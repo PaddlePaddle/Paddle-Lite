@@ -20,7 +20,6 @@
 #include <vector>
 #include "graph/tensor.h"
 #include "lite/backends/huawei_ascend_npu/device.h"
-#include "lite/backends/huawei_ascend_npu/target_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/kernels/npu/bridges/engine.h"
 #include "lite/kernels/npu/bridges/registry.h"
@@ -44,14 +43,16 @@ class DeviceProgram {
   bool LoadFromCacheFile(const std::vector<std::string>& input_names,
                          const std::vector<std::string>& output_names,
                          const std::vector<std::vector<int64_t>>& origin_idims,
-                         const std::string& model_cache_dir);
+                         const std::string& model_cache_dir,
+                         const int device_id);
   bool BuildGraphAndCacheToFile(
       const std::vector<Instruction>& origin_program,
       const std::vector<std::string>& input_names,
       const std::vector<std::string>& output_names,
       const std::vector<std::vector<int64_t>>& origin_idims,
       const std::vector<Tensor*>& origin_otensors,
-      const std::string& model_cache_dir);
+      const std::string& model_cache_dir,
+      const int device_id);
   bool ShareBufferWithOriginTensors(
       const std::vector<std::string>& input_names,
       const std::vector<std::string>& output_names,
@@ -84,15 +85,7 @@ class SubgraphEngine : public subgraph::Engine {
                  const std::vector<std::string>& output_names,
                  Scope* scope)
       : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {
-    huawei_ascend_device_id_ =
-        ctx_->As<HuaweiAscendNPUContext>().HuaweiAscendDeviceID();
-    TargetWrapperHuaweiAscendNPU::CreateDevice(huawei_ascend_device_id_);
-  }
-
-  ~SubgraphEngine() {
-    TargetWrapperHuaweiAscendNPU::DestroyDevice(huawei_ascend_device_id_);
-  }
+            ctx, block_idx, block_desc, input_names, output_names, scope) {}
 
  protected:
   bool PrepareWorkspaceForDeviceProgram() override;
@@ -100,7 +93,6 @@ class SubgraphEngine : public subgraph::Engine {
   bool LaunchDeviceProgram() override;
 
  private:
-  int huawei_ascend_device_id_{0};
   std::vector<std::shared_ptr<ge::Tensor>> device_itensors_{};
   std::vector<std::shared_ptr<ge::Tensor>> device_otensors_{};
   std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<DeviceProgram>>

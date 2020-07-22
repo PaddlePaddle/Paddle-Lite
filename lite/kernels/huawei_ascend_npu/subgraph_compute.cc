@@ -58,7 +58,8 @@ bool DeviceProgram::LoadFromCacheFile(
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
     const std::vector<std::vector<int64_t>>& origin_idims,
-    const std::string& model_cache_dir) {
+    const std::string& model_cache_dir,
+    const int device_id) {
   // Generate the model name if not initialized
   if (model_name_.empty()) {
     model_name_ = GenerateModelName(input_names, output_names, origin_idims);
@@ -68,8 +69,8 @@ bool DeviceProgram::LoadFromCacheFile(
   auto model_path = model_cache_dir + "/" + model_name_ + ".om";
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Loading model from cached file from:"
           << model_path;
-  model_client_ =
-      lite::huawei_ascend_npu::Device::Global().LoadFromFile(model_path);
+  model_client_ = lite::huawei_ascend_npu::Device::Global().LoadFromFile(
+      model_path, device_id);
   if (!model_client_) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Load model from cached file failed!";
     return false;
@@ -108,7 +109,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     const std::vector<std::string>& output_names,
     const std::vector<std::vector<int64_t>>& origin_idims,
     const std::vector<Tensor*>& origin_otensors,
-    const std::string& model_cache_dir) {
+    const std::string& model_cache_dir,
+    const int device_id) {
   // Generate the model name if not initialized
   if (model_name_.empty()) {
     model_name_ = GenerateModelName(input_names, output_names, origin_idims);
@@ -157,8 +159,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Build model success.";
   // Load the om model and create a model manager client
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Loading model from memory ...";
-  model_client_ =
-      lite::huawei_ascend_npu::Device::Global().LoadFromMem(model_buffer);
+  model_client_ = lite::huawei_ascend_npu::Device::Global().LoadFromMem(
+      model_buffer, device_id);
   if (!model_client_) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Load model from memory failed!";
     return false;
@@ -375,12 +377,16 @@ bool SubgraphEngine::BuildDeviceProgram() {
     // Obtain the model cache dir from the NPU Context of the subgraph op
     auto model_cache_dir =
         ctx_->As<HuaweiAscendNPUContext>().SubgraphModelCacheDir();
+    auto device_id = ctx_->As<HuaweiAscendNPUContext>().HuaweiAscendDeviceID();
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Get model cached dir: " << model_cache_dir;
 
     // Check and load if the cached model and configuration file exists
     if (model_cache_dir.empty() ||
-        !device_program->LoadFromCacheFile(
-            input_names_, output_names_, origin_idims_, model_cache_dir)) {
+        !device_program->LoadFromCacheFile(input_names_,
+                                           output_names_,
+                                           origin_idims_,
+                                           model_cache_dir,
+                                           device_id)) {
       // Build the model online, including converting the paddle ops to the HiAI
       // IR nodes, building the HiAI IR graph to the om model, then load it as a
       // new HiAI model manager client for inference.
@@ -393,7 +399,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
                                                     output_names_,
                                                     origin_idims_,
                                                     origin_otensors_,
-                                                    model_cache_dir)) {
+                                                    model_cache_dir,
+                                                    device_id)) {
         return false;
       }
     }

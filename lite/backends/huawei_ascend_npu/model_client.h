@@ -121,7 +121,23 @@ class TensorDesc {
 
 class AclModelClient {
  public:
-  AclModelClient() {}
+  explicit AclModelClient(int device_id) {
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Creating Huawei Ascend Device: "
+            << device_id;
+    device_num_ = num_devices();
+    if (device_id < 0 || device_id >= device_num_) {
+      LOG(FATAL) << "Failed with invalid device id " << device_id;
+      return;
+    }
+    device_id_ = device_id;
+    ACL_CALL(aclrtSetDevice(device_id_));
+  }
+
+  ~AclModelClient() {
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Destroying Huawei Ascend Device: "
+            << device_id_;
+    ACL_CALL(aclrtResetDevice(device_id_));
+  }
 
   bool LoadFromMem(const void* data, uint32_t size);
   bool LoadFromFile(const char* model_path);
@@ -141,6 +157,11 @@ class AclModelClient {
   void DestroyDataset(aclmdlDataset** dataset);
 
  private:
+  uint32_t num_devices();
+
+ private:
+  int device_id_{0};
+  int device_num_{0};
   aclrtContext context_{nullptr};
   bool load_flag_{false};
   uint32_t model_id_{0};

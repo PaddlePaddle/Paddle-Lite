@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>  // NOLINT
 #include <string>
 #include <vector>
 #include "lite/backends/huawei_ascend_npu/model_client.h"
@@ -26,18 +27,27 @@ namespace huawei_ascend_npu {
 class Device {
  public:
   static Device& Global() {
-    static thread_local Device x;
+    static Device x;
     return x;
   }
-  Device() {}
+  Device() { InitOnce(); }
+
+  ~Device() { DestroyOnce(); }
 
   std::shared_ptr<AclModelClient> LoadFromMem(
-      const std::vector<char>& model_buffer);
-  std::shared_ptr<AclModelClient> LoadFromFile(const std::string& model_path);
+      const std::vector<char>& model_buffer, const int device_id);
+  std::shared_ptr<AclModelClient> LoadFromFile(const std::string& model_path,
+                                               const int device_id);
   // Build the ACL IR graph to the ACL om model
   bool Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
              std::vector<ge::Operator>& output_nodes,  // NOLINT
              std::vector<char>* model_buffer);         // NOLINT
+
+ private:
+  void InitOnce();
+  void DestroyOnce();
+  bool runtime_inited_{false};
+  static std::mutex device_mutex_;
 };
 
 }  // namespace huawei_ascend_npu

@@ -387,6 +387,12 @@ bool AclModelClient::UnloadModel() {
   return true;
 }
 
+uint32_t AclModelClient::num_devices() {
+  uint32_t count = 0;
+  ACL_CALL(aclrtGetDeviceCount(&count));
+  return count;
+}
+
 }  // namespace huawei_ascend_npu
 }  // namespace lite
 }  // namespace paddle

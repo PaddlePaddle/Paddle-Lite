@@ -25,14 +25,14 @@ namespace lite {
 namespace huawei_ascend_npu {
 
 std::shared_ptr<AclModelClient> Device::LoadFromMem(
-    const std::vector<char>& model_buffer) {
+    const std::vector<char>& model_buffer, const int device_id) {
   if (model_buffer.size() == 0) {
     LOG(ERROR) << "[HUAWEI_ASCEND_NPU] model_buffer size is ZERO!";
     return nullptr;
   }
 
   // Create a ACL model  client to load the om model
-  std::shared_ptr<AclModelClient> model_client(new AclModelClient());
+  std::shared_ptr<AclModelClient> model_client(new AclModelClient(device_id));
   // Load model from memory
   if (model_client->LoadFromMem(
           reinterpret_cast<const void*>(model_buffer.data()),
@@ -43,14 +43,14 @@ std::shared_ptr<AclModelClient> Device::LoadFromMem(
 }
 
 std::shared_ptr<AclModelClient> Device::LoadFromFile(
-    const std::string& model_path) {
+    const std::string& model_path, const int device_id) {
   if (!paddle::lite::IsFileExists(model_path)) {
     VLOG(3) << "[HUAWEI_ASCEND_NPU] om model file not exists:" << model_path;
     return nullptr;
   }
 
   // Create a ACL model  client to load the om model
-  std::shared_ptr<AclModelClient> model_client(new AclModelClient());
+  std::shared_ptr<AclModelClient> model_client(new AclModelClient(device_id));
   // Load model from memory
   if (model_client->LoadFromFile(model_path.c_str())) {
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Loading model file success:" << model_path;
@@ -59,9 +59,12 @@ std::shared_ptr<AclModelClient> Device::LoadFromFile(
   return nullptr;
 }
 
+std::mutex Device::device_mutex_;
+
 bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
                    std::vector<ge::Operator>& output_nodes,  // NOLINT
                    std::vector<char>* model_buffer) {
+  std::lock_guard<std::mutex> lock(device_mutex_);
   // Convert the HiAI IR graph to the HiAI om model
   ge::Graph ir_graph("graph");
   ir_graph.SetInputs(input_nodes).SetOutputs(output_nodes);
@@ -80,6 +83,36 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
          om_buffer.length);
 
   return true;
+}
+
+void Device::InitOnce() {
+  if (runtime_inited_) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] runtime already inited!";
+    return;
+  }
+  // ACL runtime init => can only be called once in one process
+  ACL_CALL(aclInit(NULL));
+
+  // ATC builder init => can only be called once in one process
+  std::map<std::string, std::string> global_options;
+  global_options.insert(
+      std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
+  ATC_CALL(ge::aclgrphBuildInitialize(global_options));
+
+  runtime_inited_ = true;
+}
+
+void Device::DestroyOnce() {
+  if (!runtime_inited_) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] no need to destroy runtime!";
+    return;
+  }
+  // ATC builder finalize => can only be called once in one process
+  ge::aclgrphBuildFinalize();
+  // ACL runtime finalize => can only be called once in one process
+  ACL_CALL(aclFinalize());
+
+  runtime_inited_ = false;
 }
 
 }  // namespace huawei_ascend_npu
