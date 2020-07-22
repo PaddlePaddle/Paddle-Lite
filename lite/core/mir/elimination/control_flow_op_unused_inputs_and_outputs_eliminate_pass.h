@@ -13,25 +13,28 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <limits>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include "lite/core/mir/pass.h"
+#include "lite/core/types.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace mir {
 
-template <typename IndexType>
-class GatherCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class ControlFlowOpUnusedInputsAndOutputsEliminatePass : public mir::StmtPass {
  public:
-  void Run() override;
+  void Apply(const std::unique_ptr<SSAGraph> &graph) override;
+  void SetAllGraphs(std::vector<std::unique_ptr<mir::SSAGraph>> *graphs);
 
-  ~GatherCompute() {}
+ private:
+  std::vector<std::unique_ptr<mir::SSAGraph>> *graphs_;
 };
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

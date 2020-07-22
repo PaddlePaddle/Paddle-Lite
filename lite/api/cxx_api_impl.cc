@@ -71,8 +71,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   mode_ = config.power_mode();
   threads_ = config.threads();
 #ifdef LITE_WITH_NPU
+  // Store the model-level configuration into scope for kernels, and use
+  // exe_scope to store the execution-level configuration
   Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
-      config.subgraph_model_cache_dir());
+      raw_predictor_.scope(), config.subgraph_model_cache_dir());
 #endif
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL) && !defined(__APPLE__)
