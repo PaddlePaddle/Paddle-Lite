@@ -781,7 +781,7 @@ void act_elu<float>(
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     for (int k = 0; k < neon_loop_cnt_dim16; ++k) {
-      float32x4_t va = vld1q_f32(ptr_in_thread);             // x
+      float32x4_t va = vld1q_f32(ptr_in_thread);
       float32x4_t vb = vld1q_f32(ptr_in_thread + 4);
       float32x4_t vc = vld1q_f32(ptr_in_thread + 8);
       float32x4_t vd = vld1q_f32(ptr_in_thread + 12);
@@ -817,7 +817,7 @@ void act_elu<float>(
       ptr_in_thread += 16;
     }
     for (int j = 0; j < cnt; j++) {
-      float32x4_t va = vld1q_f32(ptr_in_thread);             // x
+      float32x4_t va = vld1q_f32(ptr_in_thread);
       float32x4_t va_exp = exp_ps(va);
       float32x4_t va_max = vmaxq_f32(va, vzero);
       float32x4_t va_sub = vsubq_f32(va_exp, vone);

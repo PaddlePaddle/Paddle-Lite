@@ -234,12 +234,12 @@ class ActivationComputeTester : public arena::TestCase {
       case ELU: {
         for (int i = 0; i < dims_.production(); i++) {
           float tmp = std::exp(x_data[i]) - 1;
-          float max =  x_data[i] > 0.f ?  x_data[i] : 0.f;
+          float max = x_data[i] > 0.f ? x_data[i] : 0.f;
           float min = x_data[i] < 0.f ? elu_alpha_ * tmp : 0.f;
           output_data[i] = min + max;
         }
+        break;
       }
-      break;
       default:
         LOG(INFO) << "the type of activation " << act_type_ << " is unknow.";
     }
@@ -429,8 +429,17 @@ TEST(Activation_sigmoid, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "sigmoid", SIGMOID));
+    std::unique_ptr<arena::TestCase> tester(
+        new ActivationComputeTester(place,
+                                    "def",
+                                    0.01,
+                                    6.,
+                                    "all",
+                                    0.,
+                                    1.0,
+                                    DDim(dims),
+                                    "sigmoid",
+                                    SIGMOID));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -626,7 +635,7 @@ TEST(activation_hard_swish, precision) {
                                     6.,
                                     "all",
                                     0.,
-				   1.0,
+                                    1.0,
                                     DDim(dims),
                                     "hard_swish",
                                     HARD_SWISH));
@@ -655,7 +664,7 @@ TEST(activation_reciprocal, precision) {
                                     6.,
                                     "all",
                                     0.,
-				   1.0,
+                                    1.0,
                                     DDim(dims),
                                     "reciprocal",
                                     RECIPROCAL));

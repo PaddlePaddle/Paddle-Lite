@@ -367,12 +367,8 @@ REGISTER_LITE_KERNEL(thresholded_relu,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-REGISTER_LITE_KERNEL(elu,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::EluCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    elu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::EluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

@@ -185,8 +185,7 @@ class ThresholdedReluCompute
   virtual ~ThresholdedReluCompute() = default;
 };
 
-class EluCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class EluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
 
