@@ -58,7 +58,7 @@ class LITE_API Predictor {
             const std::vector<std::string>& var_names = {})
       : program_desc_(desc), scope_(root) {
     Program program(*desc.get(), scope_, valid_places, var_names);
-    optimizer_ = Optimizer(std::move(program), valid_places);
+    optimizer_ = Optimizer(std::move(program), valid_places, desc);
     exec_scope_ = optimizer_.exec_scope();
     valid_places_ = valid_places;
   }
