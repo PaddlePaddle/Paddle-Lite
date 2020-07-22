@@ -41,8 +41,8 @@ class SubgraphEngine : public subgraph::Engine {
   ~SubgraphEngine();
 
  protected:
-  int BuildDeviceProgram() override;
-  int LaunchDeviceProgram() override;
+  bool BuildDeviceProgram() override;
+  bool LaunchDeviceProgram() override;
 
   NeuronModel *model_;
   NeuronCompilation *compilation_;

@@ -34,6 +34,7 @@ bool SequenceReverseOp::InferShapeImpl() const {
   const auto *input = param_.X;
   auto out_dims = input->dims();
   param_.Out->Resize(out_dims);
+  param_.Out->set_lod(param_.X->lod());
   return true;
 }
 
@@ -45,6 +46,7 @@ bool SequenceReverseOp::AttachImpl(const cpp::OpDesc &opdesc,
       scope->FindVar(opdesc.Output("Y").front())->GetMutable<lite::Tensor>();
   CHECK(param_.X);
   CHECK(param_.Out);
+
   return true;
 }
 

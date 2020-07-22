@@ -49,8 +49,7 @@ int LrnConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         << "Unsuport WithinChannel";
   }
   auto local_size = op_info->GetAttr<int>("n");
-  CHECK(op_info->HasAttr("input_scale"));
-  auto input_scale = op_info->GetAttr<float>("input_scale");
+  auto input_scale = op_info->GetInputScale(x_var_name)[0];
   VLOG(5) << "lrn input scale: " << input_scale;
 
   cnmlLrnOpParam_t param;

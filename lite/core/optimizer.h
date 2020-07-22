@@ -76,6 +76,7 @@ class Optimizer {
            "lite_conv_elementwise_fuse_pass",      // conv-elemwise-bn
            "lite_conv_bn_fuse_pass",               //
            "lite_conv_elementwise_fuse_pass",      // conv-bn-elemwise
+           "lite_conv_conv_fuse_pass",             //
            // TODO(Superjomn) Refine the fusion related design to select fusion
            // kernels for devices automatically.
            "lite_conv_activation_fuse_pass",              //
@@ -94,6 +95,8 @@ class Optimizer {
 #endif
            "identity_dropout_eliminate_pass",
            "__xpu__resnet_fuse_pass",
+           "__xpu__resnet_cbam_fuse_pass",
+           "__xpu__mmdnn_fuse_pass",
            "__xpu__multi_encoder_fuse_pass",
            "__xpu__embedding_with_eltwise_add_fuse_pass",
            "__xpu__fc_fuse_pass",

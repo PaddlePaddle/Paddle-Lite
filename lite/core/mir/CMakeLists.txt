@@ -18,14 +18,17 @@ lite_cc_library(mir_passes
       fusion/conv_activation_fuse_pass.cc
       fusion/var_conv_2d_activation_fuse_pass.cc
       fusion/conv_bn_fuse_pass.cc
+      fusion/conv_conv_fuse_pass.cc
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc
       fusion/scale_activation_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
+      fusion/__xpu__resnet_cbam_fuse_pass.cc
       fusion/__xpu__multi_encoder_fuse_pass.cc
       fusion/__xpu__embedding_with_eltwise_add_fuse_pass.cc
       fusion/__xpu__fc_fuse_pass.cc
+      fusion/__xpu__mmdnn_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc

@@ -51,6 +51,7 @@ struct FBSStrIterator {
           flatbuffers::Offset<flatbuffers::String>>::return_type>
       VI;
 
+  FBSStrIterator() = default;
   explicit FBSStrIterator(const VI& iter) { iter_ = iter; }
   const VI& raw_iter() const { return iter_; }
 
@@ -106,18 +107,29 @@ class VectorView<std::string, Flatbuffers> {
   }
   std::string operator[](size_t i) const { return cvec_->operator[](i)->str(); }
   vector_view::FBSStrIterator begin() const {
+    if (!cvec_) {
+      return vector_view::FBSStrIterator();
+    }
     return vector_view::FBSStrIterator(cvec_->begin());
   }
   vector_view::FBSStrIterator end() const {
+    if (!cvec_) {
+      return vector_view::FBSStrIterator();
+    }
     return vector_view::FBSStrIterator(cvec_->end());
   }
-  size_t size() const { return cvec_->size(); }
+  size_t size() const {
+    if (!cvec_) {
+      return 0;
+    }
+    return cvec_->size();
+  }
   operator std::vector<std::string>() const {
     VLOG(5) << "Copying elements out of VectorView will damage performance.";
     std::vector<std::string> tmp;
-    tmp.reserve(cvec_->size());
-    for (auto val : *cvec_) {
-      tmp.push_back(val->str());
+    tmp.reserve(size());
+    for (size_t i = 0; i < size(); ++i) {
+      tmp.push_back(cvec_->operator[](i)->str());
     }
     return tmp;
   }

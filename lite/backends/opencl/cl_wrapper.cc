@@ -19,14 +19,16 @@ limitations under the License. */
 
 namespace paddle {
 namespace lite {
+
 CLWrapper *CLWrapper::Global() {
   static CLWrapper wrapper;
   return &wrapper;
 }
 
 CLWrapper::CLWrapper() {
-  CHECK(InitHandle()) << "Fail to initialize the OpenCL library!";
-  InitFunctions();
+  opencl_lib_found_ = InitHandle();
+  CHECK(opencl_lib_found_) << "Fail to initialize the OpenCL library!";
+  dlsym_success_ = InitFunctions();
 }
 
 bool CLWrapper::InitHandle() {
@@ -68,15 +70,17 @@ bool CLWrapper::InitHandle() {
   }
 }
 
-void CLWrapper::InitFunctions() {
+bool CLWrapper::InitFunctions() {
   CHECK(handle_ != nullptr) << "The library handle can't be null!";
+  bool dlsym_success = true;
 
 #define PADDLE_DLSYM(cl_func)                                        \
   do {                                                               \
     cl_func##_ = (cl_func##Type)dlsym(handle_, #cl_func);            \
     if (cl_func##_ == nullptr) {                                     \
-      LOG(FATAL) << "Cannot find the " << #cl_func                   \
+      LOG(ERROR) << "Cannot find the " << #cl_func                   \
                  << " symbol in libOpenCL.so!";                      \
+      dlsym_success = false;                                         \
       break;                                                         \
     }                                                                \
     VLOG(4) << "Loaded the " << #cl_func << " symbol successfully."; \
@@ -137,6 +141,7 @@ void CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clEnqueueCopyImage);
 
 #undef PADDLE_DLSYM
+  return dlsym_success;
 }
 
 }  // namespace lite

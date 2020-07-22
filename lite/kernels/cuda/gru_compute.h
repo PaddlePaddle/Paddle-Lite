@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,19 +13,34 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 
-#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/backends/cuda/math/gemm.h"
+#include "lite/core/kernel.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace xpu {
+namespace cuda {
 
-struct XPUFreeDeleter {
-  void operator()(void* p) const { xpu_free(p); }
+template <typename T, PrecisionType PType>
+class GRUCompute : public KernelLite<TARGET(kCUDA), PType> {
+ public:
+  using param_t = operators::GRUParam;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  virtual ~GRUCompute() = default;
+
+ private:
+  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
+  lite::Tensor ordered_h0_;
 };
 
-}  // namespace xpu
+}  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

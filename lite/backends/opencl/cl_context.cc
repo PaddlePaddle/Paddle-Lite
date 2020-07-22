@@ -119,7 +119,7 @@ cl::NDRange CLContext::DefaultWorkSize(const CLImage &image) {
   }
 }
 
-cl::NDRange CLContext::LocalWorkSizeTurn(cl::NDRange global_work_size,
+cl::NDRange CLContext::LocalWorkSizeTune(cl::NDRange global_work_size,
                                          size_t max_work_size,
                                          int divisor) {
   int preferred_lws = 0;
@@ -157,7 +157,7 @@ cl::NDRange CLContext::LocalWorkSizeTurn(cl::NDRange global_work_size,
                      static_cast<size_t>(gws0)};
 #endif
 }
-cl::NDRange CLContext::LocalWorkSizeTurnReverse(cl::NDRange global_work_size,
+cl::NDRange CLContext::LocalWorkSizeTuneReverse(cl::NDRange global_work_size,
                                                 size_t max_work_size,
                                                 int divisor) {
   int preferred_lws = 0;
