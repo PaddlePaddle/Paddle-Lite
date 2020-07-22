@@ -17,10 +17,6 @@
 namespace paddle {
 namespace lite {
 
-#ifdef LITE_WITH_NPU
-std::string Context<TargetType::kNPU>::subgraph_model_cache_dir_{""};  // NOLINT
-#endif
-
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
 thread_local std::string
     Context<TargetType::kHuaweiAscendNPU>::subgraph_model_cache_dir_{
