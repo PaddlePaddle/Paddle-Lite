@@ -18,6 +18,10 @@
 #include <string>
 #include <vector>
 #include "lite/core/profile/timer.h"
+#include "lite/core/tensor.h"
+#ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_include.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -35,25 +39,83 @@ struct TimeInfo {
   float avg;
   float min;
   float max;
+#ifdef LITE_WITH_OPENCL
+  float cl_avg;
+  float cl_min;
+  float cl_max;
+#endif
 };
 
 struct OpCharacter {
   TargetType target;
+  void* op_lite{nullptr};
   std::string op_type{std::string("N/A")};
   std::string kernel_name{std::string("N/A")};
+  std::string kernel_attr{std::string("N/A")};
+  std::string kernel_func_name{std::string("N/A")};
   std::string remark{std::string("N/A")};
+
+  std::string input_shape{"N/A"};
+  std::string output_shape{"N/A"};
+  std::string filter_shape{"N/A"};
+
+  float macs{0};
+  float macs_ps{0};
+
+  float io_duration{0};
+
+#ifdef LITE_WITH_OPENCL
+  cl::Event cl_event{};
+  std::string global_work_size{"N/A"};
+  std::string local_work_size{"N/A"};
+
+  std::string NDRangeToStr(const cl::NDRange& range) {
+    std::string range_str{""};
+    const size_t range_size = 3;
+    for (size_t i = 0; i < range_size /*range.size()*/; ++i) {
+      LOG(INFO) << "range[" << i << "]:" << std::to_string(range[i]);
+      range_str += std::to_string(range[i]);
+      if (i != range_size - 1) {
+        range_str += ",";
+      }
+    }
+    return range_str;
+  }
+#else
+  void* cl_event{nullptr};
+#endif
+
+  std::string DimToStr(const paddle::lite::DDimLite& dim) {
+    if (!dim.size()) return "NotImpl";
+    std::string dim_str{""};
+    for (size_t i = 0; i < dim.size(); ++i) {
+      dim_str += std::to_string(dim[i]);
+      if (i != dim.size() - 1) {
+        dim_str += "x";
+      }
+    }
+    return dim_str;
+  }
+
+  std::string str() {
+    std::string str{""};
+    str += kernel_name + "/" + kernel_func_name + "/" + remark + "/" +
+           input_shape + "/" + filter_shape + "/" + output_shape;
+    return str;
+  }
 };
 
 class StatisUnit final {
  public:
   explicit StatisUnit(const OpCharacter& ch);
   lite::profile::Timer* Timer(Type type);
-  const OpCharacter& Character() const { return character; }
+  OpCharacter& Character() { return character; }
+
+  OpCharacter character;
 
  protected:
   std::unique_ptr<lite::profile::Timer> create_t;
   std::unique_ptr<lite::profile::Timer> dispatch_t;
-  OpCharacter character;
 };
 
 class Profiler final {
@@ -62,8 +124,15 @@ class Profiler final {
   explicit Profiler(const std::string& name) : name_(name) {}
   int NewTimer(const OpCharacter& ch);
   void StartTiming(Type type, const int index, KernelContext* ctx);
-  float StopTiming(Type type, const int index, KernelContext* ctx);
+  void StopTiming(Type type, const int index, KernelContext* ctx);
   std::string Summary(Type type, bool concise = true, size_t warm_up = 10);
+  int GetKernelFuncCalledTimes(const std::string& op_type,
+                               const std::string& kernel_attr,
+                               const std::string& kernel_func_name);
+  float GetKernelFuncSummaryGOPs(const std::string& op_type,
+                                 const std::string& kernel_attr,
+                                 const std::string& kernel_func_name);
+  OpCharacter* GetOpCharacter(const size_t index);
 
  private:
   std::string name_{std::string("N/A")};

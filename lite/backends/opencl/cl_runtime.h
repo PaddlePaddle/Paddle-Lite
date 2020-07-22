@@ -18,6 +18,7 @@ limitations under the License. */
 #include <vector>
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_utility.h"
+#include "lite/backends/opencl/cl_wrapper.h"
 
 typedef enum {
   UNKNOWN = 0,
@@ -68,6 +69,28 @@ class CLRuntime {
  public:
   static CLRuntime* Global();
 
+  bool OpenCLAvaliableForDevice() {
+    bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
+    LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
+    if (opencl_lib_found == false) return false;
+
+    bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
+    LOG(INFO) << "dlsym_success:" << dlsym_success;
+    if (opencl_lib_found == false) return false;
+
+    InitializeDevice();
+    bool support_fp16 =
+        static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
+    LOG(INFO) << "support_fp16:" << support_fp16;
+    if (support_fp16 == false) return false;
+
+    is_device_avaliable_for_opencl_ =
+        dlsym_success && opencl_lib_found && support_fp16;
+    LOG(INFO) << "is_device_avaliable_for_opencl_:"
+              << is_device_avaliable_for_opencl_;
+    return is_device_avaliable_for_opencl_;
+  }
+
   bool Init();
 
   cl::Platform& platform();
@@ -85,13 +108,21 @@ class CLRuntime {
 
   bool BuildProgram(cl::Program* program, const std::string& options = "");
 
-  bool IsInitSuccess() { return is_init_success_; }
+  bool IsInitSuccess() { return is_platform_device_init_success_; }
 
   std::string cl_path() { return cl_path_; }
 
   void set_cl_path(std::string cl_path) { cl_path_ = cl_path; }
 
   std::map<std::string, size_t>& GetDeviceInfo();
+
+  GpuType& GetGpuType();
+
+  double GetCommandTime(const cl::Event& event);
+
+  double GetQueuedTime(const cl::Event& event);
+
+  double GetSubmitTime(const cl::Event& event);
 
  private:
   CLRuntime() { Init(); }
@@ -159,9 +190,11 @@ class CLRuntime {
 
   cl_int status_{CL_SUCCESS};
 
-  bool initialized_{false};
+  bool is_device_avaliable_for_opencl_{false};
 
-  bool is_init_success_{false};
+  bool is_cl_runtime_initialized_{false};
+
+  bool is_platform_device_init_success_{false};
 };
 
 }  // namespace lite

@@ -36,7 +36,17 @@ class InterpolateOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "interpolate"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.X->dims());
+    ch->output_shape = ch->DimToStr(param_.Out->dims());
+    ch->remark = param_.interp_method;
+    ch->macs = param_.Out->numel() * 14.f;
+  }
+#endif
 
  private:
   mutable InterpolateParam param_;

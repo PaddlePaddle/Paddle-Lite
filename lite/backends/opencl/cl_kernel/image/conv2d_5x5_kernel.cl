@@ -5,9 +5,7 @@ __kernel void conv2d_5x5(__private const int global_size_dim0,
                          __private const int global_size_dim2,
                          __read_only image2d_t input_image,
                          __read_only image2d_t filter_image,
-#if defined(BIASE_CH) || defined(BIASE_ELE)
                          __read_only image2d_t bias,
-#endif
 #ifdef BATCH_NORM
                          __read_only image2d_t new_scale,
                          __read_only image2d_t new_biase,

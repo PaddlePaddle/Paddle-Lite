@@ -170,6 +170,9 @@ class VariablePlaceInferencePass : public DebugPass {
           // If is quantization, infer the Int8 type.
           if (type->precision() == PRECISION(kInt8)) {
             x_out->AsArg().type = type;
+          } else if (type->precision() == PRECISION(kFP16) &&
+                     type->target() != TARGET(kOpenCL)) {
+            x_out->AsArg().type = type;
           } else {
             PrecisionType tmp_ptype = x_out->AsArg().type->precision();
             x_out->AsArg().type = LiteType::GetTensorTy(

@@ -39,6 +39,17 @@ class AffineChannelOpLite : public OpLite {
 
   std::string DebugString() const override { return "affine_channel"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.X->dims();
+    auto output_dims = param_.Out->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = param_.data_layout;
+    ch->macs = param_.X->numel() * 2.0;
+  }
+#endif
+
  private:
   mutable AffineChannelParam param_;
 };

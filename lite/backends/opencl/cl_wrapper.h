@@ -508,13 +508,20 @@ class CLWrapper final {
     return clEnqueueCopyImage_;
   }
 
+  bool OpenclLibFound() { return opencl_lib_found_; }
+
+  bool DlsymSuccess() { return dlsym_success_; }
+
  private:
   CLWrapper();
   CLWrapper(const CLWrapper &) = delete;
   CLWrapper &operator=(const CLWrapper &) = delete;
   bool InitHandle();
-  void InitFunctions();
+  bool InitFunctions();
+  bool opencl_lib_found_{true};
+  bool dlsym_success_{true};
   void *handle_{nullptr};
+
   clGetPlatformIDsType clGetPlatformIDs_{nullptr};
   clGetPlatformInfoType clGetPlatformInfo_{nullptr};
   clBuildProgramType clBuildProgram_{nullptr};

@@ -153,13 +153,13 @@ void ElementwiseMulFloatImageCompute::Run() {
   auto global_work_size = cl::NDRange{static_cast<cl::size_type>(x_img_width),
                                       static_cast<cl::size_type>(x_img_height)};
 
-  auto  status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel
-      kernel,
-      cl::NullRange,
-      global_work_size,
-      cl::NullRange,
-      nullptr,
-      nullptr);
+  auto status = EnqueueNDRangeKernel(context,
+                                     kernel,
+                                     cl::NullRange,
+                                     global_work_size,
+                                     cl::NullRange,
+                                     nullptr,
+                                     event_);
   CL_CHECK_FATAL(status);
   std::string time_stamp_{GetTimeStamp()};
 
