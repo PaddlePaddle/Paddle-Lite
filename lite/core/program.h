@@ -41,61 +41,72 @@ static const char kKernelTypeAttr[] = "__@kernel_type_attr@__";
 // - scope: which contains all the weights
 struct Program {
  public:
-  explicit Program(const std::shared_ptr<Scope>& root) { scope_ = root; }
-  Program(const cpp::ProgramDesc& desc,
-          const std::shared_ptr<Scope>& root,
+  explicit Program(const std::shared_ptr<Scope>& root_scope) {
+    scope_ = root_scope;
+  }
+  Program(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
+          const std::shared_ptr<Scope>& root_scope,
           const std::vector<Place>& valid_places,
-          const std::vector<std::string>& var_names = {})
-      : scope_(root), valid_places_(valid_places) {
-    desc_.CopyFrom(desc);
+          const std::vector<std::string>& vars_to_clone = {})
+      : scope_(root_scope),
+        valid_places_(valid_places),
+        program_desc_(program_desc) {
     CHECK(scope_) << "scope should be init first";
     VLOG(4) << "prepare work";
-    PrepareWorkspace(desc, var_names);
+    PrepareWorkspace(program_desc_, vars_to_clone);
     VLOG(4) << "build desc";
-    Build(desc);
+    Build(program_desc_);
     VLOG(4) << "build desc finished";
   }
 
   std::unique_ptr<Program> Clone() const {
-    std::unique_ptr<Program> res(new Program(desc_, scope_, valid_places_));
-    return res;
+    return std::unique_ptr<Program>(
+        new Program(program_desc_, scope_, valid_places_));
   }
 
   const std::list<std::string>& weights() const { return weights_; }
-  const std::list<std::string>& tmp_vars() const { return tmp_vars_; }
+  const std::list<std::string>& vars() const { return vars_; }
   std::list<std::string>* mutable_weights() { return &weights_; }
-  std::list<std::string>* mutable_tmp_vars() { return &tmp_vars_; }
+  std::list<std::string>* mutable_vars() { return &vars_; }
 
-  const std::list<std::shared_ptr<OpLite>>& ops() const { return ops_; }
-  std::list<std::shared_ptr<OpLite>>* mutable_ops() { return &ops_; }
+  const std::list<std::shared_ptr<OpLite>>& ops(
+      int block_idx = kRootBlockIdx) const {
+    return ops_[block_idx];
+  }
+  std::list<std::shared_ptr<OpLite>>* mutable_ops(
+      int block_idx = kRootBlockIdx) {
+    return &ops_[block_idx];
+  }
 
-  lite::Scope* exec_scope() { return exec_scope_; }
-  lite::Scope* scope() { return scope_.get(); }
+  size_t block_size() { return ops_.size(); }
 
-  cpp::ProgramDesc* program_desc() { return &desc_; }
+  Scope* exec_scope() { return exec_scope_; }
+  Scope* scope() { return scope_.get(); }
 
-  const std::map<std::string, PrecisionType>& var_data_type() const {
-    return var_data_type_;
+  cpp::ProgramDesc* program_desc() { return program_desc_.get(); }
+
+  const std::map<std::string, const Type*>& var_type_map() const {
+    return var_type_map_;
   }
 
  private:
   // Build from a program and scope.
-  void Build(const cpp::ProgramDesc& program);
+  void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc);
   // Create temporary variables.
-  void PrepareWorkspace(const cpp::ProgramDesc& program,
-                        const std::vector<std::string>& var_names = {});
+  void PrepareWorkspace(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
+                        const std::vector<std::string>& vars_to_clone = {});
 
  private:
-  std::map<std::string, PrecisionType> var_data_type_;
-  std::list<std::string> tmp_vars_;
+  std::map<std::string, const Type*> var_type_map_;
+  std::list<std::string> vars_;
   std::list<std::string> weights_;
-  std::list<std::shared_ptr<OpLite>> ops_;
+  std::vector<std::list<std::shared_ptr<OpLite>>> ops_;
   // the scope to run the kernels, NOTE this is the execution scope.
-  std::shared_ptr<lite::Scope> scope_;
+  std::shared_ptr<Scope> scope_;
   std::vector<Place> valid_places_;
   // Runtime scope.
-  lite::Scope* exec_scope_{};
-  cpp::ProgramDesc desc_;
+  Scope* exec_scope_{};
+  std::shared_ptr<cpp::ProgramDesc> program_desc_;
 };
 
 struct Instruction {
@@ -173,8 +184,22 @@ struct Instruction {
  */
 class LITE_API RuntimeProgram {
  public:
-  explicit RuntimeProgram(std::vector<Instruction>&& insts)
+  explicit RuntimeProgram(std::vector<std::vector<Instruction>>&& insts)
       : instructions_(std::move(insts)) {
+    Init();
+  }
+  explicit RuntimeProgram(
+      const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+      Scope* exec_scope,
+      int block_idx = kRootBlockIdx);
+  ~RuntimeProgram() {
+#ifdef LITE_WITH_PROFILE
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
+    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch);
+#endif  // LITE_WITH_PROFILE
+  }
+
+  void Init() {
     if (instructions_.empty()) {
       LOG(FATAL) << "no instructions";
     }
@@ -183,7 +208,7 @@ class LITE_API RuntimeProgram {
 #endif
 #ifdef LITE_WITH_NVTX
     const NVTXAnnotator& annotator = NVTXAnnotator::Global();
-    for (auto& inst : instructions_) {
+    for (auto& inst : instructions_[kRootBlockIdx]) {
       NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
       register_layer_names_.push_back(annotator.RegisterString(
           const_cast<paddle::lite::OpLite*>(inst.op())->Type().c_str()));
@@ -191,41 +216,38 @@ class LITE_API RuntimeProgram {
     register_layer_names_.push_back(annotator.RegisterString("one_loop"));
 #endif
   }
-  ~RuntimeProgram() {
-#ifdef LITE_WITH_PROFILE
-    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
-    LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch);
-#endif  // LITE_WITH_PROFILE
-  }
 
   void Run();
 
-  void set_exec_scope(lite::Scope* x) { exec_scope_ = x; }
-  lite::Scope* exec_scope() { return exec_scope_; }
+  void set_exec_scope(Scope* x) { exec_scope_ = x; }
+  Scope* exec_scope() { return exec_scope_; }
 
-  size_t num_instructions() const { return instructions_.size(); }
+  const std::vector<Instruction>& instructions(
+      int block_idx = kRootBlockIdx) const {
+    return instructions_[block_idx];
+  }
 
-  const std::vector<Instruction>& instructions() const { return instructions_; }
+  std::vector<Instruction>* mutable_instructions(
+      int block_idx = kRootBlockIdx) {
+    return &instructions_[block_idx];
+  }
 
-  // `SaveOpInfosToProgram` will update the op list(ops_) of the block 0
-  // in ProgramDesc.
-  void SaveOpInfosToProgram(cpp::ProgramDesc* desc);
+  size_t block_size() { return instructions_.size(); }
 
-  // `UpdateVarsOfProgram` will update the var list(vars_) of the block 0 in
-  // ProgramDesc. Namely, if a new var created in some passes, its var_desc will
-  // be added in vars_.
-  void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
+  // Update the ops and vars of all of blocks to the given program_desc
+  // according to the instructions
+  void SaveToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
-  std::vector<Instruction> instructions_;
-  lite::Scope* exec_scope_{};
+  std::vector<std::vector<Instruction>> instructions_;
+  Scope* exec_scope_{};
 
 #ifdef LITE_WITH_PROFILE
   profile::Profiler profiler_;
   void set_profiler() {
-    for (auto i = instructions_.begin(); i != instructions_.end(); ++i) {
-      i->set_profiler(&profiler_);
+    for (auto& inst : instructions_[kRootBlockIdx]) {
+      inst.set_profiler(&profiler_);
     }
   }
 #endif

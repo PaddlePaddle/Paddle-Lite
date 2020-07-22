@@ -55,7 +55,8 @@ std::string DeviceProgram::GenerateModelName(
 }
 
 // Deserialize the generated model, the precisions and dimensions of the origin
-// output tensors of the subgraph op into files
+// output tensors of the subgraph op from the cached configuration file and HiAI
+// om file
 bool DeviceProgram::LoadFromCacheFile(
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
@@ -71,7 +72,7 @@ bool DeviceProgram::LoadFromCacheFile(
   VLOG(3) << "[NPU] Load model from " << model_path;
   std::vector<char> model_buffer;
   if (!ReadFile(model_path, &model_buffer)) {
-    LOG(WARNING) << "[NPU] read from " << model_path << " failed!";
+    LOG(WARNING) << "[NPU] Open " << model_path << " for reading failed!";
     return false;
   }
   bool model_comp = false;
@@ -98,9 +99,9 @@ bool DeviceProgram::LoadFromCacheFile(
     LOG(WARNING) << "[NPU] read from " << config_path << " failed!";
     return false;
   }
-  std::string config_str(config_buffer.begin(), config_buffer.end());
+  std::string str(config_buffer.begin(), config_buffer.end());
   // Parse the precision and shapes of the output tensors
-  auto output_options = Split<std::string>(config_str, ";");
+  auto output_options = Split<std::string>(str, ";");
   CHECK_EQ(output_options.size(), output_names.size());
   origin_otypes_.resize(output_names.size());
   origin_odims_.resize(output_names.size());
@@ -114,7 +115,7 @@ bool DeviceProgram::LoadFromCacheFile(
 }
 
 bool DeviceProgram::BuildGraphAndCacheToFile(
-    const std::vector<Instruction>& origin_program,
+    RuntimeProgram* origin_program,
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
     const std::vector<std::vector<int64_t>>& origin_idims,
@@ -127,10 +128,13 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Convert all of ops and their input vars and weights to HiAI IR nodes,
   // then added them into the HiAI IR graph
   int status = 0;
-  CHECK(!origin_program.empty()) << "no instructions";
   subgraph::npu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
-  for (auto& inst : origin_program) {
+  CHECK(origin_program) << "[NPU] The origin program is not initialized!";
+  CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
+      << "[NPU] No instructions found in the origin program!";
+  const auto& insts = origin_program->instructions(kRootBlockIdx);
+  for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
@@ -149,7 +153,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Collect the input and output nodes of the HiAI IR graph
   std::vector<ge::Operator> device_inodes;
   for (size_t i = 0; i < input_names.size(); i++) {
-    CHECK(graph.Has(input_names[i]) && graph.Get(input_names[i])->is_data());
+    CHECK(graph.Has(input_names[i]));
+    CHECK(graph.Get(input_names[i])->is_data());
     device_inodes.push_back(*graph.Get(input_names[i])->data());
   }
   std::vector<ge::Operator> device_onodes;
@@ -173,6 +178,9 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     LOG(WARNING) << "[NPU] Load model failed!";
     return false;
   }
+  // Do not check model compatibility because it assume that the cached om model
+  // is always compatible with the current device
+  // Update the precison and dimensions of the origin output tensors
   // Update the precison and dimensions of the origin output tensors
   CHECK_EQ(origin_otensors.size(), output_names.size());
   origin_otypes_.resize(output_names.size());
@@ -247,7 +255,7 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
                  device_idims_[i].GetHeight() * device_idims_[i].GetWidth());
     VLOG(3) << "[NPU] Init the input tensors for the device program and share "
                "their buffers with the origin input tensors";
-    // reinit device tensor will free shared buffer, so copy data to a tmp
+    // Reinit device tensor will free shared buffer, so copy data to a tmp
     // tensor
     Tensor tmp;
     tmp.CopyDataFrom(*(*origin_itensors)[i]);
@@ -337,8 +345,9 @@ bool SubgraphEngine::BuildDeviceProgram() {
   if (!device_programs_.count(origin_idims_)) {
     auto device_program = std::make_shared<DeviceProgram>();
     // Obtain the model cache dir from the NPU Context of the subgraph op
-    auto model_cache_dir = ctx_->As<NPUContext>().SubgraphModelCacheDir();
-    VLOG(3) << "[NPU] Getting subgraph model_cache_dir is: " << model_cache_dir;
+    auto model_cache_dir =
+        ctx_->As<NPUContext>().SubgraphModelCacheDir(exec_scope_);
+    VLOG(3) << "[NPU] Getting subgraph_model_cache_dir: " << model_cache_dir;
     // Check and load if the cached model and configuration file exists
     if (model_cache_dir.empty() ||
         !device_program->LoadFromCacheFile(
@@ -346,11 +355,13 @@ bool SubgraphEngine::BuildDeviceProgram() {
       // Build the model online, including converting the paddle ops to the HiAI
       // IR nodes, building the HiAI IR graph to the om model, then load it as a
       // new HiAI model manager client for inference.
-      if (origin_program_.empty()) {
+      if (!origin_program_) {
         BuildOriginProgram();
       }
-      CHECK(!origin_program_.empty()) << "no instructions";
-      if (!device_program->BuildGraphAndCacheToFile(origin_program_,
+      CHECK(origin_program_) << "[NPU] The origin program is not initialized!";
+      CHECK_GT(origin_program_->instructions().size(), 0)
+          << "[NPU] No instructions found in the origin program!";
+      if (!device_program->BuildGraphAndCacheToFile(origin_program_.get(),
                                                     input_names_,
                                                     output_names_,
                                                     origin_idims_,
@@ -391,11 +402,11 @@ bool SubgraphEngine::LaunchDeviceProgram() {
 void SubgraphCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
-                                   param.sub_block_idx,
-                                   param.sub_block_desc,
+                                   param.block_idx,
+                                   param.program_desc,
+                                   param.exec_scope,
                                    param.input_data_names,
-                                   param.output_data_names,
-                                   param.scope));
+                                   param.output_data_names));
   CHECK(engine_);
 }
 
