@@ -29,7 +29,7 @@
 
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/cuda_utils.h"
-#include "lite/backends/cuda/stream_wrapper.h"
+#include "lite/backends/cuda/stream_guard.h"
 #endif
 
 namespace paddle {
@@ -254,12 +254,12 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
 
 #ifdef LITE_WITH_CUDA
   bool cuda_use_multi_stream_{false};
-  std::unique_ptr<lite::StreamWrapper> cuda_io_stream_;
-  std::unique_ptr<lite::StreamWrapper> cuda_exec_stream_;
+  std::unique_ptr<lite::CudaStreamGuard> cuda_io_stream_;
+  std::unique_ptr<lite::CudaStreamGuard> cuda_exec_stream_;
   cudaEvent_t cuda_input_event_;
   std::vector<cudaEvent_t> cuda_output_events_;
   // only used for multi exec stream mode.
-  std::vector<lite::StreamWrapper> cuda_exec_streams_;
+  std::vector<lite::CudaStreamGuard> cuda_exec_streams_;
 #endif
 };
 

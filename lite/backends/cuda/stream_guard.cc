@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/cuda/stream_wrapper.h"
+#include "lite/backends/cuda/stream_guard.h"
 #include "lite/backends/cuda/cuda_utils.h"
 
 namespace paddle {

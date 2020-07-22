@@ -29,7 +29,7 @@
 namespace paddle {
 namespace lite {
 
-void RunModel(lite_api::CxxConfig config) {
+void RunModel(const lite_api::CxxConfig& config) {
   auto predictor = lite_api::CreatePaddlePredictor(config);
   const int batch_size = 4;
   const int channels = 3;

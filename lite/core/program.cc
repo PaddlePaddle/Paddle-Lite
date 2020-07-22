@@ -71,7 +71,7 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
   std::map<std::string, cpp::VarDesc> origin_var_maps;
   auto& main_block = *desc->GetBlock<cpp::BlockDesc>(0);
   auto var_size = main_block.VarsSize();
-  for (int i = 0; i < static_cast<int>(var_size); i++) {
+  for (size_t i = 0; i < var_size; i++) {
     auto v = main_block.GetVar<cpp::VarDesc>(i);
     auto name = v->Name();
     origin_var_maps.emplace(name, *v);
@@ -144,9 +144,9 @@ void RuntimeProgram::UpdateVarsOfProgram(cpp::ProgramDesc* desc) {
 }
 
 #ifdef LITE_WITH_CUDA
-void RuntimeProgram::UpdateContext(cudaStream_t exec, cudaStream_t io) {
+void RuntimeProgram::UpdateCudaContext(cudaStream_t exec, cudaStream_t io) {
   for (auto& inst : instructions_) {
-    inst.UpdateContext(exec, io);
+    inst.UpdateCudaContext(exec, io);
   }
 }
 #endif

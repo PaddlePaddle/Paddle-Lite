@@ -21,24 +21,35 @@
 namespace paddle {
 namespace lite {
 
-class StreamWrapper {
+// CudaStreamGuard is a encapsulation of cudaStream_t, which can accept external
+// stream or internally created stream
+//
+//   std::unique_ptr<CudaStreamGuard> sm;
+//
+//   external stream: exec_stream
+//     sm.reset(new CudaStreamGuard(exec_stream));
+//   internal stream
+//     sm.reset(new CudaStreamGuard());
+//   get cudaStream_t
+//     sm->stream();
+class CudaStreamGuard {
  public:
-  explicit StreamWrapper(cudaStream_t stream)
-      : stream_(stream), owner_(false) {}
-  StreamWrapper() : owner_(true) {
+  explicit CudaStreamGuard(cudaStream_t stream)
+      : stream_(stream), owned_(false) {}
+  CudaStreamGuard() : owned_(true) {
     lite::TargetWrapperCuda::CreateStream(&stream_);
   }
-  ~StreamWrapper() {
-    if (owner_) {
+  ~CudaStreamGuard() {
+    if (owned_) {
       lite::TargetWrapperCuda::DestroyStream(stream_);
     }
   }
   cudaStream_t stream() { return stream_; }
-  bool owner() { return owner_; }
+  bool owned() { return owned_; }
 
  private:
   cudaStream_t stream_;
-  bool owner_;
+  bool owned_{false};
 };
 
 }  // namespace lite

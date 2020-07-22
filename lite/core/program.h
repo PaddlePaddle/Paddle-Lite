@@ -129,7 +129,7 @@ struct Instruction {
     }
   }
   void Sync() const { kernel_->mutable_context()->As<CUDAContext>().Sync(); }
-  void UpdateContext(cudaStream_t exec, cudaStream_t io) {
+  void UpdateCudaContext(cudaStream_t exec, cudaStream_t io) {
     if (kernel_->target() == TargetType::kCUDA) {
       kernel_->mutable_context()->As<CUDAContext>().SetExecStream(exec);
       kernel_->mutable_context()->As<CUDAContext>().SetIoStream(io);
@@ -223,9 +223,9 @@ class LITE_API RuntimeProgram {
   void UpdateVarsOfProgram(cpp::ProgramDesc* desc);
 
 #ifdef LITE_WITH_CUDA
-  // UpdateContext will update the exec stream and io stream of all kernels in
-  // the program.
-  void UpdateContext(cudaStream_t exec, cudaStream_t io);
+  // UpdateCudaContext will update the exec stream and io stream of all kernels
+  // in the program.
+  void UpdateCudaContext(cudaStream_t exec, cudaStream_t io);
 #endif
 
  private:

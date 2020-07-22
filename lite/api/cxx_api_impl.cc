@@ -97,14 +97,14 @@ void CxxPaddleApiImpl::InitCudaEnv(std::vector<std::string> *passes) {
   // init two streams for each predictor.
   if (config_.cuda_exec_stream()) {
     cuda_exec_stream_.reset(
-        new lite::StreamWrapper(*config_.cuda_exec_stream()));
+        new lite::CudaStreamGuard(*config_.cuda_exec_stream()));
   } else {
-    cuda_exec_stream_.reset(new lite::StreamWrapper());
+    cuda_exec_stream_.reset(new lite::CudaStreamGuard());
   }
   if (config_.cuda_io_stream()) {
-    cuda_io_stream_.reset(new lite::StreamWrapper(*config_.cuda_io_stream()));
+    cuda_io_stream_.reset(new lite::CudaStreamGuard(*config_.cuda_io_stream()));
   } else {
-    cuda_io_stream_.reset(new lite::StreamWrapper());
+    cuda_io_stream_.reset(new lite::CudaStreamGuard());
   }
 
   raw_predictor_->set_cuda_exec_stream(cuda_exec_stream_->stream());

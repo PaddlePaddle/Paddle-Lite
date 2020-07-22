@@ -355,7 +355,7 @@ void Predictor::GenRuntimeProgram() {
   program_generated_ = true;
 #ifdef LITE_WITH_CUDA
   if (!cuda_use_multi_stream_) {
-    program_->UpdateContext(cuda_exec_stream_, cuda_io_stream_);
+    program_->UpdateCudaContext(cuda_exec_stream_, cuda_io_stream_);
   }
 #endif
 }
