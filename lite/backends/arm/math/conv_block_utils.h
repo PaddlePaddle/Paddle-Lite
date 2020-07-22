@@ -152,7 +152,7 @@ static bool conv_trans_weights_numc(const dtype* din,
 */
 template <typename Dtype>
 void local_transpose(const Dtype* din, Dtype* dout, int m, int n) {
-  // n % 4 == 0 m % 4 == 0
+  // n % 4 == 0 && m % 4 == 0
   // n * m ==> n * m data trans
   int offset_m = m << 2;
   const Dtype* din_ptr = din;
