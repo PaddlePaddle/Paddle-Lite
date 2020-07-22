@@ -28,36 +28,17 @@ namespace lite {
 namespace kernels {
 namespace bm {
 
-bool SubgraphEngine::PrepareWorkspaceForDeviceProgram() {
-  // Obtain the origin input tensors, and create the origin output
-  // tensors(Don't try to access them before launch the device program or the
-  // origin program)
-  PrepareWorkspaceForOriginProgram();
-  // Create the device input and output tensors, but don't initialize them
-  // with the dimensions
-  device_inputs_.resize(input_names_.size());
-  for (int i = 0; i < input_names_.size(); i++) {
-    device_inputs_[i].reset(new hiai::AiTensor);
-    CHECK(device_inputs_[i]);
-  }
-  device_outputs_.resize(output_names_.size());
-  for (int i = 0; i < output_names_.size(); i++) {
-    device_outputs_[i].reset(new hiai::AiTensor);
-    CHECK(device_outputs_[i]);
-  }
-  return true;
-}
-
 bool SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
   subgraph::bm::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
-  if (origin_program_.empty()) {
+  if (!origin_program_) {
     BuildOriginProgram();
   }
-  for (auto& inst : origin_program_) {
+  const auto& insts = origin_program_->instructions(kRootBlockIdx);
+  for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
@@ -93,13 +74,11 @@ bool SubgraphEngine::BuildDeviceProgram() {
   net_info_ = bmrt_get_network_info(bmrt_hd_, net_names_[0]);
   auto& stage = net_info_->stages[0];
   // input
-  origin_idims_.resize(input_names_.size());
-  origin_itensors_.resize(input_names_.size());
   device_inputs_.resize(input_names_.size());
   for (size_t i = 0; i < input_names_.size(); i++) {
-    origin_itensors_[i] = scope_->FindMutableTensor(net_info_->input_names[i]);
+    origin_itensors_[i] =
+        exec_scope_->FindMutableTensor(net_info_->input_names[i]);
     CHECK(origin_itensors_[i]);
-    origin_idims_[i] = origin_itensors_[i]->dims();
     bm_device_mem_t* p_mem =
         static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
@@ -112,8 +91,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
                             stage.input_shapes[i]);
   }
   // output
-  origin_odims_.resize(output_names_.size());
-  origin_otensors_.resize(output_names_.size());
   device_outputs_.resize(net_info_->output_num);
   int out_index = 0;
   for (int i = 0; i < output_names_.size(); i++) {
@@ -121,14 +98,13 @@ bool SubgraphEngine::BuildDeviceProgram() {
   }
 
   for (int i = 0; i < net_info_->output_num; i++) {
-    Tensor* t_cur = scope_->FindMutableTensor(net_info_->output_names[i]);
+    Tensor* t_cur = exec_scope_->FindMutableTensor(net_info_->output_names[i]);
     CHECK(t_cur != nullptr);
     bm_device_mem_t* p_mem =
         static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
     if (outname_map_.find(net_info_->output_names[i]) != outname_map_.end()) {
       origin_otensors_[out_index] = t_cur;
-      origin_odims_[out_index] = origin_otensors_[out_index]->dims();
       origin_otensors_[out_index]->mutable_data<float>();
       out_index += 1;
     }
@@ -173,11 +149,11 @@ bool SubgraphEngine::LaunchDeviceProgram() {
 void SubgraphCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
-                                   param.sub_block_idx,
-                                   param.sub_block_desc,
+                                   param.block_idx,
+                                   param.program_desc,
+                                   param.exec_scope,
                                    param.input_data_names,
-                                   param.output_data_names,
-                                   param.scope));
+                                   param.output_data_names));
   CHECK(engine_);
 }
 

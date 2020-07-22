@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,14 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
 
-template <typename IndexType>
-class GatherCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  void Run() override;
+// The Index of first Block in Program. also called root block.
+constexpr int kRootBlockIdx = 0;
+// The Parent Index of root Block, this block does not exist.
+constexpr int kNoneBlockIdx = -1;
 
-  ~GatherCompute() {}
-};
-
-}  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
