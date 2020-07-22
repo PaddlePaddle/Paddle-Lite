@@ -298,9 +298,6 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
     VLOG(3)
         << "[HUAWEI_ASCEND_NPU] Init the output tensors for the device program "
            "and share their buffers with the origin output tensors";
-
-    // Skip share data buf between device_otensors and origin_otensors as:
-    // (*device_otensors)[i]->GetSize() equals to ZERO before model run
   }
   return true;
 }
