@@ -14,18 +14,19 @@
 
 #pragma once
 
-#include "lite/backends/xpu/xpu_header_sitter.h"
+#include <memory>
+#include <string>
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace mir {
 
-struct XPUFreeDeleter {
-  void operator()(void* p) const { xpu_free(p); }
+class ConvConvFusePass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

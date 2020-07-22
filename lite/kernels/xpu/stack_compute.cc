@@ -25,9 +25,8 @@ void StackCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
   int n = param.X.size();
-  void* x_ptr = nullptr;
-  xpu_malloc(&x_ptr, n * 8 /* sizeof(__global__ float*) */);
-  x_ptr_guard_.reset(x_ptr);
+  x_ptr_guard_ = TargetWrapperXPU::MallocScratchPad(
+      n * 8 /* sizeof(__global__ float*) */, false /* use_l3 */);
   x_ptr_cpu_.reserve(n);
 }
 
@@ -47,14 +46,15 @@ void StackCompute::Run() {
   for (int i = 0; i < n; ++i) {
     x_ptr_cpu_[i] = param.X[i]->data<float>();
   }
-  xpu_memcpy(x_ptr_guard_.get(), &x_ptr_cpu_[0], n * 8, XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(
+      x_ptr_guard_->addr_, &x_ptr_cpu_[0], n * 8, XPU_HOST_TO_DEVICE));
 
   int r = xdnn::stack_forward(
       ctx.GetRawContext(), /* context */
       height,              /* height */
       width,               /* width */
       n,                   /* n */
-      x_ptr_guard_.get(),  /* x_ptr */
+      x_ptr_guard_->addr_, /* x_ptr */
       param.Out->mutable_data<float>(TARGET(kXPU)) /* out */);
   CHECK_EQ(r, 0);
 }

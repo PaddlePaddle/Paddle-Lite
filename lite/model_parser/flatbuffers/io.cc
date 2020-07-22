@@ -15,20 +15,21 @@
 #include "lite/model_parser/flatbuffers/io.h"
 #include <memory>
 #include <utility>
+#include <vector>
 
 namespace paddle {
 namespace lite {
 namespace fbs {
 
 void LoadModel(const std::string& path, ProgramDesc* prog) {
+  CHECK(prog);
   FILE* file = fopen(path.c_str(), "rb");
   fseek(file, 0, SEEK_END);
-  int64_t size = ftell(file);
+  int64_t length = ftell(file);
   rewind(file);
-  char* data = new char[size];
-  size = fread(data, 1, size, file);
+  std::vector<char> buf(length);
+  CHECK(fread(buf.data(), 1, length, file));
   fclose(file);
-  std::unique_ptr<char[]> buf(data);
   prog->Init(std::move(buf));
 }
 
