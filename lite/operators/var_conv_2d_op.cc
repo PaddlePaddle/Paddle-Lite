@@ -26,12 +26,12 @@ bool VarConv2dOp::InferShapeImpl() const { return true; }
 bool VarConv2dOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
-  if (!opdesc.Input("ROW").empty()) {
+  if (opdesc.HasInput("ROW") && !opdesc.Input("ROW").empty()) {
     param_.ROW = const_cast<lite::Tensor *>(
         &scope->FindVar(opdesc.Input("ROW").front())->Get<lite::Tensor>());
     CHECK(param_.ROW) << "Input(ROW) of VarConv2dOP should not be null.";
   }
-  if (!opdesc.Input("COLUMN").empty()) {
+  if (opdesc.HasInput("COLUMN") && !opdesc.Input("COLUMN").empty()) {
     param_.COLUMN = const_cast<lite::Tensor *>(
         &scope->FindVar(opdesc.Input("COLUMN").front())->Get<lite::Tensor>());
     CHECK(param_.COLUMN) << "Input(COLUMN) of VarConv2dOP should not be null.";
