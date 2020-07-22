@@ -294,7 +294,8 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
       sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
   for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
        ++sub_op_idx) {
-    auto* sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx);
+    auto* sub_op_desc = const_cast<cpp::OpDesc*>(
+        sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx));
     UpdateInputTo(sub_op_desc, head_node->AsArg().name, cur_node->AsArg().name);
   }
 
@@ -459,7 +460,8 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
       sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
   for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
        ++sub_op_idx) {
-    auto* sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx);
+    auto* sub_op_desc = const_cast<cpp::OpDesc*>(
+        sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx));
     UpdateOutputTo(
         sub_op_desc, tail_node->AsArg().name, cur_node->AsArg().name);
     /* graph like this
@@ -770,8 +772,8 @@ void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
   auto sub_program_desc = subgraph_op->GetProgramDesc();
   CHECK(sub_program_desc);
   int sub_block_idx = subgraph_op->op_info()->GetAttr<int32_t>("sub_block");
-  auto* sub_block_desc =
-      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
+  auto* sub_block_desc = const_cast<cpp::BlockDesc*>(
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx));
 
   // create a new block desc to keep op sequence correct
   cpp::BlockDesc new_block_desc;

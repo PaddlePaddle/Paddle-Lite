@@ -91,7 +91,7 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
   int block_idx{-1};
-  std::shared_ptr<cpp::ProgramDesc> program_desc{nullptr};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
   Scope* exec_scope{nullptr};
 };
 
@@ -941,7 +941,7 @@ struct CompareParam : ParamBase {
 struct WhileParam : ParamBase {
   Tensor* cond{};
   int block_idx{-1};
-  std::shared_ptr<cpp::ProgramDesc> program_desc{nullptr};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
   Scope* exec_scope{nullptr};
 };
 
@@ -1456,7 +1456,7 @@ struct ConditionalBlockParam : ParamBase {
   std::vector<lite::Tensor*> inputs{};
   std::vector<lite::Tensor*> outs{};
   int block_idx{-1};
-  std::shared_ptr<cpp::ProgramDesc> program_desc{nullptr};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
   Scope* exec_scope{nullptr};
   bool is_scalar_condition{};
 };
@@ -1627,11 +1627,36 @@ struct XPUMmdnnBidEmbGrnnAttParam : ParamBase {
   std::vector<float> grnn_rv_wi_maxs;
   float att_fc_w_max{0.0f};
 
-  lite::Tensor* grnn_fw_pool_out{};  // 1
-  lite::Tensor* grnn_rv_pool_out{};  // 2
-  lite::Tensor* att_pool_out{};      // 3
-  lite::Tensor* concat_3in1_out{};   // 4
-  lite::Tensor* emb_fw_out{};        // 5
+  lite::Tensor* grnn_fw_pool_out{};
+  lite::Tensor* grnn_rv_pool_out{};
+  lite::Tensor* att_pool_out{};
+  lite::Tensor* concat_3in1_out{};
+  lite::Tensor* emb_fw_out{};
+};
+
+struct XPUMmdnnBidEmbGrnnAttParam2 : ParamBase {
+  lite::Tensor* id0{};
+  lite::Tensor* id1{};
+  lite::Tensor* emb_tbl{};
+  lite::Tensor* grnn_fw_wh{};
+  lite::Tensor* grnn_fw_wi{};
+  lite::Tensor* grnn_rv_wh{};
+  lite::Tensor* grnn_rv_wi{};
+  lite::Tensor* att_fc_w{};
+  lite::Tensor* att_fc_b{};
+
+  std::vector<float> grnn_fw_wh_maxs;
+  std::vector<float> grnn_fw_wi_maxs;
+  std::vector<float> grnn_rv_wh_maxs;
+  std::vector<float> grnn_rv_wi_maxs;
+  float att_fc_w_max{0.0f};
+
+  lite::Tensor* emb0_out{};
+  lite::Tensor* grnn_fw_pool_out{};
+  lite::Tensor* grnn_rv_pool_out{};
+  lite::Tensor* att_pool_out{};
+  lite::Tensor* concat_3in1_out{};
+  lite::Tensor* emb_fw_out{};
 };
 
 struct XPUMmdnnBidEmbAttParam : ParamBase {
@@ -1643,8 +1668,8 @@ struct XPUMmdnnBidEmbAttParam : ParamBase {
 
   float att_fc_w_max{0.0f};
 
-  lite::Tensor* att_pool_out{};  // 1
-  lite::Tensor* emb_fw_out{};    // 2
+  lite::Tensor* att_pool_out{};
+  lite::Tensor* emb_fw_out{};
 };
 
 struct XPUMmdnnMatchConvTopkParam : ParamBase {
@@ -1656,6 +1681,7 @@ struct XPUMmdnnMatchConvTopkParam : ParamBase {
   float input_w_max{0.0f};
   float conv_w_max{0.0f};
   std::vector<int> topks;
+  int output_channel{0};
   int channel_num{0};
   int dim_t{0};
 
@@ -1664,7 +1690,7 @@ struct XPUMmdnnMatchConvTopkParam : ParamBase {
 
 struct XPUMmdnnMergeAllParam : ParamBase {
   std::vector<lite::Tensor*> concat_7in1_x;
-  std::vector<lite::Tensor*> concat_2in1_x;
+  std::vector<lite::Tensor*> concat_topk_x;
   lite::Tensor* grnn_fw_wh{};
   lite::Tensor* grnn_fw_wi{};
   lite::Tensor* grnn_rv_wh{};

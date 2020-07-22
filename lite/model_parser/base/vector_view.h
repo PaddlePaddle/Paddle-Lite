@@ -57,21 +57,35 @@ class VectorView {
  public:
   typedef vector_view::VectorTraits<T, U> Traits;
   explicit VectorView(typename Traits::vector_type const* cvec) {
-    CHECK(cvec);
     cvec_ = cvec;
   }
   typename Traits::subscript_return_type operator[](size_t i) const {
     return cvec_->operator[](i);
   }
-  typename Traits::const_iterator begin() const { return cvec_->begin(); }
-  typename Traits::const_iterator end() const { return cvec_->end(); }
-  size_t size() const { return cvec_->size(); }
+  typename Traits::const_iterator begin() const {
+    if (!cvec_) {
+      return typename Traits::const_iterator();
+    }
+    return cvec_->begin();
+  }
+  typename Traits::const_iterator end() const {
+    if (!cvec_) {
+      return typename Traits::const_iterator();
+    }
+    return cvec_->end();
+  }
+  size_t size() const {
+    if (!cvec_) {
+      return 0;
+    }
+    return cvec_->size();
+  }
   operator std::vector<T>() const {
     VLOG(5) << "Copying elements out of VectorView will damage performance.";
     std::vector<T> tmp;
-    tmp.reserve(cvec_->size());
-    for (auto val : *cvec_) {
-      tmp.push_back(val);
+    tmp.reserve(size());
+    for (size_t i = 0; i < size(); ++i) {
+      tmp.push_back(cvec_->operator[](i));
     }
     return tmp;
   }

@@ -39,10 +39,10 @@ class WhileOp : public OpLite {
 
   std::string DebugString() const override { return "while"; }
 
-  void SetProgramDesc(std::shared_ptr<cpp::ProgramDesc> program_desc) {
+  void SetProgramDesc(std::shared_ptr<const cpp::ProgramDesc> program_desc) {
     param_.program_desc = program_desc;
   }
-  std::shared_ptr<cpp::ProgramDesc> GetProgramDesc() {
+  std::shared_ptr<const cpp::ProgramDesc> GetProgramDesc() {
     return param_.program_desc;
   }
 

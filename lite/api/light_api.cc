@@ -31,7 +31,6 @@ void LightPredictor::Build(const std::string& lite_model_file,
   // For weight quantization of post training, load the int8/16 weights
   // for optimized model, and dequant it to fp32.
   DequantizeWeight();
-
   BuildRuntimeProgram(program_desc_);
   PrepareFeedFetch();
 }
@@ -110,9 +109,10 @@ std::vector<std::string> LightPredictor::GetOutputNames() {
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
-  std::vector<cpp::OpDesc*> feeds;
-  std::vector<cpp::OpDesc*> fetchs;
-  auto main_block = program_desc_->GetBlock<cpp::BlockDesc>(kRootBlockIdx);
+  std::vector<const cpp::OpDesc*> feeds;
+  std::vector<const cpp::OpDesc*> fetchs;
+  std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
+  auto main_block = program_desc->GetBlock<cpp::BlockDesc>(kRootBlockIdx);
   auto op_size = main_block->OpsSize();
   for (size_t op_idx = 0; op_idx < op_size; ++op_idx) {
     auto op_desc = main_block->GetOp<cpp::OpDesc>(op_idx);
@@ -135,7 +135,7 @@ void LightPredictor::PrepareFeedFetch() {
 }
 
 void LightPredictor::BuildRuntimeProgram(
-    const std::shared_ptr<cpp::ProgramDesc>& program_desc) {
+    const std::shared_ptr<const cpp::ProgramDesc>& program_desc) {
   auto* exe_scope = &scope_->NewScope();
   // Prepare workspace
   scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
@@ -162,6 +162,7 @@ void LightPredictor::BuildRuntimeProgram(
 }
 
 void LightPredictor::DequantizeWeight() {
+  std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
 #define PROCESS_CONV2D_DATA()                                             \
   for (int64_t i = 0; i < ch; ++i) {                                      \
     for (int64_t j = 0; j < offset; ++j) {                                \
@@ -187,10 +188,9 @@ void LightPredictor::DequantizeWeight() {
     }
     return result;
   };
-
   Tensor tmp_tensor;
-  for (size_t i = 0; i < program_desc_->BlocksSize(); i++) {
-    auto* block = program_desc_->GetBlock<cpp::BlockDesc>(i);
+  for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
+    auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
     for (size_t k = 0; k < block->OpsSize(); ++k) {
       auto* op_desc = block->GetOp<cpp::OpDesc>(k);
       if (is_weight_quantized_op(op_desc)) {

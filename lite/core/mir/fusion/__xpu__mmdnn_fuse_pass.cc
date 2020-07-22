@@ -326,6 +326,28 @@ class XPUMmdnnSearchAttentionFuser : public FuseBase {
   }
 };
 
+// 4 inputs
+// ========
+//
+// input_x
+// input_y
+// topk_row
+// topk_col
+//
+// input_x ------- match_matrix_tensor ------- input_y
+//                           |
+//                          relu
+//                 ________/    \________
+//                 |                    |
+//            var_conv_2d               |
+//                 |                    |
+//                relu                  |
+//                 |_______      _______|
+//                         \    /
+//                   sequence_concat
+//                           |
+// topk_row ---- sequence_topk_avg_pooling ----- topk_col
+//
 class XPUMmdnnMatchConvTopkFuser : public FuseBase {
  public:
   void BuildPattern() override {
@@ -418,10 +440,13 @@ class XPUMmdnnMatchConvTopkFuser : public FuseBase {
 
     auto* match_op_info = matched.at("match_matrix_tensor")->stmt()->op_info();
     op_desc.SetAttr<float>("input_w_max",
-                           match_op_info->GetAttr<float>("w_max"));
+                           match_op_info->GetAttr<float>("__xpu__w_max"));
     op_desc.SetAttr<int>("dim_t", match_op_info->GetAttr<int>("dim_t"));
     auto* conv_op_info = matched.at("conv")->stmt()->op_info();
-    op_desc.SetAttr<float>("conv_w_max", conv_op_info->GetAttr<float>("w_max"));
+    op_desc.SetAttr<float>("conv_w_max",
+                           conv_op_info->GetAttr<float>("__xpu__w_max"));
+    op_desc.SetAttr<int>("output_channel",
+                         conv_op_info->GetAttr<int>("OutputChannel"));
     auto* topk_op_info = matched.at("topk")->stmt()->op_info();
     op_desc.SetAttr<std::vector<int>>(
         "topks", topk_op_info->GetAttr<std::vector<int>>("topks"));
@@ -437,8 +462,150 @@ class XPUMmdnnMatchConvTopkFuser : public FuseBase {
     new_stmt->SetKernels(std::move(kernels));
 
     // XXX(miaotianxiang): redundant links around |topk| are automatically
-    // removed as |topk| is
-    // marked intermediate.
+    // removed as |topk| is marked intermediate.
+    // RemoveDirectedLink(matched.at("topk_col"), matched.at("topk"));
+    // RemoveDirectedLink(matched.at("topk_row"), matched.at("topk"));
+    std::vector<std::string> arg_names{"conv_w"};
+    for (auto name : arg_names) {
+      DirectedLink(matched.at(name), matched.at("match_matrix_tensor"));
+    }
+    std::vector<std::string> out_names{"topk_out"};
+    for (auto name : out_names) {
+      IR_OP_VAR_LINK(matched.at("match_matrix_tensor"), matched.at(name));
+    }
+  }
+};
+
+// 2 inputs
+// ========
+//
+// input_x
+// input_y
+//
+// input_x ------- match_matrix_tensor ------- input_y
+//    |                      |                    |
+//    |                     relu                  |
+//    |            ________/    \________         |
+//    |            |                    |         |
+//    |       var_conv_2d               |         |
+//    |            |                    |         |
+//    |           relu                  |         |
+//    |            |_______      _______|         |
+//    |                    \    /                 |
+//    |              sequence_concat              |
+//    |                      |                    |
+//    |--------- sequence_topk_avg_pooling -------|
+//
+class XPUMmdnnMatchConvTopkFuser2 : public FuseBase {
+ public:
+  void BuildPattern() override {
+    auto* input_x = VarNode("input_x")
+                        ->assert_is_op_input("match_matrix_tensor", "X")
+                        ->assert_is_op_input("sequence_topk_avg_pooling", "ROW")
+                        ->AsInput();
+    auto* input_y =
+        VarNode("input_y")
+            ->assert_is_op_input("match_matrix_tensor", "Y")
+            ->assert_is_op_input("sequence_topk_avg_pooling", "COLUMN")
+            ->AsInput();
+    auto* input_w = VarNode("input_w")
+                        ->assert_is_op_input("match_matrix_tensor", "W")
+                        ->AsInput();
+
+    auto* match_matrix_tensor =
+        OpNode("match_matrix_tensor", "match_matrix_tensor");
+    auto* match_out = VarNode("match_out")
+                          ->assert_is_op_output("match_matrix_tensor", "Out")
+                          ->AsIntermediate();
+    auto* match_tmp = VarNode("match_tmp")
+                          ->assert_is_op_output("match_matrix_tensor", "Tmp")
+                          ->AsIntermediate();
+    auto* relu0 = OpNode("relu0", "relu")->AsIntermediate();
+    auto* relu0_out = VarNode("relu0_out")
+                          ->assert_is_op_output("relu", "Out")
+                          ->AsIntermediate();
+    auto* conv_w =
+        VarNode("conv_w")->assert_is_op_input("var_conv_2d", "W")->AsInput();
+    auto* conv = OpNode("conv", "var_conv_2d")->AsIntermediate();
+    auto* conv_out = VarNode("conv_out")
+                         ->assert_is_op_output("var_conv_2d", "Out")
+                         ->AsIntermediate();
+    auto* conv_col = VarNode("conv_col")
+                         ->assert_is_op_output("var_conv_2d", "Col")
+                         ->AsIntermediate();
+    auto* relu1 = OpNode("relu1", "relu")->AsIntermediate();
+    auto* relu1_out = VarNode("relu1_out")
+                          ->assert_is_op_output("relu", "Out")
+                          ->AsIntermediate();
+    auto* seq_concat =
+        OpNode("seq_concat", "sequence_concat")->AsIntermediate();
+    auto* seq_concat_out =
+        VarNode("seq_concat_out")
+            ->assert_is_op_output("sequence_concat", "Out")
+            ->assert_is_op_input("sequence_topk_avg_pooling", "X")
+            ->AsIntermediate();
+    auto* topk = OpNode("topk", "sequence_topk_avg_pooling")->AsIntermediate();
+    auto* topk_out =
+        VarNode("topk_out")
+            ->assert_is_op_output("sequence_topk_avg_pooling", "Out")
+            ->AsOutput();
+    auto* topk_pos =
+        VarNode("topk_pos")
+            ->assert_is_op_output("sequence_topk_avg_pooling", "pos")
+            ->AsIntermediate();
+
+    *input_x >> *match_matrix_tensor;
+    *input_y >> *match_matrix_tensor;
+    *input_w >> *match_matrix_tensor;
+    *match_matrix_tensor >> *match_out >> *relu0 >> *relu0_out;
+    *match_matrix_tensor >> *match_tmp;
+
+    *relu0_out >> *conv >> *conv_out >> *relu1 >> *relu1_out;
+    *conv_w >> *conv;
+    *conv >> *conv_col;
+
+    *relu0_out >> *seq_concat;
+    *relu1_out >> *seq_concat;
+    *seq_concat >> *seq_concat_out >> *topk >> *topk_out;
+    *input_x >> *topk;
+    *input_y >> *topk;
+    *topk >> *topk_pos;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    cpp::OpDesc op_desc;
+    op_desc.SetType("__xpu__mmdnn_match_conv_topk");
+    op_desc.SetInput("input_x", {matched.at("input_x")->arg()->name});
+    op_desc.SetInput("input_y", {matched.at("input_y")->arg()->name});
+    op_desc.SetInput("input_w", {matched.at("input_w")->arg()->name});
+    op_desc.SetInput("conv_w", {matched.at("conv_w")->arg()->name});
+    op_desc.SetOutput("topk_out", {matched.at("topk_out")->arg()->name});
+
+    auto* match_op_info = matched.at("match_matrix_tensor")->stmt()->op_info();
+    op_desc.SetAttr<float>("input_w_max",
+                           match_op_info->GetAttr<float>("__xpu__w_max"));
+    op_desc.SetAttr<int>("dim_t", match_op_info->GetAttr<int>("dim_t"));
+    auto* conv_op_info = matched.at("conv")->stmt()->op_info();
+    op_desc.SetAttr<float>("conv_w_max",
+                           conv_op_info->GetAttr<float>("__xpu__w_max"));
+    op_desc.SetAttr<int>("output_channel",
+                         conv_op_info->GetAttr<int>("OutputChannel"));
+    auto* topk_op_info = matched.at("topk")->stmt()->op_info();
+    op_desc.SetAttr<std::vector<int>>(
+        "topks", topk_op_info->GetAttr<std::vector<int>>("topks"));
+    op_desc.SetAttr<int>("channel_num",
+                         topk_op_info->GetAttr<int>("channel_num"));
+
+    auto* new_stmt = matched.at("match_matrix_tensor")->stmt();
+    auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());
+    new_op->Attach(op_desc, new_stmt->op()->scope());
+    new_op->SetValidPlaces(new_stmt->op()->valid_places());
+    auto kernels = new_op->CreateKernels(new_op->valid_places());
+    new_stmt->SetOp(new_op);
+    new_stmt->SetKernels(std::move(kernels));
+
+    // XXX(miaotianxiang): redundant links around |topk| are automatically
+    // removed as |topk| is marked intermediate.
     // RemoveDirectedLink(matched.at("topk_col"), matched.at("topk"));
     // RemoveDirectedLink(matched.at("topk_row"), matched.at("topk"));
     std::vector<std::string> arg_names{"conv_w"};
@@ -624,6 +791,15 @@ class XPUMmdnnBidEmbAttFuser : public FuseBase {
   }
 };
 
+// 5 outputs
+// =========
+//
+// eltwise01_out
+// seq_pool_right_out
+// seq_pool_left_out
+// seq_pool_2in1_out
+// concat_3in1_out
+//
 class XPUMmdnnBidEmbGrnnAttFuser : public FuseBase {
  public:
   void BuildPattern() override {
@@ -818,17 +994,272 @@ class XPUMmdnnBidEmbGrnnAttFuser : public FuseBase {
     auto* grnn_fw_op_info = matched.at("grnn_left")->stmt()->op_info();
     op_desc.SetAttr<std::vector<float>>(
         "grnn_fw_wh_maxs",
-        grnn_fw_op_info->GetAttr<std::vector<float>>("wh_max"));
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
     op_desc.SetAttr<std::vector<float>>(
         "grnn_fw_wi_maxs",
-        grnn_fw_op_info->GetAttr<std::vector<float>>("wi_max"));
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
     auto* grnn_rv_op_info = matched.at("grnn_right")->stmt()->op_info();
     op_desc.SetAttr<std::vector<float>>(
         "grnn_rv_wh_maxs",
-        grnn_rv_op_info->GetAttr<std::vector<float>>("wh_max"));
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
     op_desc.SetAttr<std::vector<float>>(
         "grnn_rv_wi_maxs",
-        grnn_rv_op_info->GetAttr<std::vector<float>>("wi_max"));
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
+    auto* att_fc_op_info = matched.at("att_2in1")->stmt()->op_info();
+    op_desc.SetAttr<float>("att_fc_w_max",
+                           att_fc_op_info->GetAttr<float>("W_max"));
+
+    auto* new_stmt = matched.at("emb0")->stmt();
+    auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());
+    new_op->Attach(op_desc, new_stmt->op()->scope());
+    new_op->SetValidPlaces(new_stmt->op()->valid_places());
+    auto kernels = new_op->CreateKernels(new_op->valid_places());
+    new_stmt->SetOp(new_op);
+    new_stmt->SetKernels(std::move(kernels));
+
+    std::vector<std::string> arg_names{
+        "input1",
+        "grnn_left_wh",
+        "grnn_left_wi",
+        "grnn_right_wh",
+        "grnn_right_wi",
+        "att_2in1_w",
+        "att_2in1_b",
+    };
+    for (auto name : arg_names) {
+      DirectedLink(matched.at(name), matched.at("emb0"));
+    }
+    std::vector<std::string> out_names{
+        "seq_pool_left_out",
+        "seq_pool_right_out",
+        "seq_pool_2in1_out",
+        "concat_3in1_out",
+        "eltwise01_out",
+    };
+    for (auto name : out_names) {
+      IR_OP_VAR_LINK(matched.at("emb0"), matched.at(name));
+    }
+  }
+};
+
+// 6 outputs
+// =========
+//
+// emb0_out
+// eltwise01_out
+// seq_pool_right_out
+// seq_pool_left_out
+// seq_pool_2in1_out
+// concat_3in1_out
+//
+class XPUMmdnnBidEmbGrnnAttFuser2 : public FuseBase {
+ public:
+  void BuildPattern() override {
+    auto* input0 = VarNode("input0")->AsInput();
+    auto* input1 = VarNode("input1")->AsInput();
+    auto* emb_tbl = VarNode("emb_tbl")->AsInput();
+
+    auto* emb0 = OpNode("emb0", "lookup_table");
+    auto* emb0_out = VarNode("emb0_out")
+                         ->assert_is_op_output("lookup_table", "Out")
+                         ->assert_is_op_input("search_seq_arithmetic", "X")
+                         ->AsOutput();
+    auto* emb1 = OpNode("emb1", "lookup_table")->AsIntermediate();
+    auto* emb1_out = VarNode("emb1_out")
+                         ->assert_is_op_output("lookup_table", "Out")
+                         ->assert_is_op_input("search_seq_arithmetic", "Y")
+                         ->AsIntermediate();
+    auto* eltwise01 =
+        OpNode("eltwise01", "search_seq_arithmetic")->AsIntermediate();
+    auto* eltwise01_out =
+        VarNode("eltwise01_out")
+            ->assert_is_op_output("search_seq_arithmetic", "Out")
+            ->AsOutput();
+
+    auto* seq_rev_right0 =
+        OpNode("seq_rev_right0", "sequence_reverse")->AsIntermediate();
+    auto* seq_rev_right0_out =
+        VarNode("seq_rev_right0_out")
+            ->assert_is_op_output("sequence_reverse", "Y")
+            ->AsIntermediate();
+    auto* grnn_right_wh = VarNode("grnn_right_wh")
+                              ->assert_is_op_input("search_grnn", "Wh")
+                              ->AsInput();
+    auto* grnn_right_wi = VarNode("grnn_right_wi")
+                              ->assert_is_op_input("search_grnn", "Wi")
+                              ->AsInput();
+    auto* grnn_right = OpNode("grnn_right", "search_grnn")->AsIntermediate();
+    auto* grnn_right_out = VarNode("grnn_right_out")
+                               ->assert_is_op_output("search_grnn", "Out")
+                               ->AsIntermediate();
+    auto* grnn_right_idx_sorted_by_width =
+        VarNode("grnn_right_idx_sorted_by_width")
+            ->assert_is_op_output("search_grnn", "idx_sorted_by_width")
+            ->AsIntermediate();
+    auto* grnn_right_layout_input =
+        VarNode("grnn_right_layout_input")
+            ->assert_is_op_output("search_grnn", "layout_input")
+            ->AsIntermediate();
+    auto* grnn_right_tmp_buffer =
+        VarNode("grnn_right_tmp_buffer")
+            ->assert_is_op_output("search_grnn", "tmp_buffer")
+            ->AsIntermediate();
+    auto* seq_rev_right1 =
+        OpNode("seq_rev_right1", "sequence_reverse")->AsIntermediate();
+    auto* seq_rev_right1_out =
+        VarNode("seq_rev_right1_out")
+            ->assert_is_op_output("sequence_reverse", "Y")
+            ->AsIntermediate();
+    auto* seq_pool_right =
+        OpNode("seq_pool_right", "sequence_pool")->AsIntermediate();
+    auto* seq_pool_right_out = VarNode("seq_pool_right_out")
+                                   ->assert_is_op_output("sequence_pool", "Out")
+                                   ->AsOutput();
+    auto* seq_pool_right_max_idx =
+        VarNode("seq_pool_right_max_idx")
+            ->assert_is_op_output("sequence_pool", "MaxIndex")
+            ->AsIntermediate();
+
+    auto* grnn_left_wh = VarNode("grnn_left_wh")
+                             ->assert_is_op_input("search_grnn", "Wh")
+                             ->AsInput();
+    auto* grnn_left_wi = VarNode("grnn_left_wi")
+                             ->assert_is_op_input("search_grnn", "Wi")
+                             ->AsInput();
+    auto* grnn_left = OpNode("grnn_left", "search_grnn")->AsIntermediate();
+    auto* grnn_left_out = VarNode("grnn_left_out")
+                              ->assert_is_op_output("search_grnn", "Out")
+                              ->AsIntermediate();
+    auto* grnn_left_idx_sorted_by_width =
+        VarNode("grnn_left_idx_sorted_by_width")
+            ->assert_is_op_output("search_grnn", "idx_sorted_by_width")
+            ->AsIntermediate();
+    auto* grnn_left_layout_input =
+        VarNode("grnn_left_layout_input")
+            ->assert_is_op_output("search_grnn", "layout_input")
+            ->AsIntermediate();
+    auto* grnn_left_tmp_buffer =
+        VarNode("grnn_left_tmp_buffer")
+            ->assert_is_op_output("search_grnn", "tmp_buffer")
+            ->AsIntermediate();
+    auto* seq_pool_left =
+        OpNode("seq_pool_left", "sequence_pool")->AsIntermediate();
+    auto* seq_pool_left_out = VarNode("seq_pool_left_out")
+                                  ->assert_is_op_output("sequence_pool", "Out")
+                                  ->AsOutput();
+    auto* seq_pool_left_max_idx =
+        VarNode("seq_pool_left_max_idx")
+            ->assert_is_op_output("sequence_pool", "MaxIndex")
+            ->AsIntermediate();
+
+    auto* concat_2in1 = OpNode("concat_2in1", "concat")->AsIntermediate();
+    auto* concat_2in1_out = VarNode("concat_2in1_out")
+                                ->assert_is_op_output("concat", "Out")
+                                ->AsIntermediate();
+    auto* att_2in1_w =
+        VarNode("att_2in1_w")
+            ->assert_is_op_input("__xpu__mmdnn_search_attention", "W")
+            ->AsInput();
+    auto* att_2in1_b =
+        VarNode("att_2in1_b")
+            ->assert_is_op_input("__xpu__mmdnn_search_attention", "b")
+            ->AsInput();
+    auto* att_2in1 =
+        OpNode("att_2in1", "__xpu__mmdnn_search_attention")->AsIntermediate();
+    auto* att_2in1_out =
+        VarNode("att_2in1_out")
+            ->assert_is_op_output("__xpu__mmdnn_search_attention", "Out")
+            ->AsIntermediate();
+    auto* seq_pool_2in1 =
+        OpNode("seq_pool_2in1", "sequence_pool")->AsIntermediate();
+    auto* seq_pool_2in1_out = VarNode("seq_pool_2in1_out")
+                                  ->assert_is_op_output("sequence_pool", "Out")
+                                  ->AsOutput();
+    auto* seq_pool_2in1_max_idx =
+        VarNode("seq_pool_2in1_max_idx")
+            ->assert_is_op_output("sequence_pool", "MaxIndex")
+            ->AsIntermediate();
+
+    auto* concat_3in1 = OpNode("concat_3in1", "concat")->AsIntermediate();
+    auto* concat_3in1_out = VarNode("concat_3in1_out")
+                                ->assert_is_op_output("concat", "Out")
+                                ->AsOutput();
+
+    *input0 >> *emb0 >> *emb0_out >> *eltwise01 >> *eltwise01_out;
+    *emb_tbl >> *emb0;
+    *input1 >> *emb1 >> *emb1_out >> *eltwise01;
+    *emb_tbl >> *emb1;
+
+    *eltwise01_out >> *seq_rev_right0 >> *seq_rev_right0_out >> *grnn_right >>
+        *grnn_right_out >> *seq_rev_right1 >> *seq_rev_right1_out;
+    *grnn_right_out >> *seq_pool_right >> *seq_pool_right_out;
+    *seq_pool_right >> *seq_pool_right_max_idx;
+    *grnn_right_wh >> *grnn_right;
+    *grnn_right_wi >> *grnn_right;
+    *grnn_right >> *grnn_right_idx_sorted_by_width;
+    *grnn_right >> *grnn_right_layout_input;
+    *grnn_right >> *grnn_right_tmp_buffer;
+
+    *eltwise01_out >> *grnn_left >> *grnn_left_out >> *seq_pool_left >>
+        *seq_pool_left_out;
+    *seq_pool_left >> *seq_pool_left_max_idx;
+    *grnn_left_wh >> *grnn_left;
+    *grnn_left_wi >> *grnn_left;
+    *grnn_left >> *grnn_left_idx_sorted_by_width;
+    *grnn_left >> *grnn_left_layout_input;
+    *grnn_left >> *grnn_left_tmp_buffer;
+
+    *seq_rev_right1_out >> *concat_2in1;
+    *grnn_left_out >> *concat_2in1;
+    *concat_2in1 >> *concat_2in1_out >> *att_2in1 >> *att_2in1_out >>
+        *seq_pool_2in1 >> *seq_pool_2in1_out;
+    *seq_pool_2in1 >> *seq_pool_2in1_max_idx;
+    *att_2in1_w >> *att_2in1;
+    *att_2in1_b >> *att_2in1;
+
+    *eltwise01_out >> *concat_3in1;
+    *seq_rev_right1_out >> *concat_3in1;
+    *grnn_left_out >> *concat_3in1;
+    *concat_3in1 >> *concat_3in1_out;
+  }
+
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
+    cpp::OpDesc op_desc;
+    op_desc.SetType("__xpu__mmdnn_bid_emb_grnn_att2");
+    op_desc.SetInput("id0", {matched.at("input0")->arg()->name});
+    op_desc.SetInput("id1", {matched.at("input1")->arg()->name});
+    op_desc.SetInput("emb_tbl", {matched.at("emb_tbl")->arg()->name});
+    op_desc.SetInput("grnn_fw_wh", {matched.at("grnn_left_wh")->arg()->name});
+    op_desc.SetInput("grnn_fw_wi", {matched.at("grnn_left_wi")->arg()->name});
+    op_desc.SetInput("grnn_rv_wh", {matched.at("grnn_right_wh")->arg()->name});
+    op_desc.SetInput("grnn_rv_wi", {matched.at("grnn_right_wi")->arg()->name});
+    op_desc.SetInput("att_fc_w", {matched.at("att_2in1_w")->arg()->name});
+    op_desc.SetInput("att_fc_b", {matched.at("att_2in1_b")->arg()->name});
+    op_desc.SetOutput("emb0_out", {matched.at("emb0_out")->arg()->name});
+    op_desc.SetOutput("grnn_fw_pool_out",
+                      {matched.at("seq_pool_left_out")->arg()->name});
+    op_desc.SetOutput("grnn_rv_pool_out",
+                      {matched.at("seq_pool_right_out")->arg()->name});
+    op_desc.SetOutput("att_pool_out",
+                      {matched.at("seq_pool_2in1_out")->arg()->name});
+    op_desc.SetOutput("concat_3in1_out",
+                      {matched.at("concat_3in1_out")->arg()->name});
+    op_desc.SetOutput("emb_fw_out", {matched.at("eltwise01_out")->arg()->name});
+
+    auto* grnn_fw_op_info = matched.at("grnn_left")->stmt()->op_info();
+    op_desc.SetAttr<std::vector<float>>(
+        "grnn_fw_wh_maxs",
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
+    op_desc.SetAttr<std::vector<float>>(
+        "grnn_fw_wi_maxs",
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
+    auto* grnn_rv_op_info = matched.at("grnn_right")->stmt()->op_info();
+    op_desc.SetAttr<std::vector<float>>(
+        "grnn_rv_wh_maxs",
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
+    op_desc.SetAttr<std::vector<float>>(
+        "grnn_rv_wi_maxs",
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
     auto* att_fc_op_info = matched.at("att_2in1")->stmt()->op_info();
     op_desc.SetAttr<float>("att_fc_w_max",
                            att_fc_op_info->GetAttr<float>("W_max"));
@@ -868,6 +1299,9 @@ class XPUMmdnnBidEmbGrnnAttFuser : public FuseBase {
 
 class XPUMmdnnMergeAllFuser : public FuseBase {
  public:
+  explicit XPUMmdnnMergeAllFuser(int n_concat_topk)
+      : n_concat_topk_(n_concat_topk) {}
+
   void BuildPattern() override {
     auto* concat_7in1_input0 = VarNode("concat_7in1_input0")
                                    ->assert_is_op_nth_input("concat", "X", 0)
@@ -909,16 +1343,25 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
                           ->assert_is_op_output("relu", "Out")
                           ->AsIntermediate();
 
-    auto* concat_2in1_input0 = VarNode("concat_2in1_input0")
+    auto* concat_topk_input0 = VarNode("concat_topk_input0")
                                    ->assert_is_op_nth_input("concat", "X", 0)
                                    ->AsInput();
-    auto* concat_2in1_input1 = VarNode("concat_2in1_input1")
+    auto* concat_topk_input1 = VarNode("concat_topk_input1")
                                    ->assert_is_op_nth_input("concat", "X", 1)
                                    ->AsInput();
-    auto* concat_2in1 = OpNode("concat_2in1", "concat")->AsIntermediate();
-    auto* concat_2in1_out = VarNode("concat_2in1_out")
+    auto* concat_topk = OpNode("concat_topk", "concat")->AsIntermediate();
+    auto* concat_topk_out = VarNode("concat_topk_out")
                                 ->assert_is_op_output("concat", "Out")
                                 ->AsIntermediate();
+    for (int i = 2; i < n_concat_topk_; ++i) {
+      auto concat_topk_input_name =
+          paddle::lite::string_format("concat_topk_input%d", i);
+      auto* concat_topk_inputx = VarNode(concat_topk_input_name)
+                                     ->assert_is_op_nth_input("concat", "X", i)
+                                     ->AsInput();
+      *concat_topk_inputx >> *concat_topk;
+    }
+
     auto* seq_rev = OpNode("seq_rev", "sequence_reverse")->AsIntermediate();
     auto* seq_rev_out = VarNode("seq_rev_out")
                             ->assert_is_op_output("sequence_reverse", "Y")
@@ -1034,9 +1477,9 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
     *search_fc0_w >> *search_fc0;
     *search_fc0_b >> *search_fc0;
 
-    *concat_2in1_input0 >> *concat_2in1;
-    *concat_2in1_input1 >> *concat_2in1;
-    *concat_2in1 >> *concat_2in1_out >> *seq_rev >> *seq_rev_out;
+    *concat_topk_input0 >> *concat_topk;
+    *concat_topk_input1 >> *concat_topk;
+    *concat_topk >> *concat_topk_out >> *seq_rev >> *seq_rev_out;
 
     *seq_rev_out >> *grnn_rv >> *grnn_rv_out >> *seq_pool_rv >>
         *seq_pool_rv_out;
@@ -1047,7 +1490,7 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
     *grnn_rv >> *grnn_rv_layout_input;
     *grnn_rv >> *grnn_rv_tmp_buffer;
 
-    *concat_2in1_out >> *grnn_fw >> *grnn_fw_out >> *seq_pool_fw >>
+    *concat_topk_out >> *grnn_fw >> *grnn_fw_out >> *seq_pool_fw >>
         *seq_pool_fw_out;
     *seq_pool_fw >> *seq_pool_fw_max_idx;
     *grnn_fw_wh >> *grnn_fw;
@@ -1075,8 +1518,8 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
     op_desc.SetType("__xpu__mmdnn_merge_all");
     auto* concat_7in1_op_info = matched.at("concat_7in1")->stmt()->op_info();
     op_desc.SetInput("concat_7in1_x", concat_7in1_op_info->Input("X"));
-    auto* concat_2in1_op_info = matched.at("concat_2in1")->stmt()->op_info();
-    op_desc.SetInput("concat_2in1_x", concat_2in1_op_info->Input("X"));
+    auto* concat_topk_op_info = matched.at("concat_topk")->stmt()->op_info();
+    op_desc.SetInput("concat_topk_x", concat_topk_op_info->Input("X"));
     op_desc.SetInput("grnn_fw_wh", {matched.at("grnn_fw_wh")->arg()->name});
     op_desc.SetInput("grnn_fw_wi", {matched.at("grnn_fw_wi")->arg()->name});
     op_desc.SetInput("grnn_rv_wh", {matched.at("grnn_rv_wh")->arg()->name});
@@ -1093,23 +1536,26 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
     auto* grnn_fw_op_info = matched.at("grnn_fw")->stmt()->op_info();
     op_desc.SetAttr<std::vector<float>>(
         "grnn_fw_wh_maxs",
-        grnn_fw_op_info->GetAttr<std::vector<float>>("wh_max"));
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
     op_desc.SetAttr<std::vector<float>>(
         "grnn_fw_wi_maxs",
-        grnn_fw_op_info->GetAttr<std::vector<float>>("wi_max"));
+        grnn_fw_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
     auto* grnn_rv_op_info = matched.at("grnn_rv")->stmt()->op_info();
     op_desc.SetAttr<std::vector<float>>(
         "grnn_rv_wh_maxs",
-        grnn_rv_op_info->GetAttr<std::vector<float>>("wh_max"));
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wh_max"));
     op_desc.SetAttr<std::vector<float>>(
         "grnn_rv_wi_maxs",
-        grnn_rv_op_info->GetAttr<std::vector<float>>("wi_max"));
+        grnn_rv_op_info->GetAttr<std::vector<float>>("__xpu__wi_max"));
     auto* fc0_op_info = matched.at("search_fc0")->stmt()->op_info();
-    op_desc.SetAttr<float>("fc0_w_max", fc0_op_info->GetAttr<float>("w_max"));
+    op_desc.SetAttr<float>("fc0_w_max",
+                           fc0_op_info->GetAttr<float>("__xpu__w_max"));
     auto* fc1_op_info = matched.at("search_fc1")->stmt()->op_info();
-    op_desc.SetAttr<float>("fc1_w_max", fc1_op_info->GetAttr<float>("w_max"));
+    op_desc.SetAttr<float>("fc1_w_max",
+                           fc1_op_info->GetAttr<float>("__xpu__w_max"));
     auto* fc2_op_info = matched.at("search_fc2")->stmt()->op_info();
-    op_desc.SetAttr<float>("fc2_w_max", fc2_op_info->GetAttr<float>("w_max"));
+    op_desc.SetAttr<float>("fc2_w_max",
+                           fc2_op_info->GetAttr<float>("__xpu__w_max"));
 
     auto* new_stmt = matched.at("concat_7in1")->stmt();
     auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());
@@ -1120,8 +1566,8 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
     new_stmt->SetKernels(std::move(kernels));
 
     std::vector<std::string> arg_names{
-        "concat_2in1_input0",
-        "concat_2in1_input1",
+        "concat_topk_input0",
+        "concat_topk_input1",
         "grnn_fw_wh",
         "grnn_fw_wi",
         "grnn_rv_wh",
@@ -1133,6 +1579,11 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
         "search_fc2_w",
         "search_fc2_b",
     };
+    for (int i = 2; i < n_concat_topk_; ++i) {
+      auto concat_topk_input_name =
+          paddle::lite::string_format("concat_topk_input%d", i);
+      arg_names.push_back(concat_topk_input_name);
+    }
     for (auto name : arg_names) {
       DirectedLink(matched.at(name), matched.at("concat_7in1"));
     }
@@ -1143,6 +1594,9 @@ class XPUMmdnnMergeAllFuser : public FuseBase {
       IR_OP_VAR_LINK(matched.at("concat_7in1"), matched.at(name));
     }
   }
+
+ private:
+  int n_concat_topk_;
 };
 
 }  // namespace fusion
@@ -1158,15 +1612,21 @@ class XPUMmdnnFusePass : public ProgramPass {
     search_att_fuser(graph.get());
     fusion::XPUMmdnnMatchConvTopkFuser match_conv_topk_fuser;
     match_conv_topk_fuser(graph.get());
+    fusion::XPUMmdnnMatchConvTopkFuser2 match_conv_topk_fuser2;
+    match_conv_topk_fuser2(graph.get());
 
     fusion::XPUMmdnnBidSeqRevEmbEltwiseFuser bi_seq_rev_emb_eltwise_fuser;
     bi_seq_rev_emb_eltwise_fuser(graph.get());
     fusion::XPUMmdnnBidEmbGrnnAttFuser bid_emb_grnn_att_fuser;
     bid_emb_grnn_att_fuser(graph.get());
+    fusion::XPUMmdnnBidEmbGrnnAttFuser2 bid_emb_grnn_att_fuser2;
+    bid_emb_grnn_att_fuser2(graph.get());
     fusion::XPUMmdnnBidEmbAttFuser bid_emb_att_fuser;
     bid_emb_att_fuser(graph.get());
-    fusion::XPUMmdnnMergeAllFuser merge_all_fuser;
-    merge_all_fuser(graph.get());
+    for (int n_concat_topk : {3, 2}) {
+      fusion::XPUMmdnnMergeAllFuser merge_all_fuser(n_concat_topk);
+      merge_all_fuser(graph.get());
+    }
   }
 };
 
@@ -1178,6 +1638,7 @@ REGISTER_MIR_PASS(__xpu__mmdnn_fuse_pass, paddle::lite::mir::XPUMmdnnFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__mmdnn_search_attention")
     .BindKernel("__xpu__mmdnn_bid_emb_grnn_att")
+    .BindKernel("__xpu__mmdnn_bid_emb_grnn_att2")
     .BindKernel("__xpu__mmdnn_bid_emb_att")
     .BindKernel("__xpu__mmdnn_match_conv_topk")
     .BindKernel("__xpu__mmdnn_merge_all");

@@ -36,7 +36,7 @@ class SubgraphEngine : public subgraph::Engine {
  public:
   SubgraphEngine(KernelContext *ctx,
                  int block_idx,
-                 const std::shared_ptr<cpp::ProgramDesc> &program_desc,
+                 const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
                  Scope *exec_scope,
                  const std::vector<std::string> &input_names,
                  const std::vector<std::string> &output_names)

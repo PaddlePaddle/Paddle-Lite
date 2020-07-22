@@ -43,7 +43,7 @@ class SubgraphEngine : public subgraph::Engine {
  public:
   SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 const std::shared_ptr<cpp::ProgramDesc>& program_desc,
+                 const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
                  Scope* exec_scope,
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names,
@@ -132,7 +132,9 @@ class SubgraphEngine : public subgraph::Engine {
     origin_itensors_.clear();
     origin_otensors_.clear();
 
-    auto data_order = block_desc_->GetOp<cpp::OpDesc>(0)->Type() == "layout"
+    auto* sub_block_desc =
+        program_desc_->GetBlock()<cpp::BlockDesc>(block_idx_);
+    auto data_order = sub_block_desc->GetOp<cpp::OpDesc>(0)->Type() == "layout"
                           ? CNML_NCHW
                           : CNML_NHWC;
     // Convert all of input data vars and added into the MLU IR graph

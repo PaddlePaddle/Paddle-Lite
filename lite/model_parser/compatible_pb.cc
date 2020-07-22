@@ -234,7 +234,7 @@ void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   template <>                                                               \
   void TransformBlockDescCppToAny<NT::T>(const cpp::T &cpp_desc,            \
                                          NT::T *any_desc) {                 \
-    auto desc = cpp_desc;                                                   \
+    const cpp::T &desc = cpp_desc;                                          \
     any_desc->SetIdx(desc.Idx());                                           \
     any_desc->SetParentIdx(desc.ParentIdx());                               \
     any_desc->SetForwardBlockIdx(desc.ForwardBlockIdx());                   \

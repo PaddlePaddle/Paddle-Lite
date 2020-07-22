@@ -95,7 +95,7 @@ class LITE_API LightPredictor {
       bool model_from_memory = false);
 
   void BuildRuntimeProgram(
-      const std::shared_ptr<cpp::ProgramDesc>& program_desc);
+      const std::shared_ptr<const cpp::ProgramDesc>& program_desc);
 
   void DequantizeWeight();
 

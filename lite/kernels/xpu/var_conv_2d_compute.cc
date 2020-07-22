@@ -23,10 +23,12 @@ namespace kernels {
 namespace xpu {
 
 void VarConv2DCompute::PrepareForRun() {
-  offset_x_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
-  offset_y_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
-  offset_x_cpu.reset(new int[64]);
-  offset_y_cpu.reset(new int[64]);
+  offset_x_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  offset_y_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  offset_x_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  offset_y_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
 void VarConv2DCompute::Run() {
@@ -94,14 +96,14 @@ void VarConv2DCompute::Run() {
     offset_x_cpu[i] = offset_x[i];
     offset_y_cpu[i] = offset_y[i];
   }
-  xpu_memcpy(offset_x_xpu,
-             offset_x_cpu.get(),
-             (batch + 1) * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(offset_y_xpu,
-             offset_y_cpu.get(),
-             (batch + 1) * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(offset_x_xpu,
+                      offset_x_cpu.get(),
+                      (batch + 1) * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(offset_y_xpu,
+                      offset_y_cpu.get(),
+                      (batch + 1) * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::search_varconv<float, int16_t>(ctx.GetRawContext(),
                                                batch,

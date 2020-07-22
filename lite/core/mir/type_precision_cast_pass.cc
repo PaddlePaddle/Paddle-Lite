@@ -44,7 +44,8 @@ void UpdateInputsForSubgraph(OpLite* op,
       sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
   for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
        sub_op_idx++) {
-    auto sub_op_desc = sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx);
+    auto sub_op_desc = const_cast<cpp::OpDesc*>(
+        sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx));
     for (auto& sub_op_input : *sub_op_desc->mutable_inputs()) {
       for (auto& sub_var_name : sub_op_input.second) {
         if (sub_var_name == from) {
