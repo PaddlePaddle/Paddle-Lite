@@ -30,7 +30,7 @@ namespace fbs {
 
 class OpDesc : public OpDescAPI {
  public:
-  explicit OpDesc(proto::OpDesc* desc) : desc_(desc) { CHECK(desc_); }
+  explicit OpDesc(proto::OpDesc const* desc) : desc_(desc) { CHECK(desc_); }
 
   std::string Type() const override { return desc_->type()->str(); }
 
@@ -62,7 +62,7 @@ class OpDesc : public OpDescAPI {
   std::vector<std::string> Output(const std::string& param) const override {
     const auto& var = desc_->outputs()->LookupByKey(param.c_str());
     std::vector<std::string> args_vec;
-    if (var->arguments()) {
+    if (var && var->arguments()) {
       args_vec.reserve(var->arguments()->size());
       for (const auto& out : *var->arguments()) {
         args_vec.push_back(out->str());
@@ -95,7 +95,7 @@ class OpDesc : public OpDescAPI {
 
   OpDescAPI::AttrType GetAttrType(const std::string& name) const override {
     const auto& attr = desc_->attrs()->LookupByKey(name.c_str());
-    CHECK(attr);
+    CHECK(attr) << "Can not find attr: " << name;
     return static_cast<OpDescAPI::AttrType>(attr->type());
   }
 
@@ -124,10 +124,8 @@ class OpDesc : public OpDescAPI {
   template <typename T>
   typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(size_t idx) const;
 
-  OpDesc() = delete;
-
  private:
-  proto::OpDesc* desc_;
+  proto::OpDesc const* desc_;
 
   // To reduce overhead, we expect to use namespace aliasing to make cpp::Desc
   // and flatbuffers::Desc replace each other. However, there is no direct
@@ -138,6 +136,7 @@ class OpDesc : public OpDescAPI {
   // caused by different building options.
 
  public:
+  OpDesc() { NotImplemented(); }
   bool HasInput(const std::string& param) const {
     return desc_->inputs()->LookupByKey(param.c_str()) != nullptr;
   }
@@ -170,8 +169,7 @@ class OpDesc : public OpDescAPI {
   }
 
   bool HasOutput(const std::string& param) const {
-    NotImplemented();
-    return false;
+    return !Output(param).empty();
   }
 
   const std::map<std::string, Any>& attrs() const {

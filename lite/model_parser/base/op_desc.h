@@ -73,7 +73,9 @@ class OpDescWriteAPI {
   }
 
   template <typename T>
-  void SetAttr(const std::string& name, const T& v);
+  void SetAttr(const std::string& name, const T& v) {
+    NotImplemented();
+  }
 
   virtual ~OpDescWriteAPI() = default;
 

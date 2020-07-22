@@ -24,13 +24,16 @@ namespace kernels {
 namespace xpu {
 
 void SearchGrnnCompute::PrepareForRun() {
-  offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
-  new_offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(256 * sizeof(int));
-  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(16 * sizeof(float));
+  offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  new_offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SEQ_LEN * sizeof(int), false /* use_l3 */);
+  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(16 * sizeof(float),
+                                                       false /* use_l3 */);
 
-  idx_sorted_by_width_data_cpu.reset(new int[64]);
-  offset_cpu.reset(new int[64]);
-  new_offset_cpu.reset(new int[256]);
+  idx_sorted_by_width_data_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  offset_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  new_offset_cpu.reset(new int[XPU_MAX_LOD_SEQ_LEN]);
 }
 
 void SearchGrnnCompute::prepare_layout(const operators::SearchGrnnParam& param,
@@ -96,10 +99,10 @@ void SearchGrnnCompute::prepare_layout(const operators::SearchGrnnParam& param,
     layout_input->Resize({dim0, dim1});
   }
 
-  xpu_memcpy(idx_sorted_by_width->mutable_data<int>(TARGET(kXPU)),
-             idx_sorted_by_width_data_cpu.get(),
-             idx_sorted_by_width->numel() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(idx_sorted_by_width->mutable_data<int>(TARGET(kXPU)),
+                      idx_sorted_by_width_data_cpu.get(),
+                      idx_sorted_by_width->numel() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 }
 
 void SearchGrnnCompute::Run() {
@@ -156,14 +159,14 @@ void SearchGrnnCompute::Run() {
   for (size_t i = 0; i < new_offset.size(); ++i) {
     new_offset_cpu[i] = new_offset[i];
   }
-  xpu_memcpy(offset_xpu,
-             offset_cpu.get(),
-             offset.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(new_offset_xpu,
-             new_offset_cpu.get(),
-             new_offset.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(offset_xpu,
+                      offset_cpu.get(),
+                      offset.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(new_offset_xpu,
+                      new_offset_cpu.get(),
+                      new_offset.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::search_seq2batch(ctx.GetRawContext(),
                                  batch,
@@ -200,10 +203,10 @@ void SearchGrnnCompute::Run() {
                         0.0f,
                         0.0f,
                         0.0f};
-  xpu_memcpy(maxs_xpu,
-             maxs_cpu,
-             16 * sizeof(float),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(maxs_xpu,
+                      maxs_cpu,
+                      16 * sizeof(float),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   r = xdnn::findmax<float>(
       ctx.GetRawContext(), new_emb, cap_l * cap_e, maxs_xpu);
   CHECK_EQ(r, 0);
