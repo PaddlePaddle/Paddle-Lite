@@ -83,6 +83,9 @@ void bias_int8_nhwc(int num,
                     const void* scale,
                     cudaStream_t stream);
 
+template <typename T>
+void sigmoid(const int num, const T* din, T* dout, cudaStream_t stream);
+
 }  // namespace math
 }  // namespace cuda
 }  // namespace lite
