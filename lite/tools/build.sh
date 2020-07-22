@@ -107,7 +107,7 @@ function make_tiny_publish_so {
   local android_stl=$4
 
   cur_dir=$(pwd)
-  build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
+  build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}.${android_stl}.build_extra_${BUILD_EXTRA}.build_cv_${BUILD_CV}
   if [ -d $build_dir ]
   then
     rm -rf $build_dir
@@ -261,6 +261,8 @@ function make_all_tests {
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
+      -DLITE_WITH_PROFILE=OFF \
+      -DLITE_WITH_PRECISION_PROFILE=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_NPU=$BUILD_NPU \
