@@ -68,7 +68,7 @@ void AssignValueCompute::Run() {
 
 REGISTER_LITE_KERNEL(assign_value,
                      kCUDA,
-                     kAny,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::cuda::AssignValueCompute,
                      def)
