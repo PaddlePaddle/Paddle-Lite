@@ -771,7 +771,7 @@ void act_elu<float>(
   int thread_remain = size % threads;
   int neon_loop_cnt_dim16 = nums_per_thread >> 4;
   int neon_loop_remain_dim16 = nums_per_thread & 15;
-  float32x4_t alpha = vdupq_n_f32(alpha);
+  float32x4_t valpha = vdupq_n_f32(alpha);
   float32x4_t vzero = vdupq_n_f32(0.f);
   float32x4_t vone = vdupq_n_f32(1.f);
   int cnt = neon_loop_remain_dim16 >> 2;
@@ -797,6 +797,10 @@ void act_elu<float>(
       float32x4_t vb_sub = vsubq_f32(vb_exp, vone);
       float32x4_t vc_sub = vsubq_f32(vc_exp, vone);
       float32x4_t vd_sub = vsubq_f32(vd_exp, vone);
+      va_sub = vmulq_f32(va_sub, valpha);
+      vb_sub = vmulq_f32(vb_sub, valpha);
+      vc_sub = vmulq_f32(vc_sub, valpha);
+      vd_sub = vmulq_f32(vd_sub, valpha);
       float32x4_t va_min = vminq_f32(va_sub, vzero);
       float32x4_t vb_min = vminq_f32(vb_sub, vzero);
       float32x4_t vc_min = vminq_f32(vc_sub, vzero);
@@ -817,6 +821,7 @@ void act_elu<float>(
       float32x4_t va_exp = exp_ps(va);
       float32x4_t va_max = vmaxq_f32(va, vzero);
       float32x4_t va_sub = vsubq_f32(va_exp, vone);
+      va_sub = vmulq_f32(va_sub, valpha);
       float32x4_t va_min = vminq_f32(va_sub, vzero);
       float32x4_t va_rst = vaddq_f32(va_max, va_min);
       vst1q_f32(ptr_out_thread, va_rst);
@@ -825,7 +830,7 @@ void act_elu<float>(
     }
     for (int j = 0; j < remain; j++) {
       float beta = alpha * (expf(ptr_in_thread[0]) - 1);
-      float max = ptr_in[0] >= 0.f ? ptr_in_thread[0] : 0.f;
+      float max = ptr_in_thread[0] >= 0.f ? ptr_in_thread[0] : 0.f;
       float min = beta <= 0.f ? beta : 0.f;
       ptr_out_thread[0] = min + max;
       ptr_in_thread++;

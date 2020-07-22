@@ -87,7 +87,7 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.relu_threshold = opdesc.GetAttr<float>("threshold");
   } else if (opdesc.Type() == "elu") {
     param_.active_type = lite_api::ActivationType::kElu;
-    param_.param_.Elu_alpha = opdesc.GetAttr<float>("alpha");
+    param_.Elu_alpha = opdesc.GetAttr<float>("alpha");
   }
 
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
