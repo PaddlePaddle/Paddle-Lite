@@ -32,19 +32,20 @@ void TestCase::CreateInstruction() {
 #endif
   if (enable_subgraph_op) {
     // Create a new block desc to wrap the original op desc
+    auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
     int sub_block_idx = 0;
-    auto sub_block_desc = new cpp::BlockDesc();
+    auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
     sub_block_desc->ClearOps();
     sub_block_desc->ClearVars();
-    auto sub_block_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
-    *sub_block_op_desc = *op_desc_;
+    auto sub_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
+    *sub_op_desc = *op_desc_;
     // Add the block desc into the subgraph op which used to replace the
     // original op
     op_desc_.reset(new cpp::OpDesc());
     op_desc_->SetType("subgraph");
     op_desc_->SetAttr<int32_t>("sub_block", sub_block_idx);
-    auto in_names = sub_block_op_desc->input_vars();
-    auto out_names = sub_block_op_desc->output_vars();
+    auto in_names = sub_op_desc->input_vars();
+    auto out_names = sub_op_desc->output_vars();
     op_desc_->SetInput("Inputs", in_names);
     op_desc_->SetOutput("Outputs", out_names);
     // filter only data op (not const op by persisiable)
@@ -58,7 +59,8 @@ void TestCase::CreateInstruction() {
                                                 in_data_names);
     op_desc_->SetAttr<std::vector<std::string>>("output_data_names", out_names);
     op = LiteOpRegistry::Global().Create(op_desc().Type());
-    static_cast<operators::SubgraphOp*>(op.get())->SetSubBlock(sub_block_desc);
+    static_cast<operators::SubgraphOp*>(op.get())->SetProgramDesc(
+        sub_program_desc);
   } else {
     op = LiteOpRegistry::Global().Create(op_desc().Type());
   }
@@ -68,7 +70,7 @@ void TestCase::CreateInstruction() {
   // filter out the target kernel
   CHECK(!kernels.empty()) << "No kernel found for place "
                           << place_.DebugString();
-  auto it = std::remove_if(
+  auto it = std::find_if(
       kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& k) {
         return k->alias() == alias_;
       });
@@ -240,19 +242,6 @@ bool TestCase::CheckPrecision(const std::string& var_name,
     LOG(FATAL) << "unsupported var type";
   }
   return success;
-}
-
-TestCase::~TestCase() {
-  if (op_desc_->Type() == "subgraph") {
-    // Release the subblock desc of Subgraph op
-    auto subgraph_op = const_cast<operators::SubgraphOp*>(
-        static_cast<const operators::SubgraphOp*>(instruction_->op()));
-    CHECK(subgraph_op);
-    auto sub_block_desc = subgraph_op->GetSubBlock();
-    if (sub_block_desc) {
-      delete sub_block_desc;
-    }
-  }
 }
 
 }  // namespace arena

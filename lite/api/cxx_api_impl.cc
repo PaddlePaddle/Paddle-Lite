@@ -74,8 +74,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   mode_ = config.power_mode();
   threads_ = config.threads();
 #ifdef LITE_WITH_NPU
+  // Store the model-level configuration into scope for kernels, and use
+  // exe_scope to store the execution-level configuration
   Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
-      config.subgraph_model_cache_dir());
+      raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
   Context<TargetType::kHuaweiAscendNPU>::SetHuaweiAscendDeviceID(

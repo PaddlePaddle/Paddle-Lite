@@ -46,7 +46,7 @@ class TestCase {
         base_scope_(new Scope) {
     ctx_ = ContextScheduler::Global().NewContext(place_.target);
   }
-  virtual ~TestCase();
+  virtual ~TestCase() {}
 
   void Prepare() {
     PrepareData();
