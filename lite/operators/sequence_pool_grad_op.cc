@@ -19,7 +19,7 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool SequencePoolOp::CheckShape() const {
+bool SequencePoolGradOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.X_Grad);
   CHECK_OR_FALSE(param_.Out_Grad);
@@ -30,7 +30,7 @@ bool SequencePoolOp::CheckShape() const {
   return true;
 }
 
-bool SequencePoolOp::InferShapeImpl() const {
+bool SequencePoolGradOp::InferShapeImpl() const {
   const auto *input = param_.X;
   auto x_dims = input->dims();
   if (param_.X_Grad) {
@@ -40,18 +40,18 @@ bool SequencePoolOp::InferShapeImpl() const {
   return true;
 }
 
-bool SequencePoolOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool SequencePoolGradOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
   CHECK(param_.X);
-  if (!op_desc.Input("Out@GRAD").empty()) {
-    auto *out_grad_var = scope->FindVar(op_desc.Input("Out@GRAD").front());
+  if (!opdesc.Input("Out@GRAD").empty()) {
+    auto *out_grad_var = scope->FindVar(opdesc.Input("Out@GRAD").front());
     CHECK(out_grad_var);
     param_.Out_Grad = &out_grad_var->Get<Tensor>();
   }
 
-  if (!op_desc.Output("X@GRAD").empty()) {
-    auto *x_grad_var = scope->FindVar(op_desc.Output("X@GRAD").front());
+  if (!opdesc.Output("X@GRAD").empty()) {
+    auto *x_grad_var = scope->FindVar(opdesc.Output("X@GRAD").front());
     CHECK(x_grad_var);
     param_.X_Grad = x_grad_var->GetMutable<Tensor>();
   }
@@ -63,4 +63,4 @@ bool SequencePoolOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_pool, paddle::lite::operators::SequencePoolOp);
+REGISTER_LITE_OP(sequence_pool_grad, paddle::lite::operators::SequencePoolGradOp);

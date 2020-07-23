@@ -1012,13 +1012,13 @@ struct SequencePoolConcatParam : ParamBase {
 
 struct SequencePoolGradParam : ParamBase {
   const lite::Tensor* X{};
-  lite::Tensor* Out_Grad{};
   std::string pool_type{"AVERAGE"};
 #ifdef LITE_WITH_X86
   float pad_value{0.0};
   lite::Tensor* MaxIndex{};
 #endif
   // for backward
+  const lite::Tensor* Out_Grad{};
   lite::Tensor* X_Grad{};
 };
 

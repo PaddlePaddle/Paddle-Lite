@@ -57,13 +57,14 @@ void SequencePoolGradCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(sequence_pool,
+REGISTER_LITE_KERNEL(sequence_pool_grad,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::SequencePoolCompute,
+                     paddle::lite::kernels::arm::SequencePoolGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("MaxIndex", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

@@ -29,6 +29,13 @@ void seq_pool_sum_grad(const T* din,
                   int64_t width);
 
 template <typename T>
+void seq_pool_average_grad(const T* din,
+                   const T* din_grad,
+                   T* dout,
+                   const std::vector<uint64_t> lod,
+                   int64_t width);
+
+template <typename T>
 void seq_pool_sqrt_grad(const T* din,
                    const T* din_grad,
                    T* dout,
