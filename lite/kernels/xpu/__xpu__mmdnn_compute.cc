@@ -27,8 +27,8 @@ namespace {
 
 void FillMax(float max, float* xpu_ptr) {
   float maxs[4] = {max, 0.0f, 0.0f, 0.0f};
-  xpu_memcpy(
-      xpu_ptr, maxs, 4 * sizeof(float), XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(
+      xpu_ptr, maxs, 4 * sizeof(float), XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 }
 
 void GrnnLayout(int batch,
@@ -156,8 +156,8 @@ class MMDNNIdInfo {
            idx_sorted.data(),
            idx_sorted.size() * sizeof(int));
     offset += idx_sorted.size() * sizeof(int);
-    xpu_memcpy(
-        l3_buffer_, cpu_buffer_, offset, XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+    XPU_CALL(xpu_memcpy(
+        l3_buffer_, cpu_buffer_, offset, XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   }
 };
 
@@ -221,29 +221,32 @@ class MMDNNFcOp {
              int m,
              float* out,
              const float* in_max_by_caller = nullptr) {
+    int r = 0;
     if (in_max_by_caller == nullptr) {
-      xdnn::findmax<float>(ctx, in, m * k_, in_max_);
+      r = xdnn::findmax<float>(ctx, in, m * k_, in_max_);
+      CHECK_EQ(r, 0);
       in_max_by_caller = in_max_;
     }
-    xdnn::gemm_int16_maxptr<float, int16_t, float>(ctx,
-                                                   false,
-                                                   true,
-                                                   m,
-                                                   n_,
-                                                   k_,
-                                                   1.0f,
-                                                   in,
-                                                   k_,
-                                                   weight_,
-                                                   k_,
-                                                   0.0f,
-                                                   out,
-                                                   n_,
-                                                   bias_,
-                                                   act_type_,
-                                                   in_max_by_caller,
-                                                   weight_max_,
-                                                   out_max);
+    r = xdnn::gemm_int16_maxptr<float, int16_t, float>(ctx,
+                                                       false,
+                                                       true,
+                                                       m,
+                                                       n_,
+                                                       k_,
+                                                       1.0f,
+                                                       in,
+                                                       k_,
+                                                       weight_,
+                                                       k_,
+                                                       0.0f,
+                                                       out,
+                                                       n_,
+                                                       bias_,
+                                                       act_type_,
+                                                       in_max_by_caller,
+                                                       weight_max_,
+                                                       out_max);
+    CHECK_EQ(r, 0);
   }
 };
 
@@ -331,44 +334,49 @@ class MMDNNGrnnOp {
       gru_out = l3_buffer + 4 * slot_size;
     }
 
-    xdnn::search_seq2batch(ctx,
-                           batch,
-                           max_width,
-                           cap_e_,
-                           sentense.idx_sorted_32,
-                           sentense.lod_32,
-                           sentense.new_offset_32,
-                           in,
-                           seq2batch_out);
+    int r = 0;
+    r = xdnn::search_seq2batch(ctx,
+                               batch,
+                               max_width,
+                               cap_e_,
+                               sentense.idx_sorted_32,
+                               sentense.lod_32,
+                               sentense.new_offset_32,
+                               in,
+                               seq2batch_out);
+    CHECK_EQ(r, 0);
 
-    xdnn::findmax<float>(ctx, in, cap_l * cap_e_, input_max_);
+    r = xdnn::findmax<float>(ctx, in, cap_l * cap_e_, input_max_);
+    CHECK_EQ(r, 0);
     fc_e2h0_.Infer(ctx, seq2batch_out, cap_l, fc_e2h_out, input_max_);
     fc_e2h1_.Infer(
         ctx, seq2batch_out, cap_l, fc_e2h_out + cap_l * cap_h_, input_max_);
     fc_e2h2_.Infer(
         ctx, seq2batch_out, cap_l, fc_e2h_out + cap_l * cap_h_ * 2, input_max_);
-    xdnn::search_grnn<float, int16_t>(ctx,
-                                      cap_l,
-                                      cap_h_,
-                                      cap_e_,
-                                      max_width,
-                                      sentense.new_offset_32,
-                                      fc_e2h_out,
-                                      dense_h2h_,
-                                      gru_out,
-                                      dense_h2h_max_[0],
-                                      dense_h2h_max_[1],
-                                      dense_h2h_max_[2]);
+    r = xdnn::search_grnn<float, int16_t>(ctx,
+                                          cap_l,
+                                          cap_h_,
+                                          cap_e_,
+                                          max_width,
+                                          sentense.new_offset_32,
+                                          fc_e2h_out,
+                                          dense_h2h_,
+                                          gru_out,
+                                          dense_h2h_max_[0],
+                                          dense_h2h_max_[1],
+                                          dense_h2h_max_[2]);
+    CHECK_EQ(r, 0);
 
-    xdnn::search_batch2seq(ctx,
-                           batch,
-                           max_width,
-                           cap_h_,
-                           sentense.idx_sorted_32,
-                           sentense.lod_32,
-                           sentense.new_offset_32,
-                           gru_out,
-                           out);
+    r = xdnn::search_batch2seq(ctx,
+                               batch,
+                               max_width,
+                               cap_h_,
+                               sentense.idx_sorted_32,
+                               sentense.lod_32,
+                               sentense.new_offset_32,
+                               gru_out,
+                               out);
+    CHECK_EQ(r, 0);
   }
 };
 
@@ -435,38 +443,43 @@ class MMDNNAttentionOp {
     }
 
     seqfc_.Infer(ctx, input, cap_l, seqfc_out);
-    xdnn::search_noaligned_mat_mul(ctx,
-                                   0,
-                                   1,
-                                   batch,
-                                   lod_32,
-                                   max_width,
-                                   dim_,
-                                   alpha0_,
-                                   input,
-                                   seqfc_out,
-                                   batchgemm0_out);
-    xdnn::search_seq_softmax(
+    int r = 0;
+    r = xdnn::search_noaligned_mat_mul(ctx,
+                                       0,
+                                       1,
+                                       batch,
+                                       lod_32,
+                                       max_width,
+                                       dim_,
+                                       alpha0_,
+                                       input,
+                                       seqfc_out,
+                                       batchgemm0_out);
+    CHECK_EQ(r, 0);
+    r = xdnn::search_seq_softmax(
         ctx, batchgemm0_out, seq_softmax_out, lod_32, batch, max_width);
-    xdnn::search_noaligned_mat_mul(ctx,
-                                   0,
-                                   0,
-                                   batch,
-                                   lod_32,
-                                   max_width,
-                                   dim_,
-                                   alpha1_,
-                                   seq_softmax_out,
-                                   input,
-                                   batchgemm1_out);
-    xdnn::sequence_pooling_forward(ctx,
-                                   xdnn::Pooling_t::MAX_WITHOUT_INDEX,
-                                   batch,
-                                   lod_32,
-                                   dim_,
-                                   batchgemm1_out,
-                                   nullptr,
-                                   pool_out);
+    CHECK_EQ(r, 0);
+    r = xdnn::search_noaligned_mat_mul(ctx,
+                                       0,
+                                       0,
+                                       batch,
+                                       lod_32,
+                                       max_width,
+                                       dim_,
+                                       alpha1_,
+                                       seq_softmax_out,
+                                       input,
+                                       batchgemm1_out);
+    CHECK_EQ(r, 0);
+    r = xdnn::sequence_pooling_forward(ctx,
+                                       xdnn::Pooling_t::MAX_WITHOUT_INDEX,
+                                       batch,
+                                       lod_32,
+                                       dim_,
+                                       batchgemm1_out,
+                                       nullptr,
+                                       pool_out);
+    CHECK_EQ(r, 0);
   }
 };
 
@@ -510,12 +523,13 @@ class MMDNNMatchConvTopk {
             float conv_w_max,
             int dim_t,
             int dim_in,
+            int out_channel,
             int upper_bound_batch,
             int upper_bound_seqlen,
             const std::vector<int>& topks) {
     dim_t_ = dim_t;
     dim_in_ = dim_in;
-    out_channel_ = 5;  // TODO(miaotianxiang):
+    out_channel_ = out_channel;
     topks_ = topks;
 
     xw_fc_.Init(input_w,
@@ -553,10 +567,10 @@ class MMDNNMatchConvTopk {
     topks_xpu_guard_ =
         TargetWrapperXPU::MallocScratchPad(topks_.size() * sizeof(int), false);
     topks_xpu_ = reinterpret_cast<int*>(topks_xpu_guard_->addr_);
-    xpu_memcpy(topks_xpu_,
-               topks_.data(),
-               topks_.size() * sizeof(int),
-               XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+    XPU_CALL(xpu_memcpy(topks_xpu_,
+                        topks_.data(),
+                        topks_.size() * sizeof(int),
+                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
     useless_topk_pos_guard_ =
         TargetWrapperXPU::MallocScratchPad(4 * sizeof(int), false);
     useless_topk_pos_ = reinterpret_cast<int*>(useless_topk_pos_guard_->addr_);
@@ -576,18 +590,18 @@ class MMDNNMatchConvTopk {
     for (auto e : left_lod) {
       left_lod_32_cpu.push_back(e);
     }
-    xpu_memcpy(left_lod_32_,
-               left_lod_32_cpu.data(),
-               left_lod_32_cpu.size() * sizeof(int),
-               XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+    XPU_CALL(xpu_memcpy(left_lod_32_,
+                        left_lod_32_cpu.data(),
+                        left_lod_32_cpu.size() * sizeof(int),
+                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
     std::vector<int> right_lod_32_cpu;
     for (auto e : right_lod) {
       right_lod_32_cpu.push_back(e);
     }
-    xpu_memcpy(right_lod_32_,
-               right_lod_32_cpu.data(),
-               right_lod_32_cpu.size() * sizeof(int),
-               XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+    XPU_CALL(xpu_memcpy(right_lod_32_,
+                        right_lod_32_cpu.data(),
+                        right_lod_32_cpu.size() * sizeof(int),
+                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
     std::vector<int> lod_match = {0};
     std::vector<int> lod_conv = {0};
@@ -611,18 +625,18 @@ class MMDNNMatchConvTopk {
       left_seqlen_sum += len_x;
       right_seqlen_sum += len_y;
     }
-    xpu_memcpy(match_lod_32_,
-               lod_match.data(),
-               lod_match.size() * sizeof(int),
-               XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-    xpu_memcpy(conv_lod_32_,
-               lod_conv.data(),
-               lod_conv.size() * sizeof(int),
-               XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-    xpu_memcpy(topk_offset_32_,
-               lod_topk.data(),
-               lod_topk.size() * sizeof(int),
-               XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+    XPU_CALL(xpu_memcpy(match_lod_32_,
+                        lod_match.data(),
+                        lod_match.size() * sizeof(int),
+                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+    XPU_CALL(xpu_memcpy(conv_lod_32_,
+                        lod_conv.data(),
+                        lod_conv.size() * sizeof(int),
+                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+    XPU_CALL(xpu_memcpy(topk_offset_32_,
+                        lod_topk.data(),
+                        lod_topk.size() * sizeof(int),
+                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
     float* xwy_out = hbm_buffer_;
     float* conv_out = hbm_buffer_ + x_mul_y_sum * dim_t_;
@@ -640,19 +654,21 @@ class MMDNNMatchConvTopk {
 
     int max_width = std::max(left_seqlen_max, right_seqlen_max);
     xw_fc_.Infer(ctx, left->data<float>(), left_seqlen_sum, xw_out);
-    xdnn::match_matrix_tensor(ctx,
-                              batch,
-                              xw_out,
-                              right->data<float>(),
-                              left_lod_32_,
-                              right_lod_32_,
-                              dim_t_,
-                              dim_in_,
-                              xwy_out,
-                              xw_fc_.out_max,
-                              xdnn::Activation_t::RELU,
-                              max_width);
-    xdnn::search_varconv<float, int16_t>(
+    int r = 0;
+    r = xdnn::match_matrix_tensor(ctx,
+                                  batch,
+                                  xw_out,
+                                  right->data<float>(),
+                                  left_lod_32_,
+                                  right_lod_32_,
+                                  dim_t_,
+                                  dim_in_,
+                                  xwy_out,
+                                  xw_fc_.out_max,
+                                  xdnn::Activation_t::RELU,
+                                  max_width);
+    CHECK_EQ(r, 0);
+    r = xdnn::search_varconv<float, int16_t>(
         ctx,
         batch,
         dim_t_,
@@ -668,24 +684,27 @@ class MMDNNMatchConvTopk {
         conv_out,
         conv_weight_max_,
         xdnn::Activation_t::RELU);  // TODO(miaotianxiang):
-    xdnn::sequence_concat(ctx,
-                          xwy_out,
-                          match_lod_32_,
-                          conv_out,
-                          conv_lod_32_,
-                          seq_concat_out,
-                          batch);
-    xdnn::sequence_topk_avg_pooling(ctx,
-                                    seq_concat_out,
-                                    seq_avg_topk_out,
-                                    useless_topk_pos_,
-                                    batch,
-                                    dim_t_ + out_channel_,
-                                    topk_offset_32_,
-                                    left_lod_32_,
-                                    right_lod_32_,
-                                    topks_xpu_,
-                                    topks_.size());
+    CHECK_EQ(r, 0);
+    r = xdnn::sequence_concat(ctx,
+                              xwy_out,
+                              match_lod_32_,
+                              conv_out,
+                              conv_lod_32_,
+                              seq_concat_out,
+                              batch);
+    CHECK_EQ(r, 0);
+    r = xdnn::sequence_topk_avg_pooling(ctx,
+                                        seq_concat_out,
+                                        seq_avg_topk_out,
+                                        useless_topk_pos_,
+                                        batch,
+                                        dim_t_ + out_channel_,
+                                        topk_offset_32_,
+                                        left_lod_32_,
+                                        right_lod_32_,
+                                        topks_xpu_,
+                                        topks_.size());
+    CHECK_EQ(r, 0);
   }
 };
 
@@ -802,34 +821,38 @@ class MMDNNBidEmbGrnnAtt {
     pool_rv = grnn_rv_pool_out->mutable_data<float>(TARGET(kXPU));
     att_out = att_pool_out->mutable_data<float>(TARGET(kXPU));
 
-    xdnn::search_bid_emb_ew(ctx,
-                            batch,
-                            sentense.lod_64,
-                            sentense.id0_64,
-                            sentense.id1_64,
-                            table_,
-                            table_len_,
-                            emb_dim_,
-                            emb_fw,
-                            emb_rv,
-                            table_len_ - 2,
-                            1);
+    int r = 0;
+    r = xdnn::search_bid_emb_ew(ctx,
+                                batch,
+                                sentense.lod_64,
+                                sentense.id0_64,
+                                sentense.id1_64,
+                                table_,
+                                table_len_,
+                                emb_dim_,
+                                emb_fw,
+                                emb_rv,
+                                table_len_ - 2,
+                                1);
+    CHECK_EQ(r, 0);
     bi_rv_.Infer(ctx,
                  sentense,
                  emb_rv,
                  grnn_rv,
                  l3_buffer + 2 * slot_len,
                  l3_size - 2 * slot_len * sizeof(float));
-    xdnn::sequence_reverse(
+    r = xdnn::sequence_reverse(
         ctx, batch, sentense.lod_32, cap_h_, grnn_rv, grnn_rv_rv);
-    xdnn::sequence_pooling_forward(ctx,
-                                   xdnn::Pooling_t::LAST,
-                                   batch,
-                                   sentense.lod_32,
-                                   cap_h_,
-                                   grnn_rv,
-                                   nullptr,
-                                   pool_rv);
+    CHECK_EQ(r, 0);
+    r = xdnn::sequence_pooling_forward(ctx,
+                                       xdnn::Pooling_t::LAST,
+                                       batch,
+                                       sentense.lod_32,
+                                       cap_h_,
+                                       grnn_rv,
+                                       nullptr,
+                                       pool_rv);
+    CHECK_EQ(r, 0);
 
     bi_fw_.Infer(ctx,
                  sentense,
@@ -837,19 +860,23 @@ class MMDNNBidEmbGrnnAtt {
                  grnn_fw,
                  l3_buffer + 2 * slot_len,
                  l3_size - 2 * slot_len * sizeof(float));
-    xdnn::sequence_pooling_forward(ctx,
-                                   xdnn::Pooling_t::LAST,
-                                   batch,
-                                   sentense.lod_32,
-                                   cap_h_,
-                                   grnn_fw,
-                                   nullptr,
-                                   pool_fw);
+    r = xdnn::sequence_pooling_forward(ctx,
+                                       xdnn::Pooling_t::LAST,
+                                       batch,
+                                       sentense.lod_32,
+                                       cap_h_,
+                                       grnn_fw,
+                                       nullptr,
+                                       pool_fw);
+    CHECK_EQ(r, 0);
     const int concat_widths[] = {cap_h_, cap_h_, cap_h_};
     const float* concat_ptrs[] = {emb_fw, grnn_fw, grnn_rv_rv};
-    xdnn::concat<float>(
+    r = xdnn::concat<float>(
         ctx, cap_l, concat_widths + 1, 2, concat_ptrs + 1, concat_2in);
-    xdnn::concat<float>(ctx, cap_l, concat_widths, 3, concat_ptrs, concat_3in);
+    CHECK_EQ(r, 0);
+    r = xdnn::concat<float>(
+        ctx, cap_l, concat_widths, 3, concat_ptrs, concat_3in);
+    CHECK_EQ(r, 0);
     att_.Infer(ctx,
                sentense,
                concat_2in,
@@ -899,16 +926,18 @@ class MMDNNEmbAtt {
     int cap_l = sentense.lod.back();
     const float* emb_tables[] = {table_, table_};
     const int64_t* emb_indices[] = {sentense.id0_64, sentense.id1_64};
-    xdnn::embedding_with_ewadd<float, int64_t, false, false>(ctx,
-                                                             emb_dim_,
-                                                             cap_l,
-                                                             2,
-                                                             table_len_ - 2,
-                                                             emb_tables,
-                                                             emb_indices,
-                                                             nullptr,
-                                                             nullptr,
-                                                             emb_fw);
+    int r =
+        xdnn::embedding_with_ewadd<float, int64_t, false, false>(ctx,
+                                                                 emb_dim_,
+                                                                 cap_l,
+                                                                 2,
+                                                                 table_len_ - 2,
+                                                                 emb_tables,
+                                                                 emb_indices,
+                                                                 nullptr,
+                                                                 nullptr,
+                                                                 emb_fw);
+    CHECK_EQ(r, 0);
     att_.Infer(ctx, sentense, emb_fw, att_out, l3_buffer, l3_size);
   }
 };
@@ -990,7 +1019,7 @@ class MMDNNMergeAll {
     fc2_.Init(
         fc2_w, fc2_w_max, fc2_b, fc2_n_, fc2_k_, xdnn::Activation_t::LINEAR);
 
-    int hbm_total_len = max_cap_l * cap_h_ * 4 +
+    int hbm_total_len = max_cap_l * cap_e_ * 2 + max_cap_l * cap_h_ * 2 +
                         upper_bound_batch * (2 * cap_h_ + fc0_k_ + fc0_n_ +
                                              fc1_k_ + fc1_n_ + fc2_n_);
     hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
@@ -1000,7 +1029,7 @@ class MMDNNMergeAll {
 
   void Infer(xdnn::Context* ctx,
              const MMDNNIdInfo& sentense,
-             const std::vector<lite::Tensor*> concat_2in1_x,
+             const std::vector<lite::Tensor*> concat_topk_x,
              const std::vector<lite::Tensor*> concat_7in1_x,
              lite::Tensor* out,
              float* l3_buffer = nullptr,
@@ -1010,13 +1039,13 @@ class MMDNNMergeAll {
 
     float* topk_concat_out_fw = hbm_buffer_;
     int hbm_total_len =
-        cap_l * cap_h_ * 4 +
+        cap_l * cap_e_ * 2 + cap_l * cap_h_ * 2 +
         batch * (2 * cap_h_ + fc0_k_ + fc0_n_ + fc1_k_ + fc1_n_ + fc2_n_);
     if (l3_size > 0 && l3_size >= hbm_total_len * sizeof(float)) {
       topk_concat_out_fw = l3_buffer;
     }
-    float* topk_concat_out_rv = topk_concat_out_fw + cap_l * cap_h_;
-    float* grnn_fw = topk_concat_out_rv + cap_l * cap_h_;
+    float* topk_concat_out_rv = topk_concat_out_fw + cap_l * cap_e_;
+    float* grnn_fw = topk_concat_out_rv + cap_l * cap_e_;
     float* grnn_rv = grnn_fw + cap_l * cap_h_;
     float* pool_fw = grnn_rv + cap_l * cap_h_;
     float* pool_rv = pool_fw + batch * cap_h_;
@@ -1027,18 +1056,27 @@ class MMDNNMergeAll {
     // float* fc2_out = fc1_out + batch * fc1_n_;
     float* fc2_out = out->mutable_data<float>(TARGET(kXPU));
 
-    const int concat_widths[] = {static_cast<int>(concat_2in1_x[0]->dims()[1]),
-                                 static_cast<int>(concat_2in1_x[1]->dims()[1])};
-    const float* concat_ptrs[] = {concat_2in1_x[0]->data<float>(),
-                                  concat_2in1_x[1]->data<float>()};
-    xdnn::concat<float>(
-        ctx, cap_l, concat_widths, 2, concat_ptrs, topk_concat_out_fw);
-    xdnn::sequence_reverse(ctx,
-                           batch,
-                           sentense.lod_32,
-                           cap_e_,
-                           topk_concat_out_fw,
-                           topk_concat_out_rv);
+    std::vector<int> concat_widths;
+    std::vector<const float*> concat_ptrs;
+    for (const auto* t : concat_topk_x) {
+      concat_widths.push_back(static_cast<int>(t->dims()[1]));
+      concat_ptrs.push_back(t->data<float>());
+    }
+    int r = 0;
+    r = xdnn::concat<float>(ctx,
+                            cap_l,
+                            concat_widths.data(),
+                            concat_widths.size(),
+                            concat_ptrs.data(),
+                            topk_concat_out_fw);
+    CHECK_EQ(r, 0);
+    r = xdnn::sequence_reverse(ctx,
+                               batch,
+                               sentense.lod_32,
+                               cap_e_,
+                               topk_concat_out_fw,
+                               topk_concat_out_rv);
+    CHECK_EQ(r, 0);
     coverage_fw_.Infer(ctx,
                        sentense,
                        topk_concat_out_fw,
@@ -1051,22 +1089,24 @@ class MMDNNMergeAll {
                        grnn_rv,
                        l3_buffer + hbm_total_len,
                        l3_size - hbm_total_len * sizeof(float));
-    xdnn::sequence_pooling_forward(ctx,
-                                   xdnn::Pooling_t::LAST,
-                                   batch,
-                                   sentense.lod_32,
-                                   cap_h_,
-                                   grnn_fw,
-                                   nullptr,
-                                   pool_fw);
-    xdnn::sequence_pooling_forward(ctx,
-                                   xdnn::Pooling_t::LAST,
-                                   batch,
-                                   sentense.lod_32,
-                                   cap_h_,
-                                   grnn_rv,
-                                   nullptr,
-                                   pool_rv);
+    r = xdnn::sequence_pooling_forward(ctx,
+                                       xdnn::Pooling_t::LAST,
+                                       batch,
+                                       sentense.lod_32,
+                                       cap_h_,
+                                       grnn_fw,
+                                       nullptr,
+                                       pool_fw);
+    CHECK_EQ(r, 0);
+    r = xdnn::sequence_pooling_forward(ctx,
+                                       xdnn::Pooling_t::LAST,
+                                       batch,
+                                       sentense.lod_32,
+                                       cap_h_,
+                                       grnn_rv,
+                                       nullptr,
+                                       pool_rv);
+    CHECK_EQ(r, 0);
 
     const int concat_widths_fc0[] = {
         static_cast<int>(concat_7in1_x[0]->dims()[1]),
@@ -1089,11 +1129,13 @@ class MMDNNMergeAll {
     const int concat_widths_fc1[] = {cap_h_, cap_h_, fc0_n_};
     const float* concat_ptrs_fc1[] = {pool_fw, pool_rv, fc0_out};
 
-    xdnn::concat<float>(
+    r = xdnn::concat<float>(
         ctx, batch, concat_widths_fc0, 7, concat_ptrs_fc0, fc0_in);
+    CHECK_EQ(r, 0);
     fc0_.Infer(ctx, fc0_in, batch, fc0_out);
-    xdnn::concat<float>(
+    r = xdnn::concat<float>(
         ctx, batch, concat_widths_fc1, 3, concat_ptrs_fc1, fc1_in);
+    CHECK_EQ(r, 0);
     fc1_.Infer(ctx, fc1_in, batch, fc1_out);
     fc2_.Infer(ctx, fc1_out, batch, fc2_out);
   }
@@ -1111,14 +1153,12 @@ class XPUMmdnnBidEmbGrnnAttCompute
  private:
   MMDNNIdInfo id_;
   MMDNNBidEmbGrnnAtt compound_;
-  int upper_bound_batch_ = 40;
-  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMmdnnBidEmbGrnnAttCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.emb_tbl,
                  param.grnn_fw_wh,
                  param.grnn_fw_wh_maxs,
@@ -1131,8 +1171,8 @@ void XPUMmdnnBidEmbGrnnAttCompute::PrepareForRun() {
                  param.att_fc_w,
                  param.att_fc_w_max,
                  param.att_fc_b,
-                 upper_bound_batch_,
-                 upper_bound_seqlen_);
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN);
 }
 
 void XPUMmdnnBidEmbGrnnAttCompute::Run() {
@@ -1157,6 +1197,76 @@ void XPUMmdnnBidEmbGrnnAttCompute::Run() {
                   xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
 }
 
+class XPUMmdnnBidEmbGrnnAttCompute2
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::XPUMmdnnBidEmbGrnnAttParam2;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+ private:
+  MMDNNIdInfo id_;
+  MMDNNBidEmbGrnnAtt compound_;
+};
+
+void XPUMmdnnBidEmbGrnnAttCompute2::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+
+  id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
+  compound_.Init(param.emb_tbl,
+                 param.grnn_fw_wh,
+                 param.grnn_fw_wh_maxs,
+                 param.grnn_fw_wi,
+                 param.grnn_fw_wi_maxs,
+                 param.grnn_rv_wh,
+                 param.grnn_rv_wh_maxs,
+                 param.grnn_rv_wi,
+                 param.grnn_rv_wi_maxs,
+                 param.att_fc_w,
+                 param.att_fc_w_max,
+                 param.att_fc_b,
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN);
+}
+
+void XPUMmdnnBidEmbGrnnAttCompute2::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  auto* xpu_ctx = ctx.GetRawContext();
+
+  int batch = param.id0->lod()[0].size() - 1;
+  id_.Update(param.id0, param.id1);
+  compound_.Infer(ctx.GetRawContext(),
+                  batch,
+                  id_,
+                  param.grnn_fw_pool_out,
+                  param.grnn_rv_pool_out,
+                  param.att_pool_out,
+                  param.concat_3in1_out,
+                  param.emb_fw_out,
+                  reinterpret_cast<float*>(
+                      reinterpret_cast<char*>(xpu_ctx->workspace_l3_ptr) +
+                      xpu_ctx->used_l3_size),
+                  xpu_ctx->workspace_l3_size - xpu_ctx->used_l3_size);
+
+  int num = param.id0->numel();
+  int embed_dim = param.emb_tbl->dims()[1];
+
+  // TODO(miaotianxiang):
+  int r = xdnn::embedding<float, int64_t>(
+      ctx.GetRawContext(),                               /* context */
+      num,                                               /* num */
+      param.id0->data<int64_t>(),                        /* indices */
+      embed_dim,                                         /* embed_dim */
+      param.emb_tbl->data<float>(),                      /* table */
+      param.emb0_out->mutable_data<float>(TARGET(kXPU)), /* top */
+      128000 /* padding_idx */);
+  CHECK_EQ(r, 0);
+}
+
 class XPUMmdnnBidEmbAttCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
@@ -1169,20 +1279,18 @@ class XPUMmdnnBidEmbAttCompute
  private:
   MMDNNIdInfo id_;
   MMDNNEmbAtt compound_;
-  int upper_bound_batch_ = 40;
-  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMmdnnBidEmbAttCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.emb_tbl,
                  param.att_fc_w,
                  param.att_fc_w_max,
                  param.att_fc_b,
-                 upper_bound_batch_,
-                 upper_bound_seqlen_);
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN);
 }
 
 void XPUMmdnnBidEmbAttCompute::Run() {
@@ -1215,8 +1323,6 @@ class XPUMmdnnMatchConvTopkCompute
 
  private:
   MMDNNMatchConvTopk compound_;
-  int upper_bound_batch_ = 40;
-  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMmdnnMatchConvTopkCompute::PrepareForRun() {
@@ -1228,8 +1334,9 @@ void XPUMmdnnMatchConvTopkCompute::PrepareForRun() {
                  param.conv_w_max,
                  param.dim_t,
                  param.input_w->dims()[0],
-                 upper_bound_batch_,
-                 upper_bound_seqlen_,
+                 param.output_channel,
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN,
                  param.topks);
 }
 
@@ -1261,14 +1368,12 @@ class XPUMmdnnMergeAllCompute
  private:
   MMDNNIdInfo id_;
   MMDNNMergeAll compound_;
-  int upper_bound_batch_ = 40;
-  int upper_bound_seqlen_ = 512;
 };
 
 void XPUMmdnnMergeAllCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
-  id_.Init(upper_bound_batch_, upper_bound_seqlen_);
+  id_.Init(XPU_MAX_LOD_SIZE, XPU_MAX_LOD_SEQ_LEN);
   compound_.Init(param.grnn_fw_wh,
                  param.grnn_fw_wh_maxs,
                  param.grnn_fw_wi,
@@ -1286,8 +1391,8 @@ void XPUMmdnnMergeAllCompute::PrepareForRun() {
                  param.fc2_w,
                  param.fc2_w_max,
                  param.fc2_b,
-                 upper_bound_batch_,
-                 upper_bound_seqlen_);
+                 XPU_MAX_LOD_SIZE,
+                 XPU_MAX_LOD_SEQ_LEN);
 }
 
 void XPUMmdnnMergeAllCompute::Run() {
@@ -1296,10 +1401,10 @@ void XPUMmdnnMergeAllCompute::Run() {
 
   auto* xpu_ctx = ctx.GetRawContext();
 
-  id_.Update(param.concat_2in1_x[0], param.concat_2in1_x[1]);
+  id_.Update(param.concat_topk_x[0], param.concat_topk_x[1]);
   compound_.Infer(ctx.GetRawContext(),
                   id_,
-                  param.concat_2in1_x,
+                  param.concat_topk_x,
                   param.concat_7in1_x,
                   param.out,
                   reinterpret_cast<float*>(
@@ -1328,6 +1433,29 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_bid_emb_grnn_att,
     .BindInput("grnn_rv_wi", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("att_fc_w", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("att_fc_b", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("grnn_fw_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("grnn_rv_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("att_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("concat_3in1_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("emb_fw_out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__mmdnn_bid_emb_grnn_att2,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::XPUMmdnnBidEmbGrnnAttCompute2,
+                     def)
+    .BindInput("id0", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindInput("id1", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindInput("emb_tbl", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("grnn_fw_wh", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("grnn_fw_wi", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("grnn_rv_wh", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("grnn_rv_wi", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("att_fc_w", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("att_fc_b", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("emb0_out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("grnn_fw_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("grnn_rv_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("att_pool_out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -1371,7 +1499,7 @@ REGISTER_LITE_KERNEL(__xpu__mmdnn_merge_all,
                      paddle::lite::kernels::xpu::XPUMmdnnMergeAllCompute,
                      def)
     .BindInput("concat_7in1_x", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("concat_2in1_x", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("concat_topk_x", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("grnn_fw_wh", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("grnn_fw_wi", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("grnn_rv_wh", {LiteType::GetTensorTy(TARGET(kXPU))})

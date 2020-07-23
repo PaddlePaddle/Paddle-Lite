@@ -33,7 +33,7 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
   // Check HiAI DDK version
   const char* ddk_version = model_client->GetVersion();
   if (ddk_version) {
-    LOG(INFO) << "[NPU] HiAI DDK version: " << ddk_version;
+    VLOG(3) << "[NPU] HiAI DDK version: " << ddk_version;
   } else {
     LOG(WARNING) << "[NPU] Unable to get HiAI DDK version!";
   }

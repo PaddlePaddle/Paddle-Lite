@@ -23,8 +23,9 @@ namespace xpu {
 
 template <typename T, PrecisionType PType>
 void SequenceReverseCompute<T, PType>::PrepareForRun() {
-  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
-  lod_cpu.reset(new int[64]);
+  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
 template <typename T, PrecisionType PType>
@@ -58,10 +59,10 @@ void SequenceReverseCompute<T, PType>::Run() {
     lod_cpu[i] = lod[i];
   }
   int* lod_xpu = reinterpret_cast<int*>(lod_xpu_guard_->addr_);
-  xpu_memcpy(lod_xpu,
-             lod_cpu.get(),
-             lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(lod_xpu,
+                      lod_cpu.get(),
+                      lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::sequence_reverse(ctx.GetRawContext(),
                                  batch_size,
