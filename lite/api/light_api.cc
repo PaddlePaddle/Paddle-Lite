@@ -33,7 +33,7 @@ void LightPredictor::Build(const std::string& lite_model_file,
   DequantizeWeight();
   BuildRuntimeProgram(program_desc_);
   PrepareFeedFetch();
-  cpp_program_desc_.reset();
+  program_desc_.reset();
 }
 
 void LightPredictor::Build(const std::string& model_dir,
