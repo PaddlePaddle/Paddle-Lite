@@ -51,3 +51,19 @@ REGISTER_LITE_KERNEL(
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(assign,
+                     kHost,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::host::AssignCompute,
+                     def_tensor_array)
+    .BindInput("X",
+               {LiteType::GetTensorListTy(TARGET(kHost),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorListTy(TARGET(kHost),
+                                           PRECISION(kAny),
+                                           DATALAYOUT(kAny))})
+    .Finalize();

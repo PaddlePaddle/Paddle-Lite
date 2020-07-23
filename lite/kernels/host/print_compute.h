@@ -13,25 +13,30 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
+#include <algorithm>
+
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-template <typename IndexType>
-class GatherCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class PrintCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
+  using param_t = operators::PrintParam;
+
   void Run() override;
 
-  ~GatherCompute() {}
+  virtual ~PrintCompute() = default;
+
+ private:
+  mutable int times_{0};
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

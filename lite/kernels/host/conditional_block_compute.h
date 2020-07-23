@@ -13,25 +13,32 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <vector>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/program.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-template <typename IndexType>
-class GatherCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class ConditionalBlockCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
+  using param_t = operators::ConditionalBlockParam;
+
+  void PrepareForRun() override;
   void Run() override;
 
-  ~GatherCompute() {}
+ private:
+  std::unique_ptr<RuntimeProgram> program_;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

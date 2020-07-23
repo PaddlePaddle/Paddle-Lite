@@ -20,31 +20,23 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool WhileOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.sub_block);
-  CHECK_OR_FALSE(param_.scope);
+bool WhileOp::CheckShape() const {
   CHECK_OR_FALSE(param_.cond);
+  CHECK_OR_FALSE(param_.program_desc);
+  CHECK_OR_FALSE(param_.exec_scope);
   return true;
 }
 
-bool WhileOpLite::InferShapeImpl() const { return true; }
+bool WhileOp::InferShapeImpl() const { return true; }
 
-bool WhileOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  auto inputs = op_desc.Input("X");
-  auto outs = op_desc.Output("Out");
-
-  for (auto var : inputs) {
-    // param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
-  }
-  for (auto var : outs) {
-    // param_.outs.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
-  }
-  param_.sub_block = sub_block_;
-
+bool WhileOp::AttachImpl(const cpp::OpDesc &op_desc, Scope *scope) {
   auto condition = op_desc.Input("Condition");
   param_.cond = scope->FindVar(condition[0])->GetMutable<lite::Tensor>();
-  param_.scope = scope;
-
+  CHECK(param_.program_desc);
+  param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
+  CHECK_GE(param_.block_idx, 0);
+  param_.exec_scope = scope;
+  CHECK(param_.exec_scope);
   return true;
 }
 
@@ -52,4 +44,4 @@ bool WhileOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(while, paddle::lite::operators::WhileOpLite);
+REGISTER_LITE_OP(while, paddle::lite::operators::WhileOp);

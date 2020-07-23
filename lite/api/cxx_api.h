@@ -42,7 +42,10 @@ static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
 class LITE_API Predictor {
  public:
   // Create an empty predictor.
-  Predictor() { scope_ = std::make_shared<Scope>(); }
+  Predictor() {
+    scope_ = std::make_shared<Scope>();
+    program_desc_ = std::make_shared<cpp::ProgramDesc>();
+  }
 
   // Create a predictor with the weight variable scope set.
   explicit Predictor(const std::shared_ptr<lite::Scope>& root_scope)
@@ -64,7 +67,7 @@ class LITE_API Predictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
-  void Build(const cpp::ProgramDesc& desc,
+  void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
 
@@ -100,6 +103,7 @@ class LITE_API Predictor {
   // get a const tensor according to its name
   const lite::Tensor* GetTensor(const std::string& name) const;
   const RuntimeProgram& runtime_program() const;
+  Scope* scope() { return scope_.get(); }
 
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(
@@ -119,7 +123,7 @@ class LITE_API Predictor {
 
  private:
   Optimizer optimizer_;
-  cpp::ProgramDesc program_desc_;
+  std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
   const Scope* exec_scope_;
   std::unique_ptr<RuntimeProgram> program_;
