@@ -60,7 +60,7 @@ inline void TransCompute(const int dim,
       trans6(context, in, out, axis);
       break;
     default:
-      PADDLE_THROW("Tensors with rank at most 6 are supported");
+      LOG(FATAL) << "Tensors with rank at most 6 are supported";
   }
 }
 

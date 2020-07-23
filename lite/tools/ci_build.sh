@@ -5,6 +5,7 @@ set -ex
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 CUDNN_ROOT="/usr/local/cudnn"
+LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
 
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
@@ -20,8 +21,8 @@ USE_ADB_EMULATOR=ON
 LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
-os_nmae=`uname -s`
-if [ ${os_nmae} == "Darwin" ]; then
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
@@ -277,11 +278,19 @@ function test_server {
     done
 }
 
+function assert_api_spec_approvals() {
+    /bin/bash ${LITE_ROOT}/lite/tools/check_api_approvals.sh check_modified_file_nums
+    if [ "$?" != 0 ];then
+       exit 1
+    fi
+}
+
 # Build the code and run lite server tests. This is executed in the CI system.
 function build_test_server {
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    assert_api_spec_approvals
     cmake_x86_for_CI
     build
 
@@ -344,7 +353,7 @@ function cmake_xpu {
         -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
-        -DXPU_SDK_ROOT="$(pwd)/../../XPU_SDK"
+        -DXPU_SDK_ROOT="/opt/output"
 }
 
 function build_xpu {
@@ -555,8 +564,18 @@ function test_arm_model {
 function test_model_optimize_tool_compile {
     cd $workspace
     cd build
+    # Compile opt tool
     cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     make opt -j$NUM_CORES_FOR_COMPILE
+    # Check whether opt can transform quantized mobilenetv1 successfully.
+    cd lite/api && chmod +x ./opt
+    wget --no-check-certificate https://paddlelite-data.bj.bcebos.com/doc_models/MobileNetV1_quant.tar.gz
+    tar zxf MobileNetV1_quant.tar.gz
+    ./opt --model_dir=./MobileNetV1_quant --valid_targets=arm --optimize_out=quant_mobilenetv1
+    if [ ! -f quant_mobilenetv1.nb ]; then
+       echo -e "Error! Resulted opt can not tramsform MobileNetV1_quant successfully!"
+       exit 1
+    fi
 }
 
 function _test_paddle_code_generator {

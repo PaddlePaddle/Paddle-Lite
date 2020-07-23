@@ -753,23 +753,15 @@ void act_abs<float>(const float* din, float* dout, int size, int threads) {
   }
 }
 
-#ifdef LITE_WITH_TRAIN
 template <>
-void act_square_grad(const float* din,
-                     const float* dout_grad,
-                     float* din_grad,
-                     int size,
-                     int threads) {
-  const float* ptr_out_grad = dout_grad;
-  float* ptr_in_grad = din_grad;
+void act_thresholded_relu<float>(
+    const float* din, float* dout, int size, float threshold, int threads) {
   for (int i = 0; i < size; ++i) {
-    ptr_in_grad[0] = ptr_out_grad[0] * 2.0 * din[0];
-    ptr_out_grad++;
-    ptr_in_grad++;
+    dout[0] = (din[0] > threshold ? din[0] : 0.f);
     din++;
+    dout++;
   }
 }
-#endif
 
 }  // namespace math
 }  // namespace arm

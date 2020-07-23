@@ -21,6 +21,7 @@
 #define PADDLE_LITE_API_H_
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "paddle_place.h"  // NOLINT
 
@@ -31,6 +32,9 @@ using shape_t = std::vector<int64_t>;
 using lod_t = std::vector<std::vector<uint64_t>>;
 
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
+
+// return true if current device supports OpenCL model
+LITE_API bool IsOpenCLBackendValid();
 
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
@@ -79,6 +83,8 @@ class LITE_API PaddlePredictor {
 
   virtual void Run() = 0;
   virtual std::shared_ptr<PaddlePredictor> Clone() = 0;
+  virtual std::shared_ptr<PaddlePredictor> Clone(
+      const std::vector<std::string>& var_names) = 0;
 
   virtual std::string GetVersion() const = 0;
 
@@ -158,9 +164,8 @@ class LITE_API CxxConfig : public ConfigBase {
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
   int mlu_core_number_{1};
   DataLayoutType mlu_input_layout_{DATALAYOUT(kNCHW)};
-  bool mlu_use_first_conv_{false};
-  std::vector<float> mlu_first_conv_mean_;
-  std::vector<float> mlu_first_conv_std_;
+  std::vector<float> mlu_first_conv_mean_{};
+  std::vector<float> mlu_first_conv_std_{};
 #endif
 
  public:
@@ -208,24 +213,22 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_mlu_core_version(lite_api::MLUCoreVersion core_version);
   // set MLU core number, which is used when compiling MLU kernels
   void set_mlu_core_number(int core_number);
-  // set MLU input layout. User can specify layout of input data to be NHWC,
-  // default is NCHW
-  void set_mlu_input_layout(DataLayoutType layout);
   // whether use MLU's first conv kernel. First conv is a special kernel
   // provided by MLU, its input is uint8, and also needs two 3-dimentional
   // vectors which save all inputs' mean and std values
-  void set_mlu_use_first_conv(bool use_first_conv);
-  // set the 3-dimentional mean vector used by MLU's first conv
-  void set_mlu_first_conv_mean(const std::vector<float>& mean);
-  // set the 3-dimentional std vector used by MLU's first conv
-  void set_mlu_first_conv_std(const std::vector<float>& std);
+  // set the 3-dimentional mean vector and 3-dimentional std vector used by
+  // MLU's first conv
+  void set_mlu_firstconv_param(const std::vector<float>& mean,
+                               const std::vector<float>& std);
+  // set MLU input layout. User can specify layout of input data to be NHWC,
+  // default is NCHW
+  void set_mlu_input_layout(DataLayoutType layout);
 
   lite_api::MLUCoreVersion mlu_core_version() const;
   int mlu_core_number() const;
   DataLayoutType mlu_input_layout() const;
-  bool mlu_use_first_conv() const;
-  const std::vector<float>& mlu_first_conv_mean() const;
-  const std::vector<float>& mlu_first_conv_std() const;
+  // std::pair<mean, std>
+  std::pair<std::vector<float>, std::vector<float>> mlu_firstconv_param() const;
 #endif
 
   // XPU only, set the size of the workspace memory from L3 cache for the

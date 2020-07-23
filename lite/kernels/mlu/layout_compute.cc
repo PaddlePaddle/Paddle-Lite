@@ -24,9 +24,9 @@ namespace mlu {}  // namespace mlu
 
 REGISTER_LITE_KERNEL(
     layout,
-    kMLU,
+    kX86,
     kFloat,
-    kNHWC,
+    kNCHW,
     paddle::lite::kernels::mlu::LayoutNhwcToNchwCompute<PRECISION(kFloat)>,
     def_layout_nhwc2nchw_fp32)
     .BindInput("Input",
@@ -41,9 +41,9 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     layout,
-    kMLU,
+    kX86,
     kFP16,
-    kNHWC,
+    kNCHW,
     paddle::lite::kernels::mlu::LayoutNhwcToNchwCompute<PRECISION(kFP16)>,
     def_layout_nhwc2nchw_fp16)
     .BindInput("Input",
@@ -58,9 +58,9 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     layout,
-    kMLU,
+    kX86,
     kFloat,
-    kNHWC,
+    kNCHW,
     paddle::lite::kernels::mlu::LayoutNchwToNhwcCompute<PRECISION(kFloat)>,
     def_layout_nchw2nhwc_fp32)
     .BindInput("Input",
@@ -75,9 +75,9 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     layout,
-    kMLU,
+    kX86,
     kFP16,
-    kNHWC,
+    kNCHW,
     paddle::lite::kernels::mlu::LayoutNchwToNhwcCompute<PRECISION(kFP16)>,
     def_layout_nchw2nhwc_fp16)
     .BindInput("Input",
@@ -92,11 +92,11 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     layout,
-    kMLU,
+    kX86,
     kInt8,
-    kNHWC,
+    kNCHW,
     paddle::lite::kernels::mlu::LayoutNchwToNhwcCompute<PRECISION(kInt8)>,
-    def_layout_nchw2nhwc_fp32_int8)
+    def_layout_nchw2nhwc_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt8),

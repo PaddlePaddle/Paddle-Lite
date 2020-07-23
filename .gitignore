@@ -116,4 +116,10 @@ metal/paddle-mobile-demo/paddle-mobile-demo/Resources/images
 metal/paddle-mobile-demo/paddle-mobile-demo/Resources/models
 metal/MobileNetDemo/MobileNetDemo/Resources
 
+#flatbuffers
+lite/model_parser/flatbuffers/framework_generated.h
+
 build*
+
+# hiai libs
+ai_ddk_lib*

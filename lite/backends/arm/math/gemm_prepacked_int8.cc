@@ -534,18 +534,18 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "fmin   v17.4s, v17.4s, v1.4s\n" /* relu6 */     \
   "fmin   v18.4s, v18.4s, v1.4s\n" /* relu6 */     \
   "fmin   v19.4s, v19.4s, v1.4s\n" /* relu6 */     \
-  "fmin   v20.4s, v20.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v21.4s, v21.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v22.4s, v22.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v23.4s, v23.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v24.4s, v24.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v25.4s, v25.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v26.4s, v26.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v27.4s, v27.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v28.4s, v28.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v29.4s, v29.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v30.4s, v30.4s, v0.4s\n" /* relu6 */     \
-  "fmin   v31.4s, v31.4s, v0.4s\n" /* relu6 */     \
+  "fmin   v20.4s, v20.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v21.4s, v21.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v22.4s, v22.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v23.4s, v23.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v24.4s, v24.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v25.4s, v25.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v26.4s, v26.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v27.4s, v27.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v28.4s, v28.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v29.4s, v29.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v30.4s, v30.4s, v1.4s\n" /* relu6 */     \
+  "fmin   v31.4s, v31.4s, v1.4s\n" /* relu6 */     \
   "b      9f                    \n"   /* relu end */
 
 #define GEMM_INT8_LEAKY_RELU                       \
@@ -2242,19 +2242,45 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
       Dtype* tmp1 = nullptr;
       Dtype* tmp2 = nullptr;
       Dtype* tmp3 = nullptr;
-      float32_t scale_local[4];
+      float32_t scale_local[4] = {0, 0, 0, 0};
       float32_t bias_local[4] = {0, 0, 0, 0};
       if (is_bias) {
-        bias_local[0] = bias[y];
-        bias_local[1] = bias[y + 1];
-        bias_local[2] = bias[y + 2];
-        bias_local[3] = bias[y + 3];
+        if (y + 4 <= M) {
+          bias_local[0] = bias[y];
+          bias_local[1] = bias[y + 1];
+          bias_local[2] = bias[y + 2];
+          bias_local[3] = bias[y + 3];
+        } else {
+          switch (M - y) {
+            case 3:
+              bias_local[2] = bias[y + 2];
+            case 2:
+              bias_local[1] = bias[y + 1];
+            case 1:
+              bias_local[0] = bias[y + 0];
+            default:
+              break;
+          }
+        }
       }
       if (scale) {
-        scale_local[0] = scale[y];
-        scale_local[1] = scale[y + 1];
-        scale_local[2] = scale[y + 2];
-        scale_local[3] = scale[y + 3];
+        if (y + 4 <= M) {
+          scale_local[0] = scale[y];
+          scale_local[1] = scale[y + 1];
+          scale_local[2] = scale[y + 2];
+          scale_local[3] = scale[y + 3];
+        } else {
+          switch (M - y) {
+            case 3:
+              scale_local[2] = scale[y + 2];
+            case 2:
+              scale_local[1] = scale[y + 1];
+            case 1:
+              scale_local[0] = scale[y + 0];
+            default:
+              break;
+          }
+        }
       }
       if (y + MBLOCK_INT8_OTH > M) {
         switch (y + MBLOCK_INT8_OTH - M) {

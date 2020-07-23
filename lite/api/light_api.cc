@@ -15,8 +15,6 @@
 #include "lite/api/light_api.h"
 #include <algorithm>
 #include <map>
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
 
 namespace paddle {
 namespace lite {
@@ -111,9 +109,10 @@ std::vector<std::string> LightPredictor::GetOutputNames() {
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
-  auto current_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
-  std::vector<cpp::OpDesc*> feeds;
-  std::vector<cpp::OpDesc*> fetchs;
+  const cpp::ProgramDesc& prog = cpp_program_desc_;
+  auto current_block = prog.GetBlock<cpp::BlockDesc>(0);
+  std::vector<cpp::OpDesc const*> feeds;
+  std::vector<cpp::OpDesc const*> fetchs;
   for (size_t i = 0; i < current_block->OpsSize(); i++) {
     auto op = current_block->GetOp<cpp::OpDesc>(i);
     if (op->Type() == "feed") {
@@ -182,6 +181,7 @@ void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
 }
 
 void LightPredictor::DequantizeWeight() {
+  const cpp::ProgramDesc& cpp_desc = cpp_program_desc_;
 #define PROCESS_CONV2D_DATA()                                             \
   for (int64_t i = 0; i < ch; ++i) {                                      \
     for (int64_t j = 0; j < offset; ++j) {                                \
@@ -209,8 +209,8 @@ void LightPredictor::DequantizeWeight() {
   };
 
   Tensor tmp_tensor;
-  for (size_t i = 0; i < cpp_program_desc_.BlocksSize(); i++) {
-    auto* block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(i);
+  for (size_t i = 0; i < cpp_desc.BlocksSize(); i++) {
+    auto* block = cpp_desc.GetBlock<cpp::BlockDesc>(i);
     for (size_t k = 0; k < block->OpsSize(); ++k) {
       auto* op_desc = block->GetOp<cpp::OpDesc>(k);
       if (is_weight_quantized_op(op_desc)) {

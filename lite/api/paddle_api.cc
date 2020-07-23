@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "lite/api/paddle_api.h"
+
+#include <utility>
+
 #include "lite/core/context.h"
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
@@ -21,9 +24,29 @@
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/target_wrapper.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#endif
+
+#ifdef LITE_WITH_MLU
+#include "lite/backends/mlu/target_wrapper.h"
+#endif
+
+#ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_runtime.h"
+#endif
 
 namespace paddle {
 namespace lite_api {
+
+bool IsOpenCLBackendValid() {
+  bool opencl_valid = false;
+#ifdef LITE_WITH_OPENCL
+  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
+#endif
+  LOG(INFO) << "opencl_valid:" << opencl_valid;
+  return opencl_valid;
+}
 
 Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 
@@ -98,6 +121,13 @@ void Tensor::CopyFromCpu(const T *src_data) {
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
+  } else if (type == TargetType::kMLU) {
+#ifdef LITE_WITH_MLU
+    lite::TargetWrapperMlu::MemcpySync(
+        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
+#else
+    LOG(FATAL) << "Please compile the lib with MLU.";
+#endif
   } else {
     LOG(FATAL) << "The CopyFromCpu interface just support kHost, kARM, kCUDA";
   }
@@ -118,6 +148,13 @@ void Tensor::CopyToCpu(T *data) const {
 #else
     LOG(FATAL) << "Please compile the lib with CUDA.";
 #endif
+  } else if (type == TargetType::kMLU) {
+#ifdef LITE_WITH_MLU
+    lite::TargetWrapperMlu::MemcpySync(
+        data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
+#else
+    LOG(FATAL) << "Please compile the lib with MLU.";
+#endif
   } else {
     LOG(FATAL) << "The CopyToCpu interface just support kHost, kARM, kCUDA";
   }
@@ -137,6 +174,11 @@ template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
 template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
+
+template void Tensor::CopyFromCpu<int, TargetType::kMLU>(const int *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kMLU>(const int64_t *);
+template void Tensor::CopyFromCpu<float, TargetType::kMLU>(const float *);
+template void Tensor::CopyFromCpu<int8_t, TargetType::kMLU>(const int8_t *);
 
 template void Tensor::CopyToCpu(float *) const;
 template void Tensor::CopyToCpu(int *) const;
@@ -228,13 +270,9 @@ void CxxConfig::set_mlu_core_number(int core_number) {
 void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
   mlu_input_layout_ = layout;
 }
-void CxxConfig::set_mlu_use_first_conv(bool use_first_conv) {
-  mlu_use_first_conv_ = use_first_conv;
-}
-void CxxConfig::set_mlu_first_conv_mean(const std::vector<float> &mean) {
+void CxxConfig::set_mlu_firstconv_param(const std::vector<float> &mean,
+                                        const std::vector<float> &std) {
   mlu_first_conv_mean_ = mean;
-}
-void CxxConfig::set_mlu_first_conv_std(const std::vector<float> &std) {
   mlu_first_conv_std_ = std;
 }
 lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
@@ -242,18 +280,15 @@ lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
 }
 int CxxConfig::mlu_core_number() const { return mlu_core_number_; }
 DataLayoutType CxxConfig::mlu_input_layout() const { return mlu_input_layout_; }
-bool CxxConfig::mlu_use_first_conv() const { return mlu_use_first_conv_; }
-const std::vector<float> &CxxConfig::mlu_first_conv_mean() const {
-  return mlu_first_conv_mean_;
-}
-const std::vector<float> &CxxConfig::mlu_first_conv_std() const {
-  return mlu_first_conv_std_;
+std::pair<std::vector<float>, std::vector<float>>
+CxxConfig::mlu_firstconv_param() const {
+  return std::make_pair(mlu_first_conv_mean_, mlu_first_conv_std_);
 }
 #endif
 
 void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #ifdef LITE_WITH_XPU
-  lite::Context<TargetType::kXPU>::SetWorkspaceL3Size(l3_size);
+  lite::TargetWrapperXPU::workspace_l3_size_per_thread = l3_size;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
@@ -263,7 +298,7 @@ void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 
 void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #ifdef LITE_WITH_XPU
-  lite::Context<TargetType::kXPU>::SetDev(dev_no);
+  lite::TargetWrapperXPU::SetDev(dev_no);
 #else
   LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
@@ -272,7 +307,7 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 
 void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 #ifdef LITE_WITH_XPU
-  lite::Context<TargetType::kXPU>::_multi_encoder_precision = precision;
+  lite::TargetWrapperXPU::multi_encoder_precision = precision;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_multi_encoder_precision' is "

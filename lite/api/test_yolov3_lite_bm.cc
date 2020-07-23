@@ -59,9 +59,9 @@ void TestModel(const std::vector<Place>& valid_places) {
   }
   auto* image_tensor = predictor.GetInput(1);
   image_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 2})));
-  data = image_tensor->mutable_data<float>();
-  data[0] = FLAGS_im_height;
-  data[1] = FLAGS_im_width;
+  auto* data_1 = image_tensor->mutable_data<int>();
+  data_1[0] = FLAGS_im_height;
+  data_1[1] = FLAGS_im_width;
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();

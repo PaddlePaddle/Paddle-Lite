@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/unpooling.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -41,7 +41,7 @@ class Unpool2dMaxFunctor<lite::TargetType::kX86, T> {
       for (int c = 0; c < output_channels; ++c) {
         for (int i = 0; i < input_feasize; ++i) {
           int index = indices_data[i];
-          PADDLE_ENFORCE(index < output_feasize, "err index in unpooling!");
+          CHECK(index < output_feasize) << "err index in unpooling!";
           output_data[index] = input_data[i];
         }
         input_data += input_feasize;
@@ -77,7 +77,7 @@ class Unpool2dMaxGradFunctor<lite::TargetType::kX86, T> {
       for (int c = 0; c < output_channels; ++c) {
         for (int i = 0; i < input_feasize; ++i) {
           int index = indices_data[i];
-          PADDLE_ENFORCE(index < output_feasize, "err index in unpooling!");
+          CHECK(index < output_feasize) << "err index in unpooling!";
           input_grad_data[i] = output_grad_data[index];
         }
         input_grad_data += input_feasize;

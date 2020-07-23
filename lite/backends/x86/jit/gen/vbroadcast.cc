@@ -16,7 +16,7 @@
 #include <memory>
 #include <vector>
 #include "lite/backends/x86/jit/registry.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -76,7 +76,7 @@ class VBroadcastCreator : public JitCodeCreator<int64_t> {
     return 96 + (w / YMM_FLOAT_BLOCK) * 16 * 8;
   }
   std::unique_ptr<GenBase> CreateJitCode(const int64_t& w) const override {
-    PADDLE_ENFORCE_GT(w, 0);
+    CHECK_GT(w, 0);
     return make_unique<VBroadcastJitCode>(w, CodeSize(w));
   }
 };

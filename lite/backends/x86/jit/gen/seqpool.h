@@ -17,7 +17,7 @@
 #include <string>
 #include "lite/backends/x86/jit/gen/jitcode.h"
 #include "lite/utils/cp_logging.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -125,8 +125,8 @@ class SeqPoolJitCode : public JitCode {
         vmovss(xmm_t(reg_idx + max_num_regs), ptr[reg_ptr_src_i]);
         reg_idx++;
       }
-      PADDLE_ENFORCE_EQ(
-          reg_idx, rest_used_num_regs, "All heights should use same regs");
+      CHECK_EQ(reg_idx, rest_used_num_regs)
+          << "All heights should use same regs";
       for (int i = 0; i < reg_idx; ++i) {
         vaddps(xmm_t(i), xmm_t(i), xmm_t(i + max_num_regs));
       }

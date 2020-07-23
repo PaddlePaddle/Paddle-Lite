@@ -15,9 +15,7 @@
 #include "lite/core/program.h"
 #include <algorithm>
 #include <map>
-#include "lite/model_parser/cpp/block_desc.h"
-#include "lite/model_parser/cpp/op_desc.h"
-#include "lite/model_parser/cpp/var_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
 #include "lite/operators/while_op.h"
@@ -151,9 +149,26 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
+#ifdef LITE_WITH_NVTX
+  const NVTXAnnotator& annotator = NVTXAnnotator::Global();
+  NVTXRangeAnnotation annotation_one_loop = annotator.AnnotateBlock();
+  if (annotator.IsEnabled()) {
+    annotation_one_loop.generate(register_layer_names_.back(),
+                                 lite::Color::Engine);
+  }
+#endif
+  int idx = -1;
   for (auto& inst : instructions_) {
+    ++idx;
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
+#endif
+#ifdef LITE_WITH_NVTX
+    NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
+    nvtxStringHandle_t registered_name = register_layer_names_[idx];
+    if (annotator.IsEnabled()) {
+      annotation.generate(registered_name, lite::Color::Runner);
+    }
 #endif
 #ifdef LITE_WITH_CUDA
     if (inst.need_sync()) {
@@ -180,7 +195,7 @@ void Program::Build(const cpp::ProgramDesc& prog) {
   CHECK(ops_.empty()) << "Executor duplicate Build found";
 
   // Create operators.
-  auto program = prog;
+  auto& program = prog;
   CHECK(program.BlocksSize());
   auto& main_block = *program.GetBlock<cpp::BlockDesc>(0);
   for (size_t i = 0; i < main_block.OpsSize(); ++i) {
@@ -216,7 +231,8 @@ void Program::Build(const cpp::ProgramDesc& prog) {
   }
 }
 
-void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
+void Program::PrepareWorkspace(const cpp::ProgramDesc& prog,
+                               const std::vector<std::string>& var_names) {
   CHECK(!exec_scope_) << "Duplicate PrepareWorkspace found";
   exec_scope_ = &scope_->NewScope();
   // Create Feed and Fetch var.
@@ -246,7 +262,7 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
     }
   };
 
-  auto program = prog;
+  auto& program = prog;
   CHECK(program.BlocksSize());
   for (size_t b = 0; b < program.BlocksSize(); ++b) {
     auto& main_block = *program.GetBlock<cpp::BlockDesc>(b);
@@ -273,6 +289,13 @@ void Program::PrepareWorkspace(const cpp::ProgramDesc& prog) {
         if (var_desc.Persistable()) scope_->Var(var_desc.Name());
       }
     }
+  }
+
+  for (auto i : var_names) {
+    exec_scope_->LocalVar(i);
+    auto* tensor = scope_->Var(i)->GetMutable<lite::Tensor>();
+    auto* sub_tensor = exec_scope_->Var(i)->GetMutable<lite::Tensor>();
+    sub_tensor->CopyDataFrom(*tensor);
   }
 }
 
@@ -302,6 +325,7 @@ void Instruction::Run() {
 
 #ifdef LITE_WITH_PROFILE
   if (first_epoch_for_profiler_) {
+    kernel_->SetIsKernelTest(false);
     SetProfileRuntimeOpInfo(profiler_->GetOpCharacter(profile_id_));
     first_epoch_for_profiler_ = false;
   }

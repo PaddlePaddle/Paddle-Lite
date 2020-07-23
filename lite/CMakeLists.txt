@@ -48,11 +48,13 @@ if (WITH_TESTING)
     endif()
     if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "GoogleNet_inference.tar.gz")
-	      lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v1.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v1.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v2_relu.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "resnet50.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "inception_v4_simple.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "step_rnn.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "bert.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "ernie.tar.gz")
     endif()
 endif()
 
@@ -242,7 +244,6 @@ if (LITE_WITH_X86)
     add_dependencies(publish_inference_x86_cxx_lib test_model_bin)
 
     add_custom_target(publish_inference_x86_cxx_demos ${TARGET}
-           COMMAND rm -rf "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light"
            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full"

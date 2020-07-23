@@ -34,12 +34,13 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   // fuse quantized node and dequant node
-  for (auto& op_type : {"conv2d", "mul", "depthwise_conv2d"}) {
+  for (auto& op_type :
+       {"conv2d", "mul", "depthwise_conv2d", "conv2d_transpose"}) {
     fusion::DequantOpFuser fuser(op_type);
     fuser(graph.get());
   }
 
-  for (auto& op_type : {"conv2d", "depthwise_conv2d"}) {
+  for (auto& op_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
     fusion::ChannelWiseDequantOpFuser fuser(op_type);
     fuser(graph.get());
   }

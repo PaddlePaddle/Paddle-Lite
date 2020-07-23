@@ -44,6 +44,10 @@ class RuntimeContextAssignPass : public StmtPass {
         inst.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
             inst.picked_kernel().target()));
       }
+#elif LITE_WITH_MLU
+      inst.picked_kernel().SetContext(ContextScheduler::Global().NewContext(
+          inst.picked_kernel().target(),
+          static_cast<int>(reinterpret_cast<int64_t>(graph.get()))));
 #else
       int stream_id = inst.stream_id_;
 

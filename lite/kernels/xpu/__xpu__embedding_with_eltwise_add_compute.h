@@ -14,10 +14,9 @@
 
 #pragma once
 
-#include <memory>
 #include <vector>
+#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
-#include "lite/kernels/xpu/utils.h"  // XPUFreeDeleter
 
 namespace paddle {
 namespace lite {
@@ -36,7 +35,7 @@ class XPUEmbeddingWithEltwiseAddCompute
  private:
   std::vector<const int64_t*> arg_ids_;
   std::vector<const float*> arg_tables_;
-  std::unique_ptr<void, XPUFreeDeleter> table_lens_guard_;
+  XPUScratchPadGuard table_lens_guard_;
   std::vector<int> table_lens_cpu_;
 };
 

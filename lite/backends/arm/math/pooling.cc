@@ -2044,7 +2044,7 @@ void pooling3x3s1p0_avg(const float* din,
               } else {
                 if (pad_bottom > 1) {
                   coef_h = 1.f / 3;
-                } else if (pad_bottom = 1) {
+                } else if (pad_bottom == 1) {
                   coef_h = 0.5f;
                 } else {
                   coef_h = 1.f;
@@ -2701,7 +2701,9 @@ void pooling3x3s2p0_avg(const float* din,
     w_unroll_size -= 1;
     w_unroll_remian = wout - w_unroll_size * 4;
   }
-
+  //  do overflow process
+  w_unroll_size -= 1;
+  w_unroll_remian += 4;
   auto zero_ptr =
       static_cast<float*>(TargetMalloc(TARGET(kARM), win * sizeof(float)));
   memset(zero_ptr, 0, win * sizeof(float));
