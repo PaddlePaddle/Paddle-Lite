@@ -43,13 +43,17 @@ class SubgraphEngine : public subgraph::Engine {
  public:
   SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 cpp::BlockDesc* block_desc,
+                 const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+                 Scope* exec_scope,
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names,
-                 Scope* scope,
                  paddle::lite_api::PrecisionType type)
-      : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope),
+      : subgraph::Engine(ctx,
+                         block_idx,
+                         program_desc,
+                         exec_scope,
+                         input_names,
+                         output_names),
         fp_type_(type) {
     VLOG(4) << "[MLU] PADDLE_LITE_MLU_SAVE_OFFLINE_MODEL is "
             << GetBoolFromEnv("PADDLE_LITE_MLU_SAVE_OFFLINE_MODEL");
@@ -103,7 +107,7 @@ class SubgraphEngine : public subgraph::Engine {
 
  protected:
   bool BuildDeviceProgram() override {
-    if (origin_program_.empty()) {
+    if (!origin_program_) {
       BuildOriginProgram();
     }
     if (!error_compile_batch_size_changeable_ &&
@@ -128,13 +132,15 @@ class SubgraphEngine : public subgraph::Engine {
     origin_itensors_.clear();
     origin_otensors_.clear();
 
-    auto data_order = block_desc_->GetOp<cpp::OpDesc>(0)->Type() == "layout"
+    auto* sub_block_desc =
+        program_desc_->GetBlock()<cpp::BlockDesc>(block_idx_);
+    auto data_order = sub_block_desc->GetOp<cpp::OpDesc>(0)->Type() == "layout"
                           ? CNML_NCHW
                           : CNML_NHWC;
     // Convert all of input data vars and added into the MLU IR graph
     status |= subgraph::REBUILD_WHEN_SHAPE_CHANGED;
     for (auto& input_name : input_names_) {
-      auto input_tensor = scope_->FindMutableTensor(input_name);
+      auto input_tensor = exec_scope_->FindMutableTensor(input_name);
       auto data_type = input_tensor->precision();
       cnmlDataType_t fp_type = PrecisionToDatatype(data_type);
       origin_itensors_.push_back(input_tensor);
@@ -161,7 +167,8 @@ class SubgraphEngine : public subgraph::Engine {
     LOG(INFO) << "START TO CONVERT ";
     // Convert all of ops and its weights and added into the MLU IR graph
     const auto& bridges = subgraph::Registry::Instance();
-    for (auto& inst : origin_program_) {
+    const auto& insts = origin_program_->instructions(kRootBlockIdx);
+    for (auto& inst : insts) {
       auto op = inst.op();
       CHECK(op);
       std::string op_type = op->op_info()->Type();
@@ -200,7 +207,7 @@ class SubgraphEngine : public subgraph::Engine {
     for (auto& output_name : output_names_) {
       if (graph->HasNode(output_name)) {
         graph->AddOutput(graph->GetNode(output_name));
-        auto output_tensor = scope_->FindMutableTensor(output_name);
+        auto output_tensor = exec_scope_->FindMutableTensor(output_name);
         origin_otensors_.push_back(output_tensor);
         VLOG(4) << "subgraph output tensor " << output_name << std::endl;
 
@@ -257,7 +264,7 @@ class SubgraphEngine : public subgraph::Engine {
     for (const auto& input_name : input_names_) {
       tmp = input_name;
       name += TrimStrings(tmp) + delimiter + input_shape_str;
-      auto input_tensor = scope_->FindMutableTensor(input_name);
+      auto input_tensor = exec_scope_->FindMutableTensor(input_name);
       for (const auto& iterm : input_tensor->dims().Vectorize()) {
         name += std::to_string(iterm) + delimiter_num;
       }
@@ -266,7 +273,7 @@ class SubgraphEngine : public subgraph::Engine {
     for (const auto& output_name : output_names_) {
       tmp = output_name;
       name += TrimStrings(tmp) + delimiter + output_shape_str;
-      auto output_tensor = scope_->FindMutableTensor(output_name);
+      auto output_tensor = exec_scope_->FindMutableTensor(output_name);
       for (const auto& iterm : output_tensor->dims().Vectorize()) {
         name += std::to_string(iterm) + delimiter_num;
       }
@@ -284,7 +291,8 @@ class SubgraphEngine : public subgraph::Engine {
         origin_otensors_[i]->Resize(iter->second[i]);
       }
     } else {
-      for (auto& inst : origin_program_) {
+      const auto& insts = origin_program_->instructions(kRootBlockIdx);
+      for (auto& inst : insts) {
         auto op = inst.op();
         CHECK(op);
         op->CheckShape();
@@ -475,11 +483,11 @@ class SubgraphCompute
     auto& param = this->template Param<param_t>();
     // LOG(INFO) << "SUBGRAP Prepare RUN index " << param.sub_block_idx;
     engine_.reset(new SubgraphEngine<Precision>(this->ctx_.get(),
-                                                param.sub_block_idx,
-                                                param.sub_block_desc,
+                                                param.block_idx,
+                                                param.program_desc,
+                                                param.exec_scope,
                                                 param.input_data_names,
                                                 param.output_data_names,
-                                                param.scope,
                                                 this->precision()));
     CHECK(engine_);
   }

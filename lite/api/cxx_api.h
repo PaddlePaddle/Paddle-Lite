@@ -125,9 +125,10 @@ class LITE_API Predictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
-  void Build(const std::shared_ptr<cpp::ProgramDesc>& desc,
+  void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
+
   //////////////////////////////////////////////////////////
   // Function: Clone
   // Usage: Create a Predictor from an existed one,
@@ -177,7 +178,7 @@ class LITE_API Predictor {
       predictor->exec_scope_->LocalVar(i);
       auto* tensor = predictor->scope_->Var(i)->GetMutable<lite::Tensor>();
       auto* sub_tensor =
-          predictor->exec_scope_->Var(i)->GetMutable<lite::Tensor>();
+          predictor->exec_scope_->Var(var_name)->GetMutable<Tensor>();
       sub_tensor->CopyDataFrom(*tensor);
     }
     // step4. Return the result
@@ -216,6 +217,7 @@ class LITE_API Predictor {
   // get a const tensor according to its name
   const lite::Tensor* GetTensor(const std::string& name) const;
   const RuntimeProgram& runtime_program() const;
+  Scope* scope() { return scope_.get(); }
 
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(

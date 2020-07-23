@@ -30,10 +30,10 @@ class Engine {
  public:
   Engine(KernelContext *ctx,
          int block_idx,
-         cpp::BlockDesc *block_desc,
+         const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
+         Scope *exec_scope,
          const std::vector<std::string> &input_names,
-         const std::vector<std::string> &output_names,
-         lite::Scope *scope);
+         const std::vector<std::string> &output_names);
   virtual ~Engine() = default;
 
   virtual bool Run();
@@ -54,15 +54,15 @@ class Engine {
 
   KernelContext *ctx_{nullptr};
   int block_idx_{-1};
-  cpp::BlockDesc *block_desc_{nullptr};
+  const std::shared_ptr<const cpp::ProgramDesc> program_desc_{nullptr};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
-  Scope *scope_{nullptr};
+  Scope *exec_scope_{nullptr};
   bool is_first_epoch_{true};
   std::vector<std::vector<int64_t>> origin_idims_;
   std::vector<Tensor *> origin_itensors_;
   std::vector<Tensor *> origin_otensors_;
-  std::vector<Instruction> origin_program_;
+  std::unique_ptr<RuntimeProgram> origin_program_{nullptr};
 };
 
 }  // namespace subgraph

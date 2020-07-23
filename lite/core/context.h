@@ -39,6 +39,7 @@
 #include <utility>
 #include <vector>
 #include "lite/core/device_info.h"
+#include "lite/core/scope.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/all.h"
@@ -84,15 +85,19 @@ class Context<TargetType::kNPU> {
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
 
-  static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
-    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  static void SetSubgraphModelCacheDir(Scope* scope,
+                                       std::string subgraph_model_cache_dir) {
+    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_model_cache_dir;
   }
-  static std::string SubgraphModelCacheDir() {
-    return subgraph_model_cache_dir_;
+  static std::string SubgraphModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
   }
-
- private:
-  static std::string subgraph_model_cache_dir_;
 };
 #endif
 

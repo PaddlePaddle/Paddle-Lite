@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/op_lite.h"
@@ -23,24 +24,30 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class WhileOpLite : public OpLite {
+class WhileOp : public OpLite {
  public:
-  WhileOpLite() {}
-  explicit WhileOpLite(const std::string &op_type) : OpLite(op_type) {}
+  WhileOp() {}
+  explicit WhileOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &opdesc, Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
   std::string DebugString() const override { return "while"; }
-  void SetSubBlock(cpp::BlockDesc *desc) { sub_block_ = desc; }
+
+  void SetProgramDesc(std::shared_ptr<const cpp::ProgramDesc> program_desc) {
+    param_.program_desc = program_desc;
+  }
+  std::shared_ptr<const cpp::ProgramDesc> GetProgramDesc() {
+    return param_.program_desc;
+  }
 
  private:
   mutable WhileParam param_;
-  cpp::BlockDesc *sub_block_;
 };
 
 }  // namespace operators

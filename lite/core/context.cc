@@ -17,10 +17,6 @@
 namespace paddle {
 namespace lite {
 
-#ifdef LITE_WITH_NPU
-std::string Context<TargetType::kNPU>::subgraph_model_cache_dir_{""};  // NOLINT
-#endif
-
 #ifdef LITE_WITH_MLU
 int Context<TargetType::kMLU>::next_queue_id_{0};
 std::map<int, int> Context<TargetType::kMLU>::queue_id_map_;

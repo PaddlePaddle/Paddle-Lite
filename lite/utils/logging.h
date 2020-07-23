@@ -57,7 +57,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
 
-#ifdef LITE_WITH_ANDROID
+#if defined(LITE_WITH_LOG) && defined(LITE_WITH_ANDROID)
 #include <android/log.h>
 // Android log macors
 #define ANDROID_LOG_TAG "Paddle-Lite"
@@ -143,8 +143,10 @@ class LogMessage {
       ANDROID_LOG_I(log_stream_.str().c_str());
     } else if (level_ == "W") {
       ANDROID_LOG_W(log_stream_.str().c_str());
+    } else if (level_ == "F") {
+      ANDROID_LOG_F(log_stream_.str().c_str());
     } else {
-      fprintf(stderr, "Unsupported log level: %s", level_.c_str());
+      fprintf(stderr, "Unsupported log level: %s\n", level_.c_str());
       assert(false);
     }
 #endif
@@ -170,17 +172,25 @@ class LogMessageFatal : public LogMessage {
                   const char* level = "F")
       : LogMessage(file, func, lineno, level) {}
 
-  ~LogMessageFatal() {
+  ~LogMessageFatal()
+#ifdef LITE_WITH_EXCEPTION
+      noexcept(false)
+#endif
+  {
     log_stream_ << '\n';
 #ifdef LITE_WITH_ANDROID
     ANDROID_LOG_F(log_stream_.str().c_str());
 #endif
     fprintf(stderr, "%s", log_stream_.str().c_str());
 
+#ifdef LITE_WITH_EXCEPTION
+    throw std::exception();
+#else
 #ifndef LITE_ON_TINY_PUBLISH
     abort();
 #else
     assert(false);
+#endif
 #endif
   }
 };
@@ -237,7 +247,11 @@ class Voidify {
 
 class VoidifyFatal : public Voidify {
  public:
+#ifdef LITE_WITH_EXCEPTION
+  ~VoidifyFatal() noexcept(false) { throw std::exception(); }
+#else
   ~VoidifyFatal() { assert(false); }
+#endif
 };
 
 #endif
