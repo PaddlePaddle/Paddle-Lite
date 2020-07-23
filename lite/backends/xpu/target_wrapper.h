@@ -14,12 +14,44 @@
 
 #pragma once
 
-#include "lite/core/target_wrapper.h"
+#include <memory>                                 // std::unique_ptr
+#include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
+#include "lite/core/target_wrapper.h"             // TargetWrapper
+#include "lite/utils/cp_logging.h"                // CHECK_EQ
+
+#define XPU_CALL(func)                                        \
+  {                                                           \
+    auto e = (func);                                          \
+    CHECK_EQ(e, 0) << "XPU: (" << #func << ") returns " << e; \
+  }
 
 namespace paddle {
 namespace lite {
 
+// MAX(lod.size()) = 64
+const int XPU_MAX_LOD_SIZE = 64;
+// MAX(lod[i + 1] - lod[i]) = 512
+const int XPU_MAX_LOD_SEQ_LEN = 512;
+
 using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
+
+struct XPUScratchPad {
+  XPUScratchPad(void* addr, bool is_l3) : addr_(addr), is_l3_(is_l3) {}
+
+  void* addr_{nullptr};
+  bool is_l3_{false};
+};
+
+struct XPUScratchPadDeleter {
+  void operator()(XPUScratchPad* sp) const {
+    if (!sp->is_l3_) {
+      XPU_CALL(xpu_free(sp->addr_));
+    }
+    delete sp;
+  }
+};
+
+using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad, XPUScratchPadDeleter>;
 
 template <>
 class TargetWrapper<TARGET(kXPU)> {
@@ -34,6 +66,40 @@ class TargetWrapper<TARGET(kXPU)> {
                          const void* src,
                          size_t size,
                          IoDirection dir);
+
+  static XPUScratchPadGuard MallocScratchPad(size_t size, bool use_l3 = false);
+
+  static xdnn::Context* GetRawContext() {
+    if (tls_raw_ctx_ == nullptr) {
+      tls_raw_ctx_ = xdnn::create_context();
+      CHECK(tls_raw_ctx_);
+      int r = xdnn::set_workspace_l3_size(tls_raw_ctx_,
+                                          workspace_l3_size_per_thread);
+      if (r != 0) {
+        LOG(WARNING) << "xdnn::set_workspace_l3_size() failed, r = " << r
+                     << ", workspace_l3_size_per_thread = "
+                     << workspace_l3_size_per_thread;
+      }
+    }
+    return tls_raw_ctx_;
+  }
+
+  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
+  // thread
+  static void SetDev(int dev_no = 0) {
+    const char* dev_env = getenv("LITE_XPU_DEV");
+    if (dev_env) {
+      dev_no = atoi(dev_env);
+    }
+
+    XPU_CALL(xpu_set_device(dev_no));
+  }
+
+  static std::string multi_encoder_precision;  // NOLINT
+  static int workspace_l3_size_per_thread;
+
+ private:
+  static thread_local xdnn::Context* tls_raw_ctx_;
 };
 
 }  // namespace lite

@@ -24,7 +24,7 @@ namespace lite {
 
 TEST(VectorView, std_vector) {
   std::vector<int64_t> vector{1, 2, 3};
-  fbs::VectorView<int64_t, fbs::Standand> vector_view(&vector);
+  VectorView<int64_t, Standard> vector_view(&vector);
   size_t i = 0;
   for (const auto& value : vector_view) {
     EXPECT_EQ(value, vector[i]);

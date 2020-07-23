@@ -39,6 +39,7 @@
 #include <utility>
 #include <vector>
 #include "lite/core/device_info.h"
+#include "lite/core/scope.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/all.h"
@@ -84,15 +85,19 @@ class Context<TargetType::kNPU> {
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
 
-  static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
-    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  static void SetSubgraphModelCacheDir(Scope* scope,
+                                       std::string subgraph_model_cache_dir) {
+    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_model_cache_dir;
   }
-  static std::string SubgraphModelCacheDir() {
-    return subgraph_model_cache_dir_;
+  static std::string SubgraphModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
   }
-
- private:
-  static std::string subgraph_model_cache_dir_;
 };
 #endif
 
@@ -144,45 +149,12 @@ class Context<TargetType::kXPU> {
 
   void CopySharedTo(XPUContext* ctx) {}
 
+  // TODO(miaotianxiang): remove this
   static xdnn::Context* GetRawContext() {
-    if (_tls_raw_ctx == nullptr) {
-      _tls_raw_ctx = xdnn::create_context();
-      CHECK(_tls_raw_ctx);
-      int r = xdnn::set_workspace_l3_size(_tls_raw_ctx,
-                                          _workspace_l3_size_per_thread);
-      if (r != 0) {
-        LOG(WARNING) << "xdnn::set_workspace_l3_size() failed, r = " << r
-                     << ", _workspace_l3_size_per_thread = "
-                     << _workspace_l3_size_per_thread;
-      }
-    }
-    return _tls_raw_ctx;
-  }
-
-  static void SetWorkspaceL3Size(int l3_size = 0xfffc00) {
-    _workspace_l3_size_per_thread = l3_size;
-  }
-
-  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
-  // thread
-  static void SetDev(int dev_no = 0) {
-    const char* dev_env = getenv("LITE_XPU_DEV");
-    if (dev_env) {
-      xpu_set_device(atoi(dev_env));
-      return;
-    }
-
-    xpu_set_device(dev_no);
+    return TargetWrapperXPU::GetRawContext();
   }
 
   std::string name() const { return "XPUContext"; }
-
- public:
-  static std::string _multi_encoder_precision;  // NOLINT
-
- private:
-  static thread_local xdnn::Context* _tls_raw_ctx;
-  static int _workspace_l3_size_per_thread;
 };
 #endif
 

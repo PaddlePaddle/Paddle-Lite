@@ -88,7 +88,16 @@ class SequenceUnpadTest : public ::testing::Test {
         length_ref_.data<int64_t>(), length_gpu_.dims());
   }
 
-  void InitHalfInput() {}
+  void InitHalfInput() {
+    x_half_.Resize(lite::DDim(x_shape_));
+    auto x_half_data = x_half_.mutable_data<half>();
+    for (int64_t i = 0; i < x_half_.numel(); i++) {
+      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+    }
+    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+    length_gpu_.Assign<int64_t, lite::DDim, TARGET(kCUDA)>(
+        length_ref_.data<int64_t>(), length_gpu_.dims());
+  }
 
   void RunBaseLine(const lite::Tensor* X,
                    const lite::Tensor* Length,
@@ -109,6 +118,7 @@ class SequenceUnpadTest : public ::testing::Test {
 
   lite::Tensor x_ref_, out_ref_, length_ref_;
   lite::Tensor x_gpu_, out_gpu_, length_gpu_;
+  lite::Tensor x_half_;
   lite::Tensor out_cpu_, length_cpu_;
 
   operators::SequencePadParam param_;
@@ -144,6 +154,41 @@ TEST_F(SequenceUnpadTest, fp32) {
                           IoDirection::DtoH);
   for (int i = 0; i < out_gpu_.numel(); ++i) {
     EXPECT_NEAR(out_cpu_.data<float>()[i], out_ref_.data<float>()[i], 1e-5);
+  }
+}
+
+TEST_F(SequenceUnpadTest, TestFP16) {
+  InitHalfInput();
+  SequenceUnpadCompute<half, PRECISION(kFP16)> kernel;
+  kernel.SetParam(param_);
+  kernel.SetContext(std::move(ctx_));
+
+  for (int i = 0; i < FLAGS_warmup; ++i) {
+    kernel.Launch();
+    cudaDeviceSynchronize();
+  }
+
+  auto start = GetCurrentUS();
+  kernel.PrepareForRun();
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    kernel.Run();
+  }
+  cudaDeviceSynchronize();
+  auto duration = (GetCurrentUS() - start) / 1000.0;
+  LOG(INFO) << "fp16, warmup: " << FLAGS_warmup
+            << ", repeats: " << FLAGS_repeats << ", spend "
+            << duration / FLAGS_repeats << " ms in average.";
+
+  const half* out_gpu_data = out_gpu_.data<half>();
+  half* out_cpu_data = out_cpu_.mutable_data<half>();
+  CopySync<TARGET(kCUDA)>(out_cpu_data,
+                          out_gpu_data,
+                          sizeof(half) * out_gpu_.numel(),
+                          IoDirection::DtoH);
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float ref = out_ref_.data<float>()[i];
+    EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }
 }
 

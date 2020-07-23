@@ -99,7 +99,7 @@ class OpLite : public Registry {
   std::vector<std::unique_ptr<KernelBase>> CreateKernels(
       const std::vector<Place> &places, const std::string &kernel_type = "");
 
-  lite::Scope *scope() { return scope_; }
+  Scope *scope() { return scope_; }
 
   // Assign op param to kernel.
   virtual void AttachKernel(KernelBase *kernel) = 0;
@@ -169,7 +169,7 @@ class OpLite : public Registry {
   }
 
  protected:
-  lite::Scope *scope_{nullptr};
+  Scope *scope_{nullptr};
   std::unique_ptr<KernelBase> kernel_;
   std::string op_type_;
   std::vector<Place> valid_places_;
@@ -230,7 +230,7 @@ class OpInfo : public cpp::OpDesc {
   }
 
   void UpdateAllInputs(const std::string &from, const std::string &to) {
-    for (auto &item : inputs_) {
+    for (auto &item : *mutable_inputs()) {
       for (auto &var : item.second) {
         if (var == from) var = to;
       }
@@ -238,7 +238,7 @@ class OpInfo : public cpp::OpDesc {
   }
 
   void UpdateAllOutputs(const std::string &from, const std::string &to) {
-    for (auto &item : outputs_) {
+    for (auto &item : *mutable_outputs()) {
       for (auto &var : item.second) {
         if (var == from) var = to;
       }

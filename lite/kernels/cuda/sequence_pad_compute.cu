@@ -85,9 +85,22 @@ void SequencePadCompute<T, Ptype>::Run() {
 using SeqPadFp32 =
     paddle::lite::kernels::cuda::SequencePadCompute<float, PRECISION(kFloat)>;
 
+using SeqPadFp16 =
+    paddle::lite::kernels::cuda::SequencePadCompute<half, PRECISION(kFP16)>;
+
 REGISTER_LITE_KERNEL(sequence_pad, kCUDA, kFloat, kNCHW, SeqPadFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("PadValue", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
-    .BindOutput("Length", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindOutput("Length",
+                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(sequence_pad, kCUDA, kFP16, kNCHW, SeqPadFp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("PadValue",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindOutput("Length",
+                {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})
     .Finalize();

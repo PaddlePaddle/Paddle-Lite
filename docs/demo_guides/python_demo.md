@@ -86,19 +86,28 @@ config.set_model_from_file(/YOU_MODEL_PATH/mobilenet_v1_opt.nb)
 predictor = create_paddle_predictor(config)
 ```
 
-(3) 设置输入数据
+(3) 从图片读入数据
+
+```python
+image = Image.open('./example.jpg')
+resized_image = image.resize((224, 224), Image.BILINEAR)
+image_data = np.array(resized_image).flatten().tolist()
+```
+
+(4) 设置输入数据
+
 ```python
 input_tensor = predictor.get_input(0)
 input_tensor.resize([1, 3, 224, 224])
-input_tensor.set_float_data([1.] * 3 * 224 * 224)
+input_tensor.set_float_data(image_data)
 ```
 
-(4) 执行预测
+(5) 执行预测
 ```python
 predictor.run()
 ```
 
-(5) 得到输出数据
+(6) 得到输出数据
 ```python
 output_tensor = predictor.get_output(0)
 print(output_tensor.shape())

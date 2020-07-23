@@ -17,5 +17,7 @@
 #include "lite/model_parser/base/block_desc.h"
 #include "lite/model_parser/base/op_desc.h"
 #include "lite/model_parser/base/program_desc.h"
+#include "lite/model_parser/base/proto_desc.h"
+#include "lite/model_parser/base/traits.h"
 #include "lite/model_parser/base/var_desc.h"
 #include "lite/utils/all.h"

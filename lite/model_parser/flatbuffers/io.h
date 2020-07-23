@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,16 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <string>
+#include "lite/model_parser/flatbuffers/program_desc.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace fbs {
 
-class SquareGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationGradParam;
+void LoadModel(const std::string& path, ProgramDesc* prog);
 
-  void Run() override;
-
-  virtual ~SquareGradCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace fbs
 }  // namespace lite
 }  // namespace paddle

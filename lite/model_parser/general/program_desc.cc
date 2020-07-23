@@ -25,6 +25,12 @@ BlockDesc* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) {
 }
 
 template <>
+BlockDesc const* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) const {
+  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+  return &blocks_[idx];
+}
+
+template <>
 BlockDesc* ProgramDesc::AddBlock<BlockDesc>() {
   blocks_.emplace_back();
   return &blocks_.back();

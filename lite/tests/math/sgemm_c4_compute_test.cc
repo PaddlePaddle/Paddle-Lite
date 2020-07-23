@@ -92,6 +92,7 @@ bool test_sgemm_c4(
   auto db_c4 = tb_c4.mutable_data<float>();
   auto dc_basic = tc_basic.mutable_data<float>();
   auto dbias = tbias.mutable_data<float>();
+  memset(reinterpret_cast<char*>(dc_basic), 0, tc_basic.numel());
 
   // trans A, B to c4
   basic_trans_mat_to_c4(da, da_c4, k, m, k, true);

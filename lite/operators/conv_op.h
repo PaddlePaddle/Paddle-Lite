@@ -74,7 +74,7 @@ class ConvOpLite : public OpLite {
     param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
 
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     param_.groups = op_desc.GetAttr<int>("groups");
     auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
     param_.dilations = std::make_shared<std::vector<int>>(dilations);

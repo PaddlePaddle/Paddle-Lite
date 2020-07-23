@@ -28,52 +28,69 @@ namespace lite {
 namespace kernels {
 namespace npu {
 
+class DeviceProgram {
+ public:
+  DeviceProgram() {}
+  ~DeviceProgram() {}
+  std::string GenerateModelName(
+      const std::vector<std::string>& input_names,
+      const std::vector<std::string>& output_names,
+      const std::vector<std::vector<int64_t>>& origin_idims);
+  bool LoadFromCacheFile(const std::vector<std::string>& input_names,
+                         const std::vector<std::string>& output_names,
+                         const std::vector<std::vector<int64_t>>& origin_idims,
+                         const std::string& model_cache_dir);
+  bool BuildGraphAndCacheToFile(
+      RuntimeProgram* origin_program,
+      const std::vector<std::string>& input_names,
+      const std::vector<std::string>& output_names,
+      const std::vector<std::vector<int64_t>>& origin_idims,
+      const std::vector<Tensor*>& origin_otensors,
+      const std::string& model_cache_dir);
+  bool ShareBufferWithOriginTensors(
+      const std::vector<std::string>& input_names,
+      const std::vector<std::string>& output_names,
+      std::vector<Tensor*>* origin_itensors,
+      std::vector<Tensor*>* origin_otensors,
+      std::vector<std::shared_ptr<hiai::AiTensor>>* device_itensors,
+      std::vector<std::shared_ptr<hiai::AiTensor>>* device_otensors);
+  bool ZeroCopyRun(
+      std::vector<std::shared_ptr<hiai::AiTensor>>* device_itensors,
+      std::vector<std::shared_ptr<hiai::AiTensor>>* device_otensors);
+
+ public:
+  std::string model_name_{""};
+  std::shared_ptr<hiai::AiModelMngerClient> model_client_{nullptr};
+  std::vector<std::vector<int64_t>> origin_odims_;
+  std::vector<PrecisionType> origin_otypes_;
+  std::vector<hiai::TensorDimension> device_idims_{};
+  std::vector<hiai::TensorDimension> device_odims_{};
+};
+
 class SubgraphEngine : public subgraph::Engine {
  public:
-  SubgraphEngine(KernelContext *ctx,
+  SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 cpp::BlockDesc *block_desc,
-                 const std::vector<std::string> &input_names,
-                 const std::vector<std::string> &output_names,
-                 Scope *scope,
-                 std::string model_cache_dir = "")
+                 const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+                 Scope* exec_scope,
+                 const std::vector<std::string>& input_names,
+                 const std::vector<std::string>& output_names)
       : subgraph::Engine(ctx,
                          block_idx,
-                         block_desc,
+                         program_desc,
+                         exec_scope,
                          input_names,
-                         output_names,
-                         scope,
-                         model_cache_dir) {}
-
-  struct device_program_t {
-    explicit device_program_t(std::shared_ptr<hiai::AiModelMngerClient> _client)
-        : client(_client) {}
-    std::shared_ptr<hiai::AiModelMngerClient> client{nullptr};
-    std::vector<DDim> origin_idims{};
-    std::vector<DDim> origin_odims{};
-    std::vector<hiai::TensorDimension> device_idims{};
-    std::vector<hiai::TensorDimension> device_odims{};
-  };
-
-  int Build() override;
+                         output_names) {}
 
  protected:
-  int BuildDeviceProgram() override;
-  int LaunchDeviceProgram() override;
+  bool PrepareWorkspaceForDeviceProgram() override;
+  bool BuildDeviceProgram() override;
+  bool LaunchDeviceProgram() override;
 
-  void InitDeviceTensor() override;
-  bool InputShapeChanged() override;
-
-  std::string GenerateModelCacheName() const;
-
-  std::string model_name_{"model.om"};
-  std::vector<std::vector<int64_t>> inputs_shape_{};
-  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<device_program_t>>
-      device_program_map_{};
-  std::vector<std::string> device_inames_{};
-  std::vector<std::string> device_onames_{};
   std::vector<std::shared_ptr<hiai::AiTensor>> device_itensors_{};
   std::vector<std::shared_ptr<hiai::AiTensor>> device_otensors_{};
+  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<DeviceProgram>>
+      device_programs_;
 };
 
 class SubgraphCompute : public KernelLite<TARGET(kNPU), PRECISION(kAny)> {

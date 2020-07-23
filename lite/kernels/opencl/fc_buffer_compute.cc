@@ -35,10 +35,27 @@ class FcCompute
  public:
   using param_t = operators::FcParam;
 
-  void PrepareForRun() override {}
+  void PrepareForRun() override {
+    fc_param_ = param_.get_mutable<param_t>();
+    auto w_t = fc_param_->w;
+    auto bias_t = fc_param_->bias;
+
+    w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+    auto w_gpu_data =
+        w_gpu_t_->mutable_data(TARGET(kOpenCL), w_t->memory_size());
+    TargetWrapperCL::MemcpySync(
+        w_gpu_data, w_t->raw_data(), w_t->memory_size(), IoDirection::HtoD);
+
+    bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+    auto b_gpu_data =
+        bias_gpu_t_->mutable_data(TARGET(kOpenCL), bias_t->memory_size());
+    TargetWrapperCL::MemcpySync(b_gpu_data,
+                                bias_t->raw_data(),
+                                bias_t->memory_size(),
+                                IoDirection::HtoD);
+  }
 
   void ReInitWhenNeeded() override {
-    fc_param_ = param_.get_mutable<param_t>();
     const auto x_dims = fc_param_->input->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
@@ -93,7 +110,7 @@ class FcCompute
   }
 
   void GetGlobalWorkSize() {
-    if (m_ == 1) {  // gemv
+    if (kernel_func_name_ == "fc_gemv_1x4") {  // gemv
       global_work_size_ = cl::NDRange{static_cast<size_t>((n_ + 3) / 4)};
     } else {  // gemm
       global_work_size_ = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
@@ -103,8 +120,8 @@ class FcCompute
 
   void Run() override {
     auto* x_buf = fc_param_->input->data<float, cl::Buffer>();
-    auto* w_buf = fc_param_->w->data<float, cl::Buffer>();
-    auto* bias_buf = fc_param_->bias->data<float, cl::Buffer>();
+    auto* w_buf = w_gpu_t_->data<float, cl::Buffer>();
+    auto* bias_buf = bias_gpu_t_->data<float, cl::Buffer>();
     auto* out_buf =
         fc_param_->output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
@@ -154,6 +171,10 @@ class FcCompute
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
+
+  std::unique_ptr<Tensor> w_gpu_t_{nullptr};
+  std::unique_ptr<Tensor> bias_gpu_t_{nullptr};
+
   cl::NDRange global_work_size_;
   cl::Kernel kernel_;
 };
@@ -166,7 +187,7 @@ class FcCompute
 REGISTER_LITE_KERNEL(
     fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();

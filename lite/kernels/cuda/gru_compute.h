@@ -12,8 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/vector_view.h"
+#pragma once
+#include <memory>
+
+#include "lite/backends/cuda/math/gemm.h"
+#include "lite/core/kernel.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
-namespace lite {}  // namespace lite
+namespace lite {
+namespace kernels {
+namespace cuda {
+
+template <typename T, PrecisionType PType>
+class GRUCompute : public KernelLite<TARGET(kCUDA), PType> {
+ public:
+  using param_t = operators::GRUParam;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  virtual ~GRUCompute() = default;
+
+ private:
+  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
+  lite::Tensor ordered_h0_;
+};
+
+}  // namespace cuda
+}  // namespace kernels
+}  // namespace lite
 }  // namespace paddle

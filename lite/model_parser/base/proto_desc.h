@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,18 +14,13 @@
 
 #pragma once
 
-#include "lite/backends/xpu/xpu_header_sitter.h"
-
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
 
-struct XPUFreeDeleter {
-  void operator()(void* p) const { xpu_free(p); }
-};
+// The Index of first Block in Program. also called root block.
+constexpr int kRootBlockIdx = 0;
+// The Parent Index of root Block, this block does not exist.
+constexpr int kNoneBlockIdx = -1;
 
-}  // namespace xpu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

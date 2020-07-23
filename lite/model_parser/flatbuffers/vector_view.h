@@ -15,22 +15,13 @@
 #pragma once
 
 #include <string>
-#include <type_traits>
 #include <vector>
 #include "flatbuffers/flatbuffers.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/model_parser/base/vector_view.h"
 
 namespace paddle {
 namespace lite {
-namespace fbs {
-
-struct Flatbuffers {};
-struct Standand {};
-
-template <typename T, typename U = void>
-struct ElementTraits {
-  typedef T element_type;
-};
+namespace vector_view {
 
 template <typename T>
 struct ElementTraits<T*,
@@ -43,9 +34,6 @@ struct ElementTraits<std::string, void> {
   typedef flatbuffers::Offset<flatbuffers::String> element_type;
 };
 
-template <typename T, typename U>
-struct VectorTraits;
-
 template <typename T>
 struct VectorTraits<T, Flatbuffers> {
   typedef flatbuffers::Vector<typename ElementTraits<T>::element_type>
@@ -56,42 +44,6 @@ struct VectorTraits<T, Flatbuffers> {
   typedef value_type subscript_return_type;
 };
 
-template <typename T>
-struct VectorTraits<T, Standand> {
-  typedef std::vector<T> vector_type;
-  typedef typename vector_type::const_iterator const_iterator;
-  typedef typename vector_type::const_reference const_reference;
-  typedef const_reference subscript_return_type;
-};
-
-template <typename T, typename U = Flatbuffers>
-class VectorView {
- public:
-  typedef VectorTraits<T, U> Traits;
-  explicit VectorView(typename Traits::vector_type const* cvec) {
-    cvec_ = cvec;
-  }
-  typename Traits::subscript_return_type operator[](size_t i) const {
-    return cvec_->operator[](i);
-  }
-  typename Traits::const_iterator begin() const { return cvec_->begin(); }
-  typename Traits::const_iterator end() const { return cvec_->end(); }
-  size_t size() const { return cvec_->size(); }
-  operator std::vector<T>() {
-    VLOG(10) << "Copying elements out of VectorView will damage performance.";
-    std::vector<T> tmp;
-    tmp.reserve(cvec_->size());
-    for (auto val : *cvec_) {
-      tmp.push_back(val);
-    }
-    return tmp;
-  }
-  ~VectorView() = default;
-
- private:
-  typename Traits::vector_type const* cvec_;
-};
-
 struct FBSStrIterator {
   typedef flatbuffers::VectorIterator<
       flatbuffers::Offset<flatbuffers::String>,
@@ -99,6 +51,7 @@ struct FBSStrIterator {
           flatbuffers::Offset<flatbuffers::String>>::return_type>
       VI;
 
+  FBSStrIterator() = default;
   explicit FBSStrIterator(const VI& iter) { iter_ = iter; }
   const VI& raw_iter() const { return iter_; }
 
@@ -143,23 +96,40 @@ struct FBSStrIterator {
   VI iter_;
 };
 
+}  // namespace vector_view
+
 template <>
 class VectorView<std::string, Flatbuffers> {
  public:
-  typedef VectorTraits<std::string, Flatbuffers> Traits;
+  typedef vector_view::VectorTraits<std::string, Flatbuffers> Traits;
   explicit VectorView(typename Traits::vector_type const* cvec) {
     cvec_ = cvec;
   }
   std::string operator[](size_t i) const { return cvec_->operator[](i)->str(); }
-  FBSStrIterator begin() const { return FBSStrIterator(cvec_->begin()); }
-  FBSStrIterator end() const { return FBSStrIterator(cvec_->end()); }
-  size_t size() const { return cvec_->size(); }
-  operator std::vector<std::string>() {
-    VLOG(10) << "Copying elements out of VectorView will damage performance.";
+  vector_view::FBSStrIterator begin() const {
+    if (!cvec_) {
+      return vector_view::FBSStrIterator();
+    }
+    return vector_view::FBSStrIterator(cvec_->begin());
+  }
+  vector_view::FBSStrIterator end() const {
+    if (!cvec_) {
+      return vector_view::FBSStrIterator();
+    }
+    return vector_view::FBSStrIterator(cvec_->end());
+  }
+  size_t size() const {
+    if (!cvec_) {
+      return 0;
+    }
+    return cvec_->size();
+  }
+  operator std::vector<std::string>() const {
+    VLOG(5) << "Copying elements out of VectorView will damage performance.";
     std::vector<std::string> tmp;
-    tmp.reserve(cvec_->size());
-    for (auto val : *cvec_) {
-      tmp.push_back(val->str());
+    tmp.reserve(size());
+    for (size_t i = 0; i < size(); ++i) {
+      tmp.push_back(cvec_->operator[](i)->str());
     }
     return tmp;
   }
@@ -169,6 +139,5 @@ class VectorView<std::string, Flatbuffers> {
   typename Traits::vector_type const* cvec_;
 };
 
-}  // namespace fbs
 }  // namespace lite
 }  // namespace paddle
