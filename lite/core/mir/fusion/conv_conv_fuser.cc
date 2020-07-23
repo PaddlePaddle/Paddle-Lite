@@ -113,19 +113,16 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   CHECK_EQ(weight0_t->dims()[0], weight1_t->dims()[1])
       << "weight0_dims[0] == weight1_dim[1]";
   for (int i = 0; i < strides1.size(); i++) {
-    if (strides1[i] != 1) {
-      return;
-    }
+    CHECK_EQ(strides1[i], 1) << "strides[" << i << "]: " << strides1[i]
+                             << " must be 1";
   }
   for (int i = 0; i < paddings1.size(); i++) {
-    if (paddings1[i] != 1) {
-      return;
-    }
+    CHECK_EQ(paddings1[i], 1) << "paddings[" << i << "]: " << paddings1[i]
+                             << " must be 1";
   }
   for (int i = 0; i < dilations1.size(); i++) {
-    if (dilations1[i] != 1) {
-      return;
-    }
+    CHECK_EQ(dilations1[i], 1) << "dilations[" << i << "]: " << dilations1[i]
+                             << " must be 1";
   }
   // comupte new_wight and new bias
   ///////////////////////////////////////////////////////////////////////////////
