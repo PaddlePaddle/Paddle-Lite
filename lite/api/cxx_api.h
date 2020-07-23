@@ -158,10 +158,12 @@ class LITE_API Predictor {
     cuda_use_multi_stream_ = multi_stream;
   }
   bool cuda_use_multi_stream() { return cuda_use_multi_stream_; }
-  void set_cuda_exec_stream(cudaStream_t stream) { cuda_exec_stream_ = stream; }
-  void set_cuda_io_stream(cudaStream_t stream) { cuda_io_stream_ = stream; }
-  cudaStream_t cuda_exec_stream() { return cuda_exec_stream_; }
-  cudaStream_t cuda_io_stream() { return cuda_io_stream_; }
+  void set_cuda_exec_stream(cudaStream_t* stream) {
+    cuda_exec_stream_ = stream;
+  }
+  void set_cuda_io_stream(cudaStream_t* stream) { cuda_io_stream_ = stream; }
+  cudaStream_t* cuda_exec_stream() { return cuda_exec_stream_; }
+  cudaStream_t* cuda_io_stream() { return cuda_io_stream_; }
 #endif
 
  private:
@@ -177,8 +179,8 @@ class LITE_API Predictor {
 
 #ifdef LITE_WITH_CUDA
   bool cuda_use_multi_stream_{false};
-  cudaStream_t cuda_io_stream_;
-  cudaStream_t cuda_exec_stream_;
+  cudaStream_t* cuda_io_stream_{nullptr};
+  cudaStream_t* cuda_exec_stream_{nullptr};
 #endif
 };
 

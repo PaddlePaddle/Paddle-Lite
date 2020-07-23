@@ -135,14 +135,14 @@ void CxxPaddleApiImpl::InitCudaEnv(std::vector<std::string> *passes) {
 }
 
 void CxxPaddleApiImpl::SyncCudaInputs() {
-  TargetWrapperCuda::RecordEvent(cuda_input_event_, cuda_io_stream_->stream());
+  TargetWrapperCuda::RecordEvent(cuda_input_event_, *cuda_io_stream_->stream());
   if (cuda_use_multi_stream_) {
     for (int i = 0; i < lite::kMaxStream; ++i) {
-      TargetWrapperCuda::StreamSync(cuda_exec_streams_[i].stream(),
+      TargetWrapperCuda::StreamSync(*cuda_exec_streams_[i].stream(),
                                     cuda_input_event_);
     }
   } else {
-    TargetWrapperCuda::StreamSync(cuda_exec_stream_->stream(),
+    TargetWrapperCuda::StreamSync(*cuda_exec_stream_->stream(),
                                   cuda_input_event_);
   }
 }
@@ -151,14 +151,14 @@ void CxxPaddleApiImpl::SyncCudaOutputs() {
   if (cuda_use_multi_stream_) {
     for (size_t i = 0; i < cuda_output_events_.size(); ++i) {
       TargetWrapperCuda::RecordEvent(cuda_output_events_[i],
-                                     cuda_exec_streams_[i].stream());
-      TargetWrapperCuda::StreamSync(cuda_io_stream_->stream(),
+                                     *cuda_exec_streams_[i].stream());
+      TargetWrapperCuda::StreamSync(*cuda_io_stream_->stream(),
                                     cuda_output_events_[i]);
     }
   } else {
     TargetWrapperCuda::RecordEvent(cuda_output_events_[0],
-                                   cuda_exec_stream_->stream());
-    TargetWrapperCuda::StreamSync(cuda_io_stream_->stream(),
+                                   *cuda_exec_stream_->stream());
+    TargetWrapperCuda::StreamSync(*cuda_io_stream_->stream(),
                                   cuda_output_events_[0]);
   }
 }
@@ -168,7 +168,7 @@ std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
   auto *x = raw_predictor_->GetInput(i);
 #ifdef LITE_WITH_CUDA
   return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(x, cuda_io_stream_->stream()));
+      new lite_api::Tensor(x, *cuda_io_stream_->stream()));
 #else
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
 #endif
@@ -179,7 +179,7 @@ std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutput(
   const auto *x = raw_predictor_->GetOutput(i);
 #ifdef LITE_WITH_CUDA
   return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(x, cuda_io_stream_->stream()));
+      new lite_api::Tensor(x, *cuda_io_stream_->stream()));
 #else
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
 #endif

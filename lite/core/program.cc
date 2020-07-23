@@ -243,9 +243,9 @@ RuntimeProgram::RuntimeProgram(
 }
 
 #ifdef LITE_WITH_CUDA
-void RuntimeProgram::UpdateCudaContext(cudaStream_t exec, cudaStream_t io) {
-  for (auto& inst : instructions_) {
-    inst.UpdateCudaContext(exec, io);
+void RuntimeProgram::UpdateCudaStream(cudaStream_t* exec, cudaStream_t* io) {
+  for (auto& inst : instructions_[kRootBlockIdx]) {
+    inst.UpdateCudaStream(exec, io);
   }
 }
 #endif

@@ -44,7 +44,7 @@ class CudaStreamGuard {
       lite::TargetWrapperCuda::DestroyStream(stream_);
     }
   }
-  cudaStream_t stream() { return stream_; }
+  cudaStream_t* stream() { return &stream_; }
   bool owned() { return owned_; }
 
  private:
