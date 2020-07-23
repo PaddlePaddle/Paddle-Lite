@@ -1010,6 +1010,18 @@ struct SequencePoolConcatParam : ParamBase {
   std::vector<std::string> pool_type{};
 };
 
+struct SequencePoolGradParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out_Grad{};
+  std::string pool_type{"AVERAGE"};
+#ifdef LITE_WITH_X86
+  float pad_value{0.0};
+  lite::Tensor* MaxIndex{};
+#endif
+  // for backward
+  lite::Tensor* X_Grad{};
+};
+
 struct SearchGroupPaddingParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* out_emb_padding{};
