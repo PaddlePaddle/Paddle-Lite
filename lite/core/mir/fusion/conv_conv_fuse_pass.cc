@@ -49,7 +49,7 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   for (auto conv_has_bias0 : conv_has_bias_cases) {
     for (auto conv_has_bias1 : conv_has_bias_cases) {
       for (auto conv_type0 : conv_type_cases) {
-        for (auto conv_type1 : {"conv2d"}) { // it mustbe 1x1s1p0_conv
+        for (auto conv_type1 : {"conv2d"}) {  // it mustbe 1x1s1p0_conv
           VLOG(4) << "conv_has_bias0:" << conv_has_bias0
                   << " conv_type0:" << conv_type0;
           VLOG(4) << "conv_has_bias1:" << conv_has_bias1
