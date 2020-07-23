@@ -23,7 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void SearchFcCompute::PrepareForRun() {
-  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(float));
+  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(float), false /* use_l3 */);
 }
 
 void SearchFcCompute::Run() {
@@ -59,34 +60,34 @@ void SearchFcCompute::Run() {
 
   float* maxs_xpu = reinterpret_cast<float*>(maxs_xpu_guard_->addr_);
   float maxs_cpu[8] = {0.0f, 0.0f, 0.0f, 0.0f, w_max, 0.0f, 0.0f, 0.0f};
-  xpu_memcpy(maxs_xpu,
-             &maxs_cpu[0],
-             8 * sizeof(float),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(maxs_xpu,
+                      &maxs_cpu[0],
+                      8 * sizeof(float),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::findmax<float>(
       ctx.GetRawContext(), bottom_data, batch * _in, maxs_xpu);
   CHECK_EQ(r, 0);
   r = xdnn::gemm_int16_maxptr<float, int16_t, float>(
       ctx.GetRawContext(), /* ctx */
-      false,
-      true, /*trans_a, trans_b*/
-      batch,
-      _out,
-      _in, /*m, n, k*/
-      1.0f,
-      bottom_data,
-      _in, /*alpha, data_a, lda*/
-      weights,
-      _in,
-      0.0f, /*data_b, ldb, beta*/
-      top_data,
-      _out,
-      bias_data, /* data_c, ldc, bias*/
-      act,
-      maxs_xpu,
-      maxs_xpu + 4,
-      nullptr /*act, max_a, max_b, max_c*/);
+      false,               /* trans_a */
+      true,                /* trans_b */
+      batch,               /* m */
+      _out,                /* n */
+      _in,                 /* k */
+      1.0f,                /* alpha */
+      bottom_data,         /* data_a */
+      _in,                 /* lda */
+      weights,             /* data_b */
+      _in,                 /* ldb */
+      0.0f,                /* beta */
+      top_data,            /* data_c */
+      _out,                /* ldc */
+      bias_data,           /* bias */
+      act,                 /* act */
+      maxs_xpu,            /* max_a */
+      maxs_xpu + 4,        /* max_b */
+      nullptr /* max_c */);
   CHECK_EQ(r, 0);
 }
 

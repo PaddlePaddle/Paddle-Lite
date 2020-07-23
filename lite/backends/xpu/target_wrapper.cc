@@ -19,11 +19,11 @@ namespace lite {
 
 void* TargetWrapperXPU::Malloc(size_t size) {
   void* ptr{nullptr};
-  xpu_malloc(&ptr, size);
+  XPU_CALL(xpu_malloc(&ptr, size));
   return ptr;
 }
 
-void TargetWrapperXPU::Free(void* ptr) { xpu_free(ptr); }
+void TargetWrapperXPU::Free(void* ptr) { XPU_CALL(xpu_free(ptr)); }
 
 void TargetWrapperXPU::MemcpySync(void* dst,
                                   const void* src,
@@ -31,10 +31,10 @@ void TargetWrapperXPU::MemcpySync(void* dst,
                                   IoDirection dir) {
   switch (dir) {
     case IoDirection::HtoD:
-      xpu_memcpy(dst, src, size, XPU_HOST_TO_DEVICE);
+      XPU_CALL(xpu_memcpy(dst, src, size, XPU_HOST_TO_DEVICE));
       break;
     case IoDirection::DtoH:
-      xpu_memcpy(dst, src, size, XPU_DEVICE_TO_HOST);
+      XPU_CALL(xpu_memcpy(dst, src, size, XPU_DEVICE_TO_HOST));
       break;
     default:
       LOG(FATAL) << "Unsupported IoDirection " << static_cast<int>(dir);
@@ -49,7 +49,7 @@ XPUScratchPadGuard TargetWrapperXPU::MallocScratchPad(size_t size,
   } else {
     ptr = TargetWrapperXPU::Malloc(size);
   }
-  CHECK(ptr != nullptr);
+  CHECK(ptr != nullptr) << "size = " << size << ", use_l3 = " << use_l3;
   return XPUScratchPadGuard(new XPUScratchPad(ptr, use_l3));
 }
 
