@@ -20,14 +20,21 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
+namespace arm {
 
 using param_t = operators::SequencePoolParam;
 using grad_param_t = operators::SequencePoolGradParam;
+using kernel_t = SequencePoolCompute;
+using grad_kernel_t = SequencePoolGradCompute;
 
-template <class kernel_t, class grad_kernel_t>
 class SequencePoolGradTester {
  public:
-  explicit SequencePoolGradTester(DDim dims) : dims_(dims) {}
+  explicit SequencePoolGradTester(DDim dims,
+                                  std::vector<std::vector<uint64_t>> lod,
+				  std::string pool_type)
+      : dims_(dims),
+        lod_(lod),
+        pool_type_(pool_type) {}
 
   void prepare_kernel() {
     std::unique_ptr<KernelContext> ctx1(new KernelContext);
@@ -43,18 +50,6 @@ class SequencePoolGradTester {
     grad_kernel_.SetContext(std::move(ctx3));
   }
 
-  void generate_lod(int seq_num,
-                    int max_len,
-                    std::vector<uint64_t>& seq_offset) {  // NOLINT
-    seq_offset.clear();
-    int sum = 0;
-    seq_offset.push_back(sum);
-    for (int i = 0; i < seq_num; i++) {
-        sum += std::rand() % max_len + 1;
-        seq_offset.push_back(uint64_t(sum));
-    }
-  }
-
   void run_forward(param_t* param,
                    kernel_t* kernel,
                    const std::vector<float>& in_vec,
@@ -67,13 +62,12 @@ class SequencePoolGradTester {
     for (int i = 0; i < dims_.production(); i++) {
       x_data[i] = in_vec[i];
     }
-    x->set_lod(lod_);
+    x.set_lod(lod_);
     param->X = &x;
     param->pool_type = pool_type_;
     param->Out = &output;
     kernel->SetParam(*param);
     kernel->Launch();
-
     auto* output_data = output.mutable_data<float>();
     for (int i = 0; i < output.numel(); i++) {
       out_vec[i] = output_data[i];
@@ -83,38 +77,32 @@ class SequencePoolGradTester {
   void run_backward(grad_param_t* param,
                     grad_kernel_t* kernel,
                     const std::vector<float>& in_vec,
-                    const std::vector<float>& out_vec,
                     const std::vector<float>& out_grad_vec,
                     float* in_grad_vec) {
     Tensor x;
-    Tensor out;
     Tensor x_grad;
     Tensor out_grad;
     x.Resize(dims_);
     x_grad.Resize(dims_);
+    x.set_lod(lod_);
     // backword
     out_grad.Resize(out_dims_);
-    out.Resize(out_dims_);
     auto* x_data = x.mutable_data<float>();
-    auto* out_data = out.mutable_data<float>();
     auto* out_grad_data = out_grad.mutable_data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
       x_data[i] = in_vec[i];
     }
     for (int i = 0; i < out_dims_.production(); i++) {
-        out_data[i] = out_vec[i];
         out_grad_data[i] = out_grad_vec[i];
     }
     param->X = &x;
-    param->Out = &out;
-    param->X_grad = &x_grad;
-    param->Out_grad = &out_grad;
+    param->X_Grad = &x_grad;
+    param->Out_Grad = &out_grad;
     param->pool_type = pool_type_;
     kernel->SetParam(*param);
     kernel->Launch();
-
-    auto* x_grad_data = x_grad.mutable_data<float>();
+    auto* x_grad_data = x_grad.data<float>();
     for (int i = 0; i < dims_.production(); i++) {
       in_grad_vec[i] = x_grad_data[i];
     }
@@ -131,38 +119,21 @@ class SequencePoolGradTester {
              static_cast<float>(i % 19 - 10.0) / 10.0 * 0.333 +
              static_cast<float>(i % 39 - 20.0) / 20.0 * 0.333 + 0.001213;
     }
+    LOG(INFO) << "run_forward:";
     this->run_forward(&param_, &kernel_, x, out.data());
 
     std::vector<float> out_grad(out_dims_.production());
     std::vector<float> x_grad(dims_.production());
     std::vector<float> x_delta(dims_.production());
     std::vector<float> out_delta(out_dims_.production());
-
     for (int i = 0; i < out_dims_.production(); i++) {
       out_grad[i] = 1.0;
+      x_grad[i] = 1.0;
     }
+    LOG(INFO) << "run_backward:";
     this->run_backward(
-        &grad_param_, &grad_kernel_, x, out, out_grad, x_grad.data());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      for (int j = 0; j < dims_.production(); j++) {
-        if (i == j) {
-          x_delta[j] = x[j] + delta;
-        } else {
-          x_delta[j] = x[j];
-        }
-      }
-      this->run_forward(
-          &delta_param_, &delta_kernel_, x_delta, out_delta.data());
-
-      float sum = 0;
-      for (int j = 0; j < out_dims_.production(); j++) {
-        sum += (out_delta[j] - out[j]);
-      }
-
-      EXPECT_NEAR(x_grad[i], sum / delta, max_grad_delta);
-    }
-  }
+        &grad_param_, &grad_kernel_, x, out_grad, x_grad.data());
+}
 
  private:
   DDim dims_;
@@ -177,6 +148,18 @@ class SequencePoolGradTester {
   grad_param_t grad_param_;
 };
 
+void generate_lod(int seq_num,
+                  int max_len,
+                  std::vector<uint64_t>& seq_offset) {  // NOLINT
+  seq_offset.clear();
+  int sum = 0;
+  seq_offset.push_back(sum);
+  for (int i = 0; i < seq_num; i++) {
+    sum += std::rand() % max_len + 1;
+    seq_offset.push_back(uint64_t(sum));
+  }
+}
+
 void TestSequencePoolGrad(DDim dims, std::vector<std::vector<uint64_t>> lod, std::string pool_type) {
   LOG(INFO) << "Test SequencePool grad";
   std::unique_ptr<SequencePoolGradTester> tester(new SequencePoolGradTester(
@@ -190,24 +173,39 @@ void TestSequencePoolGrad(DDim dims, std::vector<std::vector<uint64_t>> lod, std
 TEST(sequence_pool_grad_host, compute) {
   int max_len = 2;
   DeviceInfo::Init();
-  for (auto seq_num : {1, 3, 5}) {
-    for (auto c : {2, 9}) {
-      for (auto h : {2, 1}) {
-        for (auto w : {2, 10}) {
-          for (auto pool_type :
-               {"SUM", "AVERAGE", "SQRT", "MAX", "MIN", "FIRST", "LAST"}) {
+  for (auto c : {2, 4}) {
+    for (auto h : {1, 3, 4}) {
+      for (auto w : {1, 3, 4}) {
+        for (auto pool_type :
+             {"SUM", "AVERAGE", "SQRT", "MAX", "MIN", "FIRST", "LAST"}) {
+          for (auto seq_num : {1, 3, 5}) {
             std::vector<std::vector<uint64_t>> lod;
             lod.resize(1);
             generate_lod(seq_num, max_len, lod[0]);
-            x.set_lod(lod);
             int64_t n = int64_t(lod[0].back());
+            LOG(INFO) << "sequence_pool_grad parameter: "
+                      << ", n = "
+                      << n
+                      << ", c = "
+                      << c
+                      << ", h = "
+                      << h
+                      << ", w = "
+                      << w
+                      << ", seq_num = "
+                      << seq_num
+                      << ", pool_type = "
+                      << pool_type;
             TestSequencePoolGrad(DDim(std::vector<int64_t>({n, c, h, w})), lod, pool_type);
+          }
         }
       }
     }
   }
 }
 
+
+}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

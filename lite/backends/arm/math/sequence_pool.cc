@@ -32,10 +32,12 @@ void seq_pool_sum<float>(const float* din,
                          float* dout,
                          const std::vector<uint64_t> lod,
                          int64_t width) {
+  LOG(INFO) << "size: " << lod.size() - 1;
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float* din_ptr = din + lod[i] * width;
     float* dout_ptr = dout + i * width;
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
+    if (height > 0) {
     if (width == 1) {
       float sum = 0.f;
       for (int h = 0; h < height; ++h) {
@@ -46,6 +48,16 @@ void seq_pool_sum<float>(const float* din,
       memcpy(dout_ptr, din_ptr, width * sizeof(float));
       din_ptr += width;
       height = height - 1;
+/*      for (int h = 0; h < height; h++) {
+        for (int w = 0; w < width; ++w) {
+          dout_ptr[w] += din_ptr[w];
+        }
+        din_ptr += width;
+      }
+*/
+  //    continue;
+
+      if (height == 0) return;
       int cnt_w = width >> 2;
       int remain_w = width & 3;
       int cnt_h = height >> 2;
@@ -101,8 +113,10 @@ void seq_pool_sum<float>(const float* din,
         }
         dout_ptr++;
       }
+     }
     }
   }
+  printf("end--\n");
 }
 
 template <>

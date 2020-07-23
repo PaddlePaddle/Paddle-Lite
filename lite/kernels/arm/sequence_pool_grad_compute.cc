@@ -33,14 +33,12 @@ void SequencePoolGradCompute::Run() {
   auto& x_grad = param.X_Grad;
   const auto* din_ptr = param.X->data<float>();
   const auto* dout_grad_ptr = output_grad->data<float>();
-  float* x_grad_ptr = x_grad->mutable_dataa<float>();
+  float* x_grad_ptr = x_grad->mutable_data<float>();
   const auto pool_type = param.pool_type;
   const auto lod = param.X->lod()[0];
-
   int64_t width = param.X->numel() / param.X->dims()[0];
-
   if (pool_type == "SUM" || pool_type == "MAX" || pool_type == "MIN") {
-    lite::arm::math::seq_pool_grad(din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
+    lite::arm::math::seq_pool_sum_grad(din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "AVERAGE") {
     lite::arm::math::seq_pool_average_grad(din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "SQRT") {

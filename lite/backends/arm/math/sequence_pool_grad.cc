@@ -33,22 +33,24 @@ void seq_pool_sum_grad<float>(const float* din,
                          float* dout,
                          const std::vector<uint64_t> lod,
                          int64_t width) {
-  for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
+  for (int i = 0; i < static_cast<int>(lod.size()) - 1; i++) {
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     const float* din_ptr = din + lod[i] * width;
-    const float* din_grad_ptr = din + i * width;
+    const float* din_grad_ptr = din_grad + i * width;
     float* dout_ptr = dout + lod[i] * width;
-    if (width == 1) {
-      for (int h = 0; h < height; ++h) {
+    if (height > 0) {
+      if (width == 1) {
+        for (int h = 0; h < height; ++h) {
           dout_ptr[h] = din_grad_ptr[h];
-      }
-    } else {
-      for (int w = 0; w < width; w++) {
-        for (int h = 0; h < height; h++) {
+        }
+      } else {
+        for (int w = 0; w < width; w++) {
+          for (int h = 0; h < height; h++) {
             dout_ptr[h] = *din_grad_ptr;
             dout_ptr += width;
-        }
-        din_grad_ptr++;
+          }
+         din_grad_ptr++;
+       }
       }
     }
   }
@@ -63,7 +65,7 @@ void seq_pool_average_grad<float>(const float* din,
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     const float* din_ptr = din + lod[i] * width;
-    const float* din_grad_ptr = din + i * width;
+    const float* din_grad_ptr = din_grad + i * width;
     float* dout_ptr = dout + lod[i] * width;
     float alpha = 1.0 / height;
     if (height > 0) {
@@ -93,7 +95,7 @@ void seq_pool_sqrt_grad<float>(const float* din,
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     const float* din_ptr = din + lod[i] * width;
-    const float* din_grad_ptr = din + i * width;
+    const float* din_grad_ptr = din_grad + i * width;
     float* dout_ptr = dout + lod[i] * width;
     float alpha = 1.0 / sqrtf(height);
     if (height > 0) {
