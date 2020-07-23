@@ -28,7 +28,6 @@ void YoloBoxCompute::PrepareForRun() {
   lite::Tensor* ImgSize = param.ImgSize;
   lite::Tensor* Boxes = param.Boxes;
   lite::Tensor* Scores = param.Scores;
-  
 
   Boxes->mutable_data<float>();
   Scores->mutable_data<float>();
@@ -45,16 +44,14 @@ void YoloBoxCompute::PrepareForRun() {
 
   pe_.init();
   pe_.apply();
-
 }
 
 void YoloBoxCompute::Run() {
-
   pe_.dispatch();
 
   zynqmp::YoloBoxParam& yolobox_param = pe_.param();
   yolobox_param.imgSize->saveToFile("img_size", true);
-//   exit(-1);
+  //   exit(-1);
   yolobox_param.outputBoxes->saveToFile("yolo_boxes", true);
   yolobox_param.outputScores->saveToFile("yolo_scores", true);
 }

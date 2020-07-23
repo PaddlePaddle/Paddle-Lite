@@ -25,6 +25,10 @@
 #include "lite/core/profile/precision_profiler.h"
 #endif
 
+#ifdef LITE_WITH_FPGA
+#include "lite/backends/fpga/monitor.hpp"
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -151,23 +155,41 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
+#ifdef LITE_WITH_FPGA
+  Monitor& monitor = Monitor::get_instance();
+  monitor.inferStart();
+#endif
+
   for (auto& inst : instructions_) {
+#ifdef LITE_WITH_FPGA
+    monitor.preRun(inst);
+#endif
+
 #ifndef LITE_WITH_FPGA
     if (inst.is_feed_fetch_op()) continue;
 #endif
+
 #ifdef LITE_WITH_CUDA
     if (inst.need_sync()) {
       inst.Sync();
     }
 #endif
     inst.Run();
+
+#ifdef LITE_WITH_FPGA
+    monitor.postRun(inst);
+#endif
+
 #ifdef LITE_WITH_PRECISION_PROFILE
-#ifndef LITE_WITH_FPGA
     precision_profiler_summary +=
         inst_precision_profiler.GetInstPrecision(&inst);
-#endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
+
+#ifdef LITE_WITH_FPGA
+  monitor.inferEnd();
+#endif
+
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
 #endif

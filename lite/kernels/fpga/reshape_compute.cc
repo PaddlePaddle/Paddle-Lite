@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/reshape_compute.h"
 #include <vector>
+
+#include "lite/backends/fpga/KD/debugger.hpp"
+#include "lite/kernels/fpga/reshape_compute.h"
 #include "lite/operators/reshape_op.h"
 
 namespace paddle {
@@ -48,21 +50,31 @@ void FlattenCompute::Run() {
 #endif
 }
 
-void ReshapeCompute::Run() {
+void ReshapeCompute::PrepareForRun() {
   auto& param = Param<operators::ReshapeParam>();
   auto x = param.x;
   auto output = param.output;
   auto output_dims = output->dims();
 
-  x->ZynqTensor()->unalignImage();
-
-  // x->ZynqTensor()->saveToFile("ri", true);
-
   output->Resize(output_dims);
   output->mutable_data<float16>();
+}
+
+void ReshapeCompute::Run() {
+  auto& param = Param<operators::ReshapeParam>();
+  auto x = param.x;
+  auto output = param.output;
+  // auto output_dims = output->dims();
+
+  // x->ZynqTensor()->invalidate();// TODO
+  x->ZynqTensor()->unalignImage();
+  x->ZynqTensor()->flush();
+
+  // output->Resize(output_dims);
+  // output->mutable_data<float16>();
 
   if (param.inplace) {
-    output->ShareDataWith(*x);
+    // output->ShareDataWith(*x);
   } else {
     // output->CopyDataFrom(*x);
   }
@@ -70,7 +82,7 @@ void ReshapeCompute::Run() {
   output->ZynqTensor()->copyFrom(x->ZynqTensor());
   // output->ZynqTensor()->saveToFile("ro", true);
   output->ZynqTensor()->flush();
-  output->ZynqTensor()->setAligned(x->ZynqTensor()->aligned());
+// output->ZynqTensor()->setAligned(x->ZynqTensor()->aligned());
 
 #ifdef FPGA_PRINT_TENSOR
   Debugger::get_instance().registerOutput("reshape", output->ZynqTensor());

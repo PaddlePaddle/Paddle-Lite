@@ -72,18 +72,110 @@ class ConvPE : public PE {
     }
     if (param_.filter->shape().width() == 1 &&
         param_.filter->shape().num() % 16 != 0) {
-      use_cpu_ = true;
+      // use_cpu_ = true;
     }
     if (!use_cpu_) {
       // param_.filter->releaseData();
     }
-
-    // exit(-1);
   }
+
+  void cpu_conv_half_hwc() {
+    Tensor* input = param_.input;
+    Tensor* output = param_.output;
+
+    Shape& input_shape = input->shape();
+    Shape& out_shape = output->shape();
+
+    int image_height = input_shape.height();
+    int image_width = input_shape.width();
+    int image_channels = input_shape.channel();
+    int image_pad_h = param_.paddings[0];
+    int image_pad_w = param_.paddings[0];
+    int kernel_height = param_.filter->shape().height();
+    int kernel_width = param_.filter->shape().width();
+    int kernel_step_h = param_.strides[0];
+    int kernel_step_w = param_.strides[1];
+    int dilation_rate = 1;
+    int out_channel = out_shape.channel();
+    int pooled_height_ = out_shape.height();
+    int pooled_width_ = out_shape.width();
+    int filter_chw = image_channels * kernel_height * kernel_width;
+
+    int kernel_rw = kernel_width + (dilation_rate - 1) * (kernel_width - 1);
+    int kernel_rh = kernel_height + (dilation_rate - 1) * (kernel_height - 1);
+
+    float* weight = param_.filter->data<float>();
+
+    Tensor float_input;
+    Tensor float_output;
+    float* image_addr = float_input.mutableData<float>(FP32, input->shape());
+    float_input.copyFrom(input);
+
+    float* out = float_output.mutableData<float>(FP32, output->shape());
+
+    for (int ph = 0; ph < pooled_height_; ph++) {
+      for (int pw = 0; pw < pooled_width_; pw++) {
+        int hstart = ph * kernel_step_h - image_pad_h;
+        int wstart = pw * kernel_step_w - image_pad_w;
+        int hend = std::min(hstart + kernel_rh, (int)image_height);
+        int wend = std::min(wstart + kernel_rw, (int)image_width);
+
+        int hstart_plus =
+            dilation_rate * ceil(float(image_pad_h - ph * kernel_step_h) /
+                                 float(dilation_rate)) -
+            image_pad_h + ph * kernel_step_h;
+        int wstart_plus =
+            dilation_rate * ceil(float(image_pad_w - pw * kernel_step_w) /
+                                 float(dilation_rate)) -
+            image_pad_w + pw * kernel_step_w;
+
+        int hstart_ = hstart < 0 ? hstart_plus : hstart;
+        int wstart_ = wstart < 0 ? wstart_plus : wstart;
+
+        for (int oc = 0; oc < out_channel; oc++) {
+          float sum = 0.0f;
+          const int pool_index = (ph * pooled_width_ + pw) * out_channel + oc;
+          for (int c = 0; c < image_channels; c++) {
+            for (int h = hstart_; h < hend; h += dilation_rate) {
+              int hi = 0;
+              if (hstart < 0) {
+                hi = (kernel_rh - (hend - h)) / dilation_rate;
+              } else {
+                hi = (h - hstart_) / dilation_rate;
+              }
+
+              for (int w = wstart_; w < wend; w += dilation_rate) {
+                int wi = 0;
+                if (wstart < 0) {
+                  wi = (kernel_rw - (wend - w)) / dilation_rate;
+                } else {
+                  wi = (w - wstart_) / dilation_rate;
+                }
+
+                const int index = (h * image_width + w) * image_channels + c;
+                int weight_index = oc * filter_chw +
+                                   kernel_width * kernel_height * c +
+                                   kernel_width * hi + wi;
+                float value = image_addr[index] * weight[weight_index];
+                sum += value;
+              }
+            }
+          }
+          float s = param_.scale()->data<float>()[oc];
+          float b = param_.bias()->data<float>()[oc];
+          out[pool_index] = sum * s + b;
+        }
+      }
+    }
+    float_output.saveToFile("fo", true);
+    exit(-1);
+  }
+
   void cpu_compute() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
-    input->syncToCPU();
+    // input->saveToFile("input", true);
+    // input->syncToCPU();
 
     Tensor float_input;
     Tensor float_output;
@@ -117,24 +209,39 @@ class ConvPE : public PE {
         for (int j = 0; j < in_channel; j++) {
           sum += mi[j];
         }
-        sum *= param_.scale()->data<float>()[i];
-        sum += param_.bias()->data<float>()[i];
-        out[i * wh + k] = sum;
-        max = std::max(max, std::abs(sum));
+        float fv = sum;
+        float s = param_.scale()->data<float>()[i];
+        float b = param_.bias()->data<float>()[i];
+
+        fv *= s;
+        fv += b;
+
+        // std::cout << "\n" << fv << " = " << sum << " x " << s << " + " << b
+        // << std::endl;
+
+        out[i * wh + k] = fv;
+        max = std::max(max, std::abs(fv));
       }
     }
     delete[] mi;
+    param_.bias()->saveToFile("bias", true);
+
+    exit(-1);
+
     float_output.flush();
+    float_output.saveToFile("float_output", true);
     output->copyFrom(&float_output);
+    output->invalidate();
     output->scale()[0] = max / 127.0;
     output->scale()[1] = 127.0 / max;
     // output->saveToFile("cpu", true);
   }
 
   bool dispatch() {
-    fpga_reset();
+    // fpga_reset();
     if (use_cpu_) {
-      cpu_compute();
+      // cpu_compute();
+      cpu_conv_half_hwc();
       return true;
     }
 

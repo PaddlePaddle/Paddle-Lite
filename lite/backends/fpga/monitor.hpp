@@ -13,35 +13,37 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/elementwise_add_pe.hpp"
-#include "lite/backends/fpga/KD/pes/yolobox_pe.hpp"
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+
+#include "lite/core/program.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace fpga {
 
-using float16 = zynqmp::float16;
-
-class YoloBoxCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+class Monitor {
  public:
-  void PrepareForRun() override;
-  void Run() override;
+  static Monitor& get_instance() {
+    static Monitor s_instance;
+    return s_instance;
+  }
 
-  virtual ~YoloBoxCompute(){
+  void inferStart() {}
 
-  };
+  void preRun(Instruction& inst) {
+    VLOG(4)  << "Running op:" << const_cast<OpLite*>(inst.op())->Type();
+  }
+
+  void postRun(Instruction& inst) {}
+
+  void inferEnd() {}
 
  private:
-  zynqmp::YoloBoxPE pe_;
 };
 
-}  // namespace fpga
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

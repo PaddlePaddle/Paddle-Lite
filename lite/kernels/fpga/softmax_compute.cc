@@ -14,6 +14,7 @@
 
 #include "lite/kernels/fpga/softmax_compute.h"
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -36,11 +37,10 @@ void SoftmaxCompute::PrepareForRun() {
 
 void SoftmaxCompute::Run() {
   zynqmp::SoftmaxParam& softmax_param = pe_.param();
-  // softmax_param.input->saveToFile("softmax_in", true);
   pe_.dispatch();
 
-  softmax_param.output->flush();
-// softmax_param.output->saveToFile("softmax", true);
+//   softmax_param.output->flush();
+// // softmax_param.output->saveToFile("softmax", true);
 #ifdef FPGA_PRINT_TENSOR
   Debugger::get_instance().registerOutput("softmax", softmax_param.output);
 #endif

@@ -20,58 +20,67 @@ limitations under the License. */
 namespace paddle {
 namespace zynqmp {
 
+float sigmoid(float x) { return 1.0 / (1.0 + std::exp(-x)); }
 
-float sigmoid(float x) {
-  return 1.0 / (1.0 + std::exp(-x));
-}
-
-inline void GetYoloBox(float* box, const float* x, const int* anchors, int w,
-                                  int h, int an_idx, int grid_size,
-                                  int input_size, int index, 
-                                  int img_height, int img_width) {
-  box[0] = (w + sigmoid(x[index])) * img_width * 1.0f/ grid_size;
+inline void GetYoloBox(float* box,
+                       const float* x,
+                       const int* anchors,
+                       int w,
+                       int h,
+                       int an_idx,
+                       int grid_size,
+                       int input_size,
+                       int index,
+                       int img_height,
+                       int img_width) {
+  box[0] = (w + sigmoid(x[index])) * img_width * 1.0f / grid_size;
   box[1] = (h + sigmoid(x[index + 1])) * img_height * 1.0f / grid_size;
-  box[2] = std::exp(x[index + 2 ]) * anchors[2 * an_idx] * img_width * 1.0f/
+  box[2] = std::exp(x[index + 2]) * anchors[2 * an_idx] * img_width * 1.0f /
            input_size;
-  box[3] = std::exp(x[index + 3]) * anchors[2 * an_idx + 1] *
-           img_height * 1.0f / input_size;
+  box[3] = std::exp(x[index + 3]) * anchors[2 * an_idx + 1] * img_height *
+           1.0f / input_size;
 }
 
-inline int GetEntryIndex(int batch, int an_idx, int hw_idx,
-                                    int an_num, int an_stride, int stride,
-                                    int entry) {
+inline int GetEntryIndex(int batch,
+                         int an_idx,
+                         int hw_idx,
+                         int an_num,
+                         int an_stride,
+                         int stride,
+                         int entry) {
   return (batch * an_num + an_idx) * an_stride + entry * stride + hw_idx;
 }
 
-inline void CalcDetectionBox(float* boxes, float* box, const int box_idx,
-                                        const int img_height,
-                                        const int img_width) {
+inline void CalcDetectionBox(float* boxes,
+                             float* box,
+                             const int box_idx,
+                             const int img_height,
+                             const int img_width) {
   boxes[box_idx] = box[0] - box[2] / 2;
   boxes[box_idx + 1] = box[1] - box[3] / 2;
   boxes[box_idx + 2] = box[0] + box[2] / 2;
   boxes[box_idx + 3] = box[1] + box[3] / 2;
 
   boxes[box_idx] = boxes[box_idx] > 0 ? boxes[box_idx] : 0;
-  boxes[box_idx + 1] =
-      boxes[box_idx + 1] > 0 ? boxes[box_idx + 1] : 0;
-  boxes[box_idx + 2] = boxes[box_idx + 2] < img_width - 1
-                           ? boxes[box_idx + 2]
-                           : (img_width - 1);
-  boxes[box_idx + 3] = boxes[box_idx + 3] < img_height - 1
-                           ? boxes[box_idx + 3]
-                           : (img_height - 1);
+  boxes[box_idx + 1] = boxes[box_idx + 1] > 0 ? boxes[box_idx + 1] : 0;
+  boxes[box_idx + 2] =
+      boxes[box_idx + 2] < img_width - 1 ? boxes[box_idx + 2] : (img_width - 1);
+  boxes[box_idx + 3] = boxes[box_idx + 3] < img_height - 1 ? boxes[box_idx + 3]
+                                                           : (img_height - 1);
 }
 
-inline void CalcLabelScore(float* scores, const float* input,
-                                      const int label_idx, const int score_idx,
-                                      const int class_num, const float conf) {
+inline void CalcLabelScore(float* scores,
+                           const float* input,
+                           const int label_idx,
+                           const int score_idx,
+                           const int class_num,
+                           const float conf) {
   for (int i = 0; i < class_num; i++) {
     scores[score_idx + i] = conf * sigmoid(input[label_idx + i]);
     // std::cout << scores[score_idx + i] << " ";
   }
   // std::cout << std::endl;
 }
-
 
 class YoloBoxPE : public PE {
  public:
@@ -92,7 +101,6 @@ class YoloBoxPE : public PE {
     int class_num = param_.classNum;
     float conf_thresh = param_.confThresh;
     int downsample_ratio = param_.downsampleRatio;
-
 
     const int num = input->shape().num();
     const int height = input->shape().height();
@@ -134,39 +142,42 @@ class YoloBoxPE : public PE {
 
     imgsize->saveToFile("img_size", true);
     const int32_t* imgsize_data = imgsize->data<int32_t>();
-    
+
     Tensor boxes_float;
     Tensor scores_float;
 
     boxes_float.setDataLocation(CPU);
-    float* boxes_float_data = boxes_float.mutableData<float>(FP32, boxes->shape());
+    float* boxes_float_data =
+        boxes_float.mutableData<float>(FP32, boxes->shape());
     memset(boxes_float_data, 0, boxes->shape().numel() * sizeof(float));
 
     scores_float.setDataLocation(CPU);
-    float* scores_float_data = scores_float.mutableData<float>(FP32, scores->shape());
+    float* scores_float_data =
+        scores_float.mutableData<float>(FP32, scores->shape());
     memset(scores_float_data, 0, scores->shape().numel() * sizeof(float));
 
     // float* boxes_data = boxes->mutableData<float>();
     // memset(boxes_data, 0, boxes->shape().numel() * sizeof(float));
-    
+
     // float* scores_data = scores->mutableData<float>();
     // memset(scores_data, 0, scores->shape().numel() * sizeof(float));
 
     float box[4];
     // for (int n = 0; n < num; n++) {
-      // int img_height = imgsize_data[2 * i];
-      // int img_width = imgsize_data[2 * i + 1];
+    // int img_height = imgsize_data[2 * i];
+    // int img_width = imgsize_data[2 * i + 1];
     int img_height = imgsize_data[0];
     int img_width = imgsize_data[1];
-    std::cout << "YoloBoxPE imgsize:" << img_height << "," << img_width << std::endl;
+    std::cout << "YoloBoxPE imgsize:" << img_height << "," << img_width
+              << std::endl;
 
     int channel = input_float.shape().channel();
     int count = 0;
     for (int h = 0; h < height; h++) {
-      for (int w = 0; w < width ; w++) {
+      for (int w = 0; w < width; w++) {
         for (int n = 0; n < an_num; n++) {
-     
-          int obj_idx = channel * width * h + channel * w + n * (5 + class_num) + 4;
+          int obj_idx =
+              channel * width * h + channel * w + n * (5 + class_num) + 4;
           // std::cout << obj_idx << " ";
           float conf = sigmoid(input_data[obj_idx]);
           if (conf < conf_thresh) {
@@ -174,16 +185,34 @@ class YoloBoxPE : public PE {
             continue;
           }
 
-          int box_idx = channel * width * h + channel * w + n * (5 + class_num) + 0;
-          GetYoloBox(box, input_data, anchors_data, w, h, n, height, input_size,
-                        box_idx, img_height, img_width);
-   
-          box_idx = h * an_num * 4 * width + an_num * 4 * w +  n * 4;
-          CalcDetectionBox(boxes_float_data, box, box_idx, img_height,img_width);
+          int box_idx =
+              channel * width * h + channel * w + n * (5 + class_num) + 0;
+          GetYoloBox(box,
+                     input_data,
+                     anchors_data,
+                     w,
+                     h,
+                     n,
+                     height,
+                     input_size,
+                     box_idx,
+                     img_height,
+                     img_width);
 
-          int label_idx = channel * width * h + channel * w + n * (5 + class_num) + 5;
-          int score_idx = h * an_num * class_num * width + an_num * class_num * w + n * class_num;
-          CalcLabelScore(scores_float_data, input_data, label_idx, score_idx, class_num, conf);
+          box_idx = h * an_num * 4 * width + an_num * 4 * w + n * 4;
+          CalcDetectionBox(
+              boxes_float_data, box, box_idx, img_height, img_width);
+
+          int label_idx =
+              channel * width * h + channel * w + n * (5 + class_num) + 5;
+          int score_idx = h * an_num * class_num * width +
+                          an_num * class_num * w + n * class_num;
+          CalcLabelScore(scores_float_data,
+                         input_data,
+                         label_idx,
+                         score_idx,
+                         class_num,
+                         conf);
         }
       }
     }
@@ -195,11 +224,10 @@ class YoloBoxPE : public PE {
 
   void apply(){};
 
- YoloBoxParam& param() { return param_; }
+  YoloBoxParam& param() { return param_; }
 
  private:
   YoloBoxParam param_;
-
 };
 }  // namespace zynqmp
 }  // namespace paddle

@@ -134,7 +134,6 @@ void PrecisionCastPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
   std::list<Node*> nodes;
   for (auto& node : graph->StmtTopologicalOrder()) {
-
     // if (node->IsStmt()) {
     //     auto& s = node->AsStmt();
     //     std::cout << "type_precision type:" << s.op_type() << std::endl;

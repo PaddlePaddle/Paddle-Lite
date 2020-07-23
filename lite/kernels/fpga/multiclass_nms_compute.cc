@@ -227,7 +227,7 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
       SliceOneClass<T>(scores, c, &score_slice);
       SliceOneClass<T>(bboxes, c, &bbox_slice);
     }
-    NMSFast(bboxes,// TODO
+    NMSFast(bboxes,  // TODO
             score_slice,
             score_threshold,
             nms_threshold,

@@ -70,6 +70,7 @@ class PlaceHolder {
   explicit PlaceHolder(size_t size) {
     size_ = size;
     data_ = fpga_malloc(size_);
+    // memset(data_, 0, size);
   }
 
   void* data() { return data_; }
@@ -80,7 +81,7 @@ class PlaceHolder {
 
   ~PlaceHolder() { fpga_free(data_); }
 
-  float scale_[2];
+  float scale_[2] = {0};
 
  private:
   void* data_ = nullptr;
@@ -409,12 +410,14 @@ class Tensor {
       if (i < 10) {
         std::cout << value << ",";
       }
+
       //   if (i > 1000) {
       //       break;
       //   }
       ofs << value << std::endl;
     }
-    usleep(30000);
+    std::cout << std::endl;
+    // usleep(30000);
     ofs.close();
   }
 
