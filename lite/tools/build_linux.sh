@@ -5,7 +5,7 @@ set -e
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
 # armv7 or armv8 or armv7hf, default armv8.
-ARCH=armv8
+ARCH=armv7hf
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
 # ON or OFF, default OFF.
@@ -16,7 +16,7 @@ PY_VERSION=""
 # controls whether to compile cv functions into lib, default is OFF.
 WITH_CV=OFF
 # controls whether to print log information, default is ON.
-WITH_LOG=ON
+WITH_LOG=OFF
 # options of striping lib according to input model.
 WITH_STRIP=OFF
 OPTMODEL_DIR=""
@@ -50,12 +50,13 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DLITE_WITH_X86=OFF \
                             -DARM_TARGET_OS=armlinux \
                             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-                            -DWITH_TESTING=OFF"
+                            -DLITE_ARM_DOTPROD=ON \
+			    -DWITH_TESTING=ON"
 # mutable options for linux compiling.
 function init_cmake_mutable_options {
     cmake_mutable_options="-DARM_TARGET_ARCH_ABI=$ARCH \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
-                        -DLITE_BUILD_EXTRA=$WITH_EXTRA \
+                        -DLITE_BUILD_EXTRA=$ON \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DPY_VERSION=$PY_VERSION \
                         -DLITE_WITH_CV=$WITH_CV \
