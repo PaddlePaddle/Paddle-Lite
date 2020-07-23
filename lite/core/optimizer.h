@@ -247,7 +247,6 @@ class Optimizer {
   // Specify the passes and run them.
   void RunPasses(const std::vector<std::string>& passes,
                  const std::shared_ptr<cpp::ProgramDesc>& desc) {
-    SetVarDescShapeToScopeVar(desc);
     for (auto& x : passes) {
       LOG(INFO) << "== Running pass: " << x;
       mir::Pass* pass = mir::PassManager::Global().LookUp(x);

@@ -69,13 +69,14 @@ class LITE_API Predictor {
             const std::vector<std::string>& var_names = {})
       : program_desc_(desc), scope_(root) {
     // step1. Create a Program to construct the exec_scope and ops
-    Program program(*desc.get(), scope_, valid_places, var_names);
+    Program program(desc, scope_, valid_places, var_names);
     exec_scope_ = program.exec_scope();
     valid_places_ = valid_places;
 
     // step2. Create Instructions from info in Program and inputed
     // RuntimeProgram
-    std::vector<Instruction> insts;
+    std::vector<std::vector<Instruction>> insts_vect;
+    insts_vect.resize(1);
     auto ops_ = program.ops();
     for (auto& op : program.ops()) {
       auto kernel_type = op->op_info()->GetAttr<std::string>(kKernelTypeAttr);
@@ -102,10 +103,10 @@ class LITE_API Predictor {
 #else
       (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
 #endif
-      insts.emplace_back(op, std::move(*it));
+      insts_vect[0].emplace_back(op, std::move(*it));
     }
     // step3. Create the RuntimeProgram from Instructions
-    program_.reset(new RuntimeProgram(std::move(insts)));
+    program_.reset(new RuntimeProgram(std::move(insts_vect)));
     program_generated_ = true;
   }
 
@@ -141,8 +142,7 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
-    program_->SaveOpInfosToProgram(program_desc_.get());
-    program_->UpdateVarsOfProgram(program_desc_.get());
+    program_->SaveToProgram(program_desc_);
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
     auto predictor = std::make_shared<Predictor>(
@@ -167,16 +167,16 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
-    program_->SaveOpInfosToProgram(program_desc_.get());
-    program_->UpdateVarsOfProgram(program_desc_.get());
+    program_->SaveToProgram(program_desc_);
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
     auto predictor = std::make_shared<Predictor>(
         program_desc_, scope_, valid_places_, program_, var_names);
     // step3. Copy some persistable variables into private scope.
-    for (auto i : var_names) {
-      predictor->exec_scope_->LocalVar(i);
-      auto* tensor = predictor->scope_->Var(i)->GetMutable<lite::Tensor>();
+    for (auto var_name : var_names) {
+      predictor->exec_scope_->LocalVar(var_name);
+      auto* tensor =
+          predictor->scope_->Var(var_name)->GetMutable<lite::Tensor>();
       auto* sub_tensor =
           predictor->exec_scope_->Var(var_name)->GetMutable<Tensor>();
       sub_tensor->CopyDataFrom(*tensor);

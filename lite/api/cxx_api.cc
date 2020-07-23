@@ -346,7 +346,8 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   factor.ConsiderPrecision();
   factor.ConsiderDataLayout();
 
-  optimizer_.Run(std::move(program), inner_places, factor, desc, passes);
+  optimizer_.Run(
+      std::move(program), inner_places, factor, program_desc_, passes);
   exec_scope_ = optimizer_.exec_scope();
   PrepareFeedFetch();
 }
