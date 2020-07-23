@@ -74,7 +74,8 @@ class LITE_API Predictor {
     valid_places_ = valid_places;
 
     // step3. Create the RuntimeProgram.
-    program_.reset(new RuntimeProgram(program_desc_, exec_scope_, kRootBlockIdx));
+    program_.reset(
+        new RuntimeProgram(program_desc_, exec_scope_, kRootBlockIdx));
     program_generated_ = true;
   }
 
