@@ -237,6 +237,13 @@ RuntimeProgram::RuntimeProgram(
 #else
     kernel->SetContext(ContextScheduler::Global().NewContext(kernel->target()));
 #endif
+
+// note: op info can be removed on tiny_publish after
+// model is loaded to reduce memory usage.
+#if defined(LITE_WITH_ARM) AND defined(LITE_ON_TINY_PUBLISH)
+    op->DeleteOpInfo();
+#endif
+
     instructions_[kRootBlockIdx].emplace_back(std::move(op), std::move(kernel));
   }
   Init();
