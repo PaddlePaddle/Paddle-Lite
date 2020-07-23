@@ -73,40 +73,8 @@ class LITE_API Predictor {
     exec_scope_ = program.exec_scope();
     valid_places_ = valid_places;
 
-    // step2. Create Instructions from info in Program and inputed
-    // RuntimeProgram
-    std::vector<std::vector<Instruction>> insts_vect;
-    insts_vect.resize(1);
-    auto ops_ = program.ops();
-    for (auto& op : program.ops()) {
-      auto kernel_type = op->op_info()->GetAttr<std::string>(kKernelTypeAttr);
-      std::string op_type, alias;
-      Place place;
-      KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
-      auto kernels = op->CreateKernels({place});
-      auto it = std::find_if(
-          kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
-            return it->alias() == alias;
-          });
-      CHECK(it != kernels.end());
-#ifdef LITE_WITH_OPENCL
-      if ((*it)->target() == TARGET(kOpenCL)) {
-        std::unique_ptr<KernelContext> ctx(new KernelContext());
-        (*local_ctx)
-            .As<OpenCLContext>()
-            .CopySharedTo(&ctx->As<OpenCLContext>());
-        (*it)->SetContext(std::move(ctx));
-      } else {
-        (*it)->SetContext(
-            ContextScheduler::Global().NewContext((*it)->target()));
-      }
-#else
-      (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
-#endif
-      insts_vect[0].emplace_back(op, std::move(*it));
-    }
-    // step3. Create the RuntimeProgram from Instructions
-    program_.reset(new RuntimeProgram(std::move(insts_vect)));
+    // step3. Create the RuntimeProgram.
+    program_.reset(new RuntimeProgram(program_desc_, exec_scope_, kRootBlockIdx));
     program_generated_ = true;
   }
 
