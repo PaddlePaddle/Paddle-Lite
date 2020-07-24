@@ -45,8 +45,7 @@ class Optimizer {
   Optimizer() {}
 
   Optimizer(Program&& program,
-            const std::vector<Place>& valid_places,
-            const std::shared_ptr<cpp::ProgramDesc>& desc) {
+            const std::vector<Place>& valid_places) {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
@@ -56,13 +55,12 @@ class Optimizer {
     factor.ConsiderPrecision();
     factor.ConsiderDataLayout();
 
-    Run(std::move(program), valid_places, factor, desc, {});
+    Run(std::move(program), valid_places, factor, {});
   }
 
   void Run(Program&& program,
            const std::vector<Place>& valid_places,
            core::KernelPickFactor kernel_pick_factor,
-           const std::shared_ptr<cpp::ProgramDesc>& desc,
            const std::vector<std::string>& passes = {}) {
     program_ = &program;
     valid_places_ = valid_places;
@@ -183,9 +181,9 @@ class Optimizer {
           passes_local.push_back(passes[0]);
         }
       }
-      RunPasses(passes_local, desc);
+      RunPasses(passes_local);
     } else {
-      RunPasses(passes, desc);
+      RunPasses(passes);
     }
     exec_scope_ = program.exec_scope();
   }
@@ -245,8 +243,7 @@ class Optimizer {
   void SpecifyKernelPickTactic(core::KernelPickFactor factor);
 
   // Specify the passes and run them.
-  void RunPasses(const std::vector<std::string>& passes,
-                 const std::shared_ptr<cpp::ProgramDesc>& desc) {
+  void RunPasses(const std::vector<std::string>& passes) {
     for (auto& x : passes) {
       LOG(INFO) << "== Running pass: " << x;
       mir::Pass* pass = mir::PassManager::Global().LookUp(x);

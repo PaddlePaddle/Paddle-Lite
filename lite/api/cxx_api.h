@@ -62,14 +62,13 @@ class LITE_API Predictor {
   // only be called in Predictor->Clone. This Function will create
   // a predictor from existed ProgramDesc, Scope and RuntimeProgram.
   ///////////////////////////////////////////////////////////////////
-  Predictor(const std::shared_ptr<cpp::ProgramDesc>& desc,
+  Predictor(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
             const std::shared_ptr<Scope>& root,
             const std::vector<Place>& valid_places,
-            const std::shared_ptr<RuntimeProgram>& runtime_program,
             const std::vector<std::string>& var_names = {})
-      : program_desc_(desc), scope_(root) {
+      : program_desc_(program_desc), scope_(root) {
     // step1. Create a Program to construct the exec_scope and ops
-    Program program(desc, scope_, valid_places, var_names);
+    Program program(program_desc_, scope_, valid_places, var_names);
     exec_scope_ = program.exec_scope();
     valid_places_ = valid_places;
 
@@ -114,8 +113,8 @@ class LITE_API Predictor {
     program_->SaveToProgram(program_desc_);
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
-    auto predictor = std::make_shared<Predictor>(
-        program_desc_, scope_, valid_places_, program_);
+    auto predictor =
+        std::make_shared<Predictor>(program_desc_, scope_, valid_places_);
     // step3. Return the result
     return predictor;
   }
@@ -140,7 +139,7 @@ class LITE_API Predictor {
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
     auto predictor = std::make_shared<Predictor>(
-        program_desc_, scope_, valid_places_, program_, var_names);
+        program_desc_, scope_, valid_places_, var_names);
     // step3. Copy some persistable variables into private scope.
     for (auto var_name : var_names) {
       predictor->exec_scope_->LocalVar(var_name);
