@@ -90,9 +90,9 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> output_names{};
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
-  int sub_block_idx{-1};
-  cpp::BlockDesc* sub_block_desc{nullptr};
-  Scope* scope{nullptr};
+  int block_idx{-1};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
+  Scope* exec_scope{nullptr};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -680,6 +680,13 @@ struct FakeChannelWiseDequantizeMaxAbsParam : ParamBase {
   std::vector<int> quant_bits;
 };
 
+struct FakeQuantDequantAbsMaxParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* out_scale{};
+  int bit_length;
+};
+
 /// ----------------------- sgd operators ----------------------
 struct SGDParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
@@ -941,11 +948,10 @@ struct CompareParam : ParamBase {
 };
 
 struct WhileParam : ParamBase {
-  Scope* scope{};
   Tensor* cond{};
-  cpp::BlockDesc* sub_block{};
-  std::vector<Tensor*> x{};
-  std::vector<Tensor*> outs{};
+  int block_idx{-1};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
+  Scope* exec_scope{nullptr};
 };
 
 struct TopkParam : ParamBase {
@@ -1456,10 +1462,11 @@ struct MergeLodTensorParam : ParamBase {
 
 struct ConditionalBlockParam : ParamBase {
   const lite::Tensor* cond{};
-  std::vector<lite::Tensor*> x{};
+  std::vector<lite::Tensor*> inputs{};
   std::vector<lite::Tensor*> outs{};
-  cpp::BlockDesc* sub_block{};
-  Scope* scope{};
+  int block_idx{-1};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
+  Scope* exec_scope{nullptr};
   bool is_scalar_condition{};
 };
 
@@ -1779,6 +1786,22 @@ struct ClipParam : ParamBase {
   Tensor* out{};
   float min{};
   float max{};
+};
+
+struct PrintParam : ParamBase {
+  const lite::Tensor* in{};
+  lite::Tensor* out{};
+  std::string name;
+  int first_n{-1};
+  std::string message;
+  int summarize{20};
+  bool print_tensor_name{true};
+  bool print_tensor_type{true};
+  bool print_tensor_shape{true};
+  bool print_tensor_lod{true};
+  bool print_tensor_layout{true};
+  std::string print_phase;
+  bool is_forward{true};
 };
 
 }  // namespace operators

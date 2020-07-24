@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/cuda/sequence_mask_compute.h"
-
 #include <thrust/device_ptr.h>
+#include <thrust/functional.h>
 #include <thrust/reduce.h>
 
 #include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/cuda/sequence_mask_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -44,7 +44,7 @@ void SequenceMaskCompute<T, Ptype>::Run() {
   auto stream = ctx.exec_stream();
 
   const auto* x = param.X;
-  auto* x_data = x->template data<int64_t>();
+  const int64_t* x_data = x->template data<int64_t>();
   auto* y = param.Y;
   int maxlen = param.maxlen;
 
@@ -57,8 +57,11 @@ void SequenceMaskCompute<T, Ptype>::Run() {
   }
 
   if (maxlen < 0) {
-    maxlen = thrust::reduce(
-        x_data, x_data + x->numel(), 0, thrust::maximum<int64_t>());
+    maxlen = static_cast<int>(
+        thrust::reduce(thrust::device_pointer_cast(x_data),
+                       thrust::device_pointer_cast(x_data) + x->numel(),
+                       static_cast<int64_t>(0),
+                       thrust::maximum<int64_t>()));
   }
 
   auto y_dim = x->dims().Vectorize();

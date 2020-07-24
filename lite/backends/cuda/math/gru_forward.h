@@ -30,9 +30,16 @@ namespace lite {
 namespace cuda {
 namespace math {
 
+#define SIGMOID_THRESHOLD_MIN -40.0
+#define SIGMOID_THRESHOLD_MAX 13.0
+#define EXP_MAX_INPUT 40.0
+
 template <typename Dtype>
 inline __device__ Dtype Sigmoid(const Dtype a) {
-  return static_cast<Dtype>(1.0) / (static_cast<Dtype>(1.0) + expf(-a));
+  const Dtype min = SIGMOID_THRESHOLD_MIN;
+  const Dtype max = SIGMOID_THRESHOLD_MAX;
+  Dtype tmp = (a < min) ? min : ((a > max) ? max : a);
+  return static_cast<Dtype>(1.0) / (static_cast<Dtype>(1.0) + expf(-tmp));
 }
 
 template <>
@@ -63,6 +70,7 @@ inline __device__ half ReLU(const half a) {
 template <typename Dtype>
 inline __device__ Dtype Tanh(const Dtype a) {
   Dtype tmp = static_cast<Dtype>(-2.0) * a;
+  tmp = (tmp > EXP_MAX_INPUT) ? EXP_MAX_INPUT : tmp;
   return (static_cast<Dtype>(2.0) / (static_cast<Dtype>(1.0) + expf(tmp))) -
          static_cast<Dtype>(1.0);
 }

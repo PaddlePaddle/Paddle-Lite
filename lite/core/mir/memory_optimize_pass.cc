@@ -315,4 +315,5 @@ REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
                      TARGET(kBM),
                      TARGET(kRKNPU),
                      TARGET(kAPU),
-                     TARGET(kMLU)});
+                     TARGET(kMLU),
+                     TARGET(kHuaweiAscendNPU)});

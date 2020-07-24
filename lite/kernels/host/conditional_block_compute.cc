@@ -12,28 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/conditional_block_compute.h"
-#include <memory>
-#include <string>
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
-#include "lite/core/tensor.h"
-#include "lite/core/type_system.h"
+#include "lite/kernels/host/conditional_block_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 void ConditionalBlockCompute::PrepareForRun() {
-  auto& param = Param<operators::ConditionalBlockParam>();
-  auto cur_scope = param.scope;
-
-  executor_ =
-      std::make_shared<CondExecutor>(param.sub_block, cur_scope, place());
+  auto& param = this->Param<param_t>();
+  program_.reset(new RuntimeProgram(
+      param.program_desc, param.exec_scope, param.block_idx));
 }
+
 void ConditionalBlockCompute::Run() {
-  auto& param = Param<operators::ConditionalBlockParam>();
+  auto& param = this->Param<param_t>();
   for (auto& out : param.outs) {
     out->clear();
   }
@@ -43,32 +36,40 @@ void ConditionalBlockCompute::Run() {
     auto* cond_data = cond->data<bool>();
     need_run = cond_data[0];
   } else {
-    auto x = param.x;
-    for (auto pt : x) {
-      if (pt == nullptr || !pt->IsInitialized() || pt->dims().empty()) {
+    for (auto input : param.inputs) {
+      if (input == nullptr || !input->IsInitialized() ||
+          input->dims().empty()) {
         need_run = false;
         break;
       }
     }
   }
   if (need_run) {
-    executor_->Run();
+    program_->Run();
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(conditional_block,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::ConditionalBlockCompute,
+                     kHost,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::host::ConditionalBlockCompute,
                      def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Cond", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Scope", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Input",
+               {LiteType::GetTensorListTy(
+                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindInput("Cond",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorListTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Scope",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .Finalize();

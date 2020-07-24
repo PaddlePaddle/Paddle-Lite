@@ -112,6 +112,8 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places.emplace_back(TARGET(kNPU));
+    } else if (target_repr == "huawei_ascend_npu") {
+      valid_places.emplace_back(TARGET(kHuaweiAscendNPU));
     } else if (target_repr == "xpu") {
       valid_places.emplace_back(TARGET(kXPU));
     } else if (target_repr == "mlu") {
@@ -201,6 +203,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kXPU",
                                       "kRKNPU",
                                       "kAPU",
+                                      "kHuaweiAscendNPU",
                                       "kAny",
                                       "kUnk"};
   int maximum_optype_length = 0;
@@ -265,16 +268,17 @@ void PrintHelpInfo() {
       "        `--param_file=<param_path>`\n"
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
-      "        `--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu)`\n"
+      "        "
+      "`--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu)`"
       "  Display operators in the input model\n";
   std::cout << "opt version:" << opt_version << std::endl
             << help_info << std::endl;
