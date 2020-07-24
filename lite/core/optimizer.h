@@ -44,8 +44,7 @@ class Optimizer {
  public:
   Optimizer() {}
 
-  Optimizer(Program&& program,
-            const std::vector<Place>& valid_places) {
+  Optimizer(Program&& program, const std::vector<Place>& valid_places) {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
