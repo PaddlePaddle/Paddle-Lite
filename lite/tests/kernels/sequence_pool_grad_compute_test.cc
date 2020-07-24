@@ -171,7 +171,7 @@ void TestSequencePoolGrad(DDim dims,
 
 TEST(sequence_pool_grad_host, compute) {
   int max_len = 2;
-  DeviceInfo::Init();
+//   DeviceInfo::Init();
   for (auto c : {2, 4}) {
     for (auto h : {1, 3, 4}) {
       for (auto w : {1, 3, 4}) {
