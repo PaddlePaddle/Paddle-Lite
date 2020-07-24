@@ -32,9 +32,19 @@ void SequencePadCompute<T, Ptype>::Run() {
   const auto* pad_value = param.PadValue;
   auto* out = param.Out;
   auto* len_t = param.Length;
-  int padded_length = param.padded_length;
-
   int seq_num = x->lod()[0].size() - 1;
+  int padded_length;
+  if (param.padded_length == -1) {
+    int max_seq_len = 0;
+    for (int i = 0; i < seq_num; ++i) {
+      max_seq_len = std::max(
+          max_seq_len, static_cast<int>(x->lod()[0][i + 1] - x->lod()[0][i]));
+    }
+    padded_length = max_seq_len;
+  } else {
+    padded_length = param.padded_length;
+  }
+
   int max_seq_len = 0;
   int step_width = x->numel() / x->dims()[0];
 

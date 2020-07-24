@@ -86,8 +86,7 @@ void SequencePadding(T* pad_data,
       seq_num,
       pad_seq_len,
       step_width);
-  cudaError_t error = cudaGetLastError();
-  if (error != cudaSuccess) LOG(ERROR) << cudaGetErrorString(error);
+  CUDA_POST_KERNEL_CHECK;
 }
 
 template <typename T>
@@ -120,8 +119,7 @@ void SequenceUnpadding(T* seq_data,
       seq_num,
       pad_seq_len,
       step_width);
-  cudaError_t error = cudaGetLastError();
-  if (error != cudaSuccess) LOG(ERROR) << cudaGetErrorString(error);
+  CUDA_POST_KERNEL_CHECK;
 }
 
 template void SequencePadding(float* pad_data,

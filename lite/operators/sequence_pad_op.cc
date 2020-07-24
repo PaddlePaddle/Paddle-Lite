@@ -61,18 +61,19 @@ bool SequencePadOp::InferShapeImpl() const {
     max_seq_len =
         std::max(max_seq_len, static_cast<int>(x_lod_0[i + 1] - x_lod_0[i]));
   }
-  if (param_.padded_length == -1) {
-    param_.padded_length = max_seq_len;
+  int real_padded_length = param_.padded_length;
+  if (real_padded_length == -1) {
+    real_padded_length = max_seq_len;
   }
-  CHECK_GE(param_.padded_length, max_seq_len)
+  CHECK_GE(real_padded_length, max_seq_len)
       << "The SequencePadOp Attr(padded_length) should be greater than or "
          "equal to the length of the longest original sequence. But the "
          "padded_length we received is "
-      << param_.padded_length
+      << real_padded_length
       << ", the length of the longest original sequence is " << max_seq_len;
 
   int out_dim_0 = seq_num;
-  std::vector<int64_t> out_dims_vec{out_dim_0, param_.padded_length};
+  std::vector<int64_t> out_dims_vec{out_dim_0, real_padded_length};
   std::vector<int64_t> len_dims_vec{out_dim_0};
   auto time_step_dims_vec = time_step_dims.Vectorize();
   out_dims_vec.insert(
@@ -87,7 +88,7 @@ bool SequencePadOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
   param_.PadValue = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("PadValue").front())->Get<lite::Tensor>());
-  param_.Length = scope->FindVar(opdesc.Input("Length").front())
+  param_.Length = scope->FindVar(opdesc.Output("Length").front())
                       ->GetMutable<lite::Tensor>();
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
