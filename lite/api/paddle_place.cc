@@ -74,7 +74,8 @@ const std::string& TargetToStr(TargetType target) {
                                               "bm",
                                               "mlu",
                                               "rknpu",
-                                              "apu"};
+                                              "apu",
+                                              "huawei_ascend_npu"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -117,7 +118,8 @@ const std::string& TargetRepr(TargetType target) {
                                               "kBM",
                                               "kMLU",
                                               "kRKNPU",
-                                              "kAPU"};
+                                              "kAPU",
+                                              "kHuaweiAscendNPU"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -162,7 +164,8 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kMLU),
                                                TARGET(kAPU),
                                                TARGET(kRKNPU),
-                                               TARGET(kFPGA)});
+                                               TARGET(kFPGA),
+                                               TARGET(kHuaweiAscendNPU)});
   if (target == TARGET(kAny)) {
     return valid_set;
   }

@@ -22,7 +22,8 @@ namespace arena {
 
 void TestCase::CreateInstruction() {
   std::shared_ptr<lite::OpLite> op = nullptr;
-  if (place_.target == TARGET(kNPU) || place_.target == TARGET(kXPU)) {
+  if (place_.target == TARGET(kNPU) || place_.target == TARGET(kXPU) ||
+      place_.target == TARGET(kHuaweiAscendNPU)) {
     // Create a new block desc to wrap the original op desc
     auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
     int sub_block_idx = 0;
@@ -40,7 +41,15 @@ void TestCase::CreateInstruction() {
     auto out_names = sub_op_desc->output_vars();
     op_desc_->SetInput("Inputs", in_names);
     op_desc_->SetOutput("Outputs", out_names);
-    op_desc_->SetAttr<std::vector<std::string>>("input_data_names", in_names);
+    // filter only data op (not const op by persisiable)
+    std::vector<std::string> in_data_names;
+    for (auto name : in_names) {
+      if (!(inst_scope_->FindTensor(name)->persistable())) {
+        in_data_names.push_back(name);
+      }
+    }
+    op_desc_->SetAttr<std::vector<std::string>>("input_data_names",
+                                                in_data_names);
     op_desc_->SetAttr<std::vector<std::string>>("output_data_names", out_names);
     op = LiteOpRegistry::Global().Create(op_desc().Type());
     static_cast<operators::SubgraphOp*>(op.get())->SetProgramDesc(

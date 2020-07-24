@@ -22,5 +22,14 @@ thread_local xdnn::Context* Context<TargetType::kXPU>::_tls_raw_ctx{nullptr};
 int Context<TargetType::kXPU>::_workspace_l3_size_per_thread{0};
 #endif
 
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+thread_local std::string
+    Context<TargetType::kHuaweiAscendNPU>::subgraph_model_cache_dir_{
+        ""};  // NOLINT
+thread_local int
+    Context<TargetType::kHuaweiAscendNPU>::huawei_ascend_device_id_{
+        0};  // NOLINT
+#endif
+
 }  // namespace lite
 }  // namespace paddle
