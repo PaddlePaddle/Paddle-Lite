@@ -79,6 +79,12 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+  Context<TargetType::kHuaweiAscendNPU>::SetHuaweiAscendDeviceID(
+      config.get_device_id());
+  Context<TargetType::kHuaweiAscendNPU>::SetSubgraphModelCacheDir(
+      config.subgraph_model_cache_dir());
+#endif
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
   int num_threads = config.x86_math_library_num_threads();
