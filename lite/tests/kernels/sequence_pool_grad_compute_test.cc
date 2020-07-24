@@ -130,7 +130,7 @@ class SequencePoolGradTester {
     }
     LOG(INFO) << "run_backward:";
     this->run_backward(&grad_param_, &grad_kernel_, x, out_grad, x_grad.data());
-}
+  }
 
  private:
   DDim dims_;
@@ -187,7 +187,7 @@ TEST(sequence_pool_grad_host, compute) {
                       << ", w = " << w << ", seq_num = " << seq_num
                       << ", pool_type = " << pool_type;
             TestSequencePoolGrad(
-                Dim(std::vector<int64_t>({n, c, h, w})), lod, pool_type);
+                DDim(std::vector<int64_t>({n, c, h, w})), lod, pool_type);
           }
         }
       }
