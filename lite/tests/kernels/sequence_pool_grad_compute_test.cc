@@ -186,7 +186,7 @@ TEST(sequence_pool_grad_host, compute) {
                       << ", n = " << n << ", c = " << c << ", h = " << h
                       << ", w = " << w << ", seq_num = " << seq_num
                       << ", pool_type = " << pool_type;
-            TestSequencePoolGrad(D
+            TestSequencePoolGrad(
                 Dim(std::vector<int64_t>({n, c, h, w})), lod, pool_type);
           }
         }
