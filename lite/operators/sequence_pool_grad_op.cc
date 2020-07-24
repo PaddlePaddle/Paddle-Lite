@@ -40,7 +40,8 @@ bool SequencePoolGradOp::InferShapeImpl() const {
   return true;
 }
 
-bool SequencePoolGradOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool SequencePoolGradOp::AttachImpl(const cpp::OpDesc &opdesc,
+                                    lite::Scope *scope) {
   param_.X = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
   CHECK(param_.X);
@@ -63,4 +64,5 @@ bool SequencePoolGradOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scop
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_pool_grad, paddle::lite::operators::SequencePoolGradOp);
+REGISTER_LITE_OP(sequence_pool_grad,
+                 paddle::lite::operators::SequencePoolGradOp);

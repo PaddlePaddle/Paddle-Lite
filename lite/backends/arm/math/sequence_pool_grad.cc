@@ -29,10 +29,10 @@ namespace math {
 
 template <>
 void seq_pool_sum_grad<float>(const float* din,
-                         const float* din_grad,
-                         float* dout,
-                         const std::vector<uint64_t> lod,
-                         int64_t width) {
+                              const float* din_grad,
+                              float* dout,
+                              const std::vector<uint64_t> lod,
+                              int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; i++) {
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     const float* din_ptr = din + lod[i] * width;
@@ -49,8 +49,8 @@ void seq_pool_sum_grad<float>(const float* din,
             dout_ptr[h] = *din_grad_ptr;
             dout_ptr += width;
           }
-         din_grad_ptr++;
-       }
+          din_grad_ptr++;
+        }
       }
     }
   }
@@ -58,10 +58,10 @@ void seq_pool_sum_grad<float>(const float* din,
 
 template <>
 void seq_pool_average_grad<float>(const float* din,
-                             const float* din_grad,
-                             float* dout,
-                             const std::vector<uint64_t> lod,
-                             int64_t width) {
+                                  const float* din_grad,
+                                  float* dout,
+                                  const std::vector<uint64_t> lod,
+                                  int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     const float* din_ptr = din + lod[i] * width;
@@ -88,10 +88,10 @@ void seq_pool_average_grad<float>(const float* din,
 
 template <>
 void seq_pool_sqrt_grad<float>(const float* din,
-                          const float* din_grad,
-                          float* dout,
-                          const std::vector<uint64_t> lod,
-                          int64_t width) {
+                               const float* din_grad,
+                               float* dout,
+                               const std::vector<uint64_t> lod,
+                               int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     const float* din_ptr = din + lod[i] * width;
@@ -118,10 +118,10 @@ void seq_pool_sqrt_grad<float>(const float* din,
 
 template <>
 void seq_pool_first_grad<float>(const float* din,
-                           const float* din_grad,
-                           float* dout,
-                           const std::vector<uint64_t> lod,
-                           int64_t width) {
+                                const float* din_grad,
+                                float* dout,
+                                const std::vector<uint64_t> lod,
+                                int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = lod[i + 1] - lod[i];
     const float* din_ptr = din + width * lod[i];
@@ -129,7 +129,7 @@ void seq_pool_first_grad<float>(const float* din,
     float* dout_ptr = dout + lod[i] * width;
     if (height > 0) {
       for (int w = 0; w < width; w++) {
-          dout_ptr[w] = din_grad_ptr[w];
+        dout_ptr[w] = din_grad_ptr[w];
       }
     }
   }

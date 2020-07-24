@@ -23,7 +23,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class SequencePoolGradCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class SequencePoolGradCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   void PrepareForRun() override;
 

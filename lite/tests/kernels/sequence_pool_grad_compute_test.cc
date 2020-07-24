@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/arm/sequence_pool_grad_compute.h"
 #include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/arm/sequence_pool_compute.h"
-#include "lite/kernels/arm/sequence_pool_grad_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -31,10 +31,8 @@ class SequencePoolGradTester {
  public:
   explicit SequencePoolGradTester(DDim dims,
                                   std::vector<std::vector<uint64_t>> lod,
-				  std::string pool_type)
-      : dims_(dims),
-        lod_(lod),
-        pool_type_(pool_type) {}
+                                  std::string pool_type)
+      : dims_(dims), lod_(lod), pool_type_(pool_type) {}
 
   void prepare_kernel() {
     std::unique_ptr<KernelContext> ctx1(new KernelContext);
@@ -94,7 +92,7 @@ class SequencePoolGradTester {
       x_data[i] = in_vec[i];
     }
     for (int i = 0; i < out_dims_.production(); i++) {
-        out_grad_data[i] = out_grad_vec[i];
+      out_grad_data[i] = out_grad_vec[i];
     }
     param->X = &x;
     param->X_Grad = &x_grad;
@@ -131,8 +129,7 @@ class SequencePoolGradTester {
       x_grad[i] = 1.0;
     }
     LOG(INFO) << "run_backward:";
-    this->run_backward(
-        &grad_param_, &grad_kernel_, x, out_grad, x_grad.data());
+    this->run_backward(&grad_param_, &grad_kernel_, x, out_grad, x_grad.data());
 }
 
  private:
@@ -160,10 +157,12 @@ void generate_lod(int seq_num,
   }
 }
 
-void TestSequencePoolGrad(DDim dims, std::vector<std::vector<uint64_t>> lod, std::string pool_type) {
+void TestSequencePoolGrad(DDim dims,
+                          std::vector<std::vector<uint64_t>> lod,
+                          std::string pool_type) {
   LOG(INFO) << "Test SequencePool grad";
-  std::unique_ptr<SequencePoolGradTester> tester(new SequencePoolGradTester(
-      dims, lod, pool_type));
+  std::unique_ptr<SequencePoolGradTester> tester(
+      new SequencePoolGradTester(dims, lod, pool_type));
   tester->prepare_kernel();
   float delta = 0.001;
   float max_grad_delta = 0.005;
@@ -184,26 +183,17 @@ TEST(sequence_pool_grad_host, compute) {
             generate_lod(seq_num, max_len, lod[0]);
             int64_t n = int64_t(lod[0].back());
             LOG(INFO) << "sequence_pool_grad parameter: "
-                      << ", n = "
-                      << n
-                      << ", c = "
-                      << c
-                      << ", h = "
-                      << h
-                      << ", w = "
-                      << w
-                      << ", seq_num = "
-                      << seq_num
-                      << ", pool_type = "
-                      << pool_type;
-            TestSequencePoolGrad(DDim(std::vector<int64_t>({n, c, h, w})), lod, pool_type);
+                      << ", n = " << n << ", c = " << c << ", h = " << h
+                      << ", w = " << w << ", seq_num = " << seq_num
+                      << ", pool_type = " << pool_type;
+            TestSequencePoolGrad(D
+                Dim(std::vector<int64_t>({n, c, h, w})), lod, pool_type);
           }
         }
       }
     }
   }
 }
-
 
 }  // namespace arm
 }  // namespace kernels

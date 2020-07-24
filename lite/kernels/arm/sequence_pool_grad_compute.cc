@@ -38,13 +38,17 @@ void SequencePoolGradCompute::Run() {
   const auto lod = param.X->lod()[0];
   int64_t width = param.X->numel() / param.X->dims()[0];
   if (pool_type == "SUM" || pool_type == "MAX" || pool_type == "MIN") {
-    lite::arm::math::seq_pool_sum_grad(din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
+    lite::arm::math::seq_pool_sum_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "AVERAGE") {
-    lite::arm::math::seq_pool_average_grad(din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
+    lite::arm::math::seq_pool_average_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "SQRT") {
-    lite::arm::math::seq_pool_sqrt_grad(din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
+    lite::arm::math::seq_pool_sqrt_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "FIRST" || pool_type == "LAST") {
-    lite::arm::math::seq_pool_first_grad(din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
+    lite::arm::math::seq_pool_first_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else {
     LOG(ERROR) << " UNKNOWN sequence pool type";
   }

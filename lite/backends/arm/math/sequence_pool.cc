@@ -32,91 +32,30 @@ void seq_pool_sum<float>(const float* din,
                          float* dout,
                          const std::vector<uint64_t> lod,
                          int64_t width) {
-  LOG(INFO) << "size: " << lod.size() - 1;
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     const float* din_ptr = din + lod[i] * width;
     float* dout_ptr = dout + i * width;
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     if (height > 0) {
-    if (width == 1) {
-      float sum = 0.f;
-      for (int h = 0; h < height; ++h) {
-        sum += din_ptr[h];
-      }
-      *dout_ptr = sum;
-    } else {
-      memcpy(dout_ptr, din_ptr, width * sizeof(float));
-      din_ptr += width;
-      height = height - 1;
-/*      for (int h = 0; h < height; h++) {
-        for (int w = 0; w < width; ++w) {
-          dout_ptr[w] += din_ptr[w];
+      if (width == 1) {
+        float sum = 0.f;
+        for (int h = 0; h < height; ++h) {
+          sum += din_ptr[h];
         }
+        *dout_ptr = sum;
+      } else {
+        memcpy(dout_ptr, din_ptr, width * sizeof(float));
         din_ptr += width;
+        height = height - 1;
+        for (int h = 0; h < height; h++) {
+          for (int w = 0; w < width; ++w) {
+            dout_ptr[w] += din_ptr[w];
+          }
+          din_ptr += width;
+        }
       }
-*/
-  //    continue;
-
-      if (height == 0) return;
-      int cnt_w = width >> 2;
-      int remain_w = width & 3;
-      int cnt_h = height >> 2;
-      int remain_h = height & 3;
-      int stride = width << 2;
-      for (int w = 0; w < cnt_w; w++) {
-        const float* din_ptr0 = din_ptr + w * 4;
-        float32x4_t dout_val = vld1q_f32(dout_ptr);
-        const float* din_ptr1 = din_ptr0 + width;
-        const float* din_ptr2 = din_ptr1 + width;
-        const float* din_ptr3 = din_ptr2 + width;
-        for (int h = 0; h < cnt_h; h++) {
-          float32x4_t din0 = vld1q_f32(din_ptr0);
-          float32x4_t din1 = vld1q_f32(din_ptr1);
-          float32x4_t din2 = vld1q_f32(din_ptr2);
-          float32x4_t din3 = vld1q_f32(din_ptr3);
-          dout_val = vaddq_f32(din0, dout_val);
-          float32x4_t tmp = vaddq_f32(din1, din2);
-          din_ptr0 += stride;
-          din_ptr1 += stride;
-          dout_val = vaddq_f32(din3, dout_val);
-          din_ptr2 += stride;
-          din_ptr3 += stride;
-          dout_val = vaddq_f32(tmp, dout_val);
-        }
-        for (int h = 0; h < remain_h; h++) {
-          float32x4_t din0 = vld1q_f32(din_ptr0);
-          dout_val = vaddq_f32(din0, dout_val);
-          din_ptr0 += width;
-        }
-        vst1q_f32(dout_ptr, dout_val);
-        dout_ptr += 4;
-      }
-      const float* din_ptr00 = din_ptr + cnt_w * 4;
-      for (int w = 0; w < remain_w; w++) {
-        const float* din_ptr0 = din_ptr00 + w;
-        const float* din_ptr1 = din_ptr0 + width;
-        const float* din_ptr2 = din_ptr1 + width;
-        const float* din_ptr3 = din_ptr2 + width;
-        for (int h = 0; h < cnt_h; h++) {
-          *dout_ptr += din_ptr0[0];
-          float tmp = din_ptr1[0] + din_ptr2[0];
-          din_ptr0 += stride;
-          din_ptr1 += stride;
-          *dout_ptr += din_ptr3[0];
-          din_ptr2 += stride;
-          din_ptr3 += stride;
-          *dout_ptr += tmp;
-        }
-        for (int h = 0; h < remain_h; h++) {
-          *dout_ptr += din_ptr0[0];
-          din_ptr0 += width;
-        }
-        dout_ptr++;
-      }
-     }
     }
   }
-  printf("end--\n");
 }
 
 template <>
