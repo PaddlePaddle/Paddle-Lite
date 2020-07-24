@@ -36,6 +36,9 @@ class ProgramDesc : public ProgramDescAPI {
   template <typename T>
   T* GetBlock(int32_t idx);
 
+  template <typename T>
+  T const* GetBlock(int32_t idx) const;
+
   std::vector<BlockDesc>& GetBlocks() { return blocks_; }
 
   template <typename T>
