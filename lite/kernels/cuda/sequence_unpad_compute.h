@@ -31,6 +31,7 @@ class SequenceUnpadCompute : public KernelLite<TARGET(kCUDA), Ptype> {
 
  private:
   lite::Tensor seq_offsets_;
+  lite::Tensor seq_len_cpu_;
   std::vector<size_t> seq_offsets_vec_;
 };
 

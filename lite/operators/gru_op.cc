@@ -75,9 +75,8 @@ bool GRUOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto batch_reset_hidden_prev = op_desc.Output("BatchResetHiddenPrev").front();
   auto batch_hidden = op_desc.Output("BatchHidden").front();
   auto hidden = op_desc.Output("Hidden").front();
-
   param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
-  if (op_desc.Input("H0").size()) {
+  if (!op_desc.Input("H0").empty()) {
     auto h0 = op_desc.Input("H0").front();
     param_.h0 = scope->FindVar(h0)->GetMutable<lite::Tensor>();
   }
@@ -90,7 +89,7 @@ bool GRUOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       scope->FindVar(batch_hidden)->GetMutable<lite::Tensor>();
   param_.hidden = scope->FindVar(hidden)->GetMutable<lite::Tensor>();
 
-  if (op_desc.HasInput("Bias")) {
+  if (!op_desc.Input("Bias").empty()) {
     auto bias = op_desc.Input("Bias").front();
     param_.bias = scope->FindVar(bias)->GetMutable<lite::Tensor>();
   }
