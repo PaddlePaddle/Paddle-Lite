@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/core/mir/elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.h"
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
 #include "lite/core/mir/pass_utils.h"
@@ -36,6 +37,9 @@ namespace lite {
  * lite::Optimizer optimize a program. It utilize the mir passes to analysis the
  * program and export an optimized program.
  */
+// TODO(hong1986032) Support the following passes for the subblocks
+const std::set<std::string> kSubblockUnsupportedPasses(
+    {"memory_optimize_pass"});
 class Optimizer {
  public:
   Optimizer() {}
@@ -60,14 +64,20 @@ class Optimizer {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
-    CHECK(!graph_) << "duplicate optimize found";
+    CHECK(graphs_.empty()) << "duplicate optimize found";
 
-    graph_.reset(new mir::SSAGraph);
-    graph_->Build(program, valid_places);
-    graph_->SetValidPlaces(valid_places);
+    auto block_size = program.block_size();
+    for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
+      std::unique_ptr<mir::SSAGraph> graph;
+      graph.reset(new mir::SSAGraph);
+      graph->Build(program, valid_places, block_idx);
+      graph->SetValidPlaces(valid_places);
+      graphs_.emplace_back(std::move(graph));
+    }
 
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
+    InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
 
     if (passes.empty() || passes.size() == 1) {
       std::vector<std::string> passes_local{
@@ -107,11 +117,13 @@ class Optimizer {
                                                       // 'enable_int8' for all
                                                       // of the quantized ops.
            "npu_subgraph_pass",
+           "huawei_ascend_npu_subgraph_pass",
            "xpu_subgraph_pass",
            "bm_subgraph_pass",
            "apu_subgraph_pass",
            "rknpu_subgraph_pass",
            "mlu_subgraph_pass",
+           "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
            "static_kernel_pick_pass",  // pick original kernel from graph
 
            "remove_tf_redundant_ops_pass",
@@ -176,62 +188,15 @@ class Optimizer {
     exec_scope_ = program.exec_scope();
   }
 
-  const lite::Scope* exec_scope() const { return exec_scope_; }
-
-  // Set shape(dims) infos of var descs to scope var.
-  //  developer can write pass using input / output tensor dims of op.
-  //
-  // Example: If you have node `Node* softmax_node`,
-  //   you can get dims of output tensor in passes:
-  //
-  //   auto* scope = softmax_node->AsStmt().op()->scope();
-  //   auto softmax_out_arg_name =
-  //             softmax_node->outlinks.front()->AsArg().name;
-  //   auto softmax_out_tensor =
-  //             scope->FindVar(softmax_out_arg_name)->Get<lite::Tensor>();
-  //   softmax_out_dims = softmax_out_tensor.dims();
-  void SetVarDescShapeToScopeVar() {
-    auto dims_to_str_func = [](std::vector<int64_t> shape) -> std::string {
-      std::string str_res;
-      for (size_t i = 0; i < shape.size(); ++i) {
-        str_res += std::to_string(shape[i]);
-        if (i != shape.size() - 1) {
-          str_res += "x";
-        }
-      }
-      return str_res;
-    };
-
-    auto* program_desc = program_->program_desc();
-    VLOG(5) << "program_desc->BlocksSize():" << program_desc->BlocksSize();
-    auto blocks_desc = program_desc->GetBlocks();
-    for (size_t bidx = 0; bidx < blocks_desc.size(); ++bidx) {
-      auto block_desc = blocks_desc[bidx];
-      auto vars_desc = block_desc.GetVars();
-      for (size_t vidx = 0; vidx < vars_desc.size(); ++vidx) {
-        auto var_desc = vars_desc[vidx];
-        VLOG(5) << var_desc.Name() << " "
-                << dims_to_str_func(var_desc.GetShape());
-        if (var_desc.Name() == "feed" || var_desc.Name() == "fetch") continue;
-        auto* var = program_->exec_scope()->FindVar(var_desc.Name());
-        auto tensor = var->GetMutable<lite::Tensor>();
-        if (tensor->dims().size() == 0 && var_desc.GetShape().size() != 0) {
-          VLOG(5) << "var_desc.Name():" << var_desc.Name()
-                  << " shape:" << dims_to_str_func(var_desc.GetShape());
-          tensor->Resize(var_desc.GetShape());
-        }
-        VLOG(5) << "var_desc.Name():" << var_desc.Name()
-                << " shape:" << dims_to_str_func(var_desc.GetShape())
-                << " tensor:" << tensor->dims();
-      }
-    }
-  }
+  const Scope* exec_scope() const { return exec_scope_; }
 
   // Generate a new program based on the mir graph.
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
-    pass->Apply(graph_);
+    for (auto& graph : graphs_) {
+      pass->Apply(graph);
+    }
     auto program = pass->GenProgram();
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);
@@ -247,27 +212,38 @@ class Optimizer {
     pass->SetValidPlaces(valid_places_);
   }
 
+  void InitControlFlowOpUnusedInputsAndOutputsEliminatePass() {
+    auto* pass =
+        mir::PassManager::Global()
+            .LookUp<mir::ControlFlowOpUnusedInputsAndOutputsEliminatePass>(
+                "control_flow_op_unused_inputs_and_outputs_eliminate_pass");
+    CHECK(pass);
+    CHECK(!graphs_.empty());
+    pass->SetAllGraphs(&graphs_);
+  }
+
   // Generate C++ code which combines the inference program, model and weights.
   void GenCode(const std::string& code_dir);
 
-  const mir::SSAGraph& ssa_graph() const {
-    CHECK(graph_);
-    return *graph_;
+  const mir::SSAGraph& ssa_graph(int block_idx = kRootBlockIdx) const {
+    CHECK(!graphs_.empty());
+    CHECK(graphs_[block_idx]);
+    return *graphs_[block_idx];
   }
 
-  mir::SSAGraph* mutable_ssa_graph() {
-    CHECK(graph_);
-    return graph_.get();
+  mir::SSAGraph* mutable_ssa_graph(int block_idx = kRootBlockIdx) {
+    CHECK(!graphs_.empty());
+    CHECK(graphs_[block_idx]);
+    return graphs_[block_idx].get();
   }
 
-  lite::Scope* exec_scope() { return exec_scope_; }
+  Scope* exec_scope() { return exec_scope_; }
 
  protected:
   void SpecifyKernelPickTactic(core::KernelPickFactor factor);
 
   // Specify the passes and run them.
   void RunPasses(const std::vector<std::string>& passes) {
-    SetVarDescShapeToScopeVar();
     for (auto& x : passes) {
       LOG(INFO) << "== Running pass: " << x;
       mir::Pass* pass = mir::PassManager::Global().LookUp(x);
@@ -285,16 +261,23 @@ class Optimizer {
         LOG(INFO) << "   - Skip " << x
                   << " because the target or kernel does not match.";
       } else {
-        pass->Apply(graph_);
+        // Check the pass whether it is supported for processing subblocks
+        if (kSubblockUnsupportedPasses.count(x)) {
+          pass->Apply(graphs_[kRootBlockIdx]);
+        } else {
+          for (auto& graph : graphs_) {
+            pass->Apply(graph);
+          }
+        }
         LOG(INFO) << "== Finished running: " << x;
       }
     }
   }
 
  private:
-  std::unique_ptr<mir::SSAGraph> graph_;
+  std::vector<std::unique_ptr<mir::SSAGraph>> graphs_;
   std::vector<Place> valid_places_;
-  lite::Scope* exec_scope_{};
+  Scope* exec_scope_{};
   Program* program_{};
 };
 

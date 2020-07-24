@@ -175,11 +175,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (int i = 0; i < weight_scale_size; i++) {
     weight_scale.push_back(whole_weight_scale);
   }
-
-  // Arm CPU does not support conv2d_transpose
-  if (quantized_op_type_ != "conv2d_transpose") {
-    op_desc.SetAttr("enable_int8", true);
-  }
+  op_desc.SetAttr("enable_int8", true);
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
@@ -284,7 +280,6 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetInput("X", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
   }
-  // Arm CPU does not support conv2d_transpose
   if (quantized_op_type_ != "conv2d_transpose") {
     op_desc.SetAttr("enable_int8", true);
   }
@@ -320,30 +315,33 @@ cpp::OpDesc ChannelWiseDequantOpFuser::GenOpDesc(const key2nodes_t& matched) {
 }
 
 void DeleteQuantDequantOpFuser::BuildPattern() {
-  std::string quant_dequant_op_type =
-      "fake_quantize_dequantize_moving_average_abs_max";
-  auto* input_scale_node =
-      VarNode("input_scale_node")
-          ->assert_is_op_input(quant_dequant_op_type, "InScale");
-  auto* input_act_node =
-      VarNode("input_act_node")->assert_is_op_input(quant_dequant_op_type, "X");
-  auto* quant_dequant_node = OpNode("quant_dequant_node", quant_dequant_op_type)
-                                 ->assert_is_op(quant_dequant_op_type);
+  auto* input_act_node = VarNode("input_act_node")
+                             ->assert_is_op_input(quant_dequant_op_type_, "X");
+  auto* quant_dequant_node =
+      OpNode("quant_dequant_node", quant_dequant_op_type_)
+          ->assert_is_op(quant_dequant_op_type_);
   auto* output_scale_node =
       VarNode("output_scale_node")
-          ->assert_is_op_output(quant_dequant_op_type, "OutScale");
+          ->assert_is_op_output(quant_dequant_op_type_, "OutScale");
   auto* output_act_node =
       VarNode("output_act_node")
-          ->assert_is_op_output(quant_dequant_op_type, "Out");
+          ->assert_is_op_output(quant_dequant_op_type_, "Out");
 
-  quant_dequant_node->LinksFrom({input_scale_node, input_act_node});
+  if (quant_dequant_op_type_ ==
+      "fake_quantize_dequantize_moving_average_abs_max") {
+    auto* input_scale_node =
+        VarNode("input_scale_node")
+            ->assert_is_op_input(quant_dequant_op_type_, "InScale");
+    quant_dequant_node->LinksFrom({input_scale_node, input_act_node});
+  } else {
+    quant_dequant_node->LinksFrom({input_act_node});
+  }
   output_scale_node->LinksFrom({quant_dequant_node});
   output_act_node->LinksFrom({quant_dequant_node});
 }
 
 void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
                                               const key2nodes_t& matched) {
-  auto* input_scale_node = matched.at("input_scale_node");
   auto* input_act_node = matched.at("input_act_node");
   auto* quant_dequant_node = matched.at("quant_dequant_node");
   auto* output_scale_node = matched.at("output_scale_node");
@@ -373,7 +371,12 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   }
   // delete nodes and edges
   std::set<const Node*> nodes2rm = {
-      input_scale_node, quant_dequant_node, output_scale_node, output_act_node};
+      quant_dequant_node, output_scale_node, output_act_node};
+  if (quant_dequant_op_type_ ==
+      "fake_quantize_dequantize_moving_average_abs_max") {
+    auto* input_scale_node = matched.at("input_scale_node");
+    nodes2rm.insert(input_scale_node);
+  }
   GraphSafeRemoveNodes(graph, nodes2rm);
 }
 

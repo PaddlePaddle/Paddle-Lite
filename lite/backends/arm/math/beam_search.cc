@@ -234,7 +234,7 @@ void beam_search(const Tensor *pre_ids,
   selected_ids->Resize(dims);
   selected_scores->Resize(dims);
   if (parent_idx) {
-    parent_idx->Resize(dims);
+    parent_idx->Resize({static_cast<int64_t>(num_instances)});
   }
   auto *selected_ids_data = selected_ids->mutable_data<int64_t>();
   auto *selected_scores_data = selected_scores->mutable_data<float>();
