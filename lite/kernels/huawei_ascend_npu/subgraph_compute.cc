@@ -104,7 +104,7 @@ bool DeviceProgram::LoadFromCacheFile(
 }
 
 bool DeviceProgram::BuildGraphAndCacheToFile(
-    const std::vector<Instruction>& origin_program,
+    RuntimeProgram* origin_program,
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
     const std::vector<std::vector<int64_t>>& origin_idims,
@@ -118,10 +118,14 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Convert all of ops and their input vars and weights to HiAI IR nodes,
   // then added them into the IR graph
   int status = 0;
-  CHECK(!origin_program.empty()) << "no instructions";
   subgraph::huawei_ascend_npu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
-  for (auto& inst : origin_program) {
+  CHECK(origin_program)
+      << "[HUAWEI_ASCEND_NPU] The origin program is not initialized!";
+  CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
+      << "[HUAWEI_ASCEND_NPU] No instructions found in the origin program!";
+  const auto& insts = origin_program->instructions(kRootBlockIdx);
+  for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
@@ -140,7 +144,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Collect the input and output nodes of the IR graph
   std::vector<ge::Operator> device_inodes;
   for (size_t i = 0; i < input_names.size(); i++) {
-    CHECK(graph.Has(input_names[i]) && graph.Get(input_names[i])->is_data());
+    CHECK(graph.Has(input_names[i]));
+    CHECK(graph.Get(input_names[i])->is_data());
     device_inodes.push_back(*graph.Get(input_names[i])->data());
   }
   std::vector<ge::Operator> device_onodes;
@@ -379,7 +384,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
         ctx_->As<HuaweiAscendNPUContext>().SubgraphModelCacheDir();
     auto device_id = ctx_->As<HuaweiAscendNPUContext>().HuaweiAscendDeviceID();
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Get model cached dir: " << model_cache_dir;
-
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Get huawei ascend npu device id: "
+            << device_id;
     // Check and load if the cached model and configuration file exists
     if (model_cache_dir.empty() ||
         !device_program->LoadFromCacheFile(input_names_,
@@ -390,11 +396,14 @@ bool SubgraphEngine::BuildDeviceProgram() {
       // Build the model online, including converting the paddle ops to the HiAI
       // IR nodes, building the HiAI IR graph to the om model, then load it as a
       // new HiAI model manager client for inference.
-      if (origin_program_.empty()) {
+      if (!origin_program_) {
         BuildOriginProgram();
       }
-      CHECK(!origin_program_.empty()) << "no instructions";
-      if (!device_program->BuildGraphAndCacheToFile(origin_program_,
+      CHECK(origin_program_)
+          << "[HUAWEI_ASCEND_NPU] The origin program is not initialized!";
+      CHECK_GT(origin_program_->instructions().size(), 0)
+          << "[HUAWEI_ASCEND_NPU] No instructions found in the origin program!";
+      if (!device_program->BuildGraphAndCacheToFile(origin_program_.get(),
                                                     input_names_,
                                                     output_names_,
                                                     origin_idims_,
@@ -443,11 +452,11 @@ bool SubgraphEngine::LaunchDeviceProgram() {
 void SubgraphCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
-                                   param.sub_block_idx,
-                                   param.sub_block_desc,
+                                   param.block_idx,
+                                   param.program_desc,
+                                   param.exec_scope,
                                    param.input_data_names,
-                                   param.output_data_names,
-                                   param.scope));
+                                   param.output_data_names));
   CHECK(engine_);
 }
 
