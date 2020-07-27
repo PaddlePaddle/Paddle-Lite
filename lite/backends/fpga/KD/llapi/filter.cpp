@@ -406,9 +406,8 @@ size_t format_dwconv_filter(
   // int16_t** quantize_data = (int16_t**)&fp16_data;  // NOLINT
 
   quantize_to_fp16(data_in, num, height, width, scale_ptr);
-  int16_t** quantize_data = reinterpret_cast<int16_t**>(data_in)
-
-      convert_to_hwn(quantize_data, num, height, width);
+  int16_t** quantize_data = reinterpret_cast<int16_t**>(data_in);
+  convert_to_hwn(quantize_data, num, height, width);
   size_t size = align_element_n(quantize_data, num, height, width);
   fpga_flush(*quantize_data,
              align_to_x(num, FILTER_ELEMENT_ALIGNMENT) * height * width *
