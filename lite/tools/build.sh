@@ -111,7 +111,7 @@ function make_tiny_publish_so {
   local android_stl=$4
 
   cur_dir=$(pwd)
-  build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}.${android_stl}.build_extra_${BUILD_EXTRA}.build_cv_${BUILD_CV}
+  build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
   if [ -d $build_dir ]
   then
     rm -rf $build_dir
