@@ -27,12 +27,12 @@ using grad_param_t = operators::SequencePoolGradParam;
 using kernel_t = SequencePoolCompute;
 using grad_kernel_t = SequencePoolGradCompute;
 
-void sequence_pool_grad_common(grad_param_t* param,           // NOLINT
+void sequence_pool_grad_common(grad_param_t* param,    // NOLINT
                                const float* out_grad,  // NOLINT
-                               float* x_grad,    // NOLINT
+                               float* x_grad,          // NOLINT
                                std::string pool_type) {
-  const auto lod = param.X->lod()[0];
-  int64_t width = param.X->numel() / param.X->dims()[0];
+  const auto lod = param->X->lod()[0];
+  int64_t width = param->X->numel() / param->X->dims()[0];
   if (pool_type == "SUM" || pool_type == "MAX" || pool_type == "MIN") {
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; i++) {
       int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
