@@ -268,6 +268,8 @@ function make_all_tests {
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
+      -DLITE_WITH_PROFILE=OFF \
+      -DLITE_WITH_PRECISION_PROFILE=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_NPU=$BUILD_NPU \

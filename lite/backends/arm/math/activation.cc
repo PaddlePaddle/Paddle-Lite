@@ -763,6 +763,91 @@ void act_thresholded_relu<float>(
   }
 }
 
+// elu: out = max(0,x) + min(0, alpha *(exp(x) - 1)
+template <>
+void act_elu<float>(
+    const float* din, float* dout, int size, float alpha, int threads) {
+  int nums_per_thread = size / threads;
+  int thread_remain = size % threads;
+  int neon_loop_cnt_dim16 = nums_per_thread >> 4;
+  int neon_loop_remain_dim16 = nums_per_thread & 15;
+  float32x4_t valpha = vdupq_n_f32(alpha);
+  float32x4_t vzero = vdupq_n_f32(0.f);
+  float32x4_t vone = vdupq_n_f32(1.f);
+  int cnt = neon_loop_remain_dim16 >> 2;
+  int remain = neon_loop_remain_dim16 & 3;
+#pragma omp parallel for
+  for (int i = 0; i < threads; i++) {
+    const float* ptr_in_thread = din + i * nums_per_thread;
+    float* ptr_out_thread = dout + i * nums_per_thread;
+    for (int k = 0; k < neon_loop_cnt_dim16; ++k) {
+      float32x4_t va = vld1q_f32(ptr_in_thread);
+      float32x4_t vb = vld1q_f32(ptr_in_thread + 4);
+      float32x4_t vc = vld1q_f32(ptr_in_thread + 8);
+      float32x4_t vd = vld1q_f32(ptr_in_thread + 12);
+      float32x4_t va_exp = exp_ps(va);
+      float32x4_t va_max = vmaxq_f32(va, vzero);
+      float32x4_t vb_exp = exp_ps(vb);
+      float32x4_t vb_max = vmaxq_f32(vb, vzero);
+      float32x4_t vc_exp = exp_ps(vc);
+      float32x4_t vc_max = vmaxq_f32(vc, vzero);
+      float32x4_t vd_exp = exp_ps(vd);
+      float32x4_t vd_max = vmaxq_f32(vd, vzero);
+      float32x4_t va_sub = vsubq_f32(va_exp, vone);
+      float32x4_t vb_sub = vsubq_f32(vb_exp, vone);
+      float32x4_t vc_sub = vsubq_f32(vc_exp, vone);
+      float32x4_t vd_sub = vsubq_f32(vd_exp, vone);
+      va_sub = vmulq_f32(va_sub, valpha);
+      vb_sub = vmulq_f32(vb_sub, valpha);
+      vc_sub = vmulq_f32(vc_sub, valpha);
+      vd_sub = vmulq_f32(vd_sub, valpha);
+      float32x4_t va_min = vminq_f32(va_sub, vzero);
+      float32x4_t vb_min = vminq_f32(vb_sub, vzero);
+      float32x4_t vc_min = vminq_f32(vc_sub, vzero);
+      float32x4_t vd_min = vminq_f32(vd_sub, vzero);
+      float32x4_t va_rst = vaddq_f32(va_max, va_min);
+      float32x4_t vb_rst = vaddq_f32(vb_max, vb_min);
+      float32x4_t vc_rst = vaddq_f32(vc_max, vc_min);
+      float32x4_t vd_rst = vaddq_f32(vd_max, vd_min);
+      vst1q_f32(ptr_out_thread, va_rst);
+      vst1q_f32(ptr_out_thread + 4, vb_rst);
+      vst1q_f32(ptr_out_thread + 8, vc_rst);
+      vst1q_f32(ptr_out_thread + 12, vd_rst);
+      ptr_out_thread += 16;
+      ptr_in_thread += 16;
+    }
+    for (int j = 0; j < cnt; j++) {
+      float32x4_t va = vld1q_f32(ptr_in_thread);
+      float32x4_t va_exp = exp_ps(va);
+      float32x4_t va_max = vmaxq_f32(va, vzero);
+      float32x4_t va_sub = vsubq_f32(va_exp, vone);
+      va_sub = vmulq_f32(va_sub, valpha);
+      float32x4_t va_min = vminq_f32(va_sub, vzero);
+      float32x4_t va_rst = vaddq_f32(va_max, va_min);
+      vst1q_f32(ptr_out_thread, va_rst);
+      ptr_out_thread += 4;
+      ptr_in_thread += 4;
+    }
+    for (int j = 0; j < remain; j++) {
+      float beta = alpha * (expf(ptr_in_thread[0]) - 1);
+      float max = ptr_in_thread[0] >= 0.f ? ptr_in_thread[0] : 0.f;
+      float min = beta <= 0.f ? beta : 0.f;
+      ptr_out_thread[0] = min + max;
+      ptr_in_thread++;
+      ptr_out_thread++;
+    }
+  }
+  float* ptr_out = dout + threads * nums_per_thread;
+  const float* ptr_in = din + threads * nums_per_thread;
+  for (int j = 0; j < thread_remain; j++) {
+    float beta = alpha * (expf(ptr_in[0]) - 1);
+    float max = ptr_in[0] >= 0.f ? ptr_in[0] : 0.f;
+    float min = beta <= 0.f ? beta : 0.f;
+    ptr_out[0] = max + min;
+    ptr_in++;
+    ptr_out++;
+  }
+}
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
