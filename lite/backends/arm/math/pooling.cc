@@ -2260,7 +2260,7 @@ void pooling3x3s2p1_max(const float* din,
                 "v10",
                 "v11",
                 "v31");
-#else 
+#else
 
           float32x4_t vr0_1234 = vld1q_f32(dr0);
           float32x4_t vr0_5678 = vld1q_f32(dr0 += 4);
