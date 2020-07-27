@@ -90,6 +90,9 @@ template <typename T>
 void act_thresholded_relu(
     const T* din, T* dout, int size, float threshold, int threads);
 
+template <typename T>
+void act_elu(const T* din, T* dout, int size, float alpha, int threads);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

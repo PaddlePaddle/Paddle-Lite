@@ -34,6 +34,9 @@ bool SubgraphEngine::BuildDeviceProgram() {
   const auto& bridges = subgraph::Registry::Instance();
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
+  for (size_t i = 0; i < input_names_.size(); i++) {
+    graph.AddNode(input_names_[i]);
+  }
   if (!origin_program_) {
     BuildOriginProgram();
   }
@@ -60,7 +63,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
   std::string net_name = "bmnet_f32bmodel";
   auto unique_net_name = lite::subgraph::bm::UniqueName(net_name);
   __bmcompile_opt(
-      graph.GetCompilerHandle(), const_cast<char*>(unique_net_name.c_str()), 2);
+      graph.GetCompilerHandle(), const_cast<char*>(unique_net_name.c_str()), 1);
   void* bmodel_data = nullptr;
   unsigned int data_size = 0;
   bm_hd_ = static_cast<bm_handle_t>(ctx.GetHandle());

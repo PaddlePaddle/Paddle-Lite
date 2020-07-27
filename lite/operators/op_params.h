@@ -359,6 +359,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_offset{3.0};
   // thresholded_relu
   float relu_threshold{1.0f};
+  // elu
+  float Elu_alpha{1.0f};
 };
 
 struct ActivationGradParam : ParamBase {
