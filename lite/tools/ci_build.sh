@@ -21,8 +21,8 @@ USE_ADB_EMULATOR=ON
 LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
-os_nmae=`uname -s`
-if [ ${os_nmae} == "Darwin" ]; then
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
@@ -399,6 +399,64 @@ function build_test_xpu {
     test_xpu
 }
 
+function cmake_huawei_ascend_npu {
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    prepare_workspace
+    cmake .. \
+        ${common_flags} \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
+        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5" \
+        -DCMAKE_BUILD_TYPE=Release
+}
+
+function build_huawei_ascend_npu {
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+# It will eagerly test all lite related unittests.
+function test_huawei_ascend_npu {
+    # Due to the missing of ascend kernels, we skip the following tests temporarily.
+    # TODO(xxx) clear the skip list latter
+    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
+                     "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
+                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_apis" "test_model_bin"
+                    )
+    local to_skip=0
+    for _test in $(cat $TESTS_FILE); do
+        to_skip=0
+        for skip_name in ${skip_list[@]}; do
+            if [ $skip_name = $_test ]; then
+                echo "to skip " $skip_name
+                to_skip=1
+            fi
+        done
+
+        if [ $to_skip -eq 0 ]; then
+            ctest -R $_test -V
+        fi
+    done
+}
+
+# Build the code and run lite server tests. This is executed in the CI system.
+function build_test_huawei_ascend_npu {
+    cur_dir=$(pwd)
+
+    build_dir=$cur_dir/build.lite.huawei_ascend_npu_test
+    mkdir -p $build_dir
+    cd $build_dir
+
+    cmake_huawei_ascend_npu
+    build_huawei_ascend_npu
+
+    test_huawei_ascend_npu
+}
+
 # test_arm_android <some_test_name> <adb_port_number>
 function test_arm_android {
     local test_name=$1
@@ -415,7 +473,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl" "test_lrn_image_opencl" "test_pad2d_image_opencl")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl" "test_lrn_image_opencl" "test_pad2d_image_opencl" "test_transformer_with_mask_fp32_arm")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
@@ -1157,6 +1215,10 @@ function main {
                 test_arm_android $TEST_NAME $ARM_PORT
                 shift
                 ;;
+            test_huawei_ascend_npu)
+                test_huawei_ascend_npu
+                shift
+                ;;
             build_test_cuda_server)
                 build_test_cuda_server
                 shift
@@ -1172,6 +1234,10 @@ function main {
                 ;;
             build_test_xpu)
                 build_test_xpu
+                shift
+                ;;
+            build_test_huawei_ascend_npu)
+                build_test_huawei_ascend_npu
                 shift
                 ;;
             build_test_train)
@@ -1199,6 +1265,7 @@ function main {
                 build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
                 build_test_arm_subtask_model test_resnet50 resnet50
                 build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
+                build_test_arm_subtask_model test_transformer_with_mask_fp32_arm transformer_with_mask_fp32
                 shift
                 ;;
             build_test_arm_subtask_armlinux)

@@ -19,7 +19,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
-#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/backends/xpu/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -82,8 +82,8 @@ void DumpXPUMem(const T* ptr,
                 size_t item_per_line = 30) {
   size_t after_stride_len = (len + stride - 1) / stride;
   std::unique_ptr<T[]> cpu_mem(new T[len]);
-  xpu_memcpy(
-      cpu_mem.get(), ptr, len * sizeof(T), XPUMemcpyKind::XPU_DEVICE_TO_HOST);
+  XPU_CALL(xpu_memcpy(
+      cpu_mem.get(), ptr, len * sizeof(T), XPUMemcpyKind::XPU_DEVICE_TO_HOST));
   std::unique_ptr<T[]> after_stride(new T[after_stride_len]);
   for (size_t i = 0; i < after_stride_len; ++i) {
     after_stride[i] = cpu_mem[i * stride];

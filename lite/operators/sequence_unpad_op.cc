@@ -32,32 +32,7 @@ bool SequenceUnpadOp::CheckShape() const {
   return true;
 }
 
-bool SequenceUnpadOp::InferShapeImpl() const {
-  auto x_dims = param_.X->dims();
-  auto len_dims = param_.Length->dims();
-
-  auto *seq_len_ptr = param_.Length->data<int64_t>();
-  int64_t batch_size = len_dims[0];
-  std::vector<uint64_t> out_lod0(batch_size + 1, 0);
-  for (int64_t i = 0; i < batch_size; ++i) {
-    out_lod0[i + 1] = out_lod0[i] + seq_len_ptr[i];
-  }
-  paddle::lite::LoD out_lod;
-  out_lod.push_back(out_lod0);
-
-  int64_t out_dim0 = out_lod0.back();
-  std::vector<int64_t> out_dims{out_dim0};
-  if (x_dims.size() == 2) {
-    out_dims.push_back(1);
-  } else {
-    for (size_t i = 2; i < x_dims.size(); ++i) {
-      out_dims.push_back(x_dims[i]);
-    }
-  }
-  param_.Out->Resize(out_dims);
-  param_.Out->set_lod(out_lod);
-  return true;
-}
+bool SequenceUnpadOp::InferShapeImpl() const { return true; }
 
 bool SequenceUnpadOp::AttachImpl(const cpp::OpDesc &opdesc,
                                  lite::Scope *scope) {

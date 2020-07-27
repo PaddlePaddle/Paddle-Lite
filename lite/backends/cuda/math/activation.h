@@ -17,10 +17,21 @@
 #include <cuda_runtime.h>
 #include <string>
 
+#include "lite/utils/cp_logging.h"
+
 namespace paddle {
 namespace lite {
 namespace cuda {
 namespace math {
+
+enum ActivationType {
+  kSigmoid,
+  kReLU,
+  kTanh,
+  kIdentity,
+};
+
+ActivationType GetActiveType(const std::string& act);
 
 // fp32 and half
 template <typename T>
@@ -71,6 +82,9 @@ void bias_int8_nhwc(int num,
                     int W,
                     const void* scale,
                     cudaStream_t stream);
+
+template <typename T>
+void sigmoid(const int num, const T* din, T* dout, cudaStream_t stream);
 
 }  // namespace math
 }  // namespace cuda

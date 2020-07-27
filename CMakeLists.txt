@@ -86,6 +86,7 @@ lite_option(LITE_WITH_ARM  "Enable ARM in lite mode"  OFF)
 lite_option(LITE_WITH_NPU  "Enable NPU in lite mode"  OFF)
 lite_option(LITE_WITH_RKNPU  "Enable RKNPU in lite mode"  OFF)
 lite_option(LITE_WITH_MLU  "Enable MLU in lite mode"  OFF)
+lite_option(LITE_WITH_HUAWEI_ASCEND_NPU  "Enable HUAWEI_ASCEND_NPU in lite mode"  OFF)
 lite_option(LITE_WITH_XPU  "Enable XPU in lite mode"  OFF)
 lite_option(LITE_WITH_XTCL  "Enable XPU via XTCL"  OFF IF LITE_WITH_XPU)
 lite_option(LITE_WITH_BM   "Enable BM in lite mode"   OFF)
@@ -98,6 +99,7 @@ lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OF
 lite_option(LITE_WITH_PROFILE  "Enable profile mode in lite framework"  OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF)
 lite_option(LITE_WITH_LOG "Enable log printing or not." ON)
+lite_option(LITE_WITH_EXCEPTION "Enable throwing the exception when error occurs in lite" OFF)
 lite_option(LITE_WITH_NVTX "Enable nvtx or not, please enable LITE_WITH_CUDA first." OFF)
 lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
@@ -224,6 +226,11 @@ endif()
 if(LITE_WITH_MLU)
     include(mlu)
 endif()
+
+if(LITE_WITH_HUAWEI_ASCEND_NPU)
+    include(device/huawei_ascend_npu)
+endif()
+
 include(coveralls)
 
 include(external/mklml)     # download mklml package
