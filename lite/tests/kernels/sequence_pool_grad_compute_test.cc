@@ -27,13 +27,13 @@ using grad_param_t = operators::SequencePoolGradParam;
 using kernel_t = SequencePoolCompute;
 using grad_kernel_t = SequencePoolGradCompute;
 
-void sequence_pool_grad_common(grad_param_t& param,           // NOLINT
-                               std::vector<float>& out_grad,  // NOLINT
-                               std::vector<float>& x_grad,    // NOLINT
+void sequence_pool_grad_common(grad_param_t* param,           // NOLINT
+                               const float* out_grad,  // NOLINT
+                               float* x_grad,    // NOLINT
                                std::string pool_type) {
   const auto lod = param.X->lod()[0];
   int64_t width = param.X->numel() / param.X->dims()[0];
-  if  (pool_type == "SUM" || pool_type == "MAX" || pool_type == "MIN") {
+  if (pool_type == "SUM" || pool_type == "MAX" || pool_type == "MIN") {
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; i++) {
       int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
       const float* out_grad_ptr = out_grad + i * width;
@@ -44,17 +44,16 @@ void sequence_pool_grad_common(grad_param_t& param,           // NOLINT
             x_grad_ptr[h] = out_grad_ptr[h];
           }
         } else {
-          for (int w = 0; w < width; w++) {
-            for (int h = 0; h < height; h++) {
-              x_grad_ptr[h] = *out_grad_ptr;
-              x_grad_ptr += width;
+          for (int h = 0; h < height; h++) {
+            for (int w = 0; w < width; w++) {
+              x_grad_ptr[w] = out_grad_ptr[w];
             }
-            out_grad_ptr++;
+            x_grad_ptr += width;
           }
         }
       }
     }
-  } else if  (pool_type == "AVERAGE") {
+  } else if (pool_type == "AVERAGE") {
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; i++) {
       int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
       const float* out_grad_ptr = out_grad + i * width;
@@ -66,11 +65,11 @@ void sequence_pool_grad_common(grad_param_t& param,           // NOLINT
             x_grad_ptr[h] = alpha * out_grad_ptr[h];
           }
         } else {
-          for (int w = 0; w < width; w++) {
-            for (int h = 0; h < height; h++) {
-              x_grad_ptr[h] = alpha * out_grad_ptr[w];
-              x_grad_ptr += width;
+          for (int h = 0; h < height; h++) {
+            for (int w = 0; w < width; w++) {
+              x_grad_ptr[w] = alpha * out_grad_ptr[w];
             }
+            x_grad_ptr += width;
           }
         }
       }
@@ -87,11 +86,11 @@ void sequence_pool_grad_common(grad_param_t& param,           // NOLINT
             x_grad_ptr[h] = alpha * out_grad_ptr[h];
           }
         } else {
-          for (int w = 0; w < width; w++) {
-            for (int h = 0; h < height; h++) {
-              x_grad_ptr[h] = alpha * out_grad_ptr[w];
-              x_grad_ptr += width;
+          for (int h = 0; h < height; h++) {
+            for (int w = 0; w < width; w++) {
+              x_grad_ptr[w] = alpha * out_grad_ptr[w];
             }
+            x_grad_ptr += width;
           }
         }
       }
@@ -102,8 +101,11 @@ void sequence_pool_grad_common(grad_param_t& param,           // NOLINT
       const float* out_grad_ptr = out_grad + i * width;
       float* x_grad_ptr = x_grad + lod[i] * width;
       if (height > 0) {
-        for (int w = 0; w < width; w++) {
-          x_grad_ptr[w] = out_grad_ptr[w];
+        for (int h = 0; h < height; h++) {
+          for (int w = 0; w < width; w++) {
+            x_grad_ptr[w] = out_grad_ptr[w];
+          }
+          x_grad_ptr += width;
         }
       }
     }
@@ -152,7 +154,7 @@ class SequencePoolGradTester {
     Tensor x;
     Tensor output;
     x.Resize(dims_);
-    output.Resize(dims_);
+    output.Resize(out_dims_);
     auto* x_data = x.mutable_data<float>();
     for (int i = 0; i < dims_.production(); i++) {
       x_data[i] = in_vec[i];
@@ -225,7 +227,7 @@ class SequencePoolGradTester {
     }
     LOG(INFO) << "run_backward:";
     this->run_backward(&grad_param_, &grad_kernel_, x, out_grad, x_grad.data());
-    LOG(INFO) << "CHECK";
+
     // get numeric gradient
     std::vector<float> x_delta(dims_.production());
     std::vector<float> out_delta(out_dims_.production());

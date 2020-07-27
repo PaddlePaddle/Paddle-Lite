@@ -43,12 +43,11 @@ void seq_pool_sum_grad<float>(const float* din,
           dout_ptr[h] = din_grad_ptr[h];
         }
       } else {
-        for (int w = 0; w < width; w++) {
-          for (int h = 0; h < height; h++) {
-            dout_ptr[h] = *din_grad_ptr;
-            dout_ptr += width;
+        for (int h = 0; h < height; h++) {
+          for (int w = 0; w < width; w++) {
+            dout_ptr[w] = din_grad_ptr[w];
           }
-          din_grad_ptr++;
+          dout_ptr += width;
         }
       }
     }
@@ -73,11 +72,11 @@ void seq_pool_average_grad<float>(const float* din,
           dout_ptr[h] = alpha * din_grad_ptr[h];
         }
       } else {
-        for (int w = 0; w < width; w++) {
-          for (int h = 0; h < height; h++) {
-            dout_ptr[h] = alpha * din_grad_ptr[w];
-            dout_ptr += width;
+        for (int h = 0; h < height; h++) {
+          for (int w = 0; w < width; w++) {
+            dout_ptr[w] = alpha * din_grad_ptr[w];
           }
+          dout_ptr += width;
         }
       }
     }
@@ -102,11 +101,11 @@ void seq_pool_sqrt_grad<float>(const float* din,
           dout_ptr[h] = alpha * din_grad_ptr[h];
         }
       } else {
-        for (int w = 0; w < width; w++) {
-          for (int h = 0; h < height; h++) {
-            dout_ptr[h] = alpha * din_grad_ptr[w];
-            dout_ptr += width;
+        for (int h = 0; h < height; h++) {
+          for (int w = 0; w < width; w++) {
+            dout_ptr[w] = alpha * din_grad_ptr[w];
           }
+          dout_ptr += width;
         }
       }
     }
@@ -124,8 +123,11 @@ void seq_pool_first_grad<float>(const float* din,
     const float* din_grad_ptr = din_grad + i * width;
     float* dout_ptr = dout + lod[i] * width;
     if (height > 0) {
-      for (int w = 0; w < width; w++) {
-        dout_ptr[w] = din_grad_ptr[w];
+      for (int h = 0; h < height; h++) {
+        for (int w = 0; w < width; w++) {
+          dout_ptr[w] = din_grad_ptr[w];
+        }
+        dout_ptr += width;
       }
     }
   }
