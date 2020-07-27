@@ -88,7 +88,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
   auto i_data = param.input->data<float>();
   auto o_data = param.output->mutable_data<float>();
-  auto w_data = flag_gemm_ ? param.w->data<float>() : weights_.data<float>();
+  auto w_data = param.w->data<float>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
@@ -149,8 +149,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 
   auto i_data = param.input->data<int8_t>();
   auto o_data = param.output->mutable_data<float>();
-  auto w_data =
-      flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
+  auto w_data = param.w->data<int8_t>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
@@ -208,8 +207,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 
   auto i_data = param.input->data<int8_t>();
   auto o_data = param.output->mutable_data<int8_t>();
-  auto w_data =
-      flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
+  auto w_data = param.w->data<int8_t>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
