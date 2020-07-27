@@ -47,21 +47,18 @@ struct Program {
   Program(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
           const std::shared_ptr<Scope>& root_scope,
           const std::vector<Place>& valid_places,
-          const std::vector<std::string>& vars_to_clone = {})
-      : scope_(root_scope),
-        valid_places_(valid_places),
-        program_desc_(program_desc) {
+          const std::vector<std::string>& var_names = {})
+      : scope_(root_scope), valid_places_(valid_places) {
     CHECK(scope_) << "scope should be init first";
     VLOG(4) << "prepare work";
-    PrepareWorkspace(program_desc_, vars_to_clone);
+    PrepareWorkspace(program_desc, var_names);
     VLOG(4) << "build desc";
-    Build(program_desc_);
+    Build(program_desc);
     VLOG(4) << "build desc finished";
   }
 
   std::unique_ptr<Program> Clone() const {
-    return std::unique_ptr<Program>(
-        new Program(program_desc_, scope_, valid_places_));
+    return std::unique_ptr<Program>(new Program(scope_));
   }
 
   const std::list<std::string>& weights() const { return weights_; }
@@ -82,8 +79,6 @@ struct Program {
 
   Scope* exec_scope() { return exec_scope_; }
   Scope* scope() { return scope_.get(); }
-
-  cpp::ProgramDesc* program_desc() { return program_desc_.get(); }
 
   const std::map<std::string, const Type*>& var_type_map() const {
     return var_type_map_;
@@ -106,7 +101,6 @@ struct Program {
   std::vector<Place> valid_places_;
   // Runtime scope.
   Scope* exec_scope_{};
-  std::shared_ptr<cpp::ProgramDesc> program_desc_;
 };
 
 struct Instruction {
