@@ -36,6 +36,8 @@ static const char TAILORD_KERNELS_SOURCE_LIST_FILENAME[] =
     ".tailored_kernels_source_list";
 static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
 
+std::vector<std::string> GetAllOps();
+
 /*
  * Predictor for inference, input a model, it will optimize and execute it.
  */
@@ -47,18 +49,33 @@ class LITE_API Predictor {
     program_desc_ = std::make_shared<cpp::ProgramDesc>();
   }
 
-  // Create a predictor with the weight variable scope set.
+  ///////////////////////////////////////////////////////////////////
+  // Function: Predictor
+  // Usage: Constructor of Predictor. Create a predictor with the
+  // weight variable scope set given.
+  ///////////////////////////////////////////////////////////////////
   explicit Predictor(const std::shared_ptr<lite::Scope>& root_scope)
       : scope_(root_scope) {}
-  Predictor(const std::shared_ptr<cpp::ProgramDesc>& desc,
+  ///////////////////////////////////////////////////////////////////
+  // Function: Predictor
+  // Usage: Constructor of Predictor. This constructor function can
+  // only be called in Predictor->Clone. This Function will create
+  // a predictor from existed ProgramDesc, Scope and RuntimeProgram.
+  ///////////////////////////////////////////////////////////////////
+  Predictor(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
             const std::shared_ptr<Scope>& root,
             const std::vector<Place>& valid_places,
             const std::vector<std::string>& var_names = {})
-      : program_desc_(desc), scope_(root) {
-    Program program(*desc.get(), scope_, valid_places, var_names);
-    optimizer_ = Optimizer(std::move(program), valid_places);
-    exec_scope_ = optimizer_.exec_scope();
+      : program_desc_(program_desc), scope_(root) {
+    // step1. Create a Program to construct the exec_scope and ops
+    Program program(program_desc_, scope_, valid_places, var_names);
+    exec_scope_ = program.exec_scope();
     valid_places_ = valid_places;
+
+    // step3. Create the RuntimeProgram.
+    program_.reset(
+        new RuntimeProgram(program_desc_, exec_scope_, kRootBlockIdx));
+    program_generated_ = true;
   }
 
   // Build from a model, with places set for hardware config.
@@ -77,32 +94,62 @@ class LITE_API Predictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool memory_from_memory = false);
 
-  void Build(const std::shared_ptr<cpp::ProgramDesc>& desc,
+  void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
              const std::vector<Place>& valid_places,
              const std::vector<std::string>& passes = {});
 
-  std::shared_ptr<Predictor> Clone() const {
+  //////////////////////////////////////////////////////////
+  // Function: Clone
+  // Usage: Create a Predictor from an existed one,
+  // the cloned predictor will share persistable variables
+  // in scope_ with the original predictor.
+  //////////////////////////////////////////////////////////
+  std::shared_ptr<Predictor> Clone() {
+    // step 1. Generate runtime_program, update op_info and var_info in
+    // program_desc_
+    if (!program_generated_) {
+      GenRuntimeProgram();
+    }
+    program_->SaveToProgram(program_desc_);
+    // step 2. Create a predictor friom current program_desc_ and
+    // runtime_program.
     auto predictor =
         std::make_shared<Predictor>(program_desc_, scope_, valid_places_);
+    // step3. Return the result
     return predictor;
   }
-
-  std::shared_ptr<Predictor> Clone(
-      const std::vector<std::string>& var_names) const {
+  //////////////////////////////////////////////////////////
+  // Function: Clone(var_names)
+  // Usage: Create a Predictor from an existed one,
+  // the cloned predictor will share persistable variables
+  // but persistable variables of name var_names will not
+  // be shared.
+  //////////////////////////////////////////////////////////
+  std::shared_ptr<Predictor> Clone(const std::vector<std::string>& var_names) {
     CHECK(program_desc_) << "Both program and scope of current predicotr "
                             "should be not be nullptr in Clone mode.";
     CHECK(scope_) << "Both program and scope of current predicotr should be "
                      "not be nullptr in Clone mode.";
+    // step 1. Generate runtime_program, update op_info and var_info in
+    // program_desc_
+    if (!program_generated_) {
+      GenRuntimeProgram();
+    }
+    program_->SaveToProgram(program_desc_);
+    // step 2. Create a predictor friom current program_desc_ and
+    // runtime_program.
     auto predictor = std::make_shared<Predictor>(
         program_desc_, scope_, valid_places_, var_names);
-
-    for (auto i : var_names) {
-      predictor->exec_scope_->LocalVar(i);
-      auto* tensor = predictor->scope_->Var(i)->GetMutable<lite::Tensor>();
+    // step3. Copy some persistable variables into private scope.
+    for (auto var_name : var_names) {
+      predictor->exec_scope_->LocalVar(var_name);
+      auto* tensor =
+          predictor->scope_->Var(var_name)->GetMutable<lite::Tensor>();
       auto* sub_tensor =
-          predictor->exec_scope_->Var(i)->GetMutable<lite::Tensor>();
+          predictor->exec_scope_->Var(var_name)->GetMutable<Tensor>();
       sub_tensor->CopyDataFrom(*tensor);
     }
+    // step4. Return the result
     return predictor;
   }
 
@@ -138,6 +185,7 @@ class LITE_API Predictor {
   // get a const tensor according to its name
   const lite::Tensor* GetTensor(const std::string& name) const;
   const RuntimeProgram& runtime_program() const;
+  Scope* scope() { return scope_.get(); }
 
   // This method is disabled in mobile, for unnecessary dependencies required.
   void SaveModel(
@@ -160,7 +208,7 @@ class LITE_API Predictor {
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
   Scope* exec_scope_;
-  std::unique_ptr<RuntimeProgram> program_;
+  std::shared_ptr<RuntimeProgram> program_;
   bool program_generated_{false};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;

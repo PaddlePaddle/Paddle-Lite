@@ -1245,7 +1245,7 @@ void weight_trans_c4_8x8(
   for (int i = 0; i < ch_out * ch_in * 64; ++i) {
     int new_c = i % 64;
     int new_oc = i / ch_in / 64 / 4;
-    int new_ic = i / 64 % (ch_in * 4) % ch_in;
+    int new_ic = i / 64 % ch_in;
     int new_inner = i / ch_in / 64 % 4;
     int dest_ind =
         new_c * c_stride + new_oc * ic_pad * 4 + new_ic * 4 + new_inner;
@@ -1302,7 +1302,7 @@ void weight_trans_c4_4x4(
   for (int i = 0; i < ch_out * ch_in * 16; ++i) {
     int new_c = i % 16;
     int new_oc = i / ch_in / 16 / 4;
-    int new_ic = i / 16 % (ch_in * 4) % ch_in;
+    int new_ic = i / 16 % ch_in;
     int new_inner = i / ch_in / 16 % 4;
     int dest_ind =
         new_c * c_stride + new_oc * ic_pad * 4 + new_ic * 4 + new_inner;

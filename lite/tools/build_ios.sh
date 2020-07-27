@@ -12,6 +12,8 @@ WITH_EXTRA=OFF
 WITH_CV=OFF
 # controls whether to hide log information, default is ON.
 WITH_LOG=ON
+# controls whether to throw the exception when error occurs, default is OFF 
+WITH_EXCEPTION=OFF
 # absolute path of Paddle-Lite.
 workspace=$PWD/$(dirname $0)/../../
 # options of striping lib according to input model.
@@ -69,6 +71,7 @@ function make_ios {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_LOG=$WITH_LOG \
+            -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_BUILD_TAILOR=$WITH_STRIP \
             -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
             -DARM_TARGET_ARCH_ABI=$arch \
@@ -96,6 +99,7 @@ function print_usage {
     echo -e "|     --arch: (armv8|armv7), default is armv8                                                                                          |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
+    echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
@@ -140,6 +144,10 @@ function main {
                 WITH_LOG="${i#*=}"
                 shift
                 ;;
+            --with_exception=*)
+                WITH_EXCEPTION="${i#*=}"
+                shift
+                ;;
             help)
                 print_usage
                 exit 0
@@ -152,6 +160,7 @@ function main {
         esac
     done
     make_ios $ARCH
+    exit 0
 }
 
 main $@

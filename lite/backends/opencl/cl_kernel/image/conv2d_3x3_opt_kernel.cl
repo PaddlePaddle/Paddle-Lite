@@ -19,9 +19,7 @@ __kernel void conv2d_3x3_opt(__private const int item_ch,
                              __private const int item_h,
                              __read_only image2d_t input_image,
                              __read_only image2d_t filter_image,
-#if defined(BIASE_CH) || defined(BIASE_ELE)
                              __read_only image2d_t bias,
-#endif
                              __write_only image2d_t output_image,
                              __private const int stride,
                              __private const int pad,
@@ -264,9 +262,7 @@ __kernel void conv2d_3x3_multi_batch(__private const int item_ch,
                                      __private const int item_h,
                                      __read_only image2d_t input_image,
                                      __read_only image2d_t filter_image,
-#if defined(BIASE_CH) || defined(BIASE_ELE)
                                      __read_only image2d_t bias,
-#endif
                                      __write_only image2d_t output_image,
                                      __private const int stride,
                                      __private const int pad,

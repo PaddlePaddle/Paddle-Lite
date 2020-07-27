@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
 #include "lite/kernels/x86/activation_compute.cc"
 
@@ -26,8 +28,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(gelu_x86, retrive_op) {
-  auto gelu =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("gelu");
+  auto gelu = KernelRegistry::Global().Create("gelu");
   ASSERT_FALSE(gelu.empty());
   ASSERT_TRUE(gelu.front());
 }

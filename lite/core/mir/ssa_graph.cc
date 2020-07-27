@@ -153,60 +153,61 @@ Node *SSAGraph::GraphCreateInstructNode(
 }
 
 void SSAGraph::Build(const Program &program,
-                     const std::vector<Place> &valid_places) {
+                     const std::vector<Place> &valid_places,
+                     int block_idx) {
   CHECK(node_storage_.empty());
 
-  auto weights_name = program.weights();
-  auto is_weights = [&](const std::string &name) -> bool {
-    auto it = std::find(weights_name.begin(), weights_name.end(), name);
-    if (it == weights_name.end()) return false;
+  auto weights = program.weights();
+  auto is_weight = [&](const std::string &name) -> bool {
+    auto it = std::find(weights.begin(), weights.end(), name);
+    if (it == weights.end()) return false;
     return true;
   };
 
-  std::map<std::string, PrecisionType> var_types = program.var_data_type();
-
-  std::map<std::string, mir::Node *> arg_update_node_map_;
-  for (auto &op : program.ops()) {
+  auto var_type_map = program.var_type_map();
+  std::map<std::string, mir::Node *> arg_update_node_map;
+  for (auto &op : program.ops(block_idx)) {
     VLOG(3) << op->op_info()->Type();
     auto *op_node = GraphCreateInstructNode(op, valid_places);
-    for (const std::string &name : op->op_info()->input_names()) {
+    auto *op_info = op->op_info();
+    const auto &op_type = op_info->Type();
+    for (const auto &var_name : op_info->input_names()) {
       mir::Node *arg_node = nullptr;
-      if (arg_update_node_map_.count(name)) {
-        arg_node = arg_update_node_map_.at(name);
+      if (arg_update_node_map.count(var_name)) {
+        arg_node = arg_update_node_map.at(var_name);
       } else {
         node_storage_.emplace_back();
         arg_node = &node_storage_.back();
-        arg_node->AsArg(name, node_storage_.size() - 1);
-        arg_update_node_map_[name] = arg_node;
+        arg_node->AsArg(var_name, node_storage_.size() - 1);
+        arg_update_node_map[var_name] = arg_node;
       }
-      if (var_types.count(name)) {
+      if (var_type_map.count(var_name)) {
         if (!arg_node->arg()->type) {
-          arg_node->arg()->type = LiteType::GetTensorTy(
-              TARGET(kUnk), var_types[name], DATALAYOUT(kUnk));
+          arg_node->arg()->type = var_type_map[var_name];
         }
         // Store the original data type of the output tensors for
         // type_precision_cast_pass, to keep the consistency between the
         // output types of original graph and optimized graph's
-        if (op->op_info()->Type() == "fetch") {
+        if (op_type == "fetch") {
           op->mutable_op_info()->SetAttr<int>(
-              "data_type", static_cast<int>(var_types[name]));
+              "data_type",
+              static_cast<int>(var_type_map[var_name]->precision()));
         }
       }
-      if (is_weights(name)) arg_node->AsArg().is_weight = true;
+      if (is_weight(var_name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());
       DirectedLink(arg_node, op_node);
     }
-    for (const std::string &name : op->op_info()->output_names()) {
+    for (const auto &var_name : op->op_info()->output_names()) {
       node_storage_.emplace_back();
       auto *arg_node = &node_storage_.back();
-      arg_node->AsArg(name, node_storage_.size() - 1);
-      arg_update_node_map_[name] = arg_node;
-      if (var_types.count(name) && !arg_node->arg()->type) {
-        arg_node->arg()->type = LiteType::GetTensorTy(
-            TARGET(kUnk), var_types[name], DATALAYOUT(kUnk));
+      arg_node->AsArg(var_name, node_storage_.size() - 1);
+      arg_update_node_map[var_name] = arg_node;
+      if (var_type_map.count(var_name) && !arg_node->arg()->type) {
+        arg_node->arg()->type = var_type_map[var_name];
       }
 
-      if (is_weights(name)) arg_node->AsArg().is_weight = true;
+      if (is_weight(var_name)) arg_node->AsArg().is_weight = true;
       CHECK(arg_node->IsRoleSet());
       DirectedLink(op_node, arg_node);
     }

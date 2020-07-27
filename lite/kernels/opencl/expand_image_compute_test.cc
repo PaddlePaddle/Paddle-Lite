@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <random>
 
 #include <gtest/gtest.h>
+#include <random>
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -54,11 +54,11 @@ TEST(expand_hw_image2d, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
-  std::unique_ptr<KernelContext> pixel_shuffle_context(new KernelContext);
+  std::unique_ptr<KernelContext> expand_context(new KernelContext);
   context->As<OpenCLContext>().CopySharedTo(
-      &(pixel_shuffle_context->As<OpenCLContext>()));
+      &(expand_context->As<OpenCLContext>()));
 
-  kernel->SetContext(std::move(pixel_shuffle_context));
+  kernel->SetContext(std::move(expand_context));
 
   const DDim in_dim =
       DDim(std::vector<DDim::value_type>{INPUT_N, INPUT_C, INPUT_H, INPUT_W});
@@ -179,11 +179,11 @@ TEST(expand_c2hw_image2d, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
-  std::unique_ptr<KernelContext> pixel_shuffle_context(new KernelContext);
+  std::unique_ptr<KernelContext> expand_context(new KernelContext);
   context->As<OpenCLContext>().CopySharedTo(
-      &(pixel_shuffle_context->As<OpenCLContext>()));
+      &(expand_context->As<OpenCLContext>()));
 
-  kernel->SetContext(std::move(pixel_shuffle_context));
+  kernel->SetContext(std::move(expand_context));
 
   const DDim in_dim =
       DDim(std::vector<DDim::value_type>{INPUT_N, INPUT_C, INPUT_H, INPUT_W});
@@ -303,11 +303,11 @@ TEST(expand_c3hw_image2d, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
-  std::unique_ptr<KernelContext> pixel_shuffle_context(new KernelContext);
+  std::unique_ptr<KernelContext> expand_context(new KernelContext);
   context->As<OpenCLContext>().CopySharedTo(
-      &(pixel_shuffle_context->As<OpenCLContext>()));
+      &(expand_context->As<OpenCLContext>()));
 
-  kernel->SetContext(std::move(pixel_shuffle_context));
+  kernel->SetContext(std::move(expand_context));
 
   const DDim in_dim =
       DDim(std::vector<DDim::value_type>{INPUT_N, INPUT_C, INPUT_H, INPUT_W});
@@ -428,11 +428,11 @@ TEST(expand_c4hw_image2d, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
-  std::unique_ptr<KernelContext> pixel_shuffle_context(new KernelContext);
+  std::unique_ptr<KernelContext> expand_context(new KernelContext);
   context->As<OpenCLContext>().CopySharedTo(
-      &(pixel_shuffle_context->As<OpenCLContext>()));
+      &(expand_context->As<OpenCLContext>()));
 
-  kernel->SetContext(std::move(pixel_shuffle_context));
+  kernel->SetContext(std::move(expand_context));
 
   const DDim in_dim =
       DDim(std::vector<DDim::value_type>{INPUT_N, INPUT_C, INPUT_H, INPUT_W});
@@ -551,11 +551,11 @@ TEST(expand_n_image2d, compute) {
   context->As<OpenCLContext>().InitOnce();
 
   kernel->SetParam(param);
-  std::unique_ptr<KernelContext> pixel_shuffle_context(new KernelContext);
+  std::unique_ptr<KernelContext> expand_context(new KernelContext);
   context->As<OpenCLContext>().CopySharedTo(
-      &(pixel_shuffle_context->As<OpenCLContext>()));
+      &(expand_context->As<OpenCLContext>()));
 
-  kernel->SetContext(std::move(pixel_shuffle_context));
+  kernel->SetContext(std::move(expand_context));
 
   const DDim in_dim =
       DDim(std::vector<DDim::value_type>{INPUT_N, INPUT_C, INPUT_H, INPUT_W});

@@ -185,15 +185,11 @@ void YoloBoxCompute::Run() {
 
   anchors_.Resize({static_cast<int64_t>(anchors.size())});
   int* d_anchors = anchors_.mutable_data<int>(TARGET(kCUDA));
-  // TargetWrapperCuda::MemcpyAsync(d_anchors,
-  //                               anchors.data(),
-  //                               sizeof(int) * anchors.size(),
-  //                               IoDirection::HtoD,
-  //                               stream);
-  CopySync<TARGET(kCUDA)>(d_anchors,
-                          anchors.data(),
-                          sizeof(int) * anchors.size(),
-                          IoDirection::HtoD);
+  TargetWrapperCuda::MemcpyAsync(d_anchors,
+                                 anchors.data(),
+                                 sizeof(int) * anchors.size(),
+                                 IoDirection::HtoD,
+                                 stream);
 
   int threads = 512;
   int blocks = (n * box_num + threads - 1) / threads;

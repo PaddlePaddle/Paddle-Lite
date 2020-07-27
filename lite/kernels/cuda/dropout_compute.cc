@@ -23,6 +23,9 @@ namespace cuda {
 
 void DropoutCompute::Run() {
   auto& param = Param<operators::DropoutParam>();
+  auto& ctx = this->ctx_->template As<CUDAContext>();
+  auto stream = ctx.exec_stream();
+
   const float* x_data = param.x->data<float>();
   float* out_data = param.output->mutable_data<float>(TARGET(kCUDA));
   int num = param.x->dims().production();
@@ -31,7 +34,7 @@ void DropoutCompute::Run() {
   if (param.dropout_implementation == "downgrade_in_infer") {
     scale = 1.0f - prob_data;
   }
-  lite::cuda::math::scale(num, x_data, out_data, scale, 0);
+  lite::cuda::math::scale(num, x_data, out_data, scale, 0.f, stream);
 }
 
 }  // namespace cuda

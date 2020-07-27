@@ -39,6 +39,7 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     nodes_in_order = graph->StmtTopologicalOrder();
   }
 
+  insts_.emplace_back();
   for (auto& item : nodes_in_order) {
     if (item->IsStmt()) {
       auto& stmt = item->AsStmt();
@@ -57,7 +58,7 @@ void GenerateProgramPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
             .SetSyncStreams(stmt.sync_streams_);
       }
 #endif
-      insts_.emplace_back(stmt.op(), std::move(stmt.kernels().front()));
+      insts_.back().emplace_back(stmt.op(), std::move(stmt.kernels().front()));
     }
   }
 }

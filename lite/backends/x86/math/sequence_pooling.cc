@@ -46,12 +46,12 @@ class MaxSeqPoolFunctor {
     auto in_dims = input.dims();
     auto out_dims = output->dims();
     auto idx_dims = index->dims();
-    PADDLE_ENFORCE_GT(in_dims.size(), 1u);
-    PADDLE_ENFORCE_GT(out_dims.size(), 1u);
+    CHECK_GT(in_dims.size(), 1u);
+    CHECK_GT(out_dims.size(), 1u);
     for (size_t i = 1; i < in_dims.size(); ++i) {
-      PADDLE_ENFORCE_EQ(in_dims[i], out_dims[i]);
+      CHECK_EQ(in_dims[i], out_dims[i]);
     }
-    PADDLE_ENFORCE_EQ(idx_dims, out_dims);
+    CHECK_EQ(idx_dims, out_dims);
 
     auto starts = input.lod()[0];
     const T* in_data = input.data<T>();
@@ -95,10 +95,10 @@ class MaxSeqPoolFunctor<T, true> {
                   lite::Tensor* index) {
     auto in_dims = input.dims();
     auto out_dims = output->dims();
-    PADDLE_ENFORCE_GT(in_dims.size(), 1u);
-    PADDLE_ENFORCE_GT(out_dims.size(), 1u);
+    CHECK_GT(in_dims.size(), 1u);
+    CHECK_GT(out_dims.size(), 1u);
     for (size_t i = 1; i < in_dims.size(); ++i) {
-      PADDLE_ENFORCE_EQ(in_dims[i], out_dims[i]);
+      CHECK_EQ(in_dims[i], out_dims[i]);
     }
 
     auto starts = input.lod()[0];
@@ -136,12 +136,12 @@ class MaxSeqPoolGradFunctor {
     auto og_dims = out_grad.dims();
     auto ig_dims = in_grad->dims();
     auto idx_dims = index.dims();
-    PADDLE_ENFORCE_GT(og_dims.size(), 1);
-    PADDLE_ENFORCE_GT(ig_dims.size(), 1);
+    CHECK_GT(og_dims.size(), 1);
+    CHECK_GT(ig_dims.size(), 1);
     for (size_t i = 1; i < og_dims.size(); ++i) {
-      PADDLE_ENFORCE_EQ(og_dims[i], ig_dims[i]);
+      CHECK_EQ(og_dims[i], ig_dims[i]);
     }
-    PADDLE_ENFORCE_EQ(idx_dims, og_dims);
+    CHECK_EQ(idx_dims, og_dims);
 
     const T* og_data = out_grad.data<T>();
     const int* max_index = index.data<int>();
@@ -236,7 +236,7 @@ class SumSeqPoolGradFunctor {
     auto lod = in_grad->lod()[0];
     int64_t out_w = out_grad.numel() / out_grad.dims()[0];
     int64_t in_w = in_grad->numel() / in_grad->dims()[0];
-    PADDLE_ENFORCE(in_w == out_w);
+    CHECK(in_w == out_w);
     const T* out_g_data = out_grad.data<T>();
     T* in_g_data = in_grad->template mutable_data<T>(TARGET(kX86));
     auto blas = math::GetBlas<TARGET(kX86), T>(context);
@@ -330,7 +330,7 @@ class SequencePoolFunctor<TARGET(kX86), T> {
         out_e.device(eigen_device) = in_e.sum(Eigen::array<int, 1>({{0}})) /
                                      std::sqrt(static_cast<T>(h));
       } else {
-        PADDLE_THROW("unsupported pooling pooltype");
+        LOG(FATAL) << "unsupported pooling pooltype";
       }
     }
   }
@@ -389,7 +389,7 @@ class SequencePoolGradFunctor<TARGET(kX86), T> {
       } else if (pooltype == "FIRST") {
         in_g_e.chip(0, 0).device(eigen_device) = out_g_e_v;
       } else {
-        PADDLE_THROW("unsupported pooling pooltype");
+        LOG(FATAL) << "unsupported pooling pooltype";
       }
     }
   }

@@ -30,52 +30,39 @@ class Engine {
  public:
   Engine(KernelContext *ctx,
          int block_idx,
-         cpp::BlockDesc *block_desc,
+         const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
+         Scope *exec_scope,
          const std::vector<std::string> &input_names,
-         const std::vector<std::string> &output_names,
-         lite::Scope *scope,
-         std::string model_cache_dir = "")
-      : ctx_(ctx),
-        block_idx_(block_idx),
-        block_desc_(block_desc),
-        input_names_(input_names),
-        output_names_(output_names),
-        scope_(scope),
-        model_cache_dir_(model_cache_dir) {}
+         const std::vector<std::string> &output_names);
   virtual ~Engine() = default;
 
-  virtual int Build();
-  virtual int Launch();
+  virtual bool Run();
 
  private:
   Engine(const Engine &) = delete;
 
  protected:
-  virtual int BuildDeviceProgram();
-  virtual int LaunchDeviceProgram();
+  virtual bool PrepareWorkspaceForOriginProgram();
+  virtual bool BuildOriginProgram();
+  virtual bool LaunchOriginProgram();
 
-  virtual int BuildOriginProgram();
-  virtual int LaunchOriginProgram();
+  virtual bool PrepareWorkspaceForDeviceProgram();
+  virtual bool BuildDeviceProgram();
+  virtual bool LaunchDeviceProgram();
 
-  virtual void InitDeviceTensor();
   virtual bool InputShapeChanged();
 
   KernelContext *ctx_{nullptr};
-  int block_idx_;
-  cpp::BlockDesc *block_desc_;
+  int block_idx_{-1};
+  const std::shared_ptr<const cpp::ProgramDesc> program_desc_{nullptr};
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
-  Scope *scope_{nullptr};
-  // SUCCESS: device program build successed. FAILED: device program build
-  // failed. REBUILD_WHEN_SHAPE_CHANGED: device program build successed but need
-  // to rebuild when input shape changed.
-  int build_device_program_status_{0};
-  std::vector<DDim> origin_idims_;
-  std::vector<DDim> origin_odims_;
+  Scope *exec_scope_{nullptr};
+  bool is_first_epoch_{true};
+  std::vector<std::vector<int64_t>> origin_idims_;
   std::vector<Tensor *> origin_itensors_;
   std::vector<Tensor *> origin_otensors_;
-  std::vector<Instruction> origin_program_;
-  std::string model_cache_dir_{""};
+  std::unique_ptr<RuntimeProgram> origin_program_{nullptr};
 };
 
 }  // namespace subgraph

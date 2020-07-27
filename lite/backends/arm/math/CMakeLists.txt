@@ -83,6 +83,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv5x5s2_depthwise_int8.cc
       conv5x5s2_depthwise_fp32.cc
       conv3x3_winograd_fp32_c4.cc
+      conv3x3_winograd_int8.cc
       conv_winograd_3x3.cc
       conv_impl.cc
       softmax.cc
@@ -126,5 +127,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       split_merge_lod_tenosr.cc
       reduce_prod.cc
       lstm.cc
+      clip.cc
       DEPS ${lite_kernel_deps} context tensor)
 endif()

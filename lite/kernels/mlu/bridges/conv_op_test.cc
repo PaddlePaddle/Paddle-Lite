@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #include "lite/operators/conv_op.h"
+
 #include <gtest/gtest.h>
+
 #include <random>
+
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
@@ -221,8 +224,10 @@ void test_conv(int bs,
   opdesc_mlu.SetAttr("groups", groups);
   opdesc_mlu.SetAttr("fuse_relu", static_cast<bool>(fuse_relu));
 
-  opdesc_mlu.SetAttr("weight_scale", std::vector<float>(oc, filter_scale));
-  opdesc_mlu.SetAttr("input_scale", input_scale);
+  OpInfo op_info(opdesc_mlu);
+  op_info.SetInputScale(filter_int_var_name,
+                        std::vector<float>(oc, filter_scale));
+  op_info.SetInputScale(input_var_name, {input_scale});
 
   if (has_bias) {
     if (is_channel_bias) {
@@ -231,7 +236,7 @@ void test_conv(int bs,
       bias->Resize({output_shape});
     }
     FillTensor<float>(bias);
-    opdesc_mlu.SetInput("Bias", {bias_var_name});
+    op_info.SetInput("Bias", {bias_var_name});
   }
 
   for (int i = 0; i < bs; i++) {
@@ -245,7 +250,7 @@ void test_conv(int bs,
   }
 
   // create and convert op to MLU model, then run it on MLU
-  auto op = CreateOp<operators::ConvOpLite>(opdesc_mlu, &scope);
+  auto op = CreateOp<operators::ConvOpLite>(op_info, &scope);
   LaunchOp(op, {input_var_name}, {output_var_name});
   // compare results
   auto* output_data = output->mutable_data<float>();
@@ -329,6 +334,10 @@ TEST(MLUBridges, conv) {
   test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 2, 5);
   test_conv(1, 3, 6, 14, 14, false, false, false, true, 2, 1, 0, 5);
 #endif
+}
+
+TEST(MLUBridges, depthwise_conv2d) {
+  test_conv(1, 8, 8, 14, 14, false, false, false, true, 1, 1, 2, 3);
 }
 
 }  // namespace mlu

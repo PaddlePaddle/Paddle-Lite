@@ -83,7 +83,7 @@ class DeformableConvOpLite : public OpLite {
     param_.conv_param.filter =
         scope->FindVar(Filter)->GetMutable<lite::Tensor>();
     param_.conv_param.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
     param_.conv_param.groups = op_desc.GetAttr<int>("groups");
     param_.conv_param.dilations = std::make_shared<std::vector<int>>(dilations);

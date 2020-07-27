@@ -13,14 +13,11 @@
 // limitations under the License.
 
 #pragma once
-
+#include <memory>
 #include <string>
 #include <vector>
-#include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/scope.h"
-#include "lite/core/tensor.h"
-#include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
@@ -37,14 +34,18 @@ class SubgraphOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+  bool AttachImpl(const cpp::OpDesc &op_desc, Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   std::string DebugString() const override { return "subgraph"; }
 
-  void SetSubBlock(cpp::BlockDesc *desc) { param_.sub_block_desc = desc; }
-  cpp::BlockDesc *GetSubBlock() { return param_.sub_block_desc; }
+  void SetProgramDesc(std::shared_ptr<const cpp::ProgramDesc> program_desc) {
+    param_.program_desc = program_desc;
+  }
+  std::shared_ptr<const cpp::ProgramDesc> GetProgramDesc() {
+    return param_.program_desc;
+  }
 
  private:
   mutable SubgraphParam param_;

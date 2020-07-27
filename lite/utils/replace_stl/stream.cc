@@ -23,6 +23,14 @@ namespace paddle {
 namespace lite {
 namespace replace_stl {
 
+#ifndef LITE_WITH_LOG
+#define ADD_DATA_AS_STRING(data_, obj_)
+#else
+#define ADD_DATA_AS_STRING(data_, obj_)    \
+  std::string text = std::to_string(obj_); \
+  pad(text);                               \
+  data_ = data_ + text;
+
 void ostream::pad(const std::string& text) {
   if (display_width_ > 0) {
     if (display_width_ < text.size()) {
@@ -36,15 +44,6 @@ void ostream::pad(const std::string& text) {
     }
   }
 }
-
-#ifndef LITE_WITH_LOG
-#define ADD_DATA_AS_STRING(data_, obj_)
-#else
-#define ADD_DATA_AS_STRING(data_, obj_)    \
-  std::string text = std::to_string(obj_); \
-  pad(text);                               \
-  data_ = data_ + text;
-
 #endif
 
 template <>

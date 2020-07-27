@@ -294,9 +294,9 @@ const proto::VarType::TensorDesc &VarDesc::tensor_desc() const {
     case proto::VarType::LOD_TENSOR_ARRAY:
       return desc_->type().tensor_array().tensor();
     default:
-      LOG(FATAL)
-          << "Getting 'tensor_desc' is not supported by the type of var %s."
-          << this->Name();
+      LOG(WARNING) << "Getting 'tensor_desc' is not supported by the type("
+                   << static_cast<int>(desc_->type().type()) << ") of var "
+                   << this->Name();
   }
   return framework::proto::VarDesc().type().lod_tensor().tensor();
 }
@@ -312,10 +312,9 @@ std::vector<proto::VarType::TensorDesc> VarDesc::tensor_descs() const {
       }
       return res;
     default:
-      LOG(FATAL)
-          << "Getting 'tensor_descs' is not supported by the type of var "
-             "%s."
-          << this->Name();
+      LOG(WARNING) << "Getting 'tensor_descs' is not supported by the type("
+                   << static_cast<int>(desc_->type().type()) << ") of var "
+                   << this->Name();
   }
   return std::vector<proto::VarType::TensorDesc>();
 }

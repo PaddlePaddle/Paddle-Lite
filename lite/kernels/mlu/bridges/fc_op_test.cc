@@ -131,14 +131,15 @@ void test_fc(const std::vector<int64_t>& input_shape,
   fc_op_desc_mlu.SetOutput("Out", {out_var_name});
   fc_op_desc_mlu.SetAttr("in_num_col_dims", static_cast<int>(in_num_col_dims));
 
-  fc_op_desc_mlu.SetAttr("weight_scale",
-                         std::vector<float>(w_shape[1], w_scale));
-  fc_op_desc_mlu.SetAttr("input_scale", input_scale);
+  OpInfo op_info(fc_op_desc_mlu);
+  op_info.SetInputScale(w_int_var_name,
+                        std::vector<float>(w_shape[1], w_scale));
+  op_info.SetInputScale(input_var_name, {input_scale});
   if (has_bias) {
-    fc_op_desc_mlu.SetInput("Bias", {bias_var_name});
+    op_info.SetInput("Bias", {bias_var_name});
   }
 
-  auto fc_op_mlu = CreateOp<operators::FcOpLite>(fc_op_desc_mlu, &scope);
+  auto fc_op_mlu = CreateOp<operators::FcOpLite>(op_info, &scope);
 
   Tensor input_tmp, out_tmp;
   input_tmp.Resize(input_shape);
@@ -175,9 +176,9 @@ void test_fc(const std::vector<int64_t>& input_shape,
 
 TEST(MLUBridges, fc) {
   for (bool use_bias : {true, false}) {
-    // test_fc({1, 8, 8, 1}, {64, 4}, 1, use_bias);
-    // test_fc({1, 5, 5, 1}, {25, 7}, 1, use_bias);
-    // test_fc({1, 4, 1, 1}, {4, 8}, 1, use_bias);
+    test_fc({1, 8, 8, 1}, {64, 4}, 1, use_bias);
+    test_fc({1, 5, 5, 1}, {25, 7}, 1, use_bias);
+    test_fc({1, 4, 1, 1}, {4, 8}, 1, use_bias);
     test_fc({1, 1024, 1, 1}, {1024, 32}, 1, use_bias);
   }
 }

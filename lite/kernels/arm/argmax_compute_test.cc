@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/argmax_compute.h"
 #include <gtest/gtest.h>
+
 #include <cstdlib>
 #include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/argmax_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -66,9 +68,7 @@ void argmax_compute_ref(const operators::ArgmaxParam& param) {
 }
 
 TEST(argmax_arm, retrive_op) {
-  auto argmax =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "arg_max");
+  auto argmax = KernelRegistry::Global().Create("arg_max");
   ASSERT_FALSE(argmax.empty());
   ASSERT_TRUE(argmax.front());
 }

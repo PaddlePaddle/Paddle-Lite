@@ -24,8 +24,13 @@ namespace mir {
 
 void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #ifdef LITE_WITH_X86
+#ifdef LITE_WITH_MLU
+  fusion::FcFuser fuser(false);
+  fuser(graph.get());
+#else
   fusion::FcFuser fuser(true);
   fuser(graph.get());
+#endif
 #endif
 
   fusion::FcFuser fuser2(false);
@@ -38,7 +43,9 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_fc_fuse_pass, paddle::lite::mir::FcFusePass)
     .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kXPU), TARGET(kX86)})
+    .ExcludeTargets({TARGET(kXPU)})
+#ifndef LITE_WITH_MLU
+    .ExcludeTargets({TARGET(kX86)})
+#endif
     .ExcludeTargets({TARGET(kBM)})
-    .ExcludeTargets({TARGET(kCUDA)})
     .BindKernel("fc");

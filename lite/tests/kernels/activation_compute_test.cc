@@ -38,7 +38,8 @@ enum activation_type_test {
   GELU,
   SQUARE,
   HARD_SWISH,
-  RECIPROCAL
+  RECIPROCAL,
+  THRESHOLDED_RELU
 };
 
 class ActivationComputeTester : public arena::TestCase {
@@ -54,6 +55,7 @@ class ActivationComputeTester : public arena::TestCase {
   float hard_swish_threshold = 6.0;
   float hard_swish_scale = 6.0;
   float hard_swish_offset = 3.0;
+  float relu_threshold_ = 1.0;
   DDim dims_{{1}};
   std::string type_ = "";
   activation_type_test act_type_ = RELU;
@@ -218,6 +220,12 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case THRESHOLDED_RELU: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = x_data[i] > relu_threshold_ ? x_data[i] : 0.f;
+        }
+        break;
+      }
       default:
         LOG(INFO) << "the type of activation is unknow.";
     }
@@ -244,6 +252,9 @@ class ActivationComputeTester : public arena::TestCase {
       op_desc->SetAttr("threshold", hard_swish_threshold);
       op_desc->SetAttr("scale", hard_swish_scale);
       op_desc->SetAttr("offset", hard_swish_offset);
+    }
+    if (act_type_ == THRESHOLDED_RELU) {
+      op_desc->SetAttr("threshold", relu_threshold_);
     }
   }
 
@@ -289,8 +300,11 @@ TEST(Activation_relu, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -313,6 +327,9 @@ TEST(Activation_leaky_relu, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -393,6 +410,9 @@ TEST(Activation_sigmoid, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -415,8 +435,11 @@ TEST(Activation_tanh, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -456,6 +479,9 @@ TEST(Activation_relu6, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -561,7 +587,7 @@ TEST(Activation_gelu, precision) {
   LOG(INFO) << "test gelu op";
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else
   return;
@@ -627,6 +653,36 @@ TEST(activation_reciprocal, precision) {
                                     DDim(dims),
                                     "reciprocal",
                                     RECIPROCAL));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+}
+
+TEST(Activation_thresholded_relu, precision) {
+  LOG(INFO) << "test thresholded_relu op";
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ActivationComputeTester(place,
+                                    "def",
+                                    0.01,
+                                    6.,
+                                    "all",
+                                    0.,
+                                    DDim(dims),
+                                    "thresholded_relu",
+                                    THRESHOLDED_RELU));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }

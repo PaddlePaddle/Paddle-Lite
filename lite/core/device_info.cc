@@ -66,15 +66,6 @@ thread_local std::vector<int> DeviceInfo::active_ids_;
 thread_local TensorLite DeviceInfo::workspace_;
 thread_local int64_t DeviceInfo::count_ = 0;
 
-#ifdef LITE_WITH_MLU
-thread_local cnmlCoreVersion_t DeviceInfo::mlu_core_version_{CNML_MLU270};
-thread_local int DeviceInfo::mlu_core_number_{1};
-thread_local bool DeviceInfo::use_first_conv_{false};
-thread_local std::vector<float> DeviceInfo::mean_vec_;
-thread_local std::vector<float> DeviceInfo::std_vec_;
-thread_local DataLayoutType DeviceInfo::input_layout_{DATALAYOUT(kNCHW)};
-#endif
-
 #ifdef TARGET_IOS
 const int DEFAULT_L1_CACHE_SIZE = 64 * 1024;
 const int DEFAULT_L2_CACHE_SIZE = 2048 * 1024;
@@ -1088,45 +1079,6 @@ int DeviceInfo::Setup() {
              1);  // use single thread by default
   return 0;
 }
-
-#ifdef LITE_WITH_MLU
-void DeviceInfo::SetMLURunMode(lite_api::MLUCoreVersion core_version,
-                               int core_number,
-                               bool use_first_conv,
-                               const std::vector<float>& mean_vec,
-                               const std::vector<float>& std_vec,
-                               DataLayoutType input_layout) {
-  switch (core_version) {
-    case (lite_api::MLUCoreVersion::MLU_220):
-      mlu_core_version_ = CNML_MLU220;
-      break;
-    case (lite_api::MLUCoreVersion::MLU_270):
-      mlu_core_version_ = CNML_MLU270;
-      break;
-    default:
-      mlu_core_version_ = CNML_MLU270;
-      break;
-  }
-  mlu_core_number_ = core_number;
-  use_first_conv_ = use_first_conv;
-  mean_vec_ = mean_vec;
-  std_vec_ = std_vec;
-  input_layout_ = input_layout;
-}
-
-cnmlCoreVersion_t DeviceInfo::MLUCoreVersion() { return mlu_core_version_; }
-
-int DeviceInfo::MLUCoreNumber() { return mlu_core_number_; }
-
-bool DeviceInfo::UseFirstConv() { return use_first_conv_; }
-
-const std::vector<float>& DeviceInfo::MeanVec() const { return mean_vec_; }
-
-const std::vector<float>& DeviceInfo::StdVec() const { return std_vec_; }
-
-DataLayoutType DeviceInfo::InputLayout() const { return input_layout_; }
-
-#endif  // LITE_WITH_MLU
 
 void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
 #ifdef ARM_WITH_OMP

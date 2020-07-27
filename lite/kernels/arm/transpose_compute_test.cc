@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/transpose_compute.h"
 #include <gtest/gtest.h>
+
 #include <limits>
 #include <string>
 #include <vector>
+
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/arm/transpose_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -121,9 +123,7 @@ TEST(transpose_arm, compute_shape_nchw) {
 }
 
 TEST(transpose, retrive_op) {
-  auto transpose =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "transpose");
+  auto transpose = KernelRegistry::Global().Create("transpose");
   ASSERT_FALSE(transpose.empty());
   ASSERT_TRUE(transpose.front());
 }
@@ -189,9 +189,7 @@ TEST(transpose2_arm, compute_shape_nchw) {
 }
 
 TEST(transpose2, retrive_op) {
-  auto transpose2 =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "transpose2");
+  auto transpose2 = KernelRegistry::Global().Create("transpose2");
   ASSERT_FALSE(transpose2.empty());
   ASSERT_TRUE(transpose2.front());
 }

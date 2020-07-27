@@ -48,25 +48,32 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   auto mean = scope->FindVar(mean_var_name)->GetMutable<Tensor>();
   auto mean_dims = mean->dims().Vectorize();
+  if (mean_dims.size() < 4) {
+    mean_dims.insert(mean_dims.begin(), 4 - mean_dims.size(), 1);
+  }
   auto mean_tensor = graph->AddNode(
-      mean_var_name, mean_dims, CNML_CONST, CNML_CNHW, graph->FPType());
+      mean_var_name, mean_dims, CNML_CONST, CNML_NHWC, graph->FPType());
 
   auto variance = scope->FindVar(variance_var_name)->GetMutable<Tensor>();
   auto variance_dims = variance->dims().Vectorize();
+  if (variance_dims.size() < 4) {
+    variance_dims.insert(variance_dims.begin(), 4 - variance_dims.size(), 1);
+  }
   auto variance_tensor = graph->AddNode(
-      variance_var_name, variance_dims, CNML_CONST, CNML_CNHW, graph->FPType());
+      variance_var_name, variance_dims, CNML_CONST, CNML_NHWC, graph->FPType());
 
   auto scale = scope->FindVar(scale_var_name)->GetMutable<Tensor>();
   auto bias = scope->FindVar(bias_var_name)->GetMutable<Tensor>();
 
-  int co = static_cast<int>(mean_dims[0]);
+  int co = static_cast<int>(mean_dims[3]);
 
+  std::vector<float> variance_trans(co);
+  std::vector<float> mean_trans(co);
   for (int i = 0; i < co; ++i) {
-    variance->mutable_data<float>()[i] =
+    variance_trans[i] =
         scale->data<float>()[i] / sqrtf(variance->data<float>()[i] + epsilon);
-    mean->mutable_data<float>()[i] =
-        mean->data<float>()[i] -
-        bias->data<float>()[i] / variance->data<float>()[i];
+    mean_trans[i] =
+        mean->data<float>()[i] - bias->data<float>()[i] / variance_trans[i];
   }
 
   auto input_tensor = graph->GetNode(x_var_name);
@@ -77,9 +84,13 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                          mean_tensor->mlu_tensor(),
                                          variance_tensor->mlu_tensor()));
 
-  graph->BindConstData(variance_var_name, variance);
-  graph->BindConstData(mean_var_name, mean);
+  graph->BindConstRawData(
+      variance_var_name, variance_trans.data(), variance_trans.size(), true);
+  graph->BindConstRawData(
+      mean_var_name, mean_trans.data(), mean_trans.size(), true);
   graph->FuseOp(bn_op);
+
+  CNML_CALL(cnmlDestroyBaseOp(&bn_op));
 
   return SUCCESS;
 }

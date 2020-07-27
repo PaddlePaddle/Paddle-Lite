@@ -36,14 +36,20 @@ void UpdateInputsForSubgraph(OpLite* op,
       op_desc->GetAttr<std::vector<std::string>>("input_data_names");
   std::replace(input_data_names.begin(), input_data_names.end(), from, to);
   op_desc->SetAttr("input_data_names", input_data_names);
-  auto* subblock_desc = static_cast<operators::SubgraphOp*>(op)->GetSubBlock();
-  CHECK(subblock_desc);
-  for (size_t i = 0; i < subblock_desc->OpsSize(); i++) {
-    auto* subblock_op_desc = subblock_desc->GetOp<cpp::OpDesc>(i);
-    for (auto& subblock_op_input : *subblock_op_desc->mutable_inputs()) {
-      for (auto& subblock_var_name : subblock_op_input.second) {
-        if (subblock_var_name == from) {
-          subblock_var_name = to;
+  auto sub_program_desc =
+      static_cast<operators::SubgraphOp*>(op)->GetProgramDesc();
+  CHECK(sub_program_desc);
+  int sub_block_idx = op_desc->GetAttr<int32_t>("sub_block");
+  auto sub_block_desc =
+      sub_program_desc->GetBlock<cpp::BlockDesc>(sub_block_idx);
+  for (size_t sub_op_idx = 0; sub_op_idx < sub_block_desc->OpsSize();
+       sub_op_idx++) {
+    auto sub_op_desc = const_cast<cpp::OpDesc*>(
+        sub_block_desc->GetOp<cpp::OpDesc>(sub_op_idx));
+    for (auto& sub_op_input : *sub_op_desc->mutable_inputs()) {
+      for (auto& sub_var_name : sub_op_input.second) {
+        if (sub_var_name == from) {
+          sub_var_name = to;
         }
       }
     }
@@ -66,65 +72,30 @@ void UpdateInputs(OpLite* op, const std::string& from, const std::string& to) {
   }
 }
 
-// Infer the scale value for the new calib op from the subgraph op
-static bool InferScaleFromSubgraph(std::string var_name,
-                                   const OpInfo* op_info,
-                                   float* scale,
-                                   bool reverse = false) {
-  std::string attr_name = reverse ? "output_data_names" : "input_data_names";
-  if (!op_info->HasAttr(attr_name)) return false;
-  auto input_or_output_names =
-      op_info->GetAttr<std::vector<std::string>>(attr_name);
-  attr_name = reverse ? "output_data_scales" : "input_data_scales";
-  if (!op_info->HasAttr(attr_name)) return false;
-  auto input_or_output_scales = op_info->GetAttr<std::vector<float>>(attr_name);
-  auto size = input_or_output_names.size();
-  CHECK(size == input_or_output_scales.size());
-  for (size_t i = 0; i < size; i++) {
-    if (input_or_output_names[i] == var_name) {
-      *scale = input_or_output_scales[i];
-      return true;
-    }
-  }
-  return false;
-}
-
 // Infer the scale value for the new calib op from the input_scale of the
 // current op and output_scale of the previous op.
 // case 1: prev_op->var_node->op_node(int8->any op, with input_scale).
-// case 2: prev_op->var_node->op_node(subgraph op, int8->any, with
-// input_data_scales).
-// case 3: prev_op(any->int8, with output_scale)->var_node->op_node(fp32->any,
+// case 2: prev_op(any->int8, with output_scale)->var_node->op_node(fp32->any,
 // without input_scale).
-// case 4: prev_op(any->int8, subgraph_op, with
-// output_data_scales)->var_node->op_node(fp32->any, without input_scale).
 static bool InferScale(Node* var_node, Node* op_node, float* scale) {
   bool found = false;
   auto& inst = op_node->AsStmt();
   auto op_info = inst.op_info();
   auto op_type = op_info->Type();
   auto var_name = var_node->AsArg().name;
-  if (op_type == "subgraph") {
-    found = InferScaleFromSubgraph(var_name, op_info, scale, false);
+  if (op_info->HasInputScale(var_name)) {
+    *scale = op_info->GetInputScale(var_name)[0];
+    found = true;
   } else {
-    if (op_info->HasAttr("input_scale")) {
-      *scale = op_info->GetAttr<float>("input_scale");
+    // Obtain the output_scale from one of its previous Ops
+    auto prev_op_node = var_node->inlinks.front();
+    CHECK(prev_op_node->IsStmt());
+    auto& prev_inst = prev_op_node->AsStmt();
+    auto prev_op_info = prev_inst.op_info();
+    auto prev_op_type = prev_op_info->Type();
+    if (prev_op_info->HasOutputScale(var_name)) {
+      *scale = prev_op_info->GetOutputScale(var_name)[0];
       found = true;
-    } else {
-      // Obtain the output_scale from one of its previous Ops
-      auto prev_op_node = var_node->inlinks.front();
-      CHECK(prev_op_node->IsStmt());
-      auto& prev_inst = prev_op_node->AsStmt();
-      auto prev_op_info = prev_inst.op_info();
-      auto prev_op_type = prev_op_info->Type();
-      if (prev_op_type == "subgraph") {
-        found = InferScaleFromSubgraph(var_name, prev_op_info, scale, true);
-      } else {
-        if (prev_op_info->HasAttr("output_scale")) {
-          *scale = prev_op_info->GetAttr<float>("output_scale");
-          found = true;
-        }
-      }
     }
   }
   return found;

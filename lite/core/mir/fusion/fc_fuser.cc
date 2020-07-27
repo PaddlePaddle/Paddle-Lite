@@ -71,7 +71,20 @@ void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 }
 
 cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
-  cpp::OpDesc op_desc = *matched.at("mul")->stmt()->op_info();
+  auto op_desc = *matched.at("mul")->stmt()->op_info();
+
+  // Get the input scale from mul
+  std::vector<float> x_scale_vct;
+  std::vector<float> y_scale_vct;
+  auto input_x_name = op_desc.Input("X").front();
+  auto input_y_name = op_desc.Input("Y").front();
+  bool is_quantized_op = op_desc.HasInputScale(input_x_name) &&
+                         op_desc.HasInputScale(input_y_name);
+  if (is_quantized_op) {
+    x_scale_vct = op_desc.GetInputScale(input_x_name);
+    y_scale_vct = op_desc.GetInputScale(op_desc.Input("Y").front());
+  }
+
   op_desc.mutable_inputs()->clear();
   op_desc.mutable_outputs()->clear();
   op_desc.SetType("fc");
@@ -85,6 +98,13 @@ cpp::OpDesc FcFuser::GenOpDesc(const key2nodes_t& matched) {
   if (with_relu_) {
     op_desc.SetAttr("activation_type", std::string{"relu"});
   }
+
+  // Set the input scale into fc
+  if (is_quantized_op) {
+    op_desc.SetInputScale(matched.at("x")->arg()->name, x_scale_vct);
+    op_desc.SetInputScale(matched.at("W")->arg()->name, y_scale_vct);
+  }
+
   return op_desc;
 }
 

@@ -15,6 +15,7 @@
 #pragma once
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {
@@ -30,6 +31,16 @@ class TargetWrapper<TARGET(kCUDA)> {
 
   static size_t num_devices();
   static size_t maximum_stream() { return 0; }
+
+  static int GetComputeCapability() {
+    int dev_id = GetCurDevice();
+    int major, minor;
+    CUDA_CALL(cudaDeviceGetAttribute(
+        &major, cudaDevAttrComputeCapabilityMajor, dev_id));
+    CUDA_CALL(cudaDeviceGetAttribute(
+        &minor, cudaDevAttrComputeCapabilityMinor, dev_id));
+    return major * 10 + minor;
+  }
 
   static size_t GetCurDevice() {
     int dev_id;

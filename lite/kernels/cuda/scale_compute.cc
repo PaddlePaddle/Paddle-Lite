@@ -23,8 +23,11 @@ namespace cuda {
 
 void ScaleCompute::Run() {
   auto& param = Param<operators::ScaleParam>();
+  auto& ctx = this->ctx_->template As<CUDAContext>();
+  auto stream = ctx.exec_stream();
+
   const float* x_data = param.x->data<float>();
-  float* output_data = param.output->mutable_data<float>();
+  float* output_data = param.output->mutable_data<float>(TARGET(kCUDA));
   DDim x_dims = param.x->dims();
   bool bias_after_scale = param.bias_after_scale;
   float scale = param.scale;
@@ -33,7 +36,7 @@ void ScaleCompute::Run() {
     bias *= scale;
   }
   lite::cuda::math::scale(
-      x_dims.production(), x_data, output_data, scale, bias);
+      x_dims.production(), x_data, output_data, scale, bias, stream);
 }
 
 }  // namespace cuda
