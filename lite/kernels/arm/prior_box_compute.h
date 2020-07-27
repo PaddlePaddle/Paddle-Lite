@@ -24,10 +24,15 @@ namespace arm {
 class PriorBoxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::PriorBoxParam;
-
+  void PrepareForRun() override;
   void Run() override;
 
   virtual ~PriorBoxCompute() = default;
+
+ private:
+  bool _flag_init{false};
+  lite::Tensor out_boxes;
+  lite::Tensor variances;
 };
 
 }  // namespace arm

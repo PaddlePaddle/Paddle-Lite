@@ -21,7 +21,7 @@ namespace lite {
 namespace arm {
 namespace math {
 
-const int MALLOC_ALIGN = 16;
+const int MALLOC_ALIGN = 64;
 
 void* fast_malloc(size_t size) {
   size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
@@ -46,8 +46,8 @@ void fast_free(void* ptr) {
 
 void density_prior_box(const lite::Tensor* input,
                        const lite::Tensor* image,
-                       lite::Tensor** boxes,
-                       lite::Tensor** variances,
+                       lite::Tensor* boxes,
+                       lite::Tensor* variances,
                        const std::vector<float>& min_size_,
                        const std::vector<float>& fixed_size_,
                        const std::vector<float>& fixed_ratio_,
@@ -69,11 +69,11 @@ void density_prior_box(const lite::Tensor* input,
   int win1 = input->dims()[3];
   int hin1 = input->dims()[2];
   DDim shape_out({hin1, win1, prior_num_, 4});
-  (*boxes)->Resize(shape_out);
-  (*variances)->Resize(shape_out);
+  boxes->Resize(shape_out);
+  variances->Resize(shape_out);
 
-  float* _cpu_data = (*boxes)->mutable_data<float>();
-  float* _variance_data = (*variances)->mutable_data<float>();
+  float* _cpu_data = boxes->mutable_data<float>();
+  float* _variance_data = variances->mutable_data<float>();
 
   const int width = win1;
   const int height = hin1;
@@ -329,8 +329,8 @@ void density_prior_box(const lite::Tensor* input,
 
 void prior_box(const lite::Tensor* input,
                const lite::Tensor* image,
-               lite::Tensor** boxes,
-               lite::Tensor** variances,
+               lite::Tensor* boxes,
+               lite::Tensor* variances,
                const std::vector<float>& min_size,
                const std::vector<float>& max_size,
                const std::vector<float>& aspect_ratio,

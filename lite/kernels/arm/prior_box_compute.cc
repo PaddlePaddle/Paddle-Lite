@@ -46,7 +46,7 @@ inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
   }
 }
 
-void PriorBoxCompute::Run() {
+void PriorBoxCompute::PrepareForRun() {
   auto& param = Param<operators::PriorBoxParam>();
 
   bool is_flip = param.flip;
@@ -69,8 +69,8 @@ void PriorBoxCompute::Run() {
 
   lite::arm::math::prior_box(param.input,
                              param.image,
-                             &param.boxes,
-                             &param.variances,
+                             &out_boxes,
+                             &variances,
                              min_size,
                              max_size,
                              aspect_ratios_vec,
@@ -85,6 +85,22 @@ void PriorBoxCompute::Run() {
                              is_clip,
                              order,
                              min_max_aspect_ratios_order);
+  this->_flag_init = true;
+}
+
+void PriorBoxCompute::Run() {
+  if (!this->_flag_init) {
+    LOG(FATAL) << "ERROR: init priorbox first\n";
+  }
+  auto& param = Param<operators::PriorBoxParam>();
+  param.boxes->Resize(out_boxes.dims());
+  param.variances->Resize(out_boxes.dims());
+  memcpy(param.boxes->mutable_data<float>(),
+         out_boxes.data<float>(),
+         param.boxes->numel());
+  memcpy(param.variances->mutable_data<float>(),
+         variances.data<float>(),
+         param.variances->numel());
 }
 
 }  // namespace arm
