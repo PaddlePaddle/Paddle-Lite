@@ -130,6 +130,7 @@ class SequencePoolGradTester {
     }
     LOG(INFO) << "run_backward:";
     this->run_backward(&grad_param_, &grad_kernel_, x, out_grad, x_grad.data());
+    LOG(INFO) << "end";
   }
 
  private:
@@ -170,6 +171,7 @@ void TestSequencePoolGrad(DDim dims,
 }
 
 TEST(sequence_pool_grad_host, compute) {
+#ifdef LITE_WITH_ARM
   int max_len = 2;
   for (auto c : {2, 4}) {
     for (auto h : {1, 3, 4}) {
@@ -192,6 +194,7 @@ TEST(sequence_pool_grad_host, compute) {
       }
     }
   }
+#endif
 }
 
 }  // namespace arm
