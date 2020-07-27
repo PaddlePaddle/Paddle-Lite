@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/feed_compute.h"
+
 #include "lite/backends/fpga/KD/debugger.hpp"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
@@ -90,3 +91,4 @@ REGISTER_LITE_KERNEL(feed,
                                        PRECISION(kInt32),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
+    

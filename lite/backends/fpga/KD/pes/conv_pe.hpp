@@ -32,53 +32,6 @@ namespace zynqmp {
 
 class ConvPE : public PE {
  public:
-  bool init() {
-    Tensor* output = param_.output;
-    output->setAligned(true);
-    output->setDataLocation(Device);
-    return true;
-  }
-
-  void apply() {
-    split_axis = fill_split_arg(param_);
-
-    split_channel = param_.groups != 1 && param_.splitParams().size() > 1;
-
-    if (split_axis == 0 && param_.splitParams().size() > 1) {
-      ConcatParam& concat_param = concatPE_.param();
-      for (auto conv_param : param_.splitParams()) {
-        concat_param.inputs.push_back(&conv_param->output);
-      }
-      concat_param.output = param_.output;
-      concatPE_.init();
-      concatPE_.apply();
-    }
-
-    if (split_channel) {
-      SplitParam& split_param = splitPE_.param();
-      split_param.input = param_.input;
-      for (auto conv_param : param_.splitParams()) {
-        split_param.outputs.push_back(&conv_param->input);
-      }
-      splitPE_.init();
-      splitPE_.apply();
-    }
-
-    if (DLEngine::get_instance().isZU3() &&
-        param_.input->shape().dimSize() == 4 &&
-        param_.input->shape().width() == 1 &&
-        param_.input->shape().channel() >= 2048) {
-      use_cpu_ = true;
-    }
-    if (param_.filter->shape().width() == 1 &&
-        param_.filter->shape().num() % 16 != 0) {
-      // use_cpu_ = true;
-    }
-    if (!use_cpu_) {
-      // param_.filter->releaseData();
-    }
-  }
-
   void cpu_conv_half_hwc() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
@@ -109,7 +62,10 @@ class ConvPE : public PE {
     Tensor float_input;
     Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
+    input->syncToDevice();
     float_input.copyFrom(input);
+    float_input.invalidate();
+    float_input.saveToFile("fi", true);
 
     float* out = float_output.mutableData<float>(FP32, output->shape());
 
@@ -117,16 +73,18 @@ class ConvPE : public PE {
       for (int pw = 0; pw < pooled_width_; pw++) {
         int hstart = ph * kernel_step_h - image_pad_h;
         int wstart = pw * kernel_step_w - image_pad_w;
-        int hend = std::min(hstart + kernel_rh, (int)image_height);
-        int wend = std::min(wstart + kernel_rw, (int)image_width);
+        int hend = std::min(hstart + kernel_rh, static_cast<int>(image_height));
+        int wend = std::min(wstart + kernel_rw, static_cast<int>(image_width));
 
         int hstart_plus =
-            dilation_rate * ceil(float(image_pad_h - ph * kernel_step_h) /
-                                 float(dilation_rate)) -
+            dilation_rate * ceil(
+                  static_cast<float>(image_pad_h - ph * kernel_step_h)) /
+                                 static_cast<float>(dilation_rate)) -
             image_pad_h + ph * kernel_step_h;
         int wstart_plus =
-            dilation_rate * ceil(float(image_pad_w - pw * kernel_step_w) /
-                                 float(dilation_rate)) -
+            dilation_rate *
+                ceil(static_cast<float>(image_pad_w - pw * kernel_step_w) /
+                     static_cast<float>(dilation_rate)) -
             image_pad_w + pw * kernel_step_w;
 
         int hstart_ = hstart < 0 ? hstart_plus : hstart;
@@ -167,15 +125,64 @@ class ConvPE : public PE {
         }
       }
     }
+    float_output.flush();
     float_output.saveToFile("fo", true);
-    exit(-1);
+    output->copyFrom(&float_output);
+    output->invalidate();
+    output->saveToFile("out", true);
+    // exit(-1);
   }
 
+  bool init() {
+    Tensor* output = param_.output;
+    output->setAligned(true);
+    output->setDataLocation(Device);
+    return true;
+  }
+
+  void apply() {
+    if (param_.deconv == false) {
+      split_axis = fill_split_arg(param_);
+
+      split_channel = param_.groups != 1 && param_.splitParams().size() > 1;
+
+      if (split_axis == 0 && param_.splitParams().size() > 1) {
+        ConcatParam& concat_param = concatPE_.param();
+        for (auto conv_param : param_.splitParams()) {
+          concat_param.inputs.push_back(&conv_param->output);
+        }
+        concat_param.output = param_.output;
+        concatPE_.init();
+        concatPE_.apply();
+      }
+
+      if (split_channel) {
+        SplitParam& split_param = splitPE_.param();
+        split_param.input = param_.input;
+        for (auto conv_param : param_.splitParams()) {
+          split_param.outputs.push_back(&conv_param->input);
+        }
+        splitPE_.init();
+        splitPE_.apply();
+      }
+    }
+
+    if (DLEngine::get_instance().isZU3() &&
+        param_.input->shape().dimSize() == 4 &&
+        param_.input->shape().width() == 1 &&
+        param_.input->shape().channel() >= 2048) {
+      use_cpu_ = true;
+    }
+    if (!use_cpu_) {
+      param_.filter->releaseData();
+    }
+
+    // exit(-1);
+  }
   void cpu_compute() {
     Tensor* input = param_.input;
     Tensor* output = param_.output;
-    // input->saveToFile("input", true);
-    // input->syncToCPU();
+    input->syncToCPU();
 
     Tensor float_input;
     Tensor float_output;
@@ -189,59 +196,39 @@ class ConvPE : public PE {
 
     float* filter_data = param_.filter->data<float>();
     float* mi = new float[in_channel];
-
-    int wh = input->shape().width() * input->shape().height();
-    float max = 0;
     for (int i = 0; i < out_channel; i++) {
+      float* image = image_addr;
       float* filter_ptr = filter_data + i * in_channel;
-      // #pragma omp parallel for
+      float* out_ptr = mi;
+#pragma omp parallel for
+      for (int j = 0; j < in_channel; j++) {
+        // float32x4_t x0 = vld1q_f32(image);
+        // float32x4_t x1 = vld1q_f32(filter_ptr);
 
-      for (int k = 0; k < wh; k++) {
-        float* image = image_addr;
-        float* out_ptr = mi;
+        // float32x4_t r = vmulq_f32(x0, x1);
 
-        for (int j = 0; j < in_channel; j++) {
-          float value = image_addr[k * in_channel + j] * filter_ptr[j];
-          mi[j] = value;
-        }
-
-        float sum = 0;
-        for (int j = 0; j < in_channel; j++) {
-          sum += mi[j];
-        }
-        float fv = sum;
-        float s = param_.scale()->data<float>()[i];
-        float b = param_.bias()->data<float>()[i];
-
-        fv *= s;
-        fv += b;
-
-        // std::cout << "\n" << fv << " = " << sum << " x " << s << " + " << b
-        // << std::endl;
-
-        out[i * wh + k] = fv;
-        max = std::max(max, std::abs(fv));
+        // vst1q_f32(out_ptr, r);
+        // image += 4;
+        // filter_ptr += 4;
+        // out_ptr += 4;
+        float value = image_addr[j] * filter_ptr[j];
+        mi[j] = value;
       }
+
+      float sum = 0;
+      for (int j = 0; j < in_channel; j++) {
+        sum += mi[j];
+      }
+      out[i] = sum;
     }
     delete[] mi;
-    param_.bias()->saveToFile("bias", true);
-
-    exit(-1);
-
     float_output.flush();
-    float_output.saveToFile("float_output", true);
     output->copyFrom(&float_output);
-    output->invalidate();
-    output->scale()[0] = max / 127.0;
-    output->scale()[1] = 127.0 / max;
-    // output->saveToFile("cpu", true);
   }
 
   bool dispatch() {
-    // fpga_reset();
     if (use_cpu_) {
-      // cpu_compute();
-      cpu_conv_half_hwc();
+      cpu_compute();
       return true;
     }
 
@@ -268,7 +255,7 @@ class ConvPE : public PE {
 
     std::vector<BasicConvParam*>& params = param_.splitParams();
 
-    if (split_channel) {
+    if (split_channel && param_.deconv == false) {
       // splitPE_.param().input->saveToFile("input_image",true);
       splitPE_.dispatch();
     }
@@ -298,7 +285,7 @@ class ConvPE : public PE {
     }
 
     size_t size = params.size();
-    if (split_axis == 0 && ret == 0 && size > 1) {
+    if (split_axis == 0 && ret == 0 && size > 1 && param_.deconv == false) {
       // std::cout << "concat size:" << size << std::endl;
       concatPE_.dispatch();
     }
@@ -321,6 +308,7 @@ class ConvPE : public PE {
       // std::cout << "\n ================== EW ================== \n";
       // }
     }
+
     return ret == 0;
   }
 

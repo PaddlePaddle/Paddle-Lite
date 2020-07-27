@@ -26,8 +26,6 @@ class OutputPE : public PE {
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(false);
-    DLEngine::get_instance().out_data = reinterpret_cast<float*>(
-        fpga_malloc(output->shape().numel() * sizeof(float)));
     return true;
   }
 
@@ -46,16 +44,6 @@ class OutputPE : public PE {
     }
     //
     output->syncToCPU();
-    if (DLEngine::get_instance().out_data == nullptr) {
-      DLEngine::get_instance().out_data = reinterpret_cast<float*>(
-          fpga_malloc(output->shape().numel() * sizeof(float)));
-    }
-    memcpy(DLEngine::get_instance().out_data,
-           output->data<void>(),
-           output->shape().numel() * sizeof(float));
-
-    fpga_reset();
-
     // auto max = fpga_get_memory_size_max();
     // std::cout << "PL ===== Max: ===== :: " << max << std::endl;
 

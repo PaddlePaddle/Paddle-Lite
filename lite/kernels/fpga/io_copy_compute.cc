@@ -25,7 +25,7 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void copy_properties(operators::IoCopyParam& param) {
+void copy_properties(operators::IoCopyParam& param) {  // NOLINT
   param.y->set_persistable(param.x->persistable());
   auto out_lod = param.y->mutable_lod();
   *out_lod = param.x->lod();
@@ -202,7 +202,7 @@ class IoCopyFpgaToHostCHWCompute
                dims.height(),
                dims.width());
 
-    param.y->ZynqTensor()->copyFrom(hwc.ZynqTensor());
+    // param.y->ZynqTensor()->copyFrom(hwc.ZynqTensor());
     // param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
     param.y->ZynqTensor()->flush();
     copy_properties(param);

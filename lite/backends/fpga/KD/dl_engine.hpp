@@ -29,15 +29,13 @@ class DLEngine {
     return s_instance;
   }
 
-  DeviceInfo& deviceInfo();
+  DeviceInfoArgs& deviceInfo();
 
   bool isZU3() { return info_.device_type / 100 == 3; }
 
-  float* out_data = nullptr;
-
  private:
   DLEngine();
-  DeviceInfo info_;
+  DeviceInfoArgs info_;
 };
 }  // namespace zynqmp
 }  // namespace paddle

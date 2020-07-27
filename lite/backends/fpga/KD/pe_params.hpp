@@ -78,6 +78,7 @@ struct ConvParam : PEParam {
   Tensor* filter = nullptr;
 
   int groups = 1;
+  bool deconv = false;
   std::vector<int> strides;
   std::vector<int> paddings;
   std::vector<int> kernelSize;
@@ -90,9 +91,8 @@ struct ConvParam : PEParam {
   std::vector<BasicConvParam*>& splitParams() { return splitParams_; }
 
   ~ConvParam() {
-    for (int i = 0; i < splitParams_.size(); i++) {
-      BasicConvParam* basic_param = splitParams_[i];
-      delete basic_param;
+    for (BasicConvParam* p : splitParams_) {
+      delete p;
     }
     splitParams_.clear();
   }
@@ -101,6 +101,26 @@ struct ConvParam : PEParam {
   std::vector<BasicConvParam*> splitParams_;
   Tensor scale_;
   Tensor bias_;
+};
+
+struct BasicDWConvParam {
+  Tensor input;
+  Tensor output;
+  Tensor filter;
+  Tensor bias;
+  DWconvArgs args;
+  Tensor quantizedFilter;
+  Tensor quantizedBias;
+};
+
+struct DepthwiseConvSplitParam : ConvParam {
+ public:
+  DWconvArgs args;
+
+  std::vector<BasicDWConvParam*>& splitParams() { return splitParams_; }
+
+ protected:
+  std::vector<BasicDWConvParam*> splitParams_;
 };
 
 struct DepthwiseConvParam : ConvParam {
@@ -132,6 +152,16 @@ struct PoolingParam : PEParam {
   PoolingArgs poolingArgs = {0};
 };
 
+struct PoolingSplitParam : ConvParam {
+ public:
+  PoolingArgs args;
+
+  std::vector<PoolingParam*>& splitParams() { return splitParams_; }
+
+ protected:
+  std::vector<PoolingParam*> splitParams_;
+};
+
 struct ConcatParam : PEParam {
  public:
   std::vector<Tensor*> inputs;
@@ -150,7 +180,7 @@ struct ElementwiseAddParam : PEParam {
 
 struct ElementwiseMulParam : PEParam {
  public:
-  Tensor* input_x = nullptr;
+  Tensor* input_x;
   Tensor* input_y = nullptr;
   Tensor* output = nullptr;
 };
@@ -201,10 +231,10 @@ struct NormParam : PEParam {
 };
 
 struct PriorBoxParam : PEParam {
-  Tensor* input = nullptr;
-  Tensor* image = nullptr;
-  Tensor* outputBoxes = nullptr;
-  Tensor* outputVariances = nullptr;
+  Tensor* input;
+  Tensor* image;
+  Tensor* outputBoxes;
+  Tensor* outputVariances;
 
   std::vector<float> minSizes;
   std::vector<float> maxSizes;
@@ -220,10 +250,10 @@ struct PriorBoxParam : PEParam {
 };
 
 struct YoloBoxParam : PEParam {
-  Tensor* input = nullptr;
-  Tensor* imgSize = nullptr;
-  Tensor* outputBoxes = nullptr;
-  Tensor* outputScores = nullptr;
+  Tensor* input;
+  Tensor* imgSize;
+  Tensor* outputBoxes;
+  Tensor* outputScores;
   int downsampleRatio;
   std::vector<int> anchors;
   int classNum;

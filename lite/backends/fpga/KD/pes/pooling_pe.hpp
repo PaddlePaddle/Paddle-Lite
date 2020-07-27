@@ -50,7 +50,11 @@ class PoolingPE : public PE {
 
     PoolingArgs args = {0};
     args.mode = param_.type;
-    args.kernel_reciprocal = fp32_2_fp16(1.0f / (k_width * k_height));
+    if (param_.globalPooling) {
+      args.kernel_reciprocal = fp32_2_fp16(1.0f);
+    } else {
+      args.kernel_reciprocal = fp32_2_fp16(1.0f / (k_width * k_height));
+    }
     args.image.address = input->data<float16>();
     args.image.channels = input->shape().channel();
     args.image.height = input->shape().height();
@@ -67,6 +71,14 @@ class PoolingPE : public PE {
     args.out_height = output->shape().height();
     args.out_width = output->shape().width();
     param_.poolingArgs = args;
+
+    // std::cout <<"args.mode:" << args.mode << ",channels:" <<
+    // args.image.channels << ",height:" << args.image.height
+    //   << ",width:" << args.image.width << ",paddings:" <<
+    //   args.image.pad_height << ",kernel_h:" << args.kernel.height
+    //   << ",kernel_w:" << args.kernel.width << ",stride_w:" <<
+    //   args.kernel.stride_w  << ",out_height:" << args.out_height
+    //   << ",out_width:" << args.out_width << std::endl;
 
     // use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1
     // &&
@@ -117,15 +129,16 @@ class PoolingPE : public PE {
         for (int c = 0; c < image_channels; ++c) {
           const int pool_index = (ph * pooled_width_ + pw) * image_channels + c;
           float sum = 0;
-          // const int index =
-          //     (hstart * image_width + wstart) * image_channels + c;
+
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               const int index = (h * image_width + w) * image_channels + c;
               float value = image_addr[index];
+              // ofs_out << value << std::endl;
               sum += value;
             }
           }
+
           float value = sum / kernel;
           if (value > max) {
             max = value;
@@ -203,11 +216,42 @@ class PoolingPE : public PE {
     if (use_cpu_) {
       // cpu_compute();
       compute();
+
+      std::cout << "pool compute" << std::endl;
       // exit(-1);
       return true;
     }
     param_.input->syncToDevice();
-    return compute_fpga_pool(param_.poolingArgs) == 0;
+    if (param_.globalPooling) {
+      inplace_.relu_enable = false;
+      inplace_.leaky_relu_enable = false;
+      inplace_.relu6_enable = false;
+      inplace_.sigmoid_enable = false;
+      inplace_.global_pool_en = true;
+      config_inplace(inplace_);
+
+      int kernel_height = param_.kernelSize[1];
+      int kernel_width = param_.kernelSize[0];
+      globalPoolArgs.global_pool_factor =
+          fp32_2_fp16(1.0f / (kernel_height * kernel_width));
+      config_global_pool(globalPoolArgs);
+      std::cout << "pool_pe globalPooling: " << param_.globalPooling
+                << std::endl;
+    }
+    int ret = (compute_fpga_pool(param_.poolingArgs) == 0);
+    if (param_.globalPooling) {
+      inplace_.relu_enable = false;
+      inplace_.leaky_relu_enable = false;
+      inplace_.relu6_enable = false;
+      inplace_.sigmoid_enable = false;
+      inplace_.global_pool_en = false;
+      config_inplace(inplace_);
+      globalPoolArgs.global_pool_factor = fp32_2_fp16(0);
+      config_global_pool(globalPoolArgs);
+      std::cout << "pool_pe globalPooling::: " << std::endl;
+    }
+
+    return ret;
   }
 
   PoolingParam& param() { return param_; }
@@ -215,6 +259,8 @@ class PoolingPE : public PE {
  private:
   PoolingParam param_;
   bool use_cpu_;
+  InplaceArgs inplace_ = {0};
+  GlobalPoolArgs globalPoolArgs;
 };
 
 }  // namespace zynqmp

@@ -66,22 +66,21 @@ inline int CellSize(DataType type) {
 
 class PlaceHolder {
  public:
-  PlaceHolder() {}
   explicit PlaceHolder(size_t size) {
     size_ = size;
     data_ = fpga_malloc(size_);
-    // memset(data_, 0, size);
   }
 
   void* data() { return data_; }
-  void set_data(const void* ptr) { data_ = const_cast<void*>(ptr); }
 
   size_t memorySize() { return size_; }
-  void set_size(size_t new_size) { size_ = new_size; }
 
-  ~PlaceHolder() { fpga_free(data_); }
+  ~PlaceHolder() {
+    //    std::cout << "place holder dealloc";
+    fpga_free(data_);
+  }
 
-  float scale_[2] = {0};
+  float scale_[2];
 
  private:
   void* data_ = nullptr;
@@ -100,18 +99,16 @@ class Tensor {
       return nullptr;
     }
     void* ptr = reinterpret_cast<char*>(this->placeHolder_->data()) +
-                offset * CellSize(dataType_);
+                offset_ * CellSize(dataType_);
     return reinterpret_cast<Dtype*>(ptr);
-  }
-
-  void releaseData() {
-    released = true;
-    placeHolder_.reset();
   }
 
   template <typename Dtype>
   Dtype* mutableData(DataType dataType, const Shape& shape) {
-    this->shape_.reset(new Shape(shape));
+    if (this->shape_ != nullptr) {
+      delete shape_;
+    }
+    this->shape_ = new Shape(shape);
     this->dataType_ = dataType;
     return mutableData<Dtype>();
   }
@@ -119,7 +116,7 @@ class Tensor {
   template <typename Dtype>
   Dtype* mutableData() {
     size_t memorySize =
-        shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
+        shape_->memorySize(CellSize(dataType_)) * mem_factor_ + 16;
     if (placeHolder_ != nullptr) {
       if (memorySize > placeHolder_->memorySize()) {
         placeHolder_.reset(new PlaceHolder(memorySize));
@@ -127,6 +124,7 @@ class Tensor {
     } else {
       placeHolder_.reset(new PlaceHolder(memorySize));
     }
+    // return reinterpret_cast<Dtype*>(placeHolder_->data());
     return data<Dtype>();
   }
 
@@ -135,13 +133,18 @@ class Tensor {
       return 0;
     }
     return placeHolder_->memorySize();
+    // return shape_->memorySize(CellSize(dataType_));
   }
+
+  void setMemScale(float mem_factor) { mem_factor_ = mem_factor; }
+
+  void setOffset(int offset) { offset_ = offset; }
 
   void setDataType(DataType dataType) { this->dataType_ = dataType; }
 
   DataType dataType() { return this->dataType_; }
 
-  Shape& shape() { return *(shape_.get()); }
+  Shape& shape() { return *shape_; }
 
   bool aligned() { return this->aligned_; }
 
@@ -206,6 +209,7 @@ class Tensor {
       return;
     }
     target->syncToCPU();
+    // target->aligned_ = false;
     if (shape_->shouldAlign()) {
       int cell_size = CellSize(this->dataType_);
       char* dst_data = nullptr;
@@ -243,19 +247,18 @@ class Tensor {
     }
   }
 
-  void setMemScale(float scale_factor) {
-    this->mem_scale_factor_ = scale_factor;
-  }
-
   void shareDataWith(Tensor* src) { shareDataWith(src, src->shape()); }
 
   void shareDataWith(Tensor* src, const Shape& shape, int offset = 0) {
+    if (shape_ != nullptr) {
+      delete shape_;
+    }
     this->placeHolder_ = src->placeHolder_;
     this->dataType_ = src->dataType_;
     this->aligned_ = src->aligned_;
     this->dateLocation_ = src->dateLocation_;
-    this->offset = offset;
-    shape_.reset(new Shape(shape));
+    this->offset_ = offset;
+    shape_ = new Shape(const_cast<Shape&>(shape));
   }
 
   void copyFrom(Tensor* src) {
@@ -277,14 +280,12 @@ class Tensor {
                   .channels = (uint32_t)src->shape().numel(),
                   .width = 1,
                   .height = 1,
-                  .pad_width = 0U,
-                  .pad_height = 0U};
-
-    ImageOutputArgs output = {
+                  .pad_width = 0u,
+                  .pad_height = 0u};
+    args.output = {
         .address = data<void>(), .scale_address = scale(),
     };
-
-    args.output = output;
+    src->syncToDevice();
     size_t aligned_remainder = src->shape().numel() % 16;
     if (aligned_remainder > 0) {
       size_t dtype_size =
@@ -294,21 +295,15 @@ class Tensor {
       fpga_flush(dst, aligned_remainder * dtype_size);
     }
     src->syncToDevice();
+    this->invalidate();
     perform_bypass(args);
     this->invalidate();
   }
 
-  void flush() {
-    if (released) {
-      return;
-    }
-    size_t memorySize = placeHolder_->memorySize();
-    fpga_flush(placeHolder_->data(), memorySize);
-  }
+  void flush() { fpga_flush(placeHolder_->data(), placeHolder_->memorySize()); }
 
   void invalidate() {
-    size_t memorySize = placeHolder_->memorySize();
-    fpga_invalidate(placeHolder_->data(), memorySize);
+    fpga_invalidate(placeHolder_->data(), placeHolder_->memorySize());
   }
 
   void sync() {
@@ -342,15 +337,20 @@ class Tensor {
 
   void setDataLocation(DataSyncStatus location) { dateLocation_ = location; }
 
-  void print() {}
+  void print() {
+    //    int count = shape_->numel();
+    //    for (int i = 0; i < count; i++) {
+    //      std::cout << "" << '\n';
+    //    }
+  }
 
   void printScale() {
     if (placeHolder_ == nullptr) {
       return;
     }
+    std::cout << "scale:" << placeHolder_->scale_[0]
+              << " inv:" << placeHolder_->scale_[1] << std::endl;
   }
-
-  void printScale(std::string type) { printScale(); }
 
   std::string dimsFileName() {
     return std::to_string(shape_->num()) + "_" +
@@ -359,7 +359,11 @@ class Tensor {
            std::to_string(shape_->width()) + ".txt";
   }
 
-  void saveToFile() { std::string path = dimsFileName(); }
+  void saveToFile() {
+    // std::string path = std::to_string(id_) + ".txt";
+    std::string path = dimsFileName();
+    // saveToFile(path);
+  }
 
   void saveToFile(std::string prefix, bool with_shape) {
     std::string path = prefix;
@@ -373,112 +377,99 @@ class Tensor {
 
   void saveToFile(std::string path) {
     syncToCPU();
-    invalidate();
     std::ofstream ofs;
     static int counter = 0;
     std::string npath = std::to_string(counter) + "_" + path;
     counter++;
+    // if (counter > 61) {
     save_file_with_name(npath);
+    // }
   }
 
   void save_file_with_name(std::string path) {
-    // std::cout << "saving file: " << path << std::endl;
-    void* add = (void*)this;
-    // printf("tensor @: %p  data: %p \n", (void *)add, (void*)data<void>());
     // return;
-    std::ofstream ofs;
-    ofs.open(path);
-    ofs << "data type: " << dataType() << std::endl;
-    ofs << scale()[0] << " / " << scale()[1] << std::endl;
+    invalidate();
 
+    Tensor* t;
+
+    if (this->aligned_) {
+      Tensor unaligned;
+      unaligned.dataType_ = this->dataType_;
+      unaligned.aligned_ = this->aligned_;
+      unaligned.mutableData<void>(dataType_, *shape_);
+      unaligned.copyFrom(this);
+      unaligned.unalignImage();
+      unaligned.syncToCPU();
+
+      std::ofstream ofs;
+      ofs.open(path);
+      for (int i = 0; i < shape_->numel(); i++) {
+        float value = 0;
+        if (dataType_ == FP32) {
+          value = unaligned.data<float>()[i];
+        } else if (dataType_ == FP16) {
+          value = half_to_float(unaligned.data<float16>()[i]);
+        } else {
+          value = unaligned.data<int8_t>()[i];
+        }
+        ofs << value << std::endl;
+      }
+      ofs.close();
+      return;
+    }
+
+    std::ofstream ofs;
+
+    ofs.open(path);
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
       if (dataType_ == FP32) {
         value = data<float>()[i];
-      }
-      if (dataType_ == FP16) {
+      } else {
         value = half_to_float(data<float16>()[i]);
       }
-
-      if (dataType_ == INT8) {
-        value = data<int8_t>()[i];
-      }
-      if (dataType_ == INT32) {
-        value = data<int32_t>()[i];
-      }
-
-      if (i < 10) {
-        std::cout << value << ",";
-      }
-
-      //   if (i > 1000) {
-      //       break;
-      //   }
       ofs << value << std::endl;
     }
-    std::cout << std::endl;
-    // usleep(30000);
     ofs.close();
   }
+
+  void releaseData() { placeHolder_.reset(); }
 
   void readFromFile(std::string path) {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
+      // std::cout << "file: " << path << " does not exist\n";
       return;
     }
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;
-    if (dataType_ == FP16) {
-      float16* data = mutableData<float16>();
-      for (int i = 0; i < num; ++i) {
-        float value = 0;
-        file_stream >> value;
-        max = std::max(std::abs(value), max);
-        data[i] = float_to_half(value);
-      }
-    } else {
-      float* data = mutableData<float>();
-      for (int i = 0; i < num; ++i) {
-        float value = 0;
-        file_stream >> value;
-        max = std::max(std::abs(value), max);
-        data[i] = value;
-      }
+    float16* data = mutableData<float16>();
+    for (int i = 0; i < num; ++i) {
+      float value = 0;
+      file_stream >> value;
+      max = std::max(std::abs(value), max);
+      data[i] = float_to_half(value);
     }
     flush();
     placeHolder_->scale_[0] = max / 127.0f;
     placeHolder_->scale_[1] = 127.0f / max;
+    // DLOG << "\ttensor file " << path << " loaded!";
   }
 
-  friend std::ostream& operator<<(std::ostream& os, Tensor& tensor) {
-    os << "tensor:"
-       << "\n";
-    os << "dims: {";
-    for (int i = 0; i < tensor.shape().dimSize(); ++i) {
-      os << tensor.shape()[i] << " ";
+  ~Tensor() {
+    if (shape_ != nullptr) {
+      delete shape_;
+      shape_ = nullptr;
     }
-    os << "}\n";
-    for (int i = 0; i < tensor.shape().numel(); i++) {
-      float value = 0;
-      if (tensor.dataType() == FP32) {
-        value = tensor.data<float>()[i];
-      } else {
-        value = half_to_float(tensor.data<float16>()[i]);
-      }
-      os << value << " ";
-    }
-    os << "\n";
-    return os;
   }
 
  private:
-  bool released = false;
-  int offset = 0;
-  float mem_scale_factor_ = 1.0f;
+  int offset_ = 0;
+  float mem_factor_ = 1.0f;
   std::shared_ptr<PlaceHolder> placeHolder_;
-  std::shared_ptr<Shape> shape_;
+  Shape* shape_ = nullptr;
   DataType dataType_ = FP32;
   bool aligned_ = false;
   DataSyncStatus synchedStatus_ = Synched;

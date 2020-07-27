@@ -166,13 +166,14 @@ class StaticKernelPickPass : public mir::StmtPass {
         if (out_types.count(out_names[i]) &&
             out_types.at(out_names[i]) !=
                 kernel.GetOutputDeclType(tmp)->precision()) {
-          out_match = false;
+          // out_match = false;
+          final_score += 1000;
         }
       }
 
-      if (out_match) {
-        final_score += 1000;
-      }
+      // if (out_match) {
+      //   final_score += 1000;
+      // }
     }
 
     VLOG(4) << "[score(final)]:" << final_score;

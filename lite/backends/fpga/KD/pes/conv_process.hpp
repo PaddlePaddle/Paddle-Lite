@@ -48,6 +48,7 @@ inline int get_split_num(Tensor* filter) {
              filter->shape().width();
   auto num = filter->shape().num();
   int div_capacity = filter::calc_division_capacity(chw);
+  // int aligned_num = align_to_x(num ,FILTER_NUM_ALIGNMENT);
   int filter_num_alignment = filter::get_filter_num_alignment();
   int aligned_num = align_to_x(num, filter_num_alignment);
   return filter::calc_split_num(aligned_num, div_capacity);
@@ -171,6 +172,30 @@ inline void format_bias_scale_new(Tensor* bias,
   }
 }
 
+inline void format_16_bias(Tensor* bias, Tensor* quantized_bias, int channel) {
+  int repeat = 1;
+  int alignment = 16;
+  int length = channel;
+
+  if (channel % alignment != 0 || channel < alignment) {
+    int c_lcm = lcm_(channel, alignment);
+    repeat = c_lcm / (channel);
+  }
+  Shape shape(N, {channel * repeat});
+  float16* quantized_bias_data =
+      quantized_bias->mutableData<float16>(FP16, shape);
+
+  float* bias_data = bias->data<float>();
+  // bias 按16对齐填充hw
+  for (int i = 0; i < repeat; i++) {
+    for (int j = 0; j < length; j++) {
+      float16 value = float_to_half(bias_data[j]);
+      quantized_bias_data[i * length + j] = value;
+    }
+  }
+  quantized_bias->flush();
+}
+
 inline void format_scale_bias(Tensor* scale,
                               Tensor* bias,
                               Tensor* filter,
@@ -226,6 +251,8 @@ inline void format_scale_bias(Tensor* scale,
     }
   }
 
+  // int element_num_per_div = get_filter_num_per_div(filter, group);
+  // int scale_bias_len = align_to_x(channel / group, 8) * group;
   bias_scale::format_bias_scale_array(
       &temp_data, scale_bias_len / group, scale_bias_len);
   memcpy(bs_data, temp_data, 2 * scale_bias_len * sizeof(float));
@@ -264,10 +291,10 @@ inline void format_filter(Tensor* filter,
   quantized_filter->flush();
   fpga_free(quantized_data);
 
-  for (size_t i = 0; i < max_values.size(); i++) {
-    scales.push_back(max_values[i] / max_value);
-    // scales.push_back(1.0f);
-  }
+  // for (size_t i = 0; i < max_values.size(); i++) {
+  //   // scales.push_back(max_values[i] / max_value);
+  //   scales.push_back(1.0f);
+  // }
 
   // filter->saveToFile("filter.txt");
   // std::ofstream ofs;
@@ -371,25 +398,36 @@ inline void split_filter_num(const ConvParam& c_param) {
     new_filter.flush();
     conv_param->filter.mutableData<float>(FP32, f_shape);
 
-    std::vector<float> v;  // TODO(chonwhite) change variable name;
-    format_filter(&new_filter, &(conv_param->filter), param.groups, v, max);
+    std::vector<float> quant_scale;
+    format_filter(
+        &new_filter, &(conv_param->filter), param.groups, quant_scale, max);
     conv_param->filter.setDataType(INT8);
+
     Tensor scale;
     Tensor bias;
 
     int chnnnel_start = i * filter_num_per_div;
+
     Shape s_shape(NC, {1, filter_num});
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
+    // float16* bias_data = bias.mutableData<float16>(FP16, s_shape);
     for (int n = 0; n < filter_num; n++) {
-      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
+      // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] *
+      // quant_scale[n];
+      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
     for (int n = 0; n < filter_num; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
+      // bias_data[n] = float_to_half(param.bias()->data<float>()[n +
+      // chnnnel_start]);
     }
+    // Shape sb_shape(N, {sb_num});
+    // format_scale_bias(&scale, &bias, &conv_param->filter,
+    //                   &conv_param->scaleBias, param.groups);
     format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
+    // conv_param->scaleBias.saveToFile("sb.txt");
     conv_param->scaleBias.flush();
-
     args.group_num = param.groups;
     args.sb_address = conv_param->scaleBias.data<float16>();
     args.kernel.stride_h = param.strides[1];
@@ -498,10 +536,12 @@ inline void pack_channel_filter(const ConvParam& c_param) {
     float mem_factor = filter_num_alignment / filter_per_pack;
     conv_param->filter.setMemScale(mem_factor);
 
-    std::vector<float> v;  // TODO(chonwhite) change variable name
-    format_filter(&new_filter, &(conv_param->filter), new_group, v, max);
+    std::vector<float> quant_scale;
+    format_filter(
+        &new_filter, &(conv_param->filter), new_group, quant_scale, max);
     conv_param->filter.setDataType(INT8);
 
+    // int sb_num = 2 * align_to_x(filter_current_pack, BS_NUM_ALIGNMENT);
     Tensor scale;
     Tensor bias;
 
@@ -510,17 +550,33 @@ inline void pack_channel_filter(const ConvParam& c_param) {
     Shape s_shape(NC, {1, filter_current_pack});
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
+    // float16* bias_data = bias.mutableData<float16>(FP16, s_shape);
     for (int n = 0; n < filter_current_pack; n++) {
-      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
+      // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
+      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
     for (int n = 0; n < filter_current_pack; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
+      // bias_data[n] = float_to_half(param.bias()->data<float>()[n +
+      // chnnnel_start]);
     }
+    // Shape sb_shape(N, {sb_num});
+    // format_scale_bias(&scale, &bias, &conv_param->filter,
+    //                   &conv_param->scaleBias, param.groups);
     format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
+    // conv_param->scaleBias.saveToFile("sb.txt");
     conv_param->scaleBias.flush();
+    // float* bs_data = conv_param->scaleBias.data<float>();
+    // conv_param->scaleBias.saveToFile("sb.txt");
+    // param.scale()->saveToFile("scale.txt");
+    // param.bias()->saveToFile("bias.txt");
+
+    // exit(-1);
 
     args.group_num = new_group;
+    // args.relu_enabled = param.relu.enabled;
     args.sb_address = conv_param->scaleBias.data<float16>();
+    // args.sb_address = bs_data;
     args.kernel.stride_h = param.strides[1];
     args.kernel.stride_w = param.strides[0];
     args.kernel.height = new_filter.shape().height();
@@ -594,15 +650,18 @@ inline void split_channel(const ConvParam& c_param) {
     }
     scale.flush();
     bias.flush();
+    // Shape sb_shape(N, {2 * channel});
     format_scale_bias(&scale,
                       &bias,
                       &conv_param->filter,
                       &conv_param->scaleBias,
                       param.groups);
     conv_param->scaleBias.flush();
+    // conv_param->scaleBias.saveToFile("sb.txt");
 
     ConvArgs& args = conv_param->args;
     args.group_num = param.groups;
+    // args.relu_enabled = param.relu.enabled;
     args.sb_address = conv_param->scaleBias.data<float>();
     args.kernel.stride_h = param.strides[1];
     args.kernel.stride_w = param.strides[0];
@@ -643,6 +702,7 @@ inline int fill_split_arg(const ConvParam& c_param) {
     pack_channel_filter(c_param);
     return 0;
   }
+  // split_filter_num(c_param);
 }
 
 inline bool compute_conv(const ConvParam& c_conv_params) {
@@ -654,6 +714,7 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
   }
   size_t size = params.size();
   if (ret == 0 && size > 1) {
+    // Tensor* output = conv_params.output;
     Tensor& img = params[0]->output;
     for (int i = 0; i < 1; i++) {
       for (int i = 0; i < img.shape().numel(); i++) {
@@ -663,6 +724,168 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
   }
   return ret == 0;
 }
+
+inline void dwconv_split_channel(DepthwiseConvSplitParam& param) {  // NOLINT
+  // DepthwiseConvSplitParam& param =
+  // const_cast<DepthwiseConvSplitParam&>(c_param);
+  Tensor* input = param.input;
+  Tensor* output = param.output;
+  Tensor* filter = param.filter;
+  input->syncToCPU();
+
+  int h_kernel = filter->shape().height();
+  int w_kernel = filter->shape().width();
+  int c = input->shape().channel();
+  int w = input->shape().width();
+  int wc_h_kernel = w * c * h_kernel;
+  int dwconv_limit = 131072;
+  int num = ceil(wc_h_kernel * 1.0f / dwconv_limit);
+  // std::cout << "dwconv_split_channel:" << num << std::endl;
+  while (input->shape().channel() % num != 0) {
+    num++;
+  }
+  int channel = input->shape().channel() / num;
+  if (channel % 16 != 0) {
+    std::cout << "input channel must div by 16" << std::endl;
+    // throw -1;
+  }
+
+  Shape bs_shape(N, {channel});
+
+  // param.scale()->saveToFile("scale_", true);
+  // param.bias()->saveToFile("bias_", true);
+  // filter->saveToFile("filter_", true);
+
+  float16* output_address = nullptr;
+  float16* input_address = nullptr;
+  float* out_scale_address = nullptr;
+
+  for (int i = 0; i < num; i++) {
+    BasicDWConvParam* dwconv_param = new BasicDWConvParam();
+
+    // input && output;
+    Shape in_shape(
+        NCHW, {1, channel, input->shape().height(), input->shape().width()});
+    if (num == 1) {
+      input_address = input->data<float16>();
+      output_address = output->data<float16>();
+      out_scale_address = output->scale();
+    } else {
+      input_address = dwconv_param->input.mutableData<float16>(FP16, in_shape);
+      // dwconv_param.input.shareDataWith(input, in_shape, channel * i);
+      output_address =
+          dwconv_param->output.mutableData<float16>(FP16, in_shape);
+      out_scale_address = dwconv_param->output.scale();
+    }
+
+    // filter transformation;
+    Shape f_shape(NCHW, {channel, 1, h_kernel, w_kernel});
+
+    Tensor split_filter;
+    float* split_filter_data = split_filter.mutableData<float>(FP32, f_shape);
+    int filter_hwc = h_kernel * w_kernel * channel;
+
+    memcpy(split_filter_data,
+           filter->data<float>() + i * filter_hwc,
+           filter_hwc * sizeof(float));
+    split_filter.flush();
+
+    Tensor split_scale;
+    Tensor split_bias;
+    float* scale_data = split_scale.mutableData<float>(FP32, bs_shape);
+    float* bias_data = split_bias.mutableData<float>(FP32, bs_shape);
+    for (int c = 0; c < channel; c++) {
+      scale_data[c] = param.scale()->data<float>()[i * channel + c];
+      bias_data[c] = param.bias()->data<float>()[i * channel + c];
+    }
+    split_bias.flush();
+
+    Tensor quantized_filter = dwconv_param->quantizedFilter;
+    Tensor quantized_bias = dwconv_param->quantizedBias;
+    quantized_filter.mutableData<float16>(FP16, f_shape);
+    quantized_bias.mutableData<float16>(FP16, f_shape);
+
+    format_dw_filter(
+        &split_filter, &(dwconv_param->quantizedFilter), scale_data);
+    format_16_bias(&split_bias, &(dwconv_param->quantizedBias), channel);
+    // quantized_filter.flush();
+    // quantized_bias.flush();
+    // conv_param->scaleBias.saveToFile("sb.txt");
+
+    // split_scale.saveToFile("split_scale", true);
+    // split_bias.saveToFile("split_bias", true);
+    // quantized_filter.saveToFile("quantized_filter", true);
+    // quantized_bias.saveToFile("quantized_bias", true);
+
+    DWconvArgs& args = dwconv_param->args;
+    args.bias_address = dwconv_param->quantizedBias.data<float16>();
+    args.filter_address = dwconv_param->quantizedFilter.data<float16>();
+    args.kernel.width = f_shape.height();
+    args.kernel.height = f_shape.width();
+    args.kernel.stride_w = param.strides[0];
+    args.kernel.stride_h = param.strides[1];
+    args.image.address = input_address;
+    args.image.channels = channel;
+    args.image.height = input->shape().height();
+    args.image.width = input->shape().width();
+    args.image.pad_width = param.paddings[0];
+    args.image.pad_height = param.paddings[1];
+    args.image.scale_address = input->scale();
+    args.output.address = output_address;
+    args.output.scale_address = out_scale_address;
+    args.out_width = param.output->shape().width();
+    args.out_height = param.output->shape().height();
+    args.sub_conv_num = 1;
+    param.splitParams().push_back(dwconv_param);
+
+    // static int index = 0;
+    // std::ofstream ofs1;
+    // std::string path1 = "dwconv_filter"+ std::to_string(index) +  ".txt";
+    // ofs1.open(path1);
+    // float16* filter_data = static_cast<float16*>(args.filter_address);
+    // int count_filter = args.kernel.height * args.kernel.width *
+    // args.image.channels;
+    // for (int i = 0; i < count_filter; ++i)
+    // {
+    //   float value = half_to_float(filter_data[i]);
+    //   ofs1 << value << std::endl;
+    // }
+    // ofs1.close();
+
+    // std::ofstream ofs2;
+    // std::string path2 = "dwconv_bais"+ std::to_string(index) +  ".txt";
+    // ofs2.open(path2);
+    // float16* bias_address = static_cast<float16*>(args.bias_address);
+    // int count_bais = args.image.channels;
+    // for (int i = 0; i < count_bais; ++i)
+    // {
+    //   float value = half_to_float(bias_address[i]);
+    //   ofs2 << value << std::endl;
+    // }
+    // ofs2.close();
+    // index++;
+  }
+}
+
+// inline bool compute_dwconv(const DepthwiseConvSplitParam& c_dwconv_params) {
+//   DepthwiseConvSplitParam& dwconv_params =
+//   const_cast<DepthwiseConvSplitParam&>(c_dwconv_params);
+//   std::vector<BasicDWConvParam*>& params = dwconv_params.splitParams();
+//   int ret = 0;
+//   for (auto dwconv_param : params) {
+//     ret |= compute_fpga_dwconv(dwconv_param->args);
+//   }
+//   size_t size = params.size();
+//   if (ret == 0 && size > 1) {
+//     Tensor& img = params[0]->output;
+//     for (int i = 0; i < 1; i++) {
+//       for (int i = 0; i < img.shape().numel(); i++) {
+//         float value = half_to_float(img.data<float16>()[i]);
+//       }
+//     }
+//   }
+//   return ret == 0;
+// }
 
 }  // namespace zynqmp
 }  // namespace paddle

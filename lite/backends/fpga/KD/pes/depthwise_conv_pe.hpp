@@ -92,11 +92,10 @@ class DepthwiseConvPE : public PE {
       format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
 
     } else {
-      // filter 全为1时，且channal为对齐时
+      // TODO(chonwhite) filter 全为1时，且channal为对齐时
       float16* scale_data = param_.scale()->data<float16>();
       float16* filter_data = param.quantizedFilter()->mutableData<float16>(
           FP16, param.filter->shape());
-
       // memcpy(filter_data, scale_data, channel * sizeof(float16));
       memcpy(filter_data,
              scale_data,
@@ -125,6 +124,7 @@ class DepthwiseConvPE : public PE {
     args.sub_conv_num = 1;
     param.args = args;
 
+    // inplace_.relu_enable = param_.relu.enabled;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
   }

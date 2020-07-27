@@ -34,11 +34,36 @@ class Monitor {
 
   void inferStart() {}
 
-  void preRun(Instruction& inst) {
-    VLOG(4)  << "Running op:" << const_cast<OpLite*>(inst.op())->Type();
+  void preRun(Instruction& inst) {  // NOLINT
+    auto op_type = const_cast<OpLite*>(inst.op())->Type();
+
+    VLOG(4) << "Running op:" << op_type;
   }
 
-  void postRun(Instruction& inst) {}
+  void postRun(Instruction& inst) {  // NOLINT
+    // inst.op_info().
+
+    auto op = const_cast<OpLite*>(inst.op());
+    std::cout << op->DebugString() << std::endl;
+    auto op_info = op->op_info();
+
+    auto in_names = op_info->input_names();
+
+    for (auto name : in_names) {
+      std::cout << "\n in_tensor:" << name << std::endl;
+      // auto *var = op->scope()->FindVar(name);
+      // CHECK(var) << "no variable called " << name << " found";
+      // auto tensor = var->Get<lite::Tensor>();
+    }
+
+    auto out_args = op_info->output_names();
+    for (auto name : out_args) {
+      std::cout << "\n out_tensor:" << name << std::endl;
+      // auto *var = op->scope()->FindVar(name);
+      // CHECK(var) << "no variable called " << name << " found";
+      // auto tensor = var->Get<lite::Tensor>();
+    }
+  }
 
   void inferEnd() {}
 

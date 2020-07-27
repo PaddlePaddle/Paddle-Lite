@@ -28,26 +28,26 @@ static int FILTER_SIZE = 2048;
 static int COLUMN = 4;
 
 void saveToFile(std::string name, void* data_in, int size) {
-  std::ofstream ofs;
-  ofs.open(name);
+  // std::ofstream ofs;
+  // ofs.open(name);
 
-  int8_t* data = static_cast<int8_t*>(data_in);
-  for (int i = 0; i < size; i++) {
-    float value = data[i];
-    ofs << value << std::endl;
-  }
-  ofs.close();
+  // int8_t* data = (int8_t*)data_in;
+  // for (int i = 0; i < size; i++) {
+  //   float value = data[i];
+  //   ofs << value << std::endl;
+  // }
+  // ofs.close();
 }
 
 void saveFloatToFile(std::string name, float* data_in, int size) {
-  std::ofstream ofs;
-  ofs.open(name);
+  // std::ofstream ofs;
+  // ofs.open(name);
 
-  for (int i = 0; i < size; i++) {
-    float value = data_in[i];
-    ofs << value << std::endl;
-  }
-  ofs.close();
+  // for (int i = 0; i < size; i++) {
+  //   float value = data_in[i];
+  //   ofs << value << std::endl;
+  // }
+  // ofs.close();
 }
 
 void set_filter_capacity(uint32_t cap) { FILTER_SIZE = cap; }
@@ -58,6 +58,7 @@ void set_colunm(uint32_t column) { COLUMN = column; }
 int get_filter_num_alignment() { return COLUMN * 4; }
 
 int calc_division_capacity(int chw) {
+  // int n = FILTER_SIZE / ((chw + 15) / 16) * 32;
   int filter_num_alignment = get_filter_num_alignment();
   int n = FILTER_SIZE / ((chw + 15) / 16) * filter_num_alignment;
   return n < FILTER_SIZE ? n : FILTER_SIZE;
@@ -86,6 +87,11 @@ int calc_num_per_div(int num, int group_num, int division_capacity) {
 
 int calc_pack_num(int num_per_group, int group, int division_capacity) {
   auto n = 1;
+  if (num_per_group * group % division_capacity == 0) {
+    n = num_per_group * group / division_capacity;
+    return n;
+  }
+
   while ((num_per_group * (group + n - 1) / n) > division_capacity) {
     n++;
   }
@@ -229,27 +235,35 @@ int8_t* format_filter(float* data_in,
       align_to_x(num_per_div_before_alignment, filter_num_alignment);
   int div_num =
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
+  // int num_after_alignment = num_per_div_after_alignment * div_num;
   int residual = num % num_per_div_before_alignment;
   int num_after_alignment = num_per_div_after_alignment *
                                 ((residual == 0) ? div_num : (div_num - 1)) +
                             align_to_x(residual, filter_num_alignment);
+
+  // saveFloatToFile("quantize_before", data_in, data_size);
 
   int8_t* quantized_data =
       reinterpret_cast<int8_t*>(fpga_malloc(data_size * sizeof(int8_t)));
 
   for (int n = 0; n < num; n++) {
     float* filter_start = data_in + n * chw;
+    // float f_max = find_max(filter_start, chw);
     int8_t* quantized_start = quantized_data + n * chw;
-    float f_max = find_max(filter_start, chw);
-    // float f_max = max;
-    quantize(filter_start, quantized_start, chw, f_max);
-    filter_max.push_back(f_max);
+    // quantize(filter_start, quantized_start, chw, f_max);
+    quantize(filter_start, quantized_start, chw, max);
+    // filter_max.push_back(f_max);
+    filter_max.push_back(1);
   }
+
+  // saveToFile("chw.txt", quantized_data, data_size);
 
   int8_t* hwc_data =
       reinterpret_cast<int8_t*>(fpga_malloc(data_size * sizeof(int8_t)));
   convert_to_hwc(quantized_data, hwc_data, num, channel, height, width);
   fpga_free(quantized_data);
+
+  // saveToFile("hwc.txt", hwc_data, data_size);
 
   int8_t* temp_data = hwc_data;  // NOLINT
   int chw_aligned = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
@@ -258,6 +272,7 @@ int8_t* format_filter(float* data_in,
         fpga_malloc(num * chw_aligned * sizeof(int8_t)));
     align_chw(hwc_data, hwc_aligned_data, num, chw);
 
+    // saveToFile("align_el.txt", hwc_aligned_data, data_size * 2);
     temp_data = hwc_aligned_data;
     fpga_free(hwc_data);
   }
@@ -265,7 +280,9 @@ int8_t* format_filter(float* data_in,
     int filter_num_alignment = get_filter_num_alignment();
     int num_per_div_after_alignment =
         align_to_x(num_per_div_before_alignment, filter_num_alignment);
-
+    // int div_num =
+    //     (num + num_per_div_before_alignment - 1) /
+    //     num_per_div_before_alignment;
     int num_element = div_num * num_per_div_after_alignment * chw_aligned;
     int8_t* num_aligned_data =
         reinterpret_cast<int8_t*>(fpga_malloc(num_element * sizeof(int8_t)));
@@ -275,16 +292,19 @@ int8_t* format_filter(float* data_in,
               num,
               chw_aligned);
 
+    // saveToFile("align_num.txt", num_aligned_data, data_size * 8);
     fpga_free(temp_data);
     temp_data = num_aligned_data;
   }
   int8_t* aligned_data =
       reinterpret_cast<int8_t*>(fpga_malloc(num_after_alignment * chw_aligned));
   reorder(temp_data, aligned_data, num_after_alignment, chw);
+  // saveToFile("reorder.txt", aligned_data, data_size * 8);
   fpga_free(temp_data);
   int8_t* interleaved_data =
       reinterpret_cast<int8_t*>(fpga_malloc(num_after_alignment * chw_aligned));
   interleave(aligned_data, interleaved_data, num_after_alignment, chw);
+  // saveToFile("interleave.txt", interleaved_data, data_size * 8);
   fpga_free(aligned_data);
   fpga_flush(interleaved_data,
              align_to_x(chw, FILTER_ELEMENT_ALIGNMENT) * num_after_alignment *
@@ -360,6 +380,8 @@ void quantize_to_fp16(
   float* tmp = *data_in;
   int size = num * height * width;
 
+  // std::ofstream ofs;
+  // ofs.open("quantize_to_fp16.txt");
   float16* tmp_data = (float16*)fpga_malloc(size * sizeof(float16));  // NOLINT
   for (int n = 0; n < num; n++) {
     float scale_val = scale_ptr[n];
@@ -368,6 +390,7 @@ void quantize_to_fp16(
         int index = n * height * width + h * width + w;
         float value = tmp[index] * scale_val;
         tmp_data[index] = float_to_half(value);
+        // ofs << tmp[index] << "," << scale_val << "," << value << std::endl;
       }
     }
   }
@@ -377,16 +400,22 @@ void quantize_to_fp16(
 }
 size_t format_dwconv_filter(
     float** data_in, int num, int height, int width, float* scale_ptr) {
-  quantize_to_fp16(data_in, num, height, width, scale_ptr);
-  int16_t** quantize_data = reinterpret_cast<int16_t**>(data_in);
+  // float16* fp16_data = reinterpret_cast<float16*>(
+  //     fpga_malloc(num * height * width * sizeof(float16)));
+  // to_fp16(*data_in, fp16_data, num, height, width, scale_ptr);
+  // int16_t** quantize_data = (int16_t**)&fp16_data;  // NOLINT
 
-  convert_to_hwn(quantize_data, num, height, width);
+  quantize_to_fp16(data_in, num, height, width, scale_ptr);
+  int16_t** quantize_data = reinterpret_cast<int16_t**>(data_in)
+
+      convert_to_hwn(quantize_data, num, height, width);
   size_t size = align_element_n(quantize_data, num, height, width);
   fpga_flush(*quantize_data,
              align_to_x(num, FILTER_ELEMENT_ALIGNMENT) * height * width *
                  sizeof(int16_t));
   return size;
 }
+
 }  // namespace filter
 }  // namespace zynqmp
 }  // namespace paddle
