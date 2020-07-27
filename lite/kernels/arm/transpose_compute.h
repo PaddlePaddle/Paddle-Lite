@@ -14,6 +14,7 @@
 
 #pragma once
 #include <algorithm>
+#include <vector>
 #include "lite/core/kernel.h"
 #include "lite/operators/transpose_op.h"
 
@@ -26,19 +27,24 @@ namespace arm {
 class TransposeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::TransposeParam;
-
+  void PrepareForRun() override;
   void Run() override;
 
   virtual ~TransposeCompute() = default;
+
+ private:
+  bool need_trans = false;
+  bool trans_mat = false;
+  int _trans_num;
+  int _trans_w;
+  int _trans_h;
+  std::vector<int> _new_steps;
+  std::vector<int> _old_steps;
 };
 
 // Transpose2
-class Transpose2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class Transpose2Compute : public TransposeCompute {
  public:
-  using param_t = operators::TransposeParam;
-
-  void Run() override;
-
   virtual ~Transpose2Compute() = default;
 };
 
