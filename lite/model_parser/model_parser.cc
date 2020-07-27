@@ -35,7 +35,88 @@
 namespace paddle {
 namespace lite {
 
-#ifndef LITE_ON_TINY_PUBLISH
+void LoadLoDTensor(std::istream &is, Variable *var) {
+  auto *tensor = var->GetMutable<lite::Tensor>();
+  uint32_t version{};
+  is.read(reinterpret_cast<char *>(&version), sizeof(version));
+  VLOG(3) << "model version " << version;
+
+  // Load LoD information
+  uint64_t lod_level{};
+  is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
+  auto &lod = *tensor->mutable_lod();
+  lod.resize(lod_level);
+  for (uint64_t i = 0; i < lod_level; ++i) {
+    uint64_t size;
+    is.read(reinterpret_cast<char *>(&size), sizeof(size));
+    std::vector<uint64_t> tmp(size / sizeof(uint64_t));
+    is.read(reinterpret_cast<char *>(tmp.data()),
+            static_cast<std::streamsize>(size));
+    lod[i] = tmp;
+  }
+
+  TensorFromStream(is, tensor);
+}
+
+void LoadParams(const std::string &path) {}
+
+// Load directly to CPU, and latter transfer to other devices.
+void LoadParam(const std::string &path, Variable *out) {
+  std::ifstream fin(path, std::ios::binary);
+  CHECK(fin.is_open()) << "failed to open file " << path;
+  LoadLoDTensor(fin, out);
+}
+
+bool IsPersistable(const cpp::VarDesc &var) {
+  if (var.Persistable() && var.GetType() != VarDescAPI::Type::FEED_MINIBATCH &&
+      var.GetType() != VarDescAPI::Type::FETCH_LIST &&
+      var.GetType() != VarDescAPI::Type::RAW) {
+    return true;
+  }
+  return false;
+}
+
+void LoadCombinedParamsPb(const std::string &path,
+                          lite::Scope *scope,
+                          const cpp::ProgramDesc &cpp_prog,
+                          bool params_from_memory) {
+  CHECK(scope);
+  auto &prog = cpp_prog;
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+
+  // Get vars
+  std::vector<std::string> paramlist;
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+    if (!IsPersistable(var)) continue;
+    paramlist.push_back(var.Name());
+  }
+  std::stable_sort(paramlist.begin(), paramlist.end());
+
+  // Load vars
+  auto load_var_func = [&](std::istream &is) {
+    for (size_t i = 0; i < paramlist.size(); ++i) {
+      auto *var = scope->Var(paramlist[i]);
+      // Error checking
+      CHECK(static_cast<bool>(is))
+          << "There is a problem with loading model parameters";
+      LoadLoDTensor(is, var);
+    }
+    is.peek();
+    CHECK(is.eof()) << "You are not allowed to load partial data via"
+                    << " LoadCombinedParamsPb, use LoadParam instead.";
+  };
+
+  if (params_from_memory) {
+    std::stringstream fin(path, std::ios::in | std::ios::binary);
+    load_var_func(fin);
+  } else {
+    std::ifstream fin(path, std::ios::binary);
+    CHECK(fin.is_open());
+    load_var_func(fin);
+  }
+}
+
 int SizeOfType(framework::proto::VarType::Type type) {
   using Type = framework::proto::VarType::Type;
   switch (static_cast<int>(type)) {
@@ -104,29 +185,6 @@ void TensorFromStream(std::istream &is, lite::Tensor *tensor) {
   is.read(static_cast<char *>(buf), size);
 }
 
-void LoadLoDTensor(std::istream &is, Variable *var) {
-  auto *tensor = var->GetMutable<lite::Tensor>();
-  uint32_t version{};
-  is.read(reinterpret_cast<char *>(&version), sizeof(version));
-  VLOG(3) << "model version " << version;
-
-  // Load LoD information
-  uint64_t lod_level{};
-  is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
-  auto &lod = *tensor->mutable_lod();
-  lod.resize(lod_level);
-  for (uint64_t i = 0; i < lod_level; ++i) {
-    uint64_t size;
-    is.read(reinterpret_cast<char *>(&size), sizeof(size));
-    std::vector<uint64_t> tmp(size / sizeof(uint64_t));
-    is.read(reinterpret_cast<char *>(tmp.data()),
-            static_cast<std::streamsize>(size));
-    lod[i] = tmp;
-  }
-
-  TensorFromStream(is, tensor);
-}
-
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
   std::ifstream fin(filename, std::ios::in | std::ios::binary);
   CHECK(fin.is_open()) << "Cannot open file: " << filename;
@@ -139,6 +197,7 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
   fin.close();
 }
 
+#ifndef LITE_ON_TINY_PUBLISH
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
     const std::string &path, bool program_from_memory) {
   std::unique_ptr<framework::proto::ProgramDesc> main_program(
@@ -151,65 +210,6 @@ std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
     main_program->ParseFromString(path);
   }
   return main_program;
-}
-
-void LoadParams(const std::string &path) {}
-
-// Load directly to CPU, and latter transfer to other devices.
-void LoadParam(const std::string &path, Variable *out) {
-  std::ifstream fin(path, std::ios::binary);
-  CHECK(fin.is_open()) << "failed to open file " << path;
-  LoadLoDTensor(fin, out);
-}
-
-bool IsPersistable(const cpp::VarDesc &var) {
-  if (var.Persistable() && var.GetType() != VarDescAPI::Type::FEED_MINIBATCH &&
-      var.GetType() != VarDescAPI::Type::FETCH_LIST &&
-      var.GetType() != VarDescAPI::Type::RAW) {
-    return true;
-  }
-  return false;
-}
-
-void LoadCombinedParamsPb(const std::string &path,
-                          lite::Scope *scope,
-                          const cpp::ProgramDesc &cpp_prog,
-                          bool params_from_memory) {
-  CHECK(scope);
-  auto &prog = cpp_prog;
-  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
-
-  // Get vars
-  std::vector<std::string> paramlist;
-  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
-    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-    if (!IsPersistable(var)) continue;
-    paramlist.push_back(var.Name());
-  }
-  std::stable_sort(paramlist.begin(), paramlist.end());
-
-  // Load vars
-  auto load_var_func = [&](std::istream &is) {
-    for (size_t i = 0; i < paramlist.size(); ++i) {
-      auto *var = scope->Var(paramlist[i]);
-      // Error checking
-      CHECK(static_cast<bool>(is))
-          << "There is a problem with loading model parameters";
-      LoadLoDTensor(is, var);
-    }
-    is.peek();
-    CHECK(is.eof()) << "You are not allowed to load partial data via"
-                    << " LoadCombinedParamsPb, use LoadParam instead.";
-  };
-
-  if (params_from_memory) {
-    std::stringstream fin(path, std::ios::in | std::ios::binary);
-    load_var_func(fin);
-  } else {
-    std::ifstream fin(path, std::ios::binary);
-    CHECK(fin.is_open());
-    load_var_func(fin);
-  }
 }
 
 void LoadModelPb(const std::string &model_dir,

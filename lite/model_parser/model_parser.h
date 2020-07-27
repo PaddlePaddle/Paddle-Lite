@@ -30,10 +30,9 @@
 namespace paddle {
 namespace lite {
 
-#ifndef LITE_ON_TINY_PUBLISH
-// Read a __model__ file.
-std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string& path, bool program_from_memory = false);
+void LoadModelFbsFromFile(const std::string& filename,
+                          Scope* scope,
+                          cpp::ProgramDesc* cpp_prog);
 
 // Read a single file containing all the parameters.
 void LoadParams(const std::string& path);
@@ -45,6 +44,13 @@ void LoadCombinedParamsPb(const std::string& path,
                           lite::Scope* scope,
                           const cpp::ProgramDesc& prog,
                           bool params_from_memory = false);
+void TensorFromStream(std::istream& is, lite::Tensor* tensor);
+void ReadBinaryFile(const std::string& filename, std::string* contents);
+
+#ifndef LITE_ON_TINY_PUBLISH
+// Read a __model__ file.
+std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
+    const std::string& path, bool program_from_memory = false);
 
 // Read a model and files of parameters in pb format.
 void LoadModelPb(const std::string& model_dir,
@@ -70,15 +76,13 @@ void SerializeTensor(std::ostream& os,
                      const lite::Scope& scope,
                      const std::string& var);
 
-// LoDTensor to ostream
-void TensorToStream(std::ostream& os, const lite::Tensor& tensor);
-void TensorFromStream(std::istream& is, lite::Tensor* tensor);
-void ReadBinaryFile(const std::string& filename, std::string* contents);
-
 // For naive buffer
 void SaveParamNaive(const std::string& path,
                     const lite::Scope& exec_scope,
                     const std::string& var_name);
+
+// LoDTensor to ostream
+void TensorToStream(std::ostream& os, const lite::Tensor& tensor);
 
 void SaveCombinedParamsNaive(const std::string& path,
                              const lite::Scope& exec_scope,
