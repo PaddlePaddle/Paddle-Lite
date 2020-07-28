@@ -37,6 +37,7 @@ void FcCompute::PrepareForRun() {
   fc_param.output = param.output->ZynqTensor();
   fc_param.filter = param.w->ZynqTensor();
   fc_param.bias = param.bias->ZynqTensor();
+  fc_param.bias->flush();
 
   if (activation_map.count(param.activation_type)) {
     fc_param.activeParam.type = activation_map[param.activation_type];
@@ -48,8 +49,9 @@ void FcCompute::PrepareForRun() {
 
 void FcCompute::Run() {
   pe_.dispatch();
+
 #ifdef FPGA_PRINT_TENSOR
-  zynqmp::FullyConnectedParam& fc_param = pe_.param();
+  // zynqmp::FullyConnectedParam& fc_param = pe_.param();
   Debugger::get_instance().registerOutput("fc", fc_param.output);
 #endif
 }

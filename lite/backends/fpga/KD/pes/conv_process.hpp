@@ -291,10 +291,10 @@ inline void format_filter(Tensor* filter,
   quantized_filter->flush();
   fpga_free(quantized_data);
 
-  // for (size_t i = 0; i < max_values.size(); i++) {
-  //   // scales.push_back(max_values[i] / max_value);
-  //   scales.push_back(1.0f);
-  // }
+  for (size_t i = 0; i < max_values.size(); i++) {
+    scales.push_back(max_values[i] / max_value);
+    // scales.push_back(1.0f);
+  }
 
   // filter->saveToFile("filter.txt");
   // std::ofstream ofs;
@@ -413,9 +413,9 @@ inline void split_filter_num(const ConvParam& c_param) {
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
     // float16* bias_data = bias.mutableData<float16>(FP16, s_shape);
     for (int n = 0; n < filter_num; n++) {
-      // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] *
-      // quant_scale[n];
-      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
+      scale_data[n] =
+          param.scale()->data<float>()[n + chnnnel_start] * quant_scale[n];
+      // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
     for (int n = 0; n < filter_num; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
@@ -552,8 +552,9 @@ inline void pack_channel_filter(const ConvParam& c_param) {
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
     // float16* bias_data = bias.mutableData<float16>(FP16, s_shape);
     for (int n = 0; n < filter_current_pack; n++) {
-      // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start] * v[n];
-      scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
+      scale_data[n] =
+          param.scale()->data<float>()[n + chnnnel_start] * quant_scale[n];
+      // scale_data[n] = param.scale()->data<float>()[n + chnnnel_start];
     }
     for (int n = 0; n < filter_current_pack; n++) {
       bias_data[n] = param.bias()->data<float>()[n + chnnnel_start];
@@ -645,7 +646,7 @@ inline void split_channel(const ConvParam& c_param) {
     float* bias_data = bias.mutableData<float>(FP32, bs_shape);
     float* scale_data = scale.mutableData<float>(FP32, bs_shape);
     for (int c = 0; c < channel; c++) {
-      scale_data[c] = 1;
+      scale_data[c] = scales[c];
       bias_data[c] = param.bias()->data<float>()[c] / num;
     }
     scale.flush();

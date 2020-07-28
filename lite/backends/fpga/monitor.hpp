@@ -59,7 +59,16 @@ class Monitor {
     auto out_args = op_info->output_names();
     for (auto name : out_args) {
       std::cout << "\n out_tensor:" << name << std::endl;
-      // auto *var = op->scope()->FindVar(name);
+      auto* var = op->scope()->FindVar(name);
+      if (var->IsType<lite::Tensor>()) {
+        lite::Tensor* tensor =
+            const_cast<lite::Tensor*>(&var->Get<lite::Tensor>());
+        std::cout << "Tensor:" << tensor << std::endl;
+        std::cout << "zynq Tensor:" << tensor->ZynqTensor() << std::endl;
+        if (tensor->ZynqTensor() != nullptr) {
+          // tensor->ZynqTensor()->saveToFile(name, true);
+        }
+      }
       // CHECK(var) << "no variable called " << name << " found";
       // auto tensor = var->Get<lite::Tensor>();
     }

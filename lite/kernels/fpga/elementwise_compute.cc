@@ -126,11 +126,17 @@ void ElementwiseMulCompute::PrepareForRun() {
 
 void ElementwiseMulCompute::Run() {
   auto& param = Param<operators::ElementwiseParam>();
-  // std::cout << "param.Y :" << param.Y->persistable() << std::endl;
+  std::cout << "param.Y :" << param.Y->persistable() << std::endl;
   if (!param.Y->persistable()) {
     // TODO(chonwhite) alignment;
+
+    param.Y->ZynqTensor()->invalidate();
+    // param.Y->ZynqTensor()->saveToFile("param_y", true);
     scale_.copyFrom(param.Y->ZynqTensor());
     scale_.flush();
+    if (param.X->ZynqTensor()->shape().channel() == 512) {
+      // exit(-1);
+    }
   }
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR

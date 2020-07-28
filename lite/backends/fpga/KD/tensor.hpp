@@ -353,6 +353,7 @@ class Tensor {
   }
 
   std::string dimsFileName() {
+    std::cout << "shape_:" << shape_ << std::endl;
     return std::to_string(shape_->num()) + "_" +
            std::to_string(shape_->channel()) + "_" +
            std::to_string(shape_->height()) + "_" +
@@ -423,10 +424,21 @@ class Tensor {
     ofs.open(path);
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
-      if (dataType_ == FP32) {
-        value = data<float>()[i];
-      } else {
-        value = half_to_float(data<float16>()[i]);
+      switch (dataType_) {
+        case FP32:
+          value = data<float>()[i];
+          break;
+        case FP16:
+          value = half_to_float(data<float16>()[i]);
+          break;
+        case INT8:
+          value = data<int8_t>()[i];
+          break;
+        default:
+          break;
+      }
+      if (i > 100) {
+        break;
       }
       ofs << value << std::endl;
     }

@@ -79,6 +79,9 @@ class KernelPlaceCorrectPass : public DebugPass {
       bool need_correct_place = true;
 
       auto in = x->inlinks.front();
+      if (!in) {
+        break;
+      }
       auto out = x->outlinks.front();
       auto p = in->AsArg().type->precision();
 
@@ -256,7 +259,7 @@ class KernelPlaceCorrectPass : public DebugPass {
     // std::endl;
   }
 
-  void UpdateTensor(mir::Node::Stmt& inst,
+  void UpdateTensor(mir::Node::Stmt& inst,  // NOLINT
                     Node* in,
                     Node* out,
                     TargetType new_target = TargetType::kUnk) {

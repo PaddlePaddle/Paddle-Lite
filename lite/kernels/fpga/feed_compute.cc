@@ -91,4 +91,3 @@ REGISTER_LITE_KERNEL(feed,
                                        PRECISION(kInt32),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
-    

@@ -99,9 +99,7 @@ void Transpose2Compute::Run() {
   auto& param = this->Param<param_t>();
   param.output->mutable_data<float16>();
   // param.x->ZynqTensor()->syncToCPU();
-  // param.x->ZynqTensor()->saveToFile("t_in", true);
   param.x->ZynqTensor()->unalignImage();
-  // param.x->ZynqTensor()->saveToFile("t_unaligned", true);
   param.x->ZynqTensor()->flush();
   param.x->ZynqTensor()->invalidate();
 
@@ -113,9 +111,8 @@ void Transpose2Compute::Run() {
   }
 
   // param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
-
   param.output->ZynqTensor()->flush();
-  param.output->ZynqTensor()->saveToFile("Transpose2", true);
+  // param.output->ZynqTensor()->saveToFile("Transpose2", true);
 }
 
 }  // namespace fpga

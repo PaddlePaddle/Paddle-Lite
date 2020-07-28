@@ -77,9 +77,9 @@ class ConvPE : public PE {
         int wend = std::min(wstart + kernel_rw, static_cast<int>(image_width));
 
         int hstart_plus =
-            dilation_rate * ceil(
-                  static_cast<float>(image_pad_h - ph * kernel_step_h)) /
-                                 static_cast<float>(dilation_rate) -
+            dilation_rate *
+                ceil(static_cast<float>(image_pad_h - ph * kernel_step_h)) /
+                static_cast<float>(dilation_rate) -
             image_pad_h + ph * kernel_step_h;
         int wstart_plus =
             dilation_rate *

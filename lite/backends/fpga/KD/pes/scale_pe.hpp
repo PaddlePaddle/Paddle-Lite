@@ -179,16 +179,16 @@ class ScalePE : public PE {
   }
 
   bool dispatch() {
-    // if (param_.scale->dataType() == FP16) {
-    //   DepthwiseConvParam& dw_param = dw_pe_.param();
-    //   memcpy(dw_param.quantizedFilter()->mutableData<float16>(),
-    //          param_.scale->data<float16>(),
-    //          param_.scale->shape().numel() * sizeof(float16));
-    //   dw_param.quantizedFilter()->scale()[0] = param_.scale->scale()[0];
-    //   dw_param.quantizedFilter()->scale()[1] = param_.scale->scale()[1];
-    //   dw_param.quantizedFilter()->flush();
-    // }
-    // param_.input->syncToDevice();
+    if (param_.scale->dataType() == FP16) {
+      DepthwiseConvParam& dw_param = dw_pe_.param();
+      memcpy(dw_param.quantizedFilter()->mutableData<float16>(),
+             param_.scale->data<float16>(),
+             param_.scale->shape().numel() * sizeof(float16));
+      dw_param.quantizedFilter()->scale()[0] = param_.scale->scale()[0];
+      dw_param.quantizedFilter()->scale()[1] = param_.scale->scale()[1];
+      dw_param.quantizedFilter()->flush();
+    }
+    param_.input->syncToDevice();
     return dw_pe_.dispatch();
 
     // cpu_compute();

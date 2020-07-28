@@ -210,8 +210,8 @@ class IoCopyFpgaToHostCHWCompute
     param.x->ZynqTensor()->invalidate();
     param.x->ZynqTensor()->flush();
     // hwc.ZynqTensor()->saveToFile("hwc", true);
-    param.x->ZynqTensor()->saveToFile("io2_x", true);
-    param.y->ZynqTensor()->saveToFile("io2_y", true);
+    // param.x->ZynqTensor()->saveToFile("io2_x", true);
+    // param.y->ZynqTensor()->saveToFile("io2_y", true);
   }
   std::string doc() const override { return "Copy IO from FPGA to HOST"; }
 };
