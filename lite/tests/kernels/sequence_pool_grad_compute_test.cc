@@ -30,7 +30,7 @@ using kernel_t = SequencePoolCompute;
 using grad_kernel_t = SequencePoolGradCompute;
 
 void sequence_pool_grad_common(grad_param_t* param,    // NOLINT
-                               float* out_grad,  // NOLINT
+                               float* out_grad,        // NOLINT
                                float* x_grad,          // NOLINT
                                std::string pool_type) {
   const auto lod = param->X->lod()[0];
@@ -182,9 +182,9 @@ class SequencePoolGradTester {
     Tensor x_grad;
     Tensor out_grad;
     x.Resize(dims_);
-    x_grad.Resize(dims_);
     x.set_lod(lod_);
     // backword
+    x_grad.Resize(dims_);
     out_grad.Resize(out_dims_);
     auto* x_data = x.mutable_data<float>();
     auto* out_grad_data = out_grad.mutable_data<float>();
@@ -237,7 +237,8 @@ class SequencePoolGradTester {
     tensor_x.Resize(dims_);
     grad_param_.X = &tensor_x;
 
-    sequence_pool_grad_common(&grad_param_, out_grad.data(), x_delta.data(), pool_type_);
+    sequence_pool_grad_common(
+        &grad_param_, out_grad.data(), x_delta.data(), pool_type_);
 
     for (int i = 0; i < dims_.production(); i++) {
       EXPECT_NEAR(x_grad[i], x_delta[i], max_grad_delta);
