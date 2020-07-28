@@ -315,10 +315,16 @@ class Context<TargetType::kX86> {
 #ifdef LITE_WITH_OPENCL
 template <>
 class Context<TargetType::kOpenCL> {
-  std::shared_ptr<CLContext> cl_context_;
+  std::shared_ptr<CLContext> cl_context_{nullptr};
 
  public:
-  CLContext* cl_context() { return cl_context_.get(); }
+  CLContext* cl_context() {
+    if (!cl_context_) {
+      return cl_context_.get();
+    } else {
+      return nullptr;
+    }
+  }
 
   void InitOnce() {
     CHECK(CLRuntime::Global()->IsInitSuccess());

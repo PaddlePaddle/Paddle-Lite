@@ -41,6 +41,7 @@ namespace lite_api {
 
 bool IsOpenCLBackendValid() {
   bool opencl_valid = false;
+
 #ifdef LITE_WITH_OPENCL
   bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
 #ifdef LITE_WITH_LOG
