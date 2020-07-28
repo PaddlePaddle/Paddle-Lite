@@ -25,6 +25,9 @@ CLRuntime* CLRuntime::Global() {
 }
 
 CLRuntime::~CLRuntime() {
+  LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
+  if (is_cl_runtime_initialized_ == false) return;
+
   if (command_queue_ != nullptr) {
     command_queue_->flush();
     command_queue_->finish();
@@ -38,13 +41,35 @@ CLRuntime::~CLRuntime() {
 }
 
 bool CLRuntime::Init() {
+  bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
+  LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
+  if (opencl_lib_found == false) {
+    return false;
+  }
+
+  bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
+  LOG(INFO) << "dlsym_success:" << dlsym_success;
+  if (opencl_lib_found == false) {
+    return false;
+  }
+
+  LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
   if (is_cl_runtime_initialized_) {
     return true;
   }
+
   bool is_platform_init = InitializePlatform();
-  bool is_device_init = InitializeDevice();
   LOG(INFO) << "is_platform_init:" << is_platform_init;
+  if (is_platform_init == false) {
+    return false;
+  }
+
+  bool is_device_init = InitializeDevice();
   LOG(INFO) << "is_device_init:" << is_device_init;
+  if (is_device_init == false) {
+    return false;
+  }
+
   if ((is_platform_init == true) && (is_device_init == true)) {
     is_platform_device_init_success_ = true;
     context_ = CreateContext();
