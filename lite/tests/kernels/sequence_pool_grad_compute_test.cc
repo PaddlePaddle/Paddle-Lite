@@ -237,7 +237,7 @@ class SequencePoolGradTester {
     tensor_x.Resize(dims_);
     grad_param_.X = &tensor_x;
 
-    sequence_pool_grad_common(&grad_param_, out_grad, x_delta, pool_type_);
+    sequence_pool_grad_common(&grad_param_, out_grad.data(), x_delta.data(), pool_type_);
 
     for (int i = 0; i < dims_.production(); i++) {
       EXPECT_NEAR(x_grad[i], x_delta[i], max_grad_delta);
