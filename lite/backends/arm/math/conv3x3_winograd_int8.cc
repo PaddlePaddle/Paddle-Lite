@@ -109,6 +109,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
   float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  bool flag_bias = (bias == nullptr) ? false : true;
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -286,16 +287,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
       }
       //*/
     }  // for block_count
-    const float* bias_local_ptr = bias;
     for (int ci = 0; ci < oc_8; ++ci) {
-      float bias_local[8] = {bias_local_ptr[0],
-                             bias_local_ptr[1],
-                             bias_local_ptr[2],
-                             bias_local_ptr[3],
-                             bias_local_ptr[4],
-                             bias_local_ptr[5],
-                             bias_local_ptr[6],
-                             bias_local_ptr[7]};
       write_int32_nchwc8_to_nchw(output_c8 + ci * oc_8_stride,
                                  output_ptr,
                                  ci * 8,
@@ -309,11 +301,10 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
                                  wout,
                                  flag_act,
                                  alpha,
-                                 bias_local,
-                                 param.bias,
+                                 bias + ci * 8,
+                                 flag_bias,
                                  zero_ptr,
                                  scale + ci * 8);
-      bias_local_ptr += 8;
     }
   }  // for num
 }  // conv compute
