@@ -321,12 +321,15 @@ class Context<TargetType::kOpenCL> {
   CLContext* cl_context() { return cl_context_.get(); }
 
   void InitOnce() {
-    // Init cl runtime.
-    CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
+    CHECK(CLRuntime::Global()->IsInitSuccess());
     cl_context_ = std::make_shared<CLContext>();
   }
 
-  void CopySharedTo(OpenCLContext* ctx) { ctx->cl_context_ = cl_context_; }
+  void CopySharedTo(OpenCLContext* ctx) {
+    if (ctx && cl_context_) {
+      ctx->cl_context_ = cl_context_;
+    }
+  }
 };
 #endif
 
