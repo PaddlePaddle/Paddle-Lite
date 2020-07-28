@@ -318,13 +318,7 @@ class Context<TargetType::kOpenCL> {
   std::shared_ptr<CLContext> cl_context_{nullptr};
 
  public:
-  CLContext* cl_context() {
-    if (!cl_context_) {
-      return cl_context_.get();
-    } else {
-      return nullptr;
-    }
-  }
+  CLContext* cl_context() { return cl_context_.get(); }
 
   void InitOnce() {
     CHECK(CLRuntime::Global()->IsInitSuccess());
