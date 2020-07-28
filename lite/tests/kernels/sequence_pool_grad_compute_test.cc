@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/sequence_pool_grad_compute.h"
+#include <gtest/gtest.h>
 #include <algorithm>
 #include <cmath>
-#include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/arm/sequence_pool_compute.h"
 
@@ -29,9 +29,9 @@ using grad_param_t = operators::SequencePoolGradParam;
 using kernel_t = SequencePoolCompute;
 using grad_kernel_t = SequencePoolGradCompute;
 
-void sequence_pool_grad_common(grad_param_t* param,    // NOLINT
-                               float* out_grad,        // NOLINT
-                               float* x_grad,          // NOLINT
+void sequence_pool_grad_common(grad_param_t* param,   // NOLINT
+                               float* out_grad,       // NOLINT
+                               float* x_grad,         // NOLINT
                                std::string pool_type) {
   const auto lod = param->X->lod()[0];
   int64_t width = param->X->numel() / param->X->dims()[0];
@@ -205,6 +205,7 @@ class SequencePoolGradTester {
     for (int i = 0; i < dims_.production(); i++) {
       in_grad_vec[i] = x_grad_data[i];
     }
+    LOG(INFO) << "end";
   }
 
   void check_grad(float delta, float max_grad_delta) {
@@ -235,8 +236,9 @@ class SequencePoolGradTester {
     std::vector<float> out_delta(out_dims_.production());
     Tensor tensor_x;
     tensor_x.Resize(dims_);
+    tensor_x.set_lod(lod_);
     grad_param_.X = &tensor_x;
-
+    LOG(INFO) << "sequence_pool_grad_common";
     sequence_pool_grad_common(
         &grad_param_, out_grad.data(), x_delta.data(), pool_type_);
 
