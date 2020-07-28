@@ -29,9 +29,9 @@ using grad_param_t = operators::SequencePoolGradParam;
 using kernel_t = SequencePoolCompute;
 using grad_kernel_t = SequencePoolGradCompute;
 
-void sequence_pool_grad_common(grad_param_t* param,   // NOLINT
-                               float* out_grad,       // NOLINT
-                               float* x_grad,         // NOLINT
+void sequence_pool_grad_common(grad_param_t* param,  // NOLINT
+                               float* out_grad,      // NOLINT
+                               float* x_grad,        // NOLINT
                                std::string pool_type) {
   const auto lod = param->X->lod()[0];
   int64_t width = param->X->numel() / param->X->dims()[0];
