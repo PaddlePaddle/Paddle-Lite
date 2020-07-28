@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/sequence_pool_grad_compute.h"
+#include <algorithm>
+#include <cmath>
 #include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/arm/sequence_pool_compute.h"
@@ -28,7 +30,7 @@ using kernel_t = SequencePoolCompute;
 using grad_kernel_t = SequencePoolGradCompute;
 
 void sequence_pool_grad_common(grad_param_t* param,    // NOLINT
-                               const float* out_grad,  // NOLINT
+                               float* out_grad,  // NOLINT
                                float* x_grad,          // NOLINT
                                std::string pool_type) {
   const auto lod = param->X->lod()[0];
@@ -36,7 +38,7 @@ void sequence_pool_grad_common(grad_param_t* param,    // NOLINT
   if (pool_type == "SUM" || pool_type == "MAX" || pool_type == "MIN") {
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; i++) {
       int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
-      const float* out_grad_ptr = out_grad + i * width;
+      float* out_grad_ptr = out_grad + i * width;
       float* x_grad_ptr = x_grad + lod[i] * width;
       if (height > 0) {
         if (width == 1) {
@@ -237,8 +239,7 @@ class SequencePoolGradTester {
 
     sequence_pool_grad_common(&grad_param_, out_grad, x_delta, pool_type_);
 
-    float max_grad_delta = 0.0005;
-    for (int i = 0; i < x_dims_.production(); i++) {
+    for (int i = 0; i < dims_.production(); i++) {
       EXPECT_NEAR(x_grad[i], x_delta[i], max_grad_delta);
     }
   }
