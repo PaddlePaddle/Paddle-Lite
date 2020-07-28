@@ -61,17 +61,18 @@ void YoloBoxCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-// REGISTER_LITE_KERNEL(yolo_box,
-//                      kFPGA,
-//                      kFP16,
-//                      kNHWC,
-//                      paddle::lite::kernels::fpga::YoloBoxCompute,
-//                      def)
-//     .BindInput("X", {LiteType::GetTensorTy(TARGET(kFPGA),
-//                                       PRECISION(kFP16),
-//                                       DATALAYOUT(kNHWC))})
-//     .BindInput("ImgSize",
-//                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-//     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
-//     .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
-//     .Finalize();
+REGISTER_LITE_KERNEL(yolo_box,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::YoloBoxCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("ImgSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();

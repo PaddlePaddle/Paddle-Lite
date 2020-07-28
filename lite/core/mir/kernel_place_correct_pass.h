@@ -50,7 +50,6 @@ class KernelPlaceCorrectPass : public DebugPass {
     VLOG(4) << "lite_with_targets['kFPGA']:" << lite_with_targets["kFPGA"];
 
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
-    // std::cout << ""
     for (auto& x : graph->StmtTopologicalOrder()) {
       auto& inst = x->AsStmt();
       // The IoCopyOp is a tool operator, it won't support the type inference.
@@ -94,21 +93,13 @@ class KernelPlaceCorrectPass : public DebugPass {
         for (auto* x_in : x->inlinks) {
           std::string in_name =
               get_argname(x_in->AsArg().name, inst.op_info()->inputs());
-          // std::cout << "name: " << x_in->AsArg().name  << std::endl;
-          // std::cout << "in_name: " << in_name  << std::endl;
           if (in_name == "X") {
             in = x_in;
-            std::cout << "found input \n";
-            // exit(-1);
           }
         }
 
         p = in->AsArg().type->precision();
         if (p != PrecisionType::kFP16) {
-          // std::cout << "found an arm ............... : " <<
-          // inst.kernels().size() << std::endl;
-          // std::cout << "tt:" <<  TargetRepr(inst.kernels()[0]->target()) <<
-          // std::endl;
           UpdateTarget(inst, TargetType::kHost);
           UpdateTensor(inst, in, out, TargetType::kHost);
         }
@@ -129,11 +120,12 @@ class KernelPlaceCorrectPass : public DebugPass {
       }
 
       if (inst.op_type() == "concat") {
-        std::cout << "concat target:" << TargetRepr(inst.kernels()[0]->target())
-                  << std::endl;
-        std::cout << "concat p:"
-                  << PrecisionToStr(inst.kernels()[0]->precision())
-                  << std::endl;
+        // std::cout << "concat target:" <<
+        // TargetRepr(inst.kernels()[0]->target())
+        //           << std::endl;
+        // std::cout << "concat p:"
+        //           << PrecisionToStr(inst.kernels()[0]->precision())
+        //           << std::endl;
         if (p != PrecisionType::kFP16) {
           UpdateTarget(inst, TargetType::kARM);
           UpdateTensor(inst, in, out, TargetType::kARM);

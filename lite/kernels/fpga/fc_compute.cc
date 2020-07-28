@@ -51,7 +51,7 @@ void FcCompute::Run() {
   pe_.dispatch();
 
 #ifdef FPGA_PRINT_TENSOR
-  // zynqmp::FullyConnectedParam& fc_param = pe_.param();
+  zynqmp::FullyConnectedParam& fc_param = pe_.param();
   Debugger::get_instance().registerOutput("fc", fc_param.output);
 #endif
 }

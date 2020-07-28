@@ -155,7 +155,6 @@ void TypeTargetTransformPass::AddIoCopyInst(
     // fix(MyPandaShaoxiang): select kernel that input_dcl_type same as in.type
     bool is_found = false;
     std::vector<std::unique_ptr<KernelBase>> selected_kernels;
-    std::cout << "kernels:" << std::to_string(kernels.size()) << std::endl;
     for (auto& kernel : kernels) {
       const Type* in_arg_ty = kernel->GetInputDeclType("Input");
       const Type* out_arg_ty = kernel->GetOutputDeclType("Out");

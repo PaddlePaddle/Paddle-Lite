@@ -35,22 +35,19 @@ class Monitor {
   void inferStart() {}
 
   void preRun(Instruction& inst) {  // NOLINT
-    auto op_type = const_cast<OpLite*>(inst.op())->Type();
+    auto op = const_cast<OpLite*>(inst.op());
+    auto op_type = op->Type();
 
-    VLOG(4) << "Running op:" << op_type;
+    VLOG(4) << "Running op:" << op_type << " on "
+            << op->kernel_place().DebugString();
   }
 
   void postRun(Instruction& inst) {  // NOLINT
-    // inst.op_info().
-
     auto op = const_cast<OpLite*>(inst.op());
-    std::cout << op->DebugString() << std::endl;
     auto op_info = op->op_info();
-
     auto in_names = op_info->input_names();
 
     for (auto name : in_names) {
-      std::cout << "\n in_tensor:" << name << std::endl;
       // auto *var = op->scope()->FindVar(name);
       // CHECK(var) << "no variable called " << name << " found";
       // auto tensor = var->Get<lite::Tensor>();
@@ -58,19 +55,15 @@ class Monitor {
 
     auto out_args = op_info->output_names();
     for (auto name : out_args) {
-      std::cout << "\n out_tensor:" << name << std::endl;
+      VLOG(4) << "\n out_tensor:" << name;
       auto* var = op->scope()->FindVar(name);
       if (var->IsType<lite::Tensor>()) {
         lite::Tensor* tensor =
             const_cast<lite::Tensor*>(&var->Get<lite::Tensor>());
-        std::cout << "Tensor:" << tensor << std::endl;
-        std::cout << "zynq Tensor:" << tensor->ZynqTensor() << std::endl;
         if (tensor->ZynqTensor() != nullptr) {
           // tensor->ZynqTensor()->saveToFile(name, true);
         }
       }
-      // CHECK(var) << "no variable called " << name << " found";
-      // auto tensor = var->Get<lite::Tensor>();
     }
   }
 

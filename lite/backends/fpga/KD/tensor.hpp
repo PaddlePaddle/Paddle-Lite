@@ -353,7 +353,6 @@ class Tensor {
   }
 
   std::string dimsFileName() {
-    std::cout << "shape_:" << shape_ << std::endl;
     return std::to_string(shape_->num()) + "_" +
            std::to_string(shape_->channel()) + "_" +
            std::to_string(shape_->height()) + "_" +
