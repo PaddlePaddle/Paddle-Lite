@@ -123,6 +123,7 @@ function prepare_thirdparty {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
+  prepare_thirdparty
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
       build_dir=${build_dir}.opencl
@@ -151,6 +152,7 @@ function make_tiny_publish_so {
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
+      -DLITE_WITH_PROFILE=ON \
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
@@ -196,7 +198,7 @@ function make_full_publish_so {
 
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
-      -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_LOG=ON \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
