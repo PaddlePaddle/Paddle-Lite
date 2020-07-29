@@ -121,7 +121,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
                               << " must be 0";
   }
   for (int i = 0; i < dilations1.size(); i++) {
-    CHECK_EQ(dilations1[i], 1) << "dilations1[" << i << "]: " << dilations1[i]
+    CHECK_EQ(dilations1[i], 1) << "dilations1[" << i << "]: " << dilations1[i];
   }
   // comupte new_wight and new bias
   ///////////////////////////////////////////////////////////////////////////////
