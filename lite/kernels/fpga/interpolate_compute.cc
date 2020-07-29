@@ -109,7 +109,6 @@ void NearestInterpCompute::PrepareForRun() {
   pe_.apply();
 }
 
-// TODO
 inline std::vector<int> get_new_shape(
     std::vector<const lite::Tensor*> list_new_shape_tensor) {
   // get tensor from
@@ -213,8 +212,7 @@ void NearestInterpCompute::Run() {
 
   std::string interp_method = "";
 
-  X->ZynqTensor()->invalidate();  // TODO
-  X->ZynqTensor()->saveToFile("n_in", true);
+  X->ZynqTensor()->syncToCPU();
   interpolate(X,
               OutSize,
               SizeTensor,
@@ -228,7 +226,6 @@ void NearestInterpCompute::Run() {
 
   Out->ZynqTensor()->flush();
   Out->ZynqTensor()->copyScaleFrom(X->ZynqTensor());
-  Out->ZynqTensor()->saveToFile("n_out", true);
 }
 
 } /* namespace fpga */

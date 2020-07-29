@@ -50,10 +50,10 @@ void YoloBoxCompute::Run() {
   pe_.dispatch();
 
   zynqmp::YoloBoxParam& yolobox_param = pe_.param();
-  yolobox_param.imgSize->saveToFile("img_size", true);
-  //   exit(-1);
-  yolobox_param.outputBoxes->saveToFile("yolo_boxes", true);
-  yolobox_param.outputScores->saveToFile("yolo_scores", true);
+  // yolobox_param.imgSize->saveToFile("img_size", true);
+  // //   exit(-1);
+  // yolobox_param.outputBoxes->saveToFile("yolo_boxes", true);
+  // yolobox_param.outputScores->saveToFile("yolo_scores", true);
 }
 
 }  // namespace fpga

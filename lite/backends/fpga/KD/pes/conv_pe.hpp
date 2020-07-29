@@ -248,7 +248,7 @@ class ConvPE : public PE {
       if (inplace_.leaky_relu_enable) {
         activeParamterArgs.type = TYPE_LEAKY_RELU;
         activeParamterArgs.leaky_relu_factor =
-            fp32_2_fp16(param_.activeParam.leaky_relu_factor);
+            float_to_half(param_.activeParam.leaky_relu_factor);
         config_activation(activeParamterArgs);
       }
     }
@@ -262,10 +262,6 @@ class ConvPE : public PE {
 
     int ret = 0;
     for (auto conv_param : params) {
-      // conv_param->input.printScale();
-      // if (split_channel) {
-      //   conv_param->input.saveToFile("pack_image",true);
-      // }
       ret |= compute_fpga_conv_basic(conv_param->args);
     }
 
@@ -279,7 +275,7 @@ class ConvPE : public PE {
 
       if (inplace_.leaky_relu_enable) {
         activeParamterArgs.type = TYPE_LEAKY_RELU;
-        activeParamterArgs.leaky_relu_factor = fp32_2_fp16(0);
+        activeParamterArgs.leaky_relu_factor = float_to_half(0);
         config_activation(activeParamterArgs);
       }
     }

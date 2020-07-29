@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <algorithm>
 #include "lite/backends/fpga/KD/pe.hpp"
 #include "lite/backends/fpga/KD/pe_params.hpp"
 
@@ -124,24 +125,9 @@ class YoloBoxPE : public PE {
     input_float.setDataLocation(CPU);
     float* input_data = input_float.mutableData<float>(FP32, input->shape());
     input_float.copyFrom(input);
-    // input_float.saveToFile("input_yolobox_half", "true");
 
-    // input_float.setAligned(input->aligned());
-    // input_float.unalignImage();
-    // std::cout << "-------------unalignImage-----------------" << std::endl;
-    // for (int i = 0; i < input_float.shape().numel(); ++i)
-    // {
-    //   std::cout << input_data[i] << " ";
-    // }
-    //  std::cout << "-" << std::endl;
-    //  std::cout << "-------------unalignImage-----------------" << std::endl;
-    // input_float.setAligned(false);
-    // input_float.saveToFile("input_yolobox_float", "true");
-    // input_float.syncToCPU();
-    // input_float.invalidate();
-
-    imgsize->saveToFile("img_size", true);
-    const int32_t* imgsize_data = imgsize->data<int32_t>();
+    int32_t* imgsize_data = imgsize->mutableData<int32_t>();
+    // imgsize->saveToFile("img_size", true);
 
     Tensor boxes_float;
     Tensor scores_float;
@@ -222,7 +208,7 @@ class YoloBoxPE : public PE {
     input->setAligned(true);
   }
 
-  void apply(){};
+  void apply() {}
 
   YoloBoxParam& param() { return param_; }
 

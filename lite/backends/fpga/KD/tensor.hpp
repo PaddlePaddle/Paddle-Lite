@@ -405,12 +405,22 @@ class Tensor {
       ofs.open(path);
       for (int i = 0; i < shape_->numel(); i++) {
         float value = 0;
-        if (dataType_ == FP32) {
-          value = unaligned.data<float>()[i];
-        } else if (dataType_ == FP16) {
-          value = half_to_float(unaligned.data<float16>()[i]);
-        } else {
-          value = unaligned.data<int8_t>()[i];
+        switch (dataType_) {
+          case FP32:
+            value = unaligned.data<float>()[i];
+            break;
+          case FP16:
+            value = half_to_float(unaligned.data<float16>()[i]);
+            break;
+          case INT32:
+            value = unaligned.data<int32_t>()[i];
+            break;
+          case INT8:
+            value = unaligned.data<int8_t>()[i];
+            break;
+          default:
+            std::cout << "Unknown type!! \n";
+            exit(-1);
         }
         ofs << value << std::endl;
       }

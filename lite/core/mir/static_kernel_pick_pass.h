@@ -145,28 +145,30 @@ class StaticKernelPickPass : public mir::StmtPass {
     }
 
     if (kernel.target() == TARGET(kFPGA)) {
+      VLOG(4) << "alias:" << kernel.alias();
       final_score = 4000;
       bool in_match = true;
       for (size_t i = 0; i < in_names.size(); ++i) {
         std::string tmp;
         CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
         if (in_types.count(in_names[i]) &&
-            in_types.at(in_names[i]) !=
+            in_types.at(in_names[i]) ==
                 kernel.GetInputDeclType(tmp)->precision()) {
-          in_match = false;
+          final_score += 1000;
         }
       }
-      if (in_match) {
-        final_score += 1000;
-      }
+
       bool out_match = true;
       for (size_t i = 0; i < out_names.size(); ++i) {
         std::string tmp;
         CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
         if (out_types.count(out_names[i]) &&
-            out_types.at(out_names[i]) !=
+            out_types.at(out_names[i]) ==
                 kernel.GetOutputDeclType(tmp)->precision()) {
-          // out_match = false;
+          VLOG(4) << tmp << " == "
+                  << PrecisionToStr(kernel.GetOutputDeclType(tmp)->precision());
+          VLOG(4) << "decType: "
+                  << PrecisionToStr(kernel.GetOutputDeclType(tmp)->precision());
           final_score += 1000;
         }
       }
