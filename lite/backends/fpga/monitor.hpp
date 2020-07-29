@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -43,6 +44,8 @@ class Monitor {
   }
 
   void postRun(Instruction& inst) {  // NOLINT
+    return;
+
     auto op = const_cast<OpLite*>(inst.op());
     auto op_info = op->op_info();
     auto in_names = op_info->input_names();
@@ -61,7 +64,14 @@ class Monitor {
         lite::Tensor* tensor =
             const_cast<lite::Tensor*>(&var->Get<lite::Tensor>());
         if (tensor->ZynqTensor() != nullptr) {
-          // tensor->ZynqTensor()->saveToFile(name, true);
+          std::string substr = "/";
+          std::size_t found = name.rfind(substr);
+          VLOG(4) << "\n out_tensor:::" << name << "," << found;
+          if (found != std::string::npos) {
+            name.replace(found, substr.length(), "_");
+          }
+          VLOG(4) << "\n out_tensor:::" << name;
+          tensor->ZynqTensor()->saveToFile(name, true);
         }
       }
     }

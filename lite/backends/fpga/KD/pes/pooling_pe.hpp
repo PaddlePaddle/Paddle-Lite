@@ -216,9 +216,6 @@ class PoolingPE : public PE {
     if (use_cpu_) {
       // cpu_compute();
       compute();
-
-      std::cout << "pool compute" << std::endl;
-      // exit(-1);
       return true;
     }
     param_.input->syncToDevice();
@@ -235,8 +232,6 @@ class PoolingPE : public PE {
       globalPoolArgs.global_pool_factor =
           fp32_2_fp16(1.0f / (kernel_height * kernel_width));
       config_global_pool(globalPoolArgs);
-      std::cout << "pool_pe globalPooling: " << param_.globalPooling
-                << std::endl;
     }
     int ret = (compute_fpga_pool(param_.poolingArgs) == 0);
     if (param_.globalPooling) {
@@ -248,7 +243,6 @@ class PoolingPE : public PE {
       config_inplace(inplace_);
       globalPoolArgs.global_pool_factor = fp32_2_fp16(0);
       config_global_pool(globalPoolArgs);
-      std::cout << "pool_pe globalPooling::: " << std::endl;
     }
 
     return ret;

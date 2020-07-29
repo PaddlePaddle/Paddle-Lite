@@ -215,19 +215,16 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
   for (int64_t c = 0; c < class_num; ++c) {
     if (c == background_label) continue;
 
-    // std::cout << "------ 1 \n";
     if (scores_size == 3) {
-      // std::cout << "------ scores_size = 3 \n";
       scores.Slice<T>(score_slice, c, c + 1);
       // bbox_slice = bboxes;
     } else {
-      // std::cout << "------ scores_size != 3 \n";
       score_slice.Resize({scores.dims()[0], 1});
       bbox_slice.Resize({scores.dims()[0], 4});
       SliceOneClass<T>(scores, c, &score_slice);
       SliceOneClass<T>(bboxes, c, &bbox_slice);
     }
-    NMSFast(bboxes,  // TODO
+    NMSFast(bboxes,
             score_slice,
             score_threshold,
             nms_threshold,
@@ -414,9 +411,13 @@ void MulticlassNmsCompute::Run() {
       if (e > s) {
         Tensor out;
         outs->Slice<float>(out, s, e);
+        Tensor index_int32;
         if (return_index) {
           index->Resize({static_cast<int64_t>(num_kept), 1});
-          int* output_idx = index->mutable_data<int>();
+
+          index_int32.Resize(index->dims());
+          int32_t* output_idx = index_int32.mutable_data<int32_t>();
+
           oindices = output_idx + s;
         }
         MultiClassOutput<float>(scores_slice,
@@ -429,6 +430,14 @@ void MulticlassNmsCompute::Run() {
         // out.ZynqTensor()->saveToFile("nms_o", true);
         outs->ZynqTensor()->copyFrom(out.ZynqTensor());
         outs->ZynqTensor()->flush();
+
+        if (return_index) {
+          int64_t* index_int64_data = index->mutable_data<int64_t>();
+          const int32_t* index_int32_data = index_int32.data<int32_t>();
+          for (int i = 0; i < index_int32.numel(); ++i) {
+            index_int64_data[i] = index_int32_data[i];
+          }
+        }
       }
     }
   }
@@ -460,6 +469,18 @@ REGISTER_LITE_KERNEL(multiclass_nms,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(multiclass_nms2,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::MulticlassNmsCompute,
+                     def2)
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Index",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
 // REGISTER_LITE_KERNEL(multiclass_nms,
 //                      kFPGA,
 //                      kFP16,

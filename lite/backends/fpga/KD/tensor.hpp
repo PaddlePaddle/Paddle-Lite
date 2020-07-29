@@ -38,6 +38,7 @@ enum DataType : int {
   FP16 = 1,
   INT8 = 2,
   INT32 = 3,
+  INT64 = 4,
 };
 
 enum DataSyncStatus : int {
@@ -58,6 +59,8 @@ inline int CellSize(DataType type) {
       return sizeof(int32_t);
     case INT8:
       return sizeof(int8_t);
+    case INT64:
+      return sizeof(int64_t);
     default:
       return 0;
   }
@@ -288,8 +291,10 @@ class Tensor {
     src->syncToDevice();
     size_t aligned_remainder = src->shape().numel() % 16;
     if (aligned_remainder > 0) {
-      size_t dtype_size =
-          src->dataType_ == FP32 ? sizeof(float) : sizeof(float16);
+      size_t dtype_size = CellSize(src->dataType_);
+
+      // size_t dtype_size =
+      //     src->dataType_ == FP32 ? sizeof(float) : sizeof(float16);
       void* dst = src->data<char>() + src->shape().numel() * dtype_size;
       memset(dst, 0, aligned_remainder * dtype_size);
       fpga_flush(dst, aligned_remainder * dtype_size);
@@ -443,12 +448,18 @@ class Tensor {
         case INT8:
           value = data<int8_t>()[i];
           break;
+        case INT32:
+          value = data<int32_t>()[i];
+          break;
+        case INT64:
+          value = data<int64_t>()[i];
+          break;
         default:
           break;
       }
-      if (i > 100) {
-        break;
-      }
+      // if (i > 100) {
+      //   break;
+      // }
       ofs << value << std::endl;
     }
     ofs.close();

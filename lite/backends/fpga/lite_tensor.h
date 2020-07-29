@@ -236,6 +236,9 @@ zynqmp::DataType get_date_type() {
   if (typeid(T) == typeid(int8_t)) {
     data_type = zynqmp::INT8;
   }
+  if (typeid(T) == typeid(int64_t)) {
+    data_type = zynqmp::INT64;
+  }
 
   return data_type;
 }
@@ -257,6 +260,9 @@ PrecisionType get_precistion_type() {
   }
   if (typeid(T) == typeid(int8_t)) {
     data_type = PrecisionType::kInt8;
+  }
+  if (typeid(T) == typeid(int64_t)) {
+    data_type = PrecisionType::kInt64;
   }
 
   return data_type;

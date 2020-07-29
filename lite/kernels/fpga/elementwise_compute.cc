@@ -126,7 +126,7 @@ void ElementwiseMulCompute::PrepareForRun() {
 
 void ElementwiseMulCompute::Run() {
   auto& param = Param<operators::ElementwiseParam>();
-  std::cout << "param.Y :" << param.Y->persistable() << std::endl;
+
   if (!param.Y->persistable()) {
     // TODO(chonwhite) alignment;
 

@@ -33,7 +33,22 @@ void FetchCompute::PrepareForRun() {
   }
   Tensor& out = param.fetch_list->at(param.col);
   out.Resize(param.input->dims());
-  out.mutable_data<float>();
+
+  auto in_type = param.input->ZynqTensor()->dataType();
+  switch (in_type) {
+    case zynqmp::FP16:
+    case zynqmp::FP32:
+      out.mutable_data<float>();
+      break;
+    case zynqmp::INT32:
+      out.mutable_data<int32_t>();
+      break;
+    case zynqmp::INT64:
+      out.mutable_data<int64_t>();
+      break;
+    default:
+      break;
+  }
 
   fetch_param.input = param.input->ZynqTensor();
   fetch_param.output = out.ZynqTensor();
