@@ -321,7 +321,9 @@ class Context<TargetType::kOpenCL> {
   CLContext* cl_context() { return cl_context_.get(); }
 
   void InitOnce() {
-    CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
+    if (CLRuntime::Global()->IsInitSuccess() == false) {
+      LOG(ERROR) << "OpenCL runtime init failed";
+    }
     cl_context_ = std::make_shared<CLContext>();
   }
 
