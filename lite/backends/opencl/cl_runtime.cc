@@ -64,7 +64,7 @@ bool CLRuntime::Init() {
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "dlsym_success:" << dlsym_success;
 #endif
-  if (opencl_lib_found == false) {
+  if (dlsym_success == false) {
     return false;
   }
 

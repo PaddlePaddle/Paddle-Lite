@@ -161,9 +161,9 @@ RuntimeProgram::RuntimeProgram(
 #ifdef LITE_WITH_OPENCL
   bool opencl_valid = CLRuntime::Global()->OpenCLAvaliableForDevice();
   using OpenCLContext = Context<TargetType::kOpenCL>;
-  std::unique_ptr<KernelContext> local_ctx(new KernelContext());
+  std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
   if (opencl_valid) {
-    local_ctx->As<OpenCLContext>().InitOnce();
+    unique_opencl_ctx->As<OpenCLContext>().InitOnce();
   }
 #endif
   CHECK(program_desc);
@@ -232,7 +232,7 @@ RuntimeProgram::RuntimeProgram(
     if (kernel->target() == TARGET(kOpenCL)) {
       if (opencl_valid) {
         std::unique_ptr<KernelContext> ctx(new KernelContext());
-        (*local_ctx)
+        (*unique_opencl_ctx)
             .As<OpenCLContext>()
             .CopySharedTo(&ctx->As<OpenCLContext>());
         kernel->SetContext(std::move(ctx));

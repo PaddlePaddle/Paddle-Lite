@@ -53,7 +53,7 @@ bool IsOpenCLBackendValid() {
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "dlsym_success:" << dlsym_success;
 #endif
-  if (opencl_lib_found == false) return false;
+  if (dlsym_success == false) return false;
 
   opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
 #endif
