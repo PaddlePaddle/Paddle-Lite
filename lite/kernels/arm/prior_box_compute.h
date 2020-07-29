@@ -28,7 +28,7 @@ class PriorBoxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   void Run() override;
   void ReInitWhenNeeded() override;
   virtual ~PriorBoxCompute() = default;
- 
+
  private:
   Tensor boxes_tmp_;
   Tensor variances_tmp_;
