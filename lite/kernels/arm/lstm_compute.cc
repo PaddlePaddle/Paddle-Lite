@@ -208,6 +208,8 @@ REGISTER_LITE_KERNEL(lstm,
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("C0", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("H0", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Cell", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("BatchGate", {LiteType::GetTensorTy(TARGET(kARM))})
