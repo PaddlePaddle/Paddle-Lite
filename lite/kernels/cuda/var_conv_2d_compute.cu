@@ -184,6 +184,8 @@ using VarConvFp16 =
 REGISTER_LITE_KERNEL(var_conv_2d, kCUDA, kFloat, kNCHW, VarConvFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("COLUMN", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .BindInput("ROW", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .Finalize();
@@ -191,6 +193,9 @@ REGISTER_LITE_KERNEL(var_conv_2d, kCUDA, kFloat, kNCHW, VarConvFp32, def)
 REGISTER_LITE_KERNEL(var_conv_2d, kCUDA, kFP16, kNCHW, VarConvFp16, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("COLUMN",
+               {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("ROW", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .BindOutput("Col", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .Finalize();

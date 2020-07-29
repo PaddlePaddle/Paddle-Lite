@@ -57,7 +57,8 @@ enum class TargetType : int {
   kMLU = 11,
   kRKNPU = 12,
   kAPU = 13,
-  NUM = 14,  // number of fields.
+  kHuaweiAscendNPU = 14,
+  NUM = 15,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -107,7 +108,8 @@ enum class ActivationType : int {
   kHardSwish = 10,
   kReciprocal = 11,
   kThresholdedRelu = 12,
-  NUM = 13,
+  kElu = 13,
+  NUM = 14,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {

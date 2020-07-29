@@ -107,6 +107,7 @@ TEST(transpose_arm, compute_shape_nchw) {
 
   // run transpose_compute
   transpose.SetParam(param);
+  transpose.PrepareForRun();
   transpose.Run();
 
   // run transpose_compute_ref
@@ -173,6 +174,7 @@ TEST(transpose2_arm, compute_shape_nchw) {
 
   // run transpose_compute
   transpose2.SetParam(param);
+  transpose2.PrepareForRun();
   transpose2.Run();
 
   // run transpose_compute_ref
@@ -183,8 +185,8 @@ TEST(transpose2_arm, compute_shape_nchw) {
   auto* output_ref_data = output_ref.data<float>();
   for (int i = 0;
        i < input_shape[0] * input_shape[1] * input_shape[2] * input_shape[3];
-       i += 4) {
-    EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+       i += 1) {
+    EXPECT_NEAR(output_data[i], output_ref_data[i], 0);
   }
 }
 

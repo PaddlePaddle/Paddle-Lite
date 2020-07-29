@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "lite/kernels/cuda/gru_compute.h"
+
 #include <string>
 
 #include "lite/backends/cuda/cuda_utils.h"
@@ -19,7 +21,6 @@
 #include "lite/backends/cuda/math/sequence2batch.h"
 #include "lite/backends/cuda/target_wrapper.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/cuda/gru_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -133,7 +134,6 @@ struct GRUUnitFunctor {
                 value.gate_value,
                 context);
     }
-    CUDA_POST_KERNEL_CHECK;
 
     lite::cuda::math::GruForwardResetOutput<
         T><<<grids, threads, 0, context->exec_stream()>>>(
@@ -143,7 +143,7 @@ struct GRUUnitFunctor {
         frame_size,
         batch_size,
         active_gate,
-        batch_size == 1);
+        batch_size != 1);
     CUDA_POST_KERNEL_CHECK;
 
     if (value.prev_out_value) {
@@ -163,7 +163,6 @@ struct GRUUnitFunctor {
                 value.gate_value + frame_size * 2,
                 context);
     }
-    CUDA_POST_KERNEL_CHECK;
 
     lite::cuda::math::GruForwardFinalOutput<
         T><<<grids, threads, 0, context->exec_stream()>>>(value.gate_value,
@@ -173,7 +172,7 @@ struct GRUUnitFunctor {
                                                           batch_size,
                                                           active_node,
                                                           origin_mode,
-                                                          batch_size == 1);
+                                                          batch_size != 1);
     CUDA_POST_KERNEL_CHECK;
   }
 };
@@ -218,7 +217,6 @@ struct GRUUnitFunctor<half> {
                 value.gate_value,
                 context);
     }
-    CUDA_POST_KERNEL_CHECK;
 
     lite::cuda::math::GruForwardResetOutput<
         half><<<grids, threads, 0, context->exec_stream()>>>(
@@ -248,7 +246,6 @@ struct GRUUnitFunctor<half> {
                 value.gate_value + frame_size * 2,
                 context);
     }
-    CUDA_POST_KERNEL_CHECK;
 
     lite::cuda::math::GruForwardFinalOutput<
         half><<<grids, threads, 0, context->exec_stream()>>>(

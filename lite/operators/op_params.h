@@ -359,6 +359,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_offset{3.0};
   // thresholded_relu
   float relu_threshold{1.0f};
+  // elu
+  float Elu_alpha{1.0f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -676,6 +678,13 @@ struct FakeChannelWiseDequantizeMaxAbsParam : ParamBase {
   std::vector<const lite::Tensor*> scale_tensors{};
   lite::Tensor* out{};
   std::vector<int> quant_bits;
+};
+
+struct FakeQuantDequantAbsMaxParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* out_scale{};
+  int bit_length;
 };
 
 /// ----------------------- sgd operators ----------------------
