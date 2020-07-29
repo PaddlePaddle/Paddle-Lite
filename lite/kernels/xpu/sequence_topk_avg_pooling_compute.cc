@@ -23,10 +23,11 @@ namespace kernels {
 namespace xpu {
 
 void SequenceTopkAvgPoolingCompute::PrepareForRun() {
-  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(256 * sizeof(int));
-  in_lod_cpu.reset(new int[64]);
-  row_lod_cpu.reset(new int[64]);
-  col_lod_cpu.reset(new int[64]);
+  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      4 * XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  in_lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  row_lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  col_lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
 void SequenceTopkAvgPoolingCompute::Run() {
@@ -81,22 +82,22 @@ void SequenceTopkAvgPoolingCompute::Run() {
   for (int i = 0; i < col_lod.size(); ++i) {
     col_lod_cpu[i] = col_lod[i];
   }
-  xpu_memcpy(in_lod_xpu,
-             in_lod_cpu.get(),
-             in_lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(row_lod_xpu,
-             row_lod_cpu.get(),
-             row_lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(col_lod_xpu,
-             col_lod_cpu.get(),
-             col_lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(topks_xpu,
-             topks.data(),
-             topks.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(in_lod_xpu,
+                      in_lod_cpu.get(),
+                      in_lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(row_lod_xpu,
+                      row_lod_cpu.get(),
+                      row_lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(col_lod_xpu,
+                      col_lod_cpu.get(),
+                      col_lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(topks_xpu,
+                      topks.data(),
+                      topks.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::sequence_topk_avg_pooling(ctx.GetRawContext(),
                                           in_data,

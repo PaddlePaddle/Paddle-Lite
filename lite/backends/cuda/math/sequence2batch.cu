@@ -32,7 +32,7 @@ __global__ void CopyMatrixRowsKernel(const T* src,
                                      bool is_src_index) {
   int idx = threadIdx.x;
   int idy = threadIdx.y;
-  int row_id = blockDim.y * gridDim.x + idy;
+  int row_id = blockDim.y * blockIdx.x + idy;
   if (row_id < height) {
     int src_idx = is_src_index ? index[row_id] : row_id;
     int dst_idx = is_src_index ? row_id : index[row_id];
@@ -72,7 +72,7 @@ void CopyMatrixRowsFunctor<T>::operator()(
   dim3 threads(128, 8);
   dim3 grids((height + threads.y - 1) / threads.y);
   CopyMatrixRowsKernel<T><<<grids, threads, 0, stream>>>(
-      src_data, dst_data, index_tensor_data, height, width, true);
+      src_data, dst_data, index_tensor_data, height, width, is_src_index);
   CUDA_POST_KERNEL_CHECK;
 }
 

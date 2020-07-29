@@ -27,21 +27,29 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // initialze fuser params
   std::vector<bool> conv_has_bias_cases{true, false};
   std::vector<std::string> conv_type_cases{"conv2d", "depthwise_conv2d"};
-  bool has_arm = false;
+  bool has_fp32 = false;
+  bool has_int8 = false;
   for (auto& place : graph->valid_places()) {
-    if (place.target == TARGET(kARM) && place.precision == PRECISION(kFloat)) {
-      has_arm = true;
-      break;
+    if (place.target == TARGET(kARM)) {
+      if (place.precision == PRECISION(kFloat)) {
+        has_fp32 = true;
+      }
+      if (place.precision == PRECISION(kInt8)) {
+        has_int8 = true;
+      }
+    } else {
+      return;
     }
   }
-  if (!has_arm) {
+  // only support arm-fp32
+  if (has_int8 || (has_fp32 && has_int8)) {
     return;
   }
   // only support fp32 fusion
   for (auto conv_has_bias0 : conv_has_bias_cases) {
     for (auto conv_has_bias1 : conv_has_bias_cases) {
       for (auto conv_type0 : conv_type_cases) {
-        for (auto conv_type1 : conv_type_cases) {
+        for (auto conv_type1 : {"conv2d"}) {  // it mustbe 1x1s1p0_conv
           VLOG(4) << "conv_has_bias0:" << conv_has_bias0
                   << " conv_type0:" << conv_type0;
           VLOG(4) << "conv_has_bias1:" << conv_has_bias1

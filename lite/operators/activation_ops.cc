@@ -85,6 +85,9 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   } else if (opdesc.Type() == "thresholded_relu") {
     param_.active_type = lite_api::ActivationType::kThresholdedRelu;
     param_.relu_threshold = opdesc.GetAttr<float>("threshold");
+  } else if (opdesc.Type() == "elu") {
+    param_.active_type = lite_api::ActivationType::kElu;
+    param_.Elu_alpha = opdesc.GetAttr<float>("alpha");
   }
 
   VLOG(4) << "opdesc.Type():" << opdesc.Type();
@@ -105,3 +108,4 @@ REGISTER_LITE_OP(leaky_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu6, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(prelu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(thresholded_relu, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(elu, paddle::lite::operators::ActivationOp);

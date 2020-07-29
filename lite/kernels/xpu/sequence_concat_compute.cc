@@ -23,11 +23,13 @@ namespace kernels {
 namespace xpu {
 
 void SequenceConcatCompute::PrepareForRun() {
-  lod0_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
-  lod1_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
+  lod0_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  lod1_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
 
-  lod0_cpu.reset(new int[64]);
-  lod1_cpu.reset(new int[64]);
+  lod0_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  lod1_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
 template <typename T>
@@ -106,14 +108,14 @@ void SequenceConcatCompute::Run() {
   for (int i = 0; i < lod1.size(); ++i) {
     lod1_cpu[i] = lod1[i];
   }
-  xpu_memcpy(lod0_xpu,
-             lod0_cpu.get(),
-             lod0.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
-  xpu_memcpy(lod1_xpu,
-             lod1_cpu.get(),
-             lod1.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(lod0_xpu,
+                      lod0_cpu.get(),
+                      lod0.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPU_CALL(xpu_memcpy(lod1_xpu,
+                      lod1_cpu.get(),
+                      lod1.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r = xdnn::sequence_concat(ctx.GetRawContext(),
                                 xs[0]->data<float>(),

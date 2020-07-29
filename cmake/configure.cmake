@@ -174,6 +174,10 @@ if (LITE_WITH_MLU)
 add_definitions("-DLITE_WITH_MLU")
 endif()
 
+if (LITE_WITH_HUAWEI_ASCEND_NPU)
+add_definitions("-DLITE_WITH_HUAWEI_ASCEND_NPU")
+endif()
+
 if (LITE_WITH_PROFILE)
     add_definitions("-DLITE_WITH_PROFILE")
 endif()
@@ -188,6 +192,10 @@ endif()
 
 if (LITE_WITH_LOG)
   add_definitions("-DLITE_WITH_LOG")
+endif()
+
+if (LITE_WITH_EXCEPTION)
+  add_definitions("-DLITE_WITH_EXCEPTION")
 endif()
 
 if (LITE_ON_TINY_PUBLISH)

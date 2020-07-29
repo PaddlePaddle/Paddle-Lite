@@ -23,8 +23,9 @@ namespace kernels {
 namespace xpu {
 
 void XPUSequencePoolCompute::PrepareForRun() {
-  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(64 * sizeof(int));
-  lod_cpu.reset(new int[64]);
+  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
+      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 
 void XPUSequencePoolCompute::Run() {
@@ -55,10 +56,10 @@ void XPUSequencePoolCompute::Run() {
     lod_cpu[i] = in_lod[i];
   }
   int* lod_xpu = reinterpret_cast<int*>(lod_xpu_guard_->addr_);
-  xpu_memcpy(lod_xpu,
-             lod_cpu.get(),
-             in_lod.size() * sizeof(int),
-             XPUMemcpyKind::XPU_HOST_TO_DEVICE);
+  XPU_CALL(xpu_memcpy(lod_xpu,
+                      lod_cpu.get(),
+                      in_lod.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   int r =
       xdnn::sequence_pooling_forward(ctx.GetRawContext(),

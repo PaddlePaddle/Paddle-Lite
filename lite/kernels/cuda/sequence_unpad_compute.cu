@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+
 #include "lite/backends/cuda/math/sequence_padding.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
@@ -29,8 +30,39 @@ void SequenceUnpadCompute<T, Ptype>::Run() {
   auto& ctx = this->ctx_->template As<CUDAContext>();
   auto stream = ctx.exec_stream();
 
+  auto x_dims = param.X->dims();
+  auto len_dims = param.Length->dims();
+
+  auto* seq_len_ptr = param.Length->template data<int64_t>();
+  seq_len_cpu_.Resize(param.Length->dims());
+  TargetWrapperCuda::MemcpyAsync(seq_len_cpu_.mutable_data<int64_t>(),
+                                 seq_len_ptr,
+                                 sizeof(int64_t) * param.Length->numel(),
+                                 IoDirection::DtoH,
+                                 stream);
+  TargetWrapperCuda::StreamSync(stream);
+
+  int64_t batch_size = len_dims[0];
+  std::vector<uint64_t> out_lod0(batch_size + 1, 0);
+  for (int64_t i = 0; i < batch_size; ++i) {
+    out_lod0[i + 1] = out_lod0[i] + seq_len_cpu_.data<int64_t>()[i];
+  }
+  paddle::lite::LoD out_lod;
+  out_lod.push_back(out_lod0);
+
+  int64_t out_dim0 = out_lod0.back();
+  std::vector<int64_t> out_dims{out_dim0};
+  if (x_dims.size() == 2) {
+    out_dims.push_back(1);
+  } else {
+    for (size_t i = 2; i < x_dims.size(); ++i) {
+      out_dims.push_back(x_dims[i]);
+    }
+  }
+  param.Out->Resize(out_dims);
+  param.Out->set_lod(out_lod);
+
   const auto* pad_tensor = param.X;
-  const auto* len_t = param.Length;
   auto* seq_tensor = param.Out;
 
   int padded_length = pad_tensor->dims()[1];

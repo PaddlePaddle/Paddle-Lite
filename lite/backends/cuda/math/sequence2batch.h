@@ -53,11 +53,11 @@ class LoDTensor2BatchFunctor {
   //            s0: 0 0 0 0, s1: 1 1 1 1 1, s2: 2 2 2
   //            seq_info[3] = {(4, 5, 1), (0, 4, 0), (9, 3, 2)}
   struct SeqInfo {
-    SeqInfo(size_t start, size_t length, size_t seq_idx)
-        : start_(start), length_(length), seq_idx_(seq_idx) {}
-    size_t start_;
-    size_t length_;
-    size_t seq_idx_;
+    SeqInfo(size_t start_val, size_t len_val, size_t seq_val)
+        : start(start_val), length(len_val), seq_idx(seq_val) {}
+    size_t start;
+    size_t length;
+    size_t seq_idx;
   };
 
  public:
@@ -76,7 +76,7 @@ class LoDTensor2BatchFunctor {
     }
 
     std::sort(seq_info.begin(), seq_info.end(), [](SeqInfo a, SeqInfo b) {
-      return a.length_ > b.length_;
+      return a.length > b.length;
     });
 
     // Calculate the start position of each batch.
@@ -106,7 +106,7 @@ class LoDTensor2BatchFunctor {
     batch_lods.emplace_back(std::vector<uint64_t>{0});
 
     // batch_lods[0] is the start positions for batch LoDTensor
-    size_t max_seqlen = seq_info[0].length_;
+    size_t max_seqlen = seq_info[0].length;
     batch_lods[0].resize(max_seqlen + 1);
     // batch_lods[1] is the raw index in the input LoDTensor
     batch_lods[1].resize(static_cast<size_t>(lod_tensor.dims()[0]));
@@ -119,8 +119,8 @@ class LoDTensor2BatchFunctor {
     for (size_t n = 0; n < max_seqlen; ++n) {
       size_t batch_id = batch_starts[n];
       for (size_t i = 0; i < seq_info.size(); ++i) {
-        size_t seq_len = seq_info[i].length_;
-        size_t start = seq_info[i].start_;
+        size_t seq_len = seq_info[i].length;
+        size_t start = seq_info[i].start;
         if (n < seq_len) {
           seq2batch_idx[batch_id] =
               is_reverse ? start + seq_len - 1 - n : start + n;
@@ -133,7 +133,7 @@ class LoDTensor2BatchFunctor {
     }
     auto* seq_order = batch_lods[2].data();
     for (size_t i = 0; i < seq_info.size(); ++i) {
-      seq_order[i] = seq_info[i].seq_idx_;
+      seq_order[i] = seq_info[i].seq_idx;
     }
 
     batch_tensor->set_lod(batch_lods);
