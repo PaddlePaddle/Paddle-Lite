@@ -16,7 +16,7 @@
 
 #include <vector>
 #include "lite/core/framework.pb.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -41,6 +41,11 @@ class ProgramDesc : public ProgramDescAPI {
 
   template <typename T>
   T *GetBlock(int32_t idx);
+
+  template <typename T>
+  T const *GetBlock(int32_t idx) const {
+    return GetBlock<T>(idx);
+  }
 
   template <typename T>
   T *AddBlock();

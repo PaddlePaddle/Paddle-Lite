@@ -21,7 +21,7 @@
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
 #include "lite/core/version.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
@@ -176,7 +176,7 @@ void LoadCombinedParamsPb(const std::string &path,
                           const cpp::ProgramDesc &cpp_prog,
                           bool params_from_memory) {
   CHECK(scope);
-  auto prog = cpp_prog;
+  auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
 
   // Get vars
@@ -310,7 +310,7 @@ void SaveModelPb(const std::string &model_dir,
 void SaveCombinedParamsPb(const std::string &path,
                           const lite::Scope &exec_scope,
                           const cpp::ProgramDesc &cpp_prog) {
-  auto prog = cpp_prog;
+  auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
 
   // Get vars
@@ -526,7 +526,7 @@ void SaveCombinedParamsNaive(const std::string &path,
   naive_buffer::proto::CombinedParamsDesc pt_desc(&table);
   naive_buffer::CombinedParamsDesc desc(&pt_desc);
 
-  auto prog = cpp_prog;
+  auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
   // set unique_var_names to avoid saving shared params repeatedly
   std::set<std::string> unique_var_names;
@@ -681,7 +681,7 @@ void LoadCombinedParamsNaive(const std::string &path,
   }
 
   // Check all params loaded
-  auto prog = cpp_prog;
+  auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
     auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);

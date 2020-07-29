@@ -15,8 +15,6 @@
 #include "lite/api/light_api.h"
 #include <algorithm>
 #include <map>
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
 
 namespace paddle {
 namespace lite {
@@ -24,17 +22,18 @@ namespace lite {
 void LightPredictor::Build(const std::string& lite_model_file,
                            bool model_from_memory) {
   if (model_from_memory) {
-    LoadModelNaiveFromMemory(lite_model_file, scope_.get(), &cpp_program_desc_);
+    LoadModelNaiveFromMemory(
+        lite_model_file, scope_.get(), program_desc_.get());
   } else {
-    LoadModelNaiveFromFile(lite_model_file, scope_.get(), &cpp_program_desc_);
+    LoadModelNaiveFromFile(lite_model_file, scope_.get(), program_desc_.get());
   }
 
   // For weight quantization of post training, load the int8/16 weights
   // for optimized model, and dequant it to fp32.
   DequantizeWeight();
-
-  BuildRuntimeProgram(cpp_program_desc_);
+  BuildRuntimeProgram(program_desc_);
   PrepareFeedFetch();
+  program_desc_.reset();
 }
 
 void LightPredictor::Build(const std::string& model_dir,
@@ -45,15 +44,15 @@ void LightPredictor::Build(const std::string& model_dir,
   switch (model_type) {
 #ifndef LITE_ON_TINY_PUBLISH
     case lite_api::LiteModelType::kProtobuf:
-      LoadModelPb(model_dir, "", "", scope_.get(), &cpp_program_desc_);
+      LoadModelPb(model_dir, "", "", scope_.get(), program_desc_.get());
       break;
 #endif
     case lite_api::LiteModelType::kNaiveBuffer: {
       if (model_from_memory) {
         LoadModelNaiveFromMemory(
-            model_buffer, param_buffer, scope_.get(), &cpp_program_desc_);
+            model_buffer, param_buffer, scope_.get(), program_desc_.get());
       } else {
-        LoadModelNaive(model_dir, scope_.get(), &cpp_program_desc_);
+        LoadModelNaive(model_dir, scope_.get(), program_desc_.get());
       }
       break;
     }
@@ -62,7 +61,7 @@ void LightPredictor::Build(const std::string& model_dir,
   }
 
   DequantizeWeight();
-  BuildRuntimeProgram(cpp_program_desc_);
+  BuildRuntimeProgram(program_desc_);
   PrepareFeedFetch();
 }
 
@@ -111,15 +110,17 @@ std::vector<std::string> LightPredictor::GetOutputNames() {
 }
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
-  auto current_block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(0);
-  std::vector<cpp::OpDesc*> feeds;
-  std::vector<cpp::OpDesc*> fetchs;
-  for (size_t i = 0; i < current_block->OpsSize(); i++) {
-    auto op = current_block->GetOp<cpp::OpDesc>(i);
-    if (op->Type() == "feed") {
-      feeds.push_back(op);
-    } else if (op->Type() == "fetch") {
-      fetchs.push_back(op);
+  std::vector<const cpp::OpDesc*> feeds;
+  std::vector<const cpp::OpDesc*> fetchs;
+  std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
+  auto main_block = program_desc->GetBlock<cpp::BlockDesc>(kRootBlockIdx);
+  auto op_size = main_block->OpsSize();
+  for (size_t op_idx = 0; op_idx < op_size; ++op_idx) {
+    auto op_desc = main_block->GetOp<cpp::OpDesc>(op_idx);
+    if (op_desc->Type() == "feed") {
+      feeds.push_back(op_desc);
+    } else if (op_desc->Type() == "fetch") {
+      fetchs.push_back(op_desc);
     }
   }
   input_names_.resize(feeds.size());
@@ -134,54 +135,35 @@ void LightPredictor::PrepareFeedFetch() {
   }
 }
 
-void LightPredictor::BuildRuntimeProgram(const cpp::ProgramDesc& prog) {
-  std::vector<Instruction> insts;
-  // 1. Create op first
-  Program program(prog, scope_, {});
-
-// 2. Create Instructs
-#ifdef LITE_WITH_OPENCL
-  using OpenCLContext = Context<TargetType::kOpenCL>;
-  std::unique_ptr<KernelContext> local_ctx(new KernelContext());
-  local_ctx->As<OpenCLContext>().InitOnce();
-#endif
-
-  // Create the kernels of the target places, and filter out the specific
-  // kernel with the target alias.
-  for (auto& op : program.ops()) {
-    auto kernel_type = op->op_info()->GetAttr<std::string>(kKernelTypeAttr);
-    std::string op_type, alias;
-    Place place;
-    KernelBase::ParseKernelType(kernel_type, &op_type, &alias, &place);
-    auto kernels = op->CreateKernels({place});
-    // filter out a kernel
-    auto it = std::find_if(
-        kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
-          return it->alias() == alias;
-        });
-    CHECK(it != kernels.end());
-
-#ifdef LITE_WITH_OPENCL
-    if ((*it)->target() == TARGET(kOpenCL)) {
-      std::unique_ptr<KernelContext> ctx(new KernelContext());
-      (*local_ctx).As<OpenCLContext>().CopySharedTo(&ctx->As<OpenCLContext>());
-      (*it)->SetContext(std::move(ctx));
-    } else {
-      (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
+void LightPredictor::BuildRuntimeProgram(
+    const std::shared_ptr<const cpp::ProgramDesc>& program_desc) {
+  auto* exe_scope = &scope_->NewScope();
+  // Prepare workspace
+  scope_->Var("feed")->GetMutable<std::vector<lite::Tensor>>();
+  scope_->Var("fetch")->GetMutable<std::vector<lite::Tensor>>();
+  CHECK(program_desc);
+  auto block_size = program_desc->BlocksSize();
+  CHECK(block_size);
+  for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
+    auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
+    auto var_size = block_desc->VarsSize();
+    for (size_t var_idx = 0; var_idx < var_size; ++var_idx) {
+      auto var_desc = block_desc->GetVar<cpp::VarDesc>(var_idx);
+      if (!var_desc->Persistable()) {
+        exe_scope->Var(var_desc->Name());
+      } else {
+        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") continue;
+        scope_->Var(var_desc->Name());
+      }
     }
-#else
-    (*it)->SetContext(ContextScheduler::Global().NewContext((*it)->target()));
-#endif
-
-    insts.emplace_back(op, std::move(*it));
   }
-  program_.reset(new RuntimeProgram(std::move(insts)));
-
-  CHECK(program.exec_scope());
-  program_->set_exec_scope(program.exec_scope());
+  // Only extracting the ops and generate the runtime program from the main
+  // block desc
+  program_.reset(new RuntimeProgram(program_desc, exe_scope, kRootBlockIdx));
 }
 
 void LightPredictor::DequantizeWeight() {
+  std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
 #define PROCESS_CONV2D_DATA()                                             \
   for (int64_t i = 0; i < ch; ++i) {                                      \
     for (int64_t j = 0; j < offset; ++j) {                                \
@@ -207,10 +189,9 @@ void LightPredictor::DequantizeWeight() {
     }
     return result;
   };
-
   Tensor tmp_tensor;
-  for (size_t i = 0; i < cpp_program_desc_.BlocksSize(); i++) {
-    auto* block = cpp_program_desc_.GetBlock<cpp::BlockDesc>(i);
+  for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
+    auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
     for (size_t k = 0; k < block->OpsSize(); ++k) {
       auto* op_desc = block->GetOp<cpp::OpDesc>(k);
       if (is_weight_quantized_op(op_desc)) {

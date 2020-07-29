@@ -28,7 +28,7 @@
 #include "lite/core/program.h"
 #include "lite/core/scope.h"
 #include "lite/core/types.h"
-#include "lite/model_parser/cpp/op_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 
 namespace paddle {
 namespace lite {
@@ -40,13 +40,15 @@ namespace arena {
 class TestCase {
  public:
   explicit TestCase(const Place& place, const std::string& alias)
-      : place_(place), scope_(new Scope), alias_(alias) {
+      : place_(place),
+        alias_(alias),
+        inst_scope_(new Scope),
+        base_scope_(new Scope) {
     ctx_ = ContextScheduler::Global().NewContext(place_.target);
   }
-  virtual ~TestCase();
+  virtual ~TestCase() {}
 
   void Prepare() {
-    PrepareScopes();
     PrepareData();
     op_desc_.reset(new cpp::OpDesc);
     PrepareOpDesc(op_desc_.get());
@@ -91,16 +93,15 @@ class TestCase {
   // kernel registry.
   void CheckKernelConsistWithDefinition() {}
 
-  Scope& scope() { return *scope_; }
-
-  Scope* baseline_scope() { return base_scope_; }
-  Scope* inst_scope() { return inst_scope_; }
+  Scope* baseline_scope() { return base_scope_.get(); }
+  Scope* inst_scope() { return inst_scope_.get(); }
 
  protected:
   // Prepare inputs in scope() for Tester.
   virtual void PrepareData() = 0;
 
-  /// Prepare a tensor in host. The tensors will be created in scope_.
+  /// Prepare a tensor in host. The tensors will be created both in base_scope_
+  /// and inst_scope_.
   /// Need to specify the targets other than X86 or ARM.
   template <typename T>
   void SetCommonTensor(const std::string& var_name,
@@ -108,42 +109,47 @@ class TestCase {
                        const T* data,
                        const LoD& lod = {},
                        bool is_persistable = false) {
-    auto* tensor = scope_->NewTensor(var_name);
-    tensor->Resize(ddim);
-    auto* d = tensor->mutable_data<T>();
-    memcpy(d, data, ddim.production() * sizeof(T));
+    // Create and fill a input tensor with the given data for baseline
+    auto* base_tensor = base_scope_->NewTensor(var_name);
+    base_tensor->Resize(ddim);
+    memcpy(base_tensor->mutable_data<T>(), data, ddim.production() * sizeof(T));
 
     // set lod
-    if (!lod.empty()) *tensor->mutable_lod() = lod;
+    if (!lod.empty()) *base_tensor->mutable_lod() = lod;
     // set persistable
-    tensor->set_persistable(is_persistable);
+    base_tensor->set_persistable(is_persistable);
+
+    // Create a copy for instruction
+    auto* inst_tensor = inst_scope_->NewTensor(var_name);
+    inst_tensor->CopyDataFrom(*base_tensor);
   }
 
   /// Prepare a tensor_array in host. The tensors will be created in scope_.
   /// Need to specify the targets other than X86 or ARM.
   template <typename T>
   void SetCommonTensorList(const std::string& var_name,
-                           const std::vector<DDim>& array_tensor_dims,
+                           const std::vector<DDim>& ddims,
                            const std::vector<std::vector<T>>& datas,
                            const std::vector<LoD>& lods = {}) {
-    CHECK_EQ(array_tensor_dims.size(), datas.size());
+    // Create a tensor array for baseline, and a copy for instruction
+    CHECK_EQ(ddims.size(), datas.size());
     if (!lods.empty()) {
-      CHECK_EQ(array_tensor_dims.size(), lods.size());
+      CHECK_EQ(ddims.size(), lods.size());
     }
 
-    auto* tensor_array =
-        scope_->Var(var_name)->GetMutable<std::vector<Tensor>>();
-    for (int i = 0; i < array_tensor_dims.size(); i++) {
-      Tensor tmp;
-      tmp.Resize(array_tensor_dims[i]);
-      auto* tmp_data = tmp.mutable_data<T>();
-      memcpy(tmp_data,
+    auto* base_tensor_list = base_scope_->NewTensorList(var_name);
+    auto* inst_tensor_list = inst_scope_->NewTensorList(var_name);
+    for (int i = 0; i < ddims.size(); i++) {
+      Tensor item;
+      item.Resize(ddims[i]);
+      memcpy(item.mutable_data<T>(),
              datas[i].data(),
-             array_tensor_dims[i].production() * sizeof(T));
+             ddims[i].production() * sizeof(T));
       if (!lods.empty()) {
-        tmp.set_lod(lods[i]);
+        item.set_lod(lods[i]);
       }
-      tensor_array->push_back(tmp);
+      base_tensor_list->push_back(item);
+      inst_tensor_list->push_back(item);
     }
   }
 
@@ -157,11 +163,6 @@ class TestCase {
   std::unique_ptr<KernelContext> ctx_;
   void CreateInstruction();
 
-  void PrepareScopes() {
-    inst_scope_ = &scope_->NewScope();
-    base_scope_ = &scope_->NewScope();
-  }
-
   // Check shape
   // TODO(Superjomn) Move this method to utils or DDim?
   bool ShapeEquals(const DDim& a, const DDim& b) {
@@ -172,25 +173,23 @@ class TestCase {
     return true;
   }
 
-  /// Copy the input tensors to target devices needed by the instruction.
+  // Copy the host tensors to the device tensors if needed by the instruction.
   void PrepareInputsForInstruction();
 
   // Create output tensors and variables.
   void PrepareOutputsForInstruction() {
     for (auto x : op_desc().output_vars()) {
-      inst_scope_->NewTensor(x);
-      base_scope_->NewTensor(x);
+      inst_scope_->Var(x);
     }
   }
 
  private:
   Place place_;
-  std::shared_ptr<Scope> scope_;
   std::string alias_;
   // The workspace for the Instruction.
-  Scope* inst_scope_{};
+  std::shared_ptr<Scope> inst_scope_;
   // The workspace for the baseline implementation.
-  Scope* base_scope_{};
+  std::shared_ptr<Scope> base_scope_;
   std::unique_ptr<cpp::OpDesc> op_desc_;
   std::unique_ptr<Instruction> instruction_;
 };

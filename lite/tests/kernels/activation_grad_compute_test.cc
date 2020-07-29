@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/activation_grad_compute.h"
+#include "lite/kernels/host/activation_grad_compute.h"
 #include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/arm/activation_compute.h"
@@ -20,13 +20,11 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
 
 using param_t = operators::ActivationParam;
 using grad_param_t = operators::ActivationGradParam;
-using kernel_t = SquareCompute;
-using grad_kernel_t = SquareGradCompute;
 
+template <class kernel_t, class grad_kernel_t>
 class ActivationGradTester {
  public:
   explicit ActivationGradTester(DDim dims) : dims_(dims) {}
@@ -71,22 +69,28 @@ class ActivationGradTester {
   void run_backward(grad_param_t* param,
                     grad_kernel_t* kernel,
                     const std::vector<float>& in_vec,
+                    const std::vector<float>& out_vec,
                     const std::vector<float>& out_grad_vec,
                     float* in_grad_vec) {
     Tensor x;
+    Tensor out;
     Tensor x_grad;
     Tensor out_grad;
     x.Resize(dims_);
+    out.Resize(dims_);
     x_grad.Resize(dims_);
     out_grad.Resize(dims_);
     auto* x_data = x.mutable_data<float>();
+    auto* out_data = out.mutable_data<float>();
     auto* out_grad_data = out_grad.mutable_data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
       x_data[i] = in_vec[i];
+      out_data[i] = out_vec[i];
       out_grad_data[i] = out_grad_vec[i];
     }
     param->X = &x;
+    param->Out = &out;
     param->X_grad = &x_grad;
     param->Out_grad = &out_grad;
     kernel->SetParam(*param);
@@ -102,7 +106,9 @@ class ActivationGradTester {
     std::vector<float> x(dims_.production());
     std::vector<float> out(dims_.production());
     for (int i = 0; i < dims_.production(); i++) {
-      x[i] = 1.0 * static_cast<float>(i % 128) * 0.3f - 1.1;
+      x[i] = static_cast<float>(i % 3 - 2.0) / 2.0 * 0.333 +
+             static_cast<float>(i % 19 - 10.0) / 10.0 * 0.333 +
+             static_cast<float>(i % 39 - 20.0) / 20.0 * 0.333 + 0.001213;
     }
     this->run_forward(&param_, &kernel_, x, out.data());
 
@@ -120,7 +126,8 @@ class ActivationGradTester {
     for (int i = 0; i < dims_.production(); i++) {
       out_grad[i] = 1.0;
     }
-    this->run_backward(&grad_param_, &grad_kernel_, x, out_grad, x_grad.data());
+    this->run_backward(
+        &grad_param_, &grad_kernel_, x, out, out_grad, x_grad.data());
 
     for (int i = 0; i < dims_.production(); i++) {
       EXPECT_NEAR(x_grad[i], (out_delta[i] - out[i]) / delta, max_grad_delta);
@@ -137,31 +144,58 @@ class ActivationGradTester {
   grad_param_t grad_param_;
 };
 
-void TestNormalCase(DDim dims) {
-  std::unique_ptr<ActivationGradTester> tester(new ActivationGradTester(dims));
+void TestSquareGrad(DDim dims) {
+  LOG(INFO) << "Test Square grad";
+  std::unique_ptr<
+      ActivationGradTester<arm::SquareCompute, host::SquareGradCompute>>
+      tester(
+          new ActivationGradTester<arm::SquareCompute, host::SquareGradCompute>(
+              dims));
   tester->prepare_kernel();
   float delta = 0.001;
   float max_grad_delta = 0.005;
   tester->check_grad(delta, max_grad_delta);
 }
 
-TEST(activation_grad_arm, compute) {
-  LOG(INFO) << "Test Square grad";
+void TestReluGrad(DDim dims) {
+  LOG(INFO) << "Test Relu grad";
+  std::unique_ptr<ActivationGradTester<arm::ReluCompute, host::ReluGradCompute>>
+      tester(new ActivationGradTester<arm::ReluCompute, host::ReluGradCompute>(
+          dims));
+  tester->prepare_kernel();
+  float delta = 0.001;
+  float max_grad_delta = 0.005;
+  tester->check_grad(delta, max_grad_delta);
+}
+
+void TestTanhGrad(DDim dims) {
+  LOG(INFO) << "Test Tanh grad";
+  std::unique_ptr<ActivationGradTester<arm::TanhCompute, host::TanhGradCompute>>
+      tester(new ActivationGradTester<arm::TanhCompute, host::TanhGradCompute>(
+          dims));
+  tester->prepare_kernel();
+  float delta = 0.001;
+  float max_grad_delta = 0.005;
+  tester->check_grad(delta, max_grad_delta);
+}
+
+TEST(activation_grad_host, compute) {
   DeviceInfo::Init();
-  for (auto n : {2}) {
-    for (auto c : {2}) {
-      for (auto h : {2}) {
-        for (auto w : {2}) {
-          TestNormalCase(DDim(std::vector<int64_t>({n, c, h, w})));
+  for (auto n : {2, 1}) {
+    for (auto c : {2, 9}) {
+      for (auto h : {2, 1}) {
+        for (auto w : {2, 10}) {
+          TestSquareGrad(DDim(std::vector<int64_t>({n, c, h, w})));
+          TestReluGrad(DDim(std::vector<int64_t>({n, c, h, w})));
+          TestTanhGrad(DDim(std::vector<int64_t>({n, c, h, w})));
         }
       }
     }
   }
 }
 
-}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 USE_LITE_KERNEL(square, kARM, kFloat, kNCHW, def);
-USE_LITE_KERNEL(square_grad, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(square_grad, kHost, kFloat, kNCHW, def);

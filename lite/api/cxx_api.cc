@@ -13,17 +13,23 @@
 // limitations under the License.
 
 #include "lite/api/cxx_api.h"
+
 #include <algorithm>
 #include <memory>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/api/paddle_use_passes.h"
 #include "lite/utils/io.h"
 
 namespace paddle {
 namespace lite {
+
+std::vector<std::string> GetAllOps() {
+  return OpLiteFactory::Global().GetAllOps();
+}
 
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
@@ -31,14 +37,13 @@ void Predictor::SaveModel(const std::string &dir,
   if (!program_) {
     GenRuntimeProgram();
   }
-  program_->SaveOpInfosToProgram(&program_desc_);
-  program_->UpdateVarsOfProgram(&program_desc_);
+  program_->SaveToProgram(program_desc_);
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf:
-      SaveModelPb(dir, *program_->exec_scope(), program_desc_, true);
+      SaveModelPb(dir, *program_->exec_scope(), *program_desc_.get(), true);
       break;
     case lite_api::LiteModelType::kNaiveBuffer:
-      SaveModelNaive(dir, *program_->exec_scope(), program_desc_);
+      SaveModelNaive(dir, *program_->exec_scope(), *program_desc_.get());
       break;
     default:
       LOG(FATAL) << "Unknown model type";
@@ -52,17 +57,21 @@ void Predictor::SaveModel(const std::string &dir,
 void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   std::set<std::string> ops_info;
   std::set<std::string> kernels_info;
-  const auto &instructions_ = program_->instructions();
-  for (auto &node : instructions_) {
-    // parse op type infomation
-    auto op = node.op()->op_info();
-    ops_info.insert(op->Type());
-    // parse kernel type information
-    std::string kernel_type_str =
-        node.kernel()->op_type() + "," + TargetRepr(node.kernel()->target()) +
-        "," + PrecisionRepr(node.kernel()->precision()) + "," +
-        DataLayoutRepr(node.kernel()->layout()) + "," + node.kernel()->alias();
-    kernels_info.insert(kernel_type_str);
+  auto block_size = program_->block_size();
+  for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
+    const auto &insts = program_->instructions(block_idx);
+    for (auto &inst : insts) {
+      // parse op type infomation
+      auto op = inst.op()->op_info();
+      ops_info.insert(op->Type());
+      // parse kernel type information
+      std::string kernel_type_str =
+          inst.kernel()->op_type() + "," + TargetRepr(inst.kernel()->target()) +
+          "," + PrecisionRepr(inst.kernel()->precision()) + "," +
+          DataLayoutRepr(inst.kernel()->layout()) + "," +
+          inst.kernel()->alias();
+      kernels_info.insert(kernel_type_str);
+    }
   }
 
   // get souce_file name from op type and kernel type
@@ -164,9 +173,9 @@ void Predictor::PrepareFeedFetch() {
 
   std::vector<const cpp::OpDesc *> feeds;
   std::vector<const cpp::OpDesc *> fetchs;
-  const auto &insts = program_->instructions();
-  for (size_t i = 0; i < program_->num_instructions(); i++) {
-    const auto &op = insts[i].op()->op_info();
+  const auto &insts = program_->instructions(kRootBlockIdx);
+  for (auto &inst : insts) {
+    const auto &op = inst.op()->op_info();
     if (op->Type() == "feed") {
       feeds.push_back(op);
     } else if (op->Type() == "fetch") {
@@ -232,9 +241,8 @@ std::vector<const lite::Tensor *> Predictor::GetOutputs() const {
 #endif
 
 const cpp::ProgramDesc &Predictor::program_desc() const {
-  return program_desc_;
+  return *program_desc_.get();
 }
-
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
 
 void Predictor::Build(const lite_api::CxxConfig &config,
@@ -250,7 +258,6 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   } else {
     LOG(INFO) << "Load model from file.";
   }
-
   Build(model_path,
         model_file,
         param_file,
@@ -276,14 +283,14 @@ void Predictor::Build(const std::string &model_path,
                   model_file,
                   param_file,
                   scope_.get(),
-                  &program_desc_,
+                  program_desc_.get(),
                   combined_param,
                   model_from_memory);
     } break;
     case lite_api::LiteModelType::kNaiveBuffer:
       CHECK(!model_path.empty())
           << "NaiveBuffer backend only supported combined param";
-      LoadModelNaiveFromFile(model_path, scope_.get(), &program_desc_);
+      LoadModelNaiveFromFile(model_path, scope_.get(), program_desc_.get());
       break;
     default:
       LOG(FATAL) << "Unknown model type";
@@ -291,10 +298,10 @@ void Predictor::Build(const std::string &model_path,
   Build(program_desc_, valid_places, passes);
 }
 
-void Predictor::Build(const cpp::ProgramDesc &desc,
+void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes) {
-  program_desc_ = desc;
+  program_desc_ = program_desc;
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
   for (auto &valid_place : valid_places) {
@@ -313,9 +320,9 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
       "fake_dequantize_max_abs",
       "fake_channel_wise_dequantize_max_abs"};
   bool is_quantized_model = false;
-  for (size_t i = 0; i < program_desc_.BlocksSize() && !is_quantized_model;
+  for (size_t i = 0; i < program_desc_->BlocksSize() && !is_quantized_model;
        ++i) {
-    auto *block_desc = program_desc_.GetBlock<cpp::BlockDesc>(i);
+    auto *block_desc = program_desc_->GetBlock<cpp::BlockDesc>(i);
     for (size_t j = 0; j < block_desc->OpsSize() && !is_quantized_model; ++j) {
       auto *op_desc = block_desc->GetOp<cpp::OpDesc>(j);
       std::string op_type = op_desc->Type();
@@ -327,13 +334,12 @@ void Predictor::Build(const cpp::ProgramDesc &desc,
     }
   }
   if (is_quantized_model) {
-#ifdef LITE_WITH_ARM
     inner_places.insert(inner_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
-#endif
   }
 
-  Program program(desc, scope_, inner_places);
+  Program program(program_desc_, scope_, inner_places);
+  valid_places_ = inner_places;
 
   core::KernelPickFactor factor;
   factor.ConsiderTarget();

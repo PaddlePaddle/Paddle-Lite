@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/activation_compute.cc"
 #include <gtest/gtest.h>
+
 #include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/activation_compute.cc"
 
 namespace paddle {
 namespace lite {
@@ -26,8 +28,7 @@ namespace kernels {
 namespace x86 {
 
 TEST(relu_x86, retrive_op) {
-  auto relu =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>("relu");
+  auto relu = KernelRegistry::Global().Create("relu");
   ASSERT_FALSE(relu.empty());
   ASSERT_TRUE(relu.front());
 }

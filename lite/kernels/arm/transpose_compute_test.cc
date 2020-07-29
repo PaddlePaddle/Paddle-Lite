@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/transpose_compute.h"
 #include <gtest/gtest.h>
+
 #include <limits>
 #include <string>
 #include <vector>
+
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/arm/transpose_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -105,6 +107,7 @@ TEST(transpose_arm, compute_shape_nchw) {
 
   // run transpose_compute
   transpose.SetParam(param);
+  transpose.PrepareForRun();
   transpose.Run();
 
   // run transpose_compute_ref
@@ -121,9 +124,7 @@ TEST(transpose_arm, compute_shape_nchw) {
 }
 
 TEST(transpose, retrive_op) {
-  auto transpose =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "transpose");
+  auto transpose = KernelRegistry::Global().Create("transpose");
   ASSERT_FALSE(transpose.empty());
   ASSERT_TRUE(transpose.front());
 }
@@ -173,6 +174,7 @@ TEST(transpose2_arm, compute_shape_nchw) {
 
   // run transpose_compute
   transpose2.SetParam(param);
+  transpose2.PrepareForRun();
   transpose2.Run();
 
   // run transpose_compute_ref
@@ -183,15 +185,13 @@ TEST(transpose2_arm, compute_shape_nchw) {
   auto* output_ref_data = output_ref.data<float>();
   for (int i = 0;
        i < input_shape[0] * input_shape[1] * input_shape[2] * input_shape[3];
-       i += 4) {
-    EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+       i += 1) {
+    EXPECT_NEAR(output_data[i], output_ref_data[i], 0);
   }
 }
 
 TEST(transpose2, retrive_op) {
-  auto transpose2 =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "transpose2");
+  auto transpose2 = KernelRegistry::Global().Create("transpose2");
   ASSERT_FALSE(transpose2.empty());
   ASSERT_TRUE(transpose2.front());
 }

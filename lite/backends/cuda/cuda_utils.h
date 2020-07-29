@@ -41,6 +41,8 @@
         << "CUDA: " << cudaGetErrorString(e);                \
   }
 
+#define CUDA_POST_KERNEL_CHECK CUDA_CALL(cudaPeekAtLastError())
+
 #define CUBLAS_CALL(func)                                        \
   {                                                              \
     auto e = (func);                                             \
@@ -127,6 +129,10 @@ static const char* CudnnGetErrorInfo(cudnnStatus_t status) {
       return "CUDNN_STATUS_RUNTIME_IN_PROGRESS";
     case CUDNN_STATUS_RUNTIME_FP_OVERFLOW:
       return "CUDNN_STATUS_RUNTIME_FP_OVERFLOW";
+#endif
+#if CUDNN_VERSION_MIN(8, 0, 0)
+    case CUDNN_STATUS_VERSION_MISMATCH:
+      return "CUDNN_STATUS_VERSION_MISMATCH";
 #endif
   }
   return "Unknown cudnn status";

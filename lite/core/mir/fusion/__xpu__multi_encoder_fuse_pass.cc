@@ -383,10 +383,10 @@ class XPUSingleEncoderFuser : public FuseBase {
     op_desc.SetAttr<std::string>("act_type", act_type_);
 
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
-    // XXX: memleak?
-    auto sub_block_desc = new cpp::BlockDesc();
+    auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
+    sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
-        ->SetSubBlock(sub_block_desc);
+        ->SetProgramDesc(sub_program_desc);
     auto* single_encoder_stmt = matched.at("q_mul")->stmt();
     fake_subgraph_op->Attach(op_desc, single_encoder_stmt->op()->scope());
     fake_subgraph_op->SetValidPlaces(single_encoder_stmt->op()->valid_places());
@@ -639,20 +639,21 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     std::set<int> fc_int31_ids;
 #ifdef LITE_WITH_XPU
     // TODO(miaotianxiang): core/mir/*_pass.cc are compiled anyway and need to
-    // access Context<kXPU>::_multi_encoder_precision, but this static member
-    // variable in class specialization defined in lite/core/context.cc
-    // is only compiled iff LITE_WITH_XPU==ON. To suppress linkage error, we use
+    // access TargetWrapperXPU::multi_encoder_precision, but this static member
+    // variable in class specialization defined in
+    // lite/backends/xpu/target_wrapper.cc is only compiled iff
+    // LITE_WITH_XPU==ON. To suppress linkage error, we use
     // #ifdef here. Any better idea?
     if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::Context<TargetType::kXPU>::_multi_encoder_precision == "int31") {
+        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
       fc_int31_ids = {0, 1, 2, 3, 4, 5};
       VLOG(3) << "Use int31 in XPUMultiEncoderOp, "
-              << "lite::Context<>::_multi_encoder_precision="
-              << lite::Context<TargetType::kXPU>::_multi_encoder_precision;
+              << "lite::TargetWrapperXPU::multi_encoder_precision="
+              << lite::TargetWrapperXPU::multi_encoder_precision;
     } else {
       VLOG(3) << "Use int16 in XPUMultiEncoderOp, "
-              << "lite::Context<>::_multi_encoder_precision="
-              << lite::Context<TargetType::kXPU>::_multi_encoder_precision;
+              << "lite::TargetWrapperXPU::multi_encoder_precision="
+              << lite::TargetWrapperXPU::multi_encoder_precision;
     }
 #endif
 

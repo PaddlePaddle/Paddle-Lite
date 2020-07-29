@@ -22,7 +22,6 @@ limitations under the License. */
 #include "lite/fluid/for_range.h"
 #include "lite/fluid/transform.h"
 #include "lite/utils/cp_logging.h"
-#include "lite/utils/paddle_enforce.h"
 #include "lite/utils/variant.h"
 
 namespace paddle {
@@ -66,9 +65,8 @@ inline void get_mid_dims(const lite::DDim &x_dims,
     for (size_t i = 0; i < y_dims.size(); ++i) {
       if (x_dims[i + axis] != y_dims[i]) {
         // only support single y_dims[i] = 1 now.
-        PADDLE_ENFORCE_EQ(
-            *mid_flag, 0, "Broadcast support y_dims with single 1.");
-        PADDLE_ENFORCE_EQ(y_dims[i], 1, "Broadcast dimension mismatch.");
+        CHECK_EQ(*mid_flag, 0) << "Broadcast support y_dims with single 1.";
+        CHECK_EQ(y_dims[i], 1) << "Broadcast dimension mismatch.";
         // m*n*k m*1*k
         for (size_t j = 0; j < i; ++j) {
           (*pre) *= y_dims[j];
@@ -95,8 +93,7 @@ inline void get_mid_dims(const lite::DDim &x_dims,
     }
 
     for (size_t i = 0; i < y_dims.size(); ++i) {
-      PADDLE_ENFORCE_EQ(
-          x_dims[i + axis], y_dims[i], "Broadcast dimension mismatch.");
+      CHECK_EQ(x_dims[i + axis], y_dims[i]) << "Broadcast dimension mismatch.";
       (*n) *= y_dims[i];
     }
 
@@ -314,17 +311,16 @@ void ElementwiseComputeEx(const lite::Context<Target> &ctx,
   TransformFunctor<Functor, T, Target, OutType> functor(x, y, z, ctx, func);
   auto x_dims = x->dims();
   auto y_dims_untrimed = y->dims();
-  PADDLE_ENFORCE_GE(x_dims.size(),
-                    y_dims_untrimed.size(),
-                    "Rank of first input must >= rank of second input.");
+  CHECK_GE(x_dims.size(), y_dims_untrimed.size())
+      << "Rank of first input must >= rank of second input.";
   if (x_dims == y_dims_untrimed) {
     functor.Run();
     return;
   }
 
   axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  PADDLE_ENFORCE(axis >= 0 && axis < static_cast<int>(x_dims.size()),
-                 "Axis should be in range [0, x_dims)");
+  CHECK(axis >= 0 && axis < static_cast<int>(x_dims.size()))
+      << "Axis should be in range [0, x_dims)";
   auto y_dims = trim_trailing_singular_dims(y_dims_untrimed);
   axis = (y_dims.size() == 0) ? x_dims.size() : axis;
   int pre, n, post, mid_flag = 0;
@@ -560,9 +556,8 @@ void FusedElemwiseAndActComputeEx(const lite::Context<Target> &ctx,
                                   lite::Tensor *out,
                                   lite::Tensor *intermediate_out) {
   if (KeepIntermediateOut) {
-    PADDLE_ENFORCE(intermediate_out,
-                   "The save_intermediate_out is opened, "
-                   "intermediate_out should not be nullptr.");
+    CHECK(intermediate_out) << "The save_intermediate_out is opened, "
+                               "intermediate_out should not be nullptr.";
   }
 
   const lite::DDim &x_dim = x.dims();

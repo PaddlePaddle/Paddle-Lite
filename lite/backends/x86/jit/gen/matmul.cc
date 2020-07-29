@@ -27,7 +27,7 @@ void MatMulJitCode::genCode() {
   preCode();
   int block, rest;
   const auto groups = packed_groups(n_, k_, &block, &rest);
-  PADDLE_ENFORCE_GT(groups.front(), 0);
+  CHECK_GT(groups.front(), 0);
 
   const int block_len = sizeof(float) * block;
   const int x_reg_idx = (block == ZMM_FLOAT_BLOCK ? 32 : 16) - 1;
@@ -116,9 +116,9 @@ class MatMulCreator : public JitCodeCreator<matmul_attr_t> {
   }
   std::unique_ptr<GenBase> CreateJitCode(
       const matmul_attr_t& attr) const override {
-    PADDLE_ENFORCE_GT(attr.m, 0);
-    PADDLE_ENFORCE_GT(attr.n, 0);
-    PADDLE_ENFORCE_GT(attr.k, 0);
+    CHECK_GT(attr.m, 0);
+    CHECK_GT(attr.n, 0);
+    CHECK_GT(attr.k, 0);
     return make_unique<MatMulJitCode>(attr, CodeSize(attr));
   }
 };

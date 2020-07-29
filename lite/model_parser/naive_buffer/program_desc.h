@@ -15,7 +15,7 @@
 #pragma once
 
 #include <vector>
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 
 namespace paddle {

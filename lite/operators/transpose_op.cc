@@ -43,24 +43,9 @@ bool TransposeOp::CheckShape() const {
 }
 
 bool TransposeOp::InferShapeImpl() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.output);
   auto x_dims = param_.x->dims();
-  auto x_rank = x_dims.size();
   std::vector<int> axis = param_.axis;
   size_t axis_size = axis.size();
-  // "The input tensor's rank(%d) should be equal to the axis's size(%d)",
-  // x_rank, axis_size
-  CHECK_OR_FALSE(x_rank == axis_size);
-
-  std::vector<int> count(axis_size, 0);
-  for (size_t i = 0; i < axis_size; i++) {
-    // Each element of Attribute axis should be a unique value
-    // range from 0 to (dims - 1),
-    // where the dims is the axis's size
-    CHECK_OR_FALSE(axis[i] < static_cast<int>(axis_size) &&
-                   ++count[axis[i]] == 1);
-  }
   lite::DDim out_dims(x_dims);
   for (size_t i = 0; i < axis_size; i++) {
     out_dims[i] = x_dims[axis[i]];
@@ -113,24 +98,9 @@ bool Transpose2Op::CheckShape() const {
 }
 
 bool Transpose2Op::InferShapeImpl() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.output);
   auto x_dims = param_.x->dims();
-  auto x_rank = x_dims.size();
   std::vector<int> axis = param_.axis;
   size_t axis_size = axis.size();
-  // "The input tensor's rank(%d) should be equal to the axis's size(%d)",
-  // x_rank, axis_size
-  CHECK_OR_FALSE(x_rank == axis_size);
-
-  std::vector<int> count(axis_size, 0);
-  for (size_t i = 0; i < axis_size; i++) {
-    // Each element of Attribute axis should be a unique value
-    // range from 0 to (dims - 1),
-    // where the dims is the axis's size
-    CHECK_OR_FALSE(axis[i] < static_cast<int>(axis_size) &&
-                   ++count[axis[i]] == 1);
-  }
   lite::DDim out_dims(x_dims);
   for (size_t i = 0; i < axis_size; i++) {
     out_dims[i] = x_dims[axis[i]];

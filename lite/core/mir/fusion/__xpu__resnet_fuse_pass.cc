@@ -315,10 +315,10 @@ class XPUResNetBlock0Fuser : public FuseBase {
     auto block0_stmt = matched.at("left_conv1")->stmt();
     // block0_stmt->ResetOp(op_desc, graph->valid_places());
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
-    // XXX: memleak?
-    auto sub_block_desc = new cpp::BlockDesc();
+    auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
+    sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
-        ->SetSubBlock(sub_block_desc);
+        ->SetProgramDesc(sub_program_desc);
     fake_subgraph_op->Attach(op_desc, block0_stmt->op()->scope());
     fake_subgraph_op->SetValidPlaces(block0_stmt->op()->valid_places());
     block0_stmt->SetOp(fake_subgraph_op);
@@ -577,10 +577,10 @@ class XPUResNetBlock1Fuser : public FuseBase {
 
     auto block1_stmt = matched.at("right_conv1")->stmt();
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
-    // XXX: memleak?
-    auto sub_block_desc = new cpp::BlockDesc();
+    auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
+    sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
-        ->SetSubBlock(sub_block_desc);
+        ->SetProgramDesc(sub_program_desc);
     fake_subgraph_op->Attach(op_desc, block1_stmt->op()->scope());
     fake_subgraph_op->SetValidPlaces(block1_stmt->op()->valid_places());
     block1_stmt->SetOp(fake_subgraph_op);

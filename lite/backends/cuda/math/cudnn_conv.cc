@@ -161,15 +161,17 @@ bool CudnnConv2D<T, Ptype_out>::create(const operators::ConvParam& param,
                                               search_func);
 
   } else {
-    CUDNN_CHECK(
-        cudnnGetConvolutionForwardAlgorithm(this->handle_,
-                                            this->input_desc_,
-                                            this->filter_desc_,
-                                            this->conv_desc_,
-                                            this->output_desc_,
-                                            this->preference_,
-                                            this->workspace_limit_bytes_,
-                                            &this->fwd_algo_));
+    int requestedAlgoCount = 1;
+    int returnedAlgoCount;
+    CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm_v7(this->handle_,
+                                                       this->input_desc_,
+                                                       this->filter_desc_,
+                                                       this->conv_desc_,
+                                                       this->output_desc_,
+                                                       requestedAlgoCount,
+                                                       &returnedAlgoCount,
+                                                       &this->algo_perf_));
+    this->fwd_algo_ = this->algo_perf_.algo;
   }
   CUDNN_CHECK(
       cudnnGetConvolutionForwardWorkspaceSize(this->handle_,

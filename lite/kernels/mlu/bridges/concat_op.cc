@@ -44,9 +44,10 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   auto dims = output_dims.size();
   int axis = (param_axis < 0) ? (param_axis + dims) : param_axis;
-  CHECK_LE(axis, 4) << "Unsupport dims in mlu concat";
-  int nchw_to_nhwc_axis_map[4] = {0, 3, 1, 2};
-  int nhwc_axis = nchw_to_nhwc_axis_map[axis];
+  CHECK_LT(axis, dims) << "Unsupport dims in mlu concat";
+  // value of nhwc2nchw_axis is index of nhwc
+  // order of nhwc2nchw_axis is nchw
+  int nhwc_axis = GetAxisNHWC2NCHW<int>(dims)[axis];
 
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
@@ -60,6 +61,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  &outputs,
                                  1));
   graph->FuseOp(concat_op);
+  CNML_CALL(cnmlDestroyBaseOp(&concat_op));
   return SUCCESS;
 }
 

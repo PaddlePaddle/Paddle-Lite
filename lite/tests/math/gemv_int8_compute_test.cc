@@ -108,6 +108,10 @@ bool test_gemv_int8(bool tra,
   auto dc_basic_int8 = tc_basic_int8.mutable_data<int8_t>();
   auto dc_basic_fp32 = tc_basic_fp32.mutable_data<float>();
   auto dbias = tbias.mutable_data<float>();
+  // set intial input to be 0
+  memset(reinterpret_cast<char*>(dc_basic_fp32),
+         0,
+         tc_basic_fp32.numel() * sizeof(float));
 
   paddle::lite_api::ActivationType act =
       paddle::lite_api::ActivationType::kIndentity;

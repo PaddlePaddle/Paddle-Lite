@@ -38,7 +38,9 @@ enum activation_type_test {
   GELU,
   SQUARE,
   HARD_SWISH,
-  RECIPROCAL
+  RECIPROCAL,
+  THRESHOLDED_RELU,
+  ELU
 };
 
 class ActivationComputeTester : public arena::TestCase {
@@ -54,6 +56,8 @@ class ActivationComputeTester : public arena::TestCase {
   float hard_swish_threshold = 6.0;
   float hard_swish_scale = 6.0;
   float hard_swish_offset = 3.0;
+  float relu_threshold_ = 1.0;
+  float elu_alpha_ = 1.0;
   DDim dims_{{1}};
   std::string type_ = "";
   activation_type_test act_type_ = RELU;
@@ -65,6 +69,7 @@ class ActivationComputeTester : public arena::TestCase {
                           float relu_clipped_coef,
                           std::string prelu_mode,
                           float swish_beta,
+                          float elu_alpha,
                           DDim dims,
                           std::string type,
                           activation_type_test act_type)
@@ -73,6 +78,7 @@ class ActivationComputeTester : public arena::TestCase {
         relu_clipped_coef_(relu_clipped_coef),
         prelu_mode_(prelu_mode),
         swish_beta_(swish_beta),
+        elu_alpha_(elu_alpha),
         dims_(dims),
         type_(type),
         act_type_(act_type) {}
@@ -85,6 +91,7 @@ class ActivationComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(input_);
     const auto* x_data = x->data<float>();
+    LOG(INFO) << act_type_;
     switch (act_type_) {
       case RELU: {
         for (int i = 0; i < dims_.production(); i++) {
@@ -218,8 +225,23 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case THRESHOLDED_RELU: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = x_data[i] > relu_threshold_ ? x_data[i] : 0.f;
+        }
+        break;
+      }
+      case ELU: {
+        for (int i = 0; i < dims_.production(); i++) {
+          float tmp = std::exp(x_data[i]) - 1;
+          float max = x_data[i] > 0.f ? x_data[i] : 0.f;
+          float min = x_data[i] < 0.f ? elu_alpha_ * tmp : 0.f;
+          output_data[i] = min + max;
+        }
+        break;
+      }
       default:
-        LOG(INFO) << "the type of activation is unknow.";
+        LOG(INFO) << "the type of activation " << act_type_ << " is unknow.";
     }
   }
 
@@ -244,6 +266,12 @@ class ActivationComputeTester : public arena::TestCase {
       op_desc->SetAttr("threshold", hard_swish_threshold);
       op_desc->SetAttr("scale", hard_swish_scale);
       op_desc->SetAttr("offset", hard_swish_offset);
+    }
+    if (act_type_ == THRESHOLDED_RELU) {
+      op_desc->SetAttr("threshold", relu_threshold_);
+    }
+    if (act_type_ == ELU) {
+      op_desc->SetAttr("alpha", elu_alpha_);
     }
   }
 
@@ -289,8 +317,11 @@ TEST(Activation_relu, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -298,7 +329,7 @@ TEST(Activation_relu, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "relu", RELU));
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "relu", RELU));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -313,6 +344,9 @@ TEST(Activation_leaky_relu, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -327,6 +361,7 @@ TEST(Activation_leaky_relu, precision) {
                                       6.,
                                       "all",
                                       0.,
+                                      1.0,
                                       DDim(dims),
                                       "leaky_relu",
                                       LEAKY_RELU));
@@ -359,6 +394,7 @@ TEST(Activation_relu_clipped, precision) {
                                       coef,
                                       "all",
                                       0.,
+                                      1.0,
                                       DDim(dims),
                                       "relu_clipped",
                                       RELU_CLIPPED));
@@ -376,7 +412,7 @@ TEST(Activation_prelu, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 2, 4}}) {
     for (auto mode : {"all", "channel", "element"}) {
       std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-          place, "def", 0.01, 6, mode, 0., DDim(dims), "prelu", PRELU));
+          place, "def", 0.01, 6, mode, 0., 1.0, DDim(dims), "prelu", PRELU));
       arena::Arena arena(std::move(tester), place, 2e-5);
       arena.TestPrecision();
     }
@@ -393,14 +429,26 @@ TEST(Activation_sigmoid, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "sigmoid", SIGMOID));
+    std::unique_ptr<arena::TestCase> tester(
+        new ActivationComputeTester(place,
+                                    "def",
+                                    0.01,
+                                    6.,
+                                    "all",
+                                    0.,
+                                    1.0,
+                                    DDim(dims),
+                                    "sigmoid",
+                                    SIGMOID));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -415,8 +463,11 @@ TEST(Activation_tanh, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -424,7 +475,7 @@ TEST(Activation_tanh, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "tanh", TANH));
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "tanh", TANH));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -439,7 +490,7 @@ TEST(Activation_swish, precision) {
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     for (auto coef : {0.01, 0.1}) {
       std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-          place, "def", 0.01, 6, "all", coef, DDim(dims), "swish", SWISH));
+          place, "def", 0.01, 6, "all", coef, 1.0, DDim(dims), "swish", SWISH));
       arena::Arena arena(std::move(tester), place, 2e-5);
       arena.TestPrecision();
     }
@@ -456,6 +507,9 @@ TEST(Activation_relu6, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
@@ -463,7 +517,7 @@ TEST(Activation_relu6, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "relu6", RELU6));
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "relu6", RELU6));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -485,7 +539,7 @@ TEST(Activation_log, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "log", LOG));
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "log", LOG));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -499,7 +553,7 @@ TEST(Activation_exp, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "exp", EXP));
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "exp", EXP));
     arena::Arena arena(std::move(tester), place, 2e-5);
     arena.TestPrecision();
   }
@@ -513,7 +567,7 @@ TEST(Activation_floor, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "floor", FLOOR));
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "floor", FLOOR));
     arena::Arena arena(std::move(tester), place, 2e-5);
     arena.TestPrecision();
   }
@@ -528,7 +582,7 @@ TEST(Activation_rsqrt, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "rsqrt", RSQRT));
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "rsqrt", RSQRT));
     arena::Arena arena(std::move(tester), place, 2e-5);
     arena.TestPrecision();
   }
@@ -551,7 +605,7 @@ TEST(Activation_square, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "square", SQUARE));
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "square", SQUARE));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -561,7 +615,7 @@ TEST(Activation_gelu, precision) {
   LOG(INFO) << "test gelu op";
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else
   return;
@@ -570,7 +624,7 @@ TEST(Activation_gelu, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
-        place, "def", 0.01, 6., "all", 0., DDim(dims), "gelu", GELU));
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "gelu", GELU));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -596,6 +650,7 @@ TEST(activation_hard_swish, precision) {
                                     6.,
                                     "all",
                                     0.,
+                                    1.0,
                                     DDim(dims),
                                     "hard_swish",
                                     HARD_SWISH));
@@ -624,12 +679,59 @@ TEST(activation_reciprocal, precision) {
                                     6.,
                                     "all",
                                     0.,
+                                    1.0,
                                     DDim(dims),
                                     "reciprocal",
                                     RECIPROCAL));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
+}
+
+TEST(Activation_thresholded_relu, precision) {
+  LOG(INFO) << "test thresholded_relu op";
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ActivationComputeTester(place,
+                                    "def",
+                                    0.01,
+                                    6.,
+                                    "all",
+                                    0.,
+                                    1.0,
+                                    DDim(dims),
+                                    "thresholded_relu",
+                                    THRESHOLDED_RELU));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+}
+
+TEST(Activation_elu, precision) {
+  LOG(INFO) << "test elu op";
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
+        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "elu", ELU));
+    arena::Arena arena(std::move(tester), place, 2e-5);
+    arena.TestPrecision();
+  }
+#endif
 }
 
 }  // namespace lite

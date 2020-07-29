@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/mlu/bridges/utility.h"
+
 #include <utility>
 
 namespace paddle {
@@ -20,32 +21,20 @@ namespace lite {
 namespace subgraph {
 namespace mlu {
 
-void transpose(float* input_data,
-               float* output_data,
-               std::vector<int> input_shape,
-               std::vector<int> axis) {
+void transpose2d(float* input_data,
+                 float* output_data,
+                 std::vector<int> input_shape) {
+  CHECK_EQ(input_shape.size(), 2);
   int old_index = -1;
   int new_index = -1;
-  int dim[4] = {0};
-  std::vector<int> shape = input_shape;
-  for (dim[0] = 0; dim[0] < input_shape[0]; dim[0]++) {
-    for (dim[1] = 0; dim[1] < input_shape[1]; dim[1]++) {
-      for (dim[2] = 0; dim[2] < input_shape[2]; dim[2]++) {
-        for (dim[3] = 0; dim[3] < input_shape[3]; dim[3]++) {
-          old_index = dim[0] * shape[1] * shape[2] * shape[3] +
-                      dim[1] * shape[2] * shape[3] + dim[2] * shape[3] + dim[3];
-          new_index =
-              dim[axis[0]] * shape[axis[1]] * shape[axis[2]] * shape[axis[3]] +
-              dim[axis[1]] * shape[axis[2]] * shape[axis[3]] +
-              dim[axis[2]] * shape[axis[3]] + dim[axis[3]];
-          output_data[new_index] = input_data[old_index];
-        }
-      }
+  for (int i = 0; i < input_shape[0]; i++) {
+    for (int j = 0; j < input_shape[1]; j++) {
+      old_index = i * input_shape[1] + j;
+      new_index = j * input_shape[0] + i;
+      output_data[new_index] = input_data[old_index];
     }
   }
 }
-
-int scale2position(float scale) { return static_cast<int>(-std::log2(scale)); }
 
 void dequant(float* dst, int8_t* src, size_t size, float scale) {
   for (size_t i = 0; i < size; ++i) {

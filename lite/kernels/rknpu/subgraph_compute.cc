@@ -28,117 +28,55 @@ namespace lite {
 namespace kernels {
 namespace rknpu {
 
-int SubgraphEngine::BuildDeviceProgram() {
+bool SubgraphEngine::BuildDeviceProgram() {
   LOG(INFO) << "[RKNPU]:BuildDeviceProgram";
   int status = 0;
   // Convert all of ops and their input vars and weights and added into the NPU
   // RKNPU IR graph
   subgraph::rknpu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
-  for (auto& inst : origin_program_) {
+  if (!origin_program_) {
+    BuildOriginProgram();
+  }
+  const auto& insts = origin_program_->instructions(kRootBlockIdx);
+  for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
     op->InferShape();
     std::string op_type = op->op_info()->Type();
     if (!bridges.Exists(op_type, TARGET(kRKNPU))) {
-      return subgraph::FAILED;
+      return false;
     }
     auto kernel = inst.kernel();
     status |= bridges.Select(op_type, TARGET(kRKNPU))(
         reinterpret_cast<void*>(&graph), op, const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
-      return subgraph::FAILED;
+      return false;
     }
   }
   // Collect the valid input and output nodes in the RKNPU IR graph and update
   // the input and output names
-  device_inames_.clear();
-  device_onames_.clear();
-
-  for (auto& input_name : input_names_) {
-    LOG(INFO) << "[RKNPU] Input node " << input_name;
-    if (graph.Has(input_name)) {
-      LOG(INFO) << input_name << " Precision "
-                << PrecisionToStr(graph.Get(input_name)->precision());
-      device_itensors_.push_back(graph.Get(input_name)->data());
-      device_inames_.push_back(input_name);
-    } else {
-      LOG(WARNING) << "[RKNPU] Input node " << input_name
-                   << " is ignored because it does not exist.";
-    }
-  }
-
-  for (auto& output_name : output_names_) {
-    LOG(INFO) << "[RKNPU] Output node " << output_name;
-    if (graph.Has(output_name)) {
-      auto tensor = scope_->FindMutableTensor(output_name);
-      LOG(INFO) << output_name << " Precision "
-                << PrecisionToStr(tensor->precision());
-      device_otensors_.push_back(graph.Get(output_name)->data());
-      device_onames_.push_back(output_name);
-    } else {
-      LOG(WARNING) << "[RKNPU] Output node " << output_name
-                   << " is ignored because it does not exist.";
-    }
-  }
-  CHECK(!device_inames_.empty())
-      << "[RKNPU] No input nodes found for building NPU model";
-  CHECK(!device_onames_.empty())
-      << "[RKNPU] No output nodes found for building NPU model";
-
-  device_program_ = lite::rknpu::Device::Global().Build(
-      model_name_, graph.GetHandle(), device_itensors_, device_otensors_);
-  if (device_program_ == nullptr) {
-    LOG(WARNING) << "[RKNPU] Build model failed!";
-    return subgraph::FAILED;
-  }
-
-  // input
-  origin_idims_.resize(input_names_.size());
-  origin_itensors_.resize(input_names_.size());
+  device_itensors_.clear();
+  device_otensors_.clear();
   for (size_t i = 0; i < input_names_.size(); i++) {
-    origin_itensors_[i] = scope_->FindMutableTensor(input_names_[i]);
-    CHECK(origin_itensors_[i]);
-    origin_idims_[i] = origin_itensors_[i]->dims();
-  }
-  // output
-  origin_odims_.resize(output_names_.size());
-  origin_otensors_.resize(output_names_.size());
-  for (size_t i = 0; i < output_names_.size(); i++) {
-    origin_otensors_[i] = scope_->FindMutableTensor(output_names_[i]);
-    CHECK(origin_otensors_[i]);
-    origin_odims_[i] = origin_otensors_[i]->dims();
-
-    auto output_dims = origin_otensors_[i]->dims();
-  }
-
-  origin_idims_.resize(device_inames_.size());
-  origin_itensors_.resize(device_inames_.size());
-  device_itensors_.resize(device_inames_.size());
-  origin_odims_.resize(device_onames_.size());
-  origin_otensors_.resize(device_onames_.size());
-  device_otensors_.resize(device_onames_.size());
-  for (int i = 0; i < device_inames_.size(); i++) {
-    auto node = graph.Get(device_inames_[i]);
+    CHECK(graph.Has(input_names_[i])) << "[RKNPU] Failed to find input node "
+                                      << input_names_[i];
+    auto node = graph.Get(input_names_[i]);
     auto precision = node->precision();
     auto layout = node->layout();
-    origin_itensors_[i] = scope_->FindMutableTensor(device_inames_[i]);
-    CHECK(origin_itensors_[i]);
-    origin_idims_[i] = origin_itensors_[i]->dims();
-
-    LOG(INFO) << "[RKNPU] Inputs[" << i << "] name: " << device_inames_[i]
+    LOG(INFO) << "[RKNPU] Inputs[" << i << "] name: " << input_names_[i]
               << " precision: " << PrecisionToStr(precision)
               << " layout: " << DataLayoutToStr(layout);
+    device_itensors_.push_back(node->data());
   }
-  for (int i = 0; i < device_onames_.size(); i++) {
-    auto node = graph.Get(device_onames_[i]);
+  for (size_t i = 0; i < output_names_.size(); i++) {
+    CHECK(graph.Has(output_names_[i])) << "[RKNPU] Failed to find output node "
+                                       << output_names_[i];
+    auto node = graph.Get(output_names_[i]);
     auto precision = node->precision();
     auto layout = node->layout();
-    origin_otensors_[i] = scope_->FindMutableTensor(device_onames_[i]);
-    CHECK(origin_otensors_[i]);
-    origin_odims_[i] = origin_otensors_[i]->dims();
-    LOG(INFO) << "[RKNPU] Outputs[" << i << "] name: " << device_onames_[i]
+    LOG(INFO) << "[RKNPU] Outputs[" << i << "] name: " << output_names_[i]
               << " precision: " << PrecisionToStr(precision)
               << " layout: " << DataLayoutToStr(layout);
     // Prepare the device output tensors
@@ -159,22 +97,30 @@ int SubgraphEngine::BuildDeviceProgram() {
         origin_otensors_[i]->mutable_data<int64_t>();
         break;
       default:
-        LOG(FATAL) << "[RKNPU] " << device_onames_[i]
+        LOG(FATAL) << "[RKNPU] " << output_names_[i]
                    << " can't mutable data with precision type "
                    << PrecisionToStr(precision);
         break;
     }
+    device_otensors_.push_back(node->data());
   }
-  return status;
+  // Create the RKNPU model and set the input and output nodes
+  device_program_ = lite::rknpu::Device::Global().Build(
+      model_name_, graph.GetHandle(), device_itensors_, device_otensors_);
+  if (device_program_ == nullptr) {
+    LOG(WARNING) << "[RKNPU] Build model failed!";
+    return false;
+  }
+  return true;
 }
 
-int SubgraphEngine::LaunchDeviceProgram() {
+bool SubgraphEngine::LaunchDeviceProgram() {
   LOG(INFO) << "[RKNPU]:LaunchDeviceProgram";
   std::vector<rk::nn::InputInfo> inputs;
   std::vector<rk::nn::OutputInfo> outputs;
 
-  inputs.resize(device_itensors_.size());
-  for (size_t i = 0; i < device_itensors_.size(); i++) {
+  inputs.resize(origin_itensors_.size());
+  for (size_t i = 0; i < origin_itensors_.size(); i++) {
     inputs[i].index = i;
     inputs[i].buf = const_cast<void*>(origin_itensors_[i]->raw_data());
     inputs[i].size = origin_itensors_[i]->memory_size();
@@ -184,8 +130,8 @@ int SubgraphEngine::LaunchDeviceProgram() {
     inputs[i].layout = rk::nn::DataLayoutType::NCHW;
   }
 
-  outputs.resize(device_otensors_.size());
-  for (size_t i = 0; i < device_otensors_.size(); i++) {
+  outputs.resize(origin_otensors_.size());
+  for (size_t i = 0; i < origin_otensors_.size(); i++) {
     outputs[i].index = i;
     outputs[i].buf = const_cast<void*>(origin_otensors_[i]->raw_data());
     outputs[i].size = origin_otensors_[i]->memory_size();
@@ -195,26 +141,25 @@ int SubgraphEngine::LaunchDeviceProgram() {
   device_program_->SetInputs(inputs);
   device_program_->Run();
   device_program_->GetOutputs(outputs);
-  return 0;
+  return true;
 }
 
 void SubgraphCompute::PrepareForRun() {
   LOG(INFO) << "[RKNPU]:PrepareForRun";
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
-                                   param.sub_block_idx,
-                                   param.sub_block_desc,
+                                   param.block_idx,
+                                   param.program_desc,
+                                   param.exec_scope,
                                    param.input_data_names,
-                                   param.output_data_names,
-                                   param.scope));
+                                   param.output_data_names));
   CHECK(engine_);
-  engine_->Build();
 }
 
 void SubgraphCompute::Run() {
   LOG(INFO) << "[RKNPU]:Run";
   CHECK(engine_);
-  engine_->Launch();
+  engine_->Run();
 }
 
 }  // namespace rknpu

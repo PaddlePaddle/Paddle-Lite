@@ -19,14 +19,16 @@ limitations under the License. */
 
 namespace paddle {
 namespace lite {
+
 CLWrapper *CLWrapper::Global() {
   static CLWrapper wrapper;
   return &wrapper;
 }
 
 CLWrapper::CLWrapper() {
-  CHECK(InitHandle()) << "Fail to initialize the OpenCL library!";
-  InitFunctions();
+  opencl_lib_found_ = InitHandle();
+  CHECK(opencl_lib_found_) << "Fail to initialize the OpenCL library!";
+  dlsym_success_ = InitFunctions();
 }
 
 bool CLWrapper::InitHandle() {
@@ -68,15 +70,17 @@ bool CLWrapper::InitHandle() {
   }
 }
 
-void CLWrapper::InitFunctions() {
+bool CLWrapper::InitFunctions() {
   CHECK(handle_ != nullptr) << "The library handle can't be null!";
+  bool dlsym_success = true;
 
 #define PADDLE_DLSYM(cl_func)                                        \
   do {                                                               \
     cl_func##_ = (cl_func##Type)dlsym(handle_, #cl_func);            \
     if (cl_func##_ == nullptr) {                                     \
-      LOG(FATAL) << "Cannot find the " << #cl_func                   \
+      LOG(ERROR) << "Cannot find the " << #cl_func                   \
                  << " symbol in libOpenCL.so!";                      \
+      dlsym_success = false;                                         \
       break;                                                         \
     }                                                                \
     VLOG(4) << "Loaded the " << #cl_func << " symbol successfully."; \
@@ -106,7 +110,7 @@ void CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clCreateCommandQueue);
   // note(ysh329): consider compatibility for cl_driver_version 1.10
   // using clCreateCommandQueue instead.
-  //  PADDLE_DLSYM(clCreateCommandQueueWithProperties);
+  // PADDLE_DLSYM(clCreateCommandQueueWithProperties);
   PADDLE_DLSYM(clReleaseCommandQueue);
   PADDLE_DLSYM(clCreateProgramWithBinary);
   PADDLE_DLSYM(clRetainContext);
@@ -137,6 +141,7 @@ void CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clEnqueueCopyImage);
 
 #undef PADDLE_DLSYM
+  return dlsym_success;
 }
 
 }  // namespace lite
@@ -445,9 +450,8 @@ CL_API_ENTRY cl_command_queue CL_API_CALL clCreateCommandQueueWithProperties(
   //     ->clCreateCommandQueueWithProperties()(
   //         context, device, properties, errcode_ret);
   //
-  cl_command_queue_properties cl_cmd_properties;
   return paddle::lite::CLWrapper::Global()->clCreateCommandQueue()(
-      context, device, cl_cmd_properties, errcode_ret);
+      context, device, 0, errcode_ret);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseCommandQueue(

@@ -54,6 +54,11 @@ find_library(NPU_DDK_IR_BUILD_FILE NAMES hiai_ir_build
   PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH}
   NO_DEFAULT_PATH)
 
+# Added in HiAI DDK 320 or later version
+find_library(NPU_DDK_HCL_FILE NAMES hcl
+  PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH}
+  NO_DEFAULT_PATH)
+
 if(NOT NPU_DDK_HIAI_FILE)
   message(FATAL_ERROR "Can not find NPU_DDK_HIAI_FILE in ${NPU_DDK_ROOT}")
 else()
@@ -78,5 +83,13 @@ else()
   set_property(TARGET npu_ddk_ir_build PROPERTY IMPORTED_LOCATION ${NPU_DDK_IR_BUILD_FILE})
 endif()
 
-set(npu_runtime_libs npu_ddk_hiai CACHE INTERNAL "npu ddk runtime libs")
+if(NOT NPU_DDK_HCL_FILE)
+# message(FATAL_ERROR "Can not find NPU_DDK_HCL_FILE in ${NPU_DDK_ROOT}")
+else()
+  message(STATUS "Found NPU_DDK HCL Library: ${NPU_DDK_HCL_FILE}")
+  add_library(npu_ddk_hcl SHARED IMPORTED GLOBAL)
+  set_property(TARGET npu_ddk_hcl PROPERTY IMPORTED_LOCATION ${NPU_DDK_HCL_FILE})
+endif()
+
+set(npu_runtime_libs npu_ddk_hiai npu_ddk_hcl CACHE INTERNAL "npu ddk runtime libs")
 set(npu_builder_libs npu_ddk_ir npu_ddk_ir_build CACHE INTERNAL "npu ddk builder libs")

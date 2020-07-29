@@ -62,15 +62,17 @@ std::string Visualize(mir::SSAGraph* graph) {
            << string_trunc(op_info->GetAttr<std::string>(attr_name)) << "\"";
         break;
       case AttrType::FLOATS: {
-        auto vals = op_info->GetAttr<std::vector<float>>(attr_name);
+        std::vector<float> vals =
+            op_info->GetAttr<std::vector<float>>(attr_name);
         os << ":floats: {" + Join(vals, ",") << "}";
       } break;
       case AttrType::INTS: {
-        auto vals = op_info->GetAttr<std::vector<int>>(attr_name);
+        std::vector<int> vals = op_info->GetAttr<std::vector<int>>(attr_name);
         os << ":ints: {" + Join(vals, ",") + "}";
       } break;
       case AttrType::STRINGS: {
-        auto vals = op_info->GetAttr<std::vector<std::string>>(attr_name);
+        std::vector<std::string> vals =
+            op_info->GetAttr<std::vector<std::string>>(attr_name);
         os << ":strings: {" + string_trunc(Join(vals, ",")) << "}";
       } break;
       default:

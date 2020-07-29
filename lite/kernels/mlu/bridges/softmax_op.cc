@@ -35,9 +35,10 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(out_var_name)->GetMutable<Tensor>();
   auto output_dims = output->dims().Vectorize();
+  auto x_shape =
+      scope->FindVar(x_var_name)->GetMutable<Tensor>()->dims().Vectorize();
 
-  // nchw axis to nhwc aixs
-  int nchw_to_nhwc_aixs_map[4] = {0, 3, 1, 2};
+  // nchw axis to nhwc axis
   int axis = 1;
   if (op_info->HasAttr("axis")) {
     axis = op_info->GetAttr<int>("axis");
@@ -45,7 +46,9 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       axis = output_dims.size() + axis;
     }
   }
-  int nhwc_axis = nchw_to_nhwc_aixs_map[axis];
+  // value of nhwc2nchw_axis is index of nhwc
+  // order of nhwc2nchw_axis is nchw
+  int nhwc_axis = GetAxisNHWC2NCHW<int>(x_shape.size())[axis];
 
   auto output_tensor = graph->AddNode(
       out_var_name, output_dims, CNML_TENSOR, CNML_NCHW, graph->FPType());
@@ -55,6 +58,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                   graph->GetNode(x_var_name)->mlu_tensor(),
                                   output_tensor->mlu_tensor()));
   graph->FuseOp(softmax_op);
+  CNML_CALL(cnmlDestroyBaseOp(&softmax_op));
   return SUCCESS;
 }
 

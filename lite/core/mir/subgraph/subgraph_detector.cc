@@ -411,34 +411,60 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   cpp::OpDesc subgraph_op_desc;
   subgraph_op_desc.SetType("subgraph");
 
-  // Create a new sub block desc for storing all of Ops and Vars of the target
-  // subgraph and sub_block_idx is set as a attribute of subgraph op,
-  // sub_block_idx < 0 means it's a new subgraph op
-  int sub_block_idx = -(subgraph_idx + 1);
-  auto sub_block_desc = new cpp::BlockDesc();
+  // Create a program desc and a block desc for storing all of Ops and Vars of
+  // the target subgraph and sub_block_idx is set as a attribute of subgraph op,
+  // sub_block_idx = 0 means it's a new subgraph op
+  auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
+  int sub_block_idx = 0;
+  auto sub_block_desc = sub_program_desc->AddBlock<cpp::BlockDesc>();
   sub_block_desc->ClearOps();
   sub_block_desc->ClearVars();
   for (auto &op_node : subgraph_nodes) {
-    auto sub_block_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
-    *sub_block_op_desc = *op_node->AsStmt().op_info();
+    auto sub_op_desc = sub_block_desc->AddOp<cpp::OpDesc>();
+    *sub_op_desc = *op_node->AsStmt().op_info();
   }
   subgraph_op_desc.SetAttr<int32_t>("sub_block", sub_block_idx);
 
   // Extract input and output nodes from the target subgraph
-  std::set<Node *> input_var_nodes;
+  std::set<Node *> idata_var_nodes;
   std::set<Node *> weight_var_nodes;
-  std::set<Node *> output_var_nodes;
+  std::set<Node *> odata_var_nodes;
   std::set<Node *> local_var_nodes;
   std::set<Node *> unused_var_nodes;
   ExtractInputsOutputs(subgraph_nodes,
-                       &input_var_nodes,
+                       &idata_var_nodes,
                        &weight_var_nodes,
-                       &output_var_nodes,
+                       &odata_var_nodes,
                        &local_var_nodes,
                        &unused_var_nodes);
-
+  // A simplified model without the original weight/local/unused nodes on the
+  // subgraph ops will be saved only if 'SUBGRAPH_ONLINE_MODE' is set to
+  // true(default) and Predictor->Run(...), Predictor->Save(...) is called.
+  std::set<Node *> input_var_nodes(idata_var_nodes.begin(),
+                                   idata_var_nodes.end());
+  std::set<Node *> output_var_nodes(odata_var_nodes.begin(),
+                                    odata_var_nodes.end());
+  if (GetBoolFromEnv(SUBGRAPH_ONLINE_MODE, true)) {
+    input_var_nodes.insert(weight_var_nodes.begin(), weight_var_nodes.end());
+    output_var_nodes.insert(local_var_nodes.begin(), local_var_nodes.end());
+    output_var_nodes.insert(unused_var_nodes.begin(), unused_var_nodes.end());
+  }
   // Set input and output name mapping which stores the real inputs and
   // outputs
+  std::vector<std::string> idata_var_names;
+  std::vector<std::string> odata_var_names;
+  for (auto &var_node : idata_var_nodes) {
+    idata_var_names.push_back(var_node->AsArg().name);
+  }
+  for (auto &var_node : odata_var_nodes) {
+    odata_var_names.push_back(var_node->AsArg().name);
+  }
+  subgraph_op_desc.SetAttr<std::vector<std::string>>("input_data_names",
+                                                     idata_var_names);
+  subgraph_op_desc.SetAttr<std::vector<std::string>>("output_data_names",
+                                                     odata_var_names);
+  // Set all of the inputs and outputs to the target subgraph op
+  // To prevent vars are removed in RuntimeProgram::UpdateVarsOfProgram()
   std::vector<std::string> input_var_names;
   std::vector<std::string> output_var_names;
   for (auto &var_node : input_var_nodes) {
@@ -447,60 +473,36 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   for (auto &var_node : output_var_nodes) {
     output_var_names.push_back(var_node->AsArg().name);
   }
-  subgraph_op_desc.SetAttr<std::vector<std::string>>("input_data_names",
-                                                     input_var_names);
-  subgraph_op_desc.SetAttr<std::vector<std::string>>("output_data_names",
-                                                     output_var_names);
-
-  // Set input/output scale values of input/output var nodes for
-  // type_precision_cast_pass.
-  std::vector<float> input_data_scales;
-  std::vector<float> output_data_scales;
-  for (auto &var_node : input_var_nodes) {
-    auto any_op_node = var_node->outlinks.front();
-    CHECK(any_op_node->IsStmt());
-    auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasAttr("input_scale")) {
-      input_data_scales.push_back(
-          any_inst.op_info()->GetAttr<float>("input_scale"));
-    }
-  }
-  for (auto &var_node : output_var_nodes) {
-    auto any_op_node = var_node->inlinks.front();
-    CHECK(any_op_node->IsStmt());
-    auto &any_inst = any_op_node->AsStmt();
-    if (any_inst.op_info()->HasAttr("output_scale")) {
-      output_data_scales.push_back(
-          any_inst.op_info()->GetAttr<float>("output_scale"));
-    }
-  }
-  if (input_data_scales.size() > 0) {
-    subgraph_op_desc.SetAttr<std::vector<float>>("input_data_scales",
-                                                 input_data_scales);
-  }
-  if (output_data_scales.size() > 0) {
-    subgraph_op_desc.SetAttr<std::vector<float>>("output_data_scales",
-                                                 output_data_scales);
-  }
-
-  // Set all of the inputs and outputs to the target subgraph op
-  // To prevent vars are removed in RuntimeProgram::UpdateVarsOfProgram()
-  for (auto &var_node : weight_var_nodes) {
-    input_var_names.push_back(var_node->AsArg().name);
-  }
-  for (auto &var_node : local_var_nodes) {
-    output_var_names.push_back(var_node->AsArg().name);
-  }
-  for (auto &var_node : unused_var_nodes) {
-    output_var_names.push_back(var_node->AsArg().name);
-  }
   subgraph_op_desc.SetInput("Inputs", input_var_names);
   subgraph_op_desc.SetOutput("Outputs", output_var_names);
   auto subgraph_op = LiteOpRegistry::Global().Create("subgraph");
   static_cast<operators::SubgraphOp *>(subgraph_op.get())
-      ->SetSubBlock(sub_block_desc);
+      ->SetProgramDesc(sub_program_desc);
   auto any_op = (*subgraph_nodes.begin())->AsStmt().op();
   subgraph_op->Attach(subgraph_op_desc, any_op->scope());
+
+  // Export the scale values of the input/output var nodes of the inner op nodes
+  // only for type_precision_cast_pass.
+  for (auto &var_node : input_var_nodes) {
+    auto var_node_name = var_node->arg()->name;
+    auto any_op_node = var_node->outlinks.front();
+    CHECK(any_op_node->IsStmt());
+    auto &any_inst = any_op_node->AsStmt();
+    if (any_inst.op_info()->HasInputScale(var_node_name)) {
+      subgraph_op->mutable_op_info()->SetInputScale(
+          var_node_name, any_inst.op_info()->GetInputScale(var_node_name));
+    }
+  }
+  for (auto &var_node : output_var_nodes) {
+    auto var_node_name = var_node->arg()->name;
+    auto any_op_node = var_node->inlinks.front();
+    CHECK(any_op_node->IsStmt());
+    auto &any_inst = any_op_node->AsStmt();
+    if (any_inst.op_info()->HasOutputScale(var_node_name)) {
+      subgraph_op->mutable_op_info()->SetOutputScale(
+          var_node_name, any_inst.op_info()->GetOutputScale(var_node_name));
+    }
+  }
 
   // Create and add a new subgraph node into the graph
   auto subgraph_op_node =
@@ -508,26 +510,13 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   for (auto &var_node : input_var_nodes) {
     IR_NODE_LINK_TO(var_node, subgraph_op_node);
   }
-  for (auto &var_node : weight_var_nodes) {
-    IR_NODE_LINK_TO(var_node, subgraph_op_node);
-  }
   for (auto &var_node : output_var_nodes) {
-    IR_OP_VAR_LINK(subgraph_op_node, var_node);
-  }
-  for (auto &var_node : local_var_nodes) {
-    IR_OP_VAR_LINK(subgraph_op_node, var_node);
-  }
-  for (auto &var_node : unused_var_nodes) {
     IR_OP_VAR_LINK(subgraph_op_node, var_node);
   }
 
   // Remove subgraph nodes and unused var nodes
-  auto nodes2rm = GetNodes2RM(subgraph_nodes,
-                              {input_var_nodes,
-                               weight_var_nodes,
-                               output_var_nodes,
-                               local_var_nodes,
-                               unused_var_nodes});
+  auto nodes2rm =
+      GetNodes2RM(subgraph_nodes, {input_var_nodes, output_var_nodes});
   GraphSafeRemoveNodes(graph, nodes2rm);
 }
 
@@ -602,7 +591,17 @@ std::set<const Node *> GetNodes2RM(
   std::set<const Node *> nodes2rm(op_nodes.begin(), op_nodes.end());
   for (auto &op_node : op_nodes) {
     for (auto &var_node : op_node->inlinks) {
-      if (!nodes2rm.count(var_node)) {
+      bool skip = false;
+      // skip the var node which is used by any other ops that doesn't belong to
+      // the subgraph ops.
+      for (auto &out_op_node : var_node->outlinks) {
+        if (std::find(op_nodes.begin(), op_nodes.end(), out_op_node) !=
+            op_nodes.end()) {
+          skip = true;
+          break;
+        }
+      }
+      if (!skip && !nodes2rm.count(var_node)) {
         nodes2rm.insert(var_node);
       }
     }

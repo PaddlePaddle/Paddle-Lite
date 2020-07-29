@@ -18,7 +18,7 @@
 #include <memory>
 #include <string>
 #include "lite/core/mir/pattern_matcher_high_api.h"
-#include "lite/utils/paddle_enforce.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {

@@ -21,8 +21,8 @@
 // posix_memalign
 #include "lite/backends/x86/cpu_info.h"
 #include "lite/backends/x86/jit/macro.h"
+#include "lite/utils/cp_logging.h"
 #include "lite/utils/env.h"
-#include "lite/utils/paddle_enforce.h"
 
 #ifndef _WIN32
 #define posix_memalign_free free
@@ -62,12 +62,10 @@ void* GenBase::operator new(size_t size) {
 #ifdef _WIN32
   ptr = _aligned_malloc(size, alignment);
 #else
-  PADDLE_ENFORCE_EQ(posix_memalign(&ptr, alignment, size),
-                    0,
-                    "GenBase Alloc %ld error!",
-                    size);
+  CHECK_EQ(posix_memalign(&ptr, alignment, size), 0) << "GenBase Alloc " << size
+                                                     << " error!";
 #endif
-  PADDLE_ENFORCE(ptr, "Fail to allocate GenBase CPU memory: size = %d .", size);
+  CHECK(ptr) << "Fail to allocate GenBase CPU memory: size = " << size;
   return ptr;
 }
 
