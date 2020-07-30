@@ -55,8 +55,8 @@ inline void fast_free(void* ptr) {
 }
 void density_prior_box(const lite::Tensor* input,
                        const lite::Tensor* image,
-                       lite::Tensor& boxes,
-                       lite::Tensor& variances,
+                       lite::Tensor* boxes,
+                       lite::Tensor* variances,
                        const std::vector<float>& min_size_,
                        const std::vector<float>& fixed_size_,
                        const std::vector<float>& fixed_ratio_,
@@ -78,11 +78,11 @@ void density_prior_box(const lite::Tensor* input,
   int win1 = input->dims()[3];
   int hin1 = input->dims()[2];
   DDim shape_out({hin1, win1, prior_num_, 4});
-  boxes.Resize(shape_out);
-  variances.Resize(shape_out);
+  boxes->Resize(shape_out);
+  variances->Resize(shape_out);
 
-  float* _cpu_data = boxes.mutable_data<float>();
-  float* _variance_data = variances.mutable_data<float>();
+  float* _cpu_data = boxes->mutable_data<float>();
+  float* _variance_data = variances->mutable_data<float>();
 
   const int width = win1;
   const int height = hin1;
@@ -361,8 +361,8 @@ void PriorBoxCompute::ReInitWhenNeeded() {
   bool min_max_aspect_ratios_order = param.min_max_aspect_ratios_order;
   density_prior_box(param.input,
                     param.image,
-                    boxes_tmp_,
-                    variances_tmp_,
+                    &boxes_tmp_,
+                    &variances_tmp_,
                     min_size,
                     std::vector<float>(),
                     std::vector<float>(),
