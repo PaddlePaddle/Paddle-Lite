@@ -312,6 +312,31 @@ struct ReshapeParam : ParamBase {
   }
 };
 
+// For Sum op
+struct SumParam : ParamBase {
+  std::vector<lite::Tensor*> x{};
+  lite::Tensor* output{};
+  bool use_mkldnn{false};
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      std::vector<const Tensor*> vec;
+      for (auto in : x) {
+        vec.push_back(in);
+      }
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>(vec));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+};
+
 // For Concat op
 struct ConcatParam : ParamBase {
   std::vector<lite::Tensor*> x{};

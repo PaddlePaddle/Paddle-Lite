@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -46,6 +45,24 @@ class SigmoidCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual void Run();
 
   virtual ~SigmoidCompute() = default;
+};
+
+class ExpCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~ExpCompute() = default;
+};
+
+class ReciprocalCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~ReciprocalCompute() = default;
 };
 
 }  // namespace xpu
