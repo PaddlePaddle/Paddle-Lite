@@ -69,7 +69,7 @@ inline double GetCurrentUS() {
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
 
-void RunModel(std::string model_dir,
+void RunModel(std::string model_file,
               const shape_t& input_shape,
               size_t repeats,
               size_t warmup,
@@ -77,7 +77,7 @@ void RunModel(std::string model_dir,
               size_t power_mode) {
   // 1. Set MobileConfig
   MobileConfig config;
-  config.set_model_from_file(model_dir);
+  config.set_model_from_file(model_file);
 
   // NOTE: Use android gpu with opencl, you should ensure:
   //  first, [compile **cpu+opencl** paddlelite
@@ -91,7 +91,7 @@ void RunModel(std::string model_dir,
   std::endl;
   if (is_opencl_backend_valid) {
     // give opencl nb model dir
-    config.set_model_from_file(model_dir);
+    config.set_model_from_file(model_file);
     config.set_opencl_tune(false); // default is false
   } else {
     std::cout << "Unsupport opencl nb model." << std::endl;
@@ -143,7 +143,7 @@ void RunModel(std::string model_dir,
   avg_duration = sum_duration / static_cast<float>(repeats);
   std::cout << "\n======= benchmark summary =======\n"
             << "input_shape(NCHW):" << ShapePrint(input_shape) << "\n"
-            << "model_dir:" << model_dir << "\n"
+            << "model_file:" << model_file << "\n"
             << "warmup:" << warmup << "\n"
             << "repeats:" << repeats << "\n"
             << "max_duration:" << max_duration << "\n"
@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
 
   if (argc > 2 && argc < 9) {
     std::cerr << "usage: ./" << argv[0] << "\n"
-              << "  <naive_buffer_model_dir>\n"
+              << "  <paddle-lite_model_file>\n"
               << "  <input_n>\n"
               << "  <input_c>\n"
               << "  <input_h>\n"
@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  std::string model_dir = argv[1];
+  std::string model_file = argv[1];
   if (argc >= 9) {
     input_shape[0] = atoi(argv[2]);
     input_shape[1] = atoi(argv[3]);
@@ -220,7 +220,7 @@ int main(int argc, char** argv) {
   size_t power_mode = 0;
 
   RunModel(
-      model_dir, input_shape, repeats, warmup, print_output_elem, power_mode);
+      model_file, input_shape, repeats, warmup, print_output_elem, power_mode);
 
   return 0;
 }
