@@ -66,7 +66,7 @@ class KernelBase {
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = std::string("NotImpl");
-#ifdef LITE_WITH_ARM
+#ifdef LITE_WITH_OPENCL
     ch->cl_event = event_;
 #endif
   }
