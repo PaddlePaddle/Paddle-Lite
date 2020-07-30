@@ -121,6 +121,8 @@ class LITE_API ConfigBase {
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
+  // gpu
+  bool enable_opencl_tune_{false};
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
 
@@ -135,6 +137,9 @@ class LITE_API ConfigBase {
   // set Thread
   void set_threads(int threads);
   int threads() const { return threads_; }
+  // set GPU opencl tune
+  void set_opencl_tune(bool enable_tune);
+  bool opencl_tune() const { return enable_opencl_tune_; }
   // set subgraph_model_dir
   void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
     subgraph_model_cache_dir_ = subgraph_model_cache_dir;
