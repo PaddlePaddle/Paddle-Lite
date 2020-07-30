@@ -91,6 +91,10 @@ class CLRuntime {
     return is_device_avaliable_for_opencl_;
   }
 
+  void set_auto_tune(bool enable_tune) { auto_tune_ = enable_tune; }
+
+  bool auto_tune() { return auto_tune_; }
+
   bool Init();
 
   cl::Platform& platform();
@@ -195,6 +199,8 @@ class CLRuntime {
   bool is_cl_runtime_initialized_{false};
 
   bool is_platform_device_init_success_{false};
+
+  bool auto_tune_{false};
 };
 
 }  // namespace lite

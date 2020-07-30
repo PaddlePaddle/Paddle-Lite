@@ -244,6 +244,18 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #endif
 }
 
+void ConfigBase::set_opencl_tune(bool enable_tune) {
+#ifdef LITE_WITH_OPENCL
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    enable_opencl_tune_ = enable_tune;
+    paddle::lite::CLRuntime::Global()->set_auto_tune(enable_opencl_tune_);
+#ifdef LITE_WITH_OPENCL
+    LOG(INFO) << "auto_tune:" << paddle::lite::CLRuntime::Global()->auto_tune();
+#endif
+  }
+#endif
+}
+
 void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Global().SetRunMode(mode, threads_);
