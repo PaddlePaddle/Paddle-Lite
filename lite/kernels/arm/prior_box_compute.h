@@ -26,8 +26,14 @@ class PriorBoxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   using param_t = operators::PriorBoxParam;
 
   void Run() override;
-
+  void ReInitWhenNeeded() override;
   virtual ~PriorBoxCompute() = default;
+
+ private:
+  Tensor boxes_tmp_;
+  Tensor variances_tmp_;
+  DDim last_input_shape_;
+  DDim last_image_shape_;
 };
 
 }  // namespace arm
