@@ -30,6 +30,13 @@ namespace lite {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
+#define TENSOR_UPDATE_INPUT(op, attr, format, dtype)                    \
+  ge::TensorDesc _##op##_input_desc_##attr(ge::Shape(), format, dtype); \
+  op->update_input_desc_##attr(_##op##_input_desc_##attr);
+#define TENSOR_UPDATE_OUTPUT(op, attr, format, dtype)                    \
+  ge::TensorDesc _##op##_output_desc_##attr(ge::Shape(), format, dtype); \
+  op->update_output_desc_##attr(_##op##_output_desc_##attr);
+
 // Type/tensor converters for converting Paddle type/tensor to HiAI type/tensor
 bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
