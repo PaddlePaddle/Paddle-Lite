@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/prior_box_compute.h"
+#include "lite/core/target_wrapper.h"
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -45,22 +46,6 @@ inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
       }
     }
   }
-}
-const int MALLOC_ALIGN = 16;
-
-inline void* fast_malloc(size_t size) {
-  size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
-  char* p = static_cast<char*>(malloc(offset + size));
-
-  if (!p) {
-    return nullptr;
-  }
-
-  void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) &
-                                    (~(MALLOC_ALIGN - 1)));
-  static_cast<void**>(r)[-1] = p;
-  memset(r, 0, size);
-  return r;
 }
 
 inline void fast_free(void* ptr) {
@@ -256,12 +241,11 @@ void density_prior_box(const lite::Tensor* input,
         }
       } else {
         float* min_buf =
-            reinterpret_cast<float*>(fast_malloc(sizeof(float) * 4));
-        float* max_buf =
-            reinterpret_cast<float*>(fast_malloc(sizeof(float) * 4));
+            reinterpret_cast<float*>(TargetWrapper<TARGET(kHost)>::Malloc(sizeof(float) * 4));
+       float* max_buf =
+            reinterpret_cast<float*>(TargetWrapper<TARGET(kHost)>::Malloc(sizeof(float) * 4));
         float* com_buf = reinterpret_cast<float*>(
-            fast_malloc(sizeof(float) * aspect_ratio_.size() * 4));
-
+            TargetWrapper<TARGET(kHost)>::Malloc(sizeof(float) * aspect_ratio_.size() * 4));
         for (int s = 0; s < min_size_.size(); ++s) {
           int min_idx = 0;
           int max_idx = 0;
@@ -325,9 +309,9 @@ void density_prior_box(const lite::Tensor* input,
             idx += max_idx;
           }
         }
-        fast_free(min_buf);
-        fast_free(max_buf);
-        fast_free(com_buf);
+        TargetWrapper<TARGET(kHost)>::Free(min_buf);
+        TargetWrapper<TARGET(kHost)>::Free(max_buf);
+        TargetWrapper<TARGET(kHost)>::Free(com_buf);
       }
     }
   }
