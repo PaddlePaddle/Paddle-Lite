@@ -70,24 +70,23 @@ class CLRuntime {
   static CLRuntime* Global();
 
   bool OpenCLAvaliableForDevice() {
-    bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
-    LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
-    if (opencl_lib_found == false) return false;
-
-    bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
-    LOG(INFO) << "dlsym_success:" << dlsym_success;
-    if (opencl_lib_found == false) return false;
+    // note(ysh329): entered this func means:
+    //  1. opencl_lib_found must be true
+    //  2. dlsym_success must be true
 
     InitializeDevice();
     bool support_fp16 =
         static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
+#ifdef LITE_WITH_LOG
     LOG(INFO) << "support_fp16:" << support_fp16;
+#endif
     if (support_fp16 == false) return false;
 
-    is_device_avaliable_for_opencl_ =
-        dlsym_success && opencl_lib_found && support_fp16;
+    is_device_avaliable_for_opencl_ = support_fp16;
+#ifdef LITE_WITH_LOG
     LOG(INFO) << "is_device_avaliable_for_opencl_:"
               << is_device_avaliable_for_opencl_;
+#endif
     return is_device_avaliable_for_opencl_;
   }
 

@@ -347,18 +347,23 @@ class Context<TargetType::kX86> {
 #ifdef LITE_WITH_OPENCL
 template <>
 class Context<TargetType::kOpenCL> {
-  std::shared_ptr<CLContext> cl_context_;
+  std::shared_ptr<CLContext> cl_context_{nullptr};
 
  public:
   CLContext* cl_context() { return cl_context_.get(); }
 
   void InitOnce() {
-    // Init cl runtime.
-    CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
+    if (CLRuntime::Global()->IsInitSuccess() == false) {
+      LOG(ERROR) << "OpenCL runtime init failed";
+    }
     cl_context_ = std::make_shared<CLContext>();
   }
 
-  void CopySharedTo(OpenCLContext* ctx) { ctx->cl_context_ = cl_context_; }
+  void CopySharedTo(OpenCLContext* ctx) {
+    if (ctx && cl_context_) {
+      ctx->cl_context_ = cl_context_;
+    }
+  }
 };
 #endif
 
