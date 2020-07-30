@@ -41,10 +41,26 @@ namespace lite_api {
 
 bool IsOpenCLBackendValid() {
   bool opencl_valid = false;
+
 #ifdef LITE_WITH_OPENCL
+  bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
+#endif
+  if (opencl_lib_found == false) return false;
+
+  bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "dlsym_success:" << dlsym_success;
+#endif
+  if (dlsym_success == false) return false;
+
   opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
 #endif
+
+#ifdef LITE_WITH_LOG
   LOG(INFO) << "opencl_valid:" << opencl_valid;
+#endif
   return opencl_valid;
 }
 
@@ -62,49 +78,27 @@ void Tensor::Resize(const shape_t &shape) {
   tensor(raw_tensor_)->Resize(shape);
 }
 
-// Tensor::data
-template <>
-const float *Tensor::data() const {
-  return ctensor(raw_tensor_)->data<float>();
-}
-template <>
-const int8_t *Tensor::data() const {
-  return ctensor(raw_tensor_)->data<int8_t>();
-}
-template <>
-const uint8_t *Tensor::data() const {
-  return ctensor(raw_tensor_)->data<uint8_t>();
-}
-template <>
-const int64_t *Tensor::data() const {
-  return ctensor(raw_tensor_)->data<int64_t>();
-}
-template <>
-const int32_t *Tensor::data() const {
-  return ctensor(raw_tensor_)->data<int32_t>();
+template <typename T>
+const T *Tensor::data() const {
+  return ctensor(raw_tensor_)->data<T>();
 }
 
-// Tensor::mutable_data
-template <>
-int *Tensor::mutable_data(TargetType type) const {
-  return tensor(raw_tensor_)->mutable_data<int>(type);
+template <typename T>
+T *Tensor::mutable_data(TargetType type) const {
+  return tensor(raw_tensor_)->mutable_data<T>(type);
 }
-template <>
-float *Tensor::mutable_data(TargetType type) const {
-  return tensor(raw_tensor_)->mutable_data<float>(type);
-}
-template <>
-int8_t *Tensor::mutable_data(TargetType type) const {
-  return tensor(raw_tensor_)->mutable_data<int8_t>(type);
-}
-template <>
-uint8_t *Tensor::mutable_data(TargetType type) const {
-  return tensor(raw_tensor_)->mutable_data<uint8_t>(type);
-}
-template <>
-int64_t *Tensor::mutable_data(TargetType type) const {
-  return tensor(raw_tensor_)->mutable_data<int64_t>(type);
-}
+
+template const float *Tensor::data<float>() const;
+template const int8_t *Tensor::data<int8_t>() const;
+template const uint8_t *Tensor::data<uint8_t>() const;
+template const int64_t *Tensor::data<int64_t>() const;
+template const int32_t *Tensor::data<int32_t>() const;
+
+template int *Tensor::mutable_data(TargetType type) const;
+template float *Tensor::mutable_data(TargetType type) const;
+template int8_t *Tensor::mutable_data(TargetType type) const;
+template uint8_t *Tensor::mutable_data(TargetType type) const;
+template int64_t *Tensor::mutable_data(TargetType type) const;
 
 template <typename T, TargetType type>
 void Tensor::CopyFromCpu(const T *src_data) {
@@ -241,6 +235,18 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
   lite::DeviceInfo::Global().SetRunMode(mode, threads);
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
+void ConfigBase::set_opencl_tune(bool enable_tune) {
+#ifdef LITE_WITH_OPENCL
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    enable_opencl_tune_ = enable_tune;
+    paddle::lite::CLRuntime::Global()->set_auto_tune(enable_opencl_tune_);
+#ifdef LITE_WITH_OPENCL
+    LOG(INFO) << "auto_tune:" << paddle::lite::CLRuntime::Global()->auto_tune();
+#endif
+  }
 #endif
 }
 

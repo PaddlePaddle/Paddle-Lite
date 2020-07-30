@@ -152,7 +152,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::NDRange local_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
-  bool use_tune_{true};
+  bool use_tune_{false};
 };
 
 }  // namespace opencl
