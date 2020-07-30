@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/prior_box_compute.h"
-#include "lite/core/target_wrapper.h"
 #include <algorithm>
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -240,12 +240,13 @@ void density_prior_box(const lite::Tensor* input,
           }
         }
       } else {
-        float* min_buf =
-            reinterpret_cast<float*>(TargetWrapper<TARGET(kHost)>::Malloc(sizeof(float) * 4));
-       float* max_buf =
-            reinterpret_cast<float*>(TargetWrapper<TARGET(kHost)>::Malloc(sizeof(float) * 4));
-        float* com_buf = reinterpret_cast<float*>(
-            TargetWrapper<TARGET(kHost)>::Malloc(sizeof(float) * aspect_ratio_.size() * 4));
+        float* min_buf = reinterpret_cast<float*>(
+            TargetWrapper<TARGET(kHost)>::Malloc(sizeof(float) * 4));
+        float* max_buf = reinterpret_cast<float*>(
+            TargetWrapper<TARGET(kHost)>::Malloc(sizeof(float) * 4));
+        float* com_buf =
+            reinterpret_cast<float*>(TargetWrapper<TARGET(kHost)>::Malloc(
+                sizeof(float) * aspect_ratio_.size() * 4));
         for (int s = 0; s < min_size_.size(); ++s) {
           int min_idx = 0;
           int max_idx = 0;
