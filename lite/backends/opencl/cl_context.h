@@ -70,6 +70,7 @@ class CLContext {
   cl::NDRange LocalWorkSizeTuneReverse(cl::NDRange global_work_size,
                                        size_t max_work_size,
                                        int divitor = 2);
+
   bool IsArmMali();
 
  private:
