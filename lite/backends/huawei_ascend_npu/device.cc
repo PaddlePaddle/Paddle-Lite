@@ -67,6 +67,15 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
   std::lock_guard<std::mutex> lock(device_mutex_);
   // Convert the HiAI IR graph to the HiAI om model
   ge::Graph ir_graph("graph");
+  // set input node attr index is node size > 1
+  if (input_nodes.size() > 1) {
+    int idx = 0;
+    for (auto node : input_nodes) {
+      node.SetAttr("index", idx);
+      idx++;
+    }
+  }
+  VLOG(3) << "Getting input node size " << input_nodes.size();
   ir_graph.SetInputs(input_nodes).SetOutputs(output_nodes);
 
   // Build IR model
