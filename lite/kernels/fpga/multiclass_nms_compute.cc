@@ -378,6 +378,8 @@ void MulticlassNmsCompute::Run() {
     if (return_index) {
       outs->Resize({0, out_dim});
       index->Resize({0, 1});
+      outs->mutable_data<float>();
+      index->mutable_data<int64_t>();
     } else {
       outs->Resize({1, 1});
       float* od = outs->mutable_data<float>();

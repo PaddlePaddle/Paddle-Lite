@@ -44,17 +44,17 @@ class Monitor {
   }
 
   void postRun(Instruction& inst) {  // NOLINT
-    return;
 
     auto op = const_cast<OpLite*>(inst.op());
     auto op_info = op->op_info();
     auto in_names = op_info->input_names();
 
-    for (auto name : in_names) {
-      // auto *var = op->scope()->FindVar(name);
-      // CHECK(var) << "no variable called " << name << " found";
-      // auto tensor = var->Get<lite::Tensor>();
-    }
+    // for (auto name : in_names) {
+    // auto *var = op->scope()->FindVar(name);
+    // CHECK(var) << "no variable called " << name << " found";
+    // auto tensor = var->Get<lite::Tensor>();
+    // VLOG(4) << "\n in_tensor:::" << name;
+    // }
 
     auto out_args = op_info->output_names();
     for (auto name : out_args) {
@@ -71,7 +71,7 @@ class Monitor {
             name.replace(found, substr.length(), "_");
           }
           VLOG(4) << "\n out_tensor:::" << name;
-          tensor->ZynqTensor()->saveToFile(name, true);
+          // tensor->ZynqTensor()->saveToFile(name, true);
         }
       }
     }

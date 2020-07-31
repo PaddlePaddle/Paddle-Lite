@@ -120,6 +120,9 @@ class ConvOpLite : public OpLite {
             lite_api::ActivationType::kLeakyRelu;
         param_.activation_param.Leaky_relu_alpha =
             op_desc.GetAttr<float>("leaky_relu_alpha");
+      } else if (act_type == "sigmoid") {
+        param_.activation_param.active_type =
+            lite_api::ActivationType::kSigmoid;
       } else {
         CHECK(false)
             << "The fused conv only supports fuse with relu and leaky relu";

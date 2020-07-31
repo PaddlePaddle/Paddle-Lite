@@ -25,7 +25,7 @@ cmake .. \
         -DWITH_TESTING=OFF \
         -DARM_TARGET_OS=armlinux \
         -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_PROFILE=OFF
-
+        -DLITE_WITH_PROFILE=OFF \
+        -DLITE_WITH_LOG=OFF
 make -j42
 cd -

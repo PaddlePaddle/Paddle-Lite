@@ -42,6 +42,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (!has_int8 && has_arm_float) {
     act_types.push_back("relu6");
     act_types.push_back("leaky_relu");
+    act_types.push_back("sigmoid");
   }
   if (!has_int8 && has_cuda) {
     act_types.push_back("leaky_relu");

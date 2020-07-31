@@ -23,18 +23,9 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
-void FetchCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-  // ====================================================
-  zynqmp::OutputParam& fetch_param = pe_.param();
-  auto fetch_list = param.fetch_list;
-  if (fetch_list->size() <= static_cast<size_t>(param.col)) {
-    fetch_list->resize(param.col + 1);
-  }
-  Tensor& out = param.fetch_list->at(param.col);
-  out.Resize(param.input->dims());
-
-  auto in_type = param.input->ZynqTensor()->dataType();
+void resize_output(const Tensor* input, Tensor& out) {
+  auto in_type = input->ZynqTensor()->dataType();
+  out.Resize(input->dims());
   switch (in_type) {
     case zynqmp::FP16:
     case zynqmp::FP32:
@@ -49,6 +40,19 @@ void FetchCompute::PrepareForRun() {
     default:
       break;
   }
+}
+
+void FetchCompute::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+
+  zynqmp::OutputParam& fetch_param = pe_.param();
+  auto fetch_list = param.fetch_list;
+  if (fetch_list->size() <= static_cast<size_t>(param.col)) {
+    fetch_list->resize(param.col + 1);
+  }
+
+  Tensor& out = param.fetch_list->at(param.col);
+  resize_output(param.input, out);
 
   fetch_param.input = param.input->ZynqTensor();
   fetch_param.output = out.ZynqTensor();
@@ -63,8 +67,11 @@ void FetchCompute::Run() {
   if (fetch_list->size() <= static_cast<size_t>(param.col)) {
     fetch_list->resize(param.col + 1);
   }
+
   Tensor& out = param.fetch_list->at(param.col);
-  out.Resize(param.input->dims());
+  resize_output(param.input, out);
+  // out.Resize(param.input->dims());
+
   pe_.dispatch();
 
 #ifdef FPGA_PRINT_TENSOR

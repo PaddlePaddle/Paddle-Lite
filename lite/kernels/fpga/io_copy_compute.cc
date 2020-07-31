@@ -162,9 +162,9 @@ class IoCopyFpgaToHostCHWCompute
                                       param.x->ZynqTensor()->shape());
       tempTensor.copyFrom(param.x->ZynqTensor());
       tempTensor.setAligned(true);
-      tempTensor.saveToFile("temp_1", true);
+      // tempTensor.saveToFile("temp_1", true);
       tempTensor.unalignImage();
-      tempTensor.saveToFile("temp_2", true);
+      // tempTensor.saveToFile("temp_2", true);
 
       hwc.ZynqTensor()->copyFrom(&tempTensor);
     } else {
