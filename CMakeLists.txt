@@ -191,8 +191,6 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
         include(external/gtest)     # download, build, install gtest
         include(ccache)             # set ccache for compilation
         include(external/protobuf)  # download, build, install protobuf
-    else()
-        include(external/gflags)    # download, build, install gflags
     endif()
 
     # for opencl
@@ -200,7 +198,10 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
         include(external/opencl-headers)
         include(external/opencl-clhpp)
     endif()
-
+    if (LITE_WITH_PROFILE)
+        include(external/gflags)
+        include(external/glog)
+    endif()
     include(generic)            # simplify cmake module
     include(configure)          # add paddle env configuration
 
