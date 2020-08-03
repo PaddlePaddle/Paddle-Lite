@@ -98,7 +98,7 @@ void sequence_pool_grad_common(grad_param_t* param,
         }
       }
     }
-  } else if (pool_type == "Max" || pool_type == "Min") {
+  } else if (pool_type == "MAX" || pool_type == "MIN") {
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; i++) {
       int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
       const float* out_grad_ptr = out_grad + i * width;
