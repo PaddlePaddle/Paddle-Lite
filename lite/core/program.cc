@@ -159,9 +159,12 @@ RuntimeProgram::RuntimeProgram(
     int block_idx)
     : exec_scope_(exec_scope) {
 #ifdef LITE_WITH_OPENCL
+  bool opencl_valid = CLRuntime::Global()->OpenCLAvaliableForDevice();
   using OpenCLContext = Context<TargetType::kOpenCL>;
-  std::unique_ptr<KernelContext> local_ctx(new KernelContext());
-  local_ctx->As<OpenCLContext>().InitOnce();
+  std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
+  if (opencl_valid) {
+    unique_opencl_ctx->As<OpenCLContext>().InitOnce();
+  }
 #endif
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
@@ -227,15 +230,24 @@ RuntimeProgram::RuntimeProgram(
     }
 #ifdef LITE_WITH_OPENCL
     if (kernel->target() == TARGET(kOpenCL)) {
-      std::unique_ptr<KernelContext> ctx(new KernelContext());
-      (*local_ctx).As<OpenCLContext>().CopySharedTo(&ctx->As<OpenCLContext>());
-      kernel->SetContext(std::move(ctx));
+      if (opencl_valid) {
+        std::unique_ptr<KernelContext> ctx(new KernelContext());
+        (*unique_opencl_ctx)
+            .As<OpenCLContext>()
+            .CopySharedTo(&ctx->As<OpenCLContext>());
+        kernel->SetContext(std::move(ctx));
+      } else {
+        LOG(ERROR) << "opencl_valid:" << opencl_valid;
+      }
     } else {
       kernel->SetContext(
           ContextScheduler::Global().NewContext(kernel->target()));
     }
 #else
-    kernel->SetContext(ContextScheduler::Global().NewContext(kernel->target()));
+    if (kernel != nullptr) {
+      kernel->SetContext(
+          ContextScheduler::Global().NewContext(kernel->target()));
+    }
 #endif
     instructions_[kRootBlockIdx].emplace_back(std::move(op), std::move(kernel));
   }

@@ -30,6 +30,17 @@ namespace lite {
 namespace subgraph {
 namespace huawei_ascend_npu {
 
+#define TENSOR_UPDATE_INPUT(op, attr, format, dtype)                    \
+  ge::TensorDesc _##op##_input_desc_##attr(ge::Shape(), format, dtype); \
+  op->update_input_desc_##attr(_##op##_input_desc_##attr);
+#define TENSOR_UPDATE_OUTPUT(op, attr, format, dtype)                    \
+  ge::TensorDesc _##op##_output_desc_##attr(ge::Shape(), format, dtype); \
+  op->update_output_desc_##attr(_##op##_output_desc_##attr);
+#define TENSOR_UPDATE_DYNAMIC_INPUT(op, attr, idx, format, dtype) \
+  ge::TensorDesc _##op##_input_desc_##attr##_##idx(               \
+      ge::Shape(), format, dtype);                                \
+  op->update_dynamic_input_desc_##attr(idx, _##op##_input_desc_##attr##_##idx);
+
 // Type/tensor converters for converting Paddle type/tensor to HiAI type/tensor
 bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
@@ -49,9 +60,6 @@ ge::Tensor CvtTensor(const Tensor& in_tensor,
                      DataLayoutType in_layout = DATALAYOUT(kNCHW));
 
 int CvtActMode(std::string act_type);
-
-const std::string& CvtFormat(ge::Format format);
-const std::string& CvtDataType(ge::DataType data_type);
 
 }  // namespace huawei_ascend_npu
 }  // namespace subgraph

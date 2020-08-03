@@ -420,6 +420,12 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
         if (place == TARGET(kARM) && align_mode == 1 && !align_corners) {
           continue;
         }
+        // align_mode = 0 && align_corners = false NOT supported in Huawei
+        // Ascend NPU DDK
+        if (place == TARGET(kHuaweiAscendNPU) && align_mode == 0 &&
+            !align_corners) {
+          continue;
+        }
         std::unique_ptr<arena::TestCase> tester(
             new NearestInterpComputeTester(place,
                                            "def",
@@ -442,6 +448,9 @@ TEST(Interp, precision) {
   float abs_error = 2e-5;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
+  abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
