@@ -256,7 +256,7 @@ void TestConvGroups(Place place, float abs_error = 2e-5) {
        std::vector<std::vector<int64_t>>{{1, 6, 3, 4}, {5, 12, 7, 8}}) {
     for (auto out_channels : {2, 3, 6}) {
       for (auto groups : {2, 3, 6}) {
-#ifdef LITE_WITH_NPU
+#if (defined LITE_WITH_NPU) || (defined LITE_WITH_HUAWEI_ASCEND_NPU)
         if (out_channels % groups != 0) continue;
 #endif
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
@@ -420,16 +420,13 @@ TEST(Conv2d, precision) {
   abs_error = 5e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #else
   return;
 #endif
 
   TestConvKsize(place, abs_error);
-// Huawei Ascend NPU DDK not support groups > 1
-#if !defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   TestConvGroups(place, abs_error);
-#endif
   TestConvDilations(place, abs_error);
   TestConvStrides(place, abs_error);
   TestConvPaddings(place, abs_error);
