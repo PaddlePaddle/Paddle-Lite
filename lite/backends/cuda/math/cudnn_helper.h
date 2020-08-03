@@ -13,12 +13,33 @@
 // limitations under the License.
 
 #pragma once
+#include <cudnn.h>
+
 #include <string>
+#include <vector>
+
+#include "lite/api/paddle_place.h"
+#include "lite/backends/cuda/cuda_utils.h"
 
 namespace paddle {
 namespace lite {
 namespace cuda {
-namespace math {}  // namespace math
+namespace math {
+
+template <PrecisionType PType>
+cudnnDataType_t GetCudnnDataType();
+
+template <>
+cudnnDataType_t GetCudnnDataType<PRECISION(kFloat)>() {
+  return CUDNN_DATA_FLOAT;
+}
+
+template <>
+cudnnDataType_t GetCudnnDataType<PRECISION(kFP16)>() {
+  return CUDNN_DATA_HALF;
+}
+
+}  // namespace math
 }  // namespace cuda
 }  // namespace lite
 }  // namespace paddle
