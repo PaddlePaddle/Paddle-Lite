@@ -10,7 +10,6 @@ class CxxPredictor
 
 ```python
 from paddlelite.lite import *
-from lite_core import *
 
 # 1. 设置CxxConfig
 config = CxxConfig()
