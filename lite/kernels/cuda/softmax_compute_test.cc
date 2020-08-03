@@ -202,7 +202,6 @@ TEST_F(SoftmaxTest, TestFP16) {
   for (int i = 0; i < out_gpu_.numel(); ++i) {
     float res = static_cast<float>(lite::float16(out_cpu_data[i]));
     float ref = out_ref_.data<float>()[i];
-    LOG(INFO) << "res is " << res << ", ref is " << ref;
     EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
   }
 }
