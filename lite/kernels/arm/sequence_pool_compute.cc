@@ -47,7 +47,7 @@ void SequencePoolCompute::Run() {
   } else if (pool_type == "MAX") {
     lite::arm::math::seq_pool_max(din, dout, max_index, lod, width);
   } else if (pool_type == "MIN") {
-    lite::arm::math::seq_pool_min(din, dout, lod, max_index, width);
+    lite::arm::math::seq_pool_min(din, dout, max_index, lod, width);
   } else if (pool_type == "FIRST") {
     lite::arm::math::seq_pool_first(din, dout, lod, width);
   } else if (pool_type == "LAST") {

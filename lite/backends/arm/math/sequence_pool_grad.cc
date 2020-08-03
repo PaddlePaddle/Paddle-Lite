@@ -114,11 +114,11 @@ void seq_pool_sqrt_grad<float>(const float* din,
 
 template <>
 void seq_pool_max_grad<float>(const float* din,
-                                const float* dout_grad,
-                                int64_t* index_grad,
-                                float* din_grad,
-                                const std::vector<uint64_t> lod,
-                                int64_t width) {
+                              const float* dout_grad,
+                              const int64_t* index_grad,
+                              float* din_grad,
+                              const std::vector<uint64_t> lod,
+                              int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = lod[i + 1] - lod[i];
     const float* dout_grad_ptr = dout_grad + i * width;
@@ -166,10 +166,10 @@ void seq_pool_first_grad<float>(const float* din,
 
 template <>
 void seq_pool_last_grad<float>(const float* din,
-                                const float* dout_grad,
-                                float* din_grad,
-                                const std::vector<uint64_t> lod,
-                                int64_t width) {
+                               const float* dout_grad,
+                               float* din_grad,
+                               const std::vector<uint64_t> lod,
+                               int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = lod[i + 1] - lod[i];
     const float* dout_grad_ptr = dout_grad + i * width;

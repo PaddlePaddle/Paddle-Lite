@@ -47,7 +47,7 @@ void SequencePoolGradCompute::Run() {
   } else if (pool_type == "SQRT") {
     lite::arm::math::seq_pool_sqrt_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
-  }  else if (pool_type == "MAX" || pool_type == "MIN") {
+  } else if (pool_type == "MAX" || pool_type == "MIN") {
     lite::arm::math::seq_pool_max_grad(
         din_ptr, dout_grad_ptr, index_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "FIRST" || pool_type == "LAST") {

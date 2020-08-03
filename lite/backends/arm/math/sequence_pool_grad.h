@@ -45,7 +45,7 @@ void seq_pool_sqrt_grad(const T* din,
 template <typename T>
 void seq_pool_max_grad(const T* din,
                        const T* dout_grad,
-                       int64_t* index_grad,
+                       const int64_t* index_grad,
                        T* din_grad,
                        const std::vector<uint64_t> lod,
                        int64_t width);

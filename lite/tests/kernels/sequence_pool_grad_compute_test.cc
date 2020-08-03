@@ -29,10 +29,10 @@ using grad_param_t = operators::SequencePoolGradParam;
 using kernel_t = SequencePoolCompute;
 using grad_kernel_t = SequencePoolGradCompute;
 
-void sequence_pool_grad_common(grad_param_t* param,  // NOLINT
-                               float* out_grad,      // NOLINT
+void sequence_pool_grad_common(grad_param_t* param,
+                               float* out_grad,
                                int64_t* index_grad,
-                               float* x_grad,        // NOLINT
+                               float* x_grad,
                                std::string pool_type) {
   const auto lod = param->X->lod()[0];
   int64_t width = param->X->numel() / param->X->dims()[0];
@@ -215,7 +215,7 @@ class SequencePoolGradTester {
     auto* output_index = index.data<int64_t>();
     for (int i = 0; i < output.numel(); i++) {
       out_vec[i] = output_data[i];
-      out_index_vec[i] =  output_index[i];
+      out_index_vec[i] = output_index[i];
     }
   }
 
@@ -273,7 +273,7 @@ class SequencePoolGradTester {
              static_cast<float>(i % 39 - 20.0) / 20.0 * 0.333 + 0.001213;
     }
     LOG(INFO) << "run_forward:";
-    this->run_forward(&param_, &kernel_, x, out.data(), index.data());
+    this->run_forward(&param_, &kernel_, x, index.data(), out.data());
 
     std::vector<float> out_grad(out_dims_.production());
     std::vector<float> x_grad(dims_.production());
@@ -281,7 +281,8 @@ class SequencePoolGradTester {
       out_grad[i] = 1.0;
     }
     LOG(INFO) << "run_backward:";
-    this->run_backward(&grad_param_, &grad_kernel_, x, out_grad, index, x_grad.data());
+    this->run_backward(
+        &grad_param_, &grad_kernel_, x, out_grad, index, x_grad.data());
 
     // get numeric gradient
     std::vector<float> x_delta(dims_.production());
@@ -291,8 +292,11 @@ class SequencePoolGradTester {
     tensor_x.set_lod(lod_);
     grad_param_.X = &tensor_x;
     LOG(INFO) << "sequence_pool_grad_common";
-    sequence_pool_grad_common(
-        &grad_param_, out_grad.data(), index.data(), x_delta.data(), pool_type_);
+    sequence_pool_grad_common(&grad_param_,
+                              out_grad.data(),
+                              index.data(),
+                              x_delta.data(),
+                              pool_type_);
 
     for (int i = 0; i < dims_.production(); i++) {
       EXPECT_NEAR(x_grad[i], x_delta[i], max_grad_delta);
