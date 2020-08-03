@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -95,6 +96,7 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
     CHECK(idx < GetParamsSize());
     return &params_[idx];
   }
+
   size_t GetParamsSize() const override { return params_.size(); }
 
  private:
@@ -157,6 +159,7 @@ class ParamDesc : public ParamDescAPI {
 class CombinedParamsDesc : public CombinedParamsDescAPI {
  public:
   CombinedParamsDesc() = default;
+
   explicit CombinedParamsDesc(const std::vector<char>& buf) {
     const auto* raw_buf = proto::GetCombinedParamsDesc(buf.data());
     raw_buf->UnPackTo(&desc_);
@@ -165,30 +168,26 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
   const ParamDescReadAPI* GetParamDesc(size_t idx) const override {
     return &params_[idx];
   }
+
   size_t GetParamsSize() const override { return desc_.params.size(); }
+
   ParamDescWriteAPI* AddParamDesc() override {
     desc_.params.push_back(std::unique_ptr<proto::ParamDescT>());
     SyncParams();
     return &params_[params_.size() - 1];
   }
+
   const void* data() {
     SyncBuffer();
     return buf_.data();
   }
+
   size_t buf_size() {
     SyncBuffer();
     return buf_.size();
   }
 
  private:
-  void SyncBuffer() {
-    fbb_.Reset();
-    flatbuffers::Offset<proto::CombinedParamsDesc> desc =
-        proto::CombinedParamsDesc::Pack(fbb_, &desc_);
-    fbb_.Finish(desc);
-    buf_ = fbb_.Release();
-  }
-
   void SyncParams() {
     params_.resize(GetParamsSize());
     for (size_t i = 0; i < GetParamsSize(); ++i) {
@@ -198,9 +197,17 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
     }
   }
 
-  proto::CombinedParamsDescT desc_;
+  void SyncBuffer() {
+    fbb_.Reset();
+    flatbuffers::Offset<proto::CombinedParamsDesc> desc =
+        proto::CombinedParamsDesc::Pack(fbb_, &desc_);
+    fbb_.Finish(desc);
+    buf_ = fbb_.Release();
+  }
+
   flatbuffers::DetachedBuffer buf_;
   flatbuffers::FlatBufferBuilder fbb_;
+  proto::CombinedParamsDescT desc_;
   std::vector<ParamDesc> params_;
 };
 

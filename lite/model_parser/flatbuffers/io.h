@@ -15,6 +15,10 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include "lite/core/scope.h"
+#include "lite/core/tensor.h"
+#include "lite/model_parser/flatbuffers/param_desc.h"
 #include "lite/model_parser/flatbuffers/program_desc.h"
 
 namespace paddle {
@@ -22,6 +26,17 @@ namespace lite {
 namespace fbs {
 
 void LoadModel(const std::string& path, ProgramDesc* prog);
+
+void SetParamWithTensor(const std::string& name,
+                        const lite::Tensor& tensor,
+                        ParamDescWriteAPI* prog);
+void SetTensorWithParam(const lite::Tensor& tensor, ParamDescReadAPI* prog);
+
+void SetCombinedParamsWithScope(const lite::Scope& scope,
+                                const std::vector<std::string>& params_name,
+                                CombinedParamsDescWriteAPI* params);
+void SetScopeWithCombinedParams(lite::Scope* scope,
+                                const CombinedParamsDescReadAPI& params);
 
 }  // namespace fbs
 }  // namespace lite

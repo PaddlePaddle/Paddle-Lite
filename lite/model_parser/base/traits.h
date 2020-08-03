@@ -16,6 +16,8 @@
 
 #include <string>
 #include <vector>
+#include "lite/api/paddle_place.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -67,6 +69,46 @@ enum class VarDataType {
   RAW,
   TUPLE
 };
+
+inline VarDataType ConvertPrecisionType(lite_api::PrecisionType type) {
+#define CASE(ptype, vtype)                \
+  case lite_api::PrecisionType::k##ptype: \
+    return lite::VarDataType::vtype;      \
+    break
+  switch (type) {
+    CASE(Float, FP32);
+    CASE(Int8, INT8);
+    CASE(Int32, INT32);
+    CASE(FP16, FP16);
+    CASE(Bool, BOOL);
+    CASE(Int64, INT64);
+    CASE(Int16, INT16);
+    default:
+      LOG(FATAL) << "Illegal flatbuffer VarType.";
+      return lite::VarDataType();
+  }
+#undef CASE
+}
+
+inline lite_api::PrecisionType ConvertPrecisionType(VarDataType type) {
+#define CASE(ptype, vtype)                    \
+  case lite::VarDataType::vtype:              \
+    return lite_api::PrecisionType::k##ptype; \
+    break
+  switch (type) {
+    CASE(Float, FP32);
+    CASE(Int8, INT8);
+    CASE(Int32, INT32);
+    CASE(FP16, FP16);
+    CASE(Bool, BOOL);
+    CASE(Int64, INT64);
+    CASE(Int16, INT16);
+    default:
+      LOG(FATAL) << "Illegal flatbuffer VarType.";
+      return lite_api::PrecisionType();
+  }
+#undef CASE
+}
 
 struct Standard {};
 struct Flatbuffers {};
