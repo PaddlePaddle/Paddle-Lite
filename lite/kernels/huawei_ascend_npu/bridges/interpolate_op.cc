@@ -53,9 +53,6 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     return FAILED;
   }
 
-  // get ge date type
-  ge::DataType ge_data_type = CvtPrecisionType(x->precision());
-
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
@@ -100,10 +97,18 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     bilinear_interp_op->set_input_x(*x_node->data());
     bilinear_interp_op->set_input_size(*out_size_node->data());
     bilinear_interp_op->set_attr_align_corners(align_corners);
-    TENSOR_UPDATE_INPUT(bilinear_interp_op, x, ge::FORMAT_NCHW, ge_data_type);
-    TENSOR_UPDATE_INPUT(
-        bilinear_interp_op, size, ge::FORMAT_NCHW, ge_data_type);
-    TENSOR_UPDATE_OUTPUT(bilinear_interp_op, y, ge::FORMAT_NCHW, ge_data_type);
+    TENSOR_UPDATE_INPUT(bilinear_interp_op,
+                        x,
+                        ge::FORMAT_NCHW,
+                        CvtPrecisionType(x_node->precision()));
+    TENSOR_UPDATE_INPUT(bilinear_interp_op,
+                        size,
+                        ge::FORMAT_NCHW,
+                        CvtPrecisionType(out_size_node->precision()));
+    TENSOR_UPDATE_OUTPUT(bilinear_interp_op,
+                         y,
+                         ge::FORMAT_NCHW,
+                         CvtPrecisionType(bilinear_interp_node->precision()));
   } else if (interp_method == "nearest") {
     auto nearest_interp_node =
         graph->Add<ge::op::ResizeNearestNeighborV2>(out_name);
@@ -112,9 +117,18 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     nearest_interp_op->set_input_x(*x_node->data());
     nearest_interp_op->set_input_size(*out_size_node->data());
     nearest_interp_op->set_attr_align_corners(align_corners);
-    TENSOR_UPDATE_INPUT(nearest_interp_op, x, ge::FORMAT_NCHW, ge_data_type);
-    TENSOR_UPDATE_INPUT(nearest_interp_op, size, ge::FORMAT_NCHW, ge_data_type);
-    TENSOR_UPDATE_OUTPUT(nearest_interp_op, y, ge::FORMAT_NCHW, ge_data_type);
+    TENSOR_UPDATE_INPUT(nearest_interp_op,
+                        x,
+                        ge::FORMAT_NCHW,
+                        CvtPrecisionType(x_node->precision()));
+    TENSOR_UPDATE_INPUT(nearest_interp_op,
+                        size,
+                        ge::FORMAT_NCHW,
+                        CvtPrecisionType(out_size_node->precision()));
+    TENSOR_UPDATE_OUTPUT(nearest_interp_op,
+                         y,
+                         ge::FORMAT_NCHW,
+                         CvtPrecisionType(nearest_interp_node->precision()));
   } else {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Unsupported interpolate method: "
                  << interp_method;
