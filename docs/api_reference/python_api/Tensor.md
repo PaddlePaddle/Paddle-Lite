@@ -12,7 +12,6 @@ Tensor是Paddle-Lite的数据组织形式，用于对底层数据进行封装并
 
 ```python
 from paddlelite.lite import *
-from lite_core import *
 
 # 1. 设置CxxConfig
 config = CxxConfig()
