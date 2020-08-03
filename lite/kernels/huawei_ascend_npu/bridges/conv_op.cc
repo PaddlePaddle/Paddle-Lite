@@ -35,7 +35,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto input_name = op_info->Input("Input").front();
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
-  ge::DataType ge_data_type = CvtPrecisionType(input->precision());
 
   auto filter_name = op_info->Input("Filter").front();
   auto filter = scope->FindMutableTensor(filter_name);
@@ -99,6 +98,22 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       input_dims,
                                       filter_dims);
 
+  // Check Restrictions: HxW(input) == HxW(filter) if output feature h*w = 1*1
+  if (output_dims[2] == 1 && output_dims[3] == 1) {
+    int input_h = input_dims[2] + paddings[0] + paddings[1];
+    int input_w = input_dims[3] + paddings[2] + paddings[3];
+    int filter_h = (filter_dims[2] - 1) * dilations[0] + 1;
+    int filter_w = (filter_dims[3] - 1) * dilations[1] + 1;
+    CHECK_EQ(input_h, filter_h) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK "
+                                   "restriction: if output HxW = 1x1, then "
+                                   "input height after padding should equal to "
+                                   "filter height after dilation";
+    CHECK_EQ(input_w, filter_w) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK "
+                                   "restriction: if output HxW = 1x1, then "
+                                   "input width after padding should equal to "
+                                   "filter width after dilation";
+  }
+
   // Check depthwise mode, and decide whether use DepthwiseConv2D Op
   bool use_depthwise_conv = false;
   bool is_depthwise_mode = (ic == groups && oc == groups && groups != 1);
@@ -148,20 +163,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  // Ascend must update convop desc, or IR model build will fail
-  ge::TensorDesc conv2d_input_desc_x(
-      ge::Shape(CvtShape(input_dims)), ge::FORMAT_NCHW, ge_data_type);
-  ge::TensorDesc conv2d_input_desc_filter(
-      ge::Shape(CvtShape(filter_dims)), ge::FORMAT_NCHW, ge_data_type);
-  ge::TensorDesc conv2d_input_desc_bias(
-      ge::Shape(bias_shape), ge::FORMAT_ND, ge_data_type);
-  ge::TensorDesc conv2d_output_desc_y(
-      ge::Shape(CvtShape(output_dims)), ge::FORMAT_NCHW, ge_data_type);
-  // Setting desc name
-  conv2d_input_desc_x.SetName("conv2d_input_desc_x");
-  conv2d_input_desc_filter.SetName("conv2d_input_desc_filter");
-  conv2d_input_desc_bias.SetName("conv2d_input_desc_bias");
-  conv2d_output_desc_y.SetName("conv2d_output_desc_y");
   // Conv node
   std::shared_ptr<Node> conv_node = nullptr;
   if (use_depthwise_conv && is_depthwise_mode) {
@@ -177,12 +178,19 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     conv_op->set_attr_data_format("NCHW");
     if (bias_node != nullptr && is_channel_bias) {
       conv_op->set_input_bias(*bias_node->data());
-      conv_op->update_input_desc_bias(conv2d_input_desc_bias);
+      TENSOR_UPDATE_INPUT(conv_op,
+                          bias,
+                          ge::FORMAT_NCHW,
+                          CvtPrecisionType(bias_node->precision()));
     }
-    // update tensor desc to conv2d
-    conv_op->update_input_desc_x(conv2d_input_desc_x);
-    conv_op->update_input_desc_filter(conv2d_input_desc_filter);
-    conv_op->update_output_desc_y(conv2d_output_desc_y);
+    TENSOR_UPDATE_INPUT(
+        conv_op, x, ge::FORMAT_NCHW, CvtPrecisionType(input_node->precision()));
+    TENSOR_UPDATE_INPUT(conv_op,
+                        filter,
+                        ge::FORMAT_NCHW,
+                        CvtPrecisionType(filter_node->precision()));
+    TENSOR_UPDATE_OUTPUT(
+        conv_op, y, ge::FORMAT_NCHW, CvtPrecisionType(conv_node->precision()));
   } else {
     conv_node = graph->Add<ge::op::Conv2D>(output_name);
     auto conv_op = conv_node->data<ge::op::Conv2D>();
@@ -198,12 +206,19 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     conv_op->set_attr_data_format("NCHW");
     if (bias_node != nullptr && is_channel_bias) {
       conv_op->set_input_bias(*bias_node->data());
-      conv_op->update_input_desc_bias(conv2d_input_desc_bias);
+      TENSOR_UPDATE_INPUT(conv_op,
+                          bias,
+                          ge::FORMAT_NCHW,
+                          CvtPrecisionType(bias_node->precision()));
     }
-    // update tensor desc to conv2d
-    conv_op->update_input_desc_x(conv2d_input_desc_x);
-    conv_op->update_input_desc_filter(conv2d_input_desc_filter);
-    conv_op->update_output_desc_y(conv2d_output_desc_y);
+    TENSOR_UPDATE_INPUT(
+        conv_op, x, ge::FORMAT_NCHW, CvtPrecisionType(input_node->precision()));
+    TENSOR_UPDATE_INPUT(conv_op,
+                        filter,
+                        ge::FORMAT_NCHW,
+                        CvtPrecisionType(filter_node->precision()));
+    TENSOR_UPDATE_OUTPUT(
+        conv_op, y, ge::FORMAT_NCHW, CvtPrecisionType(conv_node->precision()));
   }
   // append Add node to support bias
   if (bias_node != nullptr && !is_channel_bias) {

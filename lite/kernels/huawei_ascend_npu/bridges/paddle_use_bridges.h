@@ -27,3 +27,4 @@ USE_SUBGRAPH_BRIDGE(conv2d, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(bilinear_interp, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(nearest_interp, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(concat, kHuaweiAscendNPU);
