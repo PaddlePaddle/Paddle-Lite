@@ -48,7 +48,7 @@ class Place{
 
 示例：
 ```python
-from lite_core import *
+from paddlelite.lite import *
 
 Place{TargetType(ARM), PrecisionType(FP32), DataLayoutType(NCHW)}
 ```
