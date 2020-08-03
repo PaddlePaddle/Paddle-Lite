@@ -33,19 +33,19 @@ class Variable {
 
   template <typename T>
   T* GetMutable() {
-    if (!blob_.is<T>()) blob_.set<T>();
+    if (!blob_.valid()) {
+      blob_.set<T>();
+    }
     return blob_.get_mutable<T>();
   }
 
   template <typename T>
   bool IsType() {
-    return blob_.type() == typeid(T).hash_code();
+    return blob_.is_type<T>();
   }
 
  private:
-  // variant<int, float, std::string, lite::Tensor> blob_;
-  variant<int, float, std::string, lite::Tensor, std::vector<lite::Tensor>>
-      blob_;
+  Any blob_;
 };
 
 }  // namespace lite

@@ -49,6 +49,10 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto act_node = graph->template Add<ActType>(out_name);
   auto act_op = act_node->template data<ActType>();
   act_op->set_input_x(*x_node->data());
+  TENSOR_UPDATE_INPUT(
+      act_op, x, ge::FORMAT_NCHW, CvtPrecisionType(x_node->precision()));
+  TENSOR_UPDATE_OUTPUT(
+      act_op, y, ge::FORMAT_NCHW, CvtPrecisionType(act_node->precision()));
 
   return SUCCESS;
 }
@@ -84,6 +88,10 @@ int ActConverter<ge::op::LeakyRelu>(void* ctx, OpLite* op, KernelBase* kernel) {
   // only for leaky_relu
   auto alpha = op_info->GetAttr<float>("alpha");
   act_op->set_attr_negative_slope(alpha);
+  TENSOR_UPDATE_INPUT(
+      act_op, x, ge::FORMAT_NCHW, CvtPrecisionType(x_node->precision()));
+  TENSOR_UPDATE_OUTPUT(
+      act_op, y, ge::FORMAT_NCHW, CvtPrecisionType(act_node->precision()));
 
   return SUCCESS;
 }

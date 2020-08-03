@@ -3885,7 +3885,7 @@ inline void write_int32_nchwc8_to_nchw(const int* din,
                                        int width,
                                        int flag_act,
                                        float* alpha,
-                                       float* bias,
+                                       const float* bias,
                                        bool flag_bias,
                                        Dtype* trash_ptr,
                                        const float* scale) {

@@ -32,15 +32,23 @@ namespace opencl {
 void ConvImageCompute::PrepareForRun() {
   ReInitWhenNeeded();
 
+  auto& context = ctx_->As<OpenCLContext>();
+  CHECK(context.cl_context() != nullptr);
+  const bool is_mali = context.cl_context()->IsArmMali();
+
+  use_tune_ = CLRuntime::Global()->auto_tune();
+  if (!is_mali) {
+    use_tune_ = false;
+  }
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "use_tune_" << use_tune_;
+#endif
+
   auto filter_dims = conv_param_->filter->dims();
   filter_tensor_n_ = filter_dims[0];
   filter_tensor_c_ = filter_dims[1];
   filter_tensor_h_ = filter_dims[2];
   filter_tensor_w_ = filter_dims[3];
-
-  auto& context = ctx_->As<OpenCLContext>();
-  CHECK(context.cl_context() != nullptr);
-  const bool is_mali = context.cl_context()->IsArmMali();
 
   auto paddings = *conv_param_->paddings;
   pad_up_ = paddings[0];
@@ -65,6 +73,7 @@ void ConvImageCompute::PrepareForRun() {
   bool stride_equal = stride_h_ == stride_w_;
   bool dilation_equal = dilation_h_ == dilation_w_;
 
+#ifdef LITE_WITH_LOG
   VLOG(3) << "Is arm mali  / " << (is_mali ? "Yes" : "No");
   VLOG(3) << "Is relu fused? / " << (relu_fused_ ? "Yes" : "No");
   VLOG(3) << "groups:" << groups_ << " stride_h_:" << stride_h_
@@ -83,6 +92,8 @@ void ConvImageCompute::PrepareForRun() {
   VLOG(3) << "dilation_equal:" << dilation_equal;
   VLOG(3) << "padding :" << pad_up_ << " " << pad_down_ << " " << pad_left_
           << " " << pad_right_;
+#endif
+
   CHECK(pad_equal && stride_equal && dilation_equal);
   CHECK_GE(conv_param_->dilations->size(), 2);
   CHECK(dilation_h_ == dilation_w_);
@@ -90,10 +101,6 @@ void ConvImageCompute::PrepareForRun() {
   CHECK(pad_left_ == pad_up_);
   CHECK_GE(conv_param_->strides.size(), 2);
   CHECK(stride_h_ == stride_w_);
-
-  if (!is_mali) {
-    use_tune_ = false;
-  }
 
   /*********************************************
    * Upload filter, bias to opencl device

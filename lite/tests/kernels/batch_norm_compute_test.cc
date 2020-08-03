@@ -161,6 +161,8 @@ TEST(BatchNorm, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
 #else
   return;
 #endif
