@@ -147,6 +147,8 @@ TEST(Concat, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -157,6 +159,10 @@ TEST(Concat, precision) {
 
   for (int axis : {1, 2}) {
     for (bool is_use_axis_tensor : {false, true}) {
+      // is_use_axis_tensor = true has bugs in Huawei Ascend NPU DDK
+      if (place == TARGET(kHuaweiAscendNPU) && is_use_axis_tensor) {
+        continue;
+      }
       LOG(INFO) << "axis:" << axis
                 << ", is_use_axis_tensor:" << is_use_axis_tensor;
       std::unique_ptr<arena::TestCase> tester(

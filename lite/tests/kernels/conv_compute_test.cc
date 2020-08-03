@@ -296,6 +296,11 @@ void TestConvStrides(Place place, float abs_error = 2e-5) {
     for (auto out_channels : {1, 3}) {
       for (auto strides :
            std::vector<std::vector<int>>{{2, 2}, {3, 3}, {1, 2}, {3, 1}}) {
+        // Check Huawei Ascend NPU restriction if output HxW = 1x1
+        // input_w after padding = 4 should equal to fitler_w after dilation = 3
+        if (place == TARGET(kHuaweiAscendNPU) && dims[3] == 4) {
+          continue;
+        }
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
             place, "def", DDim(dims), out_channels, 3, strides));
         arena::Arena arena(std::move(tester), place, abs_error);
@@ -415,13 +420,16 @@ TEST(Conv2d, precision) {
   abs_error = 5e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 5e-2;  // Using fp16 in NPU
+  abs_error = 1e-2;  // Using fp16 in NPU
 #else
   return;
 #endif
 
   TestConvKsize(place, abs_error);
+// Huawei Ascend NPU DDK not support groups > 1
+#if !defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   TestConvGroups(place, abs_error);
+#endif
   TestConvDilations(place, abs_error);
   TestConvStrides(place, abs_error);
   TestConvPaddings(place, abs_error);
