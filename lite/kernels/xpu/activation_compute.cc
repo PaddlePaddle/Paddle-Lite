@@ -60,6 +60,71 @@ void SigmoidCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void AbsCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::activation_forward(
+      ctx.GetRawContext(),         /* context */
+      xdnn::Activation_t::ABS,     /* type */
+      param.X->numel(),            /* len */
+      param.X->data<float>(),      /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
+}
+
+void SquareCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::activation_forward(
+      ctx.GetRawContext(),         /* context */
+      xdnn::Activation_t::SQUARE,  /* type */
+      param.X->numel(),            /* len */
+      param.X->data<float>(),      /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
+}
+
+void SqrtCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::activation_forward(
+      ctx.GetRawContext(),         /* context */
+      xdnn::Activation_t::SQRT,    /* type */
+      param.X->numel(),            /* len */
+      param.X->data<float>(),      /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
+}
+
+void PowCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::activation_forward(
+      ctx.GetRawContext(),         /* context */
+      xdnn::Activation_t::ACT_POW, /* type */
+      param.X->numel(),            /* len */
+      param.X->data<float>(),      /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
+}
+
+void SignCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::activation_forward(
+      ctx.GetRawContext(),         /* context */
+      xdnn::Activation_t::SIGN,    /* type */
+      param.X->numel(),            /* len */
+      param.X->data<float>(),      /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
+}
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
@@ -83,6 +148,36 @@ REGISTER_LITE_KERNEL(sigmoid,
                      kNCHW,
                      paddle::lite::kernels::xpu::SigmoidCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    abs, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::AbsCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    square, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SquareCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    sqrt, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SqrtCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    pow, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PowCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    sign, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SignCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

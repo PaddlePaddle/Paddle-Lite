@@ -48,6 +48,51 @@ class SigmoidCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~SigmoidCompute() = default;
 };
 
+class AbsCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~AbsCompute() = default;
+};
+
+class SquareCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~SquareCompute() = default;
+};
+
+class SqrtCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~SqrtCompute() = default;
+};
+
+class PowCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~PowCompute() = default;
+};
+
+class SignCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~SignCompute() = default;
+};
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite

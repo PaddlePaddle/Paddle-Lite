@@ -29,6 +29,7 @@
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
+#include "lite/core/mir/graph_visualize_pass.h"
 
 namespace paddle {
 namespace lite {
@@ -104,12 +105,16 @@ class Optimizer {
            "lite_elementwise_activation_fuse_pass",  //
 #endif
            "identity_dropout_eliminate_pass",
+           "__xpu__conv2d_fuse_pass",
+           //"__xpu__conv2d_link_max_pass",
            "__xpu__resnet_fuse_pass",
            "__xpu__resnet_cbam_fuse_pass",
            "__xpu__mmdnn_fuse_pass",
            "__xpu__multi_encoder_fuse_pass",
            "__xpu__embedding_with_eltwise_add_fuse_pass",
            "__xpu__fc_fuse_pass",
+           "__xpu__vis_meanstd_fuse_pass",
+           "__xpu__vis_moment_fuse_pass",
            "quantized_op_attributes_inference_pass",  // Only for fully
                                                       // quantized model, infer
                                                       // the output scale and
@@ -194,9 +199,17 @@ class Optimizer {
   std::unique_ptr<RuntimeProgram> GenRuntimeProgram() {
     auto pass = mir::PassManager::Global().LookUp<mir::GenerateProgramPass>(
         "generate_program_pass");
+    //auto before_str = Visualize(graphs_.get());
+    //printf("!!!!!before_str = %s\n", before_str.c_str());
     for (auto& graph : graphs_) {
+      auto before_str = Visualize(graph.get());
+      printf("!!!!!before_str = %s\n", before_str.c_str());
       pass->Apply(graph);
+      auto after_str = Visualize(graph.get());
+      printf("!!!!!after_str = %s\n", after_str.c_str());
     }
+    //auto after_str = Visualize(graphs_.get());
+    //printf("!!!!!after_str = %s\n", after_str.c_str());
     auto program = pass->GenProgram();
     CHECK(exec_scope_);
     program->set_exec_scope(exec_scope_);

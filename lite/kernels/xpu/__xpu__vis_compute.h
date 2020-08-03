@@ -21,46 +21,14 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class XPUVisCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ElementwiseParam;
+  using param_t = operators::XPUVisParam;
 
   virtual void Run();
 
-  virtual ~ElementwiseAddCompute() = default;
+  virtual ~XPUVisCompute() = default;
 };
-
-class ElementwiseSubCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  virtual void Run();
-
-  virtual ~ElementwiseSubCompute() = default;
-};
-
-class ElementwiseDivCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  virtual void Run();
-
-  virtual ~ElementwiseDivCompute() = default;
-};
-
-class ElementwiseMulCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  virtual void Run();
-
-  virtual ~ElementwiseMulCompute() = default;
-};
-
 
 }  // namespace xpu
 }  // namespace kernels

@@ -76,6 +76,59 @@ void ElementwiseSubCompute::Run() {
   }
 }
 
+void ElementwiseDivCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  auto& x_dims = param.X->dims().data();
+  auto& y_dims = param.Y->dims();
+  int axis = param.axis;
+  if (param.axis == -1) {
+    axis = x_dims.size() - y_dims.size();
+  }
+  int iter = std::accumulate(
+      x_dims.begin(), x_dims.begin() + axis, 1, std::multiplies<int>());
+  int stride = param.Y->numel();
+
+  for (int i = 0; i < iter; ++i) {
+    const float* x_ptr = param.X->data<float>() + i * stride;
+    const float* y_ptr = param.Y->data<float>();
+    float* o_ptr = param.Out->mutable_data<float>(TARGET(kXPU)) + i * stride;
+    int r = xdnn::elementwise_div(ctx.GetRawContext(), /* context */
+                                  x_ptr,               /* x */
+                                  y_ptr,               /* y */
+                                  o_ptr,               /* z */
+                                  stride /* len */);
+    CHECK_EQ(r, 0);
+  }
+}
+
+void ElementwiseMulCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  auto& x_dims = param.X->dims().data();
+  auto& y_dims = param.Y->dims();
+  int axis = param.axis;
+  if (param.axis == -1) {
+    axis = x_dims.size() - y_dims.size();
+  }
+  int iter = std::accumulate(
+      x_dims.begin(), x_dims.begin() + axis, 1, std::multiplies<int>());
+  int stride = param.Y->numel();
+
+  for (int i = 0; i < iter; ++i) {
+    const float* x_ptr = param.X->data<float>() + i * stride;
+    const float* y_ptr = param.Y->data<float>();
+    float* o_ptr = param.Out->mutable_data<float>(TARGET(kXPU)) + i * stride;
+    int r = xdnn::elementwise_mul(ctx.GetRawContext(), /* context */
+                                  x_ptr,               /* x */
+                                  y_ptr,               /* y */
+                                  o_ptr,               /* z */
+                                  stride /* len */);
+    CHECK_EQ(r, 0);
+  }
+}
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
@@ -102,3 +155,26 @@ REGISTER_LITE_KERNEL(elementwise_sub,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_div,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::ElementwiseDivCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mul,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::ElementwiseMulCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+

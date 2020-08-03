@@ -29,6 +29,10 @@ lite_cc_library(mir_passes
       fusion/__xpu__embedding_with_eltwise_add_fuse_pass.cc
       fusion/__xpu__fc_fuse_pass.cc
       fusion/__xpu__mmdnn_fuse_pass.cc
+      fusion/__xpu__conv2d_fuse_pass.cc
+      fusion/__xpu__conv2d_link_max_pass.cc
+      fusion/__xpu__vis_meanstd_fuse_pass.cc
+      fusion/__xpu__vis_moment_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
