@@ -45,17 +45,14 @@ bool SequencePoolGradOp::AttachImpl(const cpp::OpDesc &opdesc,
   param_.X = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
   CHECK(param_.X);
-  if (!opdesc.Input("Out@GRAD").empty()) {
-    auto *out_grad_var = scope->FindVar(opdesc.Input("Out@GRAD").front());
-    CHECK(out_grad_var);
-    param_.Out_Grad = &out_grad_var->Get<Tensor>();
-  }
+  auto *out_grad_var = scope->FindVar(opdesc.Input("Out@GRAD").front());
+  CHECK(out_grad_var);
+  param_.Out_Grad = &out_grad_var->Get<Tensor>();
 
-  if (!opdesc.Output("X@GRAD").empty()) {
-    auto *x_grad_var = scope->FindVar(opdesc.Output("X@GRAD").front());
-    CHECK(x_grad_var);
-    param_.X_Grad = x_grad_var->GetMutable<Tensor>();
-  }
+  auto *x_grad_var = scope->FindVar(opdesc.Output("X@GRAD").front());
+  CHECK(x_grad_var);
+  param_.X_Grad = x_grad_var->GetMutable<Tensor>();
+
   param_.pool_type = opdesc.GetAttr<std::string>("pooltype");
   return true;
 }

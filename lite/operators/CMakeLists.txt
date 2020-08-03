@@ -97,7 +97,6 @@ add_operator(reduce_prod_op_lite extra SRCS reduce_prod_op.cc DEPS ${op_DEPS})
 add_operator(sequence_reshape_op_lite extra SRCS sequence_reshape_op.cc DEPS ${op_DEPS})
 add_operator(sequence_reverse_op_lite extra SRCS sequence_reverse_op.cc DEPS ${op_DEPS})
 add_operator(sequence_pool extra SRCS sequence_pool_op.cc DEPS ${op_DEPS})
-add_operator(sequence_pool_grad extra SRCS sequence_pool_grad_op.cc DEPS ${op_DEPS})
 add_operator(sequence_conv extra SRCS sequence_conv_op.cc DEPS ${op_DEPS})
 add_operator(sequence_pool_concat extra SRCS sequence_pool_concat_op.cc DEPS ${op_DEPS})
 add_operator(reduce_sum_op_lite extra SRCS reduce_ops.cc DEPS ${op_DEPS})
@@ -165,6 +164,7 @@ add_operator(activation_grad_ops train SRCS activation_grad_ops.cc DEPS ${op_DEP
 add_operator(elementwise_grad_op train SRCS elementwise_grad_ops.cc DEPS ${op_DEPS})
 add_operator(mul_grad_op train SRCS mul_grad_op.cc DEPS ${op_DEPS})
 add_operator(sgd_op train SRCS sgd_op.cc DEPS ${op_DEPS})
+add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc DEPS ${op_DEPS})
 
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS})

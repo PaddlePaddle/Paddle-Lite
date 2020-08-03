@@ -31,11 +31,12 @@ using grad_kernel_t = SequencePoolGradCompute;
 
 void sequence_pool_grad_common(grad_param_t* param,  // NOLINT
                                float* out_grad,      // NOLINT
+                               int64_t* index_grad,
                                float* x_grad,        // NOLINT
                                std::string pool_type) {
   const auto lod = param->X->lod()[0];
   int64_t width = param->X->numel() / param->X->dims()[0];
-  if (pool_type == "SUM" || pool_type == "MAX" || pool_type == "MIN") {
+  if (pool_type == "SUM") {
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; i++) {
       int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
       float* out_grad_ptr = out_grad + i * width;
@@ -97,17 +98,56 @@ void sequence_pool_grad_common(grad_param_t* param,  // NOLINT
         }
       }
     }
-  } else if (pool_type == "FIRST" || pool_type == "LAST") {
+  } else if (pool_type == "Max" || pool_type == "Min") {
+    for (int i = 0; i < static_cast<int>(lod.size()) - 1; i++) {
+      int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
+      const float* out_grad_ptr = out_grad + i * width;
+      const int64_t* index_grad_ptr = index_grad + i * width;
+      float* x_grad_ptr = x_grad + lod[i] * width;
+      float alpha = 1.0 / sqrtf(height);
+      if (height > 0) {
+        for (int w = 0; w < width; w++) {
+          for (int h = 0; h < height; h++) {
+            if (h == index_grad_ptr[w]) {
+              x_grad_ptr[h * width + w] = out_grad_ptr[w];
+            } else {
+              x_grad_ptr[h * width + w] = 0.f;
+            }
+          }
+        }
+      }
+    }
+  } else if (pool_type == "FIRST") {
     for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
       int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
       const float* out_grad_ptr = out_grad + i * width;
       float* x_grad_ptr = x_grad + lod[i] * width;
       if (height > 0) {
-        for (int h = 0; h < height; h++) {
-          for (int w = 0; w < width; w++) {
-            x_grad_ptr[w] = out_grad_ptr[w];
+        for (int w = 0; w < width; w++) {
+          for (int h = 0; h < height; h++) {
+            if (h == 0) {
+              x_grad_ptr[h * width + w] = out_grad_ptr[w];
+            } else {
+              x_grad_ptr[h * width + w] = 0.f;
+            }
           }
-          x_grad_ptr += width;
+        }
+      }
+    }
+  } else if (pool_type == "LAST") {
+    for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
+      int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
+      const float* out_grad_ptr = out_grad + i * width;
+      float* x_grad_ptr = x_grad + lod[i] * width;
+      if (height > 0) {
+        for (int w = 0; w < width; w++) {
+          for (int h = 0; h < height; h++) {
+            if (h == height - 1) {
+              x_grad_ptr[h * width + w] = out_grad_ptr[w];
+            } else {
+              x_grad_ptr[h * width + w] = 0.f;
+            }
+          }
         }
       }
     }
@@ -152,11 +192,14 @@ class SequencePoolGradTester {
   void run_forward(param_t* param,
                    kernel_t* kernel,
                    const std::vector<float>& in_vec,
+                   int64_t* out_index_vec,
                    float* out_vec) {
     Tensor x;
     Tensor output;
+    Tensor index;
     x.Resize(dims_);
     output.Resize(out_dims_);
+    index.Resize(out_dims_);
     auto* x_data = x.mutable_data<float>();
     for (int i = 0; i < dims_.production(); i++) {
       x_data[i] = in_vec[i];
@@ -165,11 +208,14 @@ class SequencePoolGradTester {
     param->X = &x;
     param->pool_type = pool_type_;
     param->Out = &output;
+    param->MaxIndex = &index;
     kernel->SetParam(*param);
     kernel->Launch();
-    auto* output_data = output.mutable_data<float>();
+    auto* output_data = output.data<float>();
+    auto* output_index = index.data<int64_t>();
     for (int i = 0; i < output.numel(); i++) {
       out_vec[i] = output_data[i];
+      out_index_vec[i] =  output_index[i];
     }
   }
 
@@ -177,27 +223,33 @@ class SequencePoolGradTester {
                     grad_kernel_t* kernel,
                     const std::vector<float>& in_vec,
                     const std::vector<float>& out_grad_vec,
+                    const std::vector<int64_t>& out_index_grad_vec,
                     float* in_grad_vec) {
     Tensor x;
     Tensor x_grad;
     Tensor out_grad;
+    Tensor out_index_grad;
     x.Resize(dims_);
     x.set_lod(lod_);
     // backword
     x_grad.Resize(dims_);
     out_grad.Resize(out_dims_);
+    out_index_grad.Resize(out_dims_);
     auto* x_data = x.mutable_data<float>();
     auto* out_grad_data = out_grad.mutable_data<float>();
+    auto* out_index_grad_data = out_index_grad.mutable_data<int64_t>();
 
     for (int i = 0; i < dims_.production(); i++) {
       x_data[i] = in_vec[i];
     }
     for (int i = 0; i < out_dims_.production(); i++) {
       out_grad_data[i] = out_grad_vec[i];
+      out_index_grad_data[i] = out_index_grad_vec[i];
     }
     param->X = &x;
     param->X_Grad = &x_grad;
     param->Out_Grad = &out_grad;
+    param->MaxIndex_Grad = &out_index_grad;
     param->pool_type = pool_type_;
     kernel->SetParam(*param);
     kernel->Launch();
@@ -214,22 +266,22 @@ class SequencePoolGradTester {
     out_dims_[0] = lod_[0].size() - 1;
     std::vector<float> x(dims_.production());
     std::vector<float> out(out_dims_.production());
+    std::vector<int64_t> index(out_dims_.production());
     for (int i = 0; i < dims_.production(); i++) {
       x[i] = static_cast<float>(i % 3 - 2.0) / 2.0 * 0.333 +
              static_cast<float>(i % 19 - 10.0) / 10.0 * 0.333 +
              static_cast<float>(i % 39 - 20.0) / 20.0 * 0.333 + 0.001213;
     }
     LOG(INFO) << "run_forward:";
-    this->run_forward(&param_, &kernel_, x, out.data());
+    this->run_forward(&param_, &kernel_, x, out.data(), index.data());
 
     std::vector<float> out_grad(out_dims_.production());
     std::vector<float> x_grad(dims_.production());
     for (int i = 0; i < out_dims_.production(); i++) {
       out_grad[i] = 1.0;
-      x_grad[i] = 1.0;
     }
     LOG(INFO) << "run_backward:";
-    this->run_backward(&grad_param_, &grad_kernel_, x, out_grad, x_grad.data());
+    this->run_backward(&grad_param_, &grad_kernel_, x, out_grad, index, x_grad.data());
 
     // get numeric gradient
     std::vector<float> x_delta(dims_.production());
@@ -240,7 +292,7 @@ class SequencePoolGradTester {
     grad_param_.X = &tensor_x;
     LOG(INFO) << "sequence_pool_grad_common";
     sequence_pool_grad_common(
-        &grad_param_, out_grad.data(), x_delta.data(), pool_type_);
+        &grad_param_, out_grad.data(), index.data(), x_delta.data(), pool_type_);
 
     for (int i = 0; i < dims_.production(); i++) {
       EXPECT_NEAR(x_grad[i], x_delta[i], max_grad_delta);
