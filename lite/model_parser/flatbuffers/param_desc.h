@@ -167,6 +167,7 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
     raw_buf->UnPackTo(&desc_);
     SyncParams();
   }
+
   const ParamDescReadAPI* GetParamDesc(size_t idx) const override {
     return &params_[idx];
   }
