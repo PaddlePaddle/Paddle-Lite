@@ -218,7 +218,7 @@ class PoolingPE : public PE {
       compute();
       return true;
     }
-    param_.input->syncToDevice();
+    // param_.input->syncToDevice();
     if (param_.globalPooling) {
       inplace_.relu_enable = false;
       inplace_.leaky_relu_enable = false;
@@ -230,7 +230,7 @@ class PoolingPE : public PE {
       int kernel_height = param_.kernelSize[1];
       int kernel_width = param_.kernelSize[0];
       globalPoolArgs.global_pool_factor =
-          fp32_2_fp16(1.0f / (kernel_height * kernel_width));
+          float_to_half(1.0f / (kernel_height * kernel_width));
       config_global_pool(globalPoolArgs);
     }
     int ret = (compute_fpga_pool(param_.poolingArgs) == 0);
@@ -241,7 +241,7 @@ class PoolingPE : public PE {
       inplace_.sigmoid_enable = false;
       inplace_.global_pool_en = false;
       config_inplace(inplace_);
-      globalPoolArgs.global_pool_factor = fp32_2_fp16(0);
+      globalPoolArgs.global_pool_factor = float_to_half(0);
       config_global_pool(globalPoolArgs);
     }
 

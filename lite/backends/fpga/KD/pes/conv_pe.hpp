@@ -173,6 +173,7 @@ class ConvPE : public PE {
         param_.input->shape().channel() >= 2048) {
       use_cpu_ = true;
     }
+
     if (!use_cpu_) {
       param_.filter->releaseData();
     }
@@ -223,7 +224,9 @@ class ConvPE : public PE {
     }
     delete[] mi;
     float_output.flush();
+    output->flush();
     output->copyFrom(&float_output);
+    output->invalidate();
   }
 
   bool dispatch() {
@@ -231,7 +234,7 @@ class ConvPE : public PE {
       cpu_compute();
       return true;
     }
-
+    inplace_.global_pool_en = false;
     if (param_.activeParam.type == TYPE_RELU) {
       inplace_.relu_enable = true;
     } else if (param_.activeParam.type == TYPE_RELU6) {
@@ -271,9 +274,10 @@ class ConvPE : public PE {
       inplace_.leaky_relu_enable = false;
       inplace_.relu6_enable = false;
       inplace_.sigmoid_enable = false;
+      inplace_.global_pool_en = false;
       config_inplace(inplace_);
 
-      if (inplace_.leaky_relu_enable) {
+      if (param_.activeParam.type == TYPE_LEAKY_RELU) {
         activeParamterArgs.type = TYPE_LEAKY_RELU;
         activeParamterArgs.leaky_relu_factor = float_to_half(0);
         config_activation(activeParamterArgs);
@@ -282,7 +286,6 @@ class ConvPE : public PE {
 
     size_t size = params.size();
     if (split_axis == 0 && ret == 0 && size > 1 && param_.deconv == false) {
-      // std::cout << "concat size:" << size << std::endl;
       concatPE_.dispatch();
     }
     if (split_axis == 1 && ret == 0 && size > 1) {
@@ -309,8 +312,6 @@ class ConvPE : public PE {
   }
 
   ConvParam& param() { return param_; }
-
-  ~ConvPE() {}
 
  private:
   bool use_cpu_ = false;

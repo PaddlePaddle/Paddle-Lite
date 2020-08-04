@@ -72,6 +72,8 @@ class PlaceHolder {
   explicit PlaceHolder(size_t size) {
     size_ = size;
     data_ = fpga_malloc(size_);
+    memset(data_, 0, size);
+    fpga_flush(data_, size);
   }
 
   void* data() { return data_; }
@@ -395,58 +397,36 @@ class Tensor {
     // return;
     invalidate();
 
-    Tensor* t;
-
+    Tensor* t = this;
+    Tensor unaligned;
     if (this->aligned_) {
-      Tensor unaligned;
       unaligned.dataType_ = this->dataType_;
       unaligned.aligned_ = this->aligned_;
       unaligned.mutableData<void>(dataType_, *shape_);
       unaligned.copyFrom(this);
       unaligned.unalignImage();
       unaligned.syncToCPU();
-
-      std::ofstream ofs;
-      ofs.open(path);
-      for (int i = 0; i < shape_->numel(); i++) {
-        float value = 0;
-        switch (dataType_) {
-          case FP32:
-            value = unaligned.data<float>()[i];
-            break;
-          case FP16:
-            value = half_to_float(unaligned.data<float16>()[i]);
-            break;
-          case INT32:
-            value = unaligned.data<int32_t>()[i];
-            break;
-          case INT8:
-            value = unaligned.data<int8_t>()[i];
-            break;
-          default:
-            std::cout << "Unknown type!! \n";
-            exit(-1);
-        }
-        ofs << value << std::endl;
-      }
-      ofs.close();
-      return;
+      t = &unaligned;
     }
 
     std::ofstream ofs;
-
     ofs.open(path);
+    ofs << "type:" << dataType_ << " scale: " << scale()[0] << " id:" << id_
+        << std::endl;
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
       switch (dataType_) {
         case FP32:
-          value = data<float>()[i];
+          value = t->data<float>()[i];
           break;
         case FP16:
-          value = half_to_float(data<float16>()[i]);
+          value = half_to_float(t->data<float16>()[i]);
+          break;
+        case INT32:
+          value = t->data<int32_t>()[i];
           break;
         case INT8:
-          value = data<int8_t>()[i];
+          value = t->data<int8_t>()[i];
           break;
         case INT32:
           value = data<int32_t>()[i];
@@ -455,11 +435,12 @@ class Tensor {
           value = data<int64_t>()[i];
           break;
         default:
-          break;
+          std::cout << "Unknown type!! \n";
+          exit(-1);
       }
-      // if (i > 100) {
-      //   break;
-      // }
+      if (i > 100) {
+        // break;
+      }
       ofs << value << std::endl;
     }
     ofs.close();

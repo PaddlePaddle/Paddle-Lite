@@ -19,6 +19,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
@@ -39,9 +40,7 @@ class Monitor {
     auto op = const_cast<OpLite*>(inst.op());
     auto op_type = op->Type();
 
-    VLOG(4) << "Running op:" << op_type << " on "
-            << op->kernel_place().DebugString();
-  }
+    VLOG(4) << "Running op:" << op_type << " on " << inst.kernel()->name();
 
   void postRun(Instruction& inst) {  // NOLINT
 
@@ -55,6 +54,29 @@ class Monitor {
     // auto tensor = var->Get<lite::Tensor>();
     // VLOG(4) << "\n in_tensor:::" << name;
     // }
+    auto op_info = op->op_info();
+    auto in_names = op_info->input_names();
+    for (auto name : in_names) {
+      // auto *var = op->scope()->FindVar(name);
+      // CHECK(var) << "no variable called " << name << " found";
+      // auto tensor = var->Get<lite::Tensor>();
+    }
+  }
+
+  void postRun(Instruction& inst) {  // NOLINT
+    auto op = const_cast<OpLite*>(inst.op());
+    auto op_info = op->op_info();
+    auto in_names = op_info->input_names();
+
+    static std::vector<std::string> tensor_names = {};
+
+    auto should_print = [tensor_names](std::string& name) -> bool {
+      if (std::find(tensor_names.begin(), tensor_names.end(), name) !=
+          tensor_names.end()) {
+        return true;
+      }
+      return false;
+    };
 
     auto out_args = op_info->output_names();
     for (auto name : out_args) {
@@ -72,6 +94,8 @@ class Monitor {
           }
           VLOG(4) << "\n out_tensor:::" << name;
           // tensor->ZynqTensor()->saveToFile(name, true);
+        if (tensor->ZynqTensor() != nullptr && should_print(name)) {
+          tensor->ZynqTensor()->saveToFile(name, true);
         }
       }
     }

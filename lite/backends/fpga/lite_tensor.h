@@ -78,10 +78,12 @@ class DDimLite {
   }
 
   friend bool operator!=(const DDimLite &a, const DDimLite &b) {
-    return !(a == b);
+    if (a.size() != b.size()) return true;
+    for (size_t i = 0; i < a.size(); i++) {
+      if (a[i] != b[i]) return true;
+    }
+    return false;
   }
-
-  ~DDimLite() {}
 
  private:
   std::vector<value_type> data_;
@@ -95,7 +97,7 @@ class TensorLite {
   TensorLite() : buffer_(std::make_shared<Buffer>()) {}
 
   template <typename DType, typename DimT, TargetType Target>
-  void Assign(DType *data, const DimT &dim) {
+  void Assign(const DType *data, const DimT &dim) {
     Resize(dim);
     auto *dst = mutable_data<DType, void>(Target);
     CopySync<Target>(
@@ -113,7 +115,7 @@ class TensorLite {
   }
 
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
-  void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
+  void Resize(const std::vector<int64_t> &x) { dims_.ConstructFrom(x); }
 
   const DDimLite &dims() const { return dims_; }
   int64_t numel() const { return dims_.production(); }
@@ -149,6 +151,13 @@ class TensorLite {
     return buffer_->data();
   }  // TODO(chonwhite) delete buffer;
 
+  void clear() {
+    // zynq_tensor_->releaseData();
+    if (zynq_tensor_) {
+      memset(zynq_tensor_->data<void>(), 0, zynq_tensor_->memorySize());
+    }
+  }
+
   size_t data_size() const { return this->dims().production(); }
 
   size_t memory_size() const { return zynq_tensor_->memorySize(); }
@@ -163,13 +172,6 @@ class TensorLite {
   void ShareDataWith(const TensorLite &other);
 
   void CopyDataFrom(const TensorLite &other);
-
-  void clear() {
-    // zynq_tensor_->releaseData();
-    if (zynq_tensor_) {
-      memset(zynq_tensor_->data<void>(), 0, zynq_tensor_->memorySize());
-    }
-  }
 
   template <typename T>
   TensorLite Slice(int64_t begin, int64_t end) const;
@@ -202,7 +204,6 @@ class TensorLite {
   // set values of precision_ and persistable_ after updating it.
   // If your tensor is just a temp tensor, such as activations,
   // you can ignore these two attributes.
-  // PrecisionType precision_{PrecisionType::kUnk};
   PrecisionType precision_{PrecisionType::kFloat};
   bool persistable_{false};
 
