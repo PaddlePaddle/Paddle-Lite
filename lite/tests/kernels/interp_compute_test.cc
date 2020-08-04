@@ -451,7 +451,7 @@ TEST(Interp, precision) {
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // use fp16 in npu
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
