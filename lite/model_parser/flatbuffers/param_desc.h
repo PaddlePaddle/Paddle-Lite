@@ -86,8 +86,9 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
 
   void InitParams() {
     desc_ = proto::GetCombinedParamsDesc(buf_.data());
-    params_.reserve(GetParamsSize());
-    for (size_t idx = 0; idx < GetParamsSize(); ++idx) {
+    size_t params_size = desc_->params()->size();
+    params_.reserve(params_size);
+    for (size_t idx = 0; idx < params_size; ++idx) {
       params_.push_back(ParamDescView(desc_->params()->Get(idx)));
     }
   }
@@ -114,6 +115,7 @@ class ParamDesc : public ParamDescAPI {
   }
 
   explicit ParamDesc(proto::ParamDescT* desc) : desc_(desc) {
+    desc_->variable.Set(proto::ParamDesc_::LoDTensorDescT());
     lod_tensor_ = desc_->variable.AsLoDTensorDesc();
     CHECK(lod_tensor_);
   }
@@ -172,7 +174,8 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
   size_t GetParamsSize() const override { return desc_.params.size(); }
 
   ParamDescWriteAPI* AddParamDesc() override {
-    desc_.params.push_back(std::unique_ptr<proto::ParamDescT>());
+    desc_.params.push_back(
+        std::unique_ptr<proto::ParamDescT>(new proto::ParamDescT));
     SyncParams();
     return &params_[params_.size() - 1];
   }
