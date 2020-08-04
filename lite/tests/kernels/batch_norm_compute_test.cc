@@ -163,6 +163,7 @@ TEST(BatchNorm, precision) {
   place = TARGET(kNPU);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2; // precision_mode default is force_fp16 in Ascend310
 #else
   return;
 #endif
