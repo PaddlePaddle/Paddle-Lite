@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "lite/operators/batch_norm_op.h"
 #include "lite/kernels/huawei_ascend_npu/bridges/graph.h"
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
@@ -61,7 +60,7 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   use_global_stats = is_test || use_global_stats;
   if (!use_global_stats) {
     LOG(WARNING)
-      << "[HUAWEI_ASCEND_NPU] Only use_global_stats=true is supported";
+        << "[HUAWEI_ASCEND_NPU] Only use_global_stats=true is supported";
   }
 
   // Input node
@@ -100,10 +99,8 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   batch_norm_op->set_attr_use_global_stats(use_global_stats);
   batch_norm_op->set_attr_mode(mode);
 
-  TENSOR_UPDATE_INPUT(batch_norm_op,
-                      x,
-                      ge::FORMAT_NCHW,
-                      CvtPrecisionType(x_node->precision()));
+  TENSOR_UPDATE_INPUT(
+      batch_norm_op, x, ge::FORMAT_NCHW, CvtPrecisionType(x_node->precision()));
   TENSOR_UPDATE_INPUT(batch_norm_op,
                       mean,
                       ge::FORMAT_NCHW,
