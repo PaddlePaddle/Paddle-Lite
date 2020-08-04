@@ -32,10 +32,6 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Converting " + op_type + "...";
 
-  //               X - Mean
-  //       -------------------------- x Scale + Bias
-  //       Sqrt(Variance^2 + epsilon)
-
   // Get input vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
@@ -52,21 +48,22 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scale_name = op_info->Input("Scale").front();
   auto scale = scope->FindMutableTensor(scale_name);
 
-  float momentum = op_info->GetAttr<float>("momentum");
-  float epsilon = op_info->GetAttr<float>("epsilon");
-
   // Get output vars
   auto y_name = op_info->Output("Y").front();
 
+  // Get other attr
+  float epsilon = op_info->GetAttr<float>("epsilon");
   int mode = 1;  // bnScale, bnBias tensor dims are 1xCx1x1
-
+  bool is_test = !op_info->HasAttr("is_test") ||
+                  op_info->GetAttr<bool>("is_test");
   bool use_global_stats = !op_info->HasAttr("use_global_stats") ||
                            op_info->GetAttr<bool>("use_global_stats");
-// if (!use_global_stats) {
-//   LOG(WARNING) << "[NPU] Only use_global_stats=true is supported by HiAI DDK";
-// }
+  use_global_stats = is_test || use_global_stats;
+  if (!use_global_stats) {
+     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Only use_global_stats=true is supported";
+  }
 
-    // Input node
+  // Input node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
@@ -80,13 +77,13 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto mean_node = graph->Add(mean_name, *mean);
   auto variance_node = graph->Add(variance_name, *variance);
 
-  // new momentum_node
+  // new momentum_node, size=1
   auto* momentum_tensor = scope->NewTensor(x_name + "/momentum");
   momentum_tensor->Resize({1});
   momentum_tensor->set_persistable(true);
-  //momentum_tensor->set_precision(PrecisionType::kFloat);
+  momentum_tensor->set_precision(PrecisionType::kFloat);
   auto momentum_tensor_data = momentum_tensor->mutable_data<float>();
-  momentum_tensor_data[0] = momentum;
+  momentum_tensor_data[0] = 1.;
   auto momentum_node = graph->Add(x_name + "/momentum", *momentum_tensor);
 
   // Batch Norm node
@@ -95,15 +92,41 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   batch_norm_op->set_input_x(*x_node->data());
   batch_norm_op->set_input_mean(*mean_node->data());
   batch_norm_op->set_input_variance(*variance_node->data());
-  batch_norm_op->set_input_momentum(*momentum_node->data());
   batch_norm_op->set_input_scale(*scale_node->data());
   batch_norm_op->set_input_offset(*bias_node->data());
+  batch_norm_op->set_input_momentum(*momentum_node->data());
   batch_norm_op->set_attr_epsilon(epsilon);
   batch_norm_op->set_attr_use_global_stats(use_global_stats);
   batch_norm_op->set_attr_mode(mode);
 
-  // TENSOR_UPDATE_INPUT(batch_norm_op, x, ge::FORMAT_NCHW, CvtPrecisionType(x_node->precision()));
-  // TENSOR_UPDATE_OUTPUT(batch_norm_op, y, ge::FORMAT_NCHW, CvtPrecisionType(batch_norm_node->precision()));
+  TENSOR_UPDATE_INPUT(batch_norm_op,
+                      x,
+                      ge::FORMAT_NCHW,
+                      CvtPrecisionType(x_node->precision()));
+  TENSOR_UPDATE_INPUT(batch_norm_op,
+                      mean,
+                      ge::FORMAT_NCHW,
+                      CvtPrecisionType(mean_node->precision()));
+  TENSOR_UPDATE_INPUT(batch_norm_op,
+                      variance,
+                      ge::FORMAT_NCHW,
+                      CvtPrecisionType(variance_node->precision()));
+  TENSOR_UPDATE_INPUT(batch_norm_op,
+                      scale,
+                      ge::FORMAT_NCHW,
+                      CvtPrecisionType(scale_node->precision()));
+  TENSOR_UPDATE_INPUT(batch_norm_op,
+                      offset,
+                      ge::FORMAT_NCHW,
+                      CvtPrecisionType(bias_node->precision()));
+  TENSOR_UPDATE_INPUT(batch_norm_op,
+                      momentum,
+                      ge::FORMAT_NCHW,
+                      CvtPrecisionType(momentum_node->precision()));
+  TENSOR_UPDATE_OUTPUT(batch_norm_op,
+                       y,
+                       ge::FORMAT_NCHW,
+                       CvtPrecisionType(batch_norm_node->precision()));
 
   return SUCCESS;
 }
