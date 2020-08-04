@@ -59,7 +59,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(dilations.size(), 2L);
   // Check depthwise mode
   bool is_depthwise_mode = (ic == groups && oc == groups && groups != 1);
-  auto weight_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
+  CHECK(op_info->HasInputScale(filter_name));
+  auto weight_scale = op_info->GetInputScale(filter_name);
 
   // for quantization
   bool enable_int8 = false;
@@ -71,9 +72,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   if (op_info->HasAttr("enable_int8")) {
     enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    input_scale = op_info->GetAttr<float>("input_scale");
+    CHECK(op_info->HasInputScale(input_name));
+    input_scale = op_info->GetInputScale(input_name)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    output_scale = op_info->GetAttr<float>("output_scale");
+    CHECK(op_info->HasOutputScale(output_name));
+    output_scale = op_info->GetOutputScale(output_name)[0];
 
     if (enable_int8) {
       precision = PRECISION(kInt8);
