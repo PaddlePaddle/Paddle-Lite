@@ -19,6 +19,7 @@
 #include <vector>
 #include "lite/model_parser/base/var_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "lite/model_parser/flatbuffers/traits.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
@@ -32,7 +33,7 @@ class VarDesc : public VarDescAPI {
   std::string Name() const override { return desc_->name()->str(); }
 
   VarDescAPI::Type GetType() const override {
-    return static_cast<VarDescAPI::Type>(desc_->type()->type());
+    return ConvertVarType(desc_->type()->type());
   }
 
   bool Persistable() const override { return desc_->persistable(); }
@@ -50,8 +51,7 @@ class VarDesc : public VarDescAPI {
 
   VarDescAPI::Type GetDataType() const {
     CHECK(GetType() == VarDescAPI::Type::LOD_TENSOR);
-    return static_cast<VarDescAPI::Type>(
-        desc_->type()->lod_tensor()->tensor()->data_type());
+    return ConvertVarType(desc_->type()->lod_tensor()->tensor()->data_type());
   }
 
  private:
