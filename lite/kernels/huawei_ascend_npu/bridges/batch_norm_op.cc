@@ -54,13 +54,14 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get other attr
   float epsilon = op_info->GetAttr<float>("epsilon");
   int mode = 1;  // bnScale, bnBias tensor dims are 1xCx1x1
-  bool is_test = !op_info->HasAttr("is_test") ||
-                  op_info->GetAttr<bool>("is_test");
+  bool is_test =
+      !op_info->HasAttr("is_test") || op_info->GetAttr<bool>("is_test");
   bool use_global_stats = !op_info->HasAttr("use_global_stats") ||
-                           op_info->GetAttr<bool>("use_global_stats");
+                          op_info->GetAttr<bool>("use_global_stats");
   use_global_stats = is_test || use_global_stats;
   if (!use_global_stats) {
-     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Only use_global_stats=true is supported";
+    LOG(WARNING)
+      << "[HUAWEI_ASCEND_NPU] Only use_global_stats=true is supported";
   }
 
   // Input node
@@ -136,6 +137,7 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(batch_norm,
-                         kHuaweiAscendNPU,
-                         paddle::lite::subgraph::huawei_ascend_npu::BatchNormConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    batch_norm,
+    kHuaweiAscendNPU,
+    paddle::lite::subgraph::huawei_ascend_npu::BatchNormConverter);
