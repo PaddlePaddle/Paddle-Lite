@@ -1287,6 +1287,13 @@ struct ExpandParam : ParamBase {
   std::vector<int> expand_times{};
 };
 
+/// ----------------------- expand as operators ----------------------
+struct ExpandAsParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Target{};
+  lite::Tensor* Out{};
+};
+
 /// ----------------------- matmul operators ----------------------
 struct MatMulParam : ParamBase {
   const lite::Tensor* X{};
