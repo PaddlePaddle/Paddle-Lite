@@ -12,35 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include "lite/backends/cuda/math/cudnn_softmax.h"
-#include "lite/core/kernel.h"
+#include "lite/backends/cuda/math/cudnn_helper.h"
+
+#include <string>
+#include <vector>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace cuda {
+namespace math {
 
-template <typename Dtype, PrecisionType Ptype>
-class SoftmaxCompute
-    : public KernelLite<TARGET(kCUDA), Ptype, DATALAYOUT(kNCHW)> {
- public:
-  using param_t = operators::SoftmaxParam;
+template <>
+cudnnDataType_t GetCudnnDataType<PRECISION(kFloat)>() {
+  return CUDNN_DATA_FLOAT;
+}
 
-  void PrepareForRun() override;
-  void Run() override;
-  virtual ~SoftmaxCompute() = default;
+template <>
+cudnnDataType_t GetCudnnDataType<PRECISION(kFP16)>() {
+  return CUDNN_DATA_HALF;
+}
 
- private:
-  lite::cuda::math::CudnnSoftmax<Dtype, Ptype> cudnn_softmax_;
-  lite::Tensor tmax_data_;
-  lite::Tensor tsum_data_;
-  size_t sharedmem_size_;
-  int max_dimsize_;
-  int axis_size_;
-};
-
+}  // namespace math
 }  // namespace cuda
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
