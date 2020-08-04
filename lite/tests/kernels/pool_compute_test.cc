@@ -322,6 +322,10 @@ void TestPoolPaddings(Place place, float abs_error = 2e-5) {
                    {1, 1},
                    {0, 0, 1, 1},
                    {2, 2});
+    // Ascend restriction: padT should equals padB, and padL should equals padR
+    if (place == TARGET(kHuaweiAscendNPU)) {
+      continue;
+    }
     TestPoolHelper(place,
                    abs_error,
                    {2, 3, 6, 7},
@@ -381,6 +385,9 @@ TEST(Pool, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else
