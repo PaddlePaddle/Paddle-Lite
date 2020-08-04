@@ -21,6 +21,7 @@
 
 #include "lite/model_parser/base/op_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "lite/model_parser/flatbuffers/traits.h"
 #include "lite/model_parser/flatbuffers/vector_view.h"
 #include "lite/utils/all.h"
 
@@ -96,13 +97,13 @@ class OpDesc : public OpDescAPI {
   OpDescAPI::AttrType GetAttrType(const std::string& name) const override {
     const auto& attr = desc_->attrs()->LookupByKey(name.c_str());
     CHECK(attr) << "Can not find attr: " << name;
-    return static_cast<OpDescAPI::AttrType>(attr->type());
+    return ConvertAttrType(attr->type());
   }
 
   OpDescAPI::AttrType GetAttrType(size_t idx) const {
     const auto& attr = desc_->attrs()->Get(idx);
     CHECK(attr);
-    return static_cast<OpDescAPI::AttrType>(attr->type());
+    return ConvertAttrType(attr->type());
   }
 
   std::vector<std::string> AttrNames() const override {

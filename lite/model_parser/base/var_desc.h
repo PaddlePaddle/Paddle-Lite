@@ -16,41 +16,11 @@
 
 #include <string>
 #include <vector>
+#include "lite/model_parser/base/traits.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
-
-enum class VarDataType {
-  // Pod Types
-  BOOL = 0,
-  INT16,
-  INT32,
-  INT64,
-  FP16,
-  FP32,
-  FP64,
-  // Tensor<size_t> is used in C++.
-  SIZE_T,
-  UINT8,
-  INT8,
-
-  // Other types that may need additional descriptions
-  LOD_TENSOR,
-  SELECTED_ROWS,
-  FEED_MINIBATCH,
-  FETCH_LIST,
-  STEP_SCOPES,
-  LOD_RANK_TABLE,
-  LOD_TENSOR_ARRAY,
-  PLACE_LIST,
-  READER,
-  // Any runtime decided variable type is raw
-  // raw variables should manage their own allocations
-  // in operators like nccl_op
-  RAW,
-  TUPLE
-};
 
 class VarDescReadAPI {
  public:
