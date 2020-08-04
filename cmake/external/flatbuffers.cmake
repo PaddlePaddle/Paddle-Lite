@@ -100,7 +100,7 @@ function(compile_flatbuffers_schema_to_cpp_opt TARGET SRC_FBS OPT)
             ${OPT}
             -o "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS_DIR}"
             "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS}"
-    DEPENDS flatbuffers
+    DEPENDS flatbuffers ${SRC_FBS}
     COMMENT "Run generation: '${GEN_HEADER}'")
   register_generated_output(${GEN_HEADER})
   add_custom_target(${TARGET} ALL DEPENDS ${GEN_HEADER})
@@ -108,7 +108,10 @@ endfunction()
 
 set(FRAMEWORK_FBS_DIR "lite/model_parser/flatbuffers")
 set(FRAMEWORK_SCHEMA_PATH "${FRAMEWORK_FBS_DIR}/framework.fbs")
+set(PARAM_SCHEMA_PATH "${FRAMEWORK_FBS_DIR}/param.fbs")
 compile_flatbuffers_schema_to_cpp_opt(framework_fbs_header ${FRAMEWORK_SCHEMA_PATH} "--no-includes;--gen-compare;--force-empty")
+compile_flatbuffers_schema_to_cpp_opt(param_fbs_header ${PARAM_SCHEMA_PATH} "--no-includes;--gen-compare;--force-empty")
 include_directories(${FLATBUFFERS_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS_DIR})
 
+add_custom_target(fbs_headers ALL DEPENDS framework_fbs_header param_fbs_header)
