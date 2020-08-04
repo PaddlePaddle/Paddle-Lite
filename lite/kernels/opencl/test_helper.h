@@ -19,7 +19,7 @@
 #define COMPUTE_RELATIVE_DIFF(res0, res1) abs(abs(res0 - res1) / (res1 + 1e-5))
 
 #define IS_DIFF_PASSED(res0, res1, threshold)        \
-  (((COMPTUE_ABS_DIFF(res0, res1) < threshold) ||    \
+  (((COMPUTE_ABS_DIFF(res0, res1) < threshold) ||    \
     (COMPUTE_RELATIVE_DIFF(res0, res1) < threshold)) \
        ? true                                        \
        : false)

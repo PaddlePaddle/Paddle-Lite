@@ -36,6 +36,10 @@
 #include "lite/backends/cuda/math/type_trans.h"
 #endif
 
+#ifdef LITE_ON_TINY_PUBLISH
+#include "lite/utils/replace_stl/stream.h"
+#endif
+
 namespace paddle {
 namespace lite {
 namespace profile {
@@ -88,19 +92,25 @@ class PrecisionProfiler {
   PrecisionProfiler() {}
 
   std::string GetSummaryHeader() {
+#ifdef LITE_ON_TINY_PUBLISH
+    using replace_stl::setw;
+#else
     using std::setw;
+#endif
     using std::left;
     using std::fixed;
     STL::stringstream ss;
     ss << "\n\n========================================= "
        << "Detailed Precision Profiler Summary "
-       << "=========================================" << std::endl;
+       << "========================================="
+       << "\n";
     ss << setw(45) << left << "operator:(kernel_info)"
        << " " << setw(70) << left << "output_tensor_name:(tensor_info)"
        << " " << setw(15) << left << "dims"
        << " " << setw(15) << left << "mean"
        << " " << setw(15) << left << "std_deviation"
-       << " " << setw(15) << left << "ave_grow_rate*" << std::endl;
+       << " " << setw(15) << left << "ave_grow_rate*"
+       << "\n";
 
     // write to file with path: `log_dir`
     if (log_dir_ != "") {
@@ -368,7 +378,11 @@ class PrecisionProfiler {
   }
 
   std::string GetInstPrecision(const Instruction* inst = nullptr) {
+#ifdef LITE_ON_TINY_PUBLISH
+    using replace_stl::setw;
+#else
     using std::setw;
+#endif
     using std::left;
     using std::fixed;
     STL::stringstream ss;
@@ -429,7 +443,7 @@ class PrecisionProfiler {
              << output_arg_info << " " << setw(15) << left << tout->dims()
              << " " << setw(15) << left << mean_str << " " << setw(15) << left
              << std_dev_str << " " << setw(15) << left << ave_grow_rate_str
-             << std::endl;
+             << "\n";
         } else if (type->IsTensorList()) {
           auto touts =
               op_scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
@@ -466,7 +480,7 @@ class PrecisionProfiler {
                << output_arg_info << " " << setw(15) << left << tout->dims()
                << " " << setw(15) << left << mean_str << " " << setw(15) << left
                << std_dev_str << " " << setw(15) << left << ave_grow_rate_str
-               << std::endl;
+               << "\n";
           }
         }
       }
