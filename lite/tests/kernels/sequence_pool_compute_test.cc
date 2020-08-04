@@ -25,6 +25,7 @@ class SequencePoolComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
+  std::string maxIndex_ = "maxIndex";
   LoD lod_{{0, 2, 5}};
   std::string pool_type_ = "SUM";
   DDim dims_{{5, 1}};
@@ -50,13 +51,17 @@ class SequencePoolComputeTester : public arena::TestCase {
     }
     out_dims[0] = x->lod()[0].size() - 1;
     auto* out = scope->NewTensor(output_);
+    auto* index = scope->NewTensor(maxIndex_);
     out->Resize(out_dims);
+    index->Resize(out_dims);
     auto* out_data = out->mutable_data<float>();
+    auto* index_data = index->mutable_data<int64_t>();
 
     for (int i = 0; i < seq_offset.size() - 1; i++) {
       int slice_num = seq_offset[i + 1] - seq_offset[i];
       const float* x_data_ptr = x_data + seq_offset[i] * width;
       float* out_data_ptr = out_data + i * width;
+      int64_t* index_data_ptr = index_data + i * width;
       if (slice_num > 0) {
         if (pool_type_ == "SUM") {
           for (int j = 0; j < width; ++j) {
@@ -89,24 +94,30 @@ class SequencePoolComputeTester : public arena::TestCase {
         } else if (pool_type_ == "MAX") {
           for (int j = 0; j < width; ++j) {
             float max = x_data_ptr[j];
+            int in = 0;
             for (int k = 1; k < slice_num; ++k) {
               float x_data_read = x_data_ptr[k * width + j];
               if (max < x_data_read) {
                 max = x_data_read;
+                in = k;
               }
             }
             out_data_ptr[j] = max;
+            index_data_ptr[j] = in;
           }
         } else if (pool_type_ == "MIN") {
           for (int j = 0; j < width; ++j) {
             float min = x_data_ptr[j];
+            int in = 0;
             for (int k = 1; k < slice_num; ++k) {
               float x_data_read = x_data_ptr[k * width + j];
               if (min > x_data_read) {
                 min = x_data_read;
+                in = k;
               }
             }
             out_data_ptr[j] = min;
+            index_data_ptr[j] = in;
           }
         } else if (pool_type_ == "FIRST") {
           memcpy(out_data_ptr, x_data_ptr, width * sizeof(float));
@@ -132,6 +143,7 @@ class SequencePoolComputeTester : public arena::TestCase {
     op_desc->SetType("sequence_pool");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
+    op_desc->SetOutput("MaxIndex", {maxIndex_});
     op_desc->SetAttr("pooltype", pool_type_);
   }
 

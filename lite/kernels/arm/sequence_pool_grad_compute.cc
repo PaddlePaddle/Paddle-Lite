@@ -75,5 +75,5 @@ REGISTER_LITE_KERNEL(sequence_pool_grad,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("MaxIndex", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("MaxIndex@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
