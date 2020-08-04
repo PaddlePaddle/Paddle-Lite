@@ -157,15 +157,15 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
   // abandoned these attributes to reduce model_size and run-time memory usage.
   // This process is operated on opt tool, so it will not increase
   // initialization time.
-  std::vector<std::string> skiped_attribute = {"op_callstack",
-                                               "op_namescope",
-                                               "op_role",
-                                               "workspace_size_MB",
-                                               "op_role_var"};
+  std::vector<std::string> skiped_attributes = {"op_callstack",
+                                                "op_namescope",
+                                                "op_role",
+                                                "workspace_size_MB",
+                                                "op_role_var"};
   for (const auto &attr_name : any_desc.AttrNames()) {
-    auto it =
-        std::find(skiped_attribute.begin(), skiped_attribute.end(), attr_name);
-    if (it == skiped_attribute.end()) {
+    auto it = std::find(
+        skiped_attributes.begin(), skiped_attributes.end(), attr_name);
+    if (it == skiped_attributes.end()) {
       auto type = any_desc.GetAttrType(attr_name);
       set_attr(attr_name, type);
     }
