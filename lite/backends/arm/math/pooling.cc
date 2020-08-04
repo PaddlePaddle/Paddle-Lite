@@ -2298,7 +2298,6 @@ void pooling3x3s2p1_max(const float* din,
 #endif
         }
 
-        // deal with right pad
         if (w_unroll_size <= 0) {
           float tmp = minval;
           for (int i = 0; i < 2; i++) {
