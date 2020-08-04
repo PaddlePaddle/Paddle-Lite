@@ -153,11 +153,19 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
         LOG(FATAL) << "Unsupported attr type found " << static_cast<int>(type);
     }
   };
-
+  // On arm backend, some op attributes have no effect on inference process, we
+  // abandoned these attributes to reduce model_size and run-time memory usage.
+  // This process is operated on opt tool, so it will not increase
+  // initialization time.
+  std::vector<std::string> skiped_attribute = {"op_callstack",
+                                               "op_namescope",
+                                               "op_role",
+                                               "workspace_size_MB",
+                                               "op_role_var"};
   for (const auto &attr_name : any_desc.AttrNames()) {
-    // note: since `op_callstack` attribute has no effect on inference process,
-    // we will not load it into op_desc.
-    if (attr_name != "op_callstack") {
+    auto it =
+        std::find(skiped_attribute.begin(), skiped_attribute.end(), attr_name);
+    if (it == skiped_attribute.end()) {
       auto type = any_desc.GetAttrType(attr_name);
       set_attr(attr_name, type);
     }
