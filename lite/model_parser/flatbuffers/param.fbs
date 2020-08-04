@@ -1,0 +1,37 @@
+include "framework.fbs";
+
+namespace paddle.lite.fbs.proto;
+
+table CombinedParamsDesc {
+  params:[paddle.lite.fbs.proto.ParamDesc];
+}
+
+namespace paddle.lite.fbs.proto.ParamDesc_;
+
+table LoDTensorDesc {
+  lod_level:int;
+  lod:[long];
+  dim:[long];
+  data_type:paddle.lite.fbs.proto.VarType_.Type;
+  data:[byte];
+}
+
+table VersionDesc {
+  version:int;
+  model_version:int;
+}
+
+union VariableDesc {
+  LoDTensorDesc
+}
+
+namespace paddle.lite.fbs.proto;
+
+table ParamDesc {
+  version:paddle.lite.fbs.proto.ParamDesc_.VersionDesc;
+  name:string (required, key);
+  variable:paddle.lite.fbs.proto.ParamDesc_.VariableDesc;
+}
+
+root_type paddle.lite.fbs.proto.ParamDesc;
+root_type paddle.lite.fbs.proto.CombinedParamsDesc;
