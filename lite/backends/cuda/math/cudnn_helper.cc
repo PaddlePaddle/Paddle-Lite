@@ -12,31 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/backends/cuda/math/cudnn_helper.h"
+
+#include <string>
+#include <vector>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace cuda {
+namespace math {
 
-class PriorBoxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::PriorBoxParam;
+template <>
+cudnnDataType_t GetCudnnDataType<PRECISION(kFloat)>() {
+  return CUDNN_DATA_FLOAT;
+}
 
-  void Run() override;
-  void ReInitWhenNeeded() override;
-  virtual ~PriorBoxCompute() = default;
+template <>
+cudnnDataType_t GetCudnnDataType<PRECISION(kFP16)>() {
+  return CUDNN_DATA_HALF;
+}
 
- private:
-  Tensor boxes_tmp_;
-  Tensor variances_tmp_;
-  DDim last_input_shape_;
-  DDim last_image_shape_;
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace math
+}  // namespace cuda
 }  // namespace lite
 }  // namespace paddle

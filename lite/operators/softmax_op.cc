@@ -52,6 +52,9 @@ bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   }
   CHECK(param_.x);
   CHECK(param_.output);
+  if (opdesc.HasAttr("use_cudnn")) {
+    param_.use_cudnn = opdesc.GetAttr<bool>("use_cudnn");
+  }
   return true;
 }
 
