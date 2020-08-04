@@ -2296,9 +2296,11 @@ void pooling3x3s2p1_max(const float* din,
                 "q11",
                 "q15");
 #endif
-        }
 
-        if (w_unroll_size <= 0) {
+          dr0 -= 8;
+          dr1 -= 8;
+          dr2 -= 8;
+        } else {
           float tmp = minval;
           for (int i = 0; i < 2; i++) {
             tmp = std::max(tmp, std::max(dr0[i], dr1[i]));
@@ -2310,11 +2312,6 @@ void pooling3x3s2p1_max(const float* din,
           dr1++;
           dr2++;
           dr_out++;
-
-        } else {
-          dr0 -= 8;
-          dr1 -= 8;
-          dr2 -= 8;
         }
 
         for (int w = 0; w < w_2 - 1; w += 1) {
