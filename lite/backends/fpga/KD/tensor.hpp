@@ -416,14 +416,11 @@ class Tensor {
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
       switch (dataType_) {
-        case FP32:
-          value = t->data<float>()[i];
-          break;
         case FP16:
           value = half_to_float(t->data<float16>()[i]);
           break;
-        case INT32:
-          value = t->data<int32_t>()[i];
+        case FP32:
+          value = t->data<float>()[i];
           break;
         case INT8:
           value = t->data<int8_t>()[i];
