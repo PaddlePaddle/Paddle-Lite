@@ -50,8 +50,11 @@ void SequencePoolGradCompute::Run() {
   } else if (pool_type == "MAX" || pool_type == "MIN") {
     lite::arm::math::seq_pool_max_grad(
         din_ptr, dout_grad_ptr, index_grad_ptr, x_grad_ptr, lod, width);
-  } else if (pool_type == "FIRST" || pool_type == "LAST") {
+  } else if (pool_type == "FIRST") {
     lite::arm::math::seq_pool_first_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
+  } else if (pool_type == "LAST") {
+    lite::arm::math::seq_pool_last_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else {
     LOG(ERROR) << " UNKNOWN sequence pool type";
