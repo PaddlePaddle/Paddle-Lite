@@ -55,9 +55,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
-  // Conv2D: groups must set to 1; DepthwiseConv2D: groups not supported.
-  CHECK_LE(groups, 1)
-      << "[HUAWEI_ASCEND_NPU] groups > 1 NOT supported, groups: " << groups;
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
   bool with_act =
       op_info->HasAttr("with_act") && op_info->GetAttr<bool>("with_act");
@@ -114,11 +111,18 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                    "filter width after dilation";
   }
 
+  // Check Restrictions: outChannel divide groups should equal to 0
+  CHECK_EQ(oc % groups, 0) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK "
+                              "restriction: out channel divice groups should "
+                              "equal to 0";
+
   // Check depthwise mode, and decide whether use DepthwiseConv2D Op
   bool use_depthwise_conv = false;
-  bool is_depthwise_mode = (ic == groups && oc == groups && groups != 1);
+  bool is_depthwise_mode = (ic == groups && oc == groups);
   if (is_depthwise_mode && dilations[0] == 1 && dilations[1] == 1) {
     use_depthwise_conv = true;
+    // Change filter shape {oc, ic/groups = 1, kh, kw} => { K=1, oc, kh, hw}
+    filter->Resize({1L, oc, filter_dims[2], filter_dims[3]});
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] DepthwiseConv2D op is used.";
   }
 
@@ -197,11 +201,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     conv_op->set_input_x(*input_node->data());
     conv_op->set_input_filter(*filter_node->data());
     conv_op->set_attr_strides(
-        ge::Operator::OpListInt({bs, ic, strides[0], strides[1]}));
+        ge::Operator::OpListInt({1, 1, strides[0], strides[1]}));
     conv_op->set_attr_pads(ge::Operator::OpListInt(
         {paddings[0], paddings[1], paddings[2], paddings[3]}));
     conv_op->set_attr_dilations(
-        ge::Operator::OpListInt({bs, ic, dilations[0], dilations[1]}));
+        ge::Operator::OpListInt({1, 1, dilations[0], dilations[1]}));
     conv_op->set_attr_groups(groups);
     conv_op->set_attr_data_format("NCHW");
     if (bias_node != nullptr && is_channel_bias) {

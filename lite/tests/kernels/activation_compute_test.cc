@@ -321,7 +321,7 @@ TEST(Activation_relu, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #else
   return;
 #endif
@@ -346,7 +346,7 @@ TEST(Activation_leaky_relu, precision) {
   place = TARGET(kARM);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #else
   return;
 #endif
@@ -431,7 +431,7 @@ TEST(Activation_sigmoid, precision) {
   place = TARGET(kARM);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #else
   return;
 #endif
@@ -467,7 +467,7 @@ TEST(Activation_tanh, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #else
   return;
 #endif
@@ -509,7 +509,7 @@ TEST(Activation_relu6, precision) {
   place = TARGET(kARM);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #else
   return;
 #endif
