@@ -2305,11 +2305,13 @@ void pooling3x3s2p1_max(const float* din,
             tmp = std::max(tmp, std::max(dr0[i], dr1[i]));
             tmp = std::max(tmp, dr2[i]);
           }
+
           dr_out[0] = tmp;
           dr0++;
           dr1++;
           dr2++;
           dr_out++;
+
         } else {
           dr0 -= 8;
           dr1 -= 8;
