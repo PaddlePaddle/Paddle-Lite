@@ -15,6 +15,7 @@
 #include "lite/backends/cuda/math/cudnn_conv.h"
 #include "lite/backends/cuda/math/activation.h"
 #include "lite/backends/cuda/math/conv_op_cache_cudnn.h"
+#include "lite/backends/cuda/math/cudnn_helper.h"
 #include "lite/backends/cuda/math/scale.h"
 #include "lite/backends/cuda/math/type_trans.h"
 
@@ -22,19 +23,6 @@ namespace paddle {
 namespace lite {
 namespace cuda {
 namespace math {
-
-template <PrecisionType PType>
-cudnnDataType_t GetDataType();
-
-template <>
-cudnnDataType_t GetDataType<PRECISION(kFloat)>() {
-  return CUDNN_DATA_FLOAT;
-}
-
-template <>
-cudnnDataType_t GetDataType<PRECISION(kFP16)>() {
-  return CUDNN_DATA_HALF;
-}
 
 template <typename T, PrecisionType Ptype_out>
 bool CudnnConv2D<T, Ptype_out>::create(const operators::ConvParam& param,
@@ -67,13 +55,13 @@ bool CudnnConv2D<T, Ptype_out>::create(const operators::ConvParam& param,
 
   CUDNN_CHECK(cudnnSetTensor4dDescriptor(this->input_desc_,
                                          CUDNN_TENSOR_NCHW,
-                                         GetDataType<Ptype_out>(),
+                                         GetCudnnDataType<Ptype_out>(),
                                          batch,
                                          ic,
                                          ih,
                                          iw));
   CUDNN_CHECK(cudnnSetFilter4dDescriptor(this->filter_desc_,
-                                         GetDataType<Ptype_out>(),
+                                         GetCudnnDataType<Ptype_out>(),
                                          CUDNN_TENSOR_NCHW,
                                          oc,
                                          ic / param.groups,
@@ -87,11 +75,11 @@ bool CudnnConv2D<T, Ptype_out>::create(const operators::ConvParam& param,
                                               dh,
                                               dw,
                                               CUDNN_CROSS_CORRELATION,
-                                              GetDataType<Ptype_out>()));
+                                              GetCudnnDataType<Ptype_out>()));
   CUDNN_CHECK(cudnnSetConvolutionGroupCount(this->conv_desc_, param.groups));
   CUDNN_CHECK(cudnnSetTensor4dDescriptor(this->output_desc_,
                                          CUDNN_TENSOR_NCHW,
-                                         GetDataType<Ptype_out>(),
+                                         GetCudnnDataType<Ptype_out>(),
                                          batch,
                                          oc,
                                          oh,
@@ -190,8 +178,11 @@ bool CudnnConv2D<T, Ptype_out>::create(const operators::ConvParam& param,
   if (param.bias) {
     int dim_bias[] = {1, oc, 1, 1};
     int stride_bias[] = {oc, 1, 1, 1};
-    cudnnSetTensorNdDescriptor(
-        this->bias_desc_, GetDataType<Ptype_out>(), 4, dim_bias, stride_bias);
+    cudnnSetTensorNdDescriptor(this->bias_desc_,
+                               GetCudnnDataType<Ptype_out>(),
+                               4,
+                               dim_bias,
+                               stride_bias);
   }
   return true;
 }
