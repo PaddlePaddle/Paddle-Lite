@@ -203,7 +203,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                              w_out,
                                              ctx);
           } else {
-            conv_depthwise_3x3s1p0_bias_s_relu(dout,
+            conv_depthwise_3x3s1p1_bias_s_relu(dout,
                                                din,
                                                weights,
                                                bias,
@@ -267,7 +267,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                               w_out,
                                               ctx);
           } else {
-            conv_depthwise_3x3s1p0_bias_s_relu6(dout,
+            conv_depthwise_3x3s1p1_bias_s_relu6(dout,
                                                 din,
                                                 weights,
                                                 bias,
@@ -331,7 +331,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                   w_out,
                                                   ctx);
           } else {
-            conv_depthwise_3x3s1p0_bias_s_leakyRelu(dout,
+            conv_depthwise_3x3s1p1_bias_s_leakyRelu(dout,
                                                     din,
                                                     weights,
                                                     bias,
@@ -2225,7 +2225,7 @@ void conv_depthwise_3x3s1p1_bias_relu6(float *dout,
 
   float32x4_t vzero = vdupq_n_f32(0.f);
 #ifdef __aarch64__
-  float32x4_t vsix = vdupq_n_f32(six);
+  float32x4_t vsix = vld1q_f32(six);
 #endif
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
@@ -2523,7 +2523,7 @@ void conv_depthwise_3x3s1p1_bias_leakyRelu(float *dout,
 
   float32x4_t vzero = vdupq_n_f32(0.f);
 #ifdef __aarch64__
-  float32x4_t vscale = vdupq_n_f32(scale);
+  float32x4_t vscale = vld1q_f32(scale);
 #endif
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
@@ -2786,7 +2786,7 @@ void conv_depthwise_3x3s1p1_bias_s_relu6(float *dout,
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
 #ifdef __aarch64__
-  float32x4_t vsix = vdupq_n_f32(six);
+  float32x4_t vsix = vld1q_f32(six);
 #endif
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
@@ -2947,7 +2947,7 @@ void conv_depthwise_3x3s1p1_bias_s_leakyRelu(float *dout,
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
 #ifdef __aarch64__
-  float32x4_t vscale = vdupq_n_f32(scale);
+  float32x4_t vscale = vld1q_f32(scale);
 #endif
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
@@ -3119,7 +3119,7 @@ void conv_depthwise_3x3s1p0_bias_relu6(float *dout,
   const int remian_idx[4] = {0, 1, 2, 3};
 
 #ifdef __aarch64__
-  float32x4_t vsix = vdupq_n_f32(six);
+  float32x4_t vsix = vld1q_f32(six);
 #endif
 
   if (remain == 0 && size_pad_right == 6) {  // w_in == w_out and w_out % 4 == 0
@@ -3402,7 +3402,7 @@ void conv_depthwise_3x3s1p0_bias_s_relu6(float *dout,
       vcgeq_s32(vld1q_s32(right_pad_idx + 4), vdupq_n_s32(6 - w_in));
 
 #ifdef __aarch64__
-  float32x4_t vsix = vdupq_n_f32(six);
+  float32x4_t vsix = vld1q_f32(six);
 #endif
 
   unsigned int vmask[8];
@@ -3569,7 +3569,7 @@ void conv_depthwise_3x3s1p0_bias_leakyRelu(float *dout,
   const int remian_idx[4] = {0, 1, 2, 3};
 
 #ifdef __aarch64__
-  float32x4_t vscale = vdupq_n_f32(scale);
+  float32x4_t vscale = vld1q_f32(scale);
 #endif
 
   if (remain == 0 && size_pad_right == 6) {  // w_in == w_out and w_out % 4 == 0
@@ -3853,7 +3853,7 @@ void conv_depthwise_3x3s1p0_bias_s_leakyRelu(float *dout,
       vcgeq_s32(vld1q_s32(right_pad_idx + 4), vdupq_n_s32(6 - w_in));
 
 #ifdef __aarch64__
-  float32x4_t vscale = vdupq_n_f32(scale);
+  float32x4_t vscale = vld1q_f32(scale);
 #endif
 
   unsigned int vmask[8];
