@@ -242,6 +242,7 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("prior_num")) {
     param.prior_num = op_info->GetAttr<int32_t>("prior_num");
   }
+  param.min_max_aspect_ratios_order = false;
   if (op_info->HasAttr("min_max_aspect_ratios_order")) {
     param.min_max_aspect_ratios_order =
         op_info->GetAttr<bool>("min_max_aspect_ratios_order");
