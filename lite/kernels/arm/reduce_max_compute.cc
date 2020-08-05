@@ -62,6 +62,7 @@ void ReduceMaxCompute::Run() {
           LOG(FATAL) << "error!!!";
       }
     } else if (dim.size() == 2) {
+      LOG(FATAL) << "Will support later!!";
     } else {
       LOG(FATAL) << "dim size should not larger than 3!!!";
     }
