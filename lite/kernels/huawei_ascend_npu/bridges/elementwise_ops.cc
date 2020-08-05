@@ -136,18 +136,9 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     reshaped_x_op->set_input_x(*x_node->data());
     reshaped_x_op->set_input_shape(*shape_node->data());
     reshaped_x_op->set_attr_axis(0);
-    TENSOR_UPDATE_INPUT(reshaped_x_op,
-                        x,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(x_node->precision()));
-    TENSOR_UPDATE_INPUT(reshaped_x_op,
-                        shape,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(shape_node->precision()));
-    TENSOR_UPDATE_OUTPUT(reshaped_x_op,
-                         y,
-                         ge::FORMAT_NCHW,
-                         CvtPrecisionType(reshaped_x_node->precision()));
+    INPUT_UPDATE(reshaped_x_op, x, x_node);
+    INPUT_UPDATE(reshaped_x_op, shape, shape_node);
+    OUTPUT_UPDATE(reshaped_x_op, y, reshaped_x_node);
     x_node = reshaped_x_node;
   } else {
     x_node = graph->Add(x_name, *x, x_new_shape);
@@ -163,18 +154,9 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     reshaped_y_op->set_input_x(*y_node->data());
     reshaped_y_op->set_input_shape(*shape_node->data());
     reshaped_y_op->set_attr_axis(0);
-    TENSOR_UPDATE_INPUT(reshaped_y_op,
-                        x,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(y_node->precision()));
-    TENSOR_UPDATE_INPUT(reshaped_y_op,
-                        shape,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(shape_node->precision()));
-    TENSOR_UPDATE_OUTPUT(reshaped_y_op,
-                         y,
-                         ge::FORMAT_NCHW,
-                         CvtPrecisionType(reshaped_y_node->precision()));
+    INPUT_UPDATE(reshaped_y_op, x, y_node);
+    INPUT_UPDATE(reshaped_y_op, shape, shape_node);
+    OUTPUT_UPDATE(reshaped_y_op, y, reshaped_y_node);
     y_node = reshaped_y_node;
   } else {
     y_node = graph->Add(y_name, *y, y_new_shape);
@@ -188,48 +170,36 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto elt_op = elt_node->data<ge::op::Add>();
     elt_op->set_input_x1(*x_node->data());
     elt_op->set_input_x2(*y_node->data());
-    TENSOR_UPDATE_INPUT(
-        elt_op, x1, ge::FORMAT_NCHW, CvtPrecisionType(x_node->precision()));
-    TENSOR_UPDATE_INPUT(
-        elt_op, x2, ge::FORMAT_NCHW, CvtPrecisionType(y_node->precision()));
-    TENSOR_UPDATE_OUTPUT(
-        elt_op, y, ge::FORMAT_NCHW, CvtPrecisionType(elt_node->precision()));
+    INPUT_UPDATE(elt_op, x1, x_node);
+    INPUT_UPDATE(elt_op, x2, y_node);
+    OUTPUT_UPDATE(elt_op, y, elt_node);
   } else if (op_type == "elementwise_sub" ||
              op_type == "fusion_elementwise_sub_activation") {
     elt_node = graph->Add<ge::op::Sub>(out_name);
     auto elt_op = elt_node->data<ge::op::Sub>();
     elt_op->set_input_x1(*x_node->data());
     elt_op->set_input_x2(*y_node->data());
-    TENSOR_UPDATE_INPUT(
-        elt_op, x1, ge::FORMAT_NCHW, CvtPrecisionType(x_node->precision()));
-    TENSOR_UPDATE_INPUT(
-        elt_op, x2, ge::FORMAT_NCHW, CvtPrecisionType(y_node->precision()));
-    TENSOR_UPDATE_OUTPUT(
-        elt_op, y, ge::FORMAT_NCHW, CvtPrecisionType(elt_node->precision()));
+    INPUT_UPDATE(elt_op, x1, x_node);
+    INPUT_UPDATE(elt_op, x2, y_node);
+    OUTPUT_UPDATE(elt_op, y, elt_node);
   } else if (op_type == "elementwise_mul" ||
              op_type == "fusion_elementwise_mul_activation") {
     elt_node = graph->Add<ge::op::Mul>(out_name);
     auto elt_op = elt_node->data<ge::op::Mul>();
     elt_op->set_input_x1(*x_node->data());
     elt_op->set_input_x2(*y_node->data());
-    TENSOR_UPDATE_INPUT(
-        elt_op, x1, ge::FORMAT_NCHW, CvtPrecisionType(x_node->precision()));
-    TENSOR_UPDATE_INPUT(
-        elt_op, x2, ge::FORMAT_NCHW, CvtPrecisionType(y_node->precision()));
-    TENSOR_UPDATE_OUTPUT(
-        elt_op, y, ge::FORMAT_NCHW, CvtPrecisionType(elt_node->precision()));
+    INPUT_UPDATE(elt_op, x1, x_node);
+    INPUT_UPDATE(elt_op, x2, y_node);
+    OUTPUT_UPDATE(elt_op, y, elt_node);
   } else if (op_type == "elementwise_div" ||
              op_type == "fusion_elementwise_div_activation") {
     elt_node = graph->Add<ge::op::RealDiv>(out_name);
     auto elt_op = elt_node->data<ge::op::RealDiv>();
     elt_op->set_input_x1(*x_node->data());
     elt_op->set_input_x2(*y_node->data());
-    TENSOR_UPDATE_INPUT(
-        elt_op, x1, ge::FORMAT_NCHW, CvtPrecisionType(x_node->precision()));
-    TENSOR_UPDATE_INPUT(
-        elt_op, x2, ge::FORMAT_NCHW, CvtPrecisionType(y_node->precision()));
-    TENSOR_UPDATE_OUTPUT(
-        elt_op, y, ge::FORMAT_NCHW, CvtPrecisionType(elt_node->precision()));
+    INPUT_UPDATE(elt_op, x1, x_node);
+    INPUT_UPDATE(elt_op, x2, y_node);
+    OUTPUT_UPDATE(elt_op, y, elt_node);
   } else {
     LOG(WARNING) << "[NPU] Unsupported op type: " << op_type;
     return FAILED;
@@ -243,18 +213,9 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     reshaped_elt_op->set_input_x(*elt_node->data());
     reshaped_elt_op->set_input_shape(*shape_node->data());
     reshaped_elt_op->set_attr_axis(0);
-    TENSOR_UPDATE_INPUT(reshaped_elt_op,
-                        x,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(y_node->precision()));
-    TENSOR_UPDATE_INPUT(reshaped_elt_op,
-                        shape,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(shape_node->precision()));
-    TENSOR_UPDATE_OUTPUT(reshaped_elt_op,
-                         y,
-                         ge::FORMAT_NCHW,
-                         CvtPrecisionType(reshaped_elt_node->precision()));
+    INPUT_UPDATE(reshaped_elt_op, x, elt_node);
+    INPUT_UPDATE(reshaped_elt_op, shape, shape_node);
+    OUTPUT_UPDATE(reshaped_elt_op, y, reshaped_elt_node);
     elt_node = reshaped_elt_node;
   }
 
@@ -270,18 +231,14 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       act_op->set_input_x(*elt_node->data());
       auto alpha = op_info->GetAttr<float>("alpha");
       act_op->set_attr_negative_slope(alpha);
-      TENSOR_UPDATE_INPUT(
-          act_op, x, ge::FORMAT_NCHW, CvtPrecisionType(elt_node->precision()));
-      TENSOR_UPDATE_OUTPUT(
-          act_op, y, ge::FORMAT_NCHW, CvtPrecisionType(act_node->precision()));
+      INPUT_UPDATE(act_op, x, elt_node);
+      OUTPUT_UPDATE(act_op, y, act_node);
     } else if (act_type == "relu") {
       auto act_node = graph->Add<ge::op::Relu>(out_name);
       auto act_op = act_node->data<ge::op::Relu>();
       act_op->set_input_x(*elt_node->data());
-      TENSOR_UPDATE_INPUT(
-          act_op, x, ge::FORMAT_NCHW, CvtPrecisionType(elt_node->precision()));
-      TENSOR_UPDATE_OUTPUT(
-          act_op, y, ge::FORMAT_NCHW, CvtPrecisionType(act_node->precision()));
+      INPUT_UPDATE(act_op, x, elt_node);
+      OUTPUT_UPDATE(act_op, y, act_node);
     } else {
       LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Unsupported act type: " << act_type;
       return FAILED;

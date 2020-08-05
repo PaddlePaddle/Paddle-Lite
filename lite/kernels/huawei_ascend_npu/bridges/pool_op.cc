@@ -119,10 +119,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (!ceil_mode) {
     pool_op->set_attr_ceil_mode(1);
   }
-  TENSOR_UPDATE_INPUT(
-      pool_op, x, ge::FORMAT_NCHW, CvtPrecisionType(x_node->precision()));
-  TENSOR_UPDATE_OUTPUT(
-      pool_op, y, ge::FORMAT_NCHW, CvtPrecisionType(pool_node->precision()));
+  INPUT_UPDATE(pool_op, x, x_node);
+  OUTPUT_UPDATE(pool_op, y, pool_node);
 
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

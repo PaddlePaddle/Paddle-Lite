@@ -22,7 +22,6 @@ USE_SUBGRAPH_BRIDGE(relu6, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(leaky_relu, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(softsign, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(softplus, kHuaweiAscendNPU);
-// conv
 USE_SUBGRAPH_BRIDGE(conv2d, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(bilinear_interp, kHuaweiAscendNPU);
@@ -37,3 +36,4 @@ USE_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_sub_activation, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_mul_activation, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(fusion_elementwise_div_activation, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(batch_norm, kHuaweiAscendNPU);

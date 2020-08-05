@@ -96,7 +96,9 @@ bool AclModelClient::GetModelIOTensorDim(
     ACL_CALL(aclmdlGetInputDims(model_desc_, i, &input_dim));
     aclDataType data_type = aclmdlGetInputDataType(model_desc_, i);
     aclFormat data_format = aclmdlGetInputFormat(model_desc_, i);
-    TensorDesc tensor_desc = TensorDesc(data_type, input_dim, data_format);
+    const std::string name_str(aclmdlGetInputNameByIndex(model_desc_, i));
+    TensorDesc tensor_desc =
+        TensorDesc(name_str, data_type, input_dim, data_format);
     input_tensor->push_back(tensor_desc);
   }
 
@@ -108,7 +110,9 @@ bool AclModelClient::GetModelIOTensorDim(
     ACL_CALL(aclmdlGetOutputDims(model_desc_, i, &output_dim));
     aclDataType data_type = aclmdlGetOutputDataType(model_desc_, i);
     aclFormat data_format = aclmdlGetOutputFormat(model_desc_, i);
-    TensorDesc tensor_desc = TensorDesc(data_type, output_dim, data_format);
+    const std::string name_str(aclmdlGetOutputNameByIndex(model_desc_, i));
+    TensorDesc tensor_desc =
+        TensorDesc(name_str, data_type, output_dim, data_format);
     output_tensor->push_back(tensor_desc);
   }
   return true;
@@ -118,12 +122,10 @@ bool AclModelClient::GetTensorFromDataset(
     std::vector<std::shared_ptr<ge::Tensor>>* output_tensor) {
   size_t device_output_num = aclmdlGetDatasetNumBuffers(output_dataset_);
   size_t tensor_output_num = reinterpret_cast<size_t>(output_tensor->size());
-  if (device_output_num != tensor_output_num) {
-    LOG(ERROR)
-        << "[HUAWEI_ASCEND_NPU] output number not equal, device number is "
-        << device_output_num << "tensor number is " << tensor_output_num;
-    return false;
-  }
+  CHECK_EQ(device_output_num, tensor_output_num)
+      << "[HUAWEI_ASCEND_NPU] tensor output number should equal to device "
+         "output number, device output number is "
+      << device_output_num << ", tensor output number is " << tensor_output_num;
   for (size_t i = 0; i < device_output_num; i++) {
     aclDataBuffer* buffer_device = aclmdlGetDatasetBuffer(output_dataset_, i);
     void* device_data = aclGetDataBufferAddr(buffer_device);
@@ -195,7 +197,10 @@ void AclModelClient::CreateOutputDataset(
     return;
   }
   size_t output_size = aclmdlGetNumOutputs(model_desc_);
-  CHECK_EQ(output_size, output_tensor->size());
+  CHECK_EQ(output_size, output_tensor->size())
+      << "[HUAWEI_ASCEND_NPU] model output number should equal to output "
+         "tensor size, model output number is "
+      << output_size << ", output tensor number is " << output_tensor->size();
   for (size_t i = 0; i < output_size; i++) {
     size_t buffer_size = aclmdlGetOutputSizeByIndex(model_desc_, i);
     void* buffer_device = nullptr;

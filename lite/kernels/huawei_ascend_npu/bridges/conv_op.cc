@@ -182,19 +182,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     conv_op->set_attr_data_format("NCHW");
     if (bias_node != nullptr && is_channel_bias) {
       conv_op->set_input_bias(*bias_node->data());
-      TENSOR_UPDATE_INPUT(conv_op,
-                          bias,
-                          ge::FORMAT_NCHW,
-                          CvtPrecisionType(bias_node->precision()));
+      INPUT_UPDATE(conv_op, bias, bias_node);
     }
-    TENSOR_UPDATE_INPUT(
-        conv_op, x, ge::FORMAT_NCHW, CvtPrecisionType(input_node->precision()));
-    TENSOR_UPDATE_INPUT(conv_op,
-                        filter,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(filter_node->precision()));
-    TENSOR_UPDATE_OUTPUT(
-        conv_op, y, ge::FORMAT_NCHW, CvtPrecisionType(conv_node->precision()));
+    INPUT_UPDATE(conv_op, x, input_node);
+    INPUT_UPDATE(conv_op, filter, filter_node);
+    OUTPUT_UPDATE(conv_op, y, conv_node);
   } else {
     conv_node = graph->Add<ge::op::Conv2D>(output_name);
     auto conv_op = conv_node->data<ge::op::Conv2D>();
@@ -210,19 +202,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     conv_op->set_attr_data_format("NCHW");
     if (bias_node != nullptr && is_channel_bias) {
       conv_op->set_input_bias(*bias_node->data());
-      TENSOR_UPDATE_INPUT(conv_op,
-                          bias,
-                          ge::FORMAT_NCHW,
-                          CvtPrecisionType(bias_node->precision()));
+      INPUT_UPDATE(conv_op, bias, bias_node);
     }
-    TENSOR_UPDATE_INPUT(
-        conv_op, x, ge::FORMAT_NCHW, CvtPrecisionType(input_node->precision()));
-    TENSOR_UPDATE_INPUT(conv_op,
-                        filter,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(filter_node->precision()));
-    TENSOR_UPDATE_OUTPUT(
-        conv_op, y, ge::FORMAT_NCHW, CvtPrecisionType(conv_node->precision()));
+    INPUT_UPDATE(conv_op, x, input_node);
+    INPUT_UPDATE(conv_op, filter, filter_node);
+    OUTPUT_UPDATE(conv_op, y, conv_node);
   }
   // append Add node to support bias
   if (bias_node != nullptr && !is_channel_bias) {
@@ -230,13 +214,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto add_op = add_node->data<ge::op::Add>();
     add_op->set_input_x1(*conv_node->data());
     add_op->set_input_x2(*bias_node->data());
-    TENSOR_UPDATE_INPUT(
-        add_op, x1, ge::FORMAT_NCHW, CvtPrecisionType(conv_node->precision()));
-    TENSOR_UPDATE_INPUT(
-        add_op, x2, ge::FORMAT_NCHW, CvtPrecisionType(bias_node->precision()));
-    TENSOR_UPDATE_OUTPUT(
-        add_op, y, ge::FORMAT_NCHW, CvtPrecisionType(add_node->precision()));
-    conv_node = add_node;
+    INPUT_UPDATE(add_op, x1, conv_node);
+    INPUT_UPDATE(add_op, x2, bias_node);
+    OUTPUT_UPDATE(add_op, y, add_node);
   }
   CHECK(conv_node);
 
@@ -247,19 +227,15 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       auto act_node = graph->Add<ge::op::Relu>(output_name);
       auto act_op = act_node->data<ge::op::Relu>();
       act_op->set_input_x(*conv_node->data());
-      TENSOR_UPDATE_INPUT(
-          act_op, x, ge::FORMAT_NCHW, CvtPrecisionType(conv_node->precision()));
-      TENSOR_UPDATE_OUTPUT(
-          act_op, y, ge::FORMAT_NCHW, CvtPrecisionType(act_node->precision()));
+      INPUT_UPDATE(act_op, x, conv_node);
+      OUTPUT_UPDATE(act_op, y, act_node);
     } else if (act_type == "leaky_relu") {
       auto act_node = graph->Add<ge::op::LeakyRelu>(output_name);
       auto act_op = act_node->data<ge::op::LeakyRelu>();
       act_op->set_input_x(*conv_node->data());
       act_op->set_attr_negative_slope(leaky_relu_alpha);
-      TENSOR_UPDATE_INPUT(
-          act_op, x, ge::FORMAT_NCHW, CvtPrecisionType(conv_node->precision()));
-      TENSOR_UPDATE_OUTPUT(
-          act_op, y, ge::FORMAT_NCHW, CvtPrecisionType(act_node->precision()));
+      INPUT_UPDATE(act_op, x, conv_node);
+      OUTPUT_UPDATE(act_op, y, act_node);
     } else {
       LOG(WARNING) << "[HUAWEI_ASCEND_NPU] act type not supported: "
                    << act_type;
