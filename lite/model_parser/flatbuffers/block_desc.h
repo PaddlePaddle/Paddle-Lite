@@ -25,17 +25,17 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class BlockDesc : public BlockDescAPI {
+class BlockDescView : public BlockDescAPI {
  public:
-  explicit BlockDesc(proto::BlockDesc const* desc) : desc_(desc) {
+  explicit BlockDescView(proto::BlockDesc const* desc) : desc_(desc) {
     CHECK(desc_);
     vars_.reserve(VarsSize());
     ops_.reserve(OpsSize());
     for (size_t idx = 0; idx < VarsSize(); ++idx) {
-      vars_.push_back(VarDesc(desc_->vars()->Get(idx)));
+      vars_.push_back(VarDescView(desc_->vars()->Get(idx)));
     }
     for (size_t idx = 0; idx < OpsSize(); ++idx) {
-      ops_.push_back(OpDesc(desc_->ops()->Get(idx)));
+      ops_.push_back(OpDescView(desc_->ops()->Get(idx)));
     }
   }
 
@@ -69,22 +69,22 @@ class BlockDesc : public BlockDescAPI {
     return nullptr;
   }
 
-  const std::vector<VarDesc>& GetVars() const { return vars_; }
+  const std::vector<VarDescView>& GetVars() const { return vars_; }
 
   int32_t ForwardBlockIdx() const override {
     return desc_->forward_block_idx();
   }
 
-  BlockDesc() { NotImplemented(); }
+  BlockDescView() { NotImplemented(); }
 
  private:
   proto::BlockDesc const* desc_;  // not_own
-  std::vector<VarDesc> vars_;
-  std::vector<OpDesc> ops_;
+  std::vector<VarDescView> vars_;
+  std::vector<OpDescView> ops_;
 
  private:
   void NotImplemented() const {
-    LOG(FATAL) << "The additional interfaces of BlockDesc is temporarily "
+    LOG(FATAL) << "The additional interfaces of BlockDescView is temporarily "
                   "unavailable in read-only mode.";
   }
 };

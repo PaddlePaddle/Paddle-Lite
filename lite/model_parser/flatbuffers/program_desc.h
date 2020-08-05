@@ -26,11 +26,11 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class ProgramDesc : public ProgramDescAPI {
+class ProgramDescView : public ProgramDescAPI {
  public:
-  ProgramDesc() = default;
-  explicit ProgramDesc(const std::vector<char>& buf) { Init(buf); }
-  explicit ProgramDesc(std::vector<char>&& buf) {
+  ProgramDescView() = default;
+  explicit ProgramDescView(const std::vector<char>& buf) { Init(buf); }
+  explicit ProgramDescView(std::vector<char>&& buf) {
     Init(std::forward<std::vector<char>>(buf));
   }
 
@@ -50,11 +50,11 @@ class ProgramDesc : public ProgramDescAPI {
     desc_ = proto::GetProgramDesc(buf_.data());
     blocks_.reserve(BlocksSize());
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {
-      blocks_.push_back(BlockDesc(desc_->blocks()->Get(idx)));
+      blocks_.push_back(BlockDescView(desc_->blocks()->Get(idx)));
     }
   }
 
-  void CopyFrom(const ProgramDesc& other) {
+  void CopyFrom(const ProgramDescView& other) {
     buf_ = other.buf();
     Init(buf_);
   }
@@ -70,7 +70,7 @@ class ProgramDesc : public ProgramDescAPI {
     return nullptr;
   }
 
-  const std::vector<BlockDesc>& GetBlocks() const { return blocks_; }
+  const std::vector<BlockDescView>& GetBlocks() const { return blocks_; }
 
   bool HasVersion() const override { return desc_->version() != nullptr; }
 
@@ -86,13 +86,13 @@ class ProgramDesc : public ProgramDescAPI {
  private:
   proto::ProgramDesc const* desc_;
   std::vector<char> buf_;
-  std::vector<BlockDesc> blocks_;
+  std::vector<BlockDescView> blocks_;
 
  private:
-  ProgramDesc& operator=(const ProgramDesc&) = delete;
-  ProgramDesc(const ProgramDesc&) = delete;
+  ProgramDescView& operator=(const ProgramDescView&) = delete;
+  ProgramDescView(const ProgramDescView&) = delete;
   void NotImplemented() const {
-    LOG(FATAL) << "The additional interfaces of ProgramDesc is temporarily "
+    LOG(FATAL) << "The additional interfaces of ProgramDescView is temporarily "
                   "unavailable in read-only mode.";
   }
 };

@@ -19,7 +19,7 @@ namespace lite {
 namespace fbs {
 
 template <>
-std::string OpDesc::GetAttr<std::string>(const std::string& name) const {
+std::string OpDescView::GetAttr<std::string>(const std::string& name) const {
   const auto& it = desc_->attrs()->LookupByKey(name.c_str());
   if (!it->s()) {
     return std::string();
@@ -28,7 +28,7 @@ std::string OpDesc::GetAttr<std::string>(const std::string& name) const {
 }
 
 template <>
-std::string OpDesc::GetAttr<std::string>(size_t idx) const {
+std::string OpDescView::GetAttr<std::string>(size_t idx) const {
   const auto& it = desc_->attrs()->Get(idx);
   if (!it->s()) {
     return std::string();
@@ -38,43 +38,43 @@ std::string OpDesc::GetAttr<std::string>(size_t idx) const {
 
 template <>
 lite::VectorView<std::string, Flatbuffers>
-OpDesc::GetAttr<std::vector<std::string>>(const std::string& name) const {
+OpDescView::GetAttr<std::vector<std::string>>(const std::string& name) const {
   const auto& it = desc_->attrs()->LookupByKey(name.c_str());
   CHECK(it) << "Attr " << name << "does not exist.";
   return VectorView<std::string>(it->strings());
 }
 
 template <>
-VectorView<std::string, Flatbuffers> OpDesc::GetAttr<std::vector<std::string>>(
-    size_t idx) const {
+VectorView<std::string, Flatbuffers>
+OpDescView::GetAttr<std::vector<std::string>>(size_t idx) const {
   const auto& it = desc_->attrs()->Get(idx);
   CHECK(it) << "Attr " << idx << "does not exist.";
   return VectorView<std::string>(it->strings());
 }
 
-#define GET_ATTR_IMPL(T, fb_f__)                                         \
-  template <>                                                            \
-  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDesc::GetAttr<T>( \
-      const std::string& name) const {                                   \
-    const auto& it = desc_->attrs()->LookupByKey(name.c_str());          \
-    return it->fb_f__();                                                 \
-  }                                                                      \
-  template <>                                                            \
-  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDesc::GetAttr<T>( \
-      size_t idx) const {                                                \
-    const auto& it = desc_->attrs()->Get(idx);                           \
-    return it->fb_f__();                                                 \
+#define GET_ATTR_IMPL(T, fb_f__)                                             \
+  template <>                                                                \
+  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDescView::GetAttr<T>( \
+      const std::string& name) const {                                       \
+    const auto& it = desc_->attrs()->LookupByKey(name.c_str());              \
+    return it->fb_f__();                                                     \
+  }                                                                          \
+  template <>                                                                \
+  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDescView::GetAttr<T>( \
+      size_t idx) const {                                                    \
+    const auto& it = desc_->attrs()->Get(idx);                               \
+    return it->fb_f__();                                                     \
   }
 
 #define GET_ATTRS_IMPL(T, fb_f__)                                            \
   template <>                                                                \
-  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDesc::GetAttr<T>(     \
+  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDescView::GetAttr<T>( \
       const std::string& name) const {                                       \
     const auto& it = desc_->attrs()->LookupByKey(name.c_str());              \
     return typename lite::OpDataTypeTrait<T, Flatbuffers>::RT(it->fb_f__()); \
   }                                                                          \
   template <>                                                                \
-  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDesc::GetAttr<T>(     \
+  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDescView::GetAttr<T>( \
       size_t idx) const {                                                    \
     const auto& it = desc_->attrs()->Get(idx);                               \
     return typename lite::OpDataTypeTrait<T, Flatbuffers>::RT(it->fb_f__()); \

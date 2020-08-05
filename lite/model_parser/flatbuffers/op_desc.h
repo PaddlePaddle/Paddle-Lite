@@ -29,9 +29,9 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class OpDesc : public OpDescAPI {
+class OpDescView : public OpDescAPI {
  public:
-  explicit OpDesc(proto::OpDesc const* desc) : desc_(desc) { CHECK(desc_); }
+  explicit OpDescView(proto::OpDesc const* desc) : desc_(desc) { CHECK(desc_); }
 
   std::string Type() const override { return desc_->type()->str(); }
 
@@ -137,7 +137,7 @@ class OpDesc : public OpDescAPI {
   // caused by different building options.
 
  public:
-  OpDesc() { NotImplemented(); }
+  OpDescView() { NotImplemented(); }
   bool HasInput(const std::string& param) const {
     return desc_->inputs()->LookupByKey(param.c_str()) != nullptr;
   }
@@ -184,7 +184,7 @@ class OpDesc : public OpDescAPI {
 
  private:
   void NotImplemented() const {
-    LOG(FATAL) << "The additional interfaces of OpDesc is temporarily "
+    LOG(FATAL) << "The additional interfaces of OpDescView is temporarily "
                   "unavailable in read-only mode.";
   }
   std::string type_;

@@ -26,9 +26,9 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class VarDesc : public VarDescAPI {
+class VarDescView : public VarDescAPI {
  public:
-  explicit VarDesc(proto::VarDesc const* desc) : desc_(desc) {}
+  explicit VarDescView(proto::VarDesc const* desc) : desc_(desc) {}
 
   std::string Name() const override { return desc_->name()->str(); }
 
@@ -66,13 +66,13 @@ class VarDesc : public VarDescAPI {
   // caused by different building options.
 
  public:
-  VarDesc() { NotImplemented(); }
+  VarDescView() { NotImplemented(); }
   void SetDataType(Type data_type) { NotImplemented(); }
   void SetShape(const std::vector<int64_t>& dims) { NotImplemented(); }
 
  private:
   void NotImplemented() const {
-    LOG(FATAL) << "The additional interfaces of VarDesc is temporarily "
+    LOG(FATAL) << "The additional interfaces of VarDescView is temporarily "
                   "unavailable in read-only mode.";
   }
   std::vector<int64_t> shape_;
