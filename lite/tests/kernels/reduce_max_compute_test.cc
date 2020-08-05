@@ -423,19 +423,13 @@ void test_reduce_max(Place place) {
 
 void test_reduce_max_for_three(Place place) {
   std::vector<std::vector<int>> reduce_dim{{0}, {1}, {2}};
-  for (auto f : {1, 3}) {
-    for (auto s : {1, 2}) {
-      for (auto t : {1, 3}) {
-        for (bool keep_dim : {false, true}) {
-          for (auto dim : reduce_dim) {
-            auto x_dims = DDim(std::vector<int64_t>({f, s, t}));
-            std::unique_ptr<arena::TestCase> tester(new ReduceMaxComputeTester(
-                place, "def", dim, keep_dim, x_dims));
-            arena::Arena arena(std::move(tester), place, 2e-5);
-            arena.TestPrecision();
-          }
-        }
-      }
+  for (bool keep_dim : {false, true}) {
+    for (auto dim : reduce_dim) {
+      auto x_dims = DDim(std::vector<int64_t>({3, 4, 5}));
+      std::unique_ptr<arena::TestCase> tester(
+          new ReduceMaxComputeTester(place, "def", dim, keep_dim, x_dims));
+      arena::Arena arena(std::move(tester), place, 2e-5);
+      arena.TestPrecision();
     }
   }
 }
