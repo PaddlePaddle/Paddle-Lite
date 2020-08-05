@@ -1755,12 +1755,6 @@ struct DeformableConvParam : ParamBase {
   }
 };
 
-struct PixelShuffleParam : ParamBase {
-  lite::Tensor* x{nullptr};
-  lite::Tensor* output{nullptr};
-  int upscale_factor{1};
-};
-
 struct RetinanetDetectionOutputParam : ParamBase {
   std::vector<Tensor*> bboxes{};
   std::vector<Tensor*> scores{};
@@ -1786,6 +1780,12 @@ struct ClipParam : ParamBase {
   Tensor* out{};
   float min{};
   float max{};
+};
+
+struct PixelShuffleParam : ParamBase {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* output{nullptr};
+  int upscale_factor{1};
 };
 
 struct PrintParam : ParamBase {
