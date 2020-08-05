@@ -204,6 +204,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
           input3 ? input3->data<half_t, cl::Image2D>() : nullptr;
       size_t input3_tensor_c = input3 ? input3->dims()[1] : -1;
 
+#ifdef LITE_WITH_LOG
+      LOG(INFO) << "output_tensor_dims[1]:" << output_tensor_dims[1];
+      LOG(INFO) << "output_tensor_dims[3]:" << output_tensor_dims[3];
       LOG(INFO) << "input0_image_p:" << input0_image_p;
       LOG(INFO) << "input0_tensor_c:" << input0_tensor_c;
       LOG(INFO) << "input1_image_p:" << input1_image_p;
@@ -212,6 +215,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       LOG(INFO) << "input2_tensor_c:" << input2_tensor_c;
       LOG(INFO) << "input3_image_p:" << input3_image_p;
       LOG(INFO) << "input3_tensor_c:" << input3_tensor_c;
+#endif
 
       const std::vector<size_t>& default_work_size = DefaultWorkSize(
           output_tensor_dims,
