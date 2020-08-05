@@ -28,8 +28,13 @@ bool FusionElementwiseActivationOp::CheckShape() const {
 }
 
 bool FusionElementwiseActivationOp::InferShapeImpl() const {
-  CHECK_OR_FALSE(param_.X->dims().size() >= param_.Y->dims().size());
-  param_.Out->Resize(param_.X->dims());
+  size_t x_size = param_.X->dims().size();
+  size_t y_size = param_.Y->dims().size();
+  if (x_size >= y_size) {
+    param_.Out->Resize(param_.X->dims());
+  } else {
+    param_.Out->Resize(param_.Y->dims());
+  }
   return true;
 }
 

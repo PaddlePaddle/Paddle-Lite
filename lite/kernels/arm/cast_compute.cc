@@ -40,7 +40,8 @@ void CastCompute::Run() {
     const auto* x_data = param.X->data<float>();
     auto* o_data = param.Out->mutable_data<float>();
     memcpy(o_data, x_data, sizeof(float) * param.X->numel());
-  } else if (param.in_dtype == param.out_dtype && param.in_dtype == 3) {
+  } else if (param.in_dtype == param.out_dtype &&
+             param.in_dtype == 3) {  // int64->int64
     const auto* x_data = param.X->data<int64_t>();
     auto* o_data = param.Out->mutable_data<int64_t>();
     memcpy(o_data, x_data, sizeof(int64_t) * param.X->numel());
@@ -60,7 +61,7 @@ void CastCompute::Run() {
     float* out_data = param.Out->mutable_data<float>();
     std::transform(
         x_data_begin, x_data_end, out_data, TransOp<unsigned char, float>);
-  } else if (param.in_dtype == 3 && param.out_dtype == 2) {
+  } else if (param.in_dtype == 3 && param.out_dtype == 2) {  // int64->int32
     const int64_t* x_data_begin = param.X->data<int64_t>();
     const int64_t* x_data_end = x_data_begin + param.X->numel();
     int32_t* out_data = param.Out->mutable_data<int32_t>();
@@ -76,7 +77,7 @@ void CastCompute::Run() {
     const int64_t* x_data_end = x_data_begin + param.X->numel();
     float* out_data = param.Out->mutable_data<float>();
     std::transform(x_data_begin, x_data_end, out_data, TransOp<int64_t, float>);
-  } else if (param.in_dtype == 2 && param.out_dtype == 3) {
+  } else if (param.in_dtype == 2 && param.out_dtype == 3) {  // INT32 -> INT64
     const int32_t* x_data_begin = param.X->data<int32_t>();
     const int32_t* x_data_end = x_data_begin + param.X->numel();
     int64_t* out_data = param.Out->mutable_data<int64_t>();
