@@ -21,17 +21,7 @@ namespace paddle {
 namespace lite {
 namespace cuda {
 namespace math {
-
-template <>
-cudnnDataType_t GetCudnnDataType<PRECISION(kFloat)>() {
-  return CUDNN_DATA_FLOAT;
-}
-
-template <>
-cudnnDataType_t GetCudnnDataType<PRECISION(kFP16)>() {
-  return CUDNN_DATA_HALF;
-}
-
+namespace cudnn {}  // namespace cudnn
 }  // namespace math
 }  // namespace cuda
 }  // namespace lite
