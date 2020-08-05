@@ -323,6 +323,63 @@ void conv_depthwise_3x3s2p1_bias_s_relu(float* dout,
                                         const int w_out,
                                         ARMContext* ctx);
 
+void conv_depthwise_3x3s1p0_bias_no_relu(float* dout,
+                                      const float* din,
+                                      const float* weights,
+                                      const float* bias,
+                                      bool flag_bias,
+                                      bool flag_relu,
+                                      const int num,
+                                      const int ch_in,
+                                      const int h_in,
+                                      const int w_in,
+                                      const int h_out,
+                                      const int w_out,
+                                      ARMContext* ctx);
+
+void conv_depthwise_3x3s1p0_bias_s_no_relu(float* dout,
+                                        const float* din,
+                                        const float* weights,
+                                        const float* bias,
+                                        bool flag_bias,
+                                        bool flag_relu,
+                                        const int num,
+                                        const int ch_in,
+                                        const int h_in,
+                                        const int w_in,
+                                        const int h_out,
+                                        const int w_out,
+                                        ARMContext* ctx);
+
+void conv_depthwise_3x3s1p1_bias_no_relu(float* dout,
+                                      const float* din,
+                                      const float* weights,
+                                      const float* bias,
+                                      bool flag_bias,
+                                      bool flag_relu,
+                                      const int num,
+                                      const int ch_in,
+                                      const int h_in,
+                                      const int w_in,
+                                      const int h_out,
+                                      const int w_out,
+                                      ARMContext* ctx);
+
+void conv_depthwise_3x3s1p1_bias_s_no_relu(float* dout,
+                                        const float* din,
+                                        const float* weights,
+                                        const float* bias,
+                                        bool flag_bias,
+                                        bool flag_relu,
+                                        const int num,
+                                        const int ch_in,
+                                        const int h_in,
+                                        const int w_in,
+                                        const int h_out,
+                                        const int w_out,
+                                        ARMContext* ctx);
+
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
