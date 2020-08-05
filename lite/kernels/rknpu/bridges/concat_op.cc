@@ -32,9 +32,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_names = op_info->Input("X");
-  auto x_type = kernel->GetInputDeclType("X");
   auto out_name = op_info->Output("Out").front();
-  auto out_type = kernel->GetOutputDeclType("Out");
   auto output = scope->FindMutableTensor(out_name);
 
   auto axis = op_info->GetAttr<int>("axis");
@@ -50,9 +48,9 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   if (op_info->HasAttr("enable_int8")) {
     enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    input_scale = op_info->GetAttr<float>("input_scale");
     bit_length = op_info->GetAttr<int>("bit_length");
-    output_scale = op_info->GetAttr<float>("output_scale");
+    CHECK(op_info->HasOutputScale(out_name));
+    output_scale = op_info->GetOutputScale(out_name)[0];
 
     if (enable_int8) {
       precision = PRECISION(kInt8);
@@ -77,12 +75,13 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       qnt.enable_int8 = enable_int8;
 
       if (enable_int8) {
+        CHECK(op_info->HasInputScale(x_name));
+        input_scale = op_info->GetInputScale(x_name)[0];
         qnt.quant_bits = bit_length;
         qnt.scale.push_back(input_scale);
         x->mutable_data<int8_t>();
       }
-      x_node =
-          graph->Add(x_name, *x, x_type->precision(), x_type->layout(), qnt);
+      x_node = graph->Add(x_name, *x, precision, layout, qnt);
     }
 
     inputs.push_back(x_node->data());
