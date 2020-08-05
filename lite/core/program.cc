@@ -244,7 +244,10 @@ RuntimeProgram::RuntimeProgram(
           ContextScheduler::Global().NewContext(kernel->target()));
     }
 #else
-    kernel->SetContext(ContextScheduler::Global().NewContext(kernel->target()));
+    if (kernel != nullptr) {
+      kernel->SetContext(
+          ContextScheduler::Global().NewContext(kernel->target()));
+    }
 #endif
     instructions_[kRootBlockIdx].emplace_back(std::move(op), std::move(kernel));
   }

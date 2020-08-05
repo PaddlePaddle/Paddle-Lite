@@ -155,8 +155,12 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
   };
 
   for (const auto &attr_name : any_desc.AttrNames()) {
-    auto type = any_desc.GetAttrType(attr_name);
-    set_attr(attr_name, type);
+    // note: since `op_callstack` attribute has no effect on inference process,
+    // we will not load it into op_desc.
+    if (attr_name != "op_callstack") {
+      auto type = any_desc.GetAttrType(attr_name);
+      set_attr(attr_name, type);
+    }
   }
 }
 

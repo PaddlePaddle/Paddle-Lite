@@ -34,6 +34,7 @@ add_operator(fake_quant extra SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op
 add_operator(fake_dequant extra SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
 add_operator(conv_transpose_op basic SRCS conv_transpose_op.cc DEPS ${op_DEPS})
 add_operator(expand_op_lite basic SRCS expand_op.cc DEPS ${op_DEPS})
+add_operator(expand_as_op_lite basic SRCS expand_as_op.cc DEPS ${op_DEPS})
 add_operator(squeeze_op_lite basic SRCS squeeze_op.cc DEPS ${op_DEPS})
 add_operator(unsqueeze_op_lite basic SRCS unsqueeze_op.cc DEPS ${op_DEPS})
 add_operator(stack_op basic SRCS stack_op.cc DEPS ${op_DEPS})

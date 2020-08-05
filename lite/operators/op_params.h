@@ -268,6 +268,7 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
   int axis{-1};
+  bool use_cudnn{true};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1284,6 +1285,13 @@ struct ExpandParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
   std::vector<int> expand_times{};
+};
+
+/// ----------------------- expand as operators ----------------------
+struct ExpandAsParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Target{};
+  lite::Tensor* Out{};
 };
 
 /// ----------------------- matmul operators ----------------------
