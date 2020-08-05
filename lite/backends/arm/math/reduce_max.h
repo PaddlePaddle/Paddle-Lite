@@ -36,32 +36,20 @@ void reduce_c(const T* src,
               int width_in);
 
 template <typename T>
-void reduce_all_of_three(const T* src,
-                         T* dst,
-                         int first_in,
-                         int second_in,
-                         int third_in);
+void reduce_all_of_three(
+    const T* src, T* dst, int first_in, int second_in, int third_in);
 
 template <typename T>
-void reduce_first_of_three(const T* src,
-                            T* dst,
-                            int first_in,
-                            int second_in,
-                            int third_in);
+void reduce_first_of_three(
+    const T* src, T* dst, int first_in, int second_in, int third_in);
 
 template <typename T>
-void reduce_second_of_three(const T* src,
-                            T* dst,
-                            int first_in,
-                            int second_in,
-                            int third_in);
+void reduce_second_of_three(
+    const T* src, T* dst, int first_in, int second_in, int third_in);
 
 template <typename T>
-void reduce_third_of_three(const T* src,
-                            T* dst,
-                            int first_in,
-                            int second_in,
-                            int third_in);
+void reduce_third_of_three(
+    const T* src, T* dst, int first_in, int second_in, int third_in);
 
 template <typename T>
 void reduce_h(const T* src,
