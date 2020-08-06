@@ -448,7 +448,6 @@ TEST(ReduceMax, precision) {
   Place place(TARGET(kARM));
   test_reduce_max(place);
   test_reduce_max_for_three(place);
-  test_reduce_max_for_three(place);
 #endif
 }
 
