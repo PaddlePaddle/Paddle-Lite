@@ -76,6 +76,7 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
     }
   }
   VLOG(3) << "Getting input node size " << input_nodes.size();
+  VLOG(3) << "Getting output node size " << output_nodes.size();
   ir_graph.SetInputs(input_nodes).SetOutputs(output_nodes);
 
   // Build IR model
