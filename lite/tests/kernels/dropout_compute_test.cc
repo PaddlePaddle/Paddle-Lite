@@ -73,7 +73,9 @@ class DropoutComputeTester : public arena::TestCase {
     op_desc->SetType(type_);
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
+#ifndef LITE_WITH_HUAWEI_ASCEND_NPU
     op_desc->SetOutput("Mask", {mask_});
+#endif
     op_desc->SetAttr("dropout_prob", dropout_prob_);
     op_desc->SetAttr("fix_seed", fix_seed_);
     op_desc->SetAttr("seed", seed_);
@@ -94,6 +96,9 @@ TEST(Dropout, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else

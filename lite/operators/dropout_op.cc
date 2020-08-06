@@ -41,11 +41,9 @@ bool DropoutOp::InferShapeImpl() const {
 bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto input = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
-  auto Mask = op_desc.Output("Mask").front();
 
   param_.x = GetVar<lite::Tensor>(scope, input);
   param_.output = GetMutableVar<lite::Tensor>(scope, out);
-  param_.mask = GetMutableVar<lite::Tensor>(scope, Mask);
 
   param_.dropout_prob = op_desc.GetAttr<float>("dropout_prob");
   param_.is_test = true;
@@ -54,6 +52,11 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   // if (op_desc.HasAttr("is_test")) {
   //   param_.is_test = op_desc.GetAttr<bool>("is_test");
   // }
+  if (param_.is_test == false) {
+    auto Mask = op_desc.Output("Mask").front();
+    param_.mask = GetMutableVar<lite::Tensor>(scope, Mask);
+  }
+
   param_.fix_seed = op_desc.GetAttr<bool>("fix_seed");
   param_.seed = op_desc.GetAttr<int>("seed");
   param_.dropout_implementation =
