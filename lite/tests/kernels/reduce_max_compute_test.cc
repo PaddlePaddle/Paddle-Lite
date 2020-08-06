@@ -190,6 +190,7 @@ void reduce_hw(const float* src,
   reduce_w(tmp_out, dst, num_in, channel_in, 1, width_in);
 }
 
+// copy from lite/kernels/arm/reduce_max_compute.cc to test precision
 void reduce_first_of_three(
     const float* src, float* dst, int first_in, int second_in, int third_in) {
   for (int i = 0; i < second_in; i++) {
@@ -206,6 +207,7 @@ void reduce_first_of_three(
   }
 }
 
+// copy from lite/kernels/arm/reduce_max_compute.cc to test precision
 void reduce_second_of_three(
     const float* src, float* dst, int first_in, int second_in, int third_in) {
   for (int i = 0; i < first_in; i++) {
@@ -222,6 +224,7 @@ void reduce_second_of_three(
   }
 }
 
+// copy from lite/kernels/arm/reduce_max_compute.cc to test precision
 void reduce_third_of_three(
     const float* src, float* dst, int first_in, int second_in, int third_in) {
   for (int i = 0; i < first_in; i++) {
@@ -238,6 +241,7 @@ void reduce_third_of_three(
   }
 }
 
+// copy from lite/kernels/arm/reduce_max_compute.cc to test precision
 void reduce_all_of_three(
     const float* src, float* dst, int first_in, int second_in, int third_in) {
   float max = src[0];
@@ -315,6 +319,8 @@ class ReduceMaxComputeTester : public arena::TestCase {
 
     auto* out_data = out->mutable_data<float>();
 
+    // the reduce kernel code is copy from
+    // lite/kernels/arm/reduce_max_compute.cc to test precision
     if (x_dims_.size() == 3) {
       if (dim_.size() == 0 || dim_.size() == 3) {
         reduce_all_of_three(
