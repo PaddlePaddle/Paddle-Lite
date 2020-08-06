@@ -60,6 +60,32 @@ void SigmoidCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void ExpCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::activation_forward(
+      ctx.GetRawContext(),     /* context */
+      xdnn::Activation_t::EXP, /* type */
+      param.X->numel(),        /* len */
+      param.X->data<float>(),  /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
+}
+
+void ReciprocalCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::activation_forward(
+      ctx.GetRawContext(),            /* context */
+      xdnn::Activation_t::RECIPROCAL, /* type */
+      param.X->numel(),               /* len */
+      param.X->data<float>(),         /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
+}
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
@@ -82,6 +108,22 @@ REGISTER_LITE_KERNEL(sigmoid,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::xpu::SigmoidCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    exp, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::ExpCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reciprocal,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::ReciprocalCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -21,34 +20,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class FillConstantCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
  public:
-  using param_t = operators::ElementwiseParam;
+  using param_t = operators::FillConstantParam;
 
   virtual void Run();
 
-  virtual ~ElementwiseAddCompute() = default;
-};
-
-class ElementwiseSubCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  virtual void Run();
-
-  virtual ~ElementwiseSubCompute() = default;
-};
-
-class ElementwiseMulCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  virtual void Run();
-
-  virtual ~ElementwiseMulCompute() = default;
+  virtual ~FillConstantCompute() = default;
 };
 
 }  // namespace xpu

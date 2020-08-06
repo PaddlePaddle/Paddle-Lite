@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -21,34 +20,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class GruCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ElementwiseParam;
+  using param_t = operators::GRUParam;
 
   virtual void Run();
 
-  virtual ~ElementwiseAddCompute() = default;
-};
-
-class ElementwiseSubCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  virtual void Run();
-
-  virtual ~ElementwiseSubCompute() = default;
-};
-
-class ElementwiseMulCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  virtual void Run();
-
-  virtual ~ElementwiseMulCompute() = default;
+  virtual ~GruCompute() = default;
 };
 
 }  // namespace xpu

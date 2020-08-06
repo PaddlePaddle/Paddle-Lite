@@ -21,34 +21,14 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <PrecisionType FilterPtype>
+class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
  public:
-  using param_t = operators::ElementwiseParam;
+  using param_t = operators::ConvParam;
 
   virtual void Run();
 
-  virtual ~ElementwiseAddCompute() = default;
-};
-
-class ElementwiseSubCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  virtual void Run();
-
-  virtual ~ElementwiseSubCompute() = default;
-};
-
-class ElementwiseMulCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ElementwiseParam;
-
-  virtual void Run();
-
-  virtual ~ElementwiseMulCompute() = default;
+  virtual ~Conv2dTransposeCompute() = default;
 };
 
 }  // namespace xpu
