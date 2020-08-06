@@ -25,15 +25,20 @@ namespace huawei_ascend_npu {
 
 class TensorDesc {
  public:
-  TensorDesc(aclDataType data_type, aclmdlIODims dims, aclFormat format) {
+  TensorDesc(const std::string name,
+             aclDataType data_type,
+             aclmdlIODims dims,
+             aclFormat format) {
     if (format == ACL_FORMAT_NHWC) {
       dim_order[1] = 3;
       dim_order[2] = 1;
       dim_order[3] = 2;
     }
     // create ge::Tensordesc
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting tensor name : " << name;
     ge_tensor_desc_ = new ge::TensorDesc(
         GetGeShape(dims), GetGeFormat(format), GetGeDataType(data_type));
+    ge_tensor_desc_->SetName(name);
     CHECK(ge_tensor_desc_ != nullptr);
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting data shape : " << repr();
   }
