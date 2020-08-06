@@ -206,6 +206,11 @@ void TestEltDims(Place place, float abs_error) {
 void TestEltTypes(Place place, float abs_error) {
   for (auto elt_type :
        std::vector<std::string>{"add", "sub", "mul", "div", "max"}) {
+    // Huawei Ascend NPU DDK has bugs in div, and not support max yet
+    if (place == TARGET(kHuaweiAscendNPU) &&
+        (elt_type == "div" || elt_type == "max")) {
+      continue;
+    }
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
   }
@@ -214,6 +219,11 @@ void TestEltTypes(Place place, float abs_error) {
 void TestEltFuseAct(Place place, float abs_error) {
   for (auto elt_type :
        std::vector<std::string>{"add", "sub", "mul", "div", "max"}) {
+    // Huawei Ascend NPU DDK has bugs in div, and not support max yet
+    if (place == TARGET(kHuaweiAscendNPU) &&
+        (elt_type == "div" || elt_type == "max")) {
+      continue;
+    }
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "relu");
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1, "relu");
   }
@@ -226,6 +236,9 @@ TEST(Elementwise, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
