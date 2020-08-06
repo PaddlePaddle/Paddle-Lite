@@ -93,13 +93,13 @@ void split_compute_ref(const operators::SplitParam& param) {
 }
 
 TEST(split_arm, init) {
-  SplitCompute split;
+  SplitCompute<float, PRECISION(kFloat)> split;
   ASSERT_EQ(split.precision(), PRECISION(kFloat));
   ASSERT_EQ(split.target(), TARGET(kARM));
 }
 
 TEST(split_arm, compute) {
-  SplitCompute split;
+  SplitCompute<float, PRECISION(kFloat)> split;
   operators::SplitParam param;
 
   lite::Tensor x;
