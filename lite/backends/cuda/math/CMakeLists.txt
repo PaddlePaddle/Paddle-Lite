@@ -20,6 +20,7 @@ nv_library(cuda_batched_gemm SRCS batched_gemm.cc DEPS ${cuda_static_deps})
 nv_library(cuda_strided_gemm SRCS strided_gemm.cc DEPS ${cuda_static_deps})
 nv_library(cuda_sequence_padding SRCS sequence_padding.cu DEPS ${cuda_static_deps})
 nv_library(cuda_bias SRCS bias.cu DEPS ${cuda_static_deps})
+nv_library(cuda_sequence_helper SRCS sequence_helper.cu DEPS ${cuda_static_deps})
 
 set (
  math_cuda
@@ -39,6 +40,7 @@ set (
  cuda_sequence_padding
  cuda_bias
  cudnn_helper
+ cuda_sequence_helper
 )
 
 set(math_cuda "${math_cuda}" CACHE GLOBAL "math cuda")
