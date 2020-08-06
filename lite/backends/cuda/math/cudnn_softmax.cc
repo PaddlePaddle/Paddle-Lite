@@ -54,7 +54,7 @@ bool CudnnSoftmax<T, Ptype>::Create(const operators::SoftmaxParam& param,
   const int stride_c = H * stride_h;
   const int stride_n = C * stride_c;
   CUDNN_CHECK(cudnnSetTensor4dDescriptorEx(bottom_desc_,
-                                           GetCudnnDataType<Ptype>(),
+                                           cudnn::cudnnTypeWrapper<T>::type,
                                            N,
                                            C,
                                            H,
@@ -64,7 +64,7 @@ bool CudnnSoftmax<T, Ptype>::Create(const operators::SoftmaxParam& param,
                                            stride_h,
                                            stride_w));
   CUDNN_CHECK(cudnnSetTensor4dDescriptorEx(top_desc_,
-                                           GetCudnnDataType<Ptype>(),
+                                           cudnn::cudnnTypeWrapper<T>::type,
                                            N,
                                            C,
                                            H,

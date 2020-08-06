@@ -30,17 +30,12 @@ __global__ void CopyMatrixRowsKernel(const T* src,
                                      int height,
                                      int width,
                                      bool is_src_index) {
-  int idx = threadIdx.x;
-  int idy = threadIdx.y;
-  int row_id = blockDim.y * blockIdx.x + idy;
-  if (row_id < height) {
-    int src_idx = is_src_index ? index[row_id] : row_id;
-    int dst_idx = is_src_index ? row_id : index[row_id];
-    const T* src_data = src + src_idx * width;
-    T* dst_data = dst + dst_idx * width;
-    for (int i = idx; i < width; i += blockDim.x) {
-      dst_data[i] = src_data[i];
-    }
+  CUDA_KERNEL_LOOP(tid, height * width) {
+    int row = tid / width;
+    int idx = tid % width;
+    int src_row = is_src_index ? index[row] : row;
+    int dst_row = is_src_index ? row : index[row];
+    dst[dst_row * width + idx] = src[src_row * width + idx];
   }
 }
 
@@ -69,9 +64,8 @@ void CopyMatrixRowsFunctor<T>::operator()(
                                  sizeof(uint64_t) * index_lod.size(),
                                  IoDirection::HtoD,
                                  stream);
-  dim3 threads(128, 8);
-  dim3 grids((height + threads.y - 1) / threads.y);
-  CopyMatrixRowsKernel<T><<<grids, threads, 0, stream>>>(
+  CopyMatrixRowsKernel<
+      T><<<CUDA_GET_BLOCKS(height * width), CUDA_NUM_THREADS, 0, stream>>>(
       src_data, dst_data, index_tensor_data, height, width, is_src_index);
   CUDA_POST_KERNEL_CHECK;
 }
