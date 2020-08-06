@@ -41,7 +41,6 @@ void PixelShuffleCompute::Run() {
     for (int sh = 0; sh < upscale_factor; sh++) {
       for (int sw = 0; sw < upscale_factor; sw++) {
         float* outptr = outptr_nc + sh * out_width + sw;
-        float* outptr = outptr_nc + sh * out_width + sw;
         for (int h = 0; h < height; h++) {
           for (int w = 0; w < width; w++) {
             outptr[0] = inptr[0];
