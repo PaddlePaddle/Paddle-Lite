@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "lite/model_parser/base/op_desc.h"
@@ -192,6 +193,93 @@ class OpDescView : public OpDescAPI {
   std::map<std::string, std::vector<std::string>> outputs_;
   std::map<std::string, Any> attrs_;
   std::map<std::string, AttrType> attr_types_;
+};
+
+class OpDesc : public OpDescAPI {
+ public:
+  OpDesc() : owned_(true), desc_(new proto::OpDescT()) {}
+  explicit OpDesc(proto::OpDescT* desc) : desc_(desc) { CHECK(desc_); }
+
+  std::string Type() const override { return desc_->type; }
+
+  void SetType(const std::string& type) override { desc_->type = type; }
+
+  std::vector<std::string> Input(const std::string& param) const override {
+    return (*GetKeyIterator(param, desc_->inputs))->arguments;
+  }
+
+  std::vector<std::string> InputArgumentNames() const override {
+    VLOG(5) << "This function call is expensive.";
+    std::vector<std::string> tmp;
+    for (const auto& input : desc_->inputs) {
+      tmp.push_back(input->parameter);
+    }
+    return tmp;
+  }
+
+  void SetInput(const std::string& param,
+                const std::vector<std::string>& args) override {
+    std::unique_ptr<proto::OpDesc_::VarT> var(new proto::OpDesc_::VarT);
+    var->parameter = param;
+    var->arguments = args;
+    InsertPair(param, std::move(var), &desc_->inputs);
+  }
+
+  std::vector<std::string> Output(const std::string& param) const override {
+    return (*GetKeyIterator(param, desc_->outputs))->arguments;
+  }
+
+  std::vector<std::string> OutputArgumentNames() const override {
+    VLOG(5) << "This function call is expensive.";
+    std::vector<std::string> tmp;
+    for (const auto& output : desc_->outputs) {
+      tmp.push_back(output->parameter);
+    }
+    return tmp;
+  }
+
+  void SetOutput(const std::string& param,
+                 const std::vector<std::string>& args) override {
+    std::unique_ptr<proto::OpDesc_::VarT> var(new proto::OpDesc_::VarT);
+    var->parameter = param;
+    var->arguments = args;
+    InsertPair(param, std::move(var), &desc_->outputs);
+  }
+
+  bool HasAttr(const std::string& name) const override {
+    return HasKey(name, desc_->attrs);
+  }
+
+  OpDescAPI::AttrType GetAttrType(const std::string& name) const override {
+    return ConvertAttrType((*GetKeyIterator(name, desc_->attrs))->type);
+  }
+
+  std::vector<std::string> AttrNames() const override {
+    VLOG(5) << "This function call is expensive.";
+    std::vector<std::string> tmp;
+    for (const auto& attr : desc_->attrs) {
+      tmp.push_back(attr->name);
+    }
+    return tmp;
+  }
+
+  template <typename T>
+  void SetAttr(const std::string& name, const T& v);
+
+  template <typename T>
+  T GetAttr(const std::string& name) const;
+
+  proto::OpDescT* raw_desc() { return desc_; }
+
+  ~OpDesc() {
+    if (owned_) {
+      delete desc_;
+    }
+  }
+
+ private:
+  bool owned_{false};
+  proto::OpDescT* desc_{nullptr};
 };
 
 }  // namespace fbs

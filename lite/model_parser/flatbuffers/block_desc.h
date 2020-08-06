@@ -89,6 +89,83 @@ class BlockDescView : public BlockDescAPI {
   }
 };
 
+class BlockDesc : public BlockDescAPI {
+ public:
+  BlockDesc() : owned_(true), desc_(new proto::BlockDescT()) {}
+  explicit BlockDesc(proto::BlockDescT* desc) : desc_(desc) { CHECK(desc_); }
+
+  int32_t Idx() const override { return desc_->idx; }
+
+  void SetIdx(int32_t idx) override { desc_->idx = idx; }
+
+  int32_t ParentIdx() const override { return desc_->parent_idx; }
+
+  void SetParentIdx(int32_t idx) override { desc_->parent_idx = idx; }
+
+  size_t VarsSize() const override { return desc_->vars.size(); }
+
+  void ClearVars() override {
+    desc_->vars.clear();
+    SyncVars();
+  }
+
+  size_t OpsSize() const override { return desc_->ops.size(); }
+
+  void ClearOps() override {
+    desc_->ops.clear();
+    SyncOps();
+  }
+
+  int32_t ForwardBlockIdx() const override { return desc_->forward_block_idx; }
+
+  void SetForwardBlockIdx(int32_t idx_in) override {
+    desc_->forward_block_idx = idx_in;
+  }
+
+  proto::BlockDescT* raw_desc() { return desc_; }
+
+  template <typename T>
+  T* GetVar(int32_t idx);
+
+  template <typename T>
+  T* AddVar();
+
+  template <typename T>
+  T* GetOp(int32_t idx);
+
+  template <typename T>
+  T* AddOp();
+
+  ~BlockDesc() {
+    if (owned_) {
+      delete desc_;
+    }
+  }
+
+ private:
+  void SyncVars() {
+    vars_.resize(desc_->vars.size());
+    for (size_t i = 0; i < desc_->vars.size(); ++i) {
+      if (vars_[i].raw_desc() != desc_->vars[i].get()) {
+        vars_[i] = VarDesc(desc_->vars[i].get());
+      }
+    }
+  }
+  void SyncOps() {
+    ops_.resize(desc_->ops.size());
+    for (size_t i = 0; i < desc_->ops.size(); ++i) {
+      if (ops_[i].raw_desc() != desc_->ops[i].get()) {
+        ops_[i] = OpDesc(desc_->ops[i].get());
+      }
+    }
+  }
+
+  bool owned_{false};
+  proto::BlockDescT* desc_{nullptr};
+  std::vector<VarDesc> vars_;
+  std::vector<OpDesc> ops_;
+};
+
 }  // namespace fbs
 }  // namespace lite
 }  // namespace paddle

@@ -78,6 +78,67 @@ class VarDescView : public VarDescAPI {
   std::vector<int64_t> shape_;
 };
 
+class VarDesc : public VarDescAPI {
+ public:
+  VarDesc() : owned_(true), desc_(new proto::VarDescT()) {}
+
+  explicit VarDesc(proto::VarDescT* desc) : desc_(desc) {
+    CHECK(desc_);
+    InitType();
+  }
+
+  std::string Name() const override { return desc_->name; }
+
+  void SetName(std::string name) override { desc_->name = name; }
+
+  Type GetType() const override { return ConvertVarType(type_->type); }
+
+  void SetType(Type type) override {
+    CHECK(type == VarDescAPI::Type::LOD_TENSOR);
+    type_->type = ConvertVarType(type);
+  }
+
+  bool Persistable() const override { return desc_->persistable; }
+
+  void SetPersistable(bool persistable) override {
+    desc_->persistable = persistable;
+  }
+
+  std::vector<int64_t> GetShape() const override {
+    CHECK(GetType() == VarDescAPI::Type::LOD_TENSOR);
+    return type_->lod_tensor->tensor->dims;
+  }
+
+  void SetShape(const std::vector<int64_t>& dims) override {
+    type_->lod_tensor->tensor->dims = dims;
+  }
+
+  proto::VarDescT* raw_desc() { return desc_; }
+
+  ~VarDesc() {
+    if (owned_) {
+      delete desc_;
+    }
+  }
+
+ private:
+  void InitType() {
+    if (!desc_->type) {
+      desc_->type = std::unique_ptr<proto::VarTypeT>(new proto::VarTypeT());
+      desc_->type->lod_tensor =
+          std::unique_ptr<proto::VarType_::LoDTensorDescT>(
+              new proto::VarType_::LoDTensorDescT());
+      desc_->type->lod_tensor->tensor =
+          std::unique_ptr<proto::VarType_::TensorDescT>(
+              new proto::VarType_::TensorDescT());
+    }
+    type_ = desc_->type.get();
+  }
+  bool owned_{false};
+  proto::VarDescT* desc_{nullptr};
+  paddle::lite::fbs::proto::VarTypeT* type_{nullptr};
+};
+
 }  // namespace fbs
 }  // namespace lite
 }  // namespace paddle
