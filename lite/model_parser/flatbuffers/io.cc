@@ -23,16 +23,22 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-void LoadModel(const std::string& path, ProgramDesc* prog) {
-  CHECK(prog);
+std::vector<char> LoadFile(const std::string& path) {
   FILE* file = fopen(path.c_str(), "rb");
   fseek(file, 0, SEEK_END);
   int64_t length = ftell(file);
   rewind(file);
   std::vector<char> buf(length);
-  CHECK(fread(buf.data(), 1, length, file));
+  CHECK(fread(buf.data(), 1, length, file) == length);
   fclose(file);
-  prog->Init(std::move(buf));
+  return buf;
+}
+
+void SaveFile(const std::string& path, const void* src, size_t byte_size) {
+  CHECK(src);
+  FILE* file = fopen(path.c_str(), "wb");
+  CHECK(fwrite(src, sizeof(char), byte_size, file) == byte_size);
+  fclose(file);
 }
 
 void SetParamWithTensor(const std::string& name,
@@ -72,6 +78,7 @@ void SetScopeWithCombinedParams(lite::Scope* scope,
     SetTensorWithParam(tensor, param);
   }
 }
+
 }  // namespace fbs
 }  // namespace lite
 }  // namespace paddle

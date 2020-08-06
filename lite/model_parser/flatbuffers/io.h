@@ -25,18 +25,14 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-void LoadModel(const std::string& path, ProgramDesc* prog);
+std::vector<char> LoadFile(const std::string& path);
+void SaveFile(const std::string& path, const void* src, size_t byte_size);
 
-void SetParamWithTensor(const std::string& name,
-                        const lite::Tensor& tensor,
-                        ParamDescWriteAPI* prog);
-void SetTensorWithParam(const lite::Tensor& tensor, ParamDescReadAPI* prog);
-
+void SetScopeWithCombinedParams(lite::Scope* scope,
+                                const CombinedParamsDescReadAPI& params);
 void SetCombinedParamsWithScope(const lite::Scope& scope,
                                 const std::vector<std::string>& params_name,
                                 CombinedParamsDescWriteAPI* params);
-void SetScopeWithCombinedParams(lite::Scope* scope,
-                                const CombinedParamsDescReadAPI& params);
 
 }  // namespace fbs
 }  // namespace lite
