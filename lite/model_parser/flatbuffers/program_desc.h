@@ -97,6 +97,79 @@ class ProgramDescView : public ProgramDescAPI {
   }
 };
 
+class ProgramDesc : public ProgramDescAPI {
+ public:
+  ProgramDesc() = default;
+
+  explicit ProgramDesc(const std::vector<char>& buf) {
+    const auto* raw_buf = proto::GetProgramDesc(buf.data());
+    raw_buf->UnPackTo(&desc_);
+    SyncBlocks();
+  }
+
+  size_t BlocksSize() const override { return desc_.blocks.size(); }
+
+  void ClearBlocks() override {
+    desc_.blocks.clear();
+    SyncBlocks();
+  }
+
+  template <typename T>
+  T* GetBlock(int32_t idx);
+
+  template <typename T>
+  T* AddBlock();
+
+  bool HasVersion() const override { return desc_.version.get(); }
+
+  int64_t Version() const override {
+    if (!HasVersion()) {
+      return -1;
+    }
+    return desc_.version->version;
+  }
+
+  void SetVersion(int64_t version_in) override {
+    if (!HasVersion()) {
+      desc_.version.reset(new fbs::proto::VersionT());
+    }
+    desc_.version->version = version_in;
+  }
+
+  const void* data() {
+    SyncBuffer();
+    return buf_.data();
+  }
+
+  size_t buf_size() {
+    SyncBuffer();
+    return buf_.size();
+  }
+
+ private:
+  void SyncBlocks() {
+    blocks_.resize(desc_.blocks.size());
+    for (size_t i = 0; i < desc_.blocks.size(); ++i) {
+      if (blocks_[i].raw_desc() != desc_.blocks[i].get()) {
+        blocks_[i] = BlockDesc(desc_.blocks[i].get());
+      }
+    }
+  }
+
+  void SyncBuffer() {
+    fbb_.Reset();
+    flatbuffers::Offset<proto::ProgramDesc> desc =
+        proto::ProgramDesc::Pack(fbb_, &desc_);
+    fbb_.Finish(desc);
+    buf_ = fbb_.Release();
+  }
+
+  flatbuffers::DetachedBuffer buf_;
+  flatbuffers::FlatBufferBuilder fbb_;
+  proto::ProgramDescT desc_;
+  std::vector<BlockDesc> blocks_;
+};
+
 }  // namespace fbs
 }  // namespace lite
 }  // namespace paddle
