@@ -46,13 +46,20 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.output = GetMutableVar<lite::Tensor>(scope, out);
 
   param_.dropout_prob = op_desc.GetAttr<float>("dropout_prob");
-  param_.is_test = true;
-  // TODO(sangoly): `is_test` has different attr type in x86 and arm, set
-  // `true` now.
-  // if (op_desc.HasAttr("is_test")) {
-  //   param_.is_test = op_desc.GetAttr<bool>("is_test");
-  // }
-  if (param_.is_test == false) {
+
+  auto is_test_type = op_desc.GetAttrType("is_test");
+  switch (is_test_type) {
+    case OpDescAPI::AttrType::INT:
+      param_.is_test = op_desc.GetAttr<int>("is_test");
+      break;
+    case OpDescAPI::AttrType::BOOLEAN:
+      param_.is_test = op_desc.GetAttr<bool>("is_test");
+      break;
+    default:
+      LOG(FATAL) << "Unsupported attribute type: the type of attribute "
+                    "`is_test` in BatchNormOP should be int or bool.";
+  }
+  if (!param_.is_test) {
     auto Mask = op_desc.Output("Mask").front();
     param_.mask = GetMutableVar<lite::Tensor>(scope, Mask);
   }
