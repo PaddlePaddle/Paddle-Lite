@@ -322,10 +322,6 @@ void TestPoolPaddings(Place place, float abs_error = 2e-5) {
                    {1, 1},
                    {0, 0, 1, 1},
                    {2, 2});
-    // Ascend restriction: padT should equals padB, and padL should equals padR
-    if (place == TARGET(kHuaweiAscendNPU)) {
-      continue;
-    }
     TestPoolHelper(place,
                    abs_error,
                    {2, 3, 6, 7},

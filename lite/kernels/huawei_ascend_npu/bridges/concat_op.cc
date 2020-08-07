@@ -28,13 +28,21 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NPU] Converting " << op_type << " ... ";
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Converting " << op_type << " ... ";
 
   // Get input and output vars and op attributes
   auto x_names = op_info->Input("X");
   auto axis = op_info->GetAttr<int>("axis");
   auto out_name = op_info->Output("Out").front();
   auto num = x_names.size();
+
+  // TODO(qili93): Ascend has bug in ge::op::Concat (i.e. has axis tensor
+  // input), to be fixed
+  if (op_info->HasInput("AxisTensor")) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK not support "
+                    "AxisTensor input!";
+    return FAILED;
+  }
 
   if (op_info->HasInput("AxisTensor")) {
     // axis node

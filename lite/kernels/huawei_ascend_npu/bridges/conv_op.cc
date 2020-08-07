@@ -96,25 +96,41 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       filter_dims);
 
   // Check Restrictions: HxW(input) == HxW(filter) if output feature h*w = 1*1
-  if (output_dims[2] == 1 && output_dims[3] == 1) {
+  if (output_dims[2] == 1) {
     int input_h = input_dims[2] + paddings[0] + paddings[1];
-    int input_w = input_dims[3] + paddings[2] + paddings[3];
     int filter_h = (filter_dims[2] - 1) * dilations[0] + 1;
-    int filter_w = (filter_dims[3] - 1) * dilations[1] + 1;
-    CHECK_EQ(input_h, filter_h) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK "
-                                   "restriction: if output HxW = 1x1, then "
-                                   "input height after padding should equal to "
-                                   "filter height after dilation";
-    CHECK_EQ(input_w, filter_w) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK "
-                                   "restriction: if output HxW = 1x1, then "
-                                   "input width after padding should equal to "
-                                   "filter width after dilation";
+    if (input_h != filter_h) {
+      LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK restriction: "
+                      "input height after padding should equal to filter "
+                      "height after dilation if output height is 1. Input "
+                      "height after padding is: "
+                   << input_h
+                   << ", filter height after dilation is: " << filter_h;
+      return FAILED;
+    }
   }
-
+  // Check Restrictions: HxW(input) == HxW(filter) if output feature h*w = 1*1
+  if (output_dims[3] == 1) {
+    int input_w = input_dims[3] + paddings[2] + paddings[3];
+    int filter_w = (filter_dims[3] - 1) * dilations[1] + 1;
+    if (input_w != filter_w) {
+      LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK restriction: "
+                      "input width after padding should equal to filter width "
+                      "after dilation if output width is 1. Input width after "
+                      "padding is: "
+                   << input_w
+                   << ", filter width after dilation is: " << filter_w;
+      return FAILED;
+    }
+  }
   // Check Restrictions: outChannel divide groups should equal to 0
-  CHECK_EQ(oc % groups, 0) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK "
-                              "restriction: out channel divice groups should "
-                              "equal to 0";
+  if (oc % groups != 0) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK restriction: "
+                    "out channel divice groups should equal to 0. out channel "
+                    "is: "
+                 << oc << ", groups is: " << groups;
+    return FAILED;
+  }
 
   // Check depthwise mode, and decide whether use DepthwiseConv2D Op
   bool use_depthwise_conv = false;
