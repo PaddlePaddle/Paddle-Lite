@@ -147,11 +147,19 @@ inline proto::AttrType ConvertAttrType(lite::OpAttrType type) {
 template <typename FlatbuffersMapT, typename KeyT = std::string>
 KeyT GetKey(const std::unique_ptr<FlatbuffersMapT>& object);
 
-#define GET_KEY_INSTANCE(type, key, key_type)       \
-  template <>                                       \
-  inline key_type GetKey<proto::type>(              \
-      const std::unique_ptr<proto::type>& object) { \
-    return object->key;                             \
+template <typename FlatbuffersMapT, typename KeyT = std::string>
+void SetKey(const KeyT& key, std::unique_ptr<FlatbuffersMapT>* object);
+
+#define GET_KEY_INSTANCE(type, key, key_type)                             \
+  template <>                                                             \
+  inline key_type GetKey<proto::type>(                                    \
+      const std::unique_ptr<proto::type>& object) {                       \
+    return object->key;                                                   \
+  }                                                                       \
+  template <>                                                             \
+  inline void SetKey<proto::type>(const key_type& key_in,                 \
+                                  std::unique_ptr<proto::type>* object) { \
+    (*object)->key = key_in;                                              \
   }
 GET_KEY_INSTANCE(OpDesc_::VarT, parameter, std::string);
 GET_KEY_INSTANCE(OpDesc_::AttrT, name, std::string);
@@ -182,19 +190,20 @@ typename std::vector<std::unique_ptr<MapT>>::const_iterator GetKeyIterator(
     const KeyT& key, const std::vector<std::unique_ptr<MapT>>& vector) {
   auto iter =
       std::lower_bound(vector.begin(), vector.end(), key, CompareFunc());
-  CHECK(GetKey(*iter) == key);
+  CHECK_EQ(GetKey(*iter), key);
   return iter;
 }
 
 template <typename MapT,
           typename KeyT = std::string,
           typename CompareFunc = CompareLessThanKey<MapT, KeyT>>
-void InsertPair(const KeyT& key,
-                std::unique_ptr<MapT>&& val,
-                std::vector<std::unique_ptr<MapT>>* vector) {
+typename std::vector<std::unique_ptr<MapT>>::iterator InsertPair(
+    const KeyT& key,
+    std::unique_ptr<MapT>&& val,
+    std::vector<std::unique_ptr<MapT>>* vector) {
   auto iter =
       std::lower_bound(vector->begin(), vector->end(), key, CompareFunc());
-  vector->insert(iter, std::forward<std::unique_ptr<MapT>>(val));
+  return vector->insert(iter, std::forward<std::unique_ptr<MapT>>(val));
 }
 
 template <typename MapT,
