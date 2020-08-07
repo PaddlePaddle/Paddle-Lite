@@ -34,7 +34,7 @@ std::unique_ptr<xtcl::network::xRuntimeInstance> Device::Build(
   for (size_t i = 0; i < outputs->size(); i++) {
     all_outs.push_back(*outputs->at(i));
   }
-  xtcl::xNetwork network =
+  xtcl::network::xNetwork network =
       builder->FinalizeNetwork(xtcl::relay::TupleNode::make(all_outs));
   auto target = xtcl::NullValue<xtcl::Target>();
   if (!target_.empty()) {
