@@ -93,12 +93,18 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  strides,
                                  ksize);
   // Ascend restriction: padT should equals padB, and padL should equals padR
-  CHECK_EQ(paddings[0], paddings[1]) << "[HUAWEI_ASCEND_NPU] Padding top "
-                                        "should equals to padding bottom in "
-                                        "Huawei Ascend NPU DDK";
-  CHECK_EQ(paddings[2], paddings[3]) << "[HUAWEI_ASCEND_NPU] Padding left "
-                                        "should equals to padding right in "
-                                        "Huawei Ascend NPU DDK";
+  if (paddings[0] != paddings[1]) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Padding top should equals to padding "
+                    "bottom in Huawei Ascend NPU DDK, padding top is: "
+                 << paddings[0] << ", padding bottom is: " << paddings[1];
+    return FAILED;
+  }
+  if (paddings[2] != paddings[3]) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Padding left should equals to padding "
+                    "right in Huawei Ascend NPU DDK, padding left is: "
+                 << paddings[2] << ", padding right is: " << paddings[3];
+    return FAILED;
+  }
 
   // ceil mode
   bool ceil_mode =
