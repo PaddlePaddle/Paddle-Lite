@@ -169,7 +169,7 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
   }
 
   const ParamDescReadAPI* GetParamDesc(size_t idx) const override {
-    return &params_[idx];
+    return params_[idx].get();
   }
 
   size_t GetParamsSize() const override { return desc_.params.size(); }
@@ -178,7 +178,7 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
     desc_.params.push_back(
         std::unique_ptr<proto::ParamDescT>(new proto::ParamDescT));
     SyncParams();
-    return &params_[params_.size() - 1];
+    return params_[params_.size() - 1].get();
   }
 
   const void* data() {
@@ -195,8 +195,8 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
   void SyncParams() {
     params_.resize(GetParamsSize());
     for (size_t i = 0; i < GetParamsSize(); ++i) {
-      if (params_[i].raw_desc() != desc_.params[i].get()) {
-        params_[i] = ParamDesc(desc_.params[i].get());
+      if (params_[i]->raw_desc() != desc_.params[i].get()) {
+        params_[i].reset(new ParamDesc(desc_.params[i].get()));
       }
     }
   }
@@ -212,7 +212,7 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
   flatbuffers::DetachedBuffer buf_;
   flatbuffers::FlatBufferBuilder fbb_;
   proto::CombinedParamsDescT desc_;
-  std::vector<ParamDesc> params_;
+  std::vector<std::unique_ptr<ParamDesc>> params_;
 };
 
 }  // namespace fbs

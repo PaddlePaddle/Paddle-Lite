@@ -46,27 +46,27 @@ OpDescView const* BlockDescView::GetOp<OpDescView>(int32_t idx) const {
 template <>
 proto::VarDescT* BlockDesc::GetVar<proto::VarDescT>(int32_t idx) {
   CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
-  return vars_[idx].raw_desc();
+  return vars_[idx]->raw_desc();
 }
 
 template <>
 proto::VarDescT* BlockDesc::AddVar<proto::VarDescT>() {
   desc_->vars.push_back(std::unique_ptr<proto::VarDescT>(new proto::VarDescT));
   SyncVars();
-  return vars_.back().raw_desc();
+  return vars_.back()->raw_desc();
 }
 
 template <>
 proto::OpDescT* BlockDesc::GetOp<proto::OpDescT>(int32_t idx) {
   CHECK_LT(idx, OpsSize()) << "idx >= vars.size()";
-  return ops_[idx].raw_desc();
+  return ops_[idx]->raw_desc();
 }
 
 template <>
 proto::OpDescT* BlockDesc::AddOp<proto::OpDescT>() {
   desc_->ops.push_back(std::unique_ptr<proto::OpDescT>(new proto::OpDescT));
   SyncOps();
-  return ops_.back().raw_desc();
+  return ops_.back()->raw_desc();
 }
 
 }  // namespace fbs

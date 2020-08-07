@@ -26,10 +26,10 @@ namespace fbs {
 std::vector<char> LoadFile(const std::string& path) {
   FILE* file = fopen(path.c_str(), "rb");
   fseek(file, 0, SEEK_END);
-  int64_t length = ftell(file);
+  uint64_t length = ftell(file);
   rewind(file);
   std::vector<char> buf(length);
-  CHECK(fread(buf.data(), 1, length, file) == length);
+  CHECK_EQ(fread(buf.data(), 1, length, file), length);
   fclose(file);
   return buf;
 }

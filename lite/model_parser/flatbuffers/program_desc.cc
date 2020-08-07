@@ -35,7 +35,7 @@ BlockDescView const* ProgramDescView::GetBlock<BlockDescView>(
 template <>
 proto::BlockDescT* ProgramDesc::GetBlock<proto::BlockDescT>(int32_t idx) {
   CHECK_LT(idx, BlocksSize()) << "idx >= vars.size()";
-  return blocks_[idx].raw_desc();
+  return blocks_[idx]->raw_desc();
 }
 
 template <>
@@ -43,7 +43,7 @@ proto::BlockDescT* ProgramDesc::AddBlock<proto::BlockDescT>() {
   desc_.blocks.push_back(
       std::unique_ptr<proto::BlockDescT>(new proto::BlockDescT));
   SyncBlocks();
-  return blocks_.back().raw_desc();
+  return blocks_.back()->raw_desc();
 }
 
 }  // namespace fbs
