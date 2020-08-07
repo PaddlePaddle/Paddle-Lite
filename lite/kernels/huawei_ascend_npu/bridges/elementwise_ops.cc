@@ -104,6 +104,14 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Converting " + op_type + "...";
 
+  // TODO(qili93): Ascend has bug in RealDiv, to be fixed
+  if (op_type == "elementwise_div" ||
+      op_type == "fusion_elementwise_div_activation") {
+    LOG(WARNING)
+        << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK not support RealDiv OP!";
+    return FAILED;
+  }
+
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindTensor(x_name);
@@ -200,6 +208,15 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     INPUT_UPDATE(elt_op, x1, x_node);
     INPUT_UPDATE(elt_op, x2, y_node);
     OUTPUT_UPDATE(elt_op, y, elt_node);
+  } else if (op_type == "elementwise_max" ||
+             op_type == "fusion_elementwise_max_activation") {
+    elt_node = graph->Add<ge::op::Maximum>(out_name);
+    auto elt_op = elt_node->data<ge::op::Maximum>();
+    elt_op->set_input_x1(*x_node->data());
+    elt_op->set_input_x2(*y_node->data());
+    INPUT_UPDATE(elt_op, x1, x_node);
+    INPUT_UPDATE(elt_op, x2, y_node);
+    OUTPUT_UPDATE(elt_op, y, elt_node);
   } else {
     LOG(WARNING) << "[NPU] Unsupported op type: " << op_type;
     return FAILED;
@@ -223,7 +240,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_type == "fusion_elementwise_add_activation" ||
       op_type == "fusion_elementwise_sub_activation" ||
       op_type == "fusion_elementwise_mul_activation" ||
-      op_type == "fusion_elementwise_div_activation") {
+      op_type == "fusion_elementwise_div_activation" ||
+      op_type == "fusion_elementwise_max_activation") {
     auto act_type = op_info->GetAttr<std::string>("act_type");
     if (act_type == "leaky_relu") {
       auto act_node = graph->Add<ge::op::LeakyRelu>(out_name);
@@ -270,6 +288,10 @@ REGISTER_SUBGRAPH_BRIDGE(
     kHuaweiAscendNPU,
     paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
+    elementwise_max,
+    kHuaweiAscendNPU,
+    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_add_activation,
     kHuaweiAscendNPU,
     paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
@@ -283,5 +305,9 @@ REGISTER_SUBGRAPH_BRIDGE(
     paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_div_activation,
+    kHuaweiAscendNPU,
+    paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    fusion_elementwise_max_activation,
     kHuaweiAscendNPU,
     paddle::lite::subgraph::huawei_ascend_npu::ElementwiseConverter);

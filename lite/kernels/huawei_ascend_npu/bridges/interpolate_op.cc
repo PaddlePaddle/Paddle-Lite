@@ -86,8 +86,8 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
   if (out_size_node == nullptr) {
-    out_size_node =
-        graph->Add(out_name + "/out_size", std::vector<int>({out_h, out_w}));
+    out_size_node = graph->Add<int>(out_name + "/out_size",
+                                    std::vector<int>({out_h, out_w}));
   }
 
   if (interp_method == "bilinear") {

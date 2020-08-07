@@ -61,19 +61,22 @@ void ScaleActivationFuser::InsertNewNode(SSAGraph* graph,
 }
 
 cpp::OpDesc ScaleActivationFuser::GenOpDesc(const key2nodes_t& matched) {
-  cpp::OpDesc op_desc = *matched.at("scale")->stmt()->op_info();
-  op_desc.SetOutput("Out", {matched.at("output")->arg()->name});
-  cpp::OpDesc act_op_desc = *matched.at("act")->stmt()->op_info();
-
+  auto op_desc = *matched.at("scale")->stmt()->op_info();
+  auto* act_op_desc = matched.at("act")->stmt()->op_info();
   op_desc.SetAttr("activation_type", act_type_);
   if (act_type_ == "relu") {
     op_desc.SetAttr("fuse_relu", true);
   } else if (act_type_ == "relu6") {
-    float alpha = act_op_desc.GetAttr<float>("threshold");
+    float alpha = act_op_desc->GetAttr<float>("threshold");
     op_desc.SetAttr("alpha", alpha);
   } else if (act_type_ == "leaky_relu") {
-    float alpha = act_op_desc.GetAttr<float>("alpha");
+    float alpha = act_op_desc->GetAttr<float>("alpha");
     op_desc.SetAttr("alpha", alpha);
+  }
+  auto& out_name = matched.at("output")->arg()->name;
+  op_desc.SetOutput("Out", {out_name});
+  if (act_op_desc->HasOutputScale(out_name)) {
+    op_desc.SetOutputScale(out_name, act_op_desc->GetOutputScale(out_name));
   }
   return op_desc;
 }

@@ -304,8 +304,6 @@ bool DeviceProgram::SharedBufferWithOutputTensors(
     (*origin_otensors)[i]->ResetBuffer(buffer,
                                        (*device_otensors)[i]->GetSize());
   }
-  // unload model after model execution
-  CHECK_EQ(model_client_->UnloadModel(), true);
   return true;
 }
 

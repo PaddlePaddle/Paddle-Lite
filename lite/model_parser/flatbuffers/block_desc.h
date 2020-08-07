@@ -92,7 +92,11 @@ class BlockDescView : public BlockDescAPI {
 class BlockDesc : public BlockDescAPI {
  public:
   BlockDesc() : owned_(true), desc_(new proto::BlockDescT()) {}
-  explicit BlockDesc(proto::BlockDescT* desc) : desc_(desc) { CHECK(desc_); }
+  explicit BlockDesc(proto::BlockDescT* desc) : desc_(desc) {
+    CHECK(desc_);
+    SyncVars();
+    SyncOps();
+  }
 
   int32_t Idx() const override { return desc_->idx; }
 
