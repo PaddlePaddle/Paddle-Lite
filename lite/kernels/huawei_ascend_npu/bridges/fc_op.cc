@@ -52,8 +52,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   VLOG(3) << "[HUAWEI_ASCEND_NPU] input_dims = " << input_dims.repr()
           << ", w_dims = " << w_dims.repr()
-          << ", in_num_col_dims = " << in_num_col_dims
-          << ", m = " << m << ", k = " << k << ", n = " << n;
+          << ", in_num_col_dims = " << in_num_col_dims << ", m = " << m
+          << ", k = " << k << ", n = " << n;
 
   // Create input node and reshape it to (m, k, 1, 1)
   std::shared_ptr<Node> input_node = nullptr;
