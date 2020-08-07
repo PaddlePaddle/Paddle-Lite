@@ -1838,7 +1838,7 @@ void conv_depthwise_3x3s2p0_bias_no_relu(float* dout,
             MID_COMPUTE_S2 MID_RESULT_S2
             "cmp %w[remain], #1                           \n"
             "blt 4f                                     \n" RIGHT_COMPUTE_S2
-                 RIGHT_RESULT_S2 "4:                                          \n"
+                RIGHT_RESULT_S2 "4:                                          \n"
             : [inptr0] "+r"(din0_ptr),
               [inptr1] "+r"(din1_ptr),
               [inptr2] "+r"(din2_ptr),
