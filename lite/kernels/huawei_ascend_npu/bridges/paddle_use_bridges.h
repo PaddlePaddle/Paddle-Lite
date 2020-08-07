@@ -41,3 +41,4 @@ USE_SUBGRAPH_BRIDGE(fusion_elementwise_max_activation, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(batch_norm, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(softmax, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(dropout, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(fc, kHuaweiAscendNPU);
