@@ -249,6 +249,10 @@ bool AclModelClient::ModelExecute(
   VLOG(3) << "[HUAWEI_ASCEND_NPU] GetTensorFromDataset succeed, modelId:"
           << model_id_;
 
+  // destroy dataset
+  DestroyDataset(&input_dataset_);
+  DestroyDataset(&output_dataset_);
+
   return true;
 }
 
@@ -275,15 +279,12 @@ void AclModelClient::DestroyDataset(aclmdlDataset** dataset) {
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Destroy dataset success.";
 }
 
-bool AclModelClient::UnloadModel() {
+void AclModelClient::UnloadModel() {
   if (!load_flag_) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] no need to unload model, load flag is "
                  << load_flag_;
-    return true;
+    return;
   }
-
-  DestroyDataset(&input_dataset_);
-  DestroyDataset(&output_dataset_);
 
   ACL_CALL(aclmdlUnload(model_id_));
   if (model_desc_ != nullptr) {
@@ -304,7 +305,6 @@ bool AclModelClient::UnloadModel() {
   }
   load_flag_ = false;
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Unload model success, model id " << model_id_;
-  return true;
 }
 
 uint32_t AclModelClient::num_devices() {
