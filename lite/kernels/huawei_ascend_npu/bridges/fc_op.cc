@@ -55,7 +55,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           << ", in_num_col_dims = " << in_num_col_dims << ", m = " << m
           << ", k = " << k << ", n = " << n;
 
-  // Create input node and reshape it to (m, k, 1, 1)
+  // Create input node
   std::shared_ptr<Node> input_node = nullptr;
   if (graph->Has(input_name)) {
     input_node = graph->Get(input_name);
@@ -63,7 +63,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     input_node = graph->Add(input_name, *input);
   }
 
-  // trans_w_node
+  // w_node, the ascend ddk will transpose the tensor of w
+  // if we set transpose attr to be true
   auto w_node = graph->Add(w_name, *w);
 
   // fc node
