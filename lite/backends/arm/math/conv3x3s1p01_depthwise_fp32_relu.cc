@@ -1756,7 +1756,7 @@ void conv_depthwise_3x3s1p1_bias_relu(float *dout,
         int cnt = cnt_col;
         unsigned int *rmask_ptr = rmask;
         unsigned int *vmask_ptr = vmask;
-        asm volatile（
+        asm volatile(
             INIT_S1 LEFT_COMPUTE_S1 LEFT_RESULT_S1_RELU MID_COMPUTE_S1
                 MID_RESULT_S1_RELU RIGHT_COMPUTE_S1 RIGHT_RESULT_S1_RELU
             : [dout_ptr1] "+r"(doutr0),
