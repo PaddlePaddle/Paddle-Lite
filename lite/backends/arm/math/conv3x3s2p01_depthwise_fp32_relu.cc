@@ -1311,7 +1311,7 @@ void conv_depthwise_3x3s2p1_bias_s_relu(float* dout,
                        "q12",
                        "q13",
                        "q14",
-                        "q15");
+                       "q15");
 #endif
         for (int w = 0; w < w_out; ++w) {
           *dout_channel++ = out_buf[w];
@@ -1663,8 +1663,8 @@ void conv_depthwise_3x3s2p0_bias_relu(float* dout,
         }
         int cnt = tile_w;
         unsigned int* mask_ptr = dmask;
-        asm volatile(INIT_S2 MID_COMPUTE_S2 MID_RESULT_S2_RELU
-                        RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU
+        asm volatile(INIT_S2 MID_COMPUTE_S2 MID_RESULT_S2_RELU RIGHT_COMPUTE_S2
+                         RIGHT_RESULT_S2_RELU
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
                        [din2_ptr] "+r"(din2_ptr),
@@ -1675,22 +1675,22 @@ void conv_depthwise_3x3s2p0_bias_relu(float* dout,
                        [wr0] "w"(wr0),
                        [wr1] "w"(wr1),
                        [wr2] "w"(wr2),
-                        [bias] "r"(bias_c)
+                       [bias] "r"(bias_c)
                      : "cc",
-                        "memory",
-                        "q3",
-                        "q4",
-                        "q5",
-                        "q6",
-                        "q7",
-                        "q8",
-                        "q9",
-                        "q10",
-                        "q11",
-                        "q12",
-                        "q13",
-                        "q14",
-                        "q15");
+                       "memory",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
         doutr0 = doutr0 + w_out;
       }
 #endif
@@ -1828,59 +1828,58 @@ void conv_depthwise_3x3s2p0_bias_no_relu(float* dout,
         }
         int cnt = tile_w;
         asm volatile(
-              INIT_S2
-              "ld1 {v15.4s}, [%[inptr0]]                 \n"
-              "ld1 {v18.4s}, [%[inptr1]]                 \n"
-              "ld1 {v19.4s}, [%[inptr2]]                 \n"
-              "ld1 {v20.4s}, [%[inptr3]]                 \n"
-              "ld1 {v21.4s}, [%[inptr4]]                 \n"
-              "ext  v10.16b, v0.16b, v15.16b, #4     \n"  // v10 = {2,4,6,8}
-              MID_COMPUTE_S2 MID_RESULT_S2
-              "cmp %w[remain], #1                           \n"
-              "blt 4f                                     \n" RIGHT_COMPUTE_S2
-                  RIGHT_RESULT_S2
-              "4:                                          \n"
-              : [inptr0] "+r"(din0_ptr),
-                [inptr1] "+r"(din1_ptr),
-                [inptr2] "+r"(din2_ptr),
-                [inptr3] "+r"(din3_ptr),
-                [inptr4] "+r"(din4_ptr),
-                [outptr0] "+r"(doutr0_ptr),
-                [outptr1] "+r"(doutr1_ptr),
-                [cnt] "+r"(cnt)
-              : [vzero] "w"(vzero),
-                [w0] "w"(wr0),
-                [w1] "w"(wr1),
-                [w2] "w"(wr2),
-                [remain] "r"(cnt_remain),
-                [mask1] "w"(vmask_rp1),
-                [mask2] "w"(vmask_rp2),
-                [wmask] "w"(wmask),
-                [vbias] "w"(wbias)
-              : "cc",
-                "memory",
-                "v0",
-                "v1",
-                "v2",
-                "v3",
-                "v4",
-                "v5",
-                "v6",
-                "v7",
-                "v8",
-                "v9",
-                "v10",
-                "v11",
-                "v12",
-                "v13",
-                "v14",
-                "v15",
-                "v16",
-                "v17",
-                "v18",
-                "v19",
-                "v20",
-                "v21");
+            INIT_S2
+            "ld1 {v15.4s}, [%[inptr0]]                 \n"
+            "ld1 {v18.4s}, [%[inptr1]]                 \n"
+            "ld1 {v19.4s}, [%[inptr2]]                 \n"
+            "ld1 {v20.4s}, [%[inptr3]]                 \n"
+            "ld1 {v21.4s}, [%[inptr4]]                 \n"
+            "ext  v10.16b, v0.16b, v15.16b, #4     \n"  // v10 = {2,4,6,8}
+            MID_COMPUTE_S2 MID_RESULT_S2
+            "cmp %w[remain], #1                           \n"
+            "blt 4f                                     \n" RIGHT_COMPUTE_S2
+                 RIGHT_RESULT_S2 "4:                                          \n"
+            : [inptr0] "+r"(din0_ptr),
+              [inptr1] "+r"(din1_ptr),
+              [inptr2] "+r"(din2_ptr),
+              [inptr3] "+r"(din3_ptr),
+              [inptr4] "+r"(din4_ptr),
+              [outptr0] "+r"(doutr0_ptr),
+              [outptr1] "+r"(doutr1_ptr),
+              [cnt] "+r"(cnt)
+            : [vzero] "w"(vzero),
+              [w0] "w"(wr0),
+              [w1] "w"(wr1),
+              [w2] "w"(wr2),
+              [remain] "r"(cnt_remain),
+              [mask1] "w"(vmask_rp1),
+              [mask2] "w"(vmask_rp2),
+              [wmask] "w"(wmask),
+              [vbias] "w"(wbias)
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15",
+              "v16",
+              "v17",
+              "v18",
+              "v19",
+              "v20",
+              "v21");
         doutr0 = doutr0 + 2 * w_out;
       }
 #else
@@ -1908,8 +1907,8 @@ void conv_depthwise_3x3s2p0_bias_no_relu(float* dout,
         }
         int cnt = tile_w;
         unsigned int* mask_ptr = dmask;
-        asm volatile(INIT_S2 MID_COMPUTE_S2 MID_RESULT_S2
-                        RIGHT_COMPUTE_S2 RIGHT_RESULT_S2
+        asm volatile(INIT_S2 MID_COMPUTE_S2 MID_RESULT_S2 RIGHT_COMPUTE_S2
+                         RIGHT_RESULT_S2
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
                        [din2_ptr] "+r"(din2_ptr),
@@ -1922,20 +1921,20 @@ void conv_depthwise_3x3s2p0_bias_no_relu(float* dout,
                        [wr2] "w"(wr2),
                        [bias] "r"(bias_c)
                      : "cc",
-                        "memory",
-                        "q3",
-                        "q4",
-                        "q5",
-                        "q6",
-                        "q7",
-                        "q8",
-                        "q9",
-                        "q10",
-                        "q11",
-                        "q12",
-                        "q13",
-                        "q14",
-                        "q15");
+                       "memory",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
         doutr0 = doutr0 + w_out;
       }
 #endif
@@ -2055,20 +2054,20 @@ void conv_depthwise_3x3s2p0_bias_s_relu(float* dout,
                        [out] "r"(out_buf),
                        [mask_ptr] "r"(dmask)
                      : "cc",
-                        "memory",
-                        "q3",
-                        "q4",
-                        "q5",
-                        "q6",
-                        "q7",
-                        "q8",
-                        "q9",
-                        "q10",
-                        "q11",
-                        "q12",
-                        "q13",
-                        "q14",
-                        "q15");
+                       "memory",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
 #endif
         for (int w = 0; w < w_out; ++w) {
           *dout_channel++ = out_buf[w];
@@ -2187,20 +2186,20 @@ void conv_depthwise_3x3s2p0_bias_s_no_relu(float* dout,
                        [out] "r"(out_buf),
                        [mask_ptr] "r"(dmask)
                      : "cc",
-                        "memory",
-                        "q3",
-                        "q4",
-                        "q5",
-                        "q6",
-                        "q7",
-                        "q8",
-                        "q9",
-                        "q10",
-                        "q11",
-                        "q12",
-                        "q13",
-                        "q14",
-                        "q15");
+                       "memory",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
 #endif
         for (int w = 0; w < w_out; ++w) {
           *dout_channel++ = out_buf[w];
