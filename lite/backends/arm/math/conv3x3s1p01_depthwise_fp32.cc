@@ -2631,7 +2631,7 @@ void conv_depthwise_3x3s1p1_bias_leakyRelu(float *dout,
         int cnt = cnt_col;
         asm volatile(INIT_S1 LEFT_COMPUTE_S1 LEFT_RESULT_S1_LEAKY_RELU
                          MID_COMPUTE_S1 MID_RESULT_S1_LEAKY_RELU RIGHT_COMPUTE_S1
-                         RIGHT_RESULT_S1_LEAKY_RELU
+                             RIGHT_RESULT_S1_LEAKY_RELU
                      : [cnt] "+r"(cnt),
                        [din_ptr0] "+r"(din_ptr0),
                        [din_ptr1] "+r"(din_ptr1),
@@ -2729,7 +2729,7 @@ void conv_depthwise_3x3s1p1_bias_leakyRelu(float *dout,
         unsigned int *vmask_ptr = vmask;
         asm volatile(INIT_S1 LEFT_COMPUTE_S1 LEFT_RESULT_S1_LEAKY_RELU
                          MID_COMPUTE_S1 MID_RESULT_S1_LEAKY_RELU RIGHT_COMPUTE_S1
-                         RIGHT_RESULT_S1_LEAKY_RELU
+                             RIGHT_RESULT_S1_LEAKY_RELU
                      : [dout_ptr1] "+r"(doutr0),
                        [dout_ptr2] "+r"(doutr1),
                        [din0_ptr] "+r"(din_ptr0),
