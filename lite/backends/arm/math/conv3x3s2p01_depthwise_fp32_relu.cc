@@ -20,6 +20,7 @@ namespace lite {
 namespace arm {
 namespace math {
 
+// clang-format off
 #ifdef __aarch64__
 #define INIT_S2                                  \
   "prfm pldl1keep, [%[inptr0]]             \n"   \
@@ -683,6 +684,7 @@ namespace math {
   "vst1.32 {d6-d7}, [%[out]]                            \n"
 
 #endif
+// clang-format on
 
 /**
  * \brief depthwise convolution kernel 3x3, stride 2
@@ -827,7 +829,7 @@ void conv_depthwise_3x3s2p1_bias_relu(float* dout,
         int cnt = cnt_col;
         asm volatile(
             INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_RELU MID_COMPUTE_S2
-            MID_RESULT_S2_RELU RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU
+                MID_RESULT_S2_RELU RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU
             : [inptr0] "+r"(din0_ptr),
               [inptr1] "+r"(din1_ptr),
               [inptr2] "+r"(din2_ptr),
@@ -846,29 +848,29 @@ void conv_depthwise_3x3s2p1_bias_relu(float* dout,
               [wmask] "w"(wmask),
               [vbias] "w"(wbias)
             : "cc",
-            "memory",
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11",
-            "v12",
-            "v13",
-            "v14",
-           "v15",
-           "v16",
-            "v17",
-            "v18",
-            "v19",
-            "v20",
-            "v21");
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15",
+              "v16",
+              "v17",
+              "v18",
+              "v19",
+              "v20",
+              "v21");
         doutr0 = doutr0 + 2 * w_out;
       }
 #else
@@ -907,7 +909,7 @@ void conv_depthwise_3x3s2p1_bias_relu(float* dout,
         unsigned int* mask_ptr = dmask;
         asm volatile(
             INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_RELU MID_COMPUTE_S2
-            MID_RESULT_S2_RELU RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU
+                MID_RESULT_S2_RELU RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU
             : [din0_ptr] "+r"(din0_ptr),
               [din1_ptr] "+r"(din1_ptr),
               [din2_ptr] "+r"(din2_ptr),
@@ -920,20 +922,20 @@ void conv_depthwise_3x3s2p1_bias_relu(float* dout,
                 [wr2] "w"(wr2),
                 [bias] "r"(bias_c)
             : "cc",
-                "memory",
-                "q3",
-                "q4",
-                "q5",
-                "q6",
-                "q7",
-                "q8",
-                "q9",
-                "q10",
-                "q11",
-                "q12",
-                "q13",
-                "q14",
-                "q15");
+              "memory",
+              "q3",
+              "q4",
+              "q5",
+              "q6",
+              "q7",
+              "q8",
+              "q9",
+              "q10",
+             "q11",
+              "q12",
+              "q13",
+              "q14",
+              "q15");
         doutr0 = doutr0 + w_out;
       }
 #endif
@@ -1078,49 +1080,50 @@ void conv_depthwise_3x3s2p1_bias_no_relu(float* dout,
           doutr1_ptr = write_ptr;
         }
         int cnt = cnt_col;
-        asm volatile(INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2 MID_COMPUTE_S2
-                           MID_RESULT_S2 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2
-                       : [inptr0] "+r"(din0_ptr),
-                         [inptr1] "+r"(din1_ptr),
-                         [inptr2] "+r"(din2_ptr),
-                         [inptr3] "+r"(din3_ptr),
-                         [inptr4] "+r"(din4_ptr),
-                         [outptr0] "+r"(doutr0_ptr),
-                         [outptr1] "+r"(doutr1_ptr),
-                         [cnt] "+r"(cnt)
-                       : [vzero] "w"(vzero),
-                         [w0] "w"(wr0),
-                         [w1] "w"(wr1),
-                         [w2] "w"(wr2),
-                         [remain] "r"(cnt_remain),
-                         [mask1] "w"(vmask_rp1),
-                         [mask2] "w"(vmask_rp2),
-                         [wmask] "w"(wmask),
-                         [vbias] "w"(wbias)
-                       : "cc",
-                         "memory",
-                         "v0",
-                         "v1",
-                         "v2",
-                         "v3",
-                         "v4",
-                         "v5",
-                         "v6",
-                         "v7",
-                         "v8",
-                         "v9",
-                         "v10",
-                         "v11",
-                         "v12",
-                         "v13",
-                         "v14",
-                         "v15",
-                         "v16",
-                         "v17",
-                         "v18",
-                         "v19",
-                         "v20",
-                         "v21");
+        asm volatile(
+            INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2 MID_COMPUTE_S2
+                MID_RESULT_S2 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2
+            : [inptr0] "+r"(din0_ptr),
+              [inptr1] "+r"(din1_ptr),
+              [inptr2] "+r"(din2_ptr),
+              [inptr3] "+r"(din3_ptr),
+              [inptr4] "+r"(din4_ptr),
+              [outptr0] "+r"(doutr0_ptr),
+              [outptr1] "+r"(doutr1_ptr),
+              [cnt] "+r"(cnt)
+            : [vzero] "w"(vzero),
+              [w0] "w"(wr0),
+              [w1] "w"(wr1),
+              [w2] "w"(wr2),
+              [remain] "r"(cnt_remain),
+              [mask1] "w"(vmask_rp1),
+              [mask2] "w"(vmask_rp2),
+              [wmask] "w"(wmask),
+              [vbias] "w"(wbias)
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15",
+              "v16",
+              "v17",
+              "v18",
+              "v19",
+              "v20",
+              "v21");
         doutr0 = doutr0 + 2 * w_out;
       }
 #else
@@ -1157,34 +1160,35 @@ void conv_depthwise_3x3s2p1_bias_no_relu(float* dout,
         }
         int cnt = cnt_col;
         unsigned int* mask_ptr = dmask;
-        asm volatile(INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2 MID_COMPUTE_S2
-                           MID_RESULT_S2 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2
-                       : [din0_ptr] "+r"(din0_ptr),
-                         [din1_ptr] "+r"(din1_ptr),
-                         [din2_ptr] "+r"(din2_ptr),
-                         [outptr] "+r"(doutr0_ptr),
-                         [cnt] "+r"(cnt),
-                         [mask_ptr] "+r"(mask_ptr)
-                       : [remain] "r"(cnt_remain),
-                         [wr0] "w"(wr0),
-                         [wr1] "w"(wr1),
-                         [wr2] "w"(wr2),
-                         [bias] "r"(bias_c)
-                       : "cc",
-                         "memory",
-                         "q3",
-                         "q4",
-                         "q5",
-                         "q6",
-                         "q7",
-                         "q8",
-                         "q9",
-                         "q10",
-                         "q11",
-                         "q12",
-                         "q13",
-                         "q14",
-                         "q15");
+        asm volatile(
+            INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2 MID_COMPUTE_S2
+                MID_RESULT_S2 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2
+            : [din0_ptr] "+r"(din0_ptr),
+              [din1_ptr] "+r"(din1_ptr),
+              [din2_ptr] "+r"(din2_ptr),
+              [outptr] "+r"(doutr0_ptr),
+              [cnt] "+r"(cnt),
+              [mask_ptr] "+r"(mask_ptr)
+            : [remain] "r"(cnt_remain),
+                [wr0] "w"(wr0),
+                [wr1] "w"(wr1),
+                [wr2] "w"(wr2),
+                [bias] "r"(bias_c)
+            : "cc",
+              "memory",
+              "q3",
+              "q4",
+              "q5",
+              "q6",
+              "q7",
+              "q8",
+              "q9",
+              "q10",
+             "q11",
+              "q12",
+              "q13",
+              "q14",
+              "q15");
         doutr0 = doutr0 + w_out;
       }
 #endif
@@ -1388,53 +1392,53 @@ void conv_depthwise_3x3s2p1_bias_s_no_relu(float* dout,
         unsigned int* mask_ptr = dmask;
 #ifdef __aarch64__
         asm volatile(COMPUTE_S_S2 RESULT_S_S2
-                       : [din0_ptr] "+r"(din0_ptr),
-                         [din1_ptr] "+r"(din1_ptr),
-                         [din2_ptr] "+r"(din2_ptr),
-                         [mask_ptr] "+r"(mask_ptr)
-                       : [wr0] "w"(wr0),
-                         [wr1] "w"(wr1),
-                         [wr2] "w"(wr2),
-                         [bias] "w"(vbias),
-                         [out] "r"(out_buf)
-                       : "v4",
-                         "v5",
-                         "v6",
-                         "v7",
-                         "v8",
-                         "v9",
-                         "v10",
-                         "v11",
-                         "v12",
-                         "v13",
-                         "v14",
-                         "v15");
+                     : [din0_ptr] "+r"(din0_ptr),
+                       [din1_ptr] "+r"(din1_ptr),
+                       [din2_ptr] "+r"(din2_ptr),
+                       [mask_ptr] "+r"(mask_ptr)
+                      : [wr0] "w"(wr0),
+                        [wr1] "w"(wr1),
+                        [wr2] "w"(wr2),
+                        [bias] "w"(vbias),
+                        [out] "r"(out_buf)
+                      : "v4",
+                        "v5",
+                        "v6",
+                        "v7",
+                        "v8",
+                        "v9",
+                        "v10",
+                        "v11",
+                        "v12",
+                        "v13",
+                        "v14",
+                        "v15");
 #else
         asm volatile(COMPUTE_S_S2 RESULT_S_S2
-                       : [din0_ptr] "+r"(din0_ptr),
-                         [din1_ptr] "+r"(din1_ptr),
-                         [din2_ptr] "+r"(din2_ptr),
-                         [mask_ptr] "+r"(mask_ptr)
-                       : [wr0] "w"(wr0),
-                         [wr1] "w"(wr1),
-                         [wr2] "w"(wr2),
-                         [bias] "r"(bias_c),
-                         [out] "r"(out_buf)
-                       : "cc",
-                         "memory",
-                         "q3",
-                         "q4",
-                         "q5",
-                         "q6",
-                         "q7",
-                         "q8",
-                         "q9",
-                         "q10",
-                         "q11",
-                         "q12",
-                         "q13",
-                         "q14",
-                         "q15");
+                     : [din0_ptr] "+r"(din0_ptr),
+                        [din1_ptr] "+r"(din1_ptr),
+                        [din2_ptr] "+r"(din2_ptr),
+                        [mask_ptr] "+r"(mask_ptr)
+                      : [wr0] "w"(wr0),
+                        [wr1] "w"(wr1),
+                        [wr2] "w"(wr2),
+                        [bias] "r"(bias_c),
+                        [out] "r"(out_buf)
+                      : "cc",
+                        "memory",
+                        "q3",
+                        "q4",
+                        "q5",
+                        "q6",
+                        "q7",
+                        "q8",
+                        "q9",
+                        "q10",
+                        "q11",
+                        "q12",
+                        "q13",
+                        "q14",
+                        "q15");
 #endif
         for (int w = 0; w < w_out; ++w) {
           *dout_channel++ = out_buf[w];
