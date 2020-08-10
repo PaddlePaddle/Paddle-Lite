@@ -169,5 +169,5 @@ REGISTER_LITE_KERNEL(where_index, kHost, kAny, kAny, whereindex, def)
     .BindInput("Condition",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
