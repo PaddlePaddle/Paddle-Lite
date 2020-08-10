@@ -2331,41 +2331,41 @@ void conv_depthwise_3x3s1p0_bias_no_relu(float *dout,
             "sub %[din0_ptr], #8 @ 0pad + 2 float data overlap\n"
             "sub %[din1_ptr], #8 @ 0pad + 2 float data overlap\n"
             "sub %[din2_ptr], #8 @ 0pad + 2 float data overlap\n"
-             "sub %[din3_ptr], #8 @ 0pad + 2 float data overlap\n"
-             "vext.32  q6, q8, q9, #1     @ 0012\n"
-             "vext.32  q7, q8, q9, #2     @ 1234\n" MID_COMPUTE_S1 MID_RESULT_S1
-             "cmp  %[remain], #1             \n"
-             "blt 0f                         \n" RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
-             "0:                         \n"
-             : [dout_ptr1] "+r"(doutr0),
-               [dout_ptr2] "+r"(doutr1),
-               [din0_ptr] "+r"(din_ptr0),
-               [din1_ptr] "+r"(din_ptr1),
-               [din2_ptr] "+r"(din_ptr2),
-               [din3_ptr] "+r"(din_ptr3),
-               [cnt] "+r"(cnt),
-               [rmask] "+r"(rmask_ptr),
-               [vmask] "+r"(vmask_ptr)
-             : [wr0] "w"(wr0),
-               [wr1] "w"(wr1),
-               [wr2] "w"(wr2),
-               [bias_val] "r"(bias_val),
-               [vzero] "w"(vzero),
-               [remain] "r"(remain)
-             : "cc",
-               "memory",
-               "q4",
-               "q5",
-               "q6",
-                "q7",
-                "q8",
-                "q9",
-                "q10",
-                "q11",
-                "q12",
-                "q13",
-                "q14",
-                "q15");
+            "sub %[din3_ptr], #8 @ 0pad + 2 float data overlap\n"
+            "vext.32  q6, q8, q9, #1     @ 0012\n"
+            "vext.32  q7, q8, q9, #2     @ 1234\n" MID_COMPUTE_S1 MID_RESULT_S1
+            "cmp  %[remain], #1             \n"
+            "blt 0f                         \n" RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
+            "0:                         \n"
+            : [dout_ptr1] "+r"(doutr0),
+              [dout_ptr2] "+r"(doutr1),
+              [din0_ptr] "+r"(din_ptr0),
+              [din1_ptr] "+r"(din_ptr1),
+              [din2_ptr] "+r"(din_ptr2),
+              [din3_ptr] "+r"(din_ptr3),
+              [cnt] "+r"(cnt),
+              [rmask] "+r"(rmask_ptr),
+              [vmask] "+r"(vmask_ptr)
+            : [wr0] "w"(wr0),
+              [wr1] "w"(wr1),
+              [wr2] "w"(wr2),
+              [bias_val] "r"(bias_val),
+              [vzero] "w"(vzero),
+              [remain] "r"(remain)
+            : "cc",
+              "memory",
+              "q4",
+              "q5",
+              "q6",
+              "q7",
+              "q8",
+              "q9",
+              "q10",
+              "q11",
+              "q12",
+              "q13",
+              "q14",
+              "q15");
         dout_ptr += 2 * w_out;
       }  //! end of processing mid rows
 #endif
@@ -2617,11 +2617,10 @@ void conv_depthwise_3x3s1p0_bias_relu(float *dout,
                      "sub %[din3_ptr], #8 @ 0pad + 2 float data overlap\n"
                      "vext.32  q6, q8, q9, #1     @ 0012\n"
                      "vext.32  q7, q8, q9, #2     @ 1234\n" MID_COMPUTE_S1
-                     MID_RESULT_S1_RELU
+                         MID_RESULT_S1_RELU
                      "cmp  %[remain], #1             \n"
                      "blt 0f                         \n" RIGHT_COMPUTE_S1
-                         RIGHT_RESULT_S1_RELU
-                     "0:                         \n"
+                         RIGHT_RESULT_S1_RELU "0:                         \n"
                      : [dout_ptr1] "+r"(doutr0),
                        [dout_ptr2] "+r"(doutr1),
                        [din0_ptr] "+r"(din_ptr0),

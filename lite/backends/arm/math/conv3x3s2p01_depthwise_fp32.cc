@@ -2882,9 +2882,8 @@ void conv_depthwise_3x3s2p0_bias_s_leakyRelu(float* dout,
                        "v14",
                        "v15",
                        "v16");
-
 #else
-	      asm volatile(COMPUTE_S_S2_P0 RESULT_S_S2_P0_LEAKY_RELU
+        asm volatile(COMPUTE_S_S2_P0 RESULT_S_S2_P0_LEAKY_RELU
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
                        [din2_ptr] "+r"(din2_ptr)
