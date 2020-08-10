@@ -42,7 +42,6 @@ void MatchMatrixActFuser::BuildPattern() {
 
   // Some op specialities.
   mm_out->AsIntermediate();
-  //   mm_tmp->AsIntermediate();
   mm->AsIntermediate();
   act->AsIntermediate();
 
