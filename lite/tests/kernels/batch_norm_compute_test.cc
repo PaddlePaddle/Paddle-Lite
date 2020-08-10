@@ -117,10 +117,12 @@ class BatchNormComputeTest : public arena::TestCase {
     op_desc->SetInput("Mean", {mean_});
     op_desc->SetInput("Variance", {variance_});
     op_desc->SetOutput("Y", {output_});
-    op_desc->SetOutput("MeanOut", {mean_out_});
-    op_desc->SetOutput("VarianceOut", {variance_out_});
-    op_desc->SetOutput("SavedMean", {saved_mean_});
-    op_desc->SetOutput("SavedVariance", {saved_variance_});
+    if (!is_test_) {
+      op_desc->SetOutput("MeanOut", {mean_out_});
+      op_desc->SetOutput("VarianceOut", {variance_out_});
+      op_desc->SetOutput("SavedMean", {saved_mean_});
+      op_desc->SetOutput("SavedVariance", {saved_variance_});
+    }
     op_desc->SetAttr("epsilon", epsilon_);
     op_desc->SetAttr("momentum", momentum_);
     op_desc->SetAttr("use_global_stats", use_global_stats_);
@@ -159,6 +161,9 @@ TEST(BatchNorm, precision) {
   Place place;
 #if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
 #else

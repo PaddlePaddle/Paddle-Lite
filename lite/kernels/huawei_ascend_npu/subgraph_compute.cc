@@ -220,7 +220,7 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
   CHECK(!model_name_.empty() && model_client_);
   // Query the dimensions of the device input and output tensors if not
   // initialized
-  VLOG(3) << "[HUAWEI_ASCEND_NPU] Sharing buffer with origin tnsors...";
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Sharing buffer with origin tensors...";
   if (device_idims_.empty() || device_odims_.empty()) {
     if (!(model_client_->GetModelIOTensorDim(&device_idims_, &device_odims_))) {
       LOG(WARNING)
@@ -304,8 +304,6 @@ bool DeviceProgram::SharedBufferWithOutputTensors(
     (*origin_otensors)[i]->ResetBuffer(buffer,
                                        (*device_otensors)[i]->GetSize());
   }
-  // unload model after model execution
-  CHECK_EQ(model_client_->UnloadModel(), true);
   return true;
 }
 

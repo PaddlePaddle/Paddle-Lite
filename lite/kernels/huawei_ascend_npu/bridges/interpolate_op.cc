@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -86,8 +86,8 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
   if (out_size_node == nullptr) {
-    out_size_node =
-        graph->Add(out_name + "/out_size", std::vector<int>({out_h, out_w}));
+    out_size_node = graph->Add<int>(out_name + "/out_size",
+                                    std::vector<int>({out_h, out_w}));
   }
 
   if (interp_method == "bilinear") {
@@ -97,18 +97,9 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     bilinear_interp_op->set_input_x(*x_node->data());
     bilinear_interp_op->set_input_size(*out_size_node->data());
     bilinear_interp_op->set_attr_align_corners(align_corners);
-    TENSOR_UPDATE_INPUT(bilinear_interp_op,
-                        x,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(x_node->precision()));
-    TENSOR_UPDATE_INPUT(bilinear_interp_op,
-                        size,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(out_size_node->precision()));
-    TENSOR_UPDATE_OUTPUT(bilinear_interp_op,
-                         y,
-                         ge::FORMAT_NCHW,
-                         CvtPrecisionType(bilinear_interp_node->precision()));
+    INPUT_UPDATE(bilinear_interp_op, x, x_node);
+    INPUT_UPDATE(bilinear_interp_op, size, out_size_node);
+    OUTPUT_UPDATE(bilinear_interp_op, y, bilinear_interp_node);
   } else if (interp_method == "nearest") {
     auto nearest_interp_node =
         graph->Add<ge::op::ResizeNearestNeighborV2>(out_name);
@@ -117,18 +108,9 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     nearest_interp_op->set_input_x(*x_node->data());
     nearest_interp_op->set_input_size(*out_size_node->data());
     nearest_interp_op->set_attr_align_corners(align_corners);
-    TENSOR_UPDATE_INPUT(nearest_interp_op,
-                        x,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(x_node->precision()));
-    TENSOR_UPDATE_INPUT(nearest_interp_op,
-                        size,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(out_size_node->precision()));
-    TENSOR_UPDATE_OUTPUT(nearest_interp_op,
-                         y,
-                         ge::FORMAT_NCHW,
-                         CvtPrecisionType(nearest_interp_node->precision()));
+    INPUT_UPDATE(nearest_interp_op, x, x_node);
+    INPUT_UPDATE(nearest_interp_op, size, out_size_node);
+    OUTPUT_UPDATE(nearest_interp_op, y, nearest_interp_node);
   } else {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Unsupported interpolate method: "
                  << interp_method;

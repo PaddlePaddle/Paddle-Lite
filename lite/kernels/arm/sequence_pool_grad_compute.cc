@@ -33,11 +33,12 @@ void SequencePoolGradCompute::Run() {
   auto& x_grad = param.X_Grad;
   const auto* din_ptr = param.X->data<float>();
   const auto* dout_grad_ptr = output_grad->data<float>();
+  const auto* index_grad_ptr = param.MaxIndex_Grad->data<int64_t>();
   float* x_grad_ptr = x_grad->mutable_data<float>();
   const auto pool_type = param.pool_type;
   const auto lod = param.X->lod()[0];
   int64_t width = param.X->numel() / param.X->dims()[0];
-  if (pool_type == "SUM" || pool_type == "MAX" || pool_type == "MIN") {
+  if (pool_type == "SUM") {
     lite::arm::math::seq_pool_sum_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "AVERAGE") {
@@ -46,8 +47,14 @@ void SequencePoolGradCompute::Run() {
   } else if (pool_type == "SQRT") {
     lite::arm::math::seq_pool_sqrt_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
-  } else if (pool_type == "FIRST" || pool_type == "LAST") {
+  } else if (pool_type == "MAX" || pool_type == "MIN") {
+    lite::arm::math::seq_pool_max_grad(
+        din_ptr, dout_grad_ptr, index_grad_ptr, x_grad_ptr, lod, width);
+  } else if (pool_type == "FIRST") {
     lite::arm::math::seq_pool_first_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
+  } else if (pool_type == "LAST") {
+    lite::arm::math::seq_pool_last_grad(
         din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else {
     LOG(ERROR) << " UNKNOWN sequence pool type";

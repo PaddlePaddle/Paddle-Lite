@@ -96,25 +96,41 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       filter_dims);
 
   // Check Restrictions: HxW(input) == HxW(filter) if output feature h*w = 1*1
-  if (output_dims[2] == 1 && output_dims[3] == 1) {
+  if (output_dims[2] == 1) {
     int input_h = input_dims[2] + paddings[0] + paddings[1];
-    int input_w = input_dims[3] + paddings[2] + paddings[3];
     int filter_h = (filter_dims[2] - 1) * dilations[0] + 1;
-    int filter_w = (filter_dims[3] - 1) * dilations[1] + 1;
-    CHECK_EQ(input_h, filter_h) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK "
-                                   "restriction: if output HxW = 1x1, then "
-                                   "input height after padding should equal to "
-                                   "filter height after dilation";
-    CHECK_EQ(input_w, filter_w) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK "
-                                   "restriction: if output HxW = 1x1, then "
-                                   "input width after padding should equal to "
-                                   "filter width after dilation";
+    if (input_h != filter_h) {
+      LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK restriction: "
+                      "input height after padding should equal to filter "
+                      "height after dilation if output height is 1. Input "
+                      "height after padding is: "
+                   << input_h
+                   << ", filter height after dilation is: " << filter_h;
+      return FAILED;
+    }
   }
-
+  // Check Restrictions: HxW(input) == HxW(filter) if output feature h*w = 1*1
+  if (output_dims[3] == 1) {
+    int input_w = input_dims[3] + paddings[2] + paddings[3];
+    int filter_w = (filter_dims[3] - 1) * dilations[1] + 1;
+    if (input_w != filter_w) {
+      LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK restriction: "
+                      "input width after padding should equal to filter width "
+                      "after dilation if output width is 1. Input width after "
+                      "padding is: "
+                   << input_w
+                   << ", filter width after dilation is: " << filter_w;
+      return FAILED;
+    }
+  }
   // Check Restrictions: outChannel divide groups should equal to 0
-  CHECK_EQ(oc % groups, 0) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK "
-                              "restriction: out channel divice groups should "
-                              "equal to 0";
+  if (oc % groups != 0) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK restriction: "
+                    "out channel divice groups should equal to 0. out channel "
+                    "is: "
+                 << oc << ", groups is: " << groups;
+    return FAILED;
+  }
 
   // Check depthwise mode, and decide whether use DepthwiseConv2D Op
   bool use_depthwise_conv = false;
@@ -182,19 +198,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     conv_op->set_attr_data_format("NCHW");
     if (bias_node != nullptr && is_channel_bias) {
       conv_op->set_input_bias(*bias_node->data());
-      TENSOR_UPDATE_INPUT(conv_op,
-                          bias,
-                          ge::FORMAT_NCHW,
-                          CvtPrecisionType(bias_node->precision()));
+      INPUT_UPDATE(conv_op, bias, bias_node);
     }
-    TENSOR_UPDATE_INPUT(
-        conv_op, x, ge::FORMAT_NCHW, CvtPrecisionType(input_node->precision()));
-    TENSOR_UPDATE_INPUT(conv_op,
-                        filter,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(filter_node->precision()));
-    TENSOR_UPDATE_OUTPUT(
-        conv_op, y, ge::FORMAT_NCHW, CvtPrecisionType(conv_node->precision()));
+    INPUT_UPDATE(conv_op, x, input_node);
+    INPUT_UPDATE(conv_op, filter, filter_node);
+    OUTPUT_UPDATE(conv_op, y, conv_node);
   } else {
     conv_node = graph->Add<ge::op::Conv2D>(output_name);
     auto conv_op = conv_node->data<ge::op::Conv2D>();
@@ -210,19 +218,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     conv_op->set_attr_data_format("NCHW");
     if (bias_node != nullptr && is_channel_bias) {
       conv_op->set_input_bias(*bias_node->data());
-      TENSOR_UPDATE_INPUT(conv_op,
-                          bias,
-                          ge::FORMAT_NCHW,
-                          CvtPrecisionType(bias_node->precision()));
+      INPUT_UPDATE(conv_op, bias, bias_node);
     }
-    TENSOR_UPDATE_INPUT(
-        conv_op, x, ge::FORMAT_NCHW, CvtPrecisionType(input_node->precision()));
-    TENSOR_UPDATE_INPUT(conv_op,
-                        filter,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(filter_node->precision()));
-    TENSOR_UPDATE_OUTPUT(
-        conv_op, y, ge::FORMAT_NCHW, CvtPrecisionType(conv_node->precision()));
+    INPUT_UPDATE(conv_op, x, input_node);
+    INPUT_UPDATE(conv_op, filter, filter_node);
+    OUTPUT_UPDATE(conv_op, y, conv_node);
   }
   // append Add node to support bias
   if (bias_node != nullptr && !is_channel_bias) {
@@ -230,7 +230,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto add_op = add_node->data<ge::op::Add>();
     add_op->set_input_x1(*conv_node->data());
     add_op->set_input_x2(*bias_node->data());
-    conv_node = add_node;
+    INPUT_UPDATE(add_op, x1, conv_node);
+    INPUT_UPDATE(add_op, x2, bias_node);
+    OUTPUT_UPDATE(add_op, y, add_node);
   }
   CHECK(conv_node);
 
@@ -241,11 +243,15 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       auto act_node = graph->Add<ge::op::Relu>(output_name);
       auto act_op = act_node->data<ge::op::Relu>();
       act_op->set_input_x(*conv_node->data());
+      INPUT_UPDATE(act_op, x, conv_node);
+      OUTPUT_UPDATE(act_op, y, act_node);
     } else if (act_type == "leaky_relu") {
       auto act_node = graph->Add<ge::op::LeakyRelu>(output_name);
       auto act_op = act_node->data<ge::op::LeakyRelu>();
       act_op->set_input_x(*conv_node->data());
       act_op->set_attr_negative_slope(leaky_relu_alpha);
+      INPUT_UPDATE(act_op, x, conv_node);
+      OUTPUT_UPDATE(act_op, y, act_node);
     } else {
       LOG(WARNING) << "[HUAWEI_ASCEND_NPU] act type not supported: "
                    << act_type;
