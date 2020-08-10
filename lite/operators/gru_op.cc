@@ -97,7 +97,9 @@ bool GRUOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.gate_activation = op_desc.GetAttr<std::string>("gate_activation");
   param_.activation = op_desc.GetAttr<std::string>("activation");
   param_.is_reverse = op_desc.GetAttr<bool>("is_reverse");
-  param_.origin_mode = op_desc.GetAttr<bool>("origin_mode");
+  if (op_desc.HasAttr("origin_mode")) {
+    param_.origin_mode = op_desc.GetAttr<bool>("origin_mode");
+  }
 
   return true;
 }
