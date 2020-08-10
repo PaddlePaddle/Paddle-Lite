@@ -177,6 +177,8 @@ namespace lite_api {
 template <>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
     const CxxConfig &config) {
+  static std::mutex mutex_conf;
+  std::unique_lock<std::mutex> lck(mutex_conf);
   auto x = std::make_shared<lite::CxxPaddleApiImpl>();
   x->Init(config);
   return x;

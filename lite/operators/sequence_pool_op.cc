@@ -34,6 +34,7 @@ bool SequencePoolOp::InferShapeImpl() const {
   auto out_dims = input->dims();
   out_dims[0] = input->lod()[0].size() - 1;
   param_.Out->Resize(out_dims);
+  param_.MaxIndex->Resize(out_dims);
   return true;
 }
 

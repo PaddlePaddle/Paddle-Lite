@@ -56,11 +56,9 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto y_name = op_info->Input("Y").front();
-  auto y_type = kernel->GetInputDeclType("Y");
   auto y = scope->FindMutableTensor(y_name);
   auto y_dims = y->dims();
   auto out_name = op_info->Output("Out").front();
@@ -78,9 +76,11 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   if (op_info->HasAttr("enable_int8")) {
     enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    input_scale = op_info->GetAttr<float>("input_scale");
+    CHECK(op_info->HasInputScale(x_name));
+    input_scale = op_info->GetInputScale(x_name)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    output_scale = op_info->GetAttr<float>("output_scale");
+    CHECK(op_info->HasOutputScale(out_name));
+    output_scale = op_info->GetOutputScale(out_name)[0];
 
     if (enable_int8) {
       precision = PRECISION(kInt8);
@@ -100,7 +100,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       qnt.scale.push_back(input_scale);
       qnt.quant_bits = op_info->GetAttr<int>("bit_length");
     }
-    x_node = graph->Add(x_name, *x, x_type->precision(), x_type->layout(), qnt);
+    x_node = graph->Add(x_name, *x, precision, layout, qnt);
   }
 
   // Y node
@@ -118,7 +118,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       qnt.scale.clear();
       qnt.scale.push_back(input_scale);
     }
-    y_node = graph->Add(y_name, *y, y_type->precision(), y_type->layout(), qnt);
+    y_node = graph->Add(y_name, *y, precision, layout, qnt);
   }
 
   std::shared_ptr<Node> output_node = nullptr;
@@ -133,8 +133,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output->mutable_data<int8_t>();
   }
 
-  output_node = graph->Add(
-      out_name, *output, x_type->precision(), x_type->layout(), output_qnt);
+  output_node = graph->Add(out_name, *output, precision, layout, output_qnt);
 
   std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;
   std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;

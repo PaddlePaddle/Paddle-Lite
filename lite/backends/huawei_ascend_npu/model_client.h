@@ -25,42 +25,54 @@ namespace huawei_ascend_npu {
 
 class TensorDesc {
  public:
-  TensorDesc(aclDataType data_type, aclmdlIODims dims, aclFormat format) {
+  TensorDesc(const std::string name,
+             aclDataType data_type,
+             aclmdlIODims dims,
+             aclFormat format) {
     if (format == ACL_FORMAT_NHWC) {
       dim_order[1] = 3;
       dim_order[2] = 1;
       dim_order[3] = 2;
     }
     // create ge::Tensordesc
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting tensor name : " << name;
     ge_tensor_desc_ = new ge::TensorDesc(
         GetGeShape(dims), GetGeFormat(format), GetGeDataType(data_type));
+    ge_tensor_desc_->SetName(name);
     CHECK(ge_tensor_desc_ != nullptr);
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting data shape : " << repr();
   }
   ~TensorDesc() { ge_tensor_desc_ = nullptr; }
-  int64_t GetNumber() const {
-    return ge_tensor_desc_->GetShape().GetDim(dim_order[0]);
-  }
-  int64_t GetChannel() const {
-    return ge_tensor_desc_->GetShape().GetDim(dim_order[1]);
-  }
-  int64_t GetHeight() const {
-    return ge_tensor_desc_->GetShape().GetDim(dim_order[2]);
-  }
-  int64_t GetWidth() const {
-    return ge_tensor_desc_->GetShape().GetDim(dim_order[3]);
-  }
+
   const ge::TensorDesc& GetGeTensorDesc() const { return *ge_tensor_desc_; }
+
+  std::string repr() const {
+    STL::stringstream ss;
+    size_t dim_size = ge_tensor_desc_->GetShape().GetDimNum();
+    if (dim_size == 0) {
+      ss << "{}";
+      return ss.str();
+    }
+    ss << "{";
+    for (size_t i = 0; i < dim_size - 1; i++) {
+      ss << ge_tensor_desc_->GetShape().GetDim(i) << ",";
+    }
+    ss << ge_tensor_desc_->GetShape().GetDim(dim_size - 1);
+    ss << "}";
+    return ss.str();
+  }
+
+  int64_t production() const {
+    return ge_tensor_desc_->GetShape().GetShapeSize();
+  }
 
  private:
   ge::Shape GetGeShape(aclmdlIODims dims) {
-    ge::Shape ge_shape({0, 0, 0, 0});
+    auto shape_data = std::vector<int64_t>({1L, 1L, 1L, 1L});
+    shape_data.resize(dims.dimCount);
+    ge::Shape ge_shape(shape_data);
     for (size_t i = 0; i < dims.dimCount; i++) {
-      if (ge_shape.SetDim(i, dims.dims[i]) != ge::GRAPH_SUCCESS) {
-        LOG(WARNING) << "[HUAWEI_ASCEND_NPU] ge::Shape SetDim failed!";
-      } else {
-        VLOG(3) << "[HUAWEI_ASCEND_NPU] Setting Ge Shape[" << i << "] = <"
-                << dims.dims[i] << ">";
-      }
+      ATC_CALL(ge_shape.SetDim(i, dims.dims[i]));
     }
     return ge_shape;
   }
@@ -80,6 +92,8 @@ class TensorDesc {
         LOG(FATAL) << "[HUAWEI_ASCEND_NPU] format not supported:" << format;
         break;
     }
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting data format : "
+            << CvtFormat(ge_format);
     return ge_format;
   }
   ge::DataType GetGeDataType(aclDataType data_type) {
@@ -110,6 +124,8 @@ class TensorDesc {
         LOG(FATAL) << "[HUAWEI_ASCEND_NPU] data type not supported!";
         break;
     }
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting data type : "
+            << CvtDataType(ge_datatype);
     return ge_datatype;
   }
 
@@ -134,6 +150,9 @@ class AclModelClient {
   }
 
   ~AclModelClient() {
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Unloading model, model id is: "
+            << model_id_;
+    UnloadModel();
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Destroying Huawei Ascend Device: "
             << device_id_;
     ACL_CALL(aclrtResetDevice(device_id_));
@@ -145,7 +164,6 @@ class AclModelClient {
                            std::vector<TensorDesc>* output_tensor);
   bool ModelExecute(std::vector<std::shared_ptr<ge::Tensor>>* input_tensor,
                     std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
-  bool UnloadModel();
 
  private:
   void CreateInputDataset(
@@ -155,6 +173,7 @@ class AclModelClient {
   bool GetTensorFromDataset(
       std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
   void DestroyDataset(aclmdlDataset** dataset);
+  void UnloadModel();
 
  private:
   uint32_t num_devices();

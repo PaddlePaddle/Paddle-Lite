@@ -117,11 +117,11 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
                              << " must be 1";
   }
   for (int i = 0; i < paddings1.size(); i++) {
-    CHECK_EQ(paddings1[i], 1) << "paddings[" << i << "]: " << paddings1[i]
-                              << " must be 1";
+    CHECK_EQ(paddings1[i], 0) << "paddings1[" << i << "]: " << paddings1[i]
+                              << " must be 0";
   }
   for (int i = 0; i < dilations1.size(); i++) {
-    CHECK_EQ(dilations1[i], 1) << "dilations[" << i << "]: " << dilations1[i]
+    CHECK_EQ(dilations1[i], 1) << "dilations1[" << i << "]: " << dilations1[i]
                                << " must be 1";
   }
   // comupte new_wight and new bias

@@ -220,7 +220,7 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
   CHECK(!model_name_.empty() && model_client_);
   // Query the dimensions of the device input and output tensors if not
   // initialized
-  VLOG(3) << "[HUAWEI_ASCEND_NPU] Sharing buffer with origin tnsors...";
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Sharing buffer with origin tensors...";
   if (device_idims_.empty() || device_odims_.empty()) {
     if (!(model_client_->GetModelIOTensorDim(&device_idims_, &device_odims_))) {
       LOG(WARNING)
@@ -241,32 +241,18 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Inputs[" << i
             << "] name: " << input_names[i]
             << " origin dims:" << (*origin_itensors)[i]->dims().repr()
-            << " device dims: {" << device_idims_[i].GetNumber() << ","
-            << device_idims_[i].GetChannel() << ","
-            << device_idims_[i].GetHeight() << ","
-            << device_idims_[i].GetWidth() << "}";
+            << " device dims:" << device_idims_[i].repr();
     CHECK_EQ((*origin_itensors)[i]->dims().production(),
-             device_idims_[i].GetNumber() * device_idims_[i].GetChannel() *
-                 device_idims_[i].GetHeight() * device_idims_[i].GetWidth());
+             device_idims_[i].production());
 
     // reset tensor desc
-    if ((*device_itensors)[i]->SetTensorDesc(
-            device_idims_[i].GetGeTensorDesc()) != ge::GRAPH_SUCCESS) {
-      LOG(WARNING) << "[HUAWEI_ASCEND_NPU] ge::Tensor input tensor "
-                      "SetTensorDesc failed!";
-    } else {
-      VLOG(3) << "[HUAWEI_ASCEND_NPU] ge::Tensor input tensor SetTensorDesc "
-                 "success.";
-    }
+    ATC_CALL((*device_itensors)[i]->SetTensorDesc(
+        device_idims_[i].GetGeTensorDesc()));
     // copy data from origin to device
-    if ((*device_itensors)[i]->SetData(
-            reinterpret_cast<uint8_t*>((*origin_itensors)[i]->raw_data()),
-            (*origin_itensors)[i]->memory_size()) != ge::GRAPH_SUCCESS) {
-      LOG(WARNING)
-          << "[HUAWEI_ASCEND_NPU] ge::Tensor input tensor SetData failed!";
-    } else {
-      VLOG(3) << "[HUAWEI_ASCEND_NPU] ge::Tensor input tensor SetData success.";
-    }
+    ATC_CALL((*device_itensors)[i]->SetData(
+        reinterpret_cast<uint8_t*>((*origin_itensors)[i]->raw_data()),
+        (*origin_itensors)[i]->memory_size()));
+
     VLOG(3)
         << "[HUAWEI_ASCEND_NPU] Init the input tensors for the device program "
            "and share their buffers with the origin input tensors";
@@ -285,26 +271,13 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Outputs[" << i
             << "] name: " << output_names[i]
             << " origin dims:" << (*origin_otensors)[i]->dims().repr()
-            << " device dims: {" << device_odims_[i].GetNumber() << ","
-            << device_odims_[i].GetChannel() << ","
-            << device_odims_[i].GetHeight() << ","
-            << device_odims_[i].GetWidth() << "}";
+            << " device dims:" << device_odims_[i].repr();
     CHECK_EQ((*origin_otensors)[i]->dims().production(),
-             device_odims_[i].GetNumber() * device_odims_[i].GetChannel() *
-                 device_odims_[i].GetHeight() * device_odims_[i].GetWidth());
+             device_odims_[i].production());
 
     // reset tensor desc
-    if ((*device_otensors)[i]->SetTensorDesc(
-            device_odims_[i].GetGeTensorDesc()) != ge::GRAPH_SUCCESS) {
-      LOG(WARNING) << "[HUAWEI_ASCEND_NPU] ge::Tensor output tensor "
-                      "SetTensorDesc failed!";
-    } else {
-      VLOG(3) << "[HUAWEI_ASCEND_NPU] ge::Tensor output tensor SetTensorDesc "
-                 "success.";
-    }
-    VLOG(3)
-        << "[HUAWEI_ASCEND_NPU] Init the output tensors for the device program "
-           "and share their buffers with the origin output tensors";
+    ATC_CALL((*device_otensors)[i]->SetTensorDesc(
+        device_odims_[i].GetGeTensorDesc()));
   }
   return true;
 }
@@ -321,8 +294,7 @@ bool DeviceProgram::SharedBufferWithOutputTensors(
 
   for (size_t i = 0; i < output_names.size(); i++) {
     CHECK_EQ((*origin_otensors)[i]->dims().production(),
-             device_odims_[i].GetNumber() * device_odims_[i].GetChannel() *
-                 device_odims_[i].GetHeight() * device_odims_[i].GetWidth());
+             device_odims_[i].production());
 
     // Share data buf between device_itensor and origin_itensor
     std::shared_ptr<Buffer> buffer = std::make_shared<Buffer>(
@@ -332,8 +304,6 @@ bool DeviceProgram::SharedBufferWithOutputTensors(
     (*origin_otensors)[i]->ResetBuffer(buffer,
                                        (*device_otensors)[i]->GetSize());
   }
-  // unload model after model execution
-  CHECK_EQ(model_client_->UnloadModel(), true);
   return true;
 }
 

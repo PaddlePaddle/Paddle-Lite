@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class SplitCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class SplitCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 

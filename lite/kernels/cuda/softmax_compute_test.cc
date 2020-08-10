@@ -20,114 +20,192 @@
 #include <utility>
 #include <vector>
 
+#include "lite/api/test_helper.h"
+#include "lite/utils/float16.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace cuda {
 
-using Tensor = lite::Tensor;
-using DDim = lite::DDim;
+class SoftmaxTest : public ::testing::Test {
+ protected:
+  SoftmaxTest()
+      : n_(2),
+        c_(2),
+        h_(2),
+        w_(2),
+        axis_(1),
+        use_cudnn_(true),
+        shape_({n_, c_, h_, w_}) {
+    x_ref_.Resize(lite::DDim(shape_));
+    x_gpu_.Resize(lite::DDim(shape_));
 
-template <typename dtype>
-static void softmax_compute_ref(const operators::SoftmaxParam& param) {
-  const dtype* x_data = param.x->mutable_data<const dtype>();
-  dtype* output_data = param.output->mutable_data<dtype>();
-  DDim x_dims = param.x->dims();
-  ASSERT_EQ(x_dims.data(), param.output->dims().data());
-  auto x_rank = x_dims.size();
-  int axis = param.axis;
-  if (axis < 0) {
-    axis += x_rank;
+    auto x_ref_data = x_ref_.mutable_data<float>();
+
+    for (int64_t i = 0; i < x_ref_.numel(); i++) {
+      x_ref_data[i] = static_cast<float>(i % 10 * 0.2);
+    }
+
+    out_ref_.Resize(lite::DDim(shape_));
+    out_cpu_.Resize(out_ref_.dims());
+    out_gpu_.Resize(out_ref_.dims());
+    RunBaseLine();
+
+    InitParamAndContext();
   }
-  int axis_size = x_dims[axis];
-  int outer_num = x_dims.Slice(0, axis).production();
-  int inner_num = x_dims.Slice(axis + 1, x_rank).production();
-  int compute_size = outer_num * inner_num;
-  for (int i = 0; i < compute_size; i++) {
-    int idx_inner = i % inner_num;
-    int idx_outer = (i / inner_num) * axis_size;
-    int start = idx_outer * inner_num + idx_inner;
-    int offset;
 
-    offset = start;
-    dtype max_data = std::numeric_limits<dtype>::lowest();
-    for (int j = 0; j < axis_size; j++) {
-      max_data = x_data[offset] > max_data ? x_data[offset] : max_data;
-      offset += inner_num;
-    }
-
-    offset = start;
-    dtype sum_data = (dtype)0;
-    for (int j = 0; j < axis_size; j++) {
-      output_data[offset] = exp(x_data[offset] - max_data);
-      sum_data += output_data[offset];
-      offset += inner_num;
-    }
-
-    offset = start;
-    for (int j = 0; j < axis_size; j++) {
-      output_data[offset] /= sum_data;
-      offset += inner_num;
-    }
+  void InitParamAndContext() {
+    ctx_.reset(new KernelContext);
+    cudaStreamCreate(&stream_);
+    auto& context = ctx_->As<CUDAContext>();
+    context.SetExecStream(stream_);
+    param_.x = &x_gpu_;
+    param_.axis = axis_;
+    param_.output = &out_gpu_;
+    param_.use_cudnn = use_cudnn_;
   }
-}
 
-TEST(softmax_cuda, compute) {
-  std::unique_ptr<KernelContext> ctx(new KernelContext);
-  auto& context = ctx->As<CUDAContext>();
-  cudaStream_t stream;
-  cudaStreamCreate(&stream);
-  context.SetExecStream(stream);
+  void InitFloatInput() {
+    x_gpu_.Assign<float, lite::DDim, TARGET(kCUDA)>(x_ref_.data<float>(),
+                                                    x_gpu_.dims());
+  }
 
-  SoftmaxCompute softmax;
-  operators::SoftmaxParam param;
-  softmax.SetContext(std::move(ctx));
-  lite::Tensor x;
-  lite::Tensor x_cpu;
-  lite::Tensor output;
-  lite::Tensor output_cpu;
-  lite::Tensor output_ref;
-  for (auto n : {1, 3}) {
-    for (auto c : {1, 4}) {
-      for (auto h : {5, 1, 112}) {
-        for (auto w : {1, 6, 112}) {
-          for (auto axis : {-2, -1, 0, 1, 2}) {
-            x.Resize({n, c, h, w});
-            x_cpu.Resize({n, c, h, w});
-            output.Resize({n, c, h, w});
-            output_cpu.Resize({n, c, h, w});
-            output_ref.Resize({n, c, h, w});
-            auto* x_cpu_data = x_cpu.mutable_data<float>();
-            auto* output_data = output.mutable_data<float>(TARGET(kCUDA));
-            auto* output_cpu_data = output_ref.mutable_data<float>();
-            auto* output_ref_data = output_ref.mutable_data<float>();
-            for (int i = 0; i < x.dims().production(); i++) {
-              x_cpu_data[i] = i;
-            }
-            x.Assign<float, lite::DDim, TARGET(kCUDA)>(x_cpu_data,
-                                                       x_cpu.dims());
-            param.x = &x;
-            param.axis = axis;
-            param.output = &output;
-            softmax.SetParam(param);
-            softmax.Launch();
-            param.x = &x_cpu;
-            param.output = &output_ref;
-            softmax_compute_ref<float>(param);
-            cudaDeviceSynchronize();
-            CopySync<TARGET(kCUDA)>(output_cpu_data,
-                                    output_data,
-                                    sizeof(float) * output.numel(),
-                                    IoDirection::DtoH);
-            for (int i = 0; i < output.dims().production(); i++) {
-              EXPECT_NEAR(output_cpu_data[i], output_ref_data[i], 1e-5);
-            }
-          }
-        }
+  void InitHalfInput() {
+    x_half_.Resize(x_ref_.dims());
+    auto x_half_data = x_half_.mutable_data<half>();
+    for (int64_t i = 0; i < x_half_.numel(); i++) {
+      x_half_data[i] = half(lite::float16(x_ref_.data<float>()[i]));
+    }
+    x_gpu_.Assign<half, lite::DDim, TARGET(kCUDA)>(x_half_data, x_gpu_.dims());
+  }
+
+  void RunBaseLine() {
+    const float* x_data = x_ref_.mutable_data<float>();
+    float* output_data = out_ref_.mutable_data<float>();
+    DDim x_dims = x_ref_.dims();
+    ASSERT_EQ(x_dims.data(), out_ref_.dims().data());
+    auto x_rank = x_dims.size();
+    int axis = axis_;
+    if (axis < 0) {
+      axis += x_rank;
+    }
+    int axis_size = x_dims[axis];
+    int outer_num = x_dims.Slice(0, axis).production();
+    int inner_num = x_dims.Slice(axis + 1, x_rank).production();
+    int compute_size = outer_num * inner_num;
+    for (int i = 0; i < compute_size; i++) {
+      int idx_inner = i % inner_num;
+      int idx_outer = (i / inner_num) * axis_size;
+      int start = idx_outer * inner_num + idx_inner;
+      int offset;
+
+      offset = start;
+      float max_data = std::numeric_limits<float>::lowest();
+      for (int j = 0; j < axis_size; j++) {
+        max_data = x_data[offset] > max_data ? x_data[offset] : max_data;
+        offset += inner_num;
+      }
+
+      offset = start;
+      float sum_data = 0.f;
+      for (int j = 0; j < axis_size; j++) {
+        output_data[offset] = exp(x_data[offset] - max_data);
+        sum_data += output_data[offset];
+        offset += inner_num;
+      }
+
+      offset = start;
+      for (int j = 0; j < axis_size; j++) {
+        output_data[offset] /= sum_data;
+        offset += inner_num;
       }
     }
   }
+
+  int n_, c_, h_, w_, axis_;
+  bool use_cudnn_;
+  std::vector<int64_t> shape_;
+  lite::Tensor x_ref_, out_ref_;
+  lite::Tensor x_gpu_;
+  lite::Tensor x_half_;
+  lite::Tensor out_cpu_, out_gpu_;
+
+  operators::SoftmaxParam param_;
+  std::unique_ptr<KernelContext> ctx_;
+  cudaStream_t stream_;
+};
+
+TEST_F(SoftmaxTest, TestFP32) {
+  InitFloatInput();
+  SoftmaxCompute<float, PRECISION(kFloat)> kernel;
+  kernel.SetParam(param_);
+  kernel.SetContext(std::move(ctx_));
+
+  for (int i = 0; i < FLAGS_warmup; ++i) {
+    kernel.Launch();
+    cudaDeviceSynchronize();
+  }
+
+  auto start = GetCurrentUS();
+  kernel.PrepareForRun();
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    kernel.Run();
+  }
+  cudaDeviceSynchronize();
+  auto duration = (GetCurrentUS() - start) / 1000.0;
+  LOG(INFO) << "fp32, warmup: " << FLAGS_warmup
+            << ", repeats: " << FLAGS_repeats << ", spend "
+            << duration / FLAGS_repeats << " ms in average.";
+
+  CopySync<TARGET(kCUDA)>(out_cpu_.mutable_data<float>(),
+                          out_gpu_.data<float>(),
+                          sizeof(float) * out_gpu_.numel(),
+                          IoDirection::DtoH);
+
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    float res = out_cpu_.data<float>()[i];
+    float ref = out_ref_.data<float>()[i];
+    EXPECT_NEAR(fabs(res - ref) / ref, 0.f, 1e-5);
+  }
 }
+
+TEST_F(SoftmaxTest, TestFP16) {
+  InitHalfInput();
+  SoftmaxCompute<half, PRECISION(kFP16)> kernel;
+  kernel.SetParam(param_);
+  kernel.SetContext(std::move(ctx_));
+
+  for (int i = 0; i < FLAGS_warmup; ++i) {
+    kernel.Launch();
+    cudaDeviceSynchronize();
+  }
+
+  auto start = GetCurrentUS();
+  kernel.PrepareForRun();
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    kernel.Run();
+  }
+  cudaDeviceSynchronize();
+  auto duration = (GetCurrentUS() - start) / 1000.0;
+  LOG(INFO) << "fp16, warmup: " << FLAGS_warmup
+            << ", repeats: " << FLAGS_repeats << ", spend "
+            << duration / FLAGS_repeats << " ms in average.";
+
+  const half* out_gpu_data = out_gpu_.data<half>();
+  half* out_cpu_data = out_cpu_.mutable_data<half>();
+  CopySync<TARGET(kCUDA)>(out_cpu_data,
+                          out_gpu_data,
+                          sizeof(half) * out_gpu_.numel(),
+                          IoDirection::DtoH);
+
+  for (int i = 0; i < out_gpu_.numel(); ++i) {
+    float res = static_cast<float>(lite::float16(out_cpu_data[i]));
+    float ref = out_ref_.data<float>()[i];
+    EXPECT_NEAR(fabs(res - ref) / (ref + 1e-5), 0., 1e-2);
+  }
+}
+
 }  // namespace cuda
 }  // namespace kernels
 }  // namespace lite
