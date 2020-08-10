@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/kernels/arm/sequence_pool_compute.h"
+#include "lite/kernels/arm/sequence_pool_grad_compute.h"
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
@@ -25,43 +25,40 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void SequencePoolCompute::PrepareForRun() {}
+void SequencePoolGradCompute::PrepareForRun() {}
 
-void SequencePoolCompute::Run() {
-  auto& param = Param<operators::SequencePoolParam>();
-  auto& output = param.Out;
-  const auto* din = param.X->data<float>();
-  float* dout = output->mutable_data<float>();
-  int64_t* max_index = param.MaxIndex->mutable_data<int64_t>();
+void SequencePoolGradCompute::Run() {
+  auto& param = Param<operators::SequencePoolGradParam>();
+  auto& output_grad = param.Out_Grad;
+  auto& x_grad = param.X_Grad;
+  const auto* din_ptr = param.X->data<float>();
+  const auto* dout_grad_ptr = output_grad->data<float>();
+  const auto* index_grad_ptr = param.MaxIndex_Grad->data<int64_t>();
+  float* x_grad_ptr = x_grad->mutable_data<float>();
   const auto pool_type = param.pool_type;
   const auto lod = param.X->lod()[0];
-
   int64_t width = param.X->numel() / param.X->dims()[0];
-
   if (pool_type == "SUM") {
-    lite::arm::math::seq_pool_sum(din, dout, lod, width);
+    lite::arm::math::seq_pool_sum_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "AVERAGE") {
-    lite::arm::math::seq_pool_average(din, dout, lod, width);
+    lite::arm::math::seq_pool_average_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "SQRT") {
-    lite::arm::math::seq_pool_sqrt(din, dout, lod, width);
-  } else if (pool_type == "MAX") {
-    lite::arm::math::seq_pool_max(din, dout, max_index, lod, width);
-  } else if (pool_type == "MIN") {
-    lite::arm::math::seq_pool_min(din, dout, max_index, lod, width);
+    lite::arm::math::seq_pool_sqrt_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
+  } else if (pool_type == "MAX" || pool_type == "MIN") {
+    lite::arm::math::seq_pool_max_grad(
+        din_ptr, dout_grad_ptr, index_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "FIRST") {
-    lite::arm::math::seq_pool_first(din, dout, lod, width);
+    lite::arm::math::seq_pool_first_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else if (pool_type == "LAST") {
-    lite::arm::math::seq_pool_last(din, dout, lod, width);
+    lite::arm::math::seq_pool_last_grad(
+        din_ptr, dout_grad_ptr, x_grad_ptr, lod, width);
   } else {
     LOG(ERROR) << " UNKNOWN sequence pool type";
   }
-  int batch_size = lod.size() - 1;
-  std::vector<uint64_t> offset_new(static_cast<uint64_t>(batch_size + 1));
-  for (int i = 0; i <= batch_size; i++) {
-    offset_new[i] = i;
-  }
-  output->mutable_lod()->clear();
-  output->mutable_lod()->push_back(offset_new);
 }
 
 }  // namespace arm
@@ -69,13 +66,14 @@ void SequencePoolCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(sequence_pool,
+REGISTER_LITE_KERNEL(sequence_pool_grad,
                      kARM,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::SequencePoolCompute,
+                     paddle::lite::kernels::arm::SequencePoolGradCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Out@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("X@GRAD", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("MaxIndex", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

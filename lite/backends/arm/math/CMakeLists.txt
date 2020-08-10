@@ -118,6 +118,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       beam_search.cc
       reduce_max.cc
       sequence_pool.cc
+      sequence_pool_grad.cc
       sequence_expand.cc
       slice.cc
       reduce_mean.cc
