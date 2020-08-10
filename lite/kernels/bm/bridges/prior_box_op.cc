@@ -242,6 +242,7 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("prior_num")) {
     param.prior_num = op_info->GetAttr<int32_t>("prior_num");
   }
+  param.min_max_aspect_ratios_order = false;
   if (op_info->HasAttr("min_max_aspect_ratios_order")) {
     param.min_max_aspect_ratios_order =
         op_info->GetAttr<bool>("min_max_aspect_ratios_order");
@@ -289,10 +290,10 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   i_split_shape_data[1] /= 2;
   shape[0] = &i_split_shape_data[0];
   shape[1] = &i_split_shape_data[0];
-  name[0] = static_cast<const char*>(
-      lite::subgraph::bm::UniqueName("bm_boxes").c_str());
-  name[1] = static_cast<const char*>(
-      lite::subgraph::bm::UniqueName("bm_boxes_var").c_str());
+  auto boxes_name = lite::subgraph::bm::UniqueName("bm_boxes");
+  auto var_name = lite::subgraph::bm::UniqueName("bm_var");
+  name[0] = static_cast<const char*>(boxes_name.c_str());
+  name[1] = static_cast<const char*>(var_name.c_str());
   int split_size[2];
   split_size[0] = shape[0][1];
   split_size[1] = shape[1][1];
