@@ -282,6 +282,7 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
   int axis{-1};
+  bool use_cudnn{true};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1010,10 +1011,10 @@ struct BeamSearchParam : ParamBase {
 struct SequencePoolParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
+  lite::Tensor* MaxIndex{};
   std::string pool_type{"AVERAGE"};
 #ifdef LITE_WITH_X86
   float pad_value{0.0};
-  lite::Tensor* MaxIndex{};
 #endif
 };
 
@@ -1030,6 +1031,18 @@ struct SequencePoolConcatParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
   std::vector<std::string> pool_type{};
+};
+
+struct SequencePoolGradParam : ParamBase {
+  const lite::Tensor* X{};
+  std::string pool_type{"AVERAGE"};
+#ifdef LITE_WITH_X86
+  float pad_value{0.0};
+#endif
+  // for backward
+  const lite::Tensor* Out_Grad{};
+  const lite::Tensor* MaxIndex_Grad{};
+  lite::Tensor* X_Grad{};
 };
 
 struct SearchGroupPaddingParam : ParamBase {
@@ -1298,6 +1311,13 @@ struct ExpandParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
   std::vector<int> expand_times{};
+};
+
+/// ----------------------- expand as operators ----------------------
+struct ExpandAsParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Target{};
+  lite::Tensor* Out{};
 };
 
 /// ----------------------- matmul operators ----------------------

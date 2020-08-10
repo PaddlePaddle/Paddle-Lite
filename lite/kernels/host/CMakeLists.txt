@@ -7,6 +7,7 @@ add_kernel(squeeze_compute_host Host basic SRCS squeeze_compute.cc DEPS ${lite_k
 add_kernel(unsqueeze_compute_host Host basic SRCS unsqueeze_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(multiclass_nms_compute_host Host basic SRCS multiclass_nms_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(expand_compute_host Host basic SRCS expand_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(expand_as_compute_host Host basic SRCS expand_as_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(shape_compute_host Host extra SRCS shape_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(is_empty_compute_host Host extra SRCS is_empty_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(crf_decoding_compute_host Host extra SRCS crf_decoding_compute.cc DEPS ${lite_kernel_deps})

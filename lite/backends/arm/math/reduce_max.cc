@@ -47,6 +47,68 @@ void reduce_n<float>(const float* src,
 }
 
 template <>
+void reduce_first_of_three<float>(
+    const float* src, float* dst, int first_in, int second_in, int third_in) {
+  for (int i = 0; i < second_in; i++) {
+    for (int j = 0; j < third_in; j++) {
+      dst[i * third_in + j] = src[i * third_in + j];
+      for (int k = 1; k < first_in; k++) {
+        dst[i * third_in + j] =
+            src[k * second_in * third_in + i * third_in + j] >
+                    dst[i * third_in + j]
+                ? src[k * second_in * third_in + i * third_in + j]
+                : dst[i * third_in + j];
+      }
+    }
+  }
+}
+
+template <>
+void reduce_second_of_three<float>(
+    const float* src, float* dst, int first_in, int second_in, int third_in) {
+  for (int i = 0; i < first_in; i++) {
+    for (int j = 0; j < third_in; j++) {
+      dst[i * third_in + j] = src[i * second_in * third_in + j];
+      for (int k = 1; k < second_in; k++) {
+        dst[i * third_in + j] =
+            src[i * second_in * third_in + third_in * k + j] >
+                    dst[i * third_in + j]
+                ? src[i * second_in * third_in + third_in * k + j]
+                : dst[i * third_in + j];
+      }
+    }
+  }
+}
+
+template <>
+void reduce_third_of_three<float>(
+    const float* src, float* dst, int first_in, int second_in, int third_in) {
+  for (int i = 0; i < first_in; i++) {
+    for (int j = 0; j < second_in; j++) {
+      dst[i * second_in + j] = src[i * second_in * third_in + j * second_in];
+      for (int k = 0; k < third_in; k++) {
+        dst[i * second_in + j] =
+            src[i * second_in * third_in + j * second_in + k] >
+                    dst[i * second_in + j]
+                ? src[i * second_in * third_in + j * second_in + k]
+                : dst[i * second_in + j];
+      }
+    }
+  }
+}
+
+template <>
+void reduce_all_of_three<float>(
+    const float* src, float* dst, int first_in, int second_in, int third_in) {
+  float max = src[0];
+  int total_element = first_in * second_in * third_in;
+  for (int i = 0; i < total_element; i++) {
+    max = src[i] > max ? src[i] : max;
+  }
+  dst[0] = max;
+}
+
+template <>
 void reduce_c<float>(const float* src,
                      float* dst,
                      int num_in,

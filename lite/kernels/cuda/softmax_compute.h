@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/backends/cuda/math/cudnn_softmax.h"
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -20,8 +21,9 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
+template <typename Dtype, PrecisionType Ptype>
 class SoftmaxCompute
-    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kCUDA), Ptype, DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::SoftmaxParam;
 
@@ -30,6 +32,7 @@ class SoftmaxCompute
   virtual ~SoftmaxCompute() = default;
 
  private:
+  lite::cuda::math::CudnnSoftmax<Dtype, Ptype> cudnn_softmax_;
   lite::Tensor tmax_data_;
   lite::Tensor tsum_data_;
   size_t sharedmem_size_;

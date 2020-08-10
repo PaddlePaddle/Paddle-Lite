@@ -32,6 +32,7 @@ void SequencePoolCompute::Run() {
   auto& output = param.Out;
   const auto* din = param.X->data<float>();
   float* dout = output->mutable_data<float>();
+  int64_t* max_index = param.MaxIndex->mutable_data<int64_t>();
   const auto pool_type = param.pool_type;
   const auto lod = param.X->lod()[0];
 
@@ -44,9 +45,9 @@ void SequencePoolCompute::Run() {
   } else if (pool_type == "SQRT") {
     lite::arm::math::seq_pool_sqrt(din, dout, lod, width);
   } else if (pool_type == "MAX") {
-    lite::arm::math::seq_pool_max(din, dout, lod, width);
+    lite::arm::math::seq_pool_max(din, dout, max_index, lod, width);
   } else if (pool_type == "MIN") {
-    lite::arm::math::seq_pool_min(din, dout, lod, width);
+    lite::arm::math::seq_pool_min(din, dout, max_index, lod, width);
   } else if (pool_type == "FIRST") {
     lite::arm::math::seq_pool_first(din, dout, lod, width);
   } else if (pool_type == "LAST") {

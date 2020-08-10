@@ -14,6 +14,7 @@
 #include "lite/kernels/cuda/gru_compute.h"
 
 #include <string>
+#include <vector>
 
 #include "lite/backends/cuda/cuda_utils.h"
 #include "lite/backends/cuda/math/bias.h"
@@ -273,6 +274,8 @@ void GRUCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
 
   auto* input = param.input;
+  T* x_data =
+      const_cast<lite::Tensor*>(input)->template mutable_data<T>(TARGET(kCUDA));
   lite::Tensor* h0{nullptr};
   if (param.h0) {
     h0 = const_cast<lite::Tensor*>(param.h0);
@@ -289,7 +292,7 @@ void GRUCompute<T, PType>::Run() {
   lite::Tensor* hidden = param.hidden;
   T* batch_reset_hidden_prev_data =
       batch_reset_hidden_prev->template mutable_data<T>(TARGET(kCUDA));
-  hidden->template mutable_data<T>(TARGET(kCUDA));
+  T* out_data = hidden->template mutable_data<T>(TARGET(kCUDA));
   T* batch_gate_data = batch_gate->template mutable_data<T>(TARGET(kCUDA));
   T* batch_hidden_data = batch_hidden->template mutable_data<T>(TARGET(kCUDA));
   bool is_reverse = param.is_reverse;
@@ -300,14 +303,28 @@ void GRUCompute<T, PType>::Run() {
   auto hidden_dims = hidden->dims();
   int frame_size = hidden_dims[1];
 
-  lite::cuda::math::LoDTensor2BatchFunctor<T> batch_func;
-  batch_func(*input, batch_gate, is_reverse, stream);
+  LoD offset_vec_vec = input->lod();
+  std::vector<int> offset(offset_vec_vec[offset_vec_vec.size() - 1].size());
+  for (size_t i = 0; i < offset_vec_vec[offset_vec_vec.size() - 1].size();
+       ++i) {
+    offset[i] = static_cast<int>(offset_vec_vec[offset_vec_vec.size() - 1][i]);
+  }
+  bool need_process = seq_utils_.GetSortedMap(offset, stream);
+  int emit_length = seq_utils_.GetEmitOffsetVec().size() - 1;
+  auto emit_offset_vec = seq_utils_.GetEmitOffsetVec();
+  if (need_process) {
+    seq_utils_.Seq2SortedSeq(
+        input->template data<T>(), batch_gate_data, 3 * frame_size, stream);
+    x_data = batch_gate_data;
+    out_data = batch_hidden_data;
+  }
 
   if (bias) {
+    // TODO(wilber): validate when bias is not nullptr
     lite::cuda::math::RowwiseAdd<T> add_bias;
-    add_bias(batch_gate_data,
+    add_bias(x_data,
              bias->template data<T>(),
-             batch_gate_data,
+             x_data,
              frame_size,
              batch_gate->numel(),
              stream);
@@ -320,6 +337,7 @@ void GRUCompute<T, PType>::Run() {
     // Since the batch computing for GRU reorders the input sequences
     // according to their length. The initialized cell state also needs
     // to reorder.
+    // TODO(wilber): validate when h0 is not nullptr
     ordered_h0_.Resize(h0->dims());
     lite::cuda::math::CopyMatrixRowsFunctor<T> row_shuffle;
     row_shuffle(*h0, &ordered_h0_, batch_gate->lod()[2], true, stream);
@@ -327,15 +345,13 @@ void GRUCompute<T, PType>::Run() {
   } else {
     gru_value.prev_out_value = nullptr;
   }
-  auto batch_starts = batch_gate->lod()[0];
-  size_t num_batch = batch_starts.size() - 1;
-  for (size_t n = 0; n < num_batch; ++n) {
-    int bstart = static_cast<int>(batch_starts[n]);
-    int bend = static_cast<int>(batch_starts[n + 1]);
+  for (size_t n = 0; n < emit_length; ++n) {
+    int bstart = emit_offset_vec[n];
+    int bend = emit_offset_vec[n + 1];
     int cur_batch_size = bend - bstart;
 
-    gru_value.output_value = batch_hidden_data + bstart * frame_size;
-    gru_value.gate_value = batch_gate_data + bstart * frame_size * 3;
+    gru_value.output_value = out_data + bstart * frame_size;
+    gru_value.gate_value = x_data + bstart * frame_size * 3;
     gru_value.reset_output_value =
         batch_reset_hidden_prev_data + bstart * frame_size;
 
@@ -349,10 +365,13 @@ void GRUCompute<T, PType>::Run() {
                                &context);
     gru_value.prev_out_value = gru_value.output_value;
   }
-
-  lite::cuda::math::Batch2LoDTensorFunctor<T> to_seq;
-  batch_hidden->set_lod(batch_gate->lod());
-  to_seq(*batch_hidden, hidden, stream);
+  if (need_process) {
+    seq_utils_.SortedSeq2Seq(batch_hidden_data,
+                             hidden->mutable_data<T>(TARGET(kCUDA)),
+                             frame_size,
+                             stream);
+  }
+  hidden->set_lod(input->lod());
 }
 
 }  // namespace cuda

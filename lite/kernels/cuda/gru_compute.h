@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "lite/backends/cuda/math/gemm.h"
+#include "lite/backends/cuda/math/sequence_helper.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/op_params.h"
 
@@ -38,6 +39,7 @@ class GRUCompute : public KernelLite<TARGET(kCUDA), PType> {
  private:
   std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
   lite::Tensor ordered_h0_;
+  lite::cuda::math::SeqSortedseqTranseUtil seq_utils_;
 };
 
 }  // namespace cuda
