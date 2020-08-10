@@ -89,8 +89,9 @@ class Optimizer {
            "lite_conv_conv_fuse_pass",             //
            // TODO(Superjomn) Refine the fusion related design to select fusion
            // kernels for devices automatically.
-           "lite_conv_activation_fuse_pass",              //
-           "lite_var_conv_2d_activation_fuse_pass",       //
+           "lite_conv_activation_fuse_pass",         //
+           "lite_var_conv_2d_activation_fuse_pass",  //
+           "lite_match_matrix_activation_fuse_pass",
            "lite_fc_fuse_pass",                           //
            "lite_shuffle_channel_fuse_pass",              //
            "lite_transpose_softmax_transpose_fuse_pass",  //
