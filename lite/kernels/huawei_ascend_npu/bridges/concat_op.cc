@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,13 +28,21 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NPU] Converting " << op_type << " ... ";
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Converting " << op_type << " ... ";
 
   // Get input and output vars and op attributes
   auto x_names = op_info->Input("X");
   auto axis = op_info->GetAttr<int>("axis");
   auto out_name = op_info->Output("Out").front();
   auto num = x_names.size();
+
+  // TODO(qili93): Ascend has bug in ge::op::Concat (i.e. has axis tensor
+  // input), to be fixed
+  if (op_info->HasInput("AxisTensor")) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Huawei Ascend NPU DDK not support "
+                    "AxisTensor input!";
+    return FAILED;
+  }
 
   if (op_info->HasInput("AxisTensor")) {
     // axis node
@@ -51,10 +59,8 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto concat_op = concat_node->data<ge::op::Concat>();
     // set axis input
     concat_op->set_input_concat_dim(*axis_node->data());
-    TENSOR_UPDATE_INPUT(concat_op,
-                        concat_dim,
-                        ge::FORMAT_NCHW,
-                        CvtPrecisionType(axis_node->precision()));
+    INPUT_UPDATE(concat_op, concat_dim, axis_node);
+
     // set dynamic input
     concat_op->set_attr_N(num);
     concat_op->create_dynamic_input_x(num);
@@ -69,17 +75,10 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         x_node = graph->Add(x_name, *x);
       }
       concat_op->set_dynamic_input_x(idx, *x_node->data());
-      TENSOR_UPDATE_DYNAMIC_INPUT(concat_op,
-                                  x,
-                                  idx,
-                                  ge::FORMAT_NCHW,
-                                  CvtPrecisionType(x_node->precision()));
+      DYNAMIC_INPUT_UPDATE(concat_op, x, idx, x_node);
       idx++;
     }
-    TENSOR_UPDATE_OUTPUT(concat_op,
-                         y,
-                         ge::FORMAT_NCHW,
-                         CvtPrecisionType(concat_node->precision()));
+    OUTPUT_UPDATE(concat_op, y, concat_node);
   } else {
     auto concat_node = graph->Add<ge::op::ConcatD>(out_name);
     auto concat_op = concat_node->data<ge::op::ConcatD>();
@@ -97,17 +96,10 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         x_node = graph->Add(x_name, *x);
       }
       concat_op->set_dynamic_input_x(idx, *x_node->data());
-      TENSOR_UPDATE_DYNAMIC_INPUT(concat_op,
-                                  x,
-                                  idx,
-                                  ge::FORMAT_NCHW,
-                                  CvtPrecisionType(x_node->precision()));
+      DYNAMIC_INPUT_UPDATE(concat_op, x, idx, x_node);
       idx++;
     }
-    TENSOR_UPDATE_OUTPUT(concat_op,
-                         y,
-                         ge::FORMAT_NCHW,
-                         CvtPrecisionType(concat_node->precision()));
+    OUTPUT_UPDATE(concat_op, y, concat_node);
   }
 
   return SUCCESS;

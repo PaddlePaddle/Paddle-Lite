@@ -103,6 +103,9 @@ TEST(Softmax, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 4e-3;  // Using fp16 in NPU
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 4e-3;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #else

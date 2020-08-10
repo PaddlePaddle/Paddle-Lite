@@ -42,12 +42,14 @@ void seq_pool_sqrt(const T* din,
 template <typename T>
 void seq_pool_max(const T* din,
                   T* dout,
+                  int64_t* index,
                   const std::vector<uint64_t> lod,
                   int64_t width);
 
 template <typename T>
 void seq_pool_min(const T* din,
                   T* dout,
+                  int64_t* index,
                   const std::vector<uint64_t> lod,
                   int64_t width);
 

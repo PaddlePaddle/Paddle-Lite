@@ -25,15 +25,20 @@ namespace huawei_ascend_npu {
 
 class TensorDesc {
  public:
-  TensorDesc(aclDataType data_type, aclmdlIODims dims, aclFormat format) {
+  TensorDesc(const std::string name,
+             aclDataType data_type,
+             aclmdlIODims dims,
+             aclFormat format) {
     if (format == ACL_FORMAT_NHWC) {
       dim_order[1] = 3;
       dim_order[2] = 1;
       dim_order[3] = 2;
     }
     // create ge::Tensordesc
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting tensor name : " << name;
     ge_tensor_desc_ = new ge::TensorDesc(
         GetGeShape(dims), GetGeFormat(format), GetGeDataType(data_type));
+    ge_tensor_desc_->SetName(name);
     CHECK(ge_tensor_desc_ != nullptr);
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting data shape : " << repr();
   }
@@ -145,6 +150,9 @@ class AclModelClient {
   }
 
   ~AclModelClient() {
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Unloading model, model id is: "
+            << model_id_;
+    UnloadModel();
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Destroying Huawei Ascend Device: "
             << device_id_;
     ACL_CALL(aclrtResetDevice(device_id_));
@@ -156,7 +164,6 @@ class AclModelClient {
                            std::vector<TensorDesc>* output_tensor);
   bool ModelExecute(std::vector<std::shared_ptr<ge::Tensor>>* input_tensor,
                     std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
-  bool UnloadModel();
 
  private:
   void CreateInputDataset(
@@ -166,6 +173,7 @@ class AclModelClient {
   bool GetTensorFromDataset(
       std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
   void DestroyDataset(aclmdlDataset** dataset);
+  void UnloadModel();
 
  private:
   uint32_t num_devices();
