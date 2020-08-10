@@ -93,10 +93,7 @@ class VarDesc : public VarDescAPI {
 
   Type GetType() const override { return ConvertVarType(type_->type); }
 
-  void SetType(Type type) override {
-    CHECK(type == VarDescAPI::Type::LOD_TENSOR);
-    type_->type = ConvertVarType(type);
-  }
+  void SetType(Type type) override { type_->type = ConvertVarType(type); }
 
   void SetDataType(Type type) {
     type_->lod_tensor->tensor->data_type = ConvertVarType(type);
