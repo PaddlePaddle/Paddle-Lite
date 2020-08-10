@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/sequence_pool_op.h"
+#include "lite/operators/sequence_pool_grad_op.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-bool SequencePoolOp::CheckShape() const {
+bool SequencePoolGradOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
+  CHECK_OR_FALSE(param_.X_Grad);
+  CHECK_OR_FALSE(param_.Out_Grad);
   auto lod = param_.X->lod();
   CHECK_EQ_OR_FALSE(lod.size(), 1UL);
   auto dims = param_.X->dims();
@@ -29,23 +30,30 @@ bool SequencePoolOp::CheckShape() const {
   return true;
 }
 
-bool SequencePoolOp::InferShapeImpl() const {
+bool SequencePoolGradOp::InferShapeImpl() const {
   const auto *input = param_.X;
-  auto out_dims = input->dims();
-  out_dims[0] = input->lod()[0].size() - 1;
-  param_.Out->Resize(out_dims);
-  param_.MaxIndex->Resize(out_dims);
+  auto x_dims = input->dims();
+  if (param_.X_Grad) {
+    param_.X_Grad->Resize(x_dims);
+    param_.X_Grad->set_lod(param_.X->lod());
+  }
   return true;
 }
 
-bool SequencePoolOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool SequencePoolGradOp::AttachImpl(const cpp::OpDesc &opdesc,
+                                    lite::Scope *scope) {
   param_.X = const_cast<lite::Tensor *>(
       &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
-  param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
-  param_.pool_type = opdesc.GetAttr<std::string>("pooltype");
   CHECK(param_.X);
-  CHECK(param_.Out);
+  auto *out_grad_var = scope->FindVar(opdesc.Input("Out@GRAD").front());
+  CHECK(out_grad_var);
+  param_.Out_Grad = &out_grad_var->Get<Tensor>();
+
+  auto *x_grad_var = scope->FindVar(opdesc.Output("X@GRAD").front());
+  CHECK(x_grad_var);
+  param_.X_Grad = x_grad_var->GetMutable<Tensor>();
+
+  param_.pool_type = opdesc.GetAttr<std::string>("pooltype");
   return true;
 }
 
@@ -53,4 +61,5 @@ bool SequencePoolOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(sequence_pool, paddle::lite::operators::SequencePoolOp);
+REGISTER_LITE_OP(sequence_pool_grad,
+                 paddle::lite::operators::SequencePoolGradOp);

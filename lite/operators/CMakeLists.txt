@@ -165,6 +165,7 @@ add_operator(activation_grad_ops train SRCS activation_grad_ops.cc DEPS ${op_DEP
 add_operator(elementwise_grad_op train SRCS elementwise_grad_ops.cc DEPS ${op_DEPS})
 add_operator(mul_grad_op train SRCS mul_grad_op.cc DEPS ${op_DEPS})
 add_operator(sgd_op train SRCS sgd_op.cc DEPS ${op_DEPS})
+add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc DEPS ${op_DEPS})
 
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS})
