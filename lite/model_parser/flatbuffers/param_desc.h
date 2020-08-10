@@ -115,7 +115,11 @@ class ParamDesc : public ParamDescAPI {
   }
 
   explicit ParamDesc(proto::ParamDescT* desc) : desc_(desc) {
-    desc_->variable.Set(proto::ParamDesc_::LoDTensorDescT());
+    if (desc_->variable.type == proto::ParamDesc_::VariableDesc_NONE) {
+      desc_->variable.Set(proto::ParamDesc_::LoDTensorDescT());
+    }
+    CHECK(desc_->variable.type ==
+          proto::ParamDesc_::VariableDesc_LoDTensorDesc);
     lod_tensor_ = desc_->variable.AsLoDTensorDesc();
     CHECK(lod_tensor_);
   }

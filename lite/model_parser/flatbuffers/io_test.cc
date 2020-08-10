@@ -53,7 +53,8 @@ TEST(CombinedParamsDesc, Scope) {
   set_tensor<int8_t>(tensor_1, std::vector<int64_t>({10, 1}));
   // Set combined parameters
   fbs::CombinedParamsDesc combined_param;
-  SetCombinedParamsWithScope(scope, params_name, &combined_param);
+  std::set<std::string> params_set(params_name.begin(), params_name.end());
+  SetCombinedParamsWithScope(scope, params_set, &combined_param);
 
   /* --------- Check scope ---------- */
   auto check_params = [&](const CombinedParamsDescReadAPI& desc) {

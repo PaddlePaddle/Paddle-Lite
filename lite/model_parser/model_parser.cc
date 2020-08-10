@@ -598,7 +598,7 @@ void SaveModelNaive(const std::string &model_dir,
 /* ---------- Flatbuffers ---------- */
 void SaveModelFbs(const std::string &model_dir,
                   const Scope &exec_scope,
-                  const general::ProgramDesc &cpp_prog) {
+                  const cpp::ProgramDesc &cpp_prog) {
   /* 1. Save model to model.fbs */
   const std::string prog_path = model_dir + "/model.fbs";
   fbs::ProgramDesc fbs_prog;

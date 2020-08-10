@@ -91,7 +91,7 @@ void SaveModelNaive(const std::string& model_dir,
 
 void SaveModelFbs(const std::string& model_dir,
                   const Scope& exec_scope,
-                  const general::ProgramDesc& cpp_prog);
+                  const cpp::ProgramDesc& cpp_prog);
 
 void LoadModelFbsFromFile(const std::string& filename,
                           Scope* scope,
