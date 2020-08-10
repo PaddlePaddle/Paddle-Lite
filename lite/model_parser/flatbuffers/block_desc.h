@@ -151,7 +151,7 @@ class BlockDesc : public BlockDescAPI {
   void SyncVars() {
     vars_.resize(desc_->vars.size());
     for (size_t i = 0; i < desc_->vars.size(); ++i) {
-      if (vars_[i]->raw_desc() != desc_->vars[i].get()) {
+      if (!vars_[i] || vars_[i]->raw_desc() != desc_->vars[i].get()) {
         vars_[i].reset(new VarDesc(desc_->vars[i].get()));
       }
     }
@@ -159,7 +159,7 @@ class BlockDesc : public BlockDescAPI {
   void SyncOps() {
     ops_.resize(desc_->ops.size());
     for (size_t i = 0; i < desc_->ops.size(); ++i) {
-      if (ops_[i]->raw_desc() != desc_->ops[i].get()) {
+      if (!ops_[i] || ops_[i]->raw_desc() != desc_->ops[i].get()) {
         ops_[i].reset(new OpDesc(desc_->ops[i].get()));
       }
     }

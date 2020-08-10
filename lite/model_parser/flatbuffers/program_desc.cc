@@ -21,20 +21,20 @@ namespace fbs {
 template <>
 proto::BlockDesc const* ProgramDescView::GetBlock<proto::BlockDesc>(
     int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
   return desc_->blocks()->Get(idx);
 }
 
 template <>
 BlockDescView const* ProgramDescView::GetBlock<BlockDescView>(
     int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
   return &blocks_[idx];
 }
 
 template <>
 proto::BlockDescT* ProgramDesc::GetBlock<proto::BlockDescT>(int32_t idx) {
-  CHECK_LT(idx, BlocksSize()) << "idx >= vars.size()";
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= vars.size()";
   return blocks_[idx]->raw_desc();
 }
 

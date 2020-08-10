@@ -150,7 +150,7 @@ class ProgramDesc : public ProgramDescAPI {
   void SyncBlocks() {
     blocks_.resize(desc_.blocks.size());
     for (size_t i = 0; i < desc_.blocks.size(); ++i) {
-      if (blocks_[i]->raw_desc() != desc_.blocks[i].get()) {
+      if (!blocks_[i] || blocks_[i]->raw_desc() != desc_.blocks[i].get()) {
         blocks_[i].reset(new BlockDesc(desc_.blocks[i].get()));
       }
     }

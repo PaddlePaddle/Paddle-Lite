@@ -32,7 +32,7 @@ void set_tensor(paddle::lite::Tensor* tensor,
   tensor->Resize(dims);
   std::vector<T> data;
   data.resize(production);
-  for (size_t i = 0; i < production; ++i) {
+  for (int i = 0; i < production; ++i) {
     data[i] = i / 2.f;
   }
   std::memcpy(tensor->mutable_data<T>(), data.data(), sizeof(T) * data.size());

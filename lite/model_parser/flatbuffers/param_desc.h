@@ -195,7 +195,7 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
   void SyncParams() {
     params_.resize(GetParamsSize());
     for (size_t i = 0; i < GetParamsSize(); ++i) {
-      if (params_[i]->raw_desc() != desc_.params[i].get()) {
+      if (!params_[i] || params_[i]->raw_desc() != desc_.params[i].get()) {
         params_[i].reset(new ParamDesc(desc_.params[i].get()));
       }
     }

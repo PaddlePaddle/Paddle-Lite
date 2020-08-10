@@ -21,31 +21,31 @@ namespace fbs {
 
 template <>
 proto::VarDesc const* BlockDescView::GetVar<proto::VarDesc>(int32_t idx) const {
-  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
+  CHECK_LT(idx, static_cast<int32_t>(VarsSize())) << "idx >= vars.size()";
   return desc_->vars()->Get(idx);
 }
 
 template <>
 proto::OpDesc const* BlockDescView::GetOp<proto::OpDesc>(int32_t idx) const {
-  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
+  CHECK_LT(idx, static_cast<int32_t>(OpsSize())) << "idx >= ops.size()";
   return desc_->ops()->Get(idx);
 }
 
 template <>
 VarDescView const* BlockDescView::GetVar<VarDescView>(int32_t idx) const {
-  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
+  CHECK_LT(idx, static_cast<int32_t>(VarsSize())) << "idx >= vars.size()";
   return &vars_[idx];
 }
 
 template <>
 OpDescView const* BlockDescView::GetOp<OpDescView>(int32_t idx) const {
-  CHECK_LT(idx, OpsSize()) << "idx >= ops.size()";
+  CHECK_LT(idx, static_cast<int32_t>(OpsSize())) << "idx >= ops.size()";
   return &ops_[idx];
 }
 
 template <>
 proto::VarDescT* BlockDesc::GetVar<proto::VarDescT>(int32_t idx) {
-  CHECK_LT(idx, VarsSize()) << "idx >= vars.size()";
+  CHECK_LT(idx, static_cast<int32_t>(VarsSize())) << "idx >= vars.size()";
   return vars_[idx]->raw_desc();
 }
 
@@ -58,7 +58,7 @@ proto::VarDescT* BlockDesc::AddVar<proto::VarDescT>() {
 
 template <>
 proto::OpDescT* BlockDesc::GetOp<proto::OpDescT>(int32_t idx) {
-  CHECK_LT(idx, OpsSize()) << "idx >= vars.size()";
+  CHECK_LT(idx, static_cast<int32_t>(OpsSize())) << "idx >= vars.size()";
   return ops_[idx]->raw_desc();
 }
 

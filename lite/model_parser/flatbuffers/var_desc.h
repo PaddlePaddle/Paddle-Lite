@@ -98,6 +98,14 @@ class VarDesc : public VarDescAPI {
     type_->type = ConvertVarType(type);
   }
 
+  void SetDataType(Type type) {
+    type_->lod_tensor->tensor->data_type = ConvertVarType(type);
+  }
+
+  Type GetDataType() const {
+    return ConvertVarType(type_->lod_tensor->tensor->data_type);
+  }
+
   bool Persistable() const override { return desc_->persistable; }
 
   void SetPersistable(bool persistable) override {

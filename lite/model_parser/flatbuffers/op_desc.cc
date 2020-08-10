@@ -103,6 +103,7 @@ GET_ATTRS_IMPL(std::vector<int64_t>, longs);
                               new proto::OpDesc_::AttrT())),                \
                           &(desc_->attrs));                                 \
     p->fb_f__ = v;                                                          \
+    p->type = ConvertAttrType(OpDataTypeTrait<T>::AT);                      \
     SetKey(name, &p);                                                       \
   }
 ATTR_IMPL(int32_t, i);
