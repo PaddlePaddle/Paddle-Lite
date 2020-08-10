@@ -155,6 +155,7 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                 if (im_h >= 0 && im_h < hin && im_w >= 0 && im_w < win) {
                   float val =
                       deformable_bilinear(in_data_ch, hin, win, im_h, im_w);
+
                   if (param.modulated) {
                     // use mask
                     const float* mask_ptr =

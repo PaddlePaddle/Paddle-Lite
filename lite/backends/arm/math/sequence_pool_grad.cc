@@ -62,6 +62,7 @@ void seq_pool_average_grad<float>(const float* din,
                                   int64_t width) {
   for (int i = 0; i < static_cast<int>(lod.size()) - 1; ++i) {
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
+    const float* dout_grad_ptr = dout_grad + i * width;
     float* din_grad_ptr = din_grad + lod[i] * width;
     float alpha = 1.0 / height;
     if (height > 0) {
@@ -84,6 +85,7 @@ void seq_pool_average_grad<float>(const float* din,
 
 template <>
 void seq_pool_sqrt_grad<float>(const float* din,
+                               const float* dout_grad,
                                float* din_grad,
                                const std::vector<uint64_t> lod,
                                int64_t width) {
@@ -96,6 +98,7 @@ void seq_pool_sqrt_grad<float>(const float* din,
       if (width == 1) {
         float sum = 0.f;
         for (int h = 0; h < height; ++h) {
+          din_grad_ptr[h] = alpha * dout_grad_ptr[h];
         }
       } else {
         for (int h = 0; h < height; h++) {
