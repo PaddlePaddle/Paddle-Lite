@@ -27,4 +27,5 @@ add_kernel(one_hot_compute_host Host basic SRCS one_hot_compute.cc DEPS ${lite_k
 
 if(LITE_BUILD_EXTRA)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)
+  lite_cc_test(test_one_hot_compute_host SRCS one_hot_compute_test.cc DEPS one_hot_compute_host)
 endif()
