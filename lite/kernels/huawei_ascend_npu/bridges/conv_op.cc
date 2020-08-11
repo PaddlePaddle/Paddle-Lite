@@ -203,6 +203,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     INPUT_UPDATE(conv_op, x, input_node);
     INPUT_UPDATE(conv_op, filter, filter_node);
     OUTPUT_UPDATE(conv_op, y, conv_node);
+    // Resize filter back to paddle dims, or save opt model after model run will
+    // result in woring tensor shape
+    filter->Resize(filter_dims);
   } else {
     conv_node = graph->Add<ge::op::Conv2D>(output_name);
     auto conv_op = conv_node->data<ge::op::Conv2D>();
