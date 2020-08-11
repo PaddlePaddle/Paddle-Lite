@@ -1812,6 +1812,15 @@ struct PrintParam : ParamBase {
   bool is_forward{true};
 };
 
+struct OneHotParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* depth_tensor{nullptr};
+  lite::Tensor* Out{};
+  int depth;
+  int dtype;
+  bool allow_out_of_range;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
