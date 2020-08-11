@@ -35,7 +35,7 @@ bool CompareOp::InferShapeImpl() const {
     new_dims.push_back(input_dims[0]);
     param_.Out->Resize(new_dims);
   } else {
-     param_.Out->Resize(input_dims);
+    param_.Out->Resize(input_dims);
   }
   // param_.Out->Resize(input_dims);
   return true;
