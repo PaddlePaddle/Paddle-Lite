@@ -173,6 +173,9 @@ function make_tiny_publish_so {
     if [ "${WITH_OPENCL}" = "ON" ]; then
        prepare_opencl_source_code $workspace $build_dir
     fi
+    if [ "${WITH_STRIP}" == "ON" ]; then
+        WITH_EXTRA=ON
+    fi
 
     init_cmake_mutable_options
     cmake $workspace \
