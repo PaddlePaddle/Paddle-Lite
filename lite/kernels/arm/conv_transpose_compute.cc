@@ -72,9 +72,6 @@ void Conv2DTransposeCompute::Run() {
   int wout = o_dims[3];
   int kw = w_dims[3];  // oihw
   int kh = w_dims[2];
-  LOG(INFO) << w_dims;
-  LOG(INFO) << x_dims;
-  LOG(INFO) << o_dims;
   int group = param.groups;
   bool flag_bias = (param.bias != nullptr);
 

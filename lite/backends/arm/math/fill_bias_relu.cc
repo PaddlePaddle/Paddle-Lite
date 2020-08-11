@@ -342,12 +342,14 @@ void fill_bias_act<float>(float* tensor,
       if (cnt > 0) {
 #ifdef __aarch64__
         asm volatile(FILL_BIAS FILL_STORE
-                     : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
+                     :
+                     [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                      : [vbias] "w"(vbias)
                      : "memory", "cc", "v0", "v1", "v2", "v3");
 #else
         asm volatile(FILL_BIAS FILL_STORE
-                     : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
+                     :
+                     [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                      : [vbias] "w"(vbias)
                      : "memory", "cc", "q3", "q4", "q5", "q6");
 #endif
