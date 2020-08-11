@@ -29,6 +29,22 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+/* note:
+One Hot Operator. This operator creates the one-hot representations for input
+index values. The following example will help to explain the function of this
+operator:
+X is a LoDTensor:
+  X.lod = [[0, 1, 4]]
+  X.shape = [4, 1]
+  X.data = [[1], [1], [3], [0]]
+set depth = 4
+Out is a LoDTensor:
+  Out.lod = [[0, 1, 4]]
+  Out.shape = [4, 4]
+  Out.data = [[0., 1., 0., 0.],
+              [0., 1., 0., 0.],
+              [0., 0., 0., 1.],
+              [1., 0., 0., 0.]]   */
 TEST(one_hot, test) {
   using T = float;
 
@@ -37,7 +53,10 @@ TEST(one_hot, test) {
   out.Resize({4, 4});
 
   auto* x_data = x.mutable_data<T>();
-  x_data = {1, 1, 3, 0};
+  x_data[0] = 1;
+  x_data[1] = 1;
+  x_data[2] = 3;
+  x_data[3] = 0;
   auto* out_data = out.mutable_data<T>();
   float out_ref[4][4] = {
       {0, 1, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}, {1, 0, 0, 0}};
