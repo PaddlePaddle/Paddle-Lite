@@ -42,9 +42,9 @@ class ParamDescView : public ParamDescReadAPI {
   std::vector<int64_t> Dim() const override {
     const auto& dims = tensor_desc_->dim();
     std::vector<int64_t> dims_vec;
-    dims_vec.reserve(dims->size());
-    for (const auto& dim : *dims) {
-      dims_vec.push_back(dim);
+    dims_vec.resize(dims->size());
+    for (size_t i = 0; i < dims->size(); ++i) {
+      dims_vec[i] = dims->operator[](i);
     }
     return dims_vec;
   }
@@ -57,7 +57,7 @@ class ParamDescView : public ParamDescReadAPI {
 
   size_t byte_size() const override { return tensor_desc_->data()->size(); }
 
-  ParamDescView() = delete;
+  ParamDescView() = default;
 
  private:
   proto::ParamDesc const* desc_;
@@ -87,9 +87,9 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
   void InitParams() {
     desc_ = proto::GetCombinedParamsDesc(buf_.data());
     size_t params_size = desc_->params()->size();
-    params_.reserve(params_size);
+    params_.resize(params_size);
     for (size_t idx = 0; idx < params_size; ++idx) {
-      params_.push_back(ParamDescView(desc_->params()->Get(idx)));
+      params_[idx] = ParamDescView(desc_->params()->Get(idx));
     }
   }
 

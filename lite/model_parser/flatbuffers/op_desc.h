@@ -40,10 +40,10 @@ class OpDescView : public OpDescAPI {
   std::vector<std::string> Input(const std::string& param) const override {
     const auto& var = desc_->inputs()->LookupByKey(param.c_str());
     std::vector<std::string> args_vec;
-    if (var->arguments()) {
-      args_vec.reserve(var->arguments()->size());
-      for (const auto& in : *var->arguments()) {
-        args_vec.push_back(in->str());
+    if (var && var->arguments()) {
+      args_vec.resize(var->arguments()->size());
+      for (size_t i = 0; i < var->arguments()->size(); ++i) {
+        args_vec[i] = (*var->arguments())[i]->str();
       }
     }
     return args_vec;
@@ -53,9 +53,9 @@ class OpDescView : public OpDescAPI {
     const auto& vars = desc_->inputs();
     std::vector<std::string> input_names_vec;
     if (vars) {
-      input_names_vec.reserve(vars->size());
-      for (const auto& in : *vars) {
-        input_names_vec.push_back(in->parameter()->str());
+      input_names_vec.resize(vars->size());
+      for (size_t i = 0; i < vars->size(); ++i) {
+        input_names_vec[i] = (*vars)[i]->parameter()->str();
       }
     }
     return input_names_vec;
@@ -65,9 +65,9 @@ class OpDescView : public OpDescAPI {
     const auto& var = desc_->outputs()->LookupByKey(param.c_str());
     std::vector<std::string> args_vec;
     if (var && var->arguments()) {
-      args_vec.reserve(var->arguments()->size());
-      for (const auto& out : *var->arguments()) {
-        args_vec.push_back(out->str());
+      args_vec.resize(var->arguments()->size());
+      for (size_t i = 0; i < var->arguments()->size(); ++i) {
+        args_vec[i] = (*var->arguments())[i]->str();
       }
     }
     return args_vec;
@@ -77,9 +77,9 @@ class OpDescView : public OpDescAPI {
     const auto& vars = desc_->outputs();
     std::vector<std::string> output_names_vec;
     if (vars) {
-      output_names_vec.reserve(vars->size());
-      for (const auto& out : *vars) {
-        output_names_vec.push_back(out->parameter()->str());
+      output_names_vec.resize(vars->size());
+      for (size_t i = 0; i < vars->size(); ++i) {
+        output_names_vec[i] = (*vars)[i]->parameter()->str();
       }
     }
     return output_names_vec;
@@ -111,9 +111,9 @@ class OpDescView : public OpDescAPI {
     const auto& attrs = desc_->attrs();
     std::vector<std::string> attr_names_vec;
     if (attrs) {
-      attr_names_vec.reserve(attrs->size());
-      for (const auto& attr : *attrs) {
-        attr_names_vec.push_back(attr->name()->str());
+      attr_names_vec.resize(attrs->size());
+      for (size_t i = 0; i < attrs->size(); ++i) {
+        attr_names_vec[i] = (*attrs)[i]->name()->str();
       }
     }
     return attr_names_vec;
@@ -138,7 +138,7 @@ class OpDescView : public OpDescAPI {
   // caused by different building options.
 
  public:
-  OpDescView() { NotImplemented(); }
+  OpDescView() = default;
   bool HasInput(const std::string& param) const {
     return desc_->inputs()->LookupByKey(param.c_str()) != nullptr;
   }
