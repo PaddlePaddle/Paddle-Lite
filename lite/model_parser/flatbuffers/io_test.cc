@@ -32,7 +32,7 @@ void set_tensor(paddle::lite::Tensor* tensor,
   tensor->Resize(dims);
   std::vector<T> data;
   data.resize(production);
-  for (size_t i = 0; i < production; ++i) {
+  for (int i = 0; i < production; ++i) {
     data[i] = i / 2.f;
   }
   std::memcpy(tensor->mutable_data<T>(), data.data(), sizeof(T) * data.size());
@@ -53,7 +53,8 @@ TEST(CombinedParamsDesc, Scope) {
   set_tensor<int8_t>(tensor_1, std::vector<int64_t>({10, 1}));
   // Set combined parameters
   fbs::CombinedParamsDesc combined_param;
-  SetCombinedParamsWithScope(scope, params_name, &combined_param);
+  std::set<std::string> params_set(params_name.begin(), params_name.end());
+  SetCombinedParamsWithScope(scope, params_set, &combined_param);
 
   /* --------- Check scope ---------- */
   auto check_params = [&](const CombinedParamsDescReadAPI& desc) {
