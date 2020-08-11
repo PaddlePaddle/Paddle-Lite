@@ -41,12 +41,18 @@ bool OneHotOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.X = scope->FindVar(x)->GetMutable<Tensor>();
   param_.Out = scope->FindMutableTensor(out);
 
-  param_.depth = op_desc.GetAttr<int>("depth");
-  if (op_desc.HasInput("depth_tensor")) {
+  if (op_desc.HasInput("depth_tensor") &&
+      !op_desc.Input("depth_tensor").empty()) {
     auto depth_tensor = op_desc.Input("depth_tensor").front();
     param_.depth_tensor = scope->FindVar(depth_tensor)->GetMutable<Tensor>();
   }
-  param_.allow_out_of_range = op_desc.GetAttr<bool>("allow_out_of_range");
+
+  if (op_desc.HasAttr("depth")) {
+    param_.depth = op_desc.GetAttr<int>("depth");
+  }
+  if (op_desc.HasAttr("allow_out_of_range")) {
+    param_.allow_out_of_range = op_desc.GetAttr<bool>("allow_out_of_range");
+  }
   param_.dtype = op_desc.GetAttr<int>("dtype");
   return true;
 }
