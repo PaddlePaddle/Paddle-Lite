@@ -72,8 +72,10 @@ void Conv2DTransposeCompute::Run() {
   int wout = o_dims[3];
   int kw = w_dims[3];  // oihw
   int kh = w_dims[2];
+  LOG(INFO) << w_dims;
+  LOG(INFO) << x_dims;
+  LOG(INFO) << o_dims;
   int group = param.groups;
-  bool fuse_relu = param.fuse_relu;
   bool flag_bias = (param.bias != nullptr);
 
   auto paddings = *param.paddings;
@@ -104,6 +106,7 @@ void Conv2DTransposeCompute::Run() {
   auto dout = param.output->mutable_data<float>();
   auto weights = param.filter->data<float>();
   auto act_param = param.activation_param;
+  bool has_act = act_param.has_active;
   for (int i = 0; i < num; i++) {
     const float* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
@@ -152,13 +155,14 @@ void Conv2DTransposeCompute::Run() {
                                      dout_batch);
     }
     if (flag_bias) {
-      lite::arm::math::fill_bias_relu<float>(
+      act_param.has_active = has_act;
+      lite::arm::math::fill_bias_act<float>(
           dout_batch,
           static_cast<const float*>(param.bias->data<float>()),
           chout,
           wout * hout,
           flag_bias,
-          fuse_relu);
+          &act_param);
     }
   }
 }
