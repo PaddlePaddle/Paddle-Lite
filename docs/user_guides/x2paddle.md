@@ -1,6 +1,6 @@
 # 模型转换工具 X2Paddle
 
-X2Paddle可以将caffe、tensorflow、onnx模型转换成Paddle支持的模型。
+X2Paddle可以将caffe、tensorflow、onnx模型转换成Paddle支持的模型。目前支持版本为caffe 1.0；tensorflow 1.x，推荐1.4.0；ONNX 1.6.0，OpSet支持 9, 10, 11版本。
 
 [X2Paddle](https://github.com/PaddlePaddle/X2Paddle)支持将Caffe/TensorFlow模型转换为PaddlePaddle模型。
 支持的模型可参考**X2Paddle模型测试库：**
