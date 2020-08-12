@@ -140,6 +140,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
   add_subdirectory(mir)
   add_subdirectory(profile)
   add_subdirectory(arena)
+elseif (LITE_WITH_PROFILE)
+  add_subdirectory(profile)
 endif()
 
 # for mobile, unnecessary to compile the following testings.

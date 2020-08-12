@@ -110,6 +110,10 @@ function make_tiny_publish_so {
   local lang=$3
   local android_stl=$4
 
+  if [ ${WITH_PROFILE} == "ON" ]; then
+    prepare_thirdparty
+  fi
+
   cur_dir=$(pwd)
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
   if [ -d $build_dir ]
@@ -134,6 +138,7 @@ function make_tiny_publish_so {
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+      -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
