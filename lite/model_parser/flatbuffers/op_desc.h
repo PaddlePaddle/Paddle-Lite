@@ -36,9 +36,8 @@ class OpDescView : public OpDescAPI {
 
   std::string Type() const override { return desc_->type()->str(); }
 
-  // Get the arguments of parameter called `param`
-  std::vector<std::string> Input(const std::string& param) const override {
-    const auto& var = desc_->inputs()->LookupByKey(param.c_str());
+  std::vector<std::string> Input(const char* param) const {
+    const auto& var = desc_->inputs()->LookupByKey(param);
     std::vector<std::string> args_vec;
     if (var && var->arguments()) {
       args_vec.resize(var->arguments()->size());
@@ -47,6 +46,10 @@ class OpDescView : public OpDescAPI {
       }
     }
     return args_vec;
+  }
+
+  std::vector<std::string> Input(const std::string& param) const override {
+    return Input(param.c_str());
   }
 
   std::vector<std::string> InputArgumentNames() const override {
@@ -61,8 +64,8 @@ class OpDescView : public OpDescAPI {
     return input_names_vec;
   }
 
-  std::vector<std::string> Output(const std::string& param) const override {
-    const auto& var = desc_->outputs()->LookupByKey(param.c_str());
+  std::vector<std::string> Output(const char* param) const {
+    const auto& var = desc_->outputs()->LookupByKey(param);
     std::vector<std::string> args_vec;
     if (var && var->arguments()) {
       args_vec.resize(var->arguments()->size());
@@ -71,6 +74,10 @@ class OpDescView : public OpDescAPI {
       }
     }
     return args_vec;
+  }
+
+  std::vector<std::string> Output(const std::string& param) const override {
+    return Output(param.c_str());
   }
 
   std::vector<std::string> OutputArgumentNames() const override {
@@ -85,8 +92,12 @@ class OpDescView : public OpDescAPI {
     return output_names_vec;
   }
 
+  bool HasAttr(const char* name) const {
+    return desc_->attrs()->LookupByKey(name) != nullptr;
+  }
+
   bool HasAttr(const std::string& name) const override {
-    return desc_->attrs()->LookupByKey(name.c_str()) != nullptr;
+    return HasAttr(name.c_str());
   }
 
   size_t AttrsSize() const { return desc_->attrs()->size(); }
@@ -95,16 +106,14 @@ class OpDescView : public OpDescAPI {
     return desc_->attrs()->Get(idx)->name()->str();
   }
 
-  OpDescAPI::AttrType GetAttrType(const std::string& name) const override {
-    const auto& attr = desc_->attrs()->LookupByKey(name.c_str());
+  OpDescAPI::AttrType GetAttrType(const char* name) const {
+    const auto& attr = desc_->attrs()->LookupByKey(name);
     CHECK(attr) << "Can not find attr: " << name;
     return ConvertAttrType(attr->type());
   }
 
-  OpDescAPI::AttrType GetAttrType(size_t idx) const {
-    const auto& attr = desc_->attrs()->Get(idx);
-    CHECK(attr);
-    return ConvertAttrType(attr->type());
+  OpDescAPI::AttrType GetAttrType(const std::string& name) const override {
+    return GetAttrType(name.c_str());
   }
 
   std::vector<std::string> AttrNames() const override {
@@ -121,10 +130,11 @@ class OpDescView : public OpDescAPI {
 
   template <typename T>
   typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(
-      const std::string& name) const;
+      const char* name) const;
 
   template <typename T>
-  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(size_t idx) const;
+  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(
+      const std::string& name) const;
 
  private:
   proto::OpDesc const* desc_;
