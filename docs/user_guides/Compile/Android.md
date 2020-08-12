@@ -3,7 +3,7 @@
 
 **注意：本编译方法只适用于release/v2.6.0之后版本（包括 v2.6.0)**
 
-安装了Android的编译环境，可以下载并编译 Paddle-Lite源码
+如果您还没有配置好Andriod交叉编译环境，请先根据[环境准备](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#id2)中的内容，根据您的开发环境安装编译Android预测库所需的编译环境。运行编译脚本之前，请先检查环变量`NDK_ROOT`指向正确的Andriod NDK安装路径，之后可以下载并编译 Paddle-Lite源码。
 
 ```shell
 # 1. 下载Paddle-Lite源码 并切换到release分支
@@ -14,6 +14,7 @@ cd Paddle-Lite && git checkout release/v2.3
 ./lite/tools/build_android.sh
 ```
 
+> **提示：** 编译过程中，如果程序在下载第三方库时花费较多时间，请尝试删除Paddle-Lite下的`<lite-repo>/third-party`目录之后再次运行编译脚本，脚本会自动下载存储于百度云的第三方库代码包，节省从git repo下载第三方库代码的时间。
 
 
 ### 编译结果
