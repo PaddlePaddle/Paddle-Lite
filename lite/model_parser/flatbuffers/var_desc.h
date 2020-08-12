@@ -42,9 +42,9 @@ class VarDescView : public VarDescAPI {
     CHECK(GetType() == VarDescAPI::Type::LOD_TENSOR);
     const auto& dims = desc_->type()->lod_tensor()->tensor()->dims();
     std::vector<int64_t> dims_vec;
-    dims_vec.reserve(dims->size());
-    for (const auto& dim : *dims) {
-      dims_vec.push_back(dim);
+    dims_vec.resize(dims->size());
+    for (size_t i = 0; i < dims->size(); ++i) {
+      dims_vec[i] = dims->operator[](i);
     }
     return dims_vec;
   }
@@ -66,7 +66,7 @@ class VarDescView : public VarDescAPI {
   // caused by different building options.
 
  public:
-  VarDescView() { NotImplemented(); }
+  VarDescView() = default;
   void SetDataType(Type data_type) { NotImplemented(); }
   void SetShape(const std::vector<int64_t>& dims) { NotImplemented(); }
 
