@@ -48,9 +48,9 @@ class ProgramDescView : public ProgramDescAPI {
 
   void InitProgramDesc() {
     desc_ = proto::GetProgramDesc(buf_.data());
-    blocks_.reserve(BlocksSize());
+    blocks_.resize(BlocksSize());
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {
-      blocks_.push_back(BlockDescView(desc_->blocks()->Get(idx)));
+      blocks_[idx] = BlockDescView(desc_->blocks()->Get(idx));
     }
   }
 

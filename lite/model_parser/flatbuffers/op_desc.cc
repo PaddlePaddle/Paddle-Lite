@@ -19,8 +19,8 @@ namespace lite {
 namespace fbs {
 
 template <>
-std::string OpDescView::GetAttr<std::string>(const std::string& name) const {
-  const auto& it = desc_->attrs()->LookupByKey(name.c_str());
+std::string OpDescView::GetAttr<std::string>(const char* name) const {
+  const auto& it = desc_->attrs()->LookupByKey(name);
   if (!it->s()) {
     return std::string();
   }
@@ -28,56 +28,48 @@ std::string OpDescView::GetAttr<std::string>(const std::string& name) const {
 }
 
 template <>
-std::string OpDescView::GetAttr<std::string>(size_t idx) const {
-  const auto& it = desc_->attrs()->Get(idx);
-  if (!it->s()) {
-    return std::string();
-  }
-  return it->s()->str();
+std::string OpDescView::GetAttr<std::string>(const std::string& name) const {
+  return GetAttr<std::string>(name.c_str());
 }
 
 template <>
 lite::VectorView<std::string, Flatbuffers>
-OpDescView::GetAttr<std::vector<std::string>>(const std::string& name) const {
-  const auto& it = desc_->attrs()->LookupByKey(name.c_str());
+OpDescView::GetAttr<std::vector<std::string>>(const char* name) const {
+  const auto& it = desc_->attrs()->LookupByKey(name);
   CHECK(it) << "Attr " << name << "does not exist.";
   return VectorView<std::string>(it->strings());
 }
 
 template <>
-VectorView<std::string, Flatbuffers>
-OpDescView::GetAttr<std::vector<std::string>>(size_t idx) const {
-  const auto& it = desc_->attrs()->Get(idx);
-  CHECK(it) << "Attr " << idx << "does not exist.";
-  return VectorView<std::string>(it->strings());
+lite::VectorView<std::string, Flatbuffers>
+OpDescView::GetAttr<std::vector<std::string>>(const std::string& name) const {
+  return GetAttr<std::vector<std::string>>(name.c_str());
 }
 
 #define GET_ATTR_IMPL(T, fb_f__)                                             \
   template <>                                                                \
   typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDescView::GetAttr<T>( \
-      const std::string& name) const {                                       \
-    const auto& it = desc_->attrs()->LookupByKey(name.c_str());              \
+      const char* name) const {                                              \
+    const auto& it = desc_->attrs()->LookupByKey(name);                      \
     return it->fb_f__();                                                     \
   }                                                                          \
   template <>                                                                \
   typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDescView::GetAttr<T>( \
-      size_t idx) const {                                                    \
-    const auto& it = desc_->attrs()->Get(idx);                               \
-    return it->fb_f__();                                                     \
+      const std::string& name) const {                                       \
+    return GetAttr<T>(name.c_str());                                         \
   }
 
 #define GET_ATTRS_IMPL(T, fb_f__)                                            \
   template <>                                                                \
   typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDescView::GetAttr<T>( \
-      const std::string& name) const {                                       \
-    const auto& it = desc_->attrs()->LookupByKey(name.c_str());              \
+      const char* name) const {                                              \
+    const auto& it = desc_->attrs()->LookupByKey(name);                      \
     return typename lite::OpDataTypeTrait<T, Flatbuffers>::RT(it->fb_f__()); \
   }                                                                          \
   template <>                                                                \
   typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDescView::GetAttr<T>( \
-      size_t idx) const {                                                    \
-    const auto& it = desc_->attrs()->Get(idx);                               \
-    return typename lite::OpDataTypeTrait<T, Flatbuffers>::RT(it->fb_f__()); \
+      const std::string& name) const {                                       \
+    return GetAttr<T>(name.c_str());                                         \
   }
 
 GET_ATTR_IMPL(int32_t, i);

@@ -30,13 +30,13 @@ class BlockDescView : public BlockDescAPI {
  public:
   explicit BlockDescView(proto::BlockDesc const* desc) : desc_(desc) {
     CHECK(desc_);
-    vars_.reserve(VarsSize());
-    ops_.reserve(OpsSize());
+    vars_.resize(VarsSize());
+    ops_.resize(OpsSize());
     for (size_t idx = 0; idx < VarsSize(); ++idx) {
-      vars_.push_back(VarDescView(desc_->vars()->Get(idx)));
+      vars_[idx] = VarDescView(desc_->vars()->Get(idx));
     }
     for (size_t idx = 0; idx < OpsSize(); ++idx) {
-      ops_.push_back(OpDescView(desc_->ops()->Get(idx)));
+      ops_[idx] = OpDescView(desc_->ops()->Get(idx));
     }
   }
 
@@ -76,7 +76,7 @@ class BlockDescView : public BlockDescAPI {
     return desc_->forward_block_idx();
   }
 
-  BlockDescView() { NotImplemented(); }
+  BlockDescView() = default;
 
  private:
   proto::BlockDesc const* desc_;  // not_own
