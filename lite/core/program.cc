@@ -161,7 +161,9 @@ RuntimeProgram::RuntimeProgram(
     int block_idx)
     : exec_scope_(exec_scope) {
 #ifdef LITE_WITH_OPENCL
-  bool opencl_valid = CLRuntime::Global()->OpenCLAvaliableForDevice();
+  bool opencl_valid = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
+                      paddle::lite::CLWrapper::Global()->DlsymSuccess() &&
+                      CLRuntime::Global()->OpenCLAvaliableForDevice();
   using OpenCLContext = Context<TargetType::kOpenCL>;
   std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
   if (opencl_valid) {
