@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/sequence_pool_concat_fuse_pass.h"
+#pragma once
+
 #include <memory>
-#include <vector>
-#include "lite/core/mir/fusion/sequence_pool_concat_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#include <string>
+#include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
+namespace fusion {
 
-void SequencePoolConcatFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::SequencePool7ConcatFuser fuser;
-  fuser(graph.get());
+class ScalesFuser : public FuseBase {
+ public:
+  ScalesFuser() {}
 
-  fusion::SequencePool2ConcatFuser fuser2;
-  fuser2(graph.get());
-}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+};
+
+}  // namespace fusion
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(lite_sequence_pool_concat_fuse_pass,
-                  paddle::lite::mir::SequencePoolConcatFusePass)
-    .BindTargets({TARGET(kCUDA)});
