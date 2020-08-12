@@ -49,6 +49,10 @@ function make_ios {
         exit 1
     fi
 
+    if [ "${WITH_STRIP}" == "ON" ]; then
+        WITH_EXTRA=ON
+    fi
+
     build_dir=$workspace/build.ios.${os}.${arch}
     if [ -d $build_dir ]
     then
@@ -61,7 +65,6 @@ function make_ios {
     GEN_CODE_PATH_PREFIX=lite/gen_code
     mkdir -p ./${GEN_CODE_PATH_PREFIX}
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
-
     cmake $workspace \
             -DWITH_LITE=ON \
             -DLITE_WITH_ARM=ON \
