@@ -574,11 +574,11 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   "vmla.f32 q15, q12, %f[wr0][1]\n" /*3456*wr0[3]*/\
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
-  "vadd.f32 q14, 14, q15\n"
+  "vadd.f32 q14, q14, q15\n"
 #define COMPUTE_TWO_LINE_S1_PRE                    \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vld1.f32 {d16-d17}, [%[din_ptr0]]!\n"           \
-  "vld1.f32 {d18-d19}, [%[din_ptr0]  \n"           \
+  "vld1.f32 {d18-d19}, [%[din_ptr0]] \n"           \
   "vext.32 q10, q8, q9, #1\n"                      \
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
@@ -604,11 +604,11 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   "vext.32 q11, q8, q9, #2\n"                      \
   "vmla.f32 q14, q12, %f[wr1][1]\n" /*3456*wr1[3]*/\
   "vext.32 q12, q8, q9, #3\n"                      \
-  "vadd.f32 q14, 14, q15\n"
+  "vadd.f32 q14, q14, q15\n"
 #define COMPUTE_THREE_LINE_S1_PRE                  \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vld1.f32 {d16-d17}, [%[din_ptr0]]!\n"           \
-  "vld1.f32 {d18-d19}, [%[din_ptr0]  \n"           \
+  "vld1.f32 {d18-d19}, [%[din_ptr0]] \n"           \
   "vext.32 q10, q8, q9, #1\n"                      \
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
@@ -644,11 +644,11 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   "vmla.f32 q15, q12, %f[wr2][1]\n" /*3456*wr2[3]*/\
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
-  "vadd.f32 q14, 14, q15\n"
+  "vadd.f32 q14, q14, q15\n"
 #define COMPUTE_FOUR_LINE_S1_PRE                   \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vld1.f32 {d16-d17}, [%[din_ptr0]]!\n"           \
-  "vld1.f32 {d18-d19}, [%[din_ptr0]  \n"           \
+  "vld1.f32 {d18-d19}, [%[din_ptr0]] \n"           \
   "vext.32 q10, q8, q9, #1\n"                      \
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
@@ -694,11 +694,11 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   "vmla.f32 q14, q12, %f[wr3][1]\n" /*3456*wr3[3]*/\
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
-  "vadd.f32 q14, 14, q15\n"
+  "vadd.f32 q14, q14, q15\n"
 #define COMPUTE_FIVE_LINE_S1                       \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vld1.f32 {d16-d17}, [%[din_ptr0]]!\n"           \
-  "vld1.f32 {d18-d19}, [%[din_ptr0]  \n"           \
+  "vld1.f32 {d18-d19}, [%[din_ptr0]] \n"           \
   "vext.32 q10, q8, q9, #1\n"                      \
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
@@ -754,7 +754,7 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   "vmla.f32 q15, q12, %f[wr4][1]\n" /*3456*wr4[3]*/\
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
-  "vadd.f32 q14, 14, q15\n"
+  "vadd.f32 q14, q14, q15\n"
 #define COMPUTE_ONE_LINE_S1_POST                   \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vld1.f32 {d16-d17}, [%[din_ptr0]]!\n"           \
@@ -774,11 +774,11 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   "vmla.f32 q15, q12, %f[wr0][1]\n" /*3456*wr0[3]*/\
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
-  "vadd.f32 q14, 14, q15\n"
+  "vadd.f32 q14, q14, q15\n"
 #define COMPUTE_TWO_LINE_S1_POST                   \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vld1.f32 {d16-d17}, [%[din_ptr0]]!\n"           \
-  "vld1.f32 {d18-d19}, [%[din_ptr0]  \n"           \
+  "vld1.f32 {d18-d19}, [%[din_ptr0]] \n"           \
   "vext.32 q10, q8, q9, #1\n"                      \
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
@@ -804,11 +804,11 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   "vext.32 q11, q8, q9, #2\n"                      \
   "vmla.f32 q14, q12, %f[wr1][1]\n" /*3456*wr1[3]*/\
   "vext.32 q12, q8, q9, #3\n"                      \
-  "vadd.f32 q14, 14, q15\n"
+  "vadd.f32 q14, q14, q15\n"
 #define COMPUTE_THREE_LINE_S1_POST                 \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vld1.f32 {d16-d17}, [%[din_ptr0]]!\n"           \
-  "vld1.f32 {d18-d19}, [%[din_ptr0]  \n"           \
+  "vld1.f32 {d18-d19}, [%[din_ptr0]] \n"           \
   "vext.32 q10, q8, q9, #1\n"                      \
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
@@ -844,11 +844,11 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   "vmla.f32 q15, q12, %f[wr2][1]\n" /*3456*wr2[3]*/\
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
-  "vadd.f32 q14, 14, q15\n"
+  "vadd.f32 q14, q14, q15\n"
 #define COMPUTE_FOUR_LINE_S1_POST                  \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vld1.f32 {d16-d17}, [%[din_ptr0]]!\n"           \
-  "vld1.f32 {d18-d19}, [%[din_ptr0]  \n"           \
+  "vld1.f32 {d18-d19}, [%[din_ptr0]] \n"           \
   "vext.32 q10, q8, q9, #1\n"                      \
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
@@ -894,7 +894,7 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   "vmla.f32 q14, q12, %f[wr3][1]\n" /*3456*wr3[3]*/\
   "vext.32 q11, q8, q9, #2\n"                      \
   "vext.32 q12, q8, q9, #3\n"                      \
-  "vadd.f32 q14, 14, q15\n"
+  "vadd.f32 q14, q14, q15\n"
 #define RESULT_S1                                  \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vst1.f32 {d28-d29}, [%[dout_ptr]]!\n"           \
@@ -1728,13 +1728,13 @@ inline void compute_all_padding_pre_relu(float* dout,
                       [din_ptr0] "+r"(din_ptr_arr[0]),
                       [din_ptr1] "+r"(din_ptr_arr[1]),
                       [din_ptr2] "+r"(din_ptr_arr[2]),
-                      [vzero] "w"(vzero),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[2]),
                       [wr1] "w"(weights[3]),
                       [wr2] "w"(weights[4]),
                       [wr5] "w"(weights[5]),
                       [wr6] "w"(weights[6]),
+                      [vzero] "w"(vzero),
                       [bias] "r"(bias)
                     : "cc",
                       "memory",
@@ -2339,13 +2339,13 @@ inline void compute_all_padding_pre_relu6(float* dout,
                       [din_ptr0] "+r"(din_ptr_arr[0]),
                       [din_ptr1] "+r"(din_ptr_arr[1]),
                       [din_ptr2] "+r"(din_ptr_arr[2]),
-                      [vzero] "w"(vzero),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[2]),
                       [wr1] "w"(weights[3]),
                       [wr2] "w"(weights[4]),
                       [wr5] "w"(weights[5]),
                       [wr6] "w"(weights[6]),
+                      [vzero] "w"(vzero),
                       [six_ptr] "r"(six),
                       [bias] "r"(bias)
                     : "cc",
@@ -2971,13 +2971,13 @@ inline void compute_all_padding_pre_leakyRelu(float* dout,
                       [din_ptr0] "+r"(din_ptr_arr[0]),
                       [din_ptr1] "+r"(din_ptr_arr[1]),
                       [din_ptr2] "+r"(din_ptr_arr[2]),
-                      [vzero] "w"(vzero),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[2]),
                       [wr1] "w"(weights[3]),
                       [wr2] "w"(weights[4]),
                       [wr5] "w"(weights[5]),
                       [wr6] "w"(weights[6]),
+                      [vzero] "w"(vzero),
                       [scale_ptr] "r"(scale),
                       [bias] "r"(bias)
                     : "cc",
