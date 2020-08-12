@@ -153,6 +153,10 @@ function make_tiny_publish_so {
       prepare_thirdparty
   fi
 
+  if [ "${WITH_STRIP}" == "ON" ]; then
+      WITH_EXTRA=ON
+  fi
+
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
@@ -204,6 +208,10 @@ function make_full_publish_so {
 
   if [ "${WITH_OPENCL}" == "ON" ]; then
       prepare_opencl_source_code $workspace $build_dir
+  fi
+
+  if [ "${WITH_STRIP}" == "ON" ]; then
+      WITH_EXTRA=ON
   fi
 
   local cmake_mutable_options="
