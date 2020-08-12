@@ -193,6 +193,10 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
         include(external/protobuf)  # download, build, install protobuf
     endif()
 
+    if (LITE_WITH_PROFILE)
+        include(external/gflags)    # download, build, install gflags
+    endif()
+
     # for opencl
     if (LITE_WITH_OPENCL)
         include(external/opencl-headers)
