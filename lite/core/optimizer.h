@@ -98,6 +98,7 @@ class Optimizer {
            "lite_interpolate_fuse_pass",                  //
            "identity_scale_eliminate_pass",               //
            "lite_scales_fuse_pass",                       //
+           "lite_sequence_reverse_embedding_fuse_pass",   //
            "elementwise_mul_constant_eliminate_pass",     //
            "lite_sequence_pool_concat_fuse_pass",         //
            "lite_scale_activation_fuse_pass",             //
