@@ -33,7 +33,6 @@ void PixelShuffleCompute::Run() {
   int out_height = param.output->dims()[2];
   int out_width = param.output->dims()[3];
 
-#pragma omp parallel for
   for (int nc = 0; nc < batch_size * out_channels; nc++) {
     const float* inptr = x_data + nc * out_height * out_width;
     float* outptr_nc = output_data + nc * out_height * out_width;
