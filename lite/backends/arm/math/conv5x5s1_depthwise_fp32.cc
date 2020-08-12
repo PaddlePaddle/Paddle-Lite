@@ -2812,7 +2812,7 @@ inline void compute_all_padding_post_relu6(float* dout,
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
   }
   for (int w = pad_right; w > 4; w--) {
-      *dout++ = bias[0] > 0.f ? ? (bias[0] < six[0] ? bias[0] : six[0]) : 0.f;
+      *dout++ = bias[0] > 0.f ? (bias[0] < six[0] ? bias[0] : six[0]) : 0.f;
   }
 }
 inline void compute_all_padding_pre_leakyRelu(float* dout,
@@ -3444,7 +3444,7 @@ inline void compute_all_padding_post_leakyRelu(float* dout,
     *dout++ = sum > 0.f ? sum : sum * scale[0];
   }
   for (int w = pad_right; w > 4; w--) {
-      *dout++ = bias[0] > 0.f ? ? bias[0] : bias[0] * scale[0];
+      *dout++ = bias[0] > 0.f ? bias[0] : bias[0] * scale[0];
   }
 }
 void conv_depthwise_5x5s1_bias(float* dout,
@@ -3483,14 +3483,14 @@ void conv_depthwise_5x5s1_bias(float* dout,
     for (int c = 0; c < chin; c++) {
        const float* din_ch = din_batch + c * in_size;
        const float* weights_ch = weights + c * weights_size;
-       float* dout_ch = dout__batch + c * out_size;
+       float* dout_ch = dout_batch + c * out_size;
        float bias_val = flag_bias ? bias[c] : 0.f;
        const float* din_ptr0 = din_ch;
        const float* din_ptr1 = din_ptr0 + win;
        const float* din_ptr2 = din_ptr1 + win;
        const float* din_ptr3 = din_ptr2 + win;
        const float* din_ptr4 = din_ptr3 + win;
-       float vbias[4] = {bias_c, bias_c, bias_c, bias_c};
+       float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
        float* dout_ptr = dout_ch;
        float32x4_t wr5;
        float32x4_t wr6;
@@ -3576,7 +3576,7 @@ void conv_depthwise_5x5s1_bias_relu(float* dout,
   int in_channel_size = chin * in_size;
   int out_channel_size = chin * out_size;
   int weights_size = 25;
-  float32x4_t vzero = vdupq_f32(0.f);
+  float32x4_t vzero = vdupq_n_f32(0.f);
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * in_channel_size;
     float* dout_batch = dout + n * out_channel_size;
@@ -3584,14 +3584,14 @@ void conv_depthwise_5x5s1_bias_relu(float* dout,
     for (int c = 0; c < chin; c++) {
        const float* din_ch = din_batch + c * in_size;
        const float* weights_ch = weights + c * weights_size;
-       float* dout_ch = dout__batch + c * out_size;
+       float* dout_ch = dout_batch + c * out_size;
        float bias_val = flag_bias ? bias[c] : 0.f;
        const float* din_ptr0 = din_ch;
        const float* din_ptr1 = din_ptr0 + win;
        const float* din_ptr2 = din_ptr1 + win;
        const float* din_ptr3 = din_ptr2 + win;
        const float* din_ptr4 = din_ptr3 + win;
-       float vbias[4] = {bias_c, bias_c, bias_c, bias_c};
+       float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
        float* dout_ptr = dout_ch;
        float32x4_t wr5;
        float32x4_t wr6;
@@ -3678,7 +3678,7 @@ void conv_depthwise_5x5s1_bias_relu6(float* dout,
   int in_channel_size = chin * in_size;
   int out_channel_size = chin * out_size;
   int weights_size = 25;
-  float32x4_t vzero = vdupq_f32(0.f);
+  float32x4_t vzero = vdupq_n_f32(0.f);
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * in_channel_size;
     float* dout_batch = dout + n * out_channel_size;
@@ -3686,14 +3686,14 @@ void conv_depthwise_5x5s1_bias_relu6(float* dout,
     for (int c = 0; c < chin; c++) {
        const float* din_ch = din_batch + c * in_size;
        const float* weights_ch = weights + c * weights_size;
-       float* dout_ch = dout__batch + c * out_size;
+       float* dout_ch = dout_batch + c * out_size;
        float bias_val = flag_bias ? bias[c] : 0.f;
        const float* din_ptr0 = din_ch;
        const float* din_ptr1 = din_ptr0 + win;
        const float* din_ptr2 = din_ptr1 + win;
        const float* din_ptr3 = din_ptr2 + win;
        const float* din_ptr4 = din_ptr3 + win;
-       float vbias[4] = {bias_c, bias_c, bias_c, bias_c};
+       float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
        float* dout_ptr = dout_ch;
        float32x4_t wr5;
        float32x4_t wr6;
@@ -3783,7 +3783,7 @@ void conv_depthwise_5x5s1_bias_leakyRelu(float* dout,
   int in_channel_size = chin * in_size;
   int out_channel_size = chin * out_size;
   int weights_size = 25;
-  float32x4_t vzero = vdupq_f32(0.f);
+  float32x4_t vzero = vdupq_n_f32(0.f);
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * in_channel_size;
     float* dout_batch = dout + n * out_channel_size;
@@ -3791,14 +3791,14 @@ void conv_depthwise_5x5s1_bias_leakyRelu(float* dout,
     for (int c = 0; c < chin; c++) {
        const float* din_ch = din_batch + c * in_size;
        const float* weights_ch = weights + c * weights_size;
-       float* dout_ch = dout__batch + c * out_size;
+       float* dout_ch = dout_batch + c * out_size;
        float bias_val = flag_bias ? bias[c] : 0.f;
        const float* din_ptr0 = din_ch;
        const float* din_ptr1 = din_ptr0 + win;
        const float* din_ptr2 = din_ptr1 + win;
        const float* din_ptr3 = din_ptr2 + win;
        const float* din_ptr4 = din_ptr3 + win;
-       float vbias[4] = {bias_c, bias_c, bias_c, bias_c};
+       float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
        float* dout_ptr = dout_ch;
        float32x4_t wr5;
        float32x4_t wr6;
