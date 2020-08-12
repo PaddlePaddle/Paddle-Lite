@@ -103,6 +103,8 @@ struct FcParam : ParamBase {
   lite::Tensor* bias{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
+  // original dims of input weight
+  lite::DDim w_dims;
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
