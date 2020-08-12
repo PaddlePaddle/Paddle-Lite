@@ -22,6 +22,87 @@ namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
+/* fuse conv2d block in resnet50-like model to xpu_conv2d op    */
+/* For example:                                                 */
+/* graph[1]: sub block                                          */
+/*                     in_Input                                 */
+/*                       |                                      */
+/*                       |                                      */
+/*                     conv2d----in_Filter                      */
+/*                       |                                      */
+/*                       |                                      */
+/*                  batch_norm ------in_Bias                    */
+/*                       |                                      */
+/*                       |                                      */
+/*                     relu                                     */
+/*                       |                                      */
+/*                       |                                      */
+/*                     out_Out                                  */
+/*                                                              */
+/* After the pass is applied:                                   */
+/*                     in_Input                                 */
+/*        in_Filter      |     in_FilterMax                     */
+/*                  \    |    /                                 */
+/*                   \   |   /                                  */
+/*     in_Bias ------- __xpu__conv2d                            */
+/*                       |    \                                 */
+/*                       |     \                                */
+/*                       |      out_OutputMax                   */
+/*                 out_Output                                   */
+/*                                                              */
+/* ------------------------------------------------------       */
+/* graph[2]: sub block                                          */
+/*                     in_Input                                 */
+/*                       |                                      */
+/*                       |                                      */
+/*                     conv2d----in_Filter                      */
+/*                       |                                      */
+/*                       |                                      */
+/*                  batch_norm ------in_Bias                    */
+/*                       |                                      */
+/*                       |                                      */
+/*                     out_Out                                  */
+/*                                                              */
+/* After the pass is applied:                                   */
+/*                     in_Input                                 */
+/*        in_Filter      |     in_FilterMax                     */
+/*                  \    |    /                                 */
+/*                   \   |   /                                  */
+/*     in_Bias ------- __xpu__conv2d                            */
+/*                       |    \                                 */
+/*                       |     \                                */
+/*                       |      out_OutputMax                   */
+/*                     out_Output                               */
+/*                                                              */
+/* ------------------------------------------------------       */
+/* graph[3]: sub block                                          */
+/*                     in_Input                                 */
+/*                       |                                      */
+/*                       |                                      */
+/*                     conv2d----in_Filter                      */
+/*                       |                                      */
+/*                       |                                      */
+/*        in_X       batch_norm ------in_Bias                   */
+/*             \         |                                      */
+/*               \       |                                      */
+/*                elementwise_add                               */
+/*                       |                                      */
+/*                       |                                      */
+/*                     relu                                     */
+/*                       |                                      */
+/*                       |                                      */
+/*                     out_Out                                  */
+/*                                                              */
+/* After the pass is applied:                                   */
+/*                     in_Input                                 */
+/*        in_Filter      |     in_FilterMax                     */
+/*                  \    |    /                                 */
+/*                   \   |   /                                  */
+/*  in_Branch ------- __xpu__conv2d ------ in_Bias              */
+/*                       |    \                                 */
+/*                       |     \                                */
+/*                       |      out_OutputMax                   */
+/*                    out_Output                                */
 
 class XPUConv2dBlock0Fuser : public FuseBase {
  public:
@@ -96,7 +177,7 @@ class XPUConv2dBlock0Fuser : public FuseBase {
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
-    cpp::OpDesc op_desc = *matched.at("conv")->stmt()->op_info();
+    auto op_desc = *matched.at("conv")->stmt()->op_info();
     auto conv_old = matched.at("conv")->stmt()->op();
     auto* scope = conv_old->scope();
     op_desc.mutable_inputs()->clear();
@@ -179,37 +260,23 @@ class XPUConv2dBlock0Fuser : public FuseBase {
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
           TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    scope->NewTensor(max_output_name);
     op_desc.SetOutput("OutputMax", {max_output_name});
-
-    // try to find input_max
-    //std::string max_input_name = input_name + "_max";
-    //auto* max_input_node = graph->RetrieveArgument(max_input_name);
-    //if (max_input_node != nullptr) {
-    //  LOG(INFO) << "!!!!!!!!found max_input_node: " << max_input_name << std::endl;
-    //  op_desc.SetAttr("has_input_max", true);
-    //  op_desc.SetInput("InputMax", {max_input_name});
-    //} else {
-    //  LOG(INFO) << "!!!!!!!!not found max_input_node: " << max_input_name << std::endl;
-    //}
 
     auto conv_op = LiteOpRegistry::Global().Create("__xpu__conv2d");
     auto& valid_places = conv_old->valid_places();
     conv_op->Attach(op_desc, scope);
     auto* new_op_node = graph->GraphCreateInstructNode(conv_op, valid_places);
-    IR_NODE_LINK_TO(matched.at("input"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("conv_filter"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
-    IR_NODE_LINK_TO(max_filter_node, new_op_node);
-    IR_NODE_LINK_TO(new_op_node, max_output_node);
+    DirectedLink(matched.at("input"), new_op_node);
+    DirectedLink(matched.at("conv_filter"), new_op_node);
+    DirectedLink(matched.at("bn_bias"), new_op_node);
+    DirectedLink(max_filter_node, new_op_node);
+    DirectedLink(new_op_node, max_output_node);
     if (_with_relu) {
-      IR_NODE_LINK_TO(new_op_node, matched.at("relu_out"));
+      DirectedLink(new_op_node, matched.at("relu_out"));
     } else {
-      IR_NODE_LINK_TO(new_op_node, matched.at("bn_out"));
+      DirectedLink(new_op_node, matched.at("bn_out"));
     }
-
-    //if (max_input_node != nullptr) {
-    //  IR_NODE_LINK_TO(max_input_node, new_op_node);
-    //}
   }
 
  private:
@@ -297,7 +364,7 @@ class XPUConv2dBlock1Fuser : public FuseBase {
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
-    cpp::OpDesc op_desc = *matched.at("conv")->stmt()->op_info();
+    auto op_desc = *matched.at("conv")->stmt()->op_info();
     auto conv_old = matched.at("conv")->stmt()->op();
     auto* scope = conv_old->scope();
     op_desc.mutable_inputs()->clear();
@@ -376,30 +443,20 @@ class XPUConv2dBlock1Fuser : public FuseBase {
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
           TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    scope->NewTensor(max_output_name);
     op_desc.SetOutput("OutputMax", {max_output_name});
-
-    // try to find input_max
-    //std::string max_input_name = input_name + "_max";
-    //auto* max_input_node = graph->RetrieveArgument(max_input_name);
-    //if (max_input_node != nullptr) {
-    //  op_desc.SetAttr("has_input_max", true);
-    //  op_desc.SetOutput("InputMax", {max_input_name});
-    //}
 
     auto conv_op = LiteOpRegistry::Global().Create("__xpu__conv2d");
     auto& valid_places = conv_old->valid_places();
     conv_op->Attach(op_desc, scope);
     auto* new_op_node = graph->GraphCreateInstructNode(conv_op, valid_places);
-    IR_NODE_LINK_TO(matched.at("input"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("conv_filter"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("bn_bias"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("ew_x"), new_op_node);
-    IR_NODE_LINK_TO(max_filter_node, new_op_node);
-    IR_NODE_LINK_TO(new_op_node, matched.at("relu_out"));
-    IR_NODE_LINK_TO(new_op_node, max_output_node);
-    //if (max_input_node != nullptr) {
-    //  IR_NODE_LINK_TO(max_input_node, new_op_node);
-    //}
+    DirectedLink(matched.at("input"), new_op_node);
+    DirectedLink(matched.at("conv_filter"), new_op_node);
+    DirectedLink(matched.at("bn_bias"), new_op_node);
+    DirectedLink(matched.at("ew_x"), new_op_node);
+    DirectedLink(max_filter_node, new_op_node);
+    DirectedLink(new_op_node, matched.at("relu_out"));
+    DirectedLink(new_op_node, max_output_node);
   }
 
 };

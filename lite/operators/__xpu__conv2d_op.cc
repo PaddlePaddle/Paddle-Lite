@@ -37,7 +37,6 @@ bool XPUConv2dOp::CheckShape() const {
   CHECK_EQ(in_dims.size(), filter_dims.size()) << "Conv input dimension and filter dimension should be the same.";
   CHECK_EQ(in_dims.size() - param_.strides.size(), 2U) << "Conv input dimension and strides dimension should be consistent.";
   CHECK_EQ(filter_dims.size(), 4UL) << "Conv filter should be 4-D tensor.";
-  //CHECK_EQ(param_.paddings.size(), param_.strides.size()) << "Conv paddings dimension and Conv strides dimension should be the same.";
   CHECK_EQ(in_dims[1], filter_dims[1] * groups) << "The number of input channels should be equal to filter channels * groups.";
   CHECK_EQ(filter_dims[0] % groups, 0) << "The number of output channels should be divided by groups.";
 
@@ -57,35 +56,6 @@ inline int ConvOutputSize(int input_size,
 
   return output_size;
 }
-//
-//// copy from conv_op.cc
-//void UpdatePaddingAndDilation(std::vector<int>* paddings,
-//                              std::vector<int>* dilations,
-//                              const std::vector<int>& strides,
-//                              const std::string padding_algorithm,
-//                              const lite::DDim data_dims,
-//                              const lite::DDim& ksize) {
-//  // when padding_desc is "VALID" or "SAME"
-//  if (padding_algorithm == "SAME") {
-//    for (size_t i = 0; i < strides.size(); ++i) {
-//      int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
-//      int pad_sum = std::max(
-//          (out_size - 1) * strides[i] + ksize[i + 2] - data_dims[i + 2],
-//          (int64_t)0);
-//      int pad_0 = pad_sum / 2;
-//      int pad_1 = pad_sum - pad_0;
-//      // pad
-//      *(paddings->begin() + i * 2) = pad_0;
-//      *(paddings->begin() + i * 2 + 1) = pad_1;
-//      // dilation
-//      *(dilations->begin() + i) = 1;
-//    }
-//  } else if (padding_algorithm == "VALID") {
-//    for (auto& it : *paddings) {
-//      it = 0;
-//    }
-//  }
-//}
 
 // copy from conv_op.cc
 bool XPUConv2dOp::InferShapeImpl() const {
@@ -110,8 +80,9 @@ bool XPUConv2dOp::InferShapeImpl() const {
                                           param_.strides[i]));
   }
 
-  // Set output dims
+  // Set output and output max dims
   param_.Output->Resize(lite::DDim(output_shape));
+  param_.OutputMax->Resize({4});
   // share LoD
   param_.Output->set_lod(param_.Input->lod());
 
@@ -142,19 +113,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   }
 
   param_.Output = scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
-
-  // optional params
-  std::vector<std::string> output_arg_names = op_desc.OutputArgumentNames();
-  if (std::find(output_arg_names.begin(), output_arg_names.end(), "OutputMax") !=
-        output_arg_names.end()) {
-    auto arguments = op_desc.Output("OutputMax");
-    if (arguments.size() > 0) {
-      auto arg_var = scope->FindVar(arguments.front());
-      if (arg_var != nullptr) {
-        param_.OutputMax = arg_var->GetMutable<lite::Tensor>();
-      }
-    }
-  }
+  param_.OutputMax = scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
 
   param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
   auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");

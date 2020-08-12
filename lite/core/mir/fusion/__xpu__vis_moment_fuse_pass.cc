@@ -22,14 +22,20 @@ namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
+// Special fuse pass for the subgraph block in vis clarity model
+// block desc:
+//  [["reduce_mean",
+//  ["concat"],
+//  ["elementwise_sub",
+//      ["square", ["reduce_mean", ["sqrt"]]],
+//      ["abs", ["pow", ["elementwise_mul", ["reduce_mean", ["abs", ["pow"]]]]]],
+//      ["sign"],
+//      ["abs", ["pow", ["reduce_mean", ["abs", ["pow"]]]]]]]]
 
 class XPUVisMomentFuser : public FuseBase {
  public:
 
   void BuildPattern() override {
-    std::cout << " XPUVisMomentFuser , build pattern" << std::endl;
-    //return;
-    // create nodes.
     auto* reduce_mean_input = VarNode("reduce_mean_input")
                                   ->assert_is_op_output("reshape2", "Out")
                                   ->assert_is_op_input("reduce_mean", "X")

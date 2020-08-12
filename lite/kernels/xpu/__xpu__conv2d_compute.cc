@@ -60,7 +60,6 @@ void XPUConv2dCompute::Run() {
   CHECK(filter_type == "int16");
 
   xdnn::Activation_t act((xdnn::Activation_t::act_enum)act_type);
-  //LOG(INFO) << "do conv2d_forward_int16" << std::endl;
   int r = xdnn::conv2d_forward_int16<float, int16_t, float, float>(
       ctx.GetRawContext(),                                      /* context */
       batch,                                                    /* batch */

@@ -22,12 +22,16 @@ namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
+// Special fuse pass for the subgraph block in vis clarity model
+// block desc:
+//  [["reduce_mean",
+//      ["concat"],
+//      ["elementwise_sub",
+//          ["square", ["reduce_sum", ["scale", ["sqrt"]]]]]]]
 
 class XPUVisMeanstdFuser : public FuseBase {
  public:
   void BuildPattern() override {
-    std::cout << " XPUVisMeanstdFuser , build pattern" << std::endl;
-    // create nodes.
     auto* reduce_mean_input = VarNode("reduce_mean_input")
                                   ->assert_is_op_output("reshape2", "Out")
                                   ->assert_is_op_input("reduce_mean", "X")
@@ -73,7 +77,6 @@ class XPUVisMeanstdFuser : public FuseBase {
     auto* out = VarNode("out")->assert_is_op_output("concat", "Out")
                               ->AsOutput();
 
-    // create topology.
     std::vector<PMNode*> elementwise_sub_inputs{reduce_mean_out, reduce_mean_input};
     std::vector<PMNode*> elementwise_div_inputs{reduce_sum_out, fill_constant_out};
     std::vector<PMNode*> concat_inputs{reduce_mean_out, sqrt_out};
@@ -88,7 +91,6 @@ class XPUVisMeanstdFuser : public FuseBase {
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
-    std::cout << "zhou InsertNewNode2" << std::endl;
     auto reduce_mean = matched.at("reduce_mean")->stmt()->op();
     auto* scope = reduce_mean->scope();
     auto op_desc = GenOpDesc(matched);
