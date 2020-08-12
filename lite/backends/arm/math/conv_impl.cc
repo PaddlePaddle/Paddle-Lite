@@ -751,6 +751,7 @@ void conv_depthwise_5x5_fp32(const void* din,
                               act_param,
                               ctx);
   } else if (stride == 1) {
+#if 1
     conv_depthwise_5x5s1_fp32(reinterpret_cast<float*>(dout),
                               reinterpret_cast<const float*>(din),
                               reinterpret_cast<const float*>(weights),
@@ -767,6 +768,26 @@ void conv_depthwise_5x5_fp32(const void* din,
                               pad_h,
                               param,
                               ctx);
+#else
+    conv_depthwise_5x5s1_fp32(reinterpret_cast<float*>(dout),
+                              reinterpret_cast<const float*>(din),
+                              reinterpret_cast<const float*>(weights),
+                              bias,
+                              flag_bias,
+                              flag_relu,
+                              num,
+                              ch_in,
+                              h_in,
+                              w_in,
+                              h_out,
+                              w_out,
+                              paddings[0],
+                              paddings[1],
+                              paddings[2],
+                              paddings[3],
+                              act_param,
+                              ctx);
+#endif 
   } else {
     LOG(FATAL) << "unsupport this type 5x5 dw conv";
   }
