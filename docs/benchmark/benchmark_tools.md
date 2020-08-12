@@ -44,6 +44,8 @@ sh run_benchmark.sh
 3. 自动执行另一个脚本`benchmark.sh`（多台手机连接USB，请在`benchmark.sh`脚本中对`adb`命令后加上测试手机的`serial number`）；
 4. 从手机下载benchmark结果`result_armv7.txt`和`result_armv8.txt`，到当前目录，并显示Benchmark结果。
 
+> **注意：** 如果运行中遇到`Operation not permitted`的问题，请使用`sudo +sh run_benchmark.sh`给予授权，并尝试重新关闭/打开手机**USB调试**和**文件传输模式**，或者通过USB重新连接手机之后再次运行脚本。
+
 ## 二. 逐步Benchmark
 
 ### 1. 编译benchmark可执行文件
