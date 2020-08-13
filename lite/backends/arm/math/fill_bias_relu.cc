@@ -300,13 +300,15 @@ void fill_bias_act<float>(float* tensor,
       switch (act_param->active_type) {
         case lite_api::ActivationType::kRelu:
           for (int i = 0; i < remain; i++) {
-            *dst = *src >= 0.f ? *src : 0.f;
+            float tmp = (*src + bias_data);
+            *dst = tmp >= 0.f ? tmp : 0.f;
             src++;
             dst++;
           }
         case lite_api::ActivationType::kRelu6:
           for (int i = 0; i < remain; i++) {
-            float tmp = *src >= 0.f ? *src : 0.f;
+            float tmp = (*src + bias_data);
+            tmp = tmp >= 0.f ? tmp : 0.f;
             *dst = tmp <= act_param->Relu_clipped_coef
                        ? tmp
                        : act_param->Relu_clipped_coef;
@@ -315,10 +317,11 @@ void fill_bias_act<float>(float* tensor,
           }
         case lite_api::ActivationType::kLeakyRelu:
           for (int i = 0; i < remain; i++) {
-            if (*src >= 0.f) {
-              *dst = *src;
+            float tmp = (*src + bias_data);
+            if (tmp >= 0.f) {
+              *dst = tmp;
             } else {
-              *dst = *src * act_param->Leaky_relu_alpha;
+              *dst = tmp * act_param->Leaky_relu_alpha;
             }
             src++;
             dst++;
@@ -336,17 +339,24 @@ void fill_bias_act<float>(float* tensor,
       float32x4_t vbias = vdupq_n_f32(bias_data);
       float* src = data + j * channel_size;
       float* dst = data + j * channel_size;
+      if (cnt > 0) {
 #ifdef __aarch64__
-      asm volatile(FILL_BIAS FILL_STORE
-                   : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
-                   : [vbias] "w"(vbias)
-                   : "memory", "cc", "v0", "v1", "v2", "v3");
+        asm volatile(FILL_BIAS FILL_STORE
+                     :
+                     [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
+                     : [vbias] "w"(vbias)
+                     : "memory", "cc", "v0", "v1", "v2", "v3");
 #else
-      asm volatile(FILL_BIAS FILL_STORE
-                   : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
-                   : [vbias] "w"(vbias)
-                   : "memory", "cc", "q3", "q4", "q5", "q6");
+        asm volatile(FILL_BIAS FILL_STORE
+                     :
+                     [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
+                     : [vbias] "w"(vbias)
+                     : "memory", "cc", "q3", "q4", "q5", "q6");
 #endif
+      }
+      for (int i = 0; i < remain; i++) {
+        *dst = *src + bias_data;
+      }
     }
   }
 }
