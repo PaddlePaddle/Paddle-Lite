@@ -1257,11 +1257,20 @@ void pooling2x2s2p0_avg(const float* din,
           int wend = std::min(wstart + K, rem);
           float coef = 0.25f;
           float tmp = 0.f;
-          if (wend - wstart == 1 && pad_right == 0) {
-            coef *= 2;
-          }
-          if (h * S + K - P > hin && pad_bottom == 0) {
-            coef *= 2;
+          if (exclusive) {
+            if (wend - wstart == 1) {
+              coef *= 2;
+            }
+            if (h * S + K - P > hin) {
+              coef *= 2;
+            }
+          } else {
+            if (wend - wstart == 1 && pad_right == 0) {
+              coef *= 2;
+            }
+            if (h * S + K - P > hin && pad_bottom == 0) {
+              coef *= 2;
+            }
           }
           for (int i = wstart; i < wend; i++) {
             tmp += dr0[i] + dr1[i];
@@ -2630,28 +2639,27 @@ void pooling3x3s2p0_max(const float* din,
                          "v10",
                          "v11");
 #else
-          asm volatile(
-              P3x3S2P0_INIT P3x3S2P0_MAX
-              : [dr0] "+r"(dr0),
-                [dr1] "+r"(dr1),
-                [dr2] "+r"(dr2),
-                [dr_out] "+r"(dr_out),
-                [cnt_num] "+r"(cnt_num)
-              :
-              : "cc",
-                "memory",
-                "q0",
-                "q1",
-                "q2",
-                "q3",
-                "q4",
-                "q5",
-                "q6",
-                "q7",
-                "q8",
-                "q9",
-                "q10",
-                "q11");
+          asm volatile(P3x3S2P0_INIT P3x3S2P0_MAX
+                       : [dr0] "+r"(dr0),
+                         [dr1] "+r"(dr1),
+                         [dr2] "+r"(dr2),
+                         [dr_out] "+r"(dr_out),
+                         [cnt_num] "+r"(cnt_num)
+                       :
+                       : "cc",
+                         "memory",
+                         "q0",
+                         "q1",
+                         "q2",
+                         "q3",
+                         "q4",
+                         "q5",
+                         "q6",
+                         "q7",
+                         "q8",
+                         "q9",
+                         "q10",
+                         "q11");
 #endif
           dr0 -= 8;
           dr1 -= 8;
