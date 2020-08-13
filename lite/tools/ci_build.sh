@@ -281,7 +281,9 @@ function test_server {
 function assert_api_spec_approvals() {
     /bin/bash ${LITE_ROOT}/lite/tools/check_api_approvals.sh check_modified_file_nums
     if [ "$?" != 0 ];then
-       exit 1
+       return 1
+    else
+       return 0
     fi
 }
 
@@ -290,12 +292,20 @@ function build_test_server {
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    # check approval
     assert_api_spec_approvals
+    approval_result = $?
+    # build on x86 backend
     cmake_x86_for_CI
     build
-
+    # test on x86 backend
     test_server
     test_model_optimize_tool_compile
+    # test approval result
+    if [ "$approval_result" != 0 ];then
+       echo "Error: Approval error occured."
+       exit 1
+    fi
 }
 
 # Build the code and run lite server tests. This is executed in the CI system.
