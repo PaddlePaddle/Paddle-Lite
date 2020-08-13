@@ -168,6 +168,9 @@ TEST(Scale, precision) {
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 3e-4;  // Some operations use fp16 in XPU
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #else

@@ -48,3 +48,8 @@ USE_SUBGRAPH_BRIDGE(transpose, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(transpose2, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(flatten, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(flatten2, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(layer_norm, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(lookup_table, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(matmul, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(cast, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(scale, kHuaweiAscendNPU);
