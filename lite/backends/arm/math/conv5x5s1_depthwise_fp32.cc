@@ -1199,7 +1199,7 @@ inline void compute_all_padding_pre(float* dout,
   }
   
   // right
-  for (int i = 1; i < pad_right_new; i--) {
+  for (int i = 1; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[4][4 - i], 4 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[num - 1 - k], weights[3 - k], 0.f, weights[3 - k][4 - i], 4 - i);
@@ -1335,7 +1335,7 @@ inline void compute_all_padding_mid(float* dout,
   }
   
   // right
-  for (int i = 0; i < pad_right_new; i--) {
+  for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
@@ -1570,7 +1570,7 @@ inline void compute_all_padding_post(float* dout,
   }
   
   // right
-  for (int i = 0; i < pad_right_new; i--) {
+  for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
@@ -1819,7 +1819,7 @@ inline void compute_all_padding_pre_relu(float* dout,
   }
   
   // right
-  for (int i = 1; i < pad_right_new; i--) {
+  for (int i = 1; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[4][4 - i], 4 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[num - 1 - k], weights[3 - k], 0.f, weights[3 - k][4 - i], 4 - i);
@@ -1928,7 +1928,7 @@ inline void compute_all_padding_mid_relu(float* dout,
   }
   
   // right
-  for (int i = 0; i < pad_right_new; i--) {
+  for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
@@ -2172,7 +2172,7 @@ inline void compute_all_padding_post_relu(float* dout,
   }
   
   // right
-  for (int i = 0; i < pad_right_new; i--) {
+  for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
@@ -2433,7 +2433,7 @@ inline void compute_all_padding_pre_relu6(float* dout,
   }
   
   // right
-  for (int i = 1; i < pad_right_new; i--) {
+  for (int i = 1; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[4][4 - i], 4 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[num - 1 - k], weights[3 - k], 0.f, weights[3 - k][4 - i], 4 - i);
@@ -2548,7 +2548,7 @@ inline void compute_all_padding_mid_relu6(float* dout,
   }
   
   // right
-  for (int i = 0; i < pad_right_new; i--) {
+  for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
@@ -2804,7 +2804,7 @@ inline void compute_all_padding_post_relu6(float* dout,
   }
   
   // right
-  for (int i = 0; i < pad_right_new; i--) {
+  for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
@@ -3065,7 +3065,7 @@ inline void compute_all_padding_pre_leakyRelu(float* dout,
   }
   
   // right
-  for (int i = 1; i < pad_right_new; i--) {
+  for (int i = 1; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[4][4 - i], 4 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[num - 1 - k], weights[3 - k], 0.f, weights[3 - k][4 - i], 4 - i);
@@ -3180,7 +3180,7 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
   }
   
   // right
-  for (int i = 0; i < pad_right_new; i--) {
+  for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
@@ -3436,7 +3436,7 @@ inline void compute_all_padding_post_leakyRelu(float* dout,
   }
   
   // right
-  for (int i = 0; i < pad_right_new; i--) {
+  for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
