@@ -1132,6 +1132,11 @@ void pooling2x2s2p0_max(const float* din,
         float* dr_out = data_out_channel;
         auto dr0 = r0;
         auto dr1 = r1;
+        if (h * S + K - P > hin + 1) {
+          memset(dr_out, 0.f, sizeof(float) * wout);
+          data_out_channel += wout;
+          continue;
+        }
         if (h * S + K - P > hin) {
           dr1 = r0;
         }
@@ -1222,9 +1227,20 @@ void pooling2x2s2p0_avg(const float* din,
         float* dr_out = data_out_channel;
         auto dr0 = r0;
         auto dr1 = r1;
+        if (h * S + K - P > hin + 1) {
+          memset(dr_out, 0.f, sizeof(float) * wout);
+          data_out_channel += wout;
+          continue;
+        }
         if (h * S + K - P > hin) {
           dr1 = zero_ptr;
-          vcoef = vdupq_n_f32(0.5f);
+          if (exclusive) {
+            vcoef = vdupq_n_f32(0.5f);
+          } else {
+            if (pad_bottom == 0) {
+               vcoef = vdupq_n_f32(0.5f);
+            }
+          }
         }
         int cnt_num = w_unroll_size;
         if (w_unroll_size > 0) {
@@ -1449,14 +1465,14 @@ void pooling2x2s2p1_avg(const float* din,
           r0 = r1 + win;
           r1 = r0 + win;
         }
+        if (h * S + K - P > hin + 1) {
+          memset(dr_out, 0, wout * sizeof(float));
+          continue;
+        }
         if (h * S + K - P > hin) {
           dr1 = zero_ptr;
-          if (exclusive) {
+          if (exclusive || pad_bottom == 0) {
             coef_h = 1.f;
-          }
-          if (h * S + K - P > hin + 1) {
-            memset(dr_out, 0, wout * sizeof(float));
-            continue;
           }
         }
         float coef_left_most = exclusive ? coef_h : coef_h / 2;
@@ -1499,8 +1515,14 @@ void pooling2x2s2p1_avg(const float* din,
           int st = wstart > 0 ? wstart : 0;
           float tmp = 0.f;
           float coef = coef_h / 2;
-          if (exclusive && wend - st == 1) {
-            coef = coef_h;
+          if (exclusive) {
+            if (wend - st == 1) {
+              coef = coef_h;
+            }
+          } else {
+            if (wend - st == 1 && wstart > 0 && pad_right == 0) {
+              coef = coef_h;
+            }
           }
           for (int i = 0; i < wend - st; i++) {
             tmp += dr0[i] + dr1[i];
