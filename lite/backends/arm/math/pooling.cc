@@ -2044,7 +2044,7 @@ void pooling3x3s1p0_avg(const float* din,
               } else {
                 if (pad_bottom > 1) {
                   coef_h = 1.f / 3;
-                } else if (pad_bottom = 1) {
+                } else if (pad_bottom == 1) {
                   coef_h = 0.5f;
                 } else {
                   coef_h = 1.f;
@@ -2540,7 +2540,7 @@ void pooling3x3s2p0_max(const float* din,
   int right = wout * 2 + 1 - win;  // if need right pad
   int tmp_val = (w_unroll_size * 4 + remain) * S;
   int wend = std::min(tmp_val + K, win) - tmp_val;
-
+  float minval = std::numeric_limits<float>::lowest();
   for (int n = 0; n < num; ++n) {
     float* data_out_batch = data_out + n * chout * size_channel_out;
     const float* data_in_batch = data_in + n * chin * size_channel_in;
