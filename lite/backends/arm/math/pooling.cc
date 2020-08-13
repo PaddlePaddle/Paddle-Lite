@@ -2575,10 +2575,9 @@ void pooling3x3s2p0_max(const float* din,
 
   int remain = w_unroll_remian - 1;
   int right = wout * 2 + 1 - win;  // if need right pad
-
-  int w_2 = right > 0 ? w_unroll_remian : w_unroll_remian + 1;
-  w_2 = w_unroll_size <= 0 ? w_2 - 1 : w_2;
+  int tmp_val = (w_unroll_size * 4 + remain) * S;
   float minval = std::numeric_limits<float>::lowest();
+  int wend = std::min(tmp_val + K, win) - tmp_val;
 
   for (int n = 0; n < num; ++n) {
     float* data_out_batch = data_out + n * chout * size_channel_out;
@@ -2630,59 +2629,13 @@ void pooling3x3s2p0_max(const float* din,
                          "v9",
                          "v10",
                          "v11");
-          dr0 -= 8;
-          dr1 -= 8;
-          dr2 -= 8;
-
-          for (int w = 0; w < w_2 - 1; w += 1) {
-            float32x4_t vr0 = vld1q_f32(dr0);
-            float32x4_t vr1 = vld1q_f32(dr1);
-            float32x4_t vr2 = vld1q_f32(dr2);
-            vr0 = vsetq_lane_f32(minval, vr0, 3);
-            vr1 = vsetq_lane_f32(minval, vr1, 3);
-            vr2 = vsetq_lane_f32(minval, vr2, 3);
-            float32x4_t vmax1 = vmaxq_f32(vr0, vr1);
-            vmax1 = vmaxq_f32(vmax1, vr2);
-            float32x2_t vmax2 =
-                vpmax_f32(vget_low_f32(vmax1), vget_high_f32(vmax1));
-            float32x2_t vmax = vpmax_f32(vmax2, vmax2);
-            dr_out[0] = vget_lane_f32(vmax, 0);
-            dr_out++;
-            dr0 += 2;
-            dr1 += 2;
-            dr2 += 2;
-          }
 #else
           asm volatile(
               P3x3S2P0_INIT P3x3S2P0_MAX
-              "cmp       %[remain], #0                         @cmp cnt_num\n"
-              "sub       %[dr0], #32                           @sub - 8\n"
-              "sub       %[dr1], #32                           @sub - 8\n"
-              "sub       %[dr2], #32                           @sub - 8\n"
-              "ble       4f                                    @ble exit1\n"
-              "2:                                              @mid loop\n"
-              "vld1.f32  {d0-d1}, [%[dr0]]!                    @load \n"
-              "vld1.f32  {d2-d3}, [%[dr1]]!                    @load \n"
-              "vld1.f32  {d4-d5}, [%[dr2]]!                    @load \n"
-              "vmov.f32  s3,s2                                 @mov \n"
-              "vmov.f32  s7,s6                                 @mov \n"
-              "vmov.f32  s11,s10                               @mov \n"
-              "vmax.f32  q0, q0, q1                            @max n"
-              "sub       %[dr0], #8                            @add w \n"
-              "sub       %[dr1], #8                            @add w \n"
-              "sub       %[dr2], #8                            @add w \n"
-              "vmax.f32  q0, q0, q2                            @max \n"
-              "vpmax.f32 d0, d0, d1                            @pmax \n"
-              "vpmax.f32 d0, d0, d0                            @pmax \n"
-              "subs      %[remain], #1                         @subs \n"
-              "vst1.f32  d0[0], [%[dr_out]]!                   @vst \n"
-              "bne       2b                                    @bne \n"
-              "4:                                              @exit\n"
               : [dr0] "+r"(dr0),
                 [dr1] "+r"(dr1),
                 [dr2] "+r"(dr2),
                 [dr_out] "+r"(dr_out),
-                [remain] "+r"(cnt_remain),
                 [cnt_num] "+r"(cnt_num)
               :
               : "cc",
@@ -2699,17 +2652,35 @@ void pooling3x3s2p0_max(const float* din,
                 "q9",
                 "q10",
                 "q11");
-          if (right) {
-            int wstart = (w_unroll_size * 4 + remain) * S;
-            int wend = std::min(wstart + K, win);
-            float tmp = dr0[wstart];  // std::numeric_limits<float>::min();
-            for (int i = wstart; i < wend; i++) {
-              tmp = std::max(tmp, std::max(dr0[i], dr1[i]));
-              tmp = std::max(tmp, dr2[i]);
-            }
-            *(dr_out++) = tmp;
-          }
 #endif
+          dr0 -= 8;
+          dr1 -= 8;
+          dr2 -= 8;
+        }
+        for (int w = 0; w < remain; w++) {
+          float32x4_t vr0 = vld1q_f32(dr0);
+          float32x4_t vr1 = vld1q_f32(dr1);
+          float32x4_t vr2 = vld1q_f32(dr2);
+          vr0 = vsetq_lane_f32(minval, vr0, 3);
+          vr1 = vsetq_lane_f32(minval, vr1, 3);
+          vr2 = vsetq_lane_f32(minval, vr2, 3);
+          float32x4_t vmax1 = vmaxq_f32(vr0, vr1);
+          vmax1 = vmaxq_f32(vmax1, vr2);
+          float32x2_t vmax2 =
+              vpmax_f32(vget_low_f32(vmax1), vget_high_f32(vmax1));
+          float32x2_t vmax = vpmax_f32(vmax2, vmax2);
+          *dr_out++ = vget_lane_f32(vmax, 0);
+          dr0 += 2;
+          dr1 += 2;
+          dr2 += 2;
+        }
+        if (right) {
+          float tmp = dr0[0];  // std::numeric_limits<float>::min();
+          for (int i = 0; i < wend; i++) {
+            tmp = std::max(tmp, std::max(dr0[i], dr1[i]));
+            tmp = std::max(tmp, dr2[i]);
+          }
+          *(dr_out++) = tmp;
         }
 
         r0 = r2;
