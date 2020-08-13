@@ -78,6 +78,9 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
   void* trans_tmp_ptr = malloc(sizeof(float) * wino_iw * wino_iw * oc * ic);
   auto weights_data_ = weights_.mutable_data<float>();
+  memset(reinterpret_cast<char*>(weights_data_),
+         0,
+         weights_.numel() * sizeof(float));
   if (!choose_small_) {
     lite::arm::math::weight_trans_c4_8x8(
         weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
@@ -251,6 +254,9 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
   void* trans_tmp_ptr = malloc(sizeof(int16_t) * wino_iw * wino_iw * oc * ic);
   auto weights_data_ = weights_.mutable_data<int16_t>();
+  memset(reinterpret_cast<char*>(weights_data_),
+         0,
+         weights_.numel() * sizeof(int16_t));
   if (!choose_small_) {
   } else {
     lite::arm::math::weight_trans_c8_4x4_int8(
