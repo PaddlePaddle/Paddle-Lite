@@ -111,6 +111,11 @@ class FcOPTest : public arena::TestCase {
     }
     auto out_data = out->mutable_data<float>();
 
+    // must init out_data to be 0 firstly
+    for (int i = 0; i < out_dim.production(); i++) {
+      out_data[i] = 0;
+    }
+
     int m = x->dims().count(0, in_num_col_dims_);
     CHECK_EQ(wdims_[0], x->dims().count(in_num_col_dims_, x->dims().size()));
     int k = wdims_[0];
@@ -279,6 +284,9 @@ TEST(FcOP, precision) {
   abs_error = 1e-4;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #else
   return;
 #endif

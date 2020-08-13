@@ -14,6 +14,11 @@
 
 #pragma once
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 #include "lite/model_parser/base/traits.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 
@@ -137,6 +142,80 @@ inline proto::AttrType ConvertAttrType(lite::OpAttrType type) {
       return proto::AttrType();
   }
 #undef CASE
+}
+
+template <typename FlatbuffersMapT, typename KeyT = std::string>
+KeyT GetKey(const std::unique_ptr<FlatbuffersMapT>& object);
+
+template <typename FlatbuffersMapT, typename KeyT = std::string>
+void SetKey(const KeyT& key, std::unique_ptr<FlatbuffersMapT>* object);
+
+#define GET_KEY_INSTANCE(type, key, key_type)                             \
+  template <>                                                             \
+  inline key_type GetKey<proto::type>(                                    \
+      const std::unique_ptr<proto::type>& object) {                       \
+    return object->key;                                                   \
+  }                                                                       \
+  template <>                                                             \
+  inline void SetKey<proto::type>(const key_type& key_in,                 \
+                                  std::unique_ptr<proto::type>* object) { \
+    (*object)->key = key_in;                                              \
+  }
+GET_KEY_INSTANCE(OpDesc_::VarT, parameter, std::string);
+GET_KEY_INSTANCE(OpDesc_::AttrT, name, std::string);
+#undef GET_KEY_INSTANCE
+
+template <typename MapT, typename KeyT = std::string>
+struct CompareLessThanKey {
+  bool operator()(const std::unique_ptr<MapT>& lhs, const KeyT& rhs) {
+    return GetKey(lhs) < rhs;
+  }
+  bool operator()(const KeyT& lhs, const std::unique_ptr<MapT>& rhs) {
+    return lhs < GetKey(rhs);
+  }
+};
+
+template <typename MapT>
+struct CompareLessThan {
+  bool operator()(const std::unique_ptr<MapT>& lhs,
+                  const std::unique_ptr<MapT>& rhs) {
+    return GetKey(lhs) < GetKey(rhs);
+  }
+};
+
+template <typename MapT,
+          typename KeyT = std::string,
+          typename CompareFunc = CompareLessThanKey<MapT, KeyT>>
+typename std::vector<std::unique_ptr<MapT>>::const_iterator GetKeyIterator(
+    const KeyT& key, const std::vector<std::unique_ptr<MapT>>& vector) {
+  auto iter =
+      std::lower_bound(vector.begin(), vector.end(), key, CompareFunc());
+  CHECK_EQ(GetKey(*iter), key);
+  return iter;
+}
+
+template <typename MapT,
+          typename KeyT = std::string,
+          typename CompareFunc = CompareLessThanKey<MapT, KeyT>>
+typename std::vector<std::unique_ptr<MapT>>::iterator InsertPair(
+    const KeyT& key,
+    std::unique_ptr<MapT>&& val,
+    std::vector<std::unique_ptr<MapT>>* vector) {
+  auto iter =
+      std::lower_bound(vector->begin(), vector->end(), key, CompareFunc());
+  return vector->insert(iter, std::forward<std::unique_ptr<MapT>>(val));
+}
+
+template <typename MapT,
+          typename KeyT = std::string,
+          typename CompareFunc = CompareLessThanKey<MapT, KeyT>>
+bool HasKey(const KeyT& key, const std::vector<std::unique_ptr<MapT>>& vector) {
+  return std::binary_search(vector.begin(), vector.end(), key, CompareFunc());
+}
+
+template <typename MapT, typename CompareFunc = CompareLessThan<MapT>>
+void Sort(std::vector<std::unique_ptr<MapT>>* vector) {
+  std::sort(vector->begin(), vector->end(), CompareFunc());
 }
 
 }  // namespace fbs

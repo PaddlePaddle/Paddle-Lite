@@ -55,31 +55,32 @@ bool CudnnConv2D<T, Ptype_out>::create(const operators::ConvParam& param,
 
   CUDNN_CHECK(cudnnSetTensor4dDescriptor(this->input_desc_,
                                          CUDNN_TENSOR_NCHW,
-                                         GetCudnnDataType<Ptype_out>(),
+                                         cudnn::cudnnTypeWrapper<T>::type,
                                          batch,
                                          ic,
                                          ih,
                                          iw));
   CUDNN_CHECK(cudnnSetFilter4dDescriptor(this->filter_desc_,
-                                         GetCudnnDataType<Ptype_out>(),
+                                         cudnn::cudnnTypeWrapper<T>::type,
                                          CUDNN_TENSOR_NCHW,
                                          oc,
                                          ic / param.groups,
                                          kh,
                                          kw));
-  CUDNN_CHECK(cudnnSetConvolution2dDescriptor(this->conv_desc_,
-                                              ph,
-                                              pw,
-                                              sh,
-                                              sw,
-                                              dh,
-                                              dw,
-                                              CUDNN_CROSS_CORRELATION,
-                                              GetCudnnDataType<Ptype_out>()));
+  CUDNN_CHECK(
+      cudnnSetConvolution2dDescriptor(this->conv_desc_,
+                                      ph,
+                                      pw,
+                                      sh,
+                                      sw,
+                                      dh,
+                                      dw,
+                                      CUDNN_CROSS_CORRELATION,
+                                      cudnn::cudnnTypeWrapper<T>::type));
   CUDNN_CHECK(cudnnSetConvolutionGroupCount(this->conv_desc_, param.groups));
   CUDNN_CHECK(cudnnSetTensor4dDescriptor(this->output_desc_,
                                          CUDNN_TENSOR_NCHW,
-                                         GetCudnnDataType<Ptype_out>(),
+                                         cudnn::cudnnTypeWrapper<T>::type,
                                          batch,
                                          oc,
                                          oh,
@@ -179,7 +180,7 @@ bool CudnnConv2D<T, Ptype_out>::create(const operators::ConvParam& param,
     int dim_bias[] = {1, oc, 1, 1};
     int stride_bias[] = {oc, 1, 1, 1};
     cudnnSetTensorNdDescriptor(this->bias_desc_,
-                               GetCudnnDataType<Ptype_out>(),
+                               cudnn::cudnnTypeWrapper<T>::type,
                                4,
                                dim_bias,
                                stride_bias);

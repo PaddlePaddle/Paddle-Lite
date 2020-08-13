@@ -103,6 +103,8 @@ struct FcParam : ParamBase {
   lite::Tensor* bias{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
+  // original dims of input weight
+  lite::DDim w_dims;
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
@@ -997,10 +999,10 @@ struct BeamSearchParam : ParamBase {
 struct SequencePoolParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
+  lite::Tensor* MaxIndex{};
   std::string pool_type{"AVERAGE"};
 #ifdef LITE_WITH_X86
   float pad_value{0.0};
-  lite::Tensor* MaxIndex{};
 #endif
 };
 
@@ -1017,6 +1019,18 @@ struct SequencePoolConcatParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
   std::vector<std::string> pool_type{};
+};
+
+struct SequencePoolGradParam : ParamBase {
+  const lite::Tensor* X{};
+  std::string pool_type{"AVERAGE"};
+#ifdef LITE_WITH_X86
+  float pad_value{0.0};
+#endif
+  // for backward
+  const lite::Tensor* Out_Grad{};
+  const lite::Tensor* MaxIndex_Grad{};
+  lite::Tensor* X_Grad{};
 };
 
 struct SearchGroupPaddingParam : ParamBase {
@@ -1810,6 +1824,15 @@ struct PrintParam : ParamBase {
   bool print_tensor_layout{true};
   std::string print_phase;
   bool is_forward{true};
+};
+
+struct OneHotParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* depth_tensor{nullptr};
+  lite::Tensor* Out{};
+  int depth;
+  int dtype;
+  bool allow_out_of_range;
 };
 
 }  // namespace operators

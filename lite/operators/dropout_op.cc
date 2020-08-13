@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/operators/dropout_op.h"
+
 #include <string>
 #include <vector>
+
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
@@ -41,23 +43,35 @@ bool DropoutOp::InferShapeImpl() const {
 bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto input = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
-  auto Mask = op_desc.Output("Mask").front();
 
   param_.x = GetVar<lite::Tensor>(scope, input);
   param_.output = GetMutableVar<lite::Tensor>(scope, out);
-  param_.mask = GetMutableVar<lite::Tensor>(scope, Mask);
 
   param_.dropout_prob = op_desc.GetAttr<float>("dropout_prob");
-  param_.is_test = true;
-  // TODO(sangoly): `is_test` has different attr type in x86 and arm, set
-  // `true` now.
-  // if (op_desc.HasAttr("is_test")) {
-  //   param_.is_test = op_desc.GetAttr<bool>("is_test");
-  // }
+
+  auto is_test_type = op_desc.GetAttrType("is_test");
+  switch (is_test_type) {
+    case OpDescAPI::AttrType::INT:
+      param_.is_test = op_desc.GetAttr<int>("is_test");
+      break;
+    case OpDescAPI::AttrType::BOOLEAN:
+      param_.is_test = op_desc.GetAttr<bool>("is_test");
+      break;
+    default:
+      LOG(FATAL) << "Unsupported attribute type: the type of attribute "
+                    "`is_test` in BatchNormOP should be int or bool.";
+  }
+  if (!param_.is_test) {
+    auto Mask = op_desc.Output("Mask").front();
+    param_.mask = GetMutableVar<lite::Tensor>(scope, Mask);
+  }
+
   param_.fix_seed = op_desc.GetAttr<bool>("fix_seed");
   param_.seed = op_desc.GetAttr<int>("seed");
-  param_.dropout_implementation =
-      op_desc.GetAttr<std::string>("dropout_implementation");
+  if (op_desc.HasAttr("dropout_implementation")) {
+    param_.dropout_implementation =
+        op_desc.GetAttr<std::string>("dropout_implementation");
+  }
   return true;
 }
 

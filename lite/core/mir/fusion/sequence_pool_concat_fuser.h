@@ -23,7 +23,16 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-class SequencePoolConcatFuser : public FuseBase {
+class SequencePool7ConcatFuser : public FuseBase {
+ public:
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+};
+
+class SequencePool2ConcatFuser : public FuseBase {
  public:
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;

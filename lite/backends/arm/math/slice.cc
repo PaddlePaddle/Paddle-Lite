@@ -79,6 +79,13 @@ void slice(const Dtype* input,
   }
 }
 
+template void slice(const float* input,
+                    std::vector<int64_t> dims,
+                    std::vector<int> axes,
+                    std::vector<int> starts,
+                    std::vector<int> ends,
+                    float* out,
+                    Context<TARGET(kARM)>* ctx);
 template void slice(const int* input,
                     std::vector<int64_t> dims,
                     std::vector<int> axes,
@@ -86,12 +93,12 @@ template void slice(const int* input,
                     std::vector<int> ends,
                     int* out,
                     Context<TARGET(kARM)>* ctx);
-template void slice(const float* input,
+template void slice(const int64_t* input,
                     std::vector<int64_t> dims,
                     std::vector<int> axes,
                     std::vector<int> starts,
                     std::vector<int> ends,
-                    float* out,
+                    int64_t* out,
                     Context<TARGET(kARM)>* ctx);
 
 }  // namespace math
