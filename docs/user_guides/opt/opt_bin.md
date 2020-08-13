@@ -3,10 +3,14 @@
 opt是 x86 平台上的可执行文件，需要在PC端运行：支持Linux终端和Mac终端。
 
 ### 帮助信息
- 执行opt时不加入任何输入选项，会输出帮助信息，提示当前支持的选项：
+
+执行opt时不加入任何输入选项，会输出帮助信息，提示当前支持的选项：
+
 ```bash
  ./opt
 ```
+> **注意：** 如果您是通过[准备opt](https://paddle-lite.readthedocs.io/zh/latest/user_guides/model_optimize_tool.html#id1)页面中，"方法二：下载opt可执行文件" 中提供的链接下载得到的opt可执行文件，请先通过`chmod +x ./opt`命令为下载的opt文件添加可执行权限。
+
 ![](https://paddlelite-data.bj.bcebos.com/doc_images/1.png)
 
 ### 功能一：转化模型为Paddle-Lite格式

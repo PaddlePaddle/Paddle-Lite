@@ -57,7 +57,9 @@ class ostream {
   ostream& operator<<(const T* obj);
 
  private:
+#ifdef LITE_WITH_LOG
   void pad(const std::string& text);
+#endif
   std::string data_;
   int display_width_{-1};  // -1 refers to no setting
 };

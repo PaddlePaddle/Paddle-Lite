@@ -36,7 +36,20 @@ class SearchSeqFcOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
+
   std::string DebugString() const override { return "search_seq_fc"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.x->dims());
+    ch->filter_shape = ch->DimToStr(param_.w->dims());
+    ch->output_shape = ch->DimToStr(param_.out->dims());
+    ch->remark = "out_size" + std::to_string(param_.out_size);
+    auto x_dims = param_.x->dims();
+    auto w_dims = param_.w->dims();
+    ch->macs = 2.f * x_dims[0] * x_dims[1] * w_dims[0];
+  }
+#endif
 
  private:
   mutable SearchSeqFcParam param_;

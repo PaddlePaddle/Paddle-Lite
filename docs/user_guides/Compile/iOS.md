@@ -61,7 +61,7 @@ inference_lite_lib.ios64.armv8                iOS预测库和头文件
 - 裁剪预测库方法（只编译模型中的kernel&OP，降低预测库体积）:
 
 ```shell
-./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir
+./lite/tools/build_ios.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir
 ```
 ```shell
 --with_strip: (OFF|ON);   是否根据输入模型裁剪预测库，默认为OFF

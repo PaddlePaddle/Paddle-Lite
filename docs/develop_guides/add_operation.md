@@ -27,6 +27,28 @@
         bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
         void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
         std::string DebugString() const override { return "argmax"; }
+
+    #ifdef LITE_WITH_PROFILE
+        void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+            auto input_dims = param_.X->dims();
+            auto output_dims = param_.Out->dims();
+            ch->input_shape = ch->DimToStr(input_dims);
+            ch->output_shape = ch->DimToStr(output_dims);
+            ch->remark = "axis" + std::to_string(param_.Axis);
+
+            auto axis = param_.Axis;
+            if (axis < 0) {
+                axis += input_dims.size();
+            }
+            int max_num = 1;
+            for (int64_t i = axis + 1; i < input_dims.size(); i++)
+                max_num *= input_dims[i];
+            float gops = 1.0f;
+            for (int i = 1; i <= max_num; i++) gops *= i;
+            ch->macs = gops * output_dims.production();
+        }
+    #endif
+
     private:
         mutable ArgmaxParam param_;
     };
@@ -85,6 +107,13 @@
         using param_t = operators::ArgmaxParam;
         void Run() override;
         virtual ~ArgmaxCompute() = default;
+    #ifdef LITE_WITH_PROFILE
+        virtual void SetProfileRuntimeKernelInfo(
+            paddle::lite::profile::OpCharacter* ch) {
+            ch->kernel_func_name = kernel_func_name_;
+        }
+        std::string kernel_func_name_{"NotImplForArgmax"};
+    #endif
     };
     ```
 - 在paddlelite/lite/kernels/arm/目录下新建argmax_compute.cc文件，主要实现Run函数。`Run()`函数调用paddlelite/lite/bachends/arm/math/argmax.h中的`argmax_func()`函数，根据输入计算输出。最后在argmax_compute.cc文件中，我们绑定argmax的输入输出（为tensor的输入参数都需要绑定），代码如下：
@@ -95,6 +124,9 @@
         lite::Tensor* output = param.Out;
         int axis = param.Axis;
         lite::arm::math::argmax_func(input, axis, output);
+    #ifdef LITE_WITH_PROFILE
+        kernel_func_name_ = "argmax_func";
+    #endif
         return;
     }
 

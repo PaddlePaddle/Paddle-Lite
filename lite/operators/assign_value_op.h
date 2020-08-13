@@ -39,6 +39,17 @@ class AssignValueOpLite : public OpLite {
 
   std::string DebugString() const override { return "assign value"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    // auto input_dims = param_.X->dims();
+    auto output_dims = param_.Out->dims();
+    // ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = "dtype" + std::to_string(param_.dtype);
+    ch->macs = param_.Out->numel() * 1.0;
+  }
+#endif
+
  private:
   mutable AssignValueParam param_;
 };

@@ -73,6 +73,9 @@ class OpLite : public Registry {
   // Indicate whether the Op runs only once or not
   virtual bool run_once() const { return false; }
   std::string Type() { return op_type_; }
+#ifdef LITE_WITH_PROFILE
+  virtual void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {}
+#endif
 
   // Link the external execution environ to internal context.
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
@@ -96,7 +99,7 @@ class OpLite : public Registry {
   std::vector<std::unique_ptr<KernelBase>> CreateKernels(
       const std::vector<Place> &places, const std::string &kernel_type = "");
 
-  lite::Scope *scope() { return scope_; }
+  Scope *scope() { return scope_; }
 
   // Assign op param to kernel.
   virtual void AttachKernel(KernelBase *kernel) = 0;
@@ -166,7 +169,7 @@ class OpLite : public Registry {
   }
 
  protected:
-  lite::Scope *scope_{nullptr};
+  Scope *scope_{nullptr};
   std::unique_ptr<KernelBase> kernel_;
   std::string op_type_;
   std::vector<Place> valid_places_;

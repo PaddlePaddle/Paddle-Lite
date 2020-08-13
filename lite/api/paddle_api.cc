@@ -22,8 +22,37 @@
 #include "lite/backends/cuda/target_wrapper.h"
 #endif
 
+#ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_runtime.h"
+#endif
+
 namespace paddle {
 namespace lite_api {
+
+bool IsOpenCLBackendValid() {
+  bool opencl_valid = false;
+
+#ifdef LITE_WITH_OPENCL
+  bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
+#endif
+  if (opencl_lib_found == false) return false;
+
+  bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "dlsym_success:" << dlsym_success;
+#endif
+  if (dlsym_success == false) return false;
+
+  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
+#endif
+
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "opencl_valid:" << opencl_valid;
+#endif
+  return opencl_valid;
+}
 
 Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 
@@ -199,6 +228,18 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
   lite::DeviceInfo::Global().SetRunMode(mode, threads);
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
+#endif
+}
+
+void ConfigBase::set_opencl_tune(bool enable_tune) {
+#ifdef LITE_WITH_OPENCL
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    enable_opencl_tune_ = enable_tune;
+    paddle::lite::CLRuntime::Global()->set_auto_tune(enable_opencl_tune_);
+#ifdef LITE_WITH_OPENCL
+    LOG(INFO) << "auto_tune:" << paddle::lite::CLRuntime::Global()->auto_tune();
+#endif
+  }
 #endif
 }
 

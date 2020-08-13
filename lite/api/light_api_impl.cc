@@ -36,6 +36,13 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   }
   mode_ = config.power_mode();
   threads_ = config.threads();
+
+#ifdef LITE_WITH_NPU
+  // Store the model-level configuration into scope for kernels, and use
+  // exe_scope to store the execution-level configuration
+  Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
+      raw_predictor_->scope(), config.subgraph_model_cache_dir());
+#endif
 }
 
 std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInput(int i) {

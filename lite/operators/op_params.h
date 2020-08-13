@@ -21,7 +21,7 @@
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
-#include "lite/model_parser/cpp/block_desc.h"
+#include "lite/model_parser/cpp/program_desc.h"
 #include "lite/model_parser/desc_apis.h"
 #include "lite/utils/all.h"
 #include "lite/utils/variant.h"
@@ -91,9 +91,9 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> output_names{};
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
-  int sub_block_idx{-1};
-  cpp::BlockDesc* sub_block_desc{nullptr};
-  Scope* scope{nullptr};
+  int block_idx{-1};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
+  Scope* exec_scope{nullptr};
 };
 
 /// -------------------------- NN operators ------------------------------------
@@ -244,6 +244,10 @@ struct ScaleParam : ParamBase {
   float scale{1.};
   float bias{};
   bool bias_after_scale{true};
+
+  std::string activation_type{""};
+  bool fuse_relu{false};
+  float alpha{6.};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -374,17 +378,17 @@ struct ConvParam : ParamBase {
   lite::Tensor* output{};
   std::vector<int> strides{1, 1};
   /* paddings type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
   /* dilations type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> dilations;
   bool fuse_relu_before_depthwise_conv{false};
   bool use_mkldnn{false};
@@ -468,10 +472,10 @@ struct PoolParam : ParamBase {
       false};  // if true, knernel size and paddings will be ignored
   std::vector<int> strides{1, 1};
   /* paddings type change
-  * from std::vector<int> to std::shared_ptr<std::vector<int>>
-  * to support dynamically modify padding
-  * let kernel param and operator param Synchronous update
-  */
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
   std::shared_ptr<std::vector<int>> paddings;
   bool exclusive{true};
   bool adaptive{false};
@@ -935,11 +939,10 @@ struct CompareParam : ParamBase {
 };
 
 struct WhileParam : ParamBase {
-  Scope* scope{};
   Tensor* cond{};
-  cpp::BlockDesc* sub_block{};
-  std::vector<Tensor*> x{};
-  std::vector<Tensor*> outs{};
+  int block_idx{-1};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
+  Scope* exec_scope{nullptr};
 };
 
 struct TopkParam : ParamBase {
@@ -1392,10 +1395,11 @@ struct MergeLodTensorParam : ParamBase {
 
 struct ConditionalBlockParam : ParamBase {
   const lite::Tensor* cond{};
-  std::vector<lite::Tensor*> x{};
+  std::vector<lite::Tensor*> inputs{};
   std::vector<lite::Tensor*> outs{};
-  cpp::BlockDesc* sub_block{};
-  Scope* scope{};
+  int block_idx{-1};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
+  Scope* exec_scope{nullptr};
   bool is_scalar_condition{};
 };
 
@@ -1509,6 +1513,28 @@ struct XPUFcParam : ParamBase {
   float w_max{0.0f};
   bool transpose_w{true};
   std::string activation_type{""};
+};
+
+struct PixelShuffleParam : ParamBase {
+  lite::Tensor* x{nullptr};
+  lite::Tensor* output{nullptr};
+  int upscale_factor{1};
+};
+
+struct PrintParam : ParamBase {
+  const lite::Tensor* in{};
+  lite::Tensor* out{};
+  std::string name;
+  int first_n{-1};
+  std::string message;
+  int summarize{20};
+  bool print_tensor_name{true};
+  bool print_tensor_type{true};
+  bool print_tensor_shape{true};
+  bool print_tensor_lod{true};
+  bool print_tensor_layout{true};
+  std::string print_phase;
+  bool is_forward{true};
 };
 
 }  // namespace operators

@@ -36,48 +36,26 @@ class SubgraphEngine : public subgraph::Engine {
  public:
   SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 cpp::BlockDesc* block_desc,
+                 const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+                 Scope* exec_scope,
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names,
-                 Scope* scope,
                  ::paddle::lite_api::PrecisionType type)
-      : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {
+      : subgraph::Engine(ctx,
+                         block_idx,
+                         program_desc,
+                         exec_scope,
+                         input_names,
+                         output_names) {
     graph_.SetFPType(type);
   }
 
-  int Build() {
-    // In order to attach all of the ops of the block desc, we need to build
-    // the original program firstly.
-    BuildOriginProgram();
-    // Run InferShape() of all of ops, and convert Paddle ops to MLU IR graph
-    build_device_program_status_ = BuildDeviceProgram();
-    return build_device_program_status_;
-  }
-
-  int Launch() {
-    // Rebuild device program when the shapes of input tensors have been
-    // changed.
-    if (subgraph::CHECK_SUCCESS(build_device_program_status_) &&
-        subgraph::CHECK_REBUILD_WHEN_SHAPE_CHANGED(
-            build_device_program_status_) &&
-        InputShapeChanged()) {
-      Build();
-    }
-    if (subgraph::CHECK_FAILED(build_device_program_status_)) {
-      LaunchOriginProgram();
-    } else {
-      LaunchDeviceProgram();
-    }
-    return 0;
-  }
-
  protected:
-  int BuildDeviceProgram() override {
+  bool BuildDeviceProgram() override {
     int status = 0;
     // Convert all of input data vars and added into the MLU IR graph
     for (auto& input_name : input_names_) {
-      auto input_tensor = scope_->FindMutableTensor(input_name);
+      auto input_tensor = exec_scope_->FindMutableTensor(input_name);
       CHECK(input_tensor);
       auto input_node =
           graph_.AddNode(input_name,
@@ -94,7 +72,11 @@ class SubgraphEngine : public subgraph::Engine {
     LOG(INFO) << "START TO CONVERT ";
     // Convert all of ops and its weights and added into the MLU IR graph
     const auto& bridges = subgraph::Registry::Instance();
-    for (auto& inst : origin_program_) {
+    if (origin_program_.empty()) {
+      BuildOriginProgram();
+    }
+    const auto& insts = origin_program_->instructions(kRootBlockIdx);
+    for (auto& inst : insts) {
       auto op = inst.op();
       CHECK(op);
       std::string op_type = op->op_info()->Type();
@@ -102,7 +84,7 @@ class SubgraphEngine : public subgraph::Engine {
       const_cast<OpLite*>(op)->InferShape();
       if (!bridges.Exists(op_type, TARGET(kMLU))) {
         LOG(INFO) << "MLU bridges doesn't support op_type: " << op_type;
-        return subgraph::FAILED;
+        return false;
       }
       auto kernel = inst.kernel();
       status |= bridges.Select(op_type, TARGET(kMLU))(
@@ -110,7 +92,7 @@ class SubgraphEngine : public subgraph::Engine {
           const_cast<OpLite*>(op),
           const_cast<KernelBase*>(kernel));
       if (subgraph::CHECK_FAILED(status)) {
-        return subgraph::FAILED;
+        return false;
       }
     }
     // Obtain the output nodes of the MLU IR graph and build the graph to MLU
@@ -119,7 +101,7 @@ class SubgraphEngine : public subgraph::Engine {
     for (auto& output_name : output_names_) {
       if (graph_.HasNode(output_name)) {
         graph_.AddOutput(graph_.GetNode(output_name));
-        auto output_tensor = scope_->FindMutableTensor(output_name);
+        auto output_tensor = exec_scope_->FindMutableTensor(output_name);
         void* p_data = static_cast<void*>(
             output_tensor->mutable_data<typename ::paddle::lite::subgraph::mlu::
                                             FPTypeTraits<Precision>::T>(
@@ -138,10 +120,10 @@ class SubgraphEngine : public subgraph::Engine {
     auto core_version = mlu_context.MLUCoreVersion();
     auto core_number = mlu_context.MLUCoreNumber();
     graph_.Compile(core_version, core_number);
-    return status;
+    return true;
   }
 
-  int LaunchDeviceProgram() override {
+  bool LaunchDeviceProgram() override {
     auto& mlu_context = this->ctx_->template As<MLUContext>();
     auto exec_queue = mlu_context.exec_queue();
     u32_t affinity = mlu_context.affinity();
@@ -151,7 +133,7 @@ class SubgraphEngine : public subgraph::Engine {
     forward_param.affinity = &affinity;
     forward_param.end = CNRT_PARAM_END;
     graph_.Compute(forward_param, exec_queue);
-    return 0;
+    return true;
   }
 
   paddle::lite::subgraph::mlu::Graph graph_;
@@ -167,19 +149,18 @@ class SubgraphCompute
     auto& param = this->template Param<param_t>();
     // LOG(INFO) << "SUBGRAP Prepare RUN index " << param.sub_block_idx;
     engine_.reset(new SubgraphEngine<Precision>(this->ctx_.get(),
-                                                param.sub_block_idx,
-                                                param.sub_block_desc,
+                                                param.block_idx,
+                                                param.program_desc,
+                                                param.exec_scope,
                                                 param.input_data_names,
                                                 param.output_data_names,
-                                                param.scope,
                                                 this->precision()));
     CHECK(engine_);
-    engine_->Build();
   }
 
   void Run() override {
     CHECK(engine_);
-    engine_->Launch();
+    engine_->Run();
   }
 
   virtual ~SubgraphCompute() = default;

@@ -39,6 +39,7 @@
 #include <utility>
 #include <vector>
 #include "lite/core/device_info.h"
+#include "lite/core/scope.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/all.h"
@@ -85,6 +86,20 @@ class Context<TargetType::kNPU> {
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+
+  static void SetSubgraphModelCacheDir(Scope* scope,
+                                       std::string subgraph_model_cache_dir) {
+    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_model_cache_dir;
+  }
+  static std::string SubgraphModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
 };
 #endif
 
@@ -349,18 +364,23 @@ class Context<TargetType::kX86> {
 #ifdef LITE_WITH_OPENCL
 template <>
 class Context<TargetType::kOpenCL> {
-  std::shared_ptr<CLContext> cl_context_;
+  std::shared_ptr<CLContext> cl_context_{nullptr};
 
  public:
   CLContext* cl_context() { return cl_context_.get(); }
 
   void InitOnce() {
-    // Init cl runtime.
-    CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
+    if (CLRuntime::Global()->IsInitSuccess() == false) {
+      LOG(ERROR) << "OpenCL runtime init failed";
+    }
     cl_context_ = std::make_shared<CLContext>();
   }
 
-  void CopySharedTo(OpenCLContext* ctx) { ctx->cl_context_ = cl_context_; }
+  void CopySharedTo(OpenCLContext* ctx) {
+    if (ctx && cl_context_) {
+      ctx->cl_context_ = cl_context_;
+    }
+  }
 };
 #endif
 

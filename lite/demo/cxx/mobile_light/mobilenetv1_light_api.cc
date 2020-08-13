@@ -78,6 +78,29 @@ void RunModel(std::string model_dir,
   // 1. Set MobileConfig
   MobileConfig config;
   config.set_model_from_file(model_dir);
+
+  // NOTE: Use android gpu with opencl, you should ensure:
+  //  first, [compile **cpu+opencl** paddlelite
+  //    lib](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/demo_guides/opencl.md);
+  //  second, [convert and use opencl nb
+  //    model](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/user_guides/opt/opt_bin.md).
+  //
+  /*  Uncomment code below to enable OpenCL
+  bool is_opencl_backend_valid = ::IsOpenCLBackendValid();
+  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid <<
+  std::endl;
+  if (is_opencl_backend_valid) {
+    // give opencl nb model dir
+    config.set_model_from_file(model_dir);
+    config.set_opencl_tune(false); // default is false
+  } else {
+    std::cout << "Unsupport opencl nb model." << std::endl;
+    exit(1);
+    // you can give backup cpu nb model instead
+    // config.set_model_from_file(cpu_nb_model_dir);
+  }
+  */
+
   // NOTE: To load model transformed by model_optimize_tool before
   // release/v2.3.0, plese use `set_model_dir` API as listed below.
   // config.set_model_dir(model_dir);
