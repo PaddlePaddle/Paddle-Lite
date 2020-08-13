@@ -966,34 +966,6 @@ inline void compute_all_padding_pre(float* dout,
     }
     *dout++ = sum;
   }
-  /*
-  switch (pad_left_new) {
-    case 4:
-      float sum = compute_one_data_pre(din_ptr_arr[num], weights[4], bias[0], weights[6][0], 0);
-      for (int i = 0; i < num; i++) {
-          sum += compute_one_data_pre(din_ptr_arr[num - 1 - i], weights[3 - i], 0.f, weights[5][3 - i], 0);
-      }
-      *dout++ = sum;
-    case 3:
-      float sum = compute_one_data_pre(din_ptr_arr[num], weights[4], bias[0], weights[6][0], 1);
-      for (int i = 0; i < num; i++) {
-          sum += compute_one_data_pre(din_ptr_arr[num - 1 - i], weights[3 - i], 0.f, weights[5][3 - i], 1);
-      }
-      *dout++ = sum;
-    case 2:
-      float sum = compute_one_data_pre(din_ptr_arr[num], weights[4], bias[0], weights[6][0], 2);
-      for (int i = 0; i < num; i++) {
-          sum += compute_one_data_pre(din_ptr_arr[num - 1 - i], weights[3 - i], 0.f, weights[5][3 - i], 2);
-      }
-      *dout++ = sum;
-    case 1:
-      float sum = compute_one_data_pre(din_ptr_arr[num], weights[4], bias[0], weights[6][0], 3);
-      for (int i = 0; i < num; i++) {
-          sum += compute_one_data_pre(din_ptr_arr[num - 1 - i], weights[3 - i], 0.f, weights[5][3 - i], 3);
-      }
-      *dout++ = sum;
-  }
-  */
   // mid
   if (cnt > 0) {
     switch (num) {
