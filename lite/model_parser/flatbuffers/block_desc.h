@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 #include "lite/model_parser/base/block_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
@@ -29,13 +30,13 @@ class BlockDescView : public BlockDescAPI {
  public:
   explicit BlockDescView(proto::BlockDesc const* desc) : desc_(desc) {
     CHECK(desc_);
-    vars_.reserve(VarsSize());
-    ops_.reserve(OpsSize());
+    vars_.resize(VarsSize());
+    ops_.resize(OpsSize());
     for (size_t idx = 0; idx < VarsSize(); ++idx) {
-      vars_.push_back(VarDescView(desc_->vars()->Get(idx)));
+      vars_[idx] = VarDescView(desc_->vars()->Get(idx));
     }
     for (size_t idx = 0; idx < OpsSize(); ++idx) {
-      ops_.push_back(OpDescView(desc_->ops()->Get(idx)));
+      ops_[idx] = OpDescView(desc_->ops()->Get(idx));
     }
   }
 
@@ -75,7 +76,7 @@ class BlockDescView : public BlockDescAPI {
     return desc_->forward_block_idx();
   }
 
-  BlockDescView() { NotImplemented(); }
+  BlockDescView() = default;
 
  private:
   proto::BlockDesc const* desc_;  // not_own
@@ -150,24 +151,24 @@ class BlockDesc : public BlockDescAPI {
   void SyncVars() {
     vars_.resize(desc_->vars.size());
     for (size_t i = 0; i < desc_->vars.size(); ++i) {
-      if (vars_[i].raw_desc() != desc_->vars[i].get()) {
-        vars_[i] = VarDesc(desc_->vars[i].get());
+      if (!vars_[i] || vars_[i]->raw_desc() != desc_->vars[i].get()) {
+        vars_[i].reset(new VarDesc(desc_->vars[i].get()));
       }
     }
   }
   void SyncOps() {
     ops_.resize(desc_->ops.size());
     for (size_t i = 0; i < desc_->ops.size(); ++i) {
-      if (ops_[i].raw_desc() != desc_->ops[i].get()) {
-        ops_[i] = OpDesc(desc_->ops[i].get());
+      if (!ops_[i] || ops_[i]->raw_desc() != desc_->ops[i].get()) {
+        ops_[i].reset(new OpDesc(desc_->ops[i].get()));
       }
     }
   }
 
   bool owned_{false};
   proto::BlockDescT* desc_{nullptr};
-  std::vector<VarDesc> vars_;
-  std::vector<OpDesc> ops_;
+  std::vector<std::unique_ptr<VarDesc>> vars_;
+  std::vector<std::unique_ptr<OpDesc>> ops_;
 };
 
 }  // namespace fbs

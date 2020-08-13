@@ -9,6 +9,7 @@ if(WIN32)
    target_link_libraries(lite_pybind ${os_dependency_modules})
 else()
    lite_cc_library(lite_pybind SHARED SRCS pybind.cc DEPS ${PYBIND_DEPS})
+   target_sources(lite_pybind PUBLIC ${__lite_cc_files})
 endif(WIN32)
 
 if (LITE_ON_TINY_PUBLISH)

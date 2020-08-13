@@ -25,6 +25,9 @@ void VarConvActivationFuser::BuildPattern() {
   // create nodes.
   auto* input = VarNode("X")->assert_is_op_input(conv_type_, "X")->AsInput();
   auto* filter = VarNode("W")->assert_is_op_input(conv_type_, "W")->AsInput();
+  auto* column =
+      VarNode("COLUMN")->assert_is_op_input(conv_type_, "COLUMN")->AsInput();
+  auto* row = VarNode("ROW")->assert_is_op_input(conv_type_, "ROW")->AsInput();
 
   auto* conv2d = OpNode("var_conv_2d", conv_type_)->AsIntermediate();
 
@@ -42,7 +45,7 @@ void VarConvActivationFuser::BuildPattern() {
       VarNode("output")->assert_is_op_output(act_type_, "Out")->AsOutput();
 
   // create topology.
-  std::vector<PMNode*> conv2d_inputs{filter, input};
+  std::vector<PMNode*> conv2d_inputs{filter, input, column, row};
   conv2d_inputs >> *conv2d >> *conv2d_out >> *act >> *out;
   *conv2d >> *conv2d_out_1;
 }
@@ -60,6 +63,8 @@ void VarConvActivationFuser::InsertNewNode(SSAGraph* graph,
 
   IR_NODE_LINK_TO(matched.at("X"), new_op_node);
   IR_NODE_LINK_TO(matched.at("W"), new_op_node);
+  IR_NODE_LINK_TO(matched.at("COLUMN"), new_op_node);
+  IR_NODE_LINK_TO(matched.at("ROW"), new_op_node);
   IR_NODE_LINK_TO(new_op_node, matched.at("output"));
 }
 
