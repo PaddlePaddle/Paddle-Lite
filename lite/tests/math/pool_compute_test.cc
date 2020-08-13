@@ -435,7 +435,7 @@ TEST(TestPoolRand, test_pool_rand) {
                                 adaptive,
                                 use_quantizer,
                                 pooling_type,
-                                {1, 2, 4},
+                                {4},
                                 {FLAGS_power_mode});
                           }
                         }

@@ -1132,6 +1132,11 @@ void pooling2x2s2p0_max(const float* din,
         float* dr_out = data_out_channel;
         auto dr0 = r0;
         auto dr1 = r1;
+        if (h * S + K - P > hin + 1) {
+          memset(dr_out, 0.f, sizeof(float) * wout);
+          data_out_channel += wout;
+          continue;
+        }
         if (h * S + K - P > hin) {
           dr1 = r0;
         }
@@ -1222,9 +1227,20 @@ void pooling2x2s2p0_avg(const float* din,
         float* dr_out = data_out_channel;
         auto dr0 = r0;
         auto dr1 = r1;
+        if (h * S + K - P > hin + 1) {
+          memset(dr_out, 0.f, sizeof(float) * wout);
+          data_out_channel += wout;
+          continue;
+        }
         if (h * S + K - P > hin) {
           dr1 = zero_ptr;
-          vcoef = vdupq_n_f32(0.5f);
+          if (exclusive) {
+            vcoef = vdupq_n_f32(0.5f);
+          } else {
+            if (pad_bottom == 0) {
+              vcoef = vdupq_n_f32(0.5f);
+            }
+          }
         }
         int cnt_num = w_unroll_size;
         if (w_unroll_size > 0) {
@@ -1257,11 +1273,20 @@ void pooling2x2s2p0_avg(const float* din,
           int wend = std::min(wstart + K, rem);
           float coef = 0.25f;
           float tmp = 0.f;
-          if (wend - wstart == 1 && pad_right == 0) {
-            coef *= 2;
-          }
-          if (h * S + K - P > hin && pad_bottom == 0) {
-            coef *= 2;
+          if (exclusive) {
+            if (wend - wstart == 1) {
+              coef *= 2;
+            }
+            if (h * S + K - P > hin) {
+              coef *= 2;
+            }
+          } else {
+            if (wend - wstart == 1 && pad_right == 0) {
+              coef *= 2;
+            }
+            if (h * S + K - P > hin && pad_bottom == 0) {
+              coef *= 2;
+            }
           }
           for (int i = wstart; i < wend; i++) {
             tmp += dr0[i] + dr1[i];
@@ -1442,7 +1467,7 @@ void pooling2x2s2p1_avg(const float* din,
         }
         if (h * S + K - P > hin) {
           dr1 = zero_ptr;
-          if (exclusive) {
+          if (exclusive || pad_bottom == 0) {
             coef_h = 1.f;
           }
           if (h * S + K - P > hin + 1) {
@@ -1490,8 +1515,14 @@ void pooling2x2s2p1_avg(const float* din,
           int st = wstart > 0 ? wstart : 0;
           float tmp = 0.f;
           float coef = coef_h / 2;
-          if (exclusive && wend - st == 1) {
-            coef = coef_h;
+          if (exclusive) {
+            if (wend - st == 1) {
+              coef = coef_h;
+            }
+          } else {
+            if (wend - st == 1 && wstart > 0 && pad_right == 0) {
+              coef = coef_h;
+            }
           }
           for (int i = 0; i < wend - st; i++) {
             tmp += dr0[i] + dr1[i];
@@ -2541,6 +2572,7 @@ void pooling3x3s2p0_max(const float* din,
   int tmp_val = (w_unroll_size * 4 + remain) * S;
   int wend = std::min(tmp_val + K, win) - tmp_val;
   float minval = std::numeric_limits<float>::lowest();
+  remain = right > 0 ? remain : remain + 1;
   for (int n = 0; n < num; ++n) {
     float* data_out_batch = data_out + n * chout * size_channel_out;
     const float* data_in_batch = data_in + n * chin * size_channel_in;
@@ -2592,28 +2624,27 @@ void pooling3x3s2p0_max(const float* din,
                          "v10",
                          "v11");
 #else
-          asm volatile(
-              P3x3S2P0_INIT P3x3S2P0_MAX
-              : [dr0] "+r"(dr0),
-                [dr1] "+r"(dr1),
-                [dr2] "+r"(dr2),
-                [dr_out] "+r"(dr_out),
-                [cnt_num] "+r"(cnt_num)
-              :
-              : "cc",
-                "memory",
-                "q0",
-                "q1",
-                "q2",
-                "q3",
-                "q4",
-                "q5",
-                "q6",
-                "q7",
-                "q8",
-                "q9",
-                "q10",
-                "q11");
+          asm volatile(P3x3S2P0_INIT P3x3S2P0_MAX
+                       : [dr0] "+r"(dr0),
+                         [dr1] "+r"(dr1),
+                         [dr2] "+r"(dr2),
+                         [dr_out] "+r"(dr_out),
+                         [cnt_num] "+r"(cnt_num)
+                       :
+                       : "cc",
+                         "memory",
+                         "q0",
+                         "q1",
+                         "q2",
+                         "q3",
+                         "q4",
+                         "q5",
+                         "q6",
+                         "q7",
+                         "q8",
+                         "q9",
+                         "q10",
+                         "q11");
 #endif
           dr0 -= 8;
           dr1 -= 8;
@@ -2795,6 +2826,7 @@ void pooling3x3s2p0_avg(const float* din,
           dr2 -= 8;
         }
         // deal with right pad
+        w_unroll_size = w_unroll_size < 0 ? 0 : w_unroll_size;
         int wstart = w_unroll_size * 4 * S - P;
         for (int j = 0; j < w_unroll_remian; ++j) {
           int wend = wstart + K;  // std::min(wstart + K, win);
