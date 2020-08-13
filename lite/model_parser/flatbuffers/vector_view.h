@@ -127,9 +127,9 @@ class VectorView<std::string, Flatbuffers> {
   operator std::vector<std::string>() const {
     VLOG(5) << "Copying elements out of VectorView will damage performance.";
     std::vector<std::string> tmp;
-    tmp.reserve(size());
+    tmp.resize(size());
     for (size_t i = 0; i < size(); ++i) {
-      tmp.push_back(cvec_->operator[](i)->str());
+      tmp[i] = cvec_->operator[](i)->str();
     }
     return tmp;
   }

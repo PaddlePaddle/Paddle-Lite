@@ -17,6 +17,7 @@
 #include <fstream>
 #include <limits>
 #include <set>
+
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
@@ -27,6 +28,7 @@
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
 #ifndef LITE_ON_TINY_PUBLISH
+#include "lite/model_parser/flatbuffers/io.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
 #endif
@@ -592,7 +594,54 @@ void SaveModelNaive(const std::string &model_dir,
   LOG(INFO) << "Save naive buffer model in '" << model_dir
             << ".nb' successfully";
 }
-#endif
+
+/* ---------- Flatbuffers ---------- */
+void SaveModelFbs(const std::string &model_dir,
+                  const Scope &exec_scope,
+                  const cpp::ProgramDesc &cpp_prog) {
+  /* 1. Save model to model.fbs */
+  const std::string prog_path = model_dir + "/model.fbs";
+  fbs::ProgramDesc fbs_prog;
+  TransformProgramDescCppToAny(cpp_prog, &fbs_prog);
+  fbs::SaveFile(prog_path, fbs_prog.data(), fbs_prog.buf_size());
+
+  /* 2. Get param names from cpp::ProgramDesc */
+  auto &main_block_desc = *cpp_prog.GetBlock<cpp::BlockDesc>(0);
+  // set unique_var_names to avoid saving shared params repeatedly
+  std::set<std::string> unique_var_names;
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+    if (var.Name() == "feed" || var.Name() == "fetch" || !var.Persistable() ||
+        unique_var_names.count(var.Name()) > 0)
+      continue;
+    unique_var_names.emplace(var.Name());
+  }
+
+  /* 3. Save combined params to params.fbs */
+  const std::string params_path = model_dir + "/params.fbs";
+  fbs::CombinedParamsDesc params_prog;
+  fbs::SetCombinedParamsWithScope(exec_scope, unique_var_names, &params_prog);
+  fbs::SaveFile(params_path, params_prog.data(), params_prog.buf_size());
+}
+
+void LoadModelFbsFromFile(const std::string &filename,
+                          Scope *scope,
+                          cpp::ProgramDesc *cpp_prog) {
+  CHECK(cpp_prog);
+  CHECK(scope);
+
+  /* 1. Save cpp::ProgramDesc with model.fbs */
+  const std::string prog_path = filename + "/model.fbs";
+  fbs::ProgramDesc program(fbs::LoadFile(prog_path));
+  TransformProgramDescAnyToCpp(program, cpp_prog);
+
+  /* 2. Save scope with params.fbs */
+  const std::string params_path = filename + "/params.fbs";
+  fbs::CombinedParamsDesc params(fbs::LoadFile(params_path));
+  fbs::SetScopeWithCombinedParams(scope, params);
+}
+
+#endif  // LITE_ON_TINY_PUBLISH
 
 template <typename T>
 void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {

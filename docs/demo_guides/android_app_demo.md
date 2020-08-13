@@ -36,9 +36,11 @@
 
 **需要的环境**： Android Studio、Android手机（开启USB调试模式）、下载到本地的[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)工程
 
+**预先要求**：如果您的Android Studio尚未配置NDK，请根据Android Studio用户指南中的[安装及配置NDK和CMake](https://developer.android.com/studio/projects/install-ndk)内容，预先配置好NDK。您可以选择最新的NDK版本，或者与[Android编译环境配置](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#android)中的NDK版本保持一致。
+
 **部署步骤**：
 
-1、 目标检测的Android示例位于 `Paddle-Lite-Demo\PaddleLite-android-demo\object_detection_demo`
+1、目标检测的Android示例位于 `Paddle-Lite-Demo\PaddleLite-android-demo\object_detection_demo`
 
 2、用Android Studio 打开object_detection_demo工程 （本步骤需要联网）。
 
@@ -46,11 +48,16 @@
 
 ![Android_studio](https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/android/Android_studio.png)
 
+**注意：** 如果您在导入项目、编译或者运行过程中遇到NDK配置错误的提示，请打开 File > Project Structure > SDK Location，修改 "Andriod NDK location" 为您本机配置的NDK所在路径。如果您是通过Andriod Studio的SDK Tools下载的NDK (见本章节"预先要求")，可以直接点击下拉框选择默认路径。如果以上步骤仍旧无法解决NDK配置错误，请尝试根据Andriod Studio官方文档中的[更新 Android Gradle 插件](https://developer.android.com/studio/releases/gradle-plugin?hl=zh-cn#updating-plugin)章节，尝试更新Android Gradle plugin版本。
+
+<p align="center"><img width="600" height="450"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/android/Andriod_Studio_NDK.png"/>
+
 4、按下 Run按钮，自动编译APP并安装到手机。(该过程会自动下载Paddle-Lite预测库和模型，需要联网)
 
 成功后效果如下，图一：APP安装到手机        图二： APP打开后的效果，会自动识别图片中的物体并标记
 
 <p align="center"><img width="300" height="450"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/android/AndroidApp0.png"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="300" height="450"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/android/AndroidApp1.jpg"/></p>
+
 
 ## Android demo结构讲解
 
