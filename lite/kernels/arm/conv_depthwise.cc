@@ -106,9 +106,8 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto x_dims = param.x->dims();
-  int iw = x_dims[3];  // nchw
+  int iw = x_dims[3];
   int ih = x_dims[2];
-  int ic = x_dims[1];
 
   /// select dw conv kernel
   if (kw == 3) {
@@ -188,9 +187,8 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   auto paddings = *param.paddings;
   auto strides = param.strides;
   auto x_dims = param.x->dims();
-  int iw = x_dims[3];  // nchw
+  int iw = x_dims[3];
   int ih = x_dims[2];
-  int ic = x_dims[1];
 
   /// select dw conv kernel
   if (kw == 3) {
@@ -199,7 +197,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
 #ifdef LITE_WITH_PROFILE
     kernel_func_name_ = "conv_depthwise_3x3_int8_int8";
 #endif
-    if ((strides[0] != 1 && strides[0] != 1) || (paddings[0] > 1 || iw <= 9)) {
+    if ((strides[0] == 2 && strides[1] == 2) || (paddings[0] > 1 || iw <= 9)) {
       int cround = ROUNDUP(w_dims[0], 8);
       weights_.Resize({cround / 8, 1, kh * kw, 8});
       auto wptr = param.filter->data<int8_t>();
@@ -302,7 +300,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
 
-  int iw = x_dims[3];  // nchw
+  int iw = x_dims[3];
   int ih = x_dims[2];
   int ic = x_dims[1];
   int bs = x_dims[0];
@@ -352,7 +350,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
 
-  int iw = x_dims[3];  // nchw
+  int iw = x_dims[3];
   int ih = x_dims[2];
   int ic = x_dims[1];
   int bs = x_dims[0];
