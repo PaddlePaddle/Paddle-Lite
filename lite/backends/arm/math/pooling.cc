@@ -1238,7 +1238,7 @@ void pooling2x2s2p0_avg(const float* din,
             vcoef = vdupq_n_f32(0.5f);
           } else {
             if (pad_bottom == 0) {
-               vcoef = vdupq_n_f32(0.5f);
+              vcoef = vdupq_n_f32(0.5f);
             }
           }
         }
@@ -2609,6 +2609,7 @@ void pooling3x3s2p0_max(const float* din,
   int tmp_val = (w_unroll_size * 4 + remain) * S;
   float minval = std::numeric_limits<float>::lowest();
   int wend = std::min(tmp_val + K, win) - tmp_val;
+  remain = right > 0 ? remain : remain + 1;
 
   for (int n = 0; n < num; ++n) {
     float* data_out_batch = data_out + n * chout * size_channel_out;
@@ -2749,9 +2750,6 @@ void pooling3x3s2p0_avg(const float* din,
     w_unroll_size -= 1;
     w_unroll_remian = wout - w_unroll_size * 4;
   }
-  //  do overflow process
-  w_unroll_size -= 1;
-  w_unroll_remian += 4;
   auto zero_ptr =
       static_cast<float*>(TargetMalloc(TARGET(kARM), win * sizeof(float)));
   memset(zero_ptr, 0, win * sizeof(float));
