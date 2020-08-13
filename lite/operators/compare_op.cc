@@ -30,7 +30,14 @@ bool CompareOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
   // TODO(Superjomn) Enable data sharing.
   auto input_dims = param_.X->dims();
-  param_.Out->Resize(input_dims);
+  std::vector<int64_t> new_dims;
+  if (input_dims.size() == 2 && input_dims[1] == 1) {
+    new_dims.push_back(input_dims[0]);
+    param_.Out->Resize(new_dims);
+  } else {
+    param_.Out->Resize(input_dims);
+  }
+  // param_.Out->Resize(input_dims);
   return true;
 }
 
