@@ -32,7 +32,7 @@ namespace fusion {
 //      ["sign"],
 //      ["abs", ["pow", ["reduce_mean", ["abs", ["pow"]]]]]]]]
 
-class XPUVisMomentFuser : public FuseBase {
+class XPUSfaHeadMomentFuser : public FuseBase {
  public:
 
   void BuildPattern() override {
@@ -196,7 +196,7 @@ class XPUVisMomentFuser : public FuseBase {
     auto reduce_mean = matched.at("reduce_mean")->stmt()->op();
     auto* scope = reduce_mean->scope();
     auto op_desc = GenOpDesc(matched);
-    auto vis_op = LiteOpRegistry::Global().Create("__xpu__vis");
+    auto vis_op = LiteOpRegistry::Global().Create("__xpu__sfa_head");
     auto& valid_places = reduce_mean->valid_places();
     vis_op->Attach(op_desc, scope);
     auto* new_op_node = graph->GraphCreateInstructNode(vis_op, valid_places);
@@ -210,7 +210,7 @@ class XPUVisMomentFuser : public FuseBase {
     cpp::OpDesc op_desc = *matched.at("reduce_mean")->stmt()->op_info();
     op_desc.mutable_inputs()->clear();
     op_desc.mutable_outputs()->clear();
-    op_desc.SetType("__xpu__vis");
+    op_desc.SetType("__xpu__sfa_head");
     op_desc.SetInput("Input", {matched.at("reduce_mean_input")->arg()->name});
     op_desc.SetOutput("Output", {matched.at("out")->arg()->name});
     op_desc.SetAttr("op_type", std::string("moment"));
@@ -220,14 +220,14 @@ class XPUVisMomentFuser : public FuseBase {
 
 }  // namespace fusion
 
-class XPUVisMomentFusePass : public ProgramPass {
+class XPUSfaHeadMomentFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) {
       return;
     }
 
-    fusion::XPUVisMomentFuser fuser;
+    fusion::XPUSfaHeadMomentFuser fuser;
     fuser(graph.get());
   }
 };
@@ -236,6 +236,6 @@ class XPUVisMomentFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__vis_moment_fuse_pass, paddle::lite::mir::XPUVisMomentFusePass)
+REGISTER_MIR_PASS(__xpu__sfa_head_moment_fuse_pass, paddle::lite::mir::XPUSfaHeadMomentFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("reduce_mean");

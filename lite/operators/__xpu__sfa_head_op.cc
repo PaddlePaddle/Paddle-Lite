@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/__xpu__vis_op.h"
+#include "lite/operators/__xpu__sfa_head_op.h"
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -20,7 +20,7 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool XPUVisOp::CheckShape() const {
+bool XPUSfaHeadOp::CheckShape() const {
   CHECK_OR_FALSE(param_.input);
   CHECK_OR_FALSE(param_.output);
   CHECK_OR_FALSE(param_.op_type != "");
@@ -33,7 +33,7 @@ bool XPUVisOp::CheckShape() const {
   return true;
 }
 
-bool XPUVisOp::InferShapeImpl() const {
+bool XPUSfaHeadOp::InferShapeImpl() const {
   const auto& input_dims = param_.input->dims();
   auto op_type = param_.op_type;
 
@@ -54,7 +54,7 @@ bool XPUVisOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUVisOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool XPUSfaHeadOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto input = op_desc.Input("Input").front();
   auto output = op_desc.Output("Output").front();
 
@@ -69,4 +69,4 @@ bool XPUVisOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__vis, paddle::lite::operators::XPUVisOp);
+REGISTER_LITE_OP(__xpu__sfa_head, paddle::lite::operators::XPUSfaHeadOp);

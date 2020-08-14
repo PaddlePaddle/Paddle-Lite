@@ -29,7 +29,6 @@
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
-#include "lite/core/mir/graph_visualize_pass.h"
 
 namespace paddle {
 namespace lite {
@@ -110,8 +109,8 @@ class Optimizer {
            "identity_dropout_eliminate_pass",
            "__xpu__conv2d_fuse_pass",
            "__xpu__conv2d_link_max_pass",
-           "__xpu__vis_meanstd_fuse_pass",
-           "__xpu__vis_moment_fuse_pass",
+           "__xpu__sfa_head_meanstd_fuse_pass",
+           "__xpu__sfa_head_moment_fuse_pass",
            "__xpu__resnet_fuse_pass",
            "__xpu__resnet_cbam_fuse_pass",
            "__xpu__mmdnn_fuse_pass",

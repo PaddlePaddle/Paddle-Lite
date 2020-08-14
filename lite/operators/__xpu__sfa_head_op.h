@@ -21,11 +21,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class XPUVisOp : public OpLite {
+class XPUSfaHeadOp : public OpLite {
  public:
-  XPUVisOp() {}
+  XPUSfaHeadOp() {}
 
-  explicit XPUVisOp(const std::string &op_type) : OpLite(op_type) {}
+  explicit XPUSfaHeadOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -38,7 +38,7 @@ class XPUVisOp : public OpLite {
   std::string DebugString() const override { return "XPUFc"; }
 
  private:
-  mutable XPUVisParam param_;
+  mutable XPUSfaHeadParam param_;
 };
 
 }  // namespace operators

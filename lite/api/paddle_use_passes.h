@@ -68,5 +68,5 @@ USE_MIR_PASS(__xpu__fc_fuse_pass);
 USE_MIR_PASS(__xpu__mmdnn_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_link_max_pass);
-USE_MIR_PASS(__xpu__vis_meanstd_fuse_pass);
-USE_MIR_PASS(__xpu__vis_moment_fuse_pass);
+USE_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass);
+USE_MIR_PASS(__xpu__sfa_head_moment_fuse_pass);

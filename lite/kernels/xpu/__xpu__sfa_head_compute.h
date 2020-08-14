@@ -21,13 +21,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class XPUVisCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class XPUSfaHeadCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::XPUVisParam;
+  using param_t = operators::XPUSfaHeadParam;
 
   virtual void Run();
 
-  virtual ~XPUVisCompute() = default;
+  virtual ~XPUSfaHeadCompute() = default;
 };
 
 }  // namespace xpu

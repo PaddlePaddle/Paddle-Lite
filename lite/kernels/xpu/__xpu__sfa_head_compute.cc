@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/__xpu__vis_compute.h"
+#include "lite/kernels/xpu/__xpu__sfa_head_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void XPUVisCompute::Run() {
+void XPUSfaHeadCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   std::string vis_type = param.op_type;
@@ -51,11 +51,11 @@ void XPUVisCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(__xpu__vis,
+REGISTER_LITE_KERNEL(__xpu__sfa_head,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUVisCompute,
+                     paddle::lite::kernels::xpu::XPUSfaHeadCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})

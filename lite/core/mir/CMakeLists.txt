@@ -31,8 +31,8 @@ lite_cc_library(mir_passes
       fusion/__xpu__mmdnn_fuse_pass.cc
       fusion/__xpu__conv2d_fuse_pass.cc
       fusion/__xpu__conv2d_link_max_pass.cc
-      fusion/__xpu__vis_meanstd_fuse_pass.cc
-      fusion/__xpu__vis_moment_fuse_pass.cc
+      fusion/__xpu__sfa_head_meanstd_fuse_pass.cc
+      fusion/__xpu__sfa_head_moment_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc

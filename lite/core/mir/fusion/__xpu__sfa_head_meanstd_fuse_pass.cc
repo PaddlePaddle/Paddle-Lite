@@ -29,7 +29,7 @@ namespace fusion {
 //      ["elementwise_sub",
 //          ["square", ["reduce_sum", ["scale", ["sqrt"]]]]]]]
 
-class XPUVisMeanstdFuser : public FuseBase {
+class XPUSfaHeadMeanstdFuser : public FuseBase {
  public:
   void BuildPattern() override {
     auto* reduce_mean_input = VarNode("reduce_mean_input")
@@ -94,7 +94,7 @@ class XPUVisMeanstdFuser : public FuseBase {
     auto reduce_mean = matched.at("reduce_mean")->stmt()->op();
     auto* scope = reduce_mean->scope();
     auto op_desc = GenOpDesc(matched);
-    auto vis_op = LiteOpRegistry::Global().Create("__xpu__vis");
+    auto vis_op = LiteOpRegistry::Global().Create("__xpu__sfa_head");
     auto& valid_places = reduce_mean->valid_places();
     vis_op->Attach(op_desc, scope);
     auto* new_op_node = graph->GraphCreateInstructNode(vis_op, valid_places);
@@ -108,7 +108,7 @@ class XPUVisMeanstdFuser : public FuseBase {
     cpp::OpDesc op_desc = *matched.at("reduce_mean")->stmt()->op_info();
     op_desc.mutable_inputs()->clear();
     op_desc.mutable_outputs()->clear();
-    op_desc.SetType("__xpu__vis");
+    op_desc.SetType("__xpu__sfa_head");
     op_desc.SetInput("Input", {matched.at("reduce_mean_input")->arg()->name});
     op_desc.SetOutput("Output", {matched.at("out")->arg()->name});
     op_desc.SetAttr("op_type", std::string("meanstd"));
@@ -118,14 +118,14 @@ class XPUVisMeanstdFuser : public FuseBase {
 
 }  // namespace fusion
 
-class XPUVisMeanstdFusePass : public ProgramPass {
+class XPUSfaHeadMeanstdFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) {
       return;
     }
 
-    fusion::XPUVisMeanstdFuser fuser;
+    fusion::XPUSfaHeadMeanstdFuser fuser;
     fuser(graph.get());
   }
 };
@@ -134,6 +134,6 @@ class XPUVisMeanstdFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__vis_meanstd_fuse_pass, paddle::lite::mir::XPUVisMeanstdFusePass)
+REGISTER_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass, paddle::lite::mir::XPUSfaHeadMeanstdFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("reduce_mean");

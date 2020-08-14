@@ -1776,7 +1776,7 @@ struct XPUConv2dParam : ParamBase {
   std::shared_ptr<std::vector<int>> dilations;
 };
 
-struct XPUVisParam : ParamBase {
+struct XPUSfaHeadParam : ParamBase {
   lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
 
