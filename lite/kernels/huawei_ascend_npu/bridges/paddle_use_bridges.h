@@ -52,3 +52,5 @@ USE_SUBGRAPH_BRIDGE(layer_norm, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(matmul, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(cast, kHuaweiAscendNPU);
 USE_SUBGRAPH_BRIDGE(scale, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(slice, kHuaweiAscendNPU);
+USE_SUBGRAPH_BRIDGE(gather, kHuaweiAscendNPU);
