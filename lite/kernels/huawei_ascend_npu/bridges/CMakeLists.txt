@@ -21,7 +21,6 @@ lite_cc_library(subgraph_bridge_reshape_op_huawei_ascend_npu SRCS reshape_op.cc 
 lite_cc_library(subgraph_bridge_transpose_op_huawei_ascend_npu SRCS transpose_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_flatten_op_huawei_ascend_npu SRCS flatten_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_layer_norm_op_huawei_ascend_npu SRCS layer_norm_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_lookup_table_op_huawei_ascend_npu SRCS lookup_table_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_matmul_op_huawei_ascend_npu SRCS matmul_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_cast_op_huawei_ascend_npu SRCS cast_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_scale_op_huawei_ascend_npu SRCS scale_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
