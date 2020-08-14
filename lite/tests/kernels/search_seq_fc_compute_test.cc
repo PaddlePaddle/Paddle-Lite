@@ -87,12 +87,18 @@ class SearchSeqFcOPTest : public arena::TestCase {
     }
 
     out->set_lod(x_lod);
-    out->Resize({x_dims[0], w_dims[0]});
+    DDim out_dims({x_dims[0], w_dims[0]});
+    out->Resize(out_dims);
 
     int M = x_dims[0];
     int K = x_dims[1];
     int N = w_dims[0];
     auto out_data = out->mutable_data<float>();
+    // Prevent 0*nan=nan in basic_gemm
+    int64_t out_num = out_dims.production();
+    for (int64_t i = 0; i < out_num; i++) {
+      out_data[i] = 0;
+    }
     basic_gemm<float, float>(false,
                              true,
                              M,

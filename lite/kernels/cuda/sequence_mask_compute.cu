@@ -37,6 +37,40 @@ __global__ void SequenceMaskKernel(T* dst,
   }
 }
 
+template <typename T>
+__global__ void VecMaxKernel(const T* in_data, T* out, const int count) {
+  extern __shared__ T cache[];
+
+  int i = blockDim.x * blockIdx.x + threadIdx.x;
+  int cache_index = threadIdx.x;
+  T tmp = -1;
+
+  while (i < count) {
+    if (in_data[i] > tmp) {
+      tmp = in_data[i];
+    }
+    i += blockDim.x * gridDim.x;
+  }
+  cache[cache_index] = tmp;
+
+  __syncthreads();
+
+  // perform parallel reduction, blockDim.x must be 2^n
+  int ib = blockDim.x / 2;
+  while (ib != 0) {
+    if (cache_index < ib && cache[cache_index + ib] > cache[cache_index]) {
+      cache[cache_index] = cache[cache_index + ib];
+    }
+
+    __syncthreads();
+
+    ib /= 2;
+  }
+  if (cache_index == 0) {
+    out[blockIdx.x] = cache[0];
+  }
+}
+
 template <typename T, PrecisionType Ptype>
 void SequenceMaskCompute<T, Ptype>::Run() {
   auto& param = this->template Param<param_t>();
@@ -57,11 +91,34 @@ void SequenceMaskCompute<T, Ptype>::Run() {
   }
 
   if (maxlen < 0) {
-    maxlen = static_cast<int>(
-        thrust::reduce(thrust::device_pointer_cast(x_data),
-                       thrust::device_pointer_cast(x_data) + x->numel(),
-                       static_cast<int64_t>(0),
-                       thrust::maximum<int64_t>()));
+    // choose algorithm according to magic_num.
+    const int magic_num = 256;
+    std::vector<int64_t> h_max_data;
+    if (x->numel() < magic_num) {
+      h_max_data.resize(x->numel());
+      TargetWrapperCuda::MemcpySync(h_max_data.data(),
+                                    x_data,
+                                    x->numel() * sizeof(int64_t),
+                                    IoDirection::DtoH);
+    } else {
+      const int threads = 256;
+      const int blocks = (x->numel() + threads - 1) / threads;
+      max_tensor_.Resize({blocks});
+      auto* max_data = max_tensor_.mutable_data<int64_t>(TARGET(kCUDA));
+      VecMaxKernel<
+          int64_t><<<blocks, threads, threads * sizeof(int64_t), stream>>>(
+          x_data, max_data, x->numel());
+      h_max_data.resize(blocks);
+      TargetWrapperCuda::MemcpyAsync(h_max_data.data(),
+                                     max_data,
+                                     sizeof(int64_t) * blocks,
+                                     IoDirection::DtoH,
+                                     stream);
+      TargetWrapperCuda::StreamSync(stream);
+    }
+    auto maxlen_iterator =
+        std::max_element(h_max_data.begin(), h_max_data.end());
+    maxlen = h_max_data[std::distance(h_max_data.begin(), maxlen_iterator)];
   }
 
   auto y_dim = x->dims().Vectorize();

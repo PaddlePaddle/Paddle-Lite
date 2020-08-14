@@ -28,6 +28,9 @@ class SequenceMaskCompute : public KernelLite<TARGET(kCUDA), Ptype> {
 
   void Run() override;
   virtual ~SequenceMaskCompute() = default;
+
+ private:
+  lite::Tensor max_tensor_;
 };
 
 }  // namespace cuda
