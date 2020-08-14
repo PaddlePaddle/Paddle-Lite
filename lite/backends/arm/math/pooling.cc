@@ -1169,7 +1169,7 @@ void pooling2x2s2p0_max(const float* din,
         int wstart = 0;
         for (int j = 0; j < w_unroll_remian; ++j) {
           int wend = std::min(wstart + K, rem);
-          float tmp = wstart < rem ? dr0[wstart] : 0.f
+          float tmp = wstart < rem ? dr0[wstart] : 0.f;
           for (int i = wstart; i < wend; i++) {
             tmp = std::max(tmp, dr0[i]);
             tmp = std::max(tmp, dr1[i]);
