@@ -103,6 +103,11 @@ class SearchAlignedMatMulComputeTester : public arena::TestCase {
     out->Resize(out_dims);
 
     auto out_data = out->mutable_data<float>();
+    // Prevent 0*nan=nan in basic_gemm
+    int64_t out_num = out_dims.production();
+    for (int64_t i = 0; i < out_num; i++) {
+      out_data[i] = 0;
+    }
     for (int i = 0; i < seq_num; i++) {
       basic_gemm<float, float>(x_transpose_,
                                y_transpose_,
