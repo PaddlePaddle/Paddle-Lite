@@ -960,7 +960,6 @@ inline void compute_all_padding_pre(float* dout,
   for (int w = pad_left; w > 4; w--) {
       *dout++ = bias[0];
   }
-  LOG(INFO) << "pad_left_new: " << pad_left_new; 
   for (int i = pad_left_new; i > 0; i--) {
     float sum = compute_one_data_pre(din_ptr_arr[num], weights[4], bias[0], weights[6][0], 4 - i);
     for (int k = 0; k < num; k++) {
@@ -1172,7 +1171,6 @@ inline void compute_all_padding_pre(float* dout,
     }
     *dout++ = sum;
   }
-  LOG(INFO) << " pad_right_new: " << pad_right_new;
   // right
   for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[4][3 - i], 3 - i);
@@ -1557,8 +1555,6 @@ void conv_depthwise_5x5s1_bias(float* dout,
                                ARMContext* ctx){
   int loop_w = wout - pad_left - pad_right;
   int loop_h = hout - pad_top - pad_bottom;
-  LOG(INFO) << "pad_top: " << pad_top << ", pad_bottom: " << pad_bottom;
-  LOG(INFO) << "pad_left: " << pad_left << ", pad_right: " << pad_right;
   int in_size = win * hin;
   int out_size = wout * hout;
   int cnt = loop_w >> 2;
@@ -1638,8 +1634,6 @@ void conv_depthwise_5x5s1_bias(float* dout,
       }
       // bottom
       for (int h = 0; h < pad_bottom_new; h++) {
-        for (int i = 0; i < 5; i++) LOG(INFO) << "i: " << i << ", ptr: " <<  din_ptr_arr[i];
-        LOG(INFO) << "num: " << (3 -h); 
         compute_all_padding_post(dout_ptr, din_ptr_arr, vbias, weights_vec, win, wout, pad_left,
                                  pad_right, pad_left_new, pad_right_new, cnt, remain, 3 - h);
         dout_ptr += wout;
@@ -1667,6 +1661,7 @@ inline void compute_all_padding_pre_relu(float* dout,
                                          int cnt,
                                          int remain,
                                          int num) {
+  int tmp_index = num - 1;
   // left
   for (int w = pad_left; w > 4; w--) {
       *dout++ = bias[0] > 0.f ? bias[0] : 0.f;
@@ -1674,7 +1669,7 @@ inline void compute_all_padding_pre_relu(float* dout,
   for (int i = pad_left_new; i > 0; i--) {
     float sum = compute_one_data_pre(din_ptr_arr[num], weights[4], bias[0], weights[6][0], 4 - i);
     for (int k = 0; k < num; k++) {
-      sum += compute_one_data_pre(din_ptr_arr[num - 1 - k], weights[3 - k], 0.f, weights[5][3 - k], 4 - i);
+      sum += compute_one_data_pre(din_ptr_arr[tmp_index - k], weights[3 - k], 0.f, weights[5][3 - k], 4 - i);
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
@@ -1878,30 +1873,31 @@ inline void compute_all_padding_pre_relu(float* dout,
       default:
         LOG(FATAL) << "This num: " << (num + 1) << "does not support";
     }
+    din_ptr_arr[0] -= 4;
   }
   // remain
   for (int w = 0; w < remain; w++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[6][0], 4);
     din_ptr_arr[num]++;
     for (int i = 0; i < num; i++) {
-        sum += compute_one_data_post(din_ptr_arr[num - 1 - i], weights[3 - i], 0.f, weights[5][3 - i], 4);
-        din_ptr_arr[num - 1 - i]++;
+        sum += compute_one_data_post(din_ptr_arr[tmp_index - i], weights[3 - i], 0.f, weights[5][3 - i], 4);
+        din_ptr_arr[tmp_index - i]++;
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
-  
   // right
-  for (int i = 1; i < pad_right_new; i++) {
-    float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[4][4 - i], 4 - i);
+  for (int i = 0; i < pad_right_new; i++) {
+    float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[4][3 - i], 3 - i);
+    din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
-      sum += compute_one_data_post(din_ptr_arr[num - 1 - k], weights[3 - k], 0.f, weights[3 - k][4 - i], 4 - i);
+      sum += compute_one_data_post(din_ptr_arr[tmp_index - k], weights[3 - k], 0.f, weights[3 - k][3 - i], 3 - i);
+      din_ptr_arr[tmp_index - k]++;
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
   for (int w = pad_right; w > 4; w--) {
       *dout++ = bias[0] > 0.f ? bias[0] : 0.f;
   }
-
 }
 inline void compute_all_padding_mid_relu(float* dout,
                                          std::vector<const float*> din_ptr_arr,
@@ -1986,7 +1982,8 @@ inline void compute_all_padding_mid_relu(float* dout,
                    "q13",
                    "q14",
                    "q15");
-#endif  
+#endif 
+     din_ptr_arr[0] -= 4;
   }
   // remain
   for (int w = 0; w < remain; w++) {
@@ -1998,12 +1995,13 @@ inline void compute_all_padding_mid_relu(float* dout,
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
-  
   // right
   for (int i = 0; i < pad_right_new; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
+    din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
+      din_ptr_arr[tmp - k]++;
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
@@ -2031,9 +2029,9 @@ inline void compute_all_padding_post_relu(float* dout,
   }
   int tmp = num - 1;
   for (int i = pad_left_new; i > 0; i--) {
-    float sum = compute_one_data_pre(din_ptr_arr[num], weights[num], bias[0], weights[5][num], 4 - i);
+    float sum = compute_one_data_pre(din_ptr_arr[3], weights[num], bias[0], weights[5][num], 4 - i);
     for (int k = 0; k < num; k++) {
-      sum += compute_one_data_pre(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[5][tmp - k], 4 - i);
+      sum += compute_one_data_pre(din_ptr_arr[2 - k], weights[tmp - k], 0.f, weights[5][tmp - k], 4 - i);
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
@@ -2044,7 +2042,7 @@ inline void compute_all_padding_post_relu(float* dout,
 #ifdef __aarch64__
         asm volatile(COMPUTE_ONE_LINE_S1_POST RESULT_S1_RELU
                     : [cnt] "+r"(cnt),
-                      [din_ptr0] "+r"(din_ptr_arr[0]),
+                      [din_ptr0] "+r"(din_ptr_arr[3]),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[0]),
                       [wr5] "w"(weights[5]),
@@ -2063,7 +2061,7 @@ inline void compute_all_padding_post_relu(float* dout,
 #else
         asm volatile(COMPUTE_ONE_LINE_S1_POST RESULT_S1_RELU
                     : [cnt] "+r"(cnt),
-                      [din_ptr0] "+r"(din_ptr_arr[0]),
+                      [din_ptr0] "+r"(din_ptr_arr[3]),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[0]),
                       [wr5] "w"(weights[5]),
@@ -2080,13 +2078,14 @@ inline void compute_all_padding_post_relu(float* dout,
                       "q14",
                       "q15");
 #endif
+        din_ptr_arr[3] -= 4;
         break;
       case 1:
 #ifdef __aarch64__
         asm volatile(COMPUTE_TWO_LINE_S1_POST RESULT_S1_RELU
                     : [cnt] "+r"(cnt),
-                      [din_ptr0] "+r"(din_ptr_arr[0]),
-                      [din_ptr1] "+r"(din_ptr_arr[1]),
+                      [din_ptr0] "+r"(din_ptr_arr[2]),
+                      [din_ptr1] "+r"(din_ptr_arr[3]),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[0]),
                       [wr1] "w"(weights[1]),
@@ -2106,8 +2105,8 @@ inline void compute_all_padding_post_relu(float* dout,
 #else
         asm volatile(COMPUTE_TWO_LINE_S1_POST RESULT_S1_RELU
                     : [cnt] "+r"(cnt),
-                      [din_ptr0] "+r"(din_ptr_arr[0]),
-                      [din_ptr1] "+r"(din_ptr_arr[1]),
+                      [din_ptr0] "+r"(din_ptr_arr[2]),
+                      [din_ptr1] "+r"(din_ptr_arr[3]),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[0]),
                       [wr1] "w"(weights[1]),
@@ -2125,14 +2124,15 @@ inline void compute_all_padding_post_relu(float* dout,
                       "q14",
                       "q15");
 #endif
+        din_ptr_arr[2] -= 4;
         break;
       case 2:
 #ifdef __aarch64__
         asm volatile(COMPUTE_THREE_LINE_S1_POST RESULT_S1_RELU
                     : [cnt] "+r"(cnt),
-                      [din_ptr0] "+r"(din_ptr_arr[0]),
-                      [din_ptr1] "+r"(din_ptr_arr[1]),
-                      [din_ptr2] "+r"(din_ptr_arr[2]),
+                      [din_ptr0] "+r"(din_ptr_arr[1]),
+                      [din_ptr1] "+r"(din_ptr_arr[2]),
+                      [din_ptr2] "+r"(din_ptr_arr[3]),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[0]),
                       [wr1] "w"(weights[1]),
@@ -2153,9 +2153,9 @@ inline void compute_all_padding_post_relu(float* dout,
 #else
         asm volatile(COMPUTE_THREE_LINE_S1_POST RESULT_S1_RELU
                     : [cnt] "+r"(cnt),
-                      [din_ptr0] "+r"(din_ptr_arr[0]),
-                      [din_ptr1] "+r"(din_ptr_arr[1]),
-                      [din_ptr2] "+r"(din_ptr_arr[2]),
+                      [din_ptr0] "+r"(din_ptr_arr[2]),
+                      [din_ptr1] "+r"(din_ptr_arr[3]),
+                      [din_ptr2] "+r"(din_ptr_arr[3]),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[0]),
                       [wr1] "w"(weights[1]),
@@ -2174,6 +2174,7 @@ inline void compute_all_padding_post_relu(float* dout,
                       "q14",
                       "q15");
 #endif
+        din_ptr_arr[1] -= 4;
         break;
       case 3:
 #ifdef __aarch64__
@@ -2227,6 +2228,7 @@ inline void compute_all_padding_post_relu(float* dout,
                       "q14",
                       "q15");
 #endif
+        din_ptr_arr[0] -= 4;
         break;
       default:
         LOG(FATAL) << "This num: " << (num + 1) << "does not support";
@@ -2234,20 +2236,20 @@ inline void compute_all_padding_post_relu(float* dout,
   }
   // remain
   for (int w = 0; w < remain; w++) {
-    float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[5][num], 4);
-    din_ptr_arr[num]++;
+    float sum = compute_one_data_post(din_ptr_arr[3], weights[num], bias[0], weights[5][num], 4);
+    din_ptr_arr[3]++;
     for (int i = 0; i < num; i++) {
-        sum += compute_one_data_post(din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
-        din_ptr_arr[tmp - i]++;
+        sum += compute_one_data_post(din_ptr_arr[2 - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
+        din_ptr_arr[2 - i]++;
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
   
   // right
   for (int i = 0; i < pad_right_new; i++) {
-    float sum = compute_one_data_post(din_ptr_arr[num], weights[num], bias[0], weights[num][3 - i], 3 - i);
+    float sum =  compute_one_data_post(din_ptr_arr[3], weights[num], bias[0], weights[num][3 - i], 3 - i);
     for (int k = 0; k < num; k++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
+      sum +=compute_one_data_post(din_ptr_arr[2 - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
@@ -2314,45 +2316,54 @@ void conv_depthwise_5x5s1_bias_relu(float* dout,
        wr5 = vsetq_lane_f32(weights_ch[14], wr5, 2);
        wr5 = vsetq_lane_f32(weights_ch[19], wr5, 3);
        wr6 = vsetq_lane_f32(weights_ch[24], wr6, 0);
-       std::vector<const float*> din_ptr_arr;
-       std::vector<float32x4_t> weights_vec;
-       din_ptr_arr.push_back(din_ptr0);
-       din_ptr_arr.push_back(din_ptr1);
-       din_ptr_arr.push_back(din_ptr2);
-       din_ptr_arr.push_back(din_ptr3);
-       din_ptr_arr.push_back(din_ptr4);
-       weights_vec.push_back(wr0);
-       weights_vec.push_back(wr1);
-       weights_vec.push_back(wr2);
-       weights_vec.push_back(wr3);
-       weights_vec.push_back(wr4);
-       weights_vec.push_back(wr5);
-       weights_vec.push_back(wr6);
-      // top_h
+       const float* din_ptr_arr[] = {din_ptr0, din_ptr1, din_ptr2, din_ptr3, din_ptr4};
+       float32x4_t weights_vec[] = {wr0, wr1, wr2, wr3, wr4, wr5, wr6};
+       // top_h
       for (int h = pad_top; h > 4; h--) {
         memset(dout_ptr, bias[0], sizeof(float)*wout);
         dout_ptr += wout;
       }
       for (int h = pad_top_new; h > 0; h--) {
         compute_all_padding_pre_relu(dout_ptr, din_ptr_arr, vbias, weights_vec, vzero, win, wout, pad_left,
-                                     pad_left_new, pad_right, pad_right_new, cnt, remain, 4 - h);
+                                     pad_right, pad_left_new, pad_right_new, cnt, remain, 4 - h);
         dout_ptr += wout;
+        din_ptr_arr[0] = din_ptr0;
+        din_ptr_arr[1] = din_ptr1;
+        din_ptr_arr[2] = din_ptr2;
+        din_ptr_arr[3] = din_ptr3;
+        din_ptr_arr[4] = din_ptr4;
       }
+      din_ptr_arr[0] = din_ptr0;
+      din_ptr_arr[1] = din_ptr1;
+      din_ptr_arr[2] = din_ptr2;
+      din_ptr_arr[3] = din_ptr3;
+      din_ptr_arr[4] = din_ptr4;
       // mid_h
       for (int h = 0; h < loop_h; h++) {
         compute_all_padding_mid_relu(dout_ptr, din_ptr_arr, vbias, weights_vec, vzero, win, wout, pad_left,
-                                     pad_left_new, pad_right, pad_right_new, cnt, remain, 4);
+                                     pad_right, pad_left_new, pad_right_new, cnt, remain, 4);
         dout_ptr += wout;
-        for (int i = 0; i < 4; i++) {
-          din_ptr_arr[i] = din_ptr_arr[i + 1];
-        }
-        din_ptr_arr[4] += win;
+        din_ptr0 = din_ptr1;
+        din_ptr1 = din_ptr2;
+        din_ptr2 = din_ptr3;
+        din_ptr3 = din_ptr4;
+        din_ptr4 = din_ptr4 + win;
+        din_ptr_arr[0] = din_ptr0;
+        din_ptr_arr[1] = din_ptr1;
+        din_ptr_arr[2] = din_ptr2;
+        din_ptr_arr[3] = din_ptr3;
+        din_ptr_arr[4] = din_ptr4;
       }
       // bottom
       for (int h = 0; h < pad_bottom_new; h++) {
         compute_all_padding_post_relu(dout_ptr, din_ptr_arr, vbias, weights_vec, vzero, win, wout, pad_left,
-                                      pad_left_new, pad_right, pad_right_new, cnt, remain, 3 - h);
+                                      pad_right, pad_left_new, pad_right_new, cnt, remain, 3 - h);
         dout_ptr += wout;
+        din_ptr_arr[0] = din_ptr0;
+        din_ptr_arr[1] = din_ptr1;
+        din_ptr_arr[2] = din_ptr2;
+        din_ptr_arr[3] = din_ptr3;
+        din_ptr_arr[4] = din_ptr4;
       }
     }
   }
