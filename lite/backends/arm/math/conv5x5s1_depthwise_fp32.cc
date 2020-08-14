@@ -955,6 +955,7 @@ inline void compute_all_padding_pre(float* dout,
                                     int cnt,
                                     int remain,
                                     int num) {
+  int tmp_index = num - 1;
   // left
   for (int w = pad_left; w > 4; w--) {
       *dout++ = bias[0];
@@ -963,7 +964,7 @@ inline void compute_all_padding_pre(float* dout,
   for (int i = pad_left_new; i > 0; i--) {
     float sum = compute_one_data_pre(din_ptr_arr[num], weights[4], bias[0], weights[6][0], 4 - i);
     for (int k = 0; k < num; k++) {
-      sum += compute_one_data_pre(din_ptr_arr[num - 1 - k], weights[3 - k], 0.f, weights[5][3 - k], 4 - i);
+      sum += compute_one_data_pre(din_ptr_arr[tmp_index - k], weights[3 - k], 0.f, weights[5][3 - k], 4 - i);
     }
     *dout++ = sum;
   }
@@ -1166,8 +1167,8 @@ inline void compute_all_padding_pre(float* dout,
     float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[6][0], 4);
     din_ptr_arr[num]++;
     for (int i = 0; i < num; i++) {
-        sum += compute_one_data_post(din_ptr_arr[num - 1 - i], weights[3 - i], 0.f, weights[5][3 - i], 4);
-        din_ptr_arr[num - 1 - i]++;
+        sum += compute_one_data_post(din_ptr_arr[tmp_index - i], weights[3 - i], 0.f, weights[5][3 - i], 4);
+        din_ptr_arr[tmp_index - i]++;
     }
     *dout++ = sum;
   }
@@ -1177,8 +1178,8 @@ inline void compute_all_padding_pre(float* dout,
     float sum = compute_one_data_post(din_ptr_arr[num], weights[4], bias[0], weights[4][3 - i], 3 - i);
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
-      sum += compute_one_data_post(din_ptr_arr[num - 1 - k], weights[3 - k], 0.f, weights[3 - k][3 - i], 3 - i);
-      din_ptr_arr[num - 1 - k]++;
+      sum += compute_one_data_post(din_ptr_arr[tmp_index - k], weights[3 - k], 0.f, weights[3 - k][3 - i], 3 - i);
+      din_ptr_arr[tmp_index - k]++;
     }
     *dout++ = sum;
   }
@@ -1619,6 +1620,7 @@ void conv_depthwise_5x5s1_bias(float* dout,
       din_ptr_arr[2] = din_ptr2;
       din_ptr_arr[3] = din_ptr3;
       din_ptr_arr[4] = din_ptr4;
+      // mid_h
       for (int h = 0; h < loop_h; h++) {
         compute_all_padding_mid(dout_ptr, din_ptr_arr, vbias, weights_vec, win, wout, pad_left,
                                 pad_right, pad_left_new, pad_right_new, cnt, remain, 4);
