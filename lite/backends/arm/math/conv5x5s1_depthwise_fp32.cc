@@ -1648,9 +1648,9 @@ void conv_depthwise_5x5s1_bias(float* dout,
 }
 
 inline void compute_all_padding_pre_relu(float* dout,
-                                         std::vector<const float*> din_ptr_arr,
+                                         const float** din_ptr_arr,
                                          const float* bias,
-                                         std::vector<float32x4_t> weights,
+                                         float32x4_t* weights,
                                          float32x4_t vzero,
                                          int win,
                                          int wout,
@@ -1900,9 +1900,9 @@ inline void compute_all_padding_pre_relu(float* dout,
   }
 }
 inline void compute_all_padding_mid_relu(float* dout,
-                                         std::vector<const float*> din_ptr_arr,
+                                         const float** din_ptr_arr,
                                          const float* bias,
-                                         std::vector<float32x4_t> weights,
+                                         float32x4_t* weights,
                                          float32x4_t vzero,
                                          int win,
                                          int wout,
@@ -2010,9 +2010,9 @@ inline void compute_all_padding_mid_relu(float* dout,
   }
 }
 inline void compute_all_padding_post_relu(float* dout,
-                                          std::vector<const float*> din_ptr_arr,
+                                          const float** din_ptr_arr,
                                           const float* bias,
-                                          std::vector<float32x4_t> weights,
+                                          float32x4_t* weights,
                                           float32x4_t vzero,
                                           int win,
                                           int wout,
@@ -2153,8 +2153,8 @@ inline void compute_all_padding_post_relu(float* dout,
 #else
         asm volatile(COMPUTE_THREE_LINE_S1_POST RESULT_S1_RELU
                     : [cnt] "+r"(cnt),
-                      [din_ptr0] "+r"(din_ptr_arr[2]),
-                      [din_ptr1] "+r"(din_ptr_arr[3]),
+                      [din_ptr0] "+r"(din_ptr_arr[1]),
+                      [din_ptr1] "+r"(din_ptr_arr[2]),
                       [din_ptr2] "+r"(din_ptr_arr[3]),
                       [dout_ptr] "+r"(dout)
                     : [wr0] "w"(weights[0]),
@@ -2242,6 +2242,28 @@ inline void compute_all_padding_post_relu(float* dout,
         sum += compute_one_data_post(din_ptr_arr[2 - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
         din_ptr_arr[2 - i]++;
     }
+    *dout++ =  sum > 0.f ? sum : 0.f;
+  }
+  
+  // right
+  for (int i = 0; i < pad_right_new; i++) {
+    float sum = compute_one_data_post(din_ptr_arr[3], weights[num], bias[0], weights[num][3 - i], 3 - i);
+    din_ptr_arr[3]++;
+    for (int k = 0; k < num; k++) {
+      sum += compute_one_data_post(din_ptr_arr[2 - k], weights[tmp - k], 0.f, weights[tmp - k][3 - i], 3 - i);
+      din_ptr_arr[2 - k]++;
+    }
+    *dout++ =  sum > 0.f ? sum : 0.f;
+  }
+/*
+  // remain
+  for (int w = 0; w < remain; w++) {
+    float sum = compute_one_data_post(din_ptr_arr[3], weights[num], bias[0], weights[5][num], 4);
+    din_ptr_arr[3]++;
+    for (int i = 0; i < num; i++) {
+        sum += compute_one_data_post(din_ptr_arr[2 - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
+        din_ptr_arr[2 - i]++;
+    }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
   
@@ -2253,6 +2275,7 @@ inline void compute_all_padding_post_relu(float* dout,
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
+ */
   for (int w = pad_right; w > 4; w--) {
       *dout++ = bias[0] > 0.f ? bias[0] : 0.f;
   }
