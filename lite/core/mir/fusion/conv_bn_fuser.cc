@@ -104,9 +104,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto conv_weight_t =
       scope->FindVar(conv_weight_name)->GetMutable<lite::Tensor>();
   auto groups = conv_op_desc->GetAttr<int>("groups");
-  bool depthwise = false;
   if (conv_type_ == "conv2d_transpose") {
-    depthwise = (conv_weight_t->dims()[0] == conv_weight_t->dims()[1] * groups);
     CHECK_EQ(static_cast<size_t>(bn_scale_t->data_size()),
              static_cast<size_t>(conv_weight_t->dims()[1] * groups))
         << "The BN bias's size should be equal to the size of the first "
@@ -120,7 +118,6 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   size_t weight_num = conv_weight_t->data_size();
   bool enable_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
   bool is_weight_quantization = conv_op_desc->HasAttr("quantize_weight_bits");
-
   // comupte BN alpha and beta
   Tensor alpha_tensor, beta_tensor;
   alpha_tensor.CopyDataFrom(*bn_bias_t);
@@ -162,12 +159,13 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     auto conv_weight_d = conv_weight_t->mutable_data<int8_t>();
     // compute new conv_weight for int8
     auto weight_scale = conv_op_desc->GetInputScale(weight_name);
-    if (conv_type_ == "conv2d_transpose" && !depthwise) {
-      int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] *
-                   conv_weight_t->dims()[3];
+    if (conv_type_ == "conv2d_transpose") {
+      int cout = conv_weight_t->dims()[1] * groups;
+      int cin_group = conv_weight_t->dims()[0] / groups;
+      int c_size = cout * conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
-      for (int k = 0; k < conv_weight_t->dims()[0]; ++k) {
-        for (int i = 0; i < h; ++i) {
+      for (int k = 0; k < cin_group; ++k) {
+        for (int i = 0; i < cout; ++i) {
           weight_scale[i] *= fabsf(alpha_data[i]);
           if (alpha_data[i] < 0.f) {
             auto ptr_row = conv_weight_d + k * c_size + i * hw;
@@ -203,12 +201,13 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   } else {
     // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
-    if (conv_type_ == "conv2d_transpose" && !depthwise) {
-      int c_size = conv_weight_t->dims()[1] * conv_weight_t->dims()[2] *
-                   conv_weight_t->dims()[3];
+    if (conv_type_ == "conv2d_transpose") {
+      int cout = conv_weight_t->dims()[1] * groups;
+      int cin_group = conv_weight_t->dims()[0] / groups;
+      int c_size = cout * conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
-      for (int k = 0; k < conv_weight_t->dims()[0]; ++k) {
-        for (int i = 0; i < h; ++i) {
+      for (int k = 0; k < cin_group; ++k) {
+        for (int i = 0; i < cout; ++i) {
           auto ptr_row = conv_weight_d + k * c_size + i * hw;
           for (int j = 0; j < hw; ++j) {
             ptr_row[j] *= alpha_data[i];

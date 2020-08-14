@@ -50,9 +50,15 @@ bool FcOpLite::CheckShape() const {
 
 bool FcOpLite::InferShapeImpl() const {
   const auto& input_dims = param_.input->dims();
-  const auto& w_dims = param_.w_dims;
+  int64_t w_dims_1;
+  if (param_.w_dims.empty()) {
+    const auto& w_dims = param_.w->dims();
+    w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
+  } else {
+    const auto& w_dims = param_.w_dims;
+    w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
+  }
   int in_num_col_dims = param_.in_num_col_dims;
-  int64_t w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
 
   // Set output dims
   std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
