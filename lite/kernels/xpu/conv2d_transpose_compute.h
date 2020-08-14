@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <memory>
+#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -21,13 +23,19 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class CastCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
+template <PrecisionType FilterPtype>
+class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
  public:
-  using param_t = operators::CastParam;
+  using param_t = operators::ConvParam;
+
+  void PrepareForRun() override;
 
   void Run() override;
 
-  virtual ~CastCompute() = default;
+  virtual ~Conv2dTransposeCompute() = default;
+
+ private:
+  XPUScratchPadGuard maxs_xpu_guard_;
 };
 
 }  // namespace xpu

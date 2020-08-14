@@ -21,13 +21,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class CastCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
+class LrnCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::CastParam;
+  using param_t = operators::LrnParam;
 
-  void Run() override;
+  virtual void Run();
 
-  virtual ~CastCompute() = default;
+  virtual ~LrnCompute() = default;
 };
 
 }  // namespace xpu

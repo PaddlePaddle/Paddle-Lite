@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/cast_compute.h"
+#include <typeinfo>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,31 +22,61 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename InType>
-void CastCompute<InType>::Run() {
+void CastCompute::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  auto* x = param.X;
   auto* out = param.Out;
   int out_dtype = param.out_dtype;
-  auto* in_data = x->template data<InType>();
-  int numel = x->numel();
-
+  int in_dtype = param.in_dtype;
+  int numel = param.X->numel();
   int r = 0;
   // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
   // SIZE_T = 19;UINT8 = 20;INT8 = 21;
-  if (out_dtype == 5) {
-    auto* out_data = out->template mutable_data<float>(TARGET(kXPU));
-    r = xdnn::cast<InType, float>(
+
+  if (in_dtype == 5 && out_dtype == 5) {
+    // float -> float
+    auto* in_data = param.X->data<float>();
+    auto* out_data = out->mutable_data<float>(TARGET(kXPU));
+    r = xdnn::cast<float, float>(ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (in_dtype == 2 && out_dtype == 2) {
+    // int -> int
+    auto* in_data = param.X->data<int>();
+    auto* out_data = out->mutable_data<int>(TARGET(kXPU));
+    r = xdnn::cast<int, int>(ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (in_dtype == 3 && out_dtype == 3) {
+    // int64 -> int64
+    auto* in_data = param.X->data<int64_t>();
+    auto* out_data = out->mutable_data<int64_t>(TARGET(kXPU));
+    r = xdnn::cast<int64_t, int64_t>(
         ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == 2) {
-    auto* out_data = out->template mutable_data<int>(TARGET(kXPU));
-    r = xdnn::cast<InType, int>(ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == 3) {
-    auto* out_data = out->template mutable_data<int64_t>(TARGET(kXPU));
-    r = xdnn::cast<InType, int64_t>(
+  } else if (in_dtype == 2 && out_dtype == 3) {
+    // int -> int64
+    auto* in_data = param.X->data<int>();
+    auto* out_data = out->mutable_data<int64_t>(TARGET(kXPU));
+    r = xdnn::cast<int, int64_t>(ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (in_dtype == 2 && out_dtype == 5) {
+    // int -> float
+    auto* in_data = param.X->data<int>();
+    auto* out_data = out->mutable_data<float>(TARGET(kXPU));
+    r = xdnn::cast<int, float>(ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (in_dtype == 3 && out_dtype == 5) {
+    // int64_t -> float
+    auto* in_data = param.X->data<int64_t>();
+    auto* out_data = out->mutable_data<float>(TARGET(kXPU));
+    r = xdnn::cast<int64_t, float>(
         ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (in_dtype == 5 && out_dtype == 3) {
+    // float -> int64_t
+    auto* in_data = param.X->data<float>();
+    auto* out_data = out->mutable_data<int64_t>(TARGET(kXPU));
+    r = xdnn::cast<float, int64_t>(
+        ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (in_dtype == 5 && out_dtype == 2) {
+    // float -> int
+    auto* in_data = param.X->data<float>();
+    auto* out_data = out->mutable_data<int>(TARGET(kXPU));
+    r = xdnn::cast<float, int>(ctx.GetRawContext(), in_data, out_data, numel);
   } else {
     CHECK(false);
   }
@@ -57,12 +88,8 @@ void CastCompute<InType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(cast,
-                     kXPU,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<float>,
-                     def)
+REGISTER_LITE_KERNEL(
+    cast, kXPU, kAny, kNCHW, paddle::lite::kernels::xpu::CastCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();

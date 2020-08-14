@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -21,13 +20,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class CastCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
+class SplitCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::CastParam;
+  using param_t = operators::SplitParam;
 
-  void Run() override;
+  virtual void Run();
 
-  virtual ~CastCompute() = default;
+  virtual ~SplitCompute() = default;
 };
 
 }  // namespace xpu

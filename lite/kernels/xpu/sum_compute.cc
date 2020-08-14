@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/dropout_compute.h"
+#include "lite/kernels/xpu/sum_compute.h"
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,29 +22,25 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void DropoutCompute::Run() {
+void SumCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-
-  if (param.is_test) {
-    float scale = 1.0f;
-    if (param.dropout_implementation == "upscale_in_train") {
-      scale = 1.0f;
-    } else {
-      scale = 1.0f - param.dropout_prob;
-    }
-    int r =
-        xdnn::scale(ctx.GetRawContext(), /* context */
-                    param.x->numel(),
-                    scale,
-                    0.0f,
-                    0,
-                    param.x->data<float>(),                           /* src */
-                    param.output->mutable_data<float>(TARGET(kXPU))); /* dst */
-    CHECK_EQ(r, 0);
-  } else {
-    CHECK(false);
+  int N = param.x.size();
+  if (N == 1) {
+    param.output->ShareDataWith(*param.x[0]);
+    return;
   }
+  std::vector<const float*> ptrs(N, nullptr);
+  for (int i = 0; i < N; i++) {
+    ptrs[i] = param.x[i]->data<float>();
+  }
+  int out_numel = param.output->numel();
+  int r = xdnn::sum_batch(ctx.GetRawContext(),
+                          ptrs.data(),
+                          param.output->mutable_data<float>(TARGET(kXPU)),
+                          N,
+                          out_numel);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -51,13 +48,8 @@ void DropoutCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(dropout,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::DropoutCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    sum, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SumCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

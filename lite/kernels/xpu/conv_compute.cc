@@ -33,32 +33,55 @@ void Conv2dCompute<PRECISION(kFloat)>::Run() {
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
 
-  int r = xdnn::conv2d_forward_int16<float, float, float, float>(
-      ctx.GetRawContext(),                             /* context */
-      x_dims[0],                                       /* num */
-      x_dims[1],                                       /* input_c */
-      x_dims[2],                                       /* input_h */
-      x_dims[3],                                       /* input_w */
-      w_dims[0],                                       /* num_filter */
-      w_dims[2],                                       /* kernel_h */
-      w_dims[3],                                       /* kernel_w */
-      strides[0],                                      /* stride_h */
-      strides[1],                                      /* stride_w */
-      paddings[0],                                     /* pad_h */
-      paddings[1],                                     /* pad_w */
-      dilations[0],                                    /* dilation_h */
-      dilations[1],                                    /* dilation_w */
-      groups,                                          /* group */
-      param.x->data<float>(),                          /* bottom */
-      param.filter->data<float>(),                     /* weight */
-      param.output->mutable_data<float>(TARGET(kXPU)), /* top */
-      nullptr,                                         /* bias */
-      nullptr,                                         /* branch */
-      xdnn::Activation_t::LINEAR,                      /* type */
-      nullptr,                                         /* max_image_ptr */
-      nullptr,                                         /* max_filter_ptr */
-      nullptr /* max_result_ptr */);
-  CHECK_EQ(r, 0);
+  if (groups == 1) {
+    int r = xdnn::conv2d_forward_int16<float, float, float, float>(
+        ctx.GetRawContext(),                             /* context */
+        x_dims[0],                                       /* num */
+        x_dims[1],                                       /* input_c */
+        x_dims[2],                                       /* input_h */
+        x_dims[3],                                       /* input_w */
+        w_dims[0],                                       /* num_filter */
+        w_dims[2],                                       /* kernel_h */
+        w_dims[3],                                       /* kernel_w */
+        strides[0],                                      /* stride_h */
+        strides[1],                                      /* stride_w */
+        paddings[0],                                     /* pad_h */
+        paddings[1],                                     /* pad_w */
+        dilations[0],                                    /* dilation_h */
+        dilations[1],                                    /* dilation_w */
+        groups,                                          /* group */
+        param.x->data<float>(),                          /* bottom */
+        param.filter->data<float>(),                     /* weight */
+        param.output->mutable_data<float>(TARGET(kXPU)), /* top */
+        nullptr,                                         /* bias */
+        nullptr,                                         /* branch */
+        xdnn::Activation_t::LINEAR,                      /* type */
+        nullptr,                                         /* max_image_ptr */
+        nullptr,                                         /* max_filter_ptr */
+        nullptr /* max_result_ptr */);
+    CHECK_EQ(r, 0);
+  } else {
+    int r = xdnn::conv2d_int16_with_group<float, float, float>(
+        ctx.GetRawContext(),                             /* context */
+        param.x->data<float>(),                          /* bottom */
+        param.filter->data<float>(),                     /* weight */
+        param.output->mutable_data<float>(TARGET(kXPU)), /* top */
+        x_dims[0],
+        x_dims[1],
+        x_dims[2],
+        x_dims[3],
+        w_dims[0],
+        w_dims[2],
+        w_dims[3],
+        groups,
+        strides[0],
+        strides[1],
+        paddings[0],
+        paddings[1],
+        nullptr,
+        nullptr);
+    CHECK_EQ(r, 0);
+  }
 }
 
 }  // namespace xpu
@@ -70,6 +93,13 @@ namespace xpu = paddle::lite::kernels::xpu;
 using Conv2dFp32 = xpu::Conv2dCompute<PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(conv2d, kXPU, kFloat, kNCHW, Conv2dFp32, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(depthwise_conv2d, kXPU, kFloat, kNCHW, Conv2dFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/dropout_compute.h"
+#include "lite/kernels/xpu/lrn_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,28 +21,33 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void DropoutCompute::Run() {
+void LrnCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-
-  if (param.is_test) {
-    float scale = 1.0f;
-    if (param.dropout_implementation == "upscale_in_train") {
-      scale = 1.0f;
-    } else {
-      scale = 1.0f - param.dropout_prob;
-    }
-    int r =
-        xdnn::scale(ctx.GetRawContext(), /* context */
-                    param.x->numel(),
-                    scale,
-                    0.0f,
-                    0,
-                    param.x->data<float>(),                           /* src */
-                    param.output->mutable_data<float>(TARGET(kXPU))); /* dst */
+  auto x_dims = param.X->dims();
+  int batch = x_dims[0];
+  int channel = x_dims[1];
+  int h = x_dims[2];
+  int w = x_dims[3];
+  int n = param.n;
+  float alpha = param.alpha;
+  float beta = param.beta;
+  float k = param.k;
+  if (param.norm_region == "AcrossChannels") {
+    int r = xdnn::lrn_fwd(ctx.GetRawContext(),
+                          param.X->data<float>(),
+                          param.Out->mutable_data<float>(TARGET(kXPU)),
+                          batch,
+                          channel,
+                          h,
+                          w,
+                          n,
+                          k,
+                          alpha,
+                          beta);
     CHECK_EQ(r, 0);
   } else {
-    CHECK(false);
+    LOG(FATAL) << "Unsupport Norm Region Type: " << param.norm_region;
   }
 }
 
@@ -51,13 +56,9 @@ void DropoutCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(dropout,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::DropoutCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    lrn, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::LrnCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("MidOut", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
