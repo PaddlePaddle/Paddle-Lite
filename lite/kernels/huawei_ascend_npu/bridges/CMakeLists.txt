@@ -16,6 +16,10 @@ lite_cc_library(subgraph_bridge_elementwise_ops_huawei_ascend_npu SRCS elementwi
 lite_cc_library(subgraph_bridge_batch_norm_op_huawei_ascend_npu SRCS batch_norm_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_softmax_op_huawei_ascend_npu SRCS softmax_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_dropout_op_huawei_ascend_npu SRCS dropout_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_fc_op_huawei_ascend_npu SRCS fc_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_reshape_op_huawei_ascend_npu SRCS reshape_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_transpose_op_huawei_ascend_npu SRCS transpose_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_flatten_op_huawei_ascend_npu SRCS flatten_op.cc DEPS ${huawei_ascend_npu_subgraph_bridge_deps})
 
 set(huawei_ascend_npu_subgraph_bridges
         subgraph_bridge_registry
@@ -30,4 +34,8 @@ set(huawei_ascend_npu_subgraph_bridges
         subgraph_bridge_batch_norm_op_huawei_ascend_npu
         subgraph_bridge_softmax_op_huawei_ascend_npu
         subgraph_bridge_dropout_op_huawei_ascend_npu
+        subgraph_bridge_fc_op_huawei_ascend_npu
+        subgraph_bridge_reshape_op_huawei_ascend_npu
+        subgraph_bridge_transpose_op_huawei_ascend_npu
+        subgraph_bridge_flatten_op_huawei_ascend_npu
         CACHE INTERNAL "huawei_ascend_npu_subgraph_bridges")

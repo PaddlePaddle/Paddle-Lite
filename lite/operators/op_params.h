@@ -103,6 +103,8 @@ struct FcParam : ParamBase {
   lite::Tensor* bias{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
+  // original dims of input weight
+  lite::DDim w_dims;
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
@@ -1861,6 +1863,15 @@ struct PrintParam : ParamBase {
   bool print_tensor_layout{true};
   std::string print_phase;
   bool is_forward{true};
+};
+
+struct OneHotParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* depth_tensor{nullptr};
+  lite::Tensor* Out{};
+  int depth;
+  int dtype;
+  bool allow_out_of_range;
 };
 
 }  // namespace operators
