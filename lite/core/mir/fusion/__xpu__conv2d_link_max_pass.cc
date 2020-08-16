@@ -62,21 +62,25 @@ class XPUConv2dLinkFuser : public FuseBase {
   explicit XPUConv2dLinkFuser(bool with_branch) : _with_branch(with_branch) {}
 
   void BuildPattern() override {
-    auto* input = VarNode("input")->assert_is_op_input("__xpu__conv2d", "Input")
-                                ->AsInput();
-    auto* filter = VarNode("filter")->assert_is_op_input("__xpu__conv2d", "Filter")
-                                ->AsInput();
-    auto* filter_max = VarNode("filter_max")->assert_is_op_input("__xpu__conv2d", "FilterMax")
-                                ->AsInput();
-    auto* bias = VarNode("bias")->assert_is_op_input("__xpu__conv2d", "Bias")
-                                ->AsInput();
+    auto* input = VarNode("input")
+                      ->assert_is_op_input("__xpu__conv2d", "Input")
+                      ->AsInput();
+    auto* filter = VarNode("filter")
+                       ->assert_is_op_input("__xpu__conv2d", "Filter")
+                       ->AsInput();
+    auto* filter_max = VarNode("filter_max")
+                           ->assert_is_op_input("__xpu__conv2d", "FilterMax")
+                           ->AsInput();
+    auto* bias =
+        VarNode("bias")->assert_is_op_input("__xpu__conv2d", "Bias")->AsInput();
     auto* xpu_conv = OpNode("xpu_conv", "__xpu__conv2d");
     auto* xpu_conv_out = VarNode("xpu_conv_out")
-                                ->assert_is_op_output("__xpu__conv2d", "Output")
-                                ->AsOutput();
-    auto* xpu_conv_out_max = VarNode("xpu_conv_out_max")
-                                ->assert_is_op_output("__xpu__conv2d", "OutputMax")
-                                ->AsOutput();
+                             ->assert_is_op_output("__xpu__conv2d", "Output")
+                             ->AsOutput();
+    auto* xpu_conv_out_max =
+        VarNode("xpu_conv_out_max")
+            ->assert_is_op_output("__xpu__conv2d", "OutputMax")
+            ->AsOutput();
 
     *input >> *xpu_conv >> *xpu_conv_out;
     *filter >> *xpu_conv;
@@ -85,8 +89,9 @@ class XPUConv2dLinkFuser : public FuseBase {
     *xpu_conv >> *xpu_conv_out_max;
 
     if (_with_branch) {
-      auto* branch = VarNode("branch")->assert_is_op_input("__xpu__conv2d", "Branch")
-                                ->AsInput();
+      auto* branch = VarNode("branch")
+                         ->assert_is_op_input("__xpu__conv2d", "Branch")
+                         ->AsInput();
       *branch >> *xpu_conv;
     }
   }
@@ -99,7 +104,9 @@ class XPUConv2dLinkFuser : public FuseBase {
     // try to find input_max
     std::string max_input_name = matched.at("input")->arg()->name + "_max";
     auto* max_input_node = graph->RetrieveArgument(max_input_name);
-    if (max_input_node != nullptr) {
+    if (max_input_node != nullptr &&
+        (!op_desc.HasAttr("has_input_max") ||
+         !op_desc.GetAttr<bool>("has_input_max"))) {
       op_desc.SetInput("InputMax", {max_input_name});
       op_desc.SetAttr("has_input_max", true);
       conv_instruct->ResetOp(op_desc, conv_old->valid_places());
@@ -107,9 +114,8 @@ class XPUConv2dLinkFuser : public FuseBase {
     }
   }
 
-  private:
-    bool _with_branch;
-
+ private:
+  bool _with_branch;
 };
 
 }  // namespace fusion
@@ -122,9 +128,9 @@ class XPUConv2dLinkPass : public ProgramPass {
     fusion::XPUConv2dLinkFuser fuser1(true);
     fuser1(graph.get());
 
-    // TODO: need fix bug in no branch case
-    //fusion::XPUConv2dLinkFuser fuser2(false);
-    //fuser2(graph.get());
+    // TODO(sunsetlh): need fix bug in no branch case
+    fusion::XPUConv2dLinkFuser fuser2(false);
+    fuser2(graph.get());
   }
 };
 
@@ -132,6 +138,7 @@ class XPUConv2dLinkPass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__conv2d_link_max_pass, paddle::lite::mir::XPUConv2dLinkPass)
+REGISTER_MIR_PASS(__xpu__conv2d_link_max_pass,
+                  paddle::lite::mir::XPUConv2dLinkPass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__conv2d");
