@@ -58,8 +58,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     auto strides = param.strides;
     auto hin = param.x->dims()[2];
     auto win = param.x->dims()[3];
-    bool flag_act = param.act_param.has_active;
-    if (win >= kw && hin >= kw && (strides[0] == 1 && strides[1] == 1) && !flag_act) {
+    if (win >= kw && hin >= kw && (strides[0] == 1 && strides[1] == 1)) {
       flag_trans_weights_ = false;
       impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
 #ifdef LITE_WITH_PROFILE
