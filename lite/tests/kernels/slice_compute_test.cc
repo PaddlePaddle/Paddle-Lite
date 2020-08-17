@@ -271,6 +271,9 @@ TEST(Slice, precision) {
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   Place place(TARGET(kXPU));
   test_slice(place);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  Place place = TARGET(kHuaweiAscendNPU);
+  test_slice(place);
 #endif
 }
 
