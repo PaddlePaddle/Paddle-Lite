@@ -32,6 +32,7 @@ BlockDescView const* ProgramDescView::GetBlock<BlockDescView>(
   return &blocks_[idx];
 }
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 template <>
 proto::BlockDescT* ProgramDesc::GetBlock<proto::BlockDescT>(int32_t idx) {
   CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= vars.size()";
@@ -45,6 +46,7 @@ proto::BlockDescT* ProgramDesc::AddBlock<proto::BlockDescT>() {
   SyncBlocks();
   return blocks_.back()->raw_desc();
 }
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite
