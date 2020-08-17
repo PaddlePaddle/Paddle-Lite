@@ -48,9 +48,9 @@ class ProgramDescView : public ProgramDescAPI {
 
   void InitProgramDesc() {
     desc_ = proto::GetProgramDesc(buf_.data());
-    blocks_.reserve(BlocksSize());
+    blocks_.resize(BlocksSize());
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {
-      blocks_.push_back(BlockDescView(desc_->blocks()->Get(idx)));
+      blocks_[idx] = BlockDescView(desc_->blocks()->Get(idx));
     }
   }
 
@@ -150,8 +150,8 @@ class ProgramDesc : public ProgramDescAPI {
   void SyncBlocks() {
     blocks_.resize(desc_.blocks.size());
     for (size_t i = 0; i < desc_.blocks.size(); ++i) {
-      if (blocks_[i].raw_desc() != desc_.blocks[i].get()) {
-        blocks_[i] = BlockDesc(desc_.blocks[i].get());
+      if (!blocks_[i] || blocks_[i]->raw_desc() != desc_.blocks[i].get()) {
+        blocks_[i].reset(new BlockDesc(desc_.blocks[i].get()));
       }
     }
   }
@@ -167,7 +167,7 @@ class ProgramDesc : public ProgramDescAPI {
   flatbuffers::DetachedBuffer buf_;
   flatbuffers::FlatBufferBuilder fbb_;
   proto::ProgramDescT desc_;
-  std::vector<BlockDesc> blocks_;
+  std::vector<std::unique_ptr<BlockDesc>> blocks_;
 };
 
 }  // namespace fbs

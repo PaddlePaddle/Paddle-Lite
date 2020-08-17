@@ -55,7 +55,9 @@ __global__ void topk_avg_pooling_kernel_by_row_improve(
         output_data +
         (gpu_input_offset_l[blockIdx.x] + idx) * feat_map_num * topk_size +
         blockIdx.y * topk_size;
-
+    for (int i = 0; i < topk_size; ++i) {
+      fm_row_out_data[i] = 0;
+    }
     Dtype *smem_start_col = smem + idx * col_max;
 
     int counter = max_k;  // topk_size;
@@ -151,6 +153,9 @@ __global__ void topk_avg_pooling_kernel_for_big_data(
                               blockIdx.z * actual_row_in_shared_mem + idx) *
                                  feat_map_num * topk_size +
                              blockIdx.y * topk_size;
+    for (int i = 0; i < topk_size; ++i) {
+      fm_row_out_data[i] = 0;
+    }
 
     Dtype *smem_start_col = smem + idx * col_max;
 
@@ -239,8 +244,6 @@ void SequenceTopkAvgPoolingCompute<T>::Run() {
   Tensor *out_tensor = param.Out;
   const T *in_data = x_tensor->data<T>();
   T *out_data = out_tensor->mutable_data<T>(TARGET(kCUDA));
-  TargetWrapperCuda::MemsetAsync(
-      out_data, 0, sizeof(T) * param.Out->numel(), cuda_stream);
 
   int topk_num = param.topks.size();
   lite::DDim top_ks_shape(std::vector<int64_t>{topk_num, 1, 1, 1});
