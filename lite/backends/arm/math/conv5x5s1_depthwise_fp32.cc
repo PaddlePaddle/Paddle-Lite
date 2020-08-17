@@ -1681,16 +1681,10 @@ inline void compute_all_padding_mid_out2(float* dout0,
         din_ptr_arr[tmp1], weights[num], bias[0], weights[6][0], 4);
     din_ptr_arr[tmp1]++;
     for (int i = 0; i < num; i++) {
-        sum += compute_one_data_post(din_ptr_arr[tmp - i],
-                                     weights[tmp - i],
-                                     0.f,
-                                     weights[5][tmp - i],
-                                     4);
-        sum1 += compute_one_data_post(din_ptr_arr[num - i],
-                                      weights[tmp - i],
-                                      0.f,
-                                      weights[5][tmp - i],
-                                      4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
+      sum1 += compute_one_data_post(
+           din_ptr_arr[num - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
         din_ptr_arr[num - i]++;
     }
     din_ptr_arr[0]++;
@@ -1947,11 +1941,8 @@ inline void compute_all_padding_post(float* dout,
         din_ptr_arr[3], weights[num], bias[0], weights[5][num], 4);
     din_ptr_arr[3]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[2 - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[2 - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[2 - i]++;
     }
     *dout++ = sum;
@@ -2366,12 +2357,9 @@ inline void compute_all_padding_pre_relu(float* dout,
         din_ptr_arr[num], weights[4], bias[0], weights[6][0], 4);
     din_ptr_arr[num]++;
     for (int i = 0; i < num; i++) {
-        sum += compute_one_data_post(din_ptr_arr[tmp_index - i],
-                                     weights[3 - i],
-                                     0.f,
-                                     weights[5][3 - i],
-                                     4);
-        din_ptr_arr[tmp_index - i]++;
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp_index - i], weights[3 - i], 0.f, weights[5][3 - i], 4);
+      din_ptr_arr[tmp_index - i]++;
     }
     *dout++ = sum > 0.f ? sum : 0.f;
   }
@@ -2484,11 +2472,8 @@ inline void compute_all_padding_mid_relu(float* dout,
         din_ptr_arr[num], weights[num], bias[0], weights[6][0], 4);
     din_ptr_arr[num]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[tmp - i]++;
     }
     *dout++ = sum > 0.f ? sum : 0.f;
@@ -2620,16 +2605,10 @@ inline void compute_all_padding_mid_relu_out2(float* dout0,
         din_ptr_arr[tmp1], weights[num], bias[0], weights[6][0], 4);
     din_ptr_arr[tmp1]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
-      sum1 += compute_one_data_post(din_ptr_arr[num - i],
-                                    weights[tmp - i],
-                                    0.f,
-                                    weights[5][tmp - i],
-                                    4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
+      sum1 += compute_one_data_post(
+           din_ptr_arr[num - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[num - i]++;
     }
     din_ptr_arr[0]++;
@@ -2894,11 +2873,8 @@ inline void compute_all_padding_post_relu(float* dout,
         din_ptr_arr[3], weights[num], bias[0], weights[5][num], 4);
     din_ptr_arr[3]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[2 - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[2 - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[2 - i]++;
     }
     *dout++ = sum > 0.f ? sum : 0.f;
@@ -3331,11 +3307,8 @@ inline void compute_all_padding_pre_relu6(float* dout,
         din_ptr_arr[num], weights[4], bias[0], weights[6][0], 4);
     din_ptr_arr[num]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp_index - i],
-                                   weights[3 - i],
-                                   0.f,
-                                   weights[5][3 - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp_index - i], weights[3 - i], 0.f, weights[5][3 - i], 4);
       din_ptr_arr[tmp_index - i]++;
     }
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
@@ -3456,11 +3429,8 @@ inline void compute_all_padding_mid_relu6(float* dout,
         din_ptr_arr[num], weights[num], bias[0], weights[6][0], 4);
     din_ptr_arr[num]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[tmp - i]++;
     }
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
@@ -3599,16 +3569,10 @@ inline void compute_all_padding_mid_relu6_out2(float* dout0,
         din_ptr_arr[tmp1], weights[num], bias[0], weights[6][0], 4);
     din_ptr_arr[tmp1]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
-      sum1 += compute_one_data_post(din_ptr_arr[num - i],
-                                    weights[tmp - i],
-                                    0.f,
-                                    weights[5][tmp - i],
-                                    4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
+      sum1 += compute_one_data_post(
+           din_ptr_arr[num - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[num - i]++;
     }
     din_ptr_arr[0]++;
@@ -3885,11 +3849,8 @@ inline void compute_all_padding_post_relu6(float* dout,
         din_ptr_arr[3], weights[num], bias[0], weights[5][num], 4);
     din_ptr_arr[3]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[2 - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[2 - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[2 - i]++;
     }
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
@@ -4335,11 +4296,8 @@ inline void compute_all_padding_pre_leakyRelu(float* dout,
         din_ptr_arr[num], weights[4], bias[0], weights[6][0], 4);
     din_ptr_arr[num]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp_index - i],
-                                   weights[3 - i],
-                                   0.f,
-                                   weights[5][3 - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp_index - i], weights[3 - i], 0.f, weights[5][3 - i], 4);
         din_ptr_arr[tmp_index - i]++;
     }
     *dout++ = sum > 0.f ? sum : sum * scale[0];
@@ -4466,11 +4424,8 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
         din_ptr_arr[num], weights[num], bias[0], weights[6][0], 4);
     din_ptr_arr[num]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[tmp - i]++;
     }
     *dout++ = sum > 0.f ? sum : sum * scale[0];
@@ -4493,19 +4448,19 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
   }
 }
 inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
-                                                    float* dout1,
-                                                    const float** din_ptr_arr,
-                                                    const float* bias,
-                                                    const float* scale,
-                                                    float32x4_t* weights,
-                                                    float32x4_t vzero,
-                                                    int win,
-                                                    int wout,
-                                                    int pad_left,
-                                                    int pad_right,
-                                                    int cnt,
-                                                    int remain,
-                                                    int num) {
+                                                   float* dout1,
+                                                   const float** din_ptr_arr,
+                                                   const float* bias,
+                                                   const float* scale,
+                                                   float32x4_t* weights,
+                                                   float32x4_t vzero,
+                                                   int win,
+                                                   int wout,
+                                                   int pad_left,
+                                                   int pad_right,
+                                                   int cnt,
+                                                   int remain,
+                                                   int num) {
 #ifdef __aarch64__
   float32x4_t vscale = vld1q_f32(scale);
 #endif
@@ -4615,16 +4570,10 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
         din_ptr_arr[tmp1], weights[num], bias[0], weights[6][0], 4);
     din_ptr_arr[tmp1]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
-      sum1 += compute_one_data_post(din_ptr_arr[num - i],
-                                    weights[tmp - i],
-                                    0.f,
-                                    weights[5][tmp - i],
-                                    4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
+      sum1 += compute_one_data_post(
+           din_ptr_arr[num - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[num - i]++;
     }
     din_ptr_arr[0]++;
@@ -4909,11 +4858,8 @@ inline void compute_all_padding_post_leakyRelu(float* dout,
         din_ptr_arr[3], weights[num], bias[0], weights[5][num], 4);
     din_ptr_arr[3]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[2 - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[2 - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[2 - i]++;
     }
     *dout++ = sum > 0.f ? sum : sum * scale[0];
