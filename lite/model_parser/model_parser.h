@@ -35,6 +35,16 @@ namespace lite {
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
     const std::string& path, bool program_from_memory = false);
 
+template <typename T>
+void ReadModelDataFromFile(T* data,
+                           const std::string& prog_path,
+                           uint64_t* offset,
+                           const uint64_t& size);
+
+void AppendToFile(const std::string& filename,
+                  const void* src,
+                  size_t byte_size);
+
 // Read a single file containing all the parameters.
 void LoadParams(const std::string& path);
 
@@ -86,12 +96,7 @@ void SaveCombinedParamsNaive(const std::string& path,
 
 void SaveModelNaive(const std::string& model_dir,
                     const Scope& exec_scope,
-                    const cpp::ProgramDesc& cpp_prog,
-                    bool combined = true);
-
-void SaveModelFbs(const std::string& model_dir,
-                  const Scope& exec_scope,
-                  const cpp::ProgramDesc& cpp_prog);
+                    const cpp::ProgramDesc& cpp_prog);
 
 void LoadModelFbsFromFile(const std::string& filename,
                           Scope* scope,
@@ -108,6 +113,9 @@ void LoadModelNaive(const std::string& model_dir,
                     lite::Scope* scope,
                     cpp::ProgramDesc* prog,
                     bool combined = true);
+void LoadModelNaiveV0FromFile(const std::string& filename,
+                              Scope* scope,
+                              cpp::ProgramDesc* cpp_prog);
 void LoadModelNaiveFromFile(const std::string& filename,
                             lite::Scope* scope,
                             cpp::ProgramDesc* prog);
@@ -118,6 +126,15 @@ void LoadModelNaiveFromMemory(const std::string& model_buffer,
 void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
+void LoadModelNaiveV1FromMemory(const std::string& model_buffer,
+                                Scope* scope,
+                                cpp::ProgramDesc* cpp_prog);
 
+void LoadModelFbsFromMemory(const std::string& model_buffer,
+                            lite::Scope* scope,
+                            cpp::ProgramDesc* cpp_prog);
+void LoadModelNaiveV0FromMemory(const std::string& model_buffer,
+                                Scope* scope,
+                                cpp::ProgramDesc* cpp_prog);
 }  // namespace lite
 }  // namespace paddle

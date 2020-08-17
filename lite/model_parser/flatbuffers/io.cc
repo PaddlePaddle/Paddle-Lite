@@ -35,6 +35,26 @@ std::vector<char> LoadFile(const std::string& path) {
   return buf;
 }
 
+std::vector<char> LoadFile(const std::string& path,
+                           const size_t& offset,
+                           const size_t& size) {
+  // open file in readonly mode
+  FILE* file = fopen(path.c_str(), "rb");
+  CHECK(file) << "Unable to open file: " << path;
+  // move fstream pointer backward for offset
+  uint64_t length = size;
+  if (size == 0) {
+    fseek(file, 0L, SEEK_END);
+    length = ftell(file) - offset;
+  }
+  fseek(file, offset, SEEK_SET);
+  // read data of `length` into buf
+  std::vector<char> buf(length);
+  CHECK_EQ(fread(buf.data(), 1, length, file), length);
+  fclose(file);
+  return buf;
+}
+
 void SaveFile(const std::string& path, const void* src, size_t byte_size) {
   CHECK(src);
   FILE* file = fopen(path.c_str(), "wb");

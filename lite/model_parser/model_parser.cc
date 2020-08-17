@@ -546,65 +546,46 @@ void SaveCombinedParamsNaive(const std::string &path,
   table.AppendToFile(path);
 }
 
-void SaveModelNaive(const std::string &model_dir,
+////////////////////////////////////////////////////////////////////////////////////
+// Save model: meta_version = 1
+// Flatbuffer model + params
+////////////////////////////////////////////////////////////////////////////////////
+void AppendToFile(const std::string &filename,
+                  const void *src,
+                  size_t byte_size) {
+  CHECK(src);
+  FILE *fp = fopen(filename.c_str(), "ab");
+  CHECK(fp) << "Unable to open file: " << filename;
+  if (fwrite(reinterpret_cast<const char *>(src), 1, byte_size, fp) !=
+      byte_size) {
+    fclose(fp);
+    LOG(FATAL) << "Write file error: " << filename;
+  }
+  fclose(fp);
+}
+/* ---------- Flatbuffers ---------- */
+void SaveModelNaive(const std::string &model_file,
                     const Scope &exec_scope,
-                    const cpp::ProgramDesc &cpp_prog,
-                    bool combined) {
-  // Save program
-  const std::string prog_path = model_dir + ".nb";
-  naive_buffer::BinaryTable table;
-  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
-  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
-  TransformProgramDescCppToAny(cpp_prog, &nb_prog);
-  nb_proto_prog.Save();
-
+                    const cpp::ProgramDesc &cpp_prog) {
+  /* 1. Save model to model.fbs */
+  const std::string prog_path = model_file + ".nb";
   // Save meta_version(uint16) into file
-  naive_buffer::BinaryTable meta_version_table;
-  meta_version_table.Require(sizeof(uint16_t));
-  uint16_t meta_version = 0;
-  memcpy(meta_version_table.cursor(), &meta_version, sizeof(uint16_t));
-  meta_version_table.Consume(sizeof(uint16_t));
-  meta_version_table.SaveToFile(prog_path);
+  uint16_t meta_version = 1;
+  fbs::SaveFile(prog_path, &meta_version, sizeof(uint16_t));
 
   // Save lite_version(char[16]) into file
   const int paddle_version_length = 16 * sizeof(char);
-  naive_buffer::BinaryTable paddle_version_table;
-  paddle_version_table.Require(paddle_version_length);
   std::string paddle_version = version();
-  memcpy(paddle_version_table.cursor(),
-         paddle_version.c_str(),
-         paddle_version_length);
-  paddle_version_table.Consume(paddle_version_length);
-  paddle_version_table.AppendToFile(prog_path);
+  AppendToFile(prog_path, paddle_version.c_str(), paddle_version_length);
   VLOG(4) << "paddle_version:" << paddle_version;
 
-  // Save topology_size(uint64) into file
-  naive_buffer::BinaryTable topology_size_table;
-  topology_size_table.Require(sizeof(uint64_t));
-  uint64_t topology_size = table.size();
-  memcpy(topology_size_table.cursor(), &topology_size, sizeof(uint64_t));
-  topology_size_table.Consume(sizeof(uint64_t));
-  topology_size_table.AppendToFile(prog_path);
-
-  // save topology data into model file
-  table.AppendToFile(prog_path);
-  // Save Params
-  SaveCombinedParamsNaive(prog_path, exec_scope, cpp_prog);
-
-  LOG(INFO) << "Save naive buffer model in '" << model_dir
-            << ".nb' successfully";
-}
-
-/* ---------- Flatbuffers ---------- */
-void SaveModelFbs(const std::string &model_dir,
-                  const Scope &exec_scope,
-                  const cpp::ProgramDesc &cpp_prog) {
-  /* 1. Save model to model.fbs */
-  const std::string prog_path = model_dir + "/model.fbs";
   fbs::ProgramDesc fbs_prog;
   TransformProgramDescCppToAny(cpp_prog, &fbs_prog);
-  fbs::SaveFile(prog_path, fbs_prog.data(), fbs_prog.buf_size());
-
+  uint64_t topology_size = fbs_prog.buf_size();
+  AppendToFile(prog_path, &topology_size, sizeof(uint64_t));
+  /* 1. Save model to model.fbs */
+  AppendToFile(prog_path, fbs_prog.data(), topology_size);
+  VLOG(4) << "save topology_size:" << topology_size;
   /* 2. Get param names from cpp::ProgramDesc */
   auto &main_block_desc = *cpp_prog.GetBlock<cpp::BlockDesc>(0);
   // set unique_var_names to avoid saving shared params repeatedly
@@ -618,27 +599,12 @@ void SaveModelFbs(const std::string &model_dir,
   }
 
   /* 3. Save combined params to params.fbs */
-  const std::string params_path = model_dir + "/params.fbs";
   fbs::CombinedParamsDesc params_prog;
   fbs::SetCombinedParamsWithScope(exec_scope, unique_var_names, &params_prog);
-  fbs::SaveFile(params_path, params_prog.data(), params_prog.buf_size());
-}
+  AppendToFile(prog_path, params_prog.data(), params_prog.buf_size());
+  VLOG(4) << "save params_size:" << params_prog.buf_size();
 
-void LoadModelFbsFromFile(const std::string &filename,
-                          Scope *scope,
-                          cpp::ProgramDesc *cpp_prog) {
-  CHECK(cpp_prog);
-  CHECK(scope);
-
-  /* 1. Save cpp::ProgramDesc with model.fbs */
-  const std::string prog_path = filename + "/model.fbs";
-  fbs::ProgramDesc program(fbs::LoadFile(prog_path));
-  TransformProgramDescAnyToCpp(program, cpp_prog);
-
-  /* 2. Save scope with params.fbs */
-  const std::string params_path = filename + "/params.fbs";
-  fbs::CombinedParamsDesc params(fbs::LoadFile(params_path));
-  fbs::SetScopeWithCombinedParams(scope, params);
+  LOG(INFO) << "Save naive buffer model in '" << prog_path << " successfully";
 }
 
 #endif  // LITE_ON_TINY_PUBLISH
@@ -740,7 +706,10 @@ void LoadCombinedParamsNaive(const std::string &path,
                                          << "] not found";
   }
 }
-
+///////////////////////////////////////////////////////////////////////////////
+/* Old Method of loading and saving model, before V2.3.0                     */
+/* Warning: this is an old inference and will be abandened in release/v3.0.0 */
+///////////////////////////////////////////////////////////////////////////////
 void LoadModelNaive(const std::string &model_dir,
                     Scope *scope,
                     cpp::ProgramDesc *cpp_prog,
@@ -796,6 +765,43 @@ void LoadModelNaive(const std::string &model_dir,
   VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
 }
 
+void LoadModelNaiveFromMemory(const std::string &model_buffer,
+                              const std::string &param_buffer,
+                              Scope *scope,
+                              cpp::ProgramDesc *cpp_prog) {
+  CHECK(cpp_prog);
+  CHECK(scope);
+  cpp_prog->ClearBlocks();
+
+  // Load model
+  naive_buffer::BinaryTable table;
+  table.LoadFromMemory(model_buffer.c_str(), model_buffer.length());
+
+  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
+  nb_proto_prog.Load();
+  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
+
+  // Transform to cpp::ProgramDesc
+  TransformProgramDescAnyToCpp(nb_prog, cpp_prog);
+
+  // Load Params
+  LoadCombinedParamsNaive(param_buffer, 0, scope, *cpp_prog, true);
+
+  VLOG(4) << "Load model from naive buffer memory successfully";
+}
+//////////////////////////////////////////////////////////////////////
+
+// usage: LoadModelNaiveFromFile is used for loading model from file.
+template <typename T>
+void ReadModelDataFromFile(T *data,
+                           const std::string &prog_path,
+                           uint64_t *offset,
+                           const uint64_t &size) {
+  naive_buffer::BinaryTable data_table;
+  data_table.LoadFromFile(prog_path, *offset, size);
+  memcpy(data, data_table.cursor(), size);
+  *offset = *offset + size;
+}
 /*
  * Binary structure of naive_buffer model: model.nb
  * ----------------------------------------------------------
@@ -814,21 +820,39 @@ void LoadModelNaive(const std::string &model_dir,
  *      param_data:   contains model's params data.
 */
 
-// usage: LoadModelNaiveFromFile is used for loading model from file.
-template <typename T>
-void ReadModelDataFromFile(T *data,
-                           const std::string &prog_path,
-                           uint64_t *offset,
-                           const uint64_t &size) {
-  naive_buffer::BinaryTable data_table;
-  data_table.LoadFromFile(prog_path, *offset, size);
-  memcpy(data, data_table.cursor(), size);
-  *offset = *offset + size;
-}
-
 void LoadModelNaiveFromFile(const std::string &filename,
                             Scope *scope,
                             cpp::ProgramDesc *cpp_prog) {
+  CHECK(cpp_prog);
+  CHECK(scope);
+  cpp_prog->ClearBlocks();
+  // ModelFile
+  const std::string prog_path = filename;
+
+  // Offset
+  uint64_t offset = 0;
+
+  // (1)get meta version
+  uint16_t meta_version;
+  ReadModelDataFromFile<uint16_t>(
+      &meta_version, prog_path, &offset, sizeof(uint16_t));
+  VLOG(4) << "Meta_version:" << meta_version;
+
+  switch (meta_version) {
+    case 0:
+      LoadModelNaiveV0FromFile(filename, scope, cpp_prog);
+      break;
+    case 1:
+      LoadModelFbsFromFile(filename, scope, cpp_prog);
+      break;
+    default:
+      LOG(ERROR) << "Error, this model file is not supported.";
+      break;
+  }
+}
+void LoadModelNaiveV0FromFile(const std::string &filename,
+                              Scope *scope,
+                              cpp::ProgramDesc *cpp_prog) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
@@ -884,34 +908,49 @@ void LoadModelNaiveFromFile(const std::string &filename,
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 
-// warning: this is an old inference and is not suggested.
-// todo: this inference will be abandened in release/v3.0.0
-void LoadModelNaiveFromMemory(const std::string &model_buffer,
-                              const std::string &param_buffer,
-                              Scope *scope,
-                              cpp::ProgramDesc *cpp_prog) {
+void LoadModelFbsFromFile(const std::string &filename,
+                          Scope *scope,
+                          cpp::ProgramDesc *cpp_prog) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
+  // Offset
+  uint64_t offset = sizeof(uint16_t);
 
-  // Load model
+  // get opt version
+  char opt_version[16];
+  const uint64_t opt_version_length = 16 * sizeof(char);
+  ReadModelDataFromFile<char>(
+      opt_version, filename, &offset, opt_version_length);
+  VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
+  // check version, opt's version should be consistent with current Paddle-Lite
+  // version.
+  const std::string paddle_version = version();
+  const std::string opt_version_str = opt_version;
+  if (paddle_version != opt_version_str) {
+    LOG(WARNING) << "warning: the version of opt that transformed this model "
+                    "is not consistent with current Paddle-Lite version."
+                    "\n      version of opt:"
+                 << static_cast<const char *>(opt_version)
+                 << "\n      version of current Paddle-Lite:" << paddle_version;
+  }
+  // (3)get topo_size
+  uint64_t topo_size;
+  ReadModelDataFromFile<uint64_t>(
+      &topo_size, filename, &offset, sizeof(uint64_t));
 
-  naive_buffer::BinaryTable table;
-  table.LoadFromMemory(model_buffer.c_str(), model_buffer.length());
+  /* 1. Save cpp::ProgramDesc with model.fbs */
+  fbs::ProgramDesc program(fbs::LoadFile(filename, offset, topo_size));
+  TransformProgramDescAnyToCpp(program, cpp_prog);
+  offset = offset + topo_size;
 
-  naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
-  nb_proto_prog.Load();
-  naive_buffer::ProgramDesc nb_prog(&nb_proto_prog);
-
-  // Transform to cpp::ProgramDesc
-  TransformProgramDescAnyToCpp(nb_prog, cpp_prog);
-
-  // Load Params
-  // NOTE: Only main block be used now.
-  // only combined Params are supported in Loading Model from memory
-  LoadCombinedParamsNaive(param_buffer, 0, scope, *cpp_prog, true);
-
-  VLOG(4) << "Load model from naive buffer memory successfully";
+  /* 2. Save scope with params.fbs */
+  fbs::CombinedParamsDesc params(fbs::LoadFile(filename, offset));
+  fbs::SetScopeWithCombinedParams(scope, params);
+  auto data = fbs::LoadFile(filename, offset);
+  LOG(INFO) << "Params data:" << int(data[0]) << ","
+            << int(data[data.size() - 1]);
+  VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 
 // usage: LoadModelNaiveFromMemory is used for loading naive model from memory
@@ -925,6 +964,7 @@ void ReadModelDataFromBuffer(T *data,
   memcpy(data, data_table.cursor(), size);
   *offset = *offset + size;
 }
+
 void LoadModelNaiveFromMemory(const std::string &model_buffer,
                               Scope *scope,
                               cpp::ProgramDesc *cpp_prog) {
@@ -932,14 +972,30 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   CHECK(scope);
   cpp_prog->ClearBlocks();
 
-  // Offset
   uint64_t offset = 0;
-
   // (1)get meta version
   uint16_t meta_version;
   ReadModelDataFromBuffer<uint16_t>(
       &meta_version, model_buffer, &offset, sizeof(uint16_t));
   VLOG(4) << "Meta_version:" << meta_version;
+  switch (meta_version) {
+    case 0:
+      LoadModelNaiveV0FromMemory(model_buffer, scope, cpp_prog);
+      break;
+    case 1:
+      LoadModelNaiveV1FromMemory(model_buffer, scope, cpp_prog);
+      break;
+    default:
+      LOG(ERROR) << "Error: Unsupported model type.";
+      break;
+  }
+}
+
+void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
+                                Scope *scope,
+                                cpp::ProgramDesc *cpp_prog) {
+  // Offset
+  uint64_t offset = sizeof(uint16_t);
 
   // (2)get opt version
   char opt_version[16];
@@ -967,6 +1023,48 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   // NOTE: Only main block be used now.
   // only combined Params are supported in Loading Model from memory
   LoadCombinedParamsNaive(model_buffer, offset, scope, *cpp_prog, true);
+
+  VLOG(4) << "Load model from naive buffer memory successfully";
+}
+
+///////////////////////////////////////////////////////////////////
+// Meta_version=1
+///////////////////////////////////////////////////////////////////
+void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
+                                Scope *scope,
+                                cpp::ProgramDesc *cpp_prog) {
+  // Offset
+  uint64_t offset = sizeof(uint16_t);
+
+  // (2)get opt version
+  char opt_version[16];
+  const uint64_t paddle_version_length = 16 * sizeof(char);
+  ReadModelDataFromBuffer<char>(
+      opt_version, model_buffer, &offset, paddle_version_length);
+  VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
+
+  // (3)get prog_size and prog_data
+  uint64_t prog_size;
+  ReadModelDataFromBuffer<uint64_t>(
+      &prog_size, model_buffer, &offset, sizeof(uint64_t));
+  VLOG(4) << "prog_size:" << prog_size;
+
+  std::vector<char> prog_data(prog_size);
+  memcpy(prog_data.data(), model_buffer.c_str() + offset, prog_size);
+  fbs::ProgramDesc program(prog_data);
+  TransformProgramDescAnyToCpp(program, cpp_prog);
+  offset = offset + prog_size;
+  VLOG(4) << "param_size:" << model_buffer.length() - offset;
+
+  std::vector<char> params_data(model_buffer.length() - offset);
+  memcpy(params_data.data(),
+         model_buffer.c_str() + offset,
+         model_buffer.length() - offset);
+
+  //  LOG(INFO) <<int(params_data[model_buffer.length() - offset-1]);
+  //  path.c_str() + offset, path.length() - offset
+  fbs::CombinedParamsDesc params(params_data);
+  fbs::SetScopeWithCombinedParams(scope, params);
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
