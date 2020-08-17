@@ -619,9 +619,10 @@ void conv_depthwise_3x3_fp32(const void* din,
   int stride = param.strides[1];
   int pad = pad_w;
   bool flag_bias = param.bias != nullptr;
+  bool ch_four = ch_in <= 4 * w_in;
   bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
   if (stride == 1) {
-    if (pads_less && (pad_h == pad_w) && (pad < 2)) {  // support pad = [0, 1]
+    if (ch_four && pads_less && (pad_h == pad_w) && (pad < 2)) {  // support pad = [0, 1]
       conv_depthwise_3x3s1_fp32(reinterpret_cast<const float*>(din),
                                 reinterpret_cast<float*>(dout),
                                 num,
@@ -676,7 +677,7 @@ void conv_depthwise_3x3_fp32(const void* din,
 #endif
     }
   } else if (stride == 2) {
-    if (pads_less && pad_h == pad_w && (pad < 2)) {  // support pad = [0, 1]
+    if (ch_four && pads_less && pad_h == pad_w && (pad < 2)) {  // support pad = [0, 1]
       conv_depthwise_3x3s2_fp32(reinterpret_cast<const float*>(din),
                                 reinterpret_cast<float*>(dout),
                                 num,
@@ -734,6 +735,7 @@ void conv_depthwise_5x5_fp32(const void* din,
   int stride = param.strides[1];
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
+  bool ch_four = ch_in > 4 * w_in;
   ctx->ExtendWorkspace((w_in + w_out) * sizeof(float));
   bool flag_act = act_param.has_active;
   if (stride == 2) {
@@ -752,7 +754,7 @@ void conv_depthwise_5x5_fp32(const void* din,
                               act_param,
                               ctx);
   } else if (stride == 1) {
-    if (h_in < 5 || w_in < 5) {
+    if (ch_four || h_in < 5 || w_in < 5) {
       conv_depthwise_5x5s1_fp32(reinterpret_cast<float*>(dout),
                                 reinterpret_cast<const float*>(din),
                                 reinterpret_cast<const float*>(weights),
