@@ -1550,11 +1550,8 @@ inline void compute_all_padding_mid(float* dout,
         din_ptr_arr[num], weights[num], bias[0], weights[6][0], 4);
     din_ptr_arr[num]++;
     for (int i = 0; i < num; i++) {
-      sum += compute_one_data_post(din_ptr_arr[tmp - i],
-                                   weights[tmp - i],
-                                   0.f,
-                                   weights[5][tmp - i],
-                                   4);
+      sum += compute_one_data_post(
+          din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       din_ptr_arr[tmp - i]++;
     }
     *dout++ = sum;
