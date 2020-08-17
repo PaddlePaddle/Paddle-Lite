@@ -5038,7 +5038,7 @@ void conv_depthwise_5x5s1_bias_leakyRelu(float* dout,
                                            cnt,
                                            remain,
                                            3 - h);
-        dout_ptr0 += wout; // 
+        dout_ptr0 += wout;
         din_ptr_arr[0] = din_ptr0;
         din_ptr_arr[1] = din_ptr1;
         din_ptr_arr[2] = din_ptr2;
