@@ -21,22 +21,6 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-// """
-// merge {sequence_pool x 7, concat} => merge_sequence_pool_and_concat
-//   src1              src2               src7            src1    src2      src7
-//     |                |                                  |       |         |
-//     v                v                                  |       |   ...   |
-// sequence_pool  sequence_pool  ...(sequence_pool)        |       |         |
-//     |                |              |              =>   -------------------
-//     ---------------------------------                          |
-//             |                                                  |
-//             v                                                  v
-//           concat                                     sequence_pool_concat
-// """
-void SequencePoolConcatFuser::BuildPattern() {
-  // create nodes.
-  auto* concat = OpNode("concat", "concat")->AsIntermediate();
-
 #define STR1(R) #R
 #define STR2(R) STR1(R)
 
@@ -58,6 +42,22 @@ void SequencePoolConcatFuser::BuildPattern() {
   *sequence_pool_##num >> *sequence_pool_##num##_idx;                       \
   *x_##num >> *sequence_pool_##num >> *sequence_pool_##num##_out >> *concat;
 
+// """
+// merge {sequence_pool x 7, concat} => merge_sequence_pool_and_concat
+//   src1              src2               src7            src1    src2      src7
+//     |                |                                  |       |         |
+//     v                v                                  |       |   ...   |
+// sequence_pool  sequence_pool  ...(sequence_pool)        |       |         |
+//     |                |              |              =>   -------------------
+//     ---------------------------------                          |
+//             |                                                  |
+//             v                                                  v
+//           concat                                     sequence_pool_concat
+// """
+void SequencePool7ConcatFuser::BuildPattern() {
+  // create nodes.
+  auto* concat = OpNode("concat", "concat")->AsIntermediate();
+
   auto* concat_out =
       VarNode("concat_out")->assert_is_op_output("concat", "Out");
   *concat >> *concat_out;
@@ -69,14 +69,10 @@ void SequencePoolConcatFuser::BuildPattern() {
   POOL_CONCAT_PATTERN(5);
   POOL_CONCAT_PATTERN(6);
   POOL_CONCAT_PATTERN(7);
-
-#undef POOL_CONCAT_PATTERN
-#undef STR1
-#undef STR2
 }
 
-void SequencePoolConcatFuser::InsertNewNode(SSAGraph* graph,
-                                            const key2nodes_t& matched) {
+void SequencePool7ConcatFuser::InsertNewNode(SSAGraph* graph,
+                                             const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
   auto sequence_pool_concat_op =
       LiteOpRegistry::Global().Create("sequence_pool_concat");
@@ -99,7 +95,7 @@ void SequencePoolConcatFuser::InsertNewNode(SSAGraph* graph,
   IR_NODE_LINK_TO(new_op_node, matched.at("concat_out"));
 }
 
-cpp::OpDesc SequencePoolConcatFuser::GenOpDesc(const key2nodes_t& matched) {
+cpp::OpDesc SequencePool7ConcatFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc = *matched.at("concat")->stmt()->op_info();
   op_desc.SetType("sequence_pool_concat");
   op_desc.SetInput("X",
@@ -146,6 +142,64 @@ cpp::OpDesc SequencePoolConcatFuser::GenOpDesc(const key2nodes_t& matched) {
 
   return op_desc;
 }
+
+void SequencePool2ConcatFuser::BuildPattern() {
+  // create nodes.
+  auto* concat = OpNode("concat", "concat")->AsIntermediate();
+
+  auto* concat_out =
+      VarNode("concat_out")->assert_is_op_output("concat", "Out");
+  *concat >> *concat_out;
+
+  POOL_CONCAT_PATTERN(1);
+  POOL_CONCAT_PATTERN(2);
+}
+
+void SequencePool2ConcatFuser::InsertNewNode(SSAGraph* graph,
+                                             const key2nodes_t& matched) {
+  auto op_desc = GenOpDesc(matched);
+  auto sequence_pool_concat_op =
+      LiteOpRegistry::Global().Create("sequence_pool_concat");
+
+  auto concat = matched.at("concat")->stmt()->op();
+  auto* scope = concat->scope();
+  auto& valid_places = concat->valid_places();
+  sequence_pool_concat_op->Attach(op_desc, scope);
+
+  auto* new_op_node =
+      graph->GraphCreateInstructNode(sequence_pool_concat_op, valid_places);
+
+  IR_NODE_LINK_TO(matched.at("sequence_pool_x_1"), new_op_node);
+  IR_NODE_LINK_TO(matched.at("sequence_pool_x_2"), new_op_node);
+  IR_NODE_LINK_TO(new_op_node, matched.at("concat_out"));
+}
+
+cpp::OpDesc SequencePool2ConcatFuser::GenOpDesc(const key2nodes_t& matched) {
+  cpp::OpDesc op_desc = *matched.at("concat")->stmt()->op_info();
+  op_desc.SetType("sequence_pool_concat");
+  op_desc.SetInput("X",
+                   {matched.at("sequence_pool_x_1")->arg()->name,
+                    matched.at("sequence_pool_x_2")->arg()->name});
+
+  std::vector<std::string> pooltypes;
+  pooltypes.push_back(matched.at("sequence_pool_1")
+                          ->stmt()
+                          ->op_info()
+                          ->GetAttr<std::string>("pooltype"));
+  pooltypes.push_back(matched.at("sequence_pool_2")
+                          ->stmt()
+                          ->op_info()
+                          ->GetAttr<std::string>("pooltype"));
+
+  op_desc.SetAttr("pooltype", pooltypes);
+  op_desc.SetOutput("Out", {matched.at("concat_out")->arg()->name});
+
+  return op_desc;
+}
+
+#undef POOL_CONCAT_PATTERN
+#undef STR1
+#undef STR2
 
 }  // namespace fusion
 }  // namespace mir

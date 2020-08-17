@@ -83,9 +83,9 @@ class VectorView {
   operator std::vector<T>() const {
     VLOG(5) << "Copying elements out of VectorView will damage performance.";
     std::vector<T> tmp;
-    tmp.reserve(size());
+    tmp.resize(size());
     for (size_t i = 0; i < size(); ++i) {
-      tmp.push_back(cvec_->operator[](i));
+      tmp[i] = cvec_->operator[](i);
     }
     return tmp;
   }

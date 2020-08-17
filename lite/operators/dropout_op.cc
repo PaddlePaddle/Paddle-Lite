@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/operators/dropout_op.h"
+
 #include <string>
 #include <vector>
+
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
@@ -66,8 +68,10 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
   param_.fix_seed = op_desc.GetAttr<bool>("fix_seed");
   param_.seed = op_desc.GetAttr<int>("seed");
-  param_.dropout_implementation =
-      op_desc.GetAttr<std::string>("dropout_implementation");
+  if (op_desc.HasAttr("dropout_implementation")) {
+    param_.dropout_implementation =
+        op_desc.GetAttr<std::string>("dropout_implementation");
+  }
   return true;
 }
 

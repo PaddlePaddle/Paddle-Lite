@@ -38,7 +38,7 @@
 ### 2.3 配置校准数据生成器
 
 静态离线量化内部使用异步数据读取的方式读取校准数据，大家只需要根据模型的输入，配置读取数据的sample_generator。sample_generator是Python生成器，**必须每次返回单个样本数据**，会用作`DataLoader.set_sample_generator()`的数据源。
-建议参考[异步数据读取文档](https://www.paddlepaddle.org.cn/documentation/docs/zh/advanced_guide/data_preparing/use_py_reader.html)和本文示例，学习如何配置校准数据生成器。
+建议参考[异步数据读取文档](https://www.paddlepaddle.org.cn/documentation/docs/zh/advanced_guide/data_preparing/static_mode/use_py_reader.html)和本文示例，学习如何配置校准数据生成器。
 
 ### 2.4 调用静态离线量化
 
