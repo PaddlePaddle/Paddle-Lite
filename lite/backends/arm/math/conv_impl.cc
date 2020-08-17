@@ -736,6 +736,7 @@ void conv_depthwise_5x5_fp32(const void* din,
   bool flag_relu = param.fuse_relu;
   bool flag_bias = param.bias != nullptr;
   bool ch_four = ch_in > 4 * w_in;
+  bool pads_five = (pad_h < 5) || (pad_w < 5);
   ctx->ExtendWorkspace((w_in + w_out) * sizeof(float));
   bool flag_act = act_param.has_active;
   if (stride == 2) {
@@ -754,7 +755,7 @@ void conv_depthwise_5x5_fp32(const void* din,
                               act_param,
                               ctx);
   } else if (stride == 1) {
-    if (ch_four || h_in < 5 || w_in < 5) {
+    if (ch_four || !pads_five || h_in < 5 || w_in < 5) {
       conv_depthwise_5x5s1_fp32(reinterpret_cast<float*>(dout),
                                 reinterpret_cast<const float*>(din),
                                 reinterpret_cast<const float*>(weights),
