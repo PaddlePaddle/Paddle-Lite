@@ -61,7 +61,8 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     // VLOG(5) << "invoke 5x5 dw conv fp32";
     bool pads_five = (paddings[0] < 5) || (paddings[2] < 5);
     auto strides = param.strides;
-    if (ch_four && pads_five && win >= kw && hin >= kw && (strides[0] == 1 && strides[1] == 1)) {
+    if (ch_four && pads_five && win >= kw && hin >= kw &&
+        (strides[0] == 1 && strides[1] == 1)) {
       flag_trans_weights_ = false;
       impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
 #ifdef LITE_WITH_PROFILE
