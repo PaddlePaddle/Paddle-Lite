@@ -58,9 +58,7 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   for (size_t i = 0; i < axes.size(); i++) {
     begin_index[axes[i]] = starts[i];
-    end_index[axes[i]] = ends[i] > static_cast<int32_t>(input_dims.size())
-                             ? static_cast<int32_t>(input_dims.size())
-                             : ends[i];
+    end_index[axes[i]] = ends[i];
     begin_mask &= ~(1 << axes[i]);
     end_mask &= ~(1 << axes[i]);
   }
