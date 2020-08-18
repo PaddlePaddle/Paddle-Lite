@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/__xpu__conv2d_compute.h"
+#include <string>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -27,64 +28,68 @@ void XPUConv2dCompute::Run() {
 
   auto& input_dims = param.Input->dims();
   auto& filter_dims = param.Filter->dims();
-  int batch         = static_cast<int>(input_dims[0]);
-  int img_c         = static_cast<int>(input_dims[1]);
-  int img_h         = static_cast<int>(input_dims[2]);
-  int img_w         = static_cast<int>(input_dims[3]);
-  int filter_num    = static_cast<int>(filter_dims[0]);
-  int win_h         = static_cast<int>(filter_dims[2]);
-  int win_w         = static_cast<int>(filter_dims[3]);
+  int batch = static_cast<int>(input_dims[0]);
+  int img_c = static_cast<int>(input_dims[1]);
+  int img_h = static_cast<int>(input_dims[2]);
+  int img_w = static_cast<int>(input_dims[3]);
+  int filter_num = static_cast<int>(filter_dims[0]);
+  int win_h = static_cast<int>(filter_dims[2]);
+  int win_w = static_cast<int>(filter_dims[3]);
 
-  auto paddings     = *param.paddings;
-  auto dilations    = *param.dilations;
-  int stride_h      = param.strides[0];
-  int stride_w      = param.strides[1];
-  int paddings_h    = paddings[0];
-  int paddings_w    = paddings[1];
-  int dilations_h   = dilations[0];
-  int dilations_w   = dilations[1];
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+  int stride_h = param.strides[0];
+  int stride_w = param.strides[1];
+  int paddings_h = paddings[0];
+  int paddings_w = paddings[1];
+  int dilations_h = dilations[0];
+  int dilations_w = dilations[1];
 
-  std::string filter_type       = param.filter_type;
-  int act_type                  = param.act_type;
-  int groups                    = param.groups;
+  std::string filter_type = param.filter_type;
+  int groups = param.groups;
 
+  int act_type = (param.act_type == -1) ? xdnn::Activation_t::RELU
+                                        : param.act_type;  // -1 means not init
   const auto* bias = param.Bias ? param.Bias->data<float>() : nullptr;
   const auto* branch = param.Branch ? param.Branch->data<float>() : nullptr;
-  const float* input_max = param.InputMax ? param.InputMax->data<float>() : nullptr;
-  float* output_max = param.OutputMax ? param.OutputMax->mutable_data<float>(TARGET(kXPU)) : nullptr;
+  const float* input_max =
+      param.InputMax ? param.InputMax->data<float>() : nullptr;
+  float* output_max = param.OutputMax
+                          ? param.OutputMax->mutable_data<float>(TARGET(kXPU))
+                          : nullptr;
   float* output = param.Output->mutable_data<float>(TARGET(kXPU));
 
-  // TODO: now support for resnet50 first
-  CHECK(act_type == xdnn::Activation_t::RELU);
-  CHECK(groups == 1);
-  CHECK(filter_type == "int16");
+  // TODO(luohang): now support for resnet50 first
+  CHECK_EQ(act_type, xdnn::Activation_t::RELU);
+  CHECK_EQ(groups, 1);
+  CHECK_EQ(filter_type, "int16");
 
   xdnn::Activation_t act((xdnn::Activation_t::act_enum)act_type);
   int r = xdnn::conv2d_forward_int16<float, int16_t, float, float>(
-      ctx.GetRawContext(),                                      /* context */
-      batch,                                                    /* batch */
-      img_c,                                                    /* input_c */
-      img_h,                                                    /* input_h */
-      img_w,                                                    /* input_w */
-      filter_num,                                               /* num_filter */
-      win_h,                                                    /* kernel_h */
-      win_w,                                                    /* kernel_w */
+      ctx.GetRawContext(),            /* context */
+      batch,                          /* batch */
+      img_c,                          /* input_c */
+      img_h,                          /* input_h */
+      img_w,                          /* input_w */
+      filter_num,                     /* num_filter */
+      win_h,                          /* kernel_h */
+      win_w,                          /* kernel_w */
       stride_h,                       /* stride_h */
       stride_w,                       /* stride_w */
-      paddings_h,                      /* pad_h */
-      paddings_w,                      /* pad_w */
-      dilations_h,                     /* dilation_h */
-      dilations_w,                     /* dilation_w */
-      groups,                                                   /* group */
-      param.Input->data<float>(),                               /* input bottom */
-      param.Filter->data<int16_t>(),                            /* filter weight */
-      output,          /* output top */
-      bias,                                /* bias */
-      branch,                              /* branch */
-      act,                                                 /* act type */
-      input_max,                            /* max_image_ptr */
-      param.FilterMax->data<float>(),                           /* max_filter_ptr */
-      output_max        /* max_result_ptr */);
+      paddings_h,                     /* pad_h */
+      paddings_w,                     /* pad_w */
+      dilations_h,                    /* dilation_h */
+      dilations_w,                    /* dilation_w */
+      groups,                         /* group */
+      param.Input->data<float>(),     /* input bottom */
+      param.Filter->data<int16_t>(),  /* filter weight */
+      output,                         /* output top */
+      bias,                           /* bias */
+      branch,                         /* branch */
+      act,                            /* act type */
+      input_max,                      /* max_image_ptr */
+      param.FilterMax->data<float>(), /* max_filter_ptr */
+      output_max /* max_result_ptr */);
 
   CHECK_EQ(r, 0);
 }

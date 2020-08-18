@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/__xpu__conv2d_op.h"
+#include <memory>
 #include <vector>
 #include "lite/core/op_registry.h"
 #include "lite/operators/conv_op.h"
@@ -21,7 +22,7 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-std::string padding_algorithm_ = "";
+std::string padding_algorithm_ = "";  // NOLINT
 
 bool XPUConv2dOp::CheckShape() const {
   CHECK(param_.Input) << "Input(Input) of ConvXPUOp should not be null.";
@@ -34,11 +35,16 @@ bool XPUConv2dOp::CheckShape() const {
   int groups = param_.groups;
 
   CHECK_EQ(in_dims.size(), 4UL) << "Conv intput should be 4-D tensor.";
-  CHECK_EQ(in_dims.size(), filter_dims.size()) << "Conv input dimension and filter dimension should be the same.";
-  CHECK_EQ(in_dims.size() - param_.strides.size(), 2U) << "Conv input dimension and strides dimension should be consistent.";
+  CHECK_EQ(in_dims.size(), filter_dims.size())
+      << "Conv input dimension and filter dimension should be the same.";
+  CHECK_EQ(in_dims.size() - param_.strides.size(), 2U)
+      << "Conv input dimension and strides dimension should be consistent.";
   CHECK_EQ(filter_dims.size(), 4UL) << "Conv filter should be 4-D tensor.";
-  CHECK_EQ(in_dims[1], filter_dims[1] * groups) << "The number of input channels should be equal to filter channels * groups.";
-  CHECK_EQ(filter_dims[0] % groups, 0) << "The number of output channels should be divided by groups.";
+  CHECK_EQ(in_dims[1], filter_dims[1] * groups)
+      << "The number of input channels should be equal to filter channels * "
+         "groups.";
+  CHECK_EQ(filter_dims[0] % groups, 0)
+      << "The number of output channels should be divided by groups.";
 
   return true;
 }
@@ -63,11 +69,11 @@ bool XPUConv2dOp::InferShapeImpl() const {
   const auto filter_dims = param_.Filter->dims();
 
   operators::UpdatePaddingAndDilation(param_.paddings.get(),
-                           param_.dilations.get(),
-                           param_.strides,
-                           padding_algorithm_,
-                           in_dims,
-                           filter_dims);
+                                      param_.dilations.get(),
+                                      param_.strides,
+                                      padding_algorithm_,
+                                      in_dims,
+                                      filter_dims);
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
   auto paddings = *param_.paddings;
   auto dilations = *param_.dilations;
@@ -91,9 +97,12 @@ bool XPUConv2dOp::InferShapeImpl() const {
 
 bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   AttachParam(&param_);
-  param_.Input = scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
-  param_.Filter = scope->FindVar(op_desc.Input("Filter").front())->GetMutable<Tensor>();
-  param_.FilterMax = scope->FindVar(op_desc.Input("FilterMax").front())->GetMutable<Tensor>();
+  param_.Input =
+      scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
+  param_.Filter =
+      scope->FindVar(op_desc.Input("Filter").front())->GetMutable<Tensor>();
+  param_.FilterMax =
+      scope->FindVar(op_desc.Input("FilterMax").front())->GetMutable<Tensor>();
   auto bias = scope->FindVar(op_desc.Input("Bias").front());
   if (bias != nullptr) {
     param_.Bias = bias->GetMutable<Tensor>();
@@ -101,7 +110,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Branch") !=
-        input_arg_names.end()) {
+      input_arg_names.end()) {
     auto arguments = op_desc.Input("Branch");
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
@@ -112,27 +121,30 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     }
   }
 
-  param_.Output = scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
-  param_.OutputMax = scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
+  param_.Output =
+      scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
+  param_.OutputMax =
+      scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
 
   param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
   auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
   auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
   param_.dilations = std::make_shared<std::vector<int>>(dilations);
   param_.groups = op_desc.GetAttr<int>("groups");
-  if (op_desc.HasAttr("act_type") && op_desc.GetAttr<bool>("act_type")) {
+  if (op_desc.HasAttr("act_type")) {
     param_.act_type = op_desc.GetAttr<int>("act_type");
-  } else {
-    param_.act_type = xdnn::Activation_t::RELU;
   }
-  if (op_desc.HasAttr("filter_type") && op_desc.GetAttr<bool>("filter_type")) {
+
+  if (op_desc.HasAttr("filter_type")) {
     param_.filter_type = op_desc.GetAttr<std::string>("filter_type");
   } else {
     param_.filter_type = "int16";
   }
 
-  if (op_desc.HasAttr("has_input_max") && op_desc.GetAttr<bool>("has_input_max")) {
-    param_.InputMax = scope->FindVar(op_desc.Input("InputMax").front())->GetMutable<Tensor>();
+  if (op_desc.HasAttr("has_input_max") &&
+      op_desc.GetAttr<bool>("has_input_max")) {
+    param_.InputMax =
+        scope->FindVar(op_desc.Input("InputMax").front())->GetMutable<Tensor>();
   }
 
   if (op_desc.HasAttr("padding_algorithm")) {

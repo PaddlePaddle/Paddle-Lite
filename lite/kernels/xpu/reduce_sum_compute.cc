@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/reduce_sum_compute.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -39,12 +40,18 @@ void ReduceSumCompute::Run() {
 
     std::vector<int> idims;
     for (int i = 0; i < x_rank; i++) {
-        idims.push_back(x_dims[i]);
+      idims.push_back(x_dims[i]);
     }
 
     auto type = xdnn::ReduceOp::REDUCE_SUM;
-    int r = xdnn::reduce(ctx.GetRawContext(), input, output,
-              idims.data(), x_rank, reduce_dim.data(), rdim, type);
+    int r = xdnn::reduce(ctx.GetRawContext(),
+                         input,
+                         output,
+                         idims.data(),
+                         x_rank,
+                         reduce_dim.data(),
+                         rdim,
+                         type);
     CHECK_EQ(r, 0);
   }
 }

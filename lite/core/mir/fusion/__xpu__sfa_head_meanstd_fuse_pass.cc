@@ -36,49 +36,54 @@ class XPUSfaHeadMeanstdFuser : public FuseBase {
                                   ->assert_is_op_output("reshape2", "Out")
                                   ->assert_is_op_input("reduce_mean", "X")
                                   ->AsInput();
-    auto* reduce_mean = OpNode("reduce_mean", "reduce_mean")
-                            ->AsIntermediate();
+    auto* reduce_mean = OpNode("reduce_mean", "reduce_mean")->AsIntermediate();
     auto* reduce_mean_out = VarNode("reduce_mean_out")
                                 ->assert_is_op_output("reduce_mean", "Out")
                                 ->assert_is_op_nth_input("concat", "X", 0)
                                 ->assert_is_op_input("elementwise_sub", "Y")
                                 ->AsIntermediate();
-    auto* elementwise_sub = OpNode("elementwise_sub", "elementwise_sub")
-                                ->AsIntermediate();
-    auto* elementwise_sub_out = VarNode("elementwise_sub_out")
-                                    ->assert_is_op_output("elementwise_sub", "Out")
-                                    ->assert_is_op_input("square", "X")
-                                    ->AsIntermediate();
+    auto* elementwise_sub =
+        OpNode("elementwise_sub", "elementwise_sub")->AsIntermediate();
+    auto* elementwise_sub_out =
+        VarNode("elementwise_sub_out")
+            ->assert_is_op_output("elementwise_sub", "Out")
+            ->assert_is_op_input("square", "X")
+            ->AsIntermediate();
     auto* square = OpNode("square", "square")->AsIntermediate();
-    auto* square_out = VarNode("square_out")->assert_is_op_output("square", "Out")
-                                            ->assert_is_op_input("reduce_sum", "X")
-                                            ->AsIntermediate();
+    auto* square_out = VarNode("square_out")
+                           ->assert_is_op_output("square", "Out")
+                           ->assert_is_op_input("reduce_sum", "X")
+                           ->AsIntermediate();
     auto* reduce_sum = OpNode("reduce_sum", "reduce_sum")->AsIntermediate();
     auto* reduce_sum_out = VarNode("reduce_sum_out")
                                ->assert_is_op_output("reduce_sum", "Out")
                                ->assert_is_op_input("elementwise_div", "X")
                                ->AsIntermediate();
-    auto* fill_constant = OpNode("fill_constant", "fill_constant")
-                              ->AsIntermediate();
+    auto* fill_constant =
+        OpNode("fill_constant", "fill_constant")->AsIntermediate();
     auto* fill_constant_out = VarNode("fill_constant_out")
                                   ->assert_is_op_output("fill_constant", "Out")
                                   ->AsIntermediate();
-    auto* elementwise_div = OpNode("elementwise_div", "elementwise_div")
-                                ->AsIntermediate();
-    auto* elementwise_div_out = VarNode("elementwise_div_out")
-                                    ->assert_is_op_output("elementwise_div", "Out")
-                                    ->assert_is_op_input("sqrt", "X")
-                                    ->AsIntermediate();
+    auto* elementwise_div =
+        OpNode("elementwise_div", "elementwise_div")->AsIntermediate();
+    auto* elementwise_div_out =
+        VarNode("elementwise_div_out")
+            ->assert_is_op_output("elementwise_div", "Out")
+            ->assert_is_op_input("sqrt", "X")
+            ->AsIntermediate();
     auto* sqrt = OpNode("sqrt", "sqrt")->AsIntermediate();
-    auto* sqrt_out = VarNode("sqrt_out")->assert_is_op_output("sqrt", "Out")
-                                        ->assert_is_op_nth_input("concat", "X", 1)
-                                        ->AsIntermediate();
+    auto* sqrt_out = VarNode("sqrt_out")
+                         ->assert_is_op_output("sqrt", "Out")
+                         ->assert_is_op_nth_input("concat", "X", 1)
+                         ->AsIntermediate();
     auto* concat = OpNode("concat", "concat")->AsIntermediate();
-    auto* out = VarNode("out")->assert_is_op_output("concat", "Out")
-                              ->AsOutput();
+    auto* out =
+        VarNode("out")->assert_is_op_output("concat", "Out")->AsOutput();
 
-    std::vector<PMNode*> elementwise_sub_inputs{reduce_mean_out, reduce_mean_input};
-    std::vector<PMNode*> elementwise_div_inputs{reduce_sum_out, fill_constant_out};
+    std::vector<PMNode*> elementwise_sub_inputs{reduce_mean_out,
+                                                reduce_mean_input};
+    std::vector<PMNode*> elementwise_div_inputs{reduce_sum_out,
+                                                fill_constant_out};
     std::vector<PMNode*> concat_inputs{reduce_mean_out, sqrt_out};
     *reduce_mean_input >> *reduce_mean >> *reduce_mean_out;
     elementwise_sub_inputs >> *elementwise_sub >> *elementwise_sub_out;
@@ -134,6 +139,7 @@ class XPUSfaHeadMeanstdFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass, paddle::lite::mir::XPUSfaHeadMeanstdFusePass)
+REGISTER_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass,
+                  paddle::lite::mir::XPUSfaHeadMeanstdFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("reduce_mean");
