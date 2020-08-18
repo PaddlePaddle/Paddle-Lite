@@ -177,4 +177,3 @@ REGISTER_LITE_KERNEL(elementwise_mul,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
-

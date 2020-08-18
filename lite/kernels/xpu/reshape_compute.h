@@ -25,7 +25,7 @@ class Reshape2Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ReshapeParam;
 
-  virtual void Run() override {
+  void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     auto x = param.x;
     auto output = param.output;
@@ -36,7 +36,10 @@ class Reshape2Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
     output->ShareDataWith(*x);
     output->Resize(out_dims);
     auto* xshape_data = xshape->mutable_data<int64_t>(TARGET(kXPU));
-    TargetWrapperXPU::MemcpySync(xshape_data, x_dims_data.data(), x_dims.size() * sizeof(int64_t), IoDirection::HtoD);
+    TargetWrapperXPU::MemcpySync(xshape_data,
+                                 x_dims_data.data(),
+                                 x_dims.size() * sizeof(int64_t),
+                                 IoDirection::HtoD);
   }
 
   virtual ~Reshape2Compute() = default;
