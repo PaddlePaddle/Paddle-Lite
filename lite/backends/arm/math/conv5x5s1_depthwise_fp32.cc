@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <arm_neon.h>
-#include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_depthwise.h"
 
 namespace paddle {
