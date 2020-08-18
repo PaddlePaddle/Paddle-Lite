@@ -34,3 +34,5 @@ if (WITH_TESTING)
     endif ()
     lite_cc_test(float16_test SRCS float16_test.cc)
 endif()
+
+lite_cc_binary(test_any SRCS any_test.cc DEPS tensor)
