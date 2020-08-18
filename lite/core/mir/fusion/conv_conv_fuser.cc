@@ -114,10 +114,10 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto channel1_in = weight1_t->dims()[1] * groups1;
   CHECK_EQ(enable0_int8, enable1_int8) << "The Conv compute type must be same";
   CHECK_EQ(groups1, 1) << "The groups of weight1_dim must be 1";
-  CHECK_EQ(channel0_out, channel1_in)
-      << "weight0_dims[0] == weight1_dim[1]";
+  CHECK_EQ(channel0_out, channel1_in) << "weight0_dims[0] == weight1_dim[1]";
   // ic0 x (oc1-oc0) < oc0 x oc1
-  if (channel0_in * (channel1_out - channel0_out) > channel0_out * channel1_out) {
+  if (channel0_in * (channel1_out - channel0_out) >
+      channel0_out * channel1_out) {
     LOG(FATAL) << "it dose not support conv+conv fusion";
   }
   for (int i = 0; i < strides1.size(); i++) {
