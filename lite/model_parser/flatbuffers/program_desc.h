@@ -97,6 +97,7 @@ class ProgramDescView : public ProgramDescAPI {
   }
 };
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
@@ -169,6 +170,7 @@ class ProgramDesc : public ProgramDescAPI {
   proto::ProgramDescT desc_;
   std::vector<std::unique_ptr<BlockDesc>> blocks_;
 };
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

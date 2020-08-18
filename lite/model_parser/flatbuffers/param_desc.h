@@ -106,6 +106,7 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
   proto::CombinedParamsDesc const* desc_;
 };
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 class ParamDesc : public ParamDescAPI {
  public:
   ParamDesc() : owned_(true), desc_(new proto::ParamDescT()) {
@@ -218,6 +219,7 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
   proto::CombinedParamsDescT desc_;
   std::vector<std::unique_ptr<ParamDesc>> params_;
 };
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite
