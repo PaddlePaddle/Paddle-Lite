@@ -384,14 +384,14 @@ struct ActivationParam : ParamBase {
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
     if (!input_tensor_ptrs_cache_) {
-      input_tensor_ptrs_cache_ = new std::vector<const Tensor*>({X});
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X}));
     }
     return input_tensor_ptrs_cache_;
   }
   // get a vector of output tensors
   std::vector<Tensor*>* output_tensor_ptrs() override {
     if (!output_tensor_ptrs_cache_) {
-      output_tensor_ptrs_cache_ = new std::vector<lite::Tensor*>({Out});
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
     }
     return output_tensor_ptrs_cache_;
   }
