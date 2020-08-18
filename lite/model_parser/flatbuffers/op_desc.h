@@ -171,8 +171,15 @@ class OpDescView : public OpDescAPI {
   }
 
   std::vector<std::string> input_vars() const {
-    NotImplemented();
-    return std::vector<std::string>();
+    VLOG(5) << "This function call is expensive.";
+    std::vector<std::string> res;
+    for (const auto& var : *(desc_->inputs())) {
+      if (var && var->arguments()) {
+        res.emplace_back(var->arguments()->begin()->c_str(),
+                         var->arguments()->end()->c_str());
+      }
+    }
+    return res;
   }
 
   std::vector<std::string> output_vars() const {
