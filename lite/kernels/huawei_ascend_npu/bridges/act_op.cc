@@ -49,6 +49,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto act_node = graph->template Add<ActType>(out_name);
   auto act_op = act_node->template data<ActType>();
   act_op->set_input_x(*x_node->data());
+  INPUT_UPDATE(act_op, x, x_node);
+  OUTPUT_UPDATE(act_op, y, act_node);
 
   return SUCCESS;
 }
@@ -84,6 +86,8 @@ int ActConverter<ge::op::LeakyRelu>(void* ctx, OpLite* op, KernelBase* kernel) {
   // only for leaky_relu
   auto alpha = op_info->GetAttr<float>("alpha");
   act_op->set_attr_negative_slope(alpha);
+  INPUT_UPDATE(act_op, x, x_node);
+  OUTPUT_UPDATE(act_op, y, act_node);
 
   return SUCCESS;
 }

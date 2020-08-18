@@ -35,6 +35,7 @@ class DropoutComputeTester : public arena::TestCase {
   bool fix_seed_ = true;
   int seed_ = 1;
   std::string dropout_implementation_ = "downgrade_in_infer";
+  int is_test_ = 1;
 
  public:
   DropoutComputeTester(const Place& place,
@@ -73,11 +74,14 @@ class DropoutComputeTester : public arena::TestCase {
     op_desc->SetType(type_);
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
-    op_desc->SetOutput("Mask", {mask_});
+    if (!is_test_) {
+      op_desc->SetOutput("Mask", {mask_});
+    }
     op_desc->SetAttr("dropout_prob", dropout_prob_);
     op_desc->SetAttr("fix_seed", fix_seed_);
     op_desc->SetAttr("seed", seed_);
     op_desc->SetAttr("dropout_implementation", dropout_implementation_);
+    op_desc->SetAttr("is_test", is_test_);
   }
 
   void PrepareData() override {
@@ -94,6 +98,9 @@ TEST(Dropout, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else

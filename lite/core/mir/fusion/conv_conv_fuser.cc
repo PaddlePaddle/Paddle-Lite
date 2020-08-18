@@ -106,7 +106,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   int kw = weight1_t->dims()[2];
   int kh = weight1_t->dims()[3];
   if (!(kw == 1 && kh == 1)) {
-    return;
+    LOG(FATAL) << "The kernel size of the second conv must be 1x1";
   }
   CHECK_EQ(enable0_int8, enable1_int8) << "The Conv compute type must be same";
   CHECK_EQ(groups1, 1) << "The groups of weight1_dim must be 1";
@@ -140,8 +140,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   //   new_bias = az + b
   ///////////////////////////////////////////////////////////////////////////////
   if (enable0_int8) {
-    LOG(FATAL) << "it doesn't support";
-    return;
+    LOG(FATAL) << "it doesn't support int8";
   } else {
     // compute new conv_weight
     Tensor weight_tensor;

@@ -62,6 +62,9 @@ class Any {
   template <typename T, typename... Args>
   inline void construct(Args&&... args);
 
+  template <typename T>
+  inline bool is_type() const;
+
  private:
   template <typename T>
   class TypeOnHeap;
@@ -212,6 +215,14 @@ inline const std::type_info& Any::type() const {
   } else {
     return typeid(void);
   }
+}
+
+template <typename T>
+inline bool Any::is_type() const {
+  if ((type_ == nullptr) || (*(type_->ptype_info) != typeid(T))) {
+    return false;
+  }
+  return true;
 }
 
 template <typename T>

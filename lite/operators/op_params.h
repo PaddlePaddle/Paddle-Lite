@@ -103,6 +103,8 @@ struct FcParam : ParamBase {
   lite::Tensor* bias{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
+  // original dims of input weight
+  lite::DDim w_dims;
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
@@ -268,6 +270,7 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
   int axis{-1};
+  bool use_cudnn{true};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -359,6 +362,8 @@ struct ActivationParam : ParamBase {
   float hard_swish_offset{3.0};
   // thresholded_relu
   float relu_threshold{1.0f};
+  // elu
+  float Elu_alpha{1.0f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -1296,6 +1301,13 @@ struct ExpandParam : ParamBase {
   std::vector<int> expand_times{};
 };
 
+/// ----------------------- expand as operators ----------------------
+struct ExpandAsParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Target{};
+  lite::Tensor* Out{};
+};
+
 /// ----------------------- matmul operators ----------------------
 struct MatMulParam : ParamBase {
   const lite::Tensor* X{};
@@ -1812,6 +1824,15 @@ struct PrintParam : ParamBase {
   bool print_tensor_layout{true};
   std::string print_phase;
   bool is_forward{true};
+};
+
+struct OneHotParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* depth_tensor{nullptr};
+  lite::Tensor* Out{};
+  int depth;
+  int dtype;
+  bool allow_out_of_range;
 };
 
 }  // namespace operators

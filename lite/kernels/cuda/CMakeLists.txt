@@ -30,7 +30,7 @@ add_kernel(feed_compute_cuda CUDA basic SRCS feed_compute.cc DEPS ${lite_kernel_
 add_kernel(fetch_compute_cuda CUDA basic SRCS fetch_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(scale_compute_cuda CUDA basic SRCS scale_compute.cc DEPS ${lite_kernel_deps} cuda_scale)
 add_kernel(dropout_compute_cuda CUDA basic SRCS dropout_compute.cc DEPS ${lite_kernel_deps} cuda_scale)
-add_kernel(softmax_compute_cuda CUDA basic SRCS softmax_compute.cu DEPS ${lite_kernel_deps})
+add_kernel(softmax_compute_cuda CUDA basic SRCS softmax_compute.cu DEPS ${lite_kernel_deps} ${math_cuda})
 add_kernel(pool_compute_cuda CUDA basic SRCS pool_compute.cu DEPS ${lite_kernel_deps} cudnn_pool)
 add_kernel(bilinear_interp_compute_cuda CUDA basic SRCS bilinear_interp_compute.cu DEPS ${lite_kernel_deps})
 
@@ -38,6 +38,7 @@ add_kernel(bilinear_interp_compute_cuda CUDA basic SRCS bilinear_interp_compute.
 add_kernel(search_seq_depadding_compute_cuda CUDA extra SRCS search_seq_depadding_compute.cu DEPS ${lite_kernel_deps})
 add_kernel(search_grnn_compute_cuda CUDA extra SRCS search_grnn_compute.cu DEPS ${lite_kernel_deps} cuda_gemm ${math_cuda})
 add_kernel(sequence_reverse_compute_cuda CUDA extra SRCS sequence_reverse_compute.cu DEPS ${lite_kernel_deps})
+add_kernel(sequence_reverse_embedding_compute_cuda CUDA extra SRCS sequence_reverse_embedding_compute.cu DEPS ${lite_kernel_deps})
 add_kernel(sequence_pad_compute_cuda CUDA extra SRCS sequence_pad_compute.cu DEPS ${lite_kernel_deps} ${math_cuda})
 add_kernel(sequence_unpad_compute_cuda CUDA extra SRCS sequence_unpad_compute.cu DEPS ${lite_kernel_deps} ${math_cuda})
 add_kernel(sequence_concat_compute_cuda CUDA extra SRCS sequence_concat_compute.cu DEPS ${lite_kernel_deps})

@@ -104,7 +104,7 @@ bool DeviceProgram::LoadFromCacheFile(
 }
 
 bool DeviceProgram::BuildGraphAndCacheToFile(
-    const std::vector<Instruction>& origin_program,
+    RuntimeProgram* origin_program,
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
     const std::vector<std::vector<int64_t>>& origin_idims,
@@ -118,10 +118,14 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Convert all of ops and their input vars and weights to HiAI IR nodes,
   // then added them into the IR graph
   int status = 0;
-  CHECK(!origin_program.empty()) << "no instructions";
   subgraph::huawei_ascend_npu::Graph graph;
   const auto& bridges = subgraph::Registry::Instance();
-  for (auto& inst : origin_program) {
+  CHECK(origin_program)
+      << "[HUAWEI_ASCEND_NPU] The origin program is not initialized!";
+  CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
+      << "[HUAWEI_ASCEND_NPU] No instructions found in the origin program!";
+  const auto& insts = origin_program->instructions(kRootBlockIdx);
+  for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
     op->CheckShape();
@@ -140,7 +144,8 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Collect the input and output nodes of the IR graph
   std::vector<ge::Operator> device_inodes;
   for (size_t i = 0; i < input_names.size(); i++) {
-    CHECK(graph.Has(input_names[i]) && graph.Get(input_names[i])->is_data());
+    CHECK(graph.Has(input_names[i]));
+    CHECK(graph.Get(input_names[i])->is_data());
     device_inodes.push_back(*graph.Get(input_names[i])->data());
   }
   std::vector<ge::Operator> device_onodes;
@@ -215,7 +220,7 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
   CHECK(!model_name_.empty() && model_client_);
   // Query the dimensions of the device input and output tensors if not
   // initialized
-  VLOG(3) << "[HUAWEI_ASCEND_NPU] Sharing buffer with origin tnsors...";
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Sharing buffer with origin tensors...";
   if (device_idims_.empty() || device_odims_.empty()) {
     if (!(model_client_->GetModelIOTensorDim(&device_idims_, &device_odims_))) {
       LOG(WARNING)
@@ -236,32 +241,18 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Inputs[" << i
             << "] name: " << input_names[i]
             << " origin dims:" << (*origin_itensors)[i]->dims().repr()
-            << " device dims: {" << device_idims_[i].GetNumber() << ","
-            << device_idims_[i].GetChannel() << ","
-            << device_idims_[i].GetHeight() << ","
-            << device_idims_[i].GetWidth() << "}";
+            << " device dims:" << device_idims_[i].repr();
     CHECK_EQ((*origin_itensors)[i]->dims().production(),
-             device_idims_[i].GetNumber() * device_idims_[i].GetChannel() *
-                 device_idims_[i].GetHeight() * device_idims_[i].GetWidth());
+             device_idims_[i].production());
 
     // reset tensor desc
-    if ((*device_itensors)[i]->SetTensorDesc(
-            device_idims_[i].GetGeTensorDesc()) != ge::GRAPH_SUCCESS) {
-      LOG(WARNING) << "[HUAWEI_ASCEND_NPU] ge::Tensor input tensor "
-                      "SetTensorDesc failed!";
-    } else {
-      VLOG(3) << "[HUAWEI_ASCEND_NPU] ge::Tensor input tensor SetTensorDesc "
-                 "success.";
-    }
+    ATC_CALL((*device_itensors)[i]->SetTensorDesc(
+        device_idims_[i].GetGeTensorDesc()));
     // copy data from origin to device
-    if ((*device_itensors)[i]->SetData(
-            reinterpret_cast<uint8_t*>((*origin_itensors)[i]->raw_data()),
-            (*origin_itensors)[i]->memory_size()) != ge::GRAPH_SUCCESS) {
-      LOG(WARNING)
-          << "[HUAWEI_ASCEND_NPU] ge::Tensor input tensor SetData failed!";
-    } else {
-      VLOG(3) << "[HUAWEI_ASCEND_NPU] ge::Tensor input tensor SetData success.";
-    }
+    ATC_CALL((*device_itensors)[i]->SetData(
+        reinterpret_cast<uint8_t*>((*origin_itensors)[i]->raw_data()),
+        (*origin_itensors)[i]->memory_size()));
+
     VLOG(3)
         << "[HUAWEI_ASCEND_NPU] Init the input tensors for the device program "
            "and share their buffers with the origin input tensors";
@@ -280,26 +271,13 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Outputs[" << i
             << "] name: " << output_names[i]
             << " origin dims:" << (*origin_otensors)[i]->dims().repr()
-            << " device dims: {" << device_odims_[i].GetNumber() << ","
-            << device_odims_[i].GetChannel() << ","
-            << device_odims_[i].GetHeight() << ","
-            << device_odims_[i].GetWidth() << "}";
+            << " device dims:" << device_odims_[i].repr();
     CHECK_EQ((*origin_otensors)[i]->dims().production(),
-             device_odims_[i].GetNumber() * device_odims_[i].GetChannel() *
-                 device_odims_[i].GetHeight() * device_odims_[i].GetWidth());
+             device_odims_[i].production());
 
     // reset tensor desc
-    if ((*device_otensors)[i]->SetTensorDesc(
-            device_odims_[i].GetGeTensorDesc()) != ge::GRAPH_SUCCESS) {
-      LOG(WARNING) << "[HUAWEI_ASCEND_NPU] ge::Tensor output tensor "
-                      "SetTensorDesc failed!";
-    } else {
-      VLOG(3) << "[HUAWEI_ASCEND_NPU] ge::Tensor output tensor SetTensorDesc "
-                 "success.";
-    }
-    VLOG(3)
-        << "[HUAWEI_ASCEND_NPU] Init the output tensors for the device program "
-           "and share their buffers with the origin output tensors";
+    ATC_CALL((*device_otensors)[i]->SetTensorDesc(
+        device_odims_[i].GetGeTensorDesc()));
   }
   return true;
 }
@@ -316,8 +294,7 @@ bool DeviceProgram::SharedBufferWithOutputTensors(
 
   for (size_t i = 0; i < output_names.size(); i++) {
     CHECK_EQ((*origin_otensors)[i]->dims().production(),
-             device_odims_[i].GetNumber() * device_odims_[i].GetChannel() *
-                 device_odims_[i].GetHeight() * device_odims_[i].GetWidth());
+             device_odims_[i].production());
 
     // Share data buf between device_itensor and origin_itensor
     std::shared_ptr<Buffer> buffer = std::make_shared<Buffer>(
@@ -327,8 +304,6 @@ bool DeviceProgram::SharedBufferWithOutputTensors(
     (*origin_otensors)[i]->ResetBuffer(buffer,
                                        (*device_otensors)[i]->GetSize());
   }
-  // unload model after model execution
-  CHECK_EQ(model_client_->UnloadModel(), true);
   return true;
 }
 
@@ -379,7 +354,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
         ctx_->As<HuaweiAscendNPUContext>().SubgraphModelCacheDir();
     auto device_id = ctx_->As<HuaweiAscendNPUContext>().HuaweiAscendDeviceID();
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Get model cached dir: " << model_cache_dir;
-
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Get huawei ascend npu device id: "
+            << device_id;
     // Check and load if the cached model and configuration file exists
     if (model_cache_dir.empty() ||
         !device_program->LoadFromCacheFile(input_names_,
@@ -390,11 +366,14 @@ bool SubgraphEngine::BuildDeviceProgram() {
       // Build the model online, including converting the paddle ops to the HiAI
       // IR nodes, building the HiAI IR graph to the om model, then load it as a
       // new HiAI model manager client for inference.
-      if (origin_program_.empty()) {
+      if (!origin_program_) {
         BuildOriginProgram();
       }
-      CHECK(!origin_program_.empty()) << "no instructions";
-      if (!device_program->BuildGraphAndCacheToFile(origin_program_,
+      CHECK(origin_program_)
+          << "[HUAWEI_ASCEND_NPU] The origin program is not initialized!";
+      CHECK_GT(origin_program_->instructions().size(), 0)
+          << "[HUAWEI_ASCEND_NPU] No instructions found in the origin program!";
+      if (!device_program->BuildGraphAndCacheToFile(origin_program_.get(),
                                                     input_names_,
                                                     output_names_,
                                                     origin_idims_,
@@ -443,11 +422,11 @@ bool SubgraphEngine::LaunchDeviceProgram() {
 void SubgraphCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   engine_.reset(new SubgraphEngine(ctx_.get(),
-                                   param.sub_block_idx,
-                                   param.sub_block_desc,
+                                   param.block_idx,
+                                   param.program_desc,
+                                   param.exec_scope,
                                    param.input_data_names,
-                                   param.output_data_names,
-                                   param.scope));
+                                   param.output_data_names));
   CHECK(engine_);
 }
 

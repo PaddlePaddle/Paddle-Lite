@@ -37,19 +37,29 @@ class Node {
     kData,
   };
 
-  Node(std::shared_ptr<ge::Operator> data,
+  Node(std::string name,
+       std::shared_ptr<ge::Operator> data,
        PrecisionType precision,
        DataLayoutType layout,
        Role role)
-      : data_(data), precision_(precision), layout_(layout), role_(role) {}
-  Node(PrecisionType precision, DataLayoutType layout, Role role)
-      : precision_(precision), layout_(layout), role_(role) {}
+      : name_(name),
+        data_(data),
+        precision_(precision),
+        layout_(layout),
+        role_(role) {}
+  Node(std::string name,
+       PrecisionType precision,
+       DataLayoutType layout,
+       Role role)
+      : name_(name), precision_(precision), layout_(layout), role_(role) {}
 
+  void set_name(std::string name) { name_ = name; }
   void set_data(std::shared_ptr<ge::Operator> data) { data_ = data; }
   void set_precision(PrecisionType precision) { precision_ = precision; }
   void set_layout(DataLayoutType layout) { layout_ = layout; }
   void set_role(Role role) { role_ = role; }
 
+  std::string name() { return name_; }
   template <typename T>
   std::shared_ptr<T> data() {
     return std::static_pointer_cast<T>(data_);
@@ -62,6 +72,7 @@ class Node {
   bool is_data() const { return role_ == Role::kData; }
 
  private:
+  std::string name_{};
   std::shared_ptr<ge::Operator> data_{nullptr};
   PrecisionType precision_{PRECISION(kFloat)};
   DataLayoutType layout_{DATALAYOUT(kNCHW)};
@@ -83,10 +94,10 @@ class Graph {
     } else if (typeid(T) == typeid(ge::op::Data)) {
       role = Node::Role::kData;
     }
-    auto node = std::make_shared<Node>(precision, layout, role);
+    auto node = std::make_shared<Node>(name, precision, layout, role);
     auto idx = Add(name, node);
     CHECK_GE(idx, 1);
-    // Generate a unique name for the created HiAI IR
+    // Generate a unique name for the created Huawei Ascend NPU IR
     node->set_data(
         std::make_shared<T>(name + "__" + paddle::lite::to_string(idx)));
     return node;

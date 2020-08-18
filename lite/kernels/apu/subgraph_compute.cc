@@ -29,6 +29,10 @@ namespace kernels {
 namespace apu {
 
 bool SubgraphEngine::BuildDeviceProgram() {
+  if (!origin_program_) {
+    BuildOriginProgram();
+  }
+
   unsigned int version;
   Neuron_getVersion(&version);
   VLOG(3) << "Neuron Adapter version: " << version;
@@ -46,9 +50,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
 
   // Convert all of ops and their input vars and weights and added into the APU
   // NIR graph
-  if (!origin_program_) {
-    BuildOriginProgram();
-  }
   const auto& bridges = subgraph::Registry::Instance();
   const auto& insts = origin_program_->instructions(kRootBlockIdx);
   for (auto& inst : insts) {

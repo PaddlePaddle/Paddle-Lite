@@ -34,6 +34,7 @@ add_operator(fake_quant extra SRCS fake_quantize_moving_avg_max_abs.cc DEPS ${op
 add_operator(fake_dequant extra SRCS fake_dequantize_max_abs.cc DEPS ${op_DEPS})
 add_operator(conv_transpose_op basic SRCS conv_transpose_op.cc DEPS ${op_DEPS})
 add_operator(expand_op_lite basic SRCS expand_op.cc DEPS ${op_DEPS})
+add_operator(expand_as_op_lite basic SRCS expand_as_op.cc DEPS ${op_DEPS})
 add_operator(squeeze_op_lite basic SRCS squeeze_op.cc DEPS ${op_DEPS})
 add_operator(unsqueeze_op_lite basic SRCS unsqueeze_op.cc DEPS ${op_DEPS})
 add_operator(stack_op basic SRCS stack_op.cc DEPS ${op_DEPS})
@@ -99,6 +100,7 @@ add_operator(sequence_reverse_op_lite extra SRCS sequence_reverse_op.cc DEPS ${o
 add_operator(sequence_pool extra SRCS sequence_pool_op.cc DEPS ${op_DEPS})
 add_operator(sequence_conv extra SRCS sequence_conv_op.cc DEPS ${op_DEPS})
 add_operator(sequence_pool_concat extra SRCS sequence_pool_concat_op.cc DEPS ${op_DEPS})
+add_operator(sequence_reverse_embedding_op_lite extra SRCS sequence_reverse_embedding_op.cc DEPS ${op_DEPS})
 add_operator(reduce_sum_op_lite extra SRCS reduce_ops.cc DEPS ${op_DEPS})
 add_operator(match_matrix_tensor_op_lite extra SRCS match_matrix_tensor_op.cc DEPS ${op_DEPS})
 add_operator(search_seq_depadding_op_lite extra SRCS search_seq_depadding_op.cc DEPS ${op_DEPS})
@@ -146,6 +148,7 @@ add_operator(layer_norm_op extra SRCS layer_norm_op.cc DEPS ${op_DEPS})
 add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEPS})
 add_operator(retinanet_detection_output_op extra SRCS retinanet_detection_output_op.cc DEPS ${op_DEPS})
 add_operator(where_index_op extra SRCS where_index_op.cc DEPS ${op_DEPS})
+add_operator(one_hot_op extra SRCS one_hot_op.cc DEPS ${op_DEPS})
 # for content-dnn specific
 add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc DEPS ${op_DEPS})
 add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
@@ -174,7 +177,7 @@ add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__resnet_cbam_op extra SRCS __xpu__resnet_cbam_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__search_attention_op extra SRCS __xpu__search_attention_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__mmdnn_op extra SRCS __xpu__mmdnn_op.cc DEPS ${op_DEPS})
-
+lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS one_hot_op memory scope ${op_deps} one_hot_compute_host)
 if (NOT LITE_WITH_X86)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc
                 DEPS fc_op memory

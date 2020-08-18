@@ -23,8 +23,11 @@ namespace lite {
 namespace mir {
 
 void SequencePoolConcatFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::SequencePoolConcatFuser fuser;
+  fusion::SequencePool7ConcatFuser fuser;
   fuser(graph.get());
+
+  fusion::SequencePool2ConcatFuser fuser2;
+  fuser2(graph.get());
 }
 
 }  // namespace mir

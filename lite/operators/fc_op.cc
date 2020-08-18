@@ -50,9 +50,15 @@ bool FcOpLite::CheckShape() const {
 
 bool FcOpLite::InferShapeImpl() const {
   const auto& input_dims = param_.input->dims();
-  const auto& w_dims = param_.w->dims();
+  int64_t w_dims_1;
+  if (param_.w_dims.empty()) {
+    const auto& w_dims = param_.w->dims();
+    w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
+  } else {
+    const auto& w_dims = param_.w_dims;
+    w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
+  }
   int in_num_col_dims = param_.in_num_col_dims;
-  int64_t w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
 
   // Set output dims
   std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
@@ -77,6 +83,7 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
   param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
   param_.w = scope->FindVar(W)->GetMutable<lite::Tensor>();
+  param_.w_dims = param_.w->dims();
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=
       input_arg_names.end()) {

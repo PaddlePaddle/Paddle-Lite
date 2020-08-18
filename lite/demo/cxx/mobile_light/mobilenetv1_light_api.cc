@@ -92,6 +92,7 @@ void RunModel(std::string model_dir,
   if (is_opencl_backend_valid) {
     // give opencl nb model dir
     config.set_model_from_file(model_dir);
+    config.set_opencl_tune(false); // default is false
   } else {
     std::cout << "Unsupport opencl nb model." << std::endl;
     exit(1);

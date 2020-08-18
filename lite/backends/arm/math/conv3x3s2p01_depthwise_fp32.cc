@@ -20,61 +20,117 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-void conv_depthwise_3x3s2p0_bias(float* dout,
-                                 const float* din,
-                                 const float* weights,
-                                 const float* bias,
-                                 bool flag_bias,
-                                 const int num,
-                                 const int ch_in,
-                                 const int h_in,
-                                 const int w_in,
-                                 const int h_out,
-                                 const int w_out,
-                                 const operators::ActivationParam act_param,
-                                 ARMContext* ctx);
+void conv_depthwise_3x3s2p0_bias_relu6(float* dout,
+                                       const float* din,
+                                       const float* weights,
+                                       const float* bias,
+                                       const float* six,
+                                       bool flag_bias,
+                                       const int num,
+                                       const int ch_in,
+                                       const int h_in,
+                                       const int w_in,
+                                       const int h_out,
+                                       const int w_out,
+                                       ARMContext* ctx);
 
-void conv_depthwise_3x3s2p0_bias_s(float* dout,
-                                   const float* din,
-                                   const float* weights,
-                                   const float* bias,
-                                   bool flag_bias,
-                                   const int num,
-                                   const int ch_in,
-                                   const int h_in,
-                                   const int w_in,
-                                   const int h_out,
-                                   const int w_out,
-                                   const operators::ActivationParam act_param,
-                                   ARMContext* ctx);
+void conv_depthwise_3x3s2p0_bias_leakyRelu(float* dout,
+                                           const float* din,
+                                           const float* weights,
+                                           const float* bias,
+                                           const float* scale,
+                                           bool flag_bias,
+                                           const int num,
+                                           const int ch_in,
+                                           const int h_in,
+                                           const int w_in,
+                                           const int h_out,
+                                           const int w_out,
+                                           ARMContext* ctx);
 
-void conv_depthwise_3x3s2p1_bias(float* dout,
-                                 const float* din,
-                                 const float* weights,
-                                 const float* bias,
-                                 bool flag_bias,
-                                 const int num,
-                                 const int ch_in,
-                                 const int h_in,
-                                 const int w_in,
-                                 const int h_out,
-                                 const int w_out,
-                                 const operators::ActivationParam act_param,
-                                 ARMContext* ctx);
+void conv_depthwise_3x3s2p0_bias_s_relu6(float* dout,
+                                         const float* din,
+                                         const float* weights,
+                                         const float* bias,
+                                         const float* six,
+                                         bool flag_bias,
+                                         const int num,
+                                         const int ch_in,
+                                         const int h_in,
+                                         const int w_in,
+                                         const int h_out,
+                                         const int w_out,
+                                         ARMContext* ctx);
 
-void conv_depthwise_3x3s2p1_bias_s(float* dout,
-                                   const float* din,
-                                   const float* weights,
-                                   const float* bias,
-                                   bool flag_bias,
-                                   const int num,
-                                   const int ch_in,
-                                   const int h_in,
-                                   const int w_in,
-                                   const int h_out,
-                                   const int w_out,
-                                   const operators::ActivationParam act_param,
-                                   ARMContext* ctx);
+void conv_depthwise_3x3s2p0_bias_s_leakyRelu(float* dout,
+                                             const float* din,
+                                             const float* weights,
+                                             const float* bias,
+                                             const float* scale,
+                                             bool flag_bias,
+                                             const int num,
+                                             const int ch_in,
+                                             const int h_in,
+                                             const int w_in,
+                                             const int h_out,
+                                             const int w_out,
+                                             ARMContext* ctx);
+
+void conv_depthwise_3x3s2p1_bias_relu6(float* dout,
+                                       const float* din,
+                                       const float* weights,
+                                       const float* bias,
+                                       const float* six,
+                                       bool flag_bias,
+                                       const int num,
+                                       const int ch_in,
+                                       const int h_in,
+                                       const int w_in,
+                                       const int h_out,
+                                       const int w_out,
+                                       ARMContext* ctx);
+
+void conv_depthwise_3x3s2p1_bias_leakyRelu(float* dout,
+                                           const float* din,
+                                           const float* weights,
+                                           const float* bias,
+                                           const float* scale,
+                                           bool flag_bias,
+                                           const int num,
+                                           const int ch_in,
+                                           const int h_in,
+                                           const int w_in,
+                                           const int h_out,
+                                           const int w_out,
+                                           ARMContext* ctx);
+
+void conv_depthwise_3x3s2p1_bias_s_relu6(float* dout,
+                                         const float* din,
+                                         const float* weights,
+                                         const float* bias,
+                                         const float* six,
+                                         bool flag_bias,
+                                         const int num,
+                                         const int ch_in,
+                                         const int h_in,
+                                         const int w_in,
+                                         const int h_out,
+                                         const int w_out,
+                                         ARMContext* ctx);
+
+void conv_depthwise_3x3s2p1_bias_s_leakyRelu(float* dout,
+                                             const float* din,
+                                             const float* weights,
+                                             const float* bias,
+                                             const float* scale,
+                                             bool flag_bias,
+                                             const int num,
+                                             const int ch_in,
+                                             const int h_in,
+                                             const int w_in,
+                                             const int h_out,
+                                             const int w_out,
+                                             ARMContext* ctx);
 
 void conv_depthwise_3x3s2_fp32(const float* din,
                                float* dout,
@@ -92,142 +148,275 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                const operators::ActivationParam act_param,
                                ARMContext* ctx) {
   bool has_active = act_param.has_active;
-  bool flag_relu = false;
-  bool relu6 = false;
+  auto act_type = act_param.active_type;
+  float tmp = act_param.Relu_clipped_coef;
+  float ss = act_param.Leaky_relu_alpha;
+  float vsix[4] = {tmp, tmp, tmp, tmp};
+  float vscale[4] = {ss, ss, ss, ss};
   if (has_active) {
-    if (act_param.active_type == lite_api::ActivationType::kRelu) {
-      flag_relu = true;
-    } else {
-      relu6 = true;
+    switch (act_type) {
+      case lite_api::ActivationType::kRelu:
+        if (pad == 0) {
+          if (w_in > 8) {
+            conv_depthwise_3x3s2p0_bias_relu(dout,
+                                             din,
+                                             weights,
+                                             bias,
+                                             flag_bias,
+                                             true,
+                                             num,
+                                             ch_in,
+                                             h_in,
+                                             w_in,
+                                             h_out,
+                                             w_out,
+                                             ctx);
+          } else {
+            conv_depthwise_3x3s2p0_bias_s_relu(dout,
+                                               din,
+                                               weights,
+                                               bias,
+                                               flag_bias,
+                                               true,
+                                               num,
+                                               ch_in,
+                                               h_in,
+                                               w_in,
+                                               h_out,
+                                               w_out,
+                                               ctx);
+          }
+        }
+        if (pad == 1) {
+          if (w_in > 7) {
+            conv_depthwise_3x3s2p1_bias_relu(dout,
+                                             din,
+                                             weights,
+                                             bias,
+                                             flag_bias,
+                                             true,
+                                             num,
+                                             ch_in,
+                                             h_in,
+                                             w_in,
+                                             h_out,
+                                             w_out,
+                                             ctx);
+          } else {
+            conv_depthwise_3x3s2p1_bias_s_relu(dout,
+                                               din,
+                                               weights,
+                                               bias,
+                                               flag_bias,
+                                               true,
+                                               num,
+                                               ch_in,
+                                               h_in,
+                                               w_in,
+                                               h_out,
+                                               w_out,
+                                               ctx);
+          }
+        }
+        break;
+      case lite_api::ActivationType::kRelu6:
+        if (pad == 0) {
+          if (w_in > 8) {
+            conv_depthwise_3x3s2p0_bias_relu6(dout,
+                                              din,
+                                              weights,
+                                              bias,
+                                              vsix,
+                                              flag_bias,
+                                              num,
+                                              ch_in,
+                                              h_in,
+                                              w_in,
+                                              h_out,
+                                              w_out,
+                                              ctx);
+          } else {
+            conv_depthwise_3x3s2p0_bias_s_relu6(dout,
+                                                din,
+                                                weights,
+                                                bias,
+                                                vsix,
+                                                flag_bias,
+                                                num,
+                                                ch_in,
+                                                h_in,
+                                                w_in,
+                                                h_out,
+                                                w_out,
+                                                ctx);
+          }
+        }
+        if (pad == 1) {
+          if (w_in > 7) {
+            conv_depthwise_3x3s2p1_bias_relu6(dout,
+                                              din,
+                                              weights,
+                                              bias,
+                                              vsix,
+                                              flag_bias,
+                                              num,
+                                              ch_in,
+                                              h_in,
+                                              w_in,
+                                              h_out,
+                                              w_out,
+                                              ctx);
+          } else {
+            conv_depthwise_3x3s2p1_bias_s_relu6(dout,
+                                                din,
+                                                weights,
+                                                bias,
+                                                vsix,
+                                                flag_bias,
+                                                num,
+                                                ch_in,
+                                                h_in,
+                                                w_in,
+                                                h_out,
+                                                w_out,
+                                                ctx);
+          }
+        }
+        break;
+      case lite_api::ActivationType::kLeakyRelu:
+        if (pad == 0) {
+          if (w_in > 8) {
+            conv_depthwise_3x3s2p0_bias_leakyRelu(dout,
+                                                  din,
+                                                  weights,
+                                                  bias,
+                                                  vscale,
+                                                  flag_bias,
+                                                  num,
+                                                  ch_in,
+                                                  h_in,
+                                                  w_in,
+                                                  h_out,
+                                                  w_out,
+                                                  ctx);
+          } else {
+            conv_depthwise_3x3s2p0_bias_s_leakyRelu(dout,
+                                                    din,
+                                                    weights,
+                                                    bias,
+                                                    vscale,
+                                                    flag_bias,
+                                                    num,
+                                                    ch_in,
+                                                    h_in,
+                                                    w_in,
+                                                    h_out,
+                                                    w_out,
+                                                    ctx);
+          }
+        }
+        if (pad == 1) {
+          if (w_in > 7) {
+            conv_depthwise_3x3s2p1_bias_leakyRelu(dout,
+                                                  din,
+                                                  weights,
+                                                  bias,
+                                                  vscale,
+                                                  flag_bias,
+                                                  num,
+                                                  ch_in,
+                                                  h_in,
+                                                  w_in,
+                                                  h_out,
+                                                  w_out,
+                                                  ctx);
+          } else {
+            conv_depthwise_3x3s2p1_bias_s_leakyRelu(dout,
+                                                    din,
+                                                    weights,
+                                                    bias,
+                                                    vscale,
+                                                    flag_bias,
+                                                    num,
+                                                    ch_in,
+                                                    h_in,
+                                                    w_in,
+                                                    h_out,
+                                                    w_out,
+                                                    ctx);
+          }
+        }
+        break;
+      default:
+        LOG(FATAL) << "this act_type: " << static_cast<int>(act_type)
+                   << " fuse not support";
     }
-  }
-  if (pad == 0) {
-    if (w_in > 8) {
-      if (relu6) {
-        conv_depthwise_3x3s2p0_bias(dout,
-                                    din,
-                                    weights,
-                                    bias,
-                                    flag_bias,
-                                    num,
-                                    ch_in,
-                                    h_in,
-                                    w_in,
-                                    h_out,
-                                    w_out,
-                                    act_param,
-                                    ctx);
+  } else {
+    if (pad == 0) {
+      if (w_in > 8) {
+        conv_depthwise_3x3s2p0_bias_no_relu(dout,
+                                            din,
+                                            weights,
+                                            bias,
+                                            flag_bias,
+                                            false,
+                                            num,
+                                            ch_in,
+                                            h_in,
+                                            w_in,
+                                            h_out,
+                                            w_out,
+                                            ctx);
       } else {
-        conv_depthwise_3x3s2p0_bias_relu(dout,
-                                         din,
-                                         weights,
-                                         bias,
-                                         flag_bias,
-                                         flag_relu,
-                                         num,
-                                         ch_in,
-                                         h_in,
-                                         w_in,
-                                         h_out,
-                                         w_out,
-                                         ctx);
-      }
-    } else {
-      if (relu6) {
-        conv_depthwise_3x3s2p0_bias_s(dout,
-                                      din,
-                                      weights,
-                                      bias,
-                                      flag_bias,
-                                      num,
-                                      ch_in,
-                                      h_in,
-                                      w_in,
-                                      h_out,
-                                      w_out,
-                                      act_param,
-                                      ctx);
-      } else {
-        conv_depthwise_3x3s2p0_bias_s_relu(dout,
-                                           din,
-                                           weights,
-                                           bias,
-                                           flag_bias,
-                                           flag_relu,
-                                           num,
-                                           ch_in,
-                                           h_in,
-                                           w_in,
-                                           h_out,
-                                           w_out,
-                                           ctx);
+        conv_depthwise_3x3s2p0_bias_s_no_relu(dout,
+                                              din,
+                                              weights,
+                                              bias,
+                                              flag_bias,
+                                              false,
+                                              num,
+                                              ch_in,
+                                              h_in,
+                                              w_in,
+                                              h_out,
+                                              w_out,
+                                              ctx);
       }
     }
-  }
-  if (pad == 1) {
-    if (w_in > 7) {
-      if (relu6) {
-        conv_depthwise_3x3s2p1_bias(dout,
-                                    din,
-                                    weights,
-                                    bias,
-                                    flag_bias,
-                                    num,
-                                    ch_in,
-                                    h_in,
-                                    w_in,
-                                    h_out,
-                                    w_out,
-                                    act_param,
-                                    ctx);
+    if (pad == 1) {
+      if (w_in > 7) {
+        conv_depthwise_3x3s2p1_bias_no_relu(dout,
+                                            din,
+                                            weights,
+                                            bias,
+                                            flag_bias,
+                                            false,
+                                            num,
+                                            ch_in,
+                                            h_in,
+                                            w_in,
+                                            h_out,
+                                            w_out,
+                                            ctx);
       } else {
-        conv_depthwise_3x3s2p1_bias_relu(dout,
-                                         din,
-                                         weights,
-                                         bias,
-                                         flag_bias,
-                                         flag_relu,
-                                         num,
-                                         ch_in,
-                                         h_in,
-                                         w_in,
-                                         h_out,
-                                         w_out,
-                                         ctx);
-      }
-    } else {
-      if (relu6) {
-        conv_depthwise_3x3s2p1_bias_s(dout,
-                                      din,
-                                      weights,
-                                      bias,
-                                      flag_bias,
-                                      num,
-                                      ch_in,
-                                      h_in,
-                                      w_in,
-                                      h_out,
-                                      w_out,
-                                      act_param,
-                                      ctx);
-      } else {
-        conv_depthwise_3x3s2p1_bias_s_relu(dout,
-                                           din,
-                                           weights,
-                                           bias,
-                                           flag_bias,
-                                           flag_relu,
-                                           num,
-                                           ch_in,
-                                           h_in,
-                                           w_in,
-                                           h_out,
-                                           w_out,
-                                           ctx);
+        conv_depthwise_3x3s2p1_bias_s_no_relu(dout,
+                                              din,
+                                              weights,
+                                              bias,
+                                              flag_bias,
+                                              false,
+                                              num,
+                                              ch_in,
+                                              h_in,
+                                              w_in,
+                                              h_out,
+                                              w_out,
+                                              ctx);
       }
     }
   }
 }
+// clang-format off
 #ifdef __aarch64__
 #define INIT_S2                                  \
   "prfm pldl1keep, [%[inptr0]]             \n"   \
@@ -746,6 +935,18 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "fmax v4.4s, v4.4s, v9.4s                       \n" \
                                                       \
   "st1 {v4.4s}, [%[out]]                          \n"
+#define RESULT_S_S2_RELU6                             \
+  "fadd v4.4s, v4.4s, %[bias].4s                  \n" \
+  "fmax v4.4s, v4.4s, v9.4s                       \n" \
+  "fmin v4.4s, v4.4s, %[vsix].4s                  \n" \
+                                                      \
+  "st1 {v4.4s}, [%[out]]                          \n"
+#define RESULT_S_S2_LEAKY_RELU                        \
+  "fadd v4.4s, v4.4s, %[bias].4s                  \n" \
+  "fcmge v11.4s, v4.4s, %[vzero].4s \n"/* vcgeq_u32 */\
+  "fmul v12.4s, v4.4s, %[vscale].4s                \n"\
+  "bif  v4.16b, v12.16b, v11.16b \n" /* choose*/      \
+  "st1 {v4.4s}, [%[out]]                          \n"
 #define COMPUTE_S_S2_P0                                \
   "movi v9.4s, #0                                 \n"  \
   "ld1  {v6.4s, v7.4s}, [%[mask_ptr]], #32        \n"  \
@@ -785,6 +986,15 @@ void conv_depthwise_3x3s2_fp32(const float* din,
 #define RESULT_S_S2_P0_RELU                           \
   "fmax v4.4s, v4.4s, v9.4s                       \n" \
   "st1 {v4.4s}, [%[out]]                          \n"
+#define RESULT_S_S2_P0_RELU6                          \
+  "fmax v4.4s, v4.4s, v9.4s                       \n" \
+  "fmin v4.4s, v4.4s, %[vsix].4s                  \n" \
+  "st1 {v4.4s}, [%[out]]                          \n"
+#define RESULT_S_S2_P0_LEAKY_RELU                      \
+  "fcmge v11.4s, v4.4s, %[vzero].4s \n"/* vcgeq_u32 */\
+  "fmul v12.4s, v4.4s, %[vscale].4s                \n"\
+  "bif  v4.16b, v12.16b, v11.16b \n" /* choose*/      \
+  "st1 {v4.4s}, [%[out]]                          \n"
 
 #else
 #define INIT_S2                                                     \
@@ -822,14 +1032,13 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "vmla.f32 q5, q15, %f[wr2][0]                   @ mul weight 1, out1\n" \
   "vmla.f32 q3,  q8, %e[wr2][0]                   @ mul weight 1, out1\n" \
                                                                           \
-  "vld2.32  {d28-d31}, [%[din2_ptr]]!             @ load din r1\n"        \
-                                                                          \
-  "vadd.f32 q3, q3, q4                            @ add \n"               \
-  "vadd.f32 q3, q3, q5                            @ add \n"
+  "vld2.32  {d28-d31}, [%[din2_ptr]]!             @ load din r1\n"
 
-#define LEFT_RESULT_S2                                \
-  "vst1.32 {d6-d7}, [%[outptr]]!                  \n" \
-  "cmp %[cnt], #1                                 \n" \
+#define LEFT_RESULT_S2                                     \
+  "vadd.f32 q3, q3, q4                            @ add \n"\
+  "vadd.f32 q3, q3, q5                            @ add \n"\
+  "vst1.32 {d6-d7}, [%[outptr]]!                  \n"      \
+  "cmp %[cnt], #1                                 \n"      \
   "blt 1f                                         \n"
 
 #define MID_COMPUTE_S2                                                    \
@@ -860,12 +1069,11 @@ void conv_depthwise_3x3s2_fp32(const float* din,
   "vmla.f32 q5, q15, %e[wr2][1]                   @ mul weight 2, out0\n" \
   "vmla.f32 q3,  q6, %f[wr2][0]                   @ mul weight 2, out0\n" \
                                                                           \
-  "vld2.32  {d28-d31}, [%[din2_ptr]]!             @ load din r2\n"        \
-                                                                          \
-  "vadd.f32 q3, q3, q4                            @ add \n"               \
-  "vadd.f32 q3, q3, q5                            @ add \n"
+  "vld2.32  {d28-d31}, [%[din2_ptr]]!             @ load din r2\n"
 
 #define MID_RESULT_S2                                 \
+  "vadd.f32 q3, q3, q4                       @ add \n"\
+  "vadd.f32 q3, q3, q5                       @ add \n"\
   "subs %[cnt], #1                                \n" \
                                                       \
   "vst1.32 {d6-d7}, [%[outptr]]!                  \n" \
@@ -910,36 +1118,104 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                                             \
   "vmla.f32 q4, q14, %e[wr2][0]                   @ mul weight 2, out0\n"   \
   "vmla.f32 q5, q15, %e[wr2][1]                   @ mul weight 2, out0\n"   \
-  "vmla.f32 q3,  q6, %f[wr2][0]                   @ mul weight 2, out0\n"   \
-                                                                            \
-  "vadd.f32 q3, q3, q4                            @ add \n"                 \
-  "vadd.f32 q3, q3, q5                            @ add \n"
+  "vmla.f32 q3,  q6, %f[wr2][0]                   @ mul weight 2, out0\n"
 
 #define RIGHT_RESULT_S2                                           \
+  "vadd.f32 q3, q3, q4                            @ add \n"       \
+  "vadd.f32 q3, q3, q5                            @ add \n"       \
   "vbif.f32 q3, q10, q11                          @ write mask\n" \
                                                                   \
   "vst1.32 {d6-d7}, [%[outptr]]!                  \n"             \
   "3:                                             \n"
 
-#define LEFT_RESULT_S2_RELU                           \
-  "vmax.f32 q3, q3, q9                    @ relu \n"  \
-  "vst1.32 {d6-d7}, [%[outptr]]!                  \n" \
-  "cmp %[cnt], #1                                 \n" \
-  "blt 1f                                         \n"
-#define MID_RESULT_S2_RELU                            \
-  "vmax.f32 q3, q3, q9                    @ relu \n"  \
-  "subs %[cnt], #1                                \n" \
-                                                      \
-  "vst1.32 {d6-d7}, [%[outptr]]!                  \n" \
-  "bne  2b                                        \n"
+#define LEFT_RESULT_S2_RELU                                \
+  "vadd.f32 q3, q3, q4                            @ add \n"\
+  "vadd.f32 q3, q3, q5                            @ add \n"\
+  "vmax.f32 q3, q3, q9                                  \n"\
+  "cmp %[cnt], #1                                       \n"\
+  "vst1.32 {d6-d7}, [%[outptr]]!                        \n"\
+  "blt 1f                                               \n"
+#define LEFT_RESULT_S2_RELU6                            \
+  "vadd.f32 q3, q3, q4                         @ add \n"\
+  "vld1.f32 {d12-d13}, [%[six_ptr]] @ load six       \n"\
+  "vadd.f32 q3, q3, q5                         @ add \n"\
+  "vmax.f32 q3, q3, q9                        @ relu \n"\
+  "cmp %[cnt], #1                                    \n"\
+  "vmin.f32 q3, q3, q6                        @ relu \n"\
+  "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
+  "blt 1f                                            \n"
+#define LEFT_RESULT_S2_LEAKY_RELU                       \
+  "vadd.f32 q3, q3, q4                               \n"\
+  "vld1.f32 {d12-d13}, [%[scale_ptr]]                \n"\
+  "vadd.f32 q3, q3, q5                               \n"\
+  "vcge.f32 q7, q3, q9                               \n"\
+  "vmul.f32 q8, q3, q6                               \n"\
+  "cmp %[cnt], #1                                    \n"\
+  "vbif q3, q8, q7 @ choose                          \n"\
+  "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
+  "blt 1f                                            \n"
+#define MID_RESULT_S2_RELU                              \
+  "vadd.f32 q3, q3, q4                         @ add \n"\
+  "vadd.f32 q3, q3, q5                         @ add \n"\
+  "subs %[cnt], #1                                   \n"\
+  "vmax.f32 q3, q3, q9                        @ relu \n"\
+                                                        \
+  "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
+  "bne  2b                                             \n"
 
-#define RIGHT_RESULT_S2_RELU                                      \
-  "vmax.f32 q3, q3, q9                    @ relu \n"              \
-  "vbif.f32 q3, q10, q11                          @ write mask\n" \
-                                                                  \
-  "vst1.32 {d6-d7}, [%[outptr]]!                  \n"             \
-  "3:                                             \n"
+#define MID_RESULT_S2_RELU6                             \
+  "vadd.f32 q3, q3, q4                         @ add \n"\
+  "vld1.f32 {d12-d13}, [%[six_ptr]] @ load six       \n"\
+  "vadd.f32 q3, q3, q5                         @ add \n"\
+  "vmax.f32 q3, q3, q9                        @ relu \n"\
+  "subs %[cnt], #1                                   \n"\
+  "vmin.f32 q3, q3, q6                        @ relu \n"\
+                                                        \
+  "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
+  "bne  2b                                             \n"
+#define MID_RESULT_S2_LEAKY_RELU                       \
+  "vadd.f32 q3, q3, q4                         @ add \n"\
+  "vld1.f32 {d12-d13}, [%[scale_ptr]]                \n"\
+  "vadd.f32 q3, q3, q5                         @ add \n"\
+  "vcge.f32 q7, q3, q9                               \n"\
+  "vmul.f32 q8, q3, q6                               \n"\
+  "subs %[cnt], #1                                   \n"\
+  "vbif q3, q8, q7 @ choose                          \n"\
+                                                        \
+  "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
+  "bne  2b                                             \n"
 
+#define RIGHT_RESULT_S2_RELU                            \
+  "vadd.f32 q3, q3, q4                         @ add \n"\
+  "vadd.f32 q3, q3, q5                         @ add \n"\
+  "vmax.f32 q3, q3, q9                         @ relu\n"\
+  "vbif.f32 q3, q10, q11                 @ write mask\n"\
+                                                        \
+  "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
+  "3:                                                 \n"
+
+#define RIGHT_RESULT_S2_RELU6                           \
+  "vadd.f32 q3, q3, q4                         @ add \n"\
+  "vld1.f32 {d12-d13}, [%[six_ptr]] @ load six       \n"\
+  "vadd.f32 q3, q3, q5                         @ add \n"\
+  "vmax.f32 q3, q3, q9                         @ relu\n"\
+  "vmin.f32 q3, q3, q6                        @ relu \n"\
+                                                        \
+  "vbif.f32 q3, q10, q11                 @ write mask\n"\
+                                                        \
+  "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
+  "3:                                                 \n"
+#define RIGHT_RESULT_S2_LEAKY_RELU                      \
+  "vadd.f32 q3, q3, q4                         @ add \n"\
+  "vld1.f32 {d12-d13}, [%[scale_ptr]]                \n"\
+  "vadd.f32 q3, q3, q5                         @ add \n"\
+  "vcge.f32 q7, q3, q9                               \n"\
+  "vmul.f32 q8, q3, q6                               \n"\
+  "vbif q3, q8, q7 @ choose                          \n"\
+  "vbif.f32 q3, q10, q11                 @ write mask\n"\
+                                                        \
+  "vst1.32 {d6-d7}, [%[outptr]]!                     \n"\
+  "3:                                                 \n"
 #define COMPUTE_S_S2                                                        \
   "vmov.u32 q9, #0                                \n"                       \
   "vld1.f32   {d12-d15}, [%[mask_ptr]]!           @ load mask\n"            \
@@ -976,17 +1252,36 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                                             \
   "vmla.f32 q4, q14, %e[wr2][1]                   @ mul weight 2, out0\n"   \
   "vmla.f32 q5, q15, %f[wr2][0]                   @ mul weight 2, out0\n"   \
-  "vmla.f32 q3, q8,  %e[wr2][0]                   @ mul weight 2, out0\n"   \
-                                                                            \
-  "vadd.f32 q3, q3, q4                            @ add \n"                 \
-  "vadd.f32 q3, q3, q5                            @ add \n"
+  "vmla.f32 q3, q8,  %e[wr2][0]                   @ mul weight 2, out0\n"
 
-#define RESULT_S_S2 "vst1.32 {d6-d7}, [%[out]]                            \n"
-#define RESULT_S_S2_RELU                                    \
-  "vmax.f32 q3, q3, q9                            @ relu\n" \
-                                                            \
+#define RESULT_S_S2                                        \
+  "vadd.f32 q3, q3, q4                            @ add \n"\
+  "vadd.f32 q3, q3, q5                            @ add \n"\
+  "vst1.32 {d6-d7}, [%[out]]                            \n"
+#define RESULT_S_S2_RELU                                   \
+  "vadd.f32 q3, q3, q4                            @ add \n"\
+  "vadd.f32 q3, q3, q5                            @ add \n"\
+  "vmax.f32 q3, q3, q9                            @ relu\n"\
+                                                           \
   "vst1.32 {d6-d7}, [%[out]]                            \n"
 
+#define RESULT_S_S2_RELU6                                  \
+  "vadd.f32 q3, q3, q4                            @ add \n"\
+  "vld1.f32 {d12-d13}, [%[six_ptr]] @ load six          \n"\
+  "vadd.f32 q3, q3, q5                            @ add \n"\
+  "vmax.f32 q3, q3, q9                            @ relu\n"\
+  "vmin.f32 q3, q3, q6                            @ relu\n"\
+                                                           \
+  "vst1.32 {d6-d7}, [%[out]]                            \n"
+#define RESULT_S_S2_LEAKY_RELU                            \
+  "vadd.f32 q3, q3, q4                            @ add \n"\
+  "vld1.f32 {d12-d13}, [%[scale_ptr]]                   \n"\
+  "vadd.f32 q3, q3, q5                            @ add \n"\
+  "vcge.f32 q7, q3, q9                                  \n"\
+  "vmul.f32 q8, q3, q6                                  \n"\
+  "vbif q3, q8, q7 @ choose                             \n"\
+                                                           \
+  "vst1.32 {d6-d7}, [%[out]]                            \n"
 #define COMPUTE_S_S2_P0                                                     \
   "vmov.u32 q9, #0                                \n"                       \
   "vld1.f32   {d12-d15}, [%[mask_ptr]]           @ load mask\n"             \
@@ -1023,207 +1318,52 @@ void conv_depthwise_3x3s2_fp32(const float* din,
                                                                             \
   "vmla.f32 q4, q14, %e[wr2][0]                   @ mul weight 2, out0\n"   \
   "vmla.f32 q5, q15, %e[wr2][1]                   @ mul weight 2, out0\n"   \
-  "vmla.f32 q3, q8,  %f[wr2][0]                   @ mul weight 2, out0\n"   \
-                                                                            \
-  "vadd.f32 q3, q3, q4                            @ add \n"                 \
-  "vadd.f32 q3, q3, q5                            @ add \n"
+  "vmla.f32 q3, q8,  %f[wr2][0]                   @ mul weight 2, out0\n"
 
-#define RESULT_S_S2_P0 "vst1.32 {d6-d7}, [%[out]]                            \n"
-#define RESULT_S_S2_P0_RELU                                  \
+#define RESULT_S_S2_P0                                      \
+  "vadd.f32 q3, q3, q4                            @ add \n" \
+  "vadd.f32 q3, q3, q5                            @ add \n" \
+  "vst1.32 {d6-d7}, [%[out]]                            \n"
+#define RESULT_S_S2_P0_RELU                                 \
+  "vadd.f32 q3, q3, q4                            @ add \n" \
+  "vadd.f32 q3, q3, q5                            @ add \n" \
   "vmax.f32 q3, q3, q9                            @ relu \n" \
+  "vst1.32 {d6-d7}, [%[out]]                             \n"
+#define RESULT_S_S2_P0_RELU6                                \
+  "vadd.f32 q3, q3, q4                            @ add \n" \
+  "vld1.f32 {d12-d13}, [%[six_ptr]] @ load six          \n" \
+  "vadd.f32 q3, q3, q5                            @ add \n" \
+  "vmax.f32 q3, q3, q9                            @ relu\n" \
+  "vmin.f32 q3, q3, q6                            @ relu\n" \
+  "vst1.32 {d6-d7}, [%[out]]                             \n"
+#define RESULT_S_S2_P0_LEAKY_RELU                           \
+  "vadd.f32 q3, q3, q4                            @ add \n" \
+  "vld1.f32 {d12-d13}, [%[scale_ptr]] @ load six        \n" \
+  "vadd.f32 q3, q3, q5                            @ add \n" \
+  "vcge.f32 q7, q3, q9                                  \n" \
+  "vmul.f32 q8, q3, q6                                  \n" \
+  "vbif q3, q8, q7 @ choose                             \n" \
   "vst1.32 {d6-d7}, [%[out]]                            \n"
 #endif
-#ifdef __aarch64__
-void act_switch_3x3s2p1(const float* din0_ptr,
-                        const float* din1_ptr,
-                        const float* din2_ptr,
-                        const float* din3_ptr,
-                        const float* din4_ptr,
-                        float* doutr0_ptr,
-                        float* doutr1_ptr,
-                        float32x4_t wr0,
-                        float32x4_t wr1,
-                        float32x4_t wr2,
-                        uint32x4_t vmask_rp1,
-                        uint32x4_t vmask_rp2,
-                        uint32x4_t wmask,
-                        float32x4_t wbias,
-                        float32x4_t vzero,
-                        int cnt,
-                        int cnt_remain,
-                        const operators::ActivationParam act_param) {
-  float tmp = act_param.Relu_clipped_coef;
-  float ss = act_param.Leaky_relu_alpha;
-  float vsix[4] = {tmp, tmp, tmp, tmp};
-  float vscale[4] = {ss, ss, ss, ss};
+// clang-format on
 
-  switch (act_param.active_type) {
-    case lite_api::ActivationType::kRelu:
-      asm volatile(INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_RELU MID_COMPUTE_S2
-                       MID_RESULT_S2_RELU RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU
-                   : [inptr0] "+r"(din0_ptr),
-                     [inptr1] "+r"(din1_ptr),
-                     [inptr2] "+r"(din2_ptr),
-                     [inptr3] "+r"(din3_ptr),
-                     [inptr4] "+r"(din4_ptr),
-                     [outptr0] "+r"(doutr0_ptr),
-                     [outptr1] "+r"(doutr1_ptr),
-                     [cnt] "+r"(cnt)
-                   : [vzero] "w"(vzero),
-                     [w0] "w"(wr0),
-                     [w1] "w"(wr1),
-                     [w2] "w"(wr2),
-                     [remain] "r"(cnt_remain),
-                     [mask1] "w"(vmask_rp1),
-                     [mask2] "w"(vmask_rp2),
-                     [wmask] "w"(wmask),
-                     [vbias] "w"(wbias)
-                   : "cc",
-                     "memory",
-                     "v0",
-                     "v1",
-                     "v2",
-                     "v3",
-                     "v4",
-                     "v5",
-                     "v6",
-                     "v7",
-                     "v8",
-                     "v9",
-                     "v10",
-                     "v11",
-                     "v12",
-                     "v13",
-                     "v14",
-                     "v15",
-                     "v16",
-                     "v17",
-                     "v18",
-                     "v19",
-                     "v20",
-                     "v21");
-      break;
-    case lite_api::ActivationType::kRelu6:
-      /* 0 <= din <= 6 */
-      asm volatile(
-          INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_RELU6 MID_COMPUTE_S2
-              MID_RESULT_S2_RELU6 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU6
-          : [inptr0] "+r"(din0_ptr),
-            [inptr1] "+r"(din1_ptr),
-            [inptr2] "+r"(din2_ptr),
-            [inptr3] "+r"(din3_ptr),
-            [inptr4] "+r"(din4_ptr),
-            [outptr0] "+r"(doutr0_ptr),
-            [outptr1] "+r"(doutr1_ptr),
-            [cnt] "+r"(cnt)
-          : [vzero] "w"(vzero),
-            [w0] "w"(wr0),
-            [w1] "w"(wr1),
-            [w2] "w"(wr2),
-            [remain] "r"(cnt_remain),
-            [six_ptr] "r"(vsix),
-            [mask1] "w"(vmask_rp1),
-            [mask2] "w"(vmask_rp2),
-            [wmask] "w"(wmask),
-            [vbias] "w"(wbias)
-          : "cc",
-            "memory",
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11",
-            "v12",
-            "v13",
-            "v14",
-            "v15",
-            "v16",
-            "v17",
-            "v18",
-            "v19",
-            "v20",
-            "v21",
-            "v22");
-      break;
-    case lite_api::ActivationType::kLeakyRelu:
-      /*din = din >= 0 ? din : din * scale*/
-      asm volatile(INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_LEAKY_RELU
-                       MID_COMPUTE_S2 MID_RESULT_S2_LEAKY_RELU RIGHT_COMPUTE_S2
-                           RIGHT_RESULT_S2_LEAKY_RELU
-                   : [inptr0] "+r"(din0_ptr),
-                     [inptr1] "+r"(din1_ptr),
-                     [inptr2] "+r"(din2_ptr),
-                     [inptr3] "+r"(din3_ptr),
-                     [inptr4] "+r"(din4_ptr),
-                     [outptr0] "+r"(doutr0_ptr),
-                     [outptr1] "+r"(doutr1_ptr),
-                     [cnt] "+r"(cnt)
-                   : [vzero] "w"(vzero),
-                     [w0] "w"(wr0),
-                     [w1] "w"(wr1),
-                     [w2] "w"(wr2),
-                     [remain] "r"(cnt_remain),
-                     [scale_ptr] "r"(vscale),
-                     [mask1] "w"(vmask_rp1),
-                     [mask2] "w"(vmask_rp2),
-                     [wmask] "w"(wmask),
-                     [vbias] "w"(wbias)
-                   : "cc",
-                     "memory",
-                     "v0",
-                     "v1",
-                     "v2",
-                     "v3",
-                     "v4",
-                     "v5",
-                     "v6",
-                     "v7",
-                     "v8",
-                     "v9",
-                     "v10",
-                     "v11",
-                     "v12",
-                     "v13",
-                     "v14",
-                     "v15",
-                     "v16",
-                     "v17",
-                     "v18",
-                     "v19",
-                     "v20",
-                     "v21",
-                     "v22");
-      break;
-    default:
-      LOG(FATAL) << "this act_type: " << static_cast<int>(act_param.active_type)
-                 << " fuse not support";
-  }
-}
-#endif
 /**
  * \brief depthwise convolution kernel 3x3, stride 2
  * w_in > 7
  */
-void conv_depthwise_3x3s2p1_bias(float* dout,
-                                 const float* din,
-                                 const float* weights,
-                                 const float* bias,
-                                 bool flag_bias,
-                                 const int num,
-                                 const int ch_in,
-                                 const int h_in,
-                                 const int w_in,
-                                 const int h_out,
-                                 const int w_out,
-                                 const operators::ActivationParam act_param,
-                                 ARMContext* ctx) {
+void conv_depthwise_3x3s2p1_bias_relu6(float* dout,
+                                       const float* din,
+                                       const float* weights,
+                                       const float* bias,
+                                       const float* six,
+                                       bool flag_bias,
+                                       const int num,
+                                       const int ch_in,
+                                       const int h_in,
+                                       const int w_in,
+                                       const int h_out,
+                                       const int w_out,
+                                       ARMContext* ctx) {
   int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
   int out_pad_idx[4] = {0, 1, 2, 3};
   int size_pad_bottom = h_out * 2 - h_in;
@@ -1350,24 +1490,52 @@ void conv_depthwise_3x3s2p1_bias(float* dout,
           doutr1_ptr = write_ptr;
         }
         int cnt = cnt_col;
-        act_switch_3x3s2p1(din0_ptr,
-                           din1_ptr,
-                           din2_ptr,
-                           din3_ptr,
-                           din4_ptr,
-                           doutr0_ptr,
-                           doutr1_ptr,
-                           wr0,
-                           wr1,
-                           wr2,
-                           vmask_rp1,
-                           vmask_rp2,
-                           wmask,
-                           wbias,
-                           vzero,
-                           cnt,
-                           cnt_remain,
-                           act_param);
+        asm volatile(
+            INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_RELU6 MID_COMPUTE_S2
+                MID_RESULT_S2_RELU6 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU6
+            : [inptr0] "+r"(din0_ptr),
+              [inptr1] "+r"(din1_ptr),
+              [inptr2] "+r"(din2_ptr),
+              [inptr3] "+r"(din3_ptr),
+              [inptr4] "+r"(din4_ptr),
+              [outptr0] "+r"(doutr0_ptr),
+              [outptr1] "+r"(doutr1_ptr),
+              [cnt] "+r"(cnt)
+            : [vzero] "w"(vzero),
+              [w0] "w"(wr0),
+              [w1] "w"(wr1),
+              [w2] "w"(wr2),
+              [remain] "r"(cnt_remain),
+              [six_ptr] "r"(six),
+              [mask1] "w"(vmask_rp1),
+              [mask2] "w"(vmask_rp2),
+              [wmask] "w"(wmask),
+              [vbias] "w"(wbias)
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15",
+              "v16",
+              "v17",
+              "v18",
+              "v19",
+              "v20",
+              "v21",
+              "v22");
         doutr0 = doutr0 + 2 * w_out;
       }
 #else
@@ -1404,8 +1572,266 @@ void conv_depthwise_3x3s2p1_bias(float* dout,
         }
         int cnt = cnt_col;
         unsigned int* mask_ptr = dmask;
-        asm volatile(INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2 MID_COMPUTE_S2
-                         MID_RESULT_S2 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2
+        asm volatile(
+            INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_RELU6 MID_COMPUTE_S2
+                MID_RESULT_S2_RELU6 RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_RELU6
+            : [din0_ptr] "+r"(din0_ptr),
+              [din1_ptr] "+r"(din1_ptr),
+              [din2_ptr] "+r"(din2_ptr),
+              [outptr] "+r"(doutr0_ptr),
+              [cnt] "+r"(cnt),
+              [mask_ptr] "+r"(mask_ptr)
+            : [remain] "r"(cnt_remain),
+              [wr0] "w"(wr0),
+              [wr1] "w"(wr1),
+              [wr2] "w"(wr2),
+              [six_ptr] "r"(six),
+              [bias] "r"(bias_c)
+            : "cc",
+              "memory",
+              "q3",
+              "q4",
+              "q5",
+              "q6",
+              "q7",
+              "q8",
+              "q9",
+              "q10",
+              "q11",
+              "q12",
+              "q13",
+              "q14",
+              "q15");
+        doutr0 = doutr0 + w_out;
+      }
+#endif
+    }
+  }
+}
+void conv_depthwise_3x3s2p1_bias_leakyRelu(float* dout,
+                                           const float* din,
+                                           const float* weights,
+                                           const float* bias,
+                                           const float* scale,
+                                           bool flag_bias,
+                                           const int num,
+                                           const int ch_in,
+                                           const int h_in,
+                                           const int w_in,
+                                           const int h_out,
+                                           const int w_out,
+                                           ARMContext* ctx) {
+  int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
+  int out_pad_idx[4] = {0, 1, 2, 3};
+  int size_pad_bottom = h_out * 2 - h_in;
+
+  int tile_w = w_out >> 2;
+  int cnt_remain = w_out % 4;
+  unsigned int size_right_remain = (unsigned int)(7 + (tile_w << 3) - w_in);
+  size_right_remain = 8 - size_right_remain;
+
+  if (cnt_remain == 0 && size_right_remain == 0) {
+    cnt_remain = 4;
+    tile_w -= 1;
+    size_right_remain = 8;
+  }
+  int cnt_col = tile_w - 1;
+
+  uint32x4_t vmask_rp1 = vcgtq_s32(vdupq_n_s32(size_right_remain),
+                                   vld1q_s32(right_pad_idx));  // 0 2 4 6
+  uint32x4_t vmask_rp2 = vcgtq_s32(vdupq_n_s32(size_right_remain),
+                                   vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
+  uint32x4_t wmask =
+      vcgtq_s32(vdupq_n_s32(cnt_remain), vld1q_s32(out_pad_idx));  // 0 1 2 3
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+
+  float* zero_ptr = ctx->workspace_data<float>();
+  memset(zero_ptr, 0, w_in * sizeof(float));
+  float* write_ptr = zero_ptr + w_in;
+
+  unsigned int dmask[12];
+
+  vst1q_u32(dmask, vmask_rp1);
+  vst1q_u32(dmask + 4, vmask_rp2);
+  vst1q_u32(dmask + 8, wmask);
+
+  for (int n = 0; n < num; ++n) {
+    const float* din_batch = din + n * ch_in * size_in_channel;
+    float* dout_batch = dout + n * ch_in * size_out_channel;
+#pragma omp parallel for
+    for (int i = 0; i < ch_in; ++i) {
+      const float* din_channel = din_batch + i * size_in_channel;
+      float* dout_channel = dout_batch + i * size_out_channel;
+
+      const float* weight_ptr = weights + i * 9;
+      float32x4_t wr0 = vld1q_f32(weight_ptr);
+      float32x4_t wr1 = vld1q_f32(weight_ptr + 3);
+      float32x4_t wr2 = vld1q_f32(weight_ptr + 6);
+
+      float32x4_t vzero = vdupq_n_f32(0.f);
+#ifdef __aarch64__
+      float32x4_t wbias;
+      if (flag_bias) {
+        wbias = vdupq_n_f32(bias[i]);
+      } else {
+        wbias = vdupq_n_f32(0.f);
+      }
+#else
+      float bias_c = 0.f;
+      if (flag_bias) {
+        bias_c = bias[i];
+      }
+#endif  // __aarch64__
+
+      const float* dr0 = din_channel;
+      const float* dr1 = dr0 + w_in;
+      const float* dr2 = dr1 + w_in;
+      const float* dr3 = dr2 + w_in;
+      const float* dr4 = dr3 + w_in;
+
+      const float* din0_ptr = dr0;
+      const float* din1_ptr = dr1;
+      const float* din2_ptr = dr2;
+      const float* din3_ptr = dr3;
+      const float* din4_ptr = dr4;
+
+      float* doutr0 = dout_channel;
+      float* doutr0_ptr = nullptr;
+      float* doutr1_ptr = nullptr;
+
+#ifdef __aarch64__
+      for (int i = 0; i < h_out; i += 2) {
+        din0_ptr = dr0;
+        din1_ptr = dr1;
+        din2_ptr = dr2;
+        din3_ptr = dr3;
+        din4_ptr = dr4;
+
+        doutr0_ptr = doutr0;
+        doutr1_ptr = doutr0 + w_out;
+
+        if (i == 0) {
+          din0_ptr = zero_ptr;
+          din1_ptr = dr0;
+          din2_ptr = dr1;
+          din3_ptr = dr2;
+          din4_ptr = dr3;
+          dr0 = dr3;
+          dr1 = dr4;
+        } else {
+          dr0 = dr4;
+          dr1 = dr0 + w_in;
+        }
+        dr2 = dr1 + w_in;
+        dr3 = dr2 + w_in;
+        dr4 = dr3 + w_in;
+
+        //! process bottom pad
+        if (i * 2 + 4 > h_in) {
+          switch (i * 2 + 4 - h_in) {
+            case 4:
+              din1_ptr = zero_ptr;
+            case 3:
+              din2_ptr = zero_ptr;
+            case 2:
+              din3_ptr = zero_ptr;
+            case 1:
+              din4_ptr = zero_ptr;
+            default:
+              break;
+          }
+        }
+        //! process output pad
+        if (i + 2 > h_out) {
+          doutr1_ptr = write_ptr;
+        }
+        int cnt = cnt_col;
+        asm volatile(INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_LEAKY_RELU
+                         MID_COMPUTE_S2 MID_RESULT_S2_LEAKY_RELU
+                             RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_LEAKY_RELU
+                     : [inptr0] "+r"(din0_ptr),
+                       [inptr1] "+r"(din1_ptr),
+                       [inptr2] "+r"(din2_ptr),
+                       [inptr3] "+r"(din3_ptr),
+                       [inptr4] "+r"(din4_ptr),
+                       [outptr0] "+r"(doutr0_ptr),
+                       [outptr1] "+r"(doutr1_ptr),
+                       [cnt] "+r"(cnt)
+                     : [vzero] "w"(vzero),
+                       [w0] "w"(wr0),
+                       [w1] "w"(wr1),
+                       [w2] "w"(wr2),
+                       [remain] "r"(cnt_remain),
+                       [scale_ptr] "r"(scale),
+                       [mask1] "w"(vmask_rp1),
+                       [mask2] "w"(vmask_rp2),
+                       [wmask] "w"(wmask),
+                       [vbias] "w"(wbias)
+                     : "cc",
+                       "memory",
+                       "v0",
+                       "v1",
+                       "v2",
+                       "v3",
+                       "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11",
+                       "v12",
+                       "v13",
+                       "v14",
+                       "v15",
+                       "v16",
+                       "v17",
+                       "v18",
+                       "v19",
+                       "v20",
+                       "v21",
+                       "v22");
+        doutr0 = doutr0 + 2 * w_out;
+      }
+#else
+      for (int i = 0; i < h_out; i++) {
+        din0_ptr = dr0;
+        din1_ptr = dr1;
+        din2_ptr = dr2;
+
+        doutr0_ptr = doutr0;
+
+        if (i == 0) {
+          din0_ptr = zero_ptr;
+          din1_ptr = dr0;
+          din2_ptr = dr1;
+          dr0 = dr1;
+          dr1 = dr2;
+          dr2 = dr1 + w_in;
+        } else {
+          dr0 = dr2;
+          dr1 = dr0 + w_in;
+          dr2 = dr1 + w_in;
+        }
+
+        //! process bottom pad
+        if (i * 2 + 2 > h_in) {
+          switch (i * 2 + 2 - h_in) {
+            case 2:
+              din1_ptr = zero_ptr;
+            case 1:
+              din2_ptr = zero_ptr;
+            default:
+              break;
+          }
+        }
+        int cnt = cnt_col;
+        unsigned int* mask_ptr = dmask;
+        asm volatile(INIT_S2 LEFT_COMPUTE_S2 LEFT_RESULT_S2_LEAKY_RELU
+                         MID_COMPUTE_S2 MID_RESULT_S2_LEAKY_RELU
+                             RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_LEAKY_RELU
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
                        [din2_ptr] "+r"(din2_ptr),
@@ -1416,6 +1842,7 @@ void conv_depthwise_3x3s2p1_bias(float* dout,
                        [wr0] "w"(wr0),
                        [wr1] "w"(wr1),
                        [wr2] "w"(wr2),
+                       [scale_ptr] "r"(scale),
                        [bias] "r"(bias_c)
                      : "cc",
                        "memory",
@@ -1432,10 +1859,6 @@ void conv_depthwise_3x3s2p1_bias(float* dout,
                        "q13",
                        "q14",
                        "q15");
-        // do act
-        if (act_param.has_active) {
-          act_switch_process(doutr0, doutr0, w_out, &act_param);
-        }
         doutr0 = doutr0 + w_out;
       }
 #endif
@@ -1446,19 +1869,19 @@ void conv_depthwise_3x3s2p1_bias(float* dout,
 /**
  * \brief depthwise convolution kernel 3x3, stride 2, width <= 4
  */
-void conv_depthwise_3x3s2p1_bias_s(float* dout,
-                                   const float* din,
-                                   const float* weights,
-                                   const float* bias,
-                                   bool flag_bias,
-                                   const int num,
-                                   const int ch_in,
-                                   const int h_in,
-                                   const int w_in,
-                                   const int h_out,
-                                   const int w_out,
-                                   const operators::ActivationParam act_param,
-                                   ARMContext* ctx) {
+void conv_depthwise_3x3s2p1_bias_s_relu6(float* dout,
+                                         const float* din,
+                                         const float* weights,
+                                         const float* bias,
+                                         const float* six,
+                                         bool flag_bias,
+                                         const int num,
+                                         const int ch_in,
+                                         const int h_in,
+                                         const int w_in,
+                                         const int h_out,
+                                         const int w_out,
+                                         ARMContext* ctx) {
   int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
   int out_pad_idx[4] = {0, 1, 2, 3};
   float zeros[8] = {0.0f};
@@ -1474,7 +1897,9 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
   unsigned int dmask[8];
   vst1q_u32(dmask, vmask_rp1);
   vst1q_u32(dmask + 4, vmask_rp2);
-
+#ifdef __aarch64__
+  float32x4_t vsix = vld1q_f32(six);
+#endif
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
@@ -1513,7 +1938,7 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
 
         unsigned int* mask_ptr = dmask;
 #ifdef __aarch64__
-        asm volatile(COMPUTE_S_S2 RESULT_S_S2
+        asm volatile(COMPUTE_S_S2 RESULT_S_S2_RELU6
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
                        [din2_ptr] "+r"(din2_ptr),
@@ -1522,6 +1947,7 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
                        [wr1] "w"(wr1),
                        [wr2] "w"(wr2),
                        [bias] "w"(vbias),
+                       [vsix] "w"(vsix),
                        [out] "r"(out_buf)
                      : "v4",
                        "v5",
@@ -1536,7 +1962,7 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
                        "v14",
                        "v15");
 #else
-        asm volatile(COMPUTE_S_S2 RESULT_S_S2
+        asm volatile(COMPUTE_S_S2 RESULT_S_S2_RELU6
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
                        [din2_ptr] "+r"(din2_ptr),
@@ -1545,6 +1971,7 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
                        [wr1] "w"(wr1),
                        [wr2] "w"(wr2),
                        [bias] "r"(bias_c),
+                       [six_ptr] "r"(six),
                        [out] "r"(out_buf)
                      : "cc",
                        "memory",
@@ -1562,10 +1989,6 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
                        "q14",
                        "q15");
 #endif
-        // do act
-        if (act_param.has_active) {
-          act_switch_process(out_buf, out_buf, w_out, &act_param);
-        }
         for (int w = 0; w < w_out; ++w) {
           *dout_channel++ = out_buf[w];
         }
@@ -1575,231 +1998,154 @@ void conv_depthwise_3x3s2p1_bias_s(float* dout,
     }
   }
 }
+void conv_depthwise_3x3s2p1_bias_s_leakyRelu(float* dout,
+                                             const float* din,
+                                             const float* weights,
+                                             const float* bias,
+                                             const float* scale,
+                                             bool flag_bias,
+                                             const int num,
+                                             const int ch_in,
+                                             const int h_in,
+                                             const int w_in,
+                                             const int h_out,
+                                             const int w_out,
+                                             ARMContext* ctx) {
+  int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
+  int out_pad_idx[4] = {0, 1, 2, 3};
+  float zeros[8] = {0.0f};
 
+  uint32x4_t vmask_rp1 =
+      vcgtq_s32(vdupq_n_s32(w_in), vld1q_s32(right_pad_idx));  // 0 2 4 6
+  uint32x4_t vmask_rp2 =
+      vcgtq_s32(vdupq_n_s32(w_in), vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+
+  unsigned int dmask[8];
+  vst1q_u32(dmask, vmask_rp1);
+  vst1q_u32(dmask + 4, vmask_rp2);
 #ifdef __aarch64__
-void act_switch_3x3s2p0(const float* din0_ptr,
-                        const float* din1_ptr,
-                        const float* din2_ptr,
-                        const float* din3_ptr,
-                        const float* din4_ptr,
-                        float* doutr0_ptr,
-                        float* doutr1_ptr,
-                        float32x4_t wr0,
-                        float32x4_t wr1,
-                        float32x4_t wr2,
-                        uint32x4_t vmask_rp1,
-                        uint32x4_t vmask_rp2,
-                        uint32x4_t wmask,
-                        float32x4_t wbias,
-                        float32x4_t vzero,
-                        int cnt,
-                        int cnt_remain,
-                        const operators::ActivationParam act_param) {
-  float tmp = act_param.Relu_clipped_coef;
-  float ss = act_param.Leaky_relu_alpha;
-  float vsix[4] = {tmp, tmp, tmp, tmp};
-  float vscale[4] = {ss, ss, ss, ss};
+  float32x4_t vscale = vld1q_f32(scale);
+  float32x4_t vzero = vdupq_n_f32(0.f);
+#endif
+  for (int n = 0; n < num; ++n) {
+    const float* din_batch = din + n * ch_in * size_in_channel;
+    float* dout_batch = dout + n * ch_in * size_out_channel;
+#pragma omp parallel for
+    for (int i = 0; i < ch_in; ++i) {
+      const float* din_channel = din_batch + i * size_in_channel;
+      float* dout_channel = dout_batch + i * size_out_channel;
 
-  switch (act_param.active_type) {
-    case lite_api::ActivationType::kRelu:
-      asm volatile(
-          INIT_S2
-          "ld1 {v15.4s}, [%[inptr0]]                 \n"
-          "ld1 {v18.4s}, [%[inptr1]]                 \n"
-          "ld1 {v19.4s}, [%[inptr2]]                 \n"
-          "ld1 {v20.4s}, [%[inptr3]]                 \n"
-          "ld1 {v21.4s}, [%[inptr4]]                 \n"
-          "ext  v10.16b, v0.16b, v15.16b, #4     \n"  // v10 = {2,4,6,8}
-          MID_COMPUTE_S2 MID_RESULT_S2_RELU
-          "cmp %w[remain], #1                           \n"
-          "blt 4f                                     \n" RIGHT_COMPUTE_S2
-              RIGHT_RESULT_S2_RELU
-          "4:                                          \n"
-          : [inptr0] "+r"(din0_ptr),
-            [inptr1] "+r"(din1_ptr),
-            [inptr2] "+r"(din2_ptr),
-            [inptr3] "+r"(din3_ptr),
-            [inptr4] "+r"(din4_ptr),
-            [outptr0] "+r"(doutr0_ptr),
-            [outptr1] "+r"(doutr1_ptr),
-            [cnt] "+r"(cnt)
-          : [vzero] "w"(vzero),
-            [w0] "w"(wr0),
-            [w1] "w"(wr1),
-            [w2] "w"(wr2),
-            [remain] "r"(cnt_remain),
-            [mask1] "w"(vmask_rp1),
-            [mask2] "w"(vmask_rp2),
-            [wmask] "w"(wmask),
-            [vbias] "w"(wbias)
-          : "cc",
-            "memory",
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11",
-            "v12",
-            "v13",
-            "v14",
-            "v15",
-            "v16",
-            "v17",
-            "v18",
-            "v19",
-            "v20",
-            "v21");
-      break;
-    case lite_api::ActivationType::kRelu6:
-      /* 0 <= din <= 6 */
-      asm volatile(
-          INIT_S2
-          "ld1 {v15.4s}, [%[inptr0]]                 \n"
-          "ld1 {v18.4s}, [%[inptr1]]                 \n"
-          "ld1 {v19.4s}, [%[inptr2]]                 \n"
-          "ld1 {v20.4s}, [%[inptr3]]                 \n"
-          "ld1 {v21.4s}, [%[inptr4]]                 \n"
-          "ext  v10.16b, v0.16b, v15.16b, #4     \n"  // v10 = {2,4,6,8}
-          "ld1 {v22.4s}, [%[six_ptr]]                  \n" MID_COMPUTE_S2
-              MID_RESULT_S2_RELU6
-          "cmp %w[remain], #1                           \n"
-          "blt 4f                                     \n" RIGHT_COMPUTE_S2
-              RIGHT_RESULT_S2_RELU6
-          "4:                                          \n"
-          : [inptr0] "+r"(din0_ptr),
-            [inptr1] "+r"(din1_ptr),
-            [inptr2] "+r"(din2_ptr),
-            [inptr3] "+r"(din3_ptr),
-            [inptr4] "+r"(din4_ptr),
-            [outptr0] "+r"(doutr0_ptr),
-            [outptr1] "+r"(doutr1_ptr),
-            [cnt] "+r"(cnt)
-          : [vzero] "w"(vzero),
-            [w0] "w"(wr0),
-            [w1] "w"(wr1),
-            [w2] "w"(wr2),
-            [remain] "r"(cnt_remain),
-            [six_ptr] "r"(vsix),
-            [mask1] "w"(vmask_rp1),
-            [mask2] "w"(vmask_rp2),
-            [wmask] "w"(wmask),
-            [vbias] "w"(wbias)
-          : "cc",
-            "memory",
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11",
-            "v12",
-            "v13",
-            "v14",
-            "v15",
-            "v16",
-            "v17",
-            "v18",
-            "v19",
-            "v20",
-            "v21",
-            "v22");
-      break;
-    case lite_api::ActivationType::kLeakyRelu:
-      /*din = din >= 0 ? din : din * scale*/
-      asm volatile(
-          INIT_S2
-          "ld1 {v15.4s}, [%[inptr0]]                 \n"
-          "ld1 {v18.4s}, [%[inptr1]]                 \n"
-          "ld1 {v19.4s}, [%[inptr2]]                 \n"
-          "ld1 {v20.4s}, [%[inptr3]]                 \n"
-          "ld1 {v21.4s}, [%[inptr4]]                 \n"
-          "ext  v10.16b, v0.16b, v15.16b, #4     \n"  // v10 = {2,4,6,8}
-          "ld1 {v22.4s}, [%[scale_ptr]]                  \n" MID_COMPUTE_S2
-              MID_RESULT_S2_LEAKY_RELU
-          "cmp %w[remain], #1                           \n"
-          "blt 4f                                     \n" RIGHT_COMPUTE_S2
-              RIGHT_RESULT_S2_LEAKY_RELU
-          "4:                                          \n"
-          : [inptr0] "+r"(din0_ptr),
-            [inptr1] "+r"(din1_ptr),
-            [inptr2] "+r"(din2_ptr),
-            [inptr3] "+r"(din3_ptr),
-            [inptr4] "+r"(din4_ptr),
-            [outptr0] "+r"(doutr0_ptr),
-            [outptr1] "+r"(doutr1_ptr),
-            [cnt] "+r"(cnt)
-          : [vzero] "w"(vzero),
-            [w0] "w"(wr0),
-            [w1] "w"(wr1),
-            [w2] "w"(wr2),
-            [remain] "r"(cnt_remain),
-            [scale_ptr] "r"(vscale),
-            [mask1] "w"(vmask_rp1),
-            [mask2] "w"(vmask_rp2),
-            [wmask] "w"(wmask),
-            [vbias] "w"(wbias)
-          : "cc",
-            "memory",
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11",
-            "v12",
-            "v13",
-            "v14",
-            "v15",
-            "v16",
-            "v17",
-            "v18",
-            "v19",
-            "v20",
-            "v21",
-            "v22");
-      break;
-    default:
-      LOG(FATAL) << "this act_type: " << static_cast<int>(act_param.active_type)
-                 << " fuse not support";
+      const float* weight_ptr = weights + i * 9;
+      float32x4_t wr0 = vld1q_f32(weight_ptr);
+      float32x4_t wr1 = vld1q_f32(weight_ptr + 3);
+      float32x4_t wr2 = vld1q_f32(weight_ptr + 6);
+
+      float bias_c = 0.f;
+
+      if (flag_bias) {
+        bias_c = bias[i];
+      }
+      float32x4_t vbias = vdupq_n_f32(bias_c);
+      int hs = -1;
+      int he = 2;
+      float out_buf[4];
+      for (int j = 0; j < h_out; ++j) {
+        const float* dr0 = din_channel + hs * w_in;
+        const float* dr1 = dr0 + w_in;
+        const float* dr2 = dr1 + w_in;
+        if (hs == -1) {
+          dr0 = zeros;
+        }
+        if (he > h_in) {
+          dr2 = zeros;
+        }
+        const float* din0_ptr = dr0;
+        const float* din1_ptr = dr1;
+        const float* din2_ptr = dr2;
+
+        unsigned int* mask_ptr = dmask;
+#ifdef __aarch64__
+        asm volatile(COMPUTE_S_S2 RESULT_S_S2_LEAKY_RELU
+                     : [din0_ptr] "+r"(din0_ptr),
+                       [din1_ptr] "+r"(din1_ptr),
+                       [din2_ptr] "+r"(din2_ptr),
+                       [mask_ptr] "+r"(mask_ptr)
+                     : [wr0] "w"(wr0),
+                       [wr1] "w"(wr1),
+                       [wr2] "w"(wr2),
+                       [bias] "w"(vbias),
+                       [vzero] "w"(vzero),
+                       [vscale] "w"(vscale),
+                       [out] "r"(out_buf)
+                     : "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11",
+                       "v12",
+                       "v13",
+                       "v14",
+                       "v15");
+#else
+        asm volatile(COMPUTE_S_S2 RESULT_S_S2_LEAKY_RELU
+                     : [din0_ptr] "+r"(din0_ptr),
+                       [din1_ptr] "+r"(din1_ptr),
+                       [din2_ptr] "+r"(din2_ptr),
+                       [mask_ptr] "+r"(mask_ptr)
+                     : [wr0] "w"(wr0),
+                       [wr1] "w"(wr1),
+                       [wr2] "w"(wr2),
+                       [bias] "r"(bias_c),
+                       [scale_ptr] "r"(scale),
+                       [out] "r"(out_buf)
+                     : "cc",
+                       "memory",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
+#endif
+        for (int w = 0; w < w_out; ++w) {
+          *dout_channel++ = out_buf[w];
+        }
+        hs += 2;
+        he += 2;
+      }
+    }
   }
 }
-#endif
 /**
  * \brief depthwise convolution kernel 3x3, stride 2
  */
 // w_in > 7
-void conv_depthwise_3x3s2p0_bias(float* dout,
-                                 const float* din,
-                                 const float* weights,
-                                 const float* bias,
-                                 bool flag_bias,
-                                 const int num,
-                                 const int ch_in,
-                                 const int h_in,
-                                 const int w_in,
-                                 const int h_out,
-                                 const int w_out,
-                                 const operators::ActivationParam act_param,
-                                 ARMContext* ctx) {
+void conv_depthwise_3x3s2p0_bias_relu6(float* dout,
+                                       const float* din,
+                                       const float* weights,
+                                       const float* bias,
+                                       const float* six,
+                                       bool flag_bias,
+                                       const int num,
+                                       const int ch_in,
+                                       const int h_in,
+                                       const int w_in,
+                                       const int h_out,
+                                       const int w_out,
+                                       ARMContext* ctx) {
   int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
   int out_pad_idx[4] = {0, 1, 2, 3};
 
@@ -1918,24 +2264,63 @@ void conv_depthwise_3x3s2p0_bias(float* dout,
           doutr1_ptr = write_ptr;
         }
         int cnt = tile_w;
-        act_switch_3x3s2p0(din0_ptr,
-                           din1_ptr,
-                           din2_ptr,
-                           din3_ptr,
-                           din4_ptr,
-                           doutr0_ptr,
-                           doutr1_ptr,
-                           wr0,
-                           wr1,
-                           wr2,
-                           vmask_rp1,
-                           vmask_rp2,
-                           wmask,
-                           wbias,
-                           vzero,
-                           cnt,
-                           cnt_remain,
-                           act_param);
+        asm volatile(
+            INIT_S2
+            "ld1 {v15.4s}, [%[inptr0]]                 \n"
+            "ld1 {v18.4s}, [%[inptr1]]                 \n"
+            "ld1 {v19.4s}, [%[inptr2]]                 \n"
+            "ld1 {v20.4s}, [%[inptr3]]                 \n"
+            "ld1 {v21.4s}, [%[inptr4]]                 \n"
+            "ext  v10.16b, v0.16b, v15.16b, #4     \n"  // v10 = {2,4,6,8}
+            "ld1 {v22.4s}, [%[six_ptr]]                  \n" MID_COMPUTE_S2
+                MID_RESULT_S2_RELU6
+            "cmp %w[remain], #1                           \n"
+            "blt 4f                                     \n" RIGHT_COMPUTE_S2
+                RIGHT_RESULT_S2_RELU6
+            "4:                                          \n"
+            : [inptr0] "+r"(din0_ptr),
+              [inptr1] "+r"(din1_ptr),
+              [inptr2] "+r"(din2_ptr),
+              [inptr3] "+r"(din3_ptr),
+              [inptr4] "+r"(din4_ptr),
+              [outptr0] "+r"(doutr0_ptr),
+              [outptr1] "+r"(doutr1_ptr),
+              [cnt] "+r"(cnt)
+            : [vzero] "w"(vzero),
+              [w0] "w"(wr0),
+              [w1] "w"(wr1),
+              [w2] "w"(wr2),
+              [remain] "r"(cnt_remain),
+              [six_ptr] "r"(six),
+              [mask1] "w"(vmask_rp1),
+              [mask2] "w"(vmask_rp2),
+              [wmask] "w"(wmask),
+              [vbias] "w"(wbias)
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15",
+              "v16",
+              "v17",
+              "v18",
+              "v19",
+              "v20",
+              "v21",
+              "v22");
         doutr0 = doutr0 + 2 * w_out;
       }
 #else
@@ -1963,8 +2348,8 @@ void conv_depthwise_3x3s2p0_bias(float* dout,
         }
         int cnt = tile_w;
         unsigned int* mask_ptr = dmask;
-        asm volatile(INIT_S2 MID_COMPUTE_S2 MID_RESULT_S2 RIGHT_COMPUTE_S2
-                         RIGHT_RESULT_S2
+        asm volatile(INIT_S2 MID_COMPUTE_S2 MID_RESULT_S2_RELU6 RIGHT_COMPUTE_S2
+                         RIGHT_RESULT_S2_RELU6
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
                        [din2_ptr] "+r"(din2_ptr),
@@ -1972,6 +2357,7 @@ void conv_depthwise_3x3s2p0_bias(float* dout,
                        [cnt] "+r"(cnt),
                        [mask_ptr] "+r"(mask_ptr)
                      : [remain] "r"(cnt_remain),
+                       [six_ptr] "r"(six),
                        [wr0] "w"(wr0),
                        [wr1] "w"(wr1),
                        [wr2] "w"(wr2),
@@ -1991,9 +2377,257 @@ void conv_depthwise_3x3s2p0_bias(float* dout,
                        "q13",
                        "q14",
                        "q15");
-        if (act_param.has_active) {
-          act_switch_process(doutr0, doutr0, w_out, &act_param);
+        doutr0 = doutr0 + w_out;
+      }
+#endif
+    }
+  }
+}
+
+void conv_depthwise_3x3s2p0_bias_leakyRelu(float* dout,
+                                           const float* din,
+                                           const float* weights,
+                                           const float* bias,
+                                           const float* scale,
+                                           bool flag_bias,
+                                           const int num,
+                                           const int ch_in,
+                                           const int h_in,
+                                           const int w_in,
+                                           const int h_out,
+                                           const int w_out,
+                                           ARMContext* ctx) {
+  int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
+  int out_pad_idx[4] = {0, 1, 2, 3};
+
+  int tile_w = w_out >> 2;
+  int cnt_remain = w_out % 4;
+
+  unsigned int size_right_remain = (unsigned int)(8 + (tile_w << 3) - w_in);
+  size_right_remain = 8 - size_right_remain;
+
+  if (cnt_remain == 0 && size_right_remain == 0) {
+    cnt_remain = 4;
+    tile_w -= 1;
+    size_right_remain = 8;
+  }
+
+  uint32x4_t vmask_rp1 = vcgtq_s32(vdupq_n_s32(size_right_remain),
+                                   vld1q_s32(right_pad_idx));  // 0 2 4 6
+  uint32x4_t vmask_rp2 = vcgtq_s32(vdupq_n_s32(size_right_remain),
+                                   vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
+  uint32x4_t wmask =
+      vcgtq_s32(vdupq_n_s32(cnt_remain), vld1q_s32(out_pad_idx));  // 0 1 2 3
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+
+  float* zero_ptr = ctx->workspace_data<float>();
+  memset(zero_ptr, 0, w_in * sizeof(float));
+  float* write_ptr = zero_ptr + w_in;
+
+  unsigned int dmask[12];
+
+  vst1q_u32(dmask, vmask_rp1);
+  vst1q_u32(dmask + 4, vmask_rp2);
+  vst1q_u32(dmask + 8, wmask);
+
+  for (int n = 0; n < num; ++n) {
+    const float* din_batch = din + n * ch_in * size_in_channel;
+    float* dout_batch = dout + n * ch_in * size_out_channel;
+#pragma omp parallel for
+    for (int i = 0; i < ch_in; ++i) {
+      const float* din_channel = din_batch + i * size_in_channel;
+      float* dout_channel = dout_batch + i * size_out_channel;
+
+      const float* weight_ptr = weights + i * 9;
+      float32x4_t wr0 = vld1q_f32(weight_ptr);
+      float32x4_t wr1 = vld1q_f32(weight_ptr + 3);
+      float32x4_t wr2 = vld1q_f32(weight_ptr + 6);
+
+      float32x4_t vzero = vdupq_n_f32(0.f);
+
+#ifdef __aarch64__
+      float32x4_t wbias;
+      if (flag_bias) {
+        wbias = vdupq_n_f32(bias[i]);
+      } else {
+        wbias = vdupq_n_f32(0.f);
+      }
+#else
+      float bias_c = 0.f;
+      if (flag_bias) {
+        bias_c = bias[i];
+      }
+#endif  // __aarch64__
+
+      const float* dr0 = din_channel;
+      const float* dr1 = dr0 + w_in;
+      const float* dr2 = dr1 + w_in;
+      const float* dr3 = dr2 + w_in;
+      const float* dr4 = dr3 + w_in;
+
+      const float* din0_ptr = dr0;
+      const float* din1_ptr = dr1;
+      const float* din2_ptr = dr2;
+      const float* din3_ptr = dr3;
+      const float* din4_ptr = dr4;
+
+      float* doutr0 = dout_channel;
+      float* doutr0_ptr = nullptr;
+      float* doutr1_ptr = nullptr;
+
+#ifdef __aarch64__
+      for (int i = 0; i < h_out; i += 2) {
+        din0_ptr = dr0;
+        din1_ptr = dr1;
+        din2_ptr = dr2;
+        din3_ptr = dr3;
+        din4_ptr = dr4;
+
+        doutr0_ptr = doutr0;
+        doutr1_ptr = doutr0 + w_out;
+
+        dr0 = dr4;
+        dr1 = dr0 + w_in;
+        dr2 = dr1 + w_in;
+        dr3 = dr2 + w_in;
+        dr4 = dr3 + w_in;
+
+        //! process bottom pad
+        if (i * 2 + 5 > h_in) {
+          switch (i * 2 + 5 - h_in) {
+            case 4:
+              din1_ptr = zero_ptr;
+            case 3:
+              din2_ptr = zero_ptr;
+            case 2:
+              din3_ptr = zero_ptr;
+            case 1:
+              din4_ptr = zero_ptr;
+            case 0:
+              din4_ptr = zero_ptr;
+            default:
+              break;
+          }
         }
+        //! process output pad
+        if (i + 2 > h_out) {
+          doutr1_ptr = write_ptr;
+        }
+        int cnt = tile_w;
+        asm volatile(
+            INIT_S2
+            "ld1 {v15.4s}, [%[inptr0]]                 \n"
+            "ld1 {v18.4s}, [%[inptr1]]                 \n"
+            "ld1 {v19.4s}, [%[inptr2]]                 \n"
+            "ld1 {v20.4s}, [%[inptr3]]                 \n"
+            "ld1 {v21.4s}, [%[inptr4]]                 \n"
+            "ext  v10.16b, v0.16b, v15.16b, #4     \n"  // v10 = {2,4,6,8}
+            "ld1 {v22.4s}, [%[scale_ptr]]                  \n" MID_COMPUTE_S2
+                MID_RESULT_S2_LEAKY_RELU
+            "cmp %w[remain], #1                           \n"
+            "blt 4f                                     \n" RIGHT_COMPUTE_S2
+                RIGHT_RESULT_S2_LEAKY_RELU
+            "4:                                          \n"
+            : [inptr0] "+r"(din0_ptr),
+              [inptr1] "+r"(din1_ptr),
+              [inptr2] "+r"(din2_ptr),
+              [inptr3] "+r"(din3_ptr),
+              [inptr4] "+r"(din4_ptr),
+              [outptr0] "+r"(doutr0_ptr),
+              [outptr1] "+r"(doutr1_ptr),
+              [cnt] "+r"(cnt)
+            : [vzero] "w"(vzero),
+              [w0] "w"(wr0),
+              [w1] "w"(wr1),
+              [w2] "w"(wr2),
+              [remain] "r"(cnt_remain),
+              [scale_ptr] "r"(scale),
+              [mask1] "w"(vmask_rp1),
+              [mask2] "w"(vmask_rp2),
+              [wmask] "w"(wmask),
+              [vbias] "w"(wbias)
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15",
+              "v16",
+              "v17",
+              "v18",
+              "v19",
+              "v20",
+              "v21",
+              "v22");
+        doutr0 = doutr0 + 2 * w_out;
+      }
+#else
+      for (int i = 0; i < h_out; i++) {
+        din0_ptr = dr0;
+        din1_ptr = dr1;
+        din2_ptr = dr2;
+
+        doutr0_ptr = doutr0;
+
+        dr0 = dr2;
+        dr1 = dr0 + w_in;
+        dr2 = dr1 + w_in;
+
+        //! process bottom pad
+        if (i * 2 + 3 > h_in) {
+          switch (i * 2 + 3 - h_in) {
+            case 2:
+              din1_ptr = zero_ptr;
+            case 1:
+              din2_ptr = zero_ptr;
+            default:
+              break;
+          }
+        }
+        int cnt = tile_w;
+        unsigned int* mask_ptr = dmask;
+        asm volatile(INIT_S2 MID_COMPUTE_S2 MID_RESULT_S2_LEAKY_RELU
+                         RIGHT_COMPUTE_S2 RIGHT_RESULT_S2_LEAKY_RELU
+                     : [din0_ptr] "+r"(din0_ptr),
+                       [din1_ptr] "+r"(din1_ptr),
+                       [din2_ptr] "+r"(din2_ptr),
+                       [outptr] "+r"(doutr0_ptr),
+                       [cnt] "+r"(cnt),
+                       [mask_ptr] "+r"(mask_ptr)
+                     : [remain] "r"(cnt_remain),
+                       [scale_ptr] "r"(scale),
+                       [wr0] "w"(wr0),
+                       [wr1] "w"(wr1),
+                       [wr2] "w"(wr2),
+                       [bias] "r"(bias_c)
+                     : "cc",
+                       "memory",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
         doutr0 = doutr0 + w_out;
       }
 #endif
@@ -2004,19 +2638,19 @@ void conv_depthwise_3x3s2p0_bias(float* dout,
 /**
  * \brief depthwise convolution kernel 3x3, stride 2, width <= 4
  */
-void conv_depthwise_3x3s2p0_bias_s(float* dout,
-                                   const float* din,
-                                   const float* weights,
-                                   const float* bias,
-                                   bool flag_bias,
-                                   const int num,
-                                   const int ch_in,
-                                   const int h_in,
-                                   const int w_in,
-                                   const int h_out,
-                                   const int w_out,
-                                   const operators::ActivationParam act_param,
-                                   ARMContext* ctx) {
+void conv_depthwise_3x3s2p0_bias_s_relu6(float* dout,
+                                         const float* din,
+                                         const float* weights,
+                                         const float* bias,
+                                         const float* six,
+                                         bool flag_bias,
+                                         const int num,
+                                         const int ch_in,
+                                         const int h_in,
+                                         const int w_in,
+                                         const int h_out,
+                                         const int w_out,
+                                         ARMContext* ctx) {
   int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
   int out_pad_idx[4] = {0, 1, 2, 3};
   float zeros[8] = {0.0f};
@@ -2033,6 +2667,10 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
   unsigned int dmask[8];
   vst1q_u32(dmask, vmask_rp1);
   vst1q_u32(dmask + 4, vmask_rp2);
+#ifdef __aarch64__
+  float32x4_t vsix = vld1q_f32(six);
+  float32x4_t vzero = vdupq_n_f32(0.f);
+#endif
 
   for (int n = 0; n < num; ++n) {
     const float* din_batch = din + n * ch_in * size_in_channel;
@@ -2077,7 +2715,7 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
 
         unsigned int* mask_ptr = dmask;
 #ifdef __aarch64__
-        asm volatile(COMPUTE_S_S2_P0 RESULT_S_S2_P0
+        asm volatile(COMPUTE_S_S2_P0 RESULT_S_S2_P0_RELU6
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
                        [din2_ptr] "+r"(din2_ptr),
@@ -2086,6 +2724,8 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
                        [wr1] "w"(wr1),
                        [wr2] "w"(wr2),
                        [bias] "w"(vbias),
+                       [vzero] "w"(vzero),
+                       [vsix] "w"(vsix),
                        [out] "r"(out_buf)
                      : "cc",
                        "memory",
@@ -2104,7 +2744,7 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
                        "v16");
 
 #else
-        asm volatile(COMPUTE_S_S2_P0 RESULT_S_S2_P0
+        asm volatile(COMPUTE_S_S2_P0 RESULT_S_S2_P0_RELU6
                      : [din0_ptr] "+r"(din0_ptr),
                        [din1_ptr] "+r"(din1_ptr),
                        [din2_ptr] "+r"(din2_ptr)
@@ -2113,6 +2753,7 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
                        [wr2] "w"(wr2),
                        [bias] "r"(bias_c),
                        [out] "r"(out_buf),
+                       [six_ptr] "r"(six),
                        [mask_ptr] "r"(dmask)
                      : "cc",
                        "memory",
@@ -2130,9 +2771,145 @@ void conv_depthwise_3x3s2p0_bias_s(float* dout,
                        "q14",
                        "q15");
 #endif
-        if (act_param.has_active) {
-          act_switch_process(out_buf, out_buf, w_out, &act_param);
+        for (int w = 0; w < w_out; ++w) {
+          *dout_channel++ = out_buf[w];
         }
+      }
+    }
+  }
+}
+void conv_depthwise_3x3s2p0_bias_s_leakyRelu(float* dout,
+                                             const float* din,
+                                             const float* weights,
+                                             const float* bias,
+                                             const float* scale,
+                                             bool flag_bias,
+                                             const int num,
+                                             const int ch_in,
+                                             const int h_in,
+                                             const int w_in,
+                                             const int h_out,
+                                             const int w_out,
+                                             ARMContext* ctx) {
+  int right_pad_idx[8] = {0, 2, 4, 6, 1, 3, 5, 7};
+  int out_pad_idx[4] = {0, 1, 2, 3};
+  float zeros[8] = {0.0f};
+  const float zero_ptr[4] = {0.f, 0.f, 0.f, 0.f};
+
+  uint32x4_t vmask_rp1 =
+      vcgtq_s32(vdupq_n_s32(w_in), vld1q_s32(right_pad_idx));  // 0 2 4 6
+  uint32x4_t vmask_rp2 =
+      vcgtq_s32(vdupq_n_s32(w_in), vld1q_s32(right_pad_idx + 4));  // 1 3 5 7
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+
+  unsigned int dmask[8];
+  vst1q_u32(dmask, vmask_rp1);
+  vst1q_u32(dmask + 4, vmask_rp2);
+#ifdef __aarch64__
+  float32x4_t vscale = vld1q_f32(scale);
+  float32x4_t vzero = vdupq_n_f32(0.f);
+#endif
+
+  for (int n = 0; n < num; ++n) {
+    const float* din_batch = din + n * ch_in * size_in_channel;
+    float* dout_batch = dout + n * ch_in * size_out_channel;
+#pragma omp parallel for
+    for (int i = 0; i < ch_in; ++i) {
+      const float* din_channel = din_batch + i * size_in_channel;
+      float* dout_channel = dout_batch + i * size_out_channel;
+
+      const float* weight_ptr = weights + i * 9;
+      float32x4_t wr0 = vld1q_f32(weight_ptr);
+      float32x4_t wr1 = vld1q_f32(weight_ptr + 3);
+      float32x4_t wr2 = vld1q_f32(weight_ptr + 6);
+
+      float bias_c = 0.f;
+
+      if (flag_bias) {
+        bias_c = bias[i];
+      }
+      float32x4_t vbias = vdupq_n_f32(bias_c);
+      float out_buf[4];
+      const float* dr0 = din_channel;
+      const float* dr1 = dr0 + w_in;
+      const float* dr2 = dr1 + w_in;
+      for (int j = 0; j < h_out; j++) {
+        const float* din0_ptr = dr0;
+        const float* din1_ptr = dr1;
+        const float* din2_ptr = dr2;
+        if (j * 2 + 2 >= h_in) {
+          switch (j + 2 - h_in) {
+            case 1:
+              din1_ptr = zero_ptr;
+            case 0:
+              din2_ptr = zero_ptr;
+            default:
+              break;
+          }
+        }
+        dr0 = dr2;
+        dr1 = dr0 + w_in;
+        dr2 = dr1 + w_in;
+
+        unsigned int* mask_ptr = dmask;
+#ifdef __aarch64__
+        asm volatile(COMPUTE_S_S2_P0 RESULT_S_S2_P0_LEAKY_RELU
+                     : [din0_ptr] "+r"(din0_ptr),
+                       [din1_ptr] "+r"(din1_ptr),
+                       [din2_ptr] "+r"(din2_ptr),
+                       [mask_ptr] "+r"(mask_ptr)
+                     : [wr0] "w"(wr0),
+                       [wr1] "w"(wr1),
+                       [wr2] "w"(wr2),
+                       [bias] "w"(vbias),
+                       [vzero] "w"(vzero),
+                       [vscale] "w"(vscale),
+                       [out] "r"(out_buf)
+                     : "cc",
+                       "memory",
+                       "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11",
+                       "v12",
+                       "v13",
+                       "v14",
+                       "v15",
+                       "v16");
+#else
+        asm volatile(COMPUTE_S_S2_P0 RESULT_S_S2_P0_LEAKY_RELU
+                     : [din0_ptr] "+r"(din0_ptr),
+                       [din1_ptr] "+r"(din1_ptr),
+                       [din2_ptr] "+r"(din2_ptr)
+                     : [wr0] "w"(wr0),
+                       [wr1] "w"(wr1),
+                       [wr2] "w"(wr2),
+                       [bias] "r"(bias_c),
+                       [out] "r"(out_buf),
+                       [scale_ptr] "r"(scale),
+                       [mask_ptr] "r"(dmask)
+                     : "cc",
+                       "memory",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
+#endif
         for (int w = 0; w < w_out; ++w) {
           *dout_channel++ = out_buf[w];
         }
