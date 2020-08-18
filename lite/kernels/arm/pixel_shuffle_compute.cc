@@ -13,9 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/pixel_shuffle_compute.h"
-#include <string>
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/arm/math/pixel_shuffle.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
@@ -30,33 +28,52 @@ void PixelShuffleCompute::Run() {
 
   const float* x_data = param.x->data<float>();
   float* output_data = param.output->mutable_data<float>();
-  int upscale_factor = param.upscale_factor;
+  const int upscale_factor = param.upscale_factor;
 
-  int batch_size = param.x->dims()[0];
-  int height = param.x->dims()[2];
-  int width = param.x->dims()[3];
-  int out_channels = param.output->dims()[1];
-  int out_height = param.output->dims()[2];
-  int out_width = param.output->dims()[3];
+  const int batch_size = param.x->dims()[0];
+  const int height = param.x->dims()[2];
+  const int width = param.x->dims()[3];
+  const int out_channels = param.output->dims()[1];
+  const int out_height = param.output->dims()[2];
+  const int out_width = param.output->dims()[3];
 
-#pragma omp parallel for
-  for (int nc = 0; nc < batch_size * out_channels; nc++) {
-    const float* inptr = x_data + nc * out_height * out_width;
-    float* outptr_nc = output_data + nc * out_height * out_width;
-
-    for (int sh = 0; sh < upscale_factor; sh++) {
-      for (int sw = 0; sw < upscale_factor; sw++) {
-        float* outptr = outptr_nc + sh * out_width + sw;
-        for (int h = 0; h < height; h++) {
-          for (int w = 0; w < width; w++) {
-            outptr[0] = inptr[0];
-            inptr++;
-            outptr += upscale_factor;
-          }
-          outptr += (upscale_factor - 1) * out_width;
-        }
-      }
-    }
+  if (upscale_factor == 2) {
+    lite::arm::math::pixel_shuffle_scale2_fp32(x_data,
+                                               output_data,
+                                               batch_size,
+                                               height,
+                                               width,
+                                               out_channels,
+                                               out_height,
+                                               out_width);
+  } else if (upscale_factor == 3) {
+    lite::arm::math::pixel_shuffle_scale3_fp32(x_data,
+                                               output_data,
+                                               batch_size,
+                                               height,
+                                               width,
+                                               out_channels,
+                                               out_height,
+                                               out_width);
+  } else if (upscale_factor == 4) {
+    lite::arm::math::pixel_shuffle_scale4_fp32(x_data,
+                                               output_data,
+                                               batch_size,
+                                               height,
+                                               width,
+                                               out_channels,
+                                               out_height,
+                                               out_width);
+  } else {
+    lite::arm::math::pixel_shuffle_native_fp32(x_data,
+                                               output_data,
+                                               batch_size,
+                                               height,
+                                               width,
+                                               out_channels,
+                                               out_height,
+                                               out_width,
+                                               upscale_factor);
   }
 
 #ifdef LITE_WITH_PROFILE
