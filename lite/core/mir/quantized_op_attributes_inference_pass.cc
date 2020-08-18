@@ -32,6 +32,7 @@ void QuantizedOpAttributesInferencePass::Apply(
   // Only for fully quantized model which is only supported by MTK and RK NPU.
   // Replace the output_scale with the input_scale of the adjacent quantized
   // ops, and fix the missing of the attribute 'enable_int8'.
+  VLOG(5) << "\n" << Visualize(graph.get());
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto& inst = op_node->AsStmt();

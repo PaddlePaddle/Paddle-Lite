@@ -39,12 +39,16 @@ USE_MIR_PASS(identity_dropout_eliminate_pass);
 USE_MIR_PASS(lite_conv_elementwise_fuse_pass);
 USE_MIR_PASS(lite_conv_activation_fuse_pass);
 USE_MIR_PASS(lite_var_conv_2d_activation_fuse_pass);
+USE_MIR_PASS(lite_match_matrix_activation_fuse_pass);
+USE_MIR_PASS(lite_scales_fuse_pass);
+USE_MIR_PASS(lite_sequence_reverse_embedding_fuse_pass);
 USE_MIR_PASS(lite_elementwise_activation_fuse_pass);
 USE_MIR_PASS(lite_quant_dequant_fuse_pass);
 USE_MIR_PASS(type_precision_cast_pass);
 USE_MIR_PASS(type_layout_cast_pass);
 USE_MIR_PASS(type_layout_cast_preprocess_pass);
 USE_MIR_PASS(memory_optimize_pass);
+USE_MIR_PASS(lite_reshape_fuse_pass);
 USE_MIR_PASS(multi_stream_analysis_pass);
 USE_MIR_PASS(elementwise_mul_constant_eliminate_pass)
 USE_MIR_PASS(npu_subgraph_pass);

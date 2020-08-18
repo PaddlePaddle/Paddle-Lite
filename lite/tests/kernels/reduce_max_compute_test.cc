@@ -190,6 +190,64 @@ void reduce_hw(const float* src,
   reduce_w(tmp_out, dst, num_in, channel_in, 1, width_in);
 }
 
+void reduce_first_of_three(
+    const float* src, float* dst, int first_in, int second_in, int third_in) {
+  for (int i = 0; i < second_in; i++) {
+    for (int j = 0; j < third_in; j++) {
+      dst[i * third_in + j] = src[i * third_in + j];
+      for (int k = 1; k < first_in; k++) {
+        dst[i * third_in + j] =
+            src[k * second_in * third_in + i * third_in + j] >
+                    dst[i * third_in + j]
+                ? src[k * second_in * third_in + i * third_in + j]
+                : dst[i * third_in + j];
+      }
+    }
+  }
+}
+
+void reduce_second_of_three(
+    const float* src, float* dst, int first_in, int second_in, int third_in) {
+  for (int i = 0; i < first_in; i++) {
+    for (int j = 0; j < third_in; j++) {
+      dst[i * third_in + j] = src[i * second_in * third_in + j];
+      for (int k = 1; k < second_in; k++) {
+        dst[i * third_in + j] =
+            src[i * second_in * third_in + third_in * k + j] >
+                    dst[i * third_in + j]
+                ? src[i * second_in * third_in + third_in * k + j]
+                : dst[i * third_in + j];
+      }
+    }
+  }
+}
+
+void reduce_third_of_three(
+    const float* src, float* dst, int first_in, int second_in, int third_in) {
+  for (int i = 0; i < first_in; i++) {
+    for (int j = 0; j < second_in; j++) {
+      dst[i * second_in + j] = src[i * second_in * third_in + j * second_in];
+      for (int k = 0; k < third_in; k++) {
+        dst[i * second_in + j] =
+            src[i * second_in * third_in + j * second_in + k] >
+                    dst[i * second_in + j]
+                ? src[i * second_in * third_in + j * second_in + k]
+                : dst[i * second_in + j];
+      }
+    }
+  }
+}
+
+void reduce_all_of_three(
+    const float* src, float* dst, int first_in, int second_in, int third_in) {
+  float max = src[0];
+  int total_element = first_in * second_in * third_in;
+  for (int i = 0; i < total_element; i++) {
+    max = src[i] > max ? src[i] : max;
+  }
+  dst[0] = max;
+}
+
 class ReduceMaxComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -256,39 +314,69 @@ class ReduceMaxComputeTester : public arena::TestCase {
     }
 
     auto* out_data = out->mutable_data<float>();
-    int in_n = x_dims_[0];
-    int in_c = x_dims_[1];
-    int in_h = x_dims_[2];
-    int in_w = x_dims_[3];
 
-    if (dim_.size() == 0) {
-      reduce_all(x_data, out_data, in_n, in_c, in_h, in_w);
-    } else if (dim_.size() == 1) {
-      switch (dim_[0]) {
-        case 0:
-          reduce_n(x_data, out_data, in_n, in_c, in_h, in_w);
-          break;
-        case 1:
-          reduce_c(x_data, out_data, in_n, in_c, in_h, in_w);
-          break;
-        case 2:
-          reduce_h(x_data, out_data, in_n, in_c, in_h, in_w);
-          break;
-        case 3:
-          reduce_w(x_data, out_data, in_n, in_c, in_h, in_w);
-          break;
-        default:
-          LOG(FATAL) << "error!!!";
-      }
-    } else if (dim_.size() == 2) {
-      if (dim_[0] == 0 && dim_[1] == 1) {
-        reduce_nc(x_data, out_data, in_n, in_c, in_h, in_w);
-      } else if (dim_[0] == 1 && dim_[1] == 2) {
-        reduce_ch(x_data, out_data, in_n, in_c, in_h, in_w);
-      } else if (dim_[0] == 2 && dim_[1] == 3) {
-        reduce_hw(x_data, out_data, in_n, in_c, in_h, in_w);
-      } else {
+    if (x_dims_.size() == 3) {
+      if (dim_.size() == 0 || dim_.size() == 3) {
+        reduce_all_of_three(
+            x_data, out_data, x_dims_[0], x_dims_[1], x_dims_[2]);
+      } else if (dim_.size() == 1) {
+        switch (dim_[0]) {
+          case 0:
+            reduce_first_of_three(
+                x_data, out_data, x_dims_[0], x_dims_[1], x_dims_[2]);
+            break;
+          case 1:
+            reduce_second_of_three(
+                x_data, out_data, x_dims_[0], x_dims_[1], x_dims_[2]);
+            break;
+
+          case 2:
+            reduce_third_of_three(
+                x_data, out_data, x_dims_[0], x_dims_[1], x_dims_[2]);
+            break;
+          default:
+            LOG(FATAL) << "error!!!";
+        }
+      } else if (dim_.size() == 2) {
         LOG(FATAL) << "invalid dims_!!";
+      } else {
+        LOG(FATAL) << "dim size should not larger than 3!!!";
+      }
+
+    } else if (x_dims_.size() == 4) {
+      int in_n = x_dims_[0];
+      int in_c = x_dims_[1];
+      int in_h = x_dims_[2];
+      int in_w = x_dims_[3];
+      if (dim_.size() == 0) {
+        reduce_all(x_data, out_data, in_n, in_c, in_h, in_w);
+      } else if (dim_.size() == 1) {
+        switch (dim_[0]) {
+          case 0:
+            reduce_n(x_data, out_data, in_n, in_c, in_h, in_w);
+            break;
+          case 1:
+            reduce_c(x_data, out_data, in_n, in_c, in_h, in_w);
+            break;
+          case 2:
+            reduce_h(x_data, out_data, in_n, in_c, in_h, in_w);
+            break;
+          case 3:
+            reduce_w(x_data, out_data, in_n, in_c, in_h, in_w);
+            break;
+          default:
+            LOG(FATAL) << "error!!!";
+        }
+      } else if (dim_.size() == 2) {
+        if (dim_[0] == 0 && dim_[1] == 1) {
+          reduce_nc(x_data, out_data, in_n, in_c, in_h, in_w);
+        } else if (dim_[0] == 1 && dim_[1] == 2) {
+          reduce_ch(x_data, out_data, in_n, in_c, in_h, in_w);
+        } else if (dim_[0] == 2 && dim_[1] == 3) {
+          reduce_hw(x_data, out_data, in_n, in_c, in_h, in_w);
+        } else {
+          LOG(FATAL) << "invalid dims_!!";
+        }
       }
     }
   }
@@ -333,6 +421,19 @@ void test_reduce_max(Place place) {
   }
 }
 
+void test_reduce_max_for_three(Place place) {
+  std::vector<std::vector<int>> reduce_dim{{0}, {1}, {2}};
+  for (bool keep_dim : {false, true}) {
+    for (auto dim : reduce_dim) {
+      auto x_dims = DDim(std::vector<int64_t>({3, 4, 5}));
+      std::unique_ptr<arena::TestCase> tester(
+          new ReduceMaxComputeTester(place, "def", dim, keep_dim, x_dims));
+      arena::Arena arena(std::move(tester), place, 2e-5);
+      arena.TestPrecision();
+    }
+  }
+}
+
 TEST(ReduceMax, precision) {
 // #ifdef LITE_WITH_X86
 //   Place place(TARGET(kX86));
@@ -340,6 +441,7 @@ TEST(ReduceMax, precision) {
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   test_reduce_max(place);
+  test_reduce_max_for_three(place);
 #endif
 }
 

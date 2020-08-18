@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vector>
 #include "lite/model_parser/base/block_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
@@ -25,17 +26,17 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-class BlockDesc : public BlockDescAPI {
+class BlockDescView : public BlockDescAPI {
  public:
-  explicit BlockDesc(proto::BlockDesc const* desc) : desc_(desc) {
+  explicit BlockDescView(proto::BlockDesc const* desc) : desc_(desc) {
     CHECK(desc_);
-    vars_.reserve(VarsSize());
-    ops_.reserve(OpsSize());
+    vars_.resize(VarsSize());
+    ops_.resize(OpsSize());
     for (size_t idx = 0; idx < VarsSize(); ++idx) {
-      vars_.push_back(VarDesc(desc_->vars()->Get(idx)));
+      vars_[idx] = VarDescView(desc_->vars()->Get(idx));
     }
     for (size_t idx = 0; idx < OpsSize(); ++idx) {
-      ops_.push_back(OpDesc(desc_->ops()->Get(idx)));
+      ops_[idx] = OpDescView(desc_->ops()->Get(idx));
     }
   }
 
@@ -69,24 +70,105 @@ class BlockDesc : public BlockDescAPI {
     return nullptr;
   }
 
-  const std::vector<VarDesc>& GetVars() const { return vars_; }
+  const std::vector<VarDescView>& GetVars() const { return vars_; }
 
   int32_t ForwardBlockIdx() const override {
     return desc_->forward_block_idx();
   }
 
-  BlockDesc() { NotImplemented(); }
+  BlockDescView() = default;
 
  private:
   proto::BlockDesc const* desc_;  // not_own
-  std::vector<VarDesc> vars_;
-  std::vector<OpDesc> ops_;
+  std::vector<VarDescView> vars_;
+  std::vector<OpDescView> ops_;
 
  private:
   void NotImplemented() const {
-    LOG(FATAL) << "The additional interfaces of BlockDesc is temporarily "
+    LOG(FATAL) << "The additional interfaces of BlockDescView is temporarily "
                   "unavailable in read-only mode.";
   }
+};
+
+class BlockDesc : public BlockDescAPI {
+ public:
+  BlockDesc() : owned_(true), desc_(new proto::BlockDescT()) {}
+  explicit BlockDesc(proto::BlockDescT* desc) : desc_(desc) {
+    CHECK(desc_);
+    SyncVars();
+    SyncOps();
+  }
+
+  int32_t Idx() const override { return desc_->idx; }
+
+  void SetIdx(int32_t idx) override { desc_->idx = idx; }
+
+  int32_t ParentIdx() const override { return desc_->parent_idx; }
+
+  void SetParentIdx(int32_t idx) override { desc_->parent_idx = idx; }
+
+  size_t VarsSize() const override { return desc_->vars.size(); }
+
+  void ClearVars() override {
+    desc_->vars.clear();
+    SyncVars();
+  }
+
+  size_t OpsSize() const override { return desc_->ops.size(); }
+
+  void ClearOps() override {
+    desc_->ops.clear();
+    SyncOps();
+  }
+
+  int32_t ForwardBlockIdx() const override { return desc_->forward_block_idx; }
+
+  void SetForwardBlockIdx(int32_t idx_in) override {
+    desc_->forward_block_idx = idx_in;
+  }
+
+  proto::BlockDescT* raw_desc() { return desc_; }
+
+  template <typename T>
+  T* GetVar(int32_t idx);
+
+  template <typename T>
+  T* AddVar();
+
+  template <typename T>
+  T* GetOp(int32_t idx);
+
+  template <typename T>
+  T* AddOp();
+
+  ~BlockDesc() {
+    if (owned_) {
+      delete desc_;
+    }
+  }
+
+ private:
+  void SyncVars() {
+    vars_.resize(desc_->vars.size());
+    for (size_t i = 0; i < desc_->vars.size(); ++i) {
+      if (!vars_[i] || vars_[i]->raw_desc() != desc_->vars[i].get()) {
+        vars_[i].reset(new VarDesc(desc_->vars[i].get()));
+      }
+    }
+  }
+  void SyncOps() {
+    ops_.resize(desc_->ops.size());
+    for (size_t i = 0; i < desc_->ops.size(); ++i) {
+      if (!ops_[i] || ops_[i]->raw_desc() != desc_->ops[i].get()) {
+        ops_[i].reset(new OpDesc(desc_->ops[i].get()));
+      }
+    }
+  }
+
+  bool owned_{false};
+  proto::BlockDescT* desc_{nullptr};
+  std::vector<std::unique_ptr<VarDesc>> vars_;
+  std::vector<std::unique_ptr<OpDesc>> ops_;
 };
 
 }  // namespace fbs

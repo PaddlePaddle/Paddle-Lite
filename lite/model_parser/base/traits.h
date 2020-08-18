@@ -16,6 +16,8 @@
 
 #include <string>
 #include <vector>
+#include "lite/api/paddle_place.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -36,6 +38,77 @@ enum class OpAttrType {
   LONGS = 11,
   UNK,
 };
+
+enum class VarDataType {
+  // Pod Types
+  BOOL = 0,
+  INT16,
+  INT32,
+  INT64,
+  FP16,
+  FP32,
+  FP64,
+  // Tensor<size_t> is used in C++.
+  SIZE_T,
+  UINT8,
+  INT8,
+
+  // Other types that may need additional descriptions
+  LOD_TENSOR,
+  SELECTED_ROWS,
+  FEED_MINIBATCH,
+  FETCH_LIST,
+  STEP_SCOPES,
+  LOD_RANK_TABLE,
+  LOD_TENSOR_ARRAY,
+  PLACE_LIST,
+  READER,
+  // Any runtime decided variable type is raw
+  // raw variables should manage their own allocations
+  // in operators like nccl_op
+  RAW,
+  TUPLE
+};
+
+inline VarDataType ConvertPrecisionType(lite_api::PrecisionType type) {
+#define CASE(ptype, vtype)                \
+  case lite_api::PrecisionType::k##ptype: \
+    return lite::VarDataType::vtype;      \
+    break
+  switch (type) {
+    CASE(Float, FP32);
+    CASE(Int8, INT8);
+    CASE(Int32, INT32);
+    CASE(FP16, FP16);
+    CASE(Bool, BOOL);
+    CASE(Int64, INT64);
+    CASE(Int16, INT16);
+    default:
+      LOG(FATAL) << "Illegal flatbuffer VarType.";
+      return lite::VarDataType();
+  }
+#undef CASE
+}
+
+inline lite_api::PrecisionType ConvertPrecisionType(VarDataType type) {
+#define CASE(ptype, vtype)                    \
+  case lite::VarDataType::vtype:              \
+    return lite_api::PrecisionType::k##ptype; \
+    break
+  switch (type) {
+    CASE(Float, FP32);
+    CASE(Int8, INT8);
+    CASE(Int32, INT32);
+    CASE(FP16, FP16);
+    CASE(Bool, BOOL);
+    CASE(Int64, INT64);
+    CASE(Int16, INT16);
+    default:
+      LOG(FATAL) << "Illegal flatbuffer VarType.";
+      return lite_api::PrecisionType();
+  }
+#undef CASE
+}
 
 struct Standard {};
 struct Flatbuffers {};

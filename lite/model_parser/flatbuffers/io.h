@@ -14,14 +14,27 @@
 
 #pragma once
 
+#include <set>
 #include <string>
+#include <vector>
+#include "lite/core/scope.h"
+#include "lite/core/tensor.h"
+#include "lite/model_parser/flatbuffers/param_desc.h"
 #include "lite/model_parser/flatbuffers/program_desc.h"
 
 namespace paddle {
 namespace lite {
 namespace fbs {
 
-void LoadModel(const std::string& path, ProgramDesc* prog);
+std::vector<char> LoadFile(const std::string& path);
+void SaveFile(const std::string& path, const void* src, size_t byte_size);
+
+void SetScopeWithCombinedParams(lite::Scope* scope,
+                                const CombinedParamsDescReadAPI& params);
+
+void SetCombinedParamsWithScope(const lite::Scope& scope,
+                                const std::set<std::string>& params_name,
+                                CombinedParamsDescWriteAPI* params);
 
 }  // namespace fbs
 }  // namespace lite

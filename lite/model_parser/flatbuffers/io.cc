@@ -13,24 +13,72 @@
 // limitations under the License.
 
 #include "lite/model_parser/flatbuffers/io.h"
+#include <cstring>
 #include <memory>
 #include <utility>
 #include <vector>
+#include "lite/model_parser/flatbuffers/traits.h"
 
 namespace paddle {
 namespace lite {
 namespace fbs {
 
-void LoadModel(const std::string& path, ProgramDesc* prog) {
-  CHECK(prog);
+std::vector<char> LoadFile(const std::string& path) {
   FILE* file = fopen(path.c_str(), "rb");
+  CHECK(file);
   fseek(file, 0, SEEK_END);
-  int64_t length = ftell(file);
+  uint64_t length = ftell(file);
   rewind(file);
   std::vector<char> buf(length);
-  CHECK(fread(buf.data(), 1, length, file));
+  CHECK_EQ(fread(buf.data(), 1, length, file), length);
   fclose(file);
-  prog->Init(std::move(buf));
+  return buf;
+}
+
+void SaveFile(const std::string& path, const void* src, size_t byte_size) {
+  CHECK(src);
+  FILE* file = fopen(path.c_str(), "wb");
+  CHECK(file);
+  CHECK(fwrite(src, sizeof(char), byte_size, file) == byte_size);
+  fclose(file);
+}
+
+void SetParamWithTensor(const std::string& name,
+                        const lite::Tensor& tensor,
+                        ParamDescWriteAPI* prog) {
+  CHECK(prog);
+  prog->SetName(name);
+  prog->SetDim(tensor.dims().Vectorize());
+  prog->SetDataType(lite::ConvertPrecisionType(tensor.precision()));
+  prog->SetData(tensor.raw_data(), tensor.memory_size());
+}
+
+void SetTensorWithParam(lite::Tensor* tensor, const ParamDescReadAPI& param) {
+  tensor->Resize(param.Dim());
+  tensor->set_precision(lite::ConvertPrecisionType(param.GetDataType()));
+  std::memcpy(tensor->mutable_data(param.byte_size()),
+              param.GetData(),
+              param.byte_size());
+}
+
+void SetCombinedParamsWithScope(const lite::Scope& scope,
+                                const std::set<std::string>& params_name,
+                                CombinedParamsDescWriteAPI* params) {
+  for (const auto& name : params_name) {
+    auto* param = params->AddParamDesc();
+    auto& tensor = scope.FindVar(name)->Get<lite::Tensor>();
+    SetParamWithTensor(name, tensor, param);
+  }
+}
+
+void SetScopeWithCombinedParams(lite::Scope* scope,
+                                const CombinedParamsDescReadAPI& params) {
+  CHECK(scope);
+  for (size_t i = 0; i < params.GetParamsSize(); ++i) {
+    const auto& param = *params.GetParamDesc(i);
+    auto* tensor = scope->Var(param.Name())->GetMutable<lite::Tensor>();
+    SetTensorWithParam(tensor, param);
+  }
 }
 
 }  // namespace fbs

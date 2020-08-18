@@ -15,6 +15,7 @@
 #include "lite/model_parser/compatible_pb.h"
 #include <string>
 #include <vector>
+#include "lite/model_parser/flatbuffers/program_desc.h"
 #include "lite/model_parser/naive_buffer/block_desc.h"
 #include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
@@ -71,6 +72,18 @@ void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
       cpp_desc->SetDataType(any_desc.GetDataType());
       cpp_desc->SetShape(any_desc.GetShape());
     }*/
+}
+
+template <>
+void TransformVarDescAnyToCpp<fbs::VarDesc>(const fbs::VarDesc &any_desc,
+                                            cpp::VarDesc *cpp_desc) {
+  cpp_desc->SetName(any_desc.Name());
+  cpp_desc->SetType(any_desc.GetType());
+  cpp_desc->SetPersistable(any_desc.Persistable());
+  if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
+    cpp_desc->SetDataType(any_desc.GetDataType());
+    cpp_desc->SetShape(any_desc.GetShape());
+  }
 }
 
 /// For OpDesc transform
@@ -153,10 +166,22 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
         LOG(FATAL) << "Unsupported attr type found " << static_cast<int>(type);
     }
   };
-
+  // On arm backend, some op attributes have no effect on inference process, we
+  // abandoned these attributes to reduce model_size and run-time memory usage.
+  // This process is operated on opt tool, so it will not increase
+  // initialization time.
+  std::vector<std::string> skiped_attributes = {"op_callstack",
+                                                "op_namescope",
+                                                "op_role",
+                                                "workspace_size_MB",
+                                                "op_role_var"};
   for (const auto &attr_name : any_desc.AttrNames()) {
-    auto type = any_desc.GetAttrType(attr_name);
-    set_attr(attr_name, type);
+    auto it = std::find(
+        skiped_attributes.begin(), skiped_attributes.end(), attr_name);
+    if (it == skiped_attributes.end()) {
+      auto type = any_desc.GetAttrType(attr_name);
+      set_attr(attr_name, type);
+    }
   }
 }
 
@@ -207,100 +232,102 @@ void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
   }
 
 /// For BlockDesc transform
-#define TRANS_BLOCK_ANY_WITH_CPP_IMPL(T, NT, PNT)                           \
-  template <>                                                               \
-  void TransformBlockDescAnyToCpp<NT::T>(const NT::T &any_desc,             \
-                                         cpp::BlockDesc *cpp_desc) {        \
-    NT::T desc = any_desc;                                                  \
-    cpp_desc->SetIdx(desc.Idx());                                           \
-    cpp_desc->SetParentIdx(desc.ParentIdx());                               \
-    cpp_desc->SetForwardBlockIdx(desc.ForwardBlockIdx());                   \
-                                                                            \
-    cpp_desc->ClearOps();                                                   \
-    for (size_t i = 0; i < desc.OpsSize(); ++i) {                           \
-      auto any_op_desc = NT::OpDesc(desc.GetOp<PNT::proto::OpDesc>(i));     \
-      auto *cpp_op_desc = cpp_desc->AddOp<cpp::OpDesc>();                   \
-      TransformOpDescAnyToCpp(any_op_desc, cpp_op_desc);                    \
-    }                                                                       \
-                                                                            \
-    cpp_desc->ClearVars();                                                  \
-    for (size_t i = 0; i < desc.VarsSize(); ++i) {                          \
-      auto any_var_desc = NT::VarDesc(desc.GetVar<PNT::proto::VarDesc>(i)); \
-      auto *cpp_var_desc = cpp_desc->AddVar<cpp::VarDesc>();                \
-      TransformVarDescAnyToCpp(any_var_desc, cpp_var_desc);                 \
-    }                                                                       \
-  }                                                                         \
-                                                                            \
-  template <>                                                               \
-  void TransformBlockDescCppToAny<NT::T>(const cpp::T &cpp_desc,            \
-                                         NT::T *any_desc) {                 \
-    const cpp::T &desc = cpp_desc;                                          \
-    any_desc->SetIdx(desc.Idx());                                           \
-    any_desc->SetParentIdx(desc.ParentIdx());                               \
-    any_desc->SetForwardBlockIdx(desc.ForwardBlockIdx());                   \
-                                                                            \
-    any_desc->ClearOps();                                                   \
-    for (size_t i = 0; i < desc.OpsSize(); ++i) {                           \
-      auto *cpp_op_desc = desc.GetOp<cpp::OpDesc>(i);                       \
-      auto any_op_desc = NT::OpDesc(any_desc->AddOp<PNT::proto::OpDesc>()); \
-      TransformOpDescCppToAny(*cpp_op_desc, &any_op_desc);                  \
-    }                                                                       \
-                                                                            \
-    any_desc->ClearVars();                                                  \
-    for (size_t i = 0; i < desc.VarsSize(); ++i) {                          \
-      auto *cpp_var_desc = desc.GetVar<cpp::VarDesc>(i);                    \
-      auto any_var_desc =                                                   \
-          NT::VarDesc(any_desc->AddVar<PNT::proto::VarDesc>());             \
-      TransformVarDescCppToAny(*cpp_var_desc, &any_var_desc);               \
-    }                                                                       \
+#define TRANS_BLOCK_ANY_WITH_CPP_IMPL(OpT, VarT, NT, PNT)                    \
+  template <>                                                                \
+  void TransformBlockDescAnyToCpp<NT::BlockDesc>(                            \
+      const NT::BlockDesc &any_desc, cpp::BlockDesc *cpp_desc) {             \
+    NT::BlockDesc &desc = const_cast<NT::BlockDesc &>(any_desc);             \
+    cpp_desc->SetIdx(desc.Idx());                                            \
+    cpp_desc->SetParentIdx(desc.ParentIdx());                                \
+    cpp_desc->SetForwardBlockIdx(desc.ForwardBlockIdx());                    \
+                                                                             \
+    cpp_desc->ClearOps();                                                    \
+    for (size_t i = 0; i < desc.OpsSize(); ++i) {                            \
+      auto any_op_desc = NT::OpDesc(desc.GetOp<PNT::proto::OpT>(i));         \
+      auto *cpp_op_desc = cpp_desc->AddOp<cpp::OpDesc>();                    \
+      TransformOpDescAnyToCpp(any_op_desc, cpp_op_desc);                     \
+    }                                                                        \
+                                                                             \
+    cpp_desc->ClearVars();                                                   \
+    for (size_t i = 0; i < desc.VarsSize(); ++i) {                           \
+      auto any_var_desc = NT::VarDesc(desc.GetVar<PNT::proto::VarT>(i));     \
+      auto *cpp_var_desc = cpp_desc->AddVar<cpp::VarDesc>();                 \
+      TransformVarDescAnyToCpp(any_var_desc, cpp_var_desc);                  \
+    }                                                                        \
+  }                                                                          \
+                                                                             \
+  template <>                                                                \
+  void TransformBlockDescCppToAny<NT::BlockDesc>(                            \
+      const cpp::BlockDesc &cpp_desc, NT::BlockDesc *any_desc) {             \
+    const cpp::BlockDesc &desc = cpp_desc;                                   \
+    any_desc->SetIdx(desc.Idx());                                            \
+    any_desc->SetParentIdx(desc.ParentIdx());                                \
+    any_desc->SetForwardBlockIdx(desc.ForwardBlockIdx());                    \
+                                                                             \
+    any_desc->ClearOps();                                                    \
+    for (size_t i = 0; i < desc.OpsSize(); ++i) {                            \
+      auto *cpp_op_desc = desc.GetOp<cpp::OpDesc>(i);                        \
+      auto any_op_desc = NT::OpDesc(any_desc->AddOp<PNT::proto::OpT>());     \
+      TransformOpDescCppToAny(*cpp_op_desc, &any_op_desc);                   \
+    }                                                                        \
+                                                                             \
+    any_desc->ClearVars();                                                   \
+    for (size_t i = 0; i < desc.VarsSize(); ++i) {                           \
+      auto *cpp_var_desc = desc.GetVar<cpp::VarDesc>(i);                     \
+      auto any_var_desc = NT::VarDesc(any_desc->AddVar<PNT::proto::VarT>()); \
+      TransformVarDescCppToAny(*cpp_var_desc, &any_var_desc);                \
+    }                                                                        \
   }
 
 /// For ProgramDesc transform
-#define TRANS_PROGRAM_ANY_WITH_CPP_IMPL(T, NT, PNT)                      \
-  template <>                                                            \
-  void TransformProgramDescAnyToCpp<NT::T>(const NT::T &any_desc,        \
-                                           cpp::ProgramDesc *cpp_desc) { \
-    NT::T desc = any_desc;                                               \
-    if (desc.HasVersion()) {                                             \
-      cpp_desc->SetVersion(desc.Version());                              \
-    }                                                                    \
-                                                                         \
-    cpp_desc->ClearBlocks();                                             \
-    for (size_t i = 0; i < desc.BlocksSize(); ++i) {                     \
-      auto any_block_desc =                                              \
-          NT::BlockDesc(desc.GetBlock<PNT::proto::BlockDesc>(i));        \
-      auto *cpp_block_desc = cpp_desc->AddBlock<cpp::BlockDesc>();       \
-      TransformBlockDescAnyToCpp(any_block_desc, cpp_block_desc);        \
-    }                                                                    \
-  }                                                                      \
-                                                                         \
-  template <>                                                            \
-  void TransformProgramDescCppToAny<NT::T>(const cpp::T &cpp_desc,       \
-                                           NT::T *any_desc) {            \
-    auto &desc = cpp_desc;                                               \
-    if (desc.HasVersion()) {                                             \
-      any_desc->SetVersion(desc.Version());                              \
-    }                                                                    \
-                                                                         \
-    any_desc->ClearBlocks();                                             \
-    for (size_t i = 0; i < desc.BlocksSize(); ++i) {                     \
-      auto *cpp_block_desc = desc.GetBlock<cpp::BlockDesc>(i);           \
-      auto any_block_desc =                                              \
-          NT::BlockDesc(any_desc->AddBlock<PNT::proto::BlockDesc>());    \
-      TransformBlockDescCppToAny(*cpp_block_desc, &any_block_desc);      \
-    }                                                                    \
+#define TRANS_PROGRAM_ANY_WITH_CPP_IMPL(BlockT, NT, PNT)                      \
+  template <>                                                                 \
+  void TransformProgramDescAnyToCpp<NT::ProgramDesc>(                         \
+      const NT::ProgramDesc &any_desc, cpp::ProgramDesc *cpp_desc) {          \
+    NT::ProgramDesc &desc = const_cast<NT::ProgramDesc &>(any_desc);          \
+    if (desc.HasVersion()) {                                                  \
+      cpp_desc->SetVersion(desc.Version());                                   \
+    }                                                                         \
+                                                                              \
+    cpp_desc->ClearBlocks();                                                  \
+    for (size_t i = 0; i < desc.BlocksSize(); ++i) {                          \
+      NT::BlockDesc any_block_desc(desc.GetBlock<PNT::proto::BlockT>(i));     \
+      auto *cpp_block_desc = cpp_desc->AddBlock<cpp::BlockDesc>();            \
+      TransformBlockDescAnyToCpp(any_block_desc, cpp_block_desc);             \
+    }                                                                         \
+  }                                                                           \
+                                                                              \
+  template <>                                                                 \
+  void TransformProgramDescCppToAny<NT::ProgramDesc>(                         \
+      const cpp::ProgramDesc &cpp_desc, NT::ProgramDesc *any_desc) {          \
+    auto &desc = cpp_desc;                                                    \
+    if (desc.HasVersion()) {                                                  \
+      any_desc->SetVersion(desc.Version());                                   \
+    }                                                                         \
+                                                                              \
+    any_desc->ClearBlocks();                                                  \
+    for (size_t i = 0; i < desc.BlocksSize(); ++i) {                          \
+      auto *cpp_block_desc = desc.GetBlock<cpp::BlockDesc>(i);                \
+      NT::BlockDesc any_block_desc(any_desc->AddBlock<PNT::proto::BlockT>()); \
+      TransformBlockDescCppToAny(*cpp_block_desc, &any_block_desc);           \
+    }                                                                         \
   }
 
 TRANS_VAR_ANY_WITH_CPP_IMPL(naive_buffer::VarDesc);
 TRANS_OP_ANY_WITH_CPP_IMPL(naive_buffer::OpDesc);
-TRANS_BLOCK_ANY_WITH_CPP_IMPL(BlockDesc, naive_buffer, naive_buffer);
-TRANS_PROGRAM_ANY_WITH_CPP_IMPL(ProgramDesc, naive_buffer, naive_buffer);
+TRANS_BLOCK_ANY_WITH_CPP_IMPL(OpDesc, VarDesc, naive_buffer, naive_buffer);
+TRANS_PROGRAM_ANY_WITH_CPP_IMPL(BlockDesc, naive_buffer, naive_buffer);
+
+TRANS_VAR_ANY_WITH_CPP_IMPL(fbs::VarDesc);
+TRANS_OP_ANY_WITH_CPP_IMPL(fbs::OpDesc);
+TRANS_BLOCK_ANY_WITH_CPP_IMPL(OpDescT, VarDescT, fbs, fbs);
+TRANS_PROGRAM_ANY_WITH_CPP_IMPL(BlockDescT, fbs, fbs);
 
 #ifndef LITE_ON_TINY_PUBLISH
 TRANS_VAR_ANY_WITH_CPP_IMPL(pb::VarDesc);
 TRANS_OP_ANY_WITH_CPP_IMPL(pb::OpDesc);
-TRANS_BLOCK_ANY_WITH_CPP_IMPL(BlockDesc, pb, framework);
-TRANS_PROGRAM_ANY_WITH_CPP_IMPL(ProgramDesc, pb, framework);
+TRANS_BLOCK_ANY_WITH_CPP_IMPL(OpDesc, VarDesc, pb, framework);
+TRANS_PROGRAM_ANY_WITH_CPP_IMPL(BlockDesc, pb, framework);
 #endif
 
 #undef TRANS_VAR_ANY_WITH_CPP_IMPL

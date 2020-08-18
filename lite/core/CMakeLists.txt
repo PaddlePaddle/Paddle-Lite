@@ -133,7 +133,7 @@ lite_cc_library(type_system SRCS type_system.cc DEPS tensor target_wrapper)
 lite_cc_library(program SRCS program.cc
     DEPS op kernel model_parser ${ops} ${cpp_wrapper}
     PROFILE_DEPS lite_profiler
-    CUDA_DEPS nvtx_wrapper)
+    CUDA_DEPS nvtx_wrapper cuda_type_trans)
 
 if (NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)
