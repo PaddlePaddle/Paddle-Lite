@@ -386,14 +386,14 @@ struct ActivationParam : ParamBase {
     if (!input_tensor_ptrs_cache_) {
       input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X}));
     }
-    return input_tensor_ptrs_cache_;
+    return input_tensor_ptrs_cache_.get();
   }
   // get a vector of output tensors
   std::vector<Tensor*>* output_tensor_ptrs() override {
     if (!output_tensor_ptrs_cache_) {
       output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
     }
-    return output_tensor_ptrs_cache_;
+    return output_tensor_ptrs_cache_.get();
   }
 };
 
