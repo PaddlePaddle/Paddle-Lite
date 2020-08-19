@@ -14,3 +14,5 @@ lite_cc_library(fbs_io SRCS io.cc DEPS fbs_program_desc fbs_param_desc scope)
 lite_cc_test(test_vector_view SRCS vector_view_test.cc DEPS fbs_program_desc)
 lite_cc_test(test_fbs_io SRCS io_test.cc DEPS fbs_io)
 lite_cc_test(test_program_desc SRCS program_desc_test.cc DEPS fbs_program_desc)
+
+lite_cc_binary(test_fbs_io_2 SRCS io_test_2.cc DEPS light_api fbs_io)

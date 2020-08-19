@@ -633,15 +633,15 @@ void LoadModelFbsFromFile(const std::string &filename,
 
   /* 1. Load cpp::ProgramDesc with model.fbs */
   const std::string prog_path = filename + "/model.fbs";
-#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
-  cpp_prog->Init(fbs::LoadFile(prog_path));
-#elif LITE_ON_TINY_PUBLISH
-  LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
-                "the model cannot be loaded.";
-#else
+// #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
+//   cpp_prog->Init(fbs::LoadFile(prog_path));
+// #elif LITE_ON_TINY_PUBLISH
+//   LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
+//                 "the model cannot be loaded.";
+// #else
   fbs::ProgramDesc program(fbs::LoadFile(prog_path));
   TransformProgramDescAnyToCpp(program, cpp_prog);
-#endif
+// #endif
 
   /* 2. Load scope with params.fbs */
   const std::string params_path = filename + "/params.fbs";
