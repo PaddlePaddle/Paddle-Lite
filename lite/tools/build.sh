@@ -436,6 +436,7 @@ function print_usage {
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
+    echo -e "--enable_flatbuffers_view: (OFF|ON); Use the flatbuffers read-only view to load the model. If ON, the naive buffer will no longer be supported."
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
