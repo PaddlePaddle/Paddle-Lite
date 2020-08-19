@@ -606,7 +606,7 @@ void SaveModelNaive(const std::string &model_file,
 
   LOG(INFO) << "Save naive buffer model in '" << prog_path << " successfully";
 }
-
+#endif  // LITE_ON_TINY_PUBLISH
 template <typename T>
 void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {
   CHECK(out);
