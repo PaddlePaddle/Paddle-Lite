@@ -3180,8 +3180,7 @@ void conv_depthwise_5x5s2_bias_relu(float* dout,
                                      vbias,
                                      weights_vec,
                                      vzero,
-                                     win,
-                                     wout,
+                                     odds_w,
                                      pad_left_new,
                                      pad_right_new,
                                      cnt,
@@ -3275,8 +3274,7 @@ void conv_depthwise_5x5s2_bias_relu(float* dout,
                                       vbias,
                                       weights_vec,
                                       vzero,
-                                      win,
-                                      wout,
+                                      odds_w,
                                       pad_left_new,
                                       pad_right_new,
                                       cnt,
@@ -4636,7 +4634,7 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
                                               const float* scale,
                                               float32x4_t* weights,
                                               float32x4_t vzero,
-                                              bool odds_w,
+                                              bool odds,
                                               int pad_left,
                                               int pad_right,
                                               int cnt,
@@ -4662,7 +4660,7 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
   if (odds) { // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
-      din_ptr_arr[tmp_index - k]++;
+      din_ptr_arr[tmp - k]++;
     }
   }
   // clang-format off
