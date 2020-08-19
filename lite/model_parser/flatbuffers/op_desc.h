@@ -205,6 +205,7 @@ class OpDescView : public OpDescAPI {
   std::map<std::string, AttrType> attr_types_;
 };
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 class OpDesc : public OpDescAPI {
  public:
   OpDesc() : owned_(true), desc_(new proto::OpDescT()) {}
@@ -291,6 +292,7 @@ class OpDesc : public OpDescAPI {
   bool owned_{false};
   proto::OpDescT* desc_{nullptr};
 };
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

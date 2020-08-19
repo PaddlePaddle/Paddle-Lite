@@ -607,8 +607,6 @@ void SaveModelNaive(const std::string &model_file,
   LOG(INFO) << "Save naive buffer model in '" << prog_path << " successfully";
 }
 
-#endif  // LITE_ON_TINY_PUBLISH
-
 template <typename T>
 void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {
   CHECK(out);
@@ -939,9 +937,15 @@ void LoadModelFbsFromFile(const std::string &filename,
   ReadModelDataFromFile<uint64_t>(
       &topo_size, filename, &offset, sizeof(uint64_t));
 
-  /* 1. Save cpp::ProgramDesc with model.fbs */
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
+  cpp_prog->Init(fbs::LoadFile(filename, offset, topo_size));
+#elif LITE_ON_TINY_PUBLISH
+  LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
+                "the model cannot be loaded.";
+#else
   fbs::ProgramDesc program(fbs::LoadFile(filename, offset, topo_size));
   TransformProgramDescAnyToCpp(program, cpp_prog);
+#endif
   offset = offset + topo_size;
 
   /* 2. Save scope with params.fbs */
