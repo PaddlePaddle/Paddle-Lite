@@ -672,4 +672,4 @@ class XPUMultiEncoderFusePass : public ProgramPass {
 REGISTER_MIR_PASS(__xpu__multi_encoder_fuse_pass,
                   paddle::lite::mir::XPUMultiEncoderFusePass)
     .BindTargets({TARGET(kXPU)})
-    .BindKernel("matmul");
+    .BindKernel("__xpu__multi_encoder");
