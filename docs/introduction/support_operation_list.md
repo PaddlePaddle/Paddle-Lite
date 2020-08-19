@@ -136,6 +136,7 @@
 - norm
 - not_equal
 - power
+- pixel_shuffle
 - read_from_array
 - reduce_max
 - reduce_prod
@@ -176,6 +177,7 @@
 - flatten
 - flatten2
 - multiclass_nms
+- pixel_shuffle
 - reshape
 - reshape2
 
@@ -256,6 +258,7 @@
 - norm
 - not_equal
 - pad2d
+- pixel_shuffle
 - pool2d
 - power
 - prelu
@@ -398,5 +401,6 @@
 - io_copy
 - io_copy_once
 - mul
+- pixel_shuffle
 - pool2d
 - relu
