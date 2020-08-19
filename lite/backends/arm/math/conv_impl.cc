@@ -753,7 +753,7 @@ void conv_depthwise_5x5_fp32(const void* din,
                                 param,
                                 act_param,
                                 ctx);
-    else {
+    } else {
       conv_depthwise_5x5s2_fp32(reinterpret_cast<float*>(dout),
                                 reinterpret_cast<const float*>(din),
                                 reinterpret_cast<const float*>(weights),

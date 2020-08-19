@@ -195,7 +195,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
 #define COMPUTE_ONE_LINE_S2_PRE                        \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1  {v11.4s}, [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -207,7 +207,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
   "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1 {v11.4s},   [%[din_ptr0]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr6].s[0]\n" /*46810*wr6[0]*/\
@@ -217,7 +217,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
 #define COMPUTE_TWO_LINE_S2_PRE                        \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1 {v11.4s}, [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -229,7 +229,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
   "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
-  "ldr  d22,      [%[din_ptr1]]\n"     /*891011*/      \
+  "ld1 {v11.4s},   [%[din_ptr1]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[3]\n" /*46810*wr5[3]*/\
@@ -239,9 +239,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr1].s[1]\n" /*1357*wr1[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "fmla v15.4s, v13.4s, %[wr1].s[3]\n" /*3579*wr1[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr6].s[0]\n" /*46810*wr6[0]*/\
@@ -251,7 +251,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
 #define COMPUTE_THREE_LINE_S2_PRE                      \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1  {v11.4s}, [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -262,8 +262,8 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "ld2 {v9.4s, v10.4s}, [%[din_ptr1]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "ld1  {v11.4s}, [%[din_ptr1]]\n"     /*891011*/      \
   "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
-  "ldr  d22,      [%[din_ptr1]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[2]\n" /*46810*wr5[2]*/\
@@ -273,9 +273,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr1].s[1]\n" /*1357*wr1[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr2]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr2]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "ld1  {v11.4s}, [%[din_ptr2]]\n"     /*891011*/      \
+  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
   "fmla v15.4s, v13.4s, %[wr1].s[3]\n" /*3579*wr1[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr5].s[3]\n" /*46810*wr5[3]*/\
@@ -285,9 +285,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v16.4s, v10.4s, %[wr2].s[1]\n" /*1357*wr2[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
-  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "ld1  {v11.4s}, [%[din_ptr0]]\n"     /*891011*/      \
+  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
   "fmla v16.4s, v13.4s, %[wr2].s[3]\n" /*3579*wr2[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr6].s[0]\n" /*46810*wr6[0]*/\
@@ -297,7 +297,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
 #define COMPUTE_FOUR_LINE_S2_PRE                       \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1  {v11.4s}, [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -308,8 +308,8 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "ld2 {v9.4s, v10.4s}, [%[din_ptr1]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "ld1  {v11.4s}, [%[din_ptr1]]\n"     /*891011*/      \
   "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
-  "ldr  d22,      [%[din_ptr1]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[1]\n" /*46810*wr5[1]*/\
@@ -319,9 +319,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr1].s[1]\n" /*1357*wr1[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr2]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr2]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "ld1  {v11.4s}, [%[din_ptr2]]\n"     /*891011*/      \
+  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
   "fmla v15.4s, v13.4s, %[wr1].s[3]\n" /*3579*wr1[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr5].s[2]\n" /*46810*wr5[2]*/\
@@ -331,9 +331,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v16.4s, v10.4s, %[wr2].s[1]\n" /*1357*wr2[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr3]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr3]]\n"     /*891011*/      \
-  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "ld1  {v11.4s}, [%[din_ptr3]]\n"     /*891011*/      \
+  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
   "fmla v16.4s, v13.4s, %[wr2].s[3]\n" /*3579*wr2[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[3]\n" /*46810*wr5[3]*/\
@@ -343,9 +343,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr3].s[1]\n" /*1357*wr3[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr3].s[2]\n" /*2468*wr3[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "ld1  {v11.4s}, [%[din_ptr0]]\n"     /*891011*/      \
+  "fmla v16.4s, v12.4s, %[wr3].s[2]\n" /*2468*wr3[2]*/ \
   "fmla v15.4s, v13.4s, %[wr3].s[3]\n" /*3579*wr3[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr6].s[0]\n" /*46810*wr6[0]*/\
@@ -355,7 +355,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
 #define COMPUTE_FIVE_LINE_S2                           \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -367,7 +367,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
   "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
-  "ldr  d22,      [%[din_ptr1]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr1]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[0]\n" /*46810*wr5[0]*/\
@@ -377,9 +377,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr1].s[1]\n" /*1357*wr1[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr2]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr2]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr2]]\n"     /*891011*/      \
   "fmla v15.4s, v13.4s, %[wr1].s[3]\n" /*3579*wr1[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr5].s[1]\n" /*46810*wr5[1]*/\
@@ -389,9 +389,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v16.4s, v10.4s, %[wr2].s[1]\n" /*1357*wr2[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr3]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr3]]\n"     /*891011*/      \
-  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr3]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr2].s[3]\n" /*3579*wr2[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[2]\n" /*46810*wr5[2]*/\
@@ -401,9 +401,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr3].s[1]\n" /*1357*wr3[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr4]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr4]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr3].s[2]\n" /*2468*wr3[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v16.4s, v12.4s, %[wr3].s[2]\n" /*2468*wr3[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr4]]\n"     /*891011*/      \
   "fmla v15.4s, v13.4s, %[wr3].s[3]\n" /*3579*wr3[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr5].s[3]\n" /*46810*wr5[3]*/\
@@ -413,9 +413,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v16.4s, v10.4s, %[wr4].s[1]\n" /*1357*wr4[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
-  "fmla v15.4s, v12.4s, %[wr4].s[2]\n" /*2468*wr4[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v15.4s, v12.4s, %[wr4].s[2]\n" /*2468*wr4[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr4].s[3]\n" /*3579*wr4[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr6].s[0]\n" /*46810*wr6[0]*/\
@@ -426,7 +426,120 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
   "ld1 {v17.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
+  "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
+  "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
+  "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
+  "1: \n"                                              \
+  "subs %w[cnt], %w[cnt], #1 \n"                       \
+  "fmla v15.4s, v9.4s, %[wr0].s[0]\n"  /*0246*wr0[0]*/ \
+  "fmul v16.4s, v10.4s, %[wr0].s[1]\n" /*1357*wr0[1]*/ \
+  "ld2 {v9.4s, v10.4s}, [%[din_ptr1]], #32\n"          \
+  "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
+  "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr1]]\n"     /*891011*/      \
+  "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
+  "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
+  "fmla v15.4s, v14.4s, %[wr5].s[0]\n" /*46810*wr5[0]*/\
+  "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
+  "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
+  "fmla v16.4s, v9.4s, %[wr1].s[0]\n"  /*0246*wr1[0]*/ \
+  "fmla v15.4s, v10.4s, %[wr1].s[1]\n" /*1357*wr1[1]*/ \
+  "ld2 {v9.4s, v10.4s}, [%[din_ptr2]], #32\n"          \
+  "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
+  "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr2]]\n"     /*891011*/      \
+  "fmla v15.4s, v13.4s, %[wr1].s[3]\n" /*3579*wr1[3]*/ \
+  "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
+  "fmla v16.4s, v14.4s, %[wr5].s[1]\n" /*46810*wr5[1]*/\
+  "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
+  "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
+  "fmla v15.4s, v9.4s, %[wr2].s[0]\n"  /*0246*wr2[0]*/ \
+  "fmla v17.4s, v9.4s, %[wr0].s[0]\n"  /*0246*wr0[0]*/ \
+  "fmla v16.4s, v10.4s, %[wr2].s[1]\n" /*1357*wr2[1]*/ \
+  "fmul v18.4s, v10.4s, %[wr0].s[1]\n" /*1357*wr0[1]*/ \
+  "ld2 {v9.4s, v10.4s}, [%[din_ptr3]], #32\n"          \
+  "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
+  "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
+  "fmla v17.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr3]]\n"     /*891011*/      \
+  "fmla v16.4s, v13.4s, %[wr2].s[3]\n" /*3579*wr2[3]*/ \
+  "fmla v18.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
+  "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
+  "fmla v15.4s, v14.4s, %[wr5].s[2]\n" /*46810*wr5[2]*/\
+  "fmla v17.4s, v14.4s, %[wr5].s[0]\n" /*46810*wr5[0]*/\
+  "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
+  "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
+  "fmla v16.4s, v9.4s, %[wr3].s[0]\n"  /*0246*wr3[0]*/ \
+  "fmla v18.4s, v9.4s, %[wr1].s[0]\n"  /*0246*wr1[0]*/ \
+  "fmla v15.4s, v10.4s, %[wr3].s[1]\n" /*1357*wr3[1]*/ \
+  "fmla v17.4s, v10.4s, %[wr1].s[1]\n" /*1357*wr1[1]*/ \
+  "ld2 {v9.4s, v10.4s}, [%[din_ptr4]], #32\n"          \
+  "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
+  "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v16.4s, v12.4s, %[wr3].s[2]\n" /*2468*wr3[2]*/ \
+  "fmla v18.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr4]]\n"     /*891011*/      \
+  "fmla v15.4s, v13.4s, %[wr3].s[3]\n" /*3579*wr3[3]*/ \
+  "fmla v17.4s, v13.4s, %[wr1].s[3]\n" /*3579*wr1[3]*/ \
+  "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
+  "fmla v16.4s, v14.4s, %[wr5].s[3]\n" /*46810*wr5[3]*/\
+  "fmla v18.4s, v14.4s, %[wr5].s[1]\n" /*46810*wr5[1]*/\
+  "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
+  "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
+  "fmla v15.4s, v9.4s, %[wr4].s[0]\n"  /*0246*wr4[0]*/ \
+  "fmla v17.4s, v9.4s, %[wr2].s[0]\n"  /*0246*wr2[0]*/ \
+  "fmla v16.4s, v10.4s, %[wr4].s[1]\n" /*1357*wr4[1]*/ \
+  "fmla v18.4s, v10.4s, %[wr2].s[1]\n" /*1357*wr2[1]*/ \
+  "ld2 {v9.4s, v10.4s}, [%[din_ptr5]], #32\n"          \
+  "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
+  "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v15.4s, v12.4s, %[wr4].s[2]\n" /*2468*wr4[2]*/ \
+  "fmla v17.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr5]]\n"     /*891011*/      \
+  "fmla v16.4s, v13.4s, %[wr4].s[3]\n" /*3579*wr4[3]*/ \
+  "fmla v18.4s, v13.4s, %[wr2].s[3]\n" /*3579*wr2[3]*/ \
+  "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
+  "fmla v15.4s, v14.4s, %[wr6].s[0]\n" /*46810*wr6[0]*/\
+  "fmla v17.4s, v14.4s, %[wr5].s[2]\n" /*46810*wr5[2]*/\
+  "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
+  "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
+  "fmla v18.4s, v9.4s, %[wr3].s[0]\n"  /*0246*wr3[0]*/ \
+  "fmla v17.4s, v10.4s, %[wr3].s[1]\n"  /*1357*wr3[1]*/\
+  "ld2 {v9.4s, v10.4s}, [%[din_ptr6]], #32\n"          \
+  "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
+  "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "ld1 {v11.4s},  [%[din_ptr6]]\n"     /*891011*/      \
+  "fmla v18.4s, v12.4s, %[wr3].s[2]\n" /*2468*wr3[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr6]]\n"     /*891011*/      \
+  "fmla v17.4s, v13.4s, %[wr3].s[3]\n" /*3579*wr3[3]*/ \
+  "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
+  "fmla v18.4s, v14.4s, %[wr5].s[3]\n" /*46810*wr6[0]*/\
+  "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
+  "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
+  "fmla v17.4s, v9.4s, %[wr4].s[0]\n"  /*0246*wr4[0]*/ \
+  "fmla v18.4s, v10.4s, %[wr4].s[1]\n"  /*1357*wr4[1]*/\
+  "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
+  "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
+  "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v17.4s, v12.4s, %[wr4].s[2]\n" /*2468*wr4[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
+  "fmla v18.4s, v13.4s, %[wr4].s[3]\n" /*3579*wr4[3]*/ \
+  "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
+  "fmla v17.4s, v14.4s, %[wr6].s[0]\n" /*46810*wr6[0]*/\
+  "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
+  "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
+  "fadd v16.4s, v16.4s, v15.4s\n"                      \
+  "fadd v18.4s, v18.4s, v17.4s\n"
+
+#define COMPUTE_FIVE_LINE_S2_OUT2_1                    \
+  "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
+  "ld1 {v15.4s}, [%[bias]]\n"                          \
+  "ld1 {v17.4s}, [%[bias]]\n"                          \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -529,7 +642,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
 #define COMPUTE_ONE_LINE_S2_POST                       \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -541,7 +654,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
   "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[0]\n" /*46810*wr5[0]*/\
@@ -551,7 +664,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
 #define COMPUTE_TWO_LINE_S2_POST                       \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -563,7 +676,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
   "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
-  "ldr  d22,      [%[din_ptr1]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr1]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[0]\n" /*46810*wr5[0]*/\
@@ -573,9 +686,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr1].s[1]\n" /*1357*wr1[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "fmla v15.4s, v13.4s, %[wr1].s[3]\n" /*3579*wr1[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr5].s[1]\n" /*46810*wr5[1]*/\
@@ -585,7 +698,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
 #define COMPUTE_THREE_LINE_S2_POST                     \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -597,7 +710,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
   "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
-  "ldr  d22,      [%[din_ptr1]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr1]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[0]\n" /*46810*wr5[0]*/\
@@ -607,9 +720,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr1].s[1]\n" /*1357*wr1[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr2]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr2]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr2]]\n"     /*891011*/      \
   "fmla v15.4s, v13.4s, %[wr1].s[3]\n" /*3579*wr1[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr5].s[1]\n" /*46810*wr5[1]*/\
@@ -619,9 +732,10 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v16.4s, v10.4s, %[wr2].s[1]\n" /*1357*wr2[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
-  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
+  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr2].s[3]\n" /*3579*wr2[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[2]\n" /*46810*wr5[2]*/\
@@ -631,7 +745,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
 #define COMPUTE_FOUR_LINE_S2_POST                      \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "ld1 {v15.4s}, [%[bias]]\n"                          \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "ext v13.16b, v10.16b, v11.16b, #4\n"/*3578*/        \
   "ext v14.16b, v9.16b, v11.16b, #8\n" /*4689*/        \
@@ -643,7 +757,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
   "fmla v15.4s, v12.4s, %[wr0].s[2]\n" /*2468*wr0[2]*/ \
-  "ldr  d22,      [%[din_ptr1]]\n"     /*891011*/      \
+  "ld1 {v11.4s},  [%[din_ptr1]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr0].s[3]\n" /*3579*wr0[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[0]\n" /*46810*wr5[0]*/\
@@ -653,9 +767,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr1].s[1]\n" /*1357*wr1[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr2]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr2]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v16.4s, v12.4s, %[wr1].s[2]\n" /*2468*wr1[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr2]]\n"     /*891011*/      \
   "fmla v15.4s, v13.4s, %[wr1].s[3]\n" /*3579*wr1[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr5].s[1]\n" /*46810*wr5[1]*/\
@@ -665,9 +779,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v16.4s, v10.4s, %[wr2].s[1]\n" /*1357*wr2[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr3]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr3]]\n"     /*891011*/      \
-  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v15.4s, v12.4s, %[wr2].s[2]\n" /*2468*wr2[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr3]]\n"     /*891011*/      \
   "fmla v16.4s, v13.4s, %[wr2].s[3]\n" /*3579*wr2[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v15.4s, v14.4s, %[wr5].s[2]\n" /*46810*wr5[2]*/\
@@ -677,9 +791,9 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "fmla v15.4s, v10.4s, %[wr3].s[1]\n" /*1357*wr3[1]*/ \
   "ld2 {v9.4s, v10.4s}, [%[din_ptr0]], #32\n"          \
   "mov v13.s[3], v11.s[1]\n"           /*3579*/        \
-  "ldr  d22,      [%[din_ptr0]]\n"     /*891011*/      \
-  "fmla v16.4s, v12.4s, %[wr3].s[2]\n" /*2468*wr3[2]*/ \
   "mov v14.s[3], v11.s[2]\n"           /*46810*/       \
+  "fmla v16.4s, v12.4s, %[wr3].s[2]\n" /*2468*wr3[2]*/ \
+  "ld1 {v11.4s},  [%[din_ptr0]]\n"     /*891011*/      \
   "fmla v15.4s, v13.4s, %[wr3].s[3]\n" /*3579*wr3[3]*/ \
   "ext v12.16b, v9.16b, v11.16b, #4\n" /*2468*/        \
   "fmla v16.4s, v14.4s, %[wr5].s[3]\n" /*46810*wr5[3]*/\
@@ -961,6 +1075,109 @@ void conv_depthwise_5x5s2_fp32(float* dout,
   "vext.32 d25, d19, d21, #1\n"          /*57-79*/ \
   "vadd.f32 q14, q14, q15\n"
 #define COMPUTE_FIVE_LINE_S2_OUT2                  \
+  "vld2.f32 {d16-d19}, [%[din_ptr0]]!\n"           \
+  "vld1.f32 {d30-d31}, [%[bias]]\n"                \
+  "vld2.f32 {d20-d21}, [%[din_ptr0]]\n"  /*810911*/\
+  "vext.32 q11, q8, q10, #1\n"           /*2468*/  \
+  "vext.32 d25, d19, d21, #1\n"          /*57-79*/ \
+  "vext.32 q13, q8, q10, #2\n"           /*46810*/ \
+  "1: \n"                                          \
+  "subs %[cnt], #1\n"                              \
+  "vmla.f32 q15, q8, %e[wr0][0]\n" /*0246*wr0[0]*/ \
+  "vmul.f32 q14, q9, %e[wr0][1]\n" /*1357*wr0[1]*/ \
+  "vext.f32 d24, d18, d19, #1\n"   /*13-35*/       \
+  "vld2.f32 {d16-d19}, [%[din_ptr1]]!\n"           \
+  "vmla.f32 q15, q11, %f[wr0][0]\n" /*2468*wr0[2]*/\
+  "vld2.f32 {d20-d21}, [%[din_ptr1]]\n"  /*810911*/\
+  "vmla.f32 q14, q13, %e[wr5][0]\n"/*46810*wr5[0]*/\
+  "vext.32 q11, q8, q10, #1\n"           /*2468*/  \
+  "vext.32 q13, q8, q10, #2\n"           /*46810*/ \
+  "vmla.f32 q15, q12, %f[wr0][1]\n" /*3579*wr0[3]*/\
+  "vext.32 d25, d19, d21, #1\n"          /*57-79*/ \
+  "vmla.f32 q14, q8, %e[wr1][0]\n" /*0246*wr1[0]*/ \
+  "vext.f32 d24, d18, d19, #1\n"   /*13-35*/       \
+  "vmla.f32 q15, q9, %e[wr1][1]\n" /*1357*wr1[1]*/ \
+  "vld2.f32 {d16-d19}, [%[din_ptr2]]!\n"           \
+  "vmla.f32 q14, q11, %f[wr1][0]\n" /*2468*wr1[2]*/\
+  "vld2.f32 {d20-d21}, [%[din_ptr2]]\n"  /*810911*/\
+  "vext.32 q11, q8, q10, #1\n"           /*2468*/  \
+  "vmla.f32 q15, q13, %e[wr5][1]\n"/*46810*wr5[1]*/\
+  "vext.32 q13, q8, q10, #2\n"           /*46810*/ \
+  "vmla.f32 q14, q12, %f[wr1][1]\n" /*3579*wr1[3]*/\
+  "vext.32 d25, d19, d21, #1\n"          /*57-79*/ \
+  "vadd.f32 q15, q15, q14\n"                       \
+  "vld1.f32 {d28-d29}, [%[bias]]\n"                \
+  "vmla.f32 q15, q8, %e[wr2][0]\n" /*0246*wr2[0]*/ \
+  "vmla.f32 q14, q8, %e[wr0][0]\n" /*0246*wr0[0]*/ \
+  "vext.f32 d24, d18, d19, #1\n"   /*13-35*/       \
+  "vmla.f32 q15, q9, %e[wr2][1]\n" /*1357*wr2[1]*/ \
+  "vmla.f32 q14, q9, %e[wr0][1]\n" /*1357*wr0[1]*/ \
+  "vld2.f32 {d16-d19}, [%[din_ptr3]]!\n"           \
+  "vmla.f32 q15, q11, %f[wr2][0]\n" /*2468*wr2[2]*/\
+  "vmla.f32 q14, q11, %f[wr0][0]\n" /*2468*wr0[2]*/\
+  "vld2.f32 {d20-d21}, [%[din_ptr3]]\n"  /*810911*/\
+  "vmla.f32 q15, q13, %f[wr5][0]\n"/*46810*wr5[2]*/\
+  "vmla.f32 q14, q13, %e[wr5][0]\n"/*46810*wr5[0]*/\
+  "vext.32 q11, q8, q10, #1\n"           /*2468*/  \
+  "vmla.f32 q15, q12, %f[wr2][1]\n" /*3579*wr2[3]*/\
+  "vmla.f32 q14, q12, %f[wr0][1]\n" /*3579*wr0[3]*/\
+  "vext.32 q13, q8, q10, #2\n"           /*46810*/ \
+  "vmla.f32 q15, q8, %e[wr3][0]\n" /*0246*wr3[0]*/ \
+  "vmla.f32 q14, q8, %e[wr1][0]\n" /*0246*wr1[0]*/ \
+  "vext.32 d25, d19, d21, #1\n"          /*57-79*/ \
+  "vmla.f32 q15, q9, %e[wr3][1]\n" /*1357*wr3[1]*/ \
+  "vmla.f32 q14, q9, %e[wr1][1]\n" /*1357*wr1[1]*/ \
+  "vext.f32 d24, d18, d19, #1\n"   /*13-35*/       \
+  "vld2.f32 {d16-d19}, [%[din_ptr4]]!\n"           \
+  "vmla.f32 q15, q11, %f[wr3][0]\n" /*2468*wr3[2]*/\
+  "vmla.f32 q14, q11, %f[wr1][0]\n" /*2468*wr1[2]*/\
+  "vld2.f32 {d20-d21}, [%[din_ptr4]]\n"  /*810911*/\
+  "vmla.f32 q15, q13, %f[wr5][1]\n"/*46810*wr5[3]*/\
+  "vmla.f32 q14, q13, %e[wr5][1]\n"/*46810*wr5[1]*/\
+  "vext.32 q11, q8, q10, #1\n"           /*2468*/  \
+  "vmla.f32 q15, q12, %f[wr3][1]\n" /*3579*wr3[3]*/\
+  "vmla.f32 q14, q12, %f[wr1][1]\n" /*3579*wr1[3]*/\
+  "vext.32 q13, q8, q10, #2\n"           /*46810*/ \
+  "vext.32 d25, d19, d21, #1\n"          /*57-79*/ \
+  "vmla.f32 q15, q8, %e[wr4][0]\n" /*0246*wr4[0]*/ \
+  "vmla.f32 q14, q8, %e[wr2][0]\n" /*0246*wr2[0]*/ \
+  "vext.f32 d24, d18, d19, #1\n"   /*13-35*/       \
+  "vmla.f32 q15, q9, %e[wr4][1]\n" /*1357*wr4[1]*/ \
+  "vmla.f32 q14, q9, %e[wr2][1]\n" /*1357*wr2[1]*/ \
+  "vld2.f32 {d16-d19}, [%[din_ptr5]]!\n"           \
+  "vmla.f32 q15, q11, %f[wr4][0]\n" /*2468*wr4[2]*/\
+  "vmla.f32 q14, q11, %f[wr2][0]\n" /*2468*wr2[2]*/\
+  "vld2.f32 {d20-d21}, [%[din_ptr5]]\n"  /*810911*/\
+  "vmla.f32 q15, q13, %e[wr6][0]\n"/*46810*wr6[0]*/\
+  "vmla.f32 q14, q13, %f[wr5][0]\n"/*46810*wr5[2]*/\
+  "vext.32 q11, q8, q10, #1\n"           /*2468*/  \
+  "vmla.f32 q15, q12, %f[wr4][1]\n" /*3579*wr4[3]*/\
+  "vmla.f32 q14, q12, %f[wr2][1]\n" /*3579*wr2[3]*/\
+  "vext.32 q13, q8, q10, #2\n"           /*46810*/ \
+  "vext.32 d25, d19, d21, #1\n"          /*57-79*/ \
+  "vmla.f32 q14, q8, %e[wr3][0]\n" /*0246*wr3[0]*/ \
+  "vext.f32 d24, d18, d19, #1\n"   /*13-35*/       \
+  "vmla.f32 q14, q9, %e[wr3][1]\n" /*1357*wr3[1]*/ \
+  "vld2.f32 {d16-d19}, [%[din_ptr6]]!\n"           \
+  "vmla.f32 q14, q11, %f[wr3][0]\n" /*2468*wr3[2]*/\
+  "vld2.f32 {d20-d21}, [%[din_ptr6]]\n"  /*810911*/\
+  "vmla.f32 q14, q13, %f[wr5][1]\n"/*46810*wr5[3]*/\
+  "vext.32 q11, q8, q10, #1\n"           /*2468*/  \
+  "vext.32 q13, q8, q10, #2\n"           /*46810*/ \
+  "vmla.f32 q14, q12, %f[wr3][1]\n" /*3579*wr4[3]*/\
+  "vext.32 d25, d19, d21, #1\n"          /*57-79*/ \
+  "vmla.f32 q14, q8, %e[wr4][0]\n" /*0246*wr4[0]*/ \
+  "vext.f32 d24, d18, d19, #1\n"   /*13-35*/       \
+  "vmla.f32 q14, q9, %e[wr4][1]\n" /*1357*wr4[1]*/ \
+  "vld2.f32 {d16-d19}, [%[din_ptr0]]!\n"           \
+  "vmla.f32 q14, q11, %f[wr4][0]\n" /*2468*wr4[2]*/\
+  "vld2.f32 {d20-d21}, [%[din_ptr0]]\n"  /*810911*/\
+  "vmla.f32 q14, q13, %e[wr6][0]\n"/*46810*wr6[0]*/\
+  "vext.32 q11, q8, q10, #1\n"           /*2468*/  \
+  "vext.32 q13, q8, q10, #2\n"           /*46810*/ \
+  "vmla.f32 q14, q12, %f[wr4][1]\n" /*3579*wr4[3]*/\
+  "vext.32 d25, d19, d21, #1\n"          /*57-79*/
+#define COMPUTE_FIVE_LINE_S2_OUT2_1                \
   "vld2.f32 {d16-d19}, [%[din_ptr0]]!\n"           \
   "vld1.f32 {d30-d31}, [%[bias]]\n"                \
   "vld2.f32 {d20-d21}, [%[din_ptr0]]\n"  /*810911*/\
@@ -1326,6 +1543,19 @@ inline void compute_all_padding_pre(float* dout,
       din_ptr_arr[tmp_index - k]++;
     }
   }
+#if 0 //def __aarch64__
+ LOG(INFO) << "data: " << din_ptr_arr[0][0] << ", " << din_ptr_arr[0][1] << ", " << din_ptr_arr[0][2] << ", " << din_ptr_arr[0][3];
+ LOG(INFO) << "----";
+ asm volatile(
+     "ld1 {v11.4s}, [%[din_ptr]]\n"
+     "ld1 {v14.4s}, [%[din_ptr]]\n"
+     "mov v14.s[3], v11.s[2]\n"
+     "st1 {v14.4s}, [%[din_ptr]]\n"
+    :[din_ptr] "+r"(din_ptr_arr[0])
+    :
+    : "cc", "memory", "v10", "v11");
+LOG(INFO) << "data: " << din_ptr_arr[0][0] << ", " << din_ptr_arr[0][1] << ", " << din_ptr_arr[0][2] << ", " << din_ptr_arr[0][3];
+#endif
   // mid
   // clang-format off
   if (cnt > 0) {
@@ -1580,7 +1810,7 @@ inline void compute_all_padding_mid(float* dout,
   if (odds) { // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
-      din_ptr_arr[tmp_index - k]++;
+      din_ptr_arr[tmp - k]++;
     }
   }
   // clang-format off
@@ -1683,7 +1913,8 @@ inline void compute_all_padding_mid_out2(float* dout0,
                                          int cnt,
                                          int remain,
                                          int num) {
-  int tmp1 = num + 1;
+  int tmp1 = num + 2;
+  int tmp2 = num + 1;
   int tmp = num - 1;
   // left
   for (int i = pad_left; i > 0; i--) {
@@ -1697,7 +1928,7 @@ inline void compute_all_padding_mid_out2(float* dout0,
                                   0.f,
                                   weights[5][tmp - k],
                                   4 - i);
-      sum1 += compute_one_data_pre(din_ptr_arr[num - k],
+      sum1 += compute_one_data_pre(din_ptr_arr[tmp2 - k],
                                    weights[tmp - k],
                                    0.f,
                                    weights[5][tmp - k],
@@ -1709,8 +1940,9 @@ inline void compute_all_padding_mid_out2(float* dout0,
   if (odds) { // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[tmp1]++;
     for (int k = 0; k < num; k++) {
-      din_ptr_arr[num - k]++;
+      din_ptr_arr[tmp2 - k]++;
     }
+    din_ptr_arr[1]++;
     din_ptr_arr[0]++;
   }
   // clang-format off
@@ -1793,9 +2025,10 @@ inline void compute_all_padding_mid_out2(float* dout0,
       sum += compute_one_data_post(
           din_ptr_arr[tmp - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
       sum1 += compute_one_data_post(
-          din_ptr_arr[num - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
-      din_ptr_arr[num - i] += 2;
+          din_ptr_arr[tmp2 - i], weights[tmp - i], 0.f, weights[5][tmp - i], 4);
+      din_ptr_arr[tmp2 - i] += 2;
     }
+    din_ptr_arr[1] += 2;
     din_ptr_arr[0] += 2;
     *dout0++ = sum;
     *dout1++ = sum1;
@@ -1813,13 +2046,14 @@ inline void compute_all_padding_mid_out2(float* dout0,
                                    0.f,
                                    weights[tmp - k][3 - i],
                                    3 - i);
-      sum1 += compute_one_data_post(din_ptr_arr[num - k],
+      sum1 += compute_one_data_post(din_ptr_arr[tmp2 - k],
                                     weights[tmp - k],
                                     0.f,
                                     weights[tmp - k][3 - i],
                                     3 - i);
-      din_ptr_arr[num - k] += 2;
+      din_ptr_arr[tmp2 - k] += 2;
     }
+    din_ptr_arr[1] += 2;
     din_ptr_arr[0] += 2;
     *dout0++ = sum;
     *dout1++ = sum1;
@@ -1853,7 +2087,7 @@ inline void compute_all_padding_post(float* dout,
   if (odds) { // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
-      din_ptr_arr[tmp_index - k]++;
+      din_ptr_arr[tmp - k]++;
     }
   }
   // clang-format off
@@ -2104,12 +2338,22 @@ void conv_depthwise_5x5s2_bias(float* dout,
   int pad_bottom_new = pad_bottom / 2;
   int weights_size = 25;
   int num_out = wout << 1;
-  int loop_w = wout - pad_left_new - pad_left_new;
+  int loop_w = wout - pad_left_new - pad_right_new;
   int loop_h = hout - pad_top_new - pad_bottom_new;
   bool odds_w = pad_left % 2;
   bool odds_h = pad_top % 2;
+  if (loop_w != ((win - 4) / 2)) {
+    loop_w--;
+    pad_right_new++;
+  }
+  if (loop_h != ((hin - 4) / 2)) {
+    loop_h--;
+    pad_bottom_new++;
+  }
   int cnt = loop_w >> 2;
   int remain = loop_w & 3;
+  int n_top_h = 4 - pad_top;
+  int n_bottom_h = 4 -pad_bottom;
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * in_channel_size;
     float* dout_batch = dout + n * out_channel_size;
@@ -2145,18 +2389,20 @@ void conv_depthwise_5x5s2_bias(float* dout,
           din_ptr0, din_ptr1, din_ptr2, din_ptr3, din_ptr4, din_ptr5, din_ptr6};
       float32x4_t weights_vec[] = {wr0, wr1, wr2, wr3, wr4, wr5, wr6};
       // top_h
+      int h_in_num = n_top_h;
       for (int h = pad_top_new; h > 0; h--) {
         compute_all_padding_pre(dout_ptr0,
                                 din_ptr_arr,
                                 vbias,
                                 weights_vec,
                                 odds_w,
-                                pad_left,
-                                pad_right,
+                                pad_left_new,
+                                pad_right_new,
                                 cnt,
                                 remain,
-                                4 - h);
+                                h_in_num);
         dout_ptr0 += wout;
+        h_in_num += 2;
         din_ptr_arr[0] = din_ptr0;
         din_ptr_arr[1] = din_ptr1;
         din_ptr_arr[2] = din_ptr2;
@@ -2164,13 +2410,20 @@ void conv_depthwise_5x5s2_bias(float* dout,
         din_ptr_arr[4] = din_ptr4;
       }
       if (odds_h) {
-        din_ptr_arr[0] = din_ptr1;
-        din_ptr_arr[1] = din_ptr2;
-        din_ptr_arr[2] = din_ptr3;
-        din_ptr_arr[3] = din_ptr4;
-        din_ptr_arr[4] = din_ptr5;
-        din_ptr_arr[5] = din_ptr6;
-        din_ptr_arr[6] = din_ptr6 + win;
+        din_ptr0 = din_ptr1;
+        din_ptr1 = din_ptr2;
+        din_ptr2 = din_ptr3;
+        din_ptr3 = din_ptr4;
+        din_ptr4 = din_ptr5;
+        din_ptr5 = din_ptr6;
+        din_ptr6 += win; 
+        din_ptr_arr[0] = din_ptr0;
+        din_ptr_arr[1] = din_ptr1;
+        din_ptr_arr[2] = din_ptr2;
+        din_ptr_arr[3] = din_ptr3;
+        din_ptr_arr[4] = din_ptr4;
+        din_ptr_arr[5] = din_ptr5;
+        din_ptr_arr[6] = din_ptr6;
       }
       dout_ptr1 = dout_ptr0 + wout;
       // mid_h
@@ -2181,8 +2434,8 @@ void conv_depthwise_5x5s2_bias(float* dout,
                                      vbias,
                                      weights_vec,
                                      odds_w,
-                                     pad_left,
-                                     pad_right,
+                                     pad_left_new,
+                                     pad_right_new,
                                      cnt,
                                      remain,
                                      4);
@@ -2209,8 +2462,8 @@ void conv_depthwise_5x5s2_bias(float* dout,
                                 vbias,
                                 weights_vec,
                                 odds_w,
-                                pad_left,
-                                pad_right,
+                                pad_left_new,
+                                pad_right_new,
                                 cnt,
                                 remain,
                                 4);
@@ -2227,18 +2480,20 @@ void conv_depthwise_5x5s2_bias(float* dout,
         din_ptr_arr[4] = din_ptr4;
       }
       // bottom
+      h_in_num = n_bottom_h;
       for (int h = 0; h < pad_bottom; h++) {
         compute_all_padding_post(dout_ptr0,
                                  din_ptr_arr,
                                  vbias,
                                  weights_vec,
                                  odds_w,
-                                 pad_left,
-                                 pad_right,
+                                 pad_left_new,
+                                 pad_right_new,
                                  cnt,
                                  remain,
-                                 3 - h);
+                                 h_in_num);
         dout_ptr0 += wout;
+        h_in_num -= 2;
         din_ptr_arr[0] = din_ptr0;
         din_ptr_arr[1] = din_ptr1;
         din_ptr_arr[2] = din_ptr2;
@@ -2671,6 +2926,7 @@ inline void compute_all_padding_mid_relu_out2(float* dout0,
                    [din_ptr3] "+r"(din_ptr_arr[3]),
                    [din_ptr4] "+r"(din_ptr_arr[4]),
                    [din_ptr5] "+r"(din_ptr_arr[5]),
+                   [din_ptr6] "+r"(din_ptr_arr[6]),
                    [dout_ptr0] "+r"(dout0),
                    [dout_ptr1] "+r"(dout1)
                  : [wr0] "w"(weights[0]),
@@ -2702,6 +2958,7 @@ inline void compute_all_padding_mid_relu_out2(float* dout0,
                    [din_ptr3] "+r"(din_ptr_arr[3]),
                    [din_ptr4] "+r"(din_ptr_arr[4]),
                    [din_ptr5] "+r"(din_ptr_arr[5]),
+                   [din_ptr6] "+r"(din_ptr_arr[6]),
                    [dout_ptr0] "+r"(dout0),
                    [dout_ptr1] "+r"(dout1)
                  : [wr0] "w"(weights[0]),
@@ -3635,6 +3892,7 @@ inline void compute_all_padding_mid_relu6_out2(float* dout0,
                    [din_ptr3] "+r"(din_ptr_arr[3]),
                    [din_ptr4] "+r"(din_ptr_arr[4]),
                    [din_ptr5] "+r"(din_ptr_arr[5]),
+                   [din_ptr6] "+r"(din_ptr_arr[6]),
                    [dout_ptr0] "+r"(dout0),
                    [dout_ptr1] "+r"(dout1)
                  : [wr0] "w"(weights[0]),
@@ -3667,6 +3925,7 @@ inline void compute_all_padding_mid_relu6_out2(float* dout0,
                    [din_ptr3] "+r"(din_ptr_arr[3]),
                    [din_ptr4] "+r"(din_ptr_arr[4]),
                    [din_ptr5] "+r"(din_ptr_arr[5]),
+                   [din_ptr6] "+r"(din_ptr_arr[6]),
                    [dout_ptr0] "+r"(dout0),
                    [dout_ptr1] "+r"(dout1)
                  : [wr0] "w"(weights[0]),
@@ -4631,6 +4890,7 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
                    [din_ptr3] "+r"(din_ptr_arr[3]),
                    [din_ptr4] "+r"(din_ptr_arr[4]),
                    [din_ptr5] "+r"(din_ptr_arr[5]),
+                   [din_ptr6] "+r"(din_ptr_arr[6]),
                    [dout_ptr0] "+r"(dout0),
                    [dout_ptr1] "+r"(dout1)
                  : [wr0] "w"(weights[0]),
@@ -4666,6 +4926,7 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
                    [din_ptr3] "+r"(din_ptr_arr[3]),
                    [din_ptr4] "+r"(din_ptr_arr[4]),
                    [din_ptr5] "+r"(din_ptr_arr[5]),
+                   [din_ptr6] "+r"(din_ptr_arr[6]),
                    [dout_ptr0] "+r"(dout0),
                    [dout_ptr1] "+r"(dout1)
                  : [wr0] "w"(weights[0]),
