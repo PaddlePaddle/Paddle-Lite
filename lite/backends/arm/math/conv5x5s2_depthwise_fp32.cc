@@ -2135,7 +2135,7 @@ void conv_depthwise_5x5s2_bias(float* dout,
   int in_channel_size = chin * in_size;
   int out_channel_size = chin * out_size;
   int pad_left_new = (pad_left + 1) / 2;
-  int pad_right_new = pad_right / 2;
+  int pad_top_new = (pad_top + 1) / 2;
   int weights_size = 25;
   int num_out = wout << 1;
   int loop_w = wout - pad_left_new;
@@ -3174,9 +3174,7 @@ void conv_depthwise_5x5s2_bias_relu(float* dout,
   int in_size = win * hin;
   int out_size = wout * hout;
   int pad_left_new = (pad_left + 1) / 2;
-  int pad_right_new = pad_right / 2;
   int pad_top_new = (pad_top + 1) / 2;
-  int pad_bottom_new = pad_bottom / 2;
   int in_channel_size = chin * in_size;
   int out_channel_size = chin * out_size;
   int weights_size = 25;
@@ -4262,9 +4260,7 @@ void conv_depthwise_5x5s2_bias_relu6(float* dout,
   int in_size = win * hin;
   int out_size = wout * hout;
   int pad_left_new = (pad_left + 1) / 2;
-  int pad_right_new = pad_right / 2;
   int pad_top_new = (pad_top + 1) / 2;
-  int pad_bottom_new = pad_bottom / 2;
   int in_channel_size = chin * in_size;
   int out_channel_size = chin * out_size;
   int weights_size = 25;
@@ -5375,9 +5371,7 @@ void conv_depthwise_5x5s2_bias_leakyRelu(float* dout,
   int in_size = win * hin;
   int out_size = wout * hout;
   int pad_left_new = (pad_left + 1) / 2;
-  int pad_right_new = pad_right / 2;
   int pad_top_new = (pad_top + 1) / 2;
-  int pad_bottom_new = pad_bottom / 2;
   int in_channel_size = chin * in_size;
   int out_channel_size = chin * out_size;
   int weights_size = 25;
