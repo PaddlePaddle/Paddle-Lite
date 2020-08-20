@@ -949,8 +949,9 @@ void LoadModelFbsFromFile(const std::string &filename,
   offset = offset + topo_size;
 
   /* 2. Save scope with params.fbs */
-  fbs::CombinedParamsDesc params(fbs::LoadFile(filename, offset));
+  fbs::CombinedParamsDescView params(fbs::LoadFile(filename, offset));
   fbs::SetScopeWithCombinedParams(scope, params);
+
   auto data = fbs::LoadFile(filename, offset);
   LOG(INFO) << "Params data:" << int(data[0]) << ","
             << int(data[data.size() - 1]);
@@ -1055,8 +1056,15 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
 
   std::vector<char> prog_data(prog_size);
   memcpy(prog_data.data(), model_buffer.c_str() + offset, prog_size);
-  fbs::ProgramDesc program(prog_data);
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
+  cpp_prog->Init(fbs::LoadFile(prog_path));
+#elif LITE_ON_TINY_PUBLISH
+  LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
+                "the model cannot be loaded.";
+#else
+  fbs::ProgramDesc program(fbs::LoadFile(prog_path));
   TransformProgramDescAnyToCpp(program, cpp_prog);
+#endif
   offset = offset + prog_size;
   VLOG(4) << "param_size:" << model_buffer.length() - offset;
 
@@ -1067,7 +1075,7 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
 
   //  LOG(INFO) <<int(params_data[model_buffer.length() - offset-1]);
   //  path.c_str() + offset, path.length() - offset
-  fbs::CombinedParamsDesc params(params_data);
+  fbs::CombinedParamsDescView params(params_data);
   fbs::SetScopeWithCombinedParams(scope, params);
 
   VLOG(4) << "Load model from naive buffer memory successfully";
