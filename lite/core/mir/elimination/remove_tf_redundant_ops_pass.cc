@@ -184,6 +184,11 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
       }
     }
 
+    if (nullptr == reshape2_out_node) {
+      VLOG(5) << "reshape2_out_node doesn't found, skip now";
+      return;
+    }
+
     // find next inst node of reshape2
     VLOG(5) << "reshape2_out_node->outlinks.size():"
             << reshape2_out_node->outlinks.size()
