@@ -45,7 +45,8 @@ struct from_chars_result {
 };
 
 /*
- * Array `s_aton_conversion_table` is the look-up table implementation
+ * Most C++ environments use ASCII as the development character
+ * set. Array `kAsciiToInt` is the look-up table implementation
  * of the following functions:
  *
  * static inline uint8_t get_char_val(char c) {
@@ -58,7 +59,7 @@ struct from_chars_result {
  *   return std::numeric_limits<uint8_t>::max();
  * }
  */
-constexpr uint8_t s_aton_conversion_table[256] = {
+constexpr uint8_t kAsciiToInt[256] = {
     UCHAR_MAX,  UCHAR_MAX, UCHAR_MAX, UCHAR_MAX, UCHAR_MAX, UCHAR_MAX,
     UCHAR_MAX,  UCHAR_MAX, UCHAR_MAX, UCHAR_MAX, UCHAR_MAX, UCHAR_MAX,
     UCHAR_MAX,  UCHAR_MAX, UCHAR_MAX, UCHAR_MAX, UCHAR_MAX, UCHAR_MAX,
@@ -136,14 +137,16 @@ from_chars_result aton_unsigned(const char* str,
   }
   int i = 0;
   for (; i < len; ++i) {
-    uint8_t cv =
-        s_aton_conversion_table[reinterpret_cast<const uint8_t&>(str[i])];
+    uint8_t cv = kAsciiToInt[reinterpret_cast<const uint8_t&>(str[i])];
     if (unlikely(cv >= base)) {
       value = static_cast<T>(val);
       result.ptr = str + i;
       return result;
     }
-    if (unlikely(i > 10) && i == std::numeric_limits<T>::digits10) {
+    // Handling integer values that may exceed the range represented by the
+    // basic type.
+    if (unlikely(i > std::numeric_limits<uint32_t>::digits10 + 1) &&
+        i == std::numeric_limits<uint64_t>::digits10) {
       uint64_t mx = static_cast<uint64_t>(std::numeric_limits<T>::max());
       if (val > mx / 10 || mx - (val * base) < cv) {
         value = static_cast<T>(std::numeric_limits<T>::max());
@@ -197,8 +200,7 @@ from_chars_result aton_signed(const char* str,
   }
   int i = 0;
   for (; i < len; ++i) {
-    uint8_t cv =
-        s_aton_conversion_table[reinterpret_cast<const uint8_t&>(str[i])];
+    uint8_t cv = kAsciiToInt[reinterpret_cast<const uint8_t&>(str[i])];
     if (unlikely(cv >= base)) {
       value = static_cast<T>(val);
       result.ptr = str + i;
@@ -270,7 +272,7 @@ from_chars_result aton_float(const char* str, int len, T& value) {  // NOLINT
       ++i;
       break;
     }
-    uint8_t cv = s_aton_conversion_table[reinterpret_cast<const uint8_t&>(c)];
+    uint8_t cv = kAsciiToInt[reinterpret_cast<const uint8_t&>(c)];
     if (unlikely(cv >= base)) {
       value = static_cast<T>(lval);
       result.ptr = str + i;
@@ -284,8 +286,7 @@ from_chars_result aton_float(const char* str, int len, T& value) {  // NOLINT
   double val{static_cast<double>(lval)};
   if (-1 != dot_pos) {
     for (; i < len; ++i) {
-      uint8_t cv =
-          s_aton_conversion_table[reinterpret_cast<const uint8_t&>(str[i])];
+      uint8_t cv = kAsciiToInt[reinterpret_cast<const uint8_t&>(str[i])];
       if (unlikely(cv >= base)) {
         result.ptr = str + i;
         return result;
