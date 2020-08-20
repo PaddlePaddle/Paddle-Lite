@@ -1882,7 +1882,7 @@ inline void compute_all_padding_post(float* dout,
                                   weights[5][tmp - k],
                                   num_index_left);
     }
-    pad_left -= 2;
+    num_index_left += 2;
     *dout++ = sum;
   }
   if (odds) { // origin pad_left is odds, such as ori_pad_left=1
@@ -2136,38 +2136,46 @@ void conv_depthwise_5x5s2_bias(float* dout,
   int out_channel_size = chin * out_size;
   int pad_left_new = (pad_left + 1) / 2;
   int pad_right_new = pad_right / 2;
-  int pad_top_new = (pad_top + 1) / 2;
-  int pad_bottom_new = pad_bottom / 2;
   int weights_size = 25;
   int num_out = wout << 1;
-  int loop_w = wout - pad_left_new - pad_right_new;
-  int loop_h = hout - pad_top_new - pad_bottom_new;
+  int loop_w = wout - pad_left_new;
+  int loop_h = hout - pad_top_new;
   bool odds_w = pad_left % 2;
   bool odds_h = pad_top % 2;
-  if (loop_w != ((win - 4) / 2)) {
-    loop_w--;
-    pad_right_new++;
-  }
-  if (loop_h != ((hin - 4) / 2)) {
-    loop_h--;
-    pad_bottom_new++;
-  }
-  int cnt = loop_w >> 2;
-  int remain = loop_w & 3;
   int n_top_h = 4 - pad_top;
-  int n_bottom_h =  odds_h ? (4 - pad_bottom) : ((hin % 2) ? 4 : 3);
-  int n_right_w = odds_w ? pad_right : ((win % 2) ? 4 : 3);
   int n_left_w = 4 - pad_left;
-  if (n_right_w == 4) {
-    remain++;
-    pad_right_new--;
-    n_right_w -= 2;
+  int n_right_w = 4;
+  int n_bottom_h = 4;
+  int in_w_cnt = (win - 4 ) >> 1;
+  int in_h_cnt = (hin - 4) >> 1;
+  int in_w_remain = win - (in_w_cnt << 1);
+  int in_h_remain = hin - (in_h_cnt << 1);
+  if (odds_w) {
+    n_right_w = in_w_remain - 1;
+  } else {
+    if (in_w_remain == 5) {
+      in_w_cnt++;
+      n_right_w = 3;
+    } else {
+     n_right_w = in_w_remain;
+   }
   }
-  if (n_bottom_h == 4) {
-    loop_h++;
-    pad_bottom_new--;
-    n_bottom_h -= 2;
+  if (odds_h) {
+    n_bottom_h = in_h_remain - 1;
+  } else {
+    if (in_h_remain == 5) {
+      in_h_cnt++;
+      n_bottom_h = 2;
+    } else {
+      n_bottom_h = in_h_remain;
+    }
   }
+  int pad_right_new = loop_w - in_w_cnt;
+  int pad_bottom_new = loop_h - in_h_cnt;
+  int cnt = in_w_cnt >> 2;
+  int remain = in_w_cnt & 3;
+  n_bottom_h--;
+  n_right_w--;
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * in_channel_size;
     float* dout_batch = dout + n * out_channel_size;
@@ -2243,7 +2251,7 @@ void conv_depthwise_5x5s2_bias(float* dout,
       }
       dout_ptr1 = dout_ptr0 + wout;
       // mid_h
-      for (int h = 0; h < loop_h - 1; h += 2) {
+      for (int h = 0; h < in_h_cnt - 1; h += 2) {
         compute_all_padding_mid_out2(dout_ptr0,
                                      dout_ptr1,
                                      din_ptr_arr,
@@ -2274,7 +2282,7 @@ void conv_depthwise_5x5s2_bias(float* dout,
         din_ptr_arr[5] = din_ptr5;
         din_ptr_arr[6] = din_ptr6;
       }
-      if (loop_h % 2 != 0) {
+      if (in_h_cnt % 2 != 0) {
         compute_all_padding_mid(dout_ptr0,
                                 din_ptr_arr,
                                 vbias,
@@ -2907,7 +2915,7 @@ inline void compute_all_padding_post_relu(float* dout,
                                   weights[5][tmp - k],
                                   num_index_left);
     }
-    pad_left -= 2;
+    num_index_left += 2;
     *dout++ = sum > 0.f ? sum : 0.f;
   }
   if (odds) { // origin pad_left is odds, such as ori_pad_left=1
@@ -3173,34 +3181,44 @@ void conv_depthwise_5x5s2_bias_relu(float* dout,
   int out_channel_size = chin * out_size;
   int weights_size = 25;
   int num_out = wout << 1;
-  int loop_w = wout - pad_left_new - pad_right_new;
-  int loop_h = hout - pad_top_new - pad_bottom_new;
+  int loop_w = wout - pad_left_new;
+  int loop_h = hout - pad_top_new;
   bool odds_w = pad_left % 2;
   bool odds_h = pad_top % 2;
-  if (loop_w != ((win - 4) / 2)) {
-    loop_w--;
-    pad_right_new++;
-  }
-  if (loop_h != ((hin - 4) / 2)) {
-    loop_h--;
-    pad_bottom_new++;
-  }
-  int cnt = loop_w >> 2;
-  int remain = loop_w & 3;
   int n_top_h = 4 - pad_top;
-  int n_bottom_h =  odds_h ? (4 - pad_bottom) : ((hin % 2) ? 4 : 3);
-  int n_right_w = odds_w ? pad_right : ((win % 2) ? 4 : 3);
   int n_left_w = 4 - pad_left;
-  if (n_right_w == 4) {
-    remain++;
-    pad_right_new--;
-    n_right_w -= 2;
+  int n_right_w = 4;
+  int n_bottom_h = 4;
+  int in_w_cnt = (win - 4 ) >> 1;
+  int in_h_cnt = (hin - 4) >> 1;
+  int in_w_remain = win - (in_w_cnt << 1);
+  int in_h_remain = hin - (in_h_cnt << 1);
+  if (odds_w) {
+    n_right_w = in_w_remain - 1;
+  } else {
+    if (in_w_remain == 5) {
+      in_w_cnt++;
+      n_right_w = 3;
+    } else {
+     n_right_w = in_w_remain;
+   }
   }
-  if (n_bottom_h == 4) {
-    loop_h++;
-    pad_bottom_new--;
-    n_bottom_h -= 2;
+  if (odds_h) {
+    n_bottom_h = in_h_remain - 1;
+  } else {
+    if (in_h_remain == 5) {
+      in_h_cnt++;
+      n_bottom_h = 2;
+    } else {
+      n_bottom_h = in_h_remain;
+    }
   }
+  int pad_right_new = loop_w - in_w_cnt;
+  int pad_bottom_new = loop_h - in_h_cnt;
+  int cnt = in_w_cnt >> 2;
+  int remain = in_w_cnt & 3;
+  n_bottom_h--;
+  n_right_w--;
   float32x4_t vzero = vdupq_n_f32(0.f);
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * in_channel_size;
@@ -3278,7 +3296,7 @@ void conv_depthwise_5x5s2_bias_relu(float* dout,
       }
       dout_ptr1 = dout_ptr0 + wout;
       // mid_h
-      for (int h = 0; h < loop_h - 1; h += 2) {
+      for (int h = 0; h < in_h_cnt - 1; h += 2) {
         compute_all_padding_mid_relu_out2(dout_ptr0,
                                           dout_ptr1,
                                           din_ptr_arr,
@@ -3310,7 +3328,7 @@ void conv_depthwise_5x5s2_bias_relu(float* dout,
         din_ptr_arr[5] = din_ptr5;
         din_ptr_arr[6] = din_ptr6;
       }
-      if (loop_h % 2 != 0) {
+      if (in_h_cnt % 2 != 0) {
         compute_all_padding_mid_relu(dout_ptr0,
                                      din_ptr_arr,
                                      vbias,
@@ -3976,7 +3994,7 @@ inline void compute_all_padding_post_relu6(float* dout,
                                   weights[5][tmp - k],
                                   num_index_left);
     }
-    pad_left -= 2;
+    num_index_left += 2;
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
   }
   if (odds) { // origin pad_left is odds, such as ori_pad_left=1
@@ -4251,34 +4269,44 @@ void conv_depthwise_5x5s2_bias_relu6(float* dout,
   int out_channel_size = chin * out_size;
   int weights_size = 25;
   int num_out = wout << 1;
-  int loop_w = wout - pad_left_new - pad_right_new;
-  int loop_h = hout - pad_top_new - pad_bottom_new;
+  int loop_w = wout - pad_left_new;
+  int loop_h = hout - pad_top_new;
   bool odds_w = pad_left % 2;
   bool odds_h = pad_top % 2;
-  if (loop_w != ((win - 4) / 2)) {
-    loop_w--;
-    pad_right_new++;
-  }
-  if (loop_h != ((hin - 4) / 2)) {
-    loop_h--;
-    pad_bottom_new++;
-  }
-  int cnt = loop_w >> 2;
-  int remain = loop_w & 3;
   int n_top_h = 4 - pad_top;
-  int n_bottom_h =  odds_h ? (4 - pad_bottom) : ((hin % 2) ? 4 : 3);
-  int n_right_w = odds_w ? pad_right : ((win % 2) ? 4 : 3);
   int n_left_w = 4 - pad_left;
-  if (n_right_w == 4) {
-    remain++;
-    pad_right_new--;
-    n_right_w -= 2;
+  int n_right_w = 4;
+  int n_bottom_h = 4;
+  int in_w_cnt = (win - 4 ) >> 1;
+  int in_h_cnt = (hin - 4) >> 1;
+  int in_w_remain = win - (in_w_cnt << 1);
+  int in_h_remain = hin - (in_h_cnt << 1);
+  if (odds_w) {
+    n_right_w = in_w_remain - 1;
+  } else {
+    if (in_w_remain == 5) {
+      in_w_cnt++;
+      n_right_w = 3;
+    } else {
+     n_right_w = in_w_remain;
+   }
   }
-  if (n_bottom_h == 4) {
-    loop_h++;
-    pad_bottom_new--;
-    n_bottom_h -= 2;
+  if (odds_h) {
+    n_bottom_h = in_h_remain - 1;
+  } else {
+    if (in_h_remain == 5) {
+      in_h_cnt++;
+      n_bottom_h = 2;
+    } else {
+      n_bottom_h = in_h_remain;
+    }
   }
+  int pad_right_new = loop_w - in_w_cnt;
+  int pad_bottom_new = loop_h - in_h_cnt;
+  int cnt = in_w_cnt >> 2;
+  int remain = in_w_cnt & 3;
+  n_bottom_h--;
+  n_right_w--;
   float32x4_t vzero = vdupq_n_f32(0.f);
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * in_channel_size;
@@ -4357,7 +4385,7 @@ void conv_depthwise_5x5s2_bias_relu6(float* dout,
       }
       dout_ptr1 = dout_ptr0 + wout;
       // mid_h
-      for (int h = 0; h < loop_h - 1; h += 2) {
+      for (int h = 0; h < in_h_cnt - 1; h += 2) {
         compute_all_padding_mid_relu6_out2(dout_ptr0,
                                            dout_ptr1,
                                            din_ptr_arr,
@@ -4390,7 +4418,7 @@ void conv_depthwise_5x5s2_bias_relu6(float* dout,
         din_ptr_arr[5] = din_ptr5;
         din_ptr_arr[6] = din_ptr6;
       }
-      if (loop_h % 2 != 0) {
+      if (in_h_cnt % 2 != 0) {
         compute_all_padding_mid_relu6(dout_ptr0,
                                       din_ptr_arr,
                                       vbias,
@@ -5071,7 +5099,7 @@ inline void compute_all_padding_post_leakyRelu(float* dout,
                                   weights[5][tmp - k],
                                   num_index_left);
     }
-    pad_left -= 2;
+    num_index_left += 2;
     *dout++ = sum > 0.f ? sum : sum * scale[0];
   }
   if (odds) { // origin pad_left is odds, such as ori_pad_left=1
@@ -5354,34 +5382,44 @@ void conv_depthwise_5x5s2_bias_leakyRelu(float* dout,
   int out_channel_size = chin * out_size;
   int weights_size = 25;
   int num_out = wout << 1;
-  int loop_w = wout - pad_left_new - pad_right_new;
-  int loop_h = hout - pad_top_new - pad_bottom_new;
+  int loop_w = wout - pad_left_new;
+  int loop_h = hout - pad_top_new;
   bool odds_w = pad_left % 2;
   bool odds_h = pad_top % 2;
-  if (loop_w != ((win - 4) / 2)) {
-    loop_w--;
-    pad_right_new++;
-  }
-  if (loop_h != ((hin - 4) / 2)) {
-    loop_h--;
-    pad_bottom_new++;
-  }
-  int cnt = loop_w >> 2;
-  int remain = loop_w & 3;
   int n_top_h = 4 - pad_top;
-  int n_bottom_h =  odds_h ? (4 - pad_bottom) : ((hin % 2) ? 4 : 3);
-  int n_right_w = odds_w ? pad_right : ((win % 2) ? 4 : 3);
   int n_left_w = 4 - pad_left;
-  if (n_right_w == 4) {
-    remain++;
-    pad_right_new--;
-    n_right_w -= 2;
+  int n_right_w = 4;
+  int n_bottom_h = 4;
+  int in_w_cnt = (win - 4 ) >> 1;
+  int in_h_cnt = (hin - 4) >> 1;
+  int in_w_remain = win - (in_w_cnt << 1);
+  int in_h_remain = hin - (in_h_cnt << 1);
+  if (odds_w) {
+    n_right_w = in_w_remain - 1;
+  } else {
+    if (in_w_remain == 5) {
+      in_w_cnt++;
+      n_right_w = 3;
+    } else {
+     n_right_w = in_w_remain;
+   }
   }
-  if (n_bottom_h == 4) {
-    loop_h++;
-    pad_bottom_new--;
-    n_bottom_h -= 2;
+  if (odds_h) {
+    n_bottom_h = in_h_remain - 1;
+  } else {
+    if (in_h_remain == 5) {
+      in_h_cnt++;
+      n_bottom_h = 2;
+    } else {
+      n_bottom_h = in_h_remain;
+    }
   }
+  int pad_right_new = loop_w - in_w_cnt;
+  int pad_bottom_new = loop_h - in_h_cnt;
+  int cnt = in_w_cnt >> 2;
+  int remain = in_w_cnt & 3;
+  n_bottom_h--;
+  n_right_w--;
   float32x4_t vzero = vdupq_n_f32(0.f);
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * in_channel_size;
@@ -5460,7 +5498,7 @@ void conv_depthwise_5x5s2_bias_leakyRelu(float* dout,
       }
       dout_ptr1 = dout_ptr0 + wout;
       // mid_h
-      for (int h = 0; h < loop_h - 1; h += 2) {
+      for (int h = 0; h < in_h_cnt - 1; h += 2) {
         compute_all_padding_mid_leakyRelu_out2(dout_ptr0,
                                                dout_ptr1,
                                                din_ptr_arr,
@@ -5493,7 +5531,7 @@ void conv_depthwise_5x5s2_bias_leakyRelu(float* dout,
         din_ptr_arr[5] = din_ptr5;
         din_ptr_arr[6] = din_ptr6;
       }
-      if (loop_h % 2 != 0) {
+      if (in_h_cnt % 2 != 0) {
         compute_all_padding_mid_leakyRelu(dout_ptr0,
                                           din_ptr_arr,
                                           vbias,
