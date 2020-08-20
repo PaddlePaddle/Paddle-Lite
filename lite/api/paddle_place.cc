@@ -54,7 +54,11 @@ const std::string& ActivationTypeToStr(ActivationType act) {
                                            "Sigmoid",
                                            "Tanh",
                                            "Swish",
-                                           "Exp"};
+                                           "Exp",
+                                           "Abs",
+                                           "HardSwish",
+                                           "Reciprocal",
+                                           "HardSigmoid"};
   auto x = static_cast<int>(act);
   CHECK_LT(x, static_cast<int>(ActivationType::NUM));
   return act2string[x];
