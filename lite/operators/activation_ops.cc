@@ -60,6 +60,7 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.active_type = lite_api::ActivationType::kSwish;
   } else if (opdesc.Type() == "hard_sigmoid") {
     // hard_sigomid
+    param_.active_type = lite_api::ActivationType::kHardSigmoid;
     param_.hard_sigmoid_slope = opdesc.GetAttr<float>("slope");
     param_.hard_sigmoid_offset = opdesc.GetAttr<float>("offset");
   } else if (opdesc.Type() == "sigmoid") {

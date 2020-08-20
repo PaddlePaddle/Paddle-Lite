@@ -72,7 +72,12 @@ class ActivationComputeImageDefault
       case 8:
         kernel_func_name_ = "exp_act";
         break;
-      default:
+      case 14:
+        kernel_func_name_ = "hard_sigmoid";
+        scale_ = act_param_->hard_sigmoid_slope;
+        threshold_ = act_param_->hard_sigmoid_offset;
+        break;
+      defauln:
         LOG(FATAL) << "This act type:" << act_type << " doesn't support.";
         return;
     }
@@ -302,6 +307,24 @@ REGISTER_LITE_KERNEL(
 // Sigmoid
 REGISTER_LITE_KERNEL(
     sigmoid,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// Hard Sigmoid
+REGISTER_LITE_KERNEL(
+    hard_sigmoid,
     kOpenCL,
     kFP16,
     kImageDefault,
