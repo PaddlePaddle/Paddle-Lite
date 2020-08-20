@@ -83,6 +83,7 @@ GET_ATTRS_IMPL(std::vector<int64_t>, longs);
 #undef GET_ATTR_IMPL
 #undef GET_ATTRS_IMPL
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 #define ATTR_IMPL(T, fb_f__)                                                \
   template <>                                                               \
   T OpDesc::GetAttr<T>(const std::string& name) const {                     \
@@ -109,6 +110,7 @@ ATTR_IMPL(std::vector<float>, floats);
 ATTR_IMPL(std::vector<int64_t>, longs);
 ATTR_IMPL(std::vector<std::string>, strings);
 #undef GET_ATTRS_IMPL
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

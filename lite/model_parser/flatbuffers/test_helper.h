@@ -21,6 +21,7 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 namespace test {
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 inline std::vector<char> GenerateProgramCache() {
   /* --------- Set Program --------- */
   ProgramDesc program;
@@ -144,6 +145,7 @@ inline void CheckProgramCache(const ProgramDescView& program) {
   CHECK_EQ(op_b0.GetAttr<bool>("Attr1"), true);
   CHECK_EQ(op_b0.HasAttr("Attr4"), false);
 }
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace test
 }  // namespace fbs

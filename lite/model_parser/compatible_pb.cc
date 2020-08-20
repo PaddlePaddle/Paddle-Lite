@@ -15,12 +15,12 @@
 #include "lite/model_parser/compatible_pb.h"
 #include <string>
 #include <vector>
-#include "lite/model_parser/flatbuffers/program_desc.h"
 #include "lite/model_parser/naive_buffer/block_desc.h"
 #include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
 #ifndef LITE_ON_TINY_PUBLISH
+#include "lite/model_parser/flatbuffers/program_desc.h"
 #include "lite/model_parser/pb/block_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
 #include "lite/model_parser/pb/program_desc.h"
@@ -56,6 +56,17 @@ void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
     cpp_desc->SetShape(any_desc.GetShape());
   }
 }
+template <>
+void TransformVarDescAnyToCpp<fbs::VarDesc>(const fbs::VarDesc &any_desc,
+                                            cpp::VarDesc *cpp_desc) {
+  cpp_desc->SetName(any_desc.Name());
+  cpp_desc->SetType(any_desc.GetType());
+  cpp_desc->SetPersistable(any_desc.Persistable());
+  if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
+    cpp_desc->SetDataType(any_desc.GetDataType());
+    cpp_desc->SetShape(any_desc.GetShape());
+  }
+}
 #endif
 
 template <>
@@ -72,18 +83,6 @@ void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
       cpp_desc->SetDataType(any_desc.GetDataType());
       cpp_desc->SetShape(any_desc.GetShape());
     }*/
-}
-
-template <>
-void TransformVarDescAnyToCpp<fbs::VarDesc>(const fbs::VarDesc &any_desc,
-                                            cpp::VarDesc *cpp_desc) {
-  cpp_desc->SetName(any_desc.Name());
-  cpp_desc->SetType(any_desc.GetType());
-  cpp_desc->SetPersistable(any_desc.Persistable());
-  if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
-    cpp_desc->SetDataType(any_desc.GetDataType());
-    cpp_desc->SetShape(any_desc.GetShape());
-  }
 }
 
 /// For OpDesc transform
@@ -318,12 +317,11 @@ TRANS_OP_ANY_WITH_CPP_IMPL(naive_buffer::OpDesc);
 TRANS_BLOCK_ANY_WITH_CPP_IMPL(OpDesc, VarDesc, naive_buffer, naive_buffer);
 TRANS_PROGRAM_ANY_WITH_CPP_IMPL(BlockDesc, naive_buffer, naive_buffer);
 
+#ifndef LITE_ON_TINY_PUBLISH
 TRANS_VAR_ANY_WITH_CPP_IMPL(fbs::VarDesc);
 TRANS_OP_ANY_WITH_CPP_IMPL(fbs::OpDesc);
 TRANS_BLOCK_ANY_WITH_CPP_IMPL(OpDescT, VarDescT, fbs, fbs);
 TRANS_PROGRAM_ANY_WITH_CPP_IMPL(BlockDescT, fbs, fbs);
-
-#ifndef LITE_ON_TINY_PUBLISH
 TRANS_VAR_ANY_WITH_CPP_IMPL(pb::VarDesc);
 TRANS_OP_ANY_WITH_CPP_IMPL(pb::OpDesc);
 TRANS_BLOCK_ANY_WITH_CPP_IMPL(OpDesc, VarDesc, pb, framework);
