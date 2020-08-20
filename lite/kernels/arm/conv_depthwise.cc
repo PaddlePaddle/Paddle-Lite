@@ -67,7 +67,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
       kernel_func_name_ = "conv_depthwise_5x5_fp32";
 #endif
     } else if ((strides[0] == 1 && strides[1] == 1) ||
-        (strides[0] == 2 && strides[1] == 2)) {
+               (strides[0] == 2 && strides[1] == 2)) {
       // trans weights
       constexpr int cblock = 4;
       auto oc = w_dims[0];
