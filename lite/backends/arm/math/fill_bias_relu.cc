@@ -347,6 +347,7 @@ void fill_bias_act<float>(float* tensor,
       float32x4_t vbias = vdupq_n_f32(bias_data);
       float* src = data + j * channel_size;
       float* dst = data + j * channel_size;
+      int cnt = cnt_num;
       if (cnt > 0) {
 #ifdef __aarch64__
         asm volatile(FILL_BIAS FILL_STORE
