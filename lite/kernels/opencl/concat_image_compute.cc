@@ -38,72 +38,79 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     concat_param_ = param_.get_mutable<param_t>();
-    if (concat_param_->x.size() == 2) {
-      kernel_func_name_ = "concat2";
-    } else {
-      kernel_func_name_ = "concat_mul";
-    }
-    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/concat_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
 
-    auto axis = concat_param_->axis;
     auto inputs = concat_param_->x;
-    auto out_dims = concat_param_->output->dims();
+    auto axis_ = concat_param_->axis;
+    auto output_tensor_dims = concat_param_->output->dims();
     auto* axis_tensor = concat_param_->axis_tensor;
     if (axis_tensor != nullptr) {
       // auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
       // axis = axis_tensor_data[0];
     }
-    auto in_dims = inputs[0]->dims();
-    axis_size_ = out_dims[axis];
-    axis_ = axis;
-    if (out_dims.size() < 4) {
-      if (out_dims.size() - axis == 1) {
+
+    if (inputs.size() == 2) {
+      kernel_func_name_ = "concat2";
+    } else if (inputs.size() == 3) {
+      kernel_func_name_ = "concatByCWith3Inputs";
+    } else if (inputs.size() == 4) {
+      kernel_func_name_ = "concatByCWith4Inputs";
+    } else {
+      // TODO(ysh329): do layout transform between image and buffer,
+      // before and after concat(buffer impl.)
+      kernel_func_name_ = "concat_mul";
+    }
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/concat_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
+
+    if (output_tensor_dims.size() < 4) {
+      if (output_tensor_dims.size() - axis_ == 1) {
         // width
-        width_ = out_dims[1];  // c
+        width_ = output_tensor_dims[1];  // c
         flag_ = 3;
       } else {
         // height
-        width_ = out_dims[0];  // n
+        width_ = output_tensor_dims[0];  // n
         flag_ = 2;
       }
     } else {
       switch (axis_) {
         case 0:
-          width_ = out_dims[2];  // h
+          width_ = output_tensor_dims[2];  // h
           flag_ = 0;
           break;
-        case 1:                  // channel
-          width_ = out_dims[3];  // w
+        case 1:                            // channel
+          width_ = output_tensor_dims[3];  // w
           flag_ = 1;
           break;
-        case 2:                  // height
-          width_ = out_dims[0];  // n
+        case 2:                            // height
+          width_ = output_tensor_dims[0];  // n
           flag_ = 2;
           break;
         case 3:
-        case -1:                 // width
-          width_ = out_dims[1];  // c
+        case -1:                           // width
+          width_ = output_tensor_dims[1];  // c
           flag_ = 3;
           break;
         default:
-          printf("this axis: %d does not support \n", axis_);
+          LOG(FATAL) << "Unsupported axis:" << axis_;
       }
     }
 
+    auto input0_tensor_dims = inputs[0]->dims();
     for (int i = 1; i < inputs.size(); i++) {
       auto dims = inputs[i]->dims();
-      // auto flag = CHECK_EQ_OR_FALSE(in_dims.size(), dims.size());
-      if (in_dims.size() != dims.size()) {
+      // auto flag = CHECK_EQ_OR_FALSE(input0_tensor_dims.size(), dims.size());
+      if (input0_tensor_dims.size() != dims.size()) {
         printf("input shape must be same \n");
         return;
       }
       for (int i = 0; i < dims.size(); i++) {
-        if (i != axis) {
-          if (in_dims[i] != dims[i]) {
+        if (i != axis_) {
+          if (input0_tensor_dims[i] != dims[i]) {
             printf("input shape must be same \n");
             return;
           }
@@ -114,20 +121,21 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    const auto& x_dims = param.output->dims();
-    auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.output->mutable_data<half_t, cl::Image2D>(
-        image_shape["width"], image_shape["height"]);
-    const auto& y_dims = param.output->dims();  // useless: check dim only
-
-    auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-
+    const auto& output_tensor_dims = param.output->dims();
+    int output_tensor_w = output_tensor_dims[output_tensor_dims.size() - 1];
+    int output_tensor_c = output_tensor_dims[1];
+    auto output_image_shape = InitImageDimInfoWith(output_tensor_dims);
+    auto* output_image_p = param.output->mutable_data<half_t, cl::Image2D>(
+        output_image_shape["width"], output_image_shape["height"]);
     auto inputs = param.x;
-    int arg_idx = 0;
-    int width = inputs[0]->dims()[inputs[0]->dims().size() - 1];
+
+    auto global_work_size =
+        cl::NDRange{static_cast<cl::size_type>(
+                        output_tensor_dims[output_tensor_dims.size() - 1]),
+                    static_cast<cl::size_type>(
+                        output_image_shape["width"] /
+                        output_tensor_dims[output_tensor_dims.size() - 1]),
+                    static_cast<cl::size_type>(output_image_shape["height"])};
 
 #ifdef LITE_WITH_LOG
     VLOG(4) << "concat input shape:  ";
@@ -141,53 +149,53 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
 
     VLOG(4) << "concat output shape:  ";
     VLOG(4) << " out  dims:  "
-            << "[" << x_dims.size() << "D]:" << x_dims[0] << " " << x_dims[1]
-            << " " << x_dims[2] << " " << x_dims[3];
+            << "[" << output_tensor_dims.size()
+            << "D]:" << output_tensor_dims[0] << " " << output_tensor_dims[1]
+            << " " << output_tensor_dims[2] << " " << output_tensor_dims[3];
     VLOG(4) << "axis_: " << axis_;
     VLOG(4) << "flag_: " << flag_;
-#endif
 
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(x_dims[x_dims.size() - 1]),
-                    static_cast<cl::size_type>(image_shape["width"] /
-                                               x_dims[x_dims.size() - 1]),
-                    static_cast<cl::size_type>(image_shape["height"])};
-
-#ifdef LITE_WITH_LOG
     VLOG(4) << TargetToStr(param.output->target());
-    VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
-            << image_shape["height"];
-    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
-            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3]
-            << "x_dims[x_dims.size() - 1]" << x_dims[x_dims.size() - 1];
-    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
-            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-    VLOG(4) << "width_: " << width_ << ", flag_: " << flag_;
-    VLOG(4) << "global_work_size: " << x_dims[x_dims.size() - 1] << "  "
-            << (image_shape["width"] / x_dims[x_dims.size() - 1]) << "  "
-            << (image_shape["height"]);
+    VLOG(4) << "output_image_shape(w,h):" << output_image_shape["width"] << " "
+            << output_image_shape["height"];
+    VLOG(4) << "output_tensor_dims[" << output_tensor_dims.size()
+            << "D]:" << output_tensor_dims[0] << " " << output_tensor_dims[1]
+            << " " << output_tensor_dims[2] << " " << output_tensor_dims[3]
+            << "output_tensor_dims[output_tensor_dims.size() - 1]"
+            << output_tensor_dims[output_tensor_dims.size() - 1];
+    VLOG(4) << "output_tensor_w: " << output_tensor_w << ", flag_: " << flag_;
+    VLOG(4) << "width_:" << width_;
+    VLOG(4) << "global_work_size: "
+            << output_tensor_dims[output_tensor_dims.size() - 1] << "  "
+            << (output_image_shape["width"] /
+                output_tensor_dims[output_tensor_dims.size() - 1])
+            << "  " << (output_image_shape["height"]);
 #endif
 
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    int out_w = x_dims[x_dims.size() - 1];
-    int out_c = x_dims[1];
-    if (inputs.size() == 2) {
-      auto* x_buf0 = inputs[0]->data<half_t, cl::Image2D>();
-      auto* x_buf1 = inputs[1]->data<half_t, cl::Image2D>();
-      cl_int status = kernel.setArg(arg_idx, *x_buf0);
+    int arg_idx = 0;
+
+    if (kernel_func_name_ == "concat2") {
+      auto* input0_image_p = inputs[0]->data<half_t, cl::Image2D>();
+      auto* input1_image_p = inputs[1]->data<half_t, cl::Image2D>();
+      cl_int status = kernel.setArg(arg_idx, *input0_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *x_buf1);
+      status = kernel.setArg(++arg_idx, *input1_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *out_buf);
+      status = kernel.setArg(++arg_idx, *output_image_p);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, flag_);
       CL_CHECK_FATAL(status);
       status =
           kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, out_c);
+      status = kernel.setArg(++arg_idx, output_tensor_c);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, out_w);
+      status = kernel.setArg(++arg_idx, output_tensor_w);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(++arg_idx, width_);
       CL_CHECK_FATAL(status);
@@ -200,39 +208,113 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
           nullptr,
           nullptr);
       CL_CHECK_FATAL(status);
-    } else {
-      auto start = 0;
-      for (int i = 0; i < inputs.size(); i++) {
-        arg_idx = 0;
-        auto in_dims = inputs[i]->dims();
-        image_shape = InitImageDimInfoWith(in_dims);
-        auto* x_buf = inputs[i]->data<half_t, cl::Image2D>();
-        int in_w = in_dims[in_dims.size() - 1];
-#ifdef LITE_WITH_LOG
-        VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
-                << image_shape["height"];
-#endif
-        global_work_size =
-            cl::NDRange{static_cast<cl::size_type>(in_dims[in_dims.size() - 1]),
-                        static_cast<cl::size_type>(image_shape["width"] /
-                                                   in_dims[in_dims.size() - 1]),
-                        static_cast<cl::size_type>(image_shape["height"])};
-        cl_int status = kernel.setArg(arg_idx, *x_buf);
+    } else if (kernel_func_name_ == "concatByCWith3Inputs" ||
+               kernel_func_name_ == "concatByCWith4Inputs") {
+      auto* input0 = inputs[0];
+      auto* input0_image_p = input0->data<half_t, cl::Image2D>();
+      size_t input0_tensor_c = input0->dims()[1];
+
+      auto* input1 = inputs.size() >= 2 ? inputs[1] : nullptr;
+      auto* input1_image_p =
+          input1 ? input1->data<half_t, cl::Image2D>() : nullptr;
+      size_t input1_tensor_c = input1 ? input1->dims()[1] : -1;
+
+      auto* input2 = inputs.size() >= 3 ? inputs[2] : nullptr;
+      auto* input2_image_p =
+          input2 ? input2->data<half_t, cl::Image2D>() : nullptr;
+      size_t input2_tensor_c = input2 ? input2->dims()[1] : -1;
+
+      auto* input3 = inputs.size() >= 4 ? inputs[3] : nullptr;
+      auto* input3_image_p =
+          input3 ? input3->data<half_t, cl::Image2D>() : nullptr;
+      size_t input3_tensor_c = input3 ? input3->dims()[1] : -1;
+
+      const std::vector<size_t>& default_work_size = DefaultWorkSize(
+          output_tensor_dims,
+          DDim(std::vector<DDim::value_type>{
+              static_cast<int64_t>(output_image_shape["width"]),
+              static_cast<int64_t>(output_image_shape["height"])}));
+      cl::NDRange global_work_size =
+          cl::NDRange{static_cast<size_t>(default_work_size[0]),
+                      static_cast<size_t>(default_work_size[1]),
+                      static_cast<size_t>(default_work_size[2])};
+
+      cl_int status;
+      status = kernel.setArg(0, *output_image_p);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(
+          1, static_cast<size_t>(output_tensor_dims[1]));  // output_tensor_c
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(
+          2, static_cast<size_t>(output_tensor_dims[3]));  // output_tensor_w
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(3, *input0_image_p);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(4, input0_tensor_c);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(5, *input1_image_p);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(6, input1_tensor_c);
+      CL_CHECK_FATAL(status);
+      if (inputs.size() >= 3) {
+        status = kernel.setArg(7, *input2_image_p);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, *out_buf);
+        status = kernel.setArg(8, input2_tensor_c);
+        CL_CHECK_FATAL(status);
+      }
+      if (inputs.size() == 4) {
+        status = kernel.setArg(9, *input3_image_p);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(10, input3_tensor_c);
+        CL_CHECK_FATAL(status);
+      }
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
+    } else if (kernel_func_name_ == "concat_mul") {  // inputs.size() > 3
+      // TODO(ysh329): need to impl using buffer
+      auto cur_axis_start_idx = 0;
+      for (int i = 0; i < inputs.size(); i++) {
+        auto* input = inputs[i];
+        auto input_tensor_dims = input->dims();
+        auto input_image_shape = InitImageDimInfoWith(input_tensor_dims);
+        auto* input_image_p = input->data<half_t, cl::Image2D>();
+        int input_tensor_w = input_tensor_dims[input_tensor_dims.size() - 1];
+
+        global_work_size = cl::NDRange{
+            static_cast<cl::size_type>(input_tensor_w),
+            static_cast<cl::size_type>(input_image_shape["width"] /
+                                       input_tensor_w),
+            static_cast<cl::size_type>(input_image_shape["height"])};
+
+#ifdef LITE_WITH_LOG
+        VLOG(4) << "input_image_shape(w,h):" << input_image_shape["width"]
+                << " " << input_image_shape["height"];
+#endif
+
+        arg_idx = 0;
+        cl_int status = kernel.setArg(arg_idx, *input_image_p);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(++arg_idx, *output_image_p);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(++arg_idx, *output_image_p);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(++arg_idx, flag_);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, start);
+        status = kernel.setArg(++arg_idx, cur_axis_start_idx);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, out_c);
+        status = kernel.setArg(++arg_idx, output_tensor_c);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, out_w);
+        status = kernel.setArg(++arg_idx, output_tensor_w);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, in_w);
+        status = kernel.setArg(++arg_idx, input_tensor_w);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(++arg_idx, width_);
-        CL_CHECK_FATAL(status);
         CL_CHECK_FATAL(status);
 
         status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
@@ -243,7 +325,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
             nullptr,
             nullptr);
         CL_CHECK_FATAL(status);
-        start += inputs[i]->dims()[axis_];
+        cur_axis_start_idx += input->dims()[axis_];
       }
     }
   }
@@ -258,7 +340,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   }
 #endif
 
-  int axis_size_ = 1;
   int axis_ = 1;
   int flag_ = 1;
   int width_ = 1;

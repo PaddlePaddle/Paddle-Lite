@@ -98,7 +98,7 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
 
     auto inputs = param.x;
     int arg_idx = 0;
-    auto global_work_size = cl::NDRange{axis_size_};
+    auto global_work_size = cl::NDRange{static_cast<cl::size_type>(axis_size_)};
     int total = axis_size_ * post_size_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     if (inputs.size() == 2) {
