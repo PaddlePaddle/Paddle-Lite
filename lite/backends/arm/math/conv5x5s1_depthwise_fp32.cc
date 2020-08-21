@@ -4322,10 +4322,6 @@ inline void compute_all_padding_pre_leakyRelu(float* dout,
     }
     *dout++ = sum > 0.f ? sum : sum * scale[0];
   }
-  for (int w = pad_right; w > 4; w--) {
-    *dout++ = bias[0] > 0.f ? bias[0] : bias[0] * scale[0];
-  }
-
 }
 inline void compute_all_padding_mid_leakyRelu(float* dout,
                                               const float** din_ptr_arr,
