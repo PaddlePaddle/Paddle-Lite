@@ -12,6 +12,7 @@ else()
 endif()
 
 lite_cc_test(test_varient SRCS varient_test.cc DEPS utils)
+lite_cc_test(test_utils_string SRCS string_test.cc)
 lite_cc_library(any SRCS any.cc)
 
 if(LITE_ON_TINY_PUBLISH OR LITE_ON_MODEL_OPTIMIZE_TOOL)
