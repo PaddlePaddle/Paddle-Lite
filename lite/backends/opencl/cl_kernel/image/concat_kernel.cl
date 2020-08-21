@@ -14,45 +14,44 @@ limitations under the License. */
 // deprecated
 __kernel void concatByCWith2Inputs(
                     __write_only image2d_t output_image,
-                    __private const int out_C,
-                    __private const int out_W,
-                    __read_only image2d_t input_image_0,
-                    __private const int C_0,
-                    __read_only image2d_t input_image_1,
-                    __private const int C_1) {
-		    
-  const int out_c = get_global_id(0);
-  const int out_w = get_global_id(1);
-  const int out_nh = get_global_id(2);
+                    __private const int output_tensor_c,
+                    __private const int output_tensor_w,
+                    __read_only image2d_t input0_image,
+                    __private const int input0_tensor_c,
+                    __read_only image2d_t input1_image,
+                    __private const int input1_tensor_c) {
+  const int out_c = get_global_id(0);   // [0, (output_tensor_c + 3) / 4)
+  const int out_w = get_global_id(1);   // [0, output_tensor_w)
+  const int out_nh = get_global_id(2);  // [0, output_tensor_n * output_tensor_h)
 
   const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
         CLK_ADDRESS_CLAMP |
         CLK_FILTER_NEAREST;
 
   int2 output_pos;
-  output_pos.x = out_c * out_W + out_w;
+  output_pos.x = out_c * output_tensor_w + out_w;
   output_pos.y = out_nh;
   CL_DTYPE4 output_data;
 
   for (int i = 0; i < 4; i++) {
     int c = out_c * 4 + i;
-    if (c >= out_C) {
+    if (c >= output_tensor_c) {
         break;
     }
     int c_in;
     CL_DTYPE4 input_data;
-    if (c < C_0) {
+    if (c < input0_tensor_c) {
       c_in = c;
       int2 input_pos;
-      input_pos.x = (c_in / 4) * out_W + out_w;
+      input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image_0, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0_image, sampler, input_pos);
     } else {
-      c_in = c - C_0;
+      c_in = c - input0_tensor_c;
       int2 input_pos;
-      input_pos.x = (c_in / 4) * out_W + out_w;
+      input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image_1, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1_image, sampler, input_pos);
     }
     int value_offset = c_in % 4;
     float value;
@@ -79,55 +78,54 @@ __kernel void concatByCWith2Inputs(
 }
 
 
-// deprecated
 __kernel void concatByCWith3Inputs(
                     __write_only image2d_t output_image,
-                    __private const int out_C,
-                    __private const int out_W,
-                    __read_only image2d_t input_image_0,
-                    __private const int C_0,
-                    __read_only image2d_t input_image_1,
-                    __private const int C_1,
-                    __read_only image2d_t input_image_2,
-                    __private const int C_2) {
-  const int out_c = get_global_id(0);
-  const int out_w = get_global_id(1);
-  const int out_nh = get_global_id(2);
+                    __private const int output_tensor_c,
+                    __private const int output_tensor_w,
+                    __read_only image2d_t input0_image,
+                    __private const int input0_tensor_c,
+                    __read_only image2d_t input1_image,
+                    __private const int input1_tensor_c,
+                    __read_only image2d_t input2_image,
+                    __private const int input2_tensor_c) {
+  const int out_c = get_global_id(0);   // [0, (output_tensor_c + 3) / 4)
+  const int out_w = get_global_id(1);   // [0, output_tensor_w)
+  const int out_nh = get_global_id(2);  // [0, output_tensor_n * output_tensor_h)
 
   const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
         CLK_ADDRESS_CLAMP |
         CLK_FILTER_NEAREST;
 
   int2 output_pos;
-  output_pos.x = out_c * out_W + out_w;
+  output_pos.x = out_c * output_tensor_w + out_w;
   output_pos.y = out_nh;
   CL_DTYPE4 output_data;
 
   for (int i = 0; i < 4; i++) {
     int c = out_c * 4 + i;
-    if (c >= out_C) {
+    if (c >= output_tensor_c) {
         break;
     }
     int c_in;
     CL_DTYPE4 input_data;
-    if (c < C_0) {
+    if (c < input0_tensor_c) {
       c_in = c;
       int2 input_pos;
-      input_pos.x = (c_in / 4) * out_W + out_w;
+      input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image_0, sampler, input_pos);
-    } else if (c < C_0 + C_1) {
-      c_in = c - C_0;
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0_image, sampler, input_pos);
+    } else if (c < input0_tensor_c + input1_tensor_c) {
+      c_in = c - input0_tensor_c;
       int2 input_pos;
-      input_pos.x = (c_in / 4) * out_W + out_w;
+      input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image_1, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1_image, sampler, input_pos);
     } else {
-      c_in = c - C_0 - C_1;
+      c_in = c - input0_tensor_c - input1_tensor_c;
       int2 input_pos;
-      input_pos.x = (c_in / 4) * out_W + out_w;
+      input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image_2, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input2_image, sampler, input_pos);
     }
     int value_offset = c_in % 4;
     float value;
@@ -154,63 +152,62 @@ __kernel void concatByCWith3Inputs(
 }
 
 
-// deprecated
 __kernel void concatByCWith4Inputs(
                     __write_only image2d_t output_image,
-                    __private const int out_C,
-                    __private const int out_W,
-                    __read_only image2d_t input_image_0,
-                    __private const int C_0,
-                    __read_only image2d_t input_image_1,
-                    __private const int C_1,
-                    __read_only image2d_t input_image_2,
-                    __private const int C_2,
-                    __read_only image2d_t input_image_3,
-                    __private const int C_3) {
-  const int out_c = get_global_id(0);
-  const int out_w = get_global_id(1);
-  const int out_nh = get_global_id(2);
+                    __private const int output_tensor_c,
+                    __private const int output_tensor_w,
+                    __read_only image2d_t input0_image,
+                    __private const int input0_tensor_c,
+                    __read_only image2d_t input1_image,
+                    __private const int input1_tensor_c,
+                    __read_only image2d_t input2_image,
+                    __private const int input2_tensor_c,
+                    __read_only image2d_t input3_image,
+                    __private const int input3_tensor_c) {
+  const int out_c = get_global_id(0);   // [0, (output_tensor_c + 3) / 4)
+  const int out_w = get_global_id(1);   // [0, output_tensor_w)
+  const int out_nh = get_global_id(2);  // [0, output_tensor_n * output_tensor_h)
 
   const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
         CLK_ADDRESS_CLAMP |
         CLK_FILTER_NEAREST;
 
   int2 output_pos;
-  output_pos.x = out_c * out_W + out_w;
+  output_pos.x = out_c * output_tensor_w + out_w;
   output_pos.y = out_nh;
   CL_DTYPE4 output_data;
 
   for (int i = 0; i < 4; i++) {
     int c = out_c * 4 + i;
-    if (c >= out_C) {
+    if (c >= output_tensor_c) {
         break;
     }
     int c_in;
     CL_DTYPE4 input_data;
-    if (c < C_0) {
+    if (c < input0_tensor_c) {
       c_in = c;
       int2 input_pos;
-      input_pos.x = (c_in / 4) * out_W + out_w;
+      input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image_0, sampler, input_pos);
-    } else if (c < C_0 + C_1) {
-      c_in = c - C_0;
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0_image, sampler, input_pos);
+    } else if (c < input0_tensor_c + input1_tensor_c) {
+      c_in = c - input0_tensor_c;
       int2 input_pos;
-      input_pos.x = (c_in / 4) * out_W + out_w;
+      input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image_1, sampler, input_pos);
-    } else if (c < C_0 + C_1 + C_2) {
-      c_in = c - C_0 - C_1;
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1_image, sampler, input_pos);
+    } else if (c < input0_tensor_c + input1_tensor_c + input2_tensor_c) {
+      c_in = c - input0_tensor_c - input1_tensor_c;
       int2 input_pos;
-      input_pos.x = (c_in / 4) * out_W + out_w;
+      input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image_2, sampler, input_pos);
-    }else if (c < C_0 + C_1 + C_2 + C_3){
-      c_in = c - C_0 - C_1 - C_2;
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input2_image, sampler, input_pos);
+    }else if (c < input0_tensor_c + input1_tensor_c + input2_tensor_c + input3_tensor_c){
+      c_in = c - input0_tensor_c - input1_tensor_c - input2_tensor_c;
       int2 input_pos;
-      input_pos.x = (c_in / 4) * out_W + out_w;
+      input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image_3, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input3_image, sampler, input_pos);
     }
     int value_offset = c_in % 4;
     float value;
@@ -444,8 +441,8 @@ __kernel void concat_mul(__read_only image2d_t input,
       // note2: fix error write for elements after 0 value
       if (fabs(output_data.x) < 1e-5) {
         output_data.y = 0;
-	output_data.z = 0;
-	output_data.w = 0;
+        output_data.z = 0;
+        output_data.w = 0;
       } else if (fabs(output_data.y) < 1e-5) {
         output_data.z = 0;
 	output_data.w = 0;
@@ -460,21 +457,20 @@ __kernel void concat_mul(__read_only image2d_t input,
       output_data.w = (c_out % 4 == 3) ? val : output_data.w;
 
 #ifdef DEBUG_CONCAT_MUL //  used for debug
-  if (output_pos.x == 29 && output_pos.y == 14) {
-      printf("->>>>>>>>>>>>>>> cur_axis_start_idx:%d, i:%d, output_data_before_post:(%d,%d): %.0f,%.0f,%.0f,%.0f, output_data:%.0f,%.0f,%.0f,%.0f, output_read:%.0f,%.0f,%.0f,%.0f, fabs_output_read:%.0f,%.0f,%.0f,%.0f, input(%d,%d): %.0f,%.0f,%.0f,%.0f, val:%.0f, c_out:%d, c_cout\%4:%d\n",
-             cur_axis_start_idx, i,
-             (int)output_pos.x, (int)output_pos.y,
-             (float)output_data_before_post.x, (float)output_data_before_post.y, (float)output_data_before_post.z, (float)output_data_before_post.w,
-             (float)output_data.x, (float)output_data.y, (float)output_data.z, (float)output_data.w,
-             (float)output_data_read.x, (float)output_data_read.y, (float)output_data_read.z, (float)output_data_read.w,
-             (float)fabs_output_data_read.x, (float)fabs_output_data_read.y, (float)fabs_output_data_read.z, (float)fabs_output_data_read.w,
+      if (output_pos.x == 29 && output_pos.y == 14) {
+          printf("->>>>>>>>>>>>>>> cur_axis_start_idx:%d, i:%d, output_data_before_post:(%d,%d): %.0f,%.0f,%.0f,%.0f, output_data:%.0f,%.0f,%.0f,%.0f, output_read:%.0f,%.0f,%.0f,%.0f, fabs_output_read:%.0f,%.0f,%.0f,%.0f, input(%d,%d): %.0f,%.0f,%.0f,%.0f, val:%.0f, c_out:%d, c_cout\%4:%d\n",
+                 cur_axis_start_idx, i,
+                 (int)output_pos.x, (int)output_pos.y,
+                 (float)output_data_before_post.x, (float)output_data_before_post.y, (float)output_data_before_post.z, (float)output_data_before_post.w,
+                 (float)output_data.x, (float)output_data.y, (float)output_data.z, (float)output_data.w,
+                 (float)output_data_read.x, (float)output_data_read.y, (float)output_data_read.z, (float)output_data_read.w,
+                 (float)fabs_output_data_read.x, (float)fabs_output_data_read.y, (float)fabs_output_data_read.z, (float)fabs_output_data_read.w,
 
-	     (int)input_pos.x, (int)input_pos.y,
-	     (float)input_data.x, (float)input_data.y, (float)input_data.z, (float)input_data.w,
-	     (float)val,
-	     (int)c_out, (int)(c_out % 4));
-  }
-#endif
+                 (int)input_pos.x, (int)input_pos.y,
+                 (float)input_data.x, (float)input_data.y, (float)input_data.z, (float)input_data.w,
+                 (float)val,
+                 (int)c_out, (int)(c_out % 4));
+      }
 
       if (output_pos.x == 0 && output_pos.y == 0) {
         printf("<<<<<<<<<<<<<< i:%d, input(%d,%d):%.0f,%.0f,%.0f,%.0f, output_data(%d,%d):%.0f,%.0f,%.0f,%.0f\n",
@@ -482,6 +478,8 @@ __kernel void concat_mul(__read_only image2d_t input,
         (int)input_pos.x, (int)input_pos.y, (float)input_data.x, (float)input_data.y, (float)input_data.z, (float)input_data.w,
         (int)output_pos.x, (int)output_pos.y, (float)output_data.x, (float)output_data.y, (float)output_data.z, (float)output_data.w);
       }
+#endif
+
       WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, output_data);
     }
   }else if (flag == 2){ // by height, width == n
