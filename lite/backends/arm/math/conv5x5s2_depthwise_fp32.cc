@@ -1339,7 +1339,7 @@ inline void compute_all_padding_pre(float* dout,
     num_index_left += 2;
     *dout++ = sum;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp_index - k]++;
@@ -1558,8 +1558,11 @@ inline void compute_all_padding_pre(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[4], bias[0], weights[4][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[4],
+                                      bias[0],
+                                      weights[4][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp_index - k],
@@ -1600,7 +1603,7 @@ inline void compute_all_padding_mid(float* dout,
     num_index_left += 2;
     *dout++ = sum;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp - k]++;
@@ -1681,8 +1684,11 @@ inline void compute_all_padding_mid(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -1716,8 +1722,11 @@ inline void compute_all_padding_mid_out2(float* dout0,
   for (int i = pad_left; i > 0; i--) {
     float sum = compute_one_data_pre(
         din_ptr_arr[num], weights[num], bias[0], weights[6][0], num_index_left);
-    float sum1 = compute_one_data_pre(
-        din_ptr_arr[tmp1], weights[num], bias[0], weights[6][0], num_index_left);
+    float sum1 = compute_one_data_pre(din_ptr_arr[tmp1],
+                                      weights[num],
+                                      bias[0],
+                                      weights[6][0],
+                                      num_index_left);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_pre(din_ptr_arr[tmp - k],
                                   weights[tmp - k],
@@ -1734,7 +1743,7 @@ inline void compute_all_padding_mid_out2(float* dout0,
     *dout0++ = sum;
     *dout1++ = sum1;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[tmp1]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp2 - k]++;
@@ -1832,10 +1841,16 @@ inline void compute_all_padding_mid_out2(float* dout0,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
-    float sum1 = compute_one_data_post(
-        din_ptr_arr[tmp1], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
+    float sum1 = compute_one_data_post(din_ptr_arr[tmp1],
+                                       weights[num],
+                                       bias[0],
+                                       weights[num][num_index_right],
+                                       num_index_right);
     din_ptr_arr[tmp1] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -1873,8 +1888,11 @@ inline void compute_all_padding_post(float* dout,
   // left
   int tmp = num - 1;
   for (int i = pad_left; i > 0; i--) {
-    float sum = compute_one_data_pre(
-        din_ptr_arr[num], weights[num], bias[0], weights[5][num], num_index_left);
+    float sum = compute_one_data_pre(din_ptr_arr[num],
+                                     weights[num],
+                                     bias[0],
+                                     weights[5][num],
+                                     num_index_left);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_pre(din_ptr_arr[tmp - k],
                                   weights[tmp - k],
@@ -1885,7 +1903,7 @@ inline void compute_all_padding_post(float* dout,
     num_index_left += 2;
     *dout++ = sum;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp - k]++;
@@ -2098,8 +2116,11 @@ inline void compute_all_padding_post(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -2146,7 +2167,7 @@ void conv_depthwise_5x5s2_bias(float* dout,
   int n_left_w = 4 - pad_left;
   int n_right_w = 4;
   int n_bottom_h = 4;
-  int in_w_cnt = (win - 4 ) >> 1;
+  int in_w_cnt = (win - 4) >> 1;
   int in_h_cnt = (hin - 4) >> 1;
   int in_w_remain = win - (in_w_cnt << 1);
   int in_h_remain = hin - (in_h_cnt << 1);
@@ -2157,8 +2178,8 @@ void conv_depthwise_5x5s2_bias(float* dout,
       in_w_cnt++;
       n_right_w = 3;
     } else {
-     n_right_w = in_w_remain;
-   }
+      n_right_w = in_w_remain;
+    }
   }
   if (odds_h) {
     n_bottom_h = in_h_remain - 1;
@@ -2240,7 +2261,7 @@ void conv_depthwise_5x5s2_bias(float* dout,
         din_ptr3 = din_ptr4;
         din_ptr4 = din_ptr5;
         din_ptr5 = din_ptr6;
-        din_ptr6 += win; 
+        din_ptr6 += win;
         din_ptr_arr[0] = din_ptr0;
         din_ptr_arr[1] = din_ptr1;
         din_ptr_arr[2] = din_ptr2;
@@ -2361,7 +2382,7 @@ inline void compute_all_padding_pre_relu(float* dout,
     num_index_left += 2;
     *dout++ = sum > 0.f ? sum : 0.f;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp_index - k]++;
@@ -2588,8 +2609,11 @@ inline void compute_all_padding_pre_relu(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[4], bias[0], weights[4][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[4],
+                                      bias[0],
+                                      weights[4][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp_index - k],
@@ -2630,7 +2654,7 @@ inline void compute_all_padding_mid_relu(float* dout,
     num_index_left += 2;
     *dout++ = sum > 0.f ? sum : 0.f;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp - k]++;
@@ -2694,7 +2718,7 @@ inline void compute_all_padding_mid_relu(float* dout,
                    "q13",
                    "q14",
                    "q15");
-#endif 
+#endif
      din_ptr_arr[0] -= 8;
   }
   // clang-format on
@@ -2712,8 +2736,11 @@ inline void compute_all_padding_mid_relu(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -2748,8 +2775,11 @@ inline void compute_all_padding_mid_relu_out2(float* dout0,
   for (int i = pad_left; i > 0; i--) {
     float sum = compute_one_data_pre(
         din_ptr_arr[num], weights[num], bias[0], weights[6][0], num_index_left);
-    float sum1 = compute_one_data_pre(
-        din_ptr_arr[tmp1], weights[num], bias[0], weights[6][0], num_index_left);
+    float sum1 = compute_one_data_pre(din_ptr_arr[tmp1],
+                                      weights[num],
+                                      bias[0],
+                                      weights[6][0],
+                                      num_index_left);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_pre(din_ptr_arr[tmp - k],
                                   weights[tmp - k],
@@ -2766,7 +2796,7 @@ inline void compute_all_padding_mid_relu_out2(float* dout0,
     *dout0++ = sum > 0.f ? sum : 0.f;
     *dout1++ = sum1 > 0.f ? sum1 : 0.f;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[tmp1]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp2 - k]++;
@@ -2840,7 +2870,7 @@ inline void compute_all_padding_mid_relu_out2(float* dout0,
                    "q13",
                    "q14",
                    "q15");
-#endif 
+#endif
      din_ptr_arr[0] -= 8;
   }
   // clang-format on
@@ -2865,10 +2895,16 @@ inline void compute_all_padding_mid_relu_out2(float* dout0,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
-    float sum1 = compute_one_data_post(
-        din_ptr_arr[tmp1], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
+    float sum1 = compute_one_data_post(din_ptr_arr[tmp1],
+                                       weights[num],
+                                       bias[0],
+                                       weights[num][num_index_right],
+                                       num_index_right);
     din_ptr_arr[tmp1] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -2906,8 +2942,11 @@ inline void compute_all_padding_post_relu(float* dout,
   // left
   int tmp = num - 1;
   for (int i = pad_left; i > 0; i--) {
-    float sum = compute_one_data_pre(
-        din_ptr_arr[num], weights[num], bias[0], weights[5][num], num_index_left);
+    float sum = compute_one_data_pre(din_ptr_arr[num],
+                                     weights[num],
+                                     bias[0],
+                                     weights[5][num],
+                                     num_index_left);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_pre(din_ptr_arr[tmp - k],
                                   weights[tmp - k],
@@ -2918,7 +2957,7 @@ inline void compute_all_padding_post_relu(float* dout,
     num_index_left += 2;
     *dout++ = sum > 0.f ? sum : 0.f;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp - k]++;
@@ -3139,8 +3178,11 @@ inline void compute_all_padding_post_relu(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -3187,7 +3229,7 @@ void conv_depthwise_5x5s2_bias_relu(float* dout,
   int n_left_w = 4 - pad_left;
   int n_right_w = 4;
   int n_bottom_h = 4;
-  int in_w_cnt = (win - 4 ) >> 1;
+  int in_w_cnt = (win - 4) >> 1;
   int in_h_cnt = (hin - 4) >> 1;
   int in_w_remain = win - (in_w_cnt << 1);
   int in_h_remain = hin - (in_h_cnt << 1);
@@ -3198,8 +3240,8 @@ void conv_depthwise_5x5s2_bias_relu(float* dout,
       in_w_cnt++;
       n_right_w = 3;
     } else {
-     n_right_w = in_w_remain;
-   }
+      n_right_w = in_w_remain;
+    }
   }
   if (odds_h) {
     n_bottom_h = in_h_remain - 1;
@@ -3412,7 +3454,7 @@ inline void compute_all_padding_pre_relu6(float* dout,
     num_index_left += 2;
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp_index - k]++;
@@ -3647,8 +3689,11 @@ inline void compute_all_padding_pre_relu6(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[4], bias[0], weights[4][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[4],
+                                      bias[0],
+                                      weights[4][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp_index - k],
@@ -3694,7 +3739,7 @@ inline void compute_all_padding_mid_relu6(float* dout,
     num_index_left += 2;
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp - k]++;
@@ -3761,7 +3806,7 @@ inline void compute_all_padding_mid_relu6(float* dout,
                    "q14",
                    "q15");
 #endif
-    din_ptr_arr[0] -= 8; 
+    din_ptr_arr[0] -= 8;
   }
   // clang-format on
   // remain
@@ -3778,8 +3823,11 @@ inline void compute_all_padding_mid_relu6(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -3838,7 +3886,7 @@ inline void compute_all_padding_mid_relu6_out2(float* dout0,
     *dout0++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
     *dout1++ = sum1 > 0.f ? (sum1 < six[0] ? sum1 : six[0]) : 0.f;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[tmp1]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp2 - k]++;
@@ -3914,7 +3962,7 @@ inline void compute_all_padding_mid_relu6_out2(float* dout0,
                    "q14",
                    "q15");
 #endif
-    din_ptr_arr[0] -= 8; 
+    din_ptr_arr[0] -= 8;
   }
   // clang-format on
   // remain
@@ -3938,10 +3986,16 @@ inline void compute_all_padding_mid_relu6_out2(float* dout0,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
-    float sum1 = compute_one_data_post(
-        din_ptr_arr[tmp1], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
+    float sum1 = compute_one_data_post(din_ptr_arr[tmp1],
+                                       weights[num],
+                                       bias[0],
+                                       weights[num][num_index_right],
+                                       num_index_right);
     din_ptr_arr[tmp1] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -3995,7 +4049,7 @@ inline void compute_all_padding_post_relu6(float* dout,
     num_index_left += 2;
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp - k]++;
@@ -4224,8 +4278,11 @@ inline void compute_all_padding_post_relu6(float* dout,
   }
   // right
    for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -4273,7 +4330,7 @@ void conv_depthwise_5x5s2_bias_relu6(float* dout,
   int n_left_w = 4 - pad_left;
   int n_right_w = 4;
   int n_bottom_h = 4;
-  int in_w_cnt = (win - 4 ) >> 1;
+  int in_w_cnt = (win - 4) >> 1;
   int in_h_cnt = (hin - 4) >> 1;
   int in_w_remain = win - (in_w_cnt << 1);
   int in_h_remain = hin - (in_h_cnt << 1);
@@ -4284,8 +4341,8 @@ void conv_depthwise_5x5s2_bias_relu6(float* dout,
       in_w_cnt++;
       n_right_w = 3;
     } else {
-     n_right_w = in_w_remain;
-   }
+      n_right_w = in_w_remain;
+    }
   }
   if (odds_h) {
     n_bottom_h = in_h_remain - 1;
@@ -4454,7 +4511,7 @@ void conv_depthwise_5x5s2_bias_relu6(float* dout,
                                        pad_left_new,
                                        pad_right_new,
                                        n_left_w,
-                                      n_right_w,
+                                       n_right_w,
                                        cnt,
                                        remain,
                                        h_in_num);
@@ -4502,7 +4559,7 @@ inline void compute_all_padding_pre_leakyRelu(float* dout,
     num_index_left += 2;
     *dout++ = sum > 0.f ? sum : sum * scale[0];
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp_index - k]++;
@@ -4745,8 +4802,11 @@ inline void compute_all_padding_pre_leakyRelu(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[4], bias[0], weights[4][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[4],
+                                      bias[0],
+                                      weights[4][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp_index - k],
@@ -4792,7 +4852,7 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
     num_index_left += 2;
     *dout++ = sum > 0.f ? sum : sum * scale[0];
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp - k]++;
@@ -4860,8 +4920,8 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
                    "q13",
                    "q14",
                    "q15");
-#endif 
-    din_ptr_arr[0] -= 8; 
+#endif
+    din_ptr_arr[0] -= 8;
   }
   // clang-format on
   // remain
@@ -4878,8 +4938,11 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -4918,8 +4981,11 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
   for (int i = pad_left; i > 0; i--) {
     float sum = compute_one_data_pre(
         din_ptr_arr[num], weights[num], bias[0], weights[6][0], num_index_left);
-    float sum1 = compute_one_data_pre(
-        din_ptr_arr[tmp1], weights[num], bias[0], weights[6][0], num_index_left);
+    float sum1 = compute_one_data_pre(din_ptr_arr[tmp1],
+                                      weights[num],
+                                      bias[0],
+                                      weights[6][0],
+                                      num_index_left);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_pre(din_ptr_arr[tmp - k],
                                   weights[tmp - k],
@@ -4936,7 +5002,7 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
     *dout0++ = sum > 0.f ? sum : sum * scale[0];
     *dout1++ = sum1 > 0.f ? sum1 : sum1 * scale[0];
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[tmp1]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp2 - k]++;
@@ -5016,8 +5082,8 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
                    "q13",
                    "q14",
                    "q15");
-#endif 
-    din_ptr_arr[0] -= 8; 
+#endif
+    din_ptr_arr[0] -= 8;
   }
   // clang-format on
   // remain
@@ -5041,10 +5107,16 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
-    float sum1 = compute_one_data_post(
-        din_ptr_arr[tmp1], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
+    float sum1 = compute_one_data_post(din_ptr_arr[tmp1],
+                                       weights[num],
+                                       bias[0],
+                                       weights[num][num_index_right],
+                                       num_index_right);
     din_ptr_arr[tmp1] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -5086,8 +5158,11 @@ inline void compute_all_padding_post_leakyRelu(float* dout,
   // left
   int tmp = num - 1;
   for (int i = pad_left; i > 0; i--) {
-    float sum = compute_one_data_pre(
-        din_ptr_arr[num], weights[num], bias[0], weights[5][num], num_index_left);
+    float sum = compute_one_data_pre(din_ptr_arr[num],
+                                     weights[num],
+                                     bias[0],
+                                     weights[5][num],
+                                     num_index_left);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_pre(din_ptr_arr[tmp - k],
                                   weights[tmp - k],
@@ -5098,7 +5173,7 @@ inline void compute_all_padding_post_leakyRelu(float* dout,
     num_index_left += 2;
     *dout++ = sum > 0.f ? sum : sum * scale[0];
   }
-  if (odds) { // origin pad_left is odds, such as ori_pad_left=1
+  if (odds) {  // origin pad_left is odds, such as ori_pad_left=1
     din_ptr_arr[num]++;
     for (int k = 0; k < num; k++) {
       din_ptr_arr[tmp - k]++;
@@ -5335,8 +5410,11 @@ inline void compute_all_padding_post_leakyRelu(float* dout,
   }
   // right
   for (int i = 0; i < pad_right; i++) {
-    float sum = compute_one_data_post(
-        din_ptr_arr[num], weights[num], bias[0], weights[num][num_index_right], num_index_right);
+    float sum = compute_one_data_post(din_ptr_arr[num],
+                                      weights[num],
+                                      bias[0],
+                                      weights[num][num_index_right],
+                                      num_index_right);
     din_ptr_arr[num] += 2;
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_post(din_ptr_arr[tmp - k],
@@ -5384,7 +5462,7 @@ void conv_depthwise_5x5s2_bias_leakyRelu(float* dout,
   int n_left_w = 4 - pad_left;
   int n_right_w = 4;
   int n_bottom_h = 4;
-  int in_w_cnt = (win - 4 ) >> 1;
+  int in_w_cnt = (win - 4) >> 1;
   int in_h_cnt = (hin - 4) >> 1;
   int in_w_remain = win - (in_w_cnt << 1);
   int in_h_remain = hin - (in_h_cnt << 1);
@@ -5395,8 +5473,8 @@ void conv_depthwise_5x5s2_bias_leakyRelu(float* dout,
       in_w_cnt++;
       n_right_w = 3;
     } else {
-     n_right_w = in_w_remain;
-   }
+      n_right_w = in_w_remain;
+    }
   }
   if (odds_h) {
     n_bottom_h = in_h_remain - 1;
