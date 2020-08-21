@@ -95,7 +95,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   // conv1
   auto weight1_t = scope->FindVar(matched.at("conv_weight1")->arg()->name)
                        ->GetMutable<lite::Tensor>();
-  auto groups0 = conv_op_desc->GetAttr<int>("groups");
+  // auto groups0 = conv_op_desc->GetAttr<int>("groups");
   auto groups1 = conv_op_desc1->GetAttr<int>("groups");
   auto strides1 = conv_op_desc1->GetAttr<std::vector<int>>("strides");
   auto paddings1 = conv_op_desc1->GetAttr<std::vector<int>>("paddings");
@@ -109,17 +109,11 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     LOG(FATAL) << "The kernel size of the second conv must be 1x1";
   }
   auto channel0_out = weight0_t->dims()[0];
-  auto channel0_in = weight0_t->dims()[1] * groups0;
-  auto channel1_out = weight1_t->dims()[0];
   auto channel1_in = weight1_t->dims()[1] * groups1;
   CHECK_EQ(enable0_int8, enable1_int8) << "The Conv compute type must be same";
   CHECK_EQ(groups1, 1) << "The groups of weight1_dim must be 1";
-  CHECK_EQ(channel0_out, channel1_in) << "weight0_dims[0] == weight1_dim[1]";
-  // ic0 x (oc1-oc0) < oc0 x oc1
-  if (channel0_in * (channel1_out - channel0_out) >
-      channel0_out * channel1_out) {
-    LOG(FATAL) << "it dose not support conv+conv fusion";
-  }
+  CHECK_EQ(channel0_out, channel1_in) << "channel0_out == channel1_in";
+
   for (int i = 0; i < strides1.size(); i++) {
     CHECK_EQ(strides1[i], 1) << "strides[" << i << "]: " << strides1[i]
                              << " must be 1";
