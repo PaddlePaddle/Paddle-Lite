@@ -3868,8 +3868,11 @@ inline void compute_all_padding_mid_relu6_out2(float* dout0,
   for (int i = pad_left; i > 0; i--) {
     float sum = compute_one_data_pre(
         din_ptr_arr[num], weights[num], bias[0], weights[6][0], num_index_left);
-    float sum1 = compute_one_data_pre(
-        din_ptr_arr[tmp1], weights[num], bias[0], weights[6][0], num_index_left);
+    float sum1 = compute_one_data_pre(din_ptr_arr[tmp1],
+                                      weights[num],
+                                      bias[0],
+                                      weights[6][0],
+                                      num_index_left);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_pre(din_ptr_arr[tmp - k],
                                   weights[tmp - k],
@@ -4037,8 +4040,11 @@ inline void compute_all_padding_post_relu6(float* dout,
   // left
   int tmp = num - 1;
   for (int i = pad_left; i > 0; i--) {
-    float sum = compute_one_data_pre(
-        din_ptr_arr[num], weights[num], bias[0], weights[5][num], num_index_left);
+    float sum = compute_one_data_pre(din_ptr_arr[num],
+                                     weights[num],
+                                     bias[0],
+                                     weights[5][num],
+                                     num_index_left);
     for (int k = 0; k < num; k++) {
       sum += compute_one_data_pre(din_ptr_arr[tmp - k],
                                   weights[tmp - k],
@@ -4277,7 +4283,7 @@ inline void compute_all_padding_post_relu6(float* dout,
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
   }
   // right
-   for (int i = 0; i < pad_right; i++) {
+  for (int i = 0; i < pad_right; i++) {
     float sum = compute_one_data_post(din_ptr_arr[num],
                                       weights[num],
                                       bias[0],
