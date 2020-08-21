@@ -103,6 +103,9 @@ function main {
             --target_name=*)
                 TARGET_NAME="${i#*=}"
                 build_bm
+                shift
+                ;;
+            *)
                 # unknown option
                 print_usage
                 exit 1
@@ -110,5 +113,4 @@ function main {
         esac
     done
 }
-
 main $@
