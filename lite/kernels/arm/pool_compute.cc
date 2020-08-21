@@ -57,7 +57,9 @@ void PoolCompute::Run() {
       (ksize[0] == ksize[1]) && (strides[0] == strides[1]) && pads_less;
   bool global_pooling = (paddings[0] == 0) && (ksize[0] == in_dims[2]) &&
                         (ksize[1] == in_dims[3]) && kps_equal && pads_equal;
+  bool win_ksize = (in_dims[2] > ksize[0]) && (in_dims[3] > ksize[1]);
   global_pooling = param.global_pooling || global_pooling;
+  kps_equal = kps_equal && win_ksize;
 
   if (global_pooling) {
     for (size_t i = 0; i < ksize.size(); ++i) {
