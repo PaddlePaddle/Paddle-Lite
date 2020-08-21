@@ -2463,7 +2463,7 @@ inline void compute_all_padding_mid_relu(float* dout,
                    "q13",
                    "q14",
                    "q15");
-#endif 
+#endif
      din_ptr_arr[0] -= 4;
   }
   // clang-format on
@@ -2594,7 +2594,7 @@ inline void compute_all_padding_mid_relu_out2(float* dout0,
                    "q13",
                    "q14",
                    "q15");
-#endif 
+#endif
      din_ptr_arr[0] -= 4;
   }
   // clang-format on
@@ -3423,7 +3423,7 @@ inline void compute_all_padding_mid_relu6(float* dout,
                    "q14",
                    "q15");
 #endif
-    din_ptr_arr[0] -= 4; 
+    din_ptr_arr[0] -= 4;
   }
   // clang-format on
   // remain
@@ -3561,7 +3561,7 @@ inline void compute_all_padding_mid_relu6_out2(float* dout0,
                    "q14",
                    "q15");
 #endif
-    din_ptr_arr[0] -= 4; 
+    din_ptr_arr[0] -= 4;
   }
   // clang-format on
   // remain
@@ -3859,7 +3859,7 @@ inline void compute_all_padding_post_relu6(float* dout,
     *dout++ = sum > 0.f ? (sum < six[0] ? sum : six[0]) : 0.f;
   }
   // right
-   for (int i = 0; i < pad_right; i++) {
+  for (int i = 0; i < pad_right; i++) {
     float sum = compute_one_data_post(
         din_ptr_arr[3], weights[num], bias[0], weights[num][3 - i], 3 - i);
     din_ptr_arr[3]++;
@@ -4419,8 +4419,8 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
                    "q13",
                    "q14",
                    "q15");
-#endif 
-    din_ptr_arr[0] -= 4; 
+#endif
+    din_ptr_arr[0] -= 4;
   }
   // clang-format on
   // remain
@@ -4559,8 +4559,8 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
                    "q13",
                    "q14",
                    "q15");
-#endif 
-    din_ptr_arr[0] -= 4; 
+#endif
+    din_ptr_arr[0] -= 4;
   }
   // clang-format on
   // remain
