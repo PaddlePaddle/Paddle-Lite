@@ -126,7 +126,9 @@ struct Instruction {
 #ifdef LITE_WITH_PROFILE
   void set_profiler(profile::Profiler* profiler) {
     profiler_ = profiler;
+#ifndef LITE_WITH_FPGA
     if (op_->Type() != "feed" && op_->Type() != "fetch") {
+#endif
       profile::OpCharacter ch;
       ch.op_lite = static_cast<void*>(const_cast<paddle::lite::OpLite*>(op()));
       ch.target = kernel()->target();
@@ -137,7 +139,9 @@ struct Instruction {
       // append `ch.kernel_func_name` in StopTiming
       profile_id_ = profiler->NewTimer(ch);
       kernel_->SetProfiler(profiler_, profile_id_);
+#ifndef LITE_WITH_FPGA
     }
+#endif
   }
 
   void SetProfileRuntimeOpInfo(paddle::lite::profile::OpCharacter* ch) {
