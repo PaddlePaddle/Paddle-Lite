@@ -122,10 +122,10 @@ void fill_bias_relu<int>(int* tensor,
   "ld1 {v1.4s}, [%[din_ptr]], #16   \n" /*vld1q_f32(din_ptr0)*/ \
   "ld1 {v2.4s}, [%[din_ptr]], #16   \n" /*vld1q_f32(din_ptr0)*/ \
   "ld1 {v3.4s}, [%[din_ptr]], #16   \n" /*vld1q_f32(din_ptr0)*/ \
-  "add v0.4s, v0.4s, %[vbias].4s    \n"                         \
-  "add v1.4s, v1.4s, %[vbias].4s    \n"                         \
-  "add v2.4s, v2.4s, %[vbias].4s    \n"                         \
-  "add v3.4s, v3.4s, %[vbias].4s    \n"
+  "fadd v0.4s, v0.4s, %[vbias].4s   \n"                         \
+  "fadd v1.4s, v1.4s, %[vbias].4s   \n"                         \
+  "fadd v2.4s, v2.4s, %[vbias].4s   \n"                         \
+  "fadd v3.4s, v3.4s, %[vbias].4s   \n"
 #define FILL_RELU                                         \
   "fmax v0.4s, v0.4s, %[vzero].4s   \n" /* vmaxq_f32() */ \
   "fmax v1.4s, v1.4s, %[vzero].4s   \n" /* vmaxq_f32() */ \
