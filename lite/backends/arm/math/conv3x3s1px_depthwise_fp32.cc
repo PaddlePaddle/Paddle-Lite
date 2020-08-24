@@ -436,371 +436,6 @@ namespace math {
           "3: \n"
 #endif
 // clang-format on
-void act_switch_3x3s1(const float* inr0,
-                      const float* inr1,
-                      const float* inr2,
-                      const float* inr3,
-                      float* out0,
-                      const float* weight_c,
-                      float flag_mask,
-                      void* outl_ptr,
-                      float32x4_t w0,
-                      float32x4_t w1,
-                      float32x4_t w2,
-                      float32x4_t w3,
-                      float32x4_t w4,
-                      float32x4_t w5,
-                      float32x4_t w6,
-                      float32x4_t w7,
-                      float32x4_t w8,
-                      float32x4_t vbias,
-                      const operators::ActivationParam act_param) {
-  bool has_active = act_param.has_active;
-  if (has_active) {
-    switch (act_param.active_type) {
-      case lite_api::ActivationType::kRelu:
-#ifdef __aarch64__
-        asm volatile(COMPUTE RELU STORE
-                     : [inr0] "+r"(inr0),
-                       [inr1] "+r"(inr1),
-                       [inr2] "+r"(inr2),
-                       [inr3] "+r"(inr3),
-                       [out] "+r"(out0)
-                     : [w0] "w"(w0),
-                       [w1] "w"(w1),
-                       [w2] "w"(w2),
-                       [w3] "w"(w3),
-                       [w4] "w"(w4),
-                       [w5] "w"(w5),
-                       [w6] "w"(w6),
-                       [w7] "w"(w7),
-                       [w8] "w"(w8),
-                       [vbias] "w"(vbias),
-                       [outl] "r"(outl_ptr),
-                       [flag_mask] "r"(flag_mask)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v15",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v20",
-                       "v21",
-                       "v22",
-                       "x0",
-                       "x1",
-                       "x2",
-                       "x3",
-                       "x4",
-                       "x5",
-                       "x6",
-                       "x7");
-#else
-        asm volatile(COMPUTE RELU STORE
-                     : [r0] "+r"(inr0),
-                       [r1] "+r"(inr1),
-                       [r2] "+r"(inr2),
-                       [r3] "+r"(inr3),
-                       [out0] "+r"(out0),
-                       [wc0] "+r"(weight_c)
-                     : [flag_mask] "r"(flag_mask), [outl] "r"(outl_ptr)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15",
-                       "r0",
-                       "r1",
-                       "r2",
-                       "r3",
-                       "r4");
-#endif
-        break;
-      case lite_api::ActivationType::kRelu6:
-#ifdef __aarch64__
-        asm volatile(COMPUTE RELU RELU6 STORE
-                     : [inr0] "+r"(inr0),
-                       [inr1] "+r"(inr1),
-                       [inr2] "+r"(inr2),
-                       [inr3] "+r"(inr3),
-                       [out] "+r"(out0)
-                     : [w0] "w"(w0),
-                       [w1] "w"(w1),
-                       [w2] "w"(w2),
-                       [w3] "w"(w3),
-                       [w4] "w"(w4),
-                       [w5] "w"(w5),
-                       [w6] "w"(w6),
-                       [w7] "w"(w7),
-                       [w8] "w"(w8),
-                       [vbias] "w"(vbias),
-                       [outl] "r"(outl_ptr),
-                       [flag_mask] "r"(flag_mask)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v15",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v20",
-                       "v21",
-                       "v22",
-                       "x0",
-                       "x1",
-                       "x2",
-                       "x3",
-                       "x4",
-                       "x5",
-                       "x6",
-                       "x7");
-#else
-        asm volatile(COMPUTE RELU RELU6 STORE
-                     : [r0] "+r"(inr0),
-                       [r1] "+r"(inr1),
-                       [r2] "+r"(inr2),
-                       [r3] "+r"(inr3),
-                       [out0] "+r"(out0),
-                       [wc0] "+r"(weight_c)
-                     : [flag_mask] "r"(flag_mask), [outl] "r"(outl_ptr)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15",
-                       "r0",
-                       "r1",
-                       "r2",
-                       "r3",
-                       "r4");
-#endif
-#endif
-        break;
-      case lite_api::ActivationType::kLeakyRelu:
-#ifdef __aarch64__
-        asm volatile(COMPUTE LEAKY_RELU STORE
-                     : [inr0] "+r"(inr0),
-                       [inr1] "+r"(inr1),
-                       [inr2] "+r"(inr2),
-                       [inr3] "+r"(inr3),
-                       [out] "+r"(out0)
-                     : [w0] "w"(w0),
-                       [w1] "w"(w1),
-                       [w2] "w"(w2),
-                       [w3] "w"(w3),
-                       [w4] "w"(w4),
-                       [w5] "w"(w5),
-                       [w6] "w"(w6),
-                       [w7] "w"(w7),
-                       [w8] "w"(w8),
-                       [vbias] "w"(vbias),
-                       [outl] "r"(outl_ptr),
-                       [flag_mask] "r"(flag_mask)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v15",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v20",
-                       "v21",
-                       "v22",
-                       "x0",
-                       "x1",
-                       "x2",
-                       "x3",
-                       "x4",
-                       "x5",
-                       "x6",
-                       "x7");
-#else
-        asm volatile(COMPUTE LEAKY_RELU STORE
-                     : [r0] "+r"(inr0),
-                       [r1] "+r"(inr1),
-                       [r2] "+r"(inr2),
-                       [r3] "+r"(inr3),
-                       [out0] "+r"(out0),
-                       [wc0] "+r"(weight_c)
-                     : [flag_mask] "r"(flag_mask), [outl] "r"(outl_ptr)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15",
-                       "r0",
-                       "r1",
-                       "r2",
-                       "r3",
-                       "r4");
-#endif
-        break;
-      default:
-        LOG(FATAL) << "this act_type: "
-                   << static_cast<int>(act_param.active_type)
-                   << " fuse not support";
-    }
-  } else {
-#ifdef __aarch64__
-    asm volatile(COMPUTE STORE
-                 : [inr0] "+r"(inr0),
-                   [inr1] "+r"(inr1),
-                   [inr2] "+r"(inr2),
-                   [inr3] "+r"(inr3),
-                   [out] "+r"(out0)
-                 : [w0] "w"(w0),
-                   [w1] "w"(w1),
-                   [w2] "w"(w2),
-                   [w3] "w"(w3),
-                   [w4] "w"(w4),
-                   [w5] "w"(w5),
-                   [w6] "w"(w6),
-                   [w7] "w"(w7),
-                   [w8] "w"(w8),
-                   [vbias] "w"(vbias),
-                   [outl] "r"(outl_ptr),
-                   [flag_mask] "r"(flag_mask)
-                 : "cc",
-                   "memory",
-                   "v0",
-                   "v1",
-                   "v2",
-                   "v3",
-                   "v4",
-                   "v5",
-                   "v6",
-                   "v7",
-                   "v8",
-                   "v9",
-                   "v10",
-                   "v11",
-                   "v15",
-                   "v16",
-                   "v17",
-                   "v18",
-                   "v19",
-                   "v20",
-                   "v21",
-                   "v22",
-                   "x0",
-                   "x1",
-                   "x2",
-                   "x3",
-                   "x4",
-                   "x5",
-                   "x6",
-                   "x7");
-#else
-    asm volatile(COMPUTE STORE
-                 : [r0] "+r"(inr0),
-                   [r1] "+r"(inr1),
-                   [r2] "+r"(inr2),
-                   [r3] "+r"(inr3),
-                   [out0] "+r"(out0),
-                   [wc0] "+r"(weight_c)
-                 : [flag_mask] "r"(flag_mask), [outl] "r"(outl_ptr)
-                 : "cc",
-                   "memory",
-                   "q0",
-                   "q1",
-                   "q2",
-                   "q3",
-                   "q4",
-                   "q5",
-                   "q6",
-                   "q7",
-                   "q8",
-                   "q9",
-                   "q10",
-                   "q11",
-                   "q12",
-                   "q13",
-                   "q14",
-                   "q15",
-                   "r0",
-                   "r1",
-                   "r2",
-                   "r3",
-                   "r4");
-#endif
-  }
-}
 void conv_3x3s1_depthwise_fp32(const float* i_data,
                                float* o_data,
                                int bs,
@@ -835,6 +470,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                        relu_ptr,
                                        six_ptr,
                                        scale_ptr,
+                                       param,
                                        ctx);
         break;
       case lite_api::ActivationType::kRelu6:
@@ -856,6 +492,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                         relu_ptr,
                                         six_ptr,
                                         scale_ptr,
+                                        param,
                                         ctx);
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -877,6 +514,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                             relu_ptr,
                                             six_ptr,
                                             scale_ptr,
+                                            param,
                                             ctx);
         break;
       default:
@@ -899,6 +537,7 @@ void conv_3x3s1_depthwise_fp32(const float* i_data,
                                    relu_ptr,
                                    six_ptr,
                                    scale_ptr,
+                                   param,
                                    ctx);
   }
 }
@@ -917,6 +556,7 @@ void conv_3x3s1_depthwise_fp32_bias(const float* i_data,
                                     float* relu_ptr,
                                     float* six_ptr,
                                     float* scale_ptr,
+                                    const operators::ConvParam& param,
                                     ARMContext* ctx) {
   int threads = ctx->threads();
 
@@ -1167,6 +807,7 @@ void conv_3x3s1_depthwise_fp32_relu(const float* i_data,
                                     float* relu_ptr,
                                     float* six_ptr,
                                     float* scale_ptr,
+                                    const operators::ConvParam& param,
                                     ARMContext* ctx) {
   int threads = ctx->threads();
 
@@ -1417,6 +1058,7 @@ void conv_3x3s1_depthwise_fp32_relu6(const float* i_data,
                                      float* relu_ptr,
                                      float* six_ptr,
                                      float* scale_ptr,
+                                     const operators::ConvParam& param,
                                      ARMContext* ctx) {
   int threads = ctx->threads();
 
@@ -1667,6 +1309,7 @@ void conv_3x3s1_depthwise_fp32_leakyRelu(const float* i_data,
                                          float* relu_ptr,
                                          float* six_ptr,
                                          float* scale_ptr,
+                                         const operators::ConvParam& param,
                                          ARMContext* ctx) {
   int threads = ctx->threads();
 
