@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/cuda/mul_compute.h"
+
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -23,9 +24,18 @@ namespace cuda {}  // namespace cuda
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    mul, kCUDA, kFloat, kNCHW, paddle::lite::kernels::cuda::MulCompute, def)
+using MulFp32 =
+    paddle::lite::kernels::cuda::MulCompute<float, PRECISION(kFloat)>;
+using MulFp16 = paddle::lite::kernels::cuda::MulCompute<half, PRECISION(kFP16)>;
+
+REGISTER_LITE_KERNEL(mul, kCUDA, kFloat, kNCHW, MulFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(mul, kCUDA, kFP16, kNCHW, MulFp16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFP16))})
     .Finalize();

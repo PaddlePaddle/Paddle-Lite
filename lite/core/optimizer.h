@@ -164,6 +164,7 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",
+           "lite_reshape_fuse_pass",
 
            "memory_optimize_pass"}};
 

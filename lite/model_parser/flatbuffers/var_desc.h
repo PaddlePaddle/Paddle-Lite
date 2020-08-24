@@ -78,6 +78,7 @@ class VarDescView : public VarDescAPI {
   std::vector<int64_t> shape_;
 };
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 class VarDesc : public VarDescAPI {
  public:
   VarDesc() : owned_(true), desc_(new proto::VarDescT()) {}
@@ -143,6 +144,7 @@ class VarDesc : public VarDescAPI {
   proto::VarDescT* desc_{nullptr};
   paddle::lite::fbs::proto::VarTypeT* type_{nullptr};
 };
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

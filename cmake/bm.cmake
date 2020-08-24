@@ -23,6 +23,9 @@ if(NOT DEFINED BM_SDK_ROOT)
     endif()
 endif()
 
+set(BM_SDK_CPLIB_RPATH ${BM_SDK_ROOT}/lib/bmcompiler)
+set(BM_SDK_LIB_RPATH ${BM_SDK_ROOT}/lib/bmnn/pcie)
+
 message(STATUS "BM_SDK_ROOT: ${BM_SDK_ROOT}")
 find_path(BM_SDK_INC NAMES bmruntime_interface.h
   PATHS ${BM_SDK_ROOT}/include/bmruntime NO_DEFAULT_PATH)
@@ -37,43 +40,35 @@ include_directories("${BM_SDK_ROOT}/include/bmcpu")
 include_directories("${BM_SDK_ROOT}/include/bmlog")
 
 find_library(BM_SDK_RT_LIB NAMES bmrt
-  PATHS ${BM_SDK_ROOT}/lib/bmnn/pcie)
+  PATHS ${BM_SDK_LIB_RPATH})
 if(NOT BM_SDK_RT_LIB)
   message(FATAL_ERROR "Can not find bmrt Library in ${BM_SDK_ROOT}")
 else()
   message(STATUS "Found bmrt Library: ${BM_SDK_RT_LIB}")
-  add_library(bmrt SHARED IMPORTED GLOBAL)
-  set_property(TARGET bmrt PROPERTY IMPORTED_LOCATION ${BM_SDK_RT_LIB})
 endif()
 
 find_library(BM_SDK_BM_LIB NAMES bmlib
-  PATHS ${BM_SDK_ROOT}/lib/bmnn/pcie)
+  PATHS ${BM_SDK_LIB_RPATH})
 if(NOT BM_SDK_BM_LIB)
   message(FATAL_ERROR "Can not find bmlib Library in ${BM_SDK_ROOT}")
 else()
   message(STATUS "Found bmlib Library: ${BM_SDK_BM_LIB}")
-  add_library(bmlib SHARED IMPORTED GLOBAL)
-  set_property(TARGET bmlib PROPERTY IMPORTED_LOCATION ${BM_SDK_BM_LIB})
 endif()
 
 find_library(BM_SDK_COMPILER_LIB NAMES bmcompiler
-  PATHS ${BM_SDK_ROOT}/lib/bmcompiler)
+  PATHS ${BM_SDK_CPLIB_RPATH})
 if(NOT BM_SDK_COMPILER_LIB)
   message(FATAL_ERROR "Can not find bmcompiler Library in ${BM_SDK_ROOT}")
 else()
   message(STATUS "Found bmcompiler Library: ${BM_SDK_COMPILER_LIB}")
-  add_library(bmcompiler SHARED IMPORTED GLOBAL)
-  set_property(TARGET bmcompiler PROPERTY IMPORTED_LOCATION ${BM_SDK_COMPILER_LIB})
 endif()
 
 find_library(BM_SDK_CPU_LIB NAMES bmcpu
-  PATHS ${BM_SDK_ROOT}/lib/bmnn/pcie)
+  PATHS ${BM_SDK_LIB_RPATH})
 if(NOT BM_SDK_CPU_LIB)
   message(FATAL_ERROR "Can not find bmcpu Library in ${BM_SDK_ROOT}")
 else()
   message(STATUS "Found bmcpu Library: ${BM_SDK_CPU_LIB}")
-  add_library(bmcpu SHARED IMPORTED GLOBAL)
-  set_property(TARGET bmcpu PROPERTY IMPORTED_LOCATION ${BM_SDK_CPU_LIB})
 endif()
 
 set(bm_runtime_libs bmrt bmlib bmcompiler bmcpu CACHE INTERNAL "bm runtime libs")
