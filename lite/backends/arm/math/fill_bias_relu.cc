@@ -122,10 +122,10 @@ void fill_bias_relu<int>(int* tensor,
   "ld1 {v1.4s}, [%[din_ptr]], #16   \n" /*vld1q_f32(din_ptr0)*/ \
   "ld1 {v2.4s}, [%[din_ptr]], #16   \n" /*vld1q_f32(din_ptr0)*/ \
   "ld1 {v3.4s}, [%[din_ptr]], #16   \n" /*vld1q_f32(din_ptr0)*/ \
-  "add v0.4s, v0.4s, %[vbias].4s    \n"                         \
-  "add v1.4s, v1.4s, %[vbias].4s    \n"                         \
-  "add v2.4s, v2.4s, %[vbias].4s    \n"                         \
-  "add v3.4s, v3.4s, %[vbias].4s    \n"
+  "fadd v0.4s, v0.4s, %[vbias].4s   \n"                         \
+  "fadd v1.4s, v1.4s, %[vbias].4s   \n"                         \
+  "fadd v2.4s, v2.4s, %[vbias].4s   \n"                         \
+  "fadd v3.4s, v3.4s, %[vbias].4s   \n"
 #define FILL_RELU                                         \
   "fmax v0.4s, v0.4s, %[vzero].4s   \n" /* vmaxq_f32() */ \
   "fmax v1.4s, v1.4s, %[vzero].4s   \n" /* vmaxq_f32() */ \
@@ -206,20 +206,21 @@ void fill_bias_act<float>(float* tensor,
                           bool flag_bias,
                           const operators::ActivationParam* act_param) {
   float* data = tensor;
-  int cnt = channel_size >> 4;
+  int cnt_num = channel_size >> 4;
   int remain = channel_size % 16;
   float32x4_t vzero = vdupq_n_f32(0.f);
   if (act_param != nullptr && act_param->has_active) {
     float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
-    for (int j = 0; j < channel; j++) {
-      float bias_data = flag_bias ? bias[j] : 0.f;
-      float* src = data + j * channel_size;
-      float* dst = data + j * channel_size;
-      float32x4_t vbias = vdupq_n_f32(bias_data);
-      if (cnt > 0) {
-        switch (act_param->active_type) {
-          case lite_api::ActivationType::kRelu:
+    switch (act_param->active_type) {
+      case lite_api::ActivationType::kRelu:
+        for (int j = 0; j < channel; j++) {
+          float bias_data = flag_bias ? bias[j] : 0.f;
+          float* src = data + j * channel_size;
+          float* dst = data + j * channel_size;
+          float32x4_t vbias = vdupq_n_f32(bias_data);
+          int cnt = cnt_num;
+          if (cnt_num > 0) {
 #ifdef __aarch64__
             asm volatile(
                 FILL_BIAS FILL_RELU FILL_STORE
@@ -233,8 +234,23 @@ void fill_bias_act<float>(float* tensor,
                 : [vzero] "w"(vzero), [vbias] "w"(vbias)
                 : "memory", "cc", "q3", "q4", "q5", "q6");
 #endif
-            break;
-          case lite_api::ActivationType::kRelu6:
+          }
+          for (int i = 0; i < remain; i++) {
+            float tmp = (*src + bias_data);
+            *dst = tmp >= 0.f ? tmp : 0.f;
+            src++;
+            dst++;
+          }
+        }
+        break;
+      case lite_api::ActivationType::kRelu6:
+        for (int j = 0; j < channel; j++) {
+          float bias_data = flag_bias ? bias[j] : 0.f;
+          float* src = data + j * channel_size;
+          float* dst = data + j * channel_size;
+          float32x4_t vbias = vdupq_n_f32(bias_data);
+          int cnt = cnt_num;
+          if (cnt_num > 0) {
 #ifdef __aarch64__
             asm volatile(
                 FILL_BIAS FILL_RELU FILL_RELU6 FILL_STORE
@@ -248,8 +264,26 @@ void fill_bias_act<float>(float* tensor,
                 : [vzero] "w"(vzero), [vsix] "w"(vsix), [vbias] "w"(vbias)
                 : "memory", "cc", "q3", "q4", "q5", "q6");
 #endif
-            break;
-          case lite_api::ActivationType::kLeakyRelu:
+          }
+          for (int i = 0; i < remain; i++) {
+            float tmp = (*src + bias_data);
+            tmp = tmp >= 0.f ? tmp : 0.f;
+            *dst = tmp <= act_param->Relu_clipped_coef
+                       ? tmp
+                       : act_param->Relu_clipped_coef;
+            src++;
+            dst++;
+          }
+        }
+        break;
+      case lite_api::ActivationType::kLeakyRelu:
+        for (int j = 0; j < channel; j++) {
+          float bias_data = flag_bias ? bias[j] : 0.f;
+          float* src = data + j * channel_size;
+          float* dst = data + j * channel_size;
+          float32x4_t vbias = vdupq_n_f32(bias_data);
+          int cnt = cnt_num;
+          if (cnt_num > 0) {
 #ifdef __aarch64__
             asm volatile(
                 FILL_BIAS FILL_LEAKY_RELU FILL_STORE
@@ -289,33 +323,7 @@ void fill_bias_act<float>(float* tensor,
                   "q13",
                   "q14");
 #endif
-            break;
-          default:
-            LOG(FATAL) << "this act_type: "
-                       << static_cast<int>(act_param->active_type)
-                       << " fuse not support";
-        }
-      }
-      // remain
-      switch (act_param->active_type) {
-        case lite_api::ActivationType::kRelu:
-          for (int i = 0; i < remain; i++) {
-            float tmp = (*src + bias_data);
-            *dst = tmp >= 0.f ? tmp : 0.f;
-            src++;
-            dst++;
           }
-        case lite_api::ActivationType::kRelu6:
-          for (int i = 0; i < remain; i++) {
-            float tmp = (*src + bias_data);
-            tmp = tmp >= 0.f ? tmp : 0.f;
-            *dst = tmp <= act_param->Relu_clipped_coef
-                       ? tmp
-                       : act_param->Relu_clipped_coef;
-            src++;
-            dst++;
-          }
-        case lite_api::ActivationType::kLeakyRelu:
           for (int i = 0; i < remain; i++) {
             float tmp = (*src + bias_data);
             if (tmp >= 0.f) {
@@ -326,12 +334,12 @@ void fill_bias_act<float>(float* tensor,
             src++;
             dst++;
           }
-          break;
-        default:
-          LOG(FATAL) << "this act_type: "
-                     << static_cast<int>(act_param->active_type)
-                     << " fuse not support";
-      }
+        }
+        break;
+      default:
+        LOG(FATAL) << "this act_type: "
+                   << static_cast<int>(act_param->active_type)
+                   << " fuse not support";
     }
   } else {
     for (int j = 0; j < channel; ++j) {
@@ -339,6 +347,7 @@ void fill_bias_act<float>(float* tensor,
       float32x4_t vbias = vdupq_n_f32(bias_data);
       float* src = data + j * channel_size;
       float* dst = data + j * channel_size;
+      int cnt = cnt_num;
       if (cnt > 0) {
 #ifdef __aarch64__
         asm volatile(FILL_BIAS FILL_STORE
