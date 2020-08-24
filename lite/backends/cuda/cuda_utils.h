@@ -21,6 +21,10 @@
 #include <cudnn.h>
 #include "lite/utils/cp_logging.h"
 
+#if (CUBLAS_VER_MAJOR * 10 + CUBLAS_VER_MINOR) >= 101
+#include <cublasLt.h>
+#endif
+
 /*
  * This file contains some CUDA specific utils.
  */
