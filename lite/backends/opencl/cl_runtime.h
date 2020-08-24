@@ -74,8 +74,6 @@ class CLRuntime {
     //  1. opencl_lib_found must be true
     //  2. dlsym_success must be true
 
-    InitializeDevice();
-
     bool support_fp16 =
         static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
 #ifdef LITE_WITH_LOG
