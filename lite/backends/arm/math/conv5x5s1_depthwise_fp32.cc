@@ -4384,8 +4384,8 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
                    "v14",
                    "v15",
                    "v16",
-                    "v17",
-                    "v18");
+                   "v17",
+                   "v18");
 #else
     asm volatile(COMPUTE_FIVE_LINE_S1 RESULT_S1_LEAKY_RELU
                  : [cnt] "+r"(cnt),
@@ -4523,7 +4523,8 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
                    "v17",
                    "v18",
                    "v19",
-                   "v20");
+                   "v20",
+                   "v21");
 #else
     asm volatile(COMPUTE_FIVE_LINE_S1_OUT2 RESULT_S1_LEAKY_RELU_OUT2
                  : [cnt] "+r"(cnt),
