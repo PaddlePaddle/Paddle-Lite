@@ -74,13 +74,8 @@ TEST(CombinedParamsDesc, Scope) {
   };
   check_params(combined_param);
 
-  /* --------- Cache scope ---------- */
-  std::vector<char> cache;
-  cache.resize(combined_param.buf_size());
-  std::memcpy(cache.data(), combined_param.data(), combined_param.buf_size());
-
   /* --------- View scope ---------- */
-  check_params(CombinedParamsDescView(std::move(cache)));
+  check_params(CombinedParamsDescView(combined_param.data()));
 }
 #endif  // LITE_WITH_FLATBUFFERS_DESC
 

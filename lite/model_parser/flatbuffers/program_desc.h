@@ -137,14 +137,12 @@ class ProgramDesc : public ProgramDescAPI {
     desc_.version->version = version_in;
   }
 
-  const void* data() {
+  std::vector<char> data() {
     SyncBuffer();
-    return buf_.data();
-  }
-
-  size_t buf_size() {
-    SyncBuffer();
-    return buf_.size();
+    std::vector<char> cache;
+    cache.resize(buf_.size());
+    std::memcpy(cache.data(), buf_.data(), buf_.size());
+    return cache;
   }
 
  private:

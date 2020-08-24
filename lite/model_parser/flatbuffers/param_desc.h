@@ -186,14 +186,12 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
     return params_[params_.size() - 1].get();
   }
 
-  const void* data() {
+  std::vector<char> data() {
     SyncBuffer();
-    return buf_.data();
-  }
-
-  size_t buf_size() {
-    SyncBuffer();
-    return buf_.size();
+    std::vector<char> cache;
+    cache.resize(buf_.size());
+    std::memcpy(cache.data(), buf_.data(), buf_.size());
+    return cache;
   }
 
  private:

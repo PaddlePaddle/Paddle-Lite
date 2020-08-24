@@ -73,10 +73,7 @@ inline std::vector<char> GenerateProgramCache() {
   op_b1.SetAttr<bool>("Attr1", true);
 
   /* --------- Cache Program ---------- */
-  std::vector<char> cache;
-  cache.resize(program.buf_size());
-  std::memcpy(cache.data(), program.data(), program.buf_size());
-  return cache;
+  return program.data();
 }
 
 inline void CheckProgramCache(ProgramDesc* program) {
