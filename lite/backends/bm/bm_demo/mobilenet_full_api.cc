@@ -15,7 +15,6 @@
 #include <iostream>
 #include <vector>
 #include "paddle_api.h"
-  
 using namespace paddle::lite_api;  // NOLINT
 int g_batch_size = 1;
 int64_t ShapeProduction(const shape_t& shape) {
@@ -24,7 +23,7 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
-+void RunModel(std::string model_dir, int im_height, int im_width) {
+void RunModel(std::string model_dir, int im_height, int im_width) {
   CxxConfig config;
   config.set_model_dir(model_dir);
   // config.set_model_file(model_dir+"/model");
