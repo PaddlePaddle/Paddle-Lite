@@ -14,7 +14,7 @@
 
 #include <iostream>
 #include <vector>
-#include "lite/api/paddle_api.h"
+#include "paddle_api.h" //NOLINT
 using namespace paddle::lite_api;  // NOLINT
 int g_batch_size = 1;
 int64_t ShapeProduction(const shape_t& shape) {
