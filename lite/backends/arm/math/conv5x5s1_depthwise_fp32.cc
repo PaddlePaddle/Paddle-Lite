@@ -4353,7 +4353,7 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
     }
     *dout++ = sum > 0.f ? sum : sum * scale[0];
   }
-// clang-format off
+  // clang-format off
   if (cnt > 0) {
 #ifdef __aarch64__
     asm volatile(COMPUTE_FIVE_LINE_S1 RESULT_S1_LEAKY_RELU
@@ -4416,7 +4416,7 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
                    "q14",
                    "q15");
 #endif
-// clang-format on
+  // clang-format on
     din_ptr_arr[0] -= 4;
   }
   // remain
@@ -4487,7 +4487,7 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
     *dout0++ = sum > 0.f ? sum : sum * scale[0];
     *dout1++ = sum1 > 0.f ? sum1 : sum1 * scale[0];
   }
-// clang-format off
+  // clang-format off
   if (cnt > 0) {
 #ifdef __aarch64__
     asm volatile(COMPUTE_FIVE_LINE_S1_OUT2 RESULT_S1_LEAKY_RELU_OUT2
@@ -4557,7 +4557,6 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
                    "q14",
                    "q15");
 #endif
-// clang-format on
     din_ptr_arr[0] -= 4;
   }
   // clang-format on
