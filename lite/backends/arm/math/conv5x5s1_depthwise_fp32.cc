@@ -4416,7 +4416,6 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
                    "q14",
                    "q15");
 #endif
-  // clang-format on
     din_ptr_arr[0] -= 4;
   }
   // clang-format on
