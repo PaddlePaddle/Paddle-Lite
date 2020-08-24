@@ -19,7 +19,7 @@
 namespace paddle {
 namespace lite {
 
-const int MALLOC_ALIGN = 16;
+const int MALLOC_ALIGN = 64;
 
 void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
