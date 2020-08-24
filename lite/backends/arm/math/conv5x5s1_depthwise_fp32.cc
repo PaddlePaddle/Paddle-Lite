@@ -4419,6 +4419,7 @@ inline void compute_all_padding_mid_leakyRelu(float* dout,
     din_ptr_arr[0] -= 4;
   }
   // clang-format on
+  }
   // remain
   for (int w = 0; w < remain; w++) {
     float sum = compute_one_data_post(
@@ -4560,7 +4561,7 @@ inline void compute_all_padding_mid_leakyRelu_out2(float* dout0,
     din_ptr_arr[0] -= 4;
   }
   // clang-format on
-  // remain
+
   for (int w = 0; w < remain; w++) {
     float sum = compute_one_data_post(
         din_ptr_arr[num], weights[num], bias[0], weights[6][0], 4);
