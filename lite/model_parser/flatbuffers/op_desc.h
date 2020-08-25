@@ -36,57 +36,68 @@ class OpDescView : public OpDescAPI {
 
   std::string Type() const override { return desc_->type()->str(); }
 
-  // Get the arguments of parameter called `param`
-  std::vector<std::string> Input(const std::string& param) const override {
-    const auto& var = desc_->inputs()->LookupByKey(param.c_str());
+  std::vector<std::string> Input(const char* param) const {
+    const auto& var = desc_->inputs()->LookupByKey(param);
     std::vector<std::string> args_vec;
-    if (var->arguments()) {
-      args_vec.reserve(var->arguments()->size());
-      for (const auto& in : *var->arguments()) {
-        args_vec.push_back(in->str());
+    if (var && var->arguments()) {
+      args_vec.resize(var->arguments()->size());
+      for (size_t i = 0; i < var->arguments()->size(); ++i) {
+        args_vec[i] = (*var->arguments())[i]->str();
       }
     }
     return args_vec;
+  }
+
+  std::vector<std::string> Input(const std::string& param) const override {
+    return Input(param.c_str());
   }
 
   std::vector<std::string> InputArgumentNames() const override {
     const auto& vars = desc_->inputs();
     std::vector<std::string> input_names_vec;
     if (vars) {
-      input_names_vec.reserve(vars->size());
-      for (const auto& in : *vars) {
-        input_names_vec.push_back(in->parameter()->str());
+      input_names_vec.resize(vars->size());
+      for (size_t i = 0; i < vars->size(); ++i) {
+        input_names_vec[i] = (*vars)[i]->parameter()->str();
       }
     }
     return input_names_vec;
   }
 
-  std::vector<std::string> Output(const std::string& param) const override {
-    const auto& var = desc_->outputs()->LookupByKey(param.c_str());
+  std::vector<std::string> Output(const char* param) const {
+    const auto& var = desc_->outputs()->LookupByKey(param);
     std::vector<std::string> args_vec;
     if (var && var->arguments()) {
-      args_vec.reserve(var->arguments()->size());
-      for (const auto& out : *var->arguments()) {
-        args_vec.push_back(out->str());
+      args_vec.resize(var->arguments()->size());
+      for (size_t i = 0; i < var->arguments()->size(); ++i) {
+        args_vec[i] = (*var->arguments())[i]->str();
       }
     }
     return args_vec;
+  }
+
+  std::vector<std::string> Output(const std::string& param) const override {
+    return Output(param.c_str());
   }
 
   std::vector<std::string> OutputArgumentNames() const override {
     const auto& vars = desc_->outputs();
     std::vector<std::string> output_names_vec;
     if (vars) {
-      output_names_vec.reserve(vars->size());
-      for (const auto& out : *vars) {
-        output_names_vec.push_back(out->parameter()->str());
+      output_names_vec.resize(vars->size());
+      for (size_t i = 0; i < vars->size(); ++i) {
+        output_names_vec[i] = (*vars)[i]->parameter()->str();
       }
     }
     return output_names_vec;
   }
 
+  bool HasAttr(const char* name) const {
+    return desc_->attrs()->LookupByKey(name) != nullptr;
+  }
+
   bool HasAttr(const std::string& name) const override {
-    return desc_->attrs()->LookupByKey(name.c_str()) != nullptr;
+    return HasAttr(name.c_str());
   }
 
   size_t AttrsSize() const { return desc_->attrs()->size(); }
@@ -95,25 +106,23 @@ class OpDescView : public OpDescAPI {
     return desc_->attrs()->Get(idx)->name()->str();
   }
 
-  OpDescAPI::AttrType GetAttrType(const std::string& name) const override {
-    const auto& attr = desc_->attrs()->LookupByKey(name.c_str());
+  OpDescAPI::AttrType GetAttrType(const char* name) const {
+    const auto& attr = desc_->attrs()->LookupByKey(name);
     CHECK(attr) << "Can not find attr: " << name;
     return ConvertAttrType(attr->type());
   }
 
-  OpDescAPI::AttrType GetAttrType(size_t idx) const {
-    const auto& attr = desc_->attrs()->Get(idx);
-    CHECK(attr);
-    return ConvertAttrType(attr->type());
+  OpDescAPI::AttrType GetAttrType(const std::string& name) const override {
+    return GetAttrType(name.c_str());
   }
 
   std::vector<std::string> AttrNames() const override {
     const auto& attrs = desc_->attrs();
     std::vector<std::string> attr_names_vec;
     if (attrs) {
-      attr_names_vec.reserve(attrs->size());
-      for (const auto& attr : *attrs) {
-        attr_names_vec.push_back(attr->name()->str());
+      attr_names_vec.resize(attrs->size());
+      for (size_t i = 0; i < attrs->size(); ++i) {
+        attr_names_vec[i] = (*attrs)[i]->name()->str();
       }
     }
     return attr_names_vec;
@@ -121,10 +130,11 @@ class OpDescView : public OpDescAPI {
 
   template <typename T>
   typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(
-      const std::string& name) const;
+      const char* name) const;
 
   template <typename T>
-  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(size_t idx) const;
+  typename lite::OpDataTypeTrait<T, Flatbuffers>::RT GetAttr(
+      const std::string& name) const;
 
  private:
   proto::OpDesc const* desc_;
@@ -138,7 +148,7 @@ class OpDescView : public OpDescAPI {
   // caused by different building options.
 
  public:
-  OpDescView() { NotImplemented(); }
+  OpDescView() = default;
   bool HasInput(const std::string& param) const {
     return desc_->inputs()->LookupByKey(param.c_str()) != nullptr;
   }
@@ -161,8 +171,15 @@ class OpDescView : public OpDescAPI {
   }
 
   std::vector<std::string> input_vars() const {
-    NotImplemented();
-    return std::vector<std::string>();
+    VLOG(5) << "This function call is expensive.";
+    std::vector<std::string> res;
+    for (const auto& var : *(desc_->inputs())) {
+      if (var && var->arguments()) {
+        res.emplace_back(var->arguments()->begin()->c_str(),
+                         var->arguments()->end()->c_str());
+      }
+    }
+    return res;
   }
 
   std::vector<std::string> output_vars() const {
@@ -195,6 +212,7 @@ class OpDescView : public OpDescAPI {
   std::map<std::string, AttrType> attr_types_;
 };
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 class OpDesc : public OpDescAPI {
  public:
   OpDesc() : owned_(true), desc_(new proto::OpDescT()) {}
@@ -281,6 +299,7 @@ class OpDesc : public OpDescAPI {
   bool owned_{false};
   proto::OpDescT* desc_{nullptr};
 };
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

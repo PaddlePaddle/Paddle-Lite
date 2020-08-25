@@ -132,18 +132,21 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     return FAILED;
   }
 
+  // Filter node
+  std::shared_ptr<Node> filter_node = nullptr;
+
   // Check depthwise mode, and decide whether use DepthwiseConv2D Op
   bool use_depthwise_conv = false;
   bool is_depthwise_mode = (ic == groups && oc == groups);
   if (is_depthwise_mode && dilations[0] == 1 && dilations[1] == 1) {
     use_depthwise_conv = true;
     // Change filter shape {oc, ic/groups = 1, kh, kw} => { K=1, oc, kh, hw}
-    filter->Resize({1L, oc, filter_dims[2], filter_dims[3]});
+    filter_node = graph->Add(
+        filter_name, *filter, {1L, oc, filter_dims[2], filter_dims[3]});
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] DepthwiseConv2D op is used.";
+  } else {
+    filter_node = graph->Add(filter_name, *filter);
   }
-
-  // Filter node
-  auto filter_node = graph->Add(filter_name, *filter);
 
   // Add bias node if exists bias
   // Supports the bias nodes with the following dimensions

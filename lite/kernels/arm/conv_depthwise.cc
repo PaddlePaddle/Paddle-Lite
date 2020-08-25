@@ -31,7 +31,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto paddings = *param.paddings;
   // select dw conv kernel
   if (kw == 3) {
-    // VLOG(5) << "invoke 3x3 dw conv fp32";
     bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
     if (pads_less && paddings[0] == paddings[2] &&
         (paddings[0] == 0 || paddings[0] == 1)) {
@@ -54,7 +53,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     kernel_func_name_ = "conv_depthwise_3x3_fp32";
 #endif
   } else if (kw == 5) {
-    // VLOG(5) << "invoke 5x5 dw conv fp32";
     auto strides = param.strides;
     if ((strides[0] == 1 && strides[1] == 1) ||
         (strides[0] == 2 && strides[1] == 2)) {
@@ -104,23 +102,44 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
       w_scale_[i] = scale[i] * in_scale;
     }
   }
+
+  auto paddings = *param.paddings;
+  auto strides = param.strides;
+  auto x_dims = param.x->dims();
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  auto act_param = param.activation_param;
+  bool has_act = act_param.has_active;
+  lite_api::ActivationType act_type = act_param.active_type;
+  // no activation and relu activation is supported now
+  bool support_act_type =
+      (has_act == false) ||
+      (has_act == true && act_type == lite_api::ActivationType::kRelu);
+  bool support_pad_type =
+      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
+      (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
+  bool support_stride_type = (strides[0] == 1 && strides[1] == 1);
+  bool support_width_type = iw > 9 ? true : false;
   /// select dw conv kernel
   if (kw == 3) {
     // trans weights
-    // VLOG(5) << "invoke 3x3 dw conv int8 kernel fp32 out";
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_fp32;
 #ifdef LITE_WITH_PROFILE
     kernel_func_name_ = "conv_depthwise_3x3_int8_fp32";
 #endif
-    int cround = ROUNDUP(w_dims[0], 8);
-    weights_.Resize({cround / 8, 1, kh * kw, 8});
-    auto wptr = param.filter->data<int8_t>();
-    auto wptr_new = weights_.mutable_data<int8_t>();
-    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
-    flag_trans_weights_ = true;
+    if (!support_act_type || !support_pad_type || !support_stride_type ||
+        !support_width_type) {
+      int cround = ROUNDUP(w_dims[0], 8);
+      weights_.Resize({cround / 8, 1, kh * kw, 8});
+      auto wptr = param.filter->data<int8_t>();
+      auto wptr_new = weights_.mutable_data<int8_t>();
+      lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
+      flag_trans_weights_ = true;
+    } else {
+      flag_trans_weights_ = false;
+    }
   } else if (kw == 5) {
     // trans weights
-    // VLOG(5) << "invoke 5x5 dw conv int8 kernel fp32 out";
     impl_ = lite::arm::math::conv_depthwise_5x5_int8_fp32;
 #ifdef LITE_WITH_PROFILE
     kernel_func_name_ = "conv_depthwise_5x5_int8_fp32";
@@ -175,23 +194,45 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     param.activation_param.Relu_clipped_coef =
         param.activation_param.Relu_clipped_coef / param.output_scale;
   }
+
+  auto paddings = *param.paddings;
+  auto strides = param.strides;
+  auto x_dims = param.x->dims();
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  auto act_param = param.activation_param;
+
+  bool has_act = act_param.has_active;
+  lite_api::ActivationType act_type = act_param.active_type;
+  // no activation and relu activation is supported now
+  bool support_act_type =
+      (has_act == false) ||
+      (has_act == true && act_type == lite_api::ActivationType::kRelu);
+  bool support_pad_type =
+      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
+      (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
+  bool support_stride_type = (strides[0] == 1 && strides[1] == 1);
+  bool support_width_type = iw > 9 ? true : false;
   /// select dw conv kernel
   if (kw == 3) {
     // trans weights
-    // VLOG(5) << "invoke 3x3 dw conv int8 kernel int8 out";
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_int8;
 #ifdef LITE_WITH_PROFILE
     kernel_func_name_ = "conv_depthwise_3x3_int8_int8";
 #endif
-    int cround = ROUNDUP(w_dims[0], 8);
-    weights_.Resize({cround / 8, 1, kh * kw, 8});
-    auto wptr = param.filter->data<int8_t>();
-    auto wptr_new = weights_.mutable_data<int8_t>();
-    lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
-    flag_trans_weights_ = true;
+    if (!support_act_type || !support_pad_type || !support_stride_type ||
+        !support_width_type) {
+      int cround = ROUNDUP(w_dims[0], 8);
+      weights_.Resize({cround / 8, 1, kh * kw, 8});
+      auto wptr = param.filter->data<int8_t>();
+      auto wptr_new = weights_.mutable_data<int8_t>();
+      lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
+      flag_trans_weights_ = true;
+    } else {
+      flag_trans_weights_ = false;
+    }
   } else if (kw == 5) {
     // trans weights
-    // VLOG(5) << "invoke 5x5 dw conv int8 kernel int8 out";
     impl_ = lite::arm::math::conv_depthwise_5x5_int8_int8;
 #ifdef LITE_WITH_PROFILE
     kernel_func_name_ = "conv_depthwise_5x5_int8_int8";
@@ -283,7 +324,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
 
-  int iw = x_dims[3];  // nchw
+  int iw = x_dims[3];
   int ih = x_dims[2];
   int ic = x_dims[1];
   int bs = x_dims[0];
@@ -333,7 +374,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
 
-  int iw = x_dims[3];  // nchw
+  int iw = x_dims[3];
   int ih = x_dims[2];
   int ic = x_dims[1];
   int bs = x_dims[0];

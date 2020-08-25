@@ -150,6 +150,9 @@ class AclModelClient {
   }
 
   ~AclModelClient() {
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Unloading model, model id is: "
+            << model_id_;
+    UnloadModel();
     VLOG(3) << "[HUAWEI_ASCEND_NPU] Destroying Huawei Ascend Device: "
             << device_id_;
     ACL_CALL(aclrtResetDevice(device_id_));
@@ -161,7 +164,6 @@ class AclModelClient {
                            std::vector<TensorDesc>* output_tensor);
   bool ModelExecute(std::vector<std::shared_ptr<ge::Tensor>>* input_tensor,
                     std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
-  bool UnloadModel();
 
  private:
   void CreateInputDataset(
@@ -171,6 +173,7 @@ class AclModelClient {
   bool GetTensorFromDataset(
       std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
   void DestroyDataset(aclmdlDataset** dataset);
+  void UnloadModel();
 
  private:
   uint32_t num_devices();

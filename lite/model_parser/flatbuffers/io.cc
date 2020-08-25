@@ -25,11 +25,12 @@ namespace fbs {
 
 std::vector<char> LoadFile(const std::string& path) {
   FILE* file = fopen(path.c_str(), "rb");
+  CHECK(file);
   fseek(file, 0, SEEK_END);
-  int64_t length = ftell(file);
+  uint64_t length = ftell(file);
   rewind(file);
   std::vector<char> buf(length);
-  CHECK(fread(buf.data(), 1, length, file) == length);
+  CHECK_EQ(fread(buf.data(), 1, length, file), length);
   fclose(file);
   return buf;
 }
@@ -37,6 +38,7 @@ std::vector<char> LoadFile(const std::string& path) {
 void SaveFile(const std::string& path, const void* src, size_t byte_size) {
   CHECK(src);
   FILE* file = fopen(path.c_str(), "wb");
+  CHECK(file);
   CHECK(fwrite(src, sizeof(char), byte_size, file) == byte_size);
   fclose(file);
 }
@@ -60,7 +62,7 @@ void SetTensorWithParam(lite::Tensor* tensor, const ParamDescReadAPI& param) {
 }
 
 void SetCombinedParamsWithScope(const lite::Scope& scope,
-                                const std::vector<std::string>& params_name,
+                                const std::set<std::string>& params_name,
                                 CombinedParamsDescWriteAPI* params) {
   for (const auto& name : params_name) {
     auto* param = params->AddParamDesc();

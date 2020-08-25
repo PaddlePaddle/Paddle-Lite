@@ -75,9 +75,8 @@ void ElementwiseActivationFuser::InsertNewNode(SSAGraph* graph,
 }
 
 cpp::OpDesc ElementwiseActivationFuser::GenOpDesc(const key2nodes_t& matched) {
-  auto* desc = matched.at("elt")->stmt()->op_info();
-
-  cpp::OpDesc op_desc;
+  auto op_desc = *matched.at("elt")->stmt()->op_info();
+  auto* act_op_desc = matched.at("act")->stmt()->op_info();
   if (eltwise_type_ == "elementwise_add") {
     op_desc.SetType("fusion_elementwise_add_activation");
   } else if (eltwise_type_ == "elementwise_sub") {
@@ -87,13 +86,12 @@ cpp::OpDesc ElementwiseActivationFuser::GenOpDesc(const key2nodes_t& matched) {
   } else {
     LOG(FATAL) << "not supported elementwise_type: " << eltwise_type_;
   }
-
-  op_desc.SetInput("X", {matched.at("x")->arg()->name});
-  op_desc.SetInput("Y", {matched.at("y")->arg()->name});
-  op_desc.SetOutput("Out", {matched.at("output")->arg()->name});
-
-  op_desc.SetAttr("axis", desc->GetAttr<int>("axis"));
   op_desc.SetAttr("act_type", act_type_);
+  auto& out_name = matched.at("output")->arg()->name;
+  op_desc.SetOutput("Out", {out_name});
+  if (act_op_desc->HasOutputScale(out_name)) {
+    op_desc.SetOutputScale(out_name, act_op_desc->GetOutputScale(out_name));
+  }
   return op_desc;
 }
 

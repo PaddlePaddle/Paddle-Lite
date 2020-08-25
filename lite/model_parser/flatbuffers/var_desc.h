@@ -42,9 +42,9 @@ class VarDescView : public VarDescAPI {
     CHECK(GetType() == VarDescAPI::Type::LOD_TENSOR);
     const auto& dims = desc_->type()->lod_tensor()->tensor()->dims();
     std::vector<int64_t> dims_vec;
-    dims_vec.reserve(dims->size());
-    for (const auto& dim : *dims) {
-      dims_vec.push_back(dim);
+    dims_vec.resize(dims->size());
+    for (size_t i = 0; i < dims->size(); ++i) {
+      dims_vec[i] = dims->operator[](i);
     }
     return dims_vec;
   }
@@ -66,7 +66,7 @@ class VarDescView : public VarDescAPI {
   // caused by different building options.
 
  public:
-  VarDescView() { NotImplemented(); }
+  VarDescView() = default;
   void SetDataType(Type data_type) { NotImplemented(); }
   void SetShape(const std::vector<int64_t>& dims) { NotImplemented(); }
 
@@ -78,6 +78,7 @@ class VarDescView : public VarDescAPI {
   std::vector<int64_t> shape_;
 };
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 class VarDesc : public VarDescAPI {
  public:
   VarDesc() : owned_(true), desc_(new proto::VarDescT()) {}
@@ -93,9 +94,14 @@ class VarDesc : public VarDescAPI {
 
   Type GetType() const override { return ConvertVarType(type_->type); }
 
-  void SetType(Type type) override {
-    CHECK(type == VarDescAPI::Type::LOD_TENSOR);
-    type_->type = ConvertVarType(type);
+  void SetType(Type type) override { type_->type = ConvertVarType(type); }
+
+  void SetDataType(Type type) {
+    type_->lod_tensor->tensor->data_type = ConvertVarType(type);
+  }
+
+  Type GetDataType() const {
+    return ConvertVarType(type_->lod_tensor->tensor->data_type);
   }
 
   bool Persistable() const override { return desc_->persistable; }
@@ -138,6 +144,7 @@ class VarDesc : public VarDescAPI {
   proto::VarDescT* desc_{nullptr};
   paddle::lite::fbs::proto::VarTypeT* type_{nullptr};
 };
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite
