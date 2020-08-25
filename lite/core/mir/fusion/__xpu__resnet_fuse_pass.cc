@@ -932,12 +932,22 @@ class XPUResNet50FusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
+
+    bool changed = false;
+    SSAGraph backup;
+    backup.CloneFrom(*graph);
+
     fusion::XPUResNetBlock0Fuser block0_fuser;
-    block0_fuser(graph.get());
+    changed |= block0_fuser(graph.get());
     fusion::XPUResNetBlock1Fuser block1_fuser;
-    block1_fuser(graph.get());
+    changed |= block1_fuser(graph.get());
     fusion::XPUResNet50Fuser resnet50_fuser;
-    resnet50_fuser(graph.get());
+    size_t n_matches = resnet50_fuser(graph.get());
+
+    if (changed && !n_matches) {
+      // Restore graph from backuped one if no whole ResNet50 graph was found
+      graph->CloneFrom(backup);
+    }
   }
 };
 
@@ -948,4 +958,4 @@ class XPUResNet50FusePass : public ProgramPass {
 REGISTER_MIR_PASS(__xpu__resnet_fuse_pass,
                   paddle::lite::mir::XPUResNet50FusePass)
     .BindTargets({TARGET(kXPU)})
-    .BindKernel("conv2d");
+    .BindKernel("__xpu__resnet50");
