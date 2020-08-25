@@ -222,7 +222,7 @@ void prepackA(float *out,
               ARMContext *ctx) {
 #ifdef __aarch64__
   if (mmax <= 4) {
-#if 0
+#if 1
     if (is_trans) {
       pack_trans_m4(out, in, alpha, ldin, m0, mmax, k0, kmax);
     } else {
@@ -311,7 +311,7 @@ void sgemm_prepack(bool is_transB,
                    ARMContext *ctx) {
 #ifdef __aarch64__
   if (M <= 4) {
-#if 0
+#if 1
     sgemm_prepacked_4x4(is_transB,
                         M,
                         N,
@@ -706,7 +706,6 @@ void prepackA_4x8(float* outptr,
 
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
   float32x4_t valpha = vdupq_n_f32(alpha);
-
 #pragma omp parallel for
   for (int y = m0; y < mmax; y += 4) {
     const float* inptr0 = inptr + y * ldin + k0;
@@ -773,7 +772,7 @@ void prepackA_4x8(float* outptr,
           "st1 {v3.4s}, [%[outptr]], #16\n" /* save q0, q1, a3~d3*/
           "trn2 v7.2d, v11.2d, v15.2d\n" /* a7b7c7d7 */
           "stp q4, q5, [%[outptr]], #32\n" /* save q4, q5, a4~d5*/
-          "stp q6, q6, [%[outptr]], #32\n" /* save q6, q7, a6~d7*/
+          "stp q6, q7, [%[outptr]], #32\n" /* save q6, q7, a6~d7*/
           : [inptr0] "+r"(inptr0),
             [inptr1] "+r"(inptr1),
             [inptr2] "+r"(inptr2),
@@ -1165,10 +1164,10 @@ void prepackA_trans_4x8(float* outptr,
           "ld1 {v3.4s}, [%[ptr3]], #16\n"
           "beq  0f\n"                             /* to main process */
           "1: \n"                                 /* alpha == 1 */
-          "fmul v0.4s, v0.4s, %[valpha].4s\n"
-          "fmul v1.4s, v1.4s, %[valpha].4s\n"
-          "fmul v2.4s, v2.4s, %[valpha].4s\n"
-          "fmul v3.4s, v3.4s, %[valpha].4s\n"
+          "fmul v0.4s, v0.4s, %[alpha].4s\n"
+          "fmul v1.4s, v1.4s, %[alpha].4s\n"
+          "fmul v2.4s, v2.4s, %[alpha].4s\n"
+          "fmul v3.4s, v3.4s, %[alpha].4s\n"
           "0: \n"
           "stp q0, q1, [%[outptr]], #32\n"
           "stp q2, q3, [%[outptr]], #32\n"
@@ -1193,10 +1192,10 @@ void prepackA_trans_4x8(float* outptr,
           "ld1 {v3.4s}, [%[ptr3]], #16\n"
           "beq  0f\n"
           "1: \n"
-          "fmul v0.4s, v0.4s, %[valpha].4s\n"
-          "fmul v1.4s, v1.4s, %[valpha].4s\n"
-          "fmul v2.4s, v2.4s, %[valpha].4s\n"
-          "fmul v3.4s, v3.4s, %[valpha].4s\n"
+          "fmul v0.4s, v0.4s, %[alpha].4s\n"
+          "fmul v1.4s, v1.4s, %[alpha].4s\n"
+          "fmul v2.4s, v2.4s, %[alpha].4s\n"
+          "fmul v3.4s, v3.4s, %[alpha].4s\n"
           "0: \n"
           "bif v0.16b, %[vzero].16b, %[vmask1].16b\n"
           "bif v1.16b, %[vzero].16b, %[vmask1].16b\n" 
@@ -1229,7 +1228,7 @@ void prepackA_trans_4x8(float* outptr,
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "1: \n"                                 /* alpha == 1 */
-          "fmul v0.4s, v0.4s, %[valpha].4s\n"
+          "fmul v0.4s, v0.4s, %[alpha].4s\n"
           "0: \n"
           "st1 {v0.4s}, [%[outptr]], #16\n"
           : [ptr0] "+r"(ptr0), [outptr] "+r"(ptr_out)
@@ -1244,7 +1243,7 @@ void prepackA_trans_4x8(float* outptr,
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "1: \n"                                 /* alpha == 1 */
-          "fmul v0.4s, v0.4s, %[valpha].4s\n"
+          "fmul v0.4s, v0.4s, %[alpha].4s\n"
           "0: \n"
           "bif v0.16b, %[vzero].16b, %[vmask1].16b\n"
           "st1 {v0.4s}, [%[outptr]], #16\n"
@@ -2418,9 +2417,9 @@ void loadb_eight(
           "bif v2.16b, %[vzero].16b, %[vmask1].16b\n"
           "bif v3.16b, %[vzero].16b, %[vmask2].16b\n"
           "stp q0, q1, [%[outptr]], #32\n" /* write to output ptr */
-          "ldp q0, q1, [%[ptr0]], #32\n" /* load r0, 8 elements */
+          "ldp q0, q1, [%[ptr2]], #32\n" /* load r0, 8 elements */
           "stp q2, q3, [%[outptr]], #32\n" /* write to output ptr */
-          "ldp q2, q3, [%[ptr1]], #32\n" /* load r1, 8 elements */
+          "ldp q2, q3, [%[ptr3]], #32\n" /* load r1, 8 elements */
           "bif v0.16b, %[vzero].16b, %[vmask1].16b\n"
           "bif v1.16b, %[vzero].16b, %[vmask2].16b\n"
           "bif v2.16b, %[vzero].16b, %[vmask1].16b\n"
@@ -2550,13 +2549,13 @@ void loadb_trans_eight(
           "stp q2, q3, [%[outptr]], #32\n"     /* save q0, q1, a1~h1*/
           
           "trn1 v8.2d, v10.2d, v14.2d\n"       /* a4b4c4d4 */
-          "trn1 v9.2d, v26.2d, 30.2d\n"        /* e4f4g4h4 */
+          "trn1 v9.2d, v26.2d, v30.2d\n"       /* e4f4g4h4 */
           "stp q4, q5, [%[outptr]], #32\n"     /* save q0, q1, a2~h2*/
           "trn1 v10.2d, v11.2d, v15.2d\n"      /* a5b5c5d5 */
           "trn1 v11.2d, v27.2d, v31.2d\n"      /* e5f5g5h5 */
           "stp q6, q7, [%[outptr]], #32\n"     /* save q0, q1, a3~h3*/
           "trn2 v12.2d, v10.2d, v14.2d\n"      /* a6b6c6d6 */
-          "trn2 v13.2d, v26.2d, 30.2d\n"       /* e6f6g6h6 */
+          "trn2 v13.2d, v26.2d, v30.2d\n"      /* e6f6g6h6 */
           "stp q8, q9, [%[outptr]], #32\n"     /* save q0, q1, a4~h4*/
           "trn2 v14.2d, v11.2d, v15.2d\n"      /* a7b7c7d7 */
           "trn2 v15.2d, v27.2d, v31.2d\n"      /* e7f7g7h7 */
@@ -3744,20 +3743,18 @@ void sgemm_prepacked_4x8(bool is_transB,
   if (tail_pre == 0) {
     tail_pre = KBLOCK;
   }
-
   bool flag_p_remain = false;
   int remain = 0;
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
-
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
     unsigned int xmax = x0 + x_block;
     if (xmax > N) {
       xmax = N;
     }
-    int bblocks = (xmax - x0 + NBLOCK - 1) / NBLOCK;
-    remain = xmax - x0 - (bblocks - 1) * NBLOCK;
+    int bblocks = (xmax - x0 + n_block - 1) / n_block;
+    remain = xmax - x0 - (bblocks - 1) * n_block;
     if (remain > 0) {
       flag_p_remain = true;
     }
@@ -3774,7 +3771,6 @@ void sgemm_prepacked_4x8(bool is_transB,
       if (ymax > M) {
         ymax = M;
       }
-
       float cout0[n_block];
       float cout1[n_block];
       float cout2[n_block];
@@ -3854,6 +3850,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "prfm   pldl1keep, [%[a_ptr], #128]\n"
             "cmp    %w[beta], #0\n"                /* check beta == 0? */
             "prfm   pldl1keep, [%[b_ptr], #128]\n"
+            "prfm   pldl1keep, [%[b_ptr], #192]\n"
             /* process beta */
             "beq    11f\n" /* check beta == 0? */
             "dup    v7.4s, %w[beta]\n"              /* beta to vector */
@@ -3889,7 +3886,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "ldp  q4, q5, [%[b_ptr]], #32\n"        /* load b0~b3 to q4, q5*/
             /* Unroll 1 */
             "fmla v8.4s, v6.4s, v1.s[0]\n"          /* out0 += b0 * a0[0] */
-            "prfm   pldl1keep, [%[b_ptr], #64]\n"
+            "prfm   pldl1keep, [%[b_ptr], #192]\n"
             "fmla v10.4s, v6.4s, v1.s[1]\n"         /* out1 += b0 * a0[1] */
             "fmla v12.4s, v6.4s, v1.s[2]\n"         /* out1 += b0 * a0[2] */
             "fmla v14.4s, v6.4s, v1.s[3]\n"         /* out1 += b0 * a0[3] */
@@ -3911,7 +3908,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "ldp  q4, q5, [%[b_ptr]], #32\n"        /* load b0~b3 to q4, q5*/
             /* Unroll 3 */
             "fmla v8.4s, v6.4s, v3.s[0]\n"          /* out0 += b0 * a0[0] */
-            "prfm   pldl1keep, [%[a_ptr], #64]\n"
+            "prfm   pldl1keep, [%[a_ptr], #128]\n"
             "fmla v10.4s, v6.4s, v3.s[1]\n"         /* out1 += b0 * a0[1] */
             "fmla v12.4s, v6.4s, v3.s[2]\n"         /* out1 += b0 * a0[2] */
             "fmla v14.4s, v6.4s, v3.s[3]\n"         /* out1 += b0 * a0[3] */
@@ -4041,34 +4038,34 @@ void sgemm_prepacked_4x8(bool is_transB,
             "b 10f\n"
             "7: \n"
             "fcmge  v2.4s,    v8.4s, %[vzero].4s\n" /* vcgeq_f32 */
-            "fmul   v3.4s,    v8.4s, %[valpha].4sn" /* vmulq_f32 */
+            "fmul   v3.4s,    v8.4s, %[valpha].4s\n"/* vmulq_f32 */
             "fcmge  v4.4s,    v9.4s, %[vzero].4s\n" /* vcgeq_f32 */
-            "fmul   v5.4s,    v9.4s, %[valpha].4sn" /* vmulq_f32 */
+            "fmul   v5.4s,    v9.4s, %[valpha].4s\n"/* vmulq_f32 */
             "fcmge  v6.4s,    v10.4s, %[vzero].4s\n" /* vcgeq_f32 */
-            "fmul   v7.4s,    v10.4s, %[valpha].4sn" /* vmulq_f32 */
+            "fmul   v7.4s,    v10.4s, %[valpha].4s\n"/* vmulq_f32 */
             "fcmge  v0.4s,    v11.4s, %[vzero].4s\n" /* vcgeq_f32 */
-            "fmul   v1.4s,    v11.4s, %[valpha].4sn" /* vmulq_f32 */
+            "fmul   v1.4s,    v11.4s, %[valpha].4s\n"/* vmulq_f32 */
             "bif    v8.16b,   v3.16b,   v2.16b  \n" /* choose*/
             "bif    v9.16b,   v5.16b,   v4.16b  \n" /* choose*/
             "bif    v10.16b,  v7.16b,   v6.16b  \n" /* choose*/
             "bif    v11.16b,  v1.16b,   v0.16b  \n" /* choose*/
             "fcmge  v2.4s,    v12.4s, %[vzero].4s\n" /* vcgeq_f32 */
-            "fmul   v3.4s,    v12.4s, %[valpha].4sn" /* vmulq_f32 */
+            "fmul   v3.4s,    v12.4s, %[valpha].4s\n"/* vmulq_f32 */
             "fcmge  v4.4s,    v13.4s, %[vzero].4s\n" /* vcgeq_f32 */
             "fmul   v5.4s,    v13.4s,   v1.4s   \n" /* vmulq_f32 */
             "fcmge  v6.4s,    v14.4s, %[vzero].4s\n" /* vcgeq_f32 */
-            "fmul   v7.4s,    v14.4s, %[valpha].4sn" /* vmulq_f32 */
+            "fmul   v7.4s,    v14.4s, %[valpha].4s\n"/* vmulq_f32 */
             "fcmge  v0.4s,    v15.4s, %[vzero].4s\n" /* vcgeq_f32 */
-            "fmul   v1.4s,    v15.4s, %[valpha].4sn" /* vmulq_f32 */
+            "fmul   v1.4s,    v15.4s, %[valpha].4s\n"/* vmulq_f32 */
             "bif    v12.16b,  v3.16b,   v2.16b  \n" /* choose*/
             "bif    v13.16b,  v5.16b,   v4.16b  \n" /* choose*/
             "bif    v14.16b,  v7.16b,   v6.16b  \n" /* choose*/
             "bif    v15.16b,  v1.16b,   v0.16b  \n" /* choose*/
             "10: \n"
             "st1 {v8.4s, v9.4s},[%[c_ptr0]], #32\n"   /* store r0 */
-            "st1 {v10.4s, v11.4s},[%[c_ptr0]], #32\n"   /* store r1 */
-            "st1 {v12.4s, v13.4s},[%[c_ptr0]], #32\n"   /* store r2 */
-            "st1 {v14.4s, v15.4s},[%[c_ptr0]], #32\n"   /* store r3 */
+            "st1 {v10.4s, v11.4s},[%[c_ptr1]], #32\n"   /* store r1 */
+            "st1 {v12.4s, v13.4s},[%[c_ptr2]], #32\n"   /* store r2 */
+            "st1 {v14.4s, v15.4s},[%[c_ptr3]], #32\n"   /* store r3 */
             : [a_ptr] "+r"(a_ptr),
               [b_ptr] "+r"(b_ptr),
               [c_ptr0] "+r"(c_ptr0),
@@ -4076,7 +4073,7 @@ void sgemm_prepacked_4x8(bool is_transB,
               [c_ptr2] "+r"(c_ptr2),
               [c_ptr3] "+r"(c_ptr3),
               [k] "+r"(k),
-              [tails] "+r"(tails)
+              [tail] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
               [beta] "r"(beta),
               [alpha] "r"(alpha),
