@@ -130,14 +130,14 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    const auto& output_tensor_dims = param.output->dims();
+    const auto& output_tensor_dims = concat_param_->output->dims();
     int output_tensor_w = output_tensor_dims[output_tensor_dims.size() - 1];
     int output_tensor_c = output_tensor_dims[1];
     auto output_image_shape = InitImageDimInfoWith(output_tensor_dims);
-    auto* output_image_p = param.output->mutable_data<half_t, cl::Image2D>(
-        output_image_shape["width"], output_image_shape["height"]);
-    auto inputs = param.x;
+    auto* output_image_p =
+        concat_param_->output->mutable_data<half_t, cl::Image2D>(
+            output_image_shape["width"], output_image_shape["height"]);
+    auto inputs = concat_param_->x;
 
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(
@@ -165,7 +165,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     VLOG(4) << "axis_: " << axis_;
     VLOG(4) << "flag_: " << flag_;
 
-    VLOG(4) << TargetToStr(param.output->target());
+    VLOG(4) << TargetToStr(concat_param_->output->target());
     VLOG(4) << "output_image_shape(w,h):" << output_image_shape["width"] << " "
             << output_image_shape["height"];
     VLOG(4) << "output_tensor_dims[" << output_tensor_dims.size()
@@ -187,27 +187,25 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    int arg_idx = 0;
 
     if (kernel_func_name_ == "concat2") {
       auto* input0_image_p = inputs[0]->data<half_t, cl::Image2D>();
       auto* input1_image_p = inputs[1]->data<half_t, cl::Image2D>();
-      cl_int status = kernel.setArg(arg_idx, *input0_image_p);
+      cl_int status = kernel.setArg(0, *input0_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *input1_image_p);
+      status = kernel.setArg(1, *input1_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *output_image_p);
+      status = kernel.setArg(2, *output_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, flag_);
+      status = kernel.setArg(3, flag_);
       CL_CHECK_FATAL(status);
-      status =
-          kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
+      status = kernel.setArg(4, static_cast<int>(inputs[0]->dims()[axis_]));
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, output_tensor_c);
+      status = kernel.setArg(5, output_tensor_c);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, output_tensor_w);
+      status = kernel.setArg(6, output_tensor_w);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, width_);
+      status = kernel.setArg(7, width_);
       CL_CHECK_FATAL(status);
 
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
@@ -349,18 +347,18 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       }
       // 3.2 concat_mul_buf
       std::shared_ptr<lite::Tensor> concat_mul_buf_output_t(new lite::Tensor);
-      concat_mul_buf_output_t->Resize(param.output->dims());
+      concat_mul_buf_output_t->Resize(concat_param_->output->dims());
       auto conat_mul_buf_output_data =
           concat_mul_buf_output_t->mutable_data<float, cl::Buffer>(
               TARGET(kOpenCL));
       // 3.3 buf_to_img
       std::shared_ptr<lite::Tensor> buf_to_img_output_t(new lite::Tensor);
-      buf_to_img_output_t->Resize(param.output->dims());
+      buf_to_img_output_t->Resize(concat_param_->output->dims());
 
       std::shared_ptr<operators::LayoutParam> buf_to_img_param(
           new operators::LayoutParam);
       buf_to_img_param->x = concat_mul_buf_output_t.get();
-      buf_to_img_param->y = param.output;
+      buf_to_img_param->y = concat_param_->output;
       buf_to_img_kernel->SetParam(buf_to_img_param);
 
       std::unique_ptr<KernelContext> buf_to_img_context(new KernelContext);
