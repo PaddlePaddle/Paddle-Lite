@@ -73,7 +73,7 @@ void concat_mul_compute_ref(std::vector<const dtype *> ins_data,
     }
   }
 }
-
+// #define PRINT_RESULT_CONCAT_MUL
 TEST(opencl_concat_buffer, compute) {
   // prepare data
   const DDim x0_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
@@ -99,13 +99,14 @@ TEST(opencl_concat_buffer, compute) {
   auto *mapped_x2 = static_cast<float *>(
       TargetWrapperCL::Map(x2_data, 0, sizeof(float) * x2_dim.production()));
   for (int i = 0; i < x0_dim.production(); i++) {
-    mapped_x0[i] = dist(engine);
+    mapped_x0[i] = i + 1;  // dist(engine);
   }
   for (int i = 0; i < x1_dim.production(); i++) {
-    mapped_x1[i] = dist(engine);
+    mapped_x1[i] = x0_dim.production() + i + 1;  // dist(engine);
   }
   for (int i = 0; i < x2_dim.production(); i++) {
-    mapped_x2[i] = dist(engine);
+    mapped_x2[i] =
+        x0_dim.production() + x1_dim.production() + i + 1;  // dist(engine);
   }
 
   // set param and kernel, then run
@@ -151,7 +152,15 @@ TEST(opencl_concat_buffer, compute) {
   auto *out_data = out.mutable_data<float, cl::Buffer>();
   auto *mapped_out = static_cast<float *>(
       TargetWrapperCL::Map(out_data, 0, sizeof(float) * out_dim.production()));
+#ifdef PRINT_RESULT_CONCAT_BUFFER
   for (int i = 0; i < out_dim.production(); i++) {
+    LOG(INFO) << "i:" << i << ", out[" << i << "]:" << mapped_out[i]
+              << ", out_ref_data[" << i << "]:" << out_ref_data[i];
+  }
+#endif
+  for (int i = 0; i < out_dim.production(); i++) {
+    LOG(INFO) << "i:" << i << ", out[" << i << "]:" << mapped_out[i]
+              << ", out_ref_data[" << i << "]:" << out_ref_data[i];
     EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
   }
   TargetWrapperCL::Unmap(out_data, mapped_out);

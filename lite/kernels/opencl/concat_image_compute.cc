@@ -55,14 +55,24 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     } else if (inputs.size() == 4) {
       kernel_func_name_ = "concatByCWith4Inputs";
     } else {
-      // TODO(ysh329): do layout transform between image and buffer,
+      // note: do layout transform between image and buffer,
       // before and after concat(buffer impl.)
-      kernel_func_name_ = "concat_mul";
+      kernel_func_name_ = "concat_mul_buffer";  // buffer/concat_kernel.cl
+      build_options_ = " -DCL_DTYPE_float";
+      auto in_dims = inputs[0]->dims();
+      for (int i = 0; i < axis_; i++) {
+        pre_size_ *= in_dims[i];
+      }
+      for (int i = axis_ + 1; i < in_dims.size(); i++) {
+        post_size_ *= in_dims[i];
+      }
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
     context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/concat_kernel.cl",
+                                    (kernel_func_name_ == "concat_mul_buffer")
+                                        ? "buffer/concat_kernel.cl"
+                                        : "image/concat_kernel.cl",
                                     build_options_,
                                     time_stamp_);
 
@@ -276,57 +286,140 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                                     nullptr,
                                     event_);
       CL_CHECK_FATAL(status);
-    } else if (kernel_func_name_ == "concat_mul") {  // inputs.size() > 3
-      // TODO(ysh329): need to impl using buffer
-      auto cur_axis_start_idx = 0;
-      for (int i = 0; i < inputs.size(); i++) {
+    } else if (kernel_func_name_ == "concat_mul_buffer") {  // inputs.size() > 4
+      // note: do image layout transform: image to buffer
+      size_t inputs_num = inputs.size();
+      std::vector<const cl::Image2D*> inputs_image_pointers(inputs_num);
+      std::vector<std::map<std::string, size_t>> inputs_image_shapes(
+          inputs_num);
+      std::vector<DDimLite> inputs_dims(inputs_num);
+      std::vector<cl::Buffer*> inputs_buffer_pointers(inputs_num);
+      for (int i = 0; i < inputs_num; i++) {
         auto* input = inputs[i];
-        auto input_tensor_dims = input->dims();
-        auto input_image_shape = InitImageDimInfoWith(input_tensor_dims);
-        auto* input_image_p = input->data<half_t, cl::Image2D>();
-        int input_tensor_w = input_tensor_dims[input_tensor_dims.size() - 1];
-
-        global_work_size = cl::NDRange{
-            static_cast<cl::size_type>(input_tensor_w),
-            static_cast<cl::size_type>(input_image_shape["width"] /
-                                       input_tensor_w),
-            static_cast<cl::size_type>(input_image_shape["height"])};
-
-#ifdef LITE_WITH_LOG
-        VLOG(4) << "input_image_shape(w,h):" << input_image_shape["width"]
-                << " " << input_image_shape["height"];
-#endif
-
-        arg_idx = 0;
-        cl_int status = kernel.setArg(arg_idx, *input_image_p);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, *output_image_p);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, *output_image_p);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, flag_);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, cur_axis_start_idx);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, output_tensor_c);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, output_tensor_w);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, input_tensor_w);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, width_);
-        CL_CHECK_FATAL(status);
-
-        status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-            kernel,
-            cl::NullRange,
-            global_work_size,
-            cl::NullRange,
-            nullptr,
-            nullptr);
-        CL_CHECK_FATAL(status);
-        cur_axis_start_idx += input->dims()[axis_];
+        inputs_dims[i] = input->dims();
+        inputs_image_shapes[i] = InitImageDimInfoWith(input->dims());
+        inputs_image_pointers[i] = input->data<half_t, cl::Image2D>();
       }
+      // step1. create kernels
+      // 1.1 img_to_buf
+      std::vector<std::list<std::unique_ptr<KernelBase>>>
+          img_to_buf_kernels_vec(inputs_num);
+      for (size_t i = 0; i < inputs_num; ++i) {
+        auto img_to_buf_kernels = KernelRegistry::Global().Create(
+            "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
+        img_to_buf_kernels_vec[i] = std::move(img_to_buf_kernels);
+      }
+      // 1.2 buf_to_img
+      std::list<std::unique_ptr<KernelBase>> buf_to_img_kernels =
+          KernelRegistry::Global().Create("layout",
+                                          TARGET(kOpenCL),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kImageDefault));
+
+      // step2. get real kernel
+      // 2.1 img_to_buf
+      std::vector<std::unique_ptr<KernelBase>> img_to_buf_kernel_vec(
+          inputs_num);
+      for (size_t i = 0; i < inputs_num; ++i) {
+        img_to_buf_kernel_vec[i] = std::move(img_to_buf_kernels_vec[i].front());
+      }
+      // 2.2 buf_to_img
+      std::unique_ptr<KernelBase> buf_to_img_kernel =
+          std::move(buf_to_img_kernels.front());
+
+      // step3. create and set param, context to kernel
+      std::unique_ptr<KernelContext> kernel_context(new KernelContext);
+      kernel_context->As<OpenCLContext>().InitOnce();
+      // 3.1 img_to_buf
+      std::vector<operators::LayoutParam> img_to_buf_params(inputs_num);
+      std::vector<lite::Tensor> outputs_vec(inputs_num);
+      std::vector<cl::Buffer*> outputs_buffer_pointers(inputs_num);
+      for (size_t i = 0; i < inputs_num; ++i) {
+        img_to_buf_params[i].x = inputs[i];
+        img_to_buf_params[i].y = &outputs_vec[i];
+        outputs_vec[i].Resize(inputs_dims[i]);
+        outputs_buffer_pointers[i] =
+            outputs_vec[i].mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+        img_to_buf_kernel_vec[i]->SetParam(img_to_buf_params[i]);
+
+        std::unique_ptr<KernelContext> img_to_buf_context(new KernelContext);
+        kernel_context->As<OpenCLContext>().CopySharedTo(
+            &(img_to_buf_context->As<OpenCLContext>()));
+        img_to_buf_kernel_vec[i]->SetContext(std::move(img_to_buf_context));
+      }
+      // 3.2 concat_mul_buf
+      std::shared_ptr<lite::Tensor> concat_mul_buf_output_t(new lite::Tensor);
+      concat_mul_buf_output_t->Resize(param.output->dims());
+      auto conat_mul_buf_output_data =
+          concat_mul_buf_output_t->mutable_data<float, cl::Buffer>(
+              TARGET(kOpenCL));
+      // 3.3 buf_to_img
+      std::shared_ptr<lite::Tensor> buf_to_img_output_t(new lite::Tensor);
+      buf_to_img_output_t->Resize(param.output->dims());
+
+      std::shared_ptr<operators::LayoutParam> buf_to_img_param(
+          new operators::LayoutParam);
+      buf_to_img_param->x = concat_mul_buf_output_t.get();
+      buf_to_img_param->y = param.output;
+      buf_to_img_kernel->SetParam(buf_to_img_param);
+
+      std::unique_ptr<KernelContext> buf_to_img_context(new KernelContext);
+      kernel_context->As<OpenCLContext>().CopySharedTo(
+          &(buf_to_img_context->As<OpenCLContext>()));
+      buf_to_img_kernel->SetContext(std::move(buf_to_img_context));
+
+      // step4. run kernels
+      // 4.1 run kernel: image->buffer
+      for (size_t i = 0; i < inputs_num; ++i) {
+        img_to_buf_kernel_vec[i]->Launch();
+      }
+      // 4.2 run kernel: concat_mul_buffer
+      auto cur_axis_start_idx = 0;
+      int total = output_tensor_dims[axis_] * post_size_;
+      for (size_t i = 0; i < inputs_num; ++i) {
+        auto* x_buf = outputs_buffer_pointers[i];
+        auto axis_dim_size = inputs[i]->dims()[axis_];
+        global_work_size = cl::NDRange{static_cast<size_t>(axis_dim_size)};
+        int total0 = axis_dim_size * post_size_;
+#ifdef LITE_WITH_LOG
+        VLOG(2) << "--------------- i:" << i << " -----------------";
+        VLOG(2) << "post_size_:" << post_size_;
+        VLOG(2) << "pre_size_:" << pre_size_;
+        VLOG(2) << "axis_dim_size:" << axis_dim_size;
+        VLOG(2) << "cur_axis_start_idx:" << cur_axis_start_idx;
+        VLOG(2) << "total:" << total;
+        VLOG(2) << "total0:" << total0;
+#endif
+        cl_int status;
+        status = kernel.setArg(0, *x_buf);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(1, *conat_mul_buf_output_data);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(2, static_cast<int>(axis_dim_size));
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(3, pre_size_);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(4, post_size_);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(5, cur_axis_start_idx);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(6, total);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(7, total0);
+        CL_CHECK_FATAL(status);
+
+        status = EnqueueNDRangeKernel(context,
+                                      kernel,
+                                      cl::NullRange,
+                                      global_work_size,
+                                      cl::NullRange,
+                                      nullptr,
+                                      event_);
+        CL_CHECK_FATAL(status);
+        cur_axis_start_idx += axis_dim_size;
+      }
+      // 4.3 run kernel: buffer->image
+      buf_to_img_kernel->Launch();
     }
   }
 
@@ -343,6 +436,8 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   int axis_ = 1;
   int flag_ = 1;
   int width_ = 1;
+  int pre_size_ = 1;
+  int post_size_ = 1;
   param_t* concat_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{" -DCL_DTYPE_half"};

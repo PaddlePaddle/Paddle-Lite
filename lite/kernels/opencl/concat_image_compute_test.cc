@@ -100,8 +100,9 @@ TEST(concat_image2d_concat2, compute) {
         LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
                   << h << " " << w << " ========";
         LOG(INFO) << "======== axis: " << axis;
+
         // set layout kernels
-        auto buf_to_img_kernels =
+        std::list<std::unique_ptr<KernelBase>> buf_to_img_kernels =
             KernelRegistry::Global().Create("layout",
                                             TARGET(kOpenCL),
                                             PRECISION(kAny),
@@ -325,13 +326,14 @@ TEST(concat_image2d_multi, compute) {
 #else
         const int axis = 1;
         const int n = 1;
-        const int c = 3;   // 1;
-        const int h = 15;  // 2;
-        const int w = 15;  // 42;
+        const int c = 3;
+        const int h = 4;
+        const int w = 5;
 #endif  // LOOP_TEST_CONCAT_MUL
         LOG(INFO) << "======== input shape[n,c,h,w]:" << n << " " << c << " "
                   << h << " " << w << " ========";
         LOG(INFO) << "======== axis: " << axis;
+
         // set layout kernels
         auto buf_to_img_kernels =
             KernelRegistry::Global().Create("layout",
@@ -399,7 +401,7 @@ TEST(concat_image2d_multi, compute) {
         DDim x0_dim = DDim(std::vector<DDim::value_type>{n, c, h, w});
         DDim x1_dim = DDim(std::vector<DDim::value_type>{n, c, h, w});
         DDim x2_dim = DDim(std::vector<DDim::value_type>{n, c, h, w});
-        DDim out_dim = DDim(std::vector<DDim::value_type>{n, c, h, w});
+        DDim out_dim = DDim(std::vector<DDim::value_type>{n, c * 3, h, w});
         // x1_dim[axis] += 2;
         out_dim[axis] = x0_dim[axis] + x1_dim[axis] + x2_dim[axis];
         x0.Resize(x0_dim);
@@ -550,9 +552,6 @@ TEST(concat_image2d_multi, compute) {
           auto abs_diff = abs(y_data_ref[i] - mapped_y[i]);
           auto relative_diff =
               COMPUTE_RELATIVE_DIFF(y_data_ref[i], mapped_y[i]);
-          EXPECT_EQ(
-              (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
-              true);
           if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
             LOG(FATAL) << "error idx:" << i << " mapped_y[" << i
                        << "]:" << mapped_y[i] << " y_data_ref[" << i
@@ -574,7 +573,7 @@ TEST(concat_image2d_multi, compute) {
     }    // h
   }      // c
 #else
-                           // nothing to do.
+// nothing to do.
 #endif
 }
 }  // namespace lite
