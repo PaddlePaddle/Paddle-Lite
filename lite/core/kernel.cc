@@ -56,20 +56,19 @@ void KernelBase::ParseKernelType(const std::string &kernel_type,
                                  std::string *op_type,
                                  std::string *alias,
                                  Place *place) {
-  auto parts = Split(kernel_type, "/");
+  auto parts = lite::SplitView(kernel_type, '/');
   CHECK_EQ(parts.size(), 5u);
+
   *op_type = parts[0];
   *alias = parts[1];
 
-  std::string target, precision, layout;
+  const auto &target = parts[2];
+  const auto &precision = parts[3];
+  const auto &layout = parts[4];
 
-  target = parts[2];
-  precision = parts[3];
-  layout = parts[4];
-
-  place->target = static_cast<TargetType>(std::atoi(target.c_str()));
-  place->precision = static_cast<PrecisionType>(std::atoi(precision.c_str()));
-  place->layout = static_cast<DataLayoutType>(std::atoi(layout.c_str()));
+  place->target = static_cast<TargetType>(target.to_digit<int>());
+  place->precision = static_cast<PrecisionType>(precision.to_digit<int>());
+  place->layout = static_cast<DataLayoutType>(layout.to_digit<int>());
 }
 
 std::string KernelBase::SerializeKernelType(const std::string &op_type,
