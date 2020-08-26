@@ -134,22 +134,20 @@ void elementwise_add_tanh<float>(const float* dinx,
     const float* diny_ptr = diny + (i << 4);
     float* dout_ptr = dout + (i << 4);
 
+    // Elementwise_add 
     float32x4_t dinx0 = vld1q_f32(dinx_ptr);
-    float32x4_t dinx1 = vld1q_f32(dinx_ptr + 4);
-    float32x4_t dinx2 = vld1q_f32(dinx_ptr + 8);
-    float32x4_t dinx3 = vld1q_f32(dinx_ptr + 12);
-
     float32x4_t diny0 = vld1q_f32(diny_ptr);
+    float32x4_t dinx1 = vld1q_f32(dinx_ptr + 4);
     float32x4_t diny1 = vld1q_f32(diny_ptr + 4);
+    float32x4_t dinx2 = vld1q_f32(dinx_ptr + 8);
     float32x4_t diny2 = vld1q_f32(diny_ptr + 8);
+    float32x4_t dinx3 = vld1q_f32(dinx_ptr + 12);
     float32x4_t diny3 = vld1q_f32(diny_ptr + 12);
 
     dinx0 = vaddq_f32(dinx0, diny0);
     dinx1 = vaddq_f32(dinx1, diny1);
     dinx2 = vaddq_f32(dinx2, diny2);
     dinx3 = vaddq_f32(dinx3, diny3);
-
-    // tanh
 
     for (int j = 0; j < 4; j++) {
       dinx0[j] = (expf(dinx0[j]) - expf(-dinx0[j])) /
@@ -172,7 +170,8 @@ void elementwise_add_tanh<float>(const float* dinx,
     float* dout_ptr = dout + (cnt << 4);
     for (int i = 0; i < remain; i++) {
       float tmp = *dinx_ptr + *diny_ptr;
-      *dout_ptr = tmp > 0.f ? tmp : 0.f;
+      *dout_ptr = (expf(tmp) - expf(-tmp)) /
+                  (expf(tmp) + expf(-tmp));
       dout_ptr++;
       dinx_ptr++;
       diny_ptr++;
