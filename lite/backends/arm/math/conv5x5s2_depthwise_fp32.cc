@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <arm_neon.h>
+#include "lite/api/paddle_place.h"
 #include "lite/backends/arm/math/conv_depthwise.h"
 
 namespace paddle {
@@ -168,7 +169,7 @@ void conv_depthwise_5x5s2_fp32(float* dout,
                                             ctx);
         break;
       default:
-        LOG(FATAL) << "this act_type: " << static_cast<int>(act_type)
+        LOG(FATAL) << "this act_type: " << ActivationTypeToStr(act_type)
                    << " fuse not support";
     }
   } else {
