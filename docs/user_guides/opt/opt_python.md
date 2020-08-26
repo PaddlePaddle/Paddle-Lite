@@ -73,8 +73,10 @@ paddle_lite_opt \
 
 * 如果待优化的fluid模型是非combined形式，请设置`--model_dir`，忽略`--model_file`和`--param_file`。
 * 如果待优化的fluid模型是combined形式，请设置`--model_file`和`--param_file`，忽略`--model_dir`。
-* 优化后的模型为以`.nb`名称结尾的单个文件。
+* `naive_buffer`的优化后模型为以`.nb`名称结尾的单个文件。
+* `protobuf`的优化后模型为文件夹下的`model`和`params`两个文件。将`model`重命名为`__model__`用[Netron](https://lutzroeder.github.io/netron/)打开，即可查看优化后的模型结构。
 * 删除`prefer_int8_kernel`的输入参数，`opt`自动判别是否是量化模型，进行相应的优化操作。
+* `protobuf`的输出模型结果，可以将`model`重命名为`__model__`用[Netron](https://lutzroeder.github.io/netron/)打开，即可查看优化后的模型结果。
 
 ### 功能二：统计模型算子信息、判断是否支持
 
