@@ -48,6 +48,7 @@ void XPUMultiEncoderCompute::Run() {
   int seq_len = param.input->dims()[1];
   int r = -1;
   if (param.precision == "int31") {
+    ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
     r = xdnn::bert_encoder_transformer_int31(
         ctx.GetRawContext(),                             /* context */
         batch_size,                                      /* batch_size */
