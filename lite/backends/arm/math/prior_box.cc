@@ -21,7 +21,7 @@ namespace lite {
 namespace arm {
 namespace math {
 
-const int MALLOC_ALIGN = 16;
+const int MALLOC_ALIGN = 64;
 
 void* fast_malloc(size_t size) {
   size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
