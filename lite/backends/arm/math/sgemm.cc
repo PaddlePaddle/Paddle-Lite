@@ -38,9 +38,10 @@ void sgemm(bool is_transA,
            ARMContext* ctx) {
   int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
+  ctx->ExtendWorkspace(m_roundup * K * sizeof(float));
 
-  auto packed_A = static_cast<float*>(
-      TargetMalloc(TargetType::kARM, m_roundup * K * sizeof(float)));
+  auto packed_A = static_cast<float*>(ctx->workspace_data<float>()) +
+                      ctx->llc_size() / sizeof(float);
 
   prepackA(packed_A, A, alpha, lda, 0, M, 0, K, is_transA, ctx);
 
@@ -58,7 +59,6 @@ void sgemm(bool is_transA,
                 is_bias,
                 act_param,
                 ctx);
-  TargetFree(TargetType::kARM, packed_A);
 }
 
 }  // namespace math
