@@ -191,6 +191,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     if (kernel_func_name_ == "concat2") {
       auto* input0_image_p = inputs[0]->data<half_t, cl::Image2D>();
       auto* input1_image_p = inputs[1]->data<half_t, cl::Image2D>();
+      size_t input0_axis_dims = inputs[0]->dims()[axis_];
       cl_int status = kernel.setArg(0, *input0_image_p);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(1, *input1_image_p);
@@ -199,7 +200,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel.setArg(3, flag_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(4, static_cast<int>(inputs[0]->dims()[axis_]));
+      status = kernel.setArg(4, input0_axis_dims);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(5, output_tensor_c);
       CL_CHECK_FATAL(status);
@@ -237,6 +238,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
           input3 ? input3->data<half_t, cl::Image2D>() : nullptr;
       size_t input3_tensor_c = input3 ? input3->dims()[1] : -1;
 
+      size_t output_tensor_c = output_tensor_dims[1];
+      size_t output_tensor_w = output_tensor_dims[3];
+
       const std::vector<size_t>& default_work_size = DefaultWorkSize(
           output_tensor_dims,
           DDim(std::vector<DDim::value_type>{
@@ -250,11 +254,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       cl_int status;
       status = kernel.setArg(0, *output_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(
-          1, static_cast<size_t>(output_tensor_dims[1]));  // output_tensor_c
+      status = kernel.setArg(1, output_tensor_c);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(
-          2, static_cast<size_t>(output_tensor_dims[3]));  // output_tensor_w
+      status = kernel.setArg(2, output_tensor_w);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(3, *input0_image_p);
       CL_CHECK_FATAL(status);
