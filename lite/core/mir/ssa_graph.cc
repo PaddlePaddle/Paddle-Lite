@@ -226,6 +226,42 @@ void SSAGraph::RemoveNode(const mir::Node *node) {
   node_storage_.erase(pos);
 }
 
+void SSAGraph::CloneFrom(const SSAGraph &from) {
+  node_storage_.clear();
+  arguments_.clear();
+  valid_places_ = from.valid_places_;
+
+  std::map<const mir::Node *, mir::Node *> clone_node_map;
+  for (const auto &node : from.node_storage_) {
+    if (node.IsArg()) {
+      node_storage_.emplace_back();
+      auto &new_node = node_storage_.back();
+      new_node.AsArg() = *node.arg();
+      clone_node_map.emplace(&node, &new_node);
+    } else {
+      const auto *inst = node.stmt();
+      auto *new_node = GraphCreateInstructNode(inst->op(), valid_places_);
+      clone_node_map.emplace(&node, new_node);
+    }
+  }
+
+  // Rebuild node inlinks/outlinks
+  for (const auto &node : from.node_storage_) {
+    CHECK(clone_node_map.count(&node));
+    auto *new_node = clone_node_map.at(&node);
+    for (const auto *inlink : node.inlinks) {
+      CHECK(clone_node_map.count(inlink));
+      new_node->inlinks.emplace_back(clone_node_map.at(inlink));
+    }
+    for (const auto *outlink : node.outlinks) {
+      CHECK(clone_node_map.count(outlink));
+      new_node->outlinks.emplace_back(clone_node_map.at(outlink));
+    }
+  }
+
+  CheckValid();
+}
+
 mir::Node *SSAGraph::Argument(const std::string &name) {
   auto it = arguments_.find(name);
   CHECK(it != arguments_.end()) << "no argument called " << name;

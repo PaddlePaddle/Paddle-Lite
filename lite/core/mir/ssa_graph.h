@@ -44,6 +44,9 @@ class SSAGraph : GraphBase {
              int block_idx = kRootBlockIdx);
   void RemoveNode(const mir::Node *node);
 
+  // Clone from another SSAGraph, all mir::Node(s) are duplicated.
+  void CloneFrom(const SSAGraph &from);
+
   std::vector<mir::Node *> StmtTopologicalOrder();
 
   std::vector<mir::Node *> NodeTopologicalOrder();

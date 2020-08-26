@@ -43,6 +43,7 @@ OpDescView const* BlockDescView::GetOp<OpDescView>(int32_t idx) const {
   return &ops_[idx];
 }
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 template <>
 proto::VarDescT* BlockDesc::GetVar<proto::VarDescT>(int32_t idx) {
   CHECK_LT(idx, static_cast<int32_t>(VarsSize())) << "idx >= vars.size()";
@@ -68,6 +69,7 @@ proto::OpDescT* BlockDesc::AddOp<proto::OpDescT>() {
   SyncOps();
   return ops_.back()->raw_desc();
 }
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

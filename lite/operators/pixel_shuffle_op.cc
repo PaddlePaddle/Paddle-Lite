@@ -25,6 +25,7 @@ bool PixelShuffleOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.upscale_factor);
   const auto x_dims = param_.x->dims();
   const auto upscale_factor = param_.upscale_factor;
+  CHECK_EQ_OR_FALSE(x_dims.size(), 4);
   CHECK_EQ_OR_FALSE(x_dims[1] % (upscale_factor * upscale_factor), 0);
   return true;
 }

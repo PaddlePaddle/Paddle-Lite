@@ -16,6 +16,7 @@ nv_library(cudnn_pool SRCS cudnn_pool.cc DEPS ${cuda_static_deps})
 nv_library(cuda_gru_forward  SRCS gru_forward.cu DEPS cuda_activation ${cuda_static_deps})
 nv_library(cuda_sequence2batch  SRCS sequence2batch.cu DEPS ${cuda_static_deps})
 nv_library(cuda_gemm SRCS gemm.cc  DEPS ${cuda_static_deps})
+nv_library(cuda_gemv SRCS gemv.cc  DEPS ${cuda_static_deps})
 nv_library(cuda_batched_gemm SRCS batched_gemm.cc DEPS ${cuda_static_deps})
 nv_library(cuda_strided_gemm SRCS strided_gemm.cc DEPS ${cuda_static_deps})
 nv_library(cuda_sequence_padding SRCS sequence_padding.cu DEPS ${cuda_static_deps})
@@ -35,6 +36,7 @@ set (
  cuda_gru_forward
  cuda_sequence2batch
  cuda_gemm
+ cuda_gemv
  cuda_batched_gemm
  cuda_strided_gemm
  cuda_sequence_padding

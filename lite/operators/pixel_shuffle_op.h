@@ -36,6 +36,18 @@ class PixelShuffleOpLite : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "pixel_shuffle"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto input_dims = param_.x->dims();
+    auto output_dims = param_.output->dims();
+    ch->input_shape = ch->DimToStr(input_dims);
+    ch->output_shape = ch->DimToStr(output_dims);
+    ch->remark = "upscale_factor" + std::to_string(param_.upscale_factor);
+
+    ch->macs = 1;
+  }
+#endif
+
  private:
   mutable PixelShuffleParam param_;
 };

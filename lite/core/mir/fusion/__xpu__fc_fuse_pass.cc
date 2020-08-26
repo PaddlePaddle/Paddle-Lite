@@ -144,4 +144,4 @@ class XPUFcFusePass : public ProgramPass {
 
 REGISTER_MIR_PASS(__xpu__fc_fuse_pass, paddle::lite::mir::XPUFcFusePass)
     .BindTargets({TARGET(kXPU)})
-    .BindKernel("fc");
+    .BindKernel("__xpu__fc");
