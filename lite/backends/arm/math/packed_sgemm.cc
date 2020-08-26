@@ -668,8 +668,8 @@ void prepackA_8x12(float *dout,
   }
 }
 
-void prepackA_4x8(float* outptr,
-                  const float* inptr,
+void prepackA_4x8(float *outptr,
+                  const float *inptr,
                   float alpha,
                   int ldin,
                   int m0,
@@ -684,10 +684,10 @@ void prepackA_4x8(float* outptr,
   float32x4_t valpha = vdupq_n_f32(alpha);
 #pragma omp parallel for
   for (int y = m0; y < mmax; y += 4) {
-    const float* inptr0 = inptr + y * ldin + k0;
-    const float* inptr1 = inptr0 + ldin;
-    const float* inptr2 = inptr1 + ldin;
-    const float* inptr3 = inptr2 + ldin;
+    const float *inptr0 = inptr + y * ldin + k0;
+    const float *inptr1 = inptr0 + ldin;
+    const float *inptr2 = inptr1 + ldin;
+    const float *inptr3 = inptr2 + ldin;
 
     int x = x_len;
     if ((y + 3) >= mmax) {
@@ -1093,8 +1093,8 @@ void prepackA_trans_8x12(float *outptr,
   }
 }
 
-void prepackA_trans_4x8(float* outptr,
-                        const float* in,
+void prepackA_trans_4x8(float *outptr,
+                        const float *in,
                         float alpha,
                         int ldin,
                         int m0,
@@ -1122,15 +1122,15 @@ void prepackA_trans_4x8(float* outptr,
 
 #pragma omp parallel for
   for (int y = 0; y < y_len - 3; y += 4) {
-    const float* ptr0 = inptr + y * ldin;
-    const float* ptr1 = ptr0 + ldin;
-    const float* ptr2 = ptr1 + ldin;
-    const float* ptr3 = ptr2 + ldin;
+    const float *ptr0 = inptr + y * ldin;
+    const float *ptr1 = ptr0 + ldin;
+    const float *ptr2 = ptr1 + ldin;
+    const float *ptr3 = ptr2 + ldin;
 
-    float* outptr_row_col = outptr + y * 4;
+    float *outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
       // clang-format off
       asm volatile(
           "cmp %w[has_alpha], #0\n"       /* check alpha == 1.f? */
@@ -1158,7 +1158,7 @@ void prepackA_trans_4x8(float* outptr,
       outptr_row_col += stride_out;
     }
     if (right_pad > 0) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
       // clang-format off
       asm volatile(
           "cmp %w[has_alpha], #0\n"       /* check alpha == 1.f? */
@@ -1194,11 +1194,12 @@ void prepackA_trans_4x8(float* outptr,
   }
 #pragma omp parallel for
   for (int y = 4 * (y_len / 4); y < y_len; ++y) {
-    const float* ptr0 = inptr + y * ldin;
-    float* outptr_row_col = outptr + y * 4;
+    const float *ptr0 = inptr + y * ldin;
+    float *outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
+      // clang-format off
       asm volatile(
           "cmp %[has_alpha], #0\n"       /* check alpha == 1.f? */
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
@@ -1210,10 +1211,12 @@ void prepackA_trans_4x8(float* outptr,
           : [ptr0] "+r"(ptr0), [outptr] "+r"(ptr_out)
           : [has_alpha] "r"(has_alpha), [alpha] "w"(valpha)
           : "v0", "v1", "cc", "memory");
+      // clang-format on
       outptr_row_col += stride_out;
     }
     if (right_pad > 0) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
+      // clang-format off
       asm volatile(
           "cmp %w[has_alpha], #0\n"       /* check alpha == 1.f? */
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
@@ -1229,6 +1232,7 @@ void prepackA_trans_4x8(float* outptr,
             [has_alpha] "r"(has_alpha),
             [alpha] "w"(valpha)
           : "v0", "v1", "cc", "memory");
+      // clang-format on
     }
   }
 }
@@ -3763,18 +3767,18 @@ void sgemm_prepacked_4x8(bool is_transB,
         bias_local[3] = bias[y + 3];
       }
 
-      float* c_ptr0 = C + y * ldc + x0;
-      float* c_ptr1 = c_ptr0 + ldc;
-      float* c_ptr2 = c_ptr1 + ldc;
-      float* c_ptr3 = c_ptr2 + ldc;
+      float *c_ptr0 = C + y * ldc + x0;
+      float *c_ptr1 = c_ptr0 + ldc;
+      float *c_ptr2 = c_ptr1 + ldc;
+      float *c_ptr3 = c_ptr2 + ldc;
 
-      float* pout0 = c_ptr0;
-      float* pout1 = c_ptr1;
-      float* pout2 = c_ptr2;
-      float* pout3 = c_ptr3;
+      float *pout0 = c_ptr0;
+      float *pout1 = c_ptr1;
+      float *pout2 = c_ptr2;
+      float *pout3 = c_ptr3;
 
-      const float* a_ptr_l = A_packed + y * K;
-      const float* b_ptr = b_pannel;
+      const float *a_ptr_l = A_packed + y * K;
+      const float *b_ptr = b_pannel;
       for (int xb = 0; xb < bblocks; xb++) {
         if ((y + 3) >= ymax) {
           switch ((y + 3) - ymax) {
@@ -3808,7 +3812,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             }
           }
         }
-        const float* a_ptr = a_ptr_l;
+        const float *a_ptr = a_ptr_l;
         int tails = tail_pre;
         int k = k_pre;
         // clang-format off
