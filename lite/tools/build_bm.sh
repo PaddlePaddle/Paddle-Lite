@@ -102,7 +102,10 @@ function main {
         case $i in
             --target_name=*)
                 TARGET_NAME="${i#*=}"
-                build_bm
+                shift
+                ;;
+            --test=*)
+                WITH_TESTING=${i#*=}
                 shift
                 ;;
             *)
@@ -112,5 +115,6 @@ function main {
                 ;;
         esac
     done
+    build_bm
 }
 main $@

@@ -1661,6 +1661,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int size_per_head{};
   std::string act_type{};
   std::string precision{};
+  bool enable_qkv_fusion{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {

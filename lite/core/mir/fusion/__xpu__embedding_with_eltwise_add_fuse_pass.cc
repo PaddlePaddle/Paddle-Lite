@@ -163,4 +163,4 @@ class XPUEmbeddingWithEltwiseAddFusePass : public ProgramPass {
 REGISTER_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass,
                   paddle::lite::mir::XPUEmbeddingWithEltwiseAddFusePass)
     .BindTargets({TARGET(kXPU)})
-    .BindKernel("lookup_table");
+    .BindKernel("__xpu__embedding_with_eltwise_add");
