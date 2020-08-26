@@ -55,9 +55,11 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (x->precision() == PRECISION(kInt8)) {
     // enable_int8 = op_info->GetAttr<bool>("enable_int8");
     enable_int8 = true;
-    input_scale = op_info->GetAttr<float>("input_scale");
+    CHECK(op_info->HasInputScale(x_name));
+    input_scale = op_info->GetInputScale(x_name)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    output_scale = op_info->GetAttr<float>("output_scale");
+    CHECK(op_info->HasOutputScale(out_name));
+    output_scale = op_info->GetOutputScale(out_name)[0];
 
     if (enable_int8) {
       precision = PRECISION(kInt8);
@@ -132,18 +134,16 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     ceil_mode = op_info->GetAttr<bool>("ceil_mode") ? 1 : 0;
   }
 
-  std::shared_ptr<Node> output_node = nullptr;
   QuantizationInfo output_qnt;
-
   output_qnt.enable_int8 = enable_int8;
-
   if (enable_int8) {
     output_qnt.quant_bits = bit_length;
     output_qnt.scale.push_back(output_scale);
     output->mutable_data<int8_t>();
   }
 
-  output_node = graph->Add(out_name, *output, precision, layout, output_qnt);
+  auto output_node =
+      graph->Add(out_name, *output, precision, layout, output_qnt);
 
   std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;
   std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;

@@ -19,17 +19,34 @@ namespace lite {
 namespace fbs {
 
 template <>
-proto::BlockDesc const* ProgramDesc::GetBlock<proto::BlockDesc>(
+proto::BlockDesc const* ProgramDescView::GetBlock<proto::BlockDesc>(
     int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
   return desc_->blocks()->Get(idx);
 }
 
 template <>
-BlockDesc const* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
+BlockDescView const* ProgramDescView::GetBlock<BlockDescView>(
+    int32_t idx) const {
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
   return &blocks_[idx];
 }
+
+#ifdef LITE_WITH_FLATBUFFERS_DESC
+template <>
+proto::BlockDescT* ProgramDesc::GetBlock<proto::BlockDescT>(int32_t idx) {
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= vars.size()";
+  return blocks_[idx]->raw_desc();
+}
+
+template <>
+proto::BlockDescT* ProgramDesc::AddBlock<proto::BlockDescT>() {
+  desc_.blocks.push_back(
+      std::unique_ptr<proto::BlockDescT>(new proto::BlockDescT));
+  SyncBlocks();
+  return blocks_.back()->raw_desc();
+}
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

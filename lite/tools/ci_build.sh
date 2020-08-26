@@ -353,7 +353,7 @@ function cmake_xpu {
         -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
-        -DXPU_SDK_ROOT="/opt/output"
+        -DXPU_SDK_ROOT="./output"
 }
 
 function build_xpu {

@@ -25,6 +25,9 @@ WITH_STRIP=OFF
 # options of compiling NPU lib.
 WITH_HUAWEI_KIRIN_NPU=OFF
 HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
+# options of compiling APU lib.
+WITH_MEDIATEK_APU=OFF
+MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
 # options of adding training ops
@@ -143,6 +146,10 @@ function make_tiny_publish_so {
       prepare_opencl_source_code $workspace $build_dir
   fi
 
+  if [ "${WITH_STRIP}" == "ON" ]; then
+      WITH_EXTRA=ON
+  fi
+
 
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
@@ -154,6 +161,8 @@ function make_tiny_publish_so {
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
+      -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -194,6 +203,10 @@ function make_full_publish_so {
       prepare_opencl_source_code $workspace $build_dir
   fi
 
+  if [ "${WITH_STRIP}" == "ON" ]; then
+      WITH_EXTRA=ON
+  fi
+
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
@@ -204,6 +217,8 @@ function make_full_publish_so {
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
+      -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -256,6 +271,13 @@ function print_usage {
     echo -e "|     --huawei_kirin_npu_sdk_root: (path to huawei HiAi DDK file) required when compiling npu library                                  |"
     echo -e "|             you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/                                   |"
     echo -e "|  detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html                      |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of apu library compiling:(armv8, gcc, c++_static)                                                                         |"
+    echo -e "|     ./lite/tools/build_android.sh --with_mediatek_apu=ON --mediatek_apu_sdk_root=YourApuSdkPath                                      |"
+    echo -e "|     --with_mediatek_apu: (OFF|ON); controls whether to compile lib for mediatek_apu, default is OFF                                  |"
+    echo -e "|     --mediatek_apu_sdk_root: (path to mediatek APU SDK file) required when compiling apu library                                     |"
+    echo -e "|             you can download mediatek APU SDK from:  https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz           |"
+    echo -e "|  detailed information about Paddle-Lite APU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/mediatek_apu.html             |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of opencl library compiling:(armv8, gcc, c++_static)                                                                      |"
     echo -e "|     ./lite/tools/build_android.sh --with_opencl=ON                                                                                   |"
@@ -349,6 +371,15 @@ function main {
                 ;;
             --huawei_kirin_npu_sdk_root=*)
                 HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on mediatek apu.
+            --with_mediatek_apu=*)
+                WITH_MEDIATEK_APU="${i#*=}"
+                shift
+                ;;
+            --mediatek_apu_sdk_root=*)
+                MEDIATEK_APU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling result contains both light_api and cxx_api lib.

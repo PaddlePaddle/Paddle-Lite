@@ -118,6 +118,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       beam_search.cc
       reduce_max.cc
       sequence_pool.cc
+      sequence_pool_grad.cc
       sequence_expand.cc
       slice.cc
       reduce_mean.cc
@@ -128,5 +129,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       reduce_prod.cc
       lstm.cc
       clip.cc
+      pixel_shuffle.cc
       DEPS ${lite_kernel_deps} context tensor)
 endif()

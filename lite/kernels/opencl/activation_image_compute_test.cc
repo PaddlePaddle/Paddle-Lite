@@ -57,13 +57,22 @@ void act_compute_ref(const dtype *x_data,
       case 8:  // exp
         out_data[i] = expf(x_data[i]);
         break;
+      case 14:  // hard sigmoid
+                // scale ==> slope
+        {
+          float tmp = x_data[i] * scale + threshold;
+          tmp = tmp < 1.0f ? tmp : 1.0f;
+          tmp = tmp > 0.0f ? tmp : 0.0f;
+          out_data[i] = tmp;
+          break;
+        }
       default:
         break;
     }
   }
 }
 
-//  #define ACT_FP16_LOOP_TEST
+// #define ACT_FP16_LOOP_TEST
 // #define ACT_FP16_PRINT_RESULT
 TEST(act_image2d_fp16, compute) {
   LOG(INFO) << "main steps of test: host -> layout(buf2img) -> relu(img) -> "
@@ -75,7 +84,7 @@ TEST(act_image2d_fp16, compute) {
     for (auto c : {1, 3, 8, 23, 32}) {
       for (int h = 12; h <= 100; h += 13) {
         for (int w = 12; w <= 100; w += 25) {
-          for (auto act_type : {1, 2, 4, 5, 6, 7, 8}) {
+          for (auto act_type : {1, 2, 4, 5, 6, 7, 8, 14}) {
             for (auto scale : {0.5, 0.8}) {
               for (auto threshold : {6.0}) {
 #else
@@ -83,9 +92,9 @@ TEST(act_image2d_fp16, compute) {
   const int c = 2;
   const int h = 3;
   const int w = 4;
-  const int act_type = 4;
-  const float scale = 0.5f;
-  const float threshold = 6.f;
+  const int act_type = 14;
+  const float scale = 2.0f;
+  const float threshold = 1.0f;
 
 #endif  // ACT_FP16_LOOP_TEST
 
@@ -116,6 +125,9 @@ TEST(act_image2d_fp16, compute) {
                     break;
                   case 8:  // tanh
                     func_name = "exp";
+                    break;
+                  case 14:  // hard sigmoid
+                    func_name = "hard_sigmoid";
                     break;
                 }
                 LOG(INFO) << "func_name: " << func_name;
@@ -166,6 +178,9 @@ TEST(act_image2d_fp16, compute) {
                 actParam.Relu_clipped_coef = threshold;
                 actParam.Leaky_relu_alpha = scale;
                 actParam.Swish_beta = scale;
+                // hard sigmoid
+                actParam.hard_sigmoid_slope = scale;
+                actParam.hard_sigmoid_offset = threshold;
 
                 const DDim x_dim =
                     DDim(std::vector<DDim::value_type>{n, c, h, w});
@@ -191,7 +206,8 @@ TEST(act_image2d_fp16, compute) {
                 std::default_random_engine engine;
                 std::uniform_real_distribution<float> dist(-1, 1);
                 for (int i = 0; i < x_dim.production(); ++i) {
-                  mapped_x[i] = dist(engine);
+                  mapped_x[i] =
+                      (i - x_dim.production() / 2) / 10.;  // dist(engine);
                   mapped_y[i] = 0.0f;
                 }
                 auto *act_in_data = act_in.mutable_data<half_t, cl::Image2D>(
@@ -316,3 +332,6 @@ USE_LITE_KERNEL(relu6, kOpenCL, kFP16, kImageDefault, ImageDefault);
 
 // sigmoid image2d fp16
 USE_LITE_KERNEL(sigmoid, kOpenCL, kFP16, kImageDefault, ImageDefault);
+
+// hard_sigmoid image2d fp16
+USE_LITE_KERNEL(hard_sigmoid, kOpenCL, kFP16, kImageDefault, ImageDefault);

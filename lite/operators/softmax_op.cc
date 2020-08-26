@@ -52,6 +52,11 @@ bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   }
   CHECK(param_.x);
   CHECK(param_.output);
+  if (opdesc.HasAttr("use_cudnn")) {
+    param_.use_cudnn = opdesc.GetAttr<bool>("use_cudnn");
+  }
+  // TODO(wilber): use cudnn default when compile with cuda.
+  param_.use_cudnn = true;
   return true;
 }
 

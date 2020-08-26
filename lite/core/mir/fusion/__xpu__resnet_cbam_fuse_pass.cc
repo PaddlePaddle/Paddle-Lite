@@ -1368,14 +1368,24 @@ class XPUResNetCbamFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
+
+    bool changed = false;
+    SSAGraph backup;
+    backup.CloneFrom(*graph);
+
     fusion::XPUResNetCbamBlock0Fuser block0_fuser;
-    block0_fuser(graph.get());
+    changed |= block0_fuser(graph.get());
     fusion::XPUResNetCbamBlock1Fuser block1_fuser;
-    block1_fuser(graph.get());
+    changed |= block1_fuser(graph.get());
     fusion::XPUResNetCbamBlock2Fuser block2_fuser;
-    block2_fuser(graph.get());
+    changed |= block2_fuser(graph.get());
     fusion::XPUResNetCbamFuser resnet_fuser;
-    resnet_fuser(graph.get());
+    size_t n_matches = resnet_fuser(graph.get());
+
+    if (changed && !n_matches) {
+      // Restore graph from backuped one if no whole ResNetCbam graph was found
+      graph->CloneFrom(backup);
+    }
   }
 };
 

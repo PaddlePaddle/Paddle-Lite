@@ -52,6 +52,7 @@ __global__ void padding_out(const dtype* src,
                             const int max_len_r,
                             const int tl,
                             const int count,
+                            const bool fuse_relu,
                             dtype* dst) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   int thread_num = blockDim.x * gridDim.x;
@@ -62,7 +63,13 @@ __global__ void padding_out(const dtype* src,
     int r_id = tid % max_len_r;
     int cur_len = offset[seq_id + 1] - offset[seq_id];
     if (r_id < cur_len) {
-      dst[tid] = src[(offset[seq_id] + r_id) * tl + tl_id];
+      if (fuse_relu) {
+        dst[tid] = src[(offset[seq_id] + r_id) * tl + tl_id] > 0
+                       ? src[(offset[seq_id] + r_id) * tl + tl_id]
+                       : 0;
+      } else {
+        dst[tid] = src[(offset[seq_id] + r_id) * tl + tl_id];
+      }
     } else {
       dst[tid] = 0.f;
     }
@@ -86,6 +93,7 @@ void MatchMatrixTensorCompute::Run() {
   auto* tmp = param.tmp;
   int dim_t = param.dim_t;
   int dim_in = x->dims()[1];
+  bool fuse_relu = param.fuse_relu;
 
   const auto& offset_l = x->lod()[0];
   const auto& offset_r = y->lod()[0];
@@ -155,6 +163,7 @@ void MatchMatrixTensorCompute::Run() {
                                                    max_len_r,
                                                    dim_t * len_l,
                                                    count,
+                                                   fuse_relu,
                                                    out_data);
   out->set_lod(y->lod());
 }

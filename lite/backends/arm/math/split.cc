@@ -51,11 +51,11 @@ void split_cpy<float>(const float* din, float* dout, int num) {
   }
 }
 
-template <>
-void split<float>(const float* din,
-                  const std::vector<lite::Tensor*>& dout,
-                  const int axis,
-                  const std::vector<int>& in_strides) {
+template <typename T>
+void split(const T* din,
+           const std::vector<lite::Tensor*>& dout,
+           const int axis,
+           const std::vector<int>& in_strides) {
   int input_offset = 0;
   for (auto out : dout) {
     auto out_dim = out->dims();
@@ -65,21 +65,30 @@ void split<float>(const float* din,
       out_strides[i] = out_strides[i + 1] * out_dim[i];
     }
 
-    float* out_data = out->mutable_data<float>();
+    T* out_data = out->mutable_data<T>();
     int before = out_strides[0] / out_strides[axis];
     int in_after = in_strides[axis];
     int out_after = out_strides[axis];
 
-    const float* din_ptr = din + input_offset;
+    const T* din_ptr = din + input_offset;
 
     for (int i = 0; i < before; ++i) {
-      std::memcpy(out_data, din_ptr, sizeof(float) * out_after);
+      std::memcpy(out_data, din_ptr, sizeof(T) * out_after);
       din_ptr += in_after;
       out_data += out_after;
     }
     input_offset += out_strides[axis];
   }
 }
+
+template void split(const float* din,
+                    const std::vector<lite::Tensor*>& dout,
+                    const int axis,
+                    const std::vector<int>& in_strides);
+template void split(const int64_t* din,
+                    const std::vector<lite::Tensor*>& dout,
+                    const int axis,
+                    const std::vector<int>& in_strides);
 
 }  // namespace math
 }  // namespace arm

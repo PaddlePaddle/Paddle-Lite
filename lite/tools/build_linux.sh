@@ -26,7 +26,7 @@ OPTMODEL_DIR=""
 WITH_OPENCL=OFF
 # options of compiling rockchip NPU lib.
 WITH_ROCKCHIP_NPU=OFF
-ROCKCHIP_NPU_SDK_ROOT=""
+ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 BAIDU_XPU_SDK_ROOT=""
@@ -173,6 +173,9 @@ function make_tiny_publish_so {
     if [ "${WITH_OPENCL}" = "ON" ]; then
        prepare_opencl_source_code $workspace $build_dir
     fi
+    if [ "${WITH_STRIP}" == "ON" ]; then
+        WITH_EXTRA=ON
+    fi
 
     init_cmake_mutable_options
     cmake $workspace \
@@ -229,6 +232,8 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh --with_rockchip_npu=ON --rockchip_npu_sdk_root=YourRockchipNpuSdkPath                                                |"
     echo -e "|     --with_rockchip_npu: (OFF|ON); controls whether to compile lib for rockchip_npu, default is OFF                                                  |"
     echo -e "|     --rockchip_npu_sdk_root: (path to rockchip_npu DDK file) required when compiling rockchip_npu library                                            |"
+    echo -e "|             you can download rockchip NPU SDK from:  https://github.com/airockchip/rknpu_ddk.git                                                     |"
+    echo -e "|  detailed information about Paddle-Lite RKNPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html                           |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
     echo -e "|     ./lite/tools/build_linux.sh --with_baidu_xpu=ON --baidu_xpu_sdk_root=YourBaiduXpuSdkPath                                                         |"

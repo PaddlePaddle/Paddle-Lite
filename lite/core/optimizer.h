@@ -91,11 +91,14 @@ class Optimizer {
            // kernels for devices automatically.
            "lite_conv_activation_fuse_pass",              //
            "lite_var_conv_2d_activation_fuse_pass",       //
+           "lite_match_matrix_activation_fuse_pass",      //
            "lite_fc_fuse_pass",                           //
            "lite_shuffle_channel_fuse_pass",              //
            "lite_transpose_softmax_transpose_fuse_pass",  //
            "lite_interpolate_fuse_pass",                  //
            "identity_scale_eliminate_pass",               //
+           "lite_scales_fuse_pass",                       //
+           "lite_sequence_reverse_embedding_fuse_pass",   //
            "elementwise_mul_constant_eliminate_pass",     //
            "lite_sequence_pool_concat_fuse_pass",         //
            "lite_scale_activation_fuse_pass",             //
@@ -161,6 +164,7 @@ class Optimizer {
 
            "runtime_context_assign_pass",
            "argument_type_display_pass",
+           "lite_reshape_fuse_pass",
 
            "memory_optimize_pass"}};
 

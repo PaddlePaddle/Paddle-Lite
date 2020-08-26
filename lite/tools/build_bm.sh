@@ -102,13 +102,19 @@ function main {
         case $i in
             --target_name=*)
                 TARGET_NAME="${i#*=}"
-                build_bm
+                shift
+                ;;
+            --test=*)
+                WITH_TESTING=${i#*=}
+                shift
+                ;;
+            *)
                 # unknown option
                 print_usage
                 exit 1
                 ;;
         esac
     done
+    build_bm
 }
-
 main $@

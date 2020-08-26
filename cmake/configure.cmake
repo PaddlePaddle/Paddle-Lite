@@ -198,8 +198,15 @@ if (LITE_WITH_EXCEPTION)
   add_definitions("-DLITE_WITH_EXCEPTION")
 endif()
 
+if (LITE_ON_FLATBUFFERS_DESC_VIEW)
+  add_definitions("-DLITE_ON_FLATBUFFERS_DESC_VIEW")
+  message(STATUS "Flatbuffers will be used as cpp default program description.")
+endif()
+
 if (LITE_ON_TINY_PUBLISH)
   add_definitions("-DLITE_ON_TINY_PUBLISH")
+else()
+  add_definitions("-DLITE_WITH_FLATBUFFERS_DESC")
 endif()
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)

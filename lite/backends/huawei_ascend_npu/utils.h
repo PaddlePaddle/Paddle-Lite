@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #pragma once
+
+#include <string>
 #include "acl/acl.h"
 #include "ge/ge_api_types.h"
 #include "ge/ge_ir_build.h"
@@ -21,10 +23,15 @@
 #include "graph/tensor.h"
 #include "graph/types.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/replace_stl/stream.h"
 
 /*
  * This file contains some Huawei Ascend NPU specific uitls.
  */
+
+namespace paddle {
+namespace lite {
+namespace huawei_ascend_npu {
 
 #define ACL_CALL(msg)                                       \
   CHECK_EQ(reinterpret_cast<aclError>(msg), ACL_ERROR_NONE) \
@@ -37,10 +44,6 @@
       << (msg) << " Huawei Ascend NPU ATC Error: "                    \
       << ::paddle::lite::huawei_ascend_npu::AtcErrorInfo(             \
              reinterpret_cast<uint32_t>(msg))
-
-namespace paddle {
-namespace lite {
-namespace huawei_ascend_npu {
 
 static const char* AtcErrorInfo(uint32_t error) {
   switch (error) {
@@ -121,6 +124,61 @@ static const char* AclErrorInfo(int error) {
       return "unknown error";
       break;
   }
+}
+
+static const std::string& CvtFormat(ge::Format format) {
+  static const int MAX_FORMAT_LENGTH = 25;
+  static const std::string format2string[] = {
+      "FORMAT_NCHW = 0",
+      "FORMAT_NHWC = 1",
+      "FORMAT_ND = 2",
+      "FORMAT_NC1HWC0 = 3",
+      "FORMAT_FRACTAL_Z = 4",
+      "FORMAT_NC1C0HWPAD = 5",
+      "FORMAT_NHWC1C0 = 6",
+      "FORMAT_FSR_NCHW = 7",
+      "FORMAT_FRACTAL_DECONV = 8",
+      "FORMAT_C1HWNC0 = 9",
+      "FORMAT_FRACTAL_DECONV_TRANSPOSE = 10",
+      "FORMAT_FRACTAL_DECONV_SP_STRIDE_TRANS = 11",
+      "FORMAT_NC1HWC0_C04 = 12",
+      "FORMAT_FRACTAL_Z_C04 = 13",
+      "FORMAT_CHWN = 14",
+      "FORMAT_FRACTAL_DECONV_SP_STRIDE8_TRANS = 15",
+      "FORMAT_HWCN = 16",
+      "FORMAT_NC1KHKWHWC0 = 17",
+      "FORMAT_BN_WEIGHT = 18",
+      "FORMAT_FILTER_HWCK = 19",
+      "FORMAT_HASHTABLE_LOOKUP_LOOKUPS = 20",
+      "FORMAT_HASHTABLE_LOOKUP_KEYS = 21",
+      "FORMAT_HASHTABLE_LOOKUP_VALUE = 22",
+      "FORMAT_HASHTABLE_LOOKUP_OUTPUT = 23",
+      "FORMAT_HASHTABLE_LOOKUP_HITS = 24"};
+  auto x = static_cast<int>(format);
+  CHECK_LT(x, MAX_FORMAT_LENGTH);
+  return format2string[x];
+}
+
+static const std::string& CvtDataType(ge::DataType data_type) {
+  static const int MAX_DATATYPE_LENGTH = 14;
+  static const std::string datatype2string[] = {"DT_FLOAT=0",
+                                                "DT_FLOAT16=1",
+                                                "DT_INT8=2",
+                                                "DT_INT32=3",
+                                                "DT_UINT8=4",
+                                                "Unknown=5",
+                                                "DT_INT16=6",
+                                                "DT_UINT16=7",
+                                                "DT_UINT32=8",
+                                                "DT_INT64=9",
+                                                "DT_UINT64=10",
+                                                "DT_DOUBLE=11",
+                                                "DT_BOOL=12",
+                                                "DT_STRING=13"};
+
+  auto x = static_cast<int>(data_type);
+  CHECK_LT(x, MAX_DATATYPE_LENGTH);
+  return datatype2string[x];
 }
 
 }  // namespace huawei_ascend_npu

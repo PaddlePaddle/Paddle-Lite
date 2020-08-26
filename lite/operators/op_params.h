@@ -83,6 +83,21 @@ struct CalibParam : ParamBase {
   const lite::Tensor* input{};
   lite::Tensor* output{};
   float scale;
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({input}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
 };
 
 struct SubgraphParam : ParamBase {
@@ -103,6 +118,8 @@ struct FcParam : ParamBase {
   lite::Tensor* bias{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
+  // original dims of input weight
+  lite::DDim w_dims;
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
@@ -268,6 +285,7 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
   int axis{-1};
+  bool use_cudnn{true};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -359,6 +377,24 @@ struct ActivationParam : ParamBase {
   float hard_swish_offset{3.0};
   // thresholded_relu
   float relu_threshold{1.0f};
+  // elu
+  float Elu_alpha{1.0f};
+
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
 };
 
 struct ActivationGradParam : ParamBase {
@@ -795,6 +831,23 @@ struct BoxCoderParam : ParamBase {
   bool box_normalized{true};
   int axis{0};
   std::vector<float> variance{};
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>(
+          {prior_box, prior_box_var, target_box}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(
+          new std::vector<lite::Tensor*>({proposals}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
 };
 
 /// ----------------------- multiclass_nms operators ----------------------
@@ -834,6 +887,23 @@ struct PriorBoxParam : ParamBase {
   // priortype: prior_min, prior_max, prior_com
   std::vector<std::string> order;
   bool min_max_aspect_ratios_order{false};
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(
+          new std::vector<const Tensor*>({input, image}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(
+          new std::vector<lite::Tensor*>({boxes, variances}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
 };
 
 struct DensityPriorBoxParam : public PriorBoxParam {
@@ -994,10 +1064,10 @@ struct BeamSearchParam : ParamBase {
 struct SequencePoolParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
+  lite::Tensor* MaxIndex{};
   std::string pool_type{"AVERAGE"};
 #ifdef LITE_WITH_X86
   float pad_value{0.0};
-  lite::Tensor* MaxIndex{};
 #endif
 };
 
@@ -1014,6 +1084,18 @@ struct SequencePoolConcatParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
   std::vector<std::string> pool_type{};
+};
+
+struct SequencePoolGradParam : ParamBase {
+  const lite::Tensor* X{};
+  std::string pool_type{"AVERAGE"};
+#ifdef LITE_WITH_X86
+  float pad_value{0.0};
+#endif
+  // for backward
+  const lite::Tensor* Out_Grad{};
+  const lite::Tensor* MaxIndex_Grad{};
+  lite::Tensor* X_Grad{};
 };
 
 struct SearchGroupPaddingParam : ParamBase {
@@ -1282,6 +1364,13 @@ struct ExpandParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
   std::vector<int> expand_times{};
+};
+
+/// ----------------------- expand as operators ----------------------
+struct ExpandAsParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Target{};
+  lite::Tensor* Out{};
 };
 
 /// ----------------------- matmul operators ----------------------
@@ -1800,6 +1889,15 @@ struct PrintParam : ParamBase {
   bool print_tensor_layout{true};
   std::string print_phase;
   bool is_forward{true};
+};
+
+struct OneHotParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* depth_tensor{nullptr};
+  lite::Tensor* Out{};
+  int depth;
+  int dtype;
+  bool allow_out_of_range;
 };
 
 }  // namespace operators
