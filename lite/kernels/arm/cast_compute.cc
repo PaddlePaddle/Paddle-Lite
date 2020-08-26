@@ -83,6 +83,11 @@ void CastCompute::Run() {
     int64_t* out_data = param.Out->mutable_data<int64_t>();
     std::transform(
         x_data_begin, x_data_end, out_data, TransOp<int32_t, int64_t>);
+  } else if (param.in_dtype == 5 && param.out_dtype == 20) {  // FP32 -> UINT8
+    const float* x_data_begin = param.X->data<float>();
+    const float* x_data_end = x_data_begin + param.X->numel();
+    uint8_t* out_data = param.Out->mutable_data<uint8_t>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<float, uint8_t>);
   } else {
     LOG(FATAL) << "other has not been implemented transform with dtype"
                << param.in_dtype << " X, dtype" << param.out_dtype << " Out";
