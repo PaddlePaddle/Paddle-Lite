@@ -141,6 +141,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
                    << PrecisionToStr(precision);
         break;
     }
+    LOG(INFO) << "ssdfsdfsdfsdfsdf";
     device_otensors_[i].data = nullptr;
     device_otensors_[i].ctx.device_type =
         subgraph::xpu::CvtDLDeviceType(TARGET(kHost));
@@ -151,25 +152,36 @@ bool SubgraphEngine::BuildDeviceProgram() {
         static_cast<const int64_t*>(origin_odims_[i].data()));
     device_otensors_[i].strides = nullptr;
     device_otensors_[i].byte_offset = 0;
+    LOG(INFO) << "ssdfsdfsdfsdfsdf11111";
   }
   return true;
 }
 
 bool SubgraphEngine::LaunchDeviceProgram() {
+  LOG(INFO) << "1  dims=" << origin_idims_[0].size();
+  auto A =
+      xtcl::xNDArray::Empty(origin_idims_[0], {kDLFloat, 32, 1}, {kDLCPU, 0});
   for (size_t i = 0; i < device_itensors_.size(); i++) {
     // Update the data pointer of DLTensor to track the origin input tensors
     device_itensors_[i].data =
         const_cast<void*>(origin_itensors_[i]->raw_data());
-    device_program_->SetInput(device_inames_[i], &device_itensors_[i]);
+    LOG(INFO) << "333   " << input_names_[i]
+              << "  ptr=" << device_itensors_[i].data;
+    // device_program_->SetInput(input_names_[i], &device_itensors_[i]);
+    device_program_->SetInput(input_names_[i], A, true);
+    LOG(INFO) << "444";
   }
+  LOG(INFO) << "2";
   // Run the XPU model
   auto GetCurrentUS = []() -> double {
     struct timeval time;
     gettimeofday(&time, NULL);
     return 1e+6 * time.tv_sec + time.tv_usec;
   };
+  LOG(INFO) << "3";
   auto start_time = GetCurrentUS();
   device_program_->Run();
+  LOG(INFO) << "4";
   VLOG(3) << "[XPU] Process cost " << GetCurrentUS() - start_time << " us";
   for (size_t i = 0; i < device_otensors_.size(); i++) {
     // Update the data pointer of DLTensor to track the origin output tensors
@@ -177,6 +189,7 @@ bool SubgraphEngine::LaunchDeviceProgram() {
         const_cast<void*>(origin_otensors_[i]->raw_data());
     device_program_->CopyOutputTo(i, &device_otensors_[i]);
   }
+  LOG(INFO) << "5";
   return true;
 }
 

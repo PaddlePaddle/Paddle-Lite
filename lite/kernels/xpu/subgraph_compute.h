@@ -47,8 +47,6 @@ class SubgraphEngine : public subgraph::Engine {
   bool BuildDeviceProgram() override;
   bool LaunchDeviceProgram() override;
 
-  std::vector<std::string> device_inames_;
-  std::vector<std::string> device_onames_;
   std::vector<DLTensor> device_itensors_{};
   std::vector<DLTensor> device_otensors_{};
   std::vector<std::vector<int64_t>> origin_odims_;

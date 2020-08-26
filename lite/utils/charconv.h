@@ -19,14 +19,7 @@
 #include <climits>
 #include <limits>
 #include <system_error>  // NOLINT
-
-#ifndef likely
-#define likely(x) __builtin_expect((x), 1)
-#endif
-
-#ifndef unlikely
-#define unlikely(x) __builtin_expect((x), 0)
-#endif
+#include "lite/utils/variant.h"
 
 namespace paddle {
 namespace lite {
@@ -50,7 +43,7 @@ struct from_chars_result {
  * of the following functions:
  *
  * static inline uint8_t get_char_val(char c) {
- *   if (likely(c >= '0' && c <= '9'))
+ *   if (LIKELY(c >= '0' && c <= '9'))
  *     return c - '0';
  *   if (c >= 'A' && c <= 'Z')
  *     return 10 + (c - 'A');
@@ -122,30 +115,30 @@ from_chars_result aton_unsigned(const char* str,
   from_chars_result result;
   result.ptr = str;
 
-  if (unlikely(!str || len <= 0)) {
+  if (UNLIKELY(!str || len <= 0)) {
     result.ec = std::errc::invalid_argument;
     return result;
   }
   uint64_t val = 0;
-  if (unlikely(*str == '-')) {
+  if (UNLIKELY(*str == '-')) {
     result.ec = std::errc::result_out_of_range;
     return result;
   }
-  if (unlikely(*str == '+')) {
+  if (UNLIKELY(*str == '+')) {
     ++str;
     --len;
   }
   int i = 0;
   for (; i < len; ++i) {
     uint8_t cv = kAsciiToInt[reinterpret_cast<const uint8_t&>(str[i])];
-    if (unlikely(cv >= base)) {
+    if (UNLIKELY(cv >= base)) {
       value = static_cast<T>(val);
       result.ptr = str + i;
       return result;
     }
     // Handling integer values that may exceed the range represented by the
     // basic type.
-    if (unlikely(i > std::numeric_limits<uint32_t>::digits10 + 1) &&
+    if (UNLIKELY(i > std::numeric_limits<uint32_t>::digits10 + 1) &&
         i == std::numeric_limits<uint64_t>::digits10) {
       uint64_t mx = static_cast<uint64_t>(std::numeric_limits<T>::max());
       if (val > mx / 10 || mx - (val * base) < cv) {
@@ -154,12 +147,12 @@ from_chars_result aton_unsigned(const char* str,
         return result;
       }
     }
-    if (likely(i != 10)) {
+    if (LIKELY(i != 10)) {
       val *= base;
     }
     val += cv;
   }
-  if (unlikely(i > std::numeric_limits<T>::digits10 + 1 ||
+  if (UNLIKELY(i > std::numeric_limits<T>::digits10 + 1 ||
                (i > std::numeric_limits<T>::digits10 &&
                 val > static_cast<uint64_t>(std::numeric_limits<T>::max())))) {
     value = static_cast<T>(std::numeric_limits<T>::max());
@@ -188,7 +181,7 @@ from_chars_result aton_signed(const char* str,
   from_chars_result result;
   result.ptr = str;
 
-  if (unlikely(!str || len <= 0)) {
+  if (UNLIKELY(!str || len <= 0)) {
     result.ec = std::errc::invalid_argument;
     return result;
   }
@@ -201,18 +194,18 @@ from_chars_result aton_signed(const char* str,
   int i = 0;
   for (; i < len; ++i) {
     uint8_t cv = kAsciiToInt[reinterpret_cast<const uint8_t&>(str[i])];
-    if (unlikely(cv >= base)) {
+    if (UNLIKELY(cv >= base)) {
       value = static_cast<T>(val);
       result.ptr = str + i;
       return result;
     }
-    if (likely(i != 0)) {
+    if (LIKELY(i != 0)) {
       val *= base;
     }
     val += cv;
   }
-  if (likely(!negative)) {
-    if (unlikely(i > std::numeric_limits<T>::digits10 + 1 ||
+  if (LIKELY(!negative)) {
+    if (UNLIKELY(i > std::numeric_limits<T>::digits10 + 1 ||
                  (i > std::numeric_limits<T>::digits10 &&
                   val > static_cast<int64_t>(std::numeric_limits<T>::max())))) {
       value = static_cast<T>(std::numeric_limits<T>::max());
@@ -251,7 +244,7 @@ from_chars_result aton_float(const char* str, int len, T& value) {  // NOLINT
   result.ptr = str;
   const uint8_t base = 10;
 
-  if (unlikely(!str || len <= 0)) {
+  if (UNLIKELY(!str || len <= 0)) {
     result.ec = std::errc::invalid_argument;
     return result;
   }
@@ -273,7 +266,7 @@ from_chars_result aton_float(const char* str, int len, T& value) {  // NOLINT
       break;
     }
     uint8_t cv = kAsciiToInt[reinterpret_cast<const uint8_t&>(c)];
-    if (unlikely(cv >= base)) {
+    if (UNLIKELY(cv >= base)) {
       value = static_cast<T>(lval);
       result.ptr = str + i;
       return result;
@@ -287,7 +280,7 @@ from_chars_result aton_float(const char* str, int len, T& value) {  // NOLINT
   if (-1 != dot_pos) {
     for (; i < len; ++i) {
       uint8_t cv = kAsciiToInt[reinterpret_cast<const uint8_t&>(str[i])];
-      if (unlikely(cv >= base)) {
+      if (UNLIKELY(cv >= base)) {
         result.ptr = str + i;
         return result;
       }
