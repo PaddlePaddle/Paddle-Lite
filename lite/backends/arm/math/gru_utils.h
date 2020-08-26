@@ -50,17 +50,23 @@ inline void gru_add_with_bias(
     float32x4_t vin1;
     float32x4_t vb1;
     for (; j < size - 7; j += 8) {
-      vin1 = vld1q_f32(din_batch + j + 4);
-      vb1 = vld1q_f32(bias + j + 4);
+      vin1 = vld1q_f32(din_batch + 4);
+      vb1 = vld1q_f32(bias + 4);
       vout0 = vaddq_f32(vb0, vin0);
       vout1 = vaddq_f32(vb1, vin1);
-      vb0 = vld1q_f32(bias + j + 8);
-      vin0 = vld1q_f32(din_batch + j + 8);
-      vst1q_f32(dout_batch + j, vout0);
-      vst1q_f32(dout_batch + j + 4, vout1);
+      din_batch += 8;
+      bias += 8;
+      vin0 = vld1q_f32(din_batch);
+      vb0 = vld1q_f32(bias);
+      vst1q_f32(dout_batch, vout0);
+      vst1q_f32(dout_batch + 4, vout1);
+      dout_batch += 8;
     }
     for (; j < size; ++j) {
-      dout_batch[j] = din_batch[j] + bias[j];
+      *dout_batch = *din_batch + *bias;
+      dout_batch++;
+      din_batch++;
+      bias++;
     }
   }
 }
@@ -82,42 +88,55 @@ static void gru_unit_reset_act_impl(float* updata_gate,
     float32x4_t vpre1 = vdupq_n_f32(0.f);
     float prev = 0.f;
     int i = 0;
+    float* updata_gate_ptr = updata_gate;
+    float* reset_gate_ptr = reset_gate;
+    const float* hidden_prev_ptr = hidden_prev;
+    float* reset_hidden_prev_ptr = reset_hidden_prev;
     for (; i < frame_size - 7; i += 8) {
-      float32x4_t vu0 = vld1q_f32(updata_gate + i);
-      float32x4_t vu1 = vld1q_f32(updata_gate + i + 4);
-      float32x4_t vr0 = vld1q_f32(reset_gate + i);
-      float32x4_t vr1 = vld1q_f32(reset_gate + i + 4);
+      float32x4_t vu0 = vld1q_f32(updata_gate_ptr);
+      float32x4_t vu1 = vld1q_f32(updata_gate_ptr + 4);
+      float32x4_t vr0 = vld1q_f32(reset_gate_ptr);
+      float32x4_t vr1 = vld1q_f32(reset_gate_ptr + 4);
 
       float32x4_t vau0 = lite::arm::math::vactive_f32<Act>(vu0);
       float32x4_t vau1 = lite::arm::math::vactive_f32<Act>(vu1);
 
       if (hidden_prev) {
-        vpre0 = vld1q_f32(hidden_prev + i);
-        vpre1 = vld1q_f32(hidden_prev + i + 4);
+        vpre0 = vld1q_f32(hidden_prev_ptr);
+        vpre1 = vld1q_f32(hidden_prev_ptr+ 4);
+        hidden_prev_ptr += 8;
       }
 
       float32x4_t var0 = lite::arm::math::vactive_f32<Act>(vr0);
       float32x4_t var1 = lite::arm::math::vactive_f32<Act>(vr1);
 
-      vst1q_f32(updata_gate + i, vau0);
-      vst1q_f32(updata_gate + i + 4, vau1);
+      vst1q_f32(updata_gate_ptr, vau0);
+      vst1q_f32(updata_gate_ptr + 4, vau1);
+      updata_gate_ptr += 8;
 
       float32x4_t vres0 = vmulq_f32(vpre0, var0);
       float32x4_t vres1 = vmulq_f32(vpre1, var1);
 
-      vst1q_f32(reset_gate + i, var0);
-      vst1q_f32(reset_gate + i + 4, var1);
-      vst1q_f32(reset_hidden_prev + i, vres0);
-      vst1q_f32(reset_hidden_prev + i + 4, vres1);
+      vst1q_f32(reset_gate_ptr, var0);
+      vst1q_f32(reset_gate_ptr + 4, var1);
+      reset_gate_ptr += 8;
+      vst1q_f32(reset_hidden_prev_ptr, vres0);
+      vst1q_f32(reset_hidden_prev_ptr + 4, vres1);
+      reset_hidden_prev_ptr += 8;
     }
 
     for (; i < frame_size; ++i) {
-      updata_gate[i] = lite::arm::math::active_f32<Act>(updata_gate[i]);
-      reset_gate[i] = lite::arm::math::active_f32<Act>(reset_gate[i]);
-      if (hidden_prev) {
-        prev = hidden_prev[i];
+      *updata_gate_ptr = lite::arm::math::active_f32<Act>(*updata_gate_ptr);
+      *reset_gate_ptr = lite::arm::math::active_f32<Act>(*reset_gate_ptr);
+      updata_gate_ptr++;
+      reset_gate_ptr++;
+      if (hidden_prev_ptr) {
+        prev = *hidden_prev_ptr;
+        hidden_prev_ptr++;
       }
-      reset_hidden_prev[i] = reset_gate[i] * prev;
+      *reset_hidden_prev_ptr = *reset_gate_ptr * prev;
+      reset_gate_ptr++;
+      reset_hidden_prev_ptr++;
     }
 
     updata_gate += stride_update;
@@ -145,78 +164,98 @@ static void gru_unit_out_act_impl(bool origin_mode,
   for (int b = 0; b < batch_size; ++b) {
     float32x4_t vpre0 = vdupq_n_f32(0.f);
     float32x4_t vpre1 = vdupq_n_f32(0.f);
+    float* updata_gate_ptr = updata_gate;
+    float* cell_state_ptr = cell_state;
+    const float* hidden_prev_ptr = hidden_prev;
+    float* hidden_ptr = hidden;
     float prev = 0.f;
     int i = 0;
     if (origin_mode) {
       for (; i < frame_size - 7; i += 8) {
-        float32x4_t vc0 = vld1q_f32(cell_state + i);
-        float32x4_t vc1 = vld1q_f32(cell_state + i + 4);
-        float32x4_t vu0 = vld1q_f32(updata_gate + i);
-        float32x4_t vu1 = vld1q_f32(updata_gate + i + 4);
+        float32x4_t vc0 = vld1q_f32(cell_state_ptr);
+        float32x4_t vc1 = vld1q_f32(cell_state_ptr + 4);
+        float32x4_t vu0 = vld1q_f32(updata_gate_ptr);
+        float32x4_t vu1 = vld1q_f32(updata_gate_ptr + 4);
+        updata_gate_ptr += 8;
 
         float32x4_t vac0 = lite::arm::math::vactive_f32<Act>(vc0);
         float32x4_t vac1 = lite::arm::math::vactive_f32<Act>(vc1);
-        if (hidden_prev) {
-          vpre0 = vld1q_f32(hidden_prev + i);
-          vpre1 = vld1q_f32(hidden_prev + i + 4);
+        if (hidden_prev_ptr) {
+          vpre0 = vld1q_f32(hidden_prev_ptr);
+          vpre1 = vld1q_f32(hidden_prev_ptr + 4);
+          hidden_prev_ptr += 8;
         }
 
         float32x4_t vh0 = vmlsq_f32(vac0, vu0, vac0);
         float32x4_t vh1 = vmlsq_f32(vac1, vu1, vac1);
 
-        vst1q_f32(cell_state + i, vac0);
-        vst1q_f32(cell_state + i + 4, vac1);
+        vst1q_f32(cell_state_ptr, vac0);
+        vst1q_f32(cell_state_ptr + 4, vac1);
+        cell_state_ptr += 8;
 
         vh0 = vmlaq_f32(vh0, vu0, vpre0);
         vh1 = vmlaq_f32(vh1, vu1, vpre1);
 
-        vst1q_f32(hidden + i, vh0);
-        vst1q_f32(hidden + i + 4, vh1);
+        vst1q_f32(hidden_ptr, vh0);
+        vst1q_f32(hidden_ptr + 4, vh1);
+        hidden_ptr += 8;
       }
 
       for (; i < frame_size; ++i) {
-        if (hidden_prev) {
-          prev = hidden_prev[i];
+        if (hidden_prev_ptr) {
+          prev = hidden_prev_ptr[0];
+          hidden_prev_ptr++;
         }
-        cell_state[i] = lite::arm::math::active_f32<Act>(cell_state[i]);
-        hidden[i] =
-            cell_state[i] * (1.f - updata_gate[i]) + updata_gate[i] * prev;
+        cell_state_ptr[0] = lite::arm::math::active_f32<Act>(cell_state_ptr[0]);
+        hidde_ptr[0] =
+            cell_state_ptr[0] * (1.f - updata_gate_ptr[0]) + updata_gate_ptr[0] * prev;
+        cell_state_ptr++;
+        hidde_ptr++;
+        updata_gate_ptr++;
       }
     } else {
       for (; i < frame_size - 7; i += 8) {
-        float32x4_t vc0 = vld1q_f32(cell_state + i);
-        float32x4_t vc1 = vld1q_f32(cell_state + i + 4);
-        float32x4_t vu0 = vld1q_f32(updata_gate + i);
-        float32x4_t vu1 = vld1q_f32(updata_gate + i + 4);
+        float32x4_t vc0 = vld1q_f32(cell_state_ptr);
+        float32x4_t vc1 = vld1q_f32(cell_state_ptr + 4);
+        float32x4_t vu0 = vld1q_f32(updata_gate_ptr);
+        float32x4_t vu1 = vld1q_f32(updata_gate_ptr + 4);
+        updata_gate_ptr += 8;
 
         float32x4_t vac0 = lite::arm::math::vactive_f32<Act>(vc0);
         float32x4_t vac1 = lite::arm::math::vactive_f32<Act>(vc1);
 
-        if (hidden_prev) {
-          vpre0 = vld1q_f32(hidden_prev + i);
-          vpre1 = vld1q_f32(hidden_prev + i + 4);
+        if (hidden_prev_ptr) {
+          vpre0 = vld1q_f32(hidden_prev_ptr);
+          vpre1 = vld1q_f32(hidden_prev_ptr + 4);
+          hidden_prev_ptr += 8;
         }
 
         float32x4_t vh0 = vmlsq_f32(vpre0, vpre0, vu0);
         float32x4_t vh1 = vmlsq_f32(vpre1, vpre1, vu1);
 
-        vst1q_f32(cell_state + i, vac0);
-        vst1q_f32(cell_state + i + 4, vac1);
+        vst1q_f32(cell_state_ptr, vac0);
+        vst1q_f32(cell_state_ptr + 4, vac1);
+        cell_state_ptr += 8;
 
         vh0 = vmlaq_f32(vh0, vu0, vac0);
         vh1 = vmlaq_f32(vh1, vu1, vac1);
 
-        vst1q_f32(hidden + i, vh0);
-        vst1q_f32(hidden + i + 4, vh1);
+        vst1q_f32(hidden_ptr, vh0);
+        vst1q_f32(hidden_ptr + 4, vh1);
+        hidden_ptr += 8;
       }
 
       for (; i < frame_size; ++i) {
-        cell_state[i] = lite::arm::math::active_f32<Act>(cell_state[i]);
-        if (hidden_prev) {
-          prev = hidden_prev[i];
+        cell_state_ptr[0] = lite::arm::math::active_f32<Act>(cell_state_ptr[0]);
+        if (hidden_prev_ptr) {
+          prev = hidden_prev_ptr[0];
+          hidden_prev_ptr++;
         }
-        hidden[i] =
-            prev * (1.f - updata_gate[i]) + updata_gate[i] * cell_state[i];
+        hidden_ptr[0] =
+            prev * (1.f - updata_gate_ptr[0]) + updata_gate_ptr[0] * cell_state_ptr[0];
+        updata_gate_ptr++;
+        hidden_ptr++;
+        cell_state_ptr++;
       }
     }
     updata_gate += stride_update;
