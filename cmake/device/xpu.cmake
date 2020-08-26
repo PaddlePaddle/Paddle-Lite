@@ -97,8 +97,20 @@ if(LITE_WITH_XTCL)
       set_property(TARGET xpu_sdk_llvm PROPERTY IMPORTED_LOCATION ${XPU_SDK_LLVM_FILE})
     endif()
 
+    find_library(XPU_SDK_XPU_JITC_FILE NAMES xpujitc
+      PATHS ${XPU_SDK_ROOT}/XTDK/runtime/shlib ${XPU_SDK_ROOT}/XTDK/shlib # libxpujitc.so may have been moved to XTDK/runtime/shlib
+      NO_DEFAULT_PATH)
+
+    if(NOT XPU_SDK_XPU_JITC_FILE)
+      message(FATAL_ERROR "Can not find XPU JITC Library in ${XPU_SDK_ROOT}")
+    else()
+      message(STATUS "Found XPU JITC Library: ${XPU_SDK_XPU_JITC_FILE}")
+      add_library(xpu_sdk_xpu_jitc SHARED IMPORTED GLOBAL)
+      set_property(TARGET xpu_sdk_xpu_jitc PROPERTY IMPORTED_LOCATION ${XPU_SDK_XPU_JITC_FILE})
+    endif()
+
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1")
 
-    set(xpu_runtime_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm CACHE INTERNAL "xpu runtime libs")
-    set(xpu_builder_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm CACHE INTERNAL "xpu builder libs")
+    set(xpu_runtime_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm xpu_sdk_xpu_jitc CACHE INTERNAL "xpu runtime libs")
+    set(xpu_builder_libs xpu_sdk_xtcl xpu_sdk_tvm xpu_sdk_xpu_api xpu_sdk_xpu_rt xpu_sdk_llvm xpu_sdk_xpu_jitc CACHE INTERNAL "xpu builder libs")
 endif()
