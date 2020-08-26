@@ -2548,20 +2548,20 @@ void loadb_trans_eight(
           "trn2 v7.2d, v25.2d, v29.2d\n"      /* e3f3g3h3 */
           "stp q2, q3, [%[outptr]], #32\n"     /* save q0, q1, a1~h1*/
           
-          "trn1 v8.2d, v10.2d, v14.2d\n"       /* a4b4c4d4 */
-          "trn1 v9.2d, v26.2d, v30.2d\n"       /* e4f4g4h4 */
+          "trn1 v16.2d, v10.2d, v14.2d\n"       /* a4b4c4d4 */
+          "trn1 v17.2d, v26.2d, v30.2d\n"       /* e4f4g4h4 */
           "stp q4, q5, [%[outptr]], #32\n"     /* save q0, q1, a2~h2*/
-          "trn1 v10.2d, v11.2d, v15.2d\n"      /* a5b5c5d5 */
-          "trn1 v11.2d, v27.2d, v31.2d\n"      /* e5f5g5h5 */
+          "trn1 v18.2d, v11.2d, v15.2d\n"      /* a5b5c5d5 */
+          "trn1 v19.2d, v27.2d, v31.2d\n"      /* e5f5g5h5 */
           "stp q6, q7, [%[outptr]], #32\n"     /* save q0, q1, a3~h3*/
-          "trn2 v12.2d, v10.2d, v14.2d\n"      /* a6b6c6d6 */
-          "trn2 v13.2d, v26.2d, v30.2d\n"      /* e6f6g6h6 */
-          "stp q8, q9, [%[outptr]], #32\n"     /* save q0, q1, a4~h4*/
-          "trn2 v14.2d, v11.2d, v15.2d\n"      /* a7b7c7d7 */
-          "trn2 v15.2d, v27.2d, v31.2d\n"      /* e7f7g7h7 */
-          "stp q10, q11, [%[outptr]], #32\n"   /* save q0, q1, a5~h5*/
-          "stp q12, q13, [%[outptr]], #32\n"   /* save q0, q1, a6~h6*/
-          "stp q14, q15, [%[outptr]], #32\n"   /* save q0, q1, a7~h7*/
+          "trn2 v20.2d, v10.2d, v14.2d\n"      /* a6b6c6d6 */
+          "trn2 v21.2d, v26.2d, v30.2d\n"      /* e6f6g6h6 */
+          "stp q16, q17, [%[outptr]], #32\n"   /* save q0, q1, a4~h4*/
+          "trn2 v22.2d, v11.2d, v15.2d\n"      /* a7b7c7d7 */
+          "trn2 v23.2d, v27.2d, v31.2d\n"      /* e7f7g7h7 */
+          "stp q18, q19, [%[outptr]], #32\n"   /* save q0, q1, a5~h5*/
+          "stp q20, q21, [%[outptr]], #32\n"   /* save q0, q1, a6~h6*/
+          "stp q22, q23, [%[outptr]], #32\n"   /* save q0, q1, a7~h7*/
           : [inptr0] "+r"(inptr0),
             [inptr1] "+r"(inptr1),
             [inptr2] "+r"(inptr2),
