@@ -69,6 +69,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.size_per_head = op_desc.GetAttr<int>("size_per_head");
   param_.act_type = op_desc.GetAttr<std::string>("act_type");
   param_.precision = op_desc.GetAttr<std::string>("precision");
+  param_.enable_qkv_fusion = op_desc.GetAttr<bool>("enable_qkv_fusion");
   return true;
 }
 
