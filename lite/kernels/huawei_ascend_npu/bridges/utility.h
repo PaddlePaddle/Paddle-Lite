@@ -66,7 +66,7 @@ ge::DataType CvtPrecisionType(PrecisionType itype);
 
 ge::Format CvtDataLayoutType(DataLayoutType itype);
 
-// Padding the shape to 4-dimensions(NCHW) for HiAI
+// Padding the shape to 4-dimensions(NCHW) for Huawei Ascend NPU
 std::vector<int64_t> CvtShape(const std::vector<int64_t>& in_shape);
 
 std::vector<int64_t> CvtShape(const DDim& in_dims);

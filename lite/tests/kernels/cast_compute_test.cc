@@ -137,17 +137,20 @@ TEST(Cast, precision) {
   place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #else
   return;
 #endif
 
 // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
 // SIZE_T = 19;UINT8 = 20;INT8 = 21;
-#ifndef LITE_WITH_XPU
+#if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   TestCast(place, abs_error, 20, 5);
 #endif
   TestCast(place, abs_error, 2, 5);
-#ifdef LITE_WITH_XPU
+#if defined(LITE_WITH_XPU) || defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   TestCast(place, abs_error, 3, 5);
   TestCast(place, abs_error, 5, 3);
 #endif

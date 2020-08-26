@@ -20,6 +20,7 @@
 #include <memory>  // For std::unique_ptr
 #include <string>
 #include <vector>
+#include "lite/utils/charconv.h"
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
@@ -132,6 +133,52 @@ static std::vector<T> Split(const std::string& original,
     results.push_back(parse_string<T>(original.substr(pos1)));
   }
   return results;
+}
+
+class StringView {
+ public:
+  StringView(std::string::const_iterator begin, std::string::const_iterator end)
+      : begin_(begin), end_(end) {}
+  size_t size() const { return static_cast<size_t>(end_ - begin_); }
+  std::string::const_iterator begin() const { return begin_; }
+  std::string::const_iterator end() const { return end_; }
+  operator std::string() const { return std::string(begin_, end_); }
+
+  template <typename T>
+  T to_digit() const {
+    T result;
+    utils::from_chars(&*begin_, &*end_, result);
+    return result;
+  }
+
+ private:
+  std::string::const_iterator begin_;
+  std::string::const_iterator end_;
+};
+
+static std::vector<StringView> SplitView(const std::string& str,
+                                         char delimiter = ' ') {
+  enum State { inSpace, inToken };
+  State state = inSpace;
+  std::vector<StringView> result;
+  std::string::const_iterator pTokenBegin{};
+  for (auto it = str.begin(); it != str.end(); ++it) {
+    const State newState = (*it == delimiter ? inSpace : inToken);
+    if (newState != state) {
+      switch (newState) {
+        case inSpace:
+          result.push_back(StringView(pTokenBegin, it));
+          break;
+        case inToken:
+          pTokenBegin = it;
+      }
+    }
+    state = newState;
+  }
+  if (state == inToken) {
+    result.push_back(StringView(pTokenBegin, str.end()));
+  }
+  return result;
 }
 
 }  // namespace lite

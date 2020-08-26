@@ -69,7 +69,7 @@ function CheckLibSizeDiff() {
     # step3: if diff_size > 10485, special approval is needed    
     diff_size=$[$current_size - $develop_size]
     if [ $diff_size -gt 10485 ]; then
-        echo_line="Your PR has increased basic inference lib for $diff_size Byte, exceeding maximum requirement of  10485 Byte (0.01M). You need Superjomn's (Yunchunwei) approval or you can contact DannyIsFunny(HuZhiqiang).\n"
+        echo_line="Your PR has increased basic inference lib for $diff_size Byte, exceeding maximum requirement of  10485 Byte (0.01M). You need Superjomn's (Yunchunwei) approval or you can contact DannyIsFunny(HuZhiqiang).\n Library size in develop branch: $develop_size byte, library size after merging your code: $current_size byte.\n Compiling method: ./lite/tools/build_android.sh --with_log=OFF\n"
         echo "****************"
         echo -e "${echo_line[@]}"
         echo "There is an approved errors."

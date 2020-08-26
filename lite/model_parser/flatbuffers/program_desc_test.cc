@@ -21,15 +21,17 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-TEST(ProgramDesc, LoadTest) {
-  ProgramDesc program(test::GenerateProgramCache());
-  test::CheckProgramCache(&program);
-}
-
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 TEST(ProgramDescView, LoadTest) {
   const ProgramDescView program(test::GenerateProgramCache());
   test::CheckProgramCache(program);
 }
+
+TEST(ProgramDesc, LoadTest) {
+  ProgramDesc program(test::GenerateProgramCache());
+  test::CheckProgramCache(&program);
+}
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

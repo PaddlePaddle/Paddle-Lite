@@ -39,6 +39,7 @@ void set_tensor(paddle::lite::Tensor* tensor,
 }
 }  // namespace
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 TEST(CombinedParamsDesc, Scope) {
   /* --------- Save scope ---------- */
   Scope scope;
@@ -81,6 +82,7 @@ TEST(CombinedParamsDesc, Scope) {
   /* --------- View scope ---------- */
   check_params(CombinedParamsDescView(std::move(cache)));
 }
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

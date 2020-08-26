@@ -92,11 +92,11 @@ void SaveModelNaive(const std::string& model_dir,
 void SaveModelFbs(const std::string& model_dir,
                   const Scope& exec_scope,
                   const cpp::ProgramDesc& cpp_prog);
+#endif  // LITE_ON_TINY_PUBLISH
 
 void LoadModelFbsFromFile(const std::string& filename,
                           Scope* scope,
                           cpp::ProgramDesc* cpp_prog);
-#endif  // LITE_ON_TINY_PUBLISH
 
 void LoadParamNaive(const std::string& path,
                     lite::Scope* scope,

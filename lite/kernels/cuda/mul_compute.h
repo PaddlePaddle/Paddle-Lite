@@ -23,22 +23,21 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-class MulCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class MulCompute : public KernelLite<TARGET(kCUDA), PType> {
  public:
   using param_t = operators::MulParam;
 
   void PrepareForRun() override {
-    gemm_impl_.reset(new lite::cuda::math::Gemm<float, float>);
+    gemm_impl_.reset(new lite::cuda::math::Gemm<T, T>);
   }
 
   void Run() override {
-    CHECK(ctx_) << "running context should be set first";
     auto& context = this->ctx_->template As<CUDAContext>();
-
-    auto& param = this->Param<param_t>();
-    const auto* x_data = param.x->data<float>();
-    const auto* y_data = param.y->data<float>();
-    auto* out_data = param.output->mutable_data<float>(TARGET(kCUDA));
+    auto& param = this->template Param<param_t>();
+    const auto* x_data = param.x->template data<T>();
+    const auto* y_data = param.y->template data<T>();
+    auto* out_data = param.output->template mutable_data<T>(TARGET(kCUDA));
 
     int x_h = static_cast<int>(
         param.x->dims().Slice(0, param.x_num_col_dims).production());
@@ -61,7 +60,7 @@ class MulCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
   virtual ~MulCompute() = default;
 
  private:
-  std::unique_ptr<lite::cuda::math::Gemm<float, float>> gemm_impl_{nullptr};
+  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
 };
 
 }  // namespace cuda

@@ -108,10 +108,12 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   if (!(kw == 1 && kh == 1)) {
     LOG(FATAL) << "The kernel size of the second conv must be 1x1";
   }
+  auto channel0_out = weight0_t->dims()[0];
+  auto channel1_in = weight1_t->dims()[1] * groups1;
   CHECK_EQ(enable0_int8, enable1_int8) << "The Conv compute type must be same";
   CHECK_EQ(groups1, 1) << "The groups of weight1_dim must be 1";
-  CHECK_EQ(weight0_t->dims()[0], weight1_t->dims()[1])
-      << "weight0_dims[0] == weight1_dim[1]";
+  CHECK_EQ(channel0_out, channel1_in) << "channel0_out == channel1_in";
+
   for (int i = 0; i < strides1.size(); i++) {
     CHECK_EQ(strides1[i], 1) << "strides[" << i << "]: " << strides1[i]
                              << " must be 1";
