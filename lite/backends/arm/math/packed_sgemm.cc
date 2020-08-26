@@ -222,7 +222,7 @@ void prepackA(float *out,
               ARMContext *ctx) {
 #ifdef __aarch64__
   if (mmax <= 4) {
-#if 1
+#if 0
     if (is_trans) {
       pack_trans_m4(out, in, alpha, ldin, m0, mmax, k0, kmax);
     } else {
@@ -311,7 +311,7 @@ void sgemm_prepack(bool is_transB,
                    ARMContext *ctx) {
 #ifdef __aarch64__
   if (M <= 4) {
-#if 1
+#if 0
     sgemm_prepacked_4x4(is_transB,
                         M,
                         N,
