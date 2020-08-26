@@ -191,7 +191,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     if (kernel_func_name_ == "concat2") {
       auto* input0_image_p = inputs[0]->data<half_t, cl::Image2D>();
       auto* input1_image_p = inputs[1]->data<half_t, cl::Image2D>();
-      size_t input0_axis_dims = inputs[0]->dims()[axis_];
+      int input0_axis_dims = inputs[0]->dims()[axis_];
       cl_int status = kernel.setArg(0, *input0_image_p);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(1, *input1_image_p);
