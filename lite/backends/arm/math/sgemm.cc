@@ -41,7 +41,7 @@ void sgemm(bool is_transA,
   ctx->ExtendWorkspace(m_roundup * K * sizeof(float));
 
   auto packed_A = static_cast<float*>(ctx->workspace_data<float>()) +
-                      ctx->llc_size() / sizeof(float);
+                  ctx->llc_size() / sizeof(float);
 
   prepackA(packed_A, A, alpha, lda, 0, M, 0, K, is_transA, ctx);
 

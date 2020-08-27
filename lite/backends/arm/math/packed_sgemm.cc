@@ -56,37 +56,37 @@ void sgemm_prepacked_8x12(bool is_transB,
                           ARMContext *ctx);
 
 void prepackA_4x8(float *out,
-                   const float *in,
-                   float alpha,
-                   int ldin,
-                   int m0,
-                   int mmax,
-                   int k0,
-                   int kmax);
+                  const float *in,
+                  float alpha,
+                  int ldin,
+                  int m0,
+                  int mmax,
+                  int k0,
+                  int kmax);
 
 void prepackA_trans_4x8(float *out,
-                         const float *in,
-                         float alpha,
-                         int ldin,
-                         int m0,
-                         int mmax,
-                         int k0,
-                         int kmax);
+                        const float *in,
+                        float alpha,
+                        int ldin,
+                        int m0,
+                        int mmax,
+                        int k0,
+                        int kmax);
 
 void sgemm_prepacked_4x8(bool is_transB,
-                          int M,
-                          int N,
-                          int K,
-                          const float *A_packed,
-                          const float *B,
-                          int ldb,
-                          float beta,
-                          float *C,
-                          int ldc,
-                          const float *bias,
-                          bool has_bias,
-                          const operators::ActivationParam act_param,
-                          ARMContext *ctx);
+                         int M,
+                         int N,
+                         int K,
+                         const float *A_packed,
+                         const float *B,
+                         int ldb,
+                         float beta,
+                         float *C,
+                         int ldc,
+                         const float *bias,
+                         bool has_bias,
+                         const operators::ActivationParam act_param,
+                         ARMContext *ctx);
 
 void pack_m4(float *out,
              const float *in,
@@ -221,19 +221,11 @@ void prepackA(float *out,
               ARMContext *ctx) {
 #ifdef __aarch64__
   if (mmax <= 4) {
-#if 0
-    if (is_trans) {
-      pack_trans_m4(out, in, alpha, ldin, m0, mmax, k0, kmax);
-    } else {
-      pack_m4(out, in, alpha, ldin, m0, mmax, k0, kmax);
-    }
-#else
     if (is_trans) {
       prepackA_trans_4x8(out, in, alpha, ldin, m0, mmax, k0, kmax);
     } else {
       prepackA_4x8(out, in, alpha, ldin, m0, mmax, k0, kmax);
     }
-#endif
   } else {
     if (is_trans) {
       prepackA_trans_8x12(out, in, alpha, ldin, m0, mmax, k0, kmax);
@@ -310,22 +302,6 @@ void sgemm_prepack(bool is_transB,
                    ARMContext *ctx) {
 #ifdef __aarch64__
   if (M <= 4) {
-#if 0
-    sgemm_prepacked_4x4(is_transB,
-                        M,
-                        N,
-                        K,
-                        A_packed,
-                        B,
-                        ldb,
-                        beta,
-                        C,
-                        ldc,
-                        bias,
-                        has_bias,
-                        act_param,
-                        ctx);
-#else
     sgemm_prepacked_4x8(is_transB,
                         M,
                         N,
@@ -340,7 +316,6 @@ void sgemm_prepack(bool is_transB,
                         has_bias,
                         act_param,
                         ctx);
-#endif
   } else {
     sgemm_prepacked_8x12(is_transB,
                          M,
@@ -691,8 +666,9 @@ void prepackA_8x12(float *dout,
     }
   }
 }
-void prepackA_4x8(float* outptr,
-                  const float* inptr,
+
+void prepackA_4x8(float *outptr,
+                  const float *inptr,
                   float alpha,
                   int ldin,
                   int m0,
@@ -707,10 +683,10 @@ void prepackA_4x8(float* outptr,
   float32x4_t valpha = vdupq_n_f32(alpha);
 #pragma omp parallel for
   for (int y = m0; y < mmax; y += 4) {
-    const float* inptr0 = inptr + y * ldin + k0;
-    const float* inptr1 = inptr0 + ldin;
-    const float* inptr2 = inptr1 + ldin;
-    const float* inptr3 = inptr2 + ldin;
+    const float *inptr0 = inptr + y * ldin + k0;
+    const float *inptr1 = inptr0 + ldin;
+    const float *inptr2 = inptr1 + ldin;
+    const float *inptr3 = inptr2 + ldin;
 
     asm volatile(
         "prfm   pldl1keep, [%[ptr0]]        \n"
@@ -1131,8 +1107,8 @@ void prepackA_trans_8x12(float *outptr,
   }
 }
 
-void prepackA_trans_4x8(float* outptr,
-                        const float* in,
+void prepackA_trans_4x8(float *outptr,
+                        const float *in,
                         float alpha,
                         int ldin,
                         int m0,
@@ -1160,10 +1136,10 @@ void prepackA_trans_4x8(float* outptr,
 
 #pragma omp parallel for
   for (int y = 0; y < y_len - 3; y += 4) {
-    const float* ptr0 = inptr + y * ldin;
-    const float* ptr1 = ptr0 + ldin;
-    const float* ptr2 = ptr1 + ldin;
-    const float* ptr3 = ptr2 + ldin;
+    const float *ptr0 = inptr + y * ldin;
+    const float *ptr1 = ptr0 + ldin;
+    const float *ptr2 = ptr1 + ldin;
+    const float *ptr3 = ptr2 + ldin;
 
      asm volatile(
         "prfm   pldl1keep, [%[ptr0]]        \n"
@@ -1180,10 +1156,10 @@ void prepackA_trans_4x8(float* outptr,
     float* outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
       // clang-format off
       asm volatile(
-          "cmp %[has_alpha], #0\n"       /* check alpha == 1.f? */
+          "cmp %w[has_alpha], #0\n"       /* check alpha == 1.f? */
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
           "ld1 {v1.4s}, [%[ptr1]], #16\n"
           "ld1 {v2.4s}, [%[ptr2]], #16\n"
@@ -1208,10 +1184,10 @@ void prepackA_trans_4x8(float* outptr,
       outptr_row_col += stride_out;
     }
     if (right_pad > 0) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
       // clang-format off
       asm volatile(
-          "cmp %[has_alpha], #0\n"       /* check alpha == 1.f? */
+          "cmp %w[has_alpha], #0\n"       /* check alpha == 1.f? */
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
           "ld1 {v1.4s}, [%[ptr1]], #16\n"
           "ld1 {v2.4s}, [%[ptr2]], #16\n"
@@ -1224,8 +1200,8 @@ void prepackA_trans_4x8(float* outptr,
           "fmul v3.4s, v3.4s, %[alpha].4s\n"
           "0: \n"
           "bif v0.16b, %[vzero].16b, %[vmask1].16b\n"
-          "bif v1.16b, %[vzero].16b, %[vmask1].16b\n" 
-          "bif v2.16b, %[vzero].16b, %[vmask1].16b\n" 
+          "bif v1.16b, %[vzero].16b, %[vmask1].16b\n"
+          "bif v2.16b, %[vzero].16b, %[vmask1].16b\n"
           "bif v3.16b, %[vzero].16b, %[vmask1].16b\n"
           "stp q0, q1, [%[outptr]], #32\n"
           "stp q2, q3, [%[outptr]], #32\n"
@@ -1244,11 +1220,12 @@ void prepackA_trans_4x8(float* outptr,
   }
 #pragma omp parallel for
   for (int y = 4 * (y_len / 4); y < y_len; ++y) {
-    const float* ptr0 = inptr + y * ldin;
-    float* outptr_row_col = outptr + y * 4;
+    const float *ptr0 = inptr + y * ldin;
+    float *outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
+      // clang-format off
       asm volatile(
           "cmp %[has_alpha], #0\n"       /* check alpha == 1.f? */
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
@@ -1260,12 +1237,14 @@ void prepackA_trans_4x8(float* outptr,
           : [ptr0] "+r"(ptr0), [outptr] "+r"(ptr_out)
           : [has_alpha] "r"(has_alpha), [alpha] "w"(valpha)
           : "v0", "v1", "cc", "memory");
+      // clang-format on
       outptr_row_col += stride_out;
     }
     if (right_pad > 0) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
+      // clang-format off
       asm volatile(
-          "cmp %[has_alpha], #0\n"       /* check alpha == 1.f? */
+          "cmp %w[has_alpha], #0\n"       /* check alpha == 1.f? */
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
           "beq  0f\n"                      /* check whether alpha == 1? */
           "1: \n"                                 /* alpha == 1 */
@@ -1279,6 +1258,7 @@ void prepackA_trans_4x8(float* outptr,
             [has_alpha] "r"(has_alpha),
             [alpha] "w"(valpha)
           : "v0", "v1", "cc", "memory");
+      // clang-format on
     }
   }
 }
@@ -1721,8 +1701,8 @@ void prepackA_trans_6x8(float* outptr,
   }
 }
 
-void prepackA_4x8(float* outptr,
-                  const float* inptr,
+void prepackA_4x8(float *outptr,
+                  const float *inptr,
                   float alpha,
                   int ldin,
                   int m0,
@@ -1737,10 +1717,10 @@ void prepackA_4x8(float* outptr,
   float32x4_t valpha = vdupq_n_f32(alpha);
 
   for (int y = m0; y < mmax; y += 4) {
-    const float* inptr0 = inptr + y * ldin + k0;
-    const float* inptr1 = inptr0 + ldin;
-    const float* inptr2 = inptr1 + ldin;
-    const float* inptr3 = inptr2 + ldin;
+    const float *inptr0 = inptr + y * ldin + k0;
+    const float *inptr1 = inptr0 + ldin;
+    const float *inptr2 = inptr1 + ldin;
+    const float *inptr3 = inptr2 + ldin;
 
     int x = x_len;
     if ((y + 3) >= mmax) {
@@ -1831,8 +1811,8 @@ void prepackA_4x8(float* outptr,
   }
 }
 
-void prepackA_trans_4x8(float* outptr,
-                        const float* in,
+void prepackA_trans_4x8(float *outptr,
+                        const float *in,
                         float alpha,
                         int ldin,
                         int m0,
@@ -1860,15 +1840,15 @@ void prepackA_trans_4x8(float* outptr,
 
 #pragma omp parallel for
   for (int y = 0; y < y_len - 3; y += 4) {
-    const float* ptr0 = inptr + y * ldin;
-    const float* ptr1 = ptr0 + ldin;
-    const float* ptr2 = ptr1 + ldin;
-    const float* ptr3 = ptr2 + ldin;
+    const float *ptr0 = inptr + y * ldin;
+    const float *ptr1 = ptr0 + ldin;
+    const float *ptr2 = ptr1 + ldin;
+    const float *ptr3 = ptr2 + ldin;
 
-    float* outptr_row_col = outptr + y * 4;
+    float *outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
           "vld1.32 {d2-d3}, [%[ptr1]]!        @ load r1, 4 elements\n"
@@ -1895,7 +1875,7 @@ void prepackA_trans_4x8(float* outptr,
       outptr_row_col += stride_out;
     }
     if (right_pad > 0) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
           "vld1.32 {d2-d3}, [%[ptr1]]!        @ load r1, 4 elements\n"
@@ -1931,11 +1911,12 @@ void prepackA_trans_4x8(float* outptr,
 
 #pragma omp parallel for
   for (int y = 4 * (y_len / 4); y < y_len; ++y) {
-    const float* ptr0 = inptr + y * ldin;
-    float* outptr_row_col = outptr + y * 4;
+    const float *ptr0 = inptr + y * ldin;
+    float *outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
+      // clang-format off
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
           "cmp %[has_alpha], #0\n"
@@ -1946,10 +1927,12 @@ void prepackA_trans_4x8(float* outptr,
           : [ptr0] "+r"(ptr0), [outptr] "+r"(ptr_out)
           : [has_alpha] "r"(has_alpha), [alpha] "w"(valpha)
           : "q0", "q1", "cc", "memory");
+      // clang-format on
       outptr_row_col += stride_out;
     }
     if (right_pad > 0) {
-      float* ptr_out = outptr_row_col;
+      float *ptr_out = outptr_row_col;
+      // clang-format off
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
           "cmp %[has_alpha], #0\n"
@@ -1964,6 +1947,7 @@ void prepackA_trans_4x8(float* outptr,
             [has_alpha] "r"(has_alpha),
             [alpha] "w"(valpha)
           : "q0", "q1", "cc", "memory");
+      // clang-format on
     }
   }
 }
@@ -2387,16 +2371,16 @@ void loadb_trans(
   }
 }
 void loadb_eight(
-    float* out, const float* in, int ldin, int k0, int kmax, int n0, int nmax) {
-  auto outptr = reinterpret_cast<uint32_t*>(out);
-  auto inptr = reinterpret_cast<const uint32_t*>(in) + k0 * ldin + n0;
+    float *out, const float *in, int ldin, int k0, int kmax, int n0, int nmax) {
+  auto outptr = reinterpret_cast<uint32_t *>(out);
+  auto inptr = reinterpret_cast<const uint32_t *>(in) + k0 * ldin + n0;
   uint32_t mask_buffer[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   int x_len = nmax - n0;
   int y_len = kmax - k0;
   int right_remain = x_len - 8 * (x_len / 8);
   int right_pad = 8 - right_remain;
 
-  uint32_t* outptr_row = outptr;
+  uint32_t *outptr_row = outptr;
   int stride_out = 8 * y_len;
 
   uint32x4_t vzero = vdupq_n_u32(0);
@@ -2407,11 +2391,11 @@ void loadb_eight(
 
 #pragma omp parallel for
   for (int y = 0; y < y_len - 3; y += 4) {
-    const uint32_t* ptr0 = inptr + y * ldin;
-    const uint32_t* ptr1 = ptr0 + ldin;
-    const uint32_t* ptr2 = ptr1 + ldin;
-    const uint32_t* ptr3 = ptr2 + ldin;
-    uint32_t* outptr_row_col = outptr_row + y * 8;
+    const uint32_t *ptr0 = inptr + y * ldin;
+    const uint32_t *ptr1 = ptr0 + ldin;
+    const uint32_t *ptr2 = ptr1 + ldin;
+    const uint32_t *ptr3 = ptr2 + ldin;
+    uint32_t *outptr_row_col = outptr_row + y * 8;
     asm volatile(
         "prfm   pldl1keep, [%[ptr0]]                \n"
         "prfm   pldl1keep, [%[ptr0], #64]   \n"
@@ -2426,14 +2410,14 @@ void loadb_eight(
         : "memory");
     int i = 0;
     for (; i < x_len - 7; i += 8) {
-      uint32_t* ptr_out = outptr_row_col;
+      uint32_t *ptr_out = outptr_row_col;
       asm volatile(
-          "ldp q0, q1, [%[ptr0]], #32\n" /* load r0, 8 elements */
-          "ldp q2, q3, [%[ptr1]], #32\n" /* load r1, 8 elements */
+          "ldp q0, q1, [%[ptr0]], #32\n"   /* load r0, 8 elements */
+          "ldp q2, q3, [%[ptr1]], #32\n"   /* load r1, 8 elements */
           "stp q0, q1, [%[outptr]], #32\n" /* write to output ptr */
           "stp q2, q3, [%[outptr]], #32\n" /* write to output ptr */
-          "ldp q0, q1, [%[ptr2]], #32\n" /* load r0, 8 elements */
-          "ldp q2, q3, [%[ptr3]], #32\n" /* load r1, 8 elements */
+          "ldp q0, q1, [%[ptr2]], #32\n"   /* load r0, 8 elements */
+          "ldp q2, q3, [%[ptr3]], #32\n"   /* load r1, 8 elements */
           "stp q0, q1, [%[outptr]], #32\n" /* write to output ptr */
           "stp q2, q3, [%[outptr]], #32\n" /* write to output ptr */
           : [outptr] "+r"(ptr_out),
@@ -2446,7 +2430,7 @@ void loadb_eight(
       outptr_row_col += stride_out;
     }
     if (right_remain > 0) {
-      uint32_t* ptr_out = outptr_row_col;
+      uint32_t *ptr_out = outptr_row_col;
       asm volatile(
           "ldp q0, q1, [%[ptr0]], #32\n" /* load r0, 8 elements */
           "ldp q2, q3, [%[ptr1]], #32\n" /* load r1, 8 elements */
@@ -2455,9 +2439,9 @@ void loadb_eight(
           "bif v2.16b, %[vzero].16b, %[vmask1].16b\n"
           "bif v3.16b, %[vzero].16b, %[vmask2].16b\n"
           "stp q0, q1, [%[outptr]], #32\n" /* write to output ptr */
-          "ldp q0, q1, [%[ptr2]], #32\n" /* load r0, 8 elements */
+          "ldp q0, q1, [%[ptr2]], #32\n"   /* load r0, 8 elements */
           "stp q2, q3, [%[outptr]], #32\n" /* write to output ptr */
-          "ldp q2, q3, [%[ptr3]], #32\n" /* load r1, 8 elements */
+          "ldp q2, q3, [%[ptr3]], #32\n"   /* load r1, 8 elements */
           "bif v0.16b, %[vzero].16b, %[vmask1].16b\n"
           "bif v1.16b, %[vzero].16b, %[vmask2].16b\n"
           "bif v2.16b, %[vzero].16b, %[vmask1].16b\n"
@@ -2475,13 +2459,13 @@ void loadb_eight(
   }
 #pragma omp parallel for
   for (int y = 4 * (y_len / 4); y < y_len; ++y) {
-    const uint32_t* ptr0 = inptr + y * ldin;
-    uint32_t* outptr_row_col = outptr_row + y * 8;
+    const uint32_t *ptr0 = inptr + y * ldin;
+    uint32_t *outptr_row_col = outptr_row + y * 8;
     int i = 0;
     for (; i < x_len - 7; i += 8) {
-      uint32_t* ptr_out = outptr_row_col;
+      uint32_t *ptr_out = outptr_row_col;
       asm volatile(
-          "ldp q0, q1, [%[ptr0]], #32\n" /* load r0, 8 elements */
+          "ldp q0, q1, [%[ptr0]], #32\n"   /* load r0, 8 elements */
           "stp q0, q1, [%[outptr]], #32\n" /* write to output ptr */
           : [ptr0] "+r"(ptr0), [outptr] "+r"(ptr_out)
           :
@@ -2489,7 +2473,7 @@ void loadb_eight(
       outptr_row_col += stride_out;
     }
     if (right_remain > 0) {
-      uint32_t* ptr_out = outptr_row_col;
+      uint32_t *ptr_out = outptr_row_col;
       asm volatile(
           "ldp q0, q1, [%[ptr0]], #32\n" /* load r0, 8 elements */
           "bif v0.16b, %[vzero].16b, %[vmask1].16b\n"
@@ -2503,23 +2487,23 @@ void loadb_eight(
 }
 
 void loadb_trans_eight(
-    float* out, const float* in, int ldin, int k0, int kmax, int n0, int nmax) {
+    float *out, const float *in, int ldin, int k0, int kmax, int n0, int nmax) {
   int x_len = kmax - k0;
   uint32_t zerobuff[x_len];  // NOLINT
   memset(zerobuff, 0, sizeof(uint32_t) * x_len);
 
-  auto outptr = reinterpret_cast<uint32_t*>(out);
-  auto inptr = reinterpret_cast<const uint32_t*>(in);
+  auto outptr = reinterpret_cast<uint32_t *>(out);
+  auto inptr = reinterpret_cast<const uint32_t *>(in);
   //! data B is not transposed, transpose B to k * 8
   for (int y = n0; y < nmax; y += 8) {
-    const uint32_t* inptr0 = inptr + y * ldin + k0;
-    const uint32_t* inptr1 = inptr0 + ldin;
-    const uint32_t* inptr2 = inptr1 + ldin;
-    const uint32_t* inptr3 = inptr2 + ldin;
-    const uint32_t* inptr4 = inptr3 + ldin;
-    const uint32_t* inptr5 = inptr4 + ldin;
-    const uint32_t* inptr6 = inptr5 + ldin;
-    const uint32_t* inptr7 = inptr6 + ldin;
+    const uint32_t *inptr0 = inptr + y * ldin + k0;
+    const uint32_t *inptr1 = inptr0 + ldin;
+    const uint32_t *inptr2 = inptr1 + ldin;
+    const uint32_t *inptr3 = inptr2 + ldin;
+    const uint32_t *inptr4 = inptr3 + ldin;
+    const uint32_t *inptr5 = inptr4 + ldin;
+    const uint32_t *inptr6 = inptr5 + ldin;
+    const uint32_t *inptr7 = inptr6 + ldin;
 
     int x = x_len;
     asm volatile(
@@ -2612,7 +2596,7 @@ void loadb_trans_eight(
           "trn2 v6.2d, v9.2d, v13.2d\n"       /* a3b3c3d3 */
           "trn2 v7.2d, v25.2d, v29.2d\n"      /* e3f3g3h3 */
           "stp q2, q3, [%[outptr]], #32\n"     /* save q0, q1, a1~h1*/
-          
+
           "trn1 v16.2d, v10.2d, v14.2d\n"       /* a4b4c4d4 */
           "trn1 v17.2d, v26.2d, v30.2d\n"       /* e4f4g4h4 */
           "stp q4, q5, [%[outptr]], #32\n"     /* save q0, q1, a2~h2*/
@@ -3563,11 +3547,11 @@ void sgemm_prepacked_8x12(bool is_transB,
             "fmax   v30.4s, v30.4s, v0.4s  \n"   /* relu*/
             "fmax   v31.4s, v31.4s, v0.4s  \n"   /* relu*/
             "b      20f                    \n"   /* relu end */
-            //! no act 
+            //! no act
             "12:                           \n"   /* no relu */
             "cmp   %w[flag_act],  #0       \n"   /* check no act */
-            "beq   20f                     \n"   /* no act end */ 
-            //! relu6 
+            "beq   20f                     \n"   /* no act end */
+            //! relu6
             "cmp    %w[flag_act],  #2      \n"    /* check if has relu6 */
             "bne    13f                    \n"    /* jump if no relu6 */
             "movi   v0.4s, #0              \n"    /* for relu6 */
@@ -3625,77 +3609,77 @@ void sgemm_prepacked_8x12(bool is_transB,
             "13:                                \n" /* otherwise is leakey relu */
             "movi   v0.4s,    #0                \n" /* for leakey relu */
             "ld1    {v1.4s},  [%[alpha]]        \n" /* leakey relu alpha */
-            "fcmge  v2.4s,    v8.4s,    v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v8.4s,    v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v4.4s,    v9.4s,    v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v5.4s,    v9.4s,    v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v6.4s,    v10.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v7.4s,    v10.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "bif    v8.16b,   v3.16b,   v2.16b  \n" /* choose*/     
-            "bif    v9.16b,   v5.16b,   v4.16b  \n" /* choose*/     
+            "fcmge  v2.4s,    v8.4s,    v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v8.4s,    v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v4.4s,    v9.4s,    v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v5.4s,    v9.4s,    v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v6.4s,    v10.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v7.4s,    v10.4s,   v1.4s   \n" /* vmulq_f32 */
+            "bif    v8.16b,   v3.16b,   v2.16b  \n" /* choose*/
+            "bif    v9.16b,   v5.16b,   v4.16b  \n" /* choose*/
             "bif    v10.16b,  v7.16b,   v6.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v11.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v11.4s,   v1.4s   \n" /* vmulq_f32 */      
+            "fcmge  v2.4s,    v11.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v11.4s,   v1.4s   \n" /* vmulq_f32 */
             "bif    v11.16b,  v3.16b,   v2.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v12.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v12.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v4.4s,    v13.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v5.4s,    v13.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v6.4s,    v14.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v7.4s,    v14.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "bif    v12.16b,  v3.16b,   v2.16b  \n" /* choose*/     
-            "bif    v13.16b,  v5.16b,   v4.16b  \n" /* choose*/     
+            "fcmge  v2.4s,    v12.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v12.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v4.4s,    v13.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v5.4s,    v13.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v6.4s,    v14.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v7.4s,    v14.4s,   v1.4s   \n" /* vmulq_f32 */
+            "bif    v12.16b,  v3.16b,   v2.16b  \n" /* choose*/
+            "bif    v13.16b,  v5.16b,   v4.16b  \n" /* choose*/
             "bif    v14.16b,  v7.16b,   v6.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v15.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v15.4s,   v1.4s   \n" /* vmulq_f32 */      
+            "fcmge  v2.4s,    v15.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v15.4s,   v1.4s   \n" /* vmulq_f32 */
             "bif    v15.16b,  v3.16b,   v2.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v16.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v16.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v4.4s,    v17.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v5.4s,    v17.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v6.4s,    v18.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v7.4s,    v18.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "bif    v16.16b,  v3.16b,   v2.16b  \n" /* choose*/     
-            "bif    v17.16b,  v5.16b,   v4.16b  \n" /* choose*/     
+            "fcmge  v2.4s,    v16.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v16.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v4.4s,    v17.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v5.4s,    v17.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v6.4s,    v18.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v7.4s,    v18.4s,   v1.4s   \n" /* vmulq_f32 */
+            "bif    v16.16b,  v3.16b,   v2.16b  \n" /* choose*/
+            "bif    v17.16b,  v5.16b,   v4.16b  \n" /* choose*/
             "bif    v18.16b,  v7.16b,   v6.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v19.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v19.4s,   v1.4s   \n" /* vmulq_f32 */      
+            "fcmge  v2.4s,    v19.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v19.4s,   v1.4s   \n" /* vmulq_f32 */
             "bif    v19.16b,  v3.16b,   v2.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v20.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v20.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v4.4s,    v21.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v5.4s,    v21.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v6.4s,    v22.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v7.4s,    v22.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "bif    v20.16b,  v3.16b,   v2.16b  \n" /* choose*/     
-            "bif    v21.16b,  v5.16b,   v4.16b  \n" /* choose*/     
-            "bif    v22.16b,  v7.16b,   v6.16b  \n" /* choose*/  
-            "fcmge  v2.4s,    v23.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v23.4s,   v1.4s   \n" /* vmulq_f32 */    
+            "fcmge  v2.4s,    v20.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v20.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v4.4s,    v21.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v5.4s,    v21.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v6.4s,    v22.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v7.4s,    v22.4s,   v1.4s   \n" /* vmulq_f32 */
+            "bif    v20.16b,  v3.16b,   v2.16b  \n" /* choose*/
+            "bif    v21.16b,  v5.16b,   v4.16b  \n" /* choose*/
+            "bif    v22.16b,  v7.16b,   v6.16b  \n" /* choose*/
+            "fcmge  v2.4s,    v23.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v23.4s,   v1.4s   \n" /* vmulq_f32 */
             "bif    v23.16b,  v3.16b,   v2.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v24.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v24.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v4.4s,    v25.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v5.4s,    v25.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v6.4s,    v26.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v7.4s,    v26.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "bif    v24.16b,  v3.16b,   v2.16b  \n" /* choose*/     
-            "bif    v25.16b,  v5.16b,   v4.16b  \n" /* choose*/     
+            "fcmge  v2.4s,    v24.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v24.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v4.4s,    v25.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v5.4s,    v25.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v6.4s,    v26.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v7.4s,    v26.4s,   v1.4s   \n" /* vmulq_f32 */
+            "bif    v24.16b,  v3.16b,   v2.16b  \n" /* choose*/
+            "bif    v25.16b,  v5.16b,   v4.16b  \n" /* choose*/
             "bif    v26.16b,  v7.16b,   v6.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v27.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v27.4s,   v1.4s   \n" /* vmulq_f32 */      
+            "fcmge  v2.4s,    v27.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v27.4s,   v1.4s   \n" /* vmulq_f32 */
             "bif    v27.16b,  v3.16b,   v2.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v28.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v28.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v4.4s,    v29.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v5.4s,    v29.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v6.4s,    v30.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v7.4s,    v30.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "bif    v28.16b,  v3.16b,   v2.16b  \n" /* choose*/     
-            "bif    v29.16b,  v5.16b,   v4.16b  \n" /* choose*/     
+            "fcmge  v2.4s,    v28.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v28.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v4.4s,    v29.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v5.4s,    v29.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v6.4s,    v30.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v7.4s,    v30.4s,   v1.4s   \n" /* vmulq_f32 */
+            "bif    v28.16b,  v3.16b,   v2.16b  \n" /* choose*/
+            "bif    v29.16b,  v5.16b,   v4.16b  \n" /* choose*/
             "bif    v30.16b,  v7.16b,   v6.16b  \n" /* choose*/
-            "fcmge  v2.4s,    v31.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v31.4s,   v1.4s   \n" /* vmulq_f32 */      
+            "fcmge  v2.4s,    v31.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v31.4s,   v1.4s   \n" /* vmulq_f32 */
             "bif    v31.16b,  v3.16b,   v2.16b  \n" /* choose*/
             "20:                                \n" /* act end */
 
@@ -3723,7 +3707,7 @@ void sgemm_prepacked_8x12(bool is_transB,
             : [bias_ptr] "r"(bias_local),
               [has_beta] "r"(has_beta),
               [beta] "r"(beta),
-              [alpha] "r"(alpha), 
+              [alpha] "r"(alpha),
               [flag_act] "r"(flag_act)
             : "cc","memory",
               "v0","v1","v2","v3","v4","v5","v6","v7",
@@ -3753,18 +3737,18 @@ void sgemm_prepacked_4x8(bool is_transB,
                          int M,
                          int N,
                          int K,
-                         const float* A_packed,
-                         const float* B,
+                         const float *A_packed,
+                         const float *B,
                          int ldb,
                          float beta,
-                         float* C,
+                         float *C,
                          int ldc,
-                         const float* bias,
+                         const float *bias,
                          bool has_bias,
                          const operators::ActivationParam act_param,
-                         ARMContext* ctx) {
+                         ARMContext *ctx) {
   size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
-  auto* workspace = ctx->workspace_data<float>();
+  auto *workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
   auto act_type = act_param.active_type;
   float alpha[4] = {0.f, 0.f, 0.f, 0.f};
@@ -3793,8 +3777,7 @@ void sgemm_prepacked_4x8(bool is_transB,
   float32x4_t valpha = vld1q_f32(alpha);
   float32x4_t vzero = vdupq_n_f32(0.f);
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block =
-      (l2_cache - (m_block * K)) / (sizeof(float) * (K + m_block));
+  int x_block = (l2_cache - (m_block * K)) / (sizeof(float) * (K + m_block));
   x_block /= n_block;
   x_block *= n_block;
   int x_num = (N + (x_block - 1)) / x_block;
@@ -3824,7 +3807,7 @@ void sgemm_prepacked_4x8(bool is_transB,
       flag_p_remain = true;
     }
     //! load bpanel
-    auto b_pannel = static_cast<float*>(workspace);
+    auto b_pannel = static_cast<float *>(workspace);
     if (is_transB) {
       loadb_trans_eight(b_pannel, B, ldb, 0, K, x0, xmax);
     } else {
@@ -3849,18 +3832,18 @@ void sgemm_prepacked_4x8(bool is_transB,
         bias_local[3] = bias[y + 3];
       }
 
-      float* c_ptr0 = C + y * ldc + x0;
-      float* c_ptr1 = c_ptr0 + ldc;
-      float* c_ptr2 = c_ptr1 + ldc;
-      float* c_ptr3 = c_ptr2 + ldc;
+      float *c_ptr0 = C + y * ldc + x0;
+      float *c_ptr1 = c_ptr0 + ldc;
+      float *c_ptr2 = c_ptr1 + ldc;
+      float *c_ptr3 = c_ptr2 + ldc;
 
-      float* pout0 = c_ptr0;
-      float* pout1 = c_ptr1;
-      float* pout2 = c_ptr2;
-      float* pout3 = c_ptr3;
+      float *pout0 = c_ptr0;
+      float *pout1 = c_ptr1;
+      float *pout2 = c_ptr2;
+      float *pout3 = c_ptr3;
 
-      const float* a_ptr_l = A_packed + y * K;
-      const float* b_ptr = b_pannel;
+      const float *a_ptr_l = A_packed + y * K;
+      const float *b_ptr = b_pannel;
       for (int xb = 0; xb < bblocks; xb++) {
         if ((y + 3) >= ymax) {
           switch ((y + 3) - ymax) {
@@ -3894,7 +3877,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             }
           }
         }
-        const float* a_ptr = a_ptr_l;
+        const float *a_ptr = a_ptr_l;
         int tails = tail_pre;
         int k = k_pre;
         // clang-format off
@@ -3930,7 +3913,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "fmla v12.4s, v0.4s, v7.4s\n"           /* cr20 += beta * c_r20 */
             "fmla v13.4s, v1.4s, v7.4s\n"           /* cr21 += beta * c_r21 */
             "fmla v14.4s, v2.4s, v7.4s\n"           /* cr30 += beta * c_r30 */
-            "fmla v15.4s, v3.4s, v7.4s\n"           /* cr31 += beta * c_r31 */  
+            "fmla v15.4s, v3.4s, v7.4s\n"           /* cr31 += beta * c_r31 */
             "11: \n"                                /* check loop count */
             "ldp  q0, q1, [%[a_ptr]], #32\n"        /* load a0~a3 to q0, q1*/
             "ldp  q4, q5, [%[b_ptr]], #32\n"        /* load b0~b3 to q4, q5*/
@@ -4011,7 +3994,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "fmla v13.4s, v7.4s, v1.s[2]\n"         /* out6 += b1 * a0[2] */
             "fmla v15.4s, v7.4s, v1.s[3]\n"         /* out7 += b1 * a0[3] */
             "beq  5f\n"                             /*jump to tail = 3*/
-            /* Unroll 2 */ 
+            /* Unroll 2 */
             "ldp  q6, q7, [%[b_ptr]], #32\n"        /* load next b1, b2 */
             "fmla v8.4s, v4.4s, v2.s[0]\n"          /* out0 += b0 * a0[0] */
             "fmla v10.4s, v4.4s, v2.s[1]\n"         /* out1 += b0 * a0[1] */
@@ -4347,7 +4330,7 @@ void sgemm_prepacked_4x4(bool is_transB,
             "ldp	q6, q7, [%[b_ptr]], #32\n"    /* load b2, b3 to q6, q7 */
             "fmla	v10.4s,  v4.4s,  v0.s[2]\n"   /* out2 = b0 * a00[2], b0 =q4 */
             "fmla	v11.4s,  v4.4s,  v0.s[3]\n"   /* out3 = b0 * a00[3], b0 =q4 */
-            
+
             "ldp	q2, q3, [%[a_ptr]], #32\n"    /* load a20, a30 to q2, q3 */
             "fmla 	v8.4s,   v5.4s,  v1.s[0]\n"   /* out0 = b1 * a10[0], b1 =q5 */
             "fmla	v9.4s,   v5.4s,  v1.s[1]\n"   /* out1 = b1 * a10[1], b1 =q5 */
@@ -4438,11 +4421,11 @@ void sgemm_prepacked_4x4(bool is_transB,
             "fmax   v10.4s, v10.4s, v0.4s  \n"   /* relu*/
             "fmax   v11.4s, v11.4s, v0.4s  \n"   /* relu*/
             "b      20f                    \n"   /* relu end */
-            //! no act 
+            //! no act
             "12:                           \n"   /* no relu */
             "cmp   %w[flag_act],  #0       \n"   /* check no act */
-            "beq   20f                     \n"   /* no act end */ 
-            //! relu6 
+            "beq   20f                     \n"   /* no act end */
+            //! relu6
             "cmp    %w[flag_act],  #2      \n"    /* check if has relu6 */
             "bne    13f                    \n"    /* jump if no relu6 */
             "movi   v0.4s, #0              \n"    /* for relu6 */
@@ -4461,17 +4444,17 @@ void sgemm_prepacked_4x4(bool is_transB,
             "13:                                \n" /* otherwise is leakey relu */
             "movi   v0.4s,    #0                \n" /* for leakey relu */
             "ld1    {v1.4s},  [%[alpha]]        \n" /* leakey relu alpha */
-            "fcmge  v2.4s,    v8.4s,    v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v3.4s,    v8.4s,    v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v4.4s,    v9.4s,    v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v5.4s,    v9.4s,    v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v6.4s,    v10.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v7.4s,    v10.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "fcmge  v12.4s,   v11.4s,   v0.4s   \n" /* vcgeq_f32 */ 
-            "fmul   v13.4s,   v11.4s,   v1.4s   \n" /* vmulq_f32 */ 
-            "bif    v8.16b,   v3.16b,   v2.16b  \n" /* choose*/     
-            "bif    v9.16b,   v5.16b,   v4.16b  \n" /* choose*/     
-            "bif    v10.16b,  v7.16b,   v6.16b  \n" /* choose*/     
+            "fcmge  v2.4s,    v8.4s,    v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v3.4s,    v8.4s,    v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v4.4s,    v9.4s,    v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v5.4s,    v9.4s,    v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v6.4s,    v10.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v7.4s,    v10.4s,   v1.4s   \n" /* vmulq_f32 */
+            "fcmge  v12.4s,   v11.4s,   v0.4s   \n" /* vcgeq_f32 */
+            "fmul   v13.4s,   v11.4s,   v1.4s   \n" /* vmulq_f32 */
+            "bif    v8.16b,   v3.16b,   v2.16b  \n" /* choose*/
+            "bif    v9.16b,   v5.16b,   v4.16b  \n" /* choose*/
+            "bif    v10.16b,  v7.16b,   v6.16b  \n" /* choose*/
             "bif    v11.16b,  v13.16b,  v12.16b \n" /* choose*/
             "20:                                \n" /* act end */
             "st1 {v8.4s}, [%[c_ptr0]], #16\n"   /* store r0 */
@@ -4489,7 +4472,7 @@ void sgemm_prepacked_4x4(bool is_transB,
               [c_ptr3] "+r"(c_ptr3)
             : [bias_ptr] "r"(bias_local),
               [has_beta] "r"(has_beta),
-              [beta] "r"(beta), 
+              [beta] "r"(beta),
               [alpha] "r"(alpha),
               [flag_act] "r"(flag_act)
             : "cc","memory",
@@ -4960,7 +4943,7 @@ void sgemm_prepacked_6x8(bool is_transB,
             "cmp        %[tails], #0              @ check no act\n"
             "beq        10f                       @ no act end  \n"
             //!   relu6
-            "cmp        %[tails], #2              @ check if has relu6\n"  
+            "cmp        %[tails], #2              @ check if has relu6\n"
             "bne        7f                        @ jump if no relu6 \n"
             "vmov.u32   q0, #0                    @ for relu6\n"
             "vmax.f32   q4, q4, q0                @ for relu6\n"
@@ -4991,45 +4974,45 @@ void sgemm_prepacked_6x8(bool is_transB,
             "vmin.f32   q15, q15, q1              @ for relu6\n"
             "b          10f                       @ relu6 end \n"
             //! leakey relu
-            "7:                                   @ otherwise is leakey relu\n" 
+            "7:                                   @ otherwise is leakey relu\n"
             "vmov.u32   q0,   #0                  @ for leakey relu \n"
             "vld1.f32   {d2-d3}, [%[alpha]]       @ load leakey relu alpha\n"
-            "vcge.f32   q2, q4, q0                @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q4, q1                @ vmulq_f32 \n"  
-            "vbif       q4, q3, q2                @ choose    \n" 
-            "vcge.f32   q2, q5, q0                @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q5, q1                @ vmulq_f32 \n"  
+            "vcge.f32   q2, q4, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q4, q1                @ vmulq_f32 \n"
+            "vbif       q4, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q5, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q5, q1                @ vmulq_f32 \n"
             "vbif       q5, q3, q2                @ choose    \n"
-            "vcge.f32   q2, q6, q0                @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q6, q1                @ vmulq_f32 \n"  
-            "vbif       q6, q3, q2                @ choose    \n" 
-            "vcge.f32   q2, q7, q0                @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q7, q1                @ vmulq_f32 \n"  
-            "vbif       q7, q3, q2                @ choose    \n" 
-            "vcge.f32   q2, q8, q0                @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q8, q1                @ vmulq_f32 \n"  
-            "vbif       q8, q3, q2                @ choose    \n"     
-            "vcge.f32   q2, q9, q0                @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q9, q1                @ vmulq_f32 \n"  
+            "vcge.f32   q2, q6, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q6, q1                @ vmulq_f32 \n"
+            "vbif       q6, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q7, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q7, q1                @ vmulq_f32 \n"
+            "vbif       q7, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q8, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q8, q1                @ vmulq_f32 \n"
+            "vbif       q8, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q9, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q9, q1                @ vmulq_f32 \n"
             "vbif       q9, q3, q2                @ choose    \n"
-            "vcge.f32   q2, q10, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q10, q1               @ vmulq_f32 \n"  
-            "vbif       q10, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q11, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q11, q1               @ vmulq_f32 \n"  
-            "vbif       q11, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q12, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q12, q1               @ vmulq_f32 \n"  
-            "vbif       q12, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q13, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q13, q1               @ vmulq_f32 \n"  
-            "vbif       q13, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q14, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q14, q1               @ vmulq_f32 \n"  
-            "vbif       q14, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q15, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q15, q1               @ vmulq_f32 \n"  
-            "vbif       q15, q3, q2               @ choose    \n" 
+            "vcge.f32   q2, q10, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q10, q1               @ vmulq_f32 \n"
+            "vbif       q10, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q11, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q11, q1               @ vmulq_f32 \n"
+            "vbif       q11, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q12, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q12, q1               @ vmulq_f32 \n"
+            "vbif       q12, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q13, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q13, q1               @ vmulq_f32 \n"
+            "vbif       q13, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q14, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q14, q1               @ vmulq_f32 \n"
+            "vbif       q14, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q15, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q15, q1               @ vmulq_f32 \n"
+            "vbif       q15, q3, q2               @ choose    \n"
             "10:                                  @ act end  \n"
             "vst1.32    {d8-d11},   [%[c_ptr0]]!    @ store r0\n"
             "vst1.32    {d12-d15},  [%[c_ptr1]]!    @ store r1\n"
@@ -5048,7 +5031,7 @@ void sgemm_prepacked_6x8(bool is_transB,
               [k] "+r"(k),
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
-              [beta] "r"(beta), 
+              [beta] "r"(beta),
               [alpha] "r" (alpha)
             : "q0","q1","q2","q3","q4",
               "q5","q6","q7","q8","q9","q10","q11",
@@ -5345,7 +5328,7 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
             "vmla.f32	q7, q3, d1[1]             \n"   /*   out11 += a13 * b3h  */
             "ldr  r1, [%[b_ptr], #0x0C]         \n"   /*    load b03 to r1     */
             "vmla.f32	q9, q3, d2[0]             \n"   /*   out21 += a23 * b3h  */
-            "subs %[k], %[k], #1                \n"   /*      loop k -= 1      */ 
+            "subs %[k], %[k], #1                \n"   /*      loop k -= 1      */
             "vldr d1, [%[a_ptr], #0x08]         \n"   /*  load a20, a30 to d1  */
             "vmov d5, r0, r1                    \n"   /*   mov b02, b03 to d5  */
             "vmla.f32	q11, q3, d2[1]            \n"   /*   out31 += a33 * b3h  */
@@ -5356,131 +5339,131 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
             "bne  1b                            \n"   /*    branch to k loop   */
             "6:\n"
             "sub  %[tails], %[tails], #4        \n"   /*       tail -= 4       */
-            "cmp  %[tails], #4                  \n"   /*     cmp tail with 4   */ 
-            "blt  3f                            \n"   /*   branch to tail == 1 */ 
+            "cmp  %[tails], #4                  \n"   /*     cmp tail with 4   */
+            "blt  3f                            \n"   /*   branch to tail == 1 */
             /* Tail Unroll 0 */
             "vmov d2, r0, r1                    \n"   /*   mov b02, b03 to d2  */
             "add  %[a_ptr], %[a_ptr], #0x18     \n"   /*      aptr +=  24      */
-            "vmla.f32	q4, q2, d0[0]             \n"   /*   out00 += a00 * b0l  */    
+            "vmla.f32	q4, q2, d0[0]             \n"   /*   out00 += a00 * b0l  */
             "vld1.32  {d3}, [%[a_ptr] :64]!     \n"   /*  load a01, a11 to d3  */
-            "vmla.f32	q6, q2, d0[1]             \n"   /*   out10 += a10 * b0l  */   
+            "vmla.f32	q6, q2, d0[1]             \n"   /*   out10 += a10 * b0l  */
             "add  %[b_ptr], %[b_ptr], #0x10     \n"   /*      bptr +=  16      */
-            "vmla.f32	q8, q2, d1[0]             \n"   /*   out20 += a20 * b0l  */    
+            "vmla.f32	q8, q2, d1[0]             \n"   /*   out20 += a20 * b0l  */
             "vld1.32	{d6-d7}, [%[b_ptr] :128]! \n"   /* load b04-b07 to d6,d7 */
-            "vmla.f32	q10, q2, d1[1]            \n"   /*   out30 += a30 * b0l  */ 
-            "vmla.f32	q12, q2, d2[0]            \n"   /*   out40 += a40 * b0l  */ 
+            "vmla.f32	q10, q2, d1[1]            \n"   /*   out30 += a30 * b0l  */
+            "vmla.f32	q12, q2, d2[0]            \n"   /*   out40 += a40 * b0l  */
             "sub  %[tails], %[tails], #4        \n"   /*       tail -= 4       */
-            "vmla.f32	q14, q2, d2[1]            \n"   /*   out50 += a50 * b0l  */ 
+            "vmla.f32	q14, q2, d2[1]            \n"   /*   out50 += a50 * b0l  */
             "vld1.32	{d4-d5}, [%[b_ptr] :128]! \n"   /* load b10-b13 to d4,d5 */
-            "vmla.f32	q5, q3, d0[0]             \n"   /*   out01 += a00 * b0h  */   
-            "vmla.f32	q7, q3, d0[1]             \n"   /*   out11 += a10 * b0h  */   
-            "vmla.f32	q9, q3, d1[0]             \n"   /*   out21 += a20 * b0h  */   
-            "vmla.f32	q11, q3, d1[1]            \n"   /*   out31 += a30 * b0h  */   
+            "vmla.f32	q5, q3, d0[0]             \n"   /*   out01 += a00 * b0h  */
+            "vmla.f32	q7, q3, d0[1]             \n"   /*   out11 += a10 * b0h  */
+            "vmla.f32	q9, q3, d1[0]             \n"   /*   out21 += a20 * b0h  */
+            "vmla.f32	q11, q3, d1[1]            \n"   /*   out31 += a30 * b0h  */
             "vld1.32	{d0-d1}, [%[a_ptr] :64]!  \n"   /* load a21-a51 to d0,d1 */
             "cmp  %[tails], #4                  \n"   /*    cmp tail with 4    */
-            "vmla.f32	q13, q3, d2[0]            \n"   /*   out41 += a40 * b0h  */   
-            "vmla.f32	q15, q3, d2[1]            \n"   /*   out51 += a50 * b0h  */   
-            "vld1.32	{d6-d7}, [%[b_ptr] :128]! \n"   /* load b14-b17 to d6,d7 */   
-            "blt  4f                            \n"   /*   branch to tail == 2 */ 
+            "vmla.f32	q13, q3, d2[0]            \n"   /*   out41 += a40 * b0h  */
+            "vmla.f32	q15, q3, d2[1]            \n"   /*   out51 += a50 * b0h  */
+            "vld1.32	{d6-d7}, [%[b_ptr] :128]! \n"   /* load b14-b17 to d6,d7 */
+            "blt  4f                            \n"   /*   branch to tail == 2 */
             /* Tail Unroll 1 */
-            "vmla.f32	q4, q2, d3[0]             \n"   /*   out00 += a01 * b1l  */    
-            "vmla.f32	q6, q2, d3[1]             \n"   /*   out10 += a11 * b1l  */    
+            "vmla.f32	q4, q2, d3[0]             \n"   /*   out00 += a01 * b1l  */
+            "vmla.f32	q6, q2, d3[1]             \n"   /*   out10 += a11 * b1l  */
             "sub  %[tails], %[tails], #4        \n"   /*       tail -= 4       */
-            "vmla.f32	q8, q2, d0[0]             \n"   /*   out20 += a21 * b1l  */  
-            "vmla.f32	q10, q2, d0[1]            \n"   /*   out30 += a31 * b1l  */  
-            "vmla.f32	q12, q2, d1[0]            \n"   /*   out40 += a41 * b1l  */  
-            "vmla.f32	q14, q2, d1[1]            \n"   /*   out50 += a51 * b1l  */  
-            "vld1.32	{d4-d5}, [%[b_ptr] :128]! \n"   /* load b20-b23 to d4,d5 */  
-            "vmla.f32	q5, q3, d3[0]             \n"   /*   out01 += a01 * b1h  */    
-            "vmla.f32	q7, q3, d3[1]             \n"   /*   out11 += a11 * b1h  */   
+            "vmla.f32	q8, q2, d0[0]             \n"   /*   out20 += a21 * b1l  */
+            "vmla.f32	q10, q2, d0[1]            \n"   /*   out30 += a31 * b1l  */
+            "vmla.f32	q12, q2, d1[0]            \n"   /*   out40 += a41 * b1l  */
+            "vmla.f32	q14, q2, d1[1]            \n"   /*   out50 += a51 * b1l  */
+            "vld1.32	{d4-d5}, [%[b_ptr] :128]! \n"   /* load b20-b23 to d4,d5 */
+            "vmla.f32	q5, q3, d3[0]             \n"   /*   out01 += a01 * b1h  */
+            "vmla.f32	q7, q3, d3[1]             \n"   /*   out11 += a11 * b1h  */
             "cmp  %[tails], #4                  \n"   /*    cmp tail with 4    */
             "vld1.32	{d2-d3}, [%[a_ptr] :64]!  \n"   /* load a02-a32 to d2,d3 */
-            "vmla.f32	q9, q3, d0[0]             \n"   /*   out21 += a21 * b1h  */ 
-            "vmla.f32	q11, q3, d0[1]            \n"   /*   out31 += a31 * b1h  */ 
-            "vmla.f32	q13, q3, d1[0]            \n"   /*   out41 += a41 * b1h  */ 
-            "vmla.f32	q15, q3, d1[1]            \n"   /*   out51 += a51 * b1h  */ 
-            "vld1.32	{d6-d7}, [%[b_ptr] :128]! \n"   /* load b24-b27 to d6,d7 */  
-            "blt  5f                            \n"   /*   branch to tail == 3 */ 
+            "vmla.f32	q9, q3, d0[0]             \n"   /*   out21 += a21 * b1h  */
+            "vmla.f32	q11, q3, d0[1]            \n"   /*   out31 += a31 * b1h  */
+            "vmla.f32	q13, q3, d1[0]            \n"   /*   out41 += a41 * b1h  */
+            "vmla.f32	q15, q3, d1[1]            \n"   /*   out51 += a51 * b1h  */
+            "vld1.32	{d6-d7}, [%[b_ptr] :128]! \n"   /* load b24-b27 to d6,d7 */
+            "blt  5f                            \n"   /*   branch to tail == 3 */
             /* Tail Unroll 2 */
             "sub  %[tails], %[tails], #4        \n"   /*       tail -= 4       */
             "vld1.32	{d0-d1}, [%[a_ptr] :64]!  \n"   /* a42a52a03a13 to d0,d1 */
-            "vmla.f32	q4, q2, d2[0]             \n"   /*   out00 += a02 * b2l  */    
-            "vmla.f32	q6, q2, d2[1]             \n"   /*   out10 += a12 * b2l  */    
+            "vmla.f32	q4, q2, d2[0]             \n"   /*   out00 += a02 * b2l  */
+            "vmla.f32	q6, q2, d2[1]             \n"   /*   out10 += a12 * b2l  */
             "vmla.f32	q8, q2, d3[0]             \n"   /*   out20 += a22 * b2l  */
             "vmla.f32	q10, q2, d3[1]            \n"   /*   out30 += a32 * b2l  */
             "vmla.f32	q12, q2, d0[0]            \n"   /*   out40 += a42 * b2l  */
             "vmla.f32	q14, q2, d0[1]            \n"   /*   out50 += a52 * b2l  */
             "vld1.32	{d4-d5}, [%[b_ptr] :128]! \n"   /* load b30-b33 to d4,d5 */
-            "vmla.f32	q5, q3, d2[0]             \n"   /*   out01 += a02 * b2h  */  
-            "vmla.f32	q7, q3, d2[1]             \n"   /*   out11 += a12 * b2h  */  
-            "vmla.f32	q9, q3, d3[0]             \n"   /*   out21 += a22 * b2h  */  
-            "vmla.f32	q11, q3, d3[1]            \n"   /*   out31 += a32 * b2h  */  
+            "vmla.f32	q5, q3, d2[0]             \n"   /*   out01 += a02 * b2h  */
+            "vmla.f32	q7, q3, d2[1]             \n"   /*   out11 += a12 * b2h  */
+            "vmla.f32	q9, q3, d3[0]             \n"   /*   out21 += a22 * b2h  */
+            "vmla.f32	q11, q3, d3[1]            \n"   /*   out31 += a32 * b2h  */
             "vld1.32	{d2-d3}, [%[a_ptr] :64]!  \n"   /* load a23-a53 to d2,d3 */
-            "vmla.f32	q13, q3, d0[0]            \n"   /*   out41 += a42 * b2h  */  
-            "vmla.f32	q15, q3, d0[1]            \n"   /*   out51 += a52 * b2h  */  
+            "vmla.f32	q13, q3, d0[0]            \n"   /*   out41 += a42 * b2h  */
+            "vmla.f32	q15, q3, d0[1]            \n"   /*   out51 += a52 * b2h  */
             "vld1.32	{d6-d7}, [%[b_ptr] :128]! \n"   /* load b34-b37 to d6,d7 */
             /* Tail Unroll 3 */
-            "vmla.f32	q4,  q2, d1[0]            \n"   /*   out00 += a03 * b3l  */    
-            "vmla.f32	q5,  q3, d1[0]            \n"   /*   out01 += a03 * b3h  */    
-            "vmla.f32	q6,  q2, d1[1]            \n"   /*   out10 += a13 * b3l  */    
-            "vmla.f32	q7,  q3, d1[1]            \n"   /*   out11 += a13 * b3h  */    
-            "vmla.f32	q8,  q2, d2[0]            \n"   /*   out20 += a23 * b3l  */    
-            "vmla.f32	q9,  q3, d2[0]            \n"   /*   out21 += a23 * b3h  */    
-            "vmla.f32	q10, q2, d2[1]            \n"   /*   out30 += a33 * b3l  */    
-            "vmla.f32	q11, q3, d2[1]            \n"   /*   out31 += a33 * b3h  */    
-            "vmla.f32	q12, q2, d3[0]            \n"   /*   out40 += a43 * b3l  */    
-            "vmla.f32	q13, q3, d3[0]            \n"   /*   out41 += a43 * b3h  */    
-            "vmla.f32	q14, q2, d3[1]            \n"   /*   out50 += a53 * b3l  */    
-            "vmla.f32	q15, q3, d3[1]            \n"   /*   out51 += a53 * b3h  */    
+            "vmla.f32	q4,  q2, d1[0]            \n"   /*   out00 += a03 * b3l  */
+            "vmla.f32	q5,  q3, d1[0]            \n"   /*   out01 += a03 * b3h  */
+            "vmla.f32	q6,  q2, d1[1]            \n"   /*   out10 += a13 * b3l  */
+            "vmla.f32	q7,  q3, d1[1]            \n"   /*   out11 += a13 * b3h  */
+            "vmla.f32	q8,  q2, d2[0]            \n"   /*   out20 += a23 * b3l  */
+            "vmla.f32	q9,  q3, d2[0]            \n"   /*   out21 += a23 * b3h  */
+            "vmla.f32	q10, q2, d2[1]            \n"   /*   out30 += a33 * b3l  */
+            "vmla.f32	q11, q3, d2[1]            \n"   /*   out31 += a33 * b3h  */
+            "vmla.f32	q12, q2, d3[0]            \n"   /*   out40 += a43 * b3l  */
+            "vmla.f32	q13, q3, d3[0]            \n"   /*   out41 += a43 * b3h  */
+            "vmla.f32	q14, q2, d3[1]            \n"   /*   out50 += a53 * b3l  */
+            "vmla.f32	q15, q3, d3[1]            \n"   /*   out51 += a53 * b3h  */
             "b  2f                              \n"   /*  branch to check relu */
             /* tails==1 final tail */
             "3:\n"
             "vmov d2, r0, r1                    \n"   /*   mov b02, b03 to d2  */
             "add  %[b_ptr], %[b_ptr], #0x10     \n"   /*      bptr +=  16      */
-            "vmla.f32	q4, q2, d0[0]             \n"   /*   out00 += a00 * b0l  */  
+            "vmla.f32	q4, q2, d0[0]             \n"   /*   out00 += a00 * b0l  */
             "add  %[a_ptr], %[a_ptr], #0x18     \n"   /*      aptr +=  24      */
-            "vmla.f32	q6, q2, d0[1]             \n"   /*   out10 += a10 * b0l  */  
+            "vmla.f32	q6, q2, d0[1]             \n"   /*   out10 += a10 * b0l  */
             "vld1.32	{d6-d7}, [%[b_ptr] :128]! \n"   /* load b04-b07 to d6,d7 */
-            "vmla.f32	q8,  q2, d1[0]            \n"   /*   out20 += a20 * b0l  */   
-            "vmla.f32	q10, q2, d1[1]            \n"   /*   out30 += a30 * b0l  */   
+            "vmla.f32	q8,  q2, d1[0]            \n"   /*   out20 += a20 * b0l  */
+            "vmla.f32	q10, q2, d1[1]            \n"   /*   out30 += a30 * b0l  */
             "vmla.f32	q12, q2, d2[0]            \n"   /*   out40 += a40 * b0l  */
             "vmla.f32	q14, q2, d2[1]            \n"   /*   out50 += a50 * b0l  */
-            "vmla.f32	q5,  q3, d0[0]            \n"   /*   out01 += a00 * b0h  */ 
-            "vmla.f32	q7,  q3, d0[1]            \n"   /*   out11 += a10 * b0h  */ 
-            "vmla.f32	q9,  q3, d1[0]            \n"   /*   out21 += a20 * b0h  */ 
-            "vmla.f32	q11, q3, d1[1]            \n"   /*   out31 += a30 * b0h  */   
-            "vmla.f32	q13, q3, d2[0]            \n"   /*   out41 += a40 * b0h  */ 
-            "vmla.f32	q15, q3, d2[1]            \n"   /*   out51 += a50 * b0h  */ 
+            "vmla.f32	q5,  q3, d0[0]            \n"   /*   out01 += a00 * b0h  */
+            "vmla.f32	q7,  q3, d0[1]            \n"   /*   out11 += a10 * b0h  */
+            "vmla.f32	q9,  q3, d1[0]            \n"   /*   out21 += a20 * b0h  */
+            "vmla.f32	q11, q3, d1[1]            \n"   /*   out31 += a30 * b0h  */
+            "vmla.f32	q13, q3, d2[0]            \n"   /*   out41 += a40 * b0h  */
+            "vmla.f32	q15, q3, d2[1]            \n"   /*   out51 += a50 * b0h  */
             "b  2f                              \n"   /*  branch to check relu */
             /* tails==2 final tail */
             "4:\n"
-            "vmla.f32	q4,  q2, d3[0]            \n"   /*   out00 += a01 * b1l  */ 
-            "vmla.f32	q5,  q3, d3[0]            \n"   /*   out01 += a01 * b1h  */ 
-            "vmla.f32	q6,  q2, d3[1]            \n"   /*   out10 += a11 * b1l  */ 
-            "vmla.f32	q7,  q3, d3[1]            \n"   /*   out11 += a11 * b1h  */ 
-            "vmla.f32	q8,  q2, d0[0]            \n"   /*   out20 += a21 * b1l  */ 
-            "vmla.f32	q9,  q3, d0[0]            \n"   /*   out21 += a21 * b1h  */ 
-            "vmla.f32	q10, q2, d0[1]            \n"   /*   out30 += a31 * b1l  */ 
-            "vmla.f32	q11, q3, d0[1]            \n"   /*   out31 += a31 * b1h  */ 
-            "vmla.f32	q12, q2, d1[0]            \n"   /*   out40 += a41 * b1l  */ 
-            "vmla.f32	q13, q3, d1[0]            \n"   /*   out41 += a41 * b1h  */ 
-            "vmla.f32	q14, q2, d1[1]            \n"   /*   out50 += a51 * b1l  */ 
-            "vmla.f32	q15, q3, d1[1]            \n"   /*   out51 += a51 * b1h  */ 
+            "vmla.f32	q4,  q2, d3[0]            \n"   /*   out00 += a01 * b1l  */
+            "vmla.f32	q5,  q3, d3[0]            \n"   /*   out01 += a01 * b1h  */
+            "vmla.f32	q6,  q2, d3[1]            \n"   /*   out10 += a11 * b1l  */
+            "vmla.f32	q7,  q3, d3[1]            \n"   /*   out11 += a11 * b1h  */
+            "vmla.f32	q8,  q2, d0[0]            \n"   /*   out20 += a21 * b1l  */
+            "vmla.f32	q9,  q3, d0[0]            \n"   /*   out21 += a21 * b1h  */
+            "vmla.f32	q10, q2, d0[1]            \n"   /*   out30 += a31 * b1l  */
+            "vmla.f32	q11, q3, d0[1]            \n"   /*   out31 += a31 * b1h  */
+            "vmla.f32	q12, q2, d1[0]            \n"   /*   out40 += a41 * b1l  */
+            "vmla.f32	q13, q3, d1[0]            \n"   /*   out41 += a41 * b1h  */
+            "vmla.f32	q14, q2, d1[1]            \n"   /*   out50 += a51 * b1l  */
+            "vmla.f32	q15, q3, d1[1]            \n"   /*   out51 += a51 * b1h  */
             "b  2f                              \n"   /*  branch to check relu */
             /* tails==3 final tail */
             "5:\n"
-            "vmla.f32	q4,  q2, d2[0]            \n"   /*   out00 += a02 * b2l  */ 
+            "vmla.f32	q4,  q2, d2[0]            \n"   /*   out00 += a02 * b2l  */
             "vld1.32	{d0}, [%[a_ptr] :64]!     \n"   /*  load a42, a52 to d0  */
-            "vmla.f32	q6,  q2, d2[1]            \n"   /*   out10 += a12 * b2l  */ 
-            "vmla.f32	q8,  q2, d3[0]            \n"   /*   out20 += a22 * b2l  */ 
-            "vmla.f32	q5,  q3, d2[0]            \n"   /*   out01 += a02 * b2h  */ 
+            "vmla.f32	q6,  q2, d2[1]            \n"   /*   out10 += a12 * b2l  */
+            "vmla.f32	q8,  q2, d3[0]            \n"   /*   out20 += a22 * b2l  */
+            "vmla.f32	q5,  q3, d2[0]            \n"   /*   out01 += a02 * b2h  */
             "vmla.f32	q7,  q3, d2[1]            \n"   /*   out11 += a12 * b2h  */
             "vmla.f32	q9,  q3, d3[0]            \n"   /*   out21 += a22 * b2h  */
-            "vmla.f32	q10, q2, d3[1]            \n"   /*   out30 += a32 * b2l  */ 
+            "vmla.f32	q10, q2, d3[1]            \n"   /*   out30 += a32 * b2l  */
             "vmla.f32	q11, q3, d3[1]            \n"   /*   out31 += a32 * b2h  */
-            "vmla.f32	q12, q2, d0[0]            \n"   /*   out40 += a42 * b2l  */ 
+            "vmla.f32	q12, q2, d0[0]            \n"   /*   out40 += a42 * b2l  */
             "vmla.f32	q13, q3, d0[0]            \n"   /*   out41 += a42 * b2h  */
-            "vmla.f32	q14, q2, d0[1]            \n"   /*   out50 += a52 * b2l  */ 
+            "vmla.f32	q14, q2, d0[1]            \n"   /*   out50 += a52 * b2l  */
             "vmla.f32	q15, q3, d0[1]            \n"   /*   out51 += a52 * b2h  */
             /* relu */
             "2:\n"
@@ -5872,7 +5855,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "cmp        %[flag_act], #0           @ check no act\n"
             "beq        10f                       @ no act end  \n"
             //!   relu6
-            "cmp        %[flag_act], #2           @ check if has relu6\n"  
+            "cmp        %[flag_act], #2           @ check if has relu6\n"
             "bne        7f                        @ jump if no relu6 \n"
             "vmov.u32   q0, #0                    @ for relu6\n"
             "vld1.f32   {d2-d3}, [%[alpha]]       @ load relu6 alpha\n"
@@ -5895,33 +5878,33 @@ void sgemm_prepacked_4x8(bool is_transB,
             "vmin.f32   q15, q15, q1              @ for relu6\n"
             "b          10f                       @ relu6 end \n"
             //! leakey relu
-            "7:                                   @ otherwise is leakey relu\n" 
+            "7:                                   @ otherwise is leakey relu\n"
             "vmov.u32   q0,   #0                  @ for leakey relu \n"
             "vld1.f32   {d2-d3}, [%[alpha]]       @ load leakey relu alpha\n"
-            "vcge.f32   q2, q8, q0                @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q8, q1                @ vmulq_f32 \n"  
-            "vbif       q8, q3, q2                @ choose    \n"     
-            "vcge.f32   q2, q9, q0                @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q9, q1                @ vmulq_f32 \n"  
+            "vcge.f32   q2, q8, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q8, q1                @ vmulq_f32 \n"
+            "vbif       q8, q3, q2                @ choose    \n"
+            "vcge.f32   q2, q9, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q3, q9, q1                @ vmulq_f32 \n"
             "vbif       q9, q3, q2                @ choose    \n"
-            "vcge.f32   q2, q10, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q10, q1               @ vmulq_f32 \n"  
-            "vbif       q10, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q11, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q11, q1               @ vmulq_f32 \n"  
-            "vbif       q11, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q12, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q12, q1               @ vmulq_f32 \n"  
-            "vbif       q12, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q13, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q13, q1               @ vmulq_f32 \n"  
-            "vbif       q13, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q14, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q14, q1               @ vmulq_f32 \n"  
-            "vbif       q14, q3, q2               @ choose    \n" 
-            "vcge.f32   q2, q15, q0               @ vcgeq_u32 \n"  
-            "vmul.f32   q3, q15, q1               @ vmulq_f32 \n"  
-            "vbif       q15, q3, q2               @ choose    \n" 
+            "vcge.f32   q2, q10, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q10, q1               @ vmulq_f32 \n"
+            "vbif       q10, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q11, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q11, q1               @ vmulq_f32 \n"
+            "vbif       q11, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q12, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q12, q1               @ vmulq_f32 \n"
+            "vbif       q12, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q13, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q13, q1               @ vmulq_f32 \n"
+            "vbif       q13, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q14, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q14, q1               @ vmulq_f32 \n"
+            "vbif       q14, q3, q2               @ choose    \n"
+            "vcge.f32   q2, q15, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q3, q15, q1               @ vmulq_f32 \n"
+            "vbif       q15, q3, q2               @ choose    \n"
             "10:                                  @ act end  \n"
             "vst1.32    {d16-d19},  [%[c_ptr0]]!    @ store r0\n"
             "vst1.32    {d20-d23},  [%[c_ptr1]]!    @ store r1\n"
