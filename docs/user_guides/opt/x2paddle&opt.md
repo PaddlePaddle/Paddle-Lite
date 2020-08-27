@@ -10,7 +10,7 @@
 
 **使用方法**：
 
-（1）打印帮助帮助信息：` sh ./auto_transform.sh`
+（1）打印帮助帮助信息：`sh ./auto_transform.sh`，Ubuntu下请执行 `bash ./auto_transform.sh`
 
 （2）转化模型方法
 
