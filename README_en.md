@@ -1,6 +1,6 @@
 # Paddle Lite
 
-[简体中文](./README.md) | English
+[简体中文](README.md) | English
 
 [![Build Status](https://travis-ci.org/PaddlePaddle/Paddle-Lite.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/Paddle-Lite)  
 [![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://paddle-lite.readthedocs.io/zh/latest/)  

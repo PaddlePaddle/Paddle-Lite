@@ -1,6 +1,6 @@
 #  Paddle Lite
 
-[English](./README_en.md) | 简体中文
+[English](README_en.md) | 简体中文
 
 [![Build Status](https://travis-ci.org/PaddlePaddle/Paddle-Lite.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/Paddle-Lite)  [![Documentation Status](https://img.shields.io/badge/中文文档-最新-brightgreen.svg)](https://paddle-lite.readthedocs.io/zh/latest/)  [![Release](https://img.shields.io/github/release/PaddlePaddle/Paddle-Lite.svg)](https://github.com/PaddlePaddle/Paddle-Lite/releases)  [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 
@@ -90,7 +90,7 @@ Paddle Lite提供了C++、Java、Python三种API，并且提供了相应API的�
 
 Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并且强化了多个硬件在一个模型中混合执行的能力，多个层面的性能优化处理，以及对端侧应用的轻量化设计。
 
-<p align="center"><img width="500" src="https://agroup-bos-bj.cdn.bcebos.com/bj-696e361f995bd202c7cbd91c95f90e42a837cc04"/></p>
+<p align="center"><img width="500" src="https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/images/architecture.png"/></p>
 
 其中，Analysis Phase 包括了 MIR(Machine IR) 相关模块，能够对原有的模型的计算图针对具体的硬件列表进行算子融合、计算裁剪 在内的多种优化。Execution Phase 只涉及到Kernel 的执行，且可以单独部署，以支持极致的轻量级部署。
 
@@ -123,7 +123,7 @@ Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并�
 * 欢迎您通过[Github Issues](https://github.com/PaddlePaddle/Paddle-Lite/issues)来提交问题、报告与建议
 * 技术交流QQ群: 一群696965088（已满） ；二群，959308808
 
-<p align="center"><img width="200" height="200"  src="https://user-images.githubusercontent.com/45189361/64117959-1969de80-cdc9-11e9-84f7-e1c2849a004c.jpeg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="200" height="200" margin="500" src="https://agroup-bos-bj.cdn.bcebos.com/bj-fbe27755cc2f1aba45858f2e6384713c76ab7f82"/></p>
+<p align="center"><img width="200" height="200"  src="https://user-images.githubusercontent.com/45189361/64117959-1969de80-cdc9-11e9-84f7-e1c2849a004c.jpeg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="200" height="200" margin="500" src="https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/images/qq-group-chat.png"/></p>
 <p align="center">  &#8194;&#8194;&#8194;微信公众号&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;官方技术交流QQ群</p>
 
 ## 版权和许可证
