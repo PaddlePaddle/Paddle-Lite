@@ -374,11 +374,11 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         img_to_buf_kernel_vec[i]->Launch();
       }
       // 4.2 run kernel: concat_mul_buffer
-      auto cur_axis_start_idx = 0;
+      int cur_axis_start_idx = 0;
       int total = output_tensor_dims[axis_] * post_size_;
       for (size_t i = 0; i < inputs_num; ++i) {
         auto* x_buf = outputs_buffer_pointers[i];
-        auto axis_dim_size = inputs[i]->dims()[axis_];
+        int axis_dim_size = inputs[i]->dims()[axis_];
         global_work_size = cl::NDRange{static_cast<size_t>(axis_dim_size)};
         int total0 = axis_dim_size * post_size_;
 #ifdef LITE_WITH_LOG
@@ -395,7 +395,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         CL_CHECK_FATAL(status);
         status = kernel.setArg(1, *conat_mul_buf_output_data);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, static_cast<int>(axis_dim_size));
+        status = kernel.setArg(2, axis_dim_size);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(3, pre_size_);
         CL_CHECK_FATAL(status);
