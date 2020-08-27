@@ -25,11 +25,10 @@ bool OneHotOp::CheckShape() const {
 }
 
 bool OneHotOp::InferShapeImpl() const {
+  // Set output dims
   auto out_dims = param_.X->dims();
   CHECK_GE(out_dims.size(), 2);
-  int depth = param_.depth_tensor ? param_.depth
-                                  : param_.depth_tensor->data<int32_t>()[0];
-  out_dims[out_dims.size() - 1] = depth;
+  out_dims[out_dims.size() - 1] = param_.depth;
   param_.Out->Resize(out_dims);
   param_.Out->set_lod(param_.X->lod());
   return true;
@@ -41,15 +40,17 @@ bool OneHotOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.X = scope->FindVar(x)->GetMutable<Tensor>();
   param_.Out = scope->FindMutableTensor(out);
 
+  if (op_desc.HasAttr("depth")) {
+    param_.depth = op_desc.GetAttr<int>("depth");
+  }
+
   if (op_desc.HasInput("depth_tensor") &&
       !op_desc.Input("depth_tensor").empty()) {
     auto depth_tensor = op_desc.Input("depth_tensor").front();
     param_.depth_tensor = scope->FindVar(depth_tensor)->GetMutable<Tensor>();
+    param_.depth = param_.depth_tensor->data<int32_t>()[0];
   }
 
-  if (op_desc.HasAttr("depth")) {
-    param_.depth = op_desc.GetAttr<int>("depth");
-  }
   if (op_desc.HasAttr("allow_out_of_range")) {
     param_.allow_out_of_range = op_desc.GetAttr<bool>("allow_out_of_range");
   }

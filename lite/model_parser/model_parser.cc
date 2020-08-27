@@ -597,6 +597,7 @@ void SaveModelNaive(const std::string &model_file,
   /* 1. Save model to model.fbs */
   AppendToFile(prog_path, fbs_prog.data(), topology_size);
   VLOG(4) << "save topology_size:" << topology_size;
+
   /* 2. Get param names from cpp::ProgramDesc */
   auto &main_block_desc = *cpp_prog.GetBlock<cpp::BlockDesc>(0);
   // set unique_var_names to avoid saving shared params repeatedly
@@ -1084,8 +1085,6 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
          model_buffer.c_str() + offset,
          model_buffer.length() - offset);
 
-  //  LOG(INFO) <<int(params_data[model_buffer.length() - offset-1]);
-  //  path.c_str() + offset, path.length() - offset
   fbs::CombinedParamsDescView params(params_data);
   fbs::SetScopeWithCombinedParams(scope, params);
 

@@ -64,16 +64,16 @@ void *TargetWrapperCL::MallocImage<float>(const size_t cl_image2d_width,
                                           void *host_ptr) {
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFloat)));
   cl_int status;
-  cl::Image2D *cl_image =
-      new cl::Image2D(CLRuntime::Global()->context(),
-                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
-                                                    : CL_MEM_ALLOC_HOST_PTR),
-                      img_format,
-                      cl_image2d_width,
-                      cl_image2d_height,
-                      0,
-                      host_ptr,
-                      &status);
+  cl::Image2D *cl_image = new cl::Image2D(
+      CLRuntime::Global()->context(),
+      (host_ptr ? CL_MEM_READ_ONLY : CL_MEM_READ_WRITE) |
+          (host_ptr ? CL_MEM_COPY_HOST_PTR : CL_MEM_ALLOC_HOST_PTR),
+      img_format,
+      cl_image2d_width,
+      cl_image2d_height,
+      0,
+      host_ptr,
+      &status);
   if (status != CL_SUCCESS) {
     delete cl_image;
     cl_image = nullptr;
@@ -88,16 +88,16 @@ void *TargetWrapperCL::MallocImage<uint16_t>(const size_t cl_image2d_width,
                                              void *host_ptr) {
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFP16)));
   cl_int status;
-  cl::Image2D *cl_image =
-      new cl::Image2D(CLRuntime::Global()->context(),
-                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
-                                                    : CL_MEM_ALLOC_HOST_PTR),
-                      img_format,
-                      cl_image2d_width,
-                      cl_image2d_height,
-                      0,
-                      host_ptr,
-                      &status);
+  cl::Image2D *cl_image = new cl::Image2D(
+      CLRuntime::Global()->context(),
+      (host_ptr ? CL_MEM_READ_ONLY : CL_MEM_READ_WRITE) |
+          (host_ptr ? CL_MEM_COPY_HOST_PTR : CL_MEM_ALLOC_HOST_PTR),
+      img_format,
+      cl_image2d_width,
+      cl_image2d_height,
+      0,
+      host_ptr,
+      &status);
   if (status != CL_SUCCESS) {
     delete cl_image;
     cl_image = nullptr;
@@ -112,16 +112,16 @@ void *TargetWrapperCL::MallocImage<int32_t>(const size_t cl_image2d_width,
                                             void *host_ptr) {
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kInt32)));
   cl_int status;
-  cl::Image2D *cl_image =
-      new cl::Image2D(CLRuntime::Global()->context(),
-                      CL_MEM_READ_WRITE | (host_ptr ? CL_MEM_COPY_HOST_PTR
-                                                    : CL_MEM_ALLOC_HOST_PTR),
-                      img_format,
-                      cl_image2d_width,
-                      cl_image2d_height,
-                      0,
-                      host_ptr,
-                      &status);
+  cl::Image2D *cl_image = new cl::Image2D(
+      CLRuntime::Global()->context(),
+      (host_ptr ? CL_MEM_READ_ONLY : CL_MEM_READ_WRITE) |
+          (host_ptr ? CL_MEM_COPY_HOST_PTR : CL_MEM_ALLOC_HOST_PTR),
+      img_format,
+      cl_image2d_width,
+      cl_image2d_height,
+      0,
+      host_ptr,
+      &status);
   if (status != CL_SUCCESS) {
     delete cl_image;
     cl_image = nullptr;

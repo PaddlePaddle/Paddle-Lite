@@ -1,32 +1,10 @@
 # 模型转换工具 X2Paddle
 
-X2Paddle可以将caffe、tensorflow、onnx模型转换成Paddle支持的模型。目前支持版本为caffe 1.0；tensorflow 1.x，推荐1.4.0；ONNX 1.6.0，OpSet支持 9, 10, 11版本。
+X2Paddle可以将caffe、tensorflow、onnx模型转换成Paddle支持的模型。目前支持版本为caffe 1.0；tensorflow 1.x，推荐1.4.0；ONNX 1.6.0，OpSet支持 9, 10, 11版本。如果您使用的是PyTorch框架，请先转换为ONNX模型之后再使用X2Paddle工具转化为Paddle模型。
 
-[X2Paddle](https://github.com/PaddlePaddle/X2Paddle)支持将Caffe/TensorFlow模型转换为PaddlePaddle模型。
-支持的模型可参考**X2Paddle模型测试库：**
-https://github.com/PaddlePaddle/X2Paddle/blob/develop/x2paddle_model_zoo.md
+[X2Paddle](https://github.com/PaddlePaddle/X2Paddle)支持将Caffe/TensorFlow/ONNX模型转换为PaddlePaddle模型。
+支持的模型可参考[X2Paddle模型测试库](https://github.com/PaddlePaddle/X2Paddle/blob/develop/x2paddle_model_zoo.md)。
 
-
-## 多框架支持
-
-|模型 | caffe | tensorflow | onnx |
-|---|---|---|---|
-|mobilenetv1 | Y | Y |  |
-|mobilenetv2 | Y | Y | Y |
-|resnet18 | Y | Y |  |
-|resnet50 | Y | Y | Y |
-|mnasnet | Y | Y |  |
-|efficientnet | Y | Y | Y |
-|squeezenetv1.1 | Y | Y | Y |
-|shufflenet | Y | Y |  |
-|mobilenet_ssd | Y | Y |  |
-|mobilenet_yolov3 |  | Y |  |
-|inceptionv4 |  |  |  |
-|mtcnn | Y | Y |  |
-|facedetection | Y |  |  |
-|unet | Y | Y |  |
-|ocr_attention |  |  |  |
-|vgg16 |  |  |  |
 
 
 ## 安装
@@ -46,18 +24,26 @@ pip install git+https://github.com/PaddlePaddle/X2Paddle.git@develop
 ### Caffe
 
 ```
-x2paddle --framework caffe \
-         --prototxt model.proto \
-	 --weight model.caffemodel \
-         --save_dir paddle_model
+x2paddle --framework=caffe \
+         --prototxt=deploy.prototxt \
+         --weight=deploy.caffemodel \
+         --save_dir=pd_model
 ```
 
 ### TensorFlow
 
 ```
-x2paddle --framework tensorflow \
-	 --model model.pb \
-	 --save_dir paddle_model
+x2paddle --framework=tensorflow \
+         --model=tf_model.pb \
+         --save_dir=pd_model
+```
+
+### ONNX
+
+```
+x2paddle --framework=onnx \
+         --model=onnx_model.onnx \
+         --save_dir=pd_model
 ```
 
 ## 转换结果说明
@@ -68,4 +54,4 @@ x2paddle --framework tensorflow \
 
 ## 问题反馈
 
-X2Paddle使用时存在问题时，欢迎您将问题或Bug报告以[Github Issues](https://github.com/PaddlePaddle/X2Paddle/issues)的形式提交给我们，我们会实时跟进。
+受限于不同框架的差异，部分模型可能会存在目前无法转换的情况，如TensorFlow中包含控制流的模型，NLP模型等。对于CV常见的模型，如若您发现无法转换或转换失败，存在较大差异等问题，欢迎您将问题或Bug报告以[Github Issues](https://github.com/PaddlePaddle/X2Paddle/issues)的形式提交给我们，我们会实时跟进。
