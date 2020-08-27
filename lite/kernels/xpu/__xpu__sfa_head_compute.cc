@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/__xpu__sfa_head_compute.h"
+#include <string>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -32,14 +33,20 @@ void XPUSfaHeadCompute::Run() {
   const int n = static_cast<int>(input->dims()[2]);
   if (vis_type == "meanstd") {
     int r = xdnn::vis_meanstd(ctx.GetRawContext(),
-            param.input->data<float>(),
-            param.output->mutable_data<float>(TARGET(kXPU)), batch, m, n);
+                              param.input->data<float>(),
+                              param.output->mutable_data<float>(TARGET(kXPU)),
+                              batch,
+                              m,
+                              n);
     CHECK_EQ(r, 0) << "XPU kernel error";
     (void)param.output->mutable_data<float>();
   } else if (vis_type == "moment") {
     int r = xdnn::vis_moment(ctx.GetRawContext(),
-            param.input->data<float>(),
-            param.output->mutable_data<float>(TARGET(kXPU)), batch, m, n);
+                             param.input->data<float>(),
+                             param.output->mutable_data<float>(TARGET(kXPU)),
+                             batch,
+                             m,
+                             n);
     CHECK_EQ(r, 0) << "XPU kernel error";
   } else {
     LOG(FATAL) << "vis xpu op not supported type " << vis_type.c_str();

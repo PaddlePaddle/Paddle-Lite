@@ -61,7 +61,6 @@ class ElementwiseMulCompute
   virtual ~ElementwiseMulCompute() = default;
 };
 
-
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite

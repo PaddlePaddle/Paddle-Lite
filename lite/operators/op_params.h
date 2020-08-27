@@ -1769,7 +1769,7 @@ struct XPUConv2dParam : ParamBase {
   lite::Tensor* OutputMax{nullptr};
 
   int groups{1};
-  int act_type;
+  int act_type{-1};
   std::string filter_type{""};
   std::vector<int> strides;
   std::shared_ptr<std::vector<int>> paddings;

@@ -18,9 +18,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace xpu {
-
-}  // namespace xpu
+namespace xpu {}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

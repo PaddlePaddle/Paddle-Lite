@@ -28,21 +28,20 @@ namespace fusion {
 //  ["concat"],
 //  ["elementwise_sub",
 //      ["square", ["reduce_mean", ["sqrt"]]],
-//      ["abs", ["pow", ["elementwise_mul", ["reduce_mean", ["abs", ["pow"]]]]]],
+//      ["abs", ["pow", ["elementwise_mul", ["reduce_mean", ["abs",
+//      ["pow"]]]]]],
 //      ["sign"],
 //      ["abs", ["pow", ["reduce_mean", ["abs", ["pow"]]]]]]]]
 
 class XPUSfaHeadMomentFuser : public FuseBase {
  public:
-
   void BuildPattern() override {
     auto* reduce_mean_input = VarNode("reduce_mean_input")
                                   ->assert_is_op_output("reshape2", "Out")
                                   ->assert_is_op_input("reduce_mean", "X")
                                   ->assert_is_op_input("elementwise_sub", "X")
                                   ->AsInput();
-    auto* reduce_mean = OpNode("reduce_mean", "reduce_mean")
-                            ->AsIntermediate();
+    auto* reduce_mean = OpNode("reduce_mean", "reduce_mean")->AsIntermediate();
 
     auto* reduce_mean_out = VarNode("reduce_mean_out")
                                 ->assert_is_op_output("reduce_mean", "Out")
@@ -50,115 +49,123 @@ class XPUSfaHeadMomentFuser : public FuseBase {
                                 ->assert_is_op_input("elementwise_sub", "Y")
                                 ->AsIntermediate();
 
-    auto* elementwise_sub = OpNode("elementwise_sub", "elementwise_sub")
-                                ->AsIntermediate();
-    auto* elementwise_sub_out = VarNode("elementwise_sub_out")
-                                    ->assert_is_op_output("elementwise_sub", "Out")
-                                    ->assert_is_op_input("square", "X")
-                                    ->assert_is_op_input("abs", "X")
-                                    ->assert_is_op_input("sign", "X")
-                                    ->AsIntermediate();
+    auto* elementwise_sub =
+        OpNode("elementwise_sub", "elementwise_sub")->AsIntermediate();
+    auto* elementwise_sub_out =
+        VarNode("elementwise_sub_out")
+            ->assert_is_op_output("elementwise_sub", "Out")
+            ->assert_is_op_input("square", "X")
+            ->assert_is_op_input("abs", "X")
+            ->assert_is_op_input("sign", "X")
+            ->AsIntermediate();
 
     auto* square = OpNode("square", "square")->AsIntermediate();
 
-
-    auto* square_out = VarNode("square_out")->assert_is_op_output("square", "Out")
-                                            ->assert_is_op_input("reduce_mean", "X")
-                                            ->AsIntermediate();
-    auto* reduce_mean_es = OpNode("es_reduce_mean", "reduce_mean")->AsIntermediate();
+    auto* square_out = VarNode("square_out")
+                           ->assert_is_op_output("square", "Out")
+                           ->assert_is_op_input("reduce_mean", "X")
+                           ->AsIntermediate();
+    auto* reduce_mean_es =
+        OpNode("es_reduce_mean", "reduce_mean")->AsIntermediate();
     auto* reduce_mean_out_es = VarNode("reduce_mean_out_es")
-                               ->assert_is_op_output("reduce_mean", "Out")
-                               ->assert_is_op_input("sqrt", "X")
-                               ->AsIntermediate();
+                                   ->assert_is_op_output("reduce_mean", "Out")
+                                   ->assert_is_op_input("sqrt", "X")
+                                   ->AsIntermediate();
     auto* sqrt = OpNode("sqrt", "sqrt")->AsIntermediate();
-    auto* sqrt_out = VarNode("sqrt_out")->assert_is_op_output("sqrt", "Out")
-                                        ->assert_is_op_nth_input("concat", "X", 1)
-                                        ->AsIntermediate();
+    auto* sqrt_out = VarNode("sqrt_out")
+                         ->assert_is_op_output("sqrt", "Out")
+                         ->assert_is_op_nth_input("concat", "X", 1)
+                         ->AsIntermediate();
     auto* concat = OpNode("concat", "concat")->AsIntermediate();
-    auto* out = VarNode("out")->assert_is_op_output("concat", "Out")
-                              ->AsOutput();
+    auto* out =
+        VarNode("out")->assert_is_op_output("concat", "Out")->AsOutput();
 
     auto* abs_e2 = OpNode("e2_abs", "abs")->AsIntermediate();
     auto* abs_e2_out = VarNode("abs_e2_out")
-				->assert_is_op_input("pow", "X")
-				->assert_is_op_output("abs", "Out")
-				->AsIntermediate();
+                           ->assert_is_op_input("pow", "X")
+                           ->assert_is_op_output("abs", "Out")
+                           ->AsIntermediate();
 
-    auto * pow_e2 = OpNode("e2_pow", "pow")->AsIntermediate();
-    auto * pow_e2_out = VarNode("pow_e2_out")
-				->assert_is_op_input("elementwise_mul", "X")
-				->assert_is_op_output("pow", "Out")
-				->AsIntermediate();
+    auto* pow_e2 = OpNode("e2_pow", "pow")->AsIntermediate();
+    auto* pow_e2_out = VarNode("pow_e2_out")
+                           ->assert_is_op_input("elementwise_mul", "X")
+                           ->assert_is_op_output("pow", "Out")
+                           ->AsIntermediate();
 
-    auto * sign_e3 = OpNode("e3_sign", "sign")->AsIntermediate();
-    auto * sign_e3_out = VarNode("sign_e3_out")
-                                ->assert_is_op_input("elementwise_mul", "Y")
-                                ->assert_is_op_output("sign", "Out")
-                                ->AsIntermediate();
+    auto* sign_e3 = OpNode("e3_sign", "sign")->AsIntermediate();
+    auto* sign_e3_out = VarNode("sign_e3_out")
+                            ->assert_is_op_input("elementwise_mul", "Y")
+                            ->assert_is_op_output("sign", "Out")
+                            ->AsIntermediate();
 
-    auto * elementwise_mul_top = OpNode("elementwise_mul_top", "elementwise_mul")->AsIntermediate();
-    auto * elementwise_mul_top_out = VarNode("elementwise_mul_top_out")
-                                ->assert_is_op_input("reduce_mean", "X")
-                                ->assert_is_op_output("elementwise_mul", "Out")
-                                ->AsIntermediate();
-    auto * reduce_mean_e2 = OpNode("reduce_mean_e2", "reduce_mean")->AsIntermediate();
-    auto * reduce_mean_e2_out = VarNode("reduce_mean_e2_out")
-                ->assert_is_op_input("abs", "X")
-                ->assert_is_op_input("sign", "X")
-                ->assert_is_op_output("reduce_mean", "Out")
-                ->AsIntermediate();
-    auto * abs_e2_2 = OpNode("abs_e2_2", "abs")->AsIntermediate();
-    auto * abs_e2_2_out = VarNode("abs_e2_2_out")
-                                ->assert_is_op_input("pow", "X")
-                                ->assert_is_op_output("abs", "Out")
-                                ->AsIntermediate();
-    auto * pow_e2_2 = OpNode("pow_e2_2", "pow")->AsIntermediate();
-    auto * pow_e2_2_out = VarNode("pow_e2_2_out")
-                                ->assert_is_op_nth_input("elementwise_mul", "X", 0)
-                                ->assert_is_op_output("pow", "Out")
-                                ->AsIntermediate();
-    auto * sign_e3_2 = OpNode("sign_e3_2", "sign")->AsIntermediate();
-    auto * sign_e3_2_out = VarNode("sign_e3_2_out")
-                                ->assert_is_op_input("elementwise_mul", "Y")
-                                ->assert_is_op_output("sign", "Out")
-                                ->AsIntermediate();
-    auto * elementwise_mul_bottom = OpNode("elementwise_mul_bottom", "elementwise_mul")
-                                ->AsIntermediate();
-    auto * elementwise_mul_bottom_out = VarNode("elementwise_mul_bottom_out")
-                                ->assert_is_op_output("elementwise_mul", "Out")
-                                ->assert_is_op_nth_input("concat", "X", 2)
-                                ->AsIntermediate();
+    auto* elementwise_mul_top =
+        OpNode("elementwise_mul_top", "elementwise_mul")->AsIntermediate();
+    auto* elementwise_mul_top_out =
+        VarNode("elementwise_mul_top_out")
+            ->assert_is_op_input("reduce_mean", "X")
+            ->assert_is_op_output("elementwise_mul", "Out")
+            ->AsIntermediate();
+    auto* reduce_mean_e2 =
+        OpNode("reduce_mean_e2", "reduce_mean")->AsIntermediate();
+    auto* reduce_mean_e2_out = VarNode("reduce_mean_e2_out")
+                                   ->assert_is_op_input("abs", "X")
+                                   ->assert_is_op_input("sign", "X")
+                                   ->assert_is_op_output("reduce_mean", "Out")
+                                   ->AsIntermediate();
+    auto* abs_e2_2 = OpNode("abs_e2_2", "abs")->AsIntermediate();
+    auto* abs_e2_2_out = VarNode("abs_e2_2_out")
+                             ->assert_is_op_input("pow", "X")
+                             ->assert_is_op_output("abs", "Out")
+                             ->AsIntermediate();
+    auto* pow_e2_2 = OpNode("pow_e2_2", "pow")->AsIntermediate();
+    auto* pow_e2_2_out = VarNode("pow_e2_2_out")
+                             ->assert_is_op_nth_input("elementwise_mul", "X", 0)
+                             ->assert_is_op_output("pow", "Out")
+                             ->AsIntermediate();
+    auto* sign_e3_2 = OpNode("sign_e3_2", "sign")->AsIntermediate();
+    auto* sign_e3_2_out = VarNode("sign_e3_2_out")
+                              ->assert_is_op_input("elementwise_mul", "Y")
+                              ->assert_is_op_output("sign", "Out")
+                              ->AsIntermediate();
+    auto* elementwise_mul_bottom =
+        OpNode("elementwise_mul_bottom", "elementwise_mul")->AsIntermediate();
+    auto* elementwise_mul_bottom_out =
+        VarNode("elementwise_mul_bottom_out")
+            ->assert_is_op_output("elementwise_mul", "Out")
+            ->assert_is_op_nth_input("concat", "X", 2)
+            ->AsIntermediate();
 
-    //e4
-   auto * abs_e_4 = OpNode("abs_e_4", "abs")->AsIntermediate();
-   auto * abs_e_4_out = VarNode("abs_e_4_out")
-                                ->assert_is_op_output("abs", "Out")
-                                ->assert_is_op_input("pow", "X")
-                                ->AsIntermediate();
-    auto * pow_e_4 = OpNode("pow_e_4","pow")->AsIntermediate();
-    auto * pow_e_4_out = VarNode("pow_e_4_out")
-                                ->assert_is_op_output("pow", "Out")
-                                ->assert_is_op_input("reduce_mean", "X")
-                                ->AsIntermediate();
-    auto * reduce_mean_4 = OpNode("reduce_mean_4")->AsIntermediate();
-    auto * reduce_mean_4_out = VarNode("reduce_mean_4_out")
-                                ->assert_is_op_output("reduce_mean", "Out")
-                                ->assert_is_op_input("abs", "X")
-                                ->AsIntermediate();
+    // e4
+    auto* abs_e_4 = OpNode("abs_e_4", "abs")->AsIntermediate();
+    auto* abs_e_4_out = VarNode("abs_e_4_out")
+                            ->assert_is_op_output("abs", "Out")
+                            ->assert_is_op_input("pow", "X")
+                            ->AsIntermediate();
+    auto* pow_e_4 = OpNode("pow_e_4", "pow")->AsIntermediate();
+    auto* pow_e_4_out = VarNode("pow_e_4_out")
+                            ->assert_is_op_output("pow", "Out")
+                            ->assert_is_op_input("reduce_mean", "X")
+                            ->AsIntermediate();
+    auto* reduce_mean_4 = OpNode("reduce_mean_4")->AsIntermediate();
+    auto* reduce_mean_4_out = VarNode("reduce_mean_4_out")
+                                  ->assert_is_op_output("reduce_mean", "Out")
+                                  ->assert_is_op_input("abs", "X")
+                                  ->AsIntermediate();
 
-    auto * abs_e_4_2 = OpNode("abs_e_4_2", "abs")->AsIntermediate();
-    auto * abs_e_4_2_out = VarNode("abs_e_4_2_out")
-                                ->assert_is_op_output("abs", "Out")
-                                ->assert_is_op_input("pow", "X")
-                                ->AsIntermediate();
+    auto* abs_e_4_2 = OpNode("abs_e_4_2", "abs")->AsIntermediate();
+    auto* abs_e_4_2_out = VarNode("abs_e_4_2_out")
+                              ->assert_is_op_output("abs", "Out")
+                              ->assert_is_op_input("pow", "X")
+                              ->AsIntermediate();
 
-    auto * pow_e_4_2 = OpNode("pow_e_4_2","pow")->AsIntermediate();
-    auto * pow_e_4_2_out = VarNode("pow_e_4_2_out")
-                               ->assert_is_op_output("pow", "Out")
-                               ->assert_is_op_nth_input("concat", "X", 3)
-                               ->AsIntermediate();
+    auto* pow_e_4_2 = OpNode("pow_e_4_2", "pow")->AsIntermediate();
+    auto* pow_e_4_2_out = VarNode("pow_e_4_2_out")
+                              ->assert_is_op_output("pow", "Out")
+                              ->assert_is_op_nth_input("concat", "X", 3)
+                              ->AsIntermediate();
 
-    std::vector<PMNode*> elementwise_sub_inputs{reduce_mean_input, reduce_mean_out};
+    std::vector<PMNode*> elementwise_sub_inputs{reduce_mean_input,
+                                                reduce_mean_out};
 
     *reduce_mean_input >> *reduce_mean >> *reduce_mean_out;
     elementwise_sub_inputs >> *elementwise_sub >> *elementwise_sub_out;
@@ -169,26 +176,30 @@ class XPUSfaHeadMomentFuser : public FuseBase {
     *elementwise_sub_out >> *sign_e3 >> *sign_e3_out;
 
     std::vector<PMNode*> elementwise_mul_top_inputs{pow_e2_out, sign_e3_out};
-    *elementwise_sub_out >> *abs_e2 >> * abs_e2_out;
-    * abs_e2_out >> * pow_e2 >> * pow_e2_out;
-    elementwise_mul_top_inputs >> * elementwise_mul_top >> * elementwise_mul_top_out;
+    *elementwise_sub_out >> *abs_e2 >> *abs_e2_out;
+    *abs_e2_out >> *pow_e2 >> *pow_e2_out;
+    elementwise_mul_top_inputs >> *elementwise_mul_top >>
+        *elementwise_mul_top_out;
 
-    * elementwise_mul_top_out >> * reduce_mean_e2 >> * reduce_mean_e2_out;
-    * reduce_mean_e2_out >> *abs_e2_2 >> * abs_e2_2_out;
-    * abs_e2_2_out >>  * pow_e2_2 >>  * pow_e2_2_out;
+    *elementwise_mul_top_out >> *reduce_mean_e2 >> *reduce_mean_e2_out;
+    *reduce_mean_e2_out >> *abs_e2_2 >> *abs_e2_2_out;
+    *abs_e2_2_out >> *pow_e2_2 >> *pow_e2_2_out;
 
-    * reduce_mean_e2_out >> *sign_e3_2 >> *sign_e3_2_out;
+    *reduce_mean_e2_out >> *sign_e3_2 >> *sign_e3_2_out;
 
-    std::vector<PMNode*> elementwise_mul_bottom_inputs{pow_e2_2_out, sign_e3_2_out};
-    elementwise_mul_bottom_inputs >>  * elementwise_mul_bottom >>  * elementwise_mul_bottom_out;
+    std::vector<PMNode*> elementwise_mul_bottom_inputs{pow_e2_2_out,
+                                                       sign_e3_2_out};
+    elementwise_mul_bottom_inputs >> *elementwise_mul_bottom >>
+        *elementwise_mul_bottom_out;
 
-    *elementwise_sub_out >> * abs_e_4 >> * abs_e_4_out;
-    * abs_e_4_out >> * pow_e_4 >> * pow_e_4_out;
-    * pow_e_4_out >> * reduce_mean_4 >> * reduce_mean_4_out;
-    * reduce_mean_4_out >> * abs_e_4_2 >> * abs_e_4_2_out;
-    * abs_e_4_2_out >> * pow_e_4_2 >> * pow_e_4_2_out;
+    *elementwise_sub_out >> *abs_e_4 >> *abs_e_4_out;
+    *abs_e_4_out >> *pow_e_4 >> *pow_e_4_out;
+    *pow_e_4_out >> *reduce_mean_4 >> *reduce_mean_4_out;
+    *reduce_mean_4_out >> *abs_e_4_2 >> *abs_e_4_2_out;
+    *abs_e_4_2_out >> *pow_e_4_2 >> *pow_e_4_2_out;
 
-    std::vector<PMNode*> concat_inputs{reduce_mean_out, sqrt_out, elementwise_mul_bottom_out, pow_e_4_2_out};
+    std::vector<PMNode*> concat_inputs{
+        reduce_mean_out, sqrt_out, elementwise_mul_bottom_out, pow_e_4_2_out};
     concat_inputs >> *concat >> *out;
   }
 
@@ -236,6 +247,7 @@ class XPUSfaHeadMomentFusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__sfa_head_moment_fuse_pass, paddle::lite::mir::XPUSfaHeadMomentFusePass)
+REGISTER_MIR_PASS(__xpu__sfa_head_moment_fuse_pass,
+                  paddle::lite::mir::XPUSfaHeadMomentFusePass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("reduce_mean");

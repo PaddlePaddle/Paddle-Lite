@@ -113,42 +113,39 @@ class XPUConv2dBlock0Fuser : public FuseBase {
         VarNode("input")->assert_is_op_input("conv2d", "Input")->AsInput();
 
     auto* conv_filter = VarNode("conv_filter")
-                                ->assert_is_op_input("conv2d", "Filter")
-                                ->AsInput();
-    auto* conv = OpNode("conv", "conv2d")
-                                ->AsIntermediate();
+                            ->assert_is_op_input("conv2d", "Filter")
+                            ->AsInput();
+    auto* conv = OpNode("conv", "conv2d")->AsIntermediate();
     auto* conv_out = VarNode("conv_out")
-                                ->assert_is_op_output("conv2d", "Output")
-                                ->assert_is_op_input("batch_norm", "X")
-                                ->AsIntermediate();
-    auto* bn_bias = VarNode("bn_bias")
-                                ->assert_is_op_input("batch_norm", "Bias")
-                                ->AsInput();
+                         ->assert_is_op_output("conv2d", "Output")
+                         ->assert_is_op_input("batch_norm", "X")
+                         ->AsIntermediate();
+    auto* bn_bias =
+        VarNode("bn_bias")->assert_is_op_input("batch_norm", "Bias")->AsInput();
     auto* bn_mean = VarNode("bn_mean")
-                                ->assert_is_op_input("batch_norm", "Mean")
-                                ->AsIntermediate();
+                        ->assert_is_op_input("batch_norm", "Mean")
+                        ->AsIntermediate();
     auto* bn_scale = VarNode("bn_scale")
-                                ->assert_is_op_input("batch_norm", "Scale")
-                                ->AsIntermediate();
+                         ->assert_is_op_input("batch_norm", "Scale")
+                         ->AsIntermediate();
     auto* bn_var = VarNode("bn_variance")
-                                ->assert_is_op_input("batch_norm", "Variance")
-                                ->AsIntermediate();
-    auto* bn = OpNode("bn", "batch_norm")
-                                ->AsIntermediate();
-    auto* bn_out = VarNode("bn_out")
-                                ->assert_is_op_output("batch_norm", "Y");
+                       ->assert_is_op_input("batch_norm", "Variance")
+                       ->AsIntermediate();
+    auto* bn = OpNode("bn", "batch_norm")->AsIntermediate();
+    auto* bn_out = VarNode("bn_out")->assert_is_op_output("batch_norm", "Y");
     auto* bn_mean_out = VarNode("bn_mean_out")
-                                ->assert_is_op_output("batch_norm", "MeanOut")
-                                ->AsIntermediate();
+                            ->assert_is_op_output("batch_norm", "MeanOut")
+                            ->AsIntermediate();
     auto* bn_saved_mean = VarNode("bn_saved_mean")
-                                ->assert_is_op_output("batch_norm", "SavedMean")
-                                ->AsIntermediate();
+                              ->assert_is_op_output("batch_norm", "SavedMean")
+                              ->AsIntermediate();
     auto* bn_var_out = VarNode("bn_var_out")
-                                ->assert_is_op_output("batch_norm", "VarianceOut")
-                                ->AsIntermediate();
-    auto* bn_saved_var = VarNode("bn_saved_var")
-                                ->assert_is_op_output("batch_norm", "SavedVariance")
-                                ->AsIntermediate();
+                           ->assert_is_op_output("batch_norm", "VarianceOut")
+                           ->AsIntermediate();
+    auto* bn_saved_var =
+        VarNode("bn_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
 
     *input >> *conv >> *conv_out >> *bn >> *bn_out;
 
@@ -164,11 +161,9 @@ class XPUConv2dBlock0Fuser : public FuseBase {
 
     if (_with_relu) {
       bn_out->assert_is_op_input("relu", "X")->AsIntermediate();
-      auto* relu = OpNode("relu", "relu")
-                                ->AsIntermediate();
-      auto* relu_out = VarNode("relu_out")
-                                ->assert_is_op_output("relu", "Out")
-                                ->AsOutput();
+      auto* relu = OpNode("relu", "relu")->AsIntermediate();
+      auto* relu_out =
+          VarNode("relu_out")->assert_is_op_output("relu", "Out")->AsOutput();
 
       *bn_out >> *relu >> *relu_out;
     } else {
@@ -233,7 +228,7 @@ class XPUConv2dBlock0Fuser : public FuseBase {
     auto* max_filter_node = graph->NewArgumentNode(max_filter_name);
     max_filter_node->arg()->is_weight = true;
     max_filter_node->arg()->type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
 
     auto* max_filter_t = scope->NewTensor(max_filter_name);
     max_filter_t->Resize({4});
@@ -259,7 +254,7 @@ class XPUConv2dBlock0Fuser : public FuseBase {
     std::string max_output_name = output_name + "_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
-          TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
+        TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     scope->NewTensor(max_output_name);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
@@ -286,69 +281,62 @@ class XPUConv2dBlock0Fuser : public FuseBase {
 // block with branch
 class XPUConv2dBlock1Fuser : public FuseBase {
  public:
-  explicit XPUConv2dBlock1Fuser() {}
+  XPUConv2dBlock1Fuser() {}
 
   void BuildPattern() override {
     auto* input =
         VarNode("input")->assert_is_op_input("conv2d", "Input")->AsInput();
 
     auto* conv_filter = VarNode("conv_filter")
-                                ->assert_is_op_input("conv2d", "Filter")
-                                ->AsInput();
-    auto* conv = OpNode("conv", "conv2d")
-                                ->AsIntermediate();
+                            ->assert_is_op_input("conv2d", "Filter")
+                            ->AsInput();
+    auto* conv = OpNode("conv", "conv2d")->AsIntermediate();
     auto* conv_out = VarNode("conv_out")
-                                ->assert_is_op_output("conv2d", "Output")
-                                ->assert_is_op_input("batch_norm", "X")
-                                ->AsIntermediate();
-    auto* bn_bias = VarNode("bn_bias")
-                                ->assert_is_op_input("batch_norm", "Bias")
-                                ->AsInput();
+                         ->assert_is_op_output("conv2d", "Output")
+                         ->assert_is_op_input("batch_norm", "X")
+                         ->AsIntermediate();
+    auto* bn_bias =
+        VarNode("bn_bias")->assert_is_op_input("batch_norm", "Bias")->AsInput();
     auto* bn_mean = VarNode("bn_mean")
-                                ->assert_is_op_input("batch_norm", "Mean")
-                                ->AsIntermediate();
+                        ->assert_is_op_input("batch_norm", "Mean")
+                        ->AsIntermediate();
     auto* bn_scale = VarNode("bn_scale")
-                                ->assert_is_op_input("batch_norm", "Scale")
-                                ->AsIntermediate();
+                         ->assert_is_op_input("batch_norm", "Scale")
+                         ->AsIntermediate();
     auto* bn_var = VarNode("bn_variance")
-                                ->assert_is_op_input("batch_norm", "Variance")
-                                ->AsIntermediate();
-    auto* bn = OpNode("bn", "batch_norm")
-                                ->AsIntermediate();
+                       ->assert_is_op_input("batch_norm", "Variance")
+                       ->AsIntermediate();
+    auto* bn = OpNode("bn", "batch_norm")->AsIntermediate();
     auto* bn_out = VarNode("bn_out")
-                                ->assert_is_op_output("batch_norm", "Y")
-                                ->assert_is_op_input("elementwise_add", "Y")
-                                ->AsIntermediate();
+                       ->assert_is_op_output("batch_norm", "Y")
+                       ->assert_is_op_input("elementwise_add", "Y")
+                       ->AsIntermediate();
     auto* bn_mean_out = VarNode("bn_mean_out")
-                                ->assert_is_op_output("batch_norm", "MeanOut")
-                                ->AsIntermediate();
+                            ->assert_is_op_output("batch_norm", "MeanOut")
+                            ->AsIntermediate();
     auto* bn_saved_mean = VarNode("bn_saved_mean")
-                                ->assert_is_op_output("batch_norm", "SavedMean")
-                                ->AsIntermediate();
+                              ->assert_is_op_output("batch_norm", "SavedMean")
+                              ->AsIntermediate();
     auto* bn_var_out = VarNode("bn_var_out")
-                                ->assert_is_op_output("batch_norm", "VarianceOut")
-                                ->AsIntermediate();
-    auto* bn_saved_var = VarNode("bn_saved_var")
-                                ->assert_is_op_output("batch_norm", "SavedVariance")
-                                ->AsIntermediate();
-    auto* ew_x = VarNode("ew_x")
-                                ->assert_is_op_input("elementwise_add", "X")
-                                ->AsInput();
-    auto* ew_add = OpNode("ew_add", "elementwise_add")
-                                ->AsIntermediate();
+                           ->assert_is_op_output("batch_norm", "VarianceOut")
+                           ->AsIntermediate();
+    auto* bn_saved_var =
+        VarNode("bn_saved_var")
+            ->assert_is_op_output("batch_norm", "SavedVariance")
+            ->AsIntermediate();
+    auto* ew_x =
+        VarNode("ew_x")->assert_is_op_input("elementwise_add", "X")->AsInput();
+    auto* ew_add = OpNode("ew_add", "elementwise_add")->AsIntermediate();
     auto* ew_out = VarNode("ew_out")
-                                ->assert_is_op_output("elementwise_add", "Out")
-                                ->assert_is_op_input("relu", "X")
-                                ->AsIntermediate();
-    auto* relu = OpNode("relu", "relu")
-                                ->AsIntermediate();
-    auto* relu_out = VarNode("relu_out")
-                                ->assert_is_op_output("relu", "Out")
-                                ->AsOutput();
+                       ->assert_is_op_output("elementwise_add", "Out")
+                       ->assert_is_op_input("relu", "X")
+                       ->AsIntermediate();
+    auto* relu = OpNode("relu", "relu")->AsIntermediate();
+    auto* relu_out =
+        VarNode("relu_out")->assert_is_op_output("relu", "Out")->AsOutput();
 
-
-    *input >> *conv >> *conv_out >> *bn >> *bn_out >>
-                                *ew_add >> *ew_out >> *relu >> * relu_out;
+    *input >> *conv >> *conv_out >> *bn >> *bn_out >> *ew_add >> *ew_out >>
+        *relu >> *relu_out;
 
     *conv_filter >> *conv;
     *bn_bias >> *bn;
@@ -420,7 +408,7 @@ class XPUConv2dBlock1Fuser : public FuseBase {
     auto* max_filter_node = graph->NewArgumentNode(max_filter_name);
     max_filter_node->arg()->is_weight = true;
     max_filter_node->arg()->type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
 
     auto* max_filter_t = scope->NewTensor(max_filter_name);
     max_filter_t->Resize({4});
@@ -442,7 +430,7 @@ class XPUConv2dBlock1Fuser : public FuseBase {
     std::string max_output_name = output_name + "_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
-          TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
+        TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     scope->NewTensor(max_output_name);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
@@ -458,7 +446,6 @@ class XPUConv2dBlock1Fuser : public FuseBase {
     DirectedLink(new_op_node, matched.at("relu_out"));
     DirectedLink(new_op_node, max_output_node);
   }
-
 };
 
 }  // namespace fusion
