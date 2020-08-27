@@ -713,6 +713,21 @@ void prepackA_4x8(float* outptr,
     const float* inptr2 = inptr1 + ldin;
     const float* inptr3 = inptr2 + ldin;
 
+    asm volatile(
+        "prfm   pldl1keep, [%[ptr0]]        \n"
+        "prfm   pldl1keep, [%[ptr0], #64]   \n"
+        "prfm   pldl1keep, [%[ptr1]]        \n"
+        "prfm   pldl1keep, [%[ptr1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr2]]        \n"
+        "prfm   pldl1keep, [%[ptr2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr3]]        \n"
+        "prfm   pldl1keep, [%[ptr3], #64]   \n"
+        :
+        : [ptr0] "r"(inptr0),
+          [ptr1] "r"(inptr1),
+          [ptr2] "r"(inptr2),
+          [ptr3] "r"(inptr3)
+        : "memory");
     int x = x_len;
     if ((y + 3) >= mmax) {
       switch ((y + 3) - mmax) {
@@ -1151,6 +1166,18 @@ void prepackA_trans_4x8(float* outptr,
     const float* ptr2 = ptr1 + ldin;
     const float* ptr3 = ptr2 + ldin;
 
+     asm volatile(
+        "prfm   pldl1keep, [%[ptr0]]        \n"
+        "prfm   pldl1keep, [%[ptr0], #64]   \n"
+        "prfm   pldl1keep, [%[ptr1]]        \n"
+        "prfm   pldl1keep, [%[ptr1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr2]]        \n"
+        "prfm   pldl1keep, [%[ptr2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr3]]        \n"
+        "prfm   pldl1keep, [%[ptr3], #64]   \n"
+        :
+        : [ptr0] "r"(ptr0), [ptr1] "r"(ptr1), [ptr2] "r"(ptr2), [ptr3] "r"(ptr3)
+        : "memory");
     float* outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
@@ -2386,6 +2413,18 @@ void loadb_eight(
     const uint32_t* ptr2 = ptr1 + ldin;
     const uint32_t* ptr3 = ptr2 + ldin;
     uint32_t* outptr_row_col = outptr_row + y * 8;
+    asm volatile(
+        "prfm   pldl1keep, [%[ptr0]]                \n"
+        "prfm   pldl1keep, [%[ptr0], #64]   \n"
+        "prfm   pldl1keep, [%[ptr1]]        \n"
+        "prfm   pldl1keep, [%[ptr1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr2]]        \n"
+        "prfm   pldl1keep, [%[ptr2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr3]]        \n"
+        "prfm   pldl1keep, [%[ptr3], #64]   \n"
+        :
+        : [ptr0] "r"(ptr0), [ptr1] "r"(ptr1), [ptr2] "r"(ptr2), [ptr3] "r"(ptr3)
+        : "memory");
     int i = 0;
     for (; i < x_len - 7; i += 8) {
       uint32_t* ptr_out = outptr_row_col;
@@ -2484,6 +2523,33 @@ void loadb_trans_eight(
     const uint32_t* inptr7 = inptr6 + ldin;
 
     int x = x_len;
+    asm volatile(
+        "prfm   pldl1keep, [%[ptr0]]        \n"
+        "prfm   pldl1keep, [%[ptr0], #64]   \n"
+        "prfm   pldl1keep, [%[ptr1]]        \n"
+        "prfm   pldl1keep, [%[ptr1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr2]]        \n"
+        "prfm   pldl1keep, [%[ptr2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr3]]        \n"
+        "prfm   pldl1keep, [%[ptr3], #64]   \n"
+        "prfm   pldl1keep, [%[ptr4]]        \n"
+        "prfm   pldl1keep, [%[ptr4], #64]   \n"
+        "prfm   pldl1keep, [%[ptr5]]        \n"
+        "prfm   pldl1keep, [%[ptr5], #64]   \n"
+        "prfm   pldl1keep, [%[ptr6]]        \n"
+        "prfm   pldl1keep, [%[ptr6], #64]   \n"
+        "prfm   pldl1keep, [%[ptr7]]        \n"
+        "prfm   pldl1keep, [%[ptr7], #64]   \n"
+        :
+        : [ptr0] "r"(inptr0),
+          [ptr1] "r"(inptr1),
+          [ptr2] "r"(inptr2),
+          [ptr3] "r"(inptr3),
+          [ptr4] "r"(inptr4),
+          [ptr5] "r"(inptr5),
+          [ptr6] "r"(inptr6),
+          [ptr7] "r"(inptr7)
+        : "memory");
 
     //! cope with row index exceed real size, set to zero buffer
     if ((y + 7) >= nmax) {
