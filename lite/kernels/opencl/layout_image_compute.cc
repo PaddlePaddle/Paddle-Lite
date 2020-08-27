@@ -42,7 +42,6 @@ class LayoutComputeBufferChwToImageDefault
 
   void PrepareForRun() override {
     auto& param = Param<param_t>();
-    CHECK(param.x->dims().size() == 4) << "input dims size must be 4";
     if (param.process_type == 1) {
       kernel_func_name_ = "buffer_to_image2d_with_pre255";
     }

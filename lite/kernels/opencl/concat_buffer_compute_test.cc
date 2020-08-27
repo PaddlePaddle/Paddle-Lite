@@ -73,7 +73,7 @@ void concat_mul_compute_ref(std::vector<const dtype *> ins_data,
     }
   }
 }
-// #define PRINT_RESULT_CONCAT_MUL
+
 TEST(opencl_concat_buffer, compute) {
   // prepare data
   const DDim x0_dim = DDim(std::vector<DDim::value_type>{1, 2, 3, 4});
@@ -158,11 +158,7 @@ TEST(opencl_concat_buffer, compute) {
               << ", out_ref_data[" << i << "]:" << out_ref_data[i];
   }
 #endif
-  for (int i = 0; i < out_dim.production(); i++) {
-    LOG(INFO) << "i:" << i << ", out[" << i << "]:" << mapped_out[i]
-              << ", out_ref_data[" << i << "]:" << out_ref_data[i];
-    EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
-  }
+  EXPECT_NEAR(mapped_out[i], out_ref_data[i], 1e-6);
   TargetWrapperCL::Unmap(out_data, mapped_out);
   TargetWrapperCL::Unmap(x0_data, mapped_x0);
   TargetWrapperCL::Unmap(x1_data, mapped_x1);
