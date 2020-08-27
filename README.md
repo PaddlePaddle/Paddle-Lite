@@ -26,7 +26,7 @@ opt工具的下载和使用，请参考 [模型优化方法](https://paddle-lite
 **三. 安装或编译**
 
 Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，我们优先推荐您直接下载 [Paddle Lite预编译库](https://paddle-lite.readthedocs.io/zh/latest/user_guides/release_lib.html)。
-您也可以根据目标平台选择对应的[源码编译方法](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html)。Paddle Lite 提供了源码编译脚本 `lite/tools/build.sh`，只需要 [准备环境](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#id2) 和 [调用编译脚本](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#paddlelite) 两个步骤即可一键编译得到目标平台的Paddle Lite预测库。
+您也可以根据目标平台选择对应的[源码编译方法](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/`文件夹下，只需要 [准备环境](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#id2) 和 [调用编译脚本](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#paddlelite) 两个步骤即可一键编译得到目标平台的Paddle Lite预测库。
 
 **四. 预测示例**
 
