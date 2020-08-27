@@ -55,7 +55,6 @@ void sgemm_prepacked_8x12(bool is_transB,
                           const operators::ActivationParam act_param,
                           ARMContext *ctx);
 
-
 void prepackA_4x8(float *out,
                    const float *in,
                    float alpha,
@@ -3837,10 +3836,10 @@ void sgemm_prepacked_4x8(bool is_transB,
       if (ymax > M) {
         ymax = M;
       }
-      float cout0[n_block];
-      float cout1[n_block];
-      float cout2[n_block];
-      float cout3[n_block];
+      float cout0[n_block];  // NOLINT
+      float cout1[n_block];  // NOLINT
+      float cout2[n_block];  // NOLINT;
+      float cout3[n_block];  // NOLINT
 
       float bias_local[4] = {0};
       if (has_bias) {
