@@ -434,6 +434,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         add_dependencies(tiny_publish_cxx_lib publish_inference_opencl)
        endif()
     endif()
+endif()
 
 if (ARM_TARGET_OS STREQUAL "armlinux")
     add_custom_target(publish_inference_armlinux_cxx_demos ${TARGET}    
@@ -445,6 +446,4 @@ if (ARM_TARGET_OS STREQUAL "armlinux")
             COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/arm_linux_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light"
     )
     add_dependencies(publish_inference publish_inference_armlinux_cxx_demos)
-endif()
-
 endif()
