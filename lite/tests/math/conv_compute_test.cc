@@ -321,17 +321,10 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
                     std::vector<DDim> dims;
                     DDim weights_dim({c, 1, 3, 3});
                     for (auto& batch : {1, 2}) {
-                      for (auto& h : {1, 3, 15, 19, 28, 32, 75}) {
+                      for (auto& h : {15, 19, 28, 32, 75}) {
                         dims.push_back(DDim({batch, c, h, h}));
                       }
                     }
-#ifdef __aarch64__
-#else
-                    if (stride == 1 && (pad_bottom == 2 || pad_right == 2 ||
-                                        pad_top == 2 || pad_left == 2)) {
-                      continue;
-                    }
-#endif
                     const float leakey_relu_scale = 8.88;
                     test_conv_fp32(dims,
                                    weights_dim,

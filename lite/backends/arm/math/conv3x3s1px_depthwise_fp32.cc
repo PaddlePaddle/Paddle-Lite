@@ -401,7 +401,7 @@ void conv_3x3s1_depthwise_fp32_leakyRelu(const float* i_data,
           "ldr r0,    [%[outl]]                 @ load outc00 to r0\n" \
           "vmla.f32   q12, q5, q0               @ w8 * inr32\n" \
           "vmla.f32   q13, q5, q1               @ w8 * inr33\n" \
-          "ldr r5,    [%[outl], #36]            @ load flag_relu to r5\n" \
+          /*"ldr r5,    [%[outl], #36]            @ load flag_relu to r5\n"*/ \
           "vmla.f32   q14, q5, q2               @ w8 * inr34\n" \
           "vmla.f32   q15, q5, q3               @ w8 * inr35\n" \
           "ldr r1,    [%[outl], #4]             @ load outc10 to r1\n" \
@@ -645,6 +645,7 @@ void conv_3x3s1_depthwise_fp32_bias(const float* i_data,
   bool flag_bias = param.bias != nullptr;
 
   /// get workspace
+  LOG(INFO) << "conv_3x3s1_depthwise_fp32_bias: ";
   float* ptr_zero = ctx->workspace_data<float>();
   memset(ptr_zero, 0, sizeof(float) * win_round);
   float* ptr_write = ptr_zero + win_round;
@@ -839,10 +840,6 @@ void conv_3x3s1_depthwise_fp32_bias(const float* i_data,
           outl[5] += 4;
           outl[6] += 4;
           outl[7] += 4;
-          inr0 += 16;
-          inr1 += 16;
-          inr2 += 16;
-          inr3 += 16;
           if (flag_mask) {
             memcpy(outl[0] - 4, pre_out, remain * sizeof(float));
             memcpy(outl[1] - 4, pre_out + 4, remain * sizeof(float));
@@ -1090,10 +1087,6 @@ void conv_3x3s1_depthwise_fp32_relu(const float* i_data,
           outl[5] += 4;
           outl[6] += 4;
           outl[7] += 4;
-          inr0 += 16;
-          inr1 += 16;
-          inr2 += 16;
-          inr3 += 16;
           if (flag_mask) {
             memcpy(outl[0] - 4, pre_out, remain * sizeof(float));
             memcpy(outl[1] - 4, pre_out + 4, remain * sizeof(float));
@@ -1341,10 +1334,6 @@ void conv_3x3s1_depthwise_fp32_relu6(const float* i_data,
           outl[5] += 4;
           outl[6] += 4;
           outl[7] += 4;
-          inr0 += 16;
-          inr1 += 16;
-          inr2 += 16;
-          inr3 += 16;
           if (flag_mask) {
             memcpy(outl[0] - 4, pre_out, remain * sizeof(float));
             memcpy(outl[1] - 4, pre_out + 4, remain * sizeof(float));
@@ -1592,10 +1581,6 @@ void conv_3x3s1_depthwise_fp32_leakyRelu(const float* i_data,
           outl[5] += 4;
           outl[6] += 4;
           outl[7] += 4;
-          inr0 += 16;
-          inr1 += 16;
-          inr2 += 16;
-          inr3 += 16;
           if (flag_mask) {
             memcpy(outl[0] - 4, pre_out, remain * sizeof(float));
             memcpy(outl[1] - 4, pre_out + 4, remain * sizeof(float));
