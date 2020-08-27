@@ -35,11 +35,10 @@ std::vector<char> LoadFile(const std::string& path) {
   return buf;
 }
 
-void SaveFile(const std::string& path, const void* src, size_t byte_size) {
-  CHECK(src);
+void SaveFile(const std::string& path, const std::vector<char>& cache) {
   FILE* file = fopen(path.c_str(), "wb");
   CHECK(file);
-  CHECK(fwrite(src, sizeof(char), byte_size, file) == byte_size);
+  CHECK(fwrite(cache.data(), sizeof(char), cache.size(), file) == cache.size());
   fclose(file);
 }
 
