@@ -19,18 +19,19 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class FillConstantBatchSizeLikeCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
-  using param_t = operators::FillConstantParam;
+  using param_t = operators::FillConstantBatchSizeLikeParam;
 
   void Run() override;
 
-  ~FillConstantCompute() {}
+  ~FillConstantBatchSizeLikeCompute() {}
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

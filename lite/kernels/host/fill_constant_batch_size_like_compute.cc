@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/fill_constant_batch_size_like_compute.h"
+#include "lite/kernels/host/fill_constant_batch_size_like_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 void FillConstantBatchSizeLikeCompute::Run() {
   auto& param = *param_.get_mutable<param_t>();
-  auto& context = ctx_->As<ARMContext>();
 
   if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
     auto data = param.out->template mutable_data<float>();
@@ -50,18 +49,18 @@ void FillConstantBatchSizeLikeCompute::Run() {
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
     fill_constant_batch_size_like,
-    kARM,
+    kHost,
     kAny,
     kNCHW,
-    paddle::lite::kernels::arm::FillConstantBatchSizeLikeCompute,
+    paddle::lite::kernels::host::FillConstantBatchSizeLikeCompute,
     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
