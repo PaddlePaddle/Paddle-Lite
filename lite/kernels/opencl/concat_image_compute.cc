@@ -221,25 +221,25 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
                kernel_func_name_ == "concatByCWith4Inputs") {
       auto* input0 = inputs[0];
       auto* input0_image_p = input0->data<half_t, cl::Image2D>();
-      size_t input0_tensor_c = input0->dims()[1];
+      int input0_tensor_c = input0->dims()[1];
 
       auto* input1 = inputs.size() >= 2 ? inputs[1] : nullptr;
       auto* input1_image_p =
           input1 ? input1->data<half_t, cl::Image2D>() : nullptr;
-      size_t input1_tensor_c = input1 ? input1->dims()[1] : -1;
+      int input1_tensor_c = input1 ? input1->dims()[1] : -1;
 
       auto* input2 = inputs.size() >= 3 ? inputs[2] : nullptr;
       auto* input2_image_p =
           input2 ? input2->data<half_t, cl::Image2D>() : nullptr;
-      size_t input2_tensor_c = input2 ? input2->dims()[1] : -1;
+      int input2_tensor_c = input2 ? input2->dims()[1] : -1;
 
       auto* input3 = inputs.size() >= 4 ? inputs[3] : nullptr;
       auto* input3_image_p =
           input3 ? input3->data<half_t, cl::Image2D>() : nullptr;
-      size_t input3_tensor_c = input3 ? input3->dims()[1] : -1;
+      int input3_tensor_c = input3 ? input3->dims()[1] : -1;
 
-      size_t output_tensor_c = output_tensor_dims[1];
-      size_t output_tensor_w = output_tensor_dims[3];
+      int output_tensor_c = output_tensor_dims[1];
+      int output_tensor_w = output_tensor_dims[3];
 
       const std::vector<size_t>& default_work_size = DefaultWorkSize(
           output_tensor_dims,
