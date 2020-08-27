@@ -550,6 +550,17 @@ void SaveCombinedParamsNaive(const std::string &path,
 // Save model: meta_version = 1
 // Flatbuffer model + params
 ////////////////////////////////////////////////////////////////////////////////////
+// Create a new file and write data into it.
+void WriteToFile(const std::string &filename,
+                 const void *src,
+                 size_t byte_size) {
+  CHECK(src);
+  FILE *file = fopen(filename.c_str(), "wb");
+  CHECK(file);
+  CHECK(fwrite(src, sizeof(char), byte_size, file) == byte_size);
+  fclose(file);
+}
+// Append data into an existed file.
 void AppendToFile(const std::string &filename,
                   const void *src,
                   size_t byte_size) {
@@ -571,7 +582,7 @@ void SaveModelNaive(const std::string &model_file,
   const std::string prog_path = model_file + ".nb";
   // Save meta_version(uint16) into file
   uint16_t meta_version = 1;
-  fbs::SaveFile(prog_path, &meta_version, sizeof(uint16_t));
+  WriteToFile(prog_path, &meta_version, sizeof(uint16_t));
 
   // Save lite_version(char[16]) into file
   const int paddle_version_length = 16 * sizeof(char);

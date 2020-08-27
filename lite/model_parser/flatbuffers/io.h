@@ -30,7 +30,7 @@ std::vector<char> LoadFile(const std::string& path);
 std::vector<char> LoadFile(const std::string& path,
                            const size_t& offset,
                            const size_t& size = 0);
-void SaveFile(const std::string& path, const void* src, size_t byte_size);
+void SaveFile(const std::string& path, const std::vector<char>& cache);
 
 void SetScopeWithCombinedParams(lite::Scope* scope,
                                 const CombinedParamsDescReadAPI& params);
