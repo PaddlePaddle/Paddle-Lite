@@ -23,18 +23,6 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-std::vector<char> LoadFile(const std::string& path) {
-  FILE* file = fopen(path.c_str(), "rb");
-  CHECK(file);
-  fseek(file, 0, SEEK_END);
-  uint64_t length = ftell(file);
-  rewind(file);
-  std::vector<char> buf(length);
-  CHECK_EQ(fread(buf.data(), 1, length, file), length);
-  fclose(file);
-  return buf;
-}
-
 std::vector<char> LoadFile(const std::string& path,
                            const size_t& offset,
                            const size_t& size) {

@@ -856,7 +856,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
       LoadModelFbsFromFile(filename, scope, cpp_prog);
       break;
     default:
-      LOG(ERROR) << "Error, this model file is not supported.";
+      LOG(FATAL) << "Error, this model file is not supported.";
       break;
   }
 }
@@ -960,13 +960,10 @@ void LoadModelFbsFromFile(const std::string &filename,
 #endif
   offset = offset + topo_size;
 
-  /* 2. Save scope with params.fbs */
+  /* 2. Load scope from params.fbs */
   fbs::CombinedParamsDescView params(fbs::LoadFile(filename, offset));
   fbs::SetScopeWithCombinedParams(scope, params);
 
-  auto data = fbs::LoadFile(filename, offset);
-  LOG(INFO) << "Params data:" << int(data[0]) << ","
-            << int(data[data.size() - 1]);
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 
@@ -1003,7 +1000,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
       LoadModelNaiveV1FromMemory(model_buffer, scope, cpp_prog);
       break;
     default:
-      LOG(ERROR) << "Error: Unsupported model type.";
+      LOG(FATAL) << "Error: Unsupported model type.";
       break;
   }
 }
