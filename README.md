@@ -23,7 +23,7 @@ Paddle Lite框架拥有优秀的加速、优化策略及实现，包含量化、
 这些优化通过Paddle Lite提供的opt工具实现。opt工具还可以统计并打印出模型中的算子信息，并判断不同硬件平台下Paddle Lite的支持情况。
 opt工具的下载和使用，请参考 [模型优化方法](https://paddle-lite.readthedocs.io/zh/latest/user_guides/model_optimize_tool.html) 。
 
-**三. 安装或编译**
+**三. 下载或编译**
 
 Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，我们优先推荐您直接下载 [Paddle Lite预编译库](https://paddle-lite.readthedocs.io/zh/latest/user_guides/release_lib.html)。
 您也可以根据目标平台选择对应的[源码编译方法](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/`文件夹下，只需要 [准备环境](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#id2) 和 [调用编译脚本](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#paddlelite) 两个步骤即可一键编译得到目标平台的Paddle Lite预测库。
