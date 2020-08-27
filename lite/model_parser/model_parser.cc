@@ -592,10 +592,10 @@ void SaveModelNaive(const std::string &model_file,
 
   fbs::ProgramDesc fbs_prog;
   TransformProgramDescCppToAny(cpp_prog, &fbs_prog);
-  uint64_t topology_size = fbs_prog.buf_size();
+  uint64_t topology_size = (fbs_prog.data()).size();
   AppendToFile(prog_path, &topology_size, sizeof(uint64_t));
   /* 1. Save model to model.fbs */
-  AppendToFile(prog_path, fbs_prog.data(), topology_size);
+  AppendToFile(prog_path, (fbs_prog.data()).data(), topology_size);
   VLOG(4) << "save topology_size:" << topology_size;
 
   /* 2. Get param names from cpp::ProgramDesc */
@@ -613,8 +613,8 @@ void SaveModelNaive(const std::string &model_file,
   /* 3. Save combined params to params.fbs */
   fbs::CombinedParamsDesc params_prog;
   fbs::SetCombinedParamsWithScope(exec_scope, unique_var_names, &params_prog);
-  AppendToFile(prog_path, params_prog.data(), params_prog.buf_size());
-  VLOG(4) << "save params_size:" << params_prog.buf_size();
+  AppendToFile(
+      prog_path, (params_prog.data()).data(), (params_prog.data()).size());
 
   LOG(INFO) << "Save naive buffer model in '" << prog_path << " successfully";
 }
