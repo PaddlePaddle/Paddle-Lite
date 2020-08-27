@@ -61,7 +61,9 @@ opt.run()
 
 ### `set_model_type(type)`
 
-设置模型的输出类型，当前支持`naive_buffer`和`protobuf`两种格式，移动端预测需要转化为`naive_buffer`
+设置模型的输出类型，当前支持`naive_buffer`和`protobuf`两种格式，移动端预测需要转化为`naive_buffer`。
+
+`naive_buffer`的优化后模型为以`.nb`名称结尾的单个文件。`protobuf`的优化后模型为文件夹下的`model`和`params`两个文件。将`model`重命名为`__model__`用[Netron](https://lutzroeder.github.io/netron/)打开，即可查看优化后的模型结构。
 
 参数：
 
