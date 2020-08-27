@@ -332,8 +332,8 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
 #ifdef __aarch64__
                                    {pad_top, pad_bottom, pad_left, pad_right},
 #else
-                                   // if only run one case is right, otherwise run all
-                                   // case by series is error
+                                   // if only run one case is right, otherwise
+                                   // run all case by series is error
                                    {pad_top, pad_top, pad_left, pad_right},
 #endif
                                    {1, 1},
