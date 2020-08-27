@@ -603,7 +603,7 @@ void SaveModelFbs(const std::string &model_dir,
   const std::string prog_path = model_dir + "/model.fbs";
   fbs::ProgramDesc fbs_prog;
   TransformProgramDescCppToAny(cpp_prog, &fbs_prog);
-  fbs::SaveFile(prog_path, fbs_prog.data(), fbs_prog.buf_size());
+  fbs::SaveFile(prog_path, fbs_prog.data());
 
   /* 2. Get param names from cpp::ProgramDesc */
   auto &main_block_desc = *cpp_prog.GetBlock<cpp::BlockDesc>(0);
@@ -621,7 +621,7 @@ void SaveModelFbs(const std::string &model_dir,
   const std::string params_path = model_dir + "/params.fbs";
   fbs::CombinedParamsDesc params_prog;
   fbs::SetCombinedParamsWithScope(exec_scope, unique_var_names, &params_prog);
-  fbs::SaveFile(params_path, params_prog.data(), params_prog.buf_size());
+  fbs::SaveFile(params_path, params_prog.data());
 }
 #endif  // LITE_ON_TINY_PUBLISH
 
