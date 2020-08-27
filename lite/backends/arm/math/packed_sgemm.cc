@@ -1141,7 +1141,7 @@ void prepackA_trans_4x8(float *outptr,
     const float *ptr2 = ptr1 + ldin;
     const float *ptr3 = ptr2 + ldin;
 
-     asm volatile(
+    asm volatile(
         "prfm   pldl1keep, [%[ptr0]]        \n"
         "prfm   pldl1keep, [%[ptr0], #64]   \n"
         "prfm   pldl1keep, [%[ptr1]]        \n"
@@ -1153,7 +1153,7 @@ void prepackA_trans_4x8(float *outptr,
         :
         : [ptr0] "r"(ptr0), [ptr1] "r"(ptr1), [ptr2] "r"(ptr2), [ptr3] "r"(ptr3)
         : "memory");
-    float* outptr_row_col = outptr + y * 4;
+    float *outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
       float *ptr_out = outptr_row_col;
@@ -1701,8 +1701,8 @@ void prepackA_trans_6x8(float* outptr,
   }
 }
 
-void prepackA_4x8(float *outptr,
-                  const float *inptr,
+void prepackA_4x8(float* outptr,
+                  const float* inptr,
                   float alpha,
                   int ldin,
                   int m0,
@@ -1717,10 +1717,10 @@ void prepackA_4x8(float *outptr,
   float32x4_t valpha = vdupq_n_f32(alpha);
 
   for (int y = m0; y < mmax; y += 4) {
-    const float *inptr0 = inptr + y * ldin + k0;
-    const float *inptr1 = inptr0 + ldin;
-    const float *inptr2 = inptr1 + ldin;
-    const float *inptr3 = inptr2 + ldin;
+    const float* inptr0 = inptr + y * ldin + k0;
+    const float* inptr1 = inptr0 + ldin;
+    const float* inptr2 = inptr1 + ldin;
+    const float* inptr3 = inptr2 + ldin;
 
     int x = x_len;
     if ((y + 3) >= mmax) {
@@ -1811,8 +1811,8 @@ void prepackA_4x8(float *outptr,
   }
 }
 
-void prepackA_trans_4x8(float *outptr,
-                        const float *in,
+void prepackA_trans_4x8(float* outptr,
+                        const float* in,
                         float alpha,
                         int ldin,
                         int m0,
@@ -1840,15 +1840,15 @@ void prepackA_trans_4x8(float *outptr,
 
 #pragma omp parallel for
   for (int y = 0; y < y_len - 3; y += 4) {
-    const float *ptr0 = inptr + y * ldin;
-    const float *ptr1 = ptr0 + ldin;
-    const float *ptr2 = ptr1 + ldin;
-    const float *ptr3 = ptr2 + ldin;
+    const float* ptr0 = inptr + y * ldin;
+    const float* ptr1 = ptr0 + ldin;
+    const float* ptr2 = ptr1 + ldin;
+    const float* ptr3 = ptr2 + ldin;
 
-    float *outptr_row_col = outptr + y * 4;
+    float* outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
-      float *ptr_out = outptr_row_col;
+      float* ptr_out = outptr_row_col;
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
           "vld1.32 {d2-d3}, [%[ptr1]]!        @ load r1, 4 elements\n"
@@ -1875,7 +1875,7 @@ void prepackA_trans_4x8(float *outptr,
       outptr_row_col += stride_out;
     }
     if (right_pad > 0) {
-      float *ptr_out = outptr_row_col;
+      float* ptr_out = outptr_row_col;
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
           "vld1.32 {d2-d3}, [%[ptr1]]!        @ load r1, 4 elements\n"
@@ -1911,11 +1911,11 @@ void prepackA_trans_4x8(float *outptr,
 
 #pragma omp parallel for
   for (int y = 4 * (y_len / 4); y < y_len; ++y) {
-    const float *ptr0 = inptr + y * ldin;
-    float *outptr_row_col = outptr + y * 4;
+    const float* ptr0 = inptr + y * ldin;
+    float* outptr_row_col = outptr + y * 4;
     int i = 0;
     for (; i < x_len - 3; i += 4) {
-      float *ptr_out = outptr_row_col;
+      float* ptr_out = outptr_row_col;
       // clang-format off
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
@@ -1931,7 +1931,7 @@ void prepackA_trans_4x8(float *outptr,
       outptr_row_col += stride_out;
     }
     if (right_pad > 0) {
-      float *ptr_out = outptr_row_col;
+      float* ptr_out = outptr_row_col;
       // clang-format off
       asm volatile(
           "vld1.32 {d0-d1}, [%[ptr0]]!        @ load r0, 4 elements\n"
