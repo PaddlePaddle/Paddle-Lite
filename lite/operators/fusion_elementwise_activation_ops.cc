@@ -30,6 +30,7 @@ bool FusionElementwiseActivationOp::CheckShape() const {
 bool FusionElementwiseActivationOp::InferShapeImpl() const {
   size_t x_size = param_.X->dims().size();
   size_t y_size = param_.Y->dims().size();
+  param_.Out->set_lod(param_.X->lod());
   if (x_size >= y_size) {
     param_.Out->Resize(param_.X->dims());
   } else {
