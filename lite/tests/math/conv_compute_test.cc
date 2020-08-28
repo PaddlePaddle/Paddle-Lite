@@ -357,7 +357,7 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
 #endif  /// 3x3dw
 
 // TODO(chenjiaoAngel): fix multi-case run error,
-// but only run one case, the result won't compute error
+// but only run one case, the result won't compute error.
 #if 0   /// 5x5dw
 TEST(TestConv5x5DW, test_conv5x5_depthwise) {
   if (FLAGS_basic_test) {
