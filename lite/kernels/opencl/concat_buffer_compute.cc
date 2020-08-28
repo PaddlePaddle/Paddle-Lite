@@ -40,7 +40,7 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
     if (concat_param_->x.size() == 2) {
       kernel_func_name_ = "concat2";
     } else {
-      kernel_func_name_ = "concat_mul";
+      kernel_func_name_ = "concat_mul_buffer";
     }
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "buffer/concat_kernel.cl",
@@ -86,7 +86,6 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.output->dims();
-    auto image_shape = InitImageDimInfoWith(x_dims);
     auto* out_buf =
         param.output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     const auto& y_dims = param.output->dims();  // useless: check dim only
@@ -98,8 +97,9 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
 
     auto inputs = param.x;
     int arg_idx = 0;
-    auto global_work_size = cl::NDRange{axis_size_};
+    auto global_work_size = cl::NDRange{static_cast<cl::size_type>(axis_size_)};
     int total = axis_size_ * post_size_;
+
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     if (inputs.size() == 2) {
       auto* x_buf0 = inputs[0]->data<float, cl::Buffer>();
@@ -144,6 +144,15 @@ class ConcatCompute : public KernelLite<TARGET(kOpenCL),
         auto* x_buf = inputs[i]->data<float, cl::Buffer>();
         global_work_size = cl::NDRange{static_cast<size_t>(size)};
         int total0 = size * post_size_;
+#ifdef LITE_WITH_LOG
+        LOG(INFO) << "------------- i=" << i << " -------------";
+        LOG(INFO) << "pre_size:" << pre_size_;
+        LOG(INFO) << "post_size:" << post_size_;
+        LOG(INFO) << "size:" << size;
+        LOG(INFO) << "start:" << start;
+        LOG(INFO) << "total:" << total;
+        LOG(INFO) << "total0:" << total0;
+#endif
         cl_int status = kernel.setArg(arg_idx, *x_buf);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(++arg_idx, *out_buf);
