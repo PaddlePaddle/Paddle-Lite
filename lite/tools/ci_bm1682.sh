@@ -36,4 +36,3 @@ function main {
 }
 
 main $@
-
