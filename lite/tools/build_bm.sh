@@ -90,7 +90,7 @@ function build_bm {
         -DWITH_TESTING=${WITH_TESTING} \
         -DBM_SDK_ROOT=${BM_SDK_ROOT}
 
-    make -j$NUM_CORES_FOR_COMPILE
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
 
     cd -
     echo "Done"
