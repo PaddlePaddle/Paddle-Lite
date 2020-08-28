@@ -83,7 +83,7 @@ inline void ConvConvFuser::createPattern() {
 
 void ConvConvFuser::BuildPattern() {
   for (auto& node : graph_->StmtTopologicalOrder()) {
-    if (node->IsStmt() &
+    if (node->IsStmt() &&
         node->AsStmt().picked_kernel().op_type() == conv_type0_) {
       auto* scope = node->stmt()->op()->scope();
       auto conv_op_desc0 = node->stmt()->mutable_op_info();
