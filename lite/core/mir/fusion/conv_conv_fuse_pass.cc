@@ -38,7 +38,7 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         has_int8 = true;
       }
     } else {
-      VLOG(5) << "place.target: " << (int) place.target;
+      VLOG(5) << "place.target: " << static_cast<int>(place.target);
       return;
     }
   }
