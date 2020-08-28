@@ -30,7 +30,7 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   bool has_fp32 = false;
   bool has_int8 = false;
   for (auto& place : graph->valid_places()) {
-    if (place.target == TARGET(kARM)) {
+    if (place.target == TARGET(kARM) || place.target == TARGET(kHost)) {
       if (place.precision == PRECISION(kFloat)) {
         has_fp32 = true;
       }
@@ -38,6 +38,7 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         has_int8 = true;
       }
     } else {
+      VLOG(5) << "place.target: " << (int) place.target;
       return;
     }
   }
@@ -50,12 +51,12 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     for (auto conv_has_bias1 : conv_has_bias_cases) {
       for (auto conv_type0 : conv_type_cases) {
         for (auto conv_type1 : {"conv2d"}) {  // it mustbe 1x1s1p0_conv
-          VLOG(4) << "conv_has_bias0:" << conv_has_bias0
+          VLOG(5) << "conv_has_bias0:" << conv_has_bias0
                   << " conv_type0:" << conv_type0;
-          VLOG(4) << "conv_has_bias1:" << conv_has_bias1
+          VLOG(5) << "conv_has_bias1:" << conv_has_bias1
                   << " conv_type1:" << conv_type1;
           fusion::ConvConvFuser fuser(
-              conv_type0, conv_type1, conv_has_bias0, conv_has_bias1);
+              conv_type0, conv_type1, conv_has_bias0, conv_has_bias1, graph);
           fuser(graph.get());
         }
       }
