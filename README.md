@@ -67,7 +67,7 @@ Paddle Lite提供了C++、Java、Python三种API，并且提供了相应API的�
 	- 支持 [PaddleSlim模型压缩工具](https://github.com/PaddlePaddle/PaddleSlim)：支持量化训练、离线量化等多种量化方式，最优可在不损失精度的前提下进一步提升模型推理性能。性能数据请参考 [benchmark](https://paddlepaddle.github.io/Paddle-Lite/develop/benchmark/)。
 - **多模型多算子**：
 	- Paddle Lite和PaddlePaddle训练框架的OP对齐，提供广泛的模型支持能力。
-	- 目前已严格验证18个模型85个OP的精度和性能，对视觉类模型做到了较为充分的支持，覆盖分类、检测和定位，包含了特色的OCR模型的支持，并在不断丰富中。具体请参考[支持OP](https://paddle-lite.readthedocs.io/zh/latest/introduction/support_operation_list.html)。
+	- 目前已严格验证24个模型200个OP的精度和性能，对视觉类模型做到了较为充分的支持，覆盖分类、检测和定位，包含了特色的OCR模型的支持，并在不断丰富中。具体请参考[支持OP](https://paddle-lite.readthedocs.io/zh/latest/introduction/support_operation_list.html)。
 - **强大的图分析和优化能力**：
 	- 不同于常规的移动端预测引擎基于 Python 脚本工具转化模型， Lite 架构上有完整基于 C++ 开发的 IR 及相应 Pass 集合，以支持操作熔合，计算剪枝，存储优化，量化计算等多类计算图优化。更多的优化策略可以简单通过 [新增 Pass](https://paddle-lite.readthedocs.io/zh/latest/develop_guides/add_new_pass.html) 的方式模块化支持。
 
