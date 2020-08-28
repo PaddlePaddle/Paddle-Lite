@@ -185,47 +185,29 @@ void ConvImageCompute::PrepareForRun() {
 
     impl_ = &ConvImageCompute::DepthwiseConv2d;
   } else if (filter_tensor_h_ == 3 && filter_tensor_w_ == 3) {
-// #define CONV3x3OPT_FALL_BACK
-#ifndef CONV3x3OPT_FALL_BACK
     // conv2d_3x3
-    kernel_func_names_.push_back(input_tensor_n_ > 1 ? "conv2d_3x3_multi_batch"
-                                                     : "conv2d_3x3_opt");
-    kernel_func_paths_.push_back("image/conv2d_3x3_opt_kernel.cl");
+    if (groups_ == 1) {
+      kernel_func_names_.push_back(
+          input_tensor_n_ > 1 ? "conv2d_3x3_multi_batch" : "conv2d_3x3_opt");
+      kernel_func_paths_.push_back("image/conv2d_3x3_opt_kernel.cl");
+      impl_ = &ConvImageCompute::Conv2d3x3opt;
+    } else {  // groups_ > 1
+      kernel_func_names_.push_back("conv2d_3x3");
+      kernel_func_paths_.push_back("image/conv2d_3x3_kernel.cl");
+      impl_ = &ConvImageCompute::Conv2d3x3;
+    }
 
     CLImageConverterFolder converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
     filter_image_h_ = filter_image_dims[1];
     filter_image_w_ = filter_image_dims[0];
     tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
-
     half_t* filter_image_data =
         tensor_hold_filter_image_->mutable_data<half_t>();
 
     converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
     filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
         filter_image_w_, filter_image_h_, filter_image_data);
-
-    impl_ = &ConvImageCompute::Conv2d3x3opt;
-#else
-    kernel_func_names_.push_back("conv2d_3x3");
-    kernel_func_paths_.push_back("image/conv2d_3x3_kernel.cl");
-
-    CLImageConverterFolder converter;
-    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    filter_image_h_ = filter_image_dims[1];
-    filter_image_w_ = filter_image_dims[0];
-    tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
-
-    half_t* filter_image_data =
-        tensor_hold_filter_image_->mutable_data<half_t>();
-
-    converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
-    filter_gpu_image_->mutable_data<half_t, cl::Image2D>(
-        filter_image_w_, filter_image_h_, filter_image_data);
-
-    impl_ = &ConvImageCompute::Conv2d3x3;
-#endif
-#undef CONV3x3OPT_FALL_BACK
   } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5) {
 #define CONV_5x5_OPT
 #ifndef CONV_5x5_OPT
@@ -584,6 +566,11 @@ void ConvImageCompute::GetGlobalWorkSize() {
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
     input_c_block_ = static_cast<const int>((input_tensor_c_ + 3) / 4);
+  } else if (kernel_func_names_[0] == "conv2d_3x3") {
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(nh_blk_)};
+
   } else if (kernel_func_names_[0] == "conv2d_3x3_multi_batch" ||
              kernel_func_names_[0] == "conv2d_3x3_opt") {
     int w_blk_size = 5;
@@ -1185,6 +1172,56 @@ void ConvImageCompute::PrintConvInfo() {
   VLOG(4) << "dilations: " << dilation_h_ << ", " << dilation_w_;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
+  VLOG(4) << "groups_:" << groups_;
+
+  LOG(INFO) << "================================";
+  LOG(INFO) << "c_blk_=" << c_blk_ << ", w_blk_=" << w_blk_
+            << ",nh_blk_=" << nh_blk_;
+  LOG(INFO) << "input_image_p_:" << input_image_p_;
+  LOG(INFO) << "filter_image_p_:" << filter_image_p_;
+  LOG(INFO) << "bias_image_p_:" << bias_image_p_;
+  LOG(INFO) << "output_image_p_:" << output_image_p_;
+
+  LOG(INFO) << "stride_h_:" << stride_h_;
+  LOG(INFO) << "stride_w_:" << stride_w_;
+
+  LOG(INFO) << "dilation_h_:" << dilation_h_;
+  LOG(INFO) << "dilation_w_:" << dilation_w_;
+
+  LOG(INFO) << "pad_up_:" << pad_up_;
+  LOG(INFO) << "pad_down_:" << pad_down_;
+  LOG(INFO) << "pad_left_:" << pad_left_;
+  LOG(INFO) << "pad_right_:" << pad_right_;
+
+  LOG(INFO) << "offset_:" << offset_;
+  LOG(INFO) << "groups_:" << groups_;
+  LOG(INFO) << "relu_fused_:" << relu_fused_;
+  LOG(INFO) << "has_bias_:" << has_bias_;
+
+  LOG(INFO) << "input_tensor_n_:" << input_tensor_n_;
+  LOG(INFO) << "input_tensor_c_:" << input_tensor_c_;
+  LOG(INFO) << "input_tensor_h_:" << input_tensor_h_;
+  LOG(INFO) << "input_tensor_w_:" << input_tensor_w_;
+  LOG(INFO) << "input_image_h_:" << input_image_h_;
+  LOG(INFO) << "input_image_w_:" << input_image_w_;
+  LOG(INFO) << "input_c_block_:" << input_c_block_;
+
+  LOG(INFO) << "output_tensor_n_:" << output_tensor_n_;
+  LOG(INFO) << "output_tensor_c_:" << output_tensor_c_;
+  LOG(INFO) << "output_tensor_h_:" << output_tensor_h_;
+  LOG(INFO) << "output_tensor_w_:" << output_tensor_w_;
+  LOG(INFO) << "output_image_h_:" << output_image_h_;
+  LOG(INFO) << "output_image_w_:" << output_image_w_;
+
+  LOG(INFO) << "filter_tensor_n_:" << filter_tensor_n_;
+  LOG(INFO) << "filter_tensor_c_:" << filter_tensor_c_;
+  LOG(INFO) << "filter_tensor_h_:" << filter_tensor_h_;
+  LOG(INFO) << "filter_tensor_w_:" << filter_tensor_w_;
+  LOG(INFO) << "filter_image_h_:" << filter_image_h_;
+  LOG(INFO) << "filter_image_w_:" << filter_image_w_;
+
+  LOG(INFO) << "bias_image_h_" << bias_image_h_;
+  LOG(INFO) << "bias_image_w_" << bias_image_w_;
 }
 
 double ConvImageCompute::Tune(int times) {
