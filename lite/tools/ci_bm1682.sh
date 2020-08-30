@@ -13,7 +13,7 @@ function bm1682_test {
     cd /paddlelite/build.lite.bm/inference_lite_lib/demo/cxx/bm_demo
     wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
     tar -xvf mobilenet_v1.tar.gz
-    build.sh
+    bash build.sh
     mobilenet_full_api mobilenet_v1 224 224
 }
 
