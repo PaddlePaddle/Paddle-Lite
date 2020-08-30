@@ -14,7 +14,7 @@ function bm1682_test {
     wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
     tar -xvf mobilenet_v1.tar.gz
     bash build.sh
-    mobilenet_full_api mobilenet_v1 224 224
+    ./mobilenet_full_api ./mobilenet_v1 224 224
 }
 
 function main {
