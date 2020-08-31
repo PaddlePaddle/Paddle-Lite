@@ -31,12 +31,13 @@ void CastCompute::PrepareForRun() {}
 void CastCompute::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::CastParam>();
-
   auto input_dims = param.X->dims();
-
+  if (param.X->precision() == PrecisionType::kFloat) {
+    param.in_dtype = 5;
+  }
   // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
   // SIZE_T = 19;UINT8 = 20;INT8 = 21;
-  if (param.in_dtype == param.out_dtype && param.in_dtype == 2) {
+  if (param.in_dtype == param.out_dtype && param.in_dtype == 5) {
     const auto* x_data = param.X->data<float>();
     auto* o_data = param.Out->mutable_data<float>();
     memcpy(o_data, x_data, sizeof(float) * param.X->numel());

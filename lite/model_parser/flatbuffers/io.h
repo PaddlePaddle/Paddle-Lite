@@ -27,7 +27,7 @@ namespace lite {
 namespace fbs {
 
 std::vector<char> LoadFile(const std::string& path);
-void SaveFile(const std::string& path, const void* src, size_t byte_size);
+void SaveFile(const std::string& path, const std::vector<char>& cache);
 
 void SetScopeWithCombinedParams(lite::Scope* scope,
                                 const CombinedParamsDescReadAPI& params);

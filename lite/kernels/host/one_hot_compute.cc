@@ -24,7 +24,7 @@ void OneHotKernelFunctor(const Tensor* in,
                          Tensor* out,
                          int depth,
                          bool allow_out_of_range = false) {
-  auto* p_in_data = in->data<T>();
+  auto* p_in_data = in->data<int64_t>();
   auto numel = in->numel();
   auto* p_out_data = out->mutable_data<T>();
   memset(p_out_data, 0, out->numel() * sizeof(T));
@@ -77,7 +77,7 @@ REGISTER_LITE_KERNEL(
     one_hot, kHost, kAny, kAny, paddle::lite::kernels::host::OneHotCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny),
+                                      PRECISION(kInt64),
                                       DATALAYOUT(kAny))})
     .BindInput("depth_tensor",
                {LiteType::GetTensorTy(TARGET(kHost),
