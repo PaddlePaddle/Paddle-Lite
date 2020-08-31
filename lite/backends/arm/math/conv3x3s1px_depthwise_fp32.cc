@@ -41,6 +41,7 @@ void conv_3x3s1_depthwise_fp32_bias(const float* i_data,
                                     float* scale_ptr,
                                     const operators::ConvParam& param,
                                     ARMContext* ctx);
+
 void conv_3x3s1_depthwise_fp32_relu(const float* i_data,
                                     float* o_data,
                                     int bs,
