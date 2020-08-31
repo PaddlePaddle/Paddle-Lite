@@ -77,7 +77,7 @@ __kernel void hard_sigmoid(__read_only image2d_t input,
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
-  CL_DTYPE4 out = clamp(in * scale + value_offset, 0.0, 1.0);
+  CL_DTYPE4 out = clamp(in * (CL_DTYPE4)(scale) + (CL_DTYPE4)(value_offset), (CL_DTYPE4)(0.0), (CL_DTYPE4)(1.0));
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }

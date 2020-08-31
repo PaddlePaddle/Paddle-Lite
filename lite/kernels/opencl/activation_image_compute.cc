@@ -77,7 +77,7 @@ class ActivationComputeImageDefault
         scale_ = act_param_->hard_sigmoid_slope;
         threshold_ = act_param_->hard_sigmoid_offset;
         break;
-      defauln:
+      default:
         LOG(FATAL) << "This act type:" << act_type << " doesn't support.";
         return;
     }
