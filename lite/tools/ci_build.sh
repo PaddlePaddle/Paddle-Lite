@@ -342,24 +342,6 @@ function build_test_train {
 
 }
 
-function cmake_xpu {
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-    prepare_workspace
-    cmake .. \
-        ${common_flags} \
-        -DWITH_GPU=OFF \
-        -DWITH_MKLDNN=OFF \
-        -DLITE_WITH_X86=ON \
-        -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_XPU=ON \
-        -DXPU_SDK_ROOT="./output"
-}
-
-function build_xpu {
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
 # It will eagerly test all lite related unittests.
 function test_xpu {
     # Due to the missing of xpu kernels, we skip the following tests temporarily.
@@ -387,14 +369,25 @@ function test_xpu {
 
 # Build the code and run lite server tests. This is executed in the CI system.
 function build_test_xpu {
-    cur_dir=$(pwd)
-
-    build_dir=$cur_dir/build.lite.xpu
-    mkdir -p $build_dir
-    cd $build_dir
-
-    cmake_xpu
-    build_xpu
+    local with_xtcl=$1
+    if [[ "${with_xtcl}x" == "x" ]]; then
+        with_xtcl=OFF
+    fi
+    mkdir -p ./build
+    cd ./build
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    prepare_workspace
+    cmake .. \
+        ${common_flags} \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_XPU=ON \
+        -DLITE_WITH_XTCL=$with_xtcl\
+        -DXPU_SDK_ROOT="./output"
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
     test_xpu
 }
@@ -1171,10 +1164,6 @@ function main {
                 cmake_x86
                 shift
                 ;;
-            cmake_xpu)
-                cmake_xpu
-                shift
-                ;;
             cmake_opencl)
                 cmake_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
@@ -1197,10 +1186,6 @@ function main {
                 ;;
             test_server)
                 test_server
-                shift
-                ;;
-            test_xpu)
-                test_xpu
                 shift
                 ;;
             test_arm)
@@ -1233,7 +1218,11 @@ function main {
                 shift
                 ;;
             build_test_xpu)
-                build_test_xpu
+                build_test_xpu OFF
+                shift
+                ;;
+            build_test_xpu_with_xtcl)
+                build_test_xpu ON
                 shift
                 ;;
             build_test_huawei_ascend_npu)

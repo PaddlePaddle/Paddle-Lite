@@ -460,8 +460,9 @@ TEST(Matmul2x2, precision) {
   abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
+// #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+//  place = TARGET(kXPU);
+//  abs_error = 1e-3; // use int16 in xpu
 #else
   return;
 #endif
@@ -500,6 +501,7 @@ TEST(Matmul2x2_y_transpose, precision) {
   place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+  abs_error = 1e-3;  // use int16 in xpu
 #else
   return;
 #endif
