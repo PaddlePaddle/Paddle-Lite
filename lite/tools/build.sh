@@ -405,7 +405,6 @@ function make_x86 {
             -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
             -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release \
-            -DWITH_TESTING=ON \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
   make publish_inference -j$NUM_PROC
