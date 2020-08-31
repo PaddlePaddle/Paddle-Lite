@@ -26,7 +26,9 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-std::vector<char> LoadFile(const std::string& path);
+std::vector<char> LoadFile(const std::string& path,
+                           const size_t& offset = 0,
+                           const size_t& size = 0);
 void SaveFile(const std::string& path, const std::vector<char>& cache);
 
 void SetScopeWithCombinedParams(lite::Scope* scope,
