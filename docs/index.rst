@@ -15,6 +15,7 @@ Welcome to Paddle-Lite's documentation!
   introduction/architecture
   introduction/support_hardware
   introduction/support_operation_list
+  introduction/support_model_list
 
 .. toctree::
   :maxdepth: 1
