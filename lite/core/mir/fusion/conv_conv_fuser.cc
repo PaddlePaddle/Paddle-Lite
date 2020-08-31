@@ -130,27 +130,20 @@ void ConvConvFuser::BuildPattern() {
                 conv_op_desc1->HasAttr("enable_int8") ? true : false;
             if (!(kw == 1 && kh == 1)) {
               VLOG(5) << "The kernel size of the second conv must be 1x1";
-              return;
+              continue;
             }
-            CHECK_EQ(groups1, 1) << "The groups of weight1_dim must be 1";
-            CHECK_EQ(ch_out_0, ch_in_1) << "channel0_out == channel1_in";
-            for (int i = 0; i < strides1.size(); i++) {
-              CHECK_EQ(strides1[i], 1) << "strides[" << i
-                                       << "]: " << strides1[i] << " must be 1";
+            if (groups1 != 1) {
+              VLOG(5) << "The groups of weight1_dim must be 1";
+              continue;
             }
-            for (int i = 0; i < paddings1.size(); i++) {
-              CHECK_EQ(paddings1[i], 0)
-                  << "paddings1[" << i << "]: " << paddings1[i] << " must be 0";
+            if (ch_out_0 != ch_in_1) {
+              VLOG(5) << "channel0_out must be equal channel1_in";
+              continue;
             }
-            for (int i = 0; i < dilations1.size(); i++) {
-              CHECK_EQ(dilations1[i], 1) << "dilations1[" << i
-                                         << "]: " << dilations1[i]
-                                         << " must be 1";
+            if (enable0_int8 || enable0_int8 != enable1_int8) {
+              VLOG(5) << "The Conv-compute type must be same and be false";
+              continue;
             }
-            CHECK_EQ(enable0_int8, enable1_int8)
-                << "The Conv compute type must be same";
-            CHECK_EQ(enable0_int8, false)
-                << "The Conv compute type must be fp32";
             // computation: ic0 x (oc1-oc0) < oc0 x oc1
             VLOG(5) << "a: " << (ch_in_0 * (ch_out_1 - ch_out_0)) << " <= "
                     << "b: " << (ch_out_0 * ch_out_1);
@@ -160,7 +153,7 @@ void ConvConvFuser::BuildPattern() {
                       << "computation "
                       << "a: " << (ch_in_0 * (ch_out_1 - ch_out_0)) << " <= "
                       << "b: " << (ch_out_0 * ch_out_1);
-              return;
+              continue;
             }
             // create pattern
             VLOG(5) << "matched: " << conv_type0_ << " and " << conv_type1_;
@@ -188,6 +181,22 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto weight1_t = scope->FindVar(matched.at("conv_weight1")->arg()->name)
                        ->GetMutable<lite::Tensor>();
   bool enable0_int8 = conv_op_desc->HasAttr("enable_int8") ? true : false;
+  auto strides1 = conv_op_desc1->GetAttr<std::vector<int>>("strides");
+  auto paddings1 = conv_op_desc1->GetAttr<std::vector<int>>("paddings");
+  auto dilations1 = conv_op_desc1->GetAttr<std::vector<int>>("dilations");
+
+   for (int i = 0; i < strides1.size(); i++) {
+     CHECK_EQ(strides1[i], 1) << "strides[" << i << "]: " << strides1[i]
+                              << " must be 1";
+   }
+   for (int i = 0; i < paddings1.size(); i++) {
+     CHECK_EQ(paddings1[i], 0) << "paddings1[" << i << "]: " << paddings1[i]
+                               << " must be 0";
+   }
+   for (int i = 0; i < dilations1.size(); i++) {
+     CHECK_EQ(dilations1[i], 1) << "dilations1[" << i << "]: " << dilations1[i]
+                                << " must be 1";
+   }
   // comupte new_wight and new bias
   ///////////////////////////////////////////////////////////////////////////////
   // Compute ConvConvFuser
