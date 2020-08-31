@@ -18,8 +18,8 @@
 #include <algorithm>
 #include <climits>
 #include <limits>
-#include <system_error>  // NOLINT
-#include "lite/utils/variant.h"
+#include <system_error>          // NOLINT
+#include "lite/utils/variant.h"  // for likely
 
 namespace paddle {
 namespace lite {
@@ -38,6 +38,9 @@ struct from_chars_result {
 };
 
 /*
+ * Reference:
+ * https://github.com/VerizonDigital/json_parser
+ *
  * Most C++ environments use ASCII as the development character
  * set. Array `kAsciiToInt` is the look-up table implementation
  * of the following functions:
@@ -97,7 +100,8 @@ constexpr uint8_t kAsciiToInt[256] = {
     UCHAR_MAX,  UCHAR_MAX, UCHAR_MAX, UCHAR_MAX, UCHAR_MAX, UCHAR_MAX,
     UCHAR_MAX,  UCHAR_MAX, UCHAR_MAX};
 
-/* function: aton_unsigned
+/*
+ * function: aton_unsigned
  * brief: Convert a string constant to an unsigned integer.
  * parameters:
  *   str(const char*): input string constant.
