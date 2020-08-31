@@ -57,7 +57,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     kernel_func_name_ = "conv_depthwise_3x3_fp32";
 #endif
   } else if (kw == 5) {
-    // VLOG(5) << "invoke 5x5 dw conv fp32";
     bool pads_five = (paddings[0] < 5) || (paddings[2] < 5);
     auto strides = param.strides;
     if (ch_four && pads_five && win >= kw && hin >= kw &&

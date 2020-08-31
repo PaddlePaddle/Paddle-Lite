@@ -35,6 +35,7 @@ void conv_depthwise_5x5s1_bias(float* dout,
                                int pad_left,
                                int pad_right,
                                ARMContext* ctx);
+
 void conv_depthwise_5x5s1_bias_relu(float* dout,
                                     const float* din,
                                     const float* weights,
@@ -51,6 +52,7 @@ void conv_depthwise_5x5s1_bias_relu(float* dout,
                                     int pad_left,
                                     int pad_right,
                                     ARMContext* ctx);
+
 void conv_depthwise_5x5s1_bias_relu6(float* dout,
                                      const float* din,
                                      const float* weights,
@@ -68,6 +70,7 @@ void conv_depthwise_5x5s1_bias_relu6(float* dout,
                                      int pad_left,
                                      int pad_right,
                                      ARMContext* ctx);
+
 void conv_depthwise_5x5s1_bias_leakyRelu(float* dout,
                                          const float* din,
                                          const float* weights,
@@ -85,6 +88,7 @@ void conv_depthwise_5x5s1_bias_leakyRelu(float* dout,
                                          int pad_left,
                                          int pad_right,
                                          ARMContext* ctx);
+
 void conv_depthwise_5x5s1_fp32(float* dout,
                                const float* din,
                                const float* weights,
@@ -190,6 +194,7 @@ void conv_depthwise_5x5s1_fp32(float* dout,
                               ctx);
   }
 }
+
 // clang-format off
 #ifdef __aarch64__
 #define COMPUTE_ONE_LINE_S1_PRE                        \
