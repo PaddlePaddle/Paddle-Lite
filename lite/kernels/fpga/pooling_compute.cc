@@ -31,29 +31,81 @@ void PoolCompute::PrepareForRun() {
   auto& param = Param<operators::PoolParam>();
   param.output->mutable_data<float16>();
 
-  zynqmp::PoolingParam& pool_param = pe_.param();
-  pool_param.input = param.x->ZynqTensor();
-  pool_param.output = param.output->ZynqTensor();
 
-  pool_param.activeParam.type = zynqmp::TYPE_RELU;
+  int h_kernel = param.ksize[0];
+  int w_kernel = param.ksize[1];
+  if (param.global_pooling) {
+    h_kernel = param.x->ZynqTensor()->shape().height();
+    w_kernel = param.x->ZynqTensor()->shape().width();
+  }
+  int c = param.x->ZynqTensor()->shape().channel();
+  int w = param.x->ZynqTensor()->shape().width();
+  
+  int wc_h_kernel = w * c * h_kernel;
+  int dwconv_limit = 131072;
+  int num = ceil(wc_h_kernel * 1.0f / dwconv_limit); 
 
-  pool_param.type = param.pooling_type == "max" ? zynqmp::PoolingType::MAX
+  // num = 1;
+  split_num_ = num;
+  // split_num_ = 1;
+
+  if (num == 1) {
+    zynqmp::PoolingParam& pool_param = pe_.param();
+    pool_param.input = param.x->ZynqTensor();
+    pool_param.output = param.output->ZynqTensor();
+
+    // pool_param.activeParam.type = zynqmp::TYPE_NONE;
+
+    pool_param.type = param.pooling_type == "max" ? zynqmp::PoolingType::MAX
                                                 : zynqmp::PoolingType::AVERAGE;
-  pool_param.globalPooling = param.global_pooling;
-  pool_param.kernelSize = param.ksize;
-  pool_param.strides = param.strides;
-  int pad_h = (*param.paddings)[0];
-  int pad_w = (*param.paddings)[2];
-  pool_param.paddings = std::vector<int>({pad_h, pad_w});
-  pe_.init();
-  pe_.apply();
+
+    pool_param.globalPooling = param.global_pooling;
+    pool_param.kernelSize = param.ksize;
+    pool_param.strides = param.strides;
+    int pad_h = (*param.paddings)[0];
+    int pad_w = (*param.paddings)[2];
+    pool_param.paddings = std::vector<int>({pad_h, pad_w});
+    pe_.init();
+    pe_.apply();
+  } else {
+    zynqmp::PoolingParam& pool_param = split_pe_.param();
+    pool_param.input = param.x->ZynqTensor();
+    pool_param.output = param.output->ZynqTensor();
+
+    // pool_param.activeParam.type = zynqmp::TYPE_NONE;
+
+    pool_param.type = param.pooling_type == "max" ? zynqmp::PoolingType::MAX
+                                                : zynqmp::PoolingType::AVERAGE;
+
+    pool_param.globalPooling = param.global_pooling;
+    pool_param.kernelSize = param.ksize;
+    pool_param.strides = param.strides;
+    int pad_h = (*param.paddings)[0];
+    int pad_w = (*param.paddings)[2];
+    pool_param.paddings = std::vector<int>({pad_h, pad_w});
+    split_pe_.init();
+    split_pe_.apply();
+  }
 }
 
 void PoolCompute::Run() {
-  pe_.dispatch();
+  
+  if (split_num_ == 1) {
+    zynqmp::PoolingParam& pool_param = pe_.param();
+    pe_.dispatch();
+    pool_param.output->saveToFile("gp1", true);
+  } else {
+    split_pe_.dispatch();
+    zynqmp::PoolingParam& pool_param = split_pe_.param();
+    pool_param.output->saveToFile("gp", true);
+  }
+
+
+  // Debugger::get_instance().registerOutput("pooling", pool_param.output);
+  
 #ifdef FPGA_PRINT_TENSOR
-  zynqmp::PoolingParam& pool_param = pe_.param();
-  Debugger::get_instance().registerOutput("pooling", pool_param.output);
+  // zynqmp::PoolingParam& pool_param = pe_.param();
+  // Debugger::get_instance().registerOutput("pooling", pool_param.output);
 #endif
 }
 
