@@ -171,8 +171,15 @@ class OpDescView : public OpDescAPI {
   }
 
   std::vector<std::string> input_vars() const {
-    NotImplemented();
-    return std::vector<std::string>();
+    VLOG(5) << "This function call is expensive.";
+    std::vector<std::string> res;
+    for (const auto& var : *(desc_->inputs())) {
+      if (var && var->arguments()) {
+        res.emplace_back(var->arguments()->begin()->c_str(),
+                         var->arguments()->end()->c_str());
+      }
+    }
+    return res;
   }
 
   std::vector<std::string> output_vars() const {
@@ -205,6 +212,7 @@ class OpDescView : public OpDescAPI {
   std::map<std::string, AttrType> attr_types_;
 };
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 class OpDesc : public OpDescAPI {
  public:
   OpDesc() : owned_(true), desc_(new proto::OpDescT()) {}
@@ -291,6 +299,7 @@ class OpDesc : public OpDescAPI {
   bool owned_{false};
   proto::OpDescT* desc_{nullptr};
 };
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

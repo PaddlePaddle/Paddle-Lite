@@ -122,6 +122,9 @@ void ElementwiseAddActivationCompute::Run() {
     if (act_type == "relu") {
       lite::arm::math::elementwise_add_relu(
           x_data, y_data, out_data, x_dims.production());
+    } else if (act_type == "tanh") {
+      lite::arm::math::elementwise_add_tanh(
+          x_data, y_data, out_data, x_dims.production());
     } else {
       LOG(FATAL) << "unsupported Activation type: " << act_type;
     }

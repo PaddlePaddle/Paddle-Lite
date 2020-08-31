@@ -435,3 +435,31 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
        endif()
     endif()
 endif()
+
+if (ARM_TARGET_OS STREQUAL "armlinux")
+    add_custom_target(publish_inference_armlinux_cxx_demos ${TARGET}    
+        if (NOT LITE_ON_TINY_PUBLISH)
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_full"
+            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/arm_linux_full_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_full"  
+        endif()
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light"
+            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/arm_linux_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light"
+    )
+    add_dependencies(publish_inference publish_inference_armlinux_cxx_demos)
+endif()
+
+if (LITE_WITH_BM)
+    add_custom_target(publish_inference_bm1682_cxx_demos ${TARGET}
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/bm_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
+        COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/api/libpaddle_full_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmcompiler" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmnn/pcie" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_place.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_api.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
+    )
+    add_dependencies(publish_inference_bm1682_cxx_demos paddle_full_api_shared)
+    add_dependencies(publish_inference publish_inference_bm1682_cxx_demos)
+endif()

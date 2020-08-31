@@ -138,7 +138,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
-    auto shape_node = graph->Add<int64_t>(x_name + "/shape", x_new_shape);
+    auto shape_node = graph->Add<int64_t>(x_name + "/x_shape", x_new_shape);
     auto reshaped_x_node = graph->Add<ge::op::Reshape>(x_name + "/reshape");
     auto reshaped_x_op = reshaped_x_node->data<ge::op::Reshape>();
     reshaped_x_op->set_input_x(*x_node->data());
@@ -156,7 +156,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> y_node = nullptr;
   if (graph->Has(y_name)) {
     y_node = graph->Get(y_name);
-    auto shape_node = graph->Add<int64_t>(y_name + "/shape", y_new_shape);
+    auto shape_node = graph->Add<int64_t>(y_name + "/y_shape", y_new_shape);
     auto reshaped_y_node = graph->Add<ge::op::Reshape>(y_name + "/reshape");
     auto reshaped_y_op = reshaped_y_node->data<ge::op::Reshape>();
     reshaped_y_op->set_input_x(*y_node->data());
@@ -224,7 +224,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   auto out_shape = out_dims.Vectorize();
   if (out_shape != x_new_shape) {
-    auto shape_node = graph->Add<int64_t>(out_name + "/shape", out_shape);
+    auto shape_node = graph->Add<int64_t>(out_name + "/out_shape", out_shape);
     auto reshaped_elt_node = graph->Add<ge::op::Reshape>(out_name);
     auto reshaped_elt_op = reshaped_elt_node->data<ge::op::Reshape>();
     reshaped_elt_op->set_input_x(*elt_node->data());

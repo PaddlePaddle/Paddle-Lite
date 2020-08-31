@@ -129,5 +129,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       reduce_prod.cc
       lstm.cc
       clip.cc
+      pixel_shuffle.cc
       DEPS ${lite_kernel_deps} context tensor)
 endif()

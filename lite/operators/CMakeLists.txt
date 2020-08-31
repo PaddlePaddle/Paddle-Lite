@@ -182,8 +182,8 @@ add_operator(__xpu__mmdnn_op extra SRCS __xpu__mmdnn_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__conv2d_op extra SRCS __xpu__conv2d_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__sfa_head_op extra SRCS __xpu__sfa_head_op.cc DEPS ${op_DEPS})
 
-lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS one_hot_op memory scope ${op_deps} one_hot_compute_host)
 if (NOT LITE_WITH_X86)
+    lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS one_hot_op memory scope ${op_deps} one_hot_compute_host)
     lite_cc_test(test_fc_op SRCS fc_op_test.cc
                 DEPS fc_op memory
                 X86_DEPS fc_compute_x86

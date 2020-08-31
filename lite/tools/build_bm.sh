@@ -90,7 +90,7 @@ function build_bm {
         -DWITH_TESTING=${WITH_TESTING} \
         -DBM_SDK_ROOT=${BM_SDK_ROOT}
 
-    make -j$NUM_CORES_FOR_COMPILE
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
 
     cd -
     echo "Done"
@@ -102,13 +102,19 @@ function main {
         case $i in
             --target_name=*)
                 TARGET_NAME="${i#*=}"
-                build_bm
+                shift
+                ;;
+            --test=*)
+                WITH_TESTING=${i#*=}
+                shift
+                ;;
+            *)
                 # unknown option
                 print_usage
                 exit 1
                 ;;
         esac
     done
+    build_bm
 }
-
 main $@

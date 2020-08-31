@@ -31,7 +31,8 @@ class XPUFuseBase {
 
   virtual ~XPUFuseBase() = default;
 
-  void operator()(SSAGraph* graph) {
+  // Returns number of matched subgraphs
+  size_t operator()(SSAGraph* graph) {
     BuildPattern();
     PerformPatternMatcher(graph);
 
@@ -40,6 +41,7 @@ class XPUFuseBase {
     }
 
     DeleteInterNodes(graph);
+    return key2nodes_.size();
   }
 
   // Build a PMPattern using PMNode.

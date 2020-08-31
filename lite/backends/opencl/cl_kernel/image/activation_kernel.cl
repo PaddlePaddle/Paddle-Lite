@@ -66,6 +66,22 @@ __kernel void sigmoid(__read_only image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
 
+__kernel void hard_sigmoid(__read_only image2d_t input,
+                           __write_only image2d_t output,
+                           __private const float value_offset,
+                           __private const float scale) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
+
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 out = clamp(in * (CL_DTYPE4)(scale) + (CL_DTYPE4)(value_offset), (CL_DTYPE4)(0.0), (CL_DTYPE4)(1.0));
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
+}
+
 __kernel void leaky_relu(__read_only image2d_t input,
                          __write_only image2d_t output,
                          __private const float threshold,

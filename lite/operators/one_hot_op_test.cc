@@ -31,7 +31,7 @@ TEST(one_hot_op_lite, TestHost) {
 
   // set data
   x->Resize(DDim(std::vector<int64_t>({4, 1})));
-  auto* x_data = x->mutable_data<int32_t>();
+  auto* x_data = x->mutable_data<int64_t>();
   x_data[0] = 1;
   x_data[1] = 1;
   x_data[2] = 3;
@@ -41,7 +41,6 @@ TEST(one_hot_op_lite, TestHost) {
   cpp::OpDesc desc;
   desc.SetType("one_hot");
   desc.SetInput("X", {"X"});
-  desc.SetInput("depth_tensor", {"depth_tensor"});
   desc.SetOutput("Out", {"Out"});
   desc.SetAttr("depth", static_cast<int>(4));
   desc.SetAttr("dtype", static_cast<int>(1));

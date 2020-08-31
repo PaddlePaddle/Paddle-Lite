@@ -90,6 +90,7 @@ class BlockDescView : public BlockDescAPI {
   }
 };
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 class BlockDesc : public BlockDescAPI {
  public:
   BlockDesc() : owned_(true), desc_(new proto::BlockDescT()) {}
@@ -170,6 +171,7 @@ class BlockDesc : public BlockDescAPI {
   std::vector<std::unique_ptr<VarDesc>> vars_;
   std::vector<std::unique_ptr<OpDesc>> ops_;
 };
+#endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs
 }  // namespace lite

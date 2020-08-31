@@ -23,12 +23,12 @@
 #include "lite/core/variable.h"
 #include "lite/core/version.h"
 #include "lite/model_parser/base/apis.h"
+#include "lite/model_parser/flatbuffers/io.h"
 #include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
 #ifndef LITE_ON_TINY_PUBLISH
-#include "lite/model_parser/flatbuffers/io.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
 #endif
@@ -603,7 +603,7 @@ void SaveModelFbs(const std::string &model_dir,
   const std::string prog_path = model_dir + "/model.fbs";
   fbs::ProgramDesc fbs_prog;
   TransformProgramDescCppToAny(cpp_prog, &fbs_prog);
-  fbs::SaveFile(prog_path, fbs_prog.data(), fbs_prog.buf_size());
+  fbs::SaveFile(prog_path, fbs_prog.data());
 
   /* 2. Get param names from cpp::ProgramDesc */
   auto &main_block_desc = *cpp_prog.GetBlock<cpp::BlockDesc>(0);
@@ -621,8 +621,9 @@ void SaveModelFbs(const std::string &model_dir,
   const std::string params_path = model_dir + "/params.fbs";
   fbs::CombinedParamsDesc params_prog;
   fbs::SetCombinedParamsWithScope(exec_scope, unique_var_names, &params_prog);
-  fbs::SaveFile(params_path, params_prog.data(), params_prog.buf_size());
+  fbs::SaveFile(params_path, params_prog.data());
 }
+#endif  // LITE_ON_TINY_PUBLISH
 
 void LoadModelFbsFromFile(const std::string &filename,
                           Scope *scope,
@@ -630,18 +631,23 @@ void LoadModelFbsFromFile(const std::string &filename,
   CHECK(cpp_prog);
   CHECK(scope);
 
-  /* 1. Save cpp::ProgramDesc with model.fbs */
+  /* 1. Load cpp::ProgramDesc with model.fbs */
   const std::string prog_path = filename + "/model.fbs";
+#ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
+  cpp_prog->Init(fbs::LoadFile(prog_path));
+#elif LITE_ON_TINY_PUBLISH
+  LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
+                "the model cannot be loaded.";
+#else
   fbs::ProgramDesc program(fbs::LoadFile(prog_path));
   TransformProgramDescAnyToCpp(program, cpp_prog);
+#endif
 
-  /* 2. Save scope with params.fbs */
+  /* 2. Load scope with params.fbs */
   const std::string params_path = filename + "/params.fbs";
-  fbs::CombinedParamsDesc params(fbs::LoadFile(params_path));
+  fbs::CombinedParamsDescView params(fbs::LoadFile(params_path));
   fbs::SetScopeWithCombinedParams(scope, params);
 }
-
-#endif  // LITE_ON_TINY_PUBLISH
 
 template <typename T>
 void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {

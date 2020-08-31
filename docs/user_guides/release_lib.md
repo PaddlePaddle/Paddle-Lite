@@ -7,7 +7,7 @@
 - arm_os=`android\ios\armlinux`    安装平台，支持的arm端移动平台包括 `ios`、`armlinux`和`android`
 - toolchain=`gcc/clang`                                 源码编译时的编译器，默认为`gcc`编译器
 - android_stl=`c++_static/c++_shared`     Lite预测库链接STL库的方式，支持静态或动态链接
-- with_extra=`ON/OFF`                                     是否编译全量OP，OFF时只编译CV相关基础OP，[参数详情](library)
+- with_extra=`ON/OFF`                                     是否编译全量OP，OFF时只编译CV相关基础OP，[参数详情](./Compile/library)
 - with_cv=`ON/OFF`                                          是否编译编译Paddle-Lite CV 相关API
 
 
