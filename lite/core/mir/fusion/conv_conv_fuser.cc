@@ -185,18 +185,18 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto paddings1 = conv_op_desc1->GetAttr<std::vector<int>>("paddings");
   auto dilations1 = conv_op_desc1->GetAttr<std::vector<int>>("dilations");
 
-   for (int i = 0; i < strides1.size(); i++) {
-     CHECK_EQ(strides1[i], 1) << "strides[" << i << "]: " << strides1[i]
-                              << " must be 1";
-   }
-   for (int i = 0; i < paddings1.size(); i++) {
-     CHECK_EQ(paddings1[i], 0) << "paddings1[" << i << "]: " << paddings1[i]
-                               << " must be 0";
-   }
-   for (int i = 0; i < dilations1.size(); i++) {
-     CHECK_EQ(dilations1[i], 1) << "dilations1[" << i << "]: " << dilations1[i]
-                                << " must be 1";
-   }
+  for (int i = 0; i < strides1.size(); i++) {
+    CHECK_EQ(strides1[i], 1) << "strides[" << i << "]: " << strides1[i]
+                             << " must be 1";
+  }
+  for (int i = 0; i < paddings1.size(); i++) {
+    CHECK_EQ(paddings1[i], 0) << "paddings1[" << i << "]: " << paddings1[i]
+                              << " must be 0";
+  }
+  for (int i = 0; i < dilations1.size(); i++) {
+    CHECK_EQ(dilations1[i], 1) << "dilations1[" << i << "]: " << dilations1[i]
+                               << " must be 1";
+  }
   // comupte new_wight and new bias
   ///////////////////////////////////////////////////////////////////////////////
   // Compute ConvConvFuser
