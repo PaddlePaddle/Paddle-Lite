@@ -30,13 +30,16 @@ class ConvConvFuser : public FuseBase {
   explicit ConvConvFuser(const std::string& conv_type0,
                          const std::string& conv_type1,
                          const bool conv_has_bias0,
-                         const bool conv_has_bias1)
+                         const bool conv_has_bias1,
+                         const std::unique_ptr<SSAGraph>& graph)
       : conv_type0_(conv_type0),
         conv_type1_(conv_type1),
         conv_has_bias0_(conv_has_bias0),
-        conv_has_bias1_(conv_has_bias1) {}
+        conv_has_bias1_(conv_has_bias1),
+        graph_(graph) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+  inline void createPattern();
 
  private:
   void ComputeNewWeight(float* dout,
@@ -112,6 +115,7 @@ class ConvConvFuser : public FuseBase {
   std::string conv_type1_{"conv2d"};
   bool conv_has_bias0_{false};
   bool conv_has_bias1_{false};
+  const std::unique_ptr<SSAGraph>& graph_;
 };
 
 }  // namespace fusion
