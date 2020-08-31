@@ -136,7 +136,7 @@ TEST(fill_constant_batch_size_like, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  Place place(TARGET(kHost));
+  place = TARGET(kHost);
 #else
   return;
 #endif
