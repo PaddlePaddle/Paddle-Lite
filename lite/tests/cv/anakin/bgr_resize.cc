@@ -1,11 +1,8 @@
 #include <limits.h>
+#include <math.h>
 #include "lite/tests/cv/anakin/cv_utils.h"
 void resize_three_channel(const uint8_t* src, int w_in, int h_in, uint8_t* dst, int w_out, int h_out);
 void bgr_resize(const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out){
-    LCHECK_GE(w_in, 0, "width must great than 0");
-    LCHECK_GE(h_in, 0, "height must great than 0");
-    LCHECK_GE(w_out, 0, "width must great than 0");
-    LCHECK_GE(h_out, 0, "height must great than 0");
     if (w_out == w_in && h_out == h_in){
         memcpy(dst, src, sizeof(char) * w_in * h_in * 3);
         return;

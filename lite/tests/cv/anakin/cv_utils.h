@@ -15,6 +15,8 @@
 #pragma once
 
 #include "lite/utils/cv/paddle_image_preprocess.h"
+#include "lite/core/tensor.h"
+#include <arm_neon.h>
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
@@ -76,120 +78,33 @@ void nv21_to_tensor(const uint8_t* nv21, Tensor& output, int width,
 void nv12_to_tensor(const uint8_t* nv12, Tensor& output, int width,
                     int height, float* means, float* scales);
 
-void image_basic_convert(const uint8_t* src, uint8_t* basic_dst,
+void image_basic_convert(const uint8_t* src, uint8_t* dst,
                          ImageFormat srcFormat, ImageFormat dstFormat,
-                         int srcw, int srch, int out_size) {
-  if (srcFormat == dstFormat) {
-    // copy
-    memcpy(dst, src, sizeof(uint8_t) * out_size);
-    return;
-  } else {
-    if (srcFormat == ImageFormat::NV12 &&
-        (dstFormat == ImageFormat::BGR || dstFormat == ImageFormat::RGB)) {
-      nv12_to_bgr(src, dst, srcw, srch);
-    } else if (srcFormat == ImageFormat::NV21 &&
-               (dstFormat == ImageFormat::BGR ||
-                dstFormat == ImageFormat::RGB)) {
-      nv21_to_bgr(src, dst, srcw, srch);
-    } else if (srcFormat == ImageFormat::NV12 &&
-               (dstFormat == ImageFormat::BGRA ||
-                dstFormat == ImageFormat::RGBA)) {
-      nv12_to_bgra(src, dst, srcw, srch);
-    } else if (srcFormat == ImageFormat::NV21 &&
-               (dstFormat == ImageFormat::BGRA ||
-                dstFormat == ImageFormat::RGBA)) {
-      nv21_to_bgra(src, dst, srcw, srch);
-    } else {
-      printf("bais-anakin srcFormat: %d, dstFormat: %d does not support! \n",
-             srcFormat,
-             dstFormat);
-    }
-  }
-}
+                         int srcw, int srch, int out_size);
+
 void image_basic_resize(const uint8_t* src,
                         uint8_t* dst,
                         ImageFormat srcFormat,
                         int srcw, int srch,
-                        int dstw, int dsth) {
-  int size = srcw * srch;
-  if (srcw == dstw && srch == dsth) {
-    if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
-      size = srcw * (static_cast<int>(1.5 * srch));
-    } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
-      size = 3 * srcw * srch;
-    } else if (srcFormat == ImageFormat::BGRA ||
-               srcFormat == ImageFormat::RGBA) {
-      size = 4 * srcw * srch;
-    }
-    memcpy(out_data, in_data, sizeof(uint8_t) * size);
-    return;
-  } else {
-    if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
-      nv21_resize(src, dst, srcw, srch, dstw, dsth);
-    } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
-      bgr_resize(src, dst, srcw, srch, dstw, dsth);
-    } else if (srcFormat == ImageFormat::BGRA ||
-               srcFormat == ImageFormat::RGBA) {
-      bgra_resize(src, dst, srcw, srch, dstw, dsth);
-    } else {
-      LOG(FATAL) << "anakin doesn't support this type: " << (int)srcFormat;
-    }
-  }
-}
+                        int dstw, int dsth);
+
 void image_basic_flip(const uint8_t* src,
                       uint8_t* dst,
                       ImageFormat srcFormat,
                       int srcw, int srch,
-                      int flip_num) {
-  if (flip_num == -1) {
-    flip_num = 0; //  xy
-  } else if (flip_num == 0) {
-    flip_num = 1; //  x
-  } else if (flip_num == 1) {
-    flip_num = -1; //  y
-  }
-  if (srcFormat == ImageFormat::GRAY) {
-    flip(src, dst, srcw, srch, flip_num);
-  } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
-    bgr_flip_hwc(src, dst, srcw, srch, flip_num);
-  } else if (srcFormat == ImageFormat::BGRA || srcFormat == ImageFormat::RGBA) {
-    bgra_flip_hwc(src, dst, srcw, srch, flip_num);
-  } else {
-    LOG(FATAL) << "anakin doesn't support this type: " << (int)srcFormat;
-  }
-}
+                      int flip_num);
+
 void image_basic_rotate(const uint8_t* src,
                         uint8_t* dst,
                         ImageFormat srcFormat,
                         int srcw, int srch,
-                        float rotate_num) {
-  if (srcFormat == ImageFormat::GRAY) {
-    rotate(src, dst, srcw, srch, rotate_num);
-  } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
-    bgr_rotate_hwc(src, dst, srcw, srch, rotate_num);
-  } else if (srcFormat == ImageFormat::BGRA || srcFormat == ImageFormat::RGBA) {
-    bgra_rotate_hwc(src, dst, srcw, srch, rotate_num);
-  } else {
-    LOG(FATAL) << "anakin doesn't support this type: " << (int)srcFormat;
-  }
-}
+                        float rotate_num);
 
-void image_to_tensor_basic(const uint8_t* in_data,
-                           Tensor* dst,
+void image_basic_to_tensor(const uint8_t* in_data,
+                           Tensor dst,
                            ImageFormat srcFormat,
                            LayoutType layout,
                            int srcw,
                            int srch,
                            float* means,
-                           float* scales) {
-  float* output = dst->mutable_data<float>();
-  if (layout == LayoutType::kNCHW &&
-      (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB)) {
-    bgr_to_tensor_chw_basic(in_data, output, srcw, srch, means, scales, 3);
-  } else if (layout == LayoutType::kNCHW && (srcFormat == ImageFormat::BGRA ||
-                                             srcFormat == ImageFormat::RGBA)) {
-    bgra_to_tensor_hwc(src, *dst, srcw, srch, means, scales);
-  } else {
-    LOG(FATAL) << "anakin doesn't suppoort other layout or format: " << (int)srcFormat;
-  }
-}
+                           float* scales);

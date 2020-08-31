@@ -18,6 +18,7 @@
 #include <random>
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
+#include "lite/tests/utils/tensor_utils.h"
 #include "lite/tests/cv/anakin/cv_utils.h"
 #include "lite/utils/cv/paddle_image_preprocess.h"
 #include "time.h"  // NOLINT
@@ -420,13 +421,13 @@ void test_flip(const std::vector<int>& cluster_id,
       ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
 
       for (int i = 0; i < test_iter; ++i) {
-        t_rotate.Start();
+        t_lite.Start();
         image_preprocess.imageFlip(src, lite_dst);
-        t_rotate.Stop();
+        t_lite.Stop();
       }
-      LOG(INFO) << "image flip avg time : " << t_rotate.LapTimes().Avg()
-                << ", min time: " << t_rotate.LapTimes().Min()
-                << ", max time: " << t_rotate.LapTimes().Max();
+      LOG(INFO) << "image flip avg time : " << t_lite.LapTimes().Avg()
+                << ", min time: " << t_lite.LapTimes().Min()
+                << ", max time: " << t_lite.LapTimes().Max();
 
       double max_ratio = 0;
       double max_diff = 0;
@@ -545,13 +546,13 @@ void test_rotate(const std::vector<int>& cluster_id,
       ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
 
       for (int i = 0; i < test_iter; ++i) {
-        t_rotate.Start();
+        t_lite.Start();
         image_preprocess.imageRotate(src, lite_dst);
-        t_rotate.Stop();
+        t_lite.Stop();
       }
-      LOG(INFO) << "image rotate avg time : " << t_rotate.LapTimes().Avg()
-                << ", min time: " << t_rotate.LapTimes().Min()
-                << ", max time: " << t_rotate.LapTimes().Max();
+      LOG(INFO) << "image rotate avg time : " << t_lite.LapTimes().Avg()
+                << ", min time: " << t_lite.LapTimes().Min()
+                << ", max time: " << t_lite.LapTimes().Max();
 
       double max_ratio = 0;
       double max_diff = 0;
@@ -670,7 +671,7 @@ void test_to_tensor(const std::vector<int>& cluster_id,
                               dsth,
                               means,
                               scales);
-        t_bsic.Stop();
+        t_basic.Stop();
       }
       LOG(INFO) << "image baisc to_tensor avg time : " << t_basic.LapTimes().Avg()
                 << ", min time: " << t_basic.LapTimes().Min()
@@ -732,13 +733,13 @@ void test_to_tensor(const std::vector<int>& cluster_id,
         if (std::abs(max_ratio) >= 1e-5f) {
           int width = resize / srch;
           printf("din: \n");
-          print_int8(resize_tmp, resize, width);
+          print_int8(src, resize, width);
           printf("saber result: \n");
-          print_ff(ptr_a, resize, width);
+          print_fp32(ptr_a, resize, width);
           printf("basic result: \n");
-          print_ff(ptr_b, resize, width);
+          print_fp32(ptr_b, resize, width);
           printf("diff result: \n");
-          print_ff(diff_v, resize, width);
+          print_fp32(diff_v, resize, width);
         }
         LOG(INFO) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
@@ -810,11 +811,11 @@ void print_info(ImageFormat srcFormat,
     LOG(INFO) << "dstFormat: RGB";
   }
   LOG(INFO) << "Rotate = " << rotate;
-  if (flip == -1) {
+  if (flip_num == -1) {
     LOG(INFO) << "Flip XY";
-  } else if (flip == 0) {
+  } else if (flip_num == 0) {
     LOG(INFO) << "Flip X";
-  } else if (flip == 1) {
+  } else if (flip_num == 1) {
     LOG(INFO) << "Flip Y"; 
   }
   if (layout == 1) {
