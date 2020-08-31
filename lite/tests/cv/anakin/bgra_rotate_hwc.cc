@@ -1,4 +1,4 @@
-#include "/lite/tests/cv/anakin/cv_utils.h"
+#include "lite/tests/cv/anakin/cv_utils.h"
 void rotate90_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
 
 void rotate270_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in);

@@ -1,5 +1,5 @@
 #include <limits.h>
-#include "/lite/tests/cv/anakin/cv_utils.h"
+#include "lite/tests/cv/anakin/cv_utils.h"
 void resize_four_channel(const uint8_t* src, int w_in, int h_in, uint8_t* dst, int w_out, int h_out);
 void bgra_resize(const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out){
     LCHECK_GE(w_in, 0, "width must great than 0");

@@ -1,4 +1,4 @@
-#include "/lite/tests/cv/anakin/cv_utils.h"
+#include "lite/tests/cv/anakin/cv_utils.h"
 void flip_x(const unsigned char* src, unsigned char* dst, int w_in, int h_in);
 
 void flip_y(const unsigned char* src, unsigned char* dst, int w_in, int h_in);

@@ -18,7 +18,7 @@
 #include <random>
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
-#include "lite/tests/cv/cv_basic.h"
+#include "lite/tests/cv/anakin/cv_utils.h"
 #include "lite/utils/cv/paddle_image_preprocess.h"
 #include "time.h"  // NOLINT
 DEFINE_int32(cluster, 3, "cluster id");

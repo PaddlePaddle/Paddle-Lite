@@ -1,4 +1,4 @@
-#include "/lite/tests/cv/anakin/cv_utils.h"
+#include "lite/tests/cv/anakin/cv_utils.h"
 void rotate90(const unsigned char* src, unsigned char* dst, int w_in, int h_in, int w_out, int h_out);
 
 void rotate270(const unsigned char* src, unsigned char* dst, int w_in, int h_in, int w_out, int h_out);

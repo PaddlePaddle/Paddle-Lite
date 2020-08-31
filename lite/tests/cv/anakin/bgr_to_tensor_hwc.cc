@@ -1,4 +1,4 @@
-#include "/lite/tests/cv/anakin/cv_utils.h"
+#include "lite/tests/cv/anakin/cv_utils.h"
 void bgr_to_tensor_hwc(const uint8_t* bgr, Tensor& output, int width, int height, float* means, float* scales) {
     int size = width * height;
     float* ptr0 = output.mutable_data<float>();

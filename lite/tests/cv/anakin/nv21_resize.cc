@@ -1,5 +1,5 @@
 #include <limits.h>
-#include "/lite/tests/cv/anakin/cv_utils.h"
+#include "lite/tests/cv/anakin/cv_utils.h"
 void resize_one_channel(const unsigned char* src, int w_in, int h_in, unsigned char* dst, int w_out, int h_out);
 void resize_one_channel_uv(const unsigned char* src, int w_in, int h_in, unsigned char* dst, int w_out, int h_out);
 void nv21_resize(const unsigned char* src, unsigned char* dst, int w_in, int h_in, int w_out, int h_out){
