@@ -2408,14 +2408,14 @@ void loadb_eight(
     for (; i < x_len - 7; i += 8) {
       uint32_t *ptr_out = outptr_row_col;
       asm volatile(
-          "ldp q0, q1, [%[ptr0]], #32\n"   // load r0, 8 elements
-          "ldp q2, q3, [%[ptr1]], #32\n"   // load r1, 8 elements
-          "stp q0, q1, [%[outptr]], #32\n" // write to output ptr
-          "stp q2, q3, [%[outptr]], #32\n" // write to output ptr
-          "ldp q0, q1, [%[ptr2]], #32\n"   // load r0, 8 elements
-          "ldp q2, q3, [%[ptr3]], #32\n"   // load r1, 8 elements
-          "stp q0, q1, [%[outptr]], #32\n" // write to output ptr
-          "stp q2, q3, [%[outptr]], #32\n" // write to output ptr
+          "ldp q0, q1, [%[ptr0]], #32\n"    // load r0, 8 elements
+          "ldp q2, q3, [%[ptr1]], #32\n"    // load r1, 8 elements
+          "stp q0, q1, [%[outptr]], #32\n"  // write to output ptr
+          "stp q2, q3, [%[outptr]], #32\n"  // write to output ptr
+          "ldp q0, q1, [%[ptr2]], #32\n"    // load r0, 8 elements
+          "ldp q2, q3, [%[ptr3]], #32\n"    // load r1, 8 elements
+          "stp q0, q1, [%[outptr]], #32\n"  // write to output ptr
+          "stp q2, q3, [%[outptr]], #32\n"  // write to output ptr
           : [outptr] "+r"(ptr_out),
             [ptr0] "+r"(ptr0),
             [ptr1] "+r"(ptr1),
