@@ -4,29 +4,29 @@
 
 | 类别 | 类别细分 | 模型 | 支持Int8 | 支持平台 |
 |-|-|:-:|:-:|-:|
-| CV  | 分类 | mobilenetv1 | Y | arm，x86，npu，rknpu，apu |
-| CV  | 分类 | mobilenetv2 | Y | arm，x86，npu |
-| CV  | 分类 | resnet18 | Y | arm，npu |
-| CV  | 分类 | resnet50 | Y | arm，x86，npu，xpu |
-| CV  | 分类 | mnasnet |  | arm，npu |
-| CV  | 分类 | efficientnet |  | arm |
-| CV  | 分类 | squeezenetv1.1 |  | arm，npu |
-| CV  | 分类 | ShufflenetV2 | Y | arm |
-| CV  | 分类 | shufflenet | Y | arm |
-| CV  | 分类 | inceptionv4 | Y | arm，x86，npu |
-| CV  | 分类 | vgg16 | Y | arm |
-| CV  | 分类 | googlenet | Y  | arm，x86 |
-| CV  | 检测 | mobilenet_ssd | Y | arm，npu* |
-| CV  | 检测 | mobilenet_yolov3 | Y | arm，npu* |
-| CV | 检测 | Faster RCNN |  | arm |
-| CV | 检测 | Mask RCNN |  | arm |
-| CV | 分割 | Deeplabv3 | Y | arm |
-| CV  | 分割 | unet |  | arm |
-| CV  | 人脸 | facedetection |  | arm |
-| CV  | 人脸 | facebox |  | arm |
-| CV  | 人脸 | blazeface | Y | arm |
-| CV  | 人脸 | mtcnn |  | arm |
-| CV  | OCR | ocr_attention |  | arm |
-| NLP  | 机器翻译 | transformer |  | arm，npu* |
+| CV  | 分类 | mobilenetv1 | Y | ARM，X86，NPU，RKNPU，APU |
+| CV  | 分类 | mobilenetv2 | Y | ARM，X86，NPU |
+| CV  | 分类 | resnet18 | Y | ARM，NPU |
+| CV  | 分类 | resnet50 | Y | ARM，X86，NPU，XPU |
+| CV  | 分类 | mnasnet |  | ARM，NPU |
+| CV  | 分类 | efficientnet |  | ARM |
+| CV  | 分类 | squeezenetv1.1 |  | ARM，NPU |
+| CV  | 分类 | ShufflenetV2 | Y | ARM |
+| CV  | 分类 | shufflenet | Y | ARM |
+| CV  | 分类 | inceptionv4 | Y | ARM，X86，NPU |
+| CV  | 分类 | vgg16 | Y | ARM |
+| CV  | 分类 | googlenet | Y  | ARM，X86 |
+| CV  | 检测 | mobilenet_ssd | Y | ARM，NPU* |
+| CV  | 检测 | mobilenet_yolov3 | Y | ARM，NPU* |
+| CV | 检测 | Faster RCNN |  | ARM |
+| CV | 检测 | Mask RCNN |  | ARM |
+| CV | 分割 | Deeplabv3 | Y | ARM |
+| CV  | 分割 | unet |  | ARM |
+| CV  | 人脸 | facedetection |  | ARM |
+| CV  | 人脸 | facebox |  | ARM |
+| CV  | 人脸 | blazeface | Y | ARM |
+| CV  | 人脸 | mtcnn |  | ARM |
+| CV  | OCR | ocr_attention |  | ARM |
+| NLP  | 机器翻译 | transformer |  | ARM，NPU* |
 
-> **注意：** npu* 代表ARM+NPU异构计算
+> **注意：** NPU* 代表ARM+NPU异构计算
