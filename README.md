@@ -93,12 +93,7 @@ Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并�
 
 其中，Analysis Phase 包括了 MIR(Machine IR) 相关模块，能够对原有的模型的计算图针对具体的硬件列表进行算子融合、计算裁剪 在内的多种优化。Execution Phase 只涉及到Kernel 的执行，且可以单独部署，以支持极致的轻量级部署。
 
-<<<<<<< HEAD
-- [ARM compute library](http://agroup.baidu.com/paddle-infer/md/article/%28https://github.com/ARM-software/ComputeLibrary%29)
-- [Anakin](https://github.com/PaddlePaddle/Anakin). The optimizations under Anakin has been incorporated into Paddle Lite, and so there will not be any future updates of Anakin. As another high-performance inference project under PaddlePaddle, Anakin has been forward-looking and helpful to the making of Paddle Lite.  
-=======
 ## 进一步了解Paddle Lite
->>>>>>> fc8c0852... [DOC] Update Readme 2.0 (#4209)
 
 如果您想要进一步了解Paddle Lite，下面是进一步学习和使用Paddle-Lite的相关内容：
 ### 文档和示例
