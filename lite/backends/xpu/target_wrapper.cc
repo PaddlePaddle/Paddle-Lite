@@ -17,6 +17,27 @@
 namespace paddle {
 namespace lite {
 
+void XPUScratchPad::Reserve(size_t new_size) {
+  if (new_size <= size_) {
+    return;
+  }
+
+  if (!is_l3_) {
+    TargetWrapperXPU::Free(addr_);
+    addr_ = TargetWrapperXPU::Malloc(new_size);
+    size_ = new_size;
+  } else {
+    CHECK(false) << "Not supported if is_l3_ == true";
+  }
+}
+
+void XPUScratchPadDeleter::operator()(XPUScratchPad* sp) const {
+  if (!sp->is_l3_) {
+    TargetWrapperXPU::Free(sp->addr_);
+  }
+  delete sp;
+}
+
 void* TargetWrapperXPU::Malloc(size_t size) {
   void* ptr{nullptr};
   XPU_CALL(xpu_malloc(&ptr, size));
@@ -50,7 +71,7 @@ XPUScratchPadGuard TargetWrapperXPU::MallocScratchPad(size_t size,
     ptr = TargetWrapperXPU::Malloc(size);
   }
   CHECK(ptr != nullptr) << "size = " << size << ", use_l3 = " << use_l3;
-  return XPUScratchPadGuard(new XPUScratchPad(ptr, use_l3));
+  return XPUScratchPadGuard(new XPUScratchPad(ptr, size, use_l3));
 }
 
 std::string TargetWrapperXPU::multi_encoder_precision;  // NOLINT

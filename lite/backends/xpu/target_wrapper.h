@@ -36,19 +36,19 @@ const int XPU_MAX_LOD_SEQ_LEN = 512;
 using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 
 struct XPUScratchPad {
-  XPUScratchPad(void* addr, bool is_l3) : addr_(addr), is_l3_(is_l3) {}
+  XPUScratchPad(void* addr, size_t size, bool is_l3)
+      : addr_(addr), size_(size), is_l3_(is_l3) {}
+
+  // XXX(miaotianxiang): |size_| increases monotonically
+  void Reserve(size_t new_size);
 
   void* addr_{nullptr};
+  size_t size_{0};
   bool is_l3_{false};
 };
 
 struct XPUScratchPadDeleter {
-  void operator()(XPUScratchPad* sp) const {
-    if (!sp->is_l3_) {
-      XPU_CALL(xpu_free(sp->addr_));
-    }
-    delete sp;
-  }
+  void operator()(XPUScratchPad* sp) const;
 };
 
 using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad, XPUScratchPadDeleter>;
