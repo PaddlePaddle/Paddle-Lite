@@ -55,6 +55,16 @@ class PoolingSplitPE : public PE {
     int k_height = param_.kernelSize[1];
     int k_width = param_.kernelSize[0];
 
+    if (param_.globalPooling) {
+      k_width = input->shape().width();
+      k_height = input->shape().height();
+      param_.kernelSize[0] = k_height;
+      param_.kernelSize[1] = k_width;
+    } else {
+      k_height = param_.kernelSize[0];
+      k_width = param_.kernelSize[1];
+    }
+
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
                (k_width > 255 || k_height > 255); 
 

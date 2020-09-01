@@ -93,11 +93,9 @@ void PoolCompute::Run() {
   if (split_num_ == 1) {
     zynqmp::PoolingParam& pool_param = pe_.param();
     pe_.dispatch();
-    pool_param.output->saveToFile("gp1", true);
   } else {
     split_pe_.dispatch();
     zynqmp::PoolingParam& pool_param = split_pe_.param();
-    pool_param.output->saveToFile("gp", true);
   }
 
 
