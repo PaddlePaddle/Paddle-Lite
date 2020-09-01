@@ -43,7 +43,6 @@ class PowOp : public OpLite {
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
     ch->input_shape = ch->DimToStr(param_.X->dims());
     ch->output_shape = ch->DimToStr(param_.Out->dims());
-    // ch->remark = "";
     ch->macs = param_.Out->numel();
   }
 #endif

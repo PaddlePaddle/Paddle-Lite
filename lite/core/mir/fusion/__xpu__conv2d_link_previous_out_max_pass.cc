@@ -138,7 +138,7 @@ class XPUConv2dLinkPass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__conv2d_link_max_pass,
+REGISTER_MIR_PASS(__xpu__conv2d_link_previous_out_max_pass,
                   paddle::lite::mir::XPUConv2dLinkPass)
     .BindTargets({TARGET(kXPU)})
     .BindKernel("__xpu__conv2d");

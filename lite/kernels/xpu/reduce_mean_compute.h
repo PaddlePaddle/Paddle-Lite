@@ -25,8 +25,6 @@ class ReduceMeanCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   void Run() override;
 
   virtual ~ReduceMeanCompute() = default;
-
- private:
 };
 
 }  // namespace xpu

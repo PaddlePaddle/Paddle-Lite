@@ -35,6 +35,8 @@ bool SignOp::InferShapeImpl() const {
 bool SignOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto X = op_desc.Input("X").front();
   auto Out = op_desc.Output("Out").front();
+  CHECK(scope->FindVar(X));
+  CHECK(scope->FindVar(Out));
   param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
   param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
   CHECK(param_.X);

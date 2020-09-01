@@ -29,7 +29,6 @@ void ReduceMeanCompute::Run() {
   int x_rank = x_dims.size();
   float* output = param.Out->mutable_data<float>(TARGET(kXPU));
   auto reduce_dim = param.dim;
-  auto rdim = reduce_dim.size();
 
   std::vector<int> idims;
   for (int i = 0; i < x_rank; i++) {
@@ -43,7 +42,7 @@ void ReduceMeanCompute::Run() {
                        idims.data(),
                        x_rank,
                        reduce_dim.data(),
-                       rdim,
+                       reduce_dim.size(),
                        type);
   CHECK_EQ(r, 0);
 }

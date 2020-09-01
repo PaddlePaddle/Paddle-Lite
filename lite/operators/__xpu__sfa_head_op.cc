@@ -57,6 +57,8 @@ bool XPUSfaHeadOp::InferShapeImpl() const {
 bool XPUSfaHeadOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   auto input = op_desc.Input("Input").front();
   auto output = op_desc.Output("Output").front();
+  CHECK(scope->FindVar(input));
+  CHECK(scope->FindVar(output));
 
   param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
   param_.output = scope->FindVar(output)->GetMutable<lite::Tensor>();

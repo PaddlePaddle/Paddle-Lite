@@ -97,6 +97,12 @@ bool XPUConv2dOp::InferShapeImpl() const {
 
 bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   AttachParam(&param_);
+  CHECK(scope->FindVar(op_desc.Input("Input").front()));
+  CHECK(scope->FindVar(op_desc.Input("Filter").front()));
+  CHECK(scope->FindVar(op_desc.Input("FilterMax").front()));
+  CHECK(scope->FindVar(op_desc.Output("Output").front()));
+  CHECK(scope->FindVar(op_desc.Output("OutputMax").front()));
+
   param_.Input =
       scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
   param_.Filter =
@@ -143,6 +149,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
   if (op_desc.HasAttr("has_input_max") &&
       op_desc.GetAttr<bool>("has_input_max")) {
+    CHECK(scope->FindVar(op_desc.Input("InputMax").front()));
     param_.InputMax =
         scope->FindVar(op_desc.Input("InputMax").front())->GetMutable<Tensor>();
   }
