@@ -49,6 +49,10 @@ struct LITE_API Tensor {
   template <typename T>
   T* mutable_data(TargetType type = TargetType::kHost) const;
 
+  // Share external data. Note: ensure that the data pointer is in a valid state
+  // during the prediction process.
+  void ShareExternalData(void* data, size_t memory_size, TargetType target);
+
   template <typename T, TargetType type = TargetType::kHost>
   void CopyFromCpu(const T* data);
 
@@ -58,6 +62,7 @@ struct LITE_API Tensor {
   shape_t shape() const;
   TargetType target() const;
   PrecisionType precision() const;
+  void SetPrecision(PrecisionType precision);
 
   // LoD of the tensor
   lod_t lod() const;
@@ -153,7 +158,7 @@ class LITE_API ConfigBase {
   }
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
-  const int get_device_id() const { return device_id_; }
+  int get_device_id() const { return device_id_; }
 };
 
 /// CxxConfig is the config for the Full feature predictor.
