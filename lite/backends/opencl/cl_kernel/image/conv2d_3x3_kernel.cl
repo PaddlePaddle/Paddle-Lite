@@ -418,12 +418,6 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                        in_pos_in_one_block.y - dilation >= input_height)
                       << 15));
 
-        half4 tmp_in3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, (int2)(pos_in.x - dilation, pos_in.y));
-        int4 is_over_bound_mask = (int4)((in_pos_in_one_block.x - dilation < 0),
-                                         (in_pos_in_one_block.y < 0),
-                                         (in_pos_in_one_block.x - dilation >= input_width),
-                                         (in_pos_in_one_block.y >= input_height));
-
         input3 =
             select(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
