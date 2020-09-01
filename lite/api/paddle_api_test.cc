@@ -68,6 +68,42 @@ TEST(CxxApi, run) {
       FLAGS_model_dir + ".opt2.naive", LiteModelType::kNaiveBuffer, true);
 }
 
+TEST(CxxApi, share_external_data) {
+  lite_api::CxxConfig config;
+  config.set_model_dir(FLAGS_model_dir);
+  config.set_valid_places({
+      Place{TARGET(kX86), PRECISION(kFloat)},
+      Place{TARGET(kARM), PRECISION(kFloat)},
+  });
+
+  auto predictor = lite_api::CreatePaddlePredictor(config);
+
+  auto inputs = predictor->GetInputNames();
+  auto outputs = predictor->GetOutputNames();
+
+  std::vector<float> external_data(100 * 100);
+  for (int i = 0; i < 100 * 100; i++) {
+    external_data[i] = i;
+  }
+
+  auto input_tensor = predictor->GetInputByName(inputs[0]);
+  input_tensor->Resize(std::vector<int64_t>({100, 100}));
+  size_t memory_size = 100 * 100 * sizeof(float);
+  input_tensor->ShareExternalData(static_cast<void*>(external_data.data()),
+                                  memory_size,
+                                  config.valid_places()[0].target);
+
+  predictor->Run();
+
+  auto output = predictor->GetTensor(outputs[0]);
+  auto* out = output->data<float>();
+  LOG(INFO) << out[0];
+  LOG(INFO) << out[1];
+
+  EXPECT_NEAR(out[0], 50.2132, 1e-3);
+  EXPECT_NEAR(out[1], -28.8729, 1e-3);
+}
+
 // Demo1 for Mobile Devices :Load model from file and run
 #ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 TEST(LightApi, run) {
