@@ -83,7 +83,8 @@ void TypeLayoutTransformPass::ComplementInputs(SSAGraph* graph,
   // static_pick_kernel_pass
   // to this pass.
   auto* in_arg_type = const_cast<Type*>(in->AsArg().type);
-  if (in_arg_type->target() == TARGET(kARM) &&
+  if ((in_arg_type->target() == TARGET(kARM) ||
+       in_arg_type->target() == TARGET(kHost)) &&
       in_arg_type->layout() == DATALAYOUT(kImageDefault)) {
     return;
   }
