@@ -30,7 +30,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                          __private const int output_width,
                          __private const int output_height,
                          __private const int output_c,
-                         __private const int filter_channel,
+                         __private const int filter_tensor_c,
                          __private const int filter_width,
                          __private const int filter_height,
                          __private const int group,
@@ -73,8 +73,10 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
   CL_DTYPE4 output = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
 #endif
 
-  CL_DTYPE4 input[9];  // 3x3 region of input
+  CL_DTYPE4 input[9];  // 3x3 region of input, not used by group > 1
+  CL_DTYPE4 input0, input1, input2, input3, input4, input5, input6, input7, input8;
   if (group == 1) {
+  #if 1 // NOTE(ysh329): Cause abnormal on snapdragon 625 etc if remove case with group > 1.
     for (int i = 0; i < input_c; ++i) {  // each run for 3x3
       int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x,
                            in_pos_in_one_block.y);
@@ -372,16 +374,17 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
       weight_w = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
       output.w += dot(input[j], weight_w);
     }
+    #endif
   } else {  // group != 1
     for (int i = 0; i < 4; i++) {
       int used_input_channel_num =
-          (out_c * 4 + i) / (output_c / group) * filter_channel;
-      for (int f_c = 0; f_c < filter_channel; ++f_c) {
-        int input_c = used_input_channel_num + f_c;
+          (out_c * 4 + i) / (output_c / group) * filter_tensor_c;
+      for (int filter_tensor_c_idx = 0; filter_tensor_c_idx < filter_tensor_c; ++filter_tensor_c_idx) {
+        int input_c = used_input_channel_num + filter_tensor_c_idx;
         int input_block = input_c / 4;
         int2 pos_in = (int2)(input_block * input_width + in_pos_in_one_block.x,
                              in_pos_in_one_block.y);
-        input[0] = select(
+        input0 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           sampler,
@@ -392,7 +395,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                        in_pos_in_one_block.x - dilation >= input_width ||
                        in_pos_in_one_block.y - dilation >= input_height)
                       << 15));
-        input[1] =
+        input1 =
             select(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
                                  sampler,
@@ -403,7 +406,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                               in_pos_in_one_block.x >= input_width ||
                               in_pos_in_one_block.y - dilation >= input_height)
                              << 15));
-        input[2] = select(
+        input2 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           sampler,
@@ -414,7 +417,14 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                        in_pos_in_one_block.x + dilation >= input_width ||
                        in_pos_in_one_block.y - dilation >= input_height)
                       << 15));
-        input[3] =
+
+        half4 tmp_in3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, (int2)(pos_in.x - dilation, pos_in.y));
+        int4 is_over_bound_mask = (int4)((in_pos_in_one_block.x - dilation < 0),
+                                         (in_pos_in_one_block.y < 0),
+                                         (in_pos_in_one_block.x - dilation >= input_width),
+                                         (in_pos_in_one_block.y >= input_height));
+
+        input3 =
             select(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
                                  sampler,
@@ -425,7 +435,8 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                               in_pos_in_one_block.x - dilation >= input_width ||
                               in_pos_in_one_block.y >= input_height)
                              << 15));
-        input[4] = select(
+
+        input4 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           sampler,
@@ -435,7 +446,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                        in_pos_in_one_block.x >= input_width ||
                        in_pos_in_one_block.y >= input_height)
                       << 15));
-        input[5] =
+        input5 =
             select(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
                                  sampler,
@@ -446,7 +457,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                               in_pos_in_one_block.x + dilation >= input_width ||
                               in_pos_in_one_block.y >= input_height)
                              << 15));
-        input[6] = select(
+        input6 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           sampler,
@@ -457,7 +468,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                        in_pos_in_one_block.x - dilation >= input_width ||
                        in_pos_in_one_block.y + dilation >= input_height)
                       << 15));
-        input[7] =
+        input7 =
             select(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
                                  sampler,
@@ -468,7 +479,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                               in_pos_in_one_block.x >= input_width ||
                               in_pos_in_one_block.y + dilation >= input_height)
                              << 15));
-        input[8] = select(
+        input8 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
                           sampler,
@@ -483,46 +494,73 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         CL_DTYPE tmp_out = 0;
         for (int j = 0; j < 9; j++) {
           int2 pos_of_weight;
-          pos_of_weight.x = (f_c / 4) * 3 + j % 3;
+          pos_of_weight.x = (filter_tensor_c_idx / 4) * 3 + j % 3;
           pos_of_weight.y = out_c * 4 * 3 + i * 3 + j / 3;
           CL_DTYPE4 weight =
               READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
 
-          int f_c_offset = f_c % 4;
-          CL_DTYPE f_value;
-          if (f_c_offset == 0) {
-            f_value = weight.x;
-          } else if (f_c_offset == 1) {
-            f_value = weight.y;
-          } else if (f_c_offset == 2) {
-            f_value = weight.z;
-          } else if (f_c_offset == 3) {
-            f_value = weight.w;
-          }
+          int filter_tensor_c_idx_offset = filter_tensor_c_idx % 4;
+          CL_DTYPE f_value = 0;
+          f_value = (filter_tensor_c_idx_offset == 0) ? weight.x : f_value;
+          f_value = (filter_tensor_c_idx_offset == 1) ? weight.y : f_value;
+          f_value = (filter_tensor_c_idx_offset == 2) ? weight.z : f_value;
+          f_value = (filter_tensor_c_idx_offset == 3) ? weight.w : f_value;
 
           int input_c_offset = input_c % 4;
-          CL_DTYPE input_value;
-          if (input_c_offset == 0) {
-            input_value = input[j].x;
-          } else if (input_c_offset == 1) {
-            input_value = input[j].y;
-          } else if (input_c_offset == 2) {
-            input_value = input[j].z;
-          } else if (input_c_offset == 3) {
-            input_value = input[j].w;
-          }
+          CL_DTYPE input_value = 0;
+          if (j == 0) {
+              input_value = (input_c_offset == 0) ? input0.x : input_value;
+              input_value = (input_c_offset == 1) ? input0.y : input_value;
+              input_value = (input_c_offset == 2) ? input0.z : input_value;
+              input_value = (input_c_offset == 3) ? input0.w : input_value;
+	  } else if (j == 1) {
+              input_value = (input_c_offset == 0) ? input1.x : input_value;
+              input_value = (input_c_offset == 1) ? input1.y : input_value;
+              input_value = (input_c_offset == 2) ? input1.z : input_value;
+              input_value = (input_c_offset == 3) ? input1.w : input_value;
+	  } else if (j == 2) {
+              input_value = (input_c_offset == 0) ? input2.x : input_value;
+              input_value = (input_c_offset == 1) ? input2.y : input_value;
+              input_value = (input_c_offset == 2) ? input2.z : input_value;
+              input_value = (input_c_offset == 3) ? input2.w : input_value;
+	  } else if (j == 3) {
+              input_value = (input_c_offset == 0) ? input3.x : input_value;
+              input_value = (input_c_offset == 1) ? input3.y : input_value;
+              input_value = (input_c_offset == 2) ? input3.z : input_value;
+              input_value = (input_c_offset == 3) ? input3.w : input_value;
+	  } else if (j == 4) {
+              input_value = (input_c_offset == 0) ? input4.x : input_value;
+              input_value = (input_c_offset == 1) ? input4.y : input_value;
+              input_value = (input_c_offset == 2) ? input4.z : input_value;
+              input_value = (input_c_offset == 3) ? input4.w : input_value;
+	  } else if (j == 5) {
+              input_value = (input_c_offset == 0) ? input5.x : input_value;
+              input_value = (input_c_offset == 1) ? input5.y : input_value;
+              input_value = (input_c_offset == 2) ? input5.z : input_value;
+              input_value = (input_c_offset == 3) ? input5.w : input_value;
+	  } else if (j == 6) {
+              input_value = (input_c_offset == 0) ? input6.x : input_value;
+              input_value = (input_c_offset == 1) ? input6.y : input_value;
+              input_value = (input_c_offset == 2) ? input6.z : input_value;
+              input_value = (input_c_offset == 3) ? input6.w : input_value;
+	  } else if (j == 7) {
+              input_value = (input_c_offset == 0) ? input7.x : input_value;
+              input_value = (input_c_offset == 1) ? input7.y : input_value;
+              input_value = (input_c_offset == 2) ? input7.z : input_value;
+              input_value = (input_c_offset == 3) ? input7.w : input_value;
+	  } else if (j == 8) {
+              input_value = (input_c_offset == 0) ? input8.x : input_value;
+              input_value = (input_c_offset == 1) ? input8.y : input_value;
+              input_value = (input_c_offset == 2) ? input8.z : input_value;
+              input_value = (input_c_offset == 3) ? input8.w : input_value;
+	  }
+
           tmp_out += f_value * input_value;
         }
-
-        if (i == 0) {
-          output.x += tmp_out;
-        } else if (i == 1) {
-          output.y += tmp_out;
-        } else if (i == 2) {
-          output.z += tmp_out;
-        } else if (i == 3) {
-          output.w += tmp_out;
-        }
+        output.x = (i == 0) ? output.x + tmp_out : output.x;
+        output.y = (i == 1) ? output.y + tmp_out : output.y;
+        output.z = (i == 2) ? output.z + tmp_out : output.z;
+        output.w = (i == 3) ? output.w + tmp_out : output.w;
       }
     }
   }
