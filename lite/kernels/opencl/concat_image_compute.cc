@@ -122,7 +122,8 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       for (int i = 0; i < dims.size(); i++) {
         if (i != axis_) {
           if (input0_tensor_dims[i] != dims[i]) {
-            LOG(FATAL) << "All inputs must have the same shape, except at concat axis.";
+            LOG(FATAL) << "All inputs must have the same shape,"
+                          "except at concat axis.";
             return;
           }
         }
