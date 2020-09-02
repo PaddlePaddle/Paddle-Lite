@@ -232,6 +232,20 @@ struct PowerParam : ParamBase {
   float power{};
 };
 
+// For Pow Op
+struct PowParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  float factor{1.};
+};
+
+// For Sign Op
+struct SignParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
 struct ShuffleChannelParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
@@ -1808,6 +1822,31 @@ struct XPUMmdnnMergeAllParam : ParamBase {
   float fc2_w_max{0.0f};
 
   lite::Tensor* out{};
+};
+
+struct XPUConv2dParam : ParamBase {
+  lite::Tensor* Input{nullptr};
+  lite::Tensor* Filter{nullptr};
+  lite::Tensor* InputMax{nullptr};
+  lite::Tensor* FilterMax{nullptr};
+  lite::Tensor* Bias{nullptr};
+  lite::Tensor* Branch{nullptr};
+  lite::Tensor* Output{nullptr};
+  lite::Tensor* OutputMax{nullptr};
+
+  int groups{1};
+  int act_type{-1};
+  std::string filter_type{""};
+  std::vector<int> strides;
+  std::shared_ptr<std::vector<int>> paddings;
+  std::shared_ptr<std::vector<int>> dilations;
+};
+
+struct XPUSfaHeadParam : ParamBase {
+  lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+
+  std::string op_type{""};
 };
 
 // For DeformableConvolution op
