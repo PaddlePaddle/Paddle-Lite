@@ -39,6 +39,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     concat_param_ = param_.get_mutable<param_t>();
     axis_ = concat_param_->axis;
+    if (-1 == axis_) {
+      axis_ = concat_param_->x[0]->dims().size() - 1;
+    }
 
     auto inputs = concat_param_->x;
     auto output_tensor_dims = concat_param_->output->dims();
@@ -100,8 +103,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
           width_ = output_tensor_dims[0];  // n
           flag_ = 2;
           break;
-        case 3:
-        case -1:                           // width
+        case 3:                            // width
           width_ = output_tensor_dims[1];  // c
           flag_ = 3;
           break;
@@ -110,9 +112,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       }
     }
 
-    if (-1 == axis_) {
-      axis_ = concat_param_->output->dims().size() - 1;
-    }
     auto input0_tensor_dims = inputs[0]->dims();
     for (int i = 1; i < inputs.size(); i++) {
       auto dims = inputs[i]->dims();
