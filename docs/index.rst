@@ -19,6 +19,26 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
+  :caption: 快速开始
+  :name: sec-quick-start
+
+  quick_start/tutorial
+  quick_start/release_lib
+  quick_start/cpp_demo
+  quick_start/java_demo
+  quick_start/python_demo
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 应用开发
+  :name: sec-app-develop
+
+  app_develop/cpp_app_develop
+  app_develop/java_app_develop
+  app_develop/python_app_develop
+
+.. toctree::
+  :maxdepth: 1
   :caption: Benchmark
   :name: sec-benchmark
   
@@ -30,8 +50,6 @@ Welcome to Paddle-Lite's documentation!
   :caption: 使用方法
   :name: sec-user-guides
 
-  user_guides/tutorial
-  user_guides/release_lib
   user_guides/source_compile
   user_guides/x2paddle
   user_guides/model_optimize_tool
@@ -46,9 +64,6 @@ Welcome to Paddle-Lite's documentation!
   :caption: 部署示例
   :name: sec-demo_guides
 
-  demo_guides/cpp_demo
-  demo_guides/java_demo
-  demo_guides/python_demo
   demo_guides/android_app_demo
   demo_guides/ios_app_demo
   demo_guides/linux_arm_demo
