@@ -49,8 +49,8 @@ void UniformRandomCompute::Run() {
           param.Out, param.min, param.max, param.seed);
       break;
     default:
-      LOG(ERROR) << "Unsupported data type for uniform_random op:" 
-                 << param.dtype;
+      LOG(ERROR) << "Unsupported data type for uniform_random op:"
+      << param.dtype;
   }
 }
 
