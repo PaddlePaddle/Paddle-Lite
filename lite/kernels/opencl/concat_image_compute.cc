@@ -110,18 +110,20 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       }
     }
 
+    if (-1 == axis_) {
+      axis_ = concat_param_->output->dims().size() - 1;
+    }
     auto input0_tensor_dims = inputs[0]->dims();
     for (int i = 1; i < inputs.size(); i++) {
       auto dims = inputs[i]->dims();
-      // auto flag = CHECK_EQ_OR_FALSE(input0_tensor_dims.size(), dims.size());
       if (input0_tensor_dims.size() != dims.size()) {
-        printf("input shape must be same \n");
+        LOG(FATAL) << "All inputs must have the same axes.";
         return;
       }
       for (int i = 0; i < dims.size(); i++) {
         if (i != axis_) {
           if (input0_tensor_dims[i] != dims[i]) {
-            printf("input shape must be same \n");
+            LOG(FATAL) << "All inputs must have the same shape, except at concat axis.";
             return;
           }
         }
