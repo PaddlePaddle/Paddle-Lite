@@ -50,7 +50,7 @@ void UniformRandomCompute::Run() {
       break;
     default:
       LOG(ERROR) << "Unsupported data type for uniform_random op:"
-      << param.dtype;
+                 << param.dtype;
   }
 }
 
