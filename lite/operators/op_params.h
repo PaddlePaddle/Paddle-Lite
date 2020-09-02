@@ -733,6 +733,7 @@ struct SGDParam : ParamBase {
 
 /// ----------------------- uniform_random operators ----------------------
 struct UniformRandomParam : ParamBase {
+  const lite::Tensor* X{nullptr};
   std::vector<int64_t> shape{};
   float min{-1.0f};
   float max{1.0f};
