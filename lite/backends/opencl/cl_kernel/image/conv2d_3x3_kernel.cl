@@ -34,9 +34,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                          __private const int filter_width,
                          __private const int filter_height,
                          __private const int group,
-                         __private const int input_tensor_c
-
-) {
+                         __private const int input_tensor_c) {
 
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
@@ -72,310 +70,9 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
 #else
   CL_DTYPE4 output = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
 #endif
+  CL_DTYPE4 zero_dtype4 = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
 
-  CL_DTYPE4 input[9];  // 3x3 region of input, not used by group > 1
   CL_DTYPE4 input0, input1, input2, input3, input4, input5, input6, input7, input8;
-  if (group == 1) {
-  #if 1 // NOTE(ysh329): Cause abnormal on snapdragon 625 etc if remove case with group > 1.
-    for (int i = 0; i < input_c; ++i) {  // each run for 3x3
-      int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x,
-                           in_pos_in_one_block.y);
-
-      input[0] = select(
-          READ_IMG_TYPE(CL_DTYPE_CHAR,
-                        input_image,
-                        sampler,
-                        (int2)(pos_in.x - dilation, pos_in.y - dilation)),
-          (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
-          (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
-                     in_pos_in_one_block.y - dilation < 0 ||
-                     in_pos_in_one_block.x - dilation >= input_width ||
-                     in_pos_in_one_block.y - dilation >= input_height)
-                    << 15));
-
-      input[1] =
-          select(READ_IMG_TYPE(CL_DTYPE_CHAR,
-                               input_image,
-                               sampler,
-                               (int2)(pos_in.x, pos_in.y - dilation)),
-                 (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
-                 (ushort4)((in_pos_in_one_block.x < 0 ||
-                            in_pos_in_one_block.y - dilation < 0 ||
-                            in_pos_in_one_block.x >= input_width ||
-                            in_pos_in_one_block.y - dilation >= input_height)
-                           << 15));
-
-      input[2] = select(
-          READ_IMG_TYPE(CL_DTYPE_CHAR,
-                        input_image,
-                        sampler,
-                        (int2)(pos_in.x + dilation, pos_in.y - dilation)),
-          (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
-          (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
-                     in_pos_in_one_block.y - dilation < 0 ||
-                     in_pos_in_one_block.x + dilation >= input_width ||
-                     in_pos_in_one_block.y - dilation >= input_height)
-                    << 15));
-
-      input[3] =
-          select(READ_IMG_TYPE(CL_DTYPE_CHAR,
-                               input_image,
-                               sampler,
-                               (int2)(pos_in.x - dilation, pos_in.y)),
-                 (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
-                 (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
-                            in_pos_in_one_block.y < 0 ||
-                            in_pos_in_one_block.x - dilation >= input_width ||
-                            in_pos_in_one_block.y >= input_height)
-                           << 15));
-
-      input[4] = select(
-          READ_IMG_TYPE(
-              CL_DTYPE_CHAR, input_image, sampler, (int2)(pos_in.x, pos_in.y)),
-          (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
-          (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 ||
-                     in_pos_in_one_block.x >= input_width ||
-                     in_pos_in_one_block.y >= input_height)
-                    << 15));
-
-      input[5] =
-          select(READ_IMG_TYPE(CL_DTYPE_CHAR,
-                               input_image,
-                               sampler,
-                               (int2)(pos_in.x + dilation, pos_in.y)),
-                 (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
-                 (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
-                            in_pos_in_one_block.y < 0 ||
-                            in_pos_in_one_block.x + dilation >= input_width ||
-                            in_pos_in_one_block.y >= input_height)
-                           << 15));
-
-      input[6] = select(
-          READ_IMG_TYPE(CL_DTYPE_CHAR,
-                        input_image,
-                        sampler,
-                        (int2)(pos_in.x - dilation, pos_in.y + dilation)),
-          (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
-          (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
-                     in_pos_in_one_block.y + dilation < 0 ||
-                     in_pos_in_one_block.x - dilation >= input_width ||
-                     in_pos_in_one_block.y + dilation >= input_height)
-                    << 15));
-
-      input[7] =
-          select(READ_IMG_TYPE(CL_DTYPE_CHAR,
-                               input_image,
-                               sampler,
-                               (int2)(pos_in.x, pos_in.y + dilation)),
-                 (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
-                 (ushort4)((in_pos_in_one_block.x < 0 ||
-                            in_pos_in_one_block.y + dilation < 0 ||
-                            in_pos_in_one_block.x >= input_width ||
-                            in_pos_in_one_block.y + dilation >= input_height)
-                           << 15));
-
-      input[8] = select(
-          READ_IMG_TYPE(CL_DTYPE_CHAR,
-                        input_image,
-                        sampler,
-                        (int2)(pos_in.x + dilation, pos_in.y + dilation)),
-          (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
-          (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
-                     in_pos_in_one_block.y + dilation < 0 ||
-                     in_pos_in_one_block.x + dilation >= input_width ||
-                     in_pos_in_one_block.y + dilation >= input_height)
-                    << 15));
-
-      if (i == input_c - 1) {
-        int c_shr = input_tensor_c % 4;
-        if (c_shr == 1) {
-          for (int k = 0; k < 9; k++) {
-            input[k].y = (half)0.f;
-            input[k].z = (half)0.f;
-            input[k].w = (half)0.f;
-          }
-        } else if (c_shr == 2) {
-          for (int k = 0; k < 9; k++) {
-            input[k].z = (half)0.f;
-            input[k].w = (half)0.f;
-          }
-        } else if (c_shr == 3) {
-          for (int k = 0; k < 9; k++) {
-            input[k].w = (half)0.f;
-          }
-        } else if (c_shr == 0) {
-        }
-      }
-
-      int j = 0;
-      int2 pos_of_weight;
-      pos_of_weight.x = i * 3 + j % 3;
-      pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-      CL_DTYPE4 weight_x =
-          READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.x += dot(input[j], weight_x);
-
-      pos_of_weight.y += 3;
-      CL_DTYPE4 weight_y =
-          READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.y += dot(input[j], weight_y);
-
-      pos_of_weight.y += 3;
-      CL_DTYPE4 weight_z =
-          READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.z += dot(input[j], weight_z);
-
-      pos_of_weight.y += 3;
-      CL_DTYPE4 weight_w =
-          READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.w += dot(input[j], weight_w);
-
-      j = 1;
-      pos_of_weight.x = i * 3 + j % 3;
-      pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-      weight_x = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.x += dot(input[j], weight_x);
-
-      pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-      weight_y = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.y += dot(input[j], weight_y);
-
-      pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-      weight_z = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.z += dot(input[j], weight_z);
-
-      pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-      weight_w = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.w += dot(input[j], weight_w);
-
-      j = 2;
-      pos_of_weight.x = i * 3 + j % 3;
-      pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-      weight_x = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.x += dot(input[j], weight_x);
-
-      pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-      weight_y = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.y += dot(input[j], weight_y);
-
-      pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-      weight_z = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.z += dot(input[j], weight_z);
-
-      pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-      weight_w = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.w += dot(input[j], weight_w);
-
-      j = 3;
-      pos_of_weight.x = i * 3 + j % 3;
-      pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-      weight_x = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.x += dot(input[j], weight_x);
-
-      pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-      weight_y = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.y += dot(input[j], weight_y);
-
-      pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-      weight_z = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.z += dot(input[j], weight_z);
-
-      pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-      weight_w = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.w += dot(input[j], weight_w);
-
-      j = 4;
-      pos_of_weight.x = i * 3 + j % 3;
-      pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-      weight_x = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.x += dot(input[j], weight_x);
-
-      pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-      weight_y = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.y += dot(input[j], weight_y);
-
-      pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-      weight_z = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.z += dot(input[j], weight_z);
-
-      pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-      weight_w = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.w += dot(input[j], weight_w);
-
-      j = 5;
-      pos_of_weight.x = i * 3 + j % 3;
-      pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-      weight_x = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.x += dot(input[j], weight_x);
-
-      pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-      weight_y = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.y += dot(input[j], weight_y);
-
-      pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-      weight_z = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.z += dot(input[j], weight_z);
-
-      pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-      weight_w = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.w += dot(input[j], weight_w);
-
-      j = 6;
-      pos_of_weight.x = i * 3 + j % 3;
-      pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-      weight_x = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.x += dot(input[j], weight_x);
-
-      pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-      weight_y = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.y += dot(input[j], weight_y);
-
-      pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-      weight_z = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.z += dot(input[j], weight_z);
-
-      pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-      weight_w = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.w += dot(input[j], weight_w);
-
-      j = 7;
-      pos_of_weight.x = i * 3 + j % 3;
-      pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-      weight_x = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.x += dot(input[j], weight_x);
-
-      pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-      weight_y = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.y += dot(input[j], weight_y);
-
-      pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-      weight_z = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.z += dot(input[j], weight_z);
-
-      pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-      weight_w = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.w += dot(input[j], weight_w);
-
-      j = 8;
-      pos_of_weight.x = i * 3 + j % 3;
-      pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-      weight_x = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.x += dot(input[j], weight_x);
-
-      pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-      weight_y = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.y += dot(input[j], weight_y);
-
-      pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-      weight_z = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.z += dot(input[j], weight_z);
-
-      pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-      weight_w = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
-      output.w += dot(input[j], weight_w);
-    }
-    #endif
-  } else {  // group != 1
     for (int i = 0; i < 4; i++) {
       int used_input_channel_num =
           (out_c * 4 + i) / (output_c / group) * filter_tensor_c;
@@ -389,7 +86,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                           input_image,
                           sampler,
                           (int2)(pos_in.x - dilation, pos_in.y - dilation)),
-            (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
+            zero_dtype4,
             (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
                        in_pos_in_one_block.y - dilation < 0 ||
                        in_pos_in_one_block.x - dilation >= input_width ||
@@ -400,7 +97,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                                  input_image,
                                  sampler,
                                  (int2)(pos_in.x, pos_in.y - dilation)),
-                   (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
+                   zero_dtype4,
                    (ushort4)((in_pos_in_one_block.x < 0 ||
                               in_pos_in_one_block.y - dilation < 0 ||
                               in_pos_in_one_block.x >= input_width ||
@@ -411,7 +108,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                           input_image,
                           sampler,
                           (int2)(pos_in.x + dilation, pos_in.y - dilation)),
-            (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
+            zero_dtype4,
             (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
                        in_pos_in_one_block.y - dilation < 0 ||
                        in_pos_in_one_block.x + dilation >= input_width ||
@@ -423,7 +120,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                                  input_image,
                                  sampler,
                                  (int2)(pos_in.x - dilation, pos_in.y)),
-                   (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
+                   zero_dtype4,
                    (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
                               in_pos_in_one_block.y < 0 ||
                               in_pos_in_one_block.x - dilation >= input_width ||
@@ -435,7 +132,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                           input_image,
                           sampler,
                           (int2)(pos_in.x, pos_in.y)),
-            (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
+            zero_dtype4,
             (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 ||
                        in_pos_in_one_block.x >= input_width ||
                        in_pos_in_one_block.y >= input_height)
@@ -445,7 +142,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                                  input_image,
                                  sampler,
                                  (int2)(pos_in.x + dilation, pos_in.y)),
-                   (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
+                   zero_dtype4,
                    (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
                               in_pos_in_one_block.y < 0 ||
                               in_pos_in_one_block.x + dilation >= input_width ||
@@ -456,7 +153,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                           input_image,
                           sampler,
                           (int2)(pos_in.x - dilation, pos_in.y + dilation)),
-            (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
+            zero_dtype4,
             (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
                        in_pos_in_one_block.y + dilation < 0 ||
                        in_pos_in_one_block.x - dilation >= input_width ||
@@ -467,7 +164,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                                  input_image,
                                  sampler,
                                  (int2)(pos_in.x, pos_in.y + dilation)),
-                   (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
+                   zero_dtype4,
                    (ushort4)((in_pos_in_one_block.x < 0 ||
                               in_pos_in_one_block.y + dilation < 0 ||
                               in_pos_in_one_block.x >= input_width ||
@@ -478,7 +175,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
                           input_image,
                           sampler,
                           (int2)(pos_in.x + dilation, pos_in.y + dilation)),
-            (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f),
+            zero_dtype4,
             (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
                        in_pos_in_one_block.y + dilation < 0 ||
                        in_pos_in_one_block.x + dilation >= input_width ||
@@ -557,8 +254,6 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         output.w = (i == 3) ? output.w + tmp_out : output.w;
       }
     }
-  }
-
   output = activation_type4(output);
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
