@@ -24,7 +24,7 @@ bool UniformRandomOpLite::CheckShape() const { return true; }
 
 bool UniformRandomOpLite::InferShapeImpl() const {
   if (param_.X) {
-    if (param_.X->precision() == PrecisionType::kInt64){
+    if (param_.X->precision() == PrecisionType::kInt64) {
       auto* new_data = param_.X->data<int64_t>();
       std::vector<int64_t> new_shape(new_data, new_data + param_.X->numel());
       param_.Out->Resize(new_shape);
