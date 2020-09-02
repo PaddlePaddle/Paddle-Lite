@@ -20,10 +20,7 @@ namespace kernels {
 namespace host {
 
 template <typename T>
-void UniformRandomKernelFunctor(Tensor* out,                        
-                                float min,
-                                float max,
-                                int seed) {
+void UniformRandomKernelFunctor(Tensor* out, float min, float max, int seed) {
   T* p_out_data = out->mutable_data<T>();
   int64_t size = out->numel();
   memset(p_out_data, 0, size * sizeof(T));
@@ -38,7 +35,6 @@ void UniformRandomKernelFunctor(Tensor* out,
   for (int64_t i = 0; i < size; ++i) {
     p_out_data[i] = dist(engine);
   }
-
 }
 
 void UniformRandomCompute::Run() {
@@ -53,7 +49,8 @@ void UniformRandomCompute::Run() {
           param.Out, param.min, param.max, param.seed);
       break;
     default:
-      LOG(ERROR) << "Unsupported data type for uniform_random op:" << param.dtype;
+      LOG(ERROR) << "Unsupported data type for uniform_random op:" 
+                 << param.dtype;
   }
 }
 
