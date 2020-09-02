@@ -19,7 +19,7 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
-    
+
 class UniformRandomCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::UniformRandomParam;
