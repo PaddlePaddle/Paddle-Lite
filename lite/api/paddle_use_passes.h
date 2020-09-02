@@ -67,3 +67,7 @@ USE_MIR_PASS(__xpu__multi_encoder_fuse_pass);
 USE_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass);
 USE_MIR_PASS(__xpu__fc_fuse_pass);
 USE_MIR_PASS(__xpu__mmdnn_fuse_pass);
+USE_MIR_PASS(__xpu__conv2d_fuse_pass);
+USE_MIR_PASS(__xpu__conv2d_link_previous_out_max_pass);
+USE_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass);
+USE_MIR_PASS(__xpu__sfa_head_moment_fuse_pass);

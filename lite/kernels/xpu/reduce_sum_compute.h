@@ -14,23 +14,20 @@
 
 #pragma once
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class FillConstantCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class ReduceSumCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::FillConstantParam;
-
   void Run() override;
 
-  ~FillConstantCompute() {}
+  virtual ~ReduceSumCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
