@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <random>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 namespace paddle {
