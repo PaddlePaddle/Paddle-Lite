@@ -1,4 +1,4 @@
-# 使用流程
+# 使用Lite预测流程
 
 Lite是一种轻量级、灵活性强、易于扩展的高性能的深度学习预测框架，它可以支持诸如ARM、OpenCL、NPU等等多种终端，同时拥有强大的图优化及预测加速能力。如果您希望将Lite框架集成到自己的项目中，那么只需要如下几步简单操作即可。
 
@@ -45,7 +45,7 @@ $ ./opt \
 
 ## 四. Lite API
 
-为了方便您的使用，我们提供了C++、Java、Python三种API，并且提供了相应的api的完整使用示例:[C++完整示例](../demo_guides/cpp_demo)、[Java完整示例](../demo_guides/java_demo)、[Python完整示例](../demo_guides/cuda)，您可以参考示例中的说明快速了解C++/Java/Python的API使用方法，并集成到您自己的项目中去。需要说明的是，为了减少第三方库的依赖、提高Lite预测框架的通用性，在移动端使用Lite API您需要准备Naive Buffer存储格式的模型，具体方法可参考第2节`模型优化`。
+为了方便您的使用，我们提供了C++、Java、Python三种API，并且提供了相应的api的完整使用示例:[C++完整示例](cpp_demo)、[Java完整示例](java_demo)、[Python完整示例](python_demo)，您可以参考示例中的说明快速了解C++/Java/Python的API使用方法，并集成到您自己的项目中去。需要说明的是，为了减少第三方库的依赖、提高Lite预测框架的通用性，在移动端使用Lite API您需要准备Naive Buffer存储格式的模型，具体方法可参考第2节`模型优化`。
 
 ## 五. 测试工具
 

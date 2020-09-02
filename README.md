@@ -24,16 +24,16 @@ Paddle Lite框架拥有优秀的加速、优化策略及实现，包含量化、
 
 **三. 下载或编译**
 
-Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，我们优先推荐您直接下载 [Paddle Lite预编译库](https://paddle-lite.readthedocs.io/zh/latest/user_guides/release_lib.html)。
+Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，我们优先推荐您直接下载 [Paddle Lite预编译库](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html)。
 您也可以根据目标平台选择对应的[源码编译方法](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/`文件夹下，只需要 [准备环境](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#id2) 和 [调用编译脚本](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#paddlelite) 两个步骤即可一键编译得到目标平台的Paddle Lite预测库。
 
 **四. 预测示例**
 
 Paddle Lite提供了C++、Java、Python三种API，并且提供了相应API的完整使用示例:
 
-- [C++完整示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/cpp_demo.html)
-- [Java完整示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/java_demo.html)
-- [Python完整示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/python_demo.html)
+- [C++完整示例](https://paddle-lite.readthedocs.io/zh/latest/quick_start/cpp_demo.html)
+- [Java完整示例](https://paddle-lite.readthedocs.io/zh/latest/quick_start/java_demo.html)
+- [Python完整示例](https://paddle-lite.readthedocs.io/zh/latest/quick_start/python_demo.html)
 
 您可以参考示例中的说明快速了解使用方法，并集成到您自己的项目中去。
 
