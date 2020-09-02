@@ -72,6 +72,11 @@ class ActivationComputeImageDefault
       case 8:
         kernel_func_name_ = "exp_act";
         break;
+      case 14:
+        kernel_func_name_ = "hard_sigmoid";
+        scale_ = act_param_->hard_sigmoid_slope;
+        threshold_ = act_param_->hard_sigmoid_offset;
+        break;
       default:
         LOG(FATAL) << "This act type:" << act_type << " doesn't support.";
         return;
