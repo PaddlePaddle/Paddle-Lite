@@ -43,8 +43,6 @@ class Reshape2Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   }
 
   virtual ~Reshape2Compute() = default;
-
- private:
 };
 
 }  // namespace xpu

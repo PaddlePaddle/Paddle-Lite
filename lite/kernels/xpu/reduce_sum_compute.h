@@ -25,8 +25,6 @@ class ReduceSumCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   void Run() override;
 
   virtual ~ReduceSumCompute() = default;
-
- private:
 };
 
 }  // namespace xpu

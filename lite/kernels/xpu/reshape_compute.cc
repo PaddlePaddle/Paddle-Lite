@@ -15,14 +15,6 @@
 #include "lite/kernels/xpu/reshape_compute.h"
 #include "lite/core/op_registry.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace xpu {}  // namespace xpu
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
-
 REGISTER_LITE_KERNEL(reshape2,
                      kXPU,
                      kFloat,
