@@ -1,4 +1,4 @@
-# Linux(ARM) Demo
+# Linux(ARM) 工程示例
 
 ## 多种应用场景
 
@@ -86,6 +86,6 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 ## 使用Python接口预测
 
-1. Python预测库编译参考[编译Linux](../user_guides/Compile/Linux)，建议在开发版上编译。
-2. [Paddle-Lite Python API](https://paddle-lite.readthedocs.io/zh/latest/api_reference/python_api_doc.html)。
-3. 代码参考，[Python预测](python_demo)
+1. Python预测库编译参考[编译Linux](../source_compile/compile_linux)，建议在开发版上编译。
+2. [Paddle-Lite Python API](../api_reference/python_api_doc)。
+3. 代码参考，[Python简单示例](python_demo)

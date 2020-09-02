@@ -1,4 +1,4 @@
-# Android Demo
+# Android 工程示例
 
 ## 多种应用场景
 
@@ -36,7 +36,7 @@
 
 **需要的环境**： Android Studio、Android手机（开启USB调试模式）、下载到本地的[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)工程
 
-**预先要求**：如果您的Android Studio尚未配置NDK，请根据Android Studio用户指南中的[安装及配置NDK和CMake](https://developer.android.com/studio/projects/install-ndk)内容，预先配置好NDK。您可以选择最新的NDK版本，或者与[Android编译环境配置](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html#android)中的NDK版本保持一致。
+**预先要求**：如果您的Android Studio尚未配置NDK，请根据Android Studio用户指南中的[安装及配置NDK和CMake](https://developer.android.com/studio/projects/install-ndk)内容，预先配置好NDK。您可以选择最新的NDK版本，或者与[Android编译环境配置](../source_compile/compile_env.html#android)中的NDK版本保持一致。
 
 **部署步骤**：
 

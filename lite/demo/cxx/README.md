@@ -23,7 +23,7 @@
 
 **编译Demo并执行**
 
-参考[预测库编译](https://paddle-lite.readthedocs.io/zh/latest/user_guides/source_compile.html)准备编译环境。
+参考[编译环境准备](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_env.html)准备编译环境。
 
 执行下面命令，下载PaddleLite代码，切换到2.6版本分支。
 ```shell

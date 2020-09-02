@@ -1,15 +1,19 @@
 # Java 完整示例
 
+本章节包含2部分内容：(1) [Java 示例程序](java_demo.html#id1)；(2) [Java 应用开发说明](java_demo.html#id8)。
+
+## Java 示例程序
+
 本章节展示的所有Java 示例代码位于 [demo/java](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/java) 。
 
-## 1. 环境准备
+### 1. 环境准备
 
 要编译和运行Android Java 示例程序，你需要准备：
 
 1. 一台armv7或armv8架构的安卓手机
 2. 一台装有AndroidStudio的开发机
 
-## 2. 下载预编译的预测库
+### 2. 下载预编译的预测库
 
 预测库下载界面位于[Paddle-Lite官方预编译库](release_lib)，可根据您的手机型号选择合适版本。
 
@@ -22,26 +26,26 @@
 **解压后内容结构如下：**
 
 ```shell
-inference_lite_lib.android.armv8          # Paddle-Lite 预测库
-├── cxx                                       # C++ 预测库
-│   ├── include                                   # C++ 预测库头文件
-│   └── lib                                       # C++ 预测库文件
-├── demo                                      # 示例 Demo
-│   ├── cxx                                       # C++ 示例 Demo
-│   └── java                                      # Java 示例 Demo
-│       ├── README.md                                 # Demo Readme 文件
-│       └── android                                   # Java Andriod Demo
-└── java                                      # Java 预测库
+inference_lite_lib.android.armv8    Paddle-Lite 预测库
+├── cxx                                 C++ 预测库
+│   ├── include                             C++ 预测库头文件
+│   └── lib                                 C++ 预测库文件
+├── demo                                示例 Demo
+│   ├── cxx                                 C++ 示例 Demo
+│   └── java                                Java 示例 Demo
+│       ├── README.md                           Java Demo Readme 文件
+│       └── android                             Java Andriod Demo
+└── java                                Java 预测库
     ├── jar 
-    │   └── PaddlePredictor.jar                    # Java JAR 包
+    │   └── PaddlePredictor.jar                 Java JAR 包
     ├── so 
-    │   └── libpaddle_lite_jni.so                  # Java JNI 动态链接库
+    │   └── libpaddle_lite_jni.so               Java JNI 动态链接库
     └── src
 ```
 
-## 3. 准备预测部署模型
+### 3. 准备预测部署模型
 
-### 自动化脚本方法
+#### 自动化脚本方法
 
 在Java Andriod Demo文件夹下，我们准备了一个脚本`prepare_demo.bash`，输入手机架构参数例如`arm64-v8a`，即可自动打包所有预测部署所需文件。
 
@@ -58,7 +62,7 @@ bash prepare_demo.bash arm8
 
 **注意：** 目前脚本输入手机架构参数仅支持 `arm7 | arm8 | armeabi-v7a | arm64-v8a`。
 
-### 手动拷贝方法
+#### 手动拷贝方法
 
 (1) 把Java JNI动态链接库和Java JAR包拷贝进安卓demo程序文件夹下：
 
@@ -83,7 +87,7 @@ cp ../../../java/jar/PaddlePredictor.jar PaddlePredictor/app/libs/
 
 注意：模型要求为naive buffer格式，您可以通过 [opt工具](../user_guides/model_optimize_tool) 将Paddle模型转为naive buffer存储格式。
 
-## 4. 运行预测示例程序
+### 4. 运行预测示例程序
 
 1. 用AndroidStudio打开`inference_lite_lib.android.armv8/demo/java/android/PaddlePredictor`文件夹（需要联网），打开后工程会自动build完成。
 2. 设置手机：手机USB连接电脑，打开`设置 -> 开发者模式 -> USB调试 -> 允许（授权）当前电脑调试手机`，并确认AndroidStudio可以识别接入的手机设备。
@@ -109,3 +113,48 @@ time: xxx ms
 该 demo 程序跑我们的 5 个模型，第一个模型结果将真正的头两个数字输出，并在第二行附上期望的正确值。你应该要看到他们的误差小于0.001。后面四个模型如果你看到 `test:true` 字样，说明模型输出通过了我们在 demo 程序里对其输出的测试。time 代表该测试花费的时间。
 
 **注意：** 在这一步中，如果遇到Andriod Studio编译/安装失败等问题，请参考[Andriod示例](../demo_guides/android_app_demo.html#id6)中部署方法章节的详细步骤和注意事项。
+
+## Java 应用开发说明
+
+Java代码调用Paddle-Lite执行预测库仅需以下五步：
+
+(1) 设置config信息
+
+```java
+MobileConfig config = new MobileConfig();
+config.setModelDir(modelPath);
+config.setPowerMode(PowerMode.LITE_POWER_HIGH);
+config.setThreads(1);
+```
+
+(2) 创建predictor
+
+```java
+PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
+```
+
+(3) 设置模型输入 (下面以全一输入为例)
+
+```java
+float[] inputBuffer = new float[10000];
+for (int i = 0; i < 10000; ++i) {
+    inputBuffer[i] = i;
+}
+Tensor input = predictor.getInput(0);
+input.resize({100, 100});
+input.setData(inputBuffer);
+```
+
+(4) 执行预测
+
+```java
+predictor.run();
+```
+
+(5) 获得预测结果
+
+```java
+Tensor output = predictor.getOutput(0);
+```
+
+详细的Java API说明文档位于[Java API](../api_reference/java_api_doc)。更多Java应用预测开发可以参考位于位于[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。

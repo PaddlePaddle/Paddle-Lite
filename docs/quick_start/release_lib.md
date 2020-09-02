@@ -71,10 +71,14 @@ pip install paddlelite
 ## 对应源码编译方法
 
 - [opt源码编译](../user_guides/model_optimize_tool.html#opt)
-- [Android源码编译](./source_compile.html#paddlelite)
-- [iOS源码编译](./source_compile.html#paddlelite)
-- [ArmLinux源码编译](./source_compile.html#paddlelite)
+- [Android源码编译](../source_compile/compile_andriod)
+- [iOS源码编译](../source_compile/compile_ios)
+- [ArmLinux源码编译](../source_compile/compile_linux)
 - [x86源码编译](../demo_guides/x86)
 - [opencl源码编译](../demo_guides/opencl)
 - [CUDA源码编译](../demo_guides/cuda)
 - [FPGA源码编译](../demo_guides/fpga)
+- [华为NPU源码编译](../demo_guides/huawei_kirin_npu)
+- [百度XPU源码编译](../demo_guides/baidu_xpu)
+- [Rockchip NPU源码编译](../demo_guides/rockchip_npu)
+- [MediaTek APU源码编译](../demo_guides/mediatek_apu)

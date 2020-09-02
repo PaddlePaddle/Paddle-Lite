@@ -1,15 +1,19 @@
 # C++ 完整示例
 
+本章节包含2部分内容：(1) [C++ 示例程序](cpp_demo.html#id1); (2) [C++ 应用开发说明](cpp_demo.html#id11)。
+
+## C++ 示例程序
+
 本章节展示的所有C++ 示例代码位于 [demo/c++](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/cxx) 。
 
-## 1. 环境准备
+### 1. 环境准备
 
 要编译和运行Android C++ 示例程序，你需要准备：
 
 1. 一台armv7或armv8架构的安卓手机
 2. 一台可以编译PaddleLite的电脑
 
-## 2. 下载预编译的预测库
+### 2. 下载预编译的预测库
 
 预测库下载界面位于[Paddle-Lite官方预编译库](release_lib)，可根据您的手机型号选择合适版本。
 
@@ -22,19 +26,19 @@
 **解压后内容结构如下：**
 
 ```shell
-inference_lite_lib.android.armv8          # Paddle-Lite 预测库
-├── cxx                                       # C++ 预测库
-│   ├── include                                   # C++ 预测库头文件
-│   └── lib                                       # C++ 预测库文件
-│       ├── libpaddle_api_light_bundled.a             # 静态预测库
-│       └── libpaddle_light_api_shared.so             # 动态预测库
-├── demo                                      # 示例 Demo
-│   ├── cxx                                       # C++ 示例 Demo
-│   └── java                                      # Java 示例 Demo
-└── java                                      # Java 预测库
+inference_lite_lib.android.armv8          Paddle-Lite 预测库
+├── cxx                                       C++ 预测库
+│   ├── include                                   C++ 预测库头文件
+│   └── lib                                       C++ 预测库文件
+│       ├── libpaddle_api_light_bundled.a             静态预测库
+│       └── libpaddle_light_api_shared.so             动态预测库
+├── demo                                      示例 Demo
+│   ├── cxx                                       C++ 示例 Demo
+│   └── java                                      Java 示例 Demo
+└── java                                      Java 预测库
 ```
 
-## 3. 准备预测部署模型
+### 3. 准备预测部署模型
 
 (1) 模型下载：下载[mobilenet_v1](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz)模型后解压，得到Paddle非combined形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具[Netron](https://lutzroeder.github.io/netron/)打开文件夹下的`__model__`文件，查看模型结构。
 
@@ -76,7 +80,7 @@ paddle_lite_opt --model_dir=./mobilenet_v1 \
 
 
 
-## 4. 编译预测示例程序
+### 4. 编译预测示例程序
 
 准备好预测库和模型，就可以直接编译随着预测库一起发布的 C++ Demo，位于在第二步中下载的预测库文件目录下`inference_lite_lib.android.armv8/demo/cxx`。以mobilenet_v1为例，目录下的`mobile_light`为mobilenet_v1预测示例，预测程序需要编译为Android可执行文件。
 
@@ -87,7 +91,7 @@ make
 
 会在同级目录下生成名为`mobilenetv1_light_api`的可执行文件。
 
-## 5. 预测部署和执行
+### 5. 预测部署和执行
 
 (1) 设置手机：手机USB连接电脑，打开`设置 -> 开发者模式 -> USB调试 -> 允许（授权）当前电脑调试手机`。保证当前电脑已经安装[adb工具](https://developer.android.com/studio/command-line/adb)，运行以下命令，确认当前手机设备已被识别：
 
@@ -150,9 +154,9 @@ output tensor 0 standard deviation:0.00219646
 output tensor 0 mean value:0.001
 ```
 
-## 更多C++示例
+### 更多C++示例
 
-### 图像分类示例
+#### 图像分类示例
 
 ```shell
 cd inference_lite_lib.android.armv8/demo/cxx/mobile_classify
@@ -186,7 +190,7 @@ i: 3, index: 282, name:  tiger cat, score: 0.093659
 i: 4, index: 283, name:  Persian cat, score: 0.060198
 ```
 
-### 目标检测示例
+#### 目标检测示例
 
 ```shell
 cd inference_lite_lib.android.armv8/demo/cxx/ssd_detection
@@ -217,7 +221,7 @@ detection, image size: 935, 1241, detect object: person, score: 0.929626, locati
 adb pull /data/local/tmp/test_ssd_detection_result.jpg ./
 ```
 
-### 口罩检测示例
+#### 口罩检测示例
 
 ```shell
 cd inference_lite_lib.android.armv8/demo/cxx/mask_detection
@@ -239,3 +243,54 @@ detect face, location: x=566, y=176, width=245, height=294, wear mask: 1, prob: 
 write result to file: test_img_result.jpg, success.
 /data/local/tmp/mask_demo/test_img_result.jpg: 1 file pulled, 0 skipped. 13.7 MB/s (87742 bytes in 0.006s)
 ```
+
+## C++ 应用开发说明
+
+C++代码调用Paddle-Lite执行预测库仅需以下五步：
+
+(1) 引用头文件和命名空间
+
+```c++
+#include "paddle_api.h"
+using namespace paddle::lite_api;
+```
+
+(2) 指定模型文件，创建Predictor
+
+```C++
+// 1. Set MobileConfig, model_file_path is 
+// the path to model model file. 
+MobileConfig config;
+config.set_model_from_file(model_file_path);
+// 2. Create PaddlePredictor by MobileConfig
+std::shared_ptr<PaddlePredictor> predictor =
+    CreatePaddlePredictor<MobileConfig>(config);
+```
+
+(3) 设置模型输入 (下面以全一输入为例)
+
+```c++
+std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
+input_tensor->Resize({1, 3, 224, 224});
+auto* data = input_tensor->mutable_data<float>();
+for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+  data[i] = 1;
+}
+```
+
+(4) 执行预测
+
+```c++
+predictor->Run();
+```
+
+(5) 获得预测结果
+
+```c++
+std::unique_ptr<const Tensor> output_tensor(
+    std::move(predictor->GetOutput(0)));
+// 转化为数据
+auto output_data=output_tensor->data<float>();
+```
+
+详细的C++ API说明文档位于[C++ API](../api_reference/cxx_api_doc)。更多C++应用预测开发可以参考位于位于[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
