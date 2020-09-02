@@ -38,9 +38,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     concat_param_ = param_.get_mutable<param_t>();
+    axis_ = concat_param_->axis;
 
     auto inputs = concat_param_->x;
-    auto axis_ = concat_param_->axis;
     auto output_tensor_dims = concat_param_->output->dims();
     auto* axis_tensor = concat_param_->axis_tensor;
     if (axis_tensor != nullptr) {
@@ -433,6 +433,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   }
 #endif
 
+ private:
   int axis_ = 1;
   int flag_ = 1;
   int width_ = 1;
