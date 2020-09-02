@@ -6,7 +6,7 @@ Basic profiler 用于 CPU 上kernel 耗时的统计。
 
 ### 开启方法:
 
-参照 [编译环境准备](../source_compile/compile_env) 进行环境配置，在编译脚本的 cmake 选项中时添加 `-DLITE_WITH_PROFILE=ON` ，就可以开启相应支持。
+参照 [编译环境准备](../source_compile/compile_env) 进行环境配置，在编译脚本的 cmake 选项中添加 `-DLITE_WITH_PROFILE=ON` ，就可以开启相应支持。
 
 ### 使用示例：
 
