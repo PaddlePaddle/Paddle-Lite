@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <random>
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <random>
 #include "lite/core/context.h"
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/naive_math_impl.h"
@@ -54,7 +54,7 @@ TEST(uniformrandom, test) {
   uniform_random.Run();
   const double* outdata = out.data<double>();
   for (int i = 0; i < out.numel(); i++) {
-    std::cout<<outdata[i];
+    std::cout << outdata[i];
   }
 }
 
