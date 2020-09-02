@@ -18,7 +18,7 @@ Python仅支持服务器端预测，目前支持 Windows / Mac / Linux (x86 | AR
 python -m pip install paddlelite
 ```
 
-**注意：** PyPI源目前仅提供Windows / Mac / Linux (x86) 三个平台pip安装包，如果您需要使用AMRLinux平台的Python预测功能，请参考[编译Linux预测库](../user_guides/Compile/Linux)。
+**注意：** PyPI源目前仅提供Windows / Mac / Linux (x86) 三个平台pip安装包，如果您需要使用AMRLinux平台的Python预测功能，请参考[源码编译(ARMLinux)](../source_compile/compile_linux)。
 
 ### 3. 准备预测部署模型
 

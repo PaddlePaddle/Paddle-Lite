@@ -15,7 +15,7 @@
 
 ### 2. 下载预编译的预测库
 
-预测库下载界面位于[Paddle-Lite官方预编译库](release_lib)，可根据您的手机型号选择合适版本。
+预测库下载界面位于[Lite预编译库下载](release_lib)，可根据您的手机型号选择合适版本。
 
 以**Android-ARMv8架构**为例，可以下载以下版本：
 
@@ -112,7 +112,7 @@ time: xxx ms
 
 该 demo 程序跑我们的 5 个模型，第一个模型结果将真正的头两个数字输出，并在第二行附上期望的正确值。你应该要看到他们的误差小于0.001。后面四个模型如果你看到 `test:true` 字样，说明模型输出通过了我们在 demo 程序里对其输出的测试。time 代表该测试花费的时间。
 
-**注意：** 在这一步中，如果遇到Andriod Studio编译/安装失败等问题，请参考[Andriod示例](../demo_guides/android_app_demo.html#id6)中部署方法章节的详细步骤和注意事项。
+**注意：** 在这一步中，如果遇到Andriod Studio编译/安装失败等问题，请参考[Andriod示例](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。
 
 ## Java 应用开发说明
 

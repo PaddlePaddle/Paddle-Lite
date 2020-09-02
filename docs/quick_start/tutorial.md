@@ -1,4 +1,4 @@
-# Lite预测流程
+# Lite 预测流程
 
 Lite是一种轻量级、灵活性强、易于扩展的高性能的深度学习预测框架，它可以支持诸如ARM、OpenCL、NPU等等多种终端，同时拥有强大的图优化及预测加速能力。如果您希望将Lite框架集成到自己的项目中，那么只需要如下几步简单操作即可。
 
@@ -9,9 +9,9 @@ Lite框架目前支持的模型结构为[PaddlePaddle](https://github.com/Paddle
 
 ## 二. 模型优化
 
-Lite框架拥有强大的加速、优化策略及实现，其中包含诸如量化、子图融合、Kernel优选等等优化手段，为了方便您使用这些优化策略，我们提供了[opt](model_optimize_tool)帮助您轻松进行模型优化。优化后的模型更轻量级，耗费资源更少，并且执行速度也更快。
+Lite框架拥有强大的加速、优化策略及实现，其中包含诸如量化、子图融合、Kernel优选等等优化手段，为了方便您使用这些优化策略，我们提供了[opt](../user_guides/model_optimize_tool)帮助您轻松进行模型优化。优化后的模型更轻量级，耗费资源更少，并且执行速度也更快。
 
-opt的详细介绍，请您参考 [模型优化方法](model_optimize_tool) 。
+opt的详细介绍，请您参考 [模型优化方法](../user_guides/model_optimize_tool)。
 
 下载opt工具后执行以下代码：
 
@@ -49,4 +49,4 @@ $ ./opt \
 
 ## 五. 测试工具
 
-为了使您更好的了解并使用Lite框架，我们向有进一步使用需求的用户开放了 [Debug工具](debug) 和 [Profile工具](debug)。Lite Model Debug Tool可以用来查找Lite框架与PaddlePaddle框架在执行预测时模型中的对应变量值是否有差异，进一步快速定位问题Op，方便复现与排查问题。Profile Monitor Tool可以帮助您了解每个Op的执行时间消耗，其会自动统计Op执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。您可以通过 [相关专题](debug) 了解更多内容。
+为了使您更好的了解并使用Lite框架，我们向有进一步使用需求的用户开放了 [Debug工具](../user_guides/debug) 和 [Profile工具](../user_guides/debug)。Lite Model Debug Tool可以用来查找Lite框架与PaddlePaddle框架在执行预测时模型中的对应变量值是否有差异，进一步快速定位问题Op，方便复现与排查问题。Profile Monitor Tool可以帮助您了解每个Op的执行时间消耗，其会自动统计Op执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。您可以通过 [相关专题](../user_guides/debug) 了解更多内容。
