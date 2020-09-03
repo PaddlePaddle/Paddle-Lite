@@ -1,4 +1,4 @@
-# 调试
+# 调试工具
 
 ## Profiler工具
 
@@ -6,7 +6,7 @@ Basic profiler 用于 CPU 上kernel 耗时的统计。
 
 ### 开启方法:
 
-参照 [编译安装](../user_guides/source_compile) 中的**full_publish**部分进行环境配置，在 cmake 时添加 `-DLITE_WITH_PROFILE=ON` ，就可以开启相应支持。
+参照 [编译环境准备](../source_compile/compile_env) 进行环境配置，在编译脚本的 cmake 选项中添加 `-DLITE_WITH_PROFILE=ON` ，就可以开启相应支持。
 
 ### 使用示例：
 
@@ -39,7 +39,7 @@ Basic profiler 用于 CPU 上kernel 耗时的统计。
 
 ### 编译方法:
 
-1. 参照 [编译安装](../user_guides/source_compile) 中的**full_publish**部分进行环境配置和编译。
+1. 参照 [编译环境准备](../source_compile/compile_env) 进行环境配置和编译。
 2. 在生成的`build`目录下，执行`make lite_model_debug_tool`，`lite_model_debug_tool`产出在编译目录的`lite/tools/debug`目录下。
 
 ### 工作流程:
