@@ -810,13 +810,13 @@ void conv_depthwise_3x3s2p1_bias_relu(float* dout,
         //! process bottom pad
         if (i + 4 > h_in) {
           switch (i + 4 - h_in) {
-            case 4:
+            case 4:  // din1_ptr-din4_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 3:
+            case 3:  // din2_ptr-din4_ptr is zero_ptr
               din2_ptr = zero_ptr;
-            case 2:
+            case 2:  // din3_ptr-din4_ptr is zero_ptr
               din3_ptr = zero_ptr;
-            case 1:
+            case 1:  // din4_ptr is zero_ptr
               din4_ptr = zero_ptr;
             default:
               break;
@@ -897,9 +897,9 @@ void conv_depthwise_3x3s2p1_bias_relu(float* dout,
         //! process bottom pad
         if (i + 2 > h_in) {
           switch (i + 2 - h_in) {
-            case 2:
+            case 2:  // din1_ptr-din2_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 1:
+            case 1:  // din2_ptr is zero_ptr
               din2_ptr = zero_ptr;
             default:
               break;
@@ -1063,13 +1063,13 @@ void conv_depthwise_3x3s2p1_bias_no_relu(float* dout,
         //! process bottom pad
         if (i + 4 > h_in) {
           switch (i + 4 - h_in) {
-            case 4:
+            case 4:  // din1_ptr-din4_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 3:
+            case 3:  // din2_ptr-din4_ptr is zero_ptr
               din2_ptr = zero_ptr;
-            case 2:
+            case 2:  // din3_ptr-din4_ptr is zero_ptr
               din3_ptr = zero_ptr;
-            case 1:
+            case 1:  // din4_ptr is zero_ptr
               din4_ptr = zero_ptr;
             default:
               break;
@@ -1149,9 +1149,9 @@ void conv_depthwise_3x3s2p1_bias_no_relu(float* dout,
         //! process bottom pad
         if (i + 2 > h_in) {
           switch (i + 2 - h_in) {
-            case 2:
+            case 2:  // din1_ptr-din2_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 1:
+            case 1:  // din2_ptr is zero_ptr
               din2_ptr = zero_ptr;
             default:
               break;
@@ -1563,15 +1563,15 @@ void conv_depthwise_3x3s2p0_bias_relu(float* dout,
         //! process bottom pad
         if (i * 2 + 5 > h_in) {
           switch (i * 2 + 5 - h_in) {
-            case 4:
+            case 4:  // din1_ptr-din4_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 3:
+            case 3:  // din2_ptr-din4_ptr is zero_ptr
               din2_ptr = zero_ptr;
-            case 2:
+            case 2:  // din3_ptr-din4_ptr is zero_ptr
               din3_ptr = zero_ptr;
-            case 1:
+            case 1:  // din4_ptr is zero_ptr
               din4_ptr = zero_ptr;
-            case 0:
+            case 0:  // din4_ptr is zero_ptr
               din4_ptr = zero_ptr;
             default:
               break;
@@ -1653,9 +1653,9 @@ void conv_depthwise_3x3s2p0_bias_relu(float* dout,
         //! process bottom pad
         if (i * 2 + 3 > h_in) {
           switch (i * 2 + 3 - h_in) {
-            case 2:
+            case 2:  // din1_ptr-din2_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 1:
+            case 1:  // din2_ptr is zero_ptr
               din2_ptr = zero_ptr;
             default:
               break;
@@ -1808,15 +1808,15 @@ void conv_depthwise_3x3s2p0_bias_no_relu(float* dout,
         //! process bottom pad
         if (i * 2 + 5 > h_in) {
           switch (i * 2 + 5 - h_in) {
-            case 4:
+            case 4:  // din1_ptr-din4_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 3:
+            case 3:  // din2_ptr-din4_ptr is zero_ptr
               din2_ptr = zero_ptr;
-            case 2:
+            case 2:  // din3_ptr-din4_ptr is zero_ptr
               din3_ptr = zero_ptr;
-            case 1:
+            case 1:  // din4_ptr is zero_ptr
               din4_ptr = zero_ptr;
-            case 0:
+            case 0:  // din4_ptr is zero_ptr
               din4_ptr = zero_ptr;
             default:
               break;
@@ -1897,9 +1897,9 @@ void conv_depthwise_3x3s2p0_bias_no_relu(float* dout,
         //! process bottom pad
         if (i * 2 + 3 > h_in) {
           switch (i * 2 + 3 - h_in) {
-            case 2:
+            case 2:  // din1_ptr-din2_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 1:
+            case 1:  // din2_ptr is zero_ptr
               din2_ptr = zero_ptr;
             default:
               break;
@@ -2003,9 +2003,9 @@ void conv_depthwise_3x3s2p0_bias_s_relu(float* dout,
         const float* din2_ptr = dr2;
         if (j * 2 + 2 >= h_in) {
           switch (j + 2 - h_in) {
-            case 1:
+            case 1:  // din1_ptr-din2_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 0:
+            case 0:  // din2_ptr is zero_ptr
               din2_ptr = zero_ptr;
             default:
               break;
@@ -2135,9 +2135,9 @@ void conv_depthwise_3x3s2p0_bias_s_no_relu(float* dout,
         const float* din2_ptr = dr2;
         if (j * 2 + 2 >= h_in) {
           switch (j + 2 - h_in) {
-            case 1:
+            case 1:  // din1_ptr-din2_ptr is zero_ptr
               din1_ptr = zero_ptr;
-            case 0:
+            case 0:  // din2_ptr is zero_ptr
               din2_ptr = zero_ptr;
             default:
               break;

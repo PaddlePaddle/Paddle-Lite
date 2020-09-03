@@ -714,13 +714,13 @@ void conv_3x3s1_depthwise_fp32_bias(const float* i_data,
         const float* inr3 = inr2 + row_len;
         if (c + out_c_block > oc) {
           switch (c + out_c_block - oc) {
-            case 3:
+            case 3:  // outc10-outc30 is ptr_write and extra
               outc10 = ptr_write;
               outc11 = ptr_write;
-            case 2:
+            case 2:  // outc20-outc30 is ptr_write and extra
               outc20 = ptr_write;
               outc21 = ptr_write;
-            case 1:
+            case 1:  //outc30 is ptr_write and extra
               outc30 = ptr_write;
               outc31 = ptr_write;
             default:
@@ -961,13 +961,13 @@ void conv_3x3s1_depthwise_fp32_relu(const float* i_data,
         const float* inr3 = inr2 + row_len;
         if (c + out_c_block > oc) {
           switch (c + out_c_block - oc) {
-            case 3:
+            case 3:  // outc10-outc30 is ptr_write and extra
               outc10 = ptr_write;
               outc11 = ptr_write;
-            case 2:
+            case 2:  // outc20-outc30 is ptr_write and extra
               outc20 = ptr_write;
               outc21 = ptr_write;
-            case 1:
+            case 1:  // outc30 is ptr_write and extra
               outc30 = ptr_write;
               outc31 = ptr_write;
             default:
@@ -1208,13 +1208,13 @@ void conv_3x3s1_depthwise_fp32_relu6(const float* i_data,
         const float* inr3 = inr2 + row_len;
         if (c + out_c_block > oc) {
           switch (c + out_c_block - oc) {
-            case 3:
+            case 3:  // outc10-outc30 is ptr_write and extra
               outc10 = ptr_write;
               outc11 = ptr_write;
-            case 2:
+            case 2:  // outc20-outc30 is ptr_write and extra
               outc20 = ptr_write;
               outc21 = ptr_write;
-            case 1:
+            case 1:  // outc30 is ptr_write and extra
               outc30 = ptr_write;
               outc31 = ptr_write;
             default:
@@ -1455,13 +1455,13 @@ void conv_3x3s1_depthwise_fp32_leakyRelu(const float* i_data,
         const float* inr3 = inr2 + row_len;
         if (c + out_c_block > oc) {
           switch (c + out_c_block - oc) {
-            case 3:
+            case 3:  // outc10-outc30 is ptr_write and extra
               outc10 = ptr_write;
               outc11 = ptr_write;
-            case 2:
+            case 2:  // outc20-outc30 is ptr_write and extra
               outc20 = ptr_write;
               outc21 = ptr_write;
-            case 1:
+            case 1:  // outc30 is ptr_write and extra
               outc30 = ptr_write;
               outc31 = ptr_write;
             default:

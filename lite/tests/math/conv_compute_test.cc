@@ -334,7 +334,9 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
 #else
                                    // if only run one case is right, otherwise
                                    // run all case by series is error
-                                   {pad_top, pad_top, pad_left, pad_right},
+                                   pad_bottom = pad_top;
+                                   pad_right = pad_left;
+                                   {pad_top, pad_bottom, pad_left, pad_right},
 #endif
                                    {1, 1},
                                    flag_bias,

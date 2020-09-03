@@ -2300,15 +2300,15 @@ void conv_depthwise_3x3s1p1_bias_relu6(float *dout,
         //! process bottom pad
         if (i + 5 > h_in) {
           switch (i + 5 - h_in) {
-            case 5:
+            case 5:  // din_ptr1-din_ptr5 is zero_ptr
               din_ptr1 = zero_ptr;
-            case 4:
+            case 4:  // din_ptr2-din_ptr5 is zero_ptr
               din_ptr2 = zero_ptr;
-            case 3:
+            case 3:  // din_ptr3-din_ptr5 is zero_ptr
               din_ptr3 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr4-din_ptr5 is zero_ptr
               din_ptr4 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr5 is zero_ptr
               din_ptr5 = zero_ptr;
             default:
               break;
@@ -2317,11 +2317,11 @@ void conv_depthwise_3x3s1p1_bias_relu6(float *dout,
         //! process bottom remain
         if (i + 4 > h_out) {
           switch (i + 4 - h_out) {
-            case 3:
+            case 3:  // doutr1-doutr3 is write_ptr and is extra
               doutr1 = write_ptr;
-            case 2:
+            case 2:  // doutr2-doutr3 is write_ptr and is extra
               doutr2 = write_ptr;
-            case 1:
+            case 1:  // doutr3 is write_ptr and is extra
               doutr3 = write_ptr;
             default:
               break;
@@ -2410,11 +2410,11 @@ void conv_depthwise_3x3s1p1_bias_relu6(float *dout,
         //! process bottom pad
         if (i + 3 > h_in) {
           switch (i + 3 - h_in) {
-            case 3:
+            case 3:  // din_ptr1-din_ptr3 is zero_ptr
               din_ptr1 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr2-din_ptr3 is zero_ptr
               din_ptr2 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr3 is zero_ptr
               din_ptr3 = zero_ptr;
             default:
               break;
@@ -2422,7 +2422,7 @@ void conv_depthwise_3x3s1p1_bias_relu6(float *dout,
         }
         //! process bottom remain
         if (i + 2 > h_out) {
-          doutr1 = write_ptr;
+          doutr1 = write_ptr; // doutr1 is write_ptr and is extra
         }
         int cnt = cnt_col;
         unsigned int *rmask_ptr = rmask;
@@ -2600,15 +2600,15 @@ void conv_depthwise_3x3s1p1_bias_leakyRelu(float *dout,
         //! process bottom pad
         if (i + 5 > h_in) {
           switch (i + 5 - h_in) {
-            case 5:
+            case 5:  // din_ptr1-din_ptr5 is zero_ptr
               din_ptr1 = zero_ptr;
-            case 4:
+            case 4:  // din_ptr2-din_ptr5 is zero_ptr
               din_ptr2 = zero_ptr;
-            case 3:
+            case 3:  // din_ptr3-din_ptr5 is zero_ptr
               din_ptr3 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr4-din_ptr5 is zero_ptr
               din_ptr4 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr5 is zero_ptr
               din_ptr5 = zero_ptr;
             default:
               break;
@@ -2617,11 +2617,11 @@ void conv_depthwise_3x3s1p1_bias_leakyRelu(float *dout,
         //! process bottom remain
         if (i + 4 > h_out) {
           switch (i + 4 - h_out) {
-            case 3:
+            case 3:  // doutr1-doutr3 is write_ptr and is extra
               doutr1 = write_ptr;
-            case 2:
+            case 2:  // doutr2-doutr3 is write_ptr and is extra
               doutr2 = write_ptr;
-            case 1:
+            case 1:  // doutr3 is write_ptr and is extra
               doutr3 = write_ptr;
             default:
               break;
@@ -2710,11 +2710,11 @@ void conv_depthwise_3x3s1p1_bias_leakyRelu(float *dout,
         //! process bottom pad
         if (i + 3 > h_in) {
           switch (i + 3 - h_in) {
-            case 3:
+            case 3:  // din_ptr1-din_ptr3 is zero_ptr
               din_ptr1 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr2-din_ptr3 is zero_ptr
               din_ptr2 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr3 is zero_ptr
               din_ptr3 = zero_ptr;
             default:
               break;
@@ -2841,11 +2841,11 @@ void conv_depthwise_3x3s1p1_bias_s_relu6(float *dout,
         //! process bottom pad
         if (j + 3 > h_in) {
           switch (j + 3 - h_in) {
-            case 3:
+            case 3:  // din_ptr1-din_ptr3 is zero_ptr
               din_ptr1 = zero;
-            case 2:
+            case 2:  // din_ptr2-din_ptr3 is zero_ptr
               din_ptr2 = zero;
-            case 1:
+            case 1:  // din_ptr3 is zero_ptr
               din_ptr3 = zero;
             default:
               break;
@@ -3002,11 +3002,11 @@ void conv_depthwise_3x3s1p1_bias_s_leakyRelu(float *dout,
         //! process bottom pad
         if (j + 3 > h_in) {
           switch (j + 3 - h_in) {
-            case 3:
+            case 3:  // din_ptr1-din_ptr3 is zero_ptr
               dr1_ptr = zero;
-            case 2:
+            case 2:  // din_ptr2-din_ptr3 is zero_ptr
               dr2_ptr = zero;
-            case 1:
+            case 1:  // din_ptr3 is zero_ptr
               dr3_ptr = zero;
             default:
               break;
@@ -3209,15 +3209,15 @@ void conv_depthwise_3x3s1p0_bias_relu6(float *dout,
         //! process bottom pad
         if (i + 5 >= h_in) {
           switch (i + 5 - h_in) {
-            case 4:
+            case 4:  // din_ptr1-din_ptr5 is zero_ptr
               din_ptr1 = zero_ptr;
-            case 3:
+            case 3:  // din_ptr2-din_ptr5 is zero_ptr
               din_ptr2 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr3-din_ptr5 is zero_ptr
               din_ptr3 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr4-din_ptr5 is zero_ptr
               din_ptr4 = zero_ptr;
-            case 0:
+            case 0:  // din_ptr5 is zero_ptr
               din_ptr5 = zero_ptr;
             default:
               break;
@@ -3226,11 +3226,11 @@ void conv_depthwise_3x3s1p0_bias_relu6(float *dout,
         //! process bottom remain
         if (i + 4 > h_out) {
           switch (i + 4 - h_out) {
-            case 3:
+            case 3:  // doutr1-doutr3 is write_ptr and is extra
               doutr1 = write_ptr;
-            case 2:
+            case 2:  // doutr2-doutr3 is write_ptr and is extra
               doutr2 = write_ptr;
-            case 1:
+            case 1:  // doutr3 is write_ptr and is extra
               doutr3 = write_ptr;
             default:
               break;
@@ -3316,11 +3316,11 @@ void conv_depthwise_3x3s1p0_bias_relu6(float *dout,
         //! process bottom pad
         if (i + 4 > h_in) {
           switch (i + 4 - h_in) {
-            case 3:
+            case 3:  // din_ptr1-din_ptr3 is zero_ptr
               din_ptr1 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr2-din_ptr3 is zero_ptr
               din_ptr2 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr3 is zero_ptr
               din_ptr3 = zero_ptr;
             default:
               break;
@@ -3451,11 +3451,11 @@ void conv_depthwise_3x3s1p0_bias_s_relu6(float *dout,
 
         if (j + 4 > h_in) {
           switch (j + 4 - h_in) {
-            case 3:
+            case 3:  // din_ptr1-din_ptr3 is zero_ptr
               dr1 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr2-din_ptr3 is zero_ptr
               dr2 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr3 is zero_ptr
               dr3 = zero_ptr;
             default:
               break;
@@ -3659,15 +3659,15 @@ void conv_depthwise_3x3s1p0_bias_leakyRelu(float *dout,
         //! process bottom pad
         if (i + 5 >= h_in) {
           switch (i + 5 - h_in) {
-            case 4:
+            case 4:  // din_ptr1-din_ptr5 is zero_ptr
               din_ptr1 = zero_ptr;
-            case 3:
+            case 3:  // din_ptr2-din_ptr5 is zero_ptr
               din_ptr2 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr3-din_ptr5 is zero_ptr
               din_ptr3 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr4-din_ptr5 is zero_ptr
               din_ptr4 = zero_ptr;
-            case 0:
+            case 0:  // din_ptr5 is zero_ptr
               din_ptr5 = zero_ptr;
             default:
               break;
@@ -3676,11 +3676,11 @@ void conv_depthwise_3x3s1p0_bias_leakyRelu(float *dout,
         //! process bottom remain
         if (i + 4 > h_out) {
           switch (i + 4 - h_out) {
-            case 3:
+            case 3:  // doutr1-doutr3 is write_ptr and is extra
               doutr1 = write_ptr;
-            case 2:
+            case 2:  // doutr2-doutr3 is write_ptr and is extra
               doutr2 = write_ptr;
-            case 1:
+            case 1:  // doutr3 is write_ptr and is extra
               doutr3 = write_ptr;
             default:
               break;
@@ -3766,11 +3766,11 @@ void conv_depthwise_3x3s1p0_bias_leakyRelu(float *dout,
         //! process bottom pad
         if (i + 4 > h_in) {
           switch (i + 4 - h_in) {
-            case 3:
+            case 3:  // din_ptr1-din_ptr3 is zero_ptr
               din_ptr1 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr2-din_ptr3 is zero_ptr
               din_ptr2 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr3 is zero_ptr
               din_ptr3 = zero_ptr;
             default:
               break;
@@ -3902,11 +3902,11 @@ void conv_depthwise_3x3s1p0_bias_s_leakyRelu(float *dout,
 
         if (j + 4 > h_in) {
           switch (j + 4 - h_in) {
-            case 3:
+            case 3:  // din_ptr1-din_ptr3 is zero_ptr
               dr1 = zero_ptr;
-            case 2:
+            case 2:  // din_ptr2-din_ptr5 is zero_ptr
               dr2 = zero_ptr;
-            case 1:
+            case 1:  // din_ptr3 is zero_ptr
               dr3 = zero_ptr;
             default:
               break;
