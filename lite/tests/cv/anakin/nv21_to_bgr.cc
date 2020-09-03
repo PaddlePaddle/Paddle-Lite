@@ -1,5 +1,6 @@
 #include "lite/tests/cv/anakin/cv_utils.h"
 #include <math.h>
+// clang-format off
 /*
 R = Y + 1.402*(V-128);
 G = Y - 0.34414*(U-128) - 0.71414*(V-128);
@@ -101,7 +102,6 @@ void nv21_to_bgr(const unsigned char* src, unsigned char* dst, int srcw, int src
             int16x8_t b0_2 = vaddq_s16(y1_1_8, b0_bias);
             int16x8_t g0_2 = vsubq_s16(y1_1_8, g0_bias);
 
-            // printf("r0_1: %d, %d, %d %d \n", y1_0_8[0], r0_1[0], r0_1[1], r0_1[2], r0_1[3]);
             r0_1 = vmaxq_s16(r0_1, zero);
             b0_1 = vmaxq_s16(b0_1, zero);
             g0_1 = vmaxq_s16(g0_1, zero);
@@ -110,7 +110,6 @@ void nv21_to_bgr(const unsigned char* src, unsigned char* dst, int srcw, int src
             b0_2 = vmaxq_s16(b0_2, zero);
             g0_2 = vmaxq_s16(g0_2, zero);
 
-            // printf("r0_1: %d, %d, %d %d \n", r0_1[0], r0_1[1], r0_1[2], r0_1[3]);
             r0_1 = vminq_s16(r0_1, max);
             b0_1 = vminq_s16(b0_1, max);
             g0_1 = vminq_s16(g0_1, max);
@@ -119,17 +118,9 @@ void nv21_to_bgr(const unsigned char* src, unsigned char* dst, int srcw, int src
             b0_2 = vminq_s16(b0_2, max);
             g0_2 = vminq_s16(g0_2, max);
 
-            // printf("r0_1: %d, %d, %d %d \n", r0_1[0], r0_1[1], r0_1[2], r0_1[3]);
-            // printf("b0_1: %d, %d, %d %d \n", b0_1[0], b0_1[1], b0_1[2], b0_1[3]);
-            // printf("g0_1: %d, %d, %d %d \n", g0_1[0], g0_1[1], g0_1[2], g0_1[3]);
-
             uint8x8_t r00 = vreinterpret_u8_s8(vmovn_s16(r0_1));
             uint8x8_t b00 = vreinterpret_u8_s8(vmovn_s16(b0_1));
             uint8x8_t g00 = vreinterpret_u8_s8(vmovn_s16(g0_1));
-
-            // printf("r00: %d, %d, %d %d \n", r00[0], r00[1], r00[2], r00[3]);
-            // printf("b00: %d, %d, %d %d \n", b00[0], b00[1], b00[2], b00[3]);
-            // printf("g00: %d, %d, %d %d \n", g00[0], g00[1], g00[2], g00[3]);
 
             uint8x8_t r01 = vreinterpret_u8_s8(vmovn_s16(r0_2));
             uint8x8_t b01 = vreinterpret_u8_s8(vmovn_s16(b0_2));
@@ -204,28 +195,16 @@ void nv21_to_bgr(const unsigned char* src, unsigned char* dst, int srcw, int src
             uint8x8_t r1_8 = vreinterpret_u8_u32(r00_2.val[1]);
             uint8x8_t b1_8 = vreinterpret_u8_u32(b00_2.val[1]);
             uint8x8_t g1_8 = vreinterpret_u8_u32(g00_2.val[1]);
-
-            // printf("b0_8: %d, %d, %d %d \n", b0_8[0], b0_8[1], b0_8[2], b0_8[3]);
-            // printf("g0_8: %d, %d, %d %d \n", g0_8[0], g0_8[1], g0_8[2], g0_8[3]);
-            // printf("r0_8: %d, %d, %d %d \n", r0_8[0], r0_8[1], r0_8[2], r0_8[3]);
             uint8x8x3_t v_bgr;
             v_bgr.val[0] = b0_8;
             v_bgr.val[1] = g0_8;
             v_bgr.val[2] = r0_8;
-
-            // vst1_u8(ptr_bgr3, r0_8);
-            // vst1_u8(ptr_bgr1, b0_8);
-            // vst1_u8(ptr_bgr2, g0_8);
 
             r00_0 = vtrn_u8(r00, r01); //014589  236710
             b00_0 = vtrn_u8(b00, b01);
             g00_0 = vtrn_u8(g00, g01);
 
             vst3_u8(ptr_bgr1, v_bgr);
-
-            // ptr_bgr3 += 8;
-            // ptr_bgr1 += 8;
-            // ptr_bgr2 += 8;
 
             r0_16 = vreinterpret_u16_u8(r00_0.val[0]);
             r1_16 = vreinterpret_u16_u8(r00_0.val[1]);
@@ -242,17 +221,11 @@ void nv21_to_bgr(const unsigned char* src, unsigned char* dst, int srcw, int src
             v_bgr1.val[1] = g1_8;
             v_bgr1.val[2] = r1_8;
 
-            // vst1_u8(ptr_bgr3, r1_8);
-            // vst1_u8(ptr_bgr1, b1_8);
-            // vst1_u8(ptr_bgr2, g1_8);
 
             r00_1 = vtrn_u16(r0_16, r1_16); //012389 456710
             b00_1 = vtrn_u16(b0_16, b1_16);
             g00_1 = vtrn_u16(g0_16, g1_16);
 
-            // ptr_bgr3 += 8;
-            // ptr_bgr1 += 8;
-            // ptr_bgr2 += 8;
             vst3_u8(ptr_bgr1, v_bgr1);
 
             r0_32 = vreinterpret_u32_u16(r00_1.val[0]);
@@ -294,18 +267,6 @@ void nv21_to_bgr(const unsigned char* src, unsigned char* dst, int srcw, int src
             vst3_u8(ptr_bgr2 + 24, v_bgr1);
 
             ptr_bgr2 += 48;
-
-            // vst1_u8(ptr_bgr6, r0_8);
-            // vst1_u8(ptr_bgr4, b0_8);
-            // vst1_u8(ptr_bgr5, g0_8);
-
-            // vst1_u8(ptr_bgr6 + 8, r1_8);
-            // vst1_u8(ptr_bgr4 + 8, b1_8);
-            // vst1_u8(ptr_bgr5 + 8, g1_8);
-
-            // ptr_bgr6 += 16;
-            // ptr_bgr4 += 16;
-            // ptr_bgr5 += 16;
         }
         //two data
         for (; j < srcw; j += 2){

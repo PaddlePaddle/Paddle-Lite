@@ -67,11 +67,11 @@ void image_basic_flip(const uint8_t* src,
                       int srcw, int srch,
                       int flip_num) {
   if (flip_num == -1) {
-    flip_num = 0; //  xy
+    flip_num = 0;  // xy
   } else if (flip_num == 0) {
-    flip_num = 1; //  x
+    flip_num = 1;  // x
   } else if (flip_num == 1) {
-    flip_num = -1; //  y
+    flip_num = -1;  // y
   }
   if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
     bgr_flip_hwc(src, dst, srcw, srch, flip_num);
@@ -79,7 +79,6 @@ void image_basic_flip(const uint8_t* src,
     bgra_flip_hwc(src, dst, srcw, srch, flip_num);
   } else {
     printf("anakin doesn't support this type: %d\n", (int)srcFormat);
-    // LOG(FATAL) << "anakin doesn't support this type: " << (int)srcFormat;
   }
 }
 
@@ -94,7 +93,6 @@ void image_basic_rotate(const uint8_t* src,
     bgra_rotate_hwc(src, dst, srcw, srch, rotate_num);
   } else {
    printf("anakin doesn't support this type: %d\n", (int)srcFormat);
-    // LOG(FATAL) << "anakin doesn't support this type: " << (int)srcFormat;
   }
 }
 
@@ -114,6 +112,5 @@ void image_basic_to_tensor(const uint8_t* in_data,
     bgra_to_tensor_hwc(in_data, dst, srcw, srch, means, scales);
   } else {
     printf("anakin doesn't support this type: %d\n", (int)srcFormat);
-    // LOG(FATAL) << "anakin doesn't suppoort other layout or format: " << (int)srcFormat;
   }
 }

@@ -1,17 +1,17 @@
-/* Copyright (c) 2018 Baidu, Inc. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
 #pragma once
 
 #include "lite/utils/cv/paddle_image_preprocess.h"
@@ -23,6 +23,7 @@ typedef paddle::lite::utils::cv::FlipParam FlipParam;
 typedef paddle::lite::Tensor Tensor;
 typedef paddle::lite_api::DataLayoutType LayoutType;
 
+// clang-format off
 void rotate(const uint8_t* src, uint8_t* dst, int srcw, int srch, int angle);
 
 void bgr_rotate_hwc(const uint8_t* src, uint8_t* dst, int srcw, int srch, int angle);
@@ -78,6 +79,7 @@ void nv21_to_tensor(const uint8_t* nv21, Tensor& output, int width,
 void nv12_to_tensor(const uint8_t* nv12, Tensor& output, int width,
                     int height, float* means, float* scales);
 
+// clang-format on
 void image_basic_convert(const uint8_t* src, uint8_t* dst,
                          ImageFormat srcFormat, ImageFormat dstFormat,
                          int srcw, int srch, int out_size);

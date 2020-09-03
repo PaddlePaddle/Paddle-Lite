@@ -1,4 +1,5 @@
 #include "lite/tests/cv/anakin/cv_utils.h"
+// clang-format off
 void bgra_to_tensor_hwc(const uint8_t* bgr, Tensor& output, int width, int height, \
                         float* means, float* scales) {
     int size = width * height;

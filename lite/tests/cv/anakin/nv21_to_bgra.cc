@@ -1,5 +1,6 @@
 #include "lite/tests/cv/anakin/cv_utils.h"
 #include <math.h>
+// clang-format off
 /*
 R = Y + 1.402*(V-128);
 G = Y - 0.34414*(U-128) - 0.71414*(V-128);
@@ -103,7 +104,6 @@ void nv21_to_bgra(const unsigned char* src, unsigned char* dst, int srcw, int sr
             int16x8_t b0_2 = vaddq_s16(y1_1_8, b0_bias);
             int16x8_t g0_2 = vsubq_s16(y1_1_8, g0_bias);
 
-            // printf("r0_1: %d, %d, %d %d \n", y1_0_8[0], r0_1[0], r0_1[1], r0_1[2], r0_1[3]);
             r0_1 = vmaxq_s16(r0_1, zero);
             b0_1 = vmaxq_s16(b0_1, zero);
             g0_1 = vmaxq_s16(g0_1, zero);
@@ -112,7 +112,6 @@ void nv21_to_bgra(const unsigned char* src, unsigned char* dst, int srcw, int sr
             b0_2 = vmaxq_s16(b0_2, zero);
             g0_2 = vmaxq_s16(g0_2, zero);
 
-            // printf("r0_1: %d, %d, %d %d \n", r0_1[0], r0_1[1], r0_1[2], r0_1[3]);
             r0_1 = vminq_s16(r0_1, max);
             b0_1 = vminq_s16(b0_1, max);
             g0_1 = vminq_s16(g0_1, max);

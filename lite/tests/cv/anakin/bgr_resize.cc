@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <math.h>
 #include "lite/tests/cv/anakin/cv_utils.h"
+// clang-format off
 void resize_three_channel(const uint8_t* src, int w_in, int h_in, uint8_t* dst, int w_out, int h_out);
 void bgr_resize(const uint8_t* src, uint8_t* dst, int w_in, int h_in, int w_out, int h_out){
     if (w_out == w_in && h_out == h_in){
@@ -63,9 +64,6 @@ void resize_three_channel(const uint8_t* src, int w_in, int h_in, uint8_t* dst, 
         ibeta[dy * 2] = SATURATE_CAST_SHORT(b0);
         ibeta[dy * 2 + 1] = SATURATE_CAST_SHORT(b1);
     }
-    // for (int dy = 0; dy < h_out; dy++) {
-    //     printf("dy: %d, sy: %d \n", dy, yofs[dy]);
-    // }
 #undef SATURATE_CAST_SHORT
     // loop body
     short* rowsbuf0 = new short[w_out + 1];
@@ -75,7 +73,6 @@ void resize_three_channel(const uint8_t* src, int w_in, int h_in, uint8_t* dst, 
     int prev_sy1 = -1;
     for (int dy = 0; dy < h_out; dy++){
         int sy = yofs[dy];
-       // printf("dy, %d, sy: %d\n", dy, sy);
         if (sy == prev_sy1){
             // hresize one row
             short* rows0_old = rows0;
@@ -131,8 +128,6 @@ void resize_three_channel(const uint8_t* src, int w_in, int h_in, uint8_t* dst, 
         int16x4_t _b1 = vdup_n_s16(b1);
         int32x4_t _v2 = vdupq_n_s32(2);
 #if 1// __aarch64__
-        //printf("cnt : %d \n", cnt);
-// #pragma omp parallel for
         for (cnt = w_out >> 3; cnt > 0; cnt--){
             int16x4_t _rows0p_sr4 = vld1_s16(rows0p);
             int16x4_t _rows1p_sr4 = vld1_s16(rows1p);
@@ -158,17 +153,11 @@ void resize_three_channel(const uint8_t* src, int w_in, int h_in, uint8_t* dst, 
         }
 #else
 #endif // __aarch64__
-        //printf("remain : %d \n", remain);
         for (; remain; --remain){
-//             D[x] = (rows0[x]*b0 + rows1[x]*b1) >> INTER_RESIZE_COEF_BITS;
+            // D[x] = (rows0[x]*b0 + rows1[x]*b1) >> INTER_RESIZE_COEF_BITS;
             *dp_ptr++ = (uint8_t)(((short)((b0 * (short)(*rows0p++)) >> 16) + \
                 (short)((b1 * (short)(*rows1p++)) >> 16) + 2)>>2);
         }
-        // dp_ptr = dst + w_out * (dy);
-        // for (int i = 0; i < w_out; i++){
-        //         printf("%d, ", dp_ptr[i]);
-        //     }
-        //     printf("\n");
         ibeta += 2;
     }
     delete[] buf;

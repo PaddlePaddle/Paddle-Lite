@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <math.h>
 #include "lite/tests/cv/anakin/cv_utils.h"
+// clang-format off
 void resize_one_channel(const unsigned char* src, int w_in, int h_in, unsigned char* dst, int w_out, int h_out);
 void resize_one_channel_uv(const unsigned char* src, int w_in, int h_in, unsigned char* dst, int w_out, int h_out);
 void nv21_resize(const unsigned char* src, unsigned char* dst, int w_in, int h_in, int w_out, int h_out){
@@ -10,10 +11,6 @@ void nv21_resize(const unsigned char* src, unsigned char* dst, int w_in, int h_i
         memcpy(dst, src, sizeof(unsigned char) * w_in * (int)(1.5 * h_in));
         return;
     }
-   // printf("w_in: %d, h_in: %d, w_out: %d, h_out: %d\n", w_in, h_in, w_out, h_out);
-   // dst = new unsigned char[h_out * w_out];
-    //if (dst == nullptr)
-   //     return;
     int y_h = h_in;
     int uv_h =  h_in / 2;
     const unsigned char* y_ptr = src;
@@ -23,17 +20,12 @@ void nv21_resize(const unsigned char* src, unsigned char* dst, int w_in, int h_i
     int dst_uv_h = h_out / 2;
     unsigned char* dst_ptr = dst + dst_y_h * w_out;
 
-    //resize_one_channel(src, w_in, h_in, dst, w_out, h_out);
-    //printf("resize_one_channel dst_y_h: %d,  y_ptr: %x, dst： %x \n", dst_y_h, y_ptr, dst);
-    //y
     resize_one_channel(y_ptr, w_in, y_h, dst, w_out, dst_y_h);
-   //printf("resize_one_channel_uv dst_uv_h: %d, uv_ptr: %x, dst_uv: %x \n", dst_uv_h, uv_ptr, dst_ptr);
-    //uv
+
     resize_one_channel_uv(uv_ptr, w_in, uv_h, dst_ptr, w_out, dst_uv_h);
 }
 
 void resize_one_channel(const unsigned char* src, int w_in, int h_in, unsigned char* dst, int w_out, int h_out){
-    //printf("resize_one_channel \n");
     const int resize_coef_bits = 11;
     const int resize_coef_scale = 1 << resize_coef_bits;
 
@@ -252,7 +244,6 @@ void resize_one_channel(const unsigned char* src, int w_in, int h_in, unsigned c
             : "r4", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
         );
 
-        //printf("resize_one_channel \n");
         }
 #endif // __aarch64__
         for (; remain; --remain){
@@ -337,9 +328,6 @@ void resize_one_channel_uv(const unsigned char* src, int w_in, int h_in, unsigne
         ibeta[dy * 2] = SATURATE_CAST_SHORT(b0);
         ibeta[dy * 2 + 1] = SATURATE_CAST_SHORT(b1);
     }
-    // for (int dy = 0; dy < h_out; dy++) {
-    //     printf("dy: %d, sy: %d \n", dy, yofs[dy]);
-    // }
 
 #undef SATURATE_CAST_SHORT
     // loop body
@@ -349,24 +337,8 @@ void resize_one_channel_uv(const unsigned char* src, int w_in, int h_in, unsigne
     short* rows1 = rowsbuf1;
 
     int prev_sy1 = -1;
-    //(x0 * a1 + x1 * a0) * b0 + (x2 * a1 + x3 * a0) * b1
-    // for (int i = 0; i < w_out; i++)
-    //     printf("%.2f ", ialpha[i] / 2048.0);
-    // printf("\n");
-    // for (int i = 0; i < h_out * 2; i++)
-    //     printf("%.2f ", ibeta[i] / 2048.0);
-    // printf("\n");
-    // for (int i = 0; i < w_out / 2; i++)
-    //     printf("%d ", xofs[i]);
-    // printf("\n");
-    // for (int i = 0; i < h_out; i++)
-    //     printf("%d ", yofs[i]);
-    // printf("\n");
-
-   // printf("prev_sy1 : %d \n", prev_sy1);
     for (int dy = 0; dy < h_out; dy++){
         int sy = yofs[dy];
-       // printf("dy, %d, sy: %d\n", dy, sy);
         if (sy == prev_sy1){
             // hresize one row
             short* rows0_old = rows0;
@@ -427,9 +399,6 @@ void resize_one_channel_uv(const unsigned char* src, int w_in, int h_in, unsigne
         int16x4_t _b1 = vdup_n_s16(b1);
         int32x4_t _v2 = vdupq_n_s32(2);
 
-#if 1// __aarch64__
-        //printf("cnt : %d \n", cnt);
-// #pragma omp parallel for
         for (cnt = w_out >> 3; cnt > 0; cnt--){
             int16x4_t _rows0p_sr4 = vld1_s16(rows0p);
             int16x4_t _rows1p_sr4 = vld1_s16(rows1p);
@@ -460,73 +429,11 @@ void resize_one_channel_uv(const unsigned char* src, int w_in, int h_in, unsigne
             rows0p += 8;
             rows1p += 8;
         }
-#else
-#pragma omp parallel for
-        if (cnt > 0){
-        asm volatile(
-            "mov        r4, #2          \n"
-            "vdup.s32   q12, r4         \n"
-             "0:                         \n"
-            "pld        [%[rows0p], #128]      \n"
-            "pld        [%[rows1p], #128]      \n"
-            "vld1.s16   {d2-d3}, [%[rows0p]]!\n"
-            "vld1.s16   {d6-d7}, [%[rows0p]]!\n"
-            "pld        [%[rows0p], #128]      \n"
-            "pld        [%[rows1p], #128]      \n"
-            "vmull.s16  q0, d2, %[_b0]     \n"
-            "vmull.s16  q1, d3, %[_b0]     \n"
-            "vmull.s16  q2, d6, %[_b1]     \n"
-            "vmull.s16  q3, d7, %[_b1]     \n"
-
-            "vld1.s16   {d2-d3}, [%[rows0p]]!\n"
-            "vld1.s16   {d6-d7}, [%[rows0p]]!\n"
-
-            "vorr.s32   q10, q12, q12   \n"
-            "vorr.s32   q11, q12, q12   \n"
-            "vsra.s32   q10, q0, #16    \n"
-            "vsra.s32   q11, q1, #16    \n"
-            "vsra.s32   q10, q2, #16    \n"
-            "vsra.s32   q11, q3, #16    \n"
-
-            "vmull.s16  q0, d2, %[_b0]     \n"
-            "vmull.s16  q1, d3, %[_b0]     \n"
-            "vmull.s16  q2, d6, %[_b1]     \n"
-            "vmull.s16  q3, d7, %[_b1]     \n"
-
-            "vsra.s32   q10, q0, #16    \n"
-            "vsra.s32   q11, q1, #16    \n"
-            "vsra.s32   q10, q2, #16    \n"
-            "vsra.s32   q11, q3, #16    \n"
-
-            "vshrn.s32  d20, q10, #2    \n"
-            "vshrn.s32  d21, q11, #2    \n"
-            "vqmovun.s16 d20, q10        \n"
-            "vst1.8     {d20}, [%[dp]]!    \n"
-            "subs       %[cnt], #1          \n"
-            "bne        0b              \n"
-            "sub        %[rows0p], #16         \n"
-            "sub        %[rows1p], #16         \n"
-            : [rows0p] "+r" (rows0p), [rows1p] "+r" (rows1p), [_b0] "+w" (_b0), [_b1] "+w" (_b1), \
-                [cnt] "+r" (cnt), [dp] "+r" (dp_ptr)
-            :
-            : "r4", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
-        );
-
-        //printf("resize_one_channel \n");
-        }
-#endif // __aarch64__
-        //printf("remain : %d \n", remain);
         for (; remain; --remain){
-//             D[x] = (rows0[x]*b0 + rows1[x]*b1) >> INTER_RESIZE_COEF_BITS;
+            // D[x] = (rows0[x]*b0 + rows1[x]*b1) >> INTER_RESIZE_COEF_BITS;
             *dp_ptr++ = (unsigned char)(((short)((b0 * (short)(*rows0p++)) >> 16) + \
                 (short)((b1 * (short)(*rows1p++)) >> 16) + 2)>>2);
         }
-
-        // dp_ptr = dst + w_out * (dy);
-        // for (int i = 0; i < w_out; i++){
-        //         printf("%d, ", dp_ptr[i]);
-        //     }
-        //     printf("\n");
 
         ibeta += 2;
     }

@@ -1,4 +1,5 @@
 #include "lite/tests/cv/anakin/cv_utils.h"
+// clang-format off
 void rotate90_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
 
 void rotate270_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
@@ -35,8 +36,6 @@ void rotate90_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in){
     int stride_h = 4 * win;
     int stride_h_w = 4 * win - 32;
     int ww = w_out - 8;
-    // printf("rotate90_hwc \n");
-    // uint8_t* dst = new uint8_t[w_out * h_out * 3];
     //block 8*8. -- 8*8
     int i = 0;
     for (i = 0; i < h_in - 7; i += 8){
@@ -308,7 +307,6 @@ void rotate180_hwc_bgra(const uint8_t* src, uint8_t* dst, int w, int h_in){
     memset(zerobuff, 0, w_in * sizeof(uint8_t));
     int stride_w = 4;
     //4*8
-    //printf("dst: %x \n", dst);
     for (int i = 0; i < h_in; i += 4){
         const uint8_t* inptr0 = src + i * w_in;
         const uint8_t* inptr1 = inptr0 + w_in;

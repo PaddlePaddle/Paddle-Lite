@@ -9,8 +9,6 @@ if(LITE_WITH_CV AND (NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WI
             bgra_rotate_hwc.cc
             bgra_to_tensor_hwc.cc
             cv_utils.cc
-            rotate.cc
-            flip.cc
             nv12_to_bgr.cc
             nv12_to_bgra.cc
             nv21_to_bgr.cc
