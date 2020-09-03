@@ -5,12 +5,27 @@ Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，如�
 
 您也可以根据目标平台选择对应的源码编译方法，Paddle Lite提供了源码编译脚本，位于`lite/tools/`文件夹下，只需要“准备环境”和“调用编译脚本”两个步骤即可一键编译得到目标平台的Paddle Lite预测库。
 
-目前支持四种编译的环境：
+目前支持四种编译开发环境：
 
 1. [Docker开发环境](compile_env.html#docker)
 2. [Linux开发环境](compile_env.html#linux)
 3. [Mac OS开发环境](compile_env.html#mac-os)
 4. [Windows开发环境](compile_env.html#windows)
+
+源码编译方法支持如下平台：
+
+- [Android源码编译](../source_compile/compile_andriod)
+- [iOS源码编译](../source_compile/compile_ios)
+- [ArmLinux源码编译](../source_compile/compile_linux)
+- [X86源码编译](../demo_guides/x86)
+- [OpenCL源码编译](../demo_guides/opencl)
+- [CUDA源码编译](../demo_guides/cuda)
+- [FPGA源码编译](../demo_guides/fpga)
+- [华为NPU源码编译](../demo_guides/huawei_kirin_npu)
+- [百度XPU源码编译](../demo_guides/baidu_xpu)
+- [Rockchip NPU源码编译](../demo_guides/rockchip_npu)
+- [MediaTek APU源码编译](../demo_guides/mediatek_apu)
+- [模型优化工具opt源码编译](../user_guides/model_optimize_tool.html#opt)
 
 ## 1. Docker开发环境
 
