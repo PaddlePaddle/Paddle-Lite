@@ -153,7 +153,10 @@ void flip_hwc1_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
                                                   // 26, 27}"
           "ld1  {v3.8b}, [%[inptr3]], #8    \n"   // v0={30,31,32, 33, 34, 35,
                                                   // 36, 37}"
-
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
           "st1 {v0.8b}, [%[outptr0]], #8             \n"   // 00 10 20 30 04 14
                                                            // 24 34
           "st1 {v1.8b}, [%[outptr1]], #8              \n"  // 02 12 22 32
@@ -180,6 +183,10 @@ void flip_hwc1_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "26 27\n"
           "vld1.8  {d12}, [%[inptr3]]!   @ zip load r1, d6 = 30 31 32 33 34 35 "
           "36 37\n"
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
 
           "vst1.32  {d0},    [%[outptr0]]!   @ write d0(q0,low),r00,r10 20 30\n"
           "vst1.32  {d4},    [%[outptr1]]!   @ write d4(q0,low),r01,r11 21 31\n"
@@ -286,7 +293,10 @@ void flip_hwc1_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
                                                    // 01 00
           "rev64  v7.8b, v3.8b                \n"  //@ reverse 07 06 05 04 03 02
                                                    // 01 00
-
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
           "st1 {v4.8b}, [%[outptr0]]             \n"  // 00 10 20 30 04 14 24 34
           "st1 {v5.8b}, [%[outptr1]]              \n"  // 02 12 22 32
           "st1 {v6.8b}, [%[outptr2]]             \n"   // 01 11 21 31
@@ -324,7 +334,10 @@ void flip_hwc1_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "vrev64.8  d9, d8               @ reverse 07 06 05 04 03 02 01 00 \n"
           "vrev64.8  d13, d12               @ reverse 07 06 05 04 03 02 01 00 "
           "\n"
-
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
           "vst1.32  {d1},    [%[outptr0]]   @ write d0(q0,low),r00,r10 20 30\n"
           "vst1.32  {d5},    [%[outptr1]]   @ write d4(q0,low),r01,r11 21 31\n"
           "vst1.32  {d9},    [%[outptr2]]   @ write d4(q0,low),r01,r11 21 31\n"
@@ -440,7 +453,10 @@ void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
                                                    // 01 00
           "rev64  v7.8b, v3.8b                \n"  //@ reverse 07 06 05 04 03 02
                                                    // 01 00
-
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
           "st1 {v4.8b}, [%[outptr0]]             \n"  // 00 10 20 30 04 14 24 34
           "st1 {v5.8b}, [%[outptr1]]              \n"  // 02 12 22 32
           "st1 {v6.8b}, [%[outptr2]]             \n"   // 01 11 21 31
@@ -478,7 +494,10 @@ void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "vrev64.8  d9, d8               @ reverse 07 06 05 04 03 02 01 00 \n"
           "vrev64.8  d13, d12               @ reverse 07 06 05 04 03 02 01 00 "
           "\n"
-
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
           "vst1.32  {d1},    [%[outptr0]]   @ write d0(q0,low),r00,r10 20 30\n"
           "vst1.32  {d5},    [%[outptr1]]   @ write d4(q0,low),r01,r11 21 31\n"
           "vst1.32  {d9},    [%[outptr2]]   @ write d4(q0,low),r01,r11 21 31\n"
@@ -583,7 +602,10 @@ void flip_hwc3_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "ld3  {v9.8b, v10.8b, v11.8b}, [%[inptr3]], #24    \n"  // v0={30,31,32,
                                                                   // 33, 34, 35,
                                                                   // 36, 37}"
-
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
           "st3 {v0.8b, v1.8b, v2.8b}, [%[outptr0]], #24             \n"   // 00
                                                                           // 10
                                                                           // 20
@@ -634,6 +656,10 @@ void flip_hwc3_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "vld3.8  {d9, d10, d11}, [%[inptr3]]!   @ zip load r1, d6 = 30 31 32 "
           "33 34 35 36 37\n"
 
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
           "vst3.8  {d0, d1, d2},    [%[outptr0]]!   @ write d0(q0,low),r00,r10 "
           "20 30\n"
           "vst3.8  {d3, d4, d5},    [%[outptr1]]!   @ write d4(q0,low),r01,r11 "
@@ -748,7 +774,10 @@ void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "ld3  {v9.8b, v10.8b, v11.8b}, [%[inptr3]], #24    \n"  // v0={30,31,32,
                                                                   // 33, 34, 35,
                                                                   // 36, 37}"
-
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
           "rev64  v12.8b, v0.8b                \n"  //@ reverse 07 06 05 04 03
                                                     // 02 01 00 b
           "rev64  v13.8b, v1.8b                \n"  //@ reverse 07 06 05 04 03
@@ -855,7 +884,10 @@ void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "\n"
           "vrev64.8  d23, d11               @ reverse 07 06 05 04 03 02 01 00 "
           "\n"
-
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
           "vst3.8  {d12, d13, d14},    [%[outptr0]]   @ write "
           "d0(q0,low),r00,r10 20 30\n"
           "vst3.8  {d15, d16, d17},    [%[outptr1]]   @ write "
@@ -1027,7 +1059,10 @@ void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
                                                      // 02 01 00
           "rev64  v23.8b, v11.8b                \n"  //@ reverse 07 06 05 04 03
                                                      // 02 01 00
-
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
           "st3 {v12.8b, v13.8b, v14.8b}, [%[outptr0]]             \n"   // 00 10
                                                                         // 20 30
                                                                         // 04 14
@@ -1106,6 +1141,10 @@ void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "\n"
           "vrev64.8  d23, d11               @ reverse 07 06 05 04 03 02 01 00 "
           "\n"
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
 
           "vst3.8  {d12, d13, d14},    [%[outptr0]]   @ write "
           "d0(q0,low),r00,r10 20 30\n"
@@ -1262,7 +1301,10 @@ void flip_hwc4_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           // 35,
           // 36,
           // 37}"
-
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
           "st4 {v0.8b, v1.8b, v2.8b, v3.8b}, [%[outptr0]], #32  \n"  // 00 10 20
                                                                      // 30 04 14
                                                                      // 24 34
@@ -1306,6 +1348,10 @@ void flip_hwc4_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "22 23 24 25 26 27\n"
           "vld4.8  {d12, d13, d14, d15}, [%[inptr3]]!   @ zip load r1, d6 = 30 "
           "31 32 33 34 35 36 37\n"
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
 
           "vst4.8  {d0, d1, d2, d3},    [%[outptr0]]!   @ write "
           "d0(q0,low),r00,r10 20 30\n"
@@ -1476,7 +1522,10 @@ void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
                                                     // 02 01 00
           "rev64  v7.8b, v15.8b                \n"  //@ reverse 07 06 05 04 03
                                                     // 02 01 00
-
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
           "st4 {v16.8b, v17.8b, v18.8b, v19.8b}, [%[outptr0]]             \n"  // 00 10 20 30 04 14 24 34
           "st4 {v20.8b, v21.8b, v22.8b, v23.8b}, [%[outptr1]]              \n"  // 02 12 22 32
           "st4 {v0.8b, v1.8b, v2.8b, v3.8b}, [%[outptr2]]             \n"  // 01
@@ -1571,6 +1620,10 @@ void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "\n"
           "vrev64.8  d7, d15               @ reverse 07 06 05 04 03 02 01 00 "
           "\n"
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
 
           "vst4.8  {d16, d17, d18, d19},    [%[outptr0]]   @ write "
           "d0(q0,low),r00,r10 20 30\n"
@@ -1770,7 +1823,10 @@ void flip_hwc4_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
                                                     // 02 01 00
           "rev64  v7.8b, v15.8b                \n"  //@ reverse 07 06 05 04 03
                                                     // 02 01 00
-
+          "prfm   pldl1keep, [%[inptr0]]        \n"
+          "prfm   pldl1keep, [%[inptr1]]        \n"
+          "prfm   pldl1keep, [%[inptr2]]        \n"
+          "prfm   pldl1keep, [%[inptr3]]        \n"
           "st4 {v16.8b, v17.8b, v18.8b, v19.8b}, [%[outptr0]]             \n"  // 00 10 20 30 04 14 24 34
           "st4 {v20.8b, v21.8b, v22.8b, v23.8b}, [%[outptr1]]              \n"  // 02 12 22 32
           "st4 {v0.8b, v1.8b, v2.8b, v3.8b}, [%[outptr2]]             \n"  // 01
@@ -1868,6 +1924,10 @@ void flip_hwc4_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
           "vrev64.8  d7, d15               @ reverse 07 06 05 04 03 02 01 00 "
           "\n"
 
+          "pld [%[inptr0]]                         @ preload a, 64byte\n"
+          "pld [%[inptr1]]                         @ preload a, 64byte\n"
+          "pld [%[inptr2]]                         @ preload a, 64byte\n"
+          "pld [%[inptr3]]                         @ preload a, 64byte\n"
           "vst4.8  {d16, d17, d18, d19},    [%[outptr0]]   @ write "
           "d0(q0,low),r00,r10 20 30\n"
           "vst4.8  {d20, d21, d22, d23},    [%[outptr1]]   @ write "

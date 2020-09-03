@@ -73,9 +73,7 @@ void image_basic_flip(const uint8_t* src,
   } else if (flip_num == 1) {
     flip_num = -1; //  y
   }
-  if (srcFormat == ImageFormat::GRAY) {
-    flip(src, dst, srcw, srch, flip_num);
-  } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
+  if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
     bgr_flip_hwc(src, dst, srcw, srch, flip_num);
   } else if (srcFormat == ImageFormat::BGRA || srcFormat == ImageFormat::RGBA) {
     bgra_flip_hwc(src, dst, srcw, srch, flip_num);
@@ -90,9 +88,7 @@ void image_basic_rotate(const uint8_t* src,
                         ImageFormat srcFormat,
                         int srcw, int srch,
                         float rotate_num) {
-  if (srcFormat == ImageFormat::GRAY) {
-    rotate(src, dst, srcw, srch, rotate_num);
-  } else if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
+  if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
     bgr_rotate_hwc(src, dst, srcw, srch, rotate_num);
   } else if (srcFormat == ImageFormat::BGRA || srcFormat == ImageFormat::RGBA) {
     bgra_rotate_hwc(src, dst, srcw, srch, rotate_num);

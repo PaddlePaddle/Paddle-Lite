@@ -143,7 +143,7 @@ gb = 0.71414 * 64 = 91.40992 = 91
 ba = 1.772 * 62 = 226.816 = 227
 nv12bgr, nv21tobgr
 */
-void nv_to_bgr(const uint8_t* src,
+inline void nv_to_bgr(const uint8_t* src,
                uint8_t* dst,
                int srcw,
                int srch,
@@ -181,6 +181,31 @@ void nv_to_bgr(const uint8_t* src,
       ptr_bgr2 = writebuf;
     }
     int j = 0;
+#ifdef __aarch64__
+        asm volatile(
+        "prfm   pldl1keep, [%[ptr_y1]]                \n"
+                "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
+                "prfm   pldl1keep, [%[ptr_y2]]        \n"
+                "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
+                "prfm   pldl1keep, [%[ptr_vu]]        \n"
+                "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
+        :
+        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        :"memory"
+        );
+#else
+        asm volatile(
+        "pld [%[ptr_y1]]                         @ preload a, 64byte\n"
+               "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
+               "pld [%[ptr_y2]]            @ preload a, 64byte\n"
+               "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
+               "pld [%[ptr_vu]]            @ preload a, 64byte\n"
+               "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
+        :
+        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        :"memory"
+        );
+#endif
     for (; j < srcw - 15; j += 16) {
       uint8x8x2_t y1 = vld2_u8(ptr_y1);  // d8 = y0y2y4y6...y14 d9 =
                                          // y1y3y5...y15
@@ -189,8 +214,8 @@ void nv_to_bgr(const uint8_t* src,
 
       uint8x8x2_t y2 = vld2_u8(ptr_y2);
 
-      uint16x8_t v = vmovl_u8(vu.val[x_num]);
-      uint16x8_t u = vmovl_u8(vu.val[y_num]);
+      uint16x8_t v = vmovl_u8(vu.val[1]);
+      uint16x8_t u = vmovl_u8(vu.val[0]);
       int16x8_t v_s = vreinterpretq_s16_u16(v);
       int16x8_t u_s = vreinterpretq_s16_u16(u);
       int16x8_t v_bias = vsubq_s16(v_s, bias);
@@ -393,8 +418,8 @@ void nv_to_bgr(const uint8_t* src,
     for (; j < srcw; j += 2) {
       uint8_t _y0 = ptr_y1[0];
       uint8_t _y1 = ptr_y1[1];
-      uint8_t _v = ptr_vu[x_num];
-      uint8_t _u = ptr_vu[y_num];
+      uint8_t _v = ptr_vu[1];
+      uint8_t _u = ptr_vu[0];
       uint8_t _y0_1 = ptr_y2[0];
       uint8_t _y1_1 = ptr_y2[1];
 
@@ -459,7 +484,7 @@ void nv_to_bgr(const uint8_t* src,
   delete[] writebuf;
 }
 // nv12bgra, nv21tobgra
-void nv_to_bgra(const uint8_t* src,
+inline void nv_to_bgra(const uint8_t* src,
                 uint8_t* dst,
                 int srcw,
                 int srch,
@@ -497,6 +522,31 @@ void nv_to_bgra(const uint8_t* src,
       ptr_bgr2 = writebuf;
     }
     int j = 0;
+#ifdef __aarch64__
+        asm volatile(
+        "prfm   pldl1keep, [%[ptr_y1]]                \n"
+                "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
+                "prfm   pldl1keep, [%[ptr_y2]]        \n"
+                "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
+                "prfm   pldl1keep, [%[ptr_vu]]        \n"
+                "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
+        :
+        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        :"memory"
+        );
+#else
+        asm volatile(
+        "pld [%[ptr_y1]]                         @ preload a, 64byte\n"
+               "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
+               "pld [%[ptr_y2]]            @ preload a, 64byte\n"
+               "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
+               "pld [%[ptr_vu]]            @ preload a, 64byte\n"
+               "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
+        :
+        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        :"memory"
+        );
+#endif
     for (; j < srcw - 15; j += 16) {
       uint8x8x2_t y1 = vld2_u8(ptr_y1);  // d8 = y0y2y4y6...y14 d9 =
                                          // y1y3y5...y15
@@ -847,7 +897,6 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
     uint8_t* outr1 = outr0 + srcw;
     uint8_t* outr2 = outr1 + srcw;
     uint8_t* outr3 = outr2 + srcw;
-
     int cnt = cnt_pro;
     if (cnt > 0) {
 #ifdef __aarch64__
