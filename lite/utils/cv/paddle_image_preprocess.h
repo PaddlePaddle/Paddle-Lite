@@ -95,6 +95,30 @@ class ImagePreprocess {
                     uint8_t* dst,
                     ImageFormat srcFormat,
                     ImageFormat dstFormat);
+
+/*
+  * image color convert
+  * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
+  * BGR(RGB)and BGRA(RGBA) transform,
+  * BGR(RGB)and RGB(BGR) transform,
+  * BGR(RGB)and RGBA(BGRA) transform,
+  * BGR(RGB)and GRAY transform,
+  * BGRA(RGBA) and GRAY transform,
+  * param src: input image data
+  * param dst: output image data
+  * param srcFormat: input image image format support: GRAY, NV12(NV21),
+  * BGR(RGB) and BGRA(RGBA)
+  * param dstFormat: output image image format, support GRAY, BGR(RGB) and
+  * BGRA(RGBA)
+  * param srcw: input image width
+  * param srch: input image height
+  */
+  void imageConvert(const uint8_t* src,
+                    uint8_t* dst,
+                    ImageFormat srcFormat,
+                    ImageFormat dstFormat,
+                    int srcw,
+                    int srch);
   /*
   * image resize, use bilinear method
   * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:

@@ -18,7 +18,7 @@ void nv12_to_bgra(const unsigned char* src, unsigned char* dst, int srcw, int sr
     int vu_h = 1 / 2 * srch;
     const unsigned char* y = src;
     const unsigned char* vu = src + y_h * srcw;
-    int wout = srcw * 3;
+    int wout = srcw * 4;
 
     int16x8_t bias = vdupq_n_s16(128);
     int16x8_t ga = vdupq_n_s16(44);
