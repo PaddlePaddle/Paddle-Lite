@@ -142,10 +142,7 @@ ga = 0.34414 * 64 = 44.3721 = 44
 gb = 0.71414 * 64 = 91.40992 = 91
 ba = 1.772 * 62 = 226.816 = 227
 */
-inline void nv12_to_bgr(const uint8_t* src,
-                        uint8_t* dst,
-                        int srcw,
-                        int srch) {
+inline void nv12_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   int y_h = srch;
   int wout = srcw * 3;
   const uint8_t* y = src;
@@ -177,29 +174,27 @@ inline void nv12_to_bgr(const uint8_t* src,
     }
     int j = 0;
 #ifdef __aarch64__
-        asm volatile(
+    asm volatile(
         "prfm   pldl1keep, [%[ptr_y1]]                \n"
-                "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
-                "prfm   pldl1keep, [%[ptr_y2]]        \n"
-                "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
-                "prfm   pldl1keep, [%[ptr_vu]]        \n"
-                "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_y2]]        \n"
+        "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_vu]]        \n"
+        "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
         :
-        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
-        :"memory"
-        );
+        : [ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        : "memory");
 #else
-        asm volatile(
+    asm volatile(
         "pld [%[ptr_y1]]                         @ preload a, 64byte\n"
-               "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
-               "pld [%[ptr_y2]]            @ preload a, 64byte\n"
-               "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
-               "pld [%[ptr_vu]]            @ preload a, 64byte\n"
-               "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_y2]]            @ preload a, 64byte\n"
+        "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_vu]]            @ preload a, 64byte\n"
+        "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
         :
-        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
-        :"memory"
-        );
+        : [ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        : "memory");
 #endif
     for (; j < srcw - 15; j += 16) {
       uint8x8x2_t y1 = vld2_u8(ptr_y1);  // d8 = y0y2y4y6...y14 d9 =
@@ -482,10 +477,7 @@ inline void nv12_to_bgr(const uint8_t* src,
 /*
 nv21(yvu) to BGR: stroe hwc dsth * dstw = srch * (srcw)
 */
-inline void nv21_to_bgr(const uint8_t* src,
-                        uint8_t* dst,
-                        int srcw,
-                        int srch) {
+inline void nv21_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   int y_h = srch;
   int wout = srcw * 3;
   const uint8_t* y = src;
@@ -517,29 +509,27 @@ inline void nv21_to_bgr(const uint8_t* src,
     }
     int j = 0;
 #ifdef __aarch64__
-        asm volatile(
+    asm volatile(
         "prfm   pldl1keep, [%[ptr_y1]]                \n"
-                "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
-                "prfm   pldl1keep, [%[ptr_y2]]        \n"
-                "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
-                "prfm   pldl1keep, [%[ptr_vu]]        \n"
-                "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_y2]]        \n"
+        "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_vu]]        \n"
+        "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
         :
-        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
-        :"memory"
-        );
+        : [ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        : "memory");
 #else
-        asm volatile(
+    asm volatile(
         "pld [%[ptr_y1]]                         @ preload a, 64byte\n"
-               "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
-               "pld [%[ptr_y2]]            @ preload a, 64byte\n"
-               "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
-               "pld [%[ptr_vu]]            @ preload a, 64byte\n"
-               "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_y2]]            @ preload a, 64byte\n"
+        "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_vu]]            @ preload a, 64byte\n"
+        "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
         :
-        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
-        :"memory"
-        );
+        : [ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        : "memory");
 #endif
     for (; j < srcw - 15; j += 16) {
       uint8x8x2_t y1 = vld2_u8(ptr_y1);  // d8 = y0y2y4y6...y14 d9 =
@@ -821,10 +811,7 @@ inline void nv21_to_bgr(const uint8_t* src,
 
 // nv12(yuv) to BGRA: stroe hwc dsth * dstw = srch * (srcw) y_w = srcw, y_h =
 // srch uv_w = srcw uv_h = 1/2 * srch
-inline void nv12_to_bgra(const uint8_t* src,
-                         uint8_t* dst,
-                         int srcw,
-                         int srch) {
+inline void nv12_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   int y_h = srch;
   int vu_h = 1 / 2 * srch;
   const uint8_t* y = src;
@@ -856,29 +843,27 @@ inline void nv12_to_bgra(const uint8_t* src,
     }
     int j = 0;
 #ifdef __aarch64__
-        asm volatile(
+    asm volatile(
         "prfm   pldl1keep, [%[ptr_y1]]                \n"
-                "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
-                "prfm   pldl1keep, [%[ptr_y2]]        \n"
-                "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
-                "prfm   pldl1keep, [%[ptr_vu]]        \n"
-                "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_y2]]        \n"
+        "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_vu]]        \n"
+        "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
         :
-        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
-        :"memory"
-        );
+        : [ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        : "memory");
 #else
-        asm volatile(
+    asm volatile(
         "pld [%[ptr_y1]]                         @ preload a, 64byte\n"
-               "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
-               "pld [%[ptr_y2]]            @ preload a, 64byte\n"
-               "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
-               "pld [%[ptr_vu]]            @ preload a, 64byte\n"
-               "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_y2]]            @ preload a, 64byte\n"
+        "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_vu]]            @ preload a, 64byte\n"
+        "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
         :
-        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
-        :"memory"
-        );
+        : [ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        : "memory");
 #endif
     for (; j < srcw - 15; j += 16) {
       uint8x8x2_t y1 = vld2_u8(ptr_y1);  // d8 = y0y2y4y6...y14 d9 =
@@ -1169,10 +1154,7 @@ inline void nv12_to_bgra(const uint8_t* src,
 
 // nv21(yvu) to BGRA:store hwc dsth * dstw = srch * srcw y_w = srcw, y_h = srch
 // uv_w = srcw uv_h = 1/2 * srch
-inline void nv21_to_bgra(const uint8_t* src,
-                         uint8_t* dst,
-                         int srcw,
-                         int srch) {
+inline void nv21_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   int y_h = srch;
   int vu_h = 1 / 2 * srch;
   const uint8_t* y = src;
@@ -1204,29 +1186,27 @@ inline void nv21_to_bgra(const uint8_t* src,
     }
     int j = 0;
 #ifdef __aarch64__
-        asm volatile(
+    asm volatile(
         "prfm   pldl1keep, [%[ptr_y1]]                \n"
-                "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
-                "prfm   pldl1keep, [%[ptr_y2]]        \n"
-                "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
-                "prfm   pldl1keep, [%[ptr_vu]]        \n"
-                "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_y1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_y2]]        \n"
+        "prfm   pldl1keep, [%[ptr_y2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr_vu]]        \n"
+        "prfm   pldl1keep, [%[ptr_vu], #64]   \n"
         :
-        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
-        :"memory"
-        );
+        : [ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        : "memory");
 #else
-        asm volatile(
+    asm volatile(
         "pld [%[ptr_y1]]                         @ preload a, 64byte\n"
-               "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
-               "pld [%[ptr_y2]]            @ preload a, 64byte\n"
-               "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
-               "pld [%[ptr_vu]]            @ preload a, 64byte\n"
-               "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_y1], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_y2]]            @ preload a, 64byte\n"
+        "pld [%[ptr_y2], #128]                         @ preload a, 64byte\n"
+        "pld [%[ptr_vu]]            @ preload a, 64byte\n"
+        "pld [%[ptr_vu], #128]                         @ preload a, 64byte\n"
         :
-        :[ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
-        :"memory"
-        );
+        : [ptr_y1] "r"(ptr_y1), [ptr_y2] "r"(ptr_y2), [ptr_vu] "r"(ptr_vu)
+        : "memory");
 #endif
     for (; j < srcw - 15; j += 16) {
       uint8x8x2_t y1 = vld2_u8(ptr_y1);  // d8 = y0y2y4y6...y14 d9 =

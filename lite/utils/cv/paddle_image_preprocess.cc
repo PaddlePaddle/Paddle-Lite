@@ -64,7 +64,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageConvert(
                      this->transParam_.ih);
 }
 
-__attribute__((visibility("default"))) void imageConvert(
+__attribute__((visibility("default"))) void ImagePreprocess::imageConvert(
     const uint8_t* src,
     uint8_t* dst,
     ImageFormat srcFormat,

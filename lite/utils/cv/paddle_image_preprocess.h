@@ -76,6 +76,7 @@ class ImagePreprocess {
   * param dst: output image data
   */
   void imageConvert(const uint8_t* src, uint8_t* dst);
+
   /*
   * image color convert
   * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
@@ -96,7 +97,7 @@ class ImagePreprocess {
                     ImageFormat srcFormat,
                     ImageFormat dstFormat);
 
-/*
+  /*
   * image color convert
   * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
   * BGR(RGB)and BGRA(RGBA) transform,
@@ -119,6 +120,7 @@ class ImagePreprocess {
                     ImageFormat dstFormat,
                     int srcw,
                     int srch);
+
   /*
   * image resize, use bilinear method
   * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
@@ -127,6 +129,7 @@ class ImagePreprocess {
   * param dst: output image data
   */
   void imageResize(const uint8_t* src, uint8_t* dst);
+
   /*
    image resize, use bilinear method
   * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
@@ -154,6 +157,7 @@ class ImagePreprocess {
   * param dst: output image data
   */
   void imageRotate(const uint8_t* src, uint8_t* dst);
+
   /*
   * image Rotate
   * support 90, 180 and 270 Rotate process
@@ -171,6 +175,7 @@ class ImagePreprocess {
                    int srcw,
                    int srch,
                    float degree);
+
   /*
   * image Flip
   * support X, Y and XY flip process
@@ -179,6 +184,7 @@ class ImagePreprocess {
   * param dst: output image data
   */
   void imageFlip(const uint8_t* src, uint8_t* dst);
+
   /*
   * image Flip
   * support X, Y and XY flip process
@@ -196,6 +202,7 @@ class ImagePreprocess {
                  int srcw,
                  int srch,
                  FlipParam flip_param);
+
   /*
   * change image data to tensor data
   * support image format is GRAY, BGR(RGB) and BGRA(RGBA), Data layout is NHWC
@@ -212,6 +219,7 @@ class ImagePreprocess {
                     LayoutType layout,
                     float* means,
                     float* scales);
+
   /*
   * change image data to tensor data
   * support image format is GRAY, BGR(RGB) and BGRA(RGBA), Data layout is NHWC
