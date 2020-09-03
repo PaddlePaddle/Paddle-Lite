@@ -110,11 +110,11 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto input0_tensor_dims = inputs[0]->dims();
     for (int i = 1; i < inputs.size(); i++) {
       auto dims = inputs[i]->dims();
-      CHECK(input0_tensor_dims.size() != dims.size())
+      CHECK(input0_tensor_dims.size() == dims.size())
           << "All inputs must have the same axes!";
       for (int i = 0; i < dims.size(); i++) {
         if (i != axis_) {
-          CHECK(input0_tensor_dims[i] != dims[i])
+          CHECK(input0_tensor_dims[i] == dims[i])
               << "All inputs must have the same shape, except at concat axis!";
         }
       }
