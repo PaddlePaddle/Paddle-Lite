@@ -325,6 +325,13 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
                       }
                     }
                     const float leakey_relu_scale = 8.88;
+#ifdef __aarch64__
+#else
+                    // if only run one case is right, otherwise
+                    // run all case by series is error
+                    pad_bottom = pad_top;
+                    pad_right = pad_left;
+#endif
                     test_conv_fp32(dims,
                                    weights_dim,
                                    c,
@@ -332,10 +339,6 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
 #ifdef __aarch64__
                                    {pad_top, pad_bottom, pad_left, pad_right},
 #else
-                                   // if only run one case is right, otherwise
-                                   // run all case by series is error
-                                   pad_bottom = pad_top;
-                                   pad_right = pad_left;
                                    {pad_top, pad_bottom, pad_left, pad_right},
 #endif
                                    {1, 1},
