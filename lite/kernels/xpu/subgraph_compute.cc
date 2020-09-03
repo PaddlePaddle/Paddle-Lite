@@ -27,14 +27,6 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-bool SubgraphEngine::PrepareWorkspaceForDeviceProgram() {
-  // Obtain the origin input tensors, and create the origin output
-  // tensors(Don't try to access them before launch the device program or the
-  // origin program)
-  PrepareWorkspaceForOriginProgram();
-  return true;
-}
-
 bool SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
   if (!origin_program_) {
