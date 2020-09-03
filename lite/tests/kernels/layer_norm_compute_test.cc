@@ -156,8 +156,8 @@ TEST(LayerNorm, precision) {
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
   abs_error = 6e-5;
-// #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-//   place = TARGET(kXPU);
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #else
   return;
 #endif
@@ -169,6 +169,7 @@ TEST(LayerNorm, precision) {
         for (bool has_bias : {true, false}) {
           for (bool has_scale : {true, false}) {
             if (axis >= dims.size()) continue;
+            // if(dims==std::vector<int64_t>{2,3,4,5})continue;
             std::unique_ptr<arena::TestCase> tester(new LayerNormComputeTest(
                 place, "def", DDim(dims), epsilon, axis, has_bias, has_scale));
             arena::Arena arena(std::move(tester), place, abs_error);
