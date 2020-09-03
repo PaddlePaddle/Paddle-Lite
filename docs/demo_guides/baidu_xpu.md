@@ -95,7 +95,7 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
 
 ### 准备本地编译环境
 
-- 为了保证编译环境一致，建议参考[源码编译](../user_guides/source_compile)中的Linux开发环境进行配置；
+- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/compile_env.html#linux)中的Linux开发环境进行配置；
 - 由于编译示例程序需要依赖OpenCV和CMake 3.10.3，请执行如下命令进行安装；
 
 ```shell

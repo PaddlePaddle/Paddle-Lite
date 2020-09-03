@@ -19,6 +19,14 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
+  :caption: Benchmark
+  :name: sec-benchmark
+  
+  benchmark/benchmark
+  benchmark/benchmark_tools
+
+.. toctree::
+  :maxdepth: 1
   :caption: 快速开始
   :name: sec-quick-start
 
@@ -30,34 +38,15 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
-  :caption: 应用开发
-  :name: sec-app-develop
-
-  app_develop/cpp_app_develop
-  app_develop/java_app_develop
-  app_develop/python_app_develop
-
-.. toctree::
-  :maxdepth: 1
-  :caption: Benchmark
-  :name: sec-benchmark
-  
-  benchmark/benchmark
-  benchmark/benchmark_tools
-
-.. toctree::
-  :maxdepth: 1
-  :caption: 使用方法
+  :caption: 使用工具
   :name: sec-user-guides
 
-  user_guides/source_compile
   user_guides/x2paddle
   user_guides/model_optimize_tool
   user_guides/post_quant_with_data
   user_guides/post_quant_no_data
   user_guides/model_quantization
   user_guides/debug
-  user_guides/library_tailoring
 
 .. toctree::
   :maxdepth: 1
@@ -75,6 +64,18 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/baidu_xpu
   demo_guides/rockchip_npu
   demo_guides/mediatek_apu
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 源码编译
+  :name: sec-source-compile
+
+  source_compile/compile_env
+  source_compile/compile_andriod
+  source_compile/compile_ios
+  source_compile/compile_linux
+  source_compile/compile_options
+  source_compile/library_tailoring
 
 .. toctree::
   :maxdepth: 1
@@ -114,9 +115,5 @@ Welcome to Paddle-Lite's documentation!
   :caption: FAQ
 
   introduction/faq
-
-.. toctree::
-  :maxdepth: 1
-  :caption: paddle-mobile
 
 

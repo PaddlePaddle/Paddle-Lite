@@ -1,5 +1,5 @@
 
-# Lite预编译库下载
+# Lite 预编译库下载
 
 ## 编译版本介绍
 
@@ -7,7 +7,7 @@
 - arm_os=`android\ios\armlinux`    安装平台，支持的arm端移动平台包括 `ios`、`armlinux`和`android`
 - toolchain=`gcc/clang`                                 源码编译时的编译器，默认为`gcc`编译器
 - android_stl=`c++_static/c++_shared`     Lite预测库链接STL库的方式，支持静态或动态链接
-- with_extra=`ON/OFF`                                     是否编译全量OP，OFF时只编译CV相关基础OP，[参数详情](./Compile/library)
+- with_extra=`ON/OFF`                                     是否编译全量OP，OFF时只编译CV相关基础OP，[参数详情](../source_compile/library)
 - with_cv=`ON/OFF`                                          是否编译编译Paddle-Lite CV 相关API
 
 
@@ -71,10 +71,14 @@ pip install paddlelite
 ## 对应源码编译方法
 
 - [opt源码编译](../user_guides/model_optimize_tool.html#opt)
-- [Android源码编译](./source_compile.html#paddlelite)
-- [iOS源码编译](./source_compile.html#paddlelite)
-- [ArmLinux源码编译](./source_compile.html#paddlelite)
+- [Android源码编译](../source_compile/compile_andriod)
+- [iOS源码编译](../source_compile/compile_ios)
+- [ArmLinux源码编译](../source_compile/compile_linux)
 - [x86源码编译](../demo_guides/x86)
 - [opencl源码编译](../demo_guides/opencl)
 - [CUDA源码编译](../demo_guides/cuda)
 - [FPGA源码编译](../demo_guides/fpga)
+- [华为NPU源码编译](../demo_guides/npu)
+- [百度XPU源码编译](../demo_guides/baidu_xpu)
+- [Rockchip NPU源码编译](../demo_guides/rockchip_npu)
+- [MediaTek APU源码编译](../demo_guides/mediatek_apu)
