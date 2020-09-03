@@ -2422,7 +2422,7 @@ void conv_depthwise_3x3s1p1_bias_relu6(float *dout,
         }
         //! process bottom remain
         if (i + 2 > h_out) {
-          doutr1 = write_ptr; // doutr1 is write_ptr and is extra
+          doutr1 = write_ptr;
         }
         int cnt = cnt_col;
         unsigned int *rmask_ptr = rmask;

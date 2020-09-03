@@ -1743,7 +1743,7 @@ void conv_depthwise_3x3s1p1_bias_relu(float *dout,
               din_ptr1 = zero_ptr;
             case 2:  // din_ptr2-din_ptr3 is zero_ptr
               din_ptr2 = zero_ptr;
-            case 1:  //din_ptr3 is zero_ptr
+            case 1:  // din_ptr3 is zero_ptr
               din_ptr3 = zero_ptr;
             default:
               break;

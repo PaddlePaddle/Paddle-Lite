@@ -720,7 +720,7 @@ void conv_3x3s1_depthwise_fp32_bias(const float* i_data,
             case 2:  // outc20-outc30 is ptr_write and extra
               outc20 = ptr_write;
               outc21 = ptr_write;
-            case 1:  //outc30 is ptr_write and extra
+            case 1:  // outc30 is ptr_write and extra
               outc30 = ptr_write;
               outc31 = ptr_write;
             default:
