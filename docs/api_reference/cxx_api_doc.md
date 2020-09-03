@@ -846,6 +846,43 @@ for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
 返回类型：`T*`
 
 
+### `ShareExternalData(data, memory_size, target)`
+
+设置Tensor共享用户数据指针。注意：请保证数据指针在预测过程中处于有效状态。
+
+示例：
+
+```c++
+lite_api::CxxConfig config
+config.set_model_dir(FLAGS_model_dir);
+config.set_valid_places({
+  Place{TARGET(kX86), PRECISION(kFloat)},
+  Place{TARGET(kARM), PRECISION(kFloat)},
+});
+auto predictor = lite_api::CreatePaddlePredictor(config);
+auto inputs = predictor->GetInputNames();
+auto outputs = predictor->GetOutputNames();
+
+std::vector<float> external_data(100 * 100, 0);
+auto input_tensor = predictor->GetInputByName(inputs[0]);
+input_tensor->Resize(std::vector<int64_t>({100, 100}));
+size_t memory_size = external_data.size() * sizeof(float);
+
+input_tensor->ShareExternalData(static_cast<void*>(external_data.data()),
+                                memory_size,
+                                config.valid_places()[0].target);
+predictor->Run();
+```
+
+参数：
+
+- `data(void*)` - 外部数据指针，请确保在预测过程中数据处于有效状态
+- `memory_size(size_t)` - 外部数据所占字节大小
+- `target(TargetType)` - 目标设备硬件类型，即数据所处设备类型
+
+返回：`None`
+
+返回类型：`void`
 
 ### `SetLoD(lod)`
 
@@ -872,3 +909,42 @@ for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
 返回：`Tensor`的LoD信息
 
 返回类型：`std::vector<std::vector<uint64_t>>`
+
+
+### `precision()`
+
+获取Tensor的精度信息
+
+参数：
+
+- `None`
+
+返回：`Tensor`的precision信息
+
+返回类型：`PrecisionType`
+
+
+### `SetPrecision(precision)`
+
+设置Tensor的精度信息
+
+参数：
+
+- `precision(PrecisionType)` - Tensor的precision信息
+
+返回：`None`
+
+返回类型：`void`
+
+
+### `target()`
+
+获取Tensor的数据所处设备信息
+
+参数：
+
+- `None`
+
+返回：`Tensor`的target信息
+
+返回类型：`TargetType`
