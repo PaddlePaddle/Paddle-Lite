@@ -136,4 +136,5 @@ REGISTER_LITE_KERNEL(dropout,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
