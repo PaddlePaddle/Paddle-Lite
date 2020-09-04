@@ -47,6 +47,7 @@ bool SumOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 
   param_.x.clear();
   for (auto var : inputs) {
+    CHECK(scope->FindVar(var));
     param_.x.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
   CHECK(scope->FindVar(out));

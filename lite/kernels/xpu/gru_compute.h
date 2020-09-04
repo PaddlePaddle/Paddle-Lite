@@ -29,10 +29,10 @@ class GruCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 
   void PrepareForRun() override;
 
-  void prepare_layout(const paddle::lite::LoD& lods,
-                      int* offset_xpu,
-                      int* new_offset_xpu,
-                      int* idx_sorted_by_width_data_xpu);
+  void PrepareLayout(const paddle::lite::LoD& lods,
+                     int* offset_xpu,
+                     int* new_offset_xpu,
+                     int* idx_sorted_by_width_data_xpu);
 
   void Run() override;
 

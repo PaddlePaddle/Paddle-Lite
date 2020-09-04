@@ -26,7 +26,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-inline xdnn::Activation_t get_gru_act_type(const std::string& type) {
+inline xdnn::Activation_t GetGruActType(const std::string& type) {
   std::map<std::string, xdnn::Activation_t> act_type_map = {
       {"sigmoid", xdnn::Activation_t::SIGMOID},
       {"tanh", xdnn::Activation_t::TANH},
@@ -36,6 +36,7 @@ inline xdnn::Activation_t get_gru_act_type(const std::string& type) {
     return it->second;
   } else {
     LOG(FATAL) << "unsupported activation type: " << type;
+    return xdnn::Activation_t(xdnn::Activation_t::act_enum(0));
   }
 }
 
@@ -93,10 +94,10 @@ void GruCompute::PrepareForRun() {
                std::max(weight_c_max_cpu[2], weight_c_max_cpu[3]));
 }
 
-void GruCompute::prepare_layout(const paddle::lite::LoD& lods,
-                                int* offset_xpu,
-                                int* new_offset_xpu,
-                                int* idx_sorted_by_width_data_xpu) {
+void GruCompute::PrepareLayout(const paddle::lite::LoD& lods,
+                               int* offset_xpu,
+                               int* new_offset_xpu,
+                               int* idx_sorted_by_width_data_xpu) {
   const auto& lod = lods[0];
   for (auto i = 0; i < lod.size(); i++) {
     offset_cpu[i] = lod[i];
@@ -162,8 +163,7 @@ void GruCompute::Run() {
   // prepare seq_info
   auto lods = input->lod();
   const auto& lod = lods[0];
-  prepare_layout(
-      lods, offset_xpu, new_offset_xpu, idx_sorted_by_width_data_xpu);
+  PrepareLayout(lods, offset_xpu, new_offset_xpu, idx_sorted_by_width_data_xpu);
   int max_width = seq_info[0].length;
 
   // sequence to batch
@@ -237,8 +237,8 @@ void GruCompute::Run() {
         new_offset_cpu[batch_idx + 1] - new_offset_cpu[batch_idx],
         frame_size,
         origin_mode,
-        get_gru_act_type(param.gate_activation),
-        get_gru_act_type(param.activation),
+        GetGruActType(param.gate_activation),
+        GetGruActType(param.activation),
         x,
         xpu_h0,
         param.weight->data<float>(),
