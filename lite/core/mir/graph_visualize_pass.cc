@@ -122,7 +122,15 @@ std::string Visualize(mir::SSAGraph* graph) {
         dot.AddNode(var_name, {});
         exists_var_names.insert(var_name);
       }
-      dot.AddEdge(var_name, op_name, {});
+      std::vector<Dot::Attr> attrs;
+      std::string arg_name;
+      if (op_info->GetInputArgname(var_name, &arg_name)) {
+        attrs.emplace_back("label", arg_name);
+      } else {
+        VLOG(5) << "Can not find the input argument for var " << var_name
+                << " in " << op_type;
+      }
+      dot.AddEdge(var_name, op_name, attrs);
     }
     for (auto& x : node->outlinks) {
       std::string var_name;
@@ -136,7 +144,15 @@ std::string Visualize(mir::SSAGraph* graph) {
         dot.AddNode(var_name, {});
         exists_var_names.insert(var_name);
       }
-      dot.AddEdge(op_name, var_name, {});
+      std::vector<Dot::Attr> attrs;
+      std::string arg_name;
+      if (op_info->GetOutputArgname(var_name, &arg_name)) {
+        attrs.emplace_back("label", arg_name);
+      } else {
+        VLOG(5) << "Can not find the output argument for var " << var_name
+                << " in " << op_type;
+      }
+      dot.AddEdge(op_name, var_name, attrs);
     }
     // Output its all of attributes(name and values)
     os << "* " << op_name << "\n";

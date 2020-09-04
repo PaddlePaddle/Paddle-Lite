@@ -41,6 +41,26 @@ class ElementwiseSubCompute
   virtual ~ElementwiseSubCompute() = default;
 };
 
+class ElementwiseDivCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  virtual void Run();
+
+  virtual ~ElementwiseDivCompute() = default;
+};
+
+class ElementwiseMulCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+
+  virtual void Run();
+
+  virtual ~ElementwiseMulCompute() = default;
+};
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite

@@ -30,6 +30,10 @@ lite_cc_library(mir_passes
       fusion/__xpu__embedding_with_eltwise_add_fuse_pass.cc
       fusion/__xpu__fc_fuse_pass.cc
       fusion/__xpu__mmdnn_fuse_pass.cc
+      fusion/__xpu__conv2d_fuse_pass.cc
+      fusion/__xpu__conv2d_link_previous_out_max_pass.cc
+      fusion/__xpu__sfa_head_meanstd_fuse_pass.cc
+      fusion/__xpu__sfa_head_moment_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc
@@ -107,26 +111,3 @@ if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     #     pattern_matcher_high_api proto_desc mir_pass_manager fc_op mul_op elementwise_ops
     #     mir_passes compatible_pb program ${ops})
 endif()
-
-message(STATUS "----> Ops lite: ${ops}")
-message(STATUS "----> Host kernels: ${host_kernels}")
-message(STATUS "----> X86 kernels: ${x86_kernels}")
-
-# lite_cc_test(test_lite_fc_fuse SRCS fusion/fc_fuse_pass_test.cc
-#    DEPS cxx_api mir_passes
-#    ${ops} ${host_kernels} ${x86_kernels} ${arm_kernels}
-#    ARGS --model_dir=${LITE_MODEL_DIR}/lite_fc_model
-#         --optimized_model=${LITE_MODEL_DIR}/lite_fc_model_opt SERIAL)
-
-# lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "lite_fc_model.tar.gz")
-# add_dependencies(test_lite_fc_fuse extern_lite_download_lite_fc_model_tar_gz)
-
-
-# lite_cc_test(test_lite_conv_elementwise_add_activation_fuse
-#              SRCS fusion/conv_elementwise_add_activation_fuse_pass_test.cc
-#              DEPS cxx_api mir_passes
-#              ${ops} ${host_kernels} ${x86_kernels})
-# lite_cc_test(test_lite_elementwise_add_activation_fuse
-#              SRCS fusion/elementwise_add_activation_fuse_pass_test.cc
-#              DEPS cxx_api mir_passes
-#              ${ops} ${host_kernels} ${x86_kernels})

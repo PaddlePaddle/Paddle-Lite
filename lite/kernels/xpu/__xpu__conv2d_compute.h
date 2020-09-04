@@ -13,25 +13,24 @@
 // limitations under the License.
 
 #pragma once
+
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class FillConstantBatchSizeLikeCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class XPUConv2dCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::FillConstantBatchSizeLikeParam;
+  using param_t = operators::XPUConv2dParam;
 
-  void Run() override;
+  virtual void Run();
 
-  ~FillConstantBatchSizeLikeCompute() {}
+  virtual ~XPUConv2dCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

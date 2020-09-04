@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/fill_constant_compute.h"
+#include "lite/kernels/host/fill_constant_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 void FillConstantCompute::Run() {
   auto& param = *param_.get_mutable<param_t>();
-  auto& context = ctx_->As<ARMContext>();
 
   if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
     auto data = param.out->template mutable_data<float>();
@@ -50,21 +49,21 @@ void FillConstantCompute::Run() {
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 // float
 REGISTER_LITE_KERNEL(fill_constant,
-                     kARM,
+                     kHost,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::arm::FillConstantCompute,
+                     paddle::lite::kernels::host::FillConstantCompute,
                      def)
     .BindInput("ShapeTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("ShapeTensorList",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
