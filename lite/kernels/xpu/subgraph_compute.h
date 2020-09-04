@@ -43,7 +43,6 @@ class SubgraphEngine : public subgraph::Engine {
                          output_names) {}
 
  protected:
-  bool PrepareWorkspaceForDeviceProgram() override;
   bool BuildDeviceProgram() override;
   bool LaunchDeviceProgram() override;
 
