@@ -10,7 +10,7 @@ link_directories(${LITE_DIR}/lib)
 
 include_directories(${LITE_DIR}/include)
 
-# 3. compile options 
+# 3. compile options
 add_definitions(-std=c++11 -g -O3 -pthread)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 
@@ -27,4 +27,4 @@ target_link_libraries(${TARGET} -lpaddle_full_api_shared)
 # 1. Comment above line using `libpaddle_full_api_shared.so`
 # 2. Undo comment below line using `libpaddle_api_full_bundled.a`
 
-#target_link_libraries(${TARGET} ${LITE_DIR}/lib/libpaddle_api_full_bundled.a)
+# target_link_libraries(${TARGET} ${LITE_DIR}/lib/libpaddle_api_full_bundled.a)
