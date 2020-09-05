@@ -33,6 +33,10 @@
 #include "lite/kernels/opencl/image_helper.h"
 #endif
 
+#ifdef LITE_WITH_CUDA
+#include "lite/backends/cuda/math/type_trans.h"
+#endif
+
 namespace paddle {
 namespace lite {
 namespace profile {
