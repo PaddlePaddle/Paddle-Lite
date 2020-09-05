@@ -436,15 +436,17 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
 endif()
 
 if (ARM_TARGET_OS STREQUAL "armlinux")
-    add_custom_target(publish_inference_armlinux_cxx_demos ${TARGET}
-        if (NOT LITE_ON_TINY_PUBLISH)
+    if (NOT LITE_ON_TINY_PUBLISH)
+        add_custom_target(publish_inference_armlinux_cxx_demos ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_full"
             COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/arm_linux_full_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_full"
-        endif()
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light"
-            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/arm_linux_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light"
-    )
-    add_dependencies(publish_inference publish_inference_armlinux_cxx_demos)
+            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/arm_linux_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light")
+    else()
+        add_custom_target(publish_inference_armlinux_cxx_demos ${TARGET}
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light"
+            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/arm_linux_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light")
+    endif()
 endif()
 
 if (LITE_WITH_BM)
