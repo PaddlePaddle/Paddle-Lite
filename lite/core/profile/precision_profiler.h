@@ -19,6 +19,7 @@
  */
 #pragma once
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/program.h"
@@ -32,22 +33,38 @@
 #include "lite/kernels/opencl/image_helper.h"
 #endif
 
-#ifdef LITE_WITH_CUDA
-#include "lite/backends/cuda/math/type_trans.h"
-#endif
-
 namespace paddle {
 namespace lite {
 namespace profile {
 
-template <typename dtype>
-static bool write_tensorfile(const Tensor* tensor, const std::string& locate) {
-  if (locate.find('/') != std::string::npos) {
-    return false;
+inline std::string generate_valid_tensor_name(const std::string& name) {
+  std::string new_name("");
+  for (size_t i = 0; i < name.length(); ++i) {
+    if (name[i] != '/') {
+      new_name += name[i];
+    } else {
+      new_name += "_";
+    }
   }
-  FILE* fp = fopen(locate.c_str(), "w");
+  return new_name;
+}
+
+template <typename dtype>
+static bool write_tensorfile(
+    const Tensor* tensor,
+    const std::string& tensor_name,
+    const std::string prefix_path = "/storage/emulated/0/") {
+  std::string new_tensor_name = generate_valid_tensor_name(tensor_name);
+  if (tensor_name.find('/') != std::string::npos) {
+    LOG(ERROR) << "--> tensor name is abnormal with '\\':" << tensor_name
+               << " !!!, replace with '_'," << new_tensor_name
+               << new_tensor_name;
+  }
+
+  std::string tensor_save_path = prefix_path + new_tensor_name + ".txt";
+  FILE* fp = fopen(tensor_save_path.c_str(), "w");
   if (fp == nullptr) {
-    LOG(ERROR) << "file open field " << locate;
+    LOG(ERROR) << "failed open file " << tensor_save_path;
     return false;
   } else {
     const dtype* data = tensor->data<dtype>();
@@ -56,6 +73,8 @@ static bool write_tensorfile(const Tensor* tensor, const std::string& locate) {
     }
   }
   fclose(fp);
+  LOG(INFO) << "write tensor " << tensor_name
+            << " to file:" << tensor_save_path;
   return true;
 }
 
@@ -254,7 +273,14 @@ class PrecisionProfiler {
               real_out_v.data(), in->numel(), true, *mean);
           *ave_grow_rate = compute_average_grow_rate<float>(real_out_v.data(),
                                                             real_out_v.size());
-          write_result_to_file&& write_tensorfile<float>(in, name);
+          std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
+          real_out_t->Resize(in->dims());
+          float* real_out_data = real_out_t->mutable_data<float>();
+          memcpy(real_out_data,
+                 real_out_v.data(),
+                 real_out_v.size() * sizeof(float));
+          write_result_to_file&& write_tensorfile<float>(real_out_t.get(),
+                                                         name);
           return;
         }
         case DATALAYOUT(kNCHW): {
@@ -269,85 +295,14 @@ class PrecisionProfiler {
               in_data_v.data(), in->numel(), true, *mean);
           *ave_grow_rate =
               compute_average_grow_rate<float>(in_data_v.data(), in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name);
-          return;
-        }
-        default:
-          *mean = -222222222222;
-          *std_dev = -22222222222;
-          *ave_grow_rate = -22222222222;
-          LOG(ERROR) << unsupported_error_log;
-          return;
-      }
-#endif
-#ifdef LITE_WITH_CUDA
-    } else if (target_type == TARGET(kCUDA)) {
-      switch (precision_type) {
-        case PRECISION(kAny):
-        case PRECISION(kFloat): {
-          std::vector<float> in_data_v(in->numel(), 0);
-          TargetWrapperCuda::MemcpySync(in_data_v.data(),
-                                        in->data<float>(),
-                                        in->numel() * sizeof(float),
-                                        IoDirection::DtoH);
-          VLOG(1) << name << ":" << in->numel();
-          *mean = compute_mean<float>(in_data_v.data(), in->numel());
-          *std_dev = compute_standard_deviation<float>(
-              in_data_v.data(), in->numel(), true, *mean);
-          *ave_grow_rate =
-              compute_average_grow_rate<float>(in_data_v.data(), in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name);
-          return;
-        }
-        case PRECISION(kInt32): {
-          std::vector<int> in_data_v(in->numel(), 0);
-          TargetWrapperCuda::MemcpySync(in_data_v.data(),
-                                        in->data<int>(),
-                                        in->numel() * sizeof(int),
-                                        IoDirection::DtoH);
-          VLOG(1) << name << ":" << in->numel();
-          *mean = compute_mean<int>(in_data_v.data(), in->numel());
-          *std_dev = compute_standard_deviation<int>(
-              in_data_v.data(), in->numel(), true, *mean);
-          *ave_grow_rate =
-              compute_average_grow_rate<int>(in_data_v.data(), in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name);
-          return;
-        }
-        case PRECISION(kInt64): {
-          std::vector<int64_t> in_data_v(in->numel(), 0);
-          TargetWrapperCuda::MemcpySync(in_data_v.data(),
-                                        in->data<int64_t>(),
-                                        in->numel() * sizeof(int64_t),
-                                        IoDirection::DtoH);
-          VLOG(1) << name << ":" << in->numel();
-          *mean = compute_mean<int64_t>(in_data_v.data(), in->numel());
-          *std_dev = compute_standard_deviation<int64_t>(
-              in_data_v.data(), in->numel(), true, *mean);
-          *ave_grow_rate =
-              compute_average_grow_rate<int64_t>(in_data_v.data(), in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name);
-          return;
-        }
-        case PRECISION(kFP16): {
-          std::vector<float> in_data_v(in->numel(), 0);
-          lite::Tensor fp32_tensor;
-          fp32_tensor.Resize(in->dims());
-          lite::cuda::math::fp16_to_fp32(
-              in->numel(),
-              in->data<half>(),
-              fp32_tensor.mutable_data<float>(TARGET(kCUDA)));
-          TargetWrapperCuda::MemcpySync(in_data_v.data(),
-                                        fp32_tensor.data<float>(),
-                                        in->numel() * sizeof(float),
-                                        IoDirection::DtoH);
-          VLOG(1) << name << ":" << in->numel();
-          *mean = compute_mean<float>(in_data_v.data(), in->numel());
-          *std_dev = compute_standard_deviation<float>(
-              in_data_v.data(), in->numel(), true, *mean);
-          *ave_grow_rate =
-              compute_average_grow_rate<float>(in_data_v.data(), in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name);
+          std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
+          real_out_t->Resize(in->dims());
+          float* real_out_data = real_out_t->mutable_data<float>();
+          memcpy(real_out_data,
+                 in_data_v.data(),
+                 in_data_v.size() * sizeof(float));
+          write_result_to_file&& write_tensorfile<float>(real_out_t.get(),
+                                                         name);
           return;
         }
         default:
@@ -372,12 +327,13 @@ class PrecisionProfiler {
     using std::left;
     using std::fixed;
     STL::stringstream ss;
-    bool write_result_to_file = false;
+    bool write_result_to_file = true;
 
     VLOG(1) << ">> Running kernel: " << inst->op()->op_info()->Repr()
             << " registered on " << TargetToStr(inst->kernel()->target()) << "/"
             << PrecisionToStr(inst->kernel()->precision()) << "/"
-            << DataLayoutToStr(inst->kernel()->layout());
+            << DataLayoutToStr(inst->kernel()->layout())
+            << ", write_result_to_file:" << write_result_to_file;
 
     std::string kernel_repr = inst->op()->op_info()->Repr();
     std::string kernel_place = TargetToStr(inst->kernel()->target()) + "/" +
