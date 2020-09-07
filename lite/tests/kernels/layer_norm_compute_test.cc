@@ -157,7 +157,7 @@ TEST(LayerNorm, precision) {
   place = TARGET(kARM);
   abs_error = 6e-5;
 // #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-//  place = TARGET(kXPU);
+//   place = TARGET(kXPU);
 #else
   return;
 #endif
