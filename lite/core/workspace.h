@@ -50,8 +50,14 @@ class WorkSpace {
   }
 
   static WorkSpace& Global_Host() {
+#if LITE_WITH_IPHONE
+    // C++ keywords 'thread_local' isn't supported by iOS 8 and below.
+    static WorkSpace x(TARGET(kHost);
+    return x;
+#else
     thread_local std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kHost)));
     return *x;
+#endif
   }
 
 #if defined(LITE_WITH_X86)

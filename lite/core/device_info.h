@@ -110,15 +110,25 @@ class DeviceInfo {
   std::vector<bool> fp16_;
   std::vector<bool> dot_;
 
-  // LITE_POWER_HIGH stands for using big cores,
-  // LITE_POWER_LOW stands for using small core,
-  // LITE_POWER_FULL stands for using all cores
+// LITE_POWER_HIGH stands for using big cores,
+// LITE_POWER_LOW stands for using small core,
+// LITE_POWER_FULL stands for using all cores
+#if LITE_WITH_IPHONE
+  // C++ keywords 'thread_local' isn't supported by iOS 8 and below.
+  static lite_api::PowerMode mode_;
+  static ARMArch arch_;
+  static int mem_size_;
+  static std::vector<int> active_ids_;
+  static TensorLite workspace_;
+  static int64_t count_;
+#else
   static thread_local lite_api::PowerMode mode_;
   static thread_local ARMArch arch_;
   static thread_local int mem_size_;
   static thread_local std::vector<int> active_ids_;
   static thread_local TensorLite workspace_;
   static thread_local int64_t count_;
+#endif
 
 #ifdef LITE_WITH_MLU
   static thread_local cnmlCoreVersion_t mlu_core_version_;

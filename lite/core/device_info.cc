@@ -59,12 +59,22 @@ namespace paddle {
 namespace lite {
 
 #if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
+#if LITE_WITH_IPHONE
+// C++ keywords 'thread_local' isn't supported by iOS 8 and below.
+lite_api::PowerMode DeviceInfo::mode_;
+ARMArch DeviceInfo::arch_;
+int DeviceInfo::mem_size_;
+std::vector<int> DeviceInfo::active_ids_;
+TensorLite DeviceInfo::workspace_;
+int64_t DeviceInfo::count_ = 0;
+#else
 thread_local lite_api::PowerMode DeviceInfo::mode_;
 thread_local ARMArch DeviceInfo::arch_;
 thread_local int DeviceInfo::mem_size_;
 thread_local std::vector<int> DeviceInfo::active_ids_;
 thread_local TensorLite DeviceInfo::workspace_;
 thread_local int64_t DeviceInfo::count_ = 0;
+#endif
 
 #ifdef LITE_WITH_MLU
 thread_local cnmlCoreVersion_t DeviceInfo::mlu_core_version_{CNML_MLU270};
