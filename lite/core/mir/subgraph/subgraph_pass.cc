@@ -128,6 +128,20 @@ void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser();
 }
 
+void NNASubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  std::set<std::string> supported_lists;
+#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
+#include "lite/kernels/nna/bridges/paddle_use_bridges.h"
+#undef USE_SUBGRAPH_BRIDGE
+  auto teller = [&](Node* node) {
+    if (!node->IsStmt()) return false;
+    auto& stmt = node->AsStmt();
+    return supported_lists.count(stmt.op_type()) != 0;
+  };
+  SubgraphFuser fuser(graph.get(), teller, 1 /* min_subgraph_size */);
+  fuser();
+}
+
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
@@ -147,3 +161,5 @@ REGISTER_MIR_PASS(rknpu_subgraph_pass, paddle::lite::mir::RKNPUSubgraphPass)
     .BindTargets({TARGET(kRKNPU)});
 REGISTER_MIR_PASS(mlu_subgraph_pass, paddle::lite::mir::MLUSubgraphPass)
     .BindTargets({TARGET(kMLU)});
+REGISTER_MIR_PASS(nna_subgraph_pass, paddle::lite::mir::NNASubgraphPass)
+    .BindTargets({TARGET(kNNA)});

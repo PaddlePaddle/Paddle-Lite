@@ -39,17 +39,17 @@ namespace paddle {
 namespace lite {
 namespace pybind {
 
-using lite_api::Tensor;
-using lite_api::CxxConfig;
-using lite_api::MobileConfig;
-using lite_api::PowerMode;
-using lite_api::TargetType;
-using lite_api::PrecisionType;
-using lite_api::DataLayoutType;
-using lite_api::Place;
-using lite_api::MLUCoreVersion;
 using lite::LightPredictorImpl;
+using lite_api::CxxConfig;
+using lite_api::DataLayoutType;
+using lite_api::MLUCoreVersion;
+using lite_api::MobileConfig;
 using lite_api::OptBase;
+using lite_api::Place;
+using lite_api::PowerMode;
+using lite_api::PrecisionType;
+using lite_api::TargetType;
+using lite_api::Tensor;
 
 #ifndef LITE_ON_TINY_PUBLISH
 using lite::CxxPaddleApiImpl;
@@ -192,6 +192,7 @@ void BindLitePlace(py::module *m) {
       .value("RKNPU", TargetType::kRKNPU)
       .value("APU", TargetType::kAPU)
       .value("HUAWEI_ASCEND_NPU", TargetType::kHuaweiAscendNPU)
+      .value("NNA", TargetType::kNNA)
       .value("Any", TargetType::kAny);
 
   // PrecisionType

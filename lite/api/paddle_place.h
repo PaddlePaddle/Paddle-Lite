@@ -58,7 +58,8 @@ enum class TargetType : int {
   kRKNPU = 12,
   kAPU = 13,
   kHuaweiAscendNPU = 14,
-  NUM = 15,  // number of fields.
+  kNNA = 15,
+  NUM = 16,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,

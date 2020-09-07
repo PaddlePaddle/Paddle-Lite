@@ -52,21 +52,21 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
                                             "feed",
                                             "fetch"};
 
-  auto insert_invalid_op_nodes_for_specific_target = [&](
-      std::set<std::string> op_node_set, TargetType specific_target) {
-    std::set<std::string> invalid_op_nodes_opencl = {"layout", "fc"};
-    for (auto& op_node : graph->StmtTopologicalOrder()) {
-      if (!op_node->IsStmt()) continue;
-      TargetType op_target_type = op_node->AsStmt().place().target;
-      if (op_target_type == specific_target &&
-          specific_target == TARGET(kOpenCL)) {
-        invalid_op_nodes.insert(invalid_op_nodes_opencl.begin(),
-                                invalid_op_nodes_opencl.end());
-        break;
-      }
-      // else if // you can add more targets
-    }
-  };
+  auto insert_invalid_op_nodes_for_specific_target =
+      [&](std::set<std::string> op_node_set, TargetType specific_target) {
+        std::set<std::string> invalid_op_nodes_opencl = {"layout", "fc"};
+        for (auto& op_node : graph->StmtTopologicalOrder()) {
+          if (!op_node->IsStmt()) continue;
+          TargetType op_target_type = op_node->AsStmt().place().target;
+          if (op_target_type == specific_target &&
+              specific_target == TARGET(kOpenCL)) {
+            invalid_op_nodes.insert(invalid_op_nodes_opencl.begin(),
+                                    invalid_op_nodes_opencl.end());
+            break;
+          }
+          // else if // you can add more targets
+        }
+      };
 
   VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
   insert_invalid_op_nodes_for_specific_target(invalid_op_nodes,
@@ -315,4 +315,5 @@ REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
                      TARGET(kRKNPU),
                      TARGET(kAPU),
                      TARGET(kMLU),
-                     TARGET(kHuaweiAscendNPU)});
+                     TARGET(kHuaweiAscendNPU),
+                     TARGET(kNNA)});
