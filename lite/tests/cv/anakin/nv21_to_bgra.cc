@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/tests/cv/anakin/cv_utils.h"
 #include <math.h>
+#include "lite/tests/cv/anakin/cv_utils.h"
 // clang-format off
 /*
 R = Y + 1.402*(V-128);

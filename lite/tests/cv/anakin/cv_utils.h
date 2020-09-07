@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include "lite/utils/cv/paddle_image_preprocess.h"
-#include "lite/core/tensor.h"
 #include <arm_neon.h>
+#include "lite/core/tensor.h"
+#include "lite/utils/cv/paddle_image_preprocess.h"
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
@@ -80,26 +80,34 @@ void nv12_to_tensor(const uint8_t* nv12, Tensor& output, int width,
                     int height, float* means, float* scales);
 
 // clang-format on
-void image_basic_convert(const uint8_t* src, uint8_t* dst,
-                         ImageFormat srcFormat, ImageFormat dstFormat,
-                         int srcw, int srch, int out_size);
+void image_basic_convert(const uint8_t* src,
+                         uint8_t* dst,
+                         ImageFormat srcFormat,
+                         ImageFormat dstFormat,
+                         int srcw,
+                         int srch,
+                         int out_size);
 
 void image_basic_resize(const uint8_t* src,
                         uint8_t* dst,
                         ImageFormat srcFormat,
-                        int srcw, int srch,
-                        int dstw, int dsth);
+                        int srcw,
+                        int srch,
+                        int dstw,
+                        int dsth);
 
 void image_basic_flip(const uint8_t* src,
                       uint8_t* dst,
                       ImageFormat srcFormat,
-                      int srcw, int srch,
+                      int srcw,
+                      int srch,
                       int flip_num);
 
 void image_basic_rotate(const uint8_t* src,
                         uint8_t* dst,
                         ImageFormat srcFormat,
-                        int srcw, int srch,
+                        int srcw,
+                        int srch,
                         float rotate_num);
 
 void image_basic_to_tensor(const uint8_t* in_data,

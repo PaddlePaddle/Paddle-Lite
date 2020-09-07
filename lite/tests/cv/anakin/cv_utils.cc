@@ -13,9 +13,13 @@
 // limitations under the License.
 
 #include "lite/tests/cv/anakin/cv_utils.h"
-void image_basic_convert(const uint8_t* src, uint8_t* dst,
-                         ImageFormat srcFormat, ImageFormat dstFormat,
-                         int srcw, int srch, int out_size) {
+void image_basic_convert(const uint8_t* src,
+                         uint8_t* dst,
+                         ImageFormat srcFormat,
+                         ImageFormat dstFormat,
+                         int srcw,
+                         int srch,
+                         int out_size) {
   if (srcFormat == dstFormat) {
     // copy
     memcpy(dst, src, sizeof(uint8_t) * out_size);
@@ -47,8 +51,10 @@ void image_basic_convert(const uint8_t* src, uint8_t* dst,
 void image_basic_resize(const uint8_t* src,
                         uint8_t* dst,
                         ImageFormat srcFormat,
-                        int srcw, int srch,
-                        int dstw, int dsth) {
+                        int srcw,
+                        int srch,
+                        int dstw,
+                        int dsth) {
   int size = srcw * srch;
   if (srcw == dstw && srch == dsth) {
     if (srcFormat == ImageFormat::NV12 || srcFormat == ImageFormat::NV21) {
@@ -78,7 +84,8 @@ void image_basic_resize(const uint8_t* src,
 void image_basic_flip(const uint8_t* src,
                       uint8_t* dst,
                       ImageFormat srcFormat,
-                      int srcw, int srch,
+                      int srcw,
+                      int srch,
                       int flip_num) {
   if (flip_num == -1) {
     flip_num = 0;  // xy
@@ -99,14 +106,15 @@ void image_basic_flip(const uint8_t* src,
 void image_basic_rotate(const uint8_t* src,
                         uint8_t* dst,
                         ImageFormat srcFormat,
-                        int srcw, int srch,
+                        int srcw,
+                        int srch,
                         float rotate_num) {
   if (srcFormat == ImageFormat::BGR || srcFormat == ImageFormat::RGB) {
     bgr_rotate_hwc(src, dst, srcw, srch, rotate_num);
   } else if (srcFormat == ImageFormat::BGRA || srcFormat == ImageFormat::RGBA) {
     bgra_rotate_hwc(src, dst, srcw, srch, rotate_num);
   } else {
-   printf("anakin doesn't support this type: %d\n", (int)srcFormat);
+    printf("anakin doesn't support this type: %d\n", (int)srcFormat);
   }
 }
 
