@@ -67,13 +67,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
     if (graph.Has(output_names_[i])) {
       device_onodes.push_back(graph.Get(output_names_[i])->data().get());
     } else {
-      output_names_[i] = std::string("");
-    }
-  }
-  // update output_names_ and origin_otensors because some outputs may be
-  // useless
-  for (int i = 0; i < output_names_.size(); i++) {
-    if (output_names_[i].empty()) {
+      // update output_names_ and origin_otensors because some outputs may be
+      // useless
       output_names_.erase(output_names_.begin() + i);
       origin_otensors_.erase(origin_otensors_.begin() + i);
       i--;
