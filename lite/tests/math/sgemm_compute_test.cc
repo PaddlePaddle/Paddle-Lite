@@ -112,13 +112,13 @@ bool test_sgemm(bool tra,
   memcpy(dc_basic, dc, sizeof(float) * m * ldc);
   memcpy(dc_backup, dc, sizeof(float) * m * ldc);
 
-  LOG(INFO) << "sgemm M: " << m << ", N: " << n << ", K: " << k
-            << ", strides, lda: " << lda << ", ldb: " << ldb << ", ldc: " << ldc
-            << ", alpha: " << alpha << ", beta: " << beta
-            << ", transA: " << (tra ? "true" : "false")
-            << ", transB: " << (trb ? "true" : "false")
-            << ", relu: " << (has_relu ? "true" : "false")
-            << ", bias: " << (has_bias ? "true" : "false");
+  VLOG(4) << "sgemm M: " << m << ", N: " << n << ", K: " << k
+          << ", strides, lda: " << lda << ", ldb: " << ldb << ", ldc: " << ldc
+          << ", alpha: " << alpha << ", beta: " << beta
+          << ", transA: " << (tra ? "true" : "false")
+          << ", transB: " << (trb ? "true" : "false")
+          << ", relu: " << (has_relu ? "true" : "false")
+          << ", bias: " << (has_bias ? "true" : "false");
   if (FLAGS_check_result) {
     basic_gemm(tra,
                trb,
@@ -276,7 +276,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                                                  FLAGS_power_mode,
                                                  th);
                           if (flag) {
-                            LOG(INFO)
+                            VLOG(4)
                                 << "test m = " << m << ", n=" << n
                                 << ", k=" << k
                                 << ", bias: " << (has_bias ? "true" : "false")
