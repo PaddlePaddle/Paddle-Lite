@@ -36,11 +36,10 @@ void FillConstantCompute::Run() {
   if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
     auto data = param.out->template mutable_data<float>(TARGET(kXPU));
     value.fp32 = param.value;
-    write_size = write_size * sizeof(float);
-    int r = xdnn::memset(ctx.GetRawContext(), /* context */
-                         reinterpret_cast<void*>(data),
-                         value.int32,
-                         write_size);
+    int r = xdnn::memset_4_byte(ctx.GetRawContext(), /* context */
+                                reinterpret_cast<void*>(data),
+                                value.int32,
+                                write_size);
     CHECK_EQ(r, 0);
 
   } else if (param.dtype ==
@@ -48,22 +47,17 @@ void FillConstantCompute::Run() {
     auto data = param.out->template mutable_data<int32_t>(TARGET(kXPU));
     value.int32 = param.value;
     write_size = write_size * sizeof(int32_t);
-    int r = xdnn::memset(ctx.GetRawContext(), /* context */
-                         reinterpret_cast<void*>(data),
-                         value.int32,
-                         write_size);
+    int r = xdnn::memset_4_byte(ctx.GetRawContext(), /* context */
+                                reinterpret_cast<void*>(data),
+                                value.int32,
+                                write_size);
     CHECK_EQ(r, 0);
 
   } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::INT8)) {
     auto data = param.out->template mutable_data<int8_t>(TARGET(kXPU));
-    value.int32 = 0;
-    for (int i = 0; i < 4; i++) {
-      value.int32 += static_cast<int32_t>(param.value);
-      value.int32 = value.int32 << 8;
-    }
     int r = xdnn::memset(ctx.GetRawContext(), /* context */
                          reinterpret_cast<void*>(data),
-                         value.int32,
+                         param.value,
                          write_size);
     CHECK_EQ(r, 0);
   } else {
