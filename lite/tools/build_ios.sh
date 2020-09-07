@@ -74,6 +74,7 @@ function make_ios {
             -DARM_TARGET_ARCH_ABI=$arch \
             -DLITE_BUILD_EXTRA=$WITH_EXTRA \
             -DLITE_WITH_CV=$WITH_CV \
+            -DDEPLOYMENT_TARGET="8.0" \
             -DARM_TARGET_OS=$os
 
     make publish_inference -j$NUM_PROC
