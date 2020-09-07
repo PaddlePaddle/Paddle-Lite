@@ -50,7 +50,8 @@ class WorkSpace {
   }
 
   static WorkSpace& Global_Host() {
-    ATTRIBUTE_TLS std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kHost)));
+    static ATTRIBUTE_TLS std::unique_ptr<WorkSpace> x(
+        new WorkSpace(TARGET(kHost)));
     return *x;
   }
 
