@@ -23,12 +23,13 @@
 #include "lite/core/mir/pass_registry.h"
 #include "lite/core/mir/subgraph/subgraph_detector.h"
 #include "lite/operators/subgraph_op.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-static thread_local int g_stream_id = 0;
+static ATTRIBUTE_TLS int g_stream_id = 0;
 
 Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
                                            const std::string& cast_arg_name,

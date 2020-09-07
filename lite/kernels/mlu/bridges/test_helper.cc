@@ -19,6 +19,7 @@
 #include "lite/kernels/mlu/bridges/utility.h"
 #include "lite/kernels/mlu/subgraph_compute.h"
 #include "lite/kernels/npu/bridges/registry.h"
+#include "lite/utils/macros.h"
 namespace paddle {
 namespace lite {
 namespace subgraph {
@@ -29,7 +30,7 @@ void PrepareInput(Graph* graph,
                   const std::string& input_name,
                   Tensor* input_tensor,
                   cnmlDataOrder_t order) {
-  thread_local Tensor temp_input;
+  ATTRIBUTE_TLS Tensor temp_input;
   temp_input.Resize(input_tensor->dims().Vectorize());
   temp_input.CopyDataFrom(*input_tensor);
   using data_type = typename MLUTypeTraits<Dtype>::type;

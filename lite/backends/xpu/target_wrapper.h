@@ -18,6 +18,7 @@
 #include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
 #include "lite/core/target_wrapper.h"             // TargetWrapper
 #include "lite/utils/cp_logging.h"                // CHECK_EQ
+#include "lite/utils/macros.h"
 
 #define XPU_CALL(func)                                        \
   {                                                           \
@@ -99,7 +100,7 @@ class TargetWrapper<TARGET(kXPU)> {
   static int workspace_l3_size_per_thread;
 
  private:
-  static thread_local xdnn::Context* tls_raw_ctx_;
+  static ATTRIBUTE_TLS xdnn::Context* tls_raw_ctx_;
 };
 
 }  // namespace lite

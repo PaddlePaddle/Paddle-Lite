@@ -50,7 +50,7 @@ class WorkSpace {
   }
 
   static WorkSpace& Global_Host() {
-    thread_local std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kHost)));
+    ATTRIBUTE_TLS std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kHost)));
     return *x;
   }
 
@@ -64,14 +64,14 @@ class WorkSpace {
 
 #if defined(LITE_WITH_CUDA)
   static WorkSpace& Global_CUDA() {
-    thread_local std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kCUDA)));
+    ATTRIBUTE_TLS std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kCUDA)));
     return *x;
   }
 #endif
 
 #if defined(LITE_WITH_MLU)
   static WorkSpace& Global_MLU() {
-    thread_local std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kMLU)));
+    ATTRIBUTE_TLS std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kMLU)));
     return *x;
   }
 #endif

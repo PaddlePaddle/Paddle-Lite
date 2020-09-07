@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "lite/backends/mlu/mlu_utils.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -37,12 +38,13 @@ void cnrtMemcpyDtoH(void* dst, const void* src, size_t size) {
 
 }  // namespace mlu
 
-thread_local cnmlCoreVersion_t TargetWrapperMlu::mlu_core_version_{CNML_MLU270};
-thread_local int TargetWrapperMlu::mlu_core_number_{1};
-thread_local bool TargetWrapperMlu::use_first_conv_{false};
-thread_local std::vector<float> TargetWrapperMlu::mean_vec_;
-thread_local std::vector<float> TargetWrapperMlu::std_vec_;
-thread_local DataLayoutType TargetWrapperMlu::input_layout_{DATALAYOUT(kNCHW)};
+ATTRIBUTE_TLS cnmlCoreVersion_t TargetWrapperMlu::mlu_core_version_{
+    CNML_MLU270};
+ATTRIBUTE_TLS int TargetWrapperMlu::mlu_core_number_{1};
+ATTRIBUTE_TLS bool TargetWrapperMlu::use_first_conv_{false};
+ATTRIBUTE_TLS std::vector<float> TargetWrapperMlu::mean_vec_;
+ATTRIBUTE_TLS std::vector<float> TargetWrapperMlu::std_vec_;
+ATTRIBUTE_TLS DataLayoutType TargetWrapperMlu::input_layout_{DATALAYOUT(kNCHW)};
 
 size_t TargetWrapperMlu::num_devices() {
   uint32_t dev_count = 0;

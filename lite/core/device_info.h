@@ -22,6 +22,7 @@
 #ifdef LITE_WITH_MLU
 #include "lite/backends/mlu/mlu_utils.h"
 #endif
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -99,12 +100,12 @@ class DeviceInfo {
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,
   // LITE_POWER_FULL stands for using all cores
-  static thread_local lite_api::PowerMode mode_;
-  static thread_local ARMArch arch_;
-  static thread_local int mem_size_;
-  static thread_local std::vector<int> active_ids_;
-  static thread_local TensorLite workspace_;
-  static thread_local int64_t count_;
+  static ATTRIBUTE_TLS lite_api::PowerMode mode_;
+  static ATTRIBUTE_TLS ARMArch arch_;
+  static ATTRIBUTE_TLS int mem_size_;
+  static ATTRIBUTE_TLS std::vector<int> active_ids_;
+  static ATTRIBUTE_TLS TensorLite workspace_;
+  static ATTRIBUTE_TLS int64_t count_;
 
   void SetDotInfo(int argc, ...);
   void SetFP16Info(int argc, ...);

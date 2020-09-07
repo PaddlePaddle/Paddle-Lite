@@ -54,17 +54,18 @@
 #include <algorithm>
 #include <limits>
 #include "lite/core/device_info.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
 
 #if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
-thread_local lite_api::PowerMode DeviceInfo::mode_;
-thread_local ARMArch DeviceInfo::arch_;
-thread_local int DeviceInfo::mem_size_;
-thread_local std::vector<int> DeviceInfo::active_ids_;
-thread_local TensorLite DeviceInfo::workspace_;
-thread_local int64_t DeviceInfo::count_ = 0;
+ATTRIBUTE_TLS lite_api::PowerMode DeviceInfo::mode_;
+ATTRIBUTE_TLS ARMArch DeviceInfo::arch_;
+ATTRIBUTE_TLS int DeviceInfo::mem_size_;
+ATTRIBUTE_TLS std::vector<int> DeviceInfo::active_ids_;
+ATTRIBUTE_TLS TensorLite DeviceInfo::workspace_;
+ATTRIBUTE_TLS int64_t DeviceInfo::count_ = 0;
 
 #ifdef TARGET_IOS
 const int DEFAULT_L1_CACHE_SIZE = 64 * 1024;

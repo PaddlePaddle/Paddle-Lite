@@ -17,6 +17,7 @@
 #include <vector>
 #include "lite/backends/mlu/mlu_utils.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -58,12 +59,12 @@ class TargetWrapper<TARGET(kMLU)> {
   static DataLayoutType InputLayout();
 
  private:
-  static thread_local cnmlCoreVersion_t mlu_core_version_;
-  static thread_local int mlu_core_number_;
-  static thread_local bool use_first_conv_;
-  static thread_local std::vector<float> mean_vec_;
-  static thread_local std::vector<float> std_vec_;
-  static thread_local DataLayoutType input_layout_;
+  static ATTRIBUTE_TLS cnmlCoreVersion_t mlu_core_version_;
+  static ATTRIBUTE_TLS int mlu_core_number_;
+  static ATTRIBUTE_TLS bool use_first_conv_;
+  static ATTRIBUTE_TLS std::vector<float> mean_vec_;
+  static ATTRIBUTE_TLS std::vector<float> std_vec_;
+  static ATTRIBUTE_TLS DataLayoutType input_layout_;
 };
 
 }  // namespace lite
