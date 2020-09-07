@@ -846,7 +846,7 @@ for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
 返回类型：`T*`
 
 
-### `ShareExternalData(data, memory_size, target)`
+### `ShareExternalMemory(data, memory_size, target)`
 
 设置Tensor共享用户数据指针。注意：请保证数据指针在预测过程中处于有效状态。
 
@@ -868,9 +868,9 @@ auto input_tensor = predictor->GetInputByName(inputs[0]);
 input_tensor->Resize(std::vector<int64_t>({100, 100}));
 size_t memory_size = external_data.size() * sizeof(float);
 
-input_tensor->ShareExternalData(static_cast<void*>(external_data.data()),
-                                memory_size,
-                                config.valid_places()[0].target);
+input_tensor->ShareExternalMemory(static_cast<void*>(external_data.data()),
+                                  memory_size,
+                                  config.valid_places()[0].target);
 predictor->Run();
 ```
 

@@ -83,9 +83,9 @@ const T *Tensor::data() const {
   return ctensor(raw_tensor_)->data<T>();
 }
 
-void Tensor::ShareExternalData(void *data,
-                               size_t memory_size,
-                               TargetType target) {
+void Tensor::ShareExternalMemory(void *data,
+                                 size_t memory_size,
+                                 TargetType target) {
   auto buf =
       std::make_shared<lite::Buffer>(lite::Buffer(data, target, memory_size));
   tensor(raw_tensor_)->ResetBuffer(buf, memory_size);

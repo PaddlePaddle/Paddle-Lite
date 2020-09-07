@@ -49,9 +49,10 @@ struct LITE_API Tensor {
   template <typename T>
   T* mutable_data(TargetType type = TargetType::kHost) const;
 
-  // Share external data. Note: ensure that the data pointer is in a valid state
+  // Share external memory. Note: ensure that the data pointer is in a valid
+  // state
   // during the prediction process.
-  void ShareExternalData(void* data, size_t memory_size, TargetType target);
+  void ShareExternalMemory(void* data, size_t memory_size, TargetType target);
 
   template <typename T, TargetType type = TargetType::kHost>
   void CopyFromCpu(const T* data);
