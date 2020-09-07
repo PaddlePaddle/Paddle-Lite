@@ -447,6 +447,7 @@ if (ARM_TARGET_OS STREQUAL "armlinux")
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light"
             COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/arm_linux_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/arm_linux_light")
     endif()
+    add_dependencies(publish_inference publish_inference_armlinux_cxx_demos)
 endif()
 
 if (LITE_WITH_BM)
