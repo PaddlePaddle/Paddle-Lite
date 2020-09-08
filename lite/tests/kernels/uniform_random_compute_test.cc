@@ -13,6 +13,7 @@
 // limitations under the License.
 //#include "lite/kernels/host/uniform_random_compute.h"
 //#include <random>
+#include "lite/kernels/host/uniform_random_compute.h"
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "lite/core/context.h"
@@ -20,7 +21,6 @@
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
-#include "lite/kernels/host/uniform_random_compute.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -52,7 +52,7 @@ TEST(uniformrandom, test) {
   uniform_random.Run();
   const double* outdata = out.data<double>();
   for (int i = 0; i < out.numel(); i++) {
-    LOG(INFO) << "out.data: "<< outdata[i];
+    LOG(INFO) << "out.data: " << outdata[i];
   }
 }
 
