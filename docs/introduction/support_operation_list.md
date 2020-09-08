@@ -6,7 +6,7 @@
 
 默认编译的算子，共计78个：
 
-| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | Huawei Krini   NPU | Baidu XPU | Rockchip NPU | MediaTeck APU |
+| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU |
 |-:|-|-|-|-|-|-|-|-|-|-|
 | affine_channel | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
 | affine_grid | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
@@ -92,7 +92,7 @@
 
 附加算子共计126个，需要在编译时打开`--build_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
 
-| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | Huawei Krini   NPU | Baidu XPU | Rockchip NPU | MediaTeck APU |
+| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU |
 |-|-|-|-|-|-|-|-|-|-|-|
 | __xpu__conv2d | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
 | __xpu__embedding_with_eltwise_add | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
