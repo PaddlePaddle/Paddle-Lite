@@ -47,7 +47,6 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
                                             "merge_lod_tensor",
                                             "equal",
                                             "lod_reset",
-                                            "concat",
                                             "yolo_box",
                                             "subgraph",
                                             "feed",
