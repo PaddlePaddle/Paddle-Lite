@@ -30,7 +30,7 @@ void PrepareInput(Graph* graph,
                   const std::string& input_name,
                   Tensor* input_tensor,
                   cnmlDataOrder_t order) {
-  ATTRIBUTE_TLS Tensor temp_input;
+  static ATTRIBUTE_TLS Tensor temp_input;
   temp_input.Resize(input_tensor->dims().Vectorize());
   temp_input.CopyDataFrom(*input_tensor);
   using data_type = typename MLUTypeTraits<Dtype>::type;

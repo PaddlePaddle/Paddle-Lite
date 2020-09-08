@@ -65,14 +65,16 @@ class WorkSpace {
 
 #if defined(LITE_WITH_CUDA)
   static WorkSpace& Global_CUDA() {
-    ATTRIBUTE_TLS std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kCUDA)));
+    static ATTRIBUTE_TLS std::unique_ptr<WorkSpace> x(
+        new WorkSpace(TARGET(kCUDA)));
     return *x;
   }
 #endif
 
 #if defined(LITE_WITH_MLU)
   static WorkSpace& Global_MLU() {
-    ATTRIBUTE_TLS std::unique_ptr<WorkSpace> x(new WorkSpace(TARGET(kMLU)));
+    static ATTRIBUTE_TLS std::unique_ptr<WorkSpace> x(
+        new WorkSpace(TARGET(kMLU)));
     return *x;
   }
 #endif
