@@ -119,22 +119,30 @@ class VectorView;
 template <typename T, typename U = Standard>
 struct OpDataTypeTrait;
 
-#define ATTR_TYPE_TRAIT_IMPL(T, type__)             \
-  template <typename U>                             \
-  struct OpDataTypeTrait<type__, U> {               \
-    typedef type__ ET;                              \
-    typedef type__ RT;                              \
-    static constexpr OpAttrType AT = OpAttrType::T; \
-    static constexpr const char* ATN = #T;          \
-  };
-#define ATTR_VECTOR_TYPE_TRAIT_IMPL(T, type__)      \
-  template <typename U>                             \
-  struct OpDataTypeTrait<std::vector<type__>, U> {  \
-    typedef type__ ET;                              \
-    typedef VectorView<type__, U> RT;               \
-    static constexpr OpAttrType AT = OpAttrType::T; \
-    static constexpr const char* ATN = #T;          \
-  };
+#define ATTR_TYPE_TRAIT_IMPL(T, type__)                \
+  template <typename U>                                \
+  struct OpDataTypeTrait<type__, U> {                  \
+    typedef type__ ET;                                 \
+    typedef type__ RT;                                 \
+    static constexpr OpAttrType AT{OpAttrType::T};     \
+    static constexpr const char* ATN{#T};              \
+  };                                                   \
+  template <typename U>                                \
+  constexpr OpAttrType OpDataTypeTrait<type__, U>::AT; \
+  template <typename U>                                \
+  constexpr const char* OpDataTypeTrait<type__, U>::ATN;
+#define ATTR_VECTOR_TYPE_TRAIT_IMPL(T, type__)                      \
+  template <typename U>                                             \
+  struct OpDataTypeTrait<std::vector<type__>, U> {                  \
+    typedef type__ ET;                                              \
+    typedef VectorView<type__, U> RT;                               \
+    static constexpr OpAttrType AT{OpAttrType::T};                  \
+    static constexpr const char* ATN{#T};                           \
+  };                                                                \
+  template <typename U>                                             \
+  constexpr OpAttrType OpDataTypeTrait<std::vector<type__>, U>::AT; \
+  template <typename U>                                             \
+  constexpr const char* OpDataTypeTrait<std::vector<type__>, U>::ATN;
 
 ATTR_TYPE_TRAIT_IMPL(BLOCK, int16_t);
 ATTR_TYPE_TRAIT_IMPL(INT, int32_t);

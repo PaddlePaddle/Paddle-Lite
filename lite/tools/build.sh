@@ -38,6 +38,7 @@ WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
 PYTHON_EXECUTABLE_OPTION=""
 ENABLE_FLATBUFFERS_DESC_VIEW=OFF
+IOS_DEPLOYMENT_TARGET=9.0
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -321,6 +322,7 @@ function make_ios {
             -DARM_TARGET_ARCH_ABI=$abi \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
+            -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DARM_TARGET_OS=$os
 
     make publish_inference -j$NUM_PROC
@@ -437,6 +439,7 @@ function print_usage {
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
     echo -e "--enable_flatbuffers_view: (OFF|ON); Use the flatbuffers read-only view to load the model. If ON, the naive buffer will no longer be supported."
+    echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
@@ -583,6 +586,10 @@ function main {
                 ;;
             --enable_flatbuffers_view=*)
                 ENABLE_FLATBUFFERS_DESC_VIEW="${i#*=}"
+                shift
+                ;;
+            --ios_deployment_target=*)
+                IOS_DEPLOYMENT_TARGET="${i#*=}"
                 shift
                 ;;
             tiny_publish)
