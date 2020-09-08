@@ -51,7 +51,7 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto score_threshold = op_info->GetAttr<float>("score_threshold");
   auto nms_threshold = op_info->GetAttr<float>("nms_threshold");
   auto nms_eta = op_info->GetAttr<float>("nms_eta");
-  bool normalized;
+  bool normalized = false;
   if (op_info->HasAttr("normalized")) {
     normalized = op_info->GetAttr<bool>("normalized");
   }
@@ -97,12 +97,39 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   in_dim[1] = score_dims.size();
   in_name[0] = static_cast<const char*>(boxes_var_name.c_str());
   in_name[1] = static_cast<const char*>(score_var_name.c_str());
-  int32_t* out_shape[1];
-  int32_t out_dim[1];
-  const char* out_name[1];
+  int32_t* out_shape[2];
+  int32_t out_dim[2];
+  const char* out_name[2];
   out_shape[0] = &i_out_shape_data[0];
   out_dim[0] = out_dims.size();
   out_name[0] = static_cast<const char*>(out_var_name.c_str());
+
+  std::vector<int64_t> vec_index_dim(score_dims.size());
+  std::vector<int32_t> i_out_index_shape_data(score_dims.size());
+  std::string out_index_name = "";
+  if (op_type == "multiclass_nms2") {
+    output_num = 2;
+    out_index_name = op_info->Output("Index").front();
+    auto out_index = scope->FindVar(out_index_name)->GetMutable<lite::Tensor>();
+    if (3 == score_dims.size()) {
+      vec_index_dim[0] = score_dims[0];
+      vec_index_dim[1] = keep_top_k;
+      vec_index_dim[2] = 1;
+    } else {
+      vec_index_dim[0] = keep_top_k;
+      vec_index_dim[1] = 1;
+    }
+    DDimLite index_dims(vec_index_dim);
+    out_index->Resize(index_dims);
+    out_index->mutable_data<float>();
+    for (size_t i = 0; i < index_dims.size(); i++) {
+      i_out_index_shape_data[i] = static_cast<int32_t>(index_dims[i]);
+    }
+    out_shape[1] = &i_out_index_shape_data[0];
+    out_dim[1] = index_dims.size();
+    out_name[1] = static_cast<const char*>(out_index_name.c_str());
+  }
+
   add_user_cpu_layer(graph->GetCompilerHandle(),
                      input_num,
                      in_shape,
@@ -124,5 +151,8 @@ int MultiClassNMSConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(multiclass_nms,
+                         kBM,
+                         paddle::lite::subgraph::bm::MultiClassNMSConverter);
+REGISTER_SUBGRAPH_BRIDGE(multiclass_nms2,
                          kBM,
                          paddle::lite::subgraph::bm::MultiClassNMSConverter);

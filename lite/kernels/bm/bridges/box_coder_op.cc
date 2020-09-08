@@ -73,10 +73,16 @@ int BoxCoderConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("variance")) {
     variance = op_info->GetAttr<std::vector<float>>("variance");
   }
+  int variance_len = variance.size();
   user_cpu_param_t bm_param;
   bm_param.op_type = USER_PADDLE_BOX_CODER;
   bm_param.u.box_coder_param.axis = axis;
-  bm_param.u.box_coder_param.variance = &variance[0];
+  CHECK_LE(variance_len, 2000);
+  memset(bm_param.u.box_coder_param.variance, 0, 2000 * sizeof(float));
+  memcpy(bm_param.u.box_coder_param.variance,
+         &variance[0],
+         variance_len * sizeof(float));
+  bm_param.u.box_coder_param.variance_len = variance_len;
   bm_param.u.box_coder_param.code_type =
       (code_type == "encode_center_size") ? 0 : 1;
   bm_param.u.box_coder_param.normalized = box_normalized;

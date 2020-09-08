@@ -67,17 +67,17 @@ int YoloBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto downsample_ratio = op_info->GetAttr<int>("downsample_ratio");
   auto conf_thresh = op_info->GetAttr<float>("conf_thresh");
   auto anchors = op_info->GetAttr<std::vector<int>>("anchors");
-  int* anchors_buffer = static_cast<int*>(malloc(sizeof(int) * anchors.size()));
-  CHECK(anchors_buffer != nullptr);
-  memcpy(anchors_buffer, &anchors[0], sizeof(int) * anchors.size());
+  CHECK_LE(anchors.size(), 2000);
   user_cpu_param_t bm_param;
   bm_param.op_type = USER_PADDLE_YOLO_BOX;
   bm_param.u.yolo_box_param.class_num = class_num;
   bm_param.u.yolo_box_param.downsample_ratio = downsample_ratio;
   bm_param.u.yolo_box_param.conf_thresh = conf_thresh;
-  bm_param.u.yolo_box_param.anchors = anchors_buffer;
+  memset(bm_param.u.yolo_box_param.anchors, 0, 2000 * sizeof(int));
+  memcpy(bm_param.u.yolo_box_param.anchors,
+         &anchors[0],
+         anchors.size() * sizeof(int));
   bm_param.u.yolo_box_param.anchors_size = anchors.size();
-  memcpy(anchors_buffer, &anchors[0], sizeof(int) * anchors.size());
   int32_t input_num = 2;
   int32_t output_num = 2;
   int32_t* in_shape[2];
