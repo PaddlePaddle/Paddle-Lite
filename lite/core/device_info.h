@@ -113,20 +113,20 @@ class DeviceInfo {
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,
   // LITE_POWER_FULL stands for using all cores
-  static thread_local lite_api::PowerMode mode_;
-  static thread_local ARMArch arch_;
-  static thread_local int mem_size_;
-  static thread_local std::vector<int> active_ids_;
-  static thread_local TensorLite workspace_;
-  static thread_local int64_t count_;
+  static ATTRIBUTE_TLS lite_api::PowerMode mode_;
+  static ATTRIBUTE_TLS ARMArch arch_;
+  static ATTRIBUTE_TLS int mem_size_;
+  static ATTRIBUTE_TLS std::vector<int> active_ids_;
+  static ATTRIBUTE_TLS TensorLite workspace_;
+  static ATTRIBUTE_TLS int64_t count_;
 
 #ifdef LITE_WITH_MLU
-  static thread_local cnmlCoreVersion_t mlu_core_version_;
-  static thread_local int mlu_core_number_;
-  static thread_local bool use_first_conv_;
-  static thread_local std::vector<float> mean_vec_;
-  static thread_local std::vector<float> std_vec_;
-  static thread_local DataLayoutType input_layout_;
+  static ATTRIBUTE_TLS cnmlCoreVersion_t mlu_core_version_;
+  static ATTRIBUTE_TLS int mlu_core_number_;
+  static ATTRIBUTE_TLS bool use_first_conv_;
+  static ATTRIBUTE_TLS std::vector<float> mean_vec_;
+  static ATTRIBUTE_TLS std::vector<float> std_vec_;
+  static ATTRIBUTE_TLS DataLayoutType input_layout_;
 #endif
 
   void SetDotInfo(int argc, ...);

@@ -53,3 +53,10 @@
 #if defined(__FLT_MAX__)
 #define FLT_MAX __FLT_MAX__
 #endif  // __FLT_MAX__
+
+#define ATTRIBUTE_TLS
+#elif __cplusplus >= 201103
+#define ATTRIBUTE_TLS thread_local
+#else
+#error "C++11 support is required for paddle-lite compilation."
+#endif

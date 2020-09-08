@@ -178,7 +178,7 @@ class KernelFuncs {
  public:
   KernelFuncs() = default;
   static KernelFuncs& Cache() {
-    static thread_local KernelFuncs<KernelTuple, PlaceType> g_func_cache;
+    static ATTRIBUTE_TLS KernelFuncs<KernelTuple, PlaceType> g_func_cache;
     return g_func_cache;
   }
 
