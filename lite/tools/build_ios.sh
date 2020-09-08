@@ -19,6 +19,7 @@ workspace=$PWD/$(dirname $0)/../../
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
+IOS_DEPLOYMENT_TARGET=9.0
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -80,6 +81,7 @@ function make_ios {
             -DARM_TARGET_ARCH_ABI=$arch \
             -DLITE_BUILD_EXTRA=$WITH_EXTRA \
             -DLITE_WITH_CV=$WITH_CV \
+            -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DARM_TARGET_OS=$os
 
     make publish_inference -j$NUM_PROC
@@ -104,6 +106,7 @@ function print_usage {
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
+    echo -e "|     --ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment.                           |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
@@ -149,6 +152,10 @@ function main {
                 ;;
             --with_exception=*)
                 WITH_EXCEPTION="${i#*=}"
+                shift
+                ;;
+            --ios_deployment_target=*)
+                IOS_DEPLOYMENT_TARGET="${i#*=}"
                 shift
                 ;;
             help)
