@@ -22,6 +22,7 @@
 #ifdef LITE_WITH_MLU
 #include "lite/backends/mlu/mlu_utils.h"
 #endif
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -113,20 +114,20 @@ class DeviceInfo {
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,
   // LITE_POWER_FULL stands for using all cores
-  static thread_local lite_api::PowerMode mode_;
-  static thread_local ARMArch arch_;
-  static thread_local int mem_size_;
-  static thread_local std::vector<int> active_ids_;
-  static thread_local TensorLite workspace_;
-  static thread_local int64_t count_;
+  static LITE_THREAD_LOCAL lite_api::PowerMode mode_;
+  static LITE_THREAD_LOCAL ARMArch arch_;
+  static LITE_THREAD_LOCAL int mem_size_;
+  static LITE_THREAD_LOCAL std::vector<int> active_ids_;
+  static LITE_THREAD_LOCAL TensorLite workspace_;
+  static LITE_THREAD_LOCAL int64_t count_;
 
 #ifdef LITE_WITH_MLU
-  static thread_local cnmlCoreVersion_t mlu_core_version_;
-  static thread_local int mlu_core_number_;
-  static thread_local bool use_first_conv_;
-  static thread_local std::vector<float> mean_vec_;
-  static thread_local std::vector<float> std_vec_;
-  static thread_local DataLayoutType input_layout_;
+  static LITE_THREAD_LOCAL cnmlCoreVersion_t mlu_core_version_;
+  static LITE_THREAD_LOCAL int mlu_core_number_;
+  static LITE_THREAD_LOCAL bool use_first_conv_;
+  static LITE_THREAD_LOCAL std::vector<float> mean_vec_;
+  static LITE_THREAD_LOCAL std::vector<float> std_vec_;
+  static LITE_THREAD_LOCAL DataLayoutType input_layout_;
 #endif
 
   void SetDotInfo(int argc, ...);

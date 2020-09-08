@@ -23,6 +23,7 @@
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/kernel_key.h"
 #include "lite/backends/x86/jit/kernel_pool.h"
+#include "lite/utils/macros.h"
 #include "lite/utils/paddle_enforce.h"
 
 namespace paddle {
@@ -178,7 +179,7 @@ class KernelFuncs {
  public:
   KernelFuncs() = default;
   static KernelFuncs& Cache() {
-    static thread_local KernelFuncs<KernelTuple, PlaceType> g_func_cache;
+    static LITE_THREAD_LOCAL KernelFuncs<KernelTuple, PlaceType> g_func_cache;
     return g_func_cache;
   }
 
