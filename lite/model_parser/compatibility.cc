@@ -11,16 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include "lite/model_parser/compatibility.h"
 
+#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/core/type_system.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/model_parser/naive_buffer/block_desc.h"
 #include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
-#ifndef LITE_ON_TINY_PUBLISH
-#include "lite/model_parser/cpp_desc.h"
 #endif
 
 namespace paddle {
