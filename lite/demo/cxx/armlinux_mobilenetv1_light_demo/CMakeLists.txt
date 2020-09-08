@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(TARGET arm_linux_light_api)
+set(TARGET mobilenet_light_api)
 
 # 1. path to Paddle-Lite lib
 set(LITE_DIR "${PROJECT_SOURCE_DIR}/../../../cxx")
