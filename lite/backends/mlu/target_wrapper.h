@@ -59,12 +59,12 @@ class TargetWrapper<TARGET(kMLU)> {
   static DataLayoutType InputLayout();
 
  private:
-  static ATTRIBUTE_TLS cnmlCoreVersion_t mlu_core_version_;
-  static ATTRIBUTE_TLS int mlu_core_number_;
-  static ATTRIBUTE_TLS bool use_first_conv_;
-  static ATTRIBUTE_TLS std::vector<float> mean_vec_;
-  static ATTRIBUTE_TLS std::vector<float> std_vec_;
-  static ATTRIBUTE_TLS DataLayoutType input_layout_;
+  static LITE_THREAD_LOCAL cnmlCoreVersion_t mlu_core_version_;
+  static LITE_THREAD_LOCAL int mlu_core_number_;
+  static LITE_THREAD_LOCAL bool use_first_conv_;
+  static LITE_THREAD_LOCAL std::vector<float> mean_vec_;
+  static LITE_THREAD_LOCAL std::vector<float> std_vec_;
+  static LITE_THREAD_LOCAL DataLayoutType input_layout_;
 };
 
 }  // namespace lite

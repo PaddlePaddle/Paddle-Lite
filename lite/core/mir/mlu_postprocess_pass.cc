@@ -29,7 +29,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-static ATTRIBUTE_TLS int g_stream_id = 0;
+static LITE_THREAD_LOCAL int g_stream_id = 0;
 
 Node* MLUPostprocessPass::InsertCastBefore(const std::string& op_type,
                                            const std::string& cast_arg_name,

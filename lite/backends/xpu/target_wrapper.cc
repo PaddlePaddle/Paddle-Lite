@@ -56,7 +56,7 @@ XPUScratchPadGuard TargetWrapperXPU::MallocScratchPad(size_t size,
 
 std::string TargetWrapperXPU::multi_encoder_precision;  // NOLINT
 int TargetWrapperXPU::workspace_l3_size_per_thread{0};
-ATTRIBUTE_TLS xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
+LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
 
 }  // namespace lite
 }  // namespace paddle

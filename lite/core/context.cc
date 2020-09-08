@@ -19,10 +19,10 @@ namespace paddle {
 namespace lite {
 
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-ATTRIBUTE_TLS std::string
+LITE_THREAD_LOCAL std::string
     Context<TargetType::kHuaweiAscendNPU>::subgraph_model_cache_dir_{
         ""};  // NOLINT
-ATTRIBUTE_TLS int
+LITE_THREAD_LOCAL int
     Context<TargetType::kHuaweiAscendNPU>::huawei_ascend_device_id_{
         0};  // NOLINT
 #endif

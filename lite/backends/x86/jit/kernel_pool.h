@@ -36,7 +36,7 @@ class JitCodePool {
  public:
   JitCodePool() = default;
   static JitCodePool& Instance() {
-    static ATTRIBUTE_TLS JitCodePool<KT> g_jit_codes;
+    static LITE_THREAD_LOCAL JitCodePool<KT> g_jit_codes;
     return g_jit_codes;
   }
 

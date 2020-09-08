@@ -38,13 +38,14 @@ void cnrtMemcpyDtoH(void* dst, const void* src, size_t size) {
 
 }  // namespace mlu
 
-ATTRIBUTE_TLS cnmlCoreVersion_t TargetWrapperMlu::mlu_core_version_{
+LITE_THREAD_LOCAL cnmlCoreVersion_t TargetWrapperMlu::mlu_core_version_{
     CNML_MLU270};
-ATTRIBUTE_TLS int TargetWrapperMlu::mlu_core_number_{1};
-ATTRIBUTE_TLS bool TargetWrapperMlu::use_first_conv_{false};
-ATTRIBUTE_TLS std::vector<float> TargetWrapperMlu::mean_vec_;
-ATTRIBUTE_TLS std::vector<float> TargetWrapperMlu::std_vec_;
-ATTRIBUTE_TLS DataLayoutType TargetWrapperMlu::input_layout_{DATALAYOUT(kNCHW)};
+LITE_THREAD_LOCAL int TargetWrapperMlu::mlu_core_number_{1};
+LITE_THREAD_LOCAL bool TargetWrapperMlu::use_first_conv_{false};
+LITE_THREAD_LOCAL std::vector<float> TargetWrapperMlu::mean_vec_;
+LITE_THREAD_LOCAL std::vector<float> TargetWrapperMlu::std_vec_;
+LITE_THREAD_LOCAL DataLayoutType TargetWrapperMlu::input_layout_{
+    DATALAYOUT(kNCHW)};
 
 size_t TargetWrapperMlu::num_devices() {
   uint32_t dev_count = 0;

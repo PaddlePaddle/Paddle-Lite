@@ -129,8 +129,8 @@ class Context<TargetType::kHuaweiAscendNPU> {
   static int HuaweiAscendDeviceID() { return huawei_ascend_device_id_; }
 
  private:
-  static ATTRIBUTE_TLS std::string subgraph_model_cache_dir_;
-  static ATTRIBUTE_TLS int huawei_ascend_device_id_;
+  static LITE_THREAD_LOCAL std::string subgraph_model_cache_dir_;
+  static LITE_THREAD_LOCAL int huawei_ascend_device_id_;
 };
 #endif
 

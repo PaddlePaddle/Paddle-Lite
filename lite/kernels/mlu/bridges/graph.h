@@ -136,7 +136,7 @@ class Graph {
 
 #define MEASURE_HWTIME_END(que)                                                \
   do {                                                                         \
-    static ATTRIBUTE_TLS float hw_time;                                        \
+    static LITE_THREAD_LOCAL float hw_time;                                    \
     CNRT_CALL(cnrtPlaceNotifier(notifier_end_, que));                          \
     CNRT_CALL(cnrtSyncQueue(que));                                             \
     CNRT_CALL(cnrtNotifierDuration(notifier_start_, notifier_end_, &hw_time)); \

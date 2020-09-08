@@ -60,12 +60,12 @@ namespace paddle {
 namespace lite {
 
 #if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
-ATTRIBUTE_TLS lite_api::PowerMode DeviceInfo::mode_;
-ATTRIBUTE_TLS ARMArch DeviceInfo::arch_;
-ATTRIBUTE_TLS int DeviceInfo::mem_size_;
-ATTRIBUTE_TLS std::vector<int> DeviceInfo::active_ids_;
-ATTRIBUTE_TLS TensorLite DeviceInfo::workspace_;
-ATTRIBUTE_TLS int64_t DeviceInfo::count_ = 0;
+LITE_THREAD_LOCAL lite_api::PowerMode DeviceInfo::mode_;
+LITE_THREAD_LOCAL ARMArch DeviceInfo::arch_;
+LITE_THREAD_LOCAL int DeviceInfo::mem_size_;
+LITE_THREAD_LOCAL std::vector<int> DeviceInfo::active_ids_;
+LITE_THREAD_LOCAL TensorLite DeviceInfo::workspace_;
+LITE_THREAD_LOCAL int64_t DeviceInfo::count_ = 0;
 
 #ifdef TARGET_IOS
 const int DEFAULT_L1_CACHE_SIZE = 64 * 1024;
