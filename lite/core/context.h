@@ -179,7 +179,7 @@ template <>
 class Context<TargetType::kNNA> {
  public:
   Context() {}
-  explicit Context(const NNAContext& ctx);
+  // explicit Context(const NNAContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(NNAContext* ctx) {}
