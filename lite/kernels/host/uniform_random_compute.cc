@@ -65,10 +65,12 @@ REGISTER_LITE_KERNEL(uniform_random,
                      kAny,
                      paddle::lite::kernels::host::UniformRandomCompute,
                      def)
-    .BindInput("ShapeTensor", {LiteType::GetTensorTy(TARGET(kHost),
+    .BindInput("ShapeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
                                               PRECISION(kAny),
                                               DATALAYOUT(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost),
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
                                               PRECISION(kAny),
                                               DATALAYOUT(kAny))})
     .Finalize();
