@@ -31,7 +31,6 @@ void PoolCompute::PrepareForRun() {
   auto& param = Param<operators::PoolParam>();
   param.output->mutable_data<float16>();
 
-
   int h_kernel = param.ksize[0];
   int w_kernel = param.ksize[1];
   if (param.global_pooling) {
@@ -40,10 +39,10 @@ void PoolCompute::PrepareForRun() {
   }
   int c = param.x->ZynqTensor()->shape().channel();
   int w = param.x->ZynqTensor()->shape().width();
-  
+
   int wc_h_kernel = w * c * h_kernel;
   int dwconv_limit = 131072;
-  int num = ceil(wc_h_kernel * 1.0f / dwconv_limit); 
+  int num = ceil(wc_h_kernel * 1.0f / dwconv_limit);
 
   // num = 1;
   split_num_ = num;
@@ -56,8 +55,9 @@ void PoolCompute::PrepareForRun() {
 
     // pool_param.activeParam.type = zynqmp::TYPE_NONE;
 
-    pool_param.type = param.pooling_type == "max" ? zynqmp::PoolingType::MAX
-                                                : zynqmp::PoolingType::AVERAGE;
+    pool_param.type = param.pooling_type == "max"
+                          ? zynqmp::PoolingType::MAX
+                          : zynqmp::PoolingType::AVERAGE;
 
     pool_param.globalPooling = param.global_pooling;
     pool_param.kernelSize = param.ksize;
@@ -74,8 +74,9 @@ void PoolCompute::PrepareForRun() {
 
     // pool_param.activeParam.type = zynqmp::TYPE_NONE;
 
-    pool_param.type = param.pooling_type == "max" ? zynqmp::PoolingType::MAX
-                                                : zynqmp::PoolingType::AVERAGE;
+    pool_param.type = param.pooling_type == "max"
+                          ? zynqmp::PoolingType::MAX
+                          : zynqmp::PoolingType::AVERAGE;
 
     pool_param.globalPooling = param.global_pooling;
     pool_param.kernelSize = param.ksize;
@@ -89,7 +90,6 @@ void PoolCompute::PrepareForRun() {
 }
 
 void PoolCompute::Run() {
-  
   if (split_num_ == 1) {
     zynqmp::PoolingParam& pool_param = pe_.param();
     pe_.dispatch();
@@ -98,12 +98,11 @@ void PoolCompute::Run() {
     zynqmp::PoolingParam& pool_param = split_pe_.param();
   }
 
+// Debugger::get_instance().registerOutput("pooling", pool_param.output);
 
-  // Debugger::get_instance().registerOutput("pooling", pool_param.output);
-  
 #ifdef FPGA_PRINT_TENSOR
-  // zynqmp::PoolingParam& pool_param = pe_.param();
-  // Debugger::get_instance().registerOutput("pooling", pool_param.output);
+// zynqmp::PoolingParam& pool_param = pe_.param();
+// Debugger::get_instance().registerOutput("pooling", pool_param.output);
 #endif
 }
 

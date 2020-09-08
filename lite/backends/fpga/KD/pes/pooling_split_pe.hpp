@@ -14,28 +14,30 @@ limitations under the License. */
 
 #pragma once
 
+#include <algorithm>
+#include <vector>
+
 #include "lite/backends/fpga/KD/pe.hpp"
 #include "lite/backends/fpga/KD/pe_params.hpp"
 #include "lite/backends/fpga/KD/pes/concat_pe.hpp"
 #include "lite/backends/fpga/KD/pes/elementwise_add_pe.hpp"
+#include "lite/backends/fpga/KD/pes/pooling_process.hpp"
 #include "lite/backends/fpga/KD/pes/scale_pe.hpp"
 #include "lite/backends/fpga/KD/pes/split_pe.hpp"
-#include "lite/backends/fpga/KD/pes/pooling_process.hpp"
 
 namespace paddle {
 namespace zynqmp {
 
 class PoolingSplitPE : public PE {
  public:
-
   inline int gcd_(int a, int b) {
-      while (b) {
-        int temp = a;
-        a = b;
-        b = temp % b;
-      }
-      return a;
+    while (b) {
+      int temp = a;
+      a = b;
+      b = temp % b;
     }
+    return a;
+  }
 
   inline int lcm_(int a, int b) { return a * b / gcd_(a, b); }
 
@@ -66,7 +68,7 @@ class PoolingSplitPE : public PE {
     }
 
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
-               (k_width > 255 || k_height > 255); 
+               (k_width > 255 || k_height > 255);
 
     if (use_cpu_) {
       return;
@@ -92,7 +94,6 @@ class PoolingSplitPE : public PE {
       concatPE_.apply();
     }
   }
-
 
   void compute() {
     Tensor* input = param_.input;
@@ -135,7 +136,7 @@ class PoolingSplitPE : public PE {
         for (int c = 0; c < image_channels; ++c) {
           const int pool_index = (ph * pooled_width_ + pw) * image_channels + c;
           float sum = 0;
-       
+
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               const int index = (h * image_width + w) * image_channels + c;
@@ -191,30 +192,40 @@ class PoolingSplitPE : public PE {
       config_global_pool(globalPoolArgs);
     }
     for (auto pooling_param : splitParams_) {
-
       ret |= compute_fpga_pool(pooling_param->poolingArgs);
 
-      float* scale_address = pooling_param->poolingArgs.output.scale_address;  
+      float* scale_address = pooling_param->poolingArgs.output.scale_address;
       output->scale()[0] = scale_address[0];
       output->scale()[1] = scale_address[1];
     }
 
     if (param_.globalPooling) {
-        inplace_.relu_enable = false;
-        inplace_.leaky_relu_enable = false;
-        inplace_.relu6_enable = false;
-        inplace_.sigmoid_enable = false;
-        inplace_.global_pool_en = false;
-        config_inplace(inplace_);
-        globalPoolArgs.global_pool_factor = fp32_2_fp16(1.0f);
-        config_global_pool(globalPoolArgs);
-      }
+      inplace_.relu_enable = false;
+      inplace_.leaky_relu_enable = false;
+      inplace_.relu6_enable = false;
+      inplace_.sigmoid_enable = false;
+      inplace_.global_pool_en = false;
+      config_inplace(inplace_);
+      globalPoolArgs.global_pool_factor = fp32_2_fp16(1.0f);
+      config_global_pool(globalPoolArgs);
+    }
 
     if (splitParams_.size() > 1) {
       concatPE_.dispatch();
     }
 
     return ret;
+  }
+
+  ~PoolingSplitPE() {
+    for (auto pooling_param : splitParams_) {
+      if (splitParams_.size() > 1) {
+        delete pooling_param->input;
+        delete pooling_param->output;
+        delete pooling_param;
+      }
+    }
+    splitParams_.clear();
   }
 
   PoolingParam& param() { return param_; }

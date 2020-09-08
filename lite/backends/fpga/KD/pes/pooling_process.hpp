@@ -22,13 +22,15 @@ limitations under the License. */
 #include <vector>
 
 #include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/tensor.hpp"
 #include "lite/backends/fpga/KD/pe_params.hpp"
+#include "lite/backends/fpga/KD/tensor.hpp"
 
 namespace paddle {
 namespace zynqmp {
 
-inline void pooling_split_channel(PoolingParam& param, std::vector<PoolingParam*>& splitParams) {
+inline void pooling_split_channel(
+    PoolingParam& param,                        // NOLINT
+    std::vector<PoolingParam*>& splitParams) {  // NOLINT
   Tensor* input = param.input;
   Tensor* output = param.output;
   input->syncToCPU();
@@ -39,24 +41,18 @@ inline void pooling_split_channel(PoolingParam& param, std::vector<PoolingParam*
     h_kernel = input->shape().height();
     w_kernel = input->shape().width();
   }
-  
+
   int c = input->shape().channel();
   int w = input->shape().width();
   int wc_h_kernel = w * c * h_kernel;
   int dwconv_limit = 131072;
   int num = ceil(wc_h_kernel * 1.0f / dwconv_limit);
 
-  // std::cout << "pooling_split_channel:" << num << std::endl;
-  while (input->shape().channel() % num != 0 ) {
+  while (input->shape().channel() % num != 0) {
     num++;
   }
- 
+
   int channel = ceil(input->shape().channel() * 1.0f / num);
-  // std::cout << "pooling_split_channel:" << channel << "," <<  num << std::endl;
-  // if (channel % 16 != 0) {
-  //   std::cout << "input channel must div by 16" << std::endl;
-  //   // throw -1;
-  // }
 
   float16* output_address = nullptr;
   float16* input_address = nullptr;
@@ -66,29 +62,33 @@ inline void pooling_split_channel(PoolingParam& param, std::vector<PoolingParam*
     PoolingParam* pooling_param = new PoolingParam();
 
     // input && output;
-    Shape in_shape(NCHW, {1, channel, input->shape().height(), input->shape().width()});
-    Shape out_shape(NCHW, {1, channel, output->shape().height(), output->shape().width()});
+    Shape in_shape(
+        NCHW, {1, channel, input->shape().height(), input->shape().width()});
+    Shape out_shape(
+        NCHW, {1, channel, output->shape().height(), output->shape().width()});
     if (num == 1) {
       pooling_param->input = input;
       pooling_param->output = output;
-      input_address = input->data<float16>();   
-      output_address = output->data<float16>(); 
-      out_scale_address = output->scale();  
+      input_address = input->data<float16>();
+      output_address = output->data<float16>();
+      out_scale_address = output->scale();
     } else {
       pooling_param->input = new Tensor();
       pooling_param->output = new Tensor();
-      input_address =  pooling_param->input->mutableData<float16>(FP16, in_shape);   
-      output_address = pooling_param->output->mutableData<float16>(FP16, out_shape);
+      input_address =
+          pooling_param->input->mutableData<float16>(FP16, in_shape);
+      output_address =
+          pooling_param->output->mutableData<float16>(FP16, out_shape);
       out_scale_address = pooling_param->output->scale();
     }
-    
+
     PoolingArgs& args = pooling_param->poolingArgs;
     args.mode = param.type;
     args.kernel_reciprocal = fp32_2_fp16(1.0f / (w_kernel * h_kernel));
     if (param.globalPooling) {
       args.kernel_reciprocal = fp32_2_fp16(1.0f);
     }
-    
+
     args.image.address = input_address;
     args.image.channels = channel;
     args.image.height = input->shape().height();
@@ -105,7 +105,6 @@ inline void pooling_split_channel(PoolingParam& param, std::vector<PoolingParam*
     args.out_height = output->shape().height();
     args.out_width = output->shape().width();
     splitParams.push_back(pooling_param);
-
   }
 }
 
