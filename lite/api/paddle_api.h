@@ -118,7 +118,7 @@ class LITE_API PaddlePredictor {
       LiteModelType model_type = LiteModelType::kProtobuf,
       bool record_info = false);
 
-  virtual ~PaddlePredictor() = default;
+  virtual ~PaddlePredictor();
 
  protected:
   int threads_{1};

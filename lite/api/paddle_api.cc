@@ -237,6 +237,10 @@ void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir,
       << "The SaveOptimizedModel API is only supported by CxxConfig predictor.";
 }
 
+PaddlePredictor::~PaddlePredictor() {
+  lite::DeviceInfo::Global().CleanWorkspace();
+}
+
 template <typename ConfigT>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
   return std::shared_ptr<PaddlePredictor>();
