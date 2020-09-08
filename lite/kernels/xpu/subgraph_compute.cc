@@ -27,18 +27,6 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-bool SubgraphEngine::PrepareWorkspaceForDeviceProgram() {
-  // Obtain the origin input tensors, and create the origin output
-  // tensors(Don't try to access them before launch the device program or the
-  // origin program)
-  PrepareWorkspaceForOriginProgram();
-  // Create the device input and output tensors, but don't initialize them
-  // with the dimensions
-  device_itensors_.resize(input_names_.size());
-  device_otensors_.resize(output_names_.size());
-  return true;
-}
-
 bool SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
   if (!origin_program_) {
@@ -74,10 +62,16 @@ bool SubgraphEngine::BuildDeviceProgram() {
     CHECK(graph.Get(input_names_[i])->is_data());
     device_inodes.push_back(graph.Get(input_names_[i])->data().get());
   }
+  std::vector<std::string> valid_output_names;
   for (size_t i = 0; i < output_names_.size(); i++) {
-    CHECK(graph.Has(output_names_[i]));
-    device_onodes.push_back(graph.Get(output_names_[i])->data().get());
+    if (graph.Has(output_names_[i])) {
+      device_onodes.push_back(graph.Get(output_names_[i])->data().get());
+      valid_output_names.push_back(output_names_[i]);
+    }
   }
+  // update output_names_ because some outputs may be useless
+  output_names_ = valid_output_names;
+  CHECK_GT(output_names_.size(), 0);
   // Build the XPU IR graph to the XPU runtime for inference
   device_program_ = lite::xpu::Device::Global().Build(
       &graph.builder_, &graph.params_, &device_onodes);
@@ -93,8 +87,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
   }
 
   // Query and check the dimensions of input and output tensors
-  CHECK_EQ(device_itensors_.size(), input_names_.size());
-  CHECK_EQ(device_otensors_.size(), output_names_.size());
+  device_itensors_.resize(input_names_.size());
+  device_otensors_.resize(output_names_.size());
   for (size_t i = 0; i < input_names_.size(); i++) {
     VLOG(3) << "[XPU] Inputs[" << i << "] name: " << input_names_[i]
             << " dims: " << DDim(origin_idims_[i]).repr();
