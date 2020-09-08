@@ -14,7 +14,12 @@
 
 #pragma once
 
-#include "lite/utils/any.h"
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/context.h"
 #endif
@@ -31,18 +36,13 @@
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #endif
-
-#include <map>
-#include <memory>
-#include <set>
-#include <string>
-#include <utility>
-#include <vector>
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/all.h"
+#include "lite/utils/any.h"
 #include "lite/utils/env.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -181,7 +181,7 @@ class Context<TargetType::kXPU> {
   std::string name() const { return "XPUContext"; }
 
  private:
-  static ATTRIBUTE_TLS xdnn::Context* _tls_raw_ctx;
+  static LITE_THREAD_LOCAL xdnn::Context* _tls_raw_ctx;
   static int _workspace_l3_size_per_thread;
 };
 #endif

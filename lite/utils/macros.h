@@ -54,9 +54,13 @@
 #define FLT_MAX __FLT_MAX__
 #endif  // __FLT_MAX__
 
-#define ATTRIBUTE_TLS
+#if (defined __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) && \
+    (__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 90000)
+// Thread local storage will be ignored because the linker for iOS 8 does not
+// support it.
+#define LITE_THREAD_LOCAL
 #elif __cplusplus >= 201103
-#define ATTRIBUTE_TLS thread_local
+#define LITE_THREAD_LOCAL thread_local
 #else
 #error "C++11 support is required for paddle-lite compilation."
 #endif

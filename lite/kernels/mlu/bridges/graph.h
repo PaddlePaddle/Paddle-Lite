@@ -22,6 +22,7 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/mlu/bridges/tensor.h"
+#include "lite/utils/macros.h"
 
 #define PRINT_HW_TIME false
 
@@ -113,7 +114,7 @@ class Graph {
 
   void Compute(cnrtInvokeFuncParam_t forward_param, cnrtQueue_t que) {
 #if PRINT_HW_TIME
-    static ATTRIBUTE_TLS float hw_time;
+    static LITE_THREAD_LOCAL float hw_time;
     CNRT_CALL(cnrtPlaceNotifier(notifier_start_, que));
 #endif
     CNML_CALL(cnmlComputeFusionOpForward_V3(fusion_op_,

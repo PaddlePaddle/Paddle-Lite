@@ -59,20 +59,20 @@ namespace paddle {
 namespace lite {
 
 #if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
-ATTRIBUTE_TLS lite_api::PowerMode DeviceInfo::mode_;
-ATTRIBUTE_TLS ARMArch DeviceInfo::arch_;
-ATTRIBUTE_TLS int DeviceInfo::mem_size_;
-ATTRIBUTE_TLS std::vector<int> DeviceInfo::active_ids_;
-ATTRIBUTE_TLS TensorLite DeviceInfo::workspace_;
-ATTRIBUTE_TLS int64_t DeviceInfo::count_ = 0;
+LITE_THREAD_LOCAL lite_api::PowerMode DeviceInfo::mode_;
+LITE_THREAD_LOCAL ARMArch DeviceInfo::arch_;
+LITE_THREAD_LOCAL int DeviceInfo::mem_size_;
+LITE_THREAD_LOCAL std::vector<int> DeviceInfo::active_ids_;
+LITE_THREAD_LOCAL TensorLite DeviceInfo::workspace_;
+LITE_THREAD_LOCAL int64_t DeviceInfo::count_ = 0;
 
 #ifdef LITE_WITH_MLU
-ATTRIBUTE_TLS cnmlCoreVersion_t DeviceInfo::mlu_core_version_{CNML_MLU270};
-ATTRIBUTE_TLS int DeviceInfo::mlu_core_number_{1};
-ATTRIBUTE_TLS bool DeviceInfo::use_first_conv_{false};
-ATTRIBUTE_TLS std::vector<float> DeviceInfo::mean_vec_;
-ATTRIBUTE_TLS std::vector<float> DeviceInfo::std_vec_;
-ATTRIBUTE_TLS DataLayoutType DeviceInfo::input_layout_{DATALAYOUT(kNCHW)};
+LITE_THREAD_LOCAL cnmlCoreVersion_t DeviceInfo::mlu_core_version_{CNML_MLU270};
+LITE_THREAD_LOCAL int DeviceInfo::mlu_core_number_{1};
+LITE_THREAD_LOCAL bool DeviceInfo::use_first_conv_{false};
+LITE_THREAD_LOCAL std::vector<float> DeviceInfo::mean_vec_;
+LITE_THREAD_LOCAL std::vector<float> DeviceInfo::std_vec_;
+LITE_THREAD_LOCAL DataLayoutType DeviceInfo::input_layout_{DATALAYOUT(kNCHW)};
 #endif
 
 #ifdef TARGET_IOS
