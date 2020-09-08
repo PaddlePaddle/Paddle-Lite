@@ -67,10 +67,10 @@ REGISTER_LITE_KERNEL(uniform_random,
                      def)
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                              PRECISION(kAny),
-                                              DATALAYOUT(kAny))})
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                              PRECISION(kAny),
-                                              DATALAYOUT(kAny))})
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
