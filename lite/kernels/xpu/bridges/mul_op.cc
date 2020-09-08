@@ -15,6 +15,7 @@
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/utility.h"
+
 namespace paddle {
 namespace lite {
 namespace subgraph {
