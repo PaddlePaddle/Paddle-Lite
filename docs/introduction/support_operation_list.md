@@ -93,20 +93,7 @@
 附加算子共计126个，需要在编译时打开`--build_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
 
 | OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU |
-|-|-|-|-|-|-|-|-|-|-|-|
-| __xpu__conv2d | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__embedding_with_eltwise_add | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__fc | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__mmdnn_bid_emb_att | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__mmdnn_bid_emb_grnn_att | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__mmdnn_bid_emb_grnn_att2 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__mmdnn_match_conv_topk | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__mmdnn_merge_all | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__mmdnn_search_attention | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__multi_encoder | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__resnet_cbam | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__resnet50 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
-| __xpu__sfa_head | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+|-:|-|-|-|-|-|-|-|-|-|-|
 | abs | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |
 | anchor_generator | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
 | assign | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
@@ -220,3 +207,16 @@
 | where_index | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | while | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | write_to_array | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| __xpu__conv2d | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__embedding_with_eltwise_add | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__fc | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_bid_emb_att | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_bid_emb_grnn_att | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_bid_emb_grnn_att2 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_match_conv_topk | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_merge_all | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_search_attention | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__multi_encoder | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__resnet_cbam | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__resnet50 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__sfa_head | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
