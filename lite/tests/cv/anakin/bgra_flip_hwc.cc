@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/tests/cv/anakin/cv_utils.h"
+
 void flip_x_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
 
 void flip_y_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
@@ -45,9 +46,9 @@ bgr1 bgr2 bgr3
 void flip_x_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int h = h_in - 1;
   int win = w_in * 4;
-  uint8_t zerobuff[win];
+  uint8_t zerobuff[win];  // NOLINT
   memset(zerobuff, 0, win * sizeof(uint8_t));
-  uint8_t zerobuff2[win];
+  uint8_t zerobuff2[win];  // NOLINT
   memset(zerobuff2, 0, win * sizeof(uint8_t));
   for (int i = 0; i < h_in; i += 4) {
     const uint8_t* inptr0 = src + i * win;
@@ -207,9 +208,9 @@ void flip_x_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
 void flip_x_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   // uint8_t zerobuff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   int win = w_in * 4;
-  uint8_t zerobuff[win];
+  uint8_t zerobuff[win];  // NOLINT
   memset(zerobuff, 0, win * sizeof(uint8_t));
-  uint8_t zerobuff2[win];
+  uint8_t zerobuff2[win];  // NOLINT
   memset(zerobuff2, 0, win * sizeof(uint8_t));
   int h = h_in - 1;
   // 4*8
@@ -351,9 +352,9 @@ void flip_y_hwc_bgra(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   // uint8_t zerobuff[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     //                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   int w_in = w * 4;
-  uint8_t zerobuff[w_in];
+  uint8_t zerobuff[w_in];  // NOLINT
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
-  uint8_t zerobuff2[w_in];
+  uint8_t zerobuff2[w_in];  // NOLINT
   memset(zerobuff2, 0, w_in * sizeof(uint8_t));
   int stride_w = 32;
   for (int i = 0; i < h_in; i += 4) {
@@ -574,9 +575,9 @@ void flip_y_hwc_bgra(const uint8_t* src, uint8_t* dst, int w, int h_in) {
 #else
 void flip_y_hwc_bgra(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int w_in = w * 4;
-  uint8_t zerobuff[w_in];
+  uint8_t zerobuff[w_in];  // NOLINT
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
-  uint8_t zerobuff2[w_in];
+  uint8_t zerobuff2[w_in];  // NOLINT
   memset(zerobuff2, 0, w_in * sizeof(uint8_t));
   int stride_w = 32;
   // 4*8
@@ -766,9 +767,9 @@ bgr3 bgr2 bgr1
 void flip_xy_hwc_bgra(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int stride_w = 32;
   int w_in = w * 4;
-  uint8_t zerobuff[w_in];
+  uint8_t zerobuff[w_in];  // NOLINT
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
-  uint8_t zerobuff2[w_in];
+  uint8_t zerobuff2[w_in];  // NOLINT
   memset(zerobuff2, 0, w_in * sizeof(uint8_t));
   for (int i = 0; i < h_in; i += 4) {
     const uint8_t* inptr0 = src + i * w_in;
@@ -986,9 +987,9 @@ void flip_xy_hwc_bgra(const uint8_t* src, uint8_t* dst, int w, int h_in) {
 #else
 void flip_xy_hwc_bgra(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int w_in = w * 4;
-  uint8_t zerobuff[w_in];
+  uint8_t zerobuff[w_in];  // NOLINT
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
-  uint8_t zerobuff2[w_in];
+  uint8_t zerobuff2[w_in];  // NOLINT
   memset(zerobuff2, 0, w_in * sizeof(uint8_t));
   int stride_w = 32;
   // 4*8

@@ -27,8 +27,8 @@ ga = 0.34414 * 64 = 44.3721 = 44
 gb = 0.71414 * 64 = 91.40992 = 91
 ba = 1.772 * 62 = 226.816 = 227
 */
-// yuv  store hwc bgrabgra dsth * dstw = srch * srcw y_w = srcw, y_h = srch uv_w
-// = srcw uv_h = 1/2 * srch
+// yuv  store hwc bgrabgra dsth * dstw = srch * srcw y_w = srcw
+// y_h = srch uv_w = srcw uv_h = 1/2 * srch
 void nv12_to_bgra(const unsigned char* src,
                   unsigned char* dst,
                   int srcw,

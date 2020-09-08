@@ -15,6 +15,7 @@
 #include <limits.h>
 #include <math.h>
 #include "lite/tests/cv/anakin/cv_utils.h"
+
 void resize_four_channel(
     const uint8_t* src, int w_in, int h_in, uint8_t* dst, int w_out, int h_out);
 void bgra_resize(const uint8_t* src,
@@ -38,23 +39,25 @@ void resize_four_channel(const uint8_t* src,
                          int h_out) {
   const int resize_coef_bits = 11;
   const int resize_coef_scale = 1 << resize_coef_bits;
-  double scale_x = (double)w_in / w_out;
-  double scale_y = (double)h_in / h_out;
+  double scale_x = static_cast<double>(w_in) / w_out;
+  double scale_y = static_cast<double>(h_in) / h_out;
   int* buf = new int[w_out * 2 + h_out * 2];
-  int* xofs = buf;                                   // new int[w];
-  int* yofs = buf + w_out;                           // new int[h];
-  short* ialpha = (short*)(buf + w_out + h_out);     // new short[w * 2];
-  short* ibeta = (short*)(buf + w_out * 2 + h_out);  // new short[h * 2];
+  int* xofs = buf;          // new int[w];
+  int* yofs = buf + w_out;  // new int[h];
+  int16_t* ialpha =
+      reinterpret_cast<int16_t*>(buf + w_out + h_out);  // new int16_t[w * 2];
+  int16_t* ibeta = reinterpret_cast<int16_t*>(buf + w_out * 2 +
+                                              h_out);  // new int16_t[h * 2];
   float fx = 0.f;
   float fy = 0.f;
   int sx = 0.f;
   int sy = 0.f;
-#define SATURATE_CAST_SHORT(X) \
-  (short)::std::min(           \
-      ::std::max((int)(X + (X >= 0.f ? 0.5f : -0.5f)), SHRT_MIN), SHRT_MAX);
-  // #pragma omp parallel for
+#define SATURATE_CAST_int16_t(X)                                             \
+  (int16_t)::std::min(                                                       \
+      ::std::max(static_cast<int>(X + (X >= 0.f ? 0.5f : -0.5f)), SHRT_MIN), \
+      SHRT_MAX);
   for (int dx = 0; dx < w_out / 4; dx++) {
-    fx = (float)((dx + 0.5) * scale_x - 0.5);
+    fx = static_cast<float>((dx + 0.5) * scale_x - 0.5);
     sx = floor(fx);
     fx -= sx;
     if (sx < 0) {
@@ -68,12 +71,11 @@ void resize_four_channel(const uint8_t* src,
     xofs[dx] = sx * 4;
     float a0 = (1.f - fx) * resize_coef_scale;
     float a1 = fx * resize_coef_scale;
-    ialpha[dx * 2] = SATURATE_CAST_SHORT(a0);
-    ialpha[dx * 2 + 1] = SATURATE_CAST_SHORT(a1);
+    ialpha[dx * 2] = SATURATE_CAST_int16_t(a0);
+    ialpha[dx * 2 + 1] = SATURATE_CAST_int16_t(a1);
   }
-  // #pragma omp parallel for
   for (int dy = 0; dy < h_out; dy++) {
-    fy = (float)((dy + 0.5) * scale_y - 0.5);
+    fy = static_cast<float>((dy + 0.5) * scale_y - 0.5);
     sy = floor(fy);
     fy -= sy;
     if (sy < 0) {
@@ -87,30 +89,30 @@ void resize_four_channel(const uint8_t* src,
     yofs[dy] = sy;
     float b0 = (1.f - fy) * resize_coef_scale;
     float b1 = fy * resize_coef_scale;
-    ibeta[dy * 2] = SATURATE_CAST_SHORT(b0);
-    ibeta[dy * 2 + 1] = SATURATE_CAST_SHORT(b1);
+    ibeta[dy * 2] = SATURATE_CAST_int16_t(b0);
+    ibeta[dy * 2 + 1] = SATURATE_CAST_int16_t(b1);
   }
-#undef SATURATE_CAST_SHORT
+#undef SATURATE_CAST_int16_t
   // loop body
-  short* rowsbuf0 = new short[w_out + 1];
-  short* rowsbuf1 = new short[w_out + 1];
-  short* rows0 = rowsbuf0;
-  short* rows1 = rowsbuf1;
+  int16_t* rowsbuf0 = new int16_t[w_out + 1];
+  int16_t* rowsbuf1 = new int16_t[w_out + 1];
+  int16_t* rows0 = rowsbuf0;
+  int16_t* rows1 = rowsbuf1;
   int prev_sy1 = -1;
   for (int dy = 0; dy < h_out; dy++) {
     int sy = yofs[dy];
     if (sy == prev_sy1) {
       // hresize one row
-      short* rows0_old = rows0;
+      int16_t* rows0_old = rows0;
       rows0 = rows1;
       rows1 = rows0_old;
       const uint8_t* S1 = src + w_in * (sy + 1);
-      const short* ialphap = ialpha;
-      short* rows1p = rows1;
+      const int16_t* ialphap = ialpha;
+      int16_t* rows1p = rows1;
       for (int dx = 0; dx < w_out / 4; dx++) {
         int sx = xofs[dx];
-        short a0 = ialphap[0];
-        short a1 = ialphap[1];
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
         const uint8_t* S1p = S1 + sx;
         int tmp = dx * 4;
         rows1p[tmp] = (S1p[0] * a0 + S1p[4] * a1) >> 4;
@@ -123,13 +125,13 @@ void resize_four_channel(const uint8_t* src,
       // hresize two rows
       const uint8_t* S0 = src + w_in * (sy);
       const uint8_t* S1 = src + w_in * (sy + 1);
-      const short* ialphap = ialpha;
-      short* rows0p = rows0;
-      short* rows1p = rows1;
+      const int16_t* ialphap = ialpha;
+      int16_t* rows0p = rows0;
+      int16_t* rows1p = rows1;
       for (int dx = 0; dx < w_out / 4; dx++) {
         int sx = xofs[dx];
-        short a0 = ialphap[0];
-        short a1 = ialphap[1];
+        int16_t a0 = ialphap[0];
+        int16_t a1 = ialphap[1];
         const uint8_t* S0p = S0 + sx;
         const uint8_t* S1p = S1 + sx;
         int tmp = dx * 4;
@@ -146,10 +148,10 @@ void resize_four_channel(const uint8_t* src,
     }
     prev_sy1 = sy + 1;
     // vresize
-    short b0 = ibeta[0];
-    short b1 = ibeta[1];
-    short* rows0p = rows0;
-    short* rows1p = rows1;
+    int16_t b0 = ibeta[0];
+    int16_t b1 = ibeta[1];
+    int16_t* rows0p = rows0;
+    int16_t* rows1p = rows1;
     uint8_t* dp_ptr = dst + w_out * (dy);
     int cnt = w_out >> 3;
     int remain = w_out - (cnt << 3);
@@ -185,9 +187,10 @@ void resize_four_channel(const uint8_t* src,
 #endif  // __aarch64__
     for (; remain; --remain) {
       // D[x] = (rows0[x]*b0 + rows1[x]*b1) >> INTER_RESIZE_COEF_BITS;
-      *dp_ptr++ = (uint8_t)(((short)((b0 * (short)(*rows0p++)) >> 16) +
-                             (short)((b1 * (short)(*rows1p++)) >> 16) + 2) >>
-                            2);
+      *dp_ptr++ =
+          (uint8_t)(((int16_t)((b0 * (int16_t)(*rows0p++)) >> 16) +
+                     (int16_t)((b1 * (int16_t)(*rows1p++)) >> 16) + 2) >>
+                    2);
     }
     ibeta += 2;
   }

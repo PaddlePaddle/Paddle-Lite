@@ -72,12 +72,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageConvert(
     int srcw,
     int srch) {
   ImageConvert img_convert;
-  img_convert.choose(src,
-                     dst,
-                     srcFormat,
-                     dstFormat,
-                     srcw,
-                     srch);
+  img_convert.choose(src, dst, srcFormat, dstFormat, srcw, srch);
 }
 
 __attribute__((visibility("default"))) void ImagePreprocess::imageResize(

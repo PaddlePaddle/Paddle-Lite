@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include "lite/tests/cv/anakin/cv_utils.h"
+
 void bgra_to_tensor_hwc(const uint8_t* bgr,
-                        Tensor& output,
+                        Tensor& output,  // NOLINT
                         int width,
                         int height,
                         float* means,
@@ -28,9 +29,8 @@ void bgra_to_tensor_hwc(const uint8_t* bgr,
   float g_scales = scales[1];
   float b_scales = scales[2];
 
-  int w = width;  //(width / 3);
-  int dim8 = w >> 3;
-  int remain = w - (dim8 << 3);
+  int dim8 = width >> 3;
+  int remain = wwidth - (dim8 << 3);
 
   float32x4_t vrmean = vdupq_n_f32(r_means);
   float32x4_t vgmean = vdupq_n_f32(g_means);
@@ -112,12 +112,12 @@ void bgra_to_tensor_hwc(const uint8_t* bgr,
 
     for (int j = 0; j < remain; j++) {
       *ptr0_b++ = (*ptr_bgr - b_means) * b_scales;
-      *ptr_bgr++;
+      ptr_bgr++;
       *ptr1_g++ = (*ptr_bgr - g_means) * g_scales;
-      *ptr_bgr++;
+      ptr_bgr++;
       *ptr2_r++ = (*ptr_bgr - r_means) * r_scales;
-      *ptr_bgr++;
-      *ptr_bgr++;
+      ptr_bgr++;
+      ptr_bgr++;
     }
   }
 }

@@ -27,6 +27,7 @@ void rotate(const uint8_t* src, uint8_t* dst, int srcw, int srch, int angle);
 
 void bgr_rotate_hwc(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, int angle);
+
 void bgra_rotate_hwc(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, int angle);
 
@@ -46,6 +47,7 @@ void nv21_resize(
 
 void bgr_resize(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, int dstw, int dsth);
+
 void bgra_resize(
     const uint8_t* src, uint8_t* dst, int srcw, int srch, int dstw, int dsth);
 
@@ -67,7 +69,7 @@ void nv12_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch);
 
 // bgr output.w == width output.h == height/3
 void bgr_to_tensor_hcw(const uint8_t* bgr,
-                       Tensor& output,
+                       Tensor& output,  // NOLINT
                        int width,
                        int height,
                        float* means,
@@ -75,7 +77,7 @@ void bgr_to_tensor_hcw(const uint8_t* bgr,
 
 // bgr output.w == width / 3 output.h == height
 void bgr_to_tensor_hwc(const uint8_t* bgr,
-                       Tensor& output,
+                       Tensor& output,  // NOLINT
                        int width,
                        int height,
                        float* means,
@@ -83,7 +85,7 @@ void bgr_to_tensor_hwc(const uint8_t* bgr,
 
 // bgra output.w == width / 4 output.h == height
 void bgra_to_tensor_hwc(const uint8_t* bgr,
-                        Tensor& output,
+                        Tensor& output,  // NOLINT
                         int width,
                         int height,
                         float* means,
@@ -91,7 +93,7 @@ void bgra_to_tensor_hwc(const uint8_t* bgr,
 
 // yvu   y_w = width, y_h = height uv_w = width uv_h = 1/2 * height
 void nv21_to_tensor(const uint8_t* nv21,
-                    Tensor& output,
+                    Tensor& output,  // NOLINT
                     int width,
                     int height,
                     float* means,
@@ -99,7 +101,7 @@ void nv21_to_tensor(const uint8_t* nv21,
 
 // yuv  y_w = width, y_h = height uv_w = width uv_h = 1/2 * height
 void nv12_to_tensor(const uint8_t* nv12,
-                    Tensor& output,
+                    Tensor& output,  // NOLINT
                     int width,
                     int height,
                     float* means,

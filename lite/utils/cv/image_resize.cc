@@ -662,7 +662,7 @@ void resize_four_channel(const uint8_t* src,
                          int h_in,
                          uint8_t* dst,
                          int w_out,
-                         int h_out){
+                         int h_out) {
   const int resize_coef_bits = 11;
   const int resize_coef_scale = 1 << resize_coef_bits;
   double scale_x = static_cast<double>(w_in) / w_out;
@@ -682,21 +682,21 @@ void resize_four_channel(const uint8_t* src,
   (int16_t)::std::min(                                                       \
       ::std::max(static_cast<int>(X + (X >= 0.f ? 0.5f : -0.5f)), SHRT_MIN), \
       SHRT_MAX);
-  for (int dx = 0; dx < w_out / 4; dx++){
+  for (int dx = 0; dx < w_out / 4; dx++) {
     fx = static_cast<float>((dx + 0.5) * scale_x - 0.5);
     sx = floor(fx);
     fx -= sx;
-    if (sx < 0){
+    if (sx < 0) {
       sx = 0;
       fx = 0.f;
     }
-    if (sx >= w_in - 1){
+    if (sx >= w_in - 1) {
       sx = w_in - 2;
       fx = 1.f;
     }
     xofs[dx] = sx * 4;
     float a0 = (1.f - fx) * resize_coef_scale;
-    float a1 =        fx  * resize_coef_scale;
+    float a1 = fx * resize_coef_scale;
     ialpha[dx * 2] = SATURATE_CAST_SHORT(a0);
     ialpha[dx * 2 + 1] = SATURATE_CAST_SHORT(a1);
   }
@@ -704,17 +704,17 @@ void resize_four_channel(const uint8_t* src,
     fy = static_cast<float>((dy + 0.5) * scale_y - 0.5);
     sy = floor(fy);
     fy -= sy;
-    if (sy < 0){
+    if (sy < 0) {
       sy = 0;
       fy = 0.f;
     }
-    if (sy >= h_in - 1){
+    if (sy >= h_in - 1) {
       sy = h_in - 2;
       fy = 1.f;
     }
     yofs[dy] = sy;
     float b0 = (1.f - fy) * resize_coef_scale;
-    float b1 =        fy  * resize_coef_scale;
+    float b1 = fy * resize_coef_scale;
     ibeta[dy * 2] = SATURATE_CAST_SHORT(b0);
     ibeta[dy * 2 + 1] = SATURATE_CAST_SHORT(b1);
   }
@@ -725,17 +725,17 @@ void resize_four_channel(const uint8_t* src,
   int16_t* rows0 = rowsbuf0;
   int16_t* rows1 = rowsbuf1;
   int prev_sy1 = -1;
-  for (int dy = 0; dy < h_out; dy++){
+  for (int dy = 0; dy < h_out; dy++) {
     int sy = yofs[dy];
-    if (sy == prev_sy1){
+    if (sy == prev_sy1) {
       // hresize one row
       int16_t* rows0_old = rows0;
       rows0 = rows1;
       rows1 = rows0_old;
-      const uint8_t *S1 = src + w_in * (sy + 1);
+      const uint8_t* S1 = src + w_in * (sy + 1);
       const int16_t* ialphap = ialpha;
       int16_t* rows1p = rows1;
-      for (int dx = 0; dx < w_out / 4; dx++){
+      for (int dx = 0; dx < w_out / 4; dx++) {
         int sx = xofs[dx];
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];
@@ -747,14 +747,14 @@ void resize_four_channel(const uint8_t* src,
         rows1p[tmp + 3] = (S1p[3] * a0 + S1p[7] * a1) >> 4;
         ialphap += 2;
       }
-    }else{
+    } else {
       // hresize two rows
-      const uint8_t *S0 = src + w_in * (sy);
-      const uint8_t *S1 = src + w_in * (sy + 1);
+      const uint8_t* S0 = src + w_in * (sy);
+      const uint8_t* S1 = src + w_in * (sy + 1);
       const int16_t* ialphap = ialpha;
       int16_t* rows0p = rows0;
       int16_t* rows1p = rows1;
-      for (int dx = 0; dx < w_out / 4; dx++){
+      for (int dx = 0; dx < w_out / 4; dx++) {
         int sx = xofs[dx];
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];
@@ -784,7 +784,7 @@ void resize_four_channel(const uint8_t* src,
     int16x4_t _b0 = vdup_n_s16(b0);
     int16x4_t _b1 = vdup_n_s16(b1);
     int32x4_t _v2 = vdupq_n_s32(2);
-    for (cnt = w_out >> 3; cnt > 0; cnt--){
+    for (cnt = w_out >> 3; cnt > 0; cnt--) {
       int16x4_t _rows0p_sr4 = vld1_s16(rows0p);
       int16x4_t _rows1p_sr4 = vld1_s16(rows1p);
       int16x4_t _rows0p_1_sr4 = vld1_s16(rows0p + 4);
@@ -809,7 +809,7 @@ void resize_four_channel(const uint8_t* src,
       rows0p += 8;
       rows1p += 8;
     }
-    for (; remain; --remain){
+    for (; remain; --remain) {
       // D[x] = (rows0[x]*b0 + rows1[x]*b1) >> INTER_RESIZE_COEF_BITS;
       *dp_ptr++ =
           (uint8_t)(((int16_t)((b0 * (int16_t)(*rows0p++)) >> 16) +
@@ -1085,4 +1085,3 @@ void compute_xy(int srcw,
 }  // namespace utils
 }  // namespace lite
 }  // namespace paddle
-

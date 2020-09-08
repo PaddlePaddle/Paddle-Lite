@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include "lite/tests/cv/anakin/cv_utils.h"
+
 void bgr_to_tensor_hwc(const uint8_t* bgr,
-                       Tensor& output,
+                       Tensor& output,  // NOLINT
                        int width,
                        int height,
                        float* means,
@@ -103,12 +104,12 @@ void bgr_to_tensor_hwc(const uint8_t* bgr,
     }
 
     for (int j = 0; j < remain; j++) {
-      *ptr0_b++ = (*ptr_bgr - b_means) * b_scales;
-      *ptr_bgr++;
-      *ptr1_g++ = (*ptr_bgr - g_means) * g_scales;
-      *ptr_bgr++;
-      *ptr2_r++ = (*ptr_bgr - r_means) * r_scales;
-      *ptr_bgr++;
+      *ptr0_b++ = (*ptr_bgr - b_means) * b_scales;  // NOLINT
+      ptr_bgr++;
+      *ptr1_g++ = (*ptr_bgr - g_means) * g_scales;  // NOLINT
+      ptr_bgr++;
+      *ptr2_r++ = (*ptr_bgr - r_means) * r_scales;  // NOLINT
+      ptr_bgr++;
     }
   }
 }

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/tests/cv/anakin/cv_utils.h"
+
 void rotate90_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
 
 void rotate270_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
@@ -604,7 +605,7 @@ bgr2 bgr5 bgr8
 bgr1 bgr4 bgr7
 */
 // dst = (h_out - 1) * w_out
-//类似rotate90，将输出结果倒着输出 或者先rotate90,然后沿Y轴翻转
+// 类似rotate90，将输出结果倒着输出 或者先rotate90,然后沿Y轴翻转
 #ifdef __aarch64__
 void rotate270_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int w_out = h_in;
@@ -1120,7 +1121,7 @@ void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   // uint8_t zerobuff[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     //                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   int w_in = w * 3;
-  uint8_t zerobuff[w_in];
+  uint8_t zerobuff[w_in];  // NOLINT
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
   int stride_w = 24;
   for (int i = 0; i < h_in; i += 4) {
@@ -1317,7 +1318,7 @@ void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
 #else
 void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int w_in = w * 3;
-  uint8_t zerobuff[w_in];
+  uint8_t zerobuff[w_in];  // NOLINT
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
   int stride_w = 24;
   // 4*8

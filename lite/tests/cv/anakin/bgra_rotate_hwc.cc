@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/tests/cv/anakin/cv_utils.h"
+
 void rotate90_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
 
 void rotate270_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in);
@@ -185,7 +186,7 @@ bgr2 bgr5 bgr8
 bgr1 bgr4 bgr7
 */
 // dst = (h_out - 1) * w_out
-//类似rotate90，将输出结果倒着输出 或者先rotate90,然后沿Y轴翻转
+// 类似rotate90，将输出结果倒着输出 或者先rotate90,然后沿Y轴翻转
 
 void rotate270_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int w_out = h_in;
@@ -333,7 +334,7 @@ bgr3 bgr2 bgr1
 // filp y
 void rotate180_hwc_bgra(const uint8_t* src, uint8_t* dst, int w, int h_in) {
   int w_in = w * 4;
-  uint8_t zerobuff[w_in];
+  uint8_t zerobuff[w_in];  // NOLINT
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
   int stride_w = 4;
   // 4*8

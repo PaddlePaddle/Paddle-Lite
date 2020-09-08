@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/tests/cv/anakin/cv_utils.h"
+
 void image_basic_convert(const uint8_t* src,
                          uint8_t* dst,
                          ImageFormat srcFormat,
@@ -76,7 +77,8 @@ void image_basic_resize(const uint8_t* src,
                srcFormat == ImageFormat::RGBA) {
       bgra_resize(src, dst, srcw, srch, dstw, dsth);
     } else {
-      printf("anakin doesn't support this type: %d\n", (int)srcFormat);
+      printf("anakin doesn't support this type: %d\n",
+             static_cast<int>(srcFormat));
     }
   }
 }
@@ -99,7 +101,8 @@ void image_basic_flip(const uint8_t* src,
   } else if (srcFormat == ImageFormat::BGRA || srcFormat == ImageFormat::RGBA) {
     bgra_flip_hwc(src, dst, srcw, srch, flip_num);
   } else {
-    printf("anakin doesn't support this type: %d\n", (int)srcFormat);
+    printf("anakin doesn't support this type: %d\n",
+           static_cast<int>(srcFormat));
   }
 }
 
@@ -114,7 +117,8 @@ void image_basic_rotate(const uint8_t* src,
   } else if (srcFormat == ImageFormat::BGRA || srcFormat == ImageFormat::RGBA) {
     bgra_rotate_hwc(src, dst, srcw, srch, rotate_num);
   } else {
-    printf("anakin doesn't support this type: %d\n", (int)srcFormat);
+    printf("anakin doesn't support this type: %d\n",
+           static_cast<int>(srcFormat));
   }
 }
 
@@ -133,6 +137,7 @@ void image_basic_to_tensor(const uint8_t* in_data,
                                              srcFormat == ImageFormat::RGBA)) {
     bgra_to_tensor_hwc(in_data, dst, srcw, srch, means, scales);
   } else {
-    printf("anakin doesn't support this type: %d\n", (int)srcFormat);
+    printf("anakin doesn't support this type: %d\n",
+           static_cast<int>(srcFormat));
   }
 }

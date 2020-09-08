@@ -18,8 +18,8 @@
 #include <random>
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
-#include "lite/tests/utils/tensor_utils.h"
 #include "lite/tests/cv/anakin/cv_utils.h"
+#include "lite/tests/utils/tensor_utils.h"
 #include "lite/utils/cv/paddle_image_preprocess.h"
 #include "time.h"  // NOLINT
 DEFINE_int32(cluster, 3, "cluster id");
@@ -144,7 +144,7 @@ void test_convert(const std::vector<int>& cluster_id,
                             srcw,
                             srch,
                             out_size);
-          t_basic.Stop();
+        t_basic.Stop();
       }
       LOG(INFO) << "image baisc Convert avg time : " << t_basic.LapTimes().Avg()
                 << ", min time: " << t_basic.LapTimes().Min()
@@ -260,17 +260,12 @@ void test_resize(const std::vector<int>& cluster_id,
       uint8_t* lite_dst = new uint8_t[out_size];
       Timer t_rotate;
       Timer t_basic, t_lite;
-     LOG(INFO) << "baisc resize compute";
+      LOG(INFO) << "baisc resize compute";
       for (int i = 0; i < test_iter; i++) {
-          t_basic.Start();
-          image_basic_resize(src,
-                             basic_dst,
-                             (ImageFormat)dstFormat,
-                             srcw,
-                             srch,
-                             dstw,
-                             dsth);
-          t_basic.Stop();
+        t_basic.Start();
+        image_basic_resize(
+            src, basic_dst, (ImageFormat)dstFormat, srcw, srch, dstw, dsth);
+        t_basic.Stop();
       }
       LOG(INFO) << "image baisc Resize avg time : " << t_basic.LapTimes().Avg()
                 << ", min time: " << t_basic.LapTimes().Min()
@@ -389,12 +384,8 @@ void test_flip(const std::vector<int>& cluster_id,
       Timer t_basic, t_lite;
       for (int i = 0; i < test_iter; i++) {
         t_basic.Start();
-        image_basic_flip(src,
-                         basic_dst,
-                         (ImageFormat)dstFormat,
-                         srcw,
-                         srch,
-                         flip);
+        image_basic_flip(
+            src, basic_dst, (ImageFormat)dstFormat, srcw, srch, flip);
         t_basic.Stop();
       }
       LOG(INFO) << "image baisc flip avg time : " << t_basic.LapTimes().Avg()
@@ -462,17 +453,17 @@ void test_flip(const std::vector<int>& cluster_id,
 }
 
 void test_rotate(const std::vector<int>& cluster_id,
-               const std::vector<int>& thread_num,
-               int srcw,
-               int srch,
-               int dstw,
-               int dsth,
-               ImageFormat srcFormat,
-               ImageFormat dstFormat,
-               float rotate,
-               FlipParam flip,
-               LayoutType layout,
-               int test_iter = 10) {
+                 const std::vector<int>& thread_num,
+                 int srcw,
+                 int srch,
+                 int dstw,
+                 int dsth,
+                 ImageFormat srcFormat,
+                 ImageFormat dstFormat,
+                 float rotate,
+                 FlipParam flip,
+                 LayoutType layout,
+                 int test_iter = 10) {
   for (auto& cls : cluster_id) {
     for (auto& th : thread_num) {
       std::unique_ptr<paddle::lite::KernelContext> ctx1(
@@ -511,12 +502,8 @@ void test_rotate(const std::vector<int>& cluster_id,
       Timer t_basic, t_lite;
       for (int i = 0; i < test_iter; i++) {
         t_basic.Start();
-        image_basic_rotate(src,
-                         basic_dst,
-                         (ImageFormat)dstFormat,
-                         srcw,
-                         srch,
-                         rotate);
+        image_basic_rotate(
+            src, basic_dst, (ImageFormat)dstFormat, srcw, srch, rotate);
         t_basic.Stop();
       }
       LOG(INFO) << "image baisc rotate avg time : " << t_basic.LapTimes().Avg()
@@ -659,7 +646,8 @@ void test_to_tensor(const std::vector<int>& cluster_id,
                               scales);
         t_basic.Stop();
       }
-      LOG(INFO) << "image baisc to_tensor avg time : " << t_basic.LapTimes().Avg()
+      LOG(INFO) << "image baisc to_tensor avg time : "
+                << t_basic.LapTimes().Avg()
                 << ", min time: " << t_basic.LapTimes().Min()
                 << ", max time: " << t_basic.LapTimes().Max();
 
@@ -748,8 +736,8 @@ void print_info(ImageFormat srcFormat,
                 int layout) {
   paddle::lite::DeviceInfo::Init();
   LOG(INFO) << " input tensor size, num= " << 1 << ", channel= " << 1
-                << ", height= " << srch << ", width= " << srcw
-                << ", srcFormat= " << (ImageFormat)srcFormat;
+            << ", height= " << srch << ", width= " << srcw
+            << ", srcFormat= " << (ImageFormat)srcFormat;
   // RGBA = 0, BGRA, RGB, BGR, GRAY, NV21 = 11, NV12,
   if (srcFormat == ImageFormat::NV21) {
     LOG(INFO) << "srcFormat: NV21";
@@ -803,13 +791,13 @@ void print_info(ImageFormat srcFormat,
   } else if (flip_num == 0) {
     LOG(INFO) << "Flip X";
   } else if (flip_num == 1) {
-    LOG(INFO) << "Flip Y"; 
+    LOG(INFO) << "Flip Y";
   }
   if (layout == 1) {
     LOG(INFO) << "Layout NCHW";
   } else if (layout == 3) {
     LOG(INFO) << "Layout NHWC";
-  }   
+  }
 }
 #if 0
 TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
@@ -826,7 +814,7 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
                       srcFormat == ImageFormat::BGR) &&
                       (dstFormat == ImageFormat::RGBA ||
                        dstFormat == ImageFormat::BGRA)) {
-                    continue; // anakin is not suupport
+                    continue;  // anakin is not suupport
                   }
                   print_info((ImageFormat)srcFormat,
                             (ImageFormat)dstFormat,
@@ -903,7 +891,7 @@ TEST(TestImageResizeRand, test_func_image_resize_preprocess) {
   }
 }
 #endif
-#if 1 
+#if 1
 TEST(TestImageFlipRand, test_func_image_flip_preprocess) {
   if (FLAGS_basic_test) {
     for (auto w : {1, 8, 16, 112, 224, 1092}) {
@@ -1025,16 +1013,16 @@ TEST(TestImageToTensorRand, test_func_image_to_tensor_preprocess) {
 #endif
 #if 1
 TEST(TestImageConvertCustom, test_func_image_preprocess_custom) {
- LOG(INFO) << "print info"; 
- print_info((ImageFormat)FLAGS_srcFormat,
-            (ImageFormat)FLAGS_dstFormat,
-            FLAGS_srcw,
-            FLAGS_srch,
-            FLAGS_dstw,
-            FLAGS_dsth,
-            FLAGS_angle,
-            FLAGS_flip_num,
-            FLAGS_layout);
+  LOG(INFO) << "print info";
+  print_info((ImageFormat)FLAGS_srcFormat,
+             (ImageFormat)FLAGS_dstFormat,
+             FLAGS_srcw,
+             FLAGS_srch,
+             FLAGS_dstw,
+             FLAGS_dsth,
+             FLAGS_angle,
+             FLAGS_flip_num,
+             FLAGS_layout);
   test_convert({FLAGS_cluster},
                {1},
                FLAGS_srcw,
@@ -1048,7 +1036,7 @@ TEST(TestImageConvertCustom, test_func_image_preprocess_custom) {
                (LayoutType)FLAGS_layout,
                FLAGS_repeats);
 
-   test_resize({FLAGS_cluster},
+  test_resize({FLAGS_cluster},
               {1},
               FLAGS_srcw,
               FLAGS_srch,
@@ -1061,17 +1049,17 @@ TEST(TestImageConvertCustom, test_func_image_preprocess_custom) {
               (LayoutType)FLAGS_layout,
               FLAGS_repeats);
   test_flip({FLAGS_cluster},
-             {1},
-             FLAGS_srcw,
-             FLAGS_srch,
-             FLAGS_dstw,
-             FLAGS_dsth,
-             (ImageFormat)FLAGS_dstFormat,
-             (ImageFormat)FLAGS_dstFormat,
-             FLAGS_angle,
-             (FlipParam)FLAGS_flip_num,
-             (LayoutType)FLAGS_layout,
-             FLAGS_repeats);
+            {1},
+            FLAGS_srcw,
+            FLAGS_srch,
+            FLAGS_dstw,
+            FLAGS_dsth,
+            (ImageFormat)FLAGS_dstFormat,
+            (ImageFormat)FLAGS_dstFormat,
+            FLAGS_angle,
+            (FlipParam)FLAGS_flip_num,
+            (LayoutType)FLAGS_layout,
+            FLAGS_repeats);
   test_rotate({FLAGS_cluster},
               {1},
               FLAGS_srcw,
@@ -1096,7 +1084,6 @@ TEST(TestImageConvertCustom, test_func_image_preprocess_custom) {
                  (FlipParam)FLAGS_flip_num,
                  (LayoutType)FLAGS_layout,
                  FLAGS_repeats);
-
 }
 #endif
 #endif
