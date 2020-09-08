@@ -20,8 +20,8 @@
 #include <vector>
 #include "HiAiModelManagerService.h"
 #include "lite/core/kernel.h"
-#include "lite/kernels/npu/bridges/engine.h"
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph_engine_base.h"
 
 namespace paddle {
 namespace lite {
@@ -67,7 +67,7 @@ class DeviceProgram {
   std::vector<hiai::TensorDimension> device_odims_{};
 };
 
-class SubgraphEngine : public subgraph::Engine {
+class SubgraphEngine : public subgraph::SubgraphEngineBase {
  public:
   SubgraphEngine(KernelContext* ctx,
                  int block_idx,
@@ -75,12 +75,12 @@ class SubgraphEngine : public subgraph::Engine {
                  Scope* exec_scope,
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names)
-      : subgraph::Engine(ctx,
-                         block_idx,
-                         program_desc,
-                         exec_scope,
-                         input_names,
-                         output_names) {}
+      : subgraph::SubgraphEngineBase(ctx,
+                                     block_idx,
+                                     program_desc,
+                                     exec_scope,
+                                     input_names,
+                                     output_names) {}
 
  protected:
   bool PrepareWorkspaceForDeviceProgram() override;

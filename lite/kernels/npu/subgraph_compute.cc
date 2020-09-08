@@ -129,7 +129,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // then added them into the HiAI IR graph
   int status = 0;
   subgraph::npu::Graph graph;
-  const auto& bridges = subgraph::Registry::Instance();
+  const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   CHECK(origin_program) << "[NPU] The origin program is not initialized!";
   CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
       << "[NPU] No instructions found in the origin program!";

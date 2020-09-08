@@ -24,13 +24,13 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph_engine_base.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
 #include "lite/core/types.h"
 #include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/mlu/bridges/tensor.h"
-#include "lite/kernels/npu/bridges/engine.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/utils/env.h"
 
 namespace paddle {
@@ -39,7 +39,7 @@ namespace kernels {
 namespace mlu {
 
 template <PrecisionType Precision>
-class SubgraphEngine : public subgraph::Engine {
+class SubgraphEngine : public subgraph::SubgraphEngineBase {
  public:
   SubgraphEngine(KernelContext* ctx,
                  int block_idx,
@@ -48,12 +48,12 @@ class SubgraphEngine : public subgraph::Engine {
                  const std::vector<std::string>& input_names,
                  const std::vector<std::string>& output_names,
                  paddle::lite_api::PrecisionType type)
-      : subgraph::Engine(ctx,
-                         block_idx,
-                         program_desc,
-                         exec_scope,
-                         input_names,
-                         output_names),
+      : subgraph::SubgraphEngineBase(ctx,
+                                     block_idx,
+                                     program_desc,
+                                     exec_scope,
+                                     input_names,
+                                     output_names),
         fp_type_(type) {
     VLOG(4) << "[MLU] PADDLE_LITE_MLU_SAVE_OFFLINE_MODEL is "
             << GetBoolFromEnv("PADDLE_LITE_MLU_SAVE_OFFLINE_MODEL");
@@ -166,7 +166,7 @@ class SubgraphEngine : public subgraph::Engine {
     }
     LOG(INFO) << "START TO CONVERT ";
     // Convert all of ops and its weights and added into the MLU IR graph
-    const auto& bridges = subgraph::Registry::Instance();
+    const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
     const auto& insts = origin_program_->instructions(kRootBlockIdx);
     for (auto& inst : insts) {
       auto op = inst.op();

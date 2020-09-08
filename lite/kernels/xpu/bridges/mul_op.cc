@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/utility.h"
-
 namespace paddle {
 namespace lite {
 namespace subgraph {

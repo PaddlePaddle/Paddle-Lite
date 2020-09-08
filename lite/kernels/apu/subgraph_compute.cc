@@ -50,7 +50,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
 
   // Convert all of ops and their input vars and weights and added into the APU
   // NIR graph
-  const auto& bridges = subgraph::Registry::Instance();
+  const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   const auto& insts = origin_program_->instructions(kRootBlockIdx);
   for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
