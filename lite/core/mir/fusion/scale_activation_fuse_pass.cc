@@ -36,4 +36,5 @@ void ScaleActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 REGISTER_MIR_PASS(lite_scale_activation_fuse_pass,
                   paddle::lite::mir::ScaleActivationFusePass)
     .BindTargets({TARGET(kARM)})
+    .ExcludeTargets({TARGET(kNPU)})
     .BindKernel("scale");
