@@ -110,6 +110,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
+  LOG(INFO) << x_dims << " " << y_dims << " " << output_dims;
   auto axis = op_info->GetAttr<int>("axis");
   int op_code{-1};
   if (op_type == "elementwise_mul") {
@@ -126,7 +127,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   const float* y_data = const_cast<const float*>(y->mutable_data<float>());
   const float* x_data = const_cast<const float*>(x->mutable_data<float>());
   auto unique_op_name = lite::subgraph::bm::UniqueName("expand_ndims");
-  std::vector<int32_t> i_expand_shape_data(3);
+  std::vector<int32_t> i_expand_shape_data;
   if (x_is_const && y_is_const) {
     float* cpu_data = compute_elementwise_both_const(op);
     bm_add_const_tensor(graph->GetCompilerHandle(),
@@ -156,11 +157,30 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
             static_cast<const char*>(unique_op_name.c_str()));
         name[1] = static_cast<const char*>(unique_op_name.c_str());
         dim[1] = 3;
-        i_expand_shape_data[0] = i_y_shape_data[0];
-        i_expand_shape_data[1] = 1;
-        i_expand_shape_data[2] = 1;
+        i_expand_shape_data.push_back(i_y_shape_data[0]);
+        i_expand_shape_data.push_back(1);
+        i_expand_shape_data.push_back(1);
         shape[1] = &i_expand_shape_data[0];
         y_data = nullptr;
+      }
+    } else {
+      if (dim[1] < dim[0]) {
+        for (size_t i = 0; i < dim[1]; i++) {
+          i_expand_shape_data.push_back(i_y_shape_data[i]);
+        }
+        for (size_t i = dim[1]; i < dim[0]; i++) {
+          i_expand_shape_data.push_back(1);
+        }
+        add_reshape_layer_v2(graph->GetCompilerHandle(),
+                             name[1],
+                             shape[1],
+                             dim[1],
+                             static_cast<const char*>(unique_op_name.c_str()),
+                             const_cast<const int*>(&i_expand_shape_data[0]),
+                             i_expand_shape_data.size());
+        dim[1] = dim[0];
+        shape[1] = &i_expand_shape_data[0];
+        name[1] = static_cast<const char*>(unique_op_name.c_str());
       }
     }
     add_binary_layer_v2(graph->GetCompilerHandle(),
