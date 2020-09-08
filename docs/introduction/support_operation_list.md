@@ -1,402 +1,222 @@
-# 支持OP
+# 支持算子
 
-## Ops （共计158个算子）
+当前Paddle-Lite共计支持算子204个，其中基础算子78个，附加算子126个。
 
-### Basic Operators (默认编译的算子)
-- affine_channel
-- arg_max
-- batch_norm
-- bilinear_interp
-- box_coder
-- calib
-- cast
-- concat
-- conv2d
-- conv2d_transpose
-- density_prior_box
-- depthwise_conv2d
-- dropout
-- elementwise_add
-- elementwise_div
-- elementwise_max
-- elementwise_mul
-- elementwise_sub
-- exp
-- expand
-- fake_channel_wise_dequantize_max_abs
-- fake_dequantize_max_abs
-- fake_quantize_abs_max
-- fake_quantize_dequantize_moving_average_abs_max
-- fake_quantize_moving_average_abs_max
-- fake_quantize_range_abs_max
-- fc
-- feed
-- fetch
-- fill_constant
-- fill_constant_batch_size_like
-- flatten
-- flatten2
-- floor
-- fusion_elementwise_add_activation
-- fusion_elementwise_div_activation
-- fusion_elementwise_max_activation
-- fusion_elementwise_mul_activation
-- fusion_elementwise_sub_activation
-- gelu
-- grid_sampler
-- hard_sigmoid
-- instance_norm
-- io_copy
-- io_copy_once
-- layout
-- leaky_relu
-- log
-- matmul
-- mean
-- mul
-- multiclass_nms
-- nearest_interp
-- pad2d
-- pool2d
-- prelu
-- prior_box
-- range
-- reduce_mean
-- relu
-- relu6
-- relu_clipped
-- reshape
-- reshape2
-- rsqrt
-- scale
-- search_fc
-- sequence_topk_avg_pooling
-- shuffle_channel
-- sigmoid
-- slice
-- softmax
-- softsign
-- split
-- sqrt
-- square
-- squeeze
-- squeeze2
-- stack
-- subgraph
-- swish
-- tanh
-- transpose
-- transpose2
-- unsqueeze
-- unsqueeze2
-- yolo_box
+### 基础算子
 
-### Extra Operators (打开 `--build_extra=ON`开关才会编译)
+默认编译的算子，共计78个：
 
-- anchor_generator
-- assign
-- assign_value
-- attention_padding_mask
-- axpy
-- beam_search
-- beam_search_decode
-- box_clip
-- calib_once
-- collect_fpn_proposals
-- conditional_block
-- crop
-- decode_bboxes
-- distribute_fpn_proposals
-- equal
-- gather
-- generate_proposals
-- graph_op
-- greater_equal
-- greater_than
-- gru
-- gru_unit
-- im2sequence
-- increment
-- is_empty
-- layer_norm
-- layout_once
-- less_equal
-- less_than
-- lod_reset
-- logical_and
-- logical_not
-- logical_or
-- logical_xor
-- lookup_table
-- lookup_table_v2
-- lrn
-- match_matrix_tensor
-- merge_lod_tensor
-- negative
-- norm
-- not_equal
-- power
-- read_from_array
-- reduce_max
-- reduce_prod
-- reduce_sum
-- roi_align
-- search_aligned_mat_mul
-- search_attention_padding_mask
-- search_grnn
-- search_group_padding
-- search_seq_arithmetic
-- search_seq_depadding
-- search_seq_fc
-- search_seq_softmax
-- sequence_arithmetic
-- sequence_concat
-- sequence_expand
-- sequence_expand_as
-- sequence_pool
-- sequence_reshape
-- sequence_reverse
-- sequence_softmax
-- shape
-- split_lod_tensor
-- top_k
-- uniform_random
-- var_conv_2d
-- while
-- write_to_array
+| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | Huawei Krini   NPU | Baidu XPU | Rockchip NPU | MediaTeck APU |
+|-:|-|-|-|-|-|-|-|-|-|-|
+| affine_channel | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| affine_grid | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| arg_max | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| assign_value | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| batch_norm | 　 | Y | 　 | Y | 　 | 　 | Y | Y | Y | 　 |
+| bilinear_interp | 　 | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 |
+| box_coder | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |
+| calib | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 | 　 |
+| cast | 　 | Y | 　 | Y | 　 | 　 | 　 | Y | 　 | 　 |
+| concat | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | 　 |
+| conv2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |
+| conv2d_transpose | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| density_prior_box | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| depthwise_conv2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |
+| depthwise_conv2d_transpose | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| dropout | 　 | Y | Y | Y | Y | Y | Y | Y | 　 | 　 |
+| elementwise_add | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |
+| elementwise_div | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | Y | 　 |
+| elementwise_max | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| elementwise_mod | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| elementwise_mul | 　 | Y | Y | Y | Y | Y | Y | 　 | Y | Y |
+| elementwise_pow | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| elementwise_sub | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | 　 |
+| elu | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| expand | Y | 　 | 　 | 　 | Y | 　 | Y | 　 | 　 | 　 |
+| expand_as | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| fc | 　 | Y | Y | Y | Y | Y | Y | 　 | Y | Y |
+| feed | Y | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 | 　 |
+| fetch | Y | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 |
+| fill_constant | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| fill_constant_batch_size_like | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| flatten | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 |
+| flatten2 | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 |
+| fusion_elementwise_add_activation | 　 | 　 | Y | Y | Y | Y | Y | 　 | 　 | 　 |
+| fusion_elementwise_div_activation | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| fusion_elementwise_max_activation | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| fusion_elementwise_mul_activation | 　 | 　 | Y | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| fusion_elementwise_sub_activation | 　 | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 |
+| grid_sampler | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |
+| instance_norm | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 |
+| io_copy | 　 | 　 | Y | 　 | Y | Y | 　 | 　 | 　 | 　 |
+| io_copy_once | 　 | 　 | Y | 　 | Y | Y | 　 | 　 | 　 | 　 |
+| layout | 　 | 　 | Y | Y | Y | Y | 　 | 　 | 　 | 　 |
+| leaky_relu | 　 | Y | Y | Y | Y | 　 | Y | 　 | 　 | 　 |
+| matmul | 　 | Y | Y | Y | 　 | 　 | Y | Y | 　 | 　 |
+| mul | 　 | Y | Y | Y | 　 | 　 | Y | Y | 　 | 　 |
+| multiclass_nms | Y | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 |
+| multiclass_nms2 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| nearest_interp | 　 | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 |
+| pad2d | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 |
+| pool2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |
+| prelu | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| prior_box | 　 | 　 | 　 | Y | 　 | Y | 　 | 　 | 　 | 　 |
+| range | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| reduce_mean | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| relu | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | Y |
+| relu6 | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 |
+| reshape | Y | Y | 　 | 　 | Y | 　 | Y | Y | 　 | 　 |
+| reshape2 | Y | Y | 　 | 　 | Y | 　 | Y | Y | 　 | 　 |
+| scale | 　 | Y | Y | Y | Y | Y | Y | Y | 　 | 　 |
+| search_fc | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_topk_avg_pooling | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| shuffle_channel | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| sigmoid | 　 | Y | Y | Y | Y | 　 | Y | 　 | 　 | 　 |
+| slice | 　 | Y | 　 | Y | Y | 　 | 　 | Y | 　 | 　 |
+| softmax | 　 | Y | Y | Y | 　 | 　 | Y | Y | Y | Y |
+| split | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| squeeze | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| squeeze2 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| stack | 　 | Y | 　 | Y | 　 | 　 | 　 | Y | 　 | 　 |
+| subgraph | 　 | 　 | 　 | 　 | 　 | 　 | Y | Y | Y | Y |
+| tanh | 　 | Y | Y | Y | Y | 　 | Y | Y | 　 | 　 |
+| thresholded_relu | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| transpose | 　 | Y | Y | Y | Y | 　 | Y | Y | 　 | 　 |
+| transpose2 | 　 | Y | Y | Y | Y | 　 | Y | Y | 　 | 　 |
+| unsqueeze | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |
+| unsqueeze2 | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |
+| yolo_box | 　 | 　 | Y | Y | 　 | 　 | 　 | Y | 　 | 　 |
 
 
+### 附加算子
 
-## Kernels
+附加算子共计126个，需要在编译时打开`--build_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
 
-### Host kernels
-
-- feed
-- fetch
-- flatten
-- flatten2
-- multiclass_nms
-- reshape
-- reshape2
-
-### ARM kernels
-
-- affine_channel
-- anchor_generator
-- arg_max
-- assign
-- assign_value
-- axpy
-- batch_norm
-- beam_search
-- beam_search_decode
-- bilinear_interp
-- box_clip
-- box_coder
-- cast
-- collect_fpn_proposals
-- concat
-- conditional_block
-- conv2d
-- conv2d_transpose
-- crop
-- decode_bboxes
-- density_prior_box
-- depthwise_conv2d
-- distribute_fpn_proposals
-- dropout
-- elementwise_add
-- elementwise_div
-- elementwise_max
-- elementwise_mul
-- elementwise_sub
-- equal
-- exp
-- expand
-- fc
-- fill_constant
-- fill_constant_batch_size_like
-- floor
-- fusion_elementwise_add_activation
-- fusion_elementwise_div_activation
-- fusion_elementwise_max_activation
-- fusion_elementwise_mul_activation
-- fusion_elementwise_sub_activation
-- gather
-- generate_proposals
-- greater_equal
-- greater_than
-- gru
-- gru_unit
-- hard_sigmoid
-- im2sequence
-- increment
-- instance_norm
-- is_empty
-- layer_norm
-- layout
-- layout_once
-- leaky_relu
-- less_equal
-- less_than
-- lod_reset
-- log
-- logical_and
-- logical_not
-- logical_or
-- logical_xor
-- lookup_table
-- lookup_table_v2
-- lrn
-- matmul
-- merge_lod_tensor
-- mul
-- nearest_interp
-- negative
-- norm
-- not_equal
-- pad2d
-- pool2d
-- power
-- prelu
-- prior_box
-- range
-- read_from_array
-- reduce_max
-- reduce_mean
-- reduce_prod
-- relu
-- relu6
-- relu_clipped
-- roi_align
-- rsqrt
-- scale
-- sequence_expand
-- sequence_pool
-- sequence_softmax
-- shape
-- shuffle_channel
-- sigmoid
-- slice
-- softmax
-- split
-- split_lod_tensor
-- squeeze
-- squeeze2
-- stack
-- swish
-- tanh
-- top_k
-- transpose
-- transpose2
-- unsqueeze
-- unsqueeze2
-- while
-- write_to_array
-- yolo_box
-
-
-### X86 kernels
-- batch_norm
-- cast
-- concat
-- conv2d
-- depthwise_conv2d
-- dropout
-- elementwise_add
-- elementwise_sub
-- fc
-- fill_constant_batch_size_like
-- gather
-- gelu
-- gru
-- layer_norm
-- match_matrix_tensor
-- matmul
-- mul
-- pool2d
-- reduce_sum
-- relu
-- reshape
-- reshape2
-- scale
-- search_aligned_mat_mul
-- search_attention_padding_mask
-- search_fc
-- search_grnn
-- search_group_padding
-- search_seq_arithmetic
-- search_seq_depadding
-- search_seq_fc
-- search_seq_softmax
-- sequence_arithmetic
-- sequence_concat
-- sequence_expand_as
-- sequence_pool
-- sequence_reverse
-- sequence_topk_avg_pooling
-- shape
-- slice
-- softmax
-- softsign
-- square
-- squeeze
-- squeeze2
-- stack
-- tanh
-- transpose
-- transpose2
-- var_conv_2d
-
-### CUDA kernels
-- attention_padding_mask
-- bilinear_interp
-- calib
-- concat
-- conv
-- dropout
-- elementwise_add
-- fusion_elementwise_add_activation
-- fusion_elementwise_mul_activation
-- elementwise_mul
-- feed
-- io_copy
-- layout
-- layout_once
-- leaky_relu
-- lookup_table
-- match_matrix_tensor
-- mul
-- nearest_interp
-- pool2d
-- relu
-- scale
-- search_aligned_mat_mul
-- search_fc
-- search_grnn
-- search_group_padding
-- search_seq_depadding
-- search_seq_fc
-- sequence_arithmetic
-- sequence_concat
-- sequence_pool
-- sequence_reverse
-- sequence_topk_avg_pooling
-- softmax
-- transpose
-- var_conv_2d
-- yolo_box
-
-### OpenCL kernels
-- conv2d
-- depthwise_conv2d
-- elementwise_add
-- fc
-- fusion_elementwise_add_activation
-- layout
-- layout_once
-- io_copy
-- io_copy_once
-- mul
-- pool2d
-- relu
+| OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | Huawei Krini   NPU | Baidu XPU | Rockchip NPU | MediaTeck APU |
+|-|-|-|-|-|-|-|-|-|-|-|
+| __xpu__conv2d | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__embedding_with_eltwise_add | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__fc | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_bid_emb_att | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_bid_emb_grnn_att | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_bid_emb_grnn_att2 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_match_conv_topk | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_merge_all | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__mmdnn_search_attention | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__multi_encoder | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__resnet_cbam | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__resnet50 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| __xpu__sfa_head | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| abs | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| anchor_generator | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| assign | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| attention_padding_mask | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| axpy | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| beam_search_decode | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| beam_search_decode | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| box_clip | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| calib_once | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 | 　 |
+| clip | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| collect_fpn_proposals | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| conditional_block | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| crf_decoding | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| crop | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| ctc_align | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| decode_bboxes | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| deformable_conv | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| distribute_fpn_proposals | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| equal | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| exp | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |
+| fake_channel_wise_dequantize_max_abs | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| fake_dequantize_max_abs | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| fake_quantize_abs_max | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| fake_quantize_dequantize_abs_max | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| fake_quantize_dequantize_moving_average_abs_max | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| fake_quantize_moving_average_abs_max | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| fake_quantize_range_abs_max | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| floor | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| gather | 　 | Y | 　 | Y | 　 | 　 | 　 | Y | 　 | 　 |
+| gelu | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| generate_proposals | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| greater_equal | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| greater_than | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| group_norm | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| gru | 　 | Y | Y | Y | 　 | Y | 　 | 　 | 　 | 　 |
+| gru_unit | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| hard_sigmoid | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 |
+| hard_swish | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| im2sequence | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| increment | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| is_empty | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| layer_norm | 　 | Y | 　 | Y | 　 | 　 | Y | Y | 　 | 　 |
+| layout_once | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 | 　 |
+| less_equal | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| less_than | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |
+| lod_reset | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| log | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| logical_and | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| logical_not | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| logical_or | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| logical_xor | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| lookup_table | 　 | Y | Y | Y | 　 | 　 | 　 | Y | 　 | 　 |
+| lookup_table_dequant | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| lookup_table_v2 | 　 | Y | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| lrn | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |
+| lstm | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| match_matrix_tensor | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| max_pool2d_with_index | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| mean | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| merge_lod_tensor | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| negative | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| norm | 　 | 　 | 　 | Y | 　 | Y | 　 | 　 | 　 | 　 |
+| not_equal | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| one_hot | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| pixel_shuffle | Y | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |
+| pow | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| power | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| print | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| read_from_array | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| reciprocal | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| reduce_max | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| reduce_prod | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| reduce_sum | 　 | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| relu_clipped | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| retinanet_detection_output | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| roi_align | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| rsqrt | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| search_aligned_mat_mul | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| search_attention_padding_mask | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| search_grnn | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| search_group_padding | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| search_seq_arithmetic | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| search_seq_depadding | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| search_seq_fc | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| search_seq_softmax | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_arithmetic | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_concat | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_conv | 　 | Y | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_expand | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_expand_as | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_mask | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_pad | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_pool | 　 | Y | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_pool_concat | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_reshape | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_reverse | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_reverse_embedding | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_softmax | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_unpad | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| shape | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sign | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| softsign | 　 | Y | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |
+| split_lod_tensor | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| sqrt | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |
+| square | 　 | Y | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
+| swish | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |
+| top_k | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| topk_pooling | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| uniform_random | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| var_conv_2d | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| where_index | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| while | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| write_to_array | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
