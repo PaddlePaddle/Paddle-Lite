@@ -23,6 +23,7 @@
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/kernel_key.h"
 #include "lite/backends/x86/jit/kernel_pool.h"
+#include "lite/utils/macros.h"
 #include "lite/utils/paddle_enforce.h"
 
 namespace paddle {

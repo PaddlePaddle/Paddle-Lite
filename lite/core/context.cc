@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/core/context.h"
-#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {

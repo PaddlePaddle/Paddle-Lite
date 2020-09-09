@@ -22,6 +22,7 @@
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/mlu/bridges/tensor.h"
+#include "lite/utils/macros.h"
 
 #define PRINT_HW_TIME false
 
