@@ -56,6 +56,7 @@ if (WITH_TESTING)
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "step_rnn.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "bert.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "ernie.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "GoogLeNet.tar.gz")
     endif()
 endif()
 
