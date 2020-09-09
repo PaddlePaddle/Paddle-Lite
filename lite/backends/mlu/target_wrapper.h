@@ -15,7 +15,6 @@
 #pragma once
 #include "lite/backends/mlu/mlu_utils.h"
 #include "lite/core/target_wrapper.h"
-#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {

@@ -21,7 +21,6 @@
 #include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/pass_registry.h"
 #include "lite/operators/subgraph_op.h"
-#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {

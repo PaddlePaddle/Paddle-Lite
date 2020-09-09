@@ -17,7 +17,6 @@
 #include <memory>
 
 #include "lite/backends/mlu/mlu_utils.h"
-#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
