@@ -26,7 +26,7 @@
 
 namespace paddle {
 namespace lite {
-namespace nna {
+namespace imagination_nna {
 
 static inline void CheckAndPrint(bool cond,
                                  const char *msg,
@@ -42,7 +42,7 @@ static inline void CheckAndPrint(bool cond,
 }
 
 #define ASSERT(statement, msg) \
-  lite::nna::CheckAndPrint(statement, msg, __LINE__, __FILE__)
+  lite::imagination_nna::CheckAndPrint(statement, msg, __LINE__, __FILE__)
 
 class ImgdnnManager {
   imgdnn_err_code err_;
@@ -252,6 +252,6 @@ class ImgdnnManager {
   }
 };
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace lite
 }  // namespace paddle

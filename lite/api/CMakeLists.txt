@@ -40,7 +40,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   NPU_DEPS ${npu_kernels}
                   APU_DEPS ${apu_kernels}
                   RKNPU_DEPS ${rknpu_kernels}
-                  NNA_DEPS ${nna_kernels}
+                  IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
                   HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
                   )
 
@@ -86,8 +86,8 @@ else()
             # Need to add RKNPU runtime libs dependency
             target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
         endif()
-        if (LITE_WITH_NNA)
-            # Need to add IMG NNA runtime libs (libhiai.so) dependency
+        if (LITE_WITH_IMAGINATION_NNA)
+            # Need to add IMG IMAGINATION_NNA runtime libs (libhiai.so) dependency
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
     endif()
@@ -122,7 +122,7 @@ if(LITE_WITH_RKNPU)
     set(cxx_api_deps ${cxx_api_deps} ${rknpu_deps})
 endif()
 
-if(LITE_WITH_NNA)
+if(LITE_WITH_IMAGINATION_NNA)
     set(light_api_deps ${light_api_deps} ${nna_deps})
     set(cxx_api_deps ${cxx_api_deps} ${nna_deps})
 endif()
@@ -180,7 +180,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
                         APU_DEPS ${apu_kernels}
                         RKNPU_DEPS ${rknpu_kernels}
                         BM_DEPS ${bm_kernels}
-                        NNA_DEPS ${nna_kernels}
+                        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
                         CL_DEPS ${opencl_kernels}
                         FPGA_DEPS ${fpga_kernels}
                         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
@@ -207,7 +207,7 @@ lite_cc_library(light_api SRCS light_api.cc
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
         BM_DEPS ${bm_kernels}
-        NNA_DEPS ${nna_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         MLU_DEPS ${mlu_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
 
@@ -232,7 +232,7 @@ if(WITH_TESTING)
            FPGA_DEPS ${fpga_kernels}
            BM_DEPS ${bm_kernels}
            MLU_DEPS ${mlu_kernels}
-           NNA_DEPS ${nna_kernels}
+           IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
            HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
            EXCLUDE_COMPILE_DEPS "ON"
            ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
@@ -365,7 +365,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         APU_DEPS ${apu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
-        NNA_DEPS ${nna_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         BM_DEPS ${bm_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     # The final inference library for just MobileConfig.
@@ -397,7 +397,7 @@ if(NOT WITH_COVERAGE)
         RKNPU_DEPS ${rknpu_kernels}
         BM_DEPS ${bm_kernels}
         MLU_DEPS ${mlu_kernels}
-        NNA_DEPS ${nna_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
         --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 endif()
@@ -440,7 +440,7 @@ if(NOT WITH_COVERAGE)
       FPGA_DEPS ${fpga_kernels}
       BM_DEPS ${bm_kernels}
       MLU_DEPS ${mlu_kernels}
-      NNA_DEPS ${nna_kernels}
+      IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
       HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
       ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model SERIAL)
     if (WITH_TESTING)
@@ -461,7 +461,7 @@ if(NOT IOS)
         CL_DEPS ${opencl_kernels}
         BM_DEPS ${bm_kernels}
         RKNPU_DEPS ${rknpu_kernels}
-        NNA_DEPS ${nna_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels}
@@ -478,7 +478,7 @@ if(NOT IOS)
         CL_DEPS ${opencl_kernels}
         BM_DEPS ${bm_kernels}
         RKNPU_DEPS ${rknpu_kernels}
-        NNA_DEPS ${nna_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels}
@@ -495,7 +495,7 @@ if(NOT IOS)
         CL_DEPS ${opencl_kernels}
         BM_DEPS ${bm_kernels}
         RKNPU_DEPS ${rknpu_kernels}
-        NNA_DEPS ${nna_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         FPGA_DEPS ${fpga_kernels}
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels}
@@ -506,7 +506,7 @@ if(NOT IOS)
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
-        NNA_DEPS ${nna_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         XPU_DEPS ${xpu_kernels}
         RKNPU_DEPS ${rknpu_kernels}
         MLU_DEPS ${mlu_kernels}
@@ -525,7 +525,7 @@ if(NOT IOS)
         APU_DEPS ${apu_kernels}
         XPU_DEPS ${xpu_kernels}
         RKNPU_DEPS ${rknpu_kernels}
-        NNA_DEPS ${nna_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         MLU_DEPS ${mlu_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
         CL_DEPS ${opencl_kernels}
@@ -540,7 +540,7 @@ if(NOT IOS)
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
         RKNPU_DEPS ${npu_kernels}
-        NNA_DEPS ${nna_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         XPU_DEPS ${xpu_kernels}
         APU_DEPS ${apu_kernels}
         CL_DEPS ${opencl_kernels}

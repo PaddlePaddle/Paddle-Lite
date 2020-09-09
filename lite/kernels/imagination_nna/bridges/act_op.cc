@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/nna/bridges/graph.h"
-#include "lite/kernels/nna/bridges/utility.h"
+#include "lite/kernels/imagination_nna/bridges/graph.h"
+#include "lite/kernels/imagination_nna/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 // template <typename ActType>
 int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
@@ -64,49 +64,51 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   return SUCCESS;
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 #if 0
 REGISTER_SUBGRAPH_BRIDGE(
     sigmoid,
-    kNNA,
-    paddle::lite::subgraph::nna::ActConverter<ge::op::Activation>);
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Activation>);
 #endif
-REGISTER_SUBGRAPH_BRIDGE(relu, kNNA, paddle::lite::subgraph::nna::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu,
+                         kImaginationNNA,
+                         paddle::lite::subgraph::imagination_nna::ActConverter);
 #if 0
 REGISTER_SUBGRAPH_BRIDGE(
-    tanh, kNNA, paddle::lite::subgraph::nna::ActConverter<ge::op::Activation>);
+    tanh, kImaginationNNA, paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     relu_clipped,
-    kNNA,
-    paddle::lite::subgraph::nna::ActConverter<ge::op::Activation>);
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
-    relu6, kNNA, paddle::lite::subgraph::nna::ActConverter<ge::op::Activation>);
+    relu6, kImaginationNNA, paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     leaky_relu,
-    kNNA,
-    paddle::lite::subgraph::nna::ActConverter<ge::op::Activation>);
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
-    abs, kNNA, paddle::lite::subgraph::nna::ActConverter<ge::op::Activation>);
+    abs, kImaginationNNA, paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     softsign,
-    kNNA,
-    paddle::lite::subgraph::nna::ActConverter<ge::op::Activation>);
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     softplus,
-    kNNA,
-    paddle::lite::subgraph::nna::ActConverter<ge::op::Activation>);
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     hard_sigmoid,
-    kNNA,
-    paddle::lite::subgraph::nna::ActConverter<ge::op::Activation>);
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Activation>);
 
 REGISTER_SUBGRAPH_BRIDGE(
-    log, kNNA, paddle::lite::subgraph::nna::ActConverter<ge::op::Log>);
+    log, kImaginationNNA, paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Log>);
 REGISTER_SUBGRAPH_BRIDGE(
-    square, kNNA, paddle::lite::subgraph::nna::ActConverter<ge::op::Square>);
+    square, kImaginationNNA, paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Square>);
 REGISTER_SUBGRAPH_BRIDGE(
-    sqrt, kNNA, paddle::lite::subgraph::nna::ActConverter<ge::op::Sqrt>);
+    sqrt, kImaginationNNA, paddle::lite::subgraph::imagination_nna::ActConverter<ge::op::Sqrt>);
 #endif

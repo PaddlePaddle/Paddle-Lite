@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/nna/subgraph_compute.h"
+#include "lite/kernels/imagination_nna/subgraph_compute.h"
 #include <sys/time.h>
 #include <time.h>
 #include <limits>
 #include <utility>
 #include "lite/core/op_registry.h"
-#include "lite/kernels/nna/bridges/graph.h"
-#include "lite/kernels/nna/bridges/paddle_use_bridges.h"
-#include "lite/kernels/nna/bridges/utility.h"
+#include "lite/kernels/imagination_nna/bridges/graph.h"
+#include "lite/kernels/imagination_nna/bridges/paddle_use_bridges.h"
+#include "lite/kernels/imagination_nna/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace nna {
+namespace imagination_nna {
 
 bool SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
   // Convert all of ops and their input vars and weights and added into the NNA
   // IMG IR graph
-  subgraph::nna::Graph graph{&imgdnn_mgr_};
+  subgraph::imagination_nna::Graph graph{&imgdnn_mgr_};
   const auto& bridges = subgraph::Registry::Instance();
   if (!origin_program_) {
     BuildOriginProgram();
@@ -43,15 +43,15 @@ bool SubgraphEngine::BuildDeviceProgram() {
     op->CheckShape();
     op->InferShape();
     std::string op_type = op->op_info()->Type();
-    if (!bridges.Exists(op_type, TARGET(kNNA))) {
+    if (!bridges.Exists(op_type, TARGET(kImaginationNNA))) {
       // return subgraph::FAILED;
       return false;
     }
     auto kernel = inst.kernel();
-    status |=
-        bridges.Select(op_type, TARGET(kNNA))(reinterpret_cast<void*>(&graph),
-                                              const_cast<OpLite*>(op),
-                                              const_cast<KernelBase*>(kernel));
+    status |= bridges.Select(op_type, TARGET(kImaginationNNA))(
+        reinterpret_cast<void*>(&graph),
+        const_cast<OpLite*>(op),
+        const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
       // return subgraph::FAILED;
       return false;
@@ -231,16 +231,16 @@ void SubgraphCompute::Run() {
   engine_->Run();
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(subgraph,
-                     kNNA,
+                     kImaginationNNA,
                      kInt8,
                      kNCHW,
-                     paddle::lite::kernels::nna::SubgraphCompute,
+                     paddle::lite::kernels::imagination_nna::SubgraphCompute,
                      def)
     .BindInput("Inputs",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt8))})

@@ -17,7 +17,7 @@
 
 namespace paddle {
 namespace lite {
-namespace nna {
+namespace imagination_nna {
 
 static void err_callback(imgdnn_report_flags flags,
                          const char **tensor_names,
@@ -390,6 +390,6 @@ imgdnn_network_object ImgdnnManager::createNetworkObject(
   return net_obj_;
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace lite
 }  // namespace paddle

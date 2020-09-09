@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 #include "imgdnn.h"  // NOLINT
-#include "lite/backends/nna/imgdnn_manager.h"
+#include "lite/backends/imagination_nna/imgdnn_manager.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 #include "utility.h"  // NOLINT
@@ -29,7 +29,7 @@
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 #define NNA_UNUSED(var) \
   do {                  \
@@ -77,7 +77,7 @@ class Node {
 
 class Graph {
  public:
-  explicit Graph(lite::nna::ImgdnnManager* pMgr) {
+  explicit Graph(lite::imagination_nna::ImgdnnManager* pMgr) {
     pImgdnnMgr = pMgr;
     std::cout << "graph construct" << std::endl;
   }
@@ -129,16 +129,16 @@ class Graph {
     return nodes_.find(name) != nodes_.end();
   }
 
-  lite::nna::ImgdnnManager* GetBuilder() {
+  lite::imagination_nna::ImgdnnManager* GetBuilder() {
     ASSERT(pImgdnnMgr == nullptr, "pImgdnnMgr used before initialize");
     return pImgdnnMgr;
   }
 
  private:
   std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
-  lite::nna::ImgdnnManager* pImgdnnMgr{nullptr};
+  lite::imagination_nna::ImgdnnManager* pImgdnnMgr{nullptr};
 };
-}  // namespace nna
+}  // namespace imagination_nna
 
 }  // namespace subgraph
 }  // namespace lite

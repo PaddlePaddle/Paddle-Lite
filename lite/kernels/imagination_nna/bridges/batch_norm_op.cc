@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/nna/bridges/graph.h"
-#include "lite/kernels/nna/bridges/registry.h"
-#include "lite/kernels/nna/bridges/utility.h"
+#include "lite/kernels/imagination_nna/bridges/graph.h"
+#include "lite/kernels/imagination_nna/bridges/registry.h"
+#include "lite/kernels/imagination_nna/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
@@ -30,7 +30,7 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " + op_type + "...";
 
-  // Get innat and output vars and op attributes
+  // Get iimagination_nnat and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
@@ -81,11 +81,12 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   return SUCCESS;
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(batch_norm,
-                         kNNA,
-                         paddle::lite::subgraph::nna::BatchNormConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    batch_norm,
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::BatchNormConverter);

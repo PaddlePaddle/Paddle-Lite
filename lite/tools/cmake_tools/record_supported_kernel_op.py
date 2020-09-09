@@ -56,7 +56,7 @@ const std::vector<std::vector<std::string>> supported_ops_target = {
 ops_lines = []
 
 # valid targets and valid_ops
-valid_targets = ["kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA", "kNPU", "kXPU", "kBM", "kMLU", "kRKNPU", "kAPU", "kHuaweiAscendNPU", "kNNA"]
+valid_targets = ["kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA", "kNPU", "kXPU", "kBM", "kMLU", "kRKNPU", "kAPU", "kHuaweiAscendNPU", "kImaginationNNA"]
 valid_ops = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
 class TargetType:
     kUnk = 0
@@ -74,7 +74,7 @@ class TargetType:
     kRKNPU = 12
     kAPU = 13
     kHuaweiAscendNPU = 14
-    kNNA = 15
+    kImaginationNNA = 15
 
 
 # record op_info of valid kernels into `valid_ops` according to different target type

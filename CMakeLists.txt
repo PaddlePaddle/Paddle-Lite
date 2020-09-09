@@ -172,8 +172,8 @@ if(LITE_WITH_RKNPU)
    include(device/rknpu)
 endif()
 
-if(LITE_WITH_NNA)
-	include(device/nna)
+if(LITE_WITH_IMAGINATION_NNA)
+	include(device/imagination_nna)
 endif()
 
 include(external/flatbuffers)

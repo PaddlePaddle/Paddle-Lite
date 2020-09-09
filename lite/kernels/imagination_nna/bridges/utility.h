@@ -26,7 +26,7 @@
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 struct TensorInfo {
   imgdnn_type type;
@@ -44,7 +44,7 @@ bool isScalesPerChannel(std::vector<float> scales);
 
 void TensorInfoReset(TensorInfo* qnt);
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

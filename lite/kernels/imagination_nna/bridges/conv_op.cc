@@ -13,14 +13,14 @@
 // limitations under the License.
 
 #include "lite/operators/conv_op.h"
-#include "lite/kernels/nna/bridges/graph.h"
-#include "lite/kernels/nna/bridges/utility.h"
+#include "lite/kernels/imagination_nna/bridges/graph.h"
+#include "lite/kernels/imagination_nna/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   CHECK(ctx != nullptr);
@@ -282,15 +282,17 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(conv2d,
-                         kNNA,
-                         paddle::lite::subgraph::nna::ConvConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    conv2d,
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::ConvConverter);
 
-REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
-                         kNNA,
-                         paddle::lite::subgraph::nna::ConvConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    depthwise_conv2d,
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::ConvConverter);

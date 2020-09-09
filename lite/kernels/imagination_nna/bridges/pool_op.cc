@@ -14,14 +14,14 @@
 
 #include "lite/operators/pool_op.h"
 #include "imgdnn.h"  // NOLINT
-#include "lite/kernels/nna/bridges/graph.h"
-#include "lite/kernels/nna/bridges/utility.h"
+#include "lite/kernels/imagination_nna/bridges/graph.h"
+#include "lite/kernels/imagination_nna/bridges/utility.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
@@ -137,11 +137,12 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(pool2d,
-                         kNNA,
-                         paddle::lite::subgraph::nna::PoolConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    pool2d,
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::PoolConverter);

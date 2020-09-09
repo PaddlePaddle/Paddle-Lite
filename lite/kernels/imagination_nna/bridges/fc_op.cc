@@ -13,13 +13,13 @@
 // limitations under the License.
 
 #include "imgdnn.h"  // NOLINT
-#include "lite/kernels/nna/bridges/graph.h"
+#include "lite/kernels/imagination_nna/bridges/graph.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
@@ -174,9 +174,11 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(fc, kNNA, paddle::lite::subgraph::nna::FCConverter);
+REGISTER_SUBGRAPH_BRIDGE(fc,
+                         kImaginationNNA,
+                         paddle::lite::subgraph::imagination_nna::FCConverter);

@@ -14,9 +14,9 @@
 
 #pragma once
 
-USE_SUBGRAPH_BRIDGE(relu, kNNA);
-USE_SUBGRAPH_BRIDGE(conv2d, kNNA);
-USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kNNA);
-USE_SUBGRAPH_BRIDGE(fc, kNNA);
-USE_SUBGRAPH_BRIDGE(pool2d, kNNA);
-// USE_SUBGRAPH_BRIDGE(softmax, kNNA);
+USE_SUBGRAPH_BRIDGE(relu, kImaginationNNA);
+USE_SUBGRAPH_BRIDGE(conv2d, kImaginationNNA);
+USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kImaginationNNA);
+USE_SUBGRAPH_BRIDGE(fc, kImaginationNNA);
+USE_SUBGRAPH_BRIDGE(pool2d, kImaginationNNA);
+// USE_SUBGRAPH_BRIDGE(softmax, kImaginationNNA);

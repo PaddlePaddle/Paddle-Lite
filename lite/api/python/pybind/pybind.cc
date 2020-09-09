@@ -192,7 +192,7 @@ void BindLitePlace(py::module *m) {
       .value("RKNPU", TargetType::kRKNPU)
       .value("APU", TargetType::kAPU)
       .value("HUAWEI_ASCEND_NPU", TargetType::kHuaweiAscendNPU)
-      .value("NNA", TargetType::kNNA)
+      .value("IMAGINATION_NNA", TargetType::kImaginationNNA)
       .value("Any", TargetType::kAny);
 
   // PrecisionType

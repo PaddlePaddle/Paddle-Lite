@@ -84,10 +84,10 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
     } else if (target_repr == "apu") {
       valid_places_.emplace_back(
           Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
-    } else if (target_repr == "nna") {
-      valid_places.emplace_back(TARGET(kNNA));
+    } else if (target_repr == "imagination_nna") {
+      valid_places.emplace_back(TARGET(kImaginationNNA));
       valid_places.emplace_back(
-          Place{TARGET(kNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
+          Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -245,7 +245,7 @@ void OptBase::PrintHelpInfo() {
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
       "`set_valid_places(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
-      "nna)`\n"
+      "imagination_nna)`\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
       "        `run() : start model transformation`\n"
@@ -283,16 +283,19 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|nna)`\n"
+      "`--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
+      "nna)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|nna)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
+      "nna)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|nna)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
+      "nna)`"
       "  Display operators in the input model\n";
   std::cout << "paddlelite opt version:" << opt_version << std::endl
             << help_info << std::endl;
@@ -311,7 +314,7 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
                                                      "kRKNPU",
                                                      "kAPU",
                                                      "kHuaweiAscendNPU",
-                                                     "kNNA",
+                                                     "kImaginationNNA",
                                                      "kAny",
                                                      "kUnk"};
   // Get the lengh of the first column: maximum length of the op_type

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/nna/bridges/utility.h"
+#include "lite/kernels/imagination_nna/bridges/utility.h"
 #include <utility>
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
@@ -61,7 +61,7 @@ void TensorInfoReset(TensorInfo* qnt) {
   qnt->layout = DATALAYOUT(kNCHW);
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

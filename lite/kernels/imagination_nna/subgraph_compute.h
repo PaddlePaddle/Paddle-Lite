@@ -18,16 +18,16 @@
 #include <string>
 #include <vector>
 #include "imgdnn.h"  // NOLINT
-#include "lite/backends/nna/imgdnn_manager.h"
+#include "lite/backends/imagination_nna/imgdnn_manager.h"
 #include "lite/core/kernel.h"
-#include "lite/kernels/nna/bridges/graph.h"
+#include "lite/kernels/imagination_nna/bridges/graph.h"
 #include "lite/kernels/npu/bridges/engine.h"
 #include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace nna {
+namespace imagination_nna {
 
 class SubgraphEngine : public subgraph::Engine {
  public:
@@ -54,11 +54,12 @@ class SubgraphEngine : public subgraph::Engine {
   std::vector<std::string> device_onames_;
   std::vector<imgdnn_input> device_itensors_;
   std::vector<imgdnn_output> device_otensors_;
-  lite::nna::ImgdnnManager imgdnn_mgr_;
+  lite::imagination_nna::ImgdnnManager imgdnn_mgr_;
 };
 
-class SubgraphCompute
-    : public KernelLite<TARGET(kNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)> {
+class SubgraphCompute : public KernelLite<TARGET(kImaginationNNA),
+                                          PRECISION(kInt8),
+                                          DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::SubgraphParam;
 
@@ -75,7 +76,7 @@ class SubgraphCompute
   std::unique_ptr<SubgraphEngine> engine_;
 };
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

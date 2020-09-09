@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/nna/bridges/graph.h"
+#include "lite/kernels/imagination_nna/bridges/graph.h"
 #include <utility>
-#include "lite/kernels/nna/bridges/utility.h"
+#include "lite/kernels/imagination_nna/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 // Add 1
 int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
@@ -145,7 +145,7 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
   return node;
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

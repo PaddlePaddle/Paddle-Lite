@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/nna/bridges/graph.h"
-#include "lite/kernels/nna/bridges/registry.h"
+#include "lite/kernels/imagination_nna/bridges/graph.h"
+#include "lite/kernels/imagination_nna/bridges/registry.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace nna {
+namespace imagination_nna {
 
 int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
@@ -69,11 +69,12 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
-}  // namespace nna
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(softmax,
-                         kNNA,
-                         paddle::lite::subgraph::nna::SoftmaxConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    softmax,
+    kImaginationNNA,
+    paddle::lite::subgraph::imagination_nna::SoftmaxConverter);
