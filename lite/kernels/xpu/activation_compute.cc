@@ -73,6 +73,19 @@ void AbsCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void ExpCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::activation_forward(
+      ctx.GetRawContext(),     /* context */
+      xdnn::Activation_t::EXP, /* type */
+      param.X->numel(),        /* len */
+      param.X->data<float>(),  /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
+}
+
 void SquareCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -82,6 +95,19 @@ void SquareCompute::Run() {
       xdnn::Activation_t::SQUARE, /* type */
       param.X->numel(),           /* len */
       param.X->data<float>(),     /* x */
+      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  CHECK_EQ(r, 0);
+}
+
+void ReciprocalCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::activation_forward(
+      ctx.GetRawContext(),            /* context */
+      xdnn::Activation_t::RECIPROCAL, /* type */
+      param.X->numel(),               /* len */
+      param.X->data<float>(),         /* x */
       param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
   CHECK_EQ(r, 0);
 }
@@ -103,11 +129,14 @@ void PowCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
+  xdnn::Activation_t act_type(xdnn::Activation_t::ACT_POW);
+  act_type.pow_factor = param.factor;
+
   int r = xdnn::activation_forward(
-      ctx.GetRawContext(),         /* context */
-      xdnn::Activation_t::ACT_POW, /* type */
-      param.X->numel(),            /* len */
-      param.X->data<float>(),      /* x */
+      ctx.GetRawContext(),    /* context */
+      act_type,               /* type */
+      param.X->numel(),       /* len */
+      param.X->data<float>(), /* x */
       param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
   CHECK_EQ(r, 0);
 }
@@ -159,6 +188,12 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
+    exp, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::ExpCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
     square, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SquareCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -178,6 +213,16 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     sign, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SignCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reciprocal,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::ReciprocalCompute,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
