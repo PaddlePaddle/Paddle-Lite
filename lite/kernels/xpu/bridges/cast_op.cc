@@ -88,7 +88,8 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Cast node
   graph->Add(
       out_name,
-      graph->builder_.CreateCast(*x_node->data(), CvtPrecisionType(out_ptype)));
+      graph->builder_.CreateCast(*x_node->data(), CvtPrecisionType(out_ptype)),
+      PrecisionType(out_ptype));
 
   return SUCCESS;
 }

@@ -127,7 +127,12 @@ class TransposeComputeTester : public arena::TestCase {
 
 void TestTranspose2D(Place place, float abs_error) {
   DDim x_dims{{4, 5}};
-  std::vector<std::vector<int>> axes{{0, 1}, {1, 0}};
+  std::vector<std::vector<int>> axes {
+#if !defined(LITE_WITH_XPU)
+    {0, 1},
+#endif
+        {1, 0},
+  };
   for (auto axis : axes) {
     std::unique_ptr<arena::TestCase> tester(
         new TransposeComputeTester(place, "def", x_dims, axis));
@@ -138,8 +143,12 @@ void TestTranspose2D(Place place, float abs_error) {
 
 void TestTranspose3D(Place place, float abs_error) {
   DDim x_dims{{3, 4, 5}};
-  std::vector<std::vector<int>> axes{
-      {0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {2, 1, 0}};
+  std::vector<std::vector<int>> axes {
+#if !defined(LITE_WITH_XPU)
+    {0, 1, 2},
+#endif
+        {0, 2, 1}, {1, 0, 2}, {2, 1, 0},
+  };
   for (auto axis : axes) {
     std::unique_ptr<arena::TestCase> tester(
         new TransposeComputeTester(place, "def", x_dims, axis));
@@ -150,8 +159,12 @@ void TestTranspose3D(Place place, float abs_error) {
 
 void TestTranspose4D(Place place, float abs_error) {
   DDim x_dims{{2, 3, 4, 5}};
-  std::vector<std::vector<int>> axes{
-      {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 2, 1, 3}, {3, 1, 2, 0}, {3, 1, 0, 2}};
+  std::vector<std::vector<int>> axes {
+#if !defined(LITE_WITH_XPU)
+    {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 2, 1, 3}, {3, 1, 2, 0}, {3, 1, 0, 2},
+#endif
+        {0, 2, 3, 1}, {0, 3, 1, 2},
+  };
   for (auto axis : axes) {
     std::unique_ptr<arena::TestCase> tester(
         new TransposeComputeTester(place, "def", x_dims, axis));
@@ -164,14 +177,14 @@ TEST(Transpose, precision) {
   LOG(INFO) << "test Transpose op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-#elif defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #else
   return;
 #endif

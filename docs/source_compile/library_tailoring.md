@@ -62,7 +62,7 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 
 ### 3、运行裁剪后的预测库文件
 
-注意：基于某一模型裁剪出的预测库只能支持优化工具转化后的该模型，例如根据mobilenetV1裁剪出的 full_api预测库只能运行以protobuf格式转化出的模型mobilenetV1_opt_nb， 裁剪出的light_api预测库只能运行以naive_buffer格式转化出的模型mobilenetV1_opt_nb， 运行其他模型可能会出现`segementation fault:undifined op or kernel`。  模型转化方法参考：[使用opt转化模型](./model_optimize_tool))。
+注意：基于某一模型裁剪出的预测库只能支持优化工具转化后的该模型，例如根据mobilenetV1裁剪出的 full_api预测库只能运行以protobuf格式转化出的模型mobilenetV1_opt_nb， 裁剪出的light_api预测库只能运行以naive_buffer格式转化出的模型mobilenetV1_opt_nb， 运行其他模型可能会出现`segementation fault:undifined op or kernel`。  模型转化方法参考：[使用opt转化模型](../user_guides/model_optimize_tool))。
 
 
 
@@ -78,7 +78,7 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
 
 `./mobilenetv1_light_api --model_dir=./mobilenetV1_NB`
 
-注意：`mobilenetV1_NB`是用`mobilenetV1`模型转化的naive_buffer格式模型(不需要设置` --record_tailoring_info =true`，转化流程参考：[使用opt转化模型](./model_optimize_tool))。
+注意：`mobilenetV1_NB`是用`mobilenetV1`模型转化的naive_buffer格式模型(不需要设置` --record_tailoring_info =true`，转化流程参考：[使用opt转化模型](../user_guides/model_optimize_tool))。
 
 
 
@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
 
 `./mobilenetv1_full_api --model_dir=./mobilenetV1_PB`
 
-注意：`mobilenetV1_PB`是用`mobilenetV1`模型转化的protobuf格式模型(不需要设置` --record_tailoring_info =true`，转化流程参考：[使用opt转化模型](./model_optimize_tool))。
+注意：`mobilenetV1_PB`是用`mobilenetV1`模型转化的protobuf格式模型(不需要设置` --record_tailoring_info =true`，转化流程参考：[使用opt转化模型](../user_guides/model_optimize_tool))。
 
 ## 按模型集合裁剪预测库
 

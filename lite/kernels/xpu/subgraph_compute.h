@@ -43,14 +43,13 @@ class SubgraphEngine : public subgraph::Engine {
                          output_names) {}
 
  protected:
-  bool PrepareWorkspaceForDeviceProgram() override;
   bool BuildDeviceProgram() override;
   bool LaunchDeviceProgram() override;
 
-  std::vector<std::string> device_inames_;
-  std::vector<std::string> device_onames_;
   std::vector<DLTensor> device_itensors_{};
   std::vector<DLTensor> device_otensors_{};
+  std::vector<std::vector<int64_t>> origin_odims_;
+  std::vector<PrecisionType> origin_otypes_;
   std::unique_ptr<xtcl::network::xRuntimeInstance> device_program_{nullptr};
 };
 

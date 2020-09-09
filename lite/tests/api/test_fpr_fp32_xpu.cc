@@ -26,47 +26,28 @@
 namespace paddle {
 namespace lite {
 
-template <typename T>
-lite::Tensor GetTensorWithShape(std::vector<int64_t> shape) {
-  lite::Tensor ret;
-  ret.Resize(shape);
-  T* ptr = ret.mutable_data<T>();
-  for (int i = 0; i < ret.numel(); ++i) {
-    ptr[i] = (T)1;
-  }
-  return ret;
-}
-
-TEST(Ernie, test_ernie_lite_xpu) {
+TEST(ResnetCbam, test_resnet_cbam_fp32_xpu) {
   lite_api::CxxConfig config;
-  config.set_model_dir(FLAGS_model_dir);
+  // config.set_model_dir(FLAGS_model_dir);
+  config.set_model_file(FLAGS_model_dir + "/__model__");
+  config.set_param_file(FLAGS_model_dir + "/__params__");
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_workspace_l3_size_per_thread();
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  int64_t batch_size = 1;
-  int64_t seq_len = 64;
-  Tensor sample_input = GetTensorWithShape<int64_t>({batch_size, seq_len, 1});
-  std::vector<int64_t> input_shape{batch_size, seq_len, 1};
-  predictor->GetInput(0)->Resize(input_shape);
-  predictor->GetInput(1)->Resize(input_shape);
-  predictor->GetInput(2)->Resize(input_shape);
-  predictor->GetInput(3)->Resize(input_shape);
-
-  memcpy(predictor->GetInput(0)->mutable_data<int64_t>(),
-         sample_input.raw_data(),
-         sizeof(int64_t) * batch_size * seq_len);
-  memcpy(predictor->GetInput(1)->mutable_data<int64_t>(),
-         sample_input.raw_data(),
-         sizeof(int64_t) * batch_size * seq_len);
-  memcpy(predictor->GetInput(2)->mutable_data<int64_t>(),
-         sample_input.raw_data(),
-         sizeof(int64_t) * batch_size * seq_len);
-  memcpy(predictor->GetInput(3)->mutable_data<int64_t>(),
-         sample_input.raw_data(),
-         sizeof(int64_t) * batch_size * seq_len);
+  auto input_tensor = predictor->GetInput(0);
+  std::vector<int64_t> input_shape{1, 3, 224, 224};
+  input_tensor->Resize(input_shape);
+  auto* data = input_tensor->mutable_data<float>();
+  int input_num = 1;
+  for (size_t i = 0; i < input_shape.size(); ++i) {
+    input_num *= input_shape[i];
+  }
+  for (int i = 0; i < input_num; i++) {
+    data[i] = 1;
+  }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor->Run();
@@ -82,20 +63,6 @@ TEST(Ernie, test_ernie_lite_xpu) {
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
-
-  std::vector<std::vector<float>> results;
-  results.emplace_back(std::vector<float>({0.108398}));
-  auto out = predictor->GetOutput(0);
-  ASSERT_EQ(out->shape().size(), 2);
-  ASSERT_EQ(out->shape()[0], 1);
-  ASSERT_EQ(out->shape()[1], 1);
-
-  for (size_t i = 0; i < results.size(); ++i) {
-    for (size_t j = 0; j < results[i].size(); ++j) {
-      EXPECT_NEAR(
-          out->data<float>()[j + (out->shape()[1] * i)], results[i][j], 2e-5);
-    }
-  }
 }
 
 }  // namespace lite

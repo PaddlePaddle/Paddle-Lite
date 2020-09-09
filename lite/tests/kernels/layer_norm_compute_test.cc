@@ -147,9 +147,7 @@ TEST(LayerNorm, precision) {
   LOG(INFO) << "test layer_norm op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
-#elif defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
@@ -158,6 +156,8 @@ TEST(LayerNorm, precision) {
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
   abs_error = 6e-5;
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #else
   return;
 #endif

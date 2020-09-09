@@ -1,29 +1,37 @@
 
-# 源码编译方法
+# 源码编译环境准备
 
-PaddleLite已经提供官方Release预测库下载，请参考[文档](release_lib)。
+Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，如果您使用的是这三个平台，我们优先推荐您直接下载[Paddle Lite预编译库](../quick_start/release_lib)。
 
-PaddleLite 提供了移动端的一键源码编译脚本 `lite/tools/build.sh`，编译流程如下：
+您也可以根据目标平台选择对应的源码编译方法，Paddle Lite提供了源码编译脚本，位于`lite/tools/`文件夹下，只需要“准备环境”和“调用编译脚本”两个步骤即可一键编译得到目标平台的Paddle Lite预测库。
 
-1. 环境准备（选择其一）：Docker交叉编译环境、Linux交叉编译环境
-2. 编译：调用`build.sh`脚本一键编译
+目前支持四种编译开发环境：
 
-## 一、环境准备
+1. [Docker开发环境](compile_env.html#docker)
+2. [Linux开发环境](compile_env.html#linux)
+3. [Mac OS开发环境](compile_env.html#mac-os)
+4. [Windows开发环境](compile_env.html#windows)
 
-目前支持四种编译的环境：
+源码编译方法支持如下平台：
 
-1. Docker 容器环境，
-2. Linux（推荐 Ubuntu 16.04）环境，
-3. Mac OS 环境，
-4. [Windows 环境](../demo_guides/x86.html#windows)
+- [Android源码编译](../source_compile/compile_andriod)
+- [iOS源码编译](../source_compile/compile_ios)
+- [ArmLinux源码编译](../source_compile/compile_linux)
+- [X86源码编译](../demo_guides/x86)
+- [OpenCL源码编译](../demo_guides/opencl)
+- [CUDA源码编译](../demo_guides/cuda)
+- [FPGA源码编译](../demo_guides/fpga)
+- [华为NPU源码编译](../demo_guides/huawei_kirin_npu)
+- [百度XPU源码编译](../demo_guides/baidu_xpu)
+- [瑞芯微NPU源码编译](../demo_guides/rockchip_npu)
+- [联发科APU源码编译](../demo_guides/mediatek_apu)
+- [模型优化工具opt源码编译](../user_guides/model_optimize_tool.html#opt)
 
-### 1、 Docker开发环境
+## 1. Docker开发环境
 
-[Docker](https://www.docker.com/) 是一个开源的应用容器引擎, 使用沙箱机制创建独立容器，方便运行不同程序。Docker初学者可以参考[Docker使用方法](https://thenewstack.io/docker-station-part-one-essential-docker-concepts-tools-terminology/)正确安装Docker。
+[Docker](https://www.docker.com/) 是一个开源的应用容器引擎, 使用沙箱机制创建独立容器，方便运行不同程序。Lite的Docker镜像基于Ubuntu 16.04，镜像中包含了开发Andriod/Linux等平台要求的软件依赖与工具。
 
-#### 准备Docker镜像
-
-有两种方式准备Docker镜像，推荐从Dockerhub直接拉取Docker镜像
+(1) 准备Docker镜像：有两种方式准备Docker镜像，推荐从Dockerhub直接拉取Docker镜像
 
 ```shell
 # 方式一：从Dockerhub直接拉取Docker镜像
@@ -40,9 +48,7 @@ docker build -t paddlepaddle/paddle-lite .
 # 镜像编译成功后，可用`docker images`命令，看到`paddlepaddle/paddle-lite`镜像。
 ```
 
-#### 进入Docker容器
-
-在拉取Paddle-Lite仓库代码的上层目录，执行如下代码，进入Docker容器：
+(2) 启动Docker容器：在拉取Paddle-Lite仓库代码的上层目录，执行如下代码，进入Docker容器：
 
 ```shell
 docker run -it \
@@ -52,9 +58,9 @@ docker run -it \
   paddlepaddle/paddle-lite /bin/bash
 ```
 
-该命令的含义：将容器命名为`paddlelite_docker`即`<container-name>`，将当前目录下的`Paddle-Lite`文件夹挂载到容器中的`/Paddle-Lite`这个根目录下，并进入容器中。至此，完成Docker环境的准备。
+该命令的含义：将容器命名为`paddlelite_docker`即`<container-name>`，将当前目录下的`Paddle-Lite`文件夹挂载到容器中的`/Paddle-Lite`这个根目录下，并进入容器中。
 
-#### Docker常用命令
+Docker初学者可以参考[Docker使用方法](https://thenewstack.io/docker-station-part-one-essential-docker-concepts-tools-terminology/)正确安装Docker。Docker常用命令参考如下：
 
 ```shell
 # 退出容器但不停止/关闭容器：键盘同时按住三个键：CTRL + q + p
@@ -75,18 +81,15 @@ docker restart <container-name>
 docker rm <container-name>
 ```
 
-### 2、Linux 开发环境
+## 2. Linux开发环境
 
-#### Android
+### 准备Android交叉编译环境
 
-##### 交叉编译环境要求
-
+交叉编译环境要求：
 - gcc、g++、git、make、wget、python、adb
 - Java environment
 - cmake（建议使用3.10或以上版本）
 - Android NDK (建议ndk-r17c)
-
-##### 具体步骤
 
 安装软件部分以 Ubuntu 为例，其他 Linux 发行版类似。
 
@@ -118,18 +121,15 @@ echo "export NDK_ROOT=/opt/android-ndk-r17c" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-#### ARM Linux
+### 准备ARM Linux编译环境
 
 适用于基于 ARMv8 和 ARMv7 架构 CPU 的各种开发板，例如 RK3399，树莓派等，目前支持交叉编译和本地编译两种方式，对于交叉编译方式，在完成目标程序编译后，可通过 scp 方式将程序拷贝到开发板运行。
 
-##### 交叉编译
+#### 交叉编译ARM Linux
 
-###### 编译环境要求
-
+编译环境要求
 - gcc、g++、git、make、wget、python、scp
 - cmake（建议使用3.10或以上版本）
-
-###### 具体步骤
 
 安装软件部分以 Ubuntu 为例，其他 Linux 发行版类似。
 
@@ -153,14 +153,11 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
     ln -s /opt/cmake-3.10/bin/ccmake /usr/bin/ccmake
 ```
 
-##### 本地编译（直接在RK3399或树莓派上编译）
+#### 本地编译ARM Linux（直接在RK3399或树莓派上编译）
 
-###### 编译环境要求
-
+编译环境要求
 - gcc、g++、git、make、wget、python、pip、python-dev、patchelf
 - cmake（建议使用3.10或以上版本）
-
-###### 具体步骤
 
 安装软件部分以 Ubuntu 为例，其他 Linux 发行版本类似。
 
@@ -183,16 +180,13 @@ sudo make install
 
 至此，完成 Linux 交叉编译环境的准备。
 
-### 3、Mac OS 开发环境
+## 3. Mac OS开发环境
 
-#### 交叉编译环境要求
-
+交叉编译环境要求
 - gcc、git、make、curl、unzip、java
 - cmake（Android编译请使用3.10版本，IOS编译请使用3.15版本）
 - 编译Android: Android NDK (建议ndk-r17c)
 - 编译IOS: XCode(Version 10.1)
-
-#### 具体步骤
 
 ```bash
 # 1. Install basic software
@@ -231,50 +225,20 @@ brew cask install java
 # sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 
-至此，完成 Mac 交叉编译环境的准备。
-
-**注意**: Mac上编译Paddle-Lite的full_publish版本时，Paddle-Lite所在路径中不可以含有中文字符
-
-## 二、编译PaddleLite
-
-`develop分支`和`release/v2.6.0`之后版本的源码编译请参考以下说明，release/v2.3之前版本（包括v2.3）源码编译请参考[release/v2.3源码编译方法](./Compile/v2.3_compile)。
-
-### Android 预测库编译方法
-
-Paddle-Lite支持在 “Docker 环境、Linux 环境、Mac 环境” 源码编译Android 预测库
-
-**编译方法参见**：[Android预测库编译方法](./Compile/Android)
+**注意**: Mac上编译Paddle-Lite的full_publish版本时，Paddle-Lite所在路径中不可以含有中文字符。
 
 
-### iOS 预测库编译方法
+## 4. Windows开发环境
 
-Paddle-Lite只支持在 “Mac 环境” 源码编译iOS 预测库
+编译环境需求，目前Windows暂不支持GPU编译，仅支持[X86平台](../demo_guides/x86.html#windows)预测库编译。
 
-**编译方法参见**：[iOS预测库编译方法](./Compile/iOS)
+- Windows 10 专业版
+- *Python 版本 2.7/3.5.1+ (64 bit)*
+- *pip 或 pip3 版本 9.0.1+ (64 bit)*
+- *Visual Studio 2015 Update3*
 
+环境准备步骤为：
 
-### Linux 预测库编译方法
-
-**编译方法参见**：[Linux预测库编译方法](./Compile/Linux)
-
-
-### 加速第三方依赖库的下载
-
-如出现源码编译耗时过长，一般是第三方库下载过慢或失败导致：
-
-- 移动端相关编译所需的第三方库均位于 `<PaddleLite>/third-party` 目录下，默认编译过程中，会利用`git submodule update --init --recursive`链上相关的第三方依赖的仓库。
-
-- 为加速`full_publish`、`test`编译模式中对`protobuf`等第三方依赖的下载，`build.sh` 和 `ci_build.sh`支持了从国内 CDN 下载第三方依赖的压缩包。
-
-可使用本节方法加速第三方库下载过程，以加速编译：
-
-- **加速方法**：`git clone`完`Paddle-Lite`仓库代码后，手动删除本地仓库根目录下的`third-party`目录：
-
-```shell
-git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-git checkout <release-version-tag>
-cd Paddle-Lite
-rm -rf third-party
-```
-
-之后再根据本文档，进行后续编译时，便会忽略第三方依赖对应的`submodule`，改为直接下载第三方压缩包。
+1. cmake 需要3.15版本, 可在官网[下载](https://cmake.org/download/)，并添加到环境变量中。
+2. python 需要2.7 及以上版本, 可在官网[下载](https://www.python.org/download/releases/2.7/)。
+3. git可以在官网[下载](https://gitforwindows.org/)，并添加到环境变量中
