@@ -573,25 +573,10 @@ function main {
                 RKNPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
-<<<<<<< HEAD
-=======
-            --with_huawei_ascend_npu=*)
-                WITH_HUAWEI_ASCEND_NPU="${i#*=}"
-                shift
-                ;;
-            --huawei_ascend_npu_ddk_root=*)
-                HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
-                shift
-                ;;
-            --enable_flatbuffers_view=*)
-                ENABLE_FLATBUFFERS_DESC_VIEW="${i#*=}"
-                shift
-                ;;
             --ios_deployment_target=*)
                 IOS_DEPLOYMENT_TARGET="${i#*=}"
                 shift
                 ;;
->>>>>>> 914219c... platform portability of tls, test=develop (#4261)
             tiny_publish)
                 make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL 
                 shift
