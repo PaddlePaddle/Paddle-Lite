@@ -31,11 +31,14 @@ void XPUEmbeddingWithEltwiseAddCompute::PrepareForRun() {
     CHECK_EQ(table_dims.size(), 2); /* shape like [table_len, embed_dim] */
     table_lens_cpu_.push_back(table_dims[0]);
   }
-  void* lens_ptr = nullptr;
+
   size_t lens_size = table_lens_cpu_.size() * sizeof(int);
-  xpu_malloc(&lens_ptr, lens_size);
-  xpu_memcpy(lens_ptr, &table_lens_cpu_[0], lens_size, XPU_HOST_TO_DEVICE);
-  table_lens_guard_.reset(lens_ptr);
+  table_lens_guard_ =
+      TargetWrapperXPU::MallocScratchPad(lens_size, false /* use_l3 */);
+  XPU_CALL(xpu_memcpy(table_lens_guard_->addr_,
+                      &table_lens_cpu_[0],
+                      lens_size,
+                      XPU_HOST_TO_DEVICE));
 }
 
 void XPUEmbeddingWithEltwiseAddCompute::Run() {
@@ -55,16 +58,16 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
   int embed_dim = table_dims[1];
   int emb_layer_num = param.Ids.size();
   int r = xdnn::embedding_with_ewadd<float, int64_t, false, false>(
-      ctx.GetRawContext(),                        /* context */
-      embed_dim,                                  /* embed_dim */
-      idx_len,                                    /* idx_len */
-      emb_layer_num,                              /* emb_layer_num */
-      param.padding_idx,                          /* padding_idx */
-      &arg_tables_[0],                            /* tables */
-      &arg_ids_[0],                               /* indices */
-      static_cast<int*>(table_lens_guard_.get()), /* table_lens */
-      nullptr,                                    /* scale_after_emb */
-      nullptr,                                    /* scale_after_ewadd */
+      ctx.GetRawContext(),                         /* context */
+      embed_dim,                                   /* embed_dim */
+      idx_len,                                     /* idx_len */
+      emb_layer_num,                               /* emb_layer_num */
+      param.padding_idx,                           /* padding_idx */
+      &arg_tables_[0],                             /* tables */
+      &arg_ids_[0],                                /* indices */
+      static_cast<int*>(table_lens_guard_->addr_), /* table_lens */
+      nullptr,                                     /* scale_after_emb */
+      nullptr,                                     /* scale_after_ewadd */
       param.Out->mutable_data<float>(TARGET(kXPU)) /* top */);
   CHECK_EQ(r, 0);
 }

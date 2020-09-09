@@ -116,8 +116,11 @@ TEST(LookupTable, precision) {
   abs_error = 1e-2;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #else
   return;
 #endif
@@ -132,7 +135,8 @@ TEST(LookupTable, precision) {
        std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
     for (auto w_dims :
          std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
-#if defined(LITE_WITH_XPU) && defined(LITE_WITH_NPU)
+#if (defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)) || \
+    defined(LITE_WITH_NPU)
       for (auto padding_idx :
            std::vector<int64_t>{-1}) {  // Only -1 is supported by XPU or NPU
 #else

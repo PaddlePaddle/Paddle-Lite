@@ -5,6 +5,7 @@ set -ex
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 CUDNN_ROOT="/usr/local/cudnn"
+LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
 
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
@@ -20,8 +21,8 @@ USE_ADB_EMULATOR=ON
 LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
-os_nmae=`uname -s`
-if [ ${os_nmae} == "Darwin" ]; then
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
@@ -277,11 +278,19 @@ function test_server {
     done
 }
 
+function assert_api_spec_approvals() {
+    /bin/bash ${LITE_ROOT}/lite/tools/check_api_approvals.sh check_modified_file_nums
+    if [ "$?" != 0 ];then
+       exit 1
+    fi
+}
+
 # Build the code and run lite server tests. This is executed in the CI system.
 function build_test_server {
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    assert_api_spec_approvals
     cmake_x86_for_CI
     build
 
@@ -333,24 +342,6 @@ function build_test_train {
 
 }
 
-function cmake_xpu {
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-    prepare_workspace
-    cmake .. \
-        ${common_flags} \
-        -DWITH_GPU=OFF \
-        -DWITH_MKLDNN=OFF \
-        -DLITE_WITH_X86=ON \
-        -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_XPU=ON \
-        -DXPU_SDK_ROOT="$(pwd)/../../XPU_SDK"
-}
-
-function build_xpu {
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
 # It will eagerly test all lite related unittests.
 function test_xpu {
     # Due to the missing of xpu kernels, we skip the following tests temporarily.
@@ -378,16 +369,85 @@ function test_xpu {
 
 # Build the code and run lite server tests. This is executed in the CI system.
 function build_test_xpu {
+    local with_xtcl=$1
+    if [[ "${with_xtcl}x" == "x" ]]; then
+        with_xtcl=OFF
+    fi
+    mkdir -p ./build
+    cd ./build
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    prepare_workspace
+    cmake .. \
+        ${common_flags} \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_XPU=ON \
+        -DLITE_WITH_XTCL=$with_xtcl\
+        -DXPU_SDK_ROOT="./output"
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+    test_xpu
+}
+
+function cmake_huawei_ascend_npu {
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    prepare_workspace
+    cmake .. \
+        ${common_flags} \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
+        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5" \
+        -DCMAKE_BUILD_TYPE=Release
+}
+
+function build_huawei_ascend_npu {
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+# It will eagerly test all lite related unittests.
+function test_huawei_ascend_npu {
+    # Due to the missing of ascend kernels, we skip the following tests temporarily.
+    # TODO(xxx) clear the skip list latter
+    local skip_list=("test_paddle_api" "test_cxx_api" "test_googlenet"
+                     "test_mobilenetv1_lite_x86" "test_mobilenetv2_lite_x86"
+                     "test_inceptionv4_lite_x86" "test_light_api"
+                     "test_apis" "test_model_bin"
+                    )
+    local to_skip=0
+    for _test in $(cat $TESTS_FILE); do
+        to_skip=0
+        for skip_name in ${skip_list[@]}; do
+            if [ $skip_name = $_test ]; then
+                echo "to skip " $skip_name
+                to_skip=1
+            fi
+        done
+
+        if [ $to_skip -eq 0 ]; then
+            ctest -R $_test -V
+        fi
+    done
+}
+
+# Build the code and run lite server tests. This is executed in the CI system.
+function build_test_huawei_ascend_npu {
     cur_dir=$(pwd)
 
-    build_dir=$cur_dir/build.lite.xpu
+    build_dir=$cur_dir/build.lite.huawei_ascend_npu_test
     mkdir -p $build_dir
     cd $build_dir
 
-    cmake_xpu
-    build_xpu
+    cmake_huawei_ascend_npu
+    build_huawei_ascend_npu
 
-    test_xpu
+    test_huawei_ascend_npu
 }
 
 # test_arm_android <some_test_name> <adb_port_number>
@@ -406,7 +466,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl" "test_lrn_image_opencl" "test_pad2d_image_opencl")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl" "test_lrn_image_opencl" "test_pad2d_image_opencl" "test_transformer_with_mask_fp32_arm")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done
@@ -555,8 +615,18 @@ function test_arm_model {
 function test_model_optimize_tool_compile {
     cd $workspace
     cd build
+    # Compile opt tool
     cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     make opt -j$NUM_CORES_FOR_COMPILE
+    # Check whether opt can transform quantized mobilenetv1 successfully.
+    cd lite/api && chmod +x ./opt
+    wget --no-check-certificate https://paddlelite-data.bj.bcebos.com/doc_models/MobileNetV1_quant.tar.gz
+    tar zxf MobileNetV1_quant.tar.gz
+    ./opt --model_dir=./MobileNetV1_quant --valid_targets=arm --optimize_out=quant_mobilenetv1
+    if [ ! -f quant_mobilenetv1.nb ]; then
+       echo -e "Error! Resulted opt can not tramsform MobileNetV1_quant successfully!"
+       exit 1
+    fi
 }
 
 function _test_paddle_code_generator {
@@ -1094,10 +1164,6 @@ function main {
                 cmake_x86
                 shift
                 ;;
-            cmake_xpu)
-                cmake_xpu
-                shift
-                ;;
             cmake_opencl)
                 cmake_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
@@ -1122,10 +1188,6 @@ function main {
                 test_server
                 shift
                 ;;
-            test_xpu)
-                test_xpu
-                shift
-                ;;
             test_arm)
                 test_arm $ARM_OS $ARM_ABI $ARM_LANG $ARM_PORT
                 shift
@@ -1136,6 +1198,10 @@ function main {
                 ;;
             test_arm_android)
                 test_arm_android $TEST_NAME $ARM_PORT
+                shift
+                ;;
+            test_huawei_ascend_npu)
+                test_huawei_ascend_npu
                 shift
                 ;;
             build_test_cuda_server)
@@ -1152,7 +1218,15 @@ function main {
                 shift
                 ;;
             build_test_xpu)
-                build_test_xpu
+                build_test_xpu OFF
+                shift
+                ;;
+            build_test_xpu_with_xtcl)
+                build_test_xpu ON
+                shift
+                ;;
+            build_test_huawei_ascend_npu)
+                build_test_huawei_ascend_npu
                 shift
                 ;;
             build_test_train)
@@ -1180,6 +1254,7 @@ function main {
                 build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
                 build_test_arm_subtask_model test_resnet50 resnet50
                 build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
+                build_test_arm_subtask_model test_transformer_with_mask_fp32_arm transformer_with_mask_fp32
                 shift
                 ;;
             build_test_arm_subtask_armlinux)

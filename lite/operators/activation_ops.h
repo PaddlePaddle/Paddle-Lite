@@ -80,6 +80,12 @@ class ActivationOp : public OpLite {
         break;
       case lite_api::ActivationType::kIndentity:
         break;
+      case lite_api::ActivationType::kThresholdedRelu:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kElu:
+        ch->macs = param_.X->numel();
+        break;
       default:
         LOG(FATAL) << "This Type of Activation:"
                    << static_cast<int>(param_.active_type)

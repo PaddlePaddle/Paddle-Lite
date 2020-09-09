@@ -16,8 +16,8 @@
 #include <gtest/gtest.h>
 #include <random>
 #include "lite/core/op_registry.h"
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -153,7 +153,7 @@ void test_elementwise_add(const std::vector<int64_t>& x_shape,
   opdesc.SetOutput("Out", {out_var_name});
   opdesc.SetAttr("axis", axis);
 
-  // create and convert op to NPU model, then run it on NPU
+  // create and convert op to MLU model, then run it on MLU
   auto op = CreateOp<operators::ElementwiseOp>(opdesc, &scope);
 
   // execute reference implementation and save to output tensor

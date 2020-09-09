@@ -19,33 +19,37 @@
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
-#include "lite/kernels/npu/bridges/engine.h"
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph_engine_base.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-class SubgraphEngine : public subgraph::Engine {
+class SubgraphEngine : public subgraph::SubgraphEngineBase {
  public:
   SubgraphEngine(KernelContext *ctx,
                  int block_idx,
-                 cpp::BlockDesc *block_desc,
+                 const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
+                 Scope *exec_scope,
                  const std::vector<std::string> &input_names,
-                 const std::vector<std::string> &output_names,
-                 Scope *scope)
-      : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {}
+                 const std::vector<std::string> &output_names)
+      : subgraph::SubgraphEngineBase(ctx,
+                                     block_idx,
+                                     program_desc,
+                                     exec_scope,
+                                     input_names,
+                                     output_names) {}
 
  protected:
-  int BuildDeviceProgram() override;
-  int LaunchDeviceProgram() override;
+  bool BuildDeviceProgram() override;
+  bool LaunchDeviceProgram() override;
 
-  std::vector<std::string> device_inames_;
-  std::vector<std::string> device_onames_;
-  std::vector<DLTensor> device_itensors_;
-  std::vector<DLTensor> device_otensors_;
+  std::vector<DLTensor> device_itensors_{};
+  std::vector<DLTensor> device_otensors_{};
+  std::vector<std::vector<int64_t>> origin_odims_;
+  std::vector<PrecisionType> origin_otypes_;
   std::unique_ptr<xtcl::network::xRuntimeInstance> device_program_{nullptr};
 };
 

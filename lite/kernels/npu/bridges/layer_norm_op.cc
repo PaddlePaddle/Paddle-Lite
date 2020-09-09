@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/npu/bridges/graph.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -127,12 +127,11 @@ int LayerNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // LayerNorm node
-  auto layer_norm_node = graph->Add<ge::op::InstanceNorm>(y_name);
-  auto layer_norm_op = layer_norm_node->data<ge::op::InstanceNorm>();
+  auto layer_norm_node = graph->Add<hiai::op::LayerNorm>(y_name);
+  auto layer_norm_op = layer_norm_node->data<hiai::op::LayerNorm>();
   layer_norm_op->set_input_x(*x_node->data());
-  layer_norm_op->set_input_scale(*scale_node->data());
-  layer_norm_op->set_input_bias(*bias_node->data());
-  layer_norm_op->set_attr_reduction_indices(ge::AttrValue::LIST_INT({3}));
+  layer_norm_op->set_input_gamma(*scale_node->data());
+  layer_norm_op->set_input_beta(*bias_node->data());
   layer_norm_op->set_attr_epsilon(epsilon);
 
   // Reshaped Y node if needs

@@ -13,10 +13,9 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/backends/cuda/blas.h"
-#include "lite/core/context.h"
+#include <memory>
+#include "lite/backends/cuda/math/gemm.h"
 #include "lite/core/kernel.h"
-#include "lite/core/types.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {
@@ -24,61 +23,21 @@ namespace lite {
 namespace kernels {
 namespace cuda {
 
-template <typename T>
-void mul_compute(const lite::cuda::Blas<float>& blas,
-                 const T* x,
-                 int x_h,
-                 int x_w,
-                 const T* y,
-                 int y_h,
-                 int y_w,
-                 T* out) {
-  float alpha = 1.0;
-  float beta = 0.0;
-  /*
-  blas.sgemm(CUBLAS_OP_N,
-             CUBLAS_OP_N,
-             x_h,
-             y_w,
-             x_w,
-             &alpha,
-             x,
-             x_w,
-             y,
-             y_w,
-             &beta,
-             out,
-             x_h);
-  */
-  blas.sgemm(CUBLAS_OP_N,
-             CUBLAS_OP_N,
-             y_w,
-             x_h,
-             y_h,
-             &alpha,
-             y,
-             y_w,
-             x,
-             x_w,
-             &beta,
-             out,
-             y_w);
-}
-
-class MulCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class MulCompute : public KernelLite<TARGET(kCUDA), PType> {
  public:
   using param_t = operators::MulParam;
 
-  void Run() override {
-    CHECK(ctx_) << "running context should be set first";
-    auto& context = this->ctx_->template As<CUDAContext>();
-    CHECK(context.cublas_fp32()) << "blas should init first";
-    auto& blas = *context.cublas_fp32();
+  void PrepareForRun() override {
+    gemm_impl_.reset(new lite::cuda::math::Gemm<T, T>);
+  }
 
-    auto& param = this->Param<param_t>();
-    const auto* x_data = param.x->data<float>();
-    const auto* y_data = param.y->data<float>();
-    auto* out_data = param.output->mutable_data<float>(TARGET(kCUDA));
+  void Run() override {
+    auto& context = this->ctx_->template As<CUDAContext>();
+    auto& param = this->template Param<param_t>();
+    const auto* x_data = param.x->template data<T>();
+    const auto* y_data = param.y->template data<T>();
+    auto* out_data = param.output->template mutable_data<T>(TARGET(kCUDA));
 
     int x_h = static_cast<int>(
         param.x->dims().Slice(0, param.x_num_col_dims).production());
@@ -94,10 +53,14 @@ class MulCompute : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
             .production());
     CHECK_EQ(x_w, y_h) << "x_w must be equal with y_h";
 
-    mul_compute<float>(blas, x_data, x_h, x_w, y_data, y_h, y_w, out_data);
+    CHECK(gemm_impl_->init(false, false, x_h, y_w, x_w, &context));
+    gemm_impl_->run(1.0f, 0.0f, x_data, y_data, out_data, &context);
   }
 
   virtual ~MulCompute() = default;
+
+ private:
+  std::unique_ptr<lite::cuda::math::Gemm<T, T>> gemm_impl_{nullptr};
 };
 
 }  // namespace cuda

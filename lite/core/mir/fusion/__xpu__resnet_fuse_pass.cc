@@ -315,10 +315,10 @@ class XPUResNetBlock0Fuser : public FuseBase {
     auto block0_stmt = matched.at("left_conv1")->stmt();
     // block0_stmt->ResetOp(op_desc, graph->valid_places());
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
-    // XXX: memleak?
-    auto sub_block_desc = new cpp::BlockDesc();
+    auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
+    sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
-        ->SetSubBlock(sub_block_desc);
+        ->SetProgramDesc(sub_program_desc);
     fake_subgraph_op->Attach(op_desc, block0_stmt->op()->scope());
     fake_subgraph_op->SetValidPlaces(block0_stmt->op()->valid_places());
     block0_stmt->SetOp(fake_subgraph_op);
@@ -577,10 +577,10 @@ class XPUResNetBlock1Fuser : public FuseBase {
 
     auto block1_stmt = matched.at("right_conv1")->stmt();
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
-    // XXX: memleak?
-    auto sub_block_desc = new cpp::BlockDesc();
+    auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
+    sub_program_desc->AddBlock<cpp::BlockDesc>();
     static_cast<operators::SubgraphOp*>(fake_subgraph_op.get())
-        ->SetSubBlock(sub_block_desc);
+        ->SetProgramDesc(sub_program_desc);
     fake_subgraph_op->Attach(op_desc, block1_stmt->op()->scope());
     fake_subgraph_op->SetValidPlaces(block1_stmt->op()->valid_places());
     block1_stmt->SetOp(fake_subgraph_op);
@@ -932,12 +932,22 @@ class XPUResNet50FusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
+
+    bool changed = false;
+    SSAGraph backup;
+    backup.CloneFrom(*graph);
+
     fusion::XPUResNetBlock0Fuser block0_fuser;
-    block0_fuser(graph.get());
+    changed |= block0_fuser(graph.get());
     fusion::XPUResNetBlock1Fuser block1_fuser;
-    block1_fuser(graph.get());
+    changed |= block1_fuser(graph.get());
     fusion::XPUResNet50Fuser resnet50_fuser;
-    resnet50_fuser(graph.get());
+    size_t n_matches = resnet50_fuser(graph.get());
+
+    if (changed && !n_matches) {
+      // Restore graph from backuped one if no whole ResNet50 graph was found
+      graph->CloneFrom(backup);
+    }
   }
 };
 
@@ -948,4 +958,4 @@ class XPUResNet50FusePass : public ProgramPass {
 REGISTER_MIR_PASS(__xpu__resnet_fuse_pass,
                   paddle::lite::mir::XPUResNet50FusePass)
     .BindTargets({TARGET(kXPU)})
-    .BindKernel("conv2d");
+    .BindKernel("__xpu__resnet50");

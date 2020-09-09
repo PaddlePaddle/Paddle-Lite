@@ -2,6 +2,10 @@ if(NOT LITE_WITH_CUDA)
     return()
 endif()
 
+if(WITH_CUDA_FP16)
+  add_definitions("-DCUDA_WITH_FP16")
+endif()
+
 set(paddle_known_gpu_archs "30 35 50 52 60 61 70")
 set(paddle_known_gpu_archs7 "30 35 50 52")
 set(paddle_known_gpu_archs8 "30 35 50 52 53 60 61 62")
@@ -167,6 +171,10 @@ elseif (${CUDA_VERSION} LESS 11.0) # CUDA 10.x
   add_definitions("-DPADDLE_CUDA_BINVER=\"100\"")
 endif()
 
+if (CUDA_WITH_FP16)
+  STRING(REGEX REPLACE "30|35|50|52" "" paddle_known_gpu_archs ${paddle_known_gpu_archs})
+endif()
+
 include_directories(${CUDA_INCLUDE_DIRS})
 if(NOT WITH_DSO)
     if(WIN32)
@@ -265,3 +273,12 @@ endif(NOT WIN32)
 
 mark_as_advanced(CUDA_BUILD_CUBIN CUDA_BUILD_EMULATION CUDA_VERBOSE_BUILD)
 mark_as_advanced(CUDA_SDK_ROOT_DIR CUDA_SEPARABLE_COMPILATION)
+
+if (LITE_WITH_NVTX)
+  if (${CUDA_VERSION} GREATER 10.0)
+    add_definitions("-DLITE_WITH_NVTX")
+  else()
+    message(WARNING "CUDA_VERSION should be larger than 10.0 to enable NVTX, force set LITE_WITH_NVTX OFF")
+    set(LITE_WITH_NVTX OFF)
+  endif()
+endif()

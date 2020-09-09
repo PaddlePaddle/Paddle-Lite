@@ -106,7 +106,7 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
 
   param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-  auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+  std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
   param_.groups = op_desc.GetAttr<int>("groups");
   auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
 
@@ -141,9 +141,25 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
       }
     }
   }
-  if (op_desc.HasAttr("fuse_relu")) {
-    param_.fuse_relu = op_desc.GetAttr<bool>("fuse_relu");
-    param_.activation_param.active_type = lite_api::ActivationType::kRelu;
+  if (op_desc.HasAttr("with_act") && op_desc.GetAttr<bool>("with_act")) {
+    param_.activation_param.has_active = true;
+    auto act_type = op_desc.GetAttr<std::string>("act_type");
+    if (act_type == "relu") {
+      param_.activation_param.active_type = lite_api::ActivationType::kRelu;
+      param_.fuse_relu = true;
+    } else if (act_type == "relu6") {
+      param_.activation_param.active_type = lite_api::ActivationType::kRelu6;
+      param_.activation_param.Relu_clipped_coef =
+          op_desc.GetAttr<float>("fuse_brelu_threshold");  // 6.f
+    } else if (act_type == "leaky_relu") {
+      param_.activation_param.active_type =
+          lite_api::ActivationType::kLeakyRelu;
+      param_.activation_param.Leaky_relu_alpha =
+          op_desc.GetAttr<float>("leaky_relu_alpha");
+    } else {
+      CHECK(false)
+          << "The fused conv only supports fuse with relu and leaky relu";
+    }
   }
   if (op_desc.HasAttr("output_size")) {
     param_.output_size = op_desc.GetAttr<std::vector<int>>("output_size");

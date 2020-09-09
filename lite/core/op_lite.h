@@ -24,7 +24,7 @@
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/scope.h"
-#include "lite/model_parser/cpp/op_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/operators/op_params.h"
 
 namespace paddle {
@@ -99,7 +99,7 @@ class OpLite : public Registry {
   std::vector<std::unique_ptr<KernelBase>> CreateKernels(
       const std::vector<Place> &places, const std::string &kernel_type = "");
 
-  lite::Scope *scope() { return scope_; }
+  Scope *scope() { return scope_; }
 
   // Assign op param to kernel.
   virtual void AttachKernel(KernelBase *kernel) = 0;
@@ -169,7 +169,7 @@ class OpLite : public Registry {
   }
 
  protected:
-  lite::Scope *scope_{nullptr};
+  Scope *scope_{nullptr};
   std::unique_ptr<KernelBase> kernel_;
   std::string op_type_;
   std::vector<Place> valid_places_;
@@ -229,55 +229,8 @@ class OpInfo : public cpp::OpDesc {
     return OutputArgumentNames();
   }
 
-  bool GetInputArgname(const std::string &value_name, std::string *out) const {
-    for (auto &item : inputs_) {
-      auto it = std::find(item.second.begin(), item.second.end(), value_name);
-      if (it != item.second.end()) {
-        *out = item.first;
-        return true;
-      }
-    }
-    return false;
-  }
-  bool GetOutputArgname(const std::string &value_name, std::string *out) const {
-    for (auto &item : outputs_) {
-      auto it = std::find(item.second.begin(), item.second.end(), value_name);
-      if (it != item.second.end()) {
-        *out = item.first;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // For the input variable name, find the index of the corresponding
-  // input argname
-  bool GetInputIndex(const std::string &value_name, int *out) const {
-    for (auto &item : inputs_) {
-      auto it = std::find(item.second.begin(), item.second.end(), value_name);
-      if (it != item.second.end()) {
-        *out = it - item.second.begin();
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // For the output variable name, find the index of the corresponding
-  // output argname
-  bool GetOutputIndex(const std::string &value_name, int *out) const {
-    for (auto &item : outputs_) {
-      auto it = std::find(item.second.begin(), item.second.end(), value_name);
-      if (it != item.second.end()) {
-        *out = it - item.second.begin();
-        return true;
-      }
-    }
-    return false;
-  }
-
   void UpdateAllInputs(const std::string &from, const std::string &to) {
-    for (auto &item : inputs_) {
+    for (auto &item : *mutable_inputs()) {
       for (auto &var : item.second) {
         if (var == from) var = to;
       }
@@ -285,12 +238,32 @@ class OpInfo : public cpp::OpDesc {
   }
 
   void UpdateAllOutputs(const std::string &from, const std::string &to) {
-    for (auto &item : outputs_) {
+    for (auto &item : *mutable_outputs()) {
       for (auto &var : item.second) {
         if (var == from) var = to;
       }
     }
   }
+
+  bool GetInputArgname(const std::string &value_name, std::string *out) const;
+  bool GetOutputArgname(const std::string &value_name, std::string *out) const;
+
+  bool GetInputIndex(const std::string &input_name, int *out) const;
+  bool GetOutputIndex(const std::string &output_name, int *out) const;
+
+  bool HasInputScale(const std::string &input_name) const;
+  bool HasOutputScale(const std::string &output_name) const;
+
+  void SetInputScale(const std::string &input_name,
+                     const std::vector<float> &scale_value);
+  void SetOutputScale(const std::string &output_name,
+                      const std::vector<float> &scale_value);
+
+  // For conv2d, depthwise_conv2d and mul, the scale of weight are a vector.
+  // Otherwise, all input and output scales are scalar, but we save these
+  // as vecotr.
+  std::vector<float> GetInputScale(const std::string &input_name) const;
+  std::vector<float> GetOutputScale(const std::string &output_name) const;
 };
 
 }  // namespace lite

@@ -30,6 +30,8 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
 #include "lite/core/device_info.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
@@ -163,7 +165,7 @@ void Run(const std::vector<int64_t>& input_shape,
     auto end = GetCurrentUS();
     perf_vct.push_back((end - start) / 1000.0);
   }
-  std::sort(perf_vct.begin(), perf_vct.end());
+  std::stable_sort(perf_vct.begin(), perf_vct.end());
   float min_res = perf_vct.back();
   float max_res = perf_vct.front();
   float total_res = accumulate(perf_vct.begin(), perf_vct.end(), 0.0);

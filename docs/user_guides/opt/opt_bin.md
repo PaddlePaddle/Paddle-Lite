@@ -3,10 +3,14 @@
 opt是 x86 平台上的可执行文件，需要在PC端运行：支持Linux终端和Mac终端。
 
 ### 帮助信息
- 执行opt时不加入任何输入选项，会输出帮助信息，提示当前支持的选项：
+
+执行opt时不加入任何输入选项，会输出帮助信息，提示当前支持的选项：
+
 ```bash
  ./opt
 ```
+> **注意：** 如果您是通过[准备opt](https://paddle-lite.readthedocs.io/zh/latest/user_guides/model_optimize_tool.html#id1)页面中，"方法二：下载opt可执行文件" 中提供的链接下载得到的opt可执行文件，请先通过`chmod +x ./opt`命令为下载的opt文件添加可执行权限。
+
 ![](https://paddlelite-data.bj.bcebos.com/doc_images/1.png)
 
 ### 功能一：转化模型为Paddle-Lite格式
@@ -66,7 +70,8 @@ paddle_lite_opt \
 
 * 如果待优化的fluid模型是非combined形式，请设置`--model_dir`，忽略`--model_file`和`--param_file`。
 * 如果待优化的fluid模型是combined形式，请设置`--model_file`和`--param_file`，忽略`--model_dir`。
-* 优化后的模型为以`.nb`名称结尾的单个文件。
+* `naive_buffer`的优化后模型为以`.nb`名称结尾的单个文件。
+* `protobuf`的优化后模型为文件夹下的`model`和`params`两个文件。将`model`重命名为`__model__`用[Netron](https://lutzroeder.github.io/netron/)打开，即可查看优化后的模型结构。
 * 删除`prefer_int8_kernel`的输入参数，`opt`自动判别是否是量化模型，进行相应的优化操作。
 
 ### 功能二：统计模型算子信息、判断是否支持

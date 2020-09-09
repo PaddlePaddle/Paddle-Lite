@@ -16,8 +16,6 @@
 #include <map>
 #include <set>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 #include "lite/core/mir/node.h"
@@ -34,7 +32,8 @@ class FuseBase {
 
   virtual ~FuseBase() = default;
 
-  void operator()(SSAGraph* graph) {
+  // Returns number of matched subgraphs
+  size_t operator()(SSAGraph* graph) {
     BuildPattern();
     PerformPatternMatcher(graph);
 
@@ -43,6 +42,7 @@ class FuseBase {
     }
 
     DeleteInterNodes(graph);
+    return key2nodes_.size();
   }
 
   // Build a PMPattern using PMNode.

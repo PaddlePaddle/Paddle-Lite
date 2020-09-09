@@ -20,7 +20,7 @@
 #include "lite/api/paddle_use_passes.h"
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/core/program.h"
-#include "lite/model_parser/cpp/program_desc.h"
+#include "lite/model_parser/cpp_desc.h"
 #include "lite/model_parser/model_parser.h"
 
 DEFINE_string(model_dir, "", "model_dir");
@@ -141,12 +141,11 @@ std::vector<std::string> AddFetchDesc(
 }
 
 TEST(Subgraph, detect_simple_model) {
-  cpp::ProgramDesc program_desc;
+  auto program_desc = std::make_shared<cpp::ProgramDesc>();
   std::vector<Place> valid_places{{TARGET(kHost), PRECISION(kFloat)}};
   auto scope = std::make_shared<Scope>();
   // Build a simple network
-  program_desc.ClearBlocks();
-  auto* block_desc = program_desc.AddBlock<cpp::BlockDesc>();
+  auto* block_desc = program_desc->AddBlock<cpp::BlockDesc>();
   block_desc->ClearOps();
   block_desc->ClearVars();
   auto* var_desc = block_desc->AddVar<cpp::VarDesc>();
@@ -181,13 +180,13 @@ TEST(Subgraph, detect_custom_model) {
                  "the path of model files.";
     return;
   }
-  cpp::ProgramDesc program_desc;
+  auto program_desc = std::make_shared<cpp::ProgramDesc>();
   auto scope = std::make_shared<Scope>();
   LoadModelPb(FLAGS_model_dir,
               FLAGS_model_file,
               FLAGS_params_file,
               scope.get(),
-              &program_desc,
+              program_desc.get(),
               !FLAGS_model_file.empty() && !FLAGS_params_file.empty(),
               false);
   std::vector<Place> valid_places({
@@ -199,6 +198,9 @@ TEST(Subgraph, detect_custom_model) {
 #endif
 #ifdef LITE_WITH_NPU
       Place{TARGET(kNPU), PRECISION(kFloat)},
+#endif
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+      Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
 #endif
 #ifdef LITE_WITH_XTCL
       Place{TARGET(kXPU), PRECISION(kFloat)},

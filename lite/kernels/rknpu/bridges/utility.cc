@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/rknpu/bridges/utility.h"
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "lite/core/op_lite.h"

@@ -24,10 +24,9 @@
 #include <map>
 #include <set>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "lite/core/framework.pb.h"
-#include "lite/model_parser/desc_apis.h"
+#include "lite/model_parser/base/apis.h"
 #include "lite/utils/all.h"
 
 namespace paddle {

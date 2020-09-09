@@ -69,7 +69,7 @@ void concat_compute_ref(const operators::ConcatParam& param) {
   std::vector<int> input_cols(input.size());
   for (int i = 0; i < num; ++i) {
     int input_i_numel = input[i]->dims().size() == 0 ? 0 : 1;
-    for (int didx = 0; didx < input[i]->dims().size(); ++didx) {
+    for (size_t didx = 0; didx < input[i]->dims().size(); ++didx) {
       input_i_numel *= input[i]->dims()[didx];
     }
     int t_cols = input_i_numel / rows;

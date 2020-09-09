@@ -90,7 +90,7 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
       return;
     }
     last_shape_ = x_dims;
-    auto w_dims = param.w->dims();
+    auto w_dims = param.w_dims;
     auto& ctx = this->ctx_->template As<ARMContext>();
 
     CHECK_GE(x_dims.size(), 2UL);
@@ -99,14 +99,14 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
 
     m_ = x_dims.Slice(0, param.in_num_col_dims).production();
     k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
-    CHECK_EQ(k_, w_dims[0]);
     n_ = w_dims[1];
-    CHECK_EQ(k_, static_cast<int>(w_dims[0]));
     flag_gemm_ = check_fc_use_gemm<PType, OutType>(
         m_, param.weight_scale, param.bias != nullptr);
-    if (!flag_trans_weights_ && !flag_gemm_) {
-      flag_trans_weights_ = true;
-      fc_trans_weights<PType>(*param.w, &weights_);
+    if (flag_trans_weights_ == flag_gemm_) {
+      flag_trans_weights_ = !flag_trans_weights_;
+      Tensor tmp_tensor;
+      fc_trans_weights<PType>(*param.w, &tmp_tensor);
+      param.w->CopyDataFrom(tmp_tensor);
     }
   }
 
@@ -117,7 +117,6 @@ class FcCompute : public KernelLite<TARGET(kARM), PType> {
 
  private:
   DDim last_shape_;
-  Tensor weights_;
   Tensor bias_;
   bool flag_trans_weights_{false};
   bool flag_trans_bias_{false};

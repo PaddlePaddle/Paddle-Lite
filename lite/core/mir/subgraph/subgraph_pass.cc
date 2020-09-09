@@ -14,8 +14,8 @@
 
 #include "lite/core/mir/subgraph/subgraph_pass.h"
 #include <memory>
+#include <set>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 #include "lite/core/mir/pass_registry.h"
@@ -27,7 +27,7 @@ namespace lite {
 namespace mir {
 
 void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::unordered_set<std::string> supported_lists;
+  std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/npu/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
@@ -40,8 +40,23 @@ void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser();
 }
 
+void HuaweiAscendNPUSubgraphPass::Apply(
+    const std::unique_ptr<SSAGraph>& graph) {
+  std::set<std::string> supported_lists;
+#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
+#include "lite/kernels/huawei_ascend_npu/bridges/paddle_use_bridges.h"
+#undef USE_SUBGRAPH_BRIDGE
+  auto teller = [&](Node* node) {
+    if (!node->IsStmt()) return false;
+    auto& stmt = node->AsStmt();
+    return supported_lists.count(stmt.op_type()) != 0;
+  };
+  SubgraphFuser fuser(graph.get(), teller, 1 /* min_subgraph_size */);
+  fuser();
+}
+
 void APUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::unordered_set<std::string> supported_lists;
+  std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) \
   supported_lists.insert(#op_type);          \
   LOG(INFO) << #op_type
@@ -58,7 +73,7 @@ void APUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 void XPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (!GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
-  std::unordered_set<std::string> supported_lists;
+  std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/xpu/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
@@ -72,7 +87,7 @@ void XPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 void BMSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::unordered_set<std::string> supported_lists;
+  std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/bm/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
@@ -86,7 +101,7 @@ void BMSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 void RKNPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::unordered_set<std::string> supported_lists;
+  std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/rknpu/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
@@ -100,7 +115,7 @@ void RKNPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::unordered_set<std::string> supported_lists;
+  std::set<std::string> supported_lists;
 #define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
 #include "lite/kernels/mlu/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
@@ -119,6 +134,9 @@ void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(npu_subgraph_pass, paddle::lite::mir::NPUSubgraphPass)
     .BindTargets({TARGET(kNPU)});
+REGISTER_MIR_PASS(huawei_ascend_npu_subgraph_pass,
+                  paddle::lite::mir::HuaweiAscendNPUSubgraphPass)
+    .BindTargets({TARGET(kHuaweiAscendNPU)});
 REGISTER_MIR_PASS(apu_subgraph_pass, paddle::lite::mir::APUSubgraphPass)
     .BindTargets({TARGET(kAPU)});
 REGISTER_MIR_PASS(xpu_subgraph_pass, paddle::lite::mir::XPUSubgraphPass)

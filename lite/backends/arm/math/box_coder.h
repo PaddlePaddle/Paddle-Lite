@@ -22,13 +22,14 @@ namespace lite {
 namespace arm {
 namespace math {
 
-void box_coder(lite::Tensor* proposals,
-               const lite::Tensor* anchors,
-               const lite::Tensor* variances,
-               const lite::Tensor* bbox_deltas,
-               const std::string code_type,
-               bool box_normalized,
-               int axis);
+void decode_bboxes(const int batch_num,
+                   const float* loc_data,
+                   const float* prior_data,
+                   const float* variance_data,
+                   const std::string code_type,
+                   const bool normalized,
+                   const int num_priors,
+                   float* bbox_data);
 
 }  // namespace math
 }  // namespace arm

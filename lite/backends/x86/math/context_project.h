@@ -146,7 +146,7 @@ class ContextProjectFunctor {
       }
     }
     if (padding_trainable) {
-      PADDLE_ENFORCE(padding_data != nullptr);
+      CHECK(padding_data != nullptr);
       for (int i = 0; i < static_cast<int>(lod_level_0.size()) - 1; ++i) {
         if (lod_level_0[i] == lod_level_0[i + 1]) continue;
 

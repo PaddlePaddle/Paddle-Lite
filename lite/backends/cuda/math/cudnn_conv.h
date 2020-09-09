@@ -81,6 +81,7 @@ class CudnnConv2DBase {
   cudaStream_t stream_;
   cudnnHandle_t handle_;
   cudnnConvolutionFwdAlgo_t fwd_algo_;
+  cudnnConvolutionFwdAlgoPerf_t algo_perf_;
   cudnnTensorDescriptor_t input_desc_;
   cudnnTensorDescriptor_t output_desc_;
   cudnnTensorDescriptor_t bias_desc_;
@@ -98,15 +99,13 @@ class CudnnConv2DBase {
 
   const bool use_tensor_core_ = true;
   const size_t workspace_limit_bytes_ = 4 * 1024 * 1024;
-  const cudnnConvolutionFwdPreference_t preference_ =
-      CUDNN_CONVOLUTION_FWD_PREFER_FASTEST;
 
   // For int8
   Tensor temp_tensor_;
   Tensor scale_;
 };
 
-template <PrecisionType Ptype_out>
+template <typename T, PrecisionType Ptype_out>
 class CudnnConv2D : public CudnnConv2DBase<Ptype_out> {
  public:
   CudnnConv2D() : CudnnConv2DBase<Ptype_out>() {}

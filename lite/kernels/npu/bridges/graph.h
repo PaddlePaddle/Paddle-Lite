@@ -14,11 +14,12 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
+#include "graph/compatible/all_ops.h"
 #include "graph/op/all_ops.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
@@ -187,7 +188,7 @@ class Graph {
   }
 
  private:
-  std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
+  std::map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
 };
 
 }  // namespace npu

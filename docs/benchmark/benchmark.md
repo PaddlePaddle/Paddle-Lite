@@ -2,7 +2,7 @@
 
 可以参考[benchmark_tools](benchmark_tools)，推荐**一键benchmark**。
 
-## 测试环境
+## ARM测试环境
 
 * 测试模型
     * fp32模型
@@ -38,7 +38,7 @@
     * 当线程数为1时，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH，否者设置LITE_POWER_NO_BIND
     * 模型的输入图像的维度是{1, 3, 224, 224}，输入图像的每一位数值是1
     
-## 测试数据
+## ARM测试数据
 
 
 ### fp32模型测试数据
@@ -120,3 +120,59 @@ mobilenet_v2 |47.13 |25.62 |13.56 |41.87 |22.42 |11.72 |
 threads num|1 |2 |4 |1 |2 |4 |
 mobilenet_v1 |63.13 |32.63 |16.85 |58.92 |29.96 |15.42 |
 mobilenet_v2 |48.60 |25.43 |13.76 |43.06 |22.10 |12.09 |
+
+
+## 华为麒麟NPU测试环境
+
+* 测试模型
+    * fp32模型
+        * mobilenet_v1
+        * mobilenet_v2
+        * squeezenet_v1.1
+        * mnasnet
+
+* 测试机器(android ndk ndk-r17c)
+   *  麒麟810
+      * HUAWEI Nova5, Kirin 810
+      * 2xCortex A76 2.27GHz + 6xCortex A55 1.88GHz
+
+   *  麒麟990
+      * HUAWEI Mate 30, Kirin 990
+      * 2 x Cortex-A76 Based 2.86 GHz + 2 x Cortex-A76 Based 2.09 GHz + 4 x Cortex-A55 1.86 GHz
+
+   *  麒麟990 5G
+      * HUAWEI P40, Kirin 990 5G
+      * 2 x Cortex-A76 Based 2.86GHz + 2 x Cortex-A76 Based 2.36GHz + 4 x Cortex-A55 1.95GHz
+
+* HIAI ddk 版本： 310 or 320
+ 
+* 测试说明
+    * branch: release/v2.6.1
+    * warmup=10, repeats=30，统计平均时间，单位是ms
+    * 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
+    * 模型的输入图像的维度是{1, 3, 224, 224}，输入图像的每一位数值是1
+    
+## 华为麒麟NPU测试数据
+
+#### paddlepaddle model
+
+- ddk 310
+
+|Kirin |810||990||990 5G||
+|---|---|---|---|---|---|---|
+|  |cpu(ms) | npu(ms) |cpu(ms) | npu(ms) |cpu(ms) | npu(ms) |
+|mobilenet_v1|	 41.20|  12.76|  31.91|  4.07|  33.97|  3.20|
+|mobilenet_v2|	 29.57|  12.12|  22.47|  5.61|  23.17|  3.51|
+|squeezenet|  23.96|  9.04|  17.79|  3.82|	 18.65|  3.01|
+|mnasnet|  26.47|  13.62|  19.54|  5.17|	 20.34|  3.32|
+
+
+- ddk 320
+
+|模型 |990||990-5G||
+|---|---|---|---|---|
+||cpu(ms) | npu(ms) |cpu(ms) | npu(ms) |
+|ssd_mobilenetv1|  65.67|  18.21|  71.8|	16.6|
+
+
+*说明：ssd_mobilenetv1的npu性能为npu、cpu混合调度运行的总时间*

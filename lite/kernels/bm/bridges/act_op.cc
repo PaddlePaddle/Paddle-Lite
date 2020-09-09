@@ -15,8 +15,8 @@
 #include <bmcompiler_if.h>
 #include <bmcompiler_if_lite.h>
 #include <bmcompiler_op_code.h>
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {

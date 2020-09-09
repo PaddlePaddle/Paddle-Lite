@@ -22,7 +22,8 @@ CMAKE编译选项：
 
 - 设置`LITE_WITH_FPGA=ON`和`LITE_WITH_ARM=ON`
 
-其他编译选项与ARM编译相同，可以参考[“Paddle Lite在Docker下的ARM编译”](../user_guides/source_compile)。
+其他编译选项与ARM编译相同，可以参考[“Paddle Lite在Docker下的ARM编译”](../source_compile/compile_linux)。
+
 示例如下：
 ```shell
     cmake .. \

@@ -15,8 +15,8 @@
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
 #include "lite/fluid/data_type.h"
 #include <stdint.h>
+#include <map>
 #include <string>
-#include <unordered_map>
 
 using float16 = paddle::lite::fluid::float16;
 
@@ -25,11 +25,10 @@ namespace lite {
 namespace fluid {
 
 struct DataTypeMap {
-  std::unordered_map<std::type_index, framework::proto::VarType::Type>
-      cpp_to_proto_;
-  std::unordered_map<int, std::type_index> proto_to_cpp_;
-  std::unordered_map<int, std::string> proto_to_str_;
-  std::unordered_map<int, size_t> proto_to_size_;
+  std::map<std::type_index, framework::proto::VarType::Type> cpp_to_proto_;
+  std::map<int, std::type_index> proto_to_cpp_;
+  std::map<int, std::string> proto_to_str_;
+  std::map<int, size_t> proto_to_size_;
 };
 
 static DataTypeMap* InitDataTypeMap();
@@ -68,7 +67,7 @@ framework::proto::VarType::Type ToDataType(std::type_index type) {
   if (it != gDataTypeMap().cpp_to_proto_.end()) {
     return it->second;
   }
-  PADDLE_THROW("Not support %s as tensor type", type.name());
+  LOG(FATAL) << "Not support " << type.name() << " as tensor type";
   return static_cast<framework::proto::VarType::Type>(-1);
 }
 
@@ -77,8 +76,8 @@ std::type_index ToTypeIndex(framework::proto::VarType::Type type) {
   if (it != gDataTypeMap().proto_to_cpp_.end()) {
     return it->second;
   }
-  PADDLE_THROW("Not support framework::proto::VarType::Type(%d) as tensor type",
-               static_cast<int>(type));
+  LOG(FATAL) << "Not support framework::proto::VarType::Type("
+             << static_cast<int>(type) << ") as tensor type";
   return std::type_index(typeid(void));
 }
 
@@ -87,8 +86,8 @@ std::string DataTypeToString(const framework::proto::VarType::Type type) {
   if (it != gDataTypeMap().proto_to_str_.end()) {
     return it->second;
   }
-  PADDLE_THROW("Not support framework::proto::VarType::Type(%d) as tensor type",
-               static_cast<int>(type));
+  LOG(FATAL) << "Not support framework::proto::VarType::Type("
+             << static_cast<int>(type) << ") as tensor type";
   return std::string();
 }
 
@@ -97,7 +96,8 @@ size_t SizeOfType(framework::proto::VarType::Type type) {
   if (it != gDataTypeMap().proto_to_size_.end()) {
     return it->second;
   }
-  PADDLE_THROW("Not support %s as tensor type", DataTypeToString(type).c_str());
+  LOG(FATAL) << "Not support " << DataTypeToString(type).c_str()
+             << " as tensor type";
   return 0;
 }
 

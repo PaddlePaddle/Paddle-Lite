@@ -25,6 +25,13 @@ CLRuntime* CLRuntime::Global() {
 }
 
 CLRuntime::~CLRuntime() {
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
+#endif
+  if (is_cl_runtime_initialized_ == false) {
+    return;
+  }
+
   if (command_queue_ != nullptr) {
     command_queue_->flush();
     command_queue_->finish();
@@ -38,17 +45,55 @@ CLRuntime::~CLRuntime() {
 }
 
 bool CLRuntime::Init() {
-  if (initialized_) {
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
+#endif
+  if (is_cl_runtime_initialized_) {
     return true;
   }
-  bool is_platform_init = InitializePlatform();
-  bool is_device_init = InitializeDevice();
-  is_init_success_ = is_platform_init && is_device_init;
-  initialized_ = true;
 
-  context_ = CreateContext();
-  command_queue_ = CreateCommandQueue(context());
-  return initialized_;
+  bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
+#endif
+  if (opencl_lib_found == false) {
+    return false;
+  }
+
+  bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "dlsym_success:" << dlsym_success;
+#endif
+  if (dlsym_success == false) {
+    return false;
+  }
+
+  bool is_platform_init = InitializePlatform();
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "is_platform_init:" << is_platform_init;
+#endif
+  if (is_platform_init == false) {
+    return false;
+  }
+
+  bool is_device_init = InitializeDevice();
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "is_device_init:" << is_device_init;
+#endif
+  if (is_device_init == false) {
+    return false;
+  }
+
+  if ((is_platform_init == true) && (is_device_init == true)) {
+    is_platform_device_init_success_ = true;
+    context_ = CreateContext();
+    command_queue_ = CreateCommandQueue(context());
+    is_cl_runtime_initialized_ = true;
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "set is_cl_runtime_initialized_ = true";
+#endif
+  }
+  return is_cl_runtime_initialized_;
 }
 
 cl::Platform& CLRuntime::platform() {
@@ -64,7 +109,9 @@ cl::Context& CLRuntime::context() {
 }
 
 cl::Device& CLRuntime::device() {
-  CHECK(device_ != nullptr) << "device_ is not initialized!";
+  if (device_ == nullptr) {
+    LOG(ERROR) << "device_ is not initialized!";
+  }
   return *device_;
 }
 
@@ -133,23 +180,35 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
   const std::string kMALI_PATTERN_STR = "Mali";
   const std::string kADRENO_PATTERN_STR = "QUALCOMM Adreno(TM)";
   const std::string kPOWERVR_PATTERN_STR = "PowerVR";
+  std::string gpu_type_str = "";
 
   if (device_name == kADRENO_PATTERN_STR) {
-    LOG(INFO) << "adreno gpu";
+    gpu_type_str = "adreno gpu";
     return GpuType::QUALCOMM_ADRENO;
   } else if (device_name.find(kMALI_PATTERN_STR) != std::string::npos) {
-    LOG(INFO) << "mali gpu";
+    gpu_type_str = "mali gpu";
     return GpuType::ARM_MALI;
   } else if (device_name.find(kPOWERVR_PATTERN_STR) != std::string::npos) {
-    LOG(INFO) << "powerVR gpu";
+    gpu_type_str = "powerVR gpu";
     return GpuType::IMAGINATION_POWERVR;
   } else {
-    LOG(INFO) << "others gpu";
+    gpu_type_str = "others gpu";
     return GpuType::UNKNOWN;
   }
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "gpu_type_str:" << gpu_type_str;
+#endif
 }
 
 bool CLRuntime::InitializeDevice() {
+  VLOG(3) << "device_info_.size():" << device_info_.size();
+  for (auto i : device_info_) {
+    VLOG(3) << ">>> " << i.first << " " << i.second;
+  }
+  if (device_info_.size() > 0 && device_info_.size() <= 2) {
+    return false;
+  }
+  device_info_["PLACEHOLDER"] = 1;
   // ===================== BASIC =====================
   // CL_DEVICE_TYPE_GPU
   // CL_DEVICE_NAME
@@ -160,7 +219,7 @@ bool CLRuntime::InitializeDevice() {
   status_ = platform_->getDevices(CL_DEVICE_TYPE_GPU, &all_devices);
   CL_CHECK_ERROR(status_);
   if (all_devices.empty()) {
-    LOG(FATAL) << "No OpenCL GPU device found!";
+    LOG(ERROR) << "No available OpenCL GPU device found!";
     return false;
   }
   device_ = std::make_shared<cl::Device>();
@@ -313,9 +372,6 @@ bool CLRuntime::InitializeDevice() {
 }
 
 std::map<std::string, size_t>& CLRuntime::GetDeviceInfo() {
-  if (0 != device_info_.size()) {
-    return device_info_;
-  }
   InitializeDevice();
   return device_info_;
 }

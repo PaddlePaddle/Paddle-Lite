@@ -14,9 +14,9 @@
 
 #include <bmcompiler_if.h>
 #include <bmcompiler_op_code.h>
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -58,9 +58,7 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
   for (size_t i = 0; i < axes.size(); i++) {
     begin_index[axes[i]] = starts[i];
-    end_index[axes[i]] = ends[i] > static_cast<int32_t>(input_dims.size())
-                             ? static_cast<int32_t>(input_dims.size())
-                             : ends[i];
+    end_index[axes[i]] = ends[i];
     begin_mask &= ~(1 << axes[i]);
     end_mask &= ~(1 << axes[i]);
   }

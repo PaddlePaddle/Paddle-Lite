@@ -121,7 +121,7 @@ lite_cc_library(kernel SRCS kernel.cc
         PROFILE_DEPS lite_profiler
   )
 lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
-  cpp_op_desc tensor
+  cpp_op_desc tensor utils
   )
 
 add_dependencies(kernel kernel_list_h)
@@ -132,13 +132,23 @@ lite_cc_library(type_system SRCS type_system.cc DEPS tensor target_wrapper)
 
 lite_cc_library(program SRCS program.cc
     DEPS op kernel model_parser ${ops} ${cpp_wrapper}
-    PROFILE_DEPS lite_profiler)
+    PROFILE_DEPS lite_profiler
+    CUDA_DEPS nvtx_wrapper cuda_type_trans)
 
 if (NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(optimizer SRCS optimizer.cc DEPS mir_pass_manager model_parser program)
   add_subdirectory(mir)
   add_subdirectory(profile)
   add_subdirectory(arena)
+endif()
+
+if(LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU)
+    lite_cc_library(subgraph_bridge_registry
+      SRCS subgraph_bridge_registry.cc
+      DEPS op)
+   lite_cc_library(subgraph_engine_base
+      SRCS subgraph_engine_base.cc
+      DEPS tensor op scope program)
 endif()
 
 # for mobile, unnecessary to compile the following testings.

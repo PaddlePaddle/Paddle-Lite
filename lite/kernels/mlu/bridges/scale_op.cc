@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/mlu/bridges/utility.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -61,6 +61,7 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                               alpha_tensor->mlu_tensor(),
                               beta_tensor->mlu_tensor()));
   graph->FuseOp(scale_op);
+  CNML_CALL(cnmlDestroyBaseOp(&scale_op));
   return SUCCESS;
 }
 

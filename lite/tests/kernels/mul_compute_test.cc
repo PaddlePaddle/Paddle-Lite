@@ -127,8 +127,9 @@ TEST(Mul, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+  abs_error = 1e-3;  // use int16 in xpu
 #else
   return;
 #endif

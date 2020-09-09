@@ -32,6 +32,10 @@
 #include "lite/kernels/opencl/image_helper.h"
 #endif
 
+#ifdef LITE_WITH_CUDA
+#include "lite/backends/cuda/math/type_trans.h"
+#endif
+
 namespace paddle {
 namespace lite {
 namespace profile {
@@ -259,6 +263,84 @@ class PrecisionProfiler {
                                       in->data<float>(),
                                       in->numel() * sizeof(float),
                                       IoDirection::DtoH);
+          VLOG(1) << name << ":" << in->numel();
+          *mean = compute_mean<float>(in_data_v.data(), in->numel());
+          *std_dev = compute_standard_deviation<float>(
+              in_data_v.data(), in->numel(), true, *mean);
+          *ave_grow_rate =
+              compute_average_grow_rate<float>(in_data_v.data(), in->numel());
+          write_result_to_file&& write_tensorfile<float>(in, name);
+          return;
+        }
+        default:
+          *mean = -222222222222;
+          *std_dev = -22222222222;
+          *ave_grow_rate = -22222222222;
+          LOG(ERROR) << unsupported_error_log;
+          return;
+      }
+#endif
+#ifdef LITE_WITH_CUDA
+    } else if (target_type == TARGET(kCUDA)) {
+      switch (precision_type) {
+        case PRECISION(kAny):
+        case PRECISION(kFloat): {
+          std::vector<float> in_data_v(in->numel(), 0);
+          TargetWrapperCuda::MemcpySync(in_data_v.data(),
+                                        in->data<float>(),
+                                        in->numel() * sizeof(float),
+                                        IoDirection::DtoH);
+          VLOG(1) << name << ":" << in->numel();
+          *mean = compute_mean<float>(in_data_v.data(), in->numel());
+          *std_dev = compute_standard_deviation<float>(
+              in_data_v.data(), in->numel(), true, *mean);
+          *ave_grow_rate =
+              compute_average_grow_rate<float>(in_data_v.data(), in->numel());
+          write_result_to_file&& write_tensorfile<float>(in, name);
+          return;
+        }
+        case PRECISION(kInt32): {
+          std::vector<int> in_data_v(in->numel(), 0);
+          TargetWrapperCuda::MemcpySync(in_data_v.data(),
+                                        in->data<int>(),
+                                        in->numel() * sizeof(int),
+                                        IoDirection::DtoH);
+          VLOG(1) << name << ":" << in->numel();
+          *mean = compute_mean<int>(in_data_v.data(), in->numel());
+          *std_dev = compute_standard_deviation<int>(
+              in_data_v.data(), in->numel(), true, *mean);
+          *ave_grow_rate =
+              compute_average_grow_rate<int>(in_data_v.data(), in->numel());
+          write_result_to_file&& write_tensorfile<float>(in, name);
+          return;
+        }
+        case PRECISION(kInt64): {
+          std::vector<int64_t> in_data_v(in->numel(), 0);
+          TargetWrapperCuda::MemcpySync(in_data_v.data(),
+                                        in->data<int64_t>(),
+                                        in->numel() * sizeof(int64_t),
+                                        IoDirection::DtoH);
+          VLOG(1) << name << ":" << in->numel();
+          *mean = compute_mean<int64_t>(in_data_v.data(), in->numel());
+          *std_dev = compute_standard_deviation<int64_t>(
+              in_data_v.data(), in->numel(), true, *mean);
+          *ave_grow_rate =
+              compute_average_grow_rate<int64_t>(in_data_v.data(), in->numel());
+          write_result_to_file&& write_tensorfile<float>(in, name);
+          return;
+        }
+        case PRECISION(kFP16): {
+          std::vector<float> in_data_v(in->numel(), 0);
+          lite::Tensor fp32_tensor;
+          fp32_tensor.Resize(in->dims());
+          lite::cuda::math::fp16_to_fp32(
+              in->numel(),
+              in->data<half>(),
+              fp32_tensor.mutable_data<float>(TARGET(kCUDA)));
+          TargetWrapperCuda::MemcpySync(in_data_v.data(),
+                                        fp32_tensor.data<float>(),
+                                        in->numel() * sizeof(float),
+                                        IoDirection::DtoH);
           VLOG(1) << name << ":" << in->numel();
           *mean = compute_mean<float>(in_data_v.data(), in->numel());
           *std_dev = compute_standard_deviation<float>(

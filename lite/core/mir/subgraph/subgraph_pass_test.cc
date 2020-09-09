@@ -13,8 +13,12 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+
 #include <cmath>
+
 #include "lite/api/paddle_api.h"
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
 #include "lite/api/test_helper.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
@@ -182,6 +186,10 @@ TEST(Subgraph, generate_model_and_check_precision) {
 // Generate and run optimized model on NPU/XPU as the target predictor
 #ifdef LITE_WITH_NPU
   valid_places.push_back(lite_api::Place{TARGET(kNPU), PRECISION(kFloat)});
+#endif
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+  valid_places.push_back(
+      lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)});
 #endif
 #ifdef LITE_WITH_XTCL
   valid_places.push_back(lite_api::Place{TARGET(kXPU), PRECISION(kFloat)});

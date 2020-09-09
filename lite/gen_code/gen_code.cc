@@ -59,7 +59,7 @@ void Module::AddHeaderIncludeGenCode() {
   Line("#include \"lite/gen_code/paddle_infer.h\"");
   Line("#include \"lite/core/op_registry.h\"");
   Line("#include \"lite/core/scope.h\"");
-  Line("#include \"lite/model_parser/cpp/op_desc.h\"");
+  Line("#include \"lite/model_parser/cpp_desc.h\"");
   Line("");
   Line("");
 }

@@ -88,7 +88,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
   auto i_data = param.input->data<float>();
   auto o_data = param.output->mutable_data<float>();
-  auto w_data = flag_gemm_ ? param.w->data<float>() : weights_.data<float>();
+  auto w_data = param.w->data<float>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
@@ -149,14 +149,17 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 
   auto i_data = param.input->data<int8_t>();
   auto o_data = param.output->mutable_data<float>();
-  auto w_data =
-      flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
+  auto w_data = param.w->data<int8_t>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
   bool flag_relu = false;
+  operators::ActivationParam act_param;
+  lite_api::ActivationType act;
+  act_param.has_active = false;
   if (param.activation_type == "relu") {
+    act = lite_api::ActivationType::kRelu;
     flag_relu = true;
   }
   if (flag_gemm_) {
@@ -170,8 +173,8 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
-                             false,
                              scale_.data(),
+                             act_param,
                              &ctx);
     if (param.bias) {
       CHECK_EQ(param.bias->numel(), n_);
@@ -191,6 +194,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  param.bias != nullptr,
                                  b_data,
                                  flag_relu,
+                                 act,
                                  &ctx);
     }
   }
@@ -203,15 +207,20 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 
   auto i_data = param.input->data<int8_t>();
   auto o_data = param.output->mutable_data<int8_t>();
-  auto w_data =
-      flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
+  auto w_data = param.w->data<int8_t>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
   bool flag_relu = false;
+  operators::ActivationParam act_param;
+  act_param.has_active = false;
+  lite_api::ActivationType act;
   if (param.activation_type == "relu") {
     flag_relu = true;
+    act_param.has_active = true;
+    act_param.active_type = lite_api::ActivationType::kRelu;
+    act = lite_api::ActivationType::kRelu;
   }
   if (flag_gemm_) {
     CHECK(!param.bias) << "fc int8 kernel with int8 output using gemm kernel "
@@ -226,8 +235,8 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                              o_data,
                              nullptr,
                              false,
-                             flag_relu,
                              scale_.data(),
+                             act_param,
                              &ctx);
   } else {
     for (int i = 0; i < m_; ++i) {
@@ -243,6 +252,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                  param.bias != nullptr,
                                  b_data,
                                  flag_relu,
+                                 act,
                                  &ctx);
     }
   }

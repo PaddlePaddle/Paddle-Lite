@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/npu/bridges/graph.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -100,6 +100,9 @@ int ActConverter<ge::op::Activation>(void* ctx,
     auto offset = op_info->GetAttr<float>("offset");
     act_op->set_attr_negative_slope(slope);
     act_op->set_attr_coef(offset);
+  } else if (op_type == "thresholded_relu") {
+    auto threshold = op_info->GetAttr<float>("threshold");
+    act_op->set_attr_coef(threshold);
   }
   return SUCCESS;
 }
@@ -139,6 +142,10 @@ REGISTER_SUBGRAPH_BRIDGE(
     paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
 REGISTER_SUBGRAPH_BRIDGE(
     hard_sigmoid,
+    kNPU,
+    paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
+REGISTER_SUBGRAPH_BRIDGE(
+    thresholded_relu,
     kNPU,
     paddle::lite::subgraph::npu::ActConverter<ge::op::Activation>);
 

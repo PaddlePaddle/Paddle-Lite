@@ -23,29 +23,33 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
+#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph_engine_base.h"
 #include "lite/core/types.h"
-#include "lite/kernels/npu/bridges/engine.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace bm {
 
-class SubgraphEngine : public subgraph::Engine {
+class SubgraphEngine : public subgraph::SubgraphEngineBase {
  public:
   SubgraphEngine(KernelContext *ctx,
                  int block_idx,
-                 cpp::BlockDesc *block_desc,
+                 const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
+                 Scope *exec_scope,
                  const std::vector<std::string> &input_names,
-                 const std::vector<std::string> &output_names,
-                 Scope *scope)
-      : subgraph::Engine(
-            ctx, block_idx, block_desc, input_names, output_names, scope) {}
+                 const std::vector<std::string> &output_names)
+      : subgraph::SubgraphEngineBase(ctx,
+                                     block_idx,
+                                     program_desc,
+                                     exec_scope,
+                                     input_names,
+                                     output_names) {}
 
  protected:
-  int BuildDeviceProgram() override;
-  int LaunchDeviceProgram() override;
+  bool BuildDeviceProgram() override;
+  bool LaunchDeviceProgram() override;
 
  private:
   void *bmrt_hd_;

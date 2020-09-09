@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/split_compute.h"
 #include <gtest/gtest.h>
+
 #include <cstring>
 #include <limits>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/split_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -91,13 +93,13 @@ void split_compute_ref(const operators::SplitParam& param) {
 }
 
 TEST(split_arm, init) {
-  SplitCompute split;
+  SplitCompute<float, PRECISION(kFloat)> split;
   ASSERT_EQ(split.precision(), PRECISION(kFloat));
   ASSERT_EQ(split.target(), TARGET(kARM));
 }
 
 TEST(split_arm, compute) {
-  SplitCompute split;
+  SplitCompute<float, PRECISION(kFloat)> split;
   operators::SplitParam param;
 
   lite::Tensor x;
@@ -165,8 +167,7 @@ TEST(split_arm, compute) {
 }
 
 TEST(split, retrive_op) {
-  auto split =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>("split");
+  auto split = KernelRegistry::Global().Create("split");
   ASSERT_FALSE(split.empty());
   ASSERT_TRUE(split.front());
 }

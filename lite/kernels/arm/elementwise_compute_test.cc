@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/elementwise_compute.h"
 #include <gtest/gtest.h>
+
+#include <cmath>
 #include <string>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/elementwise_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -24,9 +27,7 @@ namespace kernels {
 namespace arm {
 
 TEST(elementwise_add_arm, retrive_op) {
-  auto elementwise_add =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "elementwise_add");
+  auto elementwise_add = KernelRegistry::Global().Create("elementwise_add");
   ASSERT_FALSE(elementwise_add.empty());
   ASSERT_TRUE(elementwise_add.front());
 }
@@ -140,6 +141,119 @@ void elementwise_compute_ref(const operators::ElementwiseParam& param,
   }
 }
 
+template <typename dtype>
+void elementwise_fmod_compute_ref(const operators::ElementwiseParam& param,
+                                  const std::string act_type) {
+  const dtype* x_data = param.X->data<const dtype>();
+  const dtype* y_data = param.Y->data<const dtype>();
+  dtype* out_data = param.Out->mutable_data<dtype>();
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int axis = param.axis;
+  if (axis < 0) {
+    axis = x_dims.size() - y_dims.size();
+  }
+  int batch = 1;
+  int channels = 1;
+  int num = 1;
+  for (int i = 0; i < axis; ++i) {
+    batch *= x_dims[i];
+  }
+  for (int i = 0; i < y_dims.size(); ++i) {
+    channels *= y_dims[i];
+  }
+  for (int i = y_dims.size() + axis; i < x_dims.size(); ++i) {
+    num *= x_dims[i];
+  }
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const dtype* din_ptr = x_data + offset;
+      const dtype diny_data = y_data[j];
+      dtype* dout_ptr = out_data + offset;
+      for (int k = 0; k < num; ++k) {
+        *dout_ptr = fmod(diny_data + fmod(*din_ptr, diny_data), diny_data);
+        dout_ptr++;
+        din_ptr++;
+      }
+    }
+  }
+  // do activation relu
+  if (act_type.size() > 0) {
+    if (act_type == "relu") {
+      for (int i = 0; i < batch; ++i) {
+        for (int j = 0; j < channels; ++j) {
+          dtype* dout_ptr = out_data + (i * channels + j) * num;
+          for (int k = 0; k < num; ++k) {
+            *dout_ptr = *dout_ptr > 0.0f ? *dout_ptr : 0.0f;
+            dout_ptr++;
+          }
+        }
+      }
+    }
+  }
+}
+
+template <typename dtype>
+void elementwise_imod_compute_ref(const operators::ElementwiseParam& param,
+                                  const std::string act_type) {
+  const dtype* x_data = param.X->data<const dtype>();
+  const dtype* y_data = param.Y->data<const dtype>();
+  dtype* out_data = param.Out->mutable_data<dtype>();
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
+  int axis = param.axis;
+  if (axis < 0) {
+    axis = x_dims.size() - y_dims.size();
+  }
+  int batch = 1;
+  int channels = 1;
+  int num = 1;
+  for (int i = 0; i < axis; ++i) {
+    batch *= x_dims[i];
+  }
+  for (int i = 0; i < y_dims.size(); ++i) {
+    channels *= y_dims[i];
+  }
+  for (int i = y_dims.size() + axis; i < x_dims.size(); ++i) {
+    num *= x_dims[i];
+  }
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const dtype* din_ptr = x_data + offset;
+      const dtype diny_data = y_data[j];
+      dtype* dout_ptr = out_data + offset;
+      for (int k = 0; k < num; ++k) {
+        *dout_ptr = (*din_ptr) % diny_data;
+        dout_ptr++;
+        din_ptr++;
+      }
+    }
+  }
+  // do activation relu
+  if (act_type.size() > 0) {
+    if (act_type == "relu") {
+      for (int i = 0; i < batch; ++i) {
+        for (int j = 0; j < channels; ++j) {
+          dtype* dout_ptr = out_data + (i * channels + j) * num;
+          for (int k = 0; k < num; ++k) {
+            *dout_ptr = *dout_ptr > 0.0f ? *dout_ptr : 0.0f;
+            dout_ptr++;
+          }
+        }
+      }
+    }
+  }
+}
+
+template void elementwise_fmod_compute_ref<float>(
+    const operators::ElementwiseParam& param, const std::string act_type);
+template void elementwise_imod_compute_ref<int32_t>(
+    const operators::ElementwiseParam& param, const std::string act_type);
+template void elementwise_imod_compute_ref<int64_t>(
+    const operators::ElementwiseParam& param, const std::string act_type);
+
 TEST(elementwise_add, compute) {
   ElementwiseAddCompute elementwise_add;
   operators::ElementwiseParam param;
@@ -222,8 +336,7 @@ TEST(elementwise_add, compute) {
 
 TEST(fusion_elementwise_add_activation_arm, retrive_op) {
   auto fusion_elementwise_add_activation =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "fusion_elementwise_add_activation");
+      KernelRegistry::Global().Create("fusion_elementwise_add_activation");
   ASSERT_FALSE(fusion_elementwise_add_activation.empty());
   ASSERT_TRUE(fusion_elementwise_add_activation.front());
 }
@@ -321,9 +434,7 @@ TEST(fusion_elementwise_add_activation_arm, compute) {
 }
 
 TEST(elementwise_mul_arm, retrive_op) {
-  auto elementwise_mul =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "elementwise_mul");
+  auto elementwise_mul = KernelRegistry::Global().Create("elementwise_mul");
   ASSERT_FALSE(elementwise_mul.empty());
   ASSERT_TRUE(elementwise_mul.front());
 }
@@ -416,20 +527,21 @@ TEST(elementwise_mul, compute) {
 
 TEST(fusion_elementwise_mul_activation_arm, retrive_op) {
   auto fusion_elementwise_mul_activation =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "fusion_elementwise_mul_activation");
+      KernelRegistry::Global().Create("fusion_elementwise_mul_activation");
   ASSERT_FALSE(fusion_elementwise_mul_activation.empty());
   ASSERT_TRUE(fusion_elementwise_mul_activation.front());
 }
 
 TEST(fusion_elementwise_mul_activation_arm, init) {
-  ElementwiseMulActivationCompute fusion_elementwise_mul_activation;
+  ElementwiseMulActivationCompute<float, PRECISION(kFloat)>
+      fusion_elementwise_mul_activation;
   ASSERT_EQ(fusion_elementwise_mul_activation.precision(), PRECISION(kFloat));
   ASSERT_EQ(fusion_elementwise_mul_activation.target(), TARGET(kARM));
 }
 
 TEST(fusion_elementwise_mul_activation_arm, compute) {
-  ElementwiseMulActivationCompute fusion_elementwise_mul_activation;
+  ElementwiseMulActivationCompute<float, PRECISION(kFloat)>
+      fusion_elementwise_mul_activation;
   operators::FusionElementwiseActivationParam param;
   lite::Tensor x, y, output, output_ref;
 
@@ -515,9 +627,7 @@ TEST(fusion_elementwise_mul_activation_arm, compute) {
 }
 
 TEST(elementwise_max_arm, retrive_op) {
-  auto elementwise_max =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "elementwise_max");
+  auto elementwise_max = KernelRegistry::Global().Create("elementwise_max");
   ASSERT_FALSE(elementwise_max.empty());
   ASSERT_TRUE(elementwise_max.front());
 }
@@ -610,8 +720,7 @@ TEST(elementwise_max, compute) {
 
 TEST(fusion_elementwise_max_activation_arm, retrive_op) {
   auto fusion_elementwise_max_activation =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "fusion_elementwise_max_activation");
+      KernelRegistry::Global().Create("fusion_elementwise_max_activation");
   ASSERT_FALSE(fusion_elementwise_max_activation.empty());
   ASSERT_TRUE(fusion_elementwise_max_activation.front());
 }
@@ -685,7 +794,7 @@ TEST(fusion_elementwise_max_activation_arm, compute) {
                 }
                 for (int i = 0; i < y_dim.production(); i++) {
                   float sign = i % 2 == 0 ? 0.5f : -0.5f;
-                  y_data[i] = i * sign;
+                  y_data[i] = (i + 1) * sign;
                 }
                 param.X = &x;
                 param.Y = &y;
@@ -708,6 +817,106 @@ TEST(fusion_elementwise_max_activation_arm, compute) {
   }
 }
 
+TEST(elementwise_mod_int64_arm, retrive_op) {
+  auto elementwise_mod = KernelRegistry::Global().Create("elementwise_mod");
+  ASSERT_FALSE(elementwise_mod.empty());
+  ASSERT_TRUE(elementwise_mod.front());
+}
+
+TEST(elementwise_mod_int64_arm, init) {
+  ElementwiseModCompute<int64_t, PRECISION(kInt64)> elementwise_mod;
+  ASSERT_EQ(elementwise_mod.precision(), PRECISION(kInt64));
+  ASSERT_EQ(elementwise_mod.target(), TARGET(kARM));
+}
+
+TEST(elementwise_mod_int64_arm, compute) {
+  ElementwiseModCompute<int64_t, PRECISION(kInt64)> elementwise_mod;
+  operators::ElementwiseParam param;
+  lite::Tensor x, y, output, output_ref;
+
+#if 1
+  for (auto n : {1, 3, 4}) {
+    for (auto c : {1, 3, 4}) {
+      for (auto h : {1, 3, 4}) {
+        for (auto w : {1, 3, 4}) {
+          for (auto axis : {-1, 0, 1, 3}) {
+            for (auto yd : {std::vector<int64_t>({n}),
+                            std::vector<int64_t>({c}),
+                            std::vector<int64_t>({h}),
+                            std::vector<int64_t>({w}),
+                            std::vector<int64_t>({n, c}),
+                            std::vector<int64_t>({c, h}),
+                            std::vector<int64_t>({c, h, w}),
+                            std::vector<int64_t>({n, c, h, w})}) {
+#else
+  for (auto n : {1, 3, 4, 11}) {
+    for (auto c : {1, 3, 4, 11}) {
+      for (auto h : {1, 3, 4, 11}) {
+        for (auto w : {1, 3, 4, 11}) {
+          for (auto axis : {-1, 0, 1, 2, 3}) {
+            for (auto yd : {std::vector<int64_t>({n}),
+                            std::vector<int64_t>({c}),
+                            std::vector<int64_t>({h}),
+                            std::vector<int64_t>({w}),
+                            std::vector<int64_t>({n, c}),
+                            std::vector<int64_t>({c, h}),
+                            std::vector<int64_t>({h, w}),
+                            std::vector<int64_t>({n, c, h}),
+                            std::vector<int64_t>({c, h, w}),
+                            std::vector<int64_t>({n, c, h, w})}) {
+#endif
+              auto x_dim = DDim(std::vector<int64_t>({n, c, h, w}));
+              auto y_dim = DDim(yd);
+              int axis_t = axis < 0 ? x_dim.size() - y_dim.size() : axis;
+
+              if (axis_t + y_dim.size() > 4) continue;
+              bool flag = false;
+              for (int i = 0; i < y_dim.size(); i++) {
+                if (x_dim[i + axis_t] != y_dim[i]) flag = true;
+              }
+              if (flag) continue;
+
+              x.Resize(x_dim);
+              y.Resize(y_dim);
+              output.Resize(x_dim);
+              output_ref.Resize(x_dim);
+              auto* x_data = x.mutable_data<int64_t>();
+              auto* y_data = y.mutable_data<int64_t>();
+              auto* output_data = output.mutable_data<int64_t>();
+              auto* output_ref_data = output_ref.mutable_data<int64_t>();
+              for (int i = 0; i < x_dim.production(); i++) {
+                x_data[i] = i + 1;
+              }
+              for (int i = 0; i < y_dim.production(); i++) {
+                y_data[i] = y_dim.production() - i;
+              }
+              param.X = &x;
+              param.Y = &y;
+              param.axis = axis;
+              param.Out = &output;
+              elementwise_mod.SetParam(param);
+              elementwise_mod.Run();
+              param.Out = &output_ref;
+              elementwise_imod_compute_ref<int64_t>(param, "");
+              for (int i = 0; i < output.dims().production(); i++) {
+                if (std::abs(output_data[i] - output_ref_data[i]) > 1e-5 ||
+                    std::isnan(output_data[i]) ||
+                    std::isnan(output_ref_data[i])) {
+                  LOG(FATAL) << "elementwise mod cmp error, i: " << i
+                             << ", x_data: " << x_data[i]
+                             << ", y_data: " << y_data[i]
+                             << ", output_data: " << output_data[i]
+                             << ", output_ref_data: " << output_ref_data[i];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -719,3 +928,4 @@ USE_LITE_KERNEL(elementwise_mul, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_mul_activation, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(elementwise_max, kARM, kFloat, kNCHW, def);
 USE_LITE_KERNEL(fusion_elementwise_max_activation, kARM, kFloat, kNCHW, def);
+USE_LITE_KERNEL(elementwise_mod, kARM, kInt64, kNCHW, def);

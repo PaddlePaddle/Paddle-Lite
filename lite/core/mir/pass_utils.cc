@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/core/mir/pass_utils.h"
+#include <map>
 #include <set>
 #include <string>
-#include <unordered_map>
 #include "lite/core/op_registry.h"
 
 namespace paddle {

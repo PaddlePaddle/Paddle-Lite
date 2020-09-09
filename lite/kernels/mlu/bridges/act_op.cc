@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/mlu/bridges/utility.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -60,6 +60,7 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  output_tensor->mlu_tensor()));
   }
   graph->FuseOp(activation_op);
+  CNML_CALL(cnmlDestroyBaseOp(&activation_op));
   return SUCCESS;
 }
 
@@ -72,6 +73,9 @@ REGISTER_SUBGRAPH_BRIDGE(sigmoid,
                          kMLU,
                          paddle::lite::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(relu, kMLU, paddle::lite::subgraph::mlu::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(relu6,
+                         kMLU,
+                         paddle::lite::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(tanh, kMLU, paddle::lite::subgraph::mlu::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(leaky_relu,
                          kMLU,

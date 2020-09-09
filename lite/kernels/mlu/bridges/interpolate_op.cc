@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/mlu/bridges/graph.h"
 #include "lite/kernels/mlu/bridges/utility.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -85,6 +85,7 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                         nn_param));
   CNML_CALL(cnmlDestroyNearestNeighborOpParam(&nn_param));
   graph->FuseOp(interp_op);
+  CNML_CALL(cnmlDestroyBaseOp(&interp_op));
 
   return SUCCESS;
 }

@@ -1,14 +1,3 @@
-if(NOT LITE_WITH_NPU AND NOT LITE_WITH_XTCL AND NOT LITE_WITH_BM AND NOT LITE_WITH_RKNPU AND NOT LITE_WITH_MLU AND NOT LITE_WITH_APU)
-  return()
-endif()
-
-lite_cc_library(subgraph_bridge_registry
-    SRCS registry.cc
-    DEPS op)
-lite_cc_library(subgraph_bridge_engine
-    SRCS engine.cc
-    DEPS tensor op scope program)
-
 if(NOT LITE_WITH_NPU)
   return()
 endif()

@@ -1,8 +1,9 @@
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(pb)
 endif()
-add_subdirectory(cpp)
+add_subdirectory(general)
 add_subdirectory(naive_buffer)
+add_subdirectory(flatbuffers)
 
 #lite_cc_library(runtime_lite SRCS runtime.cc)
 
@@ -18,9 +19,9 @@ endif()
 
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(compatible_pb SRCS compatible_pb.cc
-      DEPS ${cpp_wrapper} ${naive_wrapper} ${pb_wrapper} framework_proto)
+      DEPS ${cpp_wrapper} ${naive_wrapper} ${pb_wrapper} framework_proto fbs_io)
 else()
-    lite_cc_library(compatible_pb SRCS compatible_pb.cc DEPS ${cpp_wrapper} ${naive_wrapper})
+    lite_cc_library(compatible_pb SRCS compatible_pb.cc DEPS ${cpp_wrapper} ${naive_wrapper} fbs_io)
 endif()
 
 lite_cc_library(model_parser SRCS model_parser.cc DEPS

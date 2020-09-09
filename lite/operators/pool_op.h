@@ -54,7 +54,7 @@ class PoolOpLite : public OpLite {
     param_.ksize = op_desc.GetAttr<std::vector<int>>("ksize");
     param_.global_pooling = op_desc.GetAttr<bool>("global_pooling");
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-    auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+    std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
 
     if (op_desc.HasAttr("exclusive")) {
       param_.exclusive = op_desc.GetAttr<bool>("exclusive");

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <iostream>
+#include "lite/backends/cuda/cuda_utils.h"
 #include "lite/backends/cuda/math/activation.h"
 #include "lite/backends/cuda/math/utils.h"
 
@@ -21,9 +22,23 @@ namespace lite {
 namespace cuda {
 namespace math {
 
+ActivationType GetActiveType(const std::string& act) {
+  if (act == "sigmoid") {
+    return kSigmoid;
+  } else if (act == "relu") {
+    return kReLU;
+  } else if (act == "tanh") {
+    return kTanh;
+  } else if (act == "identify") {
+    return kIdentity;
+  } else {
+    LOG(FATAL) << "not supported activation: " << act;
+  }
+}
+
 template <typename T>
 __global__ void relu_kernel(const int num,
-                            const T alpha,
+                            const float alpha,
                             const T* input,
                             T* output) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -33,6 +48,26 @@ __global__ void relu_kernel(const int num,
                                               : __ldg(input + index) * alpha;
 #else
     output[index] = input[index] >= 0 ? input[index] : input[index] * alpha;
+#endif
+  }
+}
+
+template <>
+__global__ void relu_kernel<half>(const int num,
+                                  const float alpha,
+                                  const half* input,
+                                  half* output) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < num) {
+    const half kZero = __float2half(0.0f);
+#if __CUDA_ARCH__ >= 530
+    output[index] = __hgt(__ldg(input + index), kZero)
+                        ? __ldg(input + index)
+                        : __hmul(__ldg(input + index), __float2half(alpha));
+#else
+    output[index] = (__half2float(input[index]) > 0)
+                        ? input[index]
+                        : __float2half(__half2float(input[index]) * alpha);
 #endif
   }
 }
@@ -419,6 +454,19 @@ void relu(int num, const T* din, T* dout, float alpha, cudaStream_t stream) {
   if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
 
+template <>
+void relu<half>(
+    int num, const half* din, half* dout, float alpha, cudaStream_t stream) {
+  if (num == 0) {
+    return;
+  }
+  int thread = 256;
+  int block = (num + thread - 1) / thread;
+  relu_kernel<half><<<block, thread, 0, stream>>>(num, alpha, din, dout);
+  cudaError_t error = cudaGetLastError();
+  if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
+}
+
 template <typename T>
 void bias_relu(int num,
                const T* din,
@@ -433,8 +481,79 @@ void bias_relu(int num,
   if (error != cudaSuccess) std::cout << cudaGetErrorString(error);
 }
 template void relu(int, const float*, float*, float, cudaStream_t);
+template void relu(int, const half*, half*, float, cudaStream_t);
 template void bias_relu(
     int, const float*, const float* bias, float*, float, cudaStream_t);
+
+// ------------- sigmoid -------------
+
+template <typename T>
+__global__ void sigmoid_kernel(const int num, const T* in, T* out) {
+  CUDA_KERNEL_LOOP(i, num) {
+#if __CUDA_ARCH__ >= 350
+    out[i] = static_cast<T>(1.0f) /
+             (static_cast<T>(1.0f) + expf(-1 * __ldg(in + i)));
+#else
+    out[i] = static_cast<T>(1.0f) / (static_cast<T>(1.0f) + expf(-in[i]));
+#endif
+  }
+}
+
+template <>
+__global__ void sigmoid_kernel(const int num, const half* in, half* out) {
+  CUDA_KERNEL_LOOP(i, num) {
+    half tmp = __float2half(1.0f);
+#if __CUDA_ARCH__ >= 530
+    out[i] = __hdiv(
+        tmp, __hadd(tmp, hexp(__hmul(__float2half(-1.0f), __ldg(in + i)))));
+#else
+    out[i] = __float2half(1.0f / (1.0f + expf(-1 * __half2float(in[i]))));
+#endif
+  }
+}
+
+template <>
+__global__ void sigmoid_kernel(const int num, const half2* in, half2* out) {
+  CUDA_KERNEL_LOOP(i, num) {
+    half2 tmp = __floats2half2_rn(1.0f, 1.0f);
+#if __CUDA_ARCH__ >= 530
+    out[i] = __h2div(tmp,
+                     __hadd2(tmp,
+                             h2exp(__hmul2(__floats2half2_rn(-1.0f, -1.0f),
+                                           __ldg(in + i)))));
+#else
+    out[i].x = __float2half(1.0f / (1.0f + expf(-1 * __half2float(in[i].x))));
+    out[i].y = __float2half(1.0f / (1.0f + expf(-1 * __half2float(in[i].y))));
+#endif
+  }
+}
+
+template <typename T>
+void sigmoid(const int num, const T* din, T* dout, cudaStream_t stream) {
+  sigmoid_kernel<T><<<CUDA_GET_BLOCKS(num), CUDA_NUM_THREADS, 0, stream>>>(
+      num, din, dout);
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template <>
+void sigmoid(const int num, const half* din, half* dout, cudaStream_t stream) {
+  if (num % 2 == 0) {
+    const half2* din2 = reinterpret_cast<const half2*>(din);
+    half2* dout2 = reinterpret_cast<half2*>(dout);
+    sigmoid_kernel<
+        half2><<<CUDA_GET_BLOCKS(num / 2), CUDA_NUM_THREADS, 0, stream>>>(
+        num / 2, din2, dout2);
+  } else {
+    sigmoid_kernel<half><<<CUDA_GET_BLOCKS(num), CUDA_NUM_THREADS, 0, stream>>>(
+        num, din, dout);
+  }
+  CUDA_POST_KERNEL_CHECK;
+}
+
+template void sigmoid(const int num,
+                      const float* din,
+                      float* dout,
+                      cudaStream_t stream);
 
 }  // namespace math
 }  // namespace cuda

@@ -86,11 +86,12 @@ void act_reciprocal(const T* din, T* dout, int size, int threads);
 template <typename T>
 void act_abs(const T* din, T* dout, int size, int threads);
 
-#ifdef LITE_WITH_TRAIN
 template <typename T>
-void act_square_grad(
-    const T* din, const T* dout_grad, T* din_grad, int size, int threads);
-#endif
+void act_thresholded_relu(
+    const T* din, T* dout, int size, float threshold, int threads);
+
+template <typename T>
+void act_elu(const T* din, T* dout, int size, float alpha, int threads);
 
 }  // namespace math
 }  // namespace arm

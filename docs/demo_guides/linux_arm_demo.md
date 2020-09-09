@@ -1,4 +1,4 @@
-# Linux(ARM) Demo
+# Linux(ARM) 工程示例
 
 ## 多种应用场景
 
@@ -18,7 +18,7 @@ Paddle-Lite提供的物体检测demo ，在移动端上提供了检测多个物�
 
 ## Linux(ARM) demo部署方法
 
-下面我们以**目标检测（object_detection_demo)**为例讲解如何部署iOS工程。
+下面我们以**目标检测（object_detection_demo)**为例讲解如何部署Linux(ARM)工程。
 
 **目的**：将基于Paddle-Lite的预测库部署到Linux(ARM)设备，实现物体检测的目标。
 
@@ -86,6 +86,6 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 ## 使用Python接口预测
 
-1. Python预测库编译参考[编译Linux](../user_guides/Compile/Linux)，建议在开发版上编译。
-2. [Paddle-Lite Python API](https://paddle-lite.readthedocs.io/zh/latest/api_reference/python_api_doc.html)。
-3. 代码参考，[Python预测](python_demo)
+1. Python预测库编译参考[编译Linux](../source_compile/compile_linux)，建议在开发版上编译。
+2. [Paddle-Lite Python API](../api_reference/python_api_doc)。
+3. 代码参考，[Python完整示例](python_demo)

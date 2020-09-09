@@ -70,9 +70,7 @@ class BoxClipComputeTester : public arena::TestCase {
       float sign = i % 3 == 0 ? -1.0f : 1.0f;
       input_data[i] = sign * static_cast<float>((i * 7) % 20);
     }
-    SetCommonTensor(input_, input_dims_, input_data.data());
-    auto input_tensor = baseline_scope()->FindMutableTensor(input_);
-    input_tensor->set_lod(input_lod_);
+    SetCommonTensor(input_, input_dims_, input_data.data(), input_lod_);
 
     std::vector<float> im_info_data{10, 10, 1, 15, 15, 1};
     SetCommonTensor(im_info_, im_info_dim_, im_info_data.data());

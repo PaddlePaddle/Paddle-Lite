@@ -20,6 +20,7 @@
 #include <memory>  // For std::unique_ptr
 #include <string>
 #include <vector>
+#include "lite/utils/charconv.h"
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
@@ -60,6 +61,38 @@ static std::string to_string(const T& v) {
   return ss.str();
 }
 
+static std::string to_string(int index) {
+  const int BUFFER_LENGTH = 15;
+  char buffer[BUFFER_LENGTH];
+  snprintf(buffer, sizeof(buffer), "%d", index);
+  return std::string(buffer);
+}
+
+template <typename T = std::string>
+static T parse_string(const std::string& v) {
+  return v;
+}
+
+template <>
+int32_t parse_string<int32_t>(const std::string& v) {
+  return std::stoi(v);
+}
+
+template <>
+int64_t parse_string<int64_t>(const std::string& v) {
+  return std::stoll(v);
+}
+
+template <>
+float parse_string<float>(const std::string& v) {
+  return std::stof(v);
+}
+
+template <>
+double parse_string<double>(const std::string& v) {
+  return std::stod(v);
+}
+
 template <typename T>
 std::string Join(const std::vector<T>& vec, const std::string& delim) {
   if (vec.empty()) return "";
@@ -84,21 +117,68 @@ static std::string Repr(const std::vector<std::string>& v) {
   return "{" + Join(tmp, ",") + "}";
 }
 
-static std::vector<std::string> Split(const std::string& original,
-                                      const std::string& separator) {
-  std::vector<std::string> results;
+template <class T = std::string>
+static std::vector<T> Split(const std::string& original,
+                            const std::string& separator) {
+  std::vector<T> results;
   std::string::size_type pos1, pos2;
   pos2 = original.find(separator);
   pos1 = 0;
   while (std::string::npos != pos2) {
-    results.push_back(original.substr(pos1, pos2 - pos1));
+    results.push_back(parse_string<T>(original.substr(pos1, pos2 - pos1)));
     pos1 = pos2 + separator.size();
     pos2 = original.find(separator, pos1);
   }
   if (pos1 != original.length()) {
-    results.push_back(original.substr(pos1));
+    results.push_back(parse_string<T>(original.substr(pos1)));
   }
   return results;
+}
+
+class StringView {
+ public:
+  StringView(std::string::const_iterator begin, std::string::const_iterator end)
+      : begin_(begin), end_(end) {}
+  size_t size() const { return static_cast<size_t>(end_ - begin_); }
+  std::string::const_iterator begin() const { return begin_; }
+  std::string::const_iterator end() const { return end_; }
+  operator std::string() const { return std::string(begin_, end_); }
+
+  template <typename T>
+  T to_digit() const {
+    T result;
+    utils::from_chars(&*begin_, &*end_, result);
+    return result;
+  }
+
+ private:
+  std::string::const_iterator begin_;
+  std::string::const_iterator end_;
+};
+
+static std::vector<StringView> SplitView(const std::string& str,
+                                         char delimiter = ' ') {
+  enum State { inSpace, inToken };
+  State state = inSpace;
+  std::vector<StringView> result;
+  std::string::const_iterator pTokenBegin{};
+  for (auto it = str.begin(); it != str.end(); ++it) {
+    const State newState = (*it == delimiter ? inSpace : inToken);
+    if (newState != state) {
+      switch (newState) {
+        case inSpace:
+          result.push_back(StringView(pTokenBegin, it));
+          break;
+        case inToken:
+          pTokenBegin = it;
+      }
+    }
+    state = newState;
+  }
+  if (state == inToken) {
+    result.push_back(StringView(pTokenBegin, str.end()));
+  }
+  return result;
 }
 
 }  // namespace lite

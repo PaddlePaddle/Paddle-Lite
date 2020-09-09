@@ -19,8 +19,8 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -191,6 +191,7 @@ void BindLitePlace(py::module *m) {
       .value("MLU", TargetType::kMLU)
       .value("RKNPU", TargetType::kRKNPU)
       .value("APU", TargetType::kAPU)
+      .value("HUAWEI_ASCEND_NPU", TargetType::kHuaweiAscendNPU)
       .value("Any", TargetType::kAny);
 
   // PrecisionType

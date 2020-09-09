@@ -19,13 +19,13 @@
 #include "lite/backends/cuda/context.h"
 #endif
 #ifdef LITE_WITH_OPENCL
-#include <unordered_map>
 #include "lite/backends/opencl/cl_context.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
 #ifdef LITE_WITH_MLU
 #include <cnml.h>
 #include <cnrt.h>
+#include <mutex>  // NOLINT
 #include "lite/backends/mlu/mlu_utils.h"
 #endif
 #ifdef LITE_WITH_XPU
@@ -39,10 +39,12 @@
 #include <utility>
 #include <vector>
 #include "lite/core/device_info.h"
+#include "lite/core/scope.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/all.h"
 #include "lite/utils/env.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -61,6 +63,7 @@ using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
+using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -77,14 +80,41 @@ class Context<TargetType::kHost> {
 template <>
 class Context<TargetType::kNPU> {
  public:
-  Context() {}
-  explicit Context(const NPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(NPUContext* ctx) {}
 
   NPUContext& operator=(const NPUContext& ctx) {}
   std::string name() const { return "NPUContext"; }
+
+  static void SetSubgraphModelCacheDir(Scope* scope,
+                                       std::string subgraph_model_cache_dir) {
+    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_model_cache_dir;
+  }
+  static std::string SubgraphModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+};
+#endif
+
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+template <>
+class Context<TargetType::kHuaweiAscendNPU> {
+ public:
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(HuaweiAscendNPUContext* ctx) {}
+
+  HuaweiAscendNPUContext& operator=(const HuaweiAscendNPUContext& ctx) {
+    return *this;
+  }
+  std::string name() const { return "HuaweiAscendNPUContext"; }
 
   static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
     subgraph_model_cache_dir_ = subgraph_model_cache_dir;
@@ -93,8 +123,14 @@ class Context<TargetType::kNPU> {
     return subgraph_model_cache_dir_;
   }
 
+  static void SetHuaweiAscendDeviceID(int huawei_ascend_device_id) {
+    huawei_ascend_device_id_ = huawei_ascend_device_id;
+  }
+  static int HuaweiAscendDeviceID() { return huawei_ascend_device_id_; }
+
  private:
-  static std::string subgraph_model_cache_dir_;
+  static LITE_THREAD_LOCAL std::string subgraph_model_cache_dir_;
+  static LITE_THREAD_LOCAL int huawei_ascend_device_id_;
 };
 #endif
 
@@ -102,8 +138,6 @@ class Context<TargetType::kNPU> {
 template <>
 class Context<TargetType::kAPU> {
  public:
-  Context() {}
-  explicit Context(const APUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(APUContext* ctx) {}
@@ -117,8 +151,6 @@ class Context<TargetType::kAPU> {
 template <>
 class Context<TargetType::kBM> {
  public:
-  Context() {}
-  explicit Context(const BMContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() { TargetWrapperBM::SetDevice(TargetWrapperBM::GetDevice()); }
   void CopySharedTo(BMContext* ctx) {}
@@ -132,8 +164,6 @@ class Context<TargetType::kBM> {
 template <>
 class Context<TargetType::kRKNPU> {
  public:
-  Context() {}
-  explicit Context(const RKNPUContext& ctx);
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
   void CopySharedTo(RKNPUContext* ctx) {}
@@ -147,53 +177,17 @@ class Context<TargetType::kRKNPU> {
 template <>
 class Context<TargetType::kXPU> {
  public:
-  Context() {}
-  explicit Context(const XPUContext& ctx);
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
   void CopySharedTo(XPUContext* ctx) {}
 
+  // TODO(miaotianxiang): remove this
   static xdnn::Context* GetRawContext() {
-    if (_tls_raw_ctx == nullptr) {
-      _tls_raw_ctx = xdnn::create_context();
-      CHECK(_tls_raw_ctx);
-      int r = xdnn::set_workspace_l3_size(_tls_raw_ctx,
-                                          _workspace_l3_size_per_thread);
-      if (r != 0) {
-        LOG(WARNING) << "xdnn::set_workspace_l3_size() failed, r = " << r
-                     << ", _workspace_l3_size_per_thread = "
-                     << _workspace_l3_size_per_thread;
-      }
-    }
-    return _tls_raw_ctx;
-  }
-
-  static void SetWorkspaceL3Size(int l3_size = 0xfffc00) {
-    _workspace_l3_size_per_thread = l3_size;
-  }
-
-  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
-  // thread
-  static void SetDev(int dev_no = 0) {
-    const char* dev_env = getenv("LITE_XPU_DEV");
-    if (dev_env) {
-      xpu_set_device(atoi(dev_env));
-      return;
-    }
-
-    xpu_set_device(dev_no);
+    return TargetWrapperXPU::GetRawContext();
   }
 
   std::string name() const { return "XPUContext"; }
-
- public:
-  static std::string _multi_encoder_precision;  // NOLINT
-
- private:
-  static thread_local xdnn::Context* _tls_raw_ctx;
-  static int _workspace_l3_size_per_thread;
 };
 #endif
 
@@ -201,11 +195,6 @@ class Context<TargetType::kXPU> {
 template <>
 class Context<TargetType::kARM> {
  public:
-  Context() {}
-  explicit Context(const ARMContext& ctx);
-
-  ARMContext& operator=(const ARMContext& ctx) {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() { DeviceInfo::Init(); }
 
@@ -247,7 +236,6 @@ class Context<TargetType::kARM> {
 template <>
 class Context<TargetType::kFPGA> {
  public:
-  Context() {}
   void InitOnce() {}
 
   FPGAContext& operator=(const FPGAContext& ctx) {}
@@ -267,11 +255,11 @@ class Context<TargetType::kMLU> {
   void InitOnce() {}
 
   MLUContext& operator=(const MLUContext& ctx) {
-    this->Init(ctx.device_id_, ctx.exec_queue_id_, ctx.io_queue_id_);
+    this->Init(ctx.device_id_, ctx.exec_queue_id_);
     return *this;
   }
 
-  void Init(int dev_id, int exec_queue_id = 0, int io_queue_id = 0) {
+  void Init(int dev_id, int exec_queue_id = 0) {
     CHECK_GT(devs.size(), 0UL)
         << "Env is not initialized or current target is not exit!";
     if (dev_id >= static_cast<int>(devs.size())) {
@@ -282,21 +270,19 @@ class Context<TargetType::kMLU> {
       device_id_ = dev_id;
     }
     SetMluDevice(device_id_);
-    if (io_queue_id >= devs[dev_id].max_queue()) {
-      LOG(WARNING) << "data queue index exceeds the maximum queue number, "
-                      "set to default qeueu(0)!";
-      io_queue_id = 0;
-    }
-    if (exec_queue_id >= devs[dev_id].max_queue()) {
-      LOG(WARNING) << "exec queue index exceeds the maximum queue number, "
-                      "set to default qeueu(0)!";
-      exec_queue_id = 0;
-    }
-    io_queue_ = devs[dev_id].io_queues()[io_queue_id];
-    exec_queue_ = devs[dev_id].exec_queues()[exec_queue_id];
 
-    exec_queue_id_ = exec_queue_id;
-    io_queue_id_ = io_queue_id;
+    // get queue id from map
+    std::unique_lock<std::mutex> lk(map_mutex_);
+    if (queue_id_map_.find(exec_queue_id) == queue_id_map_.end()) {
+      queue_id_map_[exec_queue_id] =
+          next_queue_id_++ % devs[dev_id].max_queue();
+    }
+    exec_queue_id_ = queue_id_map_[exec_queue_id];
+    VLOG(4) << "pick mlu queue id: " << exec_queue_id_;
+    lk.unlock();
+
+    io_queue_ = devs[dev_id].io_queues()[exec_queue_id_];
+    exec_queue_ = devs[dev_id].exec_queues()[exec_queue_id_];
   }
 
   void CopySharedTo(MLUContext* ctx) { ctx->forward_param_ = forward_param_; }
@@ -308,10 +294,12 @@ class Context<TargetType::kMLU> {
   void SetIoQueue(cnrtQueue_t queue) { io_queue_ = queue; }
 
   cnmlCoreVersion_t MLUCoreVersion() {
-    return DeviceInfo::Global().MLUCoreVersion();
+    return paddle::lite::TargetWrapperMlu::MLUCoreVersion();
   }
 
-  int MLUCoreNumber() { return DeviceInfo::Global().MLUCoreNumber(); }
+  int MLUCoreNumber() {
+    return paddle::lite::TargetWrapperMlu::MLUCoreNumber();
+  }
 
   u32_t affinity() { return affinity_; }
 
@@ -322,10 +310,12 @@ class Context<TargetType::kMLU> {
   std::string name() const { return "MLUContext"; }
 
  private:
+  static int next_queue_id_;
+  static std::map<int, int> queue_id_map_;
+  static std::mutex map_mutex_;
   int device_id_;
   // overall information
   int exec_queue_id_;
-  int io_queue_id_;
   cnrtQueue_t io_queue_;
   cnrtQueue_t exec_queue_;
 
@@ -341,8 +331,6 @@ class Context<TargetType::kMLU> {
 template <>
 class Context<TargetType::kX86> {
  public:
-  Context() {}
-
   // NOTE: InitOnce should only be used by ContextScheduler
   void InitOnce() {}
 
@@ -360,18 +348,23 @@ class Context<TargetType::kX86> {
 #ifdef LITE_WITH_OPENCL
 template <>
 class Context<TargetType::kOpenCL> {
-  std::shared_ptr<CLContext> cl_context_;
+  std::shared_ptr<CLContext> cl_context_{nullptr};
 
  public:
   CLContext* cl_context() { return cl_context_.get(); }
 
   void InitOnce() {
-    // Init cl runtime.
-    CHECK(CLRuntime::Global()->IsInitSuccess()) << "OpenCL runtime init failed";
+    if (CLRuntime::Global()->IsInitSuccess() == false) {
+      LOG(ERROR) << "OpenCL runtime init failed";
+    }
     cl_context_ = std::make_shared<CLContext>();
   }
 
-  void CopySharedTo(OpenCLContext* ctx) { ctx->cl_context_ = cl_context_; }
+  void CopySharedTo(OpenCLContext* ctx) {
+    if (ctx && cl_context_) {
+      ctx->cl_context_ = cl_context_;
+    }
+  }
 };
 #endif
 
@@ -435,6 +428,13 @@ class ContextScheduler {
             &ctx->As<NPUContext>());
         break;
 #endif
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+      case TARGET(kHuaweiAscendNPU):
+        kernel_contexts_[TargetType::kHuaweiAscendNPU]
+            .As<HuaweiAscendNPUContext>()
+            .CopySharedTo(&ctx->As<HuaweiAscendNPUContext>());
+        break;
+#endif
 #ifdef LITE_WITH_APU
       case TARGET(kAPU):
         kernel_contexts_[TargetType::kAPU].As<APUContext>().CopySharedTo(
@@ -475,7 +475,7 @@ class ContextScheduler {
       case TARGET(kMLU): {
         int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
         auto& context = ctx->As<MLUContext>();
-        context.Init(dev_id);
+        context.Init(dev_id, exec_stream_id);
         kernel_contexts_[TargetType::kMLU].As<MLUContext>().CopySharedTo(
             &context);
         LOG(INFO) << "New Context for MLU";
@@ -515,6 +515,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
+#endif
+#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
+    InitContext<TargetType::kHuaweiAscendNPU, HuaweiAscendNPUContext>();
 #endif
 #ifdef LITE_WITH_APU
     InitContext<TargetType::kAPU, APUContext>();

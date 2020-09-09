@@ -21,6 +21,7 @@
 #define PADDLE_LITE_API_H_
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "paddle_place.h"  // NOLINT
 
@@ -31,6 +32,9 @@ using shape_t = std::vector<int64_t>;
 using lod_t = std::vector<std::vector<uint64_t>>;
 
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
+
+// return true if current device supports OpenCL model
+LITE_API bool IsOpenCLBackendValid();
 
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
@@ -45,6 +49,11 @@ struct LITE_API Tensor {
   template <typename T>
   T* mutable_data(TargetType type = TargetType::kHost) const;
 
+  // Share external memory. Note: ensure that the data pointer is in a valid
+  // state
+  // during the prediction process.
+  void ShareExternalMemory(void* data, size_t memory_size, TargetType target);
+
   template <typename T, TargetType type = TargetType::kHost>
   void CopyFromCpu(const T* data);
 
@@ -54,6 +63,7 @@ struct LITE_API Tensor {
   shape_t shape() const;
   TargetType target() const;
   PrecisionType precision() const;
+  void SetPrecision(PrecisionType precision);
 
   // LoD of the tensor
   lod_t lod() const;
@@ -79,6 +89,8 @@ class LITE_API PaddlePredictor {
 
   virtual void Run() = 0;
   virtual std::shared_ptr<PaddlePredictor> Clone() = 0;
+  virtual std::shared_ptr<PaddlePredictor> Clone(
+      const std::vector<std::string>& var_names) = 0;
 
   virtual std::string GetVersion() const = 0;
 
@@ -118,8 +130,11 @@ class LITE_API ConfigBase {
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
+  // gpu
+  bool enable_opencl_tune_{false};
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
+  int device_id_{0};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -132,6 +147,9 @@ class LITE_API ConfigBase {
   // set Power_mode
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
+  // set GPU opencl tune
+  void set_opencl_tune(bool enable_tune);
+  bool opencl_tune() const { return enable_opencl_tune_; }
   // set subgraph_model_dir
   void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
     subgraph_model_cache_dir_ = subgraph_model_cache_dir;
@@ -139,6 +157,9 @@ class LITE_API ConfigBase {
   const std::string& subgraph_model_cache_dir() const {
     return subgraph_model_cache_dir_;
   }
+  // set Device ID
+  void set_device_id(int device_id) { device_id_ = device_id; }
+  int get_device_id() const { return device_id_; }
 };
 
 /// CxxConfig is the config for the Full feature predictor.
@@ -158,9 +179,8 @@ class LITE_API CxxConfig : public ConfigBase {
   lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
   int mlu_core_number_{1};
   DataLayoutType mlu_input_layout_{DATALAYOUT(kNCHW)};
-  bool mlu_use_first_conv_{false};
-  std::vector<float> mlu_first_conv_mean_;
-  std::vector<float> mlu_first_conv_std_;
+  std::vector<float> mlu_first_conv_mean_{};
+  std::vector<float> mlu_first_conv_std_{};
 #endif
 
  public:
@@ -208,24 +228,22 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_mlu_core_version(lite_api::MLUCoreVersion core_version);
   // set MLU core number, which is used when compiling MLU kernels
   void set_mlu_core_number(int core_number);
-  // set MLU input layout. User can specify layout of input data to be NHWC,
-  // default is NCHW
-  void set_mlu_input_layout(DataLayoutType layout);
   // whether use MLU's first conv kernel. First conv is a special kernel
   // provided by MLU, its input is uint8, and also needs two 3-dimentional
   // vectors which save all inputs' mean and std values
-  void set_mlu_use_first_conv(bool use_first_conv);
-  // set the 3-dimentional mean vector used by MLU's first conv
-  void set_mlu_first_conv_mean(const std::vector<float>& mean);
-  // set the 3-dimentional std vector used by MLU's first conv
-  void set_mlu_first_conv_std(const std::vector<float>& std);
+  // set the 3-dimentional mean vector and 3-dimentional std vector used by
+  // MLU's first conv
+  void set_mlu_firstconv_param(const std::vector<float>& mean,
+                               const std::vector<float>& std);
+  // set MLU input layout. User can specify layout of input data to be NHWC,
+  // default is NCHW
+  void set_mlu_input_layout(DataLayoutType layout);
 
   lite_api::MLUCoreVersion mlu_core_version() const;
   int mlu_core_number() const;
   DataLayoutType mlu_input_layout() const;
-  bool mlu_use_first_conv() const;
-  const std::vector<float>& mlu_first_conv_mean() const;
-  const std::vector<float>& mlu_first_conv_std() const;
+  // std::pair<mean, std>
+  std::pair<std::vector<float>, std::vector<float>> mlu_firstconv_param() const;
 #endif
 
   // XPU only, set the size of the workspace memory from L3 cache for the

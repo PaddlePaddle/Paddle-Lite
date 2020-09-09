@@ -46,6 +46,42 @@ class CalibComputeInt8ToFp32
   std::string doc() const override { return "Int8 --> Fp32"; }
 };
 
+class CalibComputeFp32ToFp16
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  virtual ~CalibComputeFp32ToFp16() = default;
+
+  std::string doc() const override { return "Fp32 --> Fp16"; }
+};
+
+class CalibOnceComputeFp32ToFp16
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  virtual ~CalibOnceComputeFp32ToFp16() = default;
+
+  std::string doc() const override { return "Fp32 --> Fp16 (once)"; }
+};
+
+class CalibComputeFp16ToFp32
+    : public KernelLite<TARGET(kCUDA), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  virtual ~CalibComputeFp16ToFp32() = default;
+
+  std::string doc() const override { return "Fp16 --> Fp32"; }
+};
+
 }  // namespace cuda
 }  // namespace kernels
 }  // namespace lite

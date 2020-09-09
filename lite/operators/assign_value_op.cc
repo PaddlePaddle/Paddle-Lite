@@ -26,12 +26,15 @@ bool AssignValueOpLite::CheckShape() const {
   auto shape = param_.shape;
   auto int32_values = param_.int32_values;
   auto fp32_values = param_.fp32_values;
+  auto int64_values = param_.int64_values;
+  auto bool_values = param_.bool_values;
   size_t shape_num = 1;
-  for (int i = 0; i < shape.size(); i++) {
+  for (size_t i = 0; i < shape.size(); i++) {
     shape_num *= shape[i];
   }
-  CHECK_OR_FALSE(shape_num == int32_values.size() ||
-                 shape_num == fp32_values.size());
+  CHECK_OR_FALSE(
+      shape_num == int32_values.size() || shape_num == fp32_values.size() ||
+      shape_num == int64_values.size() || shape_num == bool_values.size());
   return true;
 }
 
@@ -47,9 +50,18 @@ bool AssignValueOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                    lite::Scope *scope) {
   param_.shape = op_desc.GetAttr<std::vector<int>>("shape");
   param_.dtype = op_desc.GetAttr<int>("dtype");
-  param_.fp32_values = op_desc.GetAttr<std::vector<float>>("fp32_values");
-  param_.int32_values = op_desc.GetAttr<std::vector<int>>("int32_values");
-
+  if (op_desc.HasAttr("fp32_values")) {
+    param_.fp32_values = op_desc.GetAttr<std::vector<float>>("fp32_values");
+  }
+  if (op_desc.HasAttr("int32_values")) {
+    param_.int32_values = op_desc.GetAttr<std::vector<int>>("int32_values");
+  }
+  if (op_desc.HasAttr("int64_values")) {
+    param_.int64_values = op_desc.GetAttr<std::vector<int64_t>>("int64_values");
+  }
+  if (op_desc.HasAttr("bool_values")) {
+    param_.bool_values = op_desc.GetAttr<std::vector<int>>("bool_values");
+  }
   auto out = op_desc.Output("Out").front();
   param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
   return true;

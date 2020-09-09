@@ -15,6 +15,7 @@
 #include "lite/backends/cuda/math/cudnn_conv.h"
 #include "lite/backends/cuda/math/activation.h"
 #include "lite/backends/cuda/math/conv_op_cache_cudnn.h"
+#include "lite/backends/cuda/math/cudnn_helper.h"
 #include "lite/backends/cuda/math/scale.h"
 #include "lite/backends/cuda/math/type_trans.h"
 
@@ -23,9 +24,9 @@ namespace lite {
 namespace cuda {
 namespace math {
 
-template <>
-bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
-                                            Context<TARGET(kCUDA)>* ctx) {
+template <typename T, PrecisionType Ptype_out>
+bool CudnnConv2D<T, Ptype_out>::create(const operators::ConvParam& param,
+                                       Context<TARGET(kCUDA)>* ctx) {
   auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
@@ -54,53 +55,54 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
 
   CUDNN_CHECK(cudnnSetTensor4dDescriptor(this->input_desc_,
                                          CUDNN_TENSOR_NCHW,
-                                         CUDNN_DATA_FLOAT,
+                                         cudnn::cudnnTypeWrapper<T>::type,
                                          batch,
                                          ic,
                                          ih,
                                          iw));
   CUDNN_CHECK(cudnnSetFilter4dDescriptor(this->filter_desc_,
-                                         CUDNN_DATA_FLOAT,
+                                         cudnn::cudnnTypeWrapper<T>::type,
                                          CUDNN_TENSOR_NCHW,
                                          oc,
                                          ic / param.groups,
                                          kh,
                                          kw));
-  CUDNN_CHECK(cudnnSetConvolution2dDescriptor(this->conv_desc_,
-                                              ph,
-                                              pw,
-                                              sh,
-                                              sw,
-                                              dh,
-                                              dw,
-                                              CUDNN_CROSS_CORRELATION,
-                                              CUDNN_DATA_FLOAT));
+  CUDNN_CHECK(
+      cudnnSetConvolution2dDescriptor(this->conv_desc_,
+                                      ph,
+                                      pw,
+                                      sh,
+                                      sw,
+                                      dh,
+                                      dw,
+                                      CUDNN_CROSS_CORRELATION,
+                                      cudnn::cudnnTypeWrapper<T>::type));
   CUDNN_CHECK(cudnnSetConvolutionGroupCount(this->conv_desc_, param.groups));
   CUDNN_CHECK(cudnnSetTensor4dDescriptor(this->output_desc_,
                                          CUDNN_TENSOR_NCHW,
-                                         CUDNN_DATA_FLOAT,
+                                         cudnn::cudnnTypeWrapper<T>::type,
                                          batch,
                                          oc,
                                          oh,
                                          ow));
 
-  if (param.activation_param.has_active && with_relu_act_) {
+  if (param.activation_param.has_active && this->with_relu_act_) {
     CUDNN_CHECK(cudnnSetActivationDescriptor(
         this->act_desc_, CUDNN_ACTIVATION_RELU, CUDNN_NOT_PROPAGATE_NAN, 0.0));
   }
 
 #if CUDNN_VERSION_MIN(7, 0, 0)
   cudnnMathType_t math_type =
-      use_tensor_core_ ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
+      this->use_tensor_core_ ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
   CUDNN_CHECK(cudnnSetConvolutionMathType(this->conv_desc_, math_type));
 #endif
 
   if (ic == param.groups && ic == oc && ic != 1) {
     this->fwd_algo_ = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
   } else if (!param.var_length) {
-    const auto* i_data = param.x->data<float>();
-    const auto* w_data = param.filter->data<float>();
-    auto* o_data = param.output->mutable_data<float>(TARGET(kCUDA));
+    const auto* i_data = param.x->data<T>();
+    const auto* w_data = param.filter->data<T>();
+    auto* o_data = param.output->mutable_data<T>(TARGET(kCUDA));
     int workspace_size_limit = 256 * 1024 * 1024;
 
     auto search_func = [&]() {
@@ -125,10 +127,10 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
             workspace_size_limit));
       };
 
-      ResetWorkSpace();
+      this->ResetWorkSpace();
       CUDA_CALL(cudaMalloc(&this->workspace_data_, workspace_size_limit));
       cudnn_find_func(this->workspace_data_);
-      ResetWorkSpace();
+      this->ResetWorkSpace();
 
       VLOG(2) << "Perf result: (algo: stat, time, memory)";
       for (int i = 0; i < returned_algo_count; ++i) {
@@ -148,15 +150,17 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
                                               search_func);
 
   } else {
-    CUDNN_CHECK(
-        cudnnGetConvolutionForwardAlgorithm(this->handle_,
-                                            this->input_desc_,
-                                            this->filter_desc_,
-                                            this->conv_desc_,
-                                            this->output_desc_,
-                                            this->preference_,
-                                            this->workspace_limit_bytes_,
-                                            &this->fwd_algo_));
+    int requestedAlgoCount = 1;
+    int returnedAlgoCount;
+    CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm_v7(this->handle_,
+                                                       this->input_desc_,
+                                                       this->filter_desc_,
+                                                       this->conv_desc_,
+                                                       this->output_desc_,
+                                                       requestedAlgoCount,
+                                                       &returnedAlgoCount,
+                                                       &this->algo_perf_));
+    this->fwd_algo_ = this->algo_perf_.algo;
   }
   CUDNN_CHECK(
       cudnnGetConvolutionForwardWorkspaceSize(this->handle_,
@@ -168,22 +172,25 @@ bool CudnnConv2D<PRECISION(kFloat)>::create(const operators::ConvParam& param,
                                               &this->workspace_fwd_sizes_));
   if (this->workspace_fwd_sizes_ > this->workspace_size_inbytes_) {
     this->workspace_size_inbytes_ = this->workspace_fwd_sizes_;
-    ResetWorkSpace();
+    this->ResetWorkSpace();
     cudaMalloc(&this->workspace_data_, this->workspace_size_inbytes_);
     this->workspace_ = reinterpret_cast<char*>(this->workspace_data_);
   }
   if (param.bias) {
     int dim_bias[] = {1, oc, 1, 1};
     int stride_bias[] = {oc, 1, 1, 1};
-    cudnnSetTensorNdDescriptor(
-        this->bias_desc_, CUDNN_DATA_FLOAT, 4, dim_bias, stride_bias);
+    cudnnSetTensorNdDescriptor(this->bias_desc_,
+                               cudnn::cudnnTypeWrapper<T>::type,
+                               4,
+                               dim_bias,
+                               stride_bias);
   }
   return true;
 }
 
-template <>
-bool CudnnConv2D<PRECISION(kFloat)>::init(const operators::ConvParam& param,
-                                          Context<TARGET(kCUDA)>* ctx) {
+template <typename T, PrecisionType Ptype_out>
+bool CudnnConv2D<T, Ptype_out>::init(const operators::ConvParam& param,
+                                     Context<TARGET(kCUDA)>* ctx) {
   this->workspace_size_inbytes_ = 0;
   this->workspace_data_ = NULL;
   this->workspace_fwd_sizes_ = 0;
@@ -210,84 +217,90 @@ bool CudnnConv2D<PRECISION(kFloat)>::init(const operators::ConvParam& param,
   return create(param, ctx);
 }
 
-template <>
-bool CudnnConv2D<PRECISION(kFloat)>::run(const operators::ConvParam& param) {
-  const auto* i_data = param.x->data<float>();
-  const auto* w_data = param.filter->data<float>();
-  const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
-  auto* o_data = param.output->mutable_data<float>(TARGET(kCUDA));
+template <typename T, PrecisionType Ptype_out>
+bool CudnnConv2D<T, Ptype_out>::run(const operators::ConvParam& param) {
+  const auto* i_data = param.x->data<T>();
+  const auto* w_data = param.filter->data<T>();
+  const auto* b_data = param.bias ? param.bias->data<T>() : nullptr;
+  auto* o_data = param.output->mutable_data<T>(TARGET(kCUDA));
 
-  if (param.activation_param.has_active && with_relu_act_) {
+  if (param.activation_param.has_active && this->with_relu_act_) {
     if (b_data) {
       float alpha = 1.0f;
       float beta = 0.0f;
-      CUDNN_CHECK(cudnnConvolutionBiasActivationForward(handle_,
-                                                        &alpha,
-                                                        input_desc_,
-                                                        i_data,
-                                                        filter_desc_,
-                                                        w_data,
-                                                        conv_desc_,
-                                                        fwd_algo_,
-                                                        workspace_,
-                                                        workspace_fwd_sizes_,
-                                                        &beta,
-                                                        output_desc_,
-                                                        o_data,
-                                                        bias_desc_,
-                                                        b_data,
-                                                        act_desc_,
-                                                        output_desc_,
-                                                        o_data));
+      CUDNN_CHECK(
+          cudnnConvolutionBiasActivationForward(this->handle_,
+                                                &alpha,
+                                                this->input_desc_,
+                                                i_data,
+                                                this->filter_desc_,
+                                                w_data,
+                                                this->conv_desc_,
+                                                this->fwd_algo_,
+                                                this->workspace_,
+                                                this->workspace_fwd_sizes_,
+                                                &beta,
+                                                this->output_desc_,
+                                                o_data,
+                                                this->bias_desc_,
+                                                b_data,
+                                                this->act_desc_,
+                                                this->output_desc_,
+                                                o_data));
     } else {
       float alpha = 1.0f;
       float beta = 0.0f;
-      CUDNN_CHECK(cudnnConvolutionForward(handle_,
+      CUDNN_CHECK(cudnnConvolutionForward(this->handle_,
                                           &alpha,
-                                          input_desc_,
+                                          this->input_desc_,
                                           i_data,
-                                          filter_desc_,
+                                          this->filter_desc_,
                                           w_data,
-                                          conv_desc_,
-                                          fwd_algo_,
-                                          workspace_,
-                                          workspace_fwd_sizes_,
+                                          this->conv_desc_,
+                                          this->fwd_algo_,
+                                          this->workspace_,
+                                          this->workspace_fwd_sizes_,
                                           &beta,
-                                          output_desc_,
+                                          this->output_desc_,
                                           o_data));
 
-      CUDNN_CHECK(cudnnActivationForward(handle_,
-                                         act_desc_,
+      CUDNN_CHECK(cudnnActivationForward(this->handle_,
+                                         this->act_desc_,
                                          &alpha,
-                                         output_desc_,
+                                         this->output_desc_,
                                          o_data,
                                          &beta,
-                                         output_desc_,
+                                         this->output_desc_,
                                          o_data));
     }
   } else {
     float alpha = 1.0f;
     float beta = 0.0f;
-    CUDNN_CHECK(cudnnConvolutionForward(handle_,
+    CUDNN_CHECK(cudnnConvolutionForward(this->handle_,
                                         &alpha,
-                                        input_desc_,
+                                        this->input_desc_,
                                         i_data,
-                                        filter_desc_,
+                                        this->filter_desc_,
                                         w_data,
-                                        conv_desc_,
-                                        fwd_algo_,
-                                        workspace_,
-                                        workspace_fwd_sizes_,
+                                        this->conv_desc_,
+                                        this->fwd_algo_,
+                                        this->workspace_,
+                                        this->workspace_fwd_sizes_,
                                         &beta,
-                                        output_desc_,
+                                        this->output_desc_,
                                         o_data));
     if (b_data) {
-      CUDNN_CHECK(cudnnAddTensor(
-          handle_, &alpha, bias_desc_, b_data, &alpha, output_desc_, o_data));
+      CUDNN_CHECK(cudnnAddTensor(this->handle_,
+                                 &alpha,
+                                 this->bias_desc_,
+                                 b_data,
+                                 &alpha,
+                                 this->output_desc_,
+                                 o_data));
     }
   }
 
-  if (!with_relu_act_) {
+  if (!this->with_relu_act_) {
     CHECK(param.activation_param.active_type ==
           lite_api::ActivationType::kLeakyRelu)
         << "Only support leaky relu now.";
@@ -300,6 +313,9 @@ bool CudnnConv2D<PRECISION(kFloat)>::run(const operators::ConvParam& param) {
   }
   return true;
 }
+
+template class CudnnConv2D<float, PRECISION(kFloat)>;
+template class CudnnConv2D<half, PRECISION(kFP16)>;
 
 template <PrecisionType Ptype_out>
 bool CudnnConv2DInt8<Ptype_out>::create(const operators::ConvParam& param,

@@ -17,12 +17,17 @@ WITH_JAVA=ON
 WITH_CV=OFF
 # controls whether to hide log information, default is ON.
 WITH_LOG=ON
+# controls whether to throw the exception when error occurs, default is OFF 
+WITH_EXCEPTION=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
 # options of compiling NPU lib.
 WITH_HUAWEI_KIRIN_NPU=OFF
 HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
+# options of compiling APU lib.
+WITH_MEDIATEK_APU=OFF
+MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
 # options of adding training ops
@@ -141,16 +146,23 @@ function make_tiny_publish_so {
       prepare_opencl_source_code $workspace $build_dir
   fi
 
+  if [ "${WITH_STRIP}" == "ON" ]; then
+      WITH_EXTRA=ON
+  fi
+
 
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
+      -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -176,7 +188,7 @@ function make_full_publish_so {
 
   prepare_thirdparty
 
-  build_directory=$workspace/build.lite.android.$ARCH.$ARM_LANG
+  build_directory=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
 
   if [ -d $build_directory ]
   then
@@ -191,18 +203,25 @@ function make_full_publish_so {
       prepare_opencl_source_code $workspace $build_dir
   fi
 
+  if [ "${WITH_STRIP}" == "ON" ]; then
+      WITH_EXTRA=ON
+  fi
+
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_BUILD_TAILOR=$WITH_STRIP \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
+      -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
-      -DARM_TARGET_LANG=$ARM_LANG \
+      -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_TRAIN=$WITH_TRAIN \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
@@ -237,6 +256,7 @@ function print_usage {
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
+    echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
@@ -251,6 +271,13 @@ function print_usage {
     echo -e "|     --huawei_kirin_npu_sdk_root: (path to huawei HiAi DDK file) required when compiling npu library                                  |"
     echo -e "|             you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/                                   |"
     echo -e "|  detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html                      |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of apu library compiling:(armv8, gcc, c++_static)                                                                         |"
+    echo -e "|     ./lite/tools/build_android.sh --with_mediatek_apu=ON --mediatek_apu_sdk_root=YourApuSdkPath                                      |"
+    echo -e "|     --with_mediatek_apu: (OFF|ON); controls whether to compile lib for mediatek_apu, default is OFF                                  |"
+    echo -e "|     --mediatek_apu_sdk_root: (path to mediatek APU SDK file) required when compiling apu library                                     |"
+    echo -e "|             you can download mediatek APU SDK from:  https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz           |"
+    echo -e "|  detailed information about Paddle-Lite APU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/mediatek_apu.html             |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of opencl library compiling:(armv8, gcc, c++_static)                                                                      |"
     echo -e "|     ./lite/tools/build_android.sh --with_opencl=ON                                                                                   |"
@@ -269,6 +296,7 @@ function main {
     if [ -z "$1" ]; then
         # compiling result contains light_api lib only, recommanded.
         make_tiny_publish_so $ARCH $TOOLCHAIN $ANDROID_STL
+        exit 0
     fi
 
     # Parse command line.
@@ -319,6 +347,18 @@ function main {
                 WITH_LOG="${i#*=}"
                 shift
                 ;;
+            # ON or OFF, default OFF
+            --with_exception=*)
+                WITH_EXCEPTION="${i#*=}"
+                if [[ $WITH_EXCEPTION == "ON" && $ARCH == "armv7" && $TOOLCHAIN != "clang" ]]; then
+                     set +x
+                     echo
+                     echo -e "Error: only clang provide C++ exception handling support for 32-bit ARM."
+                     echo
+                     exit 1
+                fi
+                shift
+                ;;
             # compiling lib which can operate on opencl and cpu.
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
@@ -331,6 +371,15 @@ function main {
                 ;;
             --huawei_kirin_npu_sdk_root=*)
                 HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on mediatek apu.
+            --with_mediatek_apu=*)
+                WITH_MEDIATEK_APU="${i#*=}"
+                shift
+                ;;
+            --mediatek_apu_sdk_root=*)
+                MEDIATEK_APU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling result contains both light_api and cxx_api lib.
@@ -358,6 +407,7 @@ function main {
     done
     # compiling result contains light_api lib only, recommanded.
     make_tiny_publish_so
+    exit 0
 }
 
 main $@

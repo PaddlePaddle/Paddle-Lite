@@ -15,8 +15,8 @@
 #include "lite/operators/softmax_op.h"
 #include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -93,7 +93,7 @@ void test_softmax(const std::vector<int64_t>& input_shape, int axis) {
   opdesc.SetOutput("Out", {out_var_name});
   opdesc.SetAttr("axis", axis);
 
-  // create and convert op to NPU model, then run it on NPU
+  // create and convert op to MLU model, then run it on MLU
   auto op = CreateOp<operators::SoftmaxOp>(opdesc, &scope);
   // execute reference implementation and save to output tensor
   softmax_ref<float>(op);

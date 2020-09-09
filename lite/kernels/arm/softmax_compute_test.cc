@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/softmax_compute.h"
 #include <gtest/gtest.h>
+
 #include <cmath>
 #include <limits>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/arm/softmax_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -121,9 +123,7 @@ TEST(softmax_arm, compute) {
 }
 
 TEST(softmax, retrive_op) {
-  auto softmax =
-      KernelRegistry::Global().Create<TARGET(kARM), PRECISION(kFloat)>(
-          "softmax");
+  auto softmax = KernelRegistry::Global().Create("softmax");
   ASSERT_FALSE(softmax.empty());
   ASSERT_TRUE(softmax.front());
 }

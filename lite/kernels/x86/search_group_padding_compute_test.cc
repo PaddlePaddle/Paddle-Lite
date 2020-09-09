@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/search_group_padding_compute.h"
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "lite/core/op_registry.h"
+#include "lite/kernels/x86/search_group_padding_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -26,8 +28,7 @@ namespace x86 {
 
 TEST(search_group_padding_x86, retrieve_op) {
   auto search_group_padding =
-      KernelRegistry::Global().Create<TARGET(kX86), PRECISION(kFloat)>(
-          "search_group_padding");
+      KernelRegistry::Global().Create("search_group_padding");
   ASSERT_FALSE(search_group_padding.empty());
   ASSERT_TRUE(search_group_padding.front());
 }

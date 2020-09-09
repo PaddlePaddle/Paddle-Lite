@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/registry.h"
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/utility.h"
 
@@ -88,7 +88,8 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Cast node
   graph->Add(
       out_name,
-      graph->builder_.CreateCast(*x_node->data(), CvtPrecisionType(out_ptype)));
+      graph->builder_.CreateCast(*x_node->data(), CvtPrecisionType(out_ptype)),
+      PrecisionType(out_ptype));
 
   return SUCCESS;
 }

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/npu/bridges/graph.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
 namespace paddle {
@@ -43,7 +43,7 @@ int ReduceMeanConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       dim[i] += x_dims.size();
     }
   }
-  std::sort(dim.begin(), dim.end());
+  std::stable_sort(dim.begin(), dim.end());
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;

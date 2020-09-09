@@ -43,7 +43,7 @@ function prepare_thirdparty {
     # clone bmlibs
     if [ ! -d ${workspace}/third-party/bmlibs ]; then
         git clone https://github.com/AnBaolei1984/bmlibs.git ${workspace}/third-party/bmlibs
-    fi     
+    fi
 }
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
@@ -70,6 +70,13 @@ function build_bm {
     mkdir -p $build_dir
     cd $build_dir
 
+    if [ $TARGET_NAME == "BM1684" ]; then
+      BM_SDK_ROOT="$workspace/third-party/bmlibs/bm_sc5_libs"
+    else
+      BM_SDK_ROOT="$workspace/third-party/bmlibs/bm_sc3_libs"
+    fi
+    echo $BM_SDK_ROOT
+
     prepare_workspace
     cmake .. \
         ${CMAKE_COMMON_OPTIONS} \
@@ -83,7 +90,7 @@ function build_bm {
         -DWITH_TESTING=${WITH_TESTING} \
         -DBM_SDK_ROOT=${BM_SDK_ROOT}
 
-    make -j$NUM_CORES_FOR_COMPILE
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
 
     cd -
     echo "Done"
@@ -97,12 +104,8 @@ function main {
                 TARGET_NAME="${i#*=}"
                 shift
                 ;;
-            #--bm_sdk_root=*)
-            #    BM_SDK_ROOT="${i#*=}"
-            #    shift
-            #    ;;
-            bm)
-                build_bm
+            --test=*)
+                WITH_TESTING=${i#*=}
                 shift
                 ;;
             *)
@@ -112,6 +115,6 @@ function main {
                 ;;
         esac
     done
+    build_bm
 }
-
 main $@

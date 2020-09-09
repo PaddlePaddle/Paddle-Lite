@@ -42,7 +42,7 @@ Paddle Lite已支持MTK APU的预测部署。
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[源码编译](../user_guides/source_compile)中的Docker开发环境进行配置。
+- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/compile_env)中的Docker开发环境进行配置。
 
 ### 运行图像分类示例程序
 
@@ -159,12 +159,18 @@ $ git checkout <release-version-tag>
 $ wget https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
 $ tar -xvf apu_ddk.tar.gz
 ```
-- 编译tiny_publish for MT8168-P2V1 Tablet
+- 编译tiny_publish for MT8168-P2V1 Tablet and Smart TVs(S900)
 ```shell
-$ ./lite/tools/build.sh --arm_os=android --arm_abi=armv8 --arm_lang=gcc --android_stl=c++_shared --build_extra=ON --with_log=ON --build_apu=ON --apu_ddk_root=./apu_ddk tiny_publish
+For MT8168-P2V1 Tablet
+$ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
+
+For Smart TVs(S900)
+$ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
 ```
 - 将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
-- 将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件。
+- 将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件；
+- 将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/include目录；
+- 将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件。
 
 
 ## 其它说明

@@ -84,6 +84,7 @@ bool test_sgemv(bool tra,
   auto db = tb.mutable_data<float>();
   auto dc = tc.mutable_data<float>();
   auto dc_basic = tc_basic.mutable_data<float>();
+  memset(reinterpret_cast<char*>(dc_basic), 0, tc_basic.numel());
   auto dbias = tbias.mutable_data<float>();
   paddle::lite_api::ActivationType act =
       paddle::lite_api::ActivationType::kIndentity;

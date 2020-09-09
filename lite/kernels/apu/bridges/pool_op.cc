@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/operators/pool_op.h"
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/apu/bridges/graph.h"
 #include "lite/kernels/apu/bridges/utility.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -31,6 +31,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_type = op_info->Type();
   auto scope = op->scope();
   VLOG(3) << "[APU] Converting [" + op_type + "] ";
+
+  CHECK(op_info->HasAttr("enable_int8") &&
+        op_info->GetAttr<bool>("enable_int8"));
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
@@ -87,22 +90,10 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  ksize);
 
   // Add x tensor type
-  float x_scale = 1.0f;
-  float out_scale = 1.0f;
-  if (op_info->HasAttr("enable_int8")) {
-    if (op_info->GetAttr<bool>("enable_int8")) {
-      if (op_info->HasAttr("input_scale"))
-        x_scale = op_info->GetAttr<float>("input_scale");
-      if (op_info->HasAttr("output_scale"))
-        out_scale = op_info->GetAttr<float>("output_scale");
-    } else {
-      LOG(WARNING) << "Do not enable_int8";
-      return FAILED;
-    }
-  } else {
-    LOG(WARNING) << "Do not enable_int8";
-    return FAILED;
-  }
+  CHECK(op_info->HasInputScale(x_name));
+  auto x_scale = op_info->GetInputScale(x_name)[0];
+  CHECK(op_info->HasOutputScale(out_name));
+  auto out_scale = op_info->GetOutputScale(out_name)[0];
 
   NeuronOperandType xType;
   xType.type = NEURON_TENSOR_QUANT8_ASYMM;

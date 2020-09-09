@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #pragma once
+#include <utility>
+#include <vector>
 #include "lite/backends/mlu/mlu_utils.h"
 #include "lite/core/target_wrapper.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -43,11 +46,25 @@ class TargetWrapper<TARGET(kMLU)> {
                          const void* src,
                          size_t size,
                          IoDirection dir);
-  // static void MemcpyAsync(void* dst,
-  //                         const void* src,
-  //                         size_t size,
-  //                         IoDirection dir,
-  //                         const queue_t& queue);
+  static void SetMLURunMode(
+      lite_api::MLUCoreVersion core_version,
+      int core_number,
+      DataLayoutType input_layout,
+      std::pair<std::vector<float>, std::vector<float>> firstconv_param);
+  static cnmlCoreVersion_t MLUCoreVersion();
+  static int MLUCoreNumber();
+  static bool UseFirstConv();
+  static const std::vector<float>& MeanVec();
+  static const std::vector<float>& StdVec();
+  static DataLayoutType InputLayout();
+
+ private:
+  static LITE_THREAD_LOCAL cnmlCoreVersion_t mlu_core_version_;
+  static LITE_THREAD_LOCAL int mlu_core_number_;
+  static LITE_THREAD_LOCAL bool use_first_conv_;
+  static LITE_THREAD_LOCAL std::vector<float> mean_vec_;
+  static LITE_THREAD_LOCAL std::vector<float> std_vec_;
+  static LITE_THREAD_LOCAL DataLayoutType input_layout_;
 };
 
 }  // namespace lite

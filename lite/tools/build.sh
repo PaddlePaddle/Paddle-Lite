@@ -22,6 +22,7 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
+WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
@@ -32,15 +33,20 @@ BUILD_APU=OFF
 APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
+WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host 
+# default installation path, ensure acllib/atc/opp directories are all in this root dir
+HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
 PYTHON_EXECUTABLE_OPTION=""
+ENABLE_FLATBUFFERS_DESC_VIEW=OFF
+IOS_DEPLOYMENT_TARGET=9.0
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
 readonly workspace=$PWD
 
 # if operating in mac env, we should expand the maximum file num
-os_nmae=`uname -s`
-if [ ${os_nmae} == "Darwin" ]; then
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
@@ -126,6 +132,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_ON_TINY_PUBLISH=ON \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -141,7 +148,8 @@ function make_tiny_publish_so {
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
-      -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
+      -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang} \
+      -DLITE_ON_FLATBUFFERS_DESC_VIEW=${ENABLE_FLATBUFFERS_DESC_VIEW}
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
@@ -181,6 +189,7 @@ function make_opencl {
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_WITH_CV=$BUILD_CV \
       -DARM_TARGET_OS=$1 -DARM_TARGET_ARCH_ABI=$2 -DARM_TARGET_LANG=$3
 
@@ -219,6 +228,7 @@ function make_full_publish_so {
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_WITH_LOG=$WITH_LOG \
+      -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -261,6 +271,8 @@ function make_all_tests {
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
+      -DLITE_WITH_PROFILE=OFF \
+      -DLITE_WITH_PRECISION_PROFILE=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_NPU=$BUILD_NPU \
@@ -310,6 +322,7 @@ function make_ios {
             -DARM_TARGET_ARCH_ABI=$abi \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
+            -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DARM_TARGET_OS=$os
 
     make publish_inference -j$NUM_PROC
@@ -343,6 +356,8 @@ function make_cuda {
             -DLITE_WITH_STATIC_CUDA=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
+            -DLITE_WITH_LOG=${WITH_LOG} \
+            -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT
@@ -357,6 +372,11 @@ function make_x86 {
 
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.x86
+
+  if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
+    export CXX=/usr/bin/g++ # Ascend need g++ in centos
+    build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
+  fi
 
   if [ -d $build_directory ]
   then
@@ -375,13 +395,17 @@ function make_x86 {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DWITH_GPU=OFF \
+            -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_LOG=${WITH_LOG} \
+            -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+            -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
+            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
@@ -408,11 +432,14 @@ function print_usage {
     echo
     echo -e "optional argument:"
     echo -e "--with_log: (OFF|ON); controls whether to print log information, default is ON"
+    echo -e "--with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
     echo -e "--build_train: (OFF|ON); controls whether to publish training operators and kernels, build_train is only for full_publish library now"
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
+    echo -e "--enable_flatbuffers_view: (OFF|ON); Use the flatbuffers read-only view to load the model. If ON, the naive buffer will no longer be supported."
+    echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
@@ -490,6 +517,17 @@ function main {
                 WITH_LOG="${i#*=}"
                 shift
                 ;;
+            --with_exception=*)
+                WITH_EXCEPTION="${i#*=}"
+                if [[ $WITH_EXCEPTION == "ON" && $ARM_OS=="android" && $ARM_ABI == "armv7" && $ARM_LANG != "clang" ]]; then
+                     set +x
+                     echo
+                     echo -e "error: only clang provide C++ exception handling support for 32-bit ARM."
+                     echo
+                     exit 1
+                fi
+                shift
+                ;;
             --with_profile=*)
                 WITH_PROFILE="${i#*=}"
                 shift
@@ -536,6 +574,22 @@ function main {
                 ;;
             --rknpu_ddk_root=*)
                 RKNPU_DDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --with_huawei_ascend_npu=*)
+                WITH_HUAWEI_ASCEND_NPU="${i#*=}"
+                shift
+                ;;
+            --huawei_ascend_npu_ddk_root=*)
+                HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --enable_flatbuffers_view=*)
+                ENABLE_FLATBUFFERS_DESC_VIEW="${i#*=}"
+                shift
+                ;;
+            --ios_deployment_target=*)
+                IOS_DEPLOYMENT_TARGET="${i#*=}"
                 shift
                 ;;
             tiny_publish)

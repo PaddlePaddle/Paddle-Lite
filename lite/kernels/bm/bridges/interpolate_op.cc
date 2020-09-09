@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include <bmcompiler_if.h>
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
@@ -74,6 +74,8 @@ int InterpolateConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                         output_dims.size(),
                         nullptr,
                         static_cast<const char*>(output_var_name.c_str()),
+                        0,
+                        0,
                         0,
                         0,
                         type);

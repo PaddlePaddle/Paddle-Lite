@@ -15,9 +15,9 @@ limitations under the License. */
 #pragma once
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <mutex>  // NOLINT
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -82,7 +82,7 @@ class SelectedRows {
   int64_t Index(int64_t key) const {
     auto it = std::find(rows_.begin(), rows_.end(), key);
     if (it == rows_.end()) {
-      PADDLE_THROW("id %ld not in table", key);
+      LOG(FATAL) << "id " << key << " not in table";
     }
     return static_cast<int64_t>(std::distance(rows_.begin(), it));
   }
@@ -148,7 +148,7 @@ class SelectedRows {
   // SelectedRows are simply concated when adding together. Until a
   // SelectedRows add a Tensor, will the duplicate rows be handled.
   std::vector<int64_t> rows_;
-  std::unordered_map<int64_t, int64_t>
+  std::map<int64_t, int64_t>
       id_to_index_;  // should not be used when rows_ has duplicate member
   std::unique_ptr<Tensor> value_{nullptr};
   int64_t height_;  // height indicates the underline tensor's height

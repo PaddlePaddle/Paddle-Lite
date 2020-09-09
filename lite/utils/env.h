@@ -15,12 +15,23 @@
 #pragma once
 #include <cstdlib>
 #include <cstring>
-
 #include <iostream>
 #include <string>
 
+// Specify the path of configuration file for the subgraph segmentation, an
+// example is shown as below:
+// op_type:in_var_name_0,in_var_name1:out_var_name_0,out_var_name1
+// op_type::out_var_name_0
+// op_type:in_var_name_0
+// op_type
 #define SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE \
   "SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE"
+
+// The original weight/local/unused variables in the subblock of the subgraph op
+// will be saved only if 'SUBGRAPH_ONLINE_MODE' is set to true(default) during
+// the analysis phase, it ensure the ops in the subblock can be converted to the
+// target device model online during the execution phase.
+#define SUBGRAPH_ONLINE_MODE "SUBGRAPH_ONLINE_MODE"
 
 namespace paddle {
 namespace lite {

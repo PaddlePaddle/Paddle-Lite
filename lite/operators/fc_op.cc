@@ -50,9 +50,15 @@ bool FcOpLite::CheckShape() const {
 
 bool FcOpLite::InferShapeImpl() const {
   const auto& input_dims = param_.input->dims();
-  const auto& w_dims = param_.w->dims();
+  int64_t w_dims_1;
+  if (param_.w_dims.empty()) {
+    const auto& w_dims = param_.w->dims();
+    w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
+  } else {
+    const auto& w_dims = param_.w_dims;
+    w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
+  }
   int in_num_col_dims = param_.in_num_col_dims;
-  int64_t w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
 
   // Set output dims
   std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
@@ -77,6 +83,7 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
   param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
   param_.w = scope->FindVar(W)->GetMutable<lite::Tensor>();
+  param_.w_dims = param_.w->dims();
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=
       input_arg_names.end()) {
@@ -102,14 +109,18 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   }
 
   // For Int8
-  if (op_desc.HasAttr("enable_int8")) {
-    param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");
-    if (op_desc.HasAttr("input_scale"))
-      param_.input_scale = op_desc.GetAttr<float>("input_scale");
-    if (op_desc.HasAttr("weight_scale"))
-      param_.weight_scale = op_desc.GetAttr<std::vector<float>>("weight_scale");
-    if (op_desc.HasAttr("output_scale"))
-      param_.output_scale = op_desc.GetAttr<float>("output_scale");
+  const OpInfo* op_info = dynamic_cast<const OpInfo*>(&op_desc);
+  if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
+    param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
+    auto input_name = op_info->Input("Input").front();
+    auto weight_name = op_info->Input("W").front();
+    auto out_name = op_info->Output("Out").front();
+    if (op_info->HasInputScale(input_name))
+      param_.input_scale = op_info->GetInputScale(input_name)[0];
+    if (op_info->HasInputScale(weight_name))
+      param_.weight_scale = op_info->GetInputScale(weight_name);
+    if (op_info->HasOutputScale(out_name))
+      param_.output_scale = op_info->GetOutputScale(out_name)[0];
   }
   return true;
 }

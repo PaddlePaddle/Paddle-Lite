@@ -182,6 +182,12 @@ void TestElt(Place place,
              std::vector<int64_t> y_shape,
              int axis,
              std::string act_type = "") {
+#if defined(LITE_WITH_XPU)
+  if ((y_shape.size() != 1 && x_shape.size() != y_shape.size()) ||
+      elt_type != std::string("add") || !act_type.empty()) {
+    return;
+  }
+#endif
   std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester(
       place, "def", elt_type, x_shape, y_shape, axis, act_type));
   arena::Arena arena(std::move(tester), place, abs_error);
@@ -226,9 +232,12 @@ TEST(Elementwise, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else
   return;

@@ -116,7 +116,7 @@ class BeamSearchFunctor<TARGET(kX86), T> {
     lod[0].assign(high_level.begin(), high_level.end());
     lod[1].assign(low_level.begin(), low_level.end());
     // if (!lite::fluid::CheckLoD(lod)) {
-    //  //PADDLE_THROW("lod %s is not right", framework::LoDToString(lod));
+    //  //LOG(FATAL)<<"lod %s is not right", framework::LoDToString(lod));
     //}
     selected_ids->set_lod(lod);
     selected_scores->set_lod(lod);

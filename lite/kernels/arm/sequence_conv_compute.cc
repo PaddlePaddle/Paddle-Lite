@@ -17,6 +17,7 @@ limitations under the License. */
 #include <cstddef>
 #include <string>
 #include <vector>
+#include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/sgemm.h"
 #include "lite/core/op_registry.h"
@@ -88,7 +89,7 @@ void SequenceConvCompute::Run() {
       paddle::lite::arm::math::im2col(
           sub_in_data,
           1,
-          sequence_len,
+          input_row_end - input_row_begin,
           hidden_dim,  // C H W -> 1, seq_len, hidden_dim
           kernel_size,
           hidden_dim,  // kernel_h, kernel_w
@@ -101,10 +102,14 @@ void SequenceConvCompute::Run() {
           1,
           1,  // stride_h, stride_w, dilation_h, dilation_w
           tmp_data);
-      local_naive_transpose(tmp_data,
-                            sub_col_data,
-                            kernel_size * hidden_dim,
-                            input_row_end - input_row_begin);
+      int cols = kernel_size * hidden_dim;
+      int rows = input_row_end - input_row_begin;
+      if (cols % 4 == 0 && rows % 4 == 0) {
+        paddle::lite::arm::math::local_transpose(
+            tmp_data, sub_col_data, cols, rows);
+      } else {
+        local_naive_transpose(tmp_data, sub_col_data, cols, rows);
+      }
     }
   }
 

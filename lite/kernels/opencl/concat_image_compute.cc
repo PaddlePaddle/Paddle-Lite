@@ -38,158 +38,156 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     concat_param_ = param_.get_mutable<param_t>();
-    if (concat_param_->x.size() == 2) {
+    axis_ = concat_param_->axis;
+    if (-1 == axis_) {
+      axis_ = concat_param_->x[0]->dims().size() - 1;
+    }
+
+    auto inputs = concat_param_->x;
+    auto output_tensor_dims = concat_param_->output->dims();
+
+    if (inputs.size() == 2) {
       kernel_func_name_ = "concat2";
+    } else if (inputs.size() == 3) {
+      kernel_func_name_ = "concatByCWith3Inputs";
+    } else if (inputs.size() == 4) {
+      kernel_func_name_ = "concatByCWith4Inputs";
     } else {
-      kernel_func_name_ = "concat_mul";
+      // note: do layout transform between image and buffer,
+      // before and after concat(buffer impl.)
+      kernel_func_name_ = "concat_mul_buffer";  // buffer/concat_kernel.cl
+      build_options_ = " -DCL_DTYPE_float";
+      auto in_dims = inputs[0]->dims();
+      for (int i = 0; i < axis_; i++) {
+        pre_size_ *= in_dims[i];
+      }
+      for (int i = axis_ + 1; i < in_dims.size(); i++) {
+        post_size_ *= in_dims[i];
+      }
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+
     context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/concat_kernel.cl",
+                                    (kernel_func_name_ == "concat_mul_buffer")
+                                        ? "buffer/concat_kernel.cl"
+                                        : "image/concat_kernel.cl",
                                     build_options_,
                                     time_stamp_);
 
-    auto axis = concat_param_->axis;
-    auto inputs = concat_param_->x;
-    auto out_dims = concat_param_->output->dims();
-    auto* axis_tensor = concat_param_->axis_tensor;
-    if (axis_tensor != nullptr) {
-      // auto* axis_tensor_data = axis_tensor->data<int>(TARGET(kARM));
-      // axis = axis_tensor_data[0];
-    }
-    auto in_dims = inputs[0]->dims();
-    axis_size_ = out_dims[axis];
-    axis_ = axis;
-    if (out_dims.size() < 4) {
-      if (out_dims.size() - axis == 1) {
+    if (output_tensor_dims.size() < 4) {
+      if (output_tensor_dims.size() - axis_ == 1) {
         // width
-        width_ = out_dims[1];  // c
+        width_ = output_tensor_dims[1];  // c
         flag_ = 3;
       } else {
         // height
-        width_ = out_dims[0];  // n
+        width_ = output_tensor_dims[0];  // n
         flag_ = 2;
       }
     } else {
       switch (axis_) {
         case 0:
-          width_ = out_dims[2];  // h
+          width_ = output_tensor_dims[2];  // h
           flag_ = 0;
           break;
-        case 1:                  // channel
-          width_ = out_dims[3];  // w
+        case 1:                            // channel
+          width_ = output_tensor_dims[3];  // w
           flag_ = 1;
           break;
-        case 2:                  // height
-          width_ = out_dims[0];  // n
+        case 2:                            // height
+          width_ = output_tensor_dims[0];  // n
           flag_ = 2;
           break;
-        case 3:
-        case -1:                 // width
-          width_ = out_dims[1];  // c
+        case 3:                            // width
+          width_ = output_tensor_dims[1];  // c
           flag_ = 3;
           break;
         default:
-          printf("this axis: %d does not support \n", axis_);
+          LOG(FATAL) << "Unsupported axis:" << axis_;
       }
     }
 
+    auto input0_tensor_dims = inputs[0]->dims();
     for (int i = 1; i < inputs.size(); i++) {
       auto dims = inputs[i]->dims();
-      // auto flag = CHECK_EQ_OR_FALSE(in_dims.size(), dims.size());
-      if (in_dims.size() != dims.size()) {
-        printf("input shape must be same \n");
-        return;
-      }
+      CHECK(input0_tensor_dims.size() == dims.size())
+          << "All inputs must have the same axes!";
       for (int i = 0; i < dims.size(); i++) {
-        if (i != axis) {
-          if (in_dims[i] != dims[i]) {
-            printf("input shape must be same \n");
-            return;
-          }
+        if (i != axis_) {
+          CHECK(input0_tensor_dims[i] == dims[i])
+              << "All inputs must have the same shape, except at concat axis!";
         }
       }
     }
   }
 
   void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    const auto& x_dims = param.output->dims();
-    auto image_shape = InitImageDimInfoWith(x_dims);
-    auto* out_buf = param.output->mutable_data<half_t, cl::Image2D>(
-        image_shape["width"], image_shape["height"]);
-    const auto& y_dims = param.output->dims();  // useless: check dim only
+    const auto& output_tensor_dims = concat_param_->output->dims();
+    int output_tensor_w = output_tensor_dims[output_tensor_dims.size() - 1];
+    int output_tensor_c = output_tensor_dims[1];
+    auto output_image_shape = InitImageDimInfoWith(output_tensor_dims);
+    auto* output_image_p =
+        concat_param_->output->mutable_data<half_t, cl::Image2D>(
+            output_image_shape["width"], output_image_shape["height"]);
+    auto inputs = concat_param_->x;
 
-    auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-
-    auto inputs = param.x;
-    int arg_idx = 0;
-    int width = inputs[0]->dims()[inputs[0]->dims().size() - 1];
+    auto global_work_size =
+        cl::NDRange{static_cast<cl::size_type>(
+                        output_tensor_dims[output_tensor_dims.size() - 1]),
+                    static_cast<cl::size_type>(
+                        output_image_shape["width"] /
+                        output_tensor_dims[output_tensor_dims.size() - 1]),
+                    static_cast<cl::size_type>(output_image_shape["height"])};
 
 #ifdef LITE_WITH_LOG
     VLOG(4) << "concat input shape:  ";
     for (size_t i = 0; i < inputs.size(); i++) {
       VLOG(4) << "inputs [" << i << "]"
-              << "[" << inputs[i]->dims().size() << "D]:"
-              << "   dims:" << inputs[i]->dims()[0] << " "
-              << inputs[i]->dims()[1] << " " << inputs[i]->dims()[2] << " "
-              << inputs[i]->dims()[3];
+              << "   dims:" << inputs[i]->dims();
     }
 
     VLOG(4) << "concat output shape:  ";
-    VLOG(4) << " out  dims:  "
-            << "[" << x_dims.size() << "D]:" << x_dims[0] << " " << x_dims[1]
-            << " " << x_dims[2] << " " << x_dims[3];
+    VLOG(4) << " out  dims:  " << output_tensor_dims;
     VLOG(4) << "axis_: " << axis_;
     VLOG(4) << "flag_: " << flag_;
+
+    VLOG(4) << TargetToStr(concat_param_->output->target());
+    VLOG(4) << "output_image_shape(w,h): " << output_image_shape["width"] << " "
+            << output_image_shape["height"];
+    VLOG(4) << "output_tensor_w: " << output_tensor_w;
+    VLOG(4) << "width_:" << width_;
+    VLOG(4) << "global_work_size: "
+            << output_tensor_dims[output_tensor_dims.size() - 1] << "  "
+            << (output_image_shape["width"] /
+                output_tensor_dims[output_tensor_dims.size() - 1])
+            << "  " << (output_image_shape["height"]);
 #endif
 
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(x_dims[x_dims.size() - 1]),
-                    static_cast<cl::size_type>(image_shape["width"] /
-                                               x_dims[x_dims.size() - 1]),
-                    static_cast<cl::size_type>(image_shape["height"])};
-
-#ifdef LITE_WITH_LOG
-    VLOG(4) << TargetToStr(param.output->target());
-    VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
-            << image_shape["height"];
-    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
-            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3]
-            << "x_dims[x_dims.size() - 1]" << x_dims[x_dims.size() - 1];
-    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
-            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-    VLOG(4) << "width_: " << width_ << ", flag_: " << flag_;
-    VLOG(4) << "global_work_size: " << x_dims[x_dims.size() - 1] << "  "
-            << (image_shape["width"] / x_dims[x_dims.size() - 1]) << "  "
-            << (image_shape["height"]);
-#endif
-
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-    int out_w = x_dims[x_dims.size() - 1];
-    int out_c = x_dims[1];
-    if (inputs.size() == 2) {
-      auto* x_buf0 = inputs[0]->data<half_t, cl::Image2D>();
-      auto* x_buf1 = inputs[1]->data<half_t, cl::Image2D>();
-      cl_int status = kernel.setArg(arg_idx, *x_buf0);
+
+    if (kernel_func_name_ == "concat2") {
+      auto* input0_image_p = inputs[0]->data<half_t, cl::Image2D>();
+      auto* input1_image_p = inputs[1]->data<half_t, cl::Image2D>();
+      int input0_axis_dims = inputs[0]->dims()[axis_];
+      cl_int status = kernel.setArg(0, *input0_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *x_buf1);
+      status = kernel.setArg(1, *input1_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, *out_buf);
+      status = kernel.setArg(2, *output_image_p);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, flag_);
+      status = kernel.setArg(3, flag_);
       CL_CHECK_FATAL(status);
-      status =
-          kernel.setArg(++arg_idx, static_cast<int>(inputs[0]->dims()[axis_]));
+      status = kernel.setArg(4, input0_axis_dims);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, out_c);
+      status = kernel.setArg(5, output_tensor_c);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, out_w);
+      status = kernel.setArg(6, output_tensor_w);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(++arg_idx, width_);
+      status = kernel.setArg(7, width_);
       CL_CHECK_FATAL(status);
 
       status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
@@ -200,51 +198,209 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
           nullptr,
           nullptr);
       CL_CHECK_FATAL(status);
-    } else {
-      auto start = 0;
-      for (int i = 0; i < inputs.size(); i++) {
-        arg_idx = 0;
-        auto in_dims = inputs[i]->dims();
-        image_shape = InitImageDimInfoWith(in_dims);
-        auto* x_buf = inputs[i]->data<half_t, cl::Image2D>();
-        int in_w = in_dims[in_dims.size() - 1];
+    } else if (kernel_func_name_ == "concatByCWith3Inputs" ||
+               kernel_func_name_ == "concatByCWith4Inputs") {
+      auto* input0 = inputs[0];
+      auto* input0_image_p = input0->data<half_t, cl::Image2D>();
+      int input0_tensor_c = input0->dims()[1];
+
+      auto* input1 = inputs.size() >= 2 ? inputs[1] : nullptr;
+      auto* input1_image_p =
+          input1 ? input1->data<half_t, cl::Image2D>() : nullptr;
+      int input1_tensor_c = input1 ? input1->dims()[1] : -1;
+
+      auto* input2 = inputs.size() >= 3 ? inputs[2] : nullptr;
+      auto* input2_image_p =
+          input2 ? input2->data<half_t, cl::Image2D>() : nullptr;
+      int input2_tensor_c = input2 ? input2->dims()[1] : -1;
+
+      auto* input3 = inputs.size() >= 4 ? inputs[3] : nullptr;
+      auto* input3_image_p =
+          input3 ? input3->data<half_t, cl::Image2D>() : nullptr;
+      int input3_tensor_c = input3 ? input3->dims()[1] : -1;
+
+      int output_tensor_c = output_tensor_dims[1];
+      int output_tensor_w = output_tensor_dims[3];
+
+      const std::vector<size_t>& default_work_size = DefaultWorkSize(
+          output_tensor_dims,
+          DDim(std::vector<DDim::value_type>{
+              static_cast<int64_t>(output_image_shape["width"]),
+              static_cast<int64_t>(output_image_shape["height"])}));
+      cl::NDRange global_work_size =
+          cl::NDRange{static_cast<size_t>(default_work_size[0]),
+                      static_cast<size_t>(default_work_size[1]),
+                      static_cast<size_t>(default_work_size[2])};
+
+      cl_int status;
+      status = kernel.setArg(0, *output_image_p);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(1, output_tensor_c);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(2, output_tensor_w);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(3, *input0_image_p);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(4, input0_tensor_c);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(5, *input1_image_p);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(6, input1_tensor_c);
+      CL_CHECK_FATAL(status);
+      if (inputs.size() >= 3) {
+        status = kernel.setArg(7, *input2_image_p);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(8, input2_tensor_c);
+        CL_CHECK_FATAL(status);
+      }
+      if (inputs.size() == 4) {
+        status = kernel.setArg(9, *input3_image_p);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(10, input3_tensor_c);
+        CL_CHECK_FATAL(status);
+      }
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
+    } else if (kernel_func_name_ == "concat_mul_buffer") {  // inputs.size() > 4
+      // note: do image layout transform: image to buffer
+      size_t inputs_num = inputs.size();
+      std::vector<const cl::Image2D*> inputs_image_pointers(inputs_num);
+      std::vector<std::map<std::string, size_t>> inputs_image_shapes(
+          inputs_num);
+      std::vector<DDimLite> inputs_dims(inputs_num);
+      std::vector<cl::Buffer*> inputs_buffer_pointers(inputs_num);
+      for (int i = 0; i < inputs_num; i++) {
+        auto* input = inputs[i];
+        inputs_dims[i] = input->dims();
+        inputs_image_shapes[i] = InitImageDimInfoWith(input->dims());
+        inputs_image_pointers[i] = input->data<half_t, cl::Image2D>();
+      }
+      // step1. create kernels
+      // 1.1 img_to_buf
+      std::vector<std::list<std::unique_ptr<KernelBase>>>
+          img_to_buf_kernels_vec(inputs_num);
+      for (size_t i = 0; i < inputs_num; ++i) {
+        auto img_to_buf_kernels = KernelRegistry::Global().Create(
+            "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
+        img_to_buf_kernels_vec[i] = std::move(img_to_buf_kernels);
+      }
+      // 1.2 buf_to_img
+      std::list<std::unique_ptr<KernelBase>> buf_to_img_kernels =
+          KernelRegistry::Global().Create("layout",
+                                          TARGET(kOpenCL),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kImageDefault));
+
+      // step2. get real kernel
+      // 2.1 img_to_buf
+      std::vector<std::unique_ptr<KernelBase>> img_to_buf_kernel_vec(
+          inputs_num);
+      for (size_t i = 0; i < inputs_num; ++i) {
+        img_to_buf_kernel_vec[i] = std::move(img_to_buf_kernels_vec[i].front());
+      }
+      // 2.2 buf_to_img
+      std::unique_ptr<KernelBase> buf_to_img_kernel =
+          std::move(buf_to_img_kernels.front());
+
+      // step3. create and set param, context to kernel
+      std::unique_ptr<KernelContext> kernel_context(new KernelContext);
+      kernel_context->As<OpenCLContext>().InitOnce();
+      // 3.1 img_to_buf
+      std::vector<operators::LayoutParam> img_to_buf_params(inputs_num);
+      std::vector<lite::Tensor> outputs_vec(inputs_num);
+      std::vector<cl::Buffer*> outputs_buffer_pointers(inputs_num);
+      for (size_t i = 0; i < inputs_num; ++i) {
+        img_to_buf_params[i].x = inputs[i];
+        img_to_buf_params[i].y = &outputs_vec[i];
+        outputs_vec[i].Resize(inputs_dims[i]);
+        outputs_buffer_pointers[i] =
+            outputs_vec[i].mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+        img_to_buf_kernel_vec[i]->SetParam(img_to_buf_params[i]);
+
+        std::unique_ptr<KernelContext> img_to_buf_context(new KernelContext);
+        kernel_context->As<OpenCLContext>().CopySharedTo(
+            &(img_to_buf_context->As<OpenCLContext>()));
+        img_to_buf_kernel_vec[i]->SetContext(std::move(img_to_buf_context));
+      }
+      // 3.2 concat_mul_buf
+      std::shared_ptr<lite::Tensor> concat_mul_buf_output_t(new lite::Tensor);
+      concat_mul_buf_output_t->Resize(concat_param_->output->dims());
+      auto conat_mul_buf_output_data =
+          concat_mul_buf_output_t->mutable_data<float, cl::Buffer>(
+              TARGET(kOpenCL));
+      // 3.3 buf_to_img
+      std::shared_ptr<lite::Tensor> buf_to_img_output_t(new lite::Tensor);
+      buf_to_img_output_t->Resize(concat_param_->output->dims());
+
+      std::shared_ptr<operators::LayoutParam> buf_to_img_param(
+          new operators::LayoutParam);
+      buf_to_img_param->x = concat_mul_buf_output_t.get();
+      buf_to_img_param->y = concat_param_->output;
+      buf_to_img_kernel->SetParam(buf_to_img_param);
+
+      std::unique_ptr<KernelContext> buf_to_img_context(new KernelContext);
+      kernel_context->As<OpenCLContext>().CopySharedTo(
+          &(buf_to_img_context->As<OpenCLContext>()));
+      buf_to_img_kernel->SetContext(std::move(buf_to_img_context));
+
+      // step4. run kernels
+      // 4.1 run kernel: image->buffer
+      for (size_t i = 0; i < inputs_num; ++i) {
+        img_to_buf_kernel_vec[i]->Launch();
+      }
+      // 4.2 run kernel: concat_mul_buffer
+      int cur_axis_start_idx = 0;
+      int total = output_tensor_dims[axis_] * post_size_;
+      for (size_t i = 0; i < inputs_num; ++i) {
+        auto* x_buf = outputs_buffer_pointers[i];
+        int axis_dim_size = inputs[i]->dims()[axis_];
+        global_work_size = cl::NDRange{static_cast<size_t>(axis_dim_size)};
+        int total0 = axis_dim_size * post_size_;
 #ifdef LITE_WITH_LOG
-        VLOG(4) << "image_shape(w,h):" << image_shape["width"] << " "
-                << image_shape["height"];
+        VLOG(2) << "--------------- i:" << i << " -----------------";
+        VLOG(2) << "post_size_:" << post_size_;
+        VLOG(2) << "pre_size_:" << pre_size_;
+        VLOG(2) << "axis_dim_size:" << axis_dim_size;
+        VLOG(2) << "cur_axis_start_idx:" << cur_axis_start_idx;
+        VLOG(2) << "total:" << total;
+        VLOG(2) << "total0:" << total0;
 #endif
-        global_work_size =
-            cl::NDRange{static_cast<cl::size_type>(in_dims[in_dims.size() - 1]),
-                        static_cast<cl::size_type>(image_shape["width"] /
-                                                   in_dims[in_dims.size() - 1]),
-                        static_cast<cl::size_type>(image_shape["height"])};
-        cl_int status = kernel.setArg(arg_idx, *x_buf);
+        cl_int status;
+        status = kernel.setArg(0, *x_buf);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, *out_buf);
+        status = kernel.setArg(1, *conat_mul_buf_output_data);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, flag_);
+        status = kernel.setArg(2, axis_dim_size);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, start);
+        status = kernel.setArg(3, pre_size_);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, out_c);
+        status = kernel.setArg(4, post_size_);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, out_w);
+        status = kernel.setArg(5, cur_axis_start_idx);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, in_w);
+        status = kernel.setArg(6, total);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(++arg_idx, width_);
-        CL_CHECK_FATAL(status);
+        status = kernel.setArg(7, total0);
         CL_CHECK_FATAL(status);
 
-        status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-            kernel,
-            cl::NullRange,
-            global_work_size,
-            cl::NullRange,
-            nullptr,
-            nullptr);
+        status = EnqueueNDRangeKernel(context,
+                                      kernel,
+                                      cl::NullRange,
+                                      global_work_size,
+                                      cl::NullRange,
+                                      nullptr,
+                                      event_);
         CL_CHECK_FATAL(status);
-        start += inputs[i]->dims()[axis_];
+        cur_axis_start_idx += axis_dim_size;
       }
+      // 4.3 run kernel: buffer->image
+      buf_to_img_kernel->Launch();
     }
   }
 
@@ -258,10 +414,12 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   }
 #endif
 
-  int axis_size_ = 1;
+ private:
   int axis_ = 1;
   int flag_ = 1;
   int width_ = 1;
+  int pre_size_ = 1;
+  int post_size_ = 1;
   param_t* concat_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{" -DCL_DTYPE_half"};
