@@ -54,6 +54,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
       return false;
     }
   }
+
   // Collect the input and output nodes of the XPU IR graph
   std::vector<xtcl::xExpr*> device_inodes;
   std::vector<xtcl::xExpr*> device_onodes;
@@ -62,16 +63,20 @@ bool SubgraphEngine::BuildDeviceProgram() {
     CHECK(graph.Get(input_names_[i])->is_data());
     device_inodes.push_back(graph.Get(input_names_[i])->data().get());
   }
-  std::vector<std::string> valid_output_names;
   for (size_t i = 0; i < output_names_.size(); i++) {
     if (graph.Has(output_names_[i])) {
       device_onodes.push_back(graph.Get(output_names_[i])->data().get());
-      valid_output_names.push_back(output_names_[i]);
+    } else {
+      // update output_names_ and origin_otensors because some outputs may be
+      // useless
+      output_names_.erase(output_names_.begin() + i);
+      origin_otensors_.erase(origin_otensors_.begin() + i);
+      i--;
     }
   }
-  // update output_names_ because some outputs may be useless
-  output_names_ = valid_output_names;
   CHECK_GT(output_names_.size(), 0);
+  CHECK_EQ(output_names_.size(), origin_otensors_.size());
+
   // Build the XPU IR graph to the XPU runtime for inference
   device_program_ = lite::xpu::Device::Global().Build(
       &graph.builder_, &graph.params_, &device_onodes);
