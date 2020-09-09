@@ -90,7 +90,7 @@ inference_lite_lib.armlinux.armv8
 --opt_model_dir:          输入模型的绝对路径，需要为opt转化之后的模型
 ```
 
-- 编译 Rockchip NPU 预测库方法，详情请参考：[PaddleLite使用RK NPU预测部署](../demo_guides/rockchip_npu)
+- 编译 瑞芯微(Rockchip) NPU 预测库方法，详情请参考：[PaddleLite使用RK NPU预测部署](../demo_guides/rockchip_npu)
 
 ```shell
 --with_rockchip_npu: (OFF|ON)    是否编译编译 huawei_kirin_npu 的预测库，默认为OFF
@@ -98,7 +98,7 @@ inference_lite_lib.armlinux.armv8
 ```
 
 
-- 编译 Baidu XPU 预测库方法, 详情请参考：[PaddleLite使用百度XPU预测部署](../demo_guides/baidu_xpu)
+- 编译 百度(Baidu) XPU 预测库方法, 详情请参考：[PaddleLite使用百度XPU预测部署](../demo_guides/baidu_xpu)
 
 ```shell
 --with_baidu_xpu: (OFF|ON)    是否编译编译 baidu_xpu 的预测库，默认为OFF
