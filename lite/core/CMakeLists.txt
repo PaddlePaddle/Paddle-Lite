@@ -142,6 +142,15 @@ if (NOT LITE_ON_TINY_PUBLISH)
   add_subdirectory(arena)
 endif()
 
+if(LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU)
+    lite_cc_library(subgraph_bridge_registry
+      SRCS subgraph_bridge_registry.cc
+      DEPS op)
+   lite_cc_library(subgraph_engine_base
+      SRCS subgraph_engine_base.cc
+      DEPS tensor op scope program)
+endif()
+
 # for mobile, unnecessary to compile the following testings.
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     return()

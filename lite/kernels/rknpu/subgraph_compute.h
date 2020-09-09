@@ -20,9 +20,9 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
+#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph_engine_base.h"
 #include "lite/core/types.h"
-#include "lite/kernels/npu/bridges/engine.h"
-#include "lite/kernels/npu/bridges/registry.h"
 #include "rknpu/rknpu_pub.h"
 
 namespace paddle {
@@ -30,7 +30,7 @@ namespace lite {
 namespace kernels {
 namespace rknpu {
 
-class SubgraphEngine : public subgraph::Engine {
+class SubgraphEngine : public subgraph::SubgraphEngineBase {
  public:
   SubgraphEngine(KernelContext *ctx,
                  int block_idx,
@@ -38,12 +38,12 @@ class SubgraphEngine : public subgraph::Engine {
                  Scope *exec_scope,
                  const std::vector<std::string> &input_names,
                  const std::vector<std::string> &output_names)
-      : subgraph::Engine(ctx,
-                         block_idx,
-                         program_desc,
-                         exec_scope,
-                         input_names,
-                         output_names) {}
+      : subgraph::SubgraphEngineBase(ctx,
+                                     block_idx,
+                                     program_desc,
+                                     exec_scope,
+                                     input_names,
+                                     output_names) {}
 
  protected:
   bool BuildDeviceProgram() override;

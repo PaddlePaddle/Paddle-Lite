@@ -36,9 +36,9 @@ inline bool CHECK_REBUILD_WHEN_SHAPE_CHANGED(int status) {
 using cvt_func_type =
     std::function<int(void* ctx, OpLite* op, KernelBase* kernel)>;
 using cvt_map_type = std::map<int, std::map<std::string, cvt_func_type>>;
-class Registry {
+class SubgraphBridgeRegistry {
  public:
-  static Registry& Instance();
+  static SubgraphBridgeRegistry& Instance();
 
   void Insert(const std::string& op_type,
               const TargetType& target,
@@ -46,11 +46,11 @@ class Registry {
   const cvt_func_type& Select(const std::string& op_type,
                               const TargetType& target) const;
   bool Exists(const std::string& op_type, const TargetType& target) const;
-  Registry() = default;
+  SubgraphBridgeRegistry() = default;
 
  private:
   cvt_map_type map_;
-  DISALLOW_COPY_AND_ASSIGN(Registry);
+  DISALLOW_COPY_AND_ASSIGN(SubgraphBridgeRegistry);
 };
 
 }  // namespace subgraph
@@ -69,7 +69,7 @@ class Registry {
       "REGISTER_SUBGRAPH_BRIDGE must be called in global namespace only " \
       "once!");                                                           \
   int __reg_subgraph_bridge_##op_type__##_##target__##_Insert() {         \
-    paddle::lite::subgraph::Registry::Instance().Insert(                  \
+    paddle::lite::subgraph::SubgraphBridgeRegistry::Instance().Insert(    \
         #op_type__, TARGET(target__), cvt_func_name);                     \
     return 0;                                                             \
   }

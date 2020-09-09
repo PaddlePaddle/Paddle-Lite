@@ -16,9 +16,9 @@
 #include <gtest/gtest.h>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
 #include "lite/kernels/mlu/bridges/utility.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
