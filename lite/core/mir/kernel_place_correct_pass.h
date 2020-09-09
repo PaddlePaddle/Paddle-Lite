@@ -120,12 +120,6 @@ class KernelPlaceCorrectPass : public DebugPass {
       }
 
       if (inst.op_type() == "concat") {
-        // std::cout << "concat target:" <<
-        // TargetRepr(inst.kernels()[0]->target())
-        //           << std::endl;
-        // std::cout << "concat p:"
-        //           << PrecisionToStr(inst.kernels()[0]->precision())
-        //           << std::endl;
         if (p != PrecisionType::kFP16) {
           UpdateTarget(inst, TargetType::kARM);
           UpdateTensor(inst, in, out, TargetType::kARM);
@@ -164,21 +158,10 @@ class KernelPlaceCorrectPass : public DebugPass {
                 << "-- node name:" << node_name;
 
         auto type = inst.picked_kernel().GetInputDeclType(arg_name);
-
-        // std::cout << arg_name <<" is weight:: " <<
-        // std::to_string(x_in->AsArg().is_weight)
-        //     << "     is persist: " <<
-        //     std::to_string(x_in->AsArg().is_persist) << std::endl;
-
-        // std::cout << " type: "<< inst.op_type() << std::endl;
-
         if (!x_in->AsArg().is_weight) {
           auto p = x_in->AsArg().type->precision();
           auto t = x_in->AsArg().type->target();
           auto l = x_in->AsArg().type->layout();
-          // std::cout << "p:" << PrecisionToStr(p) << std::endl;
-          // std::cout << "t:" << TargetRepr(t) << std::endl;
-          // std::cout << "layout:" << DataLayoutToStr(l) << std::endl;
         }
 
         if (!x_in->AsArg().type) {
@@ -229,8 +212,6 @@ class KernelPlaceCorrectPass : public DebugPass {
 
   // Update me's kUnk fields by other's fields.
   void UpdateTarget(mir::Node::Stmt& inst, TargetType new_target) {  // NOLINT
-    // std::cout << "1 kernels: " << std::to_string(inst.kernels().size()) <<
-    // std::endl;
     auto new_place = inst.place();
 
     new_place.target = new_target;
@@ -247,8 +228,6 @@ class KernelPlaceCorrectPass : public DebugPass {
     std::vector<Place> places;
     places.push_back(new_place);
     inst.ResetKernels(places);
-    // std::cout << "2 kernels: " << std::to_string(inst.kernels().size()) <<
-    // std::endl;
   }
 
   void UpdateTensor(mir::Node::Stmt& inst,  // NOLINT

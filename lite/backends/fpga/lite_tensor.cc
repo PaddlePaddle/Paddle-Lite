@@ -91,7 +91,6 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
   zynq_tensor_->mutableData<void>(zynq_tensor_->dataType(), shape);
   precision_ = other.precision_;
 
-  // this->ZynqTensor()->copyFrom(other.ZynqTensor());
   memcpy(this->ZynqTensor()->data<void>(),
          other.ZynqTensor()->data<void>(),
          other.ZynqTensor()->shape().numel() * sizeof(float));

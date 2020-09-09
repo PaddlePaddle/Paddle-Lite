@@ -146,19 +146,24 @@ class StaticKernelPickPass : public mir::StmtPass {
 
     if (kernel.target() == TARGET(kFPGA)) {
       VLOG(4) << "alias:" << kernel.alias();
-      final_score = 4000;
-      bool in_match = true;
+      /**
+       * we want to use fpga kernel as much as possible, so we give it a very high score,
+       * so this kernel can be picked, it may be not the best option, and we shall correct
+       * it in kernel_place_correct_pass
+       * 
+       * 4000 is a high score that can purpass all the other kernels.
+       **/ 
+      final_score = 4000; 
       for (size_t i = 0; i < in_names.size(); ++i) {
         std::string tmp;
         CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
         if (in_types.count(in_names[i]) &&
             in_types.at(in_names[i]) ==
                 kernel.GetInputDeclType(tmp)->precision()) {
-          final_score += 1000;
+          final_score += 100; //multiple inputs pick the most matched one;
         }
       }
 
-      bool out_match = true;
       for (size_t i = 0; i < out_names.size(); ++i) {
         std::string tmp;
         CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
@@ -169,13 +174,9 @@ class StaticKernelPickPass : public mir::StmtPass {
                   << PrecisionToStr(kernel.GetOutputDeclType(tmp)->precision());
           VLOG(4) << "decType: "
                   << PrecisionToStr(kernel.GetOutputDeclType(tmp)->precision());
-          final_score += 1000;
+          final_score += 100;  // multiple outputs pick the most matched one;
         }
       }
-
-      // if (out_match) {
-      //   final_score += 1000;
-      // }
     }
 
     VLOG(4) << "[score(final)]:" << final_score;

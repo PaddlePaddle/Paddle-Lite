@@ -332,8 +332,6 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
     memcpy(dst_data,
            src_data + static_cast<size_t>(begin * base) * sizeof(T),
            dst_dims.production() * sizeof(T));
-    dst.ZynqTensor()->saveToFile("_slice", true);
-
     return dst;
   }
 }

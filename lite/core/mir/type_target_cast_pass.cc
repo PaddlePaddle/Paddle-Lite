@@ -32,12 +32,6 @@ void TypeTargetTransformPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Start from inputs of the graph, those should have place set.
   std::list<Node*> nodes;
   for (auto& node : graph->StmtTopologicalOrder()) {
-    // if (node->IsStmt()) {
-    //   auto& s = node->AsStmt();
-    //   // std::cout << "type_target type:" << s.op_type() << std::endl;
-    // }else {
-    //   // std::cout << "type_target not a statement \n";
-    // }
     nodes.push_back(node);
   }
 
@@ -134,13 +128,14 @@ void TypeTargetTransformPass::AddIoCopyInst(
     auto* io_copy_inst = graph->NewInstructNode();
 
     bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
-    // std::string io_copy_type = in_persist ? "io_copy_once" : "io_copy";
-    std::string io_copy_type = "io_copy";
+    std::string io_copy_type = in_persist ? "io_copy_once" : "io_copy";
+#ifdef LITE_WITH_FPGA
+    io_copy_type = "io_copy";
+#endif
     io_copy_output_arg->AsArg().is_persist = in_persist;
     // create Op and kernels.
     auto io_copy_op = LiteOpRegistry::Global().Create(io_copy_type);
     CHECK(io_copy_op) << "create op [" << io_copy_op << "] failed";
-    // CHECK(io_copy_op);
     // Create the new var manually.
     inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
 

@@ -41,16 +41,6 @@ class Monitor {
     auto op_type = op->Type();
 
     VLOG(4) << "Running op:" << op_type << " on " << inst.kernel()->name();
-
-    auto op_info = op->op_info();
-    auto in_names = op_info->input_names();
-
-    // for (auto name : in_names) {
-    // auto *var = op->scope()->FindVar(name);
-    // CHECK(var) << "no variable called " << name << " found";
-    // auto tensor = var->Get<lite::Tensor>();
-    // VLOG(4) << "\n in_tensor:::" << name;
-    // }
   }
 
   void postRun(Instruction& inst) {  // NOLINT
@@ -83,7 +73,6 @@ class Monitor {
             name.replace(found, substr.length(), "_");
           }
           VLOG(4) << "\n out_tensor:::" << name;
-          // tensor->ZynqTensor()->saveToFile(name, true);
           if (tensor->ZynqTensor() != nullptr && should_print(name)) {
             tensor->ZynqTensor()->saveToFile(name, true);
           }
