@@ -23,6 +23,7 @@ if(LITE_WITH_XPU AND NOT LITE_WITH_XTCL)
     xpu_x86_without_xtcl_test(test_ernie_fp32_xpu ernie)
     xpu_x86_without_xtcl_test(test_bert_fp32_xpu bert)
     # xpu_x86_without_xtcl_test(test_googlenet_fp32_xpu GoogLeNet)
+    xpu_x86_without_xtcl_test(test_vgg19_fp32_xpu vgg19)
 endif()
 
 if(LITE_WITH_RKNPU)
