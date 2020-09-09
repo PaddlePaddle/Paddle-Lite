@@ -80,5 +80,5 @@ pip install paddlelite
 - [FPGA源码编译](../demo_guides/fpga)
 - [华为NPU源码编译](../demo_guides/npu)
 - [百度XPU源码编译](../demo_guides/baidu_xpu)
-- [Rockchip NPU源码编译](../demo_guides/rockchip_npu)
-- [MediaTek APU源码编译](../demo_guides/mediatek_apu)
+- [瑞芯微NPU源码编译](../demo_guides/rockchip_npu)
+- [联发科APU源码编译](../demo_guides/mediatek_apu)
