@@ -122,12 +122,12 @@ class DeviceInfo {
   static LITE_THREAD_LOCAL int64_t count_;
 
 #ifdef LITE_WITH_MLU
-  static thread_local cnmlCoreVersion_t mlu_core_version_;
-  static thread_local int mlu_core_number_;
-  static thread_local bool use_first_conv_;
-  static thread_local std::vector<float> mean_vec_;
-  static thread_local std::vector<float> std_vec_;
-  static thread_local DataLayoutType input_layout_;
+  static LITE_THREAD_LOCAL cnmlCoreVersion_t mlu_core_version_;
+  static LITE_THREAD_LOCAL int mlu_core_number_;
+  static LITE_THREAD_LOCAL bool use_first_conv_;
+  static LITE_THREAD_LOCAL std::vector<float> mean_vec_;
+  static LITE_THREAD_LOCAL std::vector<float> std_vec_;
+  static LITE_THREAD_LOCAL DataLayoutType input_layout_;
 #endif
 
   void SetDotInfo(int argc, ...);
