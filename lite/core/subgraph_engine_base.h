@@ -26,20 +26,21 @@ namespace paddle {
 namespace lite {
 namespace subgraph {
 
-class Engine {
+class SubgraphEngineBase {
  public:
-  Engine(KernelContext *ctx,
-         int block_idx,
-         const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
-         Scope *exec_scope,
-         const std::vector<std::string> &input_names,
-         const std::vector<std::string> &output_names);
-  virtual ~Engine() = default;
+  SubgraphEngineBase(
+      KernelContext *ctx,
+      int block_idx,
+      const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
+      Scope *exec_scope,
+      const std::vector<std::string> &input_names,
+      const std::vector<std::string> &output_names);
+  virtual ~SubgraphEngineBase() = default;
 
   virtual bool Run();
 
  private:
-  Engine(const Engine &) = delete;
+  SubgraphEngineBase(const SubgraphEngineBase &) = delete;
 
  protected:
   virtual bool PrepareWorkspaceForOriginProgram();

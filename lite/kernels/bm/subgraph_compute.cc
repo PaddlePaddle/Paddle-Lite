@@ -31,7 +31,7 @@ namespace bm {
 bool SubgraphEngine::BuildDeviceProgram() {
   int status = 0;
   subgraph::bm::Graph graph;
-  const auto& bridges = subgraph::Registry::Instance();
+  const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
   for (size_t i = 0; i < input_names_.size(); i++) {

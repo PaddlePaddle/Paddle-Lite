@@ -119,7 +119,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // then added them into the IR graph
   int status = 0;
   subgraph::huawei_ascend_npu::Graph graph;
-  const auto& bridges = subgraph::Registry::Instance();
+  const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   CHECK(origin_program)
       << "[HUAWEI_ASCEND_NPU] The origin program is not initialized!";
   CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
