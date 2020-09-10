@@ -318,7 +318,6 @@ void MatrixNmsCompute::Run() {
   index->set_lod(lod);
 }
 
-
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
