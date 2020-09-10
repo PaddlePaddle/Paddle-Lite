@@ -9,7 +9,7 @@ Mobile 在这次升级为 Lite 架构， 侧重多硬件、高性能的支持，
 
 架构图如下
 
-![Paddle Inference Refactor1.0](https://user-images.githubusercontent.com/52520497/64949619-26e49580-d8ac-11e9-855a-514feb9b75af.png)
+<p align="center"><img width="500" src="https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/develop/docs/images/architecture.png"/></p>
 
 ## 编译期和执行期严格隔离设计
 
