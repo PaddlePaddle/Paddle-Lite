@@ -138,7 +138,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.dilations = std::make_shared<std::vector<int>>(dilations);
   param_.groups = op_desc.GetAttr<int>("groups");
   if (op_desc.HasAttr("act_type")) {
-    param_.act_type = op_desc.GetAttr<int>("act_type");
+    param_.act_type = op_desc.GetAttr<std::string>("act_type");
   }
 
   if (op_desc.HasAttr("filter_type")) {
