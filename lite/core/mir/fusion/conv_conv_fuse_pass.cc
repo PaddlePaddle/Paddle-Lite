@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/conv_conv_fuse_pass.h"
+#include <list>
 #include <memory>
 #include <vector>
 #include "lite/core/mir/fusion/conv_conv_fuser.h"
@@ -29,6 +30,7 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<std::string> conv_type_cases{"conv2d", "depthwise_conv2d"};
   bool has_fp32 = false;
   bool has_int8 = false;
+  bool has_weight_quant = false;
   for (auto& place : graph->valid_places()) {
     if (place.target == TARGET(kARM) || place.target == TARGET(kHost)) {
       if (place.precision == PRECISION(kFloat)) {
@@ -42,8 +44,18 @@ void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       return;
     }
   }
+  const std::list<mir::Node>& nodes = graph->nodes();
+  for (auto& node : nodes) {
+    if (node.IsStmt()) {
+      auto* op_info = (node.stmt())->op_info();
+      if (op_info->HasAttr("quantization_type")) {
+        has_weight_quant = true;
+        break;
+      }
+    }
+  }
   // only support arm-fp32
-  if (has_int8 || (has_fp32 && has_int8)) {
+  if (has_int8 || has_weight_quant) {
     return;
   }
   // only support fp32 fusion
