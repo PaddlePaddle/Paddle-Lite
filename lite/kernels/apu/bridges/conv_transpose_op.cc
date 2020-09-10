@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/conv_op.h"
-#include <iostream>
 #include <vector>
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/apu/bridges/graph.h"
 #include "lite/kernels/apu/bridges/utility.h"
+
+#include "lite/operators/conv_op.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
 namespace apu {
 
-int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
-  auto graph = static_cast<Graph*>(ctx);
+  auto graph = static_cast<Graph *>(ctx);
   auto model = graph->model();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
@@ -38,31 +38,28 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(op_info->HasAttr("enable_int8") &&
         op_info->GetAttr<bool>("enable_int8"));
 
-  // Get input and output vars and op attributes
+  // Get input, output and op attributes
   auto input_name = op_info->Input("Input").front();
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
+  CHECK_EQ(input_dims.size(), 4);
 
   auto filter_name = op_info->Input("Filter").front();
   auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
+  CHECK_EQ(filter_dims.size(), 4);
 
   auto output_name = op_info->Output("Output").front();
-  auto output = scope->FindMutableTensor(output_name);
-  auto output_dims = output->dims();
 
-  auto bs = input_dims[0];
-  auto ic = input_dims[1];
-  auto oc = filter_dims[0];
-  CHECK_EQ(input_dims.size(), 4L);
-  CHECK_EQ(output_dims.size(), 4L);
-  CHECK_EQ(filter_dims.size(), 4L);
-  CHECK_EQ(output_dims[0], bs);
-  CHECK_EQ(output_dims[1], oc);
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  CHECK_EQ(strides.size(), 2L);
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
-  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  if (groups > 1) {
+    LOG(WARNING) << "[NPU] only support groups == 1";
+    return FAILED;
+  }
+
   bool with_act =
       op_info->HasAttr("with_act") && op_info->GetAttr<bool>("with_act");
   std::string act_type =
@@ -70,11 +67,15 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   float leaky_relu_alpha = act_type == "leaky_relu"
                                ? op_info->GetAttr<float>("leaky_relu_alpha")
                                : 0.f;
-  CHECK_EQ(strides.size(), 2L);
-  CHECK_EQ(dilations.size(), 2L);
-  bool is_depthwise_mode = ic == groups && oc == groups;
-  VLOG(3) << "is_depthwise_mode: " << is_depthwise_mode;
+  auto fuse_relu =
+      op_info->HasAttr("fuse_relu") && op_info->GetAttr<bool>("fuse_relu");
 
+  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  CHECK_EQ(dilations.size(), 2L);
+  std::string padding_algorithm =
+      op_info->HasAttr("padding_algorithm")
+          ? op_info->GetAttr<std::string>("padding_algorithm")
+          : "";
   if (paddings.size() == 2L) {
     for (size_t i = 0; i < strides.size(); ++i) {
       int copy_pad = *(paddings.begin() + 2 * i);
@@ -86,10 +87,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       << "[APU] Paddings size should be the same or twice as the input size."
       << paddings.size();
 
-  std::string padding_algorithm("");
-  if (op_info->HasAttr("padding_algorithm")) {
-    padding_algorithm = op_info->GetAttr<std::string>("padding_algorithm");
-  }
   operators::UpdatePaddingAndDilation(&paddings,
                                       &dilations,
                                       strides,
@@ -97,20 +94,43 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       input_dims,
                                       filter_dims);
 
+  std::vector<int> output_dims;
+  // set output_dims batches
+  output_dims.push_back(input_dims[0]);
+
+  std::vector<int> output_size;
+  if (op_info->HasAttr("output_size")) {
+    output_size = op_info->GetAttr<std::vector<int>>("output_size");
+  }
+
+  if (output_size.size() > 2) {
+    // set output_dims height, width
+    output_dims.push_back(output_size[0]);
+    output_dims.push_back(output_size[1]);
+  } else {
+    // compute output size
+    for (int i = 0; i < strides.size(); i++) {
+      int kernel_ext = filter_dims[i + 2];
+      int output_size = (input_dims[i + 2] - 1) * strides[i] + kernel_ext -
+                        paddings[i * 2] - paddings[i * 2 + 1];
+      output_dims.push_back(output_size);
+    }
+  }
+  output_dims.push_back(filter_dims[1]);
+
   CHECK(op_info->HasInputScale(input_name));
   auto input_scale = op_info->GetInputScale(input_name)[0];
   CHECK(op_info->HasInputScale(filter_name));
   auto filter_scale = op_info->GetInputScale(filter_name);
   CHECK(op_info->HasOutputScale(output_name));
   auto output_scale = op_info->GetOutputScale(output_name)[0];
-  auto orig_output_scale = op_info->GetOutputScale(output_name)[0];
 
   VLOG(3) << "strides.size(): " << strides.size() << " ,groups: " << groups
           << " ,dilations: " << dilations[0] << ":" << dilations[1];
-  VLOG(3) << "with_act: " << with_act << " ,act_type:" << act_type;
-  VLOG(3) << "input_dims: " << input_dims << " ,output_dims: " << output_dims
+  VLOG(3) << "with_act: " << with_act << " ,act_type: " << act_type;
+  VLOG(3) << "input_dims: " << input_dims
           << " ,filter_scale size: " << filter_scale.size();
-  VLOG(3) << "filter_dims: " << filter_dims
+  VLOG(3) << "filter_dims(Cin, Cout, H, W): " << filter_dims
           << " ,memory_size: " << filter->memory_size()
           << " ,data_size: " << filter->data_size();
 
@@ -129,16 +149,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> input_node = nullptr;
   if (graph->Has(input_name)) {
     VLOG(3) << "Graph has " << input_name;
-
-    if (graph->IsInput(input_name)) {
-      VLOG(3) << input_name << "is input and already exist";
-      input_name = "transpose_" + input_name;
-    }
-
-    if (graph->IsOutput(input_name)) {
-      VLOG(3) << input_name << "is input and output node";
-      input_name = "transpose_" + input_name;
-    }
     // input operand already exist
     input_node = graph->Get(input_name);
   } else {
@@ -166,6 +176,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_node = graph->Add(input_name, dims_in);
     }
   }
+
   VLOG(3) << "input node idx: " << input_node->index()
           << ": input_scale: " << input_scale
           << ", inType: " << inType.dimensions[0] << ":" << inType.dimensions[1]
@@ -175,136 +186,105 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NeuronOperandType biasType;
 
   // Add filter type
-  // filter NCHW -> NHWC
+  // filter (Cin,Cout,H,W) -> (depth_out, h, w, depth_in)
   Tensor transpose_filter;
   std::vector<uint32_t> dims_filter;
+  transpose_filter.Resize({(uint32_t)filter_dims[1],
+                           (uint32_t)filter_dims[2],
+                           (uint32_t)filter_dims[3],
+                           (uint32_t)filter_dims[0]});
 
-  if (is_depthwise_mode) {
-    transpose_filter.Resize({1,
-                             (uint32_t)filter_dims[2],
-                             (uint32_t)filter_dims[3],
-                             (uint32_t)filter_dims[0]});
-    dims_filter = {1,
-                   (uint32_t)filter_dims[0],
-                   (uint32_t)filter_dims[2],
-                   (uint32_t)filter_dims[3]};
-    transpose(filter->data<int8_t>(),
-              transpose_filter.mutable_data<uint8_t>(),
-              dims_filter,
-              {0, 2, 3, 1});
+  transposeAsym(filter->data<int8_t>(),
+                transpose_filter.mutable_data<uint8_t>(),
+                {(uint32_t)filter_dims[0],
+                 (uint32_t)filter_dims[1],
+                 (uint32_t)filter_dims[2],
+                 (uint32_t)filter_dims[3]},
+                {1, 2, 3, 0});
 
-    dims_filter = {(uint32_t)filter_dims[1],
-                   (uint32_t)filter_dims[2],
-                   (uint32_t)filter_dims[3],
-                   (uint32_t)filter_dims[0]};
-  } else {
-    transpose_filter.Resize({(uint32_t)filter_dims[0],
-                             (uint32_t)filter_dims[2],
-                             (uint32_t)filter_dims[3],
-                             (uint32_t)filter_dims[1]});
-    dims_filter = {(uint32_t)filter_dims[0],
-                   (uint32_t)filter_dims[1],
-                   (uint32_t)filter_dims[2],
-                   (uint32_t)filter_dims[3]};
-    transpose(filter->data<int8_t>(),
-              transpose_filter.mutable_data<uint8_t>(),
-              dims_filter,
-              {0, 2, 3, 1});
-
-    dims_filter = {(uint32_t)filter_dims[0],
-                   (uint32_t)filter_dims[2],
-                   (uint32_t)filter_dims[3],
-                   (uint32_t)filter_dims[1]};
-  }
+  dims_filter = {(uint32_t)filter_dims[1],
+                 (uint32_t)filter_dims[2],
+                 (uint32_t)filter_dims[3],
+                 (uint32_t)filter_dims[0]};
 
   NeuronOperandType filterType;
-  NeuronOperandType channelFilterType;
-  NeuronSymmPerChannelQuantParams symmPerChannelQuantParams;
-  if (1 == filter_scale.size()) {
-    // Per layer type
-    filterType.type = NEURON_TENSOR_QUANT8_ASYMM;
-    filterType.scale = filter_scale[0];
-    filterType.zeroPoint = 128;
-    filterType.dimensionCount = filter_dims.size();
-    filterType.dimensions = &dims_filter[0];
-    biasType.scale = inType.scale * filterType.scale;
-  } else {
-    // Per channel type
-    channelFilterType.type = NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL;
-    channelFilterType.scale = 0.0f;
-    channelFilterType.zeroPoint = 0;
-    channelFilterType.dimensionCount = filter_dims.size();
-    channelFilterType.dimensions = &dims_filter[0];
+  filterType.type = NEURON_TENSOR_QUANT8_ASYMM;
+  filterType.scale = filter_scale[0];
+  filterType.zeroPoint = 128;
+  filterType.dimensionCount = filter_dims.size();
+  filterType.dimensions = &dims_filter[0];
+  biasType.scale = inType.scale * filterType.scale;
 
-    // Per channel setting
-    if (is_depthwise_mode)
-      symmPerChannelQuantParams.channelDim = 3;
-    else
-      symmPerChannelQuantParams.channelDim = 0;
-    symmPerChannelQuantParams.scaleCount = filter_scale.size();
-    symmPerChannelQuantParams.scales = filter_scale.data();
-    biasType.scale = 0;
+  std::shared_ptr<Node> filter_node = nullptr;
+  NeuronModel_addOperand(model, &filterType);
+  filter_node = graph->Add(filter_name, dims_filter);
+  auto precision = filter->precision();
+  VLOG(3) << " filter node idx: " << filter_node->index()
+          << " filter_scale[0]=" << filter_scale[0]
+          << " filter memory_size=" << filter->memory_size()
+          << " filter precision=" << PrecisionToStr(precision)
+          << " :filterType: " << filterType.dimensions[0] << ":"
+          << filterType.dimensions[2] << ":" << filterType.dimensions[2] << ":"
+          << filterType.dimensions[3];
+
+#if DEBUG
+
+  std::ofstream myfile;
+  std::string filename = "paddle_conv2d_transpose_filter.bin";
+  myfile.open(filename, std::ios::out | std::ios::binary);
+  myfile.write(reinterpret_cast<char *>(filter->raw_data()),
+               filter->memory_size());
+  myfile.close();
+
+  int8_t *tmp = reinterpret_cast<int8_t *>(filter->raw_data());
+  for (int i = 0; i < 24; i++) {
+    VLOG(3) << i << ":" << static_cast<int>(tmp[i]);
+  }
+#endif
+
+  memcpy(filter->mutable_data<int8_t>(),
+         transpose_filter.mutable_data<uint8_t>(),
+         filter->memory_size());
+
+#if DEBUG
+  std::string filename1 = "vpu_conv2d_transpose_filter.bin";
+  myfile.open(filename1, std::ios::out | std::ios::binary);
+  myfile.write(reinterpret_cast<char *>(filter->raw_data()),
+               filter->memory_size());
+  myfile.close();
+
+  tmp = reinterpret_cast<int8_t *>(filter->raw_data());
+  for (int i = 0; i < 24; i++) {
+    VLOG(3) << i << ":" << static_cast<int>(tmp[i * 128]);
   }
 
-  auto precision = filter->precision();
-  std::shared_ptr<Node> filter_node = nullptr;
-  if (1 == filter_scale.size()) {
-    NeuronModel_addOperand(model, &filterType);  // 1: filter
-    filter_node = graph->Add(filter_name, dims_filter);
-    VLOG(3) << "filter node idx: " << filter_node->index() << "filter_scale[0]"
-            << filter_scale[0] << ": filterType: " << filterType.dimensions[0]
-            << ":" << filterType.dimensions[1] << ":"
-            << filterType.dimensions[2] << ":" << filterType.dimensions[3];
-    memcpy(filter->mutable_data<int8_t>(),
-           transpose_filter.mutable_data<uint8_t>(),
-           filter->memory_size());
-    neuron_errCode = NeuronModel_setOperandValue(
-        model, filter_node->index(), filter->raw_data(), filter->memory_size());
-    if (NEURON_NO_ERROR != neuron_errCode) {
-      LOG(WARNING) << "Set filter operand value fail:" << neuron_errCode;
-      return subgraph::FAILED;
-    }
-  } else {
-    NeuronModel_addOperand(model, &channelFilterType);  // 1: filter
-    filter_node = graph->Add(filter_name, dims_filter);
-    VLOG(3) << "chennel filter node idx: " << filter_node->index()
-            << " ,scale_count:" << filter_scale.size()
-            << " filter_scale[0]:" << filter_scale.data()[0]
-            << " ,channelFilterType: " << channelFilterType.dimensions[0] << ":"
-            << channelFilterType.dimensions[1] << ":"
-            << channelFilterType.dimensions[2] << ":"
-            << channelFilterType.dimensions[3];
-    memcpy(filter->mutable_data<int8_t>(),
-           transpose_filter.mutable_data<uint8_t>(),
-           filter->memory_size());
-    neuron_errCode = NeuronModel_setOperandValue(
-        model, filter_node->index(), filter->raw_data(), filter->memory_size());
-    if (NEURON_NO_ERROR != neuron_errCode) {
-      LOG(WARNING) << "Set filter operand value fail:" << neuron_errCode;
-      return subgraph::FAILED;
-    }
-    neuron_errCode = NeuronModel_setOperandSymmPerChannelQuantParams(
-        model, filter_node->index(), &symmPerChannelQuantParams);
-    if (NEURON_NO_ERROR != neuron_errCode) {
-      LOG(WARNING) << "Set per channel filter params fail:" << neuron_errCode;
-      return subgraph::FAILED;
-    }
+#endif
+
+  // Set filter value
+  neuron_errCode = NeuronModel_setOperandValue(
+      model, filter_node->index(), filter->raw_data(), filter->memory_size());
+  if (NEURON_NO_ERROR != neuron_errCode) {
+    LOG(WARNING) << "Set filter operand value fail:" << neuron_errCode;
+    return subgraph::FAILED;
   }
 
   // Add biasType node value
   // A 1-D tensor, of shape [depth_out], specifying the bias.
-  // For filter tensor of NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL, the bias
-  // should be of NEURON_TENSOR_INT32, with zeroPoint of 0
-  // and bias_scale of 0. The actual scale of each value 'i' is equal
-  // to bias_scale[i] = input_scale * filter_scale[i].
+  // For filter tensor of NEURON_TENSOR_QUANT8_ASYMM, the bias should be of
+  // NEURON_TENSOR_INT32 with zeroPoint of 0 and bias_scale ==
+  // input_scale * filter_scale
   biasType.type = NEURON_TENSOR_INT32;
   biasType.zeroPoint = 0;
   std::vector<uint32_t> dims_bias;
   std::shared_ptr<Node> bias_node = nullptr;
+
   if (HasInputArg(op_info, scope, "Bias")) {
     auto bias_name = op_info->Input("Bias").front();
     auto bias = scope->FindMutableTensor(bias_name);
     auto bias_dims = bias->dims();
+    auto channel_size = bias->dims().production();
+    CHECK_EQ(channel_size, filter_dims[1] * groups);
+    CHECK_EQ(bias_dims.size(), 1);
 
     biasType.dimensionCount = bias_dims.size();
     for (int i = 0; i < bias_dims.size(); i++)
@@ -315,14 +295,18 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     VLOG(3) << "node idx: " << bias_node->index()
             << ": Bias name: " << bias_name
             << " ,bias scale: " << biasType.scale
-            << " ,dimensions: " << bias_dims;
+            << " ,dimensions: " << bias_dims
+            << " ,channel_size:" << channel_size;
+
   } else {
+    // create default bias with value 0
     biasType.dimensionCount = 1;
     dims_bias = {(uint32_t)output_dims[1]};
     biasType.dimensions = &dims_bias[0];
     NeuronModel_addOperand(model, &biasType);  // 2: bias
     bias_node = graph->Add(filter_name + "_default_bias", dims_bias);
-    VLOG(3) << "node idx" << bias_node->index() << ": Bias name: default_bias "
+    VLOG(3) << "node idx: " << bias_node->index()
+            << ": Bias name: default_bias "
             << " ,bias scale: " << biasType.scale
             << " ,dimensions: " << dims_bias.size();
   }
@@ -356,26 +340,16 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NeuronModel_addOperand(model, &int32Type);  // 8: stride height
   strideH_node = graph->Add(filter_name + "_stride_height", dims_int32);
 
-  std::shared_ptr<Node> dm_node = nullptr;
-  if (is_depthwise_mode) {
-    NeuronModel_addOperand(model, &int32Type);  // 9: depthwise multiplier
-    dm_node = graph->Add(filter_name + "_dm", dims_int32);
-  }
-
   std::shared_ptr<Node> fuse_node = nullptr;
-  NeuronModel_addOperand(model, &int32Type);  // 9/10: fuse
+  NeuronModel_addOperand(model, &int32Type);  // 9: fuse
   fuse_node = graph->Add(filter_name + "_fuse", dims_int32);
 
-  /* check output scale */
-  if (is_depthwise_mode) {
-    for (auto s : filter_scale) {
-      if (output_scale < s * input_scale)
-        output_scale = s * input_scale + 0.000001;
-    }
-#ifdef ENABLE_MTK_REQUANT
-    output_scale = orig_output_scale;
-#endif
-  }
+  NeuronOperandType boolType;
+  boolType.type = NEURON_BOOL;
+  boolType.dimensionCount = 0;  // Must be 0 for scalars.
+  std::shared_ptr<Node> layout_node = nullptr;
+  NeuronModel_addOperand(model, &boolType);  // 9: fuse
+  layout_node = graph->Add(filter_name + "_layout", dims_int32);
 
   // Add output tensor type
   NeuronOperandType outType;
@@ -384,33 +358,26 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   outType.zeroPoint = 128;
   outType.dimensionCount = output_dims.size();
   std::vector<uint32_t> dims_out = {(uint32_t)output_dims[0],
+                                    (uint32_t)output_dims[1],
                                     (uint32_t)output_dims[2],
-                                    (uint32_t)output_dims[3],
-                                    (uint32_t)output_dims[1]};
+                                    (uint32_t)output_dims[3]};
   outType.dimensions = &dims_out[0];
   std::shared_ptr<Node> output_node = nullptr;
   if (graph->Has(output_name)) {
     output_node = graph->Get(output_name);
   } else {
     // add output operand
-    NeuronModel_addOperand(model, &outType);  // output
-
-    if (orig_output_scale != output_scale) {
-      // need to add requant op
-      // requant_ -> transpose_ -> output
-      output_node = graph->Add("requant_" + output_name, dims_out);
-    } else if (graph->IsOutput(output_name)) {
-      // need to add transpose op
-      // transpose_ -> output
+    if (graph->IsOutput(output_name)) {
+      NeuronModel_addOperand(model, &outType);  // output
       output_node = graph->Add("transpose_" + output_name, dims_out);
     } else {
-      // input -> output
+      NeuronModel_addOperand(model, &outType);
       output_node = graph->Add(output_name, dims_out);
     }
   }
   VLOG(3) << "output node idx: " << output_node->index()
           << ": output_scale: " << outType.scale
-          << ", outType: " << outType.dimensions[0] << ":"
+          << " ,outType: " << outType.dimensions[0] << ":"
           << outType.dimensions[1] << ":" << outType.dimensions[2] << ":"
           << outType.dimensions[3];
 
@@ -418,19 +385,49 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (HasInputArg(op_info, scope, "Bias")) {
     auto bias_name = op_info->Input("Bias").front();
     auto bias = scope->FindMutableTensor(bias_name);
-    int32_t* int32_bias_data =
-        reinterpret_cast<int32_t*>(bias->mutable_data<float>());
+
+#if DEBUG
+    std::ofstream myfile;
+    std::string filename = "vpu_conv2d_transpose_bias_float.bin";
+    myfile.open(filename, std::ios::out | std::ios::binary);
+    myfile.write(reinterpret_cast<char *>(bias->raw_data()),
+                 bias->memory_size());
+    myfile.close();
+
+    float *tmp_float = reinterpret_cast<float *>(bias->raw_data());
+    for (int i = 0; i < 64; i++) {
+      VLOG(3) << i << ":" << (tmp_float[i]);
+    }
+#endif
+
+    int32_t *int32_bias_data =
+        reinterpret_cast<int32_t *>(bias->mutable_data<float>());
     float2int32(
         bias->data<float>(), input_scale, filter_scale, int32_bias_data);
 
-    VLOG(3) << "int32_bias_data: " << int32_bias_data[0] << " : "
-            << int32_bias_data[1] << " : " << int32_bias_data[2] << " : "
+    VLOG(3) << "int32_bias_data: " << int32_bias_data[0] << ":"
+            << int32_bias_data[1] << ":" << int32_bias_data[2] << ":"
             << int32_bias_data[3];
+
+#if DEBUG
+    myfile;
+    filename = "vpu_conv2d_transpose_bias.bin";
+    myfile.open(filename, std::ios::out | std::ios::binary);
+    myfile.write(reinterpret_cast<char *>(bias->raw_data()),
+                 bias->memory_size());
+    myfile.close();
+
+    int32_t *tmp = reinterpret_cast<int32_t *>(bias->raw_data());
+    for (int i = 0; i < 24; i++) {
+      VLOG(3) << i << ":" << static_cast<int>(tmp[i]);
+    }
+#endif
+
     neuron_errCode = NeuronModel_setOperandValue(
         model, bias_node->index(), bias->raw_data(), bias->memory_size());
   } else {
     auto int32_bias = std::make_shared<Tensor>();
-    int32_bias->Resize({1, output_dims[1]});
+    int32_bias->Resize({1, output_dims[3]});
     int32_bias->mutable_data<int32_t>();
     VLOG(3) << "bais_default: " << int32_bias->memory_size();
     memset(int32_bias->mutable_data<int32_t>(), 0, int32_bias->memory_size());
@@ -473,104 +470,53 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NeuronModel_setOperandValue(
       model, strideH_node->index(), stride_val, sizeof(int32_t) * 1);
 
-  // Add fuse
-  int32_t fuse_val[1] = {0};
+  int32_t fuse_val[1] = {NEURON_FUSED_NONE};
   if (act_type == "relu") {
-    fuse_val[0] = 1;
+    fuse_val[0] = NEURON_FUSED_RELU;
   } else if (act_type == "relu1") {
-    fuse_val[0] = 2;
+    fuse_val[0] = NEURON_FUSED_RELU1;
   } else if (act_type == "relu6") {
-    fuse_val[0] = 3;
+    fuse_val[0] = NEURON_FUSED_RELU6;
   } else if (!act_type.empty()) {
-    fuse_val[0] = 0;
+    fuse_val[0] = NEURON_FUSED_NONE;
     LOG(WARNING) << "Support act_type: " << act_type;
     return FAILED;
   }
 
-  if (is_depthwise_mode) {
-    int32_t dm = oc / ic;
-    NeuronModel_setOperandValue(
-        model, dm_node->index(), &dm, sizeof(int32_t) * 1);
-    VLOG(3) << "depthwise multiplier:" << dm;
+  NeuronModel_setOperandValue(
+      model, fuse_node->index(), fuse_val, sizeof(int32_t) * 1);
 
-    // Depthwise conv
-    NeuronModel_setOperandValue(
-        model, fuse_node->index(), fuse_val, sizeof(int32_t) * 1);
-    std::vector<uint32_t> addInIndex = {
-        input_node->index(),     // 0: input
-        filter_node->index(),    // 1: filter
-        bias_node->index(),      // 2: bias
-        paddingL_node->index(),  // 3: padding left
-        paddingR_node->index(),  // 4: padding right
-        paddingT_node->index(),  // 5: padding top
-        paddingB_node->index(),  // 6: padding bottom
-        strideW_node->index(),   // 7: stride width
-        strideH_node->index(),   // 8: stride height
-        dm_node->index(),        // 9: depthwise multiplier
-        fuse_node->index()};     // 10 : fuse
+  bool layout_val[] = {false};
+  NeuronModel_setOperandValue(
+      model, layout_node->index(), layout_val, sizeof(bool) * 1);
 
-    std::vector<uint32_t> addOutIndex = {output_node->index()};
-    neuron_errCode = NeuronModel_addOperation(model,
-                                              NEURON_DEPTHWISE_CONV_2D,
-                                              addInIndex.size(),
-                                              &addInIndex[0],
-                                              addOutIndex.size(),
-                                              &addOutIndex[0]);
-  } else {
-    NeuronModel_setOperandValue(
-        model, fuse_node->index(), fuse_val, sizeof(int32_t) * 1);
-    std::vector<uint32_t> addInIndex = {
-        input_node->index(),     // 0: input
-        filter_node->index(),    // 1: filter
-        bias_node->index(),      // 2: bias
-        paddingL_node->index(),  // 3: padding left
-        paddingR_node->index(),  // 4: padding right
-        paddingT_node->index(),  // 5: padding top
-        paddingB_node->index(),  // 6: padding bottom
-        strideW_node->index(),   // 7: stride width
-        strideH_node->index(),   // 8: stride height
-        fuse_node->index()};     // 9: fuse
+  std::vector<uint32_t> addInIndex = {
+      input_node->index(),     // 0: input
+      filter_node->index(),    // 1: filter
+      bias_node->index(),      // 2: bias
+      paddingL_node->index(),  // 3: padding left
+      paddingR_node->index(),  // 4: padding right
+      paddingT_node->index(),  // 5: padding top
+      paddingB_node->index(),  // 6: padding bottom
+      strideW_node->index(),   // 7: stride width
+      strideH_node->index(),   // 8: stride height
+      fuse_node->index(),      // 9: fuse
+      layout_node->index()};   // 10: layout
 
-    std::vector<uint32_t> addOutIndex = {output_node->index()};
-    neuron_errCode = NeuronModel_addOperation(model,
-                                              NEURON_CONV_2D,
-                                              addInIndex.size(),
-                                              &addInIndex[0],
-                                              addOutIndex.size(),
-                                              &addOutIndex[0]);
-  }
+  std::vector<uint32_t> addOutIndex = {output_node->index()};
+  neuron_errCode = NeuronModel_addOperation(model,
+                                            NEURON_TRANSPOSE_CONV_2D,
+                                            addInIndex.size(),
+                                            &addInIndex[0],
+                                            addOutIndex.size(),
+                                            &addOutIndex[0]);
 
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(WARNING) << "Add op fail:" << op_type;
     return FAILED;
   }
 
-  // Check if Requant OP is needed
-  std::shared_ptr<Node> requant_node = nullptr;
-  if (orig_output_scale != output_scale) {
-    std::string requant_out_name = output_name;
-    VLOG(3) << "Insert requant output scale, orig:" << orig_output_scale
-            << " ,output_scale:" << output_scale;
-    if (graph->IsOutput(output_name)) {
-      requant_out_name = "transpose_" + output_name;
-    }
-    // Add requant, requant_in -> tran
-    insert_requant_node(ctx,
-                        "requant_" + output_name,
-                        requant_out_name,
-                        dims_out,
-                        dims_out,
-                        output_scale,
-                        orig_output_scale,
-                        outType.zeroPoint);
-
-    requant_node = graph->Get(requant_out_name);
-    if (requant_node == nullptr) return subgraph::FAILED;
-  }
-
-  std::shared_ptr<Node> transpose_node = nullptr;
   if (graph->IsOutput(output_name)) {
-    VLOG(3) << "Add output transpose:" << output_name;
     // Insert transpose for NHWC -> NCHW
     insert_transpose_node(ctx,
                           "transpose_" + output_name,
@@ -583,8 +529,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                           {0, 3, 1, 2},
                           outType.scale,
                           outType.zeroPoint);
-    transpose_node = graph->Get(output_name);
-    if (transpose_node == nullptr) return subgraph::FAILED;
+    output_node = graph->Get(output_name);
+    if (output_node == nullptr) return subgraph::FAILED;
   }
 
   return REBUILD_WHEN_SHAPE_CHANGED;
@@ -595,9 +541,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(conv2d,
+REGISTER_SUBGRAPH_BRIDGE(conv2d_transpose,
                          kAPU,
-                         paddle::lite::subgraph::apu::ConvConverter);
-REGISTER_SUBGRAPH_BRIDGE(depthwise_conv2d,
-                         kAPU,
-                         paddle::lite::subgraph::apu::ConvConverter);
+                         paddle::lite::subgraph::apu::ConvTransposeConverter);

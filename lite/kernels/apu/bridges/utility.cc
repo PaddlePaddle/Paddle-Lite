@@ -39,14 +39,101 @@ bool HasInputArg(const OpInfo* op_info,
   }
 }
 
-void insert_transpose_node(void* ctx,
-                           const std::string& input_name,
-                           const std::string& output_name,
-                           std::vector<uint32_t> input_shape,
-                           std::vector<uint32_t> output_shape,
-                           std::vector<int32_t> axis,
-                           float scale,
-                           int32_t zeroPoint) {
+int insert_requant_node(void* ctx,
+                        const std::string& input_name,
+                        const std::string& output_name,
+                        std::vector<uint32_t> input_shape,
+                        std::vector<uint32_t> output_shape,
+                        float scale_in,
+                        float scale_out,
+                        int32_t zeroPoint) {
+  int neuron_errCode;
+  auto graph = static_cast<Graph*>(ctx);
+  auto model = graph->model();
+
+  uint32_t numDevices = 0;
+  CHECK_EQ(Neuron_getDeviceCount(&numDevices), NEURON_NO_ERROR);
+  CHECK_GT(numDevices, (uint32_t)0);
+
+  NeuronDevice* targetDevice = nullptr;
+
+  for (uint32_t i = 0; i < numDevices; ++i) {
+    NeuronDevice* device = nullptr;
+    Neuron_getDevice(i, &device);
+    const char* name;
+    NeuronDevice_getName(device, &name);
+    if (0 == strcmp(name, "mtk-dsp")) {
+      targetDevice = device;
+      break;
+    }
+  }
+  if (targetDevice == nullptr) {
+    LOG(FATAL) << "Insert mtk_requant op fail!";
+    return -1;
+  }
+
+  // Add input
+  NeuronOperandType inType;
+  inType.type = NEURON_TENSOR_QUANT8_ASYMM;
+  inType.scale = scale_in;
+  inType.zeroPoint = zeroPoint;
+  inType.dimensionCount = input_shape.size();
+  inType.dimensions = &input_shape[0];
+
+  std::shared_ptr<Node> input_node = nullptr;
+  if (graph->Has(input_name)) {
+    VLOG(3) << "Has " << input_name;
+    input_node = graph->Get(input_name);
+  } else {
+    neuron_errCode = NeuronModel_addOperand(model, &inType);  // input
+    if (NEURON_NO_ERROR != neuron_errCode) {
+      LOG(FATAL) << "Insert mtk_requant op fail!";
+      return -1;
+    }
+    VLOG(3) << "Add " << input_name;
+    input_node = graph->Add(input_name, input_shape);
+  }
+
+  // Add output
+  NeuronOperandType outType;
+  outType.type = NEURON_TENSOR_QUANT8_ASYMM;
+  outType.scale = scale_out;
+  outType.zeroPoint = zeroPoint;
+  outType.dimensionCount = output_shape.size();
+  outType.dimensions = &output_shape[0];
+
+  NeuronModel_addOperand(model, &outType);  // output
+  std::shared_ptr<Node> output_node = nullptr;
+  output_node = graph->Add(output_name, output_shape);
+
+  std::vector<uint32_t> addInIndex = {input_node->index()};  // 0: input
+
+  std::vector<uint32_t> addOutIndex = {output_node->index()};  // 1: output
+
+  neuron_errCode = NeuronModel_addOperationExtension(model,
+                                                     "MTK_REQUANTIZE",
+                                                     "mediatek",
+                                                     targetDevice,
+                                                     addInIndex.size(),
+                                                     &addInIndex[0],
+                                                     addOutIndex.size(),
+                                                     &addOutIndex[0]);
+  if (NEURON_NO_ERROR != neuron_errCode) {
+    LOG(FATAL) << "Insert mtk_requant op fail!";
+    return -1;
+  }
+
+  return 0;
+}
+
+int insert_transpose_node(void* ctx,
+                          const std::string& input_name,
+                          const std::string& output_name,
+                          std::vector<uint32_t> input_shape,
+                          std::vector<uint32_t> output_shape,
+                          std::vector<int32_t> axis,
+                          float scale,
+                          int32_t zeroPoint) {
   int neuron_errCode;
   auto graph = static_cast<Graph*>(ctx);
   auto model = graph->model();
@@ -61,15 +148,15 @@ void insert_transpose_node(void* ctx,
 
   std::shared_ptr<Node> input_node = nullptr;
   if (graph->Has(input_name)) {
-    VLOG(3) << "Has " << input_name;
+    VLOG(5) << "Has " << input_name;
     input_node = graph->Get(input_name);
   } else {
     neuron_errCode = NeuronModel_addOperand(model, &inType);  // input
     if (NEURON_NO_ERROR != neuron_errCode) {
-      LOG(WARNING) << "Insert transpose op fail!";
-      return;
+      LOG(FATAL) << "Insert transpose op fail!";
+      return -1;
     }
-    VLOG(3) << "Add " << input_name;
+    VLOG(5) << "Add " << input_name;
     input_node = graph->Add(input_name, input_shape);
   }
 
@@ -82,20 +169,20 @@ void insert_transpose_node(void* ctx,
 
   neuron_errCode = NeuronModel_addOperand(model, &permsType);  // perm
   if (NEURON_NO_ERROR != neuron_errCode) {
-    LOG(WARNING) << "Insert transpose op fail!";
-    return;
+    LOG(FATAL) << "Insert transpose op fail!";
+    return -1;
   }
   std::shared_ptr<Node> perms_node = nullptr;
   perms_node = graph->Add(input_name + "_perms", {4});
 
-  VLOG(3) << "axis :" << axis[0] << ":" << axis[1] << ":" << axis[2] << ":"
+  VLOG(5) << "axis :" << axis[0] << ":" << axis[1] << ":" << axis[2] << ":"
           << axis[3];
   //  &axis[0], sizeof(int32_t) * axis.size());
   neuron_errCode = NeuronModel_setOperandValue(
       model, perms_node->index(), &axis[0], sizeof(int32_t) * axis.size());
   if (NEURON_NO_ERROR != neuron_errCode) {
-    LOG(WARNING) << "Insert transpose op fail!";
-    return;
+    LOG(FATAL) << "Insert transpose op fail!";
+    return -1;
   }
 
   // Add output
@@ -123,8 +210,10 @@ void insert_transpose_node(void* ctx,
                                             &addOutIndex[0]);
 
   if (NEURON_NO_ERROR != neuron_errCode) {
-    LOG(WARNING) << "Insert transpose op fail!";
+    LOG(FATAL) << "Insert transpose op fail!";
   }
+
+  return 0;
 }
 
 void transpose(const int8_t* input_data,
@@ -135,9 +224,9 @@ void transpose(const int8_t* input_data,
   int new_index = -1;
   int dim[4] = {0};
   std::vector<uint32_t> shape = input_shape;
-  VLOG(3) << input_shape[0] << ":" << input_shape[1] << ":" << input_shape[2]
+  VLOG(5) << input_shape[0] << ":" << input_shape[1] << ":" << input_shape[2]
           << ":" << input_shape[3];
-  VLOG(3) << axis[0] << ":" << axis[1] << ":" << axis[2] << ":" << axis[3];
+  VLOG(5) << axis[0] << ":" << axis[1] << ":" << axis[2] << ":" << axis[3];
   for (dim[0] = 0; dim[0] < input_shape[0]; dim[0]++) {
     for (dim[1] = 0; dim[1] < input_shape[1]; dim[1]++) {
       for (dim[2] = 0; dim[2] < input_shape[2]; dim[2]++) {
@@ -164,9 +253,9 @@ void transposeAsym(const int8_t* input_data,
   int new_index = -1;
   int dim[4] = {0};
   std::vector<uint32_t> shape = input_shape;
-  VLOG(3) << input_shape[0] << ":" << input_shape[1] << ":" << input_shape[2]
+  VLOG(5) << input_shape[0] << ":" << input_shape[1] << ":" << input_shape[2]
           << ":" << input_shape[3];
-  VLOG(3) << axis[0] << ":" << axis[1] << ":" << axis[2] << ":" << axis[3];
+  VLOG(5) << axis[0] << ":" << axis[1] << ":" << axis[2] << ":" << axis[3];
   for (dim[0] = 0; dim[0] < input_shape[0]; dim[0]++) {
     for (dim[1] = 0; dim[1] < input_shape[1]; dim[1]++) {
       for (dim[2] = 0; dim[2] < input_shape[2]; dim[2]++) {

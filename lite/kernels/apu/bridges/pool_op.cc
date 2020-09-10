@@ -107,7 +107,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   xType.dimensions = &dims_x[0];
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
-    LOG(INFO) << "Graph has " << x_name;
+    VLOG(3) << "Graph has " << x_name;
     // input operand already exist
     x_node = graph->Get(x_name);
   } else {
@@ -118,6 +118,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "x_scale: " << x_scale << ", xType: " << xType.dimensions[0] << ":"
           << xType.dimensions[1] << ":" << xType.dimensions[2] << ":"
           << xType.dimensions[3];
+
+  VLOG(3) << "ksize:" << ksize[0] << ":" << ksize[1];
 
   NeuronOperandType int32Type;
   int32Type.type = NEURON_INT32;
@@ -158,7 +160,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   std::shared_ptr<Node> fuse_node = nullptr;
   NeuronModel_addOperand(model, &int32Type);  // 9: fuse
-  fuse_node = graph->Add(x_name + "_fuse", dims_int32);
+  fuse_node = graph->Add(x_name + "_pool_fuse", dims_int32);
 
   // Add out type
   // Add output tensor type
@@ -179,7 +181,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     NeuronModel_addOperand(model, &outType);  // out
     out_node = graph->Add(out_name, dims_out);
   }
-  VLOG(3) << "output_scale: " << x_scale
+  VLOG(3) << "output_scale: " << out_scale
           << ", outType: " << outType.dimensions[0] << ":"
           << outType.dimensions[1] << ":" << outType.dimensions[2] << ":"
           << outType.dimensions[3];

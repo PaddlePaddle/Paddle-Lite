@@ -147,7 +147,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   outType.scale = out_scale;
   outType.zeroPoint = 128;
   outType.dimensionCount = 2;
-  std::vector<uint32_t> dims_out = {(uint32_t)out_dims[0], out_dims[1]};
+  std::vector<uint32_t> dims_out = {(uint32_t)out_dims[0],
+                                    (uint32_t)out_dims[1]};
   outType.dimensions = &dims_out[0];
   VLOG(3) << "out_scale: " << out_scale
           << ", outType: " << outType.dimensions[0] << " : "
