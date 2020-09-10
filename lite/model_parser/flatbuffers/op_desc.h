@@ -154,18 +154,22 @@ class OpDescView : public OpDescAPI {
   }
 
   const std::map<std::string, std::vector<std::string>>& inputs() const {
+    VLOG(8) << "[additional interfaces] OpDescView::inputs()";
     NotImplemented();
     return inputs_;
   }
   const std::map<std::string, std::vector<std::string>>& outputs() const {
+    VLOG(8) << "[additional interfaces] OpDescView::outputs()";
     NotImplemented();
     return outputs_;
   }
   std::map<std::string, std::vector<std::string>>* mutable_inputs() {
+    VLOG(8) << "[additional interfaces] OpDescView::mutable_inputs()";
     NotImplemented();
     return &inputs_;
   }
   std::map<std::string, std::vector<std::string>>* mutable_outputs() {
+    VLOG(8) << "[additional interfaces] OpDescView::mutable_outputs()";
     NotImplemented();
     return &outputs_;
   }
@@ -183,6 +187,7 @@ class OpDescView : public OpDescAPI {
   }
 
   std::vector<std::string> output_vars() const {
+    VLOG(8) << "[additional interfaces] OpDescView::output_vars()";
     NotImplemented();
     return std::vector<std::string>();
   }
@@ -192,10 +197,12 @@ class OpDescView : public OpDescAPI {
   }
 
   const std::map<std::string, Any>& attrs() const {
+    VLOG(8) << "[additional interfaces] OpDescView::attrs()";
     NotImplemented();
     return attrs_;
   }
   const std::map<std::string, AttrType>& attr_types() const {
+    VLOG(8) << "[additional interfaces] OpDescView::attr_types()";
     NotImplemented();
     return attr_types_;
   }
