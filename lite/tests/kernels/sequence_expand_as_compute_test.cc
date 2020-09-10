@@ -20,36 +20,24 @@
 #include <vector>
 
 #include "lite/core/op_registry.h"
-#ifdef LITE_WITH_X86
-#include "lite/kernels/x86/sequence_expand_as_compute.h"
-#endif
 #ifdef LITE_WITH_ARM
 #include "lite/kernels/arm/sequence_expand_as_compute.h"
 #endif  // LITE_WITH_ARM
 namespace paddle {
 namespace lite {
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+#ifdef LITE_WITH_ARM
 TEST(sequence_expand_as, retrive_op) {
   auto sequence_expand_as =
       KernelRegistry::Global().Create("sequence_expand_as");
   ASSERT_FALSE(sequence_expand_as.empty());
   ASSERT_TRUE(sequence_expand_as.front());
 }
-#ifdef LITE_WITH_X86
-TEST(sequence_expand_as, init) {
-  paddle::lite::kernels::arm::SequenceExpandAsCompute<float> sequence_expand_as;
-  ASSERT_EQ(sequence_expand_as.precision(), PRECISION(kFloat));
-  ASSERT_EQ(sequence_expand_as.target(), TARGET(kX86));
-}
-#endif
 
-#ifdef LITE_WITH_ARM
 TEST(sequence_expand_as, init) {
   paddle::lite::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
   ASSERT_EQ(sequence_expand_as.precision(), PRECISION(kFloat));
   ASSERT_EQ(sequence_expand_as.target(), TARGET(kARM));
 }
-#endif
 
 TEST(sequence_expand_as, run_test) {
   lite::Tensor x, y, out;
@@ -72,11 +60,8 @@ TEST(sequence_expand_as, run_test) {
 
   std::vector<std::vector<uint64_t>> lod{{0, 3, 3, 1, 1}};
   y.set_lod(lod);
-#ifdef LITE_WITH_ARM
   paddle::lite::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
-#else
-  paddle::lite::kernels::arm::SequenceExpandAsCompute<float> sequence_expand_as;
-#endif
+
   operators::SequenceExpandAsParam param;
 
   param.x = &x;
@@ -84,11 +69,8 @@ TEST(sequence_expand_as, run_test) {
   param.out = &out;
 
   std::unique_ptr<KernelContext> ctx(new KernelContext);
-#ifdef LITE_WITH_ARM
   ctx->As<ARMContext>();
-#else
-  ctx->As<X86Context>();
-#endif
+
   sequence_expand_as.SetContext(std::move(ctx));
   sequence_expand_as.SetParam(param);
   sequence_expand_as.Run();
@@ -111,5 +93,4 @@ TEST(sequence_expand_as, run_test) {
 }  // namespace paddle
 #endif
 
-USE_LITE_KERNEL(sequence_expand_as, kX86, kFloat, kNCHW, def);
 USE_LITE_KERNEL(sequence_expand_as, kARM, kFloat, kNCHW, def);
