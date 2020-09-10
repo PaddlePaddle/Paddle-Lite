@@ -29,7 +29,8 @@ Paddle Lite支持[ARM Cortex-A系列处理器](https://en.wikipedia.org/wiki/ARM
 Paddle Lite支持移动端GPU和Nvidia端上GPU设备，支持列表如下：
 - ARM Mali G 系列
 - Qualcomm Adreno 系列
-- Nvida tegra系列: tx1, tx2, nano, xavier
+  
+  Nvida tegra系列: tx1, tx2, nano, xavier
 
 ## NPU
 Paddle Lite支持NPU，支持列表如下：
