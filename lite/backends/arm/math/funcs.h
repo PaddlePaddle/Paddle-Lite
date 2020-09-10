@@ -53,6 +53,7 @@
 #include "lite/backends/arm/math/reduce_max.h"
 #include "lite/backends/arm/math/reduce_mean.h"
 #include "lite/backends/arm/math/reduce_prod.h"
+#include "lite/backends/arm/math/reduce_sum.h"
 #include "lite/backends/arm/math/scale.h"
 #include "lite/backends/arm/math/sequence_expand.h"
 #include "lite/backends/arm/math/sequence_pool.h"
