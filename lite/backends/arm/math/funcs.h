@@ -358,6 +358,15 @@ inline float32x4_t pow_ps(float32x4_t a, float32x4_t b) {
   return exp_ps(vmulq_f32(b, log_ps(a)));
 }
 
+inline float32x4_t vpaddq_f32(float32x4_t a, float32x4_t b) {
+  float32x4_t vrst;
+  vrst[0] = a[0] + a[1];
+  vrst[1] = a[2] + a[3];
+  vrst[2] = b[0] + b[1];
+  vrst[3] = b[2] + b[3];
+  return vrst;
+}
+
 template <typename T>
 void fill_bias_fc(
     T* tensor, const T* bias, int num, int channel, bool flag_relu);
