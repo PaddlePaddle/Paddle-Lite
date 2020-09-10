@@ -48,8 +48,9 @@ void XPUConv2dCompute::Run() {
   std::string filter_type = param.filter_type;
   int groups = param.groups;
 
-  int act_type = (param.act_type == -1) ? xdnn::Activation_t::RELU
-                                        : param.act_type;  // -1 means not init
+  int act_type = (param.act_type == "relu")
+                     ? xdnn::Activation_t::RELU
+                     : xdnn::Activation_t::LINEAR;  // -1 means not init
   const auto* bias = param.Bias ? param.Bias->data<float>() : nullptr;
   const auto* branch = param.Branch ? param.Branch->data<float>() : nullptr;
   const float* input_max =
@@ -60,7 +61,6 @@ void XPUConv2dCompute::Run() {
   float* output = param.Output->mutable_data<float>(TARGET(kXPU));
 
   // TODO(luohang): now support for resnet50 first
-  CHECK_EQ(act_type, xdnn::Activation_t::RELU);
   CHECK_EQ(groups, 1);
   CHECK_EQ(filter_type, "int16");
 
