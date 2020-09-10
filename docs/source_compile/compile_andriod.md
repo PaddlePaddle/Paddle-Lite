@@ -90,7 +90,7 @@ inference_lite_lib.android.armv8/
 
 
 
-- 编译 Android npu 预测库方法，详情请参考：[PaddleLite使用华为NPU预测部署](../demo_guides/npu)
+- 编译 Android npu 预测库方法，详情请参考：[PaddleLite使用华为NPU预测部署](../demo_guides/huawei_kirin_npu)
 
 ```shell
 ./lite/tools/build_android.sh --with_huawei_kirin_npu=ON \

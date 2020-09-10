@@ -17,14 +17,14 @@ Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，如�
 - [Android源码编译](../source_compile/compile_andriod)
 - [iOS源码编译](../source_compile/compile_ios)
 - [ArmLinux源码编译](../source_compile/compile_linux)
-- [x86源码编译](../demo_guides/x86)
+- [X86源码编译](../demo_guides/x86)
 - [OpenCL源码编译](../demo_guides/opencl)
 - [CUDA源码编译](../demo_guides/cuda)
 - [FPGA源码编译](../demo_guides/fpga)
-- [华为NPU源码编译](../demo_guides/npu)
+- [华为NPU源码编译](../demo_guides/huawei_kirin_npu)
 - [百度XPU源码编译](../demo_guides/baidu_xpu)
-- [Rockchip NPU源码编译](../demo_guides/rockchip_npu)
-- [MediaTek APU源码编译](../demo_guides/mediatek_apu)
+- [瑞芯微NPU源码编译](../demo_guides/rockchip_npu)
+- [联发科APU源码编译](../demo_guides/mediatek_apu)
 - [模型优化工具opt源码编译](../user_guides/model_optimize_tool.html#opt)
 
 ## 1. Docker开发环境
