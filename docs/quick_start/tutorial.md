@@ -2,7 +2,7 @@
 
 Lite是一种轻量级、灵活性强、易于扩展的高性能的深度学习预测框架，它可以支持诸如ARM、OpenCL、NPU等等多种终端，同时拥有强大的图优化及预测加速能力。如果您希望将Lite框架集成到自己的项目中，那么只需要如下几步简单操作即可。
 
-<p align="center"><img width="500" src="https://raw.githubusercontent.com/qili93/Paddle-Lite/develop/docs/images/workflow.png"/></p>
+<p align="center"><img width="500" src="https://raw.githubusercontent.com/qili93/Paddle-Lite/fix_doc_dev_0910/docs/images/workflow.png"/></p>
 
 **一. 准备模型**
 
