@@ -54,6 +54,7 @@
 #include "lite/backends/arm/math/reduce_mean.h"
 #include "lite/backends/arm/math/reduce_prod.h"
 #include "lite/backends/arm/math/scale.h"
+#include "lite/backends/arm/math/scatter.h"
 #include "lite/backends/arm/math/sequence_expand.h"
 #include "lite/backends/arm/math/sequence_pool.h"
 #include "lite/backends/arm/math/sequence_pool_grad.h"
