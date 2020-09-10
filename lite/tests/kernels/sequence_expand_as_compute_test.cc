@@ -89,8 +89,8 @@ TEST(sequence_expand_as, run_test) {
     ASSERT_EQ(out_data[i], x_data[index - 1]);
   }
 }
+#endif
 }  // namespace lite
 }  // namespace paddle
-#endif
 
 USE_LITE_KERNEL(sequence_expand_as, kARM, kFloat, kNCHW, def);
