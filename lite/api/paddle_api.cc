@@ -242,8 +242,11 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
   return std::shared_ptr<PaddlePredictor>();
 }
 
-ConfigBase::ConfigBase(PowerMode mode, int threads) {
+ConfigBase::ConfigBase(PowerMode mode, int threads, int max_llc_size) {
 #ifdef LITE_WITH_ARM
+  if (max_llc_size > 0) {
+    lite::DeviceInfo::Global().SetMaxllcSize(max_llc_size);
+  }
   lite::DeviceInfo::Init();
   lite::DeviceInfo::Global().SetRunMode(mode, threads);
   mode_ = lite::DeviceInfo::Global().mode();

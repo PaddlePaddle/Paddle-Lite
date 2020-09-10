@@ -137,7 +137,10 @@ class LITE_API ConfigBase {
   int device_id_{0};
 
  public:
-  explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
+  explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND,
+                      int threads = 1,
+                      int max_llc_size = 0);
+
   // set Model_dir
   void set_model_dir(const std::string& x) { model_dir_ = x; }
   const std::string& model_dir() const { return model_dir_; }
@@ -271,6 +274,10 @@ class LITE_API MobileConfig : public ConfigBase {
   std::string param_buffer_;
 
  public:
+  explicit MobileConfig(PowerMode mode = LITE_POWER_NO_BIND,
+                        int threads = 1,
+                        int max_llc_size = 0)
+      : ConfigBase(mode, threads, max_llc_size) {}
   // set model data in combined format, `set_model_from_file` refers to loading
   // model from file, set_model_from_buffer refers to loading model from memory
   // buffer

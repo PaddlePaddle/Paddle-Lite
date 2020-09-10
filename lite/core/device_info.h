@@ -65,11 +65,23 @@ class DeviceInfo {
   int l1_cache_size() const { return L1_cache_[active_ids_[0]]; }
   int l2_cache_size() const { return L2_cache_[active_ids_[0]]; }
   int l3_cache_size() const { return L3_cache_[active_ids_[0]]; }
+  void SetMaxllcSize(int size) {
+    if (size > 0) {
+      max_llc_size_ = size;
+    }
+  }
+
   int llc_size() const {
     auto size = L3_cache_[active_ids_[0]] > 0 ? L3_cache_[active_ids_[0]]
                                               : L2_cache_[active_ids_[0]];
-    return size > 0 ? size : 512 * 1024;
+    size = size > 0 ? size : 512 * 1024;
+    if (max_llc_size_ != 0) {
+      size = size < max_llc_size_ ? size : max_llc_size_;
+    }
+    printf("llc_size: %d\n", size);
+    return size;
   }
+
   bool has_dot() const { return dot_[active_ids_[0]]; }
   bool has_fp16() const { return fp16_[active_ids_[0]]; }
 
@@ -81,6 +93,7 @@ class DeviceInfo {
 
  private:
   int core_num_;
+  int max_llc_size_ = 0;
   std::vector<int> max_freqs_;
   std::vector<int> min_freqs_;
   std::string dev_name_;
