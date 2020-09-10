@@ -880,6 +880,22 @@ struct MulticlassNmsParam : ParamBase {
   bool normalized{true};
 };
 
+/// ----------------------- matrix_nms operators ----------------------
+struct MatrixNmsParam : ParamBase {
+  const lite::Tensor* bboxes{};
+  const lite::Tensor* scores{};
+  lite::Tensor* out{};
+  lite::Tensor* index{};
+  int background_label{0};
+  float score_threshold{};
+  float post_threshold{0.0f};
+  int nms_top_k{};
+  int keep_top_k;
+  bool normalized{true};
+  bool use_gaussian{false};
+  float gaussian_sigma{2.0f};
+};
+
 /// ----------------------- priorbox operators ----------------------
 struct PriorBoxParam : ParamBase {
   lite::Tensor* input{};
