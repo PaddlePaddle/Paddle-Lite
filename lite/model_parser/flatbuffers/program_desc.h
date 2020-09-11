@@ -66,7 +66,7 @@ class ProgramDescView : public ProgramDescAPI {
 
   template <typename T>
   T* GetBlock(int32_t idx) {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return nullptr;
   }
 
@@ -91,10 +91,6 @@ class ProgramDescView : public ProgramDescAPI {
  private:
   ProgramDescView& operator=(const ProgramDescView&) = delete;
   ProgramDescView(const ProgramDescView&) = delete;
-  void NotImplemented() const {
-    LOG(FATAL) << "The additional interfaces of ProgramDescView is temporarily "
-                  "unavailable in read-only mode.";
-  }
 };
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC

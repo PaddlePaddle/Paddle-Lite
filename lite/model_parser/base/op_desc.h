@@ -62,27 +62,24 @@ class OpDescReadAPI {
 
 class OpDescWriteAPI {
  public:
-  virtual void SetType(const std::string& type) { NotImplemented(); }
+  virtual void SetType(const std::string& type) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
   virtual void SetInput(const std::string& param,
                         const std::vector<std::string>& args) {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   }
   virtual void SetOutput(const std::string& param,
                          const std::vector<std::string>& args) {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   }
 
   template <typename T>
   void SetAttr(const std::string& name, const T& v) {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   }
 
   virtual ~OpDescWriteAPI() = default;
-
- private:
-  void NotImplemented() const {
-    LOG(FATAL) << "OpDescWriteAPI is not available in model read-only mode.";
-  }
 };
 
 // The reading and writing of the model are one-time and separate.
