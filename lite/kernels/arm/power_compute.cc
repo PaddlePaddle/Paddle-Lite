@@ -39,7 +39,7 @@ void PowerCompute::Run() {
 } /* namespace paddle */
 
 REGISTER_LITE_KERNEL(
-    power, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PowerCompute, def)
+    pow, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PowerCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
