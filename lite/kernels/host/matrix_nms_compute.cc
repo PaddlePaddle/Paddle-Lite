@@ -274,7 +274,7 @@ void MatrixNmsCompute::Run() {
 
   Tensor boxes_slice, scores_slice;
   size_t num_out = 0;
-  std::vector<size_t> offsets = {0};
+  std::vector<uint64_t> offsets = {0};
   std::vector<float> detections;
   std::vector<int> indices;
   detections.reserve(out_dim * num_boxes * batch_size);
@@ -298,10 +298,10 @@ void MatrixNmsCompute::Run() {
                                   post_threshold,
                                   use_gaussian,
                                   gaussian_sigma);
-    offsets.push_back(offsets.back() + num_out);
+    offsets.push_back(offsets.back() + static_cast<uint64_t>(num_out));
   }
 
-  size_t num_kept = offsets.back();
+  uint64_t num_kept = offsets.back();
   if (num_kept == 0) {
     outs->Resize({0, out_dim});
     index->Resize({0, 1});
