@@ -44,44 +44,36 @@ void bgra_to_tensor_hwc(const uint8_t* bgr,
     float* ptr0_b = ptr0 + i * width;
     float* ptr1_g = ptr0_b + size;
     float* ptr2_r = ptr1_g + size;
-    // float* ptr3_a = ptr2_g + size;
 
     for (int j = 0; j < dim8; j++) {
       uint8x8x4_t vbgr = vld4_u8(ptr_bgr);
       uint8x8_t vb = vbgr.val[0];
       uint8x8_t vg = vbgr.val[1];
       uint8x8_t vr = vbgr.val[2];
-      // uint8x8_t va = vbgr.val[3];
 
       uint16x8_t vb_16 = vmovl_u8(vb);
       uint16x8_t vg_16 = vmovl_u8(vg);
       uint16x8_t vr_16 = vmovl_u8(vr);
-      // uint16x8_t va_16 = vmovl_u8(va);
 
       uint32x4_t vb_low_32 = vmovl_u16(vget_low_u16(vb_16));
       uint32x4_t vg_low_32 = vmovl_u16(vget_low_u16(vg_16));
       uint32x4_t vr_low_32 = vmovl_u16(vget_low_u16(vr_16));
-      // uint32x4_t va_low_32 = vmovl_u16(vget_low_u16(va_16));
 
       uint32x4_t vb_high_32 = vmovl_u16(vget_high_u16(vb_16));
       uint32x4_t vg_high_32 = vmovl_u16(vget_high_u16(vg_16));
       uint32x4_t vr_high_32 = vmovl_u16(vget_high_u16(vr_16));
-      // uint32x4_t va_high_32 = vmovl_u16(vget_high_u16(va_16));
 
       float32x4_t vb_low_f32 = vcvtq_f32_u32(vb_low_32);
       float32x4_t vr_low_f32 = vcvtq_f32_u32(vr_low_32);
       float32x4_t vg_low_f32 = vcvtq_f32_u32(vg_low_32);
-      // float32x4_t va_low_f32 = vcvtq_f32_u32(va_low_32);
 
       float32x4_t vb_high_f32 = vcvtq_f32_u32(vb_high_32);
       float32x4_t vg_high_f32 = vcvtq_f32_u32(vg_high_32);
       float32x4_t vr_high_f32 = vcvtq_f32_u32(vr_high_32);
-      // float32x4_t va_high_f32 = vcvtq_f32_u32(va_high_32);
 
       vb_low_f32 = vsubq_f32(vb_low_f32, vbmean);
       vg_low_f32 = vsubq_f32(vg_low_f32, vgmean);
       vr_low_f32 = vsubq_f32(vr_low_f32, vrmean);
-      // va_low_f32 = vsubq_f32(va_low_f32, vamean);
 
       vb_high_f32 = vsubq_f32(vb_high_f32, vbmean);
       vg_high_f32 = vsubq_f32(vg_high_f32, vgmean);

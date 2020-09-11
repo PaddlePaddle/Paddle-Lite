@@ -18,8 +18,7 @@
 /*
 R = Y + 1.402*(V-128);
 G = Y - 0.34414*(U-128) - 0.71414*(V-128);
-B = Y + 1.772*(U-128);
-浮点乘法用 7位精度处理（即a*b = ((a << 7)*b )>>7）
+float compute: a*b = ((a << 7)*b )>>7
 
 ra = 1.402 *128 = 179.456 = 179
 ga = 0.34414 * 64 = 44.3721 = 44
@@ -34,7 +33,6 @@ void nv21_to_bgr(const unsigned char* src,
                  int srch) {
   int y_h = srch;
   int wout = srcw * 3;
-  // int vu_h = 1 /2 * srch;
   const unsigned char* y = src;
   const unsigned char* vu = src + y_h * srcw;
 

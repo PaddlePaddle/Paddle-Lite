@@ -187,7 +187,6 @@ bgr1 bgr4 bgr7
 */
 // dst = (h_out - 1) * w_out
 // 类似rotate90，将输出结果倒着输出 或者先rotate90,然后沿Y轴翻转
-
 void rotate270_hwc_bgra(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int w_out = h_in;
   int h_out = w_in;

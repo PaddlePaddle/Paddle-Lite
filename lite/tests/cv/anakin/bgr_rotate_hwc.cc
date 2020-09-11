@@ -622,10 +622,6 @@ void rotate270_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
     const uint8_t* inptr1 = inptr0 + win;
     const uint8_t* inptr2 = inptr1 + win;
     const uint8_t* inptr3 = inptr2 + win;
-    // const uint8_t* inptr4 = inptr3 + w_in;
-    // const uint8_t* inptr5 = inptr4 + w_in;
-    // const uint8_t* inptr6 = inptr5 + w_in;
-    // const uint8_t* inptr7 = inptr6 + w_in;
 
     asm volatile(
         "prfm   pldl1keep, [%[ptr0]]                \n"
@@ -636,10 +632,6 @@ void rotate270_hwc(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
         "prfm   pldl1keep, [%[ptr2], #64]   \n"
         "prfm   pldl1keep, [%[ptr3]]        \n"
         "prfm   pldl1keep, [%[ptr3], #64]   \n"
-        // "prfm   pldl1keep, [%[ptr4]]        \n"
-        // "prfm   pldl1keep, [%[ptr4], #64]   \n"
-        // "prfm   pldl1keep, [%[ptr5]]        \n"
-        // "prfm   pldl1keep, [%[ptr5], #64]   \n"
         :
         : [ptr0] "r"(inptr0),
           [ptr1] "r"(inptr1),
@@ -1118,8 +1110,6 @@ bgr3 bgr2 bgr1
 // filp y
 #ifdef __aarch64__
 void rotate180_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
-  // uint8_t zerobuff[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-    //                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   int w_in = w * 3;
   uint8_t zerobuff[w_in];  // NOLINT
   memset(zerobuff, 0, w_in * sizeof(uint8_t));

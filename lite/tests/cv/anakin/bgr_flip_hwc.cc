@@ -328,8 +328,6 @@ bgr9 bgr8 bgr7
 */
 #ifdef __aarch64__
 void flip_y_hwc(const uint8_t* src, uint8_t* dst, int w, int h_in) {
-  // uint8_t zerobuff[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-    //                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   int w_in = w * 3;
   uint8_t zerobuff[w_in];  // NOLINT
   memset(zerobuff, 0, w_in * sizeof(uint8_t));

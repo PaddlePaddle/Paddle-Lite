@@ -20,7 +20,7 @@ R = Y + 1.402*(V-128);
 G = Y - 0.34414*(U-128) - 0.71414*(V-128);
 B = Y + 1.772*(U-128);
 A = 255
-浮点乘法用 7位精度处理（即a*b = ((a << 7)*b )>>7）
+float-compute: a*b = ((a << 7)*b )>>7
 
 ra = 1.402 *128 = 179.456 = 179
 ga = 0.34414 * 64 = 44.3721 = 44
@@ -225,10 +225,6 @@ void nv21_to_bgra(const unsigned char* src,
       b00_0 = vtrn_u8(b00, b01);
       g00_0 = vtrn_u8(g00, g01);
 
-      // ptr_bgr3 += 8;
-      // ptr_bgr1 += 8;
-      // ptr_bgr2 += 8;
-      // vst3_u8(ptr_bgr1, v_bgr);
       vst4_u8(ptr_bgr1, v_bgr);
 
       r0_16 = vreinterpret_u16_u8(r00_0.val[0]);
@@ -241,7 +237,6 @@ void nv21_to_bgra(const unsigned char* src,
       g1_16 = vreinterpret_u16_u8(g00_0.val[1]);
 
       ptr_bgr1 += 32;
-      // uint8x8x3_t v_bgr1;
       uint8x8x4_t v_bgr1;
       v_bgr1.val[0] = b1_8;
       v_bgr1.val[1] = g1_8;
@@ -252,7 +247,6 @@ void nv21_to_bgra(const unsigned char* src,
       b00_1 = vtrn_u16(b0_16, b1_16);
       g00_1 = vtrn_u16(g0_16, g1_16);
 
-      // vst3_u8(ptr_bgr1, v_bgr1);
       vst4_u8(ptr_bgr1, v_bgr1);
 
       r0_32 = vreinterpret_u32_u16(r00_1.val[0]);
@@ -264,7 +258,6 @@ void nv21_to_bgra(const unsigned char* src,
       g0_32 = vreinterpret_u32_u16(g00_1.val[0]);
       g1_32 = vreinterpret_u32_u16(g00_1.val[1]);
 
-      // ptr_bgr1 += 24;
       ptr_bgr1 += 32;
 
       r00_2 = vtrn_u32(r0_32, r1_32);  // 01234567 8910
@@ -291,8 +284,6 @@ void nv21_to_bgra(const unsigned char* src,
       v_bgr1.val[1] = g1_8;
       v_bgr1.val[2] = r1_8;
 
-      // vst3_u8(ptr_bgr2, v_bgr);
-      // vst3_u8(ptr_bgr2 + 24, v_bgr1);
       vst4_u8(ptr_bgr2, v_bgr);
       vst4_u8(ptr_bgr2 + 32, v_bgr1);
 
@@ -327,9 +318,6 @@ void nv21_to_bgra(const unsigned char* src,
       g1 = g1 < 0 ? 0 : (g1 > 255) ? 255 : g1;
       b1 = b1 < 0 ? 0 : (b1 > 255) ? 255 : b1;
 
-      // *ptr_bgr1++ = b;
-      // *ptr_bgr2++ = g;
-      // *ptr_bgr3++ = r;
       *ptr_bgr1++ = b;
       *ptr_bgr1++ = g;
       *ptr_bgr1++ = r;

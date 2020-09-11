@@ -158,7 +158,7 @@ void resize_four_channel(const uint8_t* src,
     int16x4_t _b0 = vdup_n_s16(b0);
     int16x4_t _b1 = vdup_n_s16(b1);
     int32x4_t _v2 = vdupq_n_s32(2);
-#if 1  // __aarch64__
+
     for (cnt = w_out >> 3; cnt > 0; cnt--) {
       int16x4_t _rows0p_sr4 = vld1_s16(rows0p);
       int16x4_t _rows1p_sr4 = vld1_s16(rows1p);
@@ -183,8 +183,6 @@ void resize_four_channel(const uint8_t* src,
       rows0p += 8;
       rows1p += 8;
     }
-#else
-#endif  // __aarch64__
     for (; remain; --remain) {
       // D[x] = (rows0[x]*b0 + rows1[x]*b1) >> INTER_RESIZE_COEF_BITS;
       *dp_ptr++ =
