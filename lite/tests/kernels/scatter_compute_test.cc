@@ -78,7 +78,6 @@ class ScatterComputeTester : public arena::TestCase {
         overwrite_(overwrite) {}
 
   void RunBaseline(Scope* scope) override {
-    auto* x = scope->FindMutableTensor(input_);
     auto* indexs_t = scope->FindMutableTensor(indexs_);
     auto* updates_t = scope->FindMutableTensor(updates_);
     const auto* indexs_data = indexs_t->data<int64_t>();
@@ -140,8 +139,6 @@ void test_scatter(Place place) {
             auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
             auto up_dims = DDim(std::vector<int64_t>({n, c, h, w}));
             auto id_dims = DDim(std::vector<int64_t>({n}));
-            LOG(INFO) << "n: " << n << ", c: " << c << ", h: " << h << ", w: "<< w;
-            LOG(INFO) << "overwrite: " << overwrite;
             std::unique_ptr<arena::TestCase> tester(new ScatterComputeTester(
                 place, "def", up_dims, id_dims, x_dims, overwrite, n));
             arena::Arena arena(std::move(tester), place, 2e-5);
