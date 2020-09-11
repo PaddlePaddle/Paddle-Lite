@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <math.h>
 #include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
