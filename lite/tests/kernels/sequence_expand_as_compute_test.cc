@@ -22,10 +22,8 @@
 #include "lite/core/op_registry.h"
 #ifdef LITE_WITH_ARM
 #include "lite/kernels/arm/sequence_expand_as_compute.h"
-#endif  // LITE_WITH_ARM
 namespace paddle {
 namespace lite {
-#ifdef LITE_WITH_ARM
 TEST(sequence_expand_as, retrive_op) {
   auto sequence_expand_as =
       KernelRegistry::Global().Create("sequence_expand_as");
@@ -89,8 +87,10 @@ TEST(sequence_expand_as, run_test) {
     ASSERT_EQ(out_data[i], x_data[index - 1]);
   }
 }
-#endif
+
 }  // namespace lite
 }  // namespace paddle
 
 USE_LITE_KERNEL(sequence_expand_as, kARM, kFloat, kNCHW, def);
+#endif
+
