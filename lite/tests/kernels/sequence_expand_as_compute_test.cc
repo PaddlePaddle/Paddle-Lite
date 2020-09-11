@@ -93,4 +93,3 @@ TEST(sequence_expand_as, run_test) {
 
 USE_LITE_KERNEL(sequence_expand_as, kARM, kFloat, kNCHW, def);
 #endif
-
