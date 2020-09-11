@@ -43,43 +43,186 @@ void ReduceSumCompute::Run() {
   if (reduce_all) {
     lite::arm::math::reduce_sum_all(input, output, x_dims.production());
   } else {
-    CHECK_EQ(x_rank, 4U);
-    int n_in = x_dims[0];
-    int c_in = x_dims[1];
-    int h_in = x_dims[2];
-    int w_in = x_dims[3];
-
-    if (dim.size() == 1) {
-      switch (dim[0]) {
-        case 0:
-          lite::arm::math::reduce_sum_n(input, output, n_in, c_in, h_in, w_in);
-          break;
-        case 1:
-          lite::arm::math::reduce_sum_c(input, output, n_in, c_in, h_in, w_in);
-          break;
-        case 2:
-          lite::arm::math::reduce_sum_h(input, output, n_in, c_in, h_in, w_in);
-          break;
-        case 3:
-          lite::arm::math::reduce_sum_w(input, output, n_in, c_in, h_in, w_in);
-          break;
-        default:
-          LOG(FATAL) << "dim[0] should be less than 4.";
-      }
-    } else if (dim.size() == 2) {
-      if (dim[0] == 0 && dim[1] == 1) {
-        lite::arm::math::reduce_sum_nc(input, output, n_in, c_in, h_in, w_in);
-      } else if (dim[0] == 1 && dim[1] == 2) {
-        lite::arm::math::reduce_sum_ch(input, output, n_in, c_in, h_in, w_in);
-      } else if (dim[0] == 2 && dim[1] == 3) {
-        lite::arm::math::reduce_sum_hw(input, output, n_in, c_in, h_in, w_in);
-      } else {
-        LOG(FATAL)
-            << "Only support the values of the dim are 0,1 1,2 or 2,3 for now.";
-      }
-    } else {
-      LOG(FATAL) << "dim's size over than 2, which is not supported now!!";
+    switch (x_rank) {
+      case 4:
+        int n_in = x_dims[0];
+        int c_in = x_dims[1];
+        int h_in = x_dims[2];
+        int w_in = x_dims[3];
+        if (dim.size() == 1) {
+          switch (dim[0]) {
+            case 0:
+              lite::arm::math::reduce_sum_n(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            case 1:
+              lite::arm::math::reduce_sum_c(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            case 2:
+              lite::arm::math::reduce_sum_h(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            case 3:
+              lite::arm::math::reduce_sum_w(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            default:
+              LOG(FATAL) << "dim[0] should be less than 4.";
+          }
+        } else if (dim.size() == 2) {
+          if (dim[0] == 0 && dim[1] == 1) {
+            lite::arm::math::reduce_sum_nc(
+                input, output, n_in, c_in, h_in, w_in);
+          } else if (dim[0] == 1 && dim[1] == 2) {
+            lite::arm::math::reduce_sum_ch(
+                input, output, n_in, c_in, h_in, w_in);
+          } else if (dim[0] == 2 && dim[1] == 3) {
+            lite::arm::math::reduce_sum_hw(
+                input, output, n_in, c_in, h_in, w_in);
+          } else {
+            LOG(FATAL) << "Only support the values of the dim are 0,1 1,2 or "
+                          "2,3 for now.";
+          }
+        } else {
+          LOG(FATAL) << "dim's size over than 2, which is not supported now!!";
+        }
+        break;
+      case 3:
+        int n_in = 1;
+        int c_in = x_dims[0];
+        int h_in = x_dims[1];
+        int w_in = x_dims[2];
+        if (dim.size() == 1) {
+          switch (dim[0]) {
+            case 0:
+              lite::arm::math::reduce_sum_c(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            case 1:
+              lite::arm::math::reduce_sum_h(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            case 2:
+              lite::arm::math::reduce_sum_w(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            default:
+              LOG(FATAL) << "dim[0] should be less than 3.";
+          }
+        } else if (dim.size() == 2) {
+          if (dim[0] == 0 && dim[1] == 1) {
+            lite::arm::math::reduce_sum_ch(
+                input, output, n_in, c_in, h_in, w_in);
+          } else if (dim[0] == 1 && dim[1] == 2) {
+            lite::arm::math::reduce_sum_hw(
+                input, output, n_in, c_in, h_in, w_in);
+          } else {
+            LOG(FATAL)
+                << "Only support the values of the dim are 0,1 or 1,2 for now.";
+          }
+        } else {
+          LOG(FATAL) << "dim's size over than 2, which is not supported now!!";
+        }
+        break;
+      case 2:
+        int n_in = 1;
+        int c_in = 1;
+        int h_in = x_dims[0];
+        int w_in = x_dims[1];
+        if (dim.size() == 1) {
+          switch (dim[0]) {
+            case 0:
+              lite::arm::math::reduce_sum_h(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            case 1:
+              lite::arm::math::reduce_sum_w(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            default:
+              LOG(FATAL) << "dim[0] should be less than 2.";
+          }
+        } else if (dim.size() == 2) {
+          if (dim[0] == 0 && dim[1] == 1) {
+            lite::arm::math::reduce_sum_hw(
+                input, output, n_in, c_in, h_in, w_in);
+          } else {
+            LOG(FATAL) << "Only support the values of the dim are 0,1 for now.";
+          }
+        } else {
+          LOG(FATAL) << "dim's size over than 2, which is not supported now!!";
+        }
+        break;
+      case 1:
+        int n_in = 1;
+        int c_in = 1;
+        int h_in = 1;
+        int w_in = x_dims[0];
+        if (dim.size() == 1) {
+          switch (dim[0]) {
+            case 0:
+              lite::arm::math::reduce_sum_h(
+                  input, output, n_in, c_in, h_in, w_in);
+              break;
+            default:
+              LOG(FATAL) << "dim[0] should be less than 1.";
+          }
+        } else {
+          LOG(FATAL) << "dim's size over than 1, which is not supported now!!";
+        }
+        break;
+      default:
+        LOG(FATAL) << "x_rank size less than 4, which is not supported now!!";
     }
+  }
+  int n_in = 1;
+  int c_in = 1;
+  int h_in = 1;
+  int w_in = 1;
+  switch (x_dims.size()) {
+    case 4:
+      w_in = x_dims[3];
+    case 3:
+      h_in = x_dims[2];
+    case 2:
+      c_in = x_dims[1];
+    case 1:
+      n_in = x_dims[0];
+    default:
+      LOOG(FATAL) << "x_dim's size less than 4";
+  }
+
+  if (dim.size() == 1) {
+    switch (dim[0]) {
+      case 0:
+        lite::arm::math::reduce_sum_n(input, output, n_in, c_in, h_in, w_in);
+        break;
+      case 1:
+        lite::arm::math::reduce_sum_c(input, output, n_in, c_in, h_in, w_in);
+        break;
+      case 2:
+        lite::arm::math::reduce_sum_h(input, output, n_in, c_in, h_in, w_in);
+        break;
+      case 3:
+        lite::arm::math::reduce_sum_w(input, output, n_in, c_in, h_in, w_in);
+        break;
+      default:
+        LOG(FATAL) << "dim[0] should be less than 4.";
+    }
+  } else if (dim.size() == 2) {
+    if (dim[0] == 0 && dim[1] == 1) {
+      lite::arm::math::reduce_sum_nc(input, output, n_in, c_in, h_in, w_in);
+    } else if (dim[0] == 1 && dim[1] == 2) {
+      lite::arm::math::reduce_sum_ch(input, output, n_in, c_in, h_in, w_in);
+    } else if (dim[0] == 2 && dim[1] == 3) {
+      lite::arm::math::reduce_sum_hw(input, output, n_in, c_in, h_in, w_in);
+    } else {
+      LOG(FATAL)
+          << "Only support the values of the dim are 0,1 1,2 or 2,3 for now.";
+    }
+  } else {
+    LOG(FATAL) << "dim's size over than 2, which is not supported now!!";
   }
 }
 
