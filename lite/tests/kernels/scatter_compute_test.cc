@@ -80,7 +80,6 @@ class ScatterComputeTester : public arena::TestCase {
     auto* x = scope->FindMutableTensor(input_);
     auto* indexs_t = scope->FindMutableTensor(indexs_);
     auto* updates_t = scope->FindMutableTensor(updates_);
-    const auto* x_data = x->data<float>();
     const auto* indexs_data = indexs_t->data<int64_t>();
     const auto* updates_data = updates_t->data<float>();
     auto* out = scope->NewTensor(output_);
