@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "lite/kernels/host/matrix_nms_compute.h"
+#include <cmath>
 #include <map>
 #include <utility>
 #include <vector>
-#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
