@@ -37,9 +37,7 @@ bool PowerOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto Out = op_desc.Output("Out").front();
   param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
   param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
-  param_.scale = op_desc.GetAttr<float>("scale");
-  param_.shift = op_desc.GetAttr<float>("shift");
-  param_.power = op_desc.GetAttr<float>("power");
+  param_.power = op_desc.GetAttr<float>("factor");
   CHECK(param_.X);
   CHECK(param_.Out);
 
@@ -50,4 +48,4 @@ bool PowerOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 } /* namespace lite */
 } /* namespace paddle */
 
-REGISTER_LITE_OP(power, paddle::lite::operators::PowerOp);
+REGISTER_LITE_OP(pow, paddle::lite::operators::PowerOp);

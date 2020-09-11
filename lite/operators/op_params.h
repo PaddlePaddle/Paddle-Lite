@@ -227,8 +227,8 @@ struct PowerParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
 
-  float scale{};
-  float shift{};
+  float scale{0};
+  float shift{0};
   float power{};
 };
 
