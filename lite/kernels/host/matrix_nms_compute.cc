@@ -16,6 +16,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
