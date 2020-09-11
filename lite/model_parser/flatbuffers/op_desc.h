@@ -154,11 +154,33 @@ class OpDescView : public OpDescAPI {
   }
 
   const std::map<std::string, std::vector<std::string>>& inputs() const {
-    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+    for (const auto& var : *desc_->inputs()) {
+      std::pair<std::string, std::vector<std::string>> pair;
+      pair.first = var->parameter()->str();
+      auto& args_vec = pair.second;
+      if (var && var->arguments()) {
+        args_vec.resize(var->arguments()->size());
+        for (size_t i = 0; i < var->arguments()->size(); ++i) {
+          args_vec[i] = (*var->arguments())[i]->str();
+        }
+      }
+      inputs_.insert(std::move(pair));
+    }
     return inputs_;
   }
   const std::map<std::string, std::vector<std::string>>& outputs() const {
-    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+    for (const auto& var : *desc_->outputs()) {
+      std::pair<std::string, std::vector<std::string>> pair;
+      pair.first = var->parameter()->str();
+      auto& args_vec = pair.second;
+      if (var && var->arguments()) {
+        args_vec.resize(var->arguments()->size());
+        for (size_t i = 0; i < var->arguments()->size(); ++i) {
+          args_vec[i] = (*var->arguments())[i]->str();
+        }
+      }
+      outputs_.insert(std::move(pair));
+    }
     return outputs_;
   }
   std::map<std::string, std::vector<std::string>>* mutable_inputs() {
@@ -202,8 +224,8 @@ class OpDescView : public OpDescAPI {
 
  private:
   std::string type_;
-  std::map<std::string, std::vector<std::string>> inputs_;
-  std::map<std::string, std::vector<std::string>> outputs_;
+  mutable std::map<std::string, std::vector<std::string>> inputs_;
+  mutable std::map<std::string, std::vector<std::string>> outputs_;
   std::map<std::string, Any> attrs_;
   std::map<std::string, AttrType> attr_types_;
 };
