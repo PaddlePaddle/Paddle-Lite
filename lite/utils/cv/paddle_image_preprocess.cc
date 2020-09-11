@@ -39,7 +39,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat,
   this->dstFormat_ = dstFormat;
   this->transParam_ = param;
 }
-__attribute__((visibility("default"))) void ImagePreprocess::imageConvert(
+__attribute__((visibility("default"))) void ImagePreprocess::image_convert(
     const uint8_t* src, uint8_t* dst) {
   ImageConvert img_convert;
   img_convert.choose(src,
@@ -50,7 +50,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageConvert(
                      this->transParam_.ih);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::imageConvert(
+__attribute__((visibility("default"))) void ImagePreprocess::image_convert(
     const uint8_t* src,
     uint8_t* dst,
     ImageFormat srcFormat,
@@ -64,7 +64,18 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageConvert(
                      this->transParam_.ih);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::imageResize(
+__attribute__((visibility("default"))) void ImagePreprocess::image_convert(
+    const uint8_t* src,
+    uint8_t* dst,
+    ImageFormat srcFormat,
+    ImageFormat dstFormat,
+    int srcw,
+    int srch) {
+  ImageConvert img_convert;
+  img_convert.choose(src, dst, srcFormat, dstFormat, srcw, srch);
+}
+
+__attribute__((visibility("default"))) void ImagePreprocess::image_resize(
     const uint8_t* src,
     uint8_t* dst,
     ImageFormat srcFormat,
@@ -76,7 +87,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageResize(
   img_resize.choose(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::imageResize(
+__attribute__((visibility("default"))) void ImagePreprocess::image_resize(
     const uint8_t* src, uint8_t* dst) {
   int srcw = this->transParam_.iw;
   int srch = this->transParam_.ih;
@@ -87,7 +98,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageResize(
   img_resize.choose(src, dst, srcFormat, srcw, srch, dstw, dsth);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::imageRotate(
+__attribute__((visibility("default"))) void ImagePreprocess::image_rotate(
     const uint8_t* src,
     uint8_t* dst,
     ImageFormat srcFormat,
@@ -98,7 +109,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageRotate(
   img_rotate.choose(src, dst, srcFormat, srcw, srch, degree);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::imageRotate(
+__attribute__((visibility("default"))) void ImagePreprocess::image_rotate(
     const uint8_t* src, uint8_t* dst) {
   auto srcw = this->transParam_.ow;
   auto srch = this->transParam_.oh;
@@ -108,7 +119,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageRotate(
   img_rotate.choose(src, dst, srcFormat, srcw, srch, degree);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::imageFlip(
+__attribute__((visibility("default"))) void ImagePreprocess::image_flip(
     const uint8_t* src,
     uint8_t* dst,
     ImageFormat srcFormat,
@@ -119,7 +130,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageFlip(
   img_flip.choose(src, dst, srcFormat, srcw, srch, flip_param);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::imageFlip(
+__attribute__((visibility("default"))) void ImagePreprocess::image_flip(
     const uint8_t* src, uint8_t* dst) {
   auto srcw = this->transParam_.ow;
   auto srch = this->transParam_.oh;
@@ -129,7 +140,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::imageFlip(
   img_flip.choose(src, dst, srcFormat, srcw, srch, flip_param);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::image2Tensor(
+__attribute__((visibility("default"))) void ImagePreprocess::image_to_tensor(
     const uint8_t* src,
     Tensor* dstTensor,
     ImageFormat srcFormat,
@@ -143,7 +154,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::image2Tensor(
       src, dstTensor, srcFormat, layout, srcw, srch, means, scales);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::image2Tensor(
+__attribute__((visibility("default"))) void ImagePreprocess::image_to_tensor(
     const uint8_t* src,
     Tensor* dstTensor,
     LayoutType layout,
@@ -160,7 +171,7 @@ __attribute__((visibility("default"))) void ImagePreprocess::image2Tensor(
                     scales);
 }
 
-__attribute__((visibility("default"))) void ImagePreprocess::imageCrop(
+__attribute__((visibility("default"))) void ImagePreprocess::image_crop(
     const uint8_t* src,
     uint8_t* dst,
     ImageFormat srcFormat,
