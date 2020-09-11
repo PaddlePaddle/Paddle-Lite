@@ -56,8 +56,9 @@ void ReduceSumCompute::Run() {
         c_in = x_dims[1];
       case 1:
         n_in = x_dims[0];
+        break;
       default:
-        LOG(FATAL) << "x_dim's size over than 4, which is not supported now!!"
+        LOG(FATAL) << "x_dim's size over than 4, which is not supported now!!";
     }
 
     if (dim.size() == 1) {
