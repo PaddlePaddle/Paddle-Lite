@@ -32,6 +32,7 @@ void scatter<float>(const int64_t* indexs,
   for (int i = 0; i < num; i++) {
     const float* din = src + indexs[i] * size;
     memcpy(dst, din, sizeof(float) * size);
+    dst += size;
   }
   if (overwrite) {
     for (int i = num; i < index_size; i++) {

@@ -30,6 +30,7 @@ void scatter_basic(const int64_t* indexs,
   for (int i = 0; i < num; i++) {
     const float* din = src + indexs[i] * size;
     memcpy(dst, din, sizeof(float) * size);
+    dst += size;
   }
   if (overwrite) {
     for (int i = num; i < index_size; i++) {
@@ -139,6 +140,8 @@ void test_scatter(Place place) {
             auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
             auto up_dims = DDim(std::vector<int64_t>({n, c, h, w}));
             auto id_dims = DDim(std::vector<int64_t>({n}));
+            LOG(INFO) << "n: " << n << ", c: " << c << ", h: " << h << ", w: "<< w;
+            LOG(INFO) << "overwrite: " << overwrite;
             std::unique_ptr<arena::TestCase> tester(new ScatterComputeTester(
                 place, "def", up_dims, id_dims, x_dims, overwrite, n));
             arena::Arena arena(std::move(tester), place, 2e-5);
