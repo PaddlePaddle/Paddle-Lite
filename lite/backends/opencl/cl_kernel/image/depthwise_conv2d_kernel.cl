@@ -48,7 +48,7 @@ __kernel void depth_conv2d_3x3(
   int2 ouput_pos_in_one_block = (int2)(out_w, out_nh_in_one_batch);
 
   int2 in_pos_in_one_block =
-      ouput_pos_in_one_block * stride_xy + (int2)(offset, offset);
+      ouput_pos_in_one_block * stride_xy + (int2)(offset + dilation - 1, offset + dilation - 1);
 
 #ifdef BIASE_CH
   CL_DTYPE4 output =
@@ -122,14 +122,6 @@ __kernel void depth_conv2d_3x3(
                  in_pos_in_one_block.x - dilation >= input_width ||
                  in_pos_in_one_block.y >= input_height)
                 << 15));
-  /*
-  if (output_pos.x == 112 && output_pos.y == 0) {
-        CL_DTYPE4 input1 = inputs[3];
-        float4 in = (float4)(input1.x, input1.y, input1.z, input1.w);
-        printf(" input4 3 - %v4hlf \n", in);
-        printf(" --- %d ---\n", in_pos_in_one_block.x - dilation);
-  }
-  */
 
   inputs[4] = select(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -221,14 +213,18 @@ __kernel void depth_conv2d_3x3(
 
   /*
 
-  if (output_pos.x == 112 && output_pos.y == 0) {
+  if (output_pos.x == 0 && output_pos.y == 0) {
 
       for (int i = 0; i < 9; ++i) {
           CL_DTYPE4 input1 = inputs[i];
           float4 in = (float4)(input1.x, input1.y, input1.z, input1.w);
-          printf(" input4 %d - %v4hlf \n", i, in);
+          printf(" input4[%d]: %v4hlf \n", i, in);
       }
-
+      for (int i = 0; i < 9; ++i) {
+          CL_DTYPE4 filters1 = filters[i];
+          float4 f = (float4)(filters1.x, filters1.y, filters1.z, filters1.w);
+          printf(" weights4[%d]: %v4hlf \n", i, f);
+      }
       float4 out = (float4)(output.x, output.y, output.z, output.w);
       printf(" depth wise output output4 = %v4hlf \n", out);
       printf(" pos_in_input_block -x %d \n ", pos_in_input_block.x);
