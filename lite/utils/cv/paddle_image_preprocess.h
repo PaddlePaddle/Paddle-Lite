@@ -75,7 +75,8 @@ class ImagePreprocess {
   * param src: input image data
   * param dst: output image data
   */
-  void imageConvert(const uint8_t* src, uint8_t* dst);
+  void image_convert(const uint8_t* src, uint8_t* dst);
+
   /*
   * image color convert
   * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
@@ -91,10 +92,35 @@ class ImagePreprocess {
   * param dstFormat: output image image format, support GRAY, BGR(RGB) and
   * BGRA(RGBA)
   */
-  void imageConvert(const uint8_t* src,
-                    uint8_t* dst,
-                    ImageFormat srcFormat,
-                    ImageFormat dstFormat);
+  void image_convert(const uint8_t* src,
+                     uint8_t* dst,
+                     ImageFormat srcFormat,
+                     ImageFormat dstFormat);
+
+  /*
+  * image color convert
+  * support NV12/NV21_to_BGR(RGB), NV12/NV21_to_BGRA(RGBA),
+  * BGR(RGB)and BGRA(RGBA) transform,
+  * BGR(RGB)and RGB(BGR) transform,
+  * BGR(RGB)and RGBA(BGRA) transform,
+  * BGR(RGB)and GRAY transform,
+  * BGRA(RGBA) and GRAY transform,
+  * param src: input image data
+  * param dst: output image data
+  * param srcFormat: input image image format support: GRAY, NV12(NV21),
+  * BGR(RGB) and BGRA(RGBA)
+  * param dstFormat: output image image format, support GRAY, BGR(RGB) and
+  * BGRA(RGBA)
+  * param srcw: input image width
+  * param srch: input image height
+  */
+  void image_convert(const uint8_t* src,
+                     uint8_t* dst,
+                     ImageFormat srcFormat,
+                     ImageFormat dstFormat,
+                     int srcw,
+                     int srch);
+
   /*
   * image resize, use bilinear method
   * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
@@ -102,7 +128,8 @@ class ImagePreprocess {
   * param src: input image data
   * param dst: output image data
   */
-  void imageResize(const uint8_t* src, uint8_t* dst);
+  void image_resize(const uint8_t* src, uint8_t* dst);
+
   /*
    image resize, use bilinear method
   * support image format: 1-channel image (egs: GRAY, 2-channel image (egs:
@@ -114,13 +141,13 @@ class ImagePreprocess {
   * param dstw: output image width
   * param dsth: output image height
   */
-  void imageResize(const uint8_t* src,
-                   uint8_t* dst,
-                   ImageFormat srcFormat,
-                   int srcw,
-                   int srch,
-                   int dstw,
-                   int dsth);
+  void image_resize(const uint8_t* src,
+                    uint8_t* dst,
+                    ImageFormat srcFormat,
+                    int srcw,
+                    int srch,
+                    int dstw,
+                    int dsth);
 
   /*
   * image Rotate
@@ -129,7 +156,8 @@ class ImagePreprocess {
   * param src: input image data
   * param dst: output image data
   */
-  void imageRotate(const uint8_t* src, uint8_t* dst);
+  void image_rotate(const uint8_t* src, uint8_t* dst);
+
   /*
   * image Rotate
   * support 90, 180 and 270 Rotate process
@@ -141,12 +169,13 @@ class ImagePreprocess {
   * param srch: input image height
   * param degree: Rotate degree, support 90, 180 and 270
   */
-  void imageRotate(const uint8_t* src,
-                   uint8_t* dst,
-                   ImageFormat srcFormat,
-                   int srcw,
-                   int srch,
-                   float degree);
+  void image_rotate(const uint8_t* src,
+                    uint8_t* dst,
+                    ImageFormat srcFormat,
+                    int srcw,
+                    int srch,
+                    float degree);
+
   /*
   * image Flip
   * support X, Y and XY flip process
@@ -154,7 +183,8 @@ class ImagePreprocess {
   * param src: input image data
   * param dst: output image data
   */
-  void imageFlip(const uint8_t* src, uint8_t* dst);
+  void image_flip(const uint8_t* src, uint8_t* dst);
+
   /*
   * image Flip
   * support X, Y and XY flip process
@@ -166,12 +196,13 @@ class ImagePreprocess {
   * param srch: input image height
   * param flip_param: flip parameter, support X, Y and XY
   */
-  void imageFlip(const uint8_t* src,
-                 uint8_t* dst,
-                 ImageFormat srcFormat,
-                 int srcw,
-                 int srch,
-                 FlipParam flip_param);
+  void image_flip(const uint8_t* src,
+                  uint8_t* dst,
+                  ImageFormat srcFormat,
+                  int srcw,
+                  int srch,
+                  FlipParam flip_param);
+
   /*
   * change image data to tensor data
   * support image format is GRAY, BGR(RGB) and BGRA(RGBA), Data layout is NHWC
@@ -183,11 +214,12 @@ class ImagePreprocess {
   * param means: means of image
   * param scales: scales of image
   */
-  void image2Tensor(const uint8_t* src,
-                    Tensor* dstTensor,
-                    LayoutType layout,
-                    float* means,
-                    float* scales);
+  void image_to_tensor(const uint8_t* src,
+                       Tensor* dstTensor,
+                       LayoutType layout,
+                       float* means,
+                       float* scales);
+
   /*
   * change image data to tensor data
   * support image format is GRAY, BGR(RGB) and BGRA(RGBA), Data layout is NHWC
@@ -202,14 +234,14 @@ class ImagePreprocess {
   * param means: means of image
   * param scales: scales of image
   */
-  void image2Tensor(const uint8_t* src,
-                    Tensor* dstTensor,
-                    ImageFormat srcFormat,
-                    int srcw,
-                    int srch,
-                    LayoutType layout,
-                    float* means,
-                    float* scales);
+  void image_to_tensor(const uint8_t* src,
+                       Tensor* dstTensor,
+                       ImageFormat srcFormat,
+                       int srcw,
+                       int srch,
+                       LayoutType layout,
+                       float* means,
+                       float* scales);
 
   /*
   * image crop process
@@ -217,15 +249,15 @@ class ImagePreprocess {
   * param src: input image data
   * param dst: output image data
   */
-  void imageCrop(const uint8_t* src,
-                 uint8_t* dst,
-                 ImageFormat srcFormat,
-                 int srcw,
-                 int srch,
-                 int left_x,
-                 int left_y,
-                 int dstw,
-                 int dsth);
+  void image_crop(const uint8_t* src,
+                  uint8_t* dst,
+                  ImageFormat srcFormat,
+                  int srcw,
+                  int srch,
+                  int left_x,
+                  int left_y,
+                  int dstw,
+                  int dsth);
 
  private:
   ImageFormat srcFormat_;
