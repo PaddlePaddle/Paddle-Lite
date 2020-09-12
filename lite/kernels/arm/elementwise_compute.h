@@ -22,8 +22,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ElementwiseAddCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
