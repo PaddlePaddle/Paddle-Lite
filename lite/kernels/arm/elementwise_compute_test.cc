@@ -33,7 +33,7 @@ TEST(elementwise_add_arm, retrive_op) {
 }
 
 TEST(elementwise_add_arm, init) {
-  ElementwiseAddCompute elementwise_add;
+  ElementwiseAddCompute<float, PRECISION(kFloat)> elementwise_add;
   ASSERT_EQ(elementwise_add.precision(), PRECISION(kFloat));
   ASSERT_EQ(elementwise_add.target(), TARGET(kARM));
 }
@@ -255,7 +255,7 @@ template void elementwise_imod_compute_ref<int64_t>(
     const operators::ElementwiseParam& param, const std::string act_type);
 
 TEST(elementwise_add, compute) {
-  ElementwiseAddCompute elementwise_add;
+  ElementwiseAddCompute<float, PRECISION(kFloat)> elementwise_add;
   operators::ElementwiseParam param;
   lite::Tensor x, y, output, output_ref;
 
