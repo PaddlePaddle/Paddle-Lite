@@ -43,9 +43,14 @@ TEST(VGG19, test_vgg19_fp32_xpu) {
   for (size_t i = 0; i < input_shape.size(); ++i) {
     input_num *= input_shape[i];
   }
-  for (int i = 0; i < input_num; i++) {
-    data[i] = 1.f;
-  }
+  std::string data_path = FLAGS_data_dir + std::string("/tabby_cat.data");
+  std::ifstream fin(data_path, std::ios::in | std::ios::binary);
+  CHECK(fin.is_open()) << "failed to open file " << data_path;
+  fin.seekg(0, std::ios::end);
+  auto file_size = fin.tellg();
+  fin.seekg(0, std::ios::beg);
+  fin.read(reinterpret_cast<char*>(data), file_size);
+  fin.close();
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor->Run();
@@ -62,26 +67,41 @@ TEST(VGG19, test_vgg19_fp32_xpu) {
             << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
 
-  std::vector<std::vector<float>> results;
-  results.emplace_back(std::vector<float>({
-      0.0008115003,  0.00037260418, 0.00039926748, 0.00069935434, 0.00066621014,
-      0.00062534987, 0.00067734305, 0.00076451659, 0.0012990986,  0.00072598457,
-      0.00068432355, 0.0022401153,  0.0024542178,  0.001884914,   0.0014625499,
-      0.00060186163, 0.00056303054, 0.0006409206,  0.0006997037,  0.00083688588,
-  }));
   auto out = predictor->GetOutput(0);
-  ASSERT_EQ(out->shape().size(), 2);
-  ASSERT_EQ(out->shape()[0], 1);
-  ASSERT_EQ(out->shape()[1], 1000);
+  auto out_shape = out->shape();
+  auto out_data = out->data<float>();
+  ASSERT_EQ(out_shape.size(), 2UL);
+  ASSERT_EQ(out_shape[0], 1);
+  ASSERT_EQ(out_shape[1], 1000);
 
-  int step = 50;
-  for (size_t i = 0; i < results.size(); ++i) {
-    for (size_t j = 0; j < results[i].size(); ++j) {
-      EXPECT_NEAR(out->data<float>()[j * step + (out->shape()[1] * i)],
-                  results[i][j],
-                  1e-5);
+  std::string label_path = FLAGS_data_dir + std::string("/synset_words.txt");
+  std::vector<std::string> labels = ReadLines(label_path);
+  for (size_t i = 0; i < labels.size(); i++) {
+    if (labels[i].empty()) {
+      labels.erase(labels.begin() + i);
+      i--;
+      continue;
     }
+    labels[i].erase(labels[i].begin(), labels[i].begin() + 10);
   }
+  CHECK_EQ(labels.size(), out_shape[1]);
+  std::vector<std::tuple<float, std::string>> results;
+  for (size_t i = 0; i < labels.size(); i++) {
+    results.push_back(std::make_tuple(out_data[i], labels[i]));
+  }
+  std::sort(
+      results.begin(),
+      results.end(),
+      [](std::tuple<float, std::string> a, std::tuple<float, std::string> b) {
+        return std::get<0>(a) > std::get<0>(b);
+      });
+
+  for (int i = 0; i < 3; i++) {
+    LOG(INFO) << "top" << i << ": " << std::get<0>(results[i]) << ", "
+              << std::get<1>(results[i]);
+  }
+  ASSERT_EQ(std::get<1>(results[0]), std::string("tabby, tabby cat"));
+  ASSERT_GT(std::get<0>(results[0]), 0.78);
 }
 
 }  // namespace lite

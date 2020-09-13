@@ -8,22 +8,26 @@ if(LITE_WITH_ARM)
     endif()
 endif()
 
-function(xpu_x86_without_xtcl_test TARGET MODEL)
+function(xpu_x86_without_xtcl_test TARGET MODEL DATA)
     lite_cc_test(${TARGET} SRCS ${TARGET}.cc
         DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
         ${ops} ${host_kernels} ${x86_kernels} ${xpu_kernels}
-        ARGS --model_dir=${LITE_MODEL_DIR}/${MODEL})
+        ARGS --model_dir=${LITE_MODEL_DIR}/${MODEL}
+             --data_dir=${LITE_MODEL_DIR}/${DATA})
     if(WITH_TESTING)
         add_dependencies(${TARGET} extern_lite_download_${MODEL}_tar_gz)
+        if(NOT ${DATA} STREQUAL "")
+            add_dependencies(${TARGET} extern_lite_download_${DATA}_tar_gz)
+        endif()
     endif()
 endfunction()
 
 if(LITE_WITH_XPU AND NOT LITE_WITH_XTCL)
-    xpu_x86_without_xtcl_test(test_resnet50_fp32_xpu resnet50)
-    xpu_x86_without_xtcl_test(test_ernie_fp32_xpu ernie)
-    xpu_x86_without_xtcl_test(test_bert_fp32_xpu bert)
-    # xpu_x86_without_xtcl_test(test_googlenet_fp32_xpu GoogLeNet)
-    xpu_x86_without_xtcl_test(test_vgg19_fp32_xpu vgg19)
+    xpu_x86_without_xtcl_test(test_resnet50_fp32_xpu resnet50 tabby_cat)
+    xpu_x86_without_xtcl_test(test_googlenet_fp32_xpu GoogLeNet tabby_cat)
+    xpu_x86_without_xtcl_test(test_vgg19_fp32_xpu vgg19 tabby_cat)
+    xpu_x86_without_xtcl_test(test_ernie_fp32_xpu ernie "")
+    xpu_x86_without_xtcl_test(test_bert_fp32_xpu bert "")
 endif()
 
 if(LITE_WITH_RKNPU)
