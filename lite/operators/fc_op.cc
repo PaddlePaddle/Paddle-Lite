@@ -112,15 +112,15 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   const OpInfo* op_info = dynamic_cast<const OpInfo*>(&op_desc);
   if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
     param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    auto input_name = op_info->Input("Input").front();
-    auto weight_name = op_info->Input("W").front();
-    auto out_name = op_info->Output("Out").front();
-    if (op_info->HasInputScale(input_name))
-      param_.input_scale = op_info->GetInputScale(input_name)[0];
-    if (op_info->HasInputScale(weight_name))
-      param_.weight_scale = op_info->GetInputScale(weight_name);
-    if (op_info->HasOutputScale(out_name))
-      param_.output_scale = op_info->GetOutputScale(out_name)[0];
+    auto input_scale_name = "Input0_scale";
+    auto weight_scale_name = "W0_scale";
+    auto out_scale_name = "Out0_scale";
+    if (op_info->HasInputScale(input_scale_name, true))
+      param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+    if (op_info->HasInputScale(weight_scale_name, true))
+      param_.weight_scale = op_info->GetInputScale(weight_scale_name, true);
+    if (op_info->HasOutputScale(out_scale_name))
+      param_.output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
   }
   return true;
 }
