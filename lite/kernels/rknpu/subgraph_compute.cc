@@ -34,7 +34,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
   // Convert all of ops and their input vars and weights and added into the NPU
   // RKNPU IR graph
   subgraph::rknpu::Graph graph;
-  const auto& bridges = subgraph::Registry::Instance();
+  const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   if (!origin_program_) {
     BuildOriginProgram();
   }

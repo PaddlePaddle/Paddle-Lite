@@ -13,9 +13,9 @@
 // limitations under the License.
 
 // #include "lite/operators/interpolate_op.h"
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/huawei_ascend_npu/bridges/graph.h"
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {

@@ -78,12 +78,12 @@ inline std::vector<char> GenerateProgramCache() {
 
 inline void CheckProgramCache(ProgramDesc* program) {
   CHECK_EQ(program->Version(), 1000600);
-  CHECK_EQ(program->BlocksSize(), static_cast<size_t>(2));
+  CHECK_EQ(program->BlocksSize(), 2u);
 
   /* --------- Check Block A --------- */
   BlockDesc block_a(program->GetBlock<proto::BlockDescT>(0));
-  CHECK_EQ(block_a.OpsSize(), static_cast<size_t>(1));
-  CHECK_EQ(block_a.VarsSize(), static_cast<size_t>(2));
+  CHECK_EQ(block_a.OpsSize(), 1u);
+  CHECK_EQ(block_a.VarsSize(), 2u);
 
   auto var_a2 = VarDesc(block_a.GetVar<proto::VarDescT>(0));
   CHECK(var_a2.GetShape() == std::vector<int64_t>({2, 2, 1}));
@@ -101,8 +101,8 @@ inline void CheckProgramCache(ProgramDesc* program) {
 
   /* --------- Check Block B --------- */
   BlockDesc block_b(program->GetBlock<proto::BlockDescT>(1));
-  CHECK_EQ(block_b.OpsSize(), static_cast<size_t>(2));
-  CHECK_EQ(block_b.VarsSize(), static_cast<size_t>(1));
+  CHECK_EQ(block_b.OpsSize(), 2u);
+  CHECK_EQ(block_b.VarsSize(), 1u);
 
   auto op_b0 = OpDesc(block_b.GetOp<proto::OpDescT>(1));
   CHECK_EQ(op_b0.GetAttr<bool>("Attr1"), true);
@@ -111,12 +111,12 @@ inline void CheckProgramCache(ProgramDesc* program) {
 
 inline void CheckProgramCache(const ProgramDescView& program) {
   CHECK_EQ(program.Version(), 1000600);
-  CHECK_EQ(program.BlocksSize(), static_cast<size_t>(2));
+  CHECK_EQ(program.BlocksSize(), 2u);
 
   /* --------- Check Block A --------- */
   const auto& block_a = *program.GetBlock<BlockDescView>(0);
-  CHECK_EQ(block_a.OpsSize(), static_cast<size_t>(1));
-  CHECK_EQ(block_a.VarsSize(), static_cast<size_t>(2));
+  CHECK_EQ(block_a.OpsSize(), 1u);
+  CHECK_EQ(block_a.VarsSize(), 2u);
 
   const auto& var_a2 = *block_a.GetVar<VarDescView>(0);
   CHECK(var_a2.GetShape() == std::vector<int64_t>({2, 2, 1}));
@@ -135,8 +135,8 @@ inline void CheckProgramCache(const ProgramDescView& program) {
 
   /* --------- Check Block B --------- */
   const auto& block_b = *program.GetBlock<BlockDescView>(1);
-  CHECK_EQ(block_b.OpsSize(), static_cast<size_t>(2));
-  CHECK_EQ(block_b.VarsSize(), static_cast<size_t>(1));
+  CHECK_EQ(block_b.OpsSize(), 2u);
+  CHECK_EQ(block_b.VarsSize(), 1u);
 
   const auto& op_b0 = *block_b.GetOp<OpDescView>(1);
   CHECK_EQ(op_b0.GetAttr<bool>("Attr1"), true);

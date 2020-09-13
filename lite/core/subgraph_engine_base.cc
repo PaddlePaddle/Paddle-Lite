@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/npu/bridges/engine.h"
+#include "lite/core/subgraph_engine_base.h"
 #include <sys/time.h>
 #include <time.h>
 #include <algorithm>
 #include <utility>
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
 
-Engine::Engine(KernelContext *ctx,
-               int block_idx,
-               const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
-               Scope *exec_scope,
-               const std::vector<std::string> &input_names,
-               const std::vector<std::string> &output_names)
+SubgraphEngineBase::SubgraphEngineBase(
+    KernelContext *ctx,
+    int block_idx,
+    const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
+    Scope *exec_scope,
+    const std::vector<std::string> &input_names,
+    const std::vector<std::string> &output_names)
     : ctx_(ctx),
       block_idx_(block_idx),
       program_desc_(program_desc),
@@ -43,7 +43,7 @@ Engine::Engine(KernelContext *ctx,
   std::stable_sort(output_names_.begin(), output_names_.end());
 }
 
-bool Engine::Run() {
+bool SubgraphEngineBase::Run() {
   if (is_first_epoch_) {
     PrepareWorkspaceForDeviceProgram();
     is_first_epoch_ = false;
@@ -54,7 +54,7 @@ bool Engine::Run() {
   return LaunchDeviceProgram();
 }
 
-bool Engine::PrepareWorkspaceForOriginProgram() {
+bool SubgraphEngineBase::PrepareWorkspaceForOriginProgram() {
   origin_idims_.resize(input_names_.size());
   origin_itensors_.resize(input_names_.size());
   for (int i = 0; i < input_names_.size(); i++) {
@@ -69,7 +69,7 @@ bool Engine::PrepareWorkspaceForOriginProgram() {
   return true;
 }
 
-bool Engine::BuildOriginProgram() {
+bool SubgraphEngineBase::BuildOriginProgram() {
   // TODO(hong19860320) The block_desc need to be divided into subgraphs during
   // the exection time. But only see them as a subgraph now.
   if (!origin_program_) {
@@ -79,7 +79,7 @@ bool Engine::BuildOriginProgram() {
   return true;
 }
 
-bool Engine::LaunchOriginProgram() {
+bool SubgraphEngineBase::LaunchOriginProgram() {
   if (!origin_program_) {
     BuildOriginProgram();
   }
@@ -91,15 +91,15 @@ bool Engine::LaunchOriginProgram() {
   return false;
 }
 
-bool Engine::PrepareWorkspaceForDeviceProgram() {
+bool SubgraphEngineBase::PrepareWorkspaceForDeviceProgram() {
   return PrepareWorkspaceForOriginProgram();
 }
 
-bool Engine::BuildDeviceProgram() { return BuildOriginProgram(); }
+bool SubgraphEngineBase::BuildDeviceProgram() { return BuildOriginProgram(); }
 
-bool Engine::LaunchDeviceProgram() { return LaunchOriginProgram(); }
+bool SubgraphEngineBase::LaunchDeviceProgram() { return LaunchOriginProgram(); }
 
-bool Engine::InputShapeChanged() {
+bool SubgraphEngineBase::InputShapeChanged() {
   bool changed = false;
   for (size_t i = 0; i < origin_itensors_.size(); i++) {
     auto origin_idim = origin_itensors_[i]->dims().Vectorize();
