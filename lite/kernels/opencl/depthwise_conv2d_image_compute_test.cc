@@ -494,7 +494,12 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         const int oh = ConvOutputSize(ih, fh, dilation, pad, pad, stride);
         const int ow = ConvOutputSize(iw, fw, dilation, pad, pad, stride);
         if (oh <= 0 || ow <= 0) {
+#ifdef LOOP_TEST
           continue;
+#else
+    LOG(FATAL) << "Output tensor of depthwise conv is illegal!"
+               << "Please check your input dims and conv params";
+#endif
         }
 
         LOG(INFO) << "to get kernel ...";
