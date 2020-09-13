@@ -137,10 +137,10 @@ class ConvOpLite : public OpLite {
       auto filter_scale_name = "Filter0_scale";
       auto output_scale_name = "Output0_scale";
       if (op_info->HasInputScale(input_scale_name, true))
-        param_.input_scale = op_info->GetInputScale(input_scale_name)[0];
+        param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
       if (op_info->HasInputScale(filter_scale_name, true))
         param_.weight_scale = op_info->GetInputScale(filter_scale_name, true);
-      if (op_info->HasOutputScale(output_scale_name)) {
+      if (op_info->HasOutputScale(output_scale_name, true)) {
         param_.output_scale =
             op_info->GetOutputScale(output_scale_name, true)[0];
       }

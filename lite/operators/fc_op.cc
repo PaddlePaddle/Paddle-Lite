@@ -119,7 +119,7 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
     if (op_info->HasInputScale(weight_scale_name, true))
       param_.weight_scale = op_info->GetInputScale(weight_scale_name, true);
-    if (op_info->HasOutputScale(out_scale_name))
+    if (op_info->HasOutputScale(out_scale_name, true))
       param_.output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
   }
   return true;
