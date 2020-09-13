@@ -91,14 +91,24 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     // 方法二
     void ImagePreprocess::imageCovert(const uint8_t* src,
     uint8_t* dst, ImageFormat srcFormat, ImageFormat dstFormat);
+    // 方法三
+    void ImagePreprocess::imageCovert(const uint8_t* src,
+    uint8_t* dst, ImageFormat srcFormat, ImageFormat dstFormat,
+    int srcw, int srch);
     ```
 
     + 第一个 `imageCovert` 接口，缺省参数来源于 `ImagePreprocess` 类的成员变量。故在初始化 `ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`srcFormat_`
         - param dstFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
+        - param srcw: `ImagePreprocess` 类的成员变量`transParam_`结构体中的`iw`变量
+        - param srch: `ImagePreprocess` 类的成员变量`transParam_`结构体中的`ih`变量
     
-    - 第二个`imageCovert` 接口，可以直接使用
+    - 第二个`imageCovert` 接口，缺省参数来源于 `ImagePreprocess` 类的成员变量。故在初始化 `ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
+        - param srcw: `ImagePreprocess` 类的成员变量`transParam_`结构体中的`iw`变量
+        - param srch: `ImagePreprocess` 类的成员变量`transParam_`结构体中的`ih`变量
 
+    - 第二个`imageCovert` 接口, 可以直接使用
+    
 ### 缩放 Resize
 
 `Resize` 功能支持颜色空间：GRAY、NV12（NV21）、RGB（BGR）和RGBA（BGRA）

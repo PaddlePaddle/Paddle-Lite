@@ -244,6 +244,7 @@ class XPUConv2dBlock0Fuser : public FuseBase {
 
     std::string output_name = "";
     if (_with_relu) {
+      op_desc.SetAttr("act_type", std::string{"relu"});
       output_name = matched.at("relu_out")->arg()->name;
     } else {
       output_name = matched.at("bn_out")->arg()->name;
@@ -433,6 +434,7 @@ class XPUConv2dBlock1Fuser : public FuseBase {
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     scope->NewTensor(max_output_name);
     op_desc.SetOutput("OutputMax", {max_output_name});
+    op_desc.SetAttr("act_type", std::string{"relu"});
 
     auto conv_op = LiteOpRegistry::Global().Create("__xpu__conv2d");
     auto& valid_places = conv_old->valid_places();
