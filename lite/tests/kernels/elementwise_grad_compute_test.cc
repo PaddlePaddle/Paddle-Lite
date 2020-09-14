@@ -27,7 +27,7 @@ using param_t = operators::ElementwiseParam;
 using grad_param_t = operators::ElementwiseGradParam;
 using kernel_add_t = ElementwiseAddCompute<float, PRECISION(kFloat)>;
 using grad_kernel_add_t = ElementwiseAddGradCompute;
-using kernel_sub_t = ElementwiseSubCompute;
+using kernel_sub_t = ElementwiseSubCompute<float, PRECISION(kFloat)>;
 using grad_kernel_sub_t = ElementwiseSubGradCompute;
 
 void elementwise_common(grad_param_t& param,           // NOLINT
