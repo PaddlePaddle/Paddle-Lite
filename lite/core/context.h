@@ -44,6 +44,7 @@
 #include "lite/core/tensor.h"
 #include "lite/utils/all.h"
 #include "lite/utils/env.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -196,7 +197,7 @@ class Context<TargetType::kXPU> {
   std::string name() const { return "XPUContext"; }
 
  private:
-  static thread_local xdnn::Context* _tls_raw_ctx;
+  static LITE_THREAD_LOCAL xdnn::Context* _tls_raw_ctx;
   static int _workspace_l3_size_per_thread;
 };
 #endif

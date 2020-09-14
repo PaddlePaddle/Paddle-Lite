@@ -35,6 +35,7 @@ BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 LITE_WITH_ARM_LANG=OFF
 PYTHON_EXECUTABLE_OPTION=""
+IOS_DEPLOYMENT_TARGET=9.0
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -326,6 +327,7 @@ function make_ios {
             -DARM_TARGET_ARCH_ABI=$abi \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
+            -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DARM_TARGET_OS=$os
 
     make publish_inference -j$NUM_PROC
@@ -434,6 +436,7 @@ function print_usage {
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
+    echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
@@ -568,6 +571,10 @@ function main {
                 ;;
             --rknpu_ddk_root=*)
                 RKNPU_DDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --ios_deployment_target=*)
+                IOS_DEPLOYMENT_TARGET="${i#*=}"
                 shift
                 ;;
             tiny_publish)

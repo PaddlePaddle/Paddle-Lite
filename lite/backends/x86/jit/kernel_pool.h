@@ -22,6 +22,7 @@
 #include "lite/backends/x86/jit/gen_base.h"
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/kernel_key.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
@@ -35,7 +36,7 @@ class JitCodePool {
  public:
   JitCodePool() = default;
   static JitCodePool& Instance() {
-    static thread_local JitCodePool<KT> g_jit_codes;
+    static LITE_THREAD_LOCAL JitCodePool<KT> g_jit_codes;
     return g_jit_codes;
   }
 
