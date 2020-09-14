@@ -408,6 +408,7 @@ class PrecisionProfiler {
           *ave_grow_rate =
               compute_average_grow_rate<float>(in_data_v.data(), in->numel());
           write_result_to_file&& write_tensorfile<float>(in, name, log_dir_);
+          return;
         }
         default:
           *mean = -222222222222;
