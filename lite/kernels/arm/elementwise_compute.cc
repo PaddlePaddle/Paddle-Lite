@@ -548,6 +548,16 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
+using elementwise_div_int32_t =
+    paddle::lite::kernels::arm::ElementwiseDivCompute<int32_t,
+                                                      PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(
+    elementwise_div, kARM, kInt32, kNCHW, elementwise_div_int32_t, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
 using elementwise_div_int64_t =
     paddle::lite::kernels::arm::ElementwiseDivCompute<int64_t,
                                                       PRECISION(kInt64)>;

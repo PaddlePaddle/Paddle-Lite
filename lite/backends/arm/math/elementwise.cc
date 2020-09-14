@@ -44,6 +44,12 @@ static T naive_sub(T l, T r) {
   return l - r;
 }
 
+// todo: remove this function when all elementwise div works
+template <typename T>
+static T naive_div(T l, T r) {
+  return l / r;
+}
+
 // todo: use arm intrinsics
 template <>
 void elementwise_add<int32_t>(const int32_t* dinx,
@@ -1511,6 +1517,15 @@ void elementwise_max_relu_broadcast<float>(const float* dinx,
   }
 }
 
+// todo: use arm intrinsics
+template <>
+void elementwise_div<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  naive_elementwise_op<int32_t>(dinx, diny, dout, num, naive_div<int32_t>);
+}
+
 template <>
 void elementwise_div<int64_t>(const int64_t* dinx,
                               const int64_t* diny,
@@ -1574,6 +1589,18 @@ void elementwise_div<float>(const float* dinx,
       diny_ptr++;
     }
   }
+}
+
+// todo: use arm intrinsics
+template <>
+void elementwise_div_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+  naive_elementwise_op_broadcast<int32_t>(
+      dinx, diny, dout, batch, channels, num, naive_div<int32_t>);
 }
 
 template <>
