@@ -38,6 +38,12 @@ static T naive_add(T l, T r) {
   return l + r;
 }
 
+// todo: remove this function when all elementwise sub works
+template <typename T>
+static T naive_sub(T l, T r) {
+  return l - r;
+}
+
 // todo: use arm intrinsics
 template <>
 void elementwise_add<int32_t>(const int32_t* dinx,
@@ -472,6 +478,25 @@ void elementwise_add_grad_broadcast<float>(const float* dout_grad,
     }
   }
 }
+
+// todo: use arm intrinsics
+template <>
+void elementwise_sub<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  naive_elementwise_op<int32_t>(dinx, diny, dout, num, naive_sub<int32_t>);
+}
+
+// todo: use arm intrinsics
+template <>
+void elementwise_sub<int64_t>(const int64_t* dinx,
+                              const int64_t* diny,
+                              int64_t* dout,
+                              int num) {
+  naive_elementwise_op<int64_t>(dinx, diny, dout, num, naive_sub<int64_t>);
+}
+
 template <>
 void elementwise_sub<float>(const float* dinx,
                             const float* diny,
@@ -570,6 +595,30 @@ void elementwise_sub_relu<float>(const float* dinx,
       diny_ptr++;
     }
   }
+}
+
+// todo: use arm intrinsics
+template <>
+void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+  naive_elementwise_op_broadcast<int32_t>(
+      dinx, diny, dout, batch, channels, num, naive_sub<int32_t>);
+}
+
+// todo: use arm intrinsics
+template <>
+void elementwise_sub_broadcast<int64_t>(const int64_t* dinx,
+                                        const int64_t* diny,
+                                        int64_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+  naive_elementwise_op_broadcast<int64_t>(
+      dinx, diny, dout, batch, channels, num, naive_sub<int64_t>);
 }
 
 template <>
