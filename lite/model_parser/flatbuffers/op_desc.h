@@ -154,19 +154,19 @@ class OpDescView : public OpDescAPI {
   }
 
   const std::map<std::string, std::vector<std::string>>& inputs() const {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return inputs_;
   }
   const std::map<std::string, std::vector<std::string>>& outputs() const {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return outputs_;
   }
   std::map<std::string, std::vector<std::string>>* mutable_inputs() {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return &inputs_;
   }
   std::map<std::string, std::vector<std::string>>* mutable_outputs() {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return &outputs_;
   }
 
@@ -183,7 +183,7 @@ class OpDescView : public OpDescAPI {
   }
 
   std::vector<std::string> output_vars() const {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return std::vector<std::string>();
   }
 
@@ -192,19 +192,15 @@ class OpDescView : public OpDescAPI {
   }
 
   const std::map<std::string, Any>& attrs() const {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return attrs_;
   }
   const std::map<std::string, AttrType>& attr_types() const {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return attr_types_;
   }
 
  private:
-  void NotImplemented() const {
-    LOG(FATAL) << "The additional interfaces of OpDescView is temporarily "
-                  "unavailable in read-only mode.";
-  }
   std::string type_;
   std::map<std::string, std::vector<std::string>> inputs_;
   std::map<std::string, std::vector<std::string>> outputs_;

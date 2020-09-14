@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "lite/model_parser/base/traits.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -36,22 +37,18 @@ class ProgramDescReadAPI {
 
 class ProgramDescWriteAPI {
  public:
-  virtual void ClearBlocks() { NotImplemented(); }
-  virtual void SetVersion(int64_t version) { NotImplemented(); }
+  virtual void ClearBlocks() { LITE_MODEL_INTERFACE_NOT_IMPLEMENTED; }
+  virtual void SetVersion(int64_t version) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
 
   template <typename T>
   T* AddBlock() {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return nullptr;
   }
 
   virtual ~ProgramDescWriteAPI() = default;
-
- private:
-  void NotImplemented() const {
-    LOG(FATAL)
-        << "ProgramDescWriteAPI is not available in model read-only mode.";
-  }
 };
 
 // The reading and writing of the model are one-time and separate.

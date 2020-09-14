@@ -48,7 +48,7 @@ __kernel void depth_conv2d_3x3(
   int2 ouput_pos_in_one_block = (int2)(out_w, out_nh_in_one_batch);
 
   int2 in_pos_in_one_block =
-      ouput_pos_in_one_block * stride_xy + (int2)(offset, offset);
+      ouput_pos_in_one_block * stride_xy + (int2)(offset + dilation - 1, offset + dilation - 1);
 
 #ifdef BIASE_CH
   CL_DTYPE4 output =
@@ -77,13 +77,13 @@ __kernel void depth_conv2d_3x3(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
-                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1,
-                           pos_in_input_block.y + in_pos_in_one_block.y - 1)),
+                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x - dilation,
+                           pos_in_input_block.y + in_pos_in_one_block.y - dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x - 1 < 0 ||
-                 in_pos_in_one_block.y - 1 < 0 ||
-                 in_pos_in_one_block.x - 1 >= input_width ||
-                 in_pos_in_one_block.y - 1 >= input_height)
+      (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
+                 in_pos_in_one_block.y - dilation < 0 ||
+                 in_pos_in_one_block.x - dilation >= input_width ||
+                 in_pos_in_one_block.y - dilation >= input_height)
                 << 15));
 
   inputs[1] = select(
@@ -91,45 +91,37 @@ __kernel void depth_conv2d_3x3(
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x,
-                           pos_in_input_block.y + in_pos_in_one_block.y - 1)),
+                           pos_in_input_block.y + in_pos_in_one_block.y - dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y - 1 < 0 ||
+      (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y - dilation < 0 ||
                  in_pos_in_one_block.x >= input_width ||
-                 in_pos_in_one_block.y - 1 >= input_height)
+                 in_pos_in_one_block.y - dilation >= input_height)
                 << 15));
 
   inputs[2] = select(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
-                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1,
-                           pos_in_input_block.y + in_pos_in_one_block.y - 1)),
+                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x + dilation,
+                           pos_in_input_block.y + in_pos_in_one_block.y - dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x + 1 < 0 ||
-                 in_pos_in_one_block.y - 1 < 0 ||
-                 in_pos_in_one_block.x + 1 >= input_width ||
-                 in_pos_in_one_block.y - 1 >= input_height)
+      (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
+                 in_pos_in_one_block.y - dilation < 0 ||
+                 in_pos_in_one_block.x + dilation >= input_width ||
+                 in_pos_in_one_block.y - dilation >= input_height)
                 << 15));
 
   inputs[3] = select(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
-                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1,
+                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x - dilation,
                            pos_in_input_block.y + in_pos_in_one_block.y)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y < 0 ||
-                 in_pos_in_one_block.x - 1 >= input_width ||
+      (ushort4)((in_pos_in_one_block.x - dilation < 0 || in_pos_in_one_block.y < 0 ||
+                 in_pos_in_one_block.x - dilation >= input_width ||
                  in_pos_in_one_block.y >= input_height)
                 << 15));
-  /*
-  if (output_pos.x == 112 && output_pos.y == 0) {
-        CL_DTYPE4 input1 = inputs[3];
-        float4 in = (float4)(input1.x, input1.y, input1.z, input1.w);
-        printf(" input4 3 - %v4hlf \n", in);
-        printf(" --- %d ---\n", in_pos_in_one_block.x - 1);
-  }
-  */
 
   inputs[4] = select(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -147,11 +139,11 @@ __kernel void depth_conv2d_3x3(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
-                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1,
+                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x + dilation,
                            pos_in_input_block.y + in_pos_in_one_block.y)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y < 0 ||
-                 in_pos_in_one_block.x + 1 >= input_width ||
+      (ushort4)((in_pos_in_one_block.x + dilation < 0 || in_pos_in_one_block.y < 0 ||
+                 in_pos_in_one_block.x + dilation >= input_width ||
                  in_pos_in_one_block.y >= input_height)
                 << 15));
 
@@ -159,13 +151,13 @@ __kernel void depth_conv2d_3x3(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
-                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1,
-                           pos_in_input_block.y + in_pos_in_one_block.y + 1)),
+                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x - dilation,
+                           pos_in_input_block.y + in_pos_in_one_block.y + dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x - 1 < 0 ||
-                 in_pos_in_one_block.y + 1 < 0 ||
-                 in_pos_in_one_block.x - 1 >= input_width ||
-                 in_pos_in_one_block.y + 1 >= input_height)
+      (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
+                 in_pos_in_one_block.y + dilation < 0 ||
+                 in_pos_in_one_block.x - dilation >= input_width ||
+                 in_pos_in_one_block.y + dilation >= input_height)
                 << 15));
 
   inputs[7] = select(
@@ -173,24 +165,24 @@ __kernel void depth_conv2d_3x3(
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x,
-                           pos_in_input_block.y + in_pos_in_one_block.y + 1)),
+                           pos_in_input_block.y + in_pos_in_one_block.y + dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y + 1 < 0 ||
+      (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y + dilation < 0 ||
                  in_pos_in_one_block.x >= input_width ||
-                 in_pos_in_one_block.y + 1 >= input_height)
+                 in_pos_in_one_block.y + dilation >= input_height)
                 << 15));
 
   inputs[8] = select(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
-                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1,
-                           pos_in_input_block.y + in_pos_in_one_block.y + 1)),
+                    (int2)(pos_in_input_block.x + in_pos_in_one_block.x + dilation,
+                           pos_in_input_block.y + in_pos_in_one_block.y + dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x + 1 < 0 ||
-                 in_pos_in_one_block.y + 1 < 0 ||
-                 in_pos_in_one_block.x + 1 >= input_width ||
-                 in_pos_in_one_block.y + 1 >= input_height)
+      (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
+                 in_pos_in_one_block.y + dilation < 0 ||
+                 in_pos_in_one_block.x + dilation >= input_width ||
+                 in_pos_in_one_block.y + dilation >= input_height)
                 << 15));
 
   CL_DTYPE4 filters[9];
@@ -221,14 +213,18 @@ __kernel void depth_conv2d_3x3(
 
   /*
 
-  if (output_pos.x == 112 && output_pos.y == 0) {
+  if (output_pos.x == 0 && output_pos.y == 0) {
 
       for (int i = 0; i < 9; ++i) {
           CL_DTYPE4 input1 = inputs[i];
           float4 in = (float4)(input1.x, input1.y, input1.z, input1.w);
-          printf(" input4 %d - %v4hlf \n", i, in);
+          printf(" input4[%d]: %v4hlf \n", i, in);
       }
-
+      for (int i = 0; i < 9; ++i) {
+          CL_DTYPE4 filters1 = filters[i];
+          float4 f = (float4)(filters1.x, filters1.y, filters1.z, filters1.w);
+          printf(" weights4[%d]: %v4hlf \n", i, f);
+      }
       float4 out = (float4)(output.x, output.y, output.z, output.w);
       printf(" depth wise output output4 = %v4hlf \n", out);
       printf(" pos_in_input_block -x %d \n ", pos_in_input_block.x);
