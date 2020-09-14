@@ -1,3 +1,8 @@
+if (LITE_ON_TINY_PUBLISH)
+  set(naive_wrapper "")
+  return()
+endif()
+
 lite_cc_library(naive_buffer SRCS naive_buffer.cc DEPS types)
 
 add_subdirectory(proto)

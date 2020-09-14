@@ -24,11 +24,11 @@
 #include "lite/core/version.h"
 #include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/flatbuffers/io.h"
+#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
-#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
 #endif
@@ -618,7 +618,7 @@ void SaveModelNaive(const std::string &model_file,
 
   LOG(INFO) << "Save naive buffer model in '" << prog_path << " successfully";
 }
-#endif  // LITE_ON_TINY_PUBLISH
+
 template <typename T>
 void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {
   CHECK(out);
@@ -716,6 +716,7 @@ void LoadCombinedParamsNaive(const std::string &path,
                                          << "] not found";
   }
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 /* Old Method of loading and saving model, before V2.3.0                     */
 /* Warning: this is an old inference and will be abandened in release/v3.0.0 */
@@ -799,6 +800,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
+#endif  // LITE_ON_TINY_PUBLISH
 //////////////////////////////////////////////////////////////////////
 
 // usage: LoadModelNaiveFromFile is used for loading model from file.
@@ -807,9 +809,8 @@ void ReadModelDataFromFile(T *data,
                            const std::string &prog_path,
                            uint64_t *offset,
                            const uint64_t &size) {
-  naive_buffer::BinaryTable data_table;
-  data_table.LoadFromFile(prog_path, *offset, size);
-  memcpy(data, data_table.cursor(), size);
+  std::vector<char> prog_data = lite::fbs::LoadFile(prog_path, *offset, size);
+  memcpy(data, prog_data.data(), size);
   *offset = *offset + size;
 }
 /*
@@ -835,7 +836,6 @@ void LoadModelNaiveFromFile(const std::string &filename,
                             cpp::ProgramDesc *cpp_prog) {
   CHECK(cpp_prog);
   CHECK(scope);
-  cpp_prog->ClearBlocks();
   // ModelFile
   const std::string prog_path = filename;
 
@@ -850,7 +850,11 @@ void LoadModelNaiveFromFile(const std::string &filename,
 
   switch (meta_version) {
     case 0:
+#ifndef LITE_ON_TINY_PUBLISH
       LoadModelNaiveV0FromFile(filename, scope, cpp_prog);
+#else
+      LOG(FATAL) << "Error, this model file is not supported.";
+#endif
       break;
     case 1:
       LoadModelFbsFromFile(filename, scope, cpp_prog);
@@ -860,6 +864,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
       break;
   }
 }
+#ifndef LITE_ON_TINY_PUBLISH
 void LoadModelNaiveV0FromFile(const std::string &filename,
                               Scope *scope,
                               cpp::ProgramDesc *cpp_prog) {
@@ -917,13 +922,13 @@ void LoadModelNaiveV0FromFile(const std::string &filename,
 
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
-
+#endif  // LITE_ON_TINY_PUBLISH
 void LoadModelFbsFromFile(const std::string &filename,
                           Scope *scope,
                           cpp::ProgramDesc *cpp_prog) {
   CHECK(cpp_prog);
   CHECK(scope);
-  cpp_prog->ClearBlocks();
+  CHECK_EQ(cpp_prog->BlocksSize(), 0);
   // Offset
   uint64_t offset = sizeof(uint16_t);
 
@@ -973,9 +978,7 @@ void ReadModelDataFromBuffer(T *data,
                              const std::string &model_buffer,
                              uint64_t *offset,
                              const uint64_t &size) {
-  naive_buffer::BinaryTable data_table;
-  data_table.LoadFromMemory(model_buffer.c_str() + *offset, size);
-  memcpy(data, data_table.cursor(), size);
+  memcpy(data, model_buffer.c_str() + *offset, size);
   *offset = *offset + size;
 }
 
@@ -994,7 +997,11 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   VLOG(4) << "Meta_version:" << meta_version;
   switch (meta_version) {
     case 0:
+#ifndef LITE_ON_TINY_PUBLISH
       LoadModelNaiveV0FromMemory(model_buffer, scope, cpp_prog);
+#else
+      LOG(FATAL) << "Error: Unsupported model type.";
+#endif
       break;
     case 1:
       LoadModelNaiveV1FromMemory(model_buffer, scope, cpp_prog);
@@ -1004,7 +1011,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
       break;
   }
 }
-
+#ifndef LITE_ON_TINY_PUBLISH
 void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
                                 Scope *scope,
                                 cpp::ProgramDesc *cpp_prog) {
@@ -1040,7 +1047,7 @@ void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
-
+#endif
 ///////////////////////////////////////////////////////////////////
 // Meta_version=1
 ///////////////////////////////////////////////////////////////////
