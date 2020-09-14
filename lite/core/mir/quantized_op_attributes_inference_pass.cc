@@ -97,4 +97,4 @@ void QuantizedOpAttributesInferencePass::Apply(
 
 REGISTER_MIR_PASS(quantized_op_attributes_inference_pass,
                   paddle::lite::mir::QuantizedOpAttributesInferencePass)
-    .BindTargets({TARGET(kAPU), TARGET(kRKNPU)});
+    .BindTargets({TARGET(kAPU), TARGET(kRKNPU), TARGET(kImaginationNNA)});

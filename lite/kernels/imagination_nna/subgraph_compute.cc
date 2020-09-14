@@ -28,6 +28,7 @@ namespace kernels {
 namespace imagination_nna {
 
 bool SubgraphEngine::BuildDeviceProgram() {
+  device_program_ready = false;
   int status = 0;
   // Convert all of ops and their input vars and weights and added into the NNA
   // IMG IR graph
@@ -44,7 +45,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
     op->InferShape();
     std::string op_type = op->op_info()->Type();
     if (!bridges.Exists(op_type, TARGET(kImaginationNNA))) {
-      // return subgraph::FAILED;
       return false;
     }
     auto kernel = inst.kernel();
@@ -53,7 +53,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
         const_cast<OpLite*>(op),
         const_cast<KernelBase*>(kernel));
     if (subgraph::CHECK_FAILED(status)) {
-      // return subgraph::FAILED;
       return false;
     }
   }
@@ -156,11 +155,15 @@ bool SubgraphEngine::BuildDeviceProgram() {
         break;
     }
   }
+  device_program_ready = true;
 
   return true;
 }
 
 bool SubgraphEngine::LaunchDeviceProgram() {
+  if (!device_program_ready)  // build device program fail
+    LaunchOriginProgram();
+
   // Set input buffer
   for (size_t i = 0; i < origin_itensors_.size(); i++) {
     // check input shapes

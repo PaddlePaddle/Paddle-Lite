@@ -30,6 +30,9 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " + op_type + "...";
 
+  CHECK(op_info->HasAttr("enable_int8") &&
+        op_info->GetAttr<bool>("enable_int8"));
+
   auto input_name = op_info->Input("Input").front();
   auto input = scope->FindTensor(input_name);
   auto input_dims = input->dims();
@@ -58,19 +61,12 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "[NNA] input dims: " << input_dims << " w dims: " << w_dims
           << " m: " << m << " k: " << k << " n: " << n;
 
-  // for quantization
-  bool enable_int8 = false;
-  float input_scale = 1.0;
-  float output_scale = 1.0;
-  std::vector<float> weight_scale;
-  TensorInfo qnt;
-
-  if (op_info->HasAttr("enable_int8")) {
-    enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    input_scale = op_info->GetAttr<float>("input_scale");
-    output_scale = op_info->GetAttr<float>("output_scale");
-    weight_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
-  }
+  CHECK(op_info->HasInputScale(input_name));
+  float input_scale = op_info->GetInputScale(input_name)[0];
+  CHECK(op_info->HasInputScale(weight_name));
+  std::vector<float> weight_scale = op_info->GetInputScale(weight_name);
+  CHECK(op_info->HasOutputScale(out_name));
+  float output_scale = op_info->GetOutputScale(out_name)[0];
 
   // Create input node and reshape it to (m, k, 1, 1)
   std::shared_ptr<Node> input_node = nullptr;
@@ -84,21 +80,19 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> weight_node = nullptr;
   bool per_channel = isScalesPerChannel(weight_scale);
   uint8_t* weights_u8 = graph->GetBuilder()->GetBufromPool(w_dims.production());
-  if (enable_int8) {
-    qnt.type = IMGDNN_TYPE_Q_U8;
-    if (per_channel) {
-      LOG(FATAL)
-          << "[NNA] FC per-channel quantization is not supported for Mirage";
-    } else {
-      qnt.scales.push_back(weight_scale.at(0));
-      qnt.zero_points.push_back(128);
-    }
-    const char* weight_src = static_cast<const char*>(weights->raw_data());
-    for (int i = 0; i < w_dims.production(); i++)
-      weights_u8[i] = static_cast<uint8_t>(weight_src[i] + 128);
+
+  TensorInfo qnt;
+  qnt.type = IMGDNN_TYPE_Q_U8;
+  if (per_channel) {
+    LOG(FATAL)
+        << "[NNA] FC per-channel quantization is not supported for Mirage";
   } else {
-    LOG(FATAL) << "[NNA] PaddleLite Only 8-bits quantization.";
+    qnt.scales.push_back(weight_scale.at(0));
+    qnt.zero_points.push_back(128);
   }
+  const char* weight_src = static_cast<const char*>(weights->raw_data());
+  for (int i = 0; i < w_dims.production(); i++)
+    weights_u8[i] = static_cast<uint8_t>(weight_src[i] + 128);
   weight_node = graph->Add(
       weight_name, weights_u8, w_dims.Vectorize(), qnt, Node::Role::kConst);
 
@@ -111,49 +105,43 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       bias_node = graph->Get(bias_name);
     } else {
       auto bias = scope->FindTensor(bias_name);
+      // CHECK_EQ(bias->precision(), PRECISION(kFloat));
       auto bias_dims = bias->dims();
       CHECK_EQ(bias_dims.production(), n);
 
-      if (enable_int8 && bias->precision() == PRECISION(kFloat)) {
-        TensorInfoReset(&qnt);
-        qnt.type = IMGDNN_TYPE_I32;
-        if (per_channel) {
-          qnt.scales.resize(weight_scale.size());
-          qnt.count = bias_dims.size();
-          qnt.axis = 0;
-          for (int i = 0; i < weight_scale.size(); i++) {
-            qnt.scales[i] = input_scale * weight_scale[i];
-          }
-          LOG(FATAL)
-              << "[NNA] per-channel quantization is not supported for FC";
-        } else {
-          qnt.scales.push_back(weight_scale.at(0) * input_scale);
-          qnt.zero_points.push_back(0);
+      TensorInfoReset(&qnt);
+      qnt.type = IMGDNN_TYPE_I32;
+      if (per_channel) {
+        qnt.scales.resize(weight_scale.size());
+        qnt.count = bias_dims.size();
+        qnt.axis = 0;
+        for (int i = 0; i < weight_scale.size(); i++) {
+          qnt.scales[i] = input_scale * weight_scale[i];
         }
-
-        int quant_bits = 32;
-        auto dtype_max = static_cast<int>((1 << (quant_bits - 1)) - 1);
-        auto dtype_min = static_cast<int>(0 - dtype_max);
-
-        auto* bias_data = bias->data<float, float>();
-        int32_t* bias_qnt_data =
-            reinterpret_cast<int32_t*>(graph->GetBuilder()->GetBufromPool(
-                bias_dims.production() * sizeof(int32_t)));
-        for (int i = 0; i < n; i++) {
-          float current_scale = per_channel ? qnt.scales[i] : qnt.scales[0];
-          bias_qnt_data[i] =
-              std::min(std::max(static_cast<int>(bias_data[i] / current_scale),
-                                dtype_min),
-                       dtype_max);
-        }
-
-        std::vector<int64_t> shapes{1};
-        bias_node = graph->Add(
-            bias_name, bias_qnt_data, shapes, qnt, Node::Role::kConst);
+        LOG(FATAL) << "[NNA] per-channel quantization is not supported for FC";
       } else {
-        qnt.type = IMGDNN_TYPE_F32;
-        bias_node = graph->Add(bias_name, *bias, qnt, Node::Role::kConst);
+        qnt.scales.push_back(weight_scale.at(0) * input_scale);
+        qnt.zero_points.push_back(0);
       }
+
+      int quant_bits = 32;
+      auto dtype_max = static_cast<int>((1 << (quant_bits - 1)) - 1);
+      auto dtype_min = static_cast<int>(0 - dtype_max);
+
+      auto* bias_data = bias->data<float, float>();
+      int32_t* bias_qnt_data =
+          reinterpret_cast<int32_t*>(graph->GetBuilder()->GetBufromPool(
+              bias_dims.production() * sizeof(int32_t)));
+      for (int i = 0; i < n; i++) {
+        float current_scale = per_channel ? qnt.scales[i] : qnt.scales[0];
+        bias_qnt_data[i] = std::min(
+            std::max(static_cast<int>(bias_data[i] / current_scale), dtype_min),
+            dtype_max);
+      }
+
+      std::vector<int64_t> shapes{1};
+      bias_node =
+          graph->Add(bias_name, bias_qnt_data, shapes, qnt, Node::Role::kConst);
     }
     bias_tensor = bias_node->data();
   }

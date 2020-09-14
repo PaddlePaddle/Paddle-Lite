@@ -31,6 +31,9 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " << op_type << "... ";
 
+  CHECK(op_info->HasAttr("enable_int8") &&
+        op_info->GetAttr<bool>("enable_int8"));
+
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
   auto input = scope->FindMutableTensor(input_name);
@@ -67,19 +70,14 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   CHECK_EQ(strides.size(), 2L);
   CHECK_EQ(dilations.size(), 2L);
 
-  // for quantization
-  bool enable_int8 = false;
-  float input_scale = 1.0;
-  float output_scale = 1.0;
-  std::vector<float> weight_scale;
-  TensorInfo qnt;
+  CHECK(op_info->HasInputScale(input_name));
+  float input_scale = op_info->GetInputScale(input_name)[0];
+  CHECK(op_info->HasInputScale(filter_name));
+  std::vector<float> weight_scale = op_info->GetInputScale(filter_name);
+  CHECK(op_info->HasOutputScale(output_name));
+  float output_scale = op_info->GetOutputScale(output_name)[0];
 
-  if (op_info->HasAttr("enable_int8")) {
-    enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    input_scale = op_info->GetAttr<float>("input_scale");
-    output_scale = op_info->GetAttr<float>("output_scale");
-    weight_scale = op_info->GetAttr<std::vector<float>>("weight_scale");
-  }
+  TensorInfo qnt;
 
   // Input node
   std::shared_ptr<Node> input_node = nullptr;
@@ -89,10 +87,7 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
     in_tensor = input_node->data();
   } else {
     TensorInfoReset(&qnt);
-    if (enable_int8)
-      qnt.type = IMGDNN_TYPE_Q_U8;
-    else
-      qnt.type = IMGDNN_TYPE_F32;
+    qnt.type = IMGDNN_TYPE_Q_U8;
     qnt.scales.push_back(input_scale);
     qnt.zero_points.push_back(128);
     input_node = graph->Add(input_name, *input, qnt, Node::Role::kInput);
@@ -123,39 +118,32 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   bool is_depthwise_mode = (ic == groups && oc == groups && groups != 1);
 
   // Filter node
-  std::shared_ptr<Node> filter_node = nullptr;
-  imgdnn_tensor filter_tensor;
   bool per_channel = isScalesPerChannel(weight_scale);
   TensorInfoReset(&qnt);
   uint8_t *weights_u8 =
       graph->GetBuilder()->GetBufromPool(filter_dims.production());
-  if (enable_int8) {
-    char *weight_src = static_cast<char *>(filter->raw_data());
+  char *weight_src = static_cast<char *>(filter->raw_data());
 
-    qnt.type = IMGDNN_TYPE_Q_U8;
-    if (per_channel) {
-      qnt.scales.assign(weight_scale.begin(), weight_scale.end());
-      qnt.zero_points.assign(weight_scale.size(), 128);
-      qnt.count = oc;
-      qnt.axis = 1;
-    } else {
-      qnt.scales.push_back(weight_scale.at(0));
-      qnt.zero_points.push_back(128);
-    }
-    for (int i = 0; i < filter_dims.production(); i++) {
-      weights_u8[i] = static_cast<uint8_t>(weight_src[i] + 128);
-    }
-
-    filter_node = graph->Add(filter_name,
-                             weights_u8,
-                             filter_dims.Vectorize(),
-                             qnt,
-                             Node::Role::kConst);
-    filter_tensor = filter_node->data();
+  qnt.type = IMGDNN_TYPE_Q_U8;
+  if (per_channel) {
+    qnt.scales.assign(weight_scale.begin(), weight_scale.end());
+    qnt.zero_points.assign(weight_scale.size(), 128);
+    qnt.count = oc;
+    qnt.axis = 1;
   } else {
-    qnt.type = IMGDNN_TYPE_F32;
-    filter_node = graph->Add(filter_name, *filter, qnt, Node::Role::kConst);
+    qnt.scales.push_back(weight_scale.at(0));
+    qnt.zero_points.push_back(128);
   }
+  for (int i = 0; i < filter_dims.production(); i++) {
+    weights_u8[i] = static_cast<uint8_t>(weight_src[i] + 128);
+  }
+
+  std::shared_ptr<Node> filter_node = graph->Add(filter_name,
+                                                 weights_u8,
+                                                 filter_dims.Vectorize(),
+                                                 qnt,
+                                                 Node::Role::kConst);
+  imgdnn_tensor filter_tensor = filter_node->data();
 
   // Add bias node if exists bias
   // Supports the bias nodes with the following dimensions
@@ -192,46 +180,38 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
       }
 
       TensorInfoReset(&qnt);
-      std::vector<int64_t> shapes{1, oc};
-      auto bias_data = bias->data<float, float>();
-      if (enable_int8) {
-        qnt.type = IMGDNN_TYPE_I32;
-        if (per_channel) {
-          qnt.scales.resize(bias_data_size);
-          for (int i = 0; i < bias_data_size; i++)
-            qnt.scales[i] = input_scale * weight_scale[i];
-          qnt.zero_points.assign(bias_data_size, 0);
-          qnt.count = 2;
-          qnt.axis = 1;
-        } else {
-          qnt.scales.push_back(input_scale * weight_scale[0]);
-          qnt.zero_points.push_back(0);
-        }
-
-        int quant_bits = 32;
-        auto dtype_max = static_cast<int>((1 << (quant_bits - 1)) - 1);
-        auto dtype_min = static_cast<int>(0 - dtype_max);
-
-        int32_t *bias_qnt_data =
-            reinterpret_cast<int32_t *>(graph->GetBuilder()->GetBufromPool(
-                bias_dims.production() * sizeof(int32_t)));
-        for (int i = 0; i < bias_data_size; i++) {
-          float current_scale = per_channel ? qnt.scales[i] : qnt.scales[0];
-          bias_qnt_data[i] =
-              std::min(std::max(static_cast<int>(bias_data[i] / current_scale),
-                                dtype_min),
-                       dtype_max);
-        }
-
-        bias_node = graph->Add(
-            bias_name, bias_qnt_data, shapes, qnt, Node::Role::kConst);
+      qnt.type = IMGDNN_TYPE_I32;
+      if (per_channel) {
+        qnt.scales.resize(bias_data_size);
+        for (int i = 0; i < bias_data_size; i++)
+          qnt.scales[i] = input_scale * weight_scale[i];
+        qnt.zero_points.assign(bias_data_size, 0);
+        qnt.count = 2;
+        qnt.axis = 1;
       } else {
-        qnt.type = IMGDNN_TYPE_F32;
-        std::vector<float> bias_float_data(bias_data,
-                                           bias_data + bias_data_size);
-        bias_node = graph->Add(
-            bias_name, bias_float_data.data(), shapes, qnt, Node::Role::kConst);
+        qnt.scales.push_back(input_scale * weight_scale[0]);
+        qnt.zero_points.push_back(0);
       }
+
+      int quant_bits = 32;
+      auto dtype_max = static_cast<int>((1 << (quant_bits - 1)) - 1);
+      auto dtype_min = static_cast<int>(0 - dtype_max);
+
+      auto bias_data = bias->data<float, float>();
+      int32_t *bias_qnt_data =
+          reinterpret_cast<int32_t *>(graph->GetBuilder()->GetBufromPool(
+              bias_dims.production() * sizeof(int32_t)));
+      for (int i = 0; i < bias_data_size; i++) {
+        float current_scale = per_channel ? qnt.scales[i] : qnt.scales[0];
+        bias_qnt_data[i] = std::min(
+            std::max(static_cast<int>(bias_data[i] / current_scale), dtype_min),
+            dtype_max);
+      }
+
+      std::vector<int64_t> shapes{1, oc};
+      bias_node =
+          graph->Add(bias_name, bias_qnt_data, shapes, qnt, Node::Role::kConst);
+
       bias_tensor = bias_node->data();
     }
   }

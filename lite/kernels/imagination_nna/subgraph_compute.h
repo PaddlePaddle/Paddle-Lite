@@ -55,6 +55,7 @@ class SubgraphEngine : public subgraph::Engine {
   std::vector<imgdnn_input> device_itensors_;
   std::vector<imgdnn_output> device_otensors_;
   lite::imagination_nna::ImgdnnManager imgdnn_mgr_;
+  bool device_program_ready{false};
 };
 
 class SubgraphCompute : public KernelLite<TARGET(kImaginationNNA),

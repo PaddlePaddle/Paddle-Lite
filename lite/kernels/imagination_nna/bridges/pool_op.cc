@@ -32,6 +32,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " + op_type + "...";
 
+  CHECK(op_info->HasAttr("enable_int8") &&
+        op_info->GetAttr<bool>("enable_int8"));
+
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
@@ -43,11 +46,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
 
   // for quantization
-  float output_scale = 1.0;
-
-  if (op_info->HasAttr("enable_int8")) {
-    output_scale = op_info->GetAttr<float>("output_scale");
-  }
+  CHECK(op_info->HasOutputScale(out_name));
+  float output_scale = op_info->GetOutputScale(out_name)[0];
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
