@@ -254,8 +254,9 @@ template void elementwise_imod_compute_ref<int32_t>(
 template void elementwise_imod_compute_ref<int64_t>(
     const operators::ElementwiseParam& param, const std::string act_type);
 
-TEST(elementwise_add, compute) {
-  ElementwiseAddCompute<float, PRECISION(kFloat)> elementwise_add;
+template <typename T, PrecisionType PType>
+void elementwise_add_compute() {
+  ElementwiseAddCompute<T, PType> elementwise_add;
   operators::ElementwiseParam param;
   lite::Tensor x, y, output, output_ref;
 
@@ -305,10 +306,10 @@ TEST(elementwise_add, compute) {
               y.Resize(y_dim);
               output.Resize(x_dim);
               output_ref.Resize(x_dim);
-              auto* x_data = x.mutable_data<float>();
-              auto* y_data = y.mutable_data<float>();
-              auto* output_data = output.mutable_data<float>();
-              auto* output_ref_data = output_ref.mutable_data<float>();
+              T* x_data = x.mutable_data<T>();
+              T* y_data = y.mutable_data<T>();
+              T* output_data = output.mutable_data<T>();
+              T* output_ref_data = output_ref.mutable_data<T>();
               for (int i = 0; i < x_dim.production(); i++) {
                 x_data[i] = i;
               }
@@ -322,15 +323,44 @@ TEST(elementwise_add, compute) {
               elementwise_add.SetParam(param);
               elementwise_add.Run();
               param.Out = &output_ref;
-              elementwise_compute_ref<float>(param, "add", "");
-              for (int i = 0; i < output.dims().production(); i++) {
-                EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+              elementwise_compute_ref<T>(param, "add", "");
+              if (std::is_floating_point<T>::value) {
+                for (int i = 0; i < output.dims().production(); i++) {
+                  EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5)
+                      << "Value differ at index " << i;
+                }
+              } else {
+                for (int i = 0; i < output.dims().production(); i++) {
+                  EXPECT_EQ(output_data[i], output_ref_data[i])
+                      << "Value differ at index " << i;
+                }
               }
             }
           }
         }
       }
     }
+  }
+}
+
+TEST(elementwise_add, compute_fp32) {
+  elementwise_add_compute<float, PRECISION(kFloat)>();
+  if (::testing::Test::HasFailure()) {
+    FAIL();
+  }
+}
+
+TEST(elementwise_add, compute_i32) {
+  elementwise_add_compute<int32_t, PRECISION(kInt32)>();
+  if (::testing::Test::HasFailure()) {
+    FAIL();
+  }
+}
+
+TEST(elementwise_add, compute_i64) {
+  elementwise_add_compute<int64_t, PRECISION(kInt64)>();
+  if (::testing::Test::HasFailure()) {
+    FAIL();
   }
 }
 
