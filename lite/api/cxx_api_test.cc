@@ -131,7 +131,8 @@ TEST(CXXApi, save_model) {
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
 
   LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
-  predictor.SaveModel(FLAGS_optimized_model);
+  predictor.SaveModel(FLAGS_optimized_model,
+                      lite_api::LiteModelType::kProtobuf);
   predictor.SaveModel(FLAGS_optimized_model + ".naive",
                       lite_api::LiteModelType::kNaiveBuffer);
 }
