@@ -21,7 +21,6 @@ DEFINE_string(model_dir, "", "");
 
 namespace paddle {
 namespace lite {
-
 TEST(ModelParser, LoadProgram) {
   CHECK(!FLAGS_model_dir.empty());
   auto program = LoadProgram(FLAGS_model_dir + "/__model__");
@@ -117,7 +116,7 @@ TEST(ModelParser, SaveModelNaive) {
   cpp::ProgramDesc prog;
   Scope scope;
   LoadModelPb(FLAGS_model_dir, "", "", &scope, &prog);
-  const std::string save_pb_model_path = FLAGS_model_dir + ".saved.naive";
+  const std::string save_pb_model_path = FLAGS_model_dir + ".saved";
   SaveModelNaive(save_pb_model_path, scope, prog);
 }
 
@@ -126,7 +125,7 @@ TEST(ModelParser, LoadModelNaiveFromFile) {
   cpp::ProgramDesc prog;
   Scope scope;
 
-  auto model_path = std::string(FLAGS_model_dir) + ".saved.naive.nb";
+  auto model_path = std::string(FLAGS_model_dir) + ".saved.nb";
   LoadModelNaiveFromFile(model_path, &scope, &prog);
 }
 
@@ -135,7 +134,7 @@ TEST(ModelParser, LoadModelNaiveFromMemory) {
   cpp::ProgramDesc prog;
   Scope scope;
 
-  auto model_path = std::string(FLAGS_model_dir) + ".saved.naive.nb";
+  auto model_path = std::string(FLAGS_model_dir) + ".saved.nb";
   std::string model_buffer = lite::ReadFile(model_path);
   LoadModelNaiveFromMemory(model_buffer, &scope, &prog);
 }
