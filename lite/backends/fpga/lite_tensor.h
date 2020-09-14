@@ -78,7 +78,11 @@ class DDimLite {
   }
 
   friend bool operator!=(const DDimLite &a, const DDimLite &b) {
-    return !(a == b);
+    if (a.size() != b.size()) return true;
+    for (size_t i = 0; i < a.size(); i++) {
+      if (a[i] != b[i]) return true;
+    }
+    return false;
   }
 
  private:
@@ -93,7 +97,7 @@ class TensorLite {
   TensorLite() : buffer_(std::make_shared<Buffer>()) {}
 
   template <typename DType, typename DimT, TargetType Target>
-  void Assign(DType *data, const DimT &dim) {
+  void Assign(const DType *data, const DimT &dim) {
     Resize(dim);
     auto *dst = mutable_data<DType, void>(Target);
     CopySync<Target>(
@@ -107,10 +111,11 @@ class TensorLite {
   template <typename T, typename R = T>
   const R *data() const {
     return zynq_tensor_->data<R>() + offset_;
+    // return zynq_tensor_->data<R>();
   }
 
   void Resize(const DDimLite &ddim) { dims_ = ddim; }
-  void Resize(const std::vector<int64_t> &x) { dims_ = DDimLite(x); }
+  void Resize(const std::vector<int64_t> &x) { dims_.ConstructFrom(x); }
 
   const DDimLite &dims() const { return dims_; }
   int64_t numel() const { return dims_.production(); }
@@ -142,7 +147,16 @@ class TensorLite {
   void *mutable_data(size_t memory_size);
   void *mutable_data(TargetType target, size_t memory_size);
 
-  const void *raw_data() const { return buffer_->data(); }
+  const void *raw_data() const {
+    return buffer_->data();
+  }  // TODO(chonwhite) delete buffer;
+
+  void clear() {
+    // zynq_tensor_->releaseData();
+    if (zynq_tensor_) {
+      memset(zynq_tensor_->data<void>(), 0, zynq_tensor_->memorySize());
+    }
+  }
 
   size_t data_size() const { return this->dims().production(); }
 
@@ -150,16 +164,18 @@ class TensorLite {
 
   size_t offset() const { return offset_; }
 
-  bool IsInitialized() const { return buffer_->data(); }
-  void clear() {
-    buffer_->Free();
-    offset_ = 0;
-  }
+  bool IsInitialized() const {
+    return buffer_->data();
+  }  // TODO(chonwhite) delete buffer;
 
   // Other share data to this.
   void ShareDataWith(const TensorLite &other);
 
   void CopyDataFrom(const TensorLite &other);
+
+  void ResetBuffer(std::shared_ptr<Buffer> buffer, size_t memory_size) {
+    // TODO(chonwhite) deal with buffer;
+  }
 
   template <typename T>
   TensorLite Slice(int64_t begin, int64_t end) const;
@@ -169,7 +185,10 @@ class TensorLite {
 
   TargetType target() const { return target_; }
 
-  zynqmp::Tensor *ZynqTensor() const { return zynq_tensor_; }
+  // template <typename T>
+  // TensorLite Slice(int64_t begin, int64_t end) const;
+
+  zynqmp::Tensor *ZynqTensor() const { return zynq_tensor_.get(); }
 
   friend std::ostream &operator<<(std::ostream &os, const TensorLite &tensor) {
     os << "Tensor:" << '\n';
@@ -189,7 +208,7 @@ class TensorLite {
   // set values of precision_ and persistable_ after updating it.
   // If your tensor is just a temp tensor, such as activations,
   // you can ignore these two attributes.
-  PrecisionType precision_{PrecisionType::kUnk};
+  PrecisionType precision_{PrecisionType::kFloat};
   bool persistable_{false};
 
   DDimLite dims_;
@@ -198,11 +217,61 @@ class TensorLite {
   size_t memory_size_{};
   size_t offset_{0};
 
-  zynqmp::Tensor *zynq_tensor_ = new zynqmp::Tensor();
+  std::shared_ptr<zynqmp::Tensor> zynq_tensor_;
 
   template <typename T>
   void mutable_data_internal();
 };
+
+template <typename T>
+zynqmp::DataType get_date_type() {
+  zynqmp::DataType data_type = zynqmp::FP32;
+  if (typeid(T) == typeid(float)) {
+    data_type = zynqmp::FP32;
+  }
+  if (typeid(T) == typeid(zynqmp::float16)) {
+    data_type = zynqmp::FP16;
+  }
+  if (typeid(T) == typeid(int)) {
+    data_type = zynqmp::INT32;
+  }
+  if (typeid(T) == typeid(int32_t)) {
+    data_type = zynqmp::INT32;
+  }
+  if (typeid(T) == typeid(int8_t)) {
+    data_type = zynqmp::INT8;
+  }
+  if (typeid(T) == typeid(int64_t)) {
+    data_type = zynqmp::INT64;
+  }
+
+  return data_type;
+}
+
+template <typename T>
+PrecisionType get_precistion_type() {
+  PrecisionType data_type = PrecisionType::kUnk;
+  if (typeid(T) == typeid(float)) {
+    data_type = PrecisionType::kFloat;
+  }
+  if (typeid(T) == typeid(zynqmp::float16)) {
+    data_type = PrecisionType::kFP16;
+  }
+  if (typeid(T) == typeid(int)) {
+    data_type = PrecisionType::kInt32;
+  }
+  if (typeid(T) == typeid(int32_t)) {
+    data_type = PrecisionType::kInt32;
+  }
+  if (typeid(T) == typeid(int8_t)) {
+    data_type = PrecisionType::kInt8;
+  }
+  if (typeid(T) == typeid(int64_t)) {
+    data_type = PrecisionType::kInt64;
+  }
+
+  return data_type;
+}
 
 template <typename T, typename R>
 R *TensorLite::mutable_data() {
@@ -229,14 +298,13 @@ R *TensorLite::mutable_data() {
       break;
   }
   zynqmp::Shape input_shape(layout_type, v);
+  zynqmp::DataType data_type = get_date_type<T>();
+  precision_ = get_precistion_type<T>();
 
-  zynqmp::DataType data_type = zynqmp::FP32;
-  if (typeid(T) == typeid(float)) {
-    data_type = zynqmp::FP32;
+  if (zynq_tensor_.get() == nullptr) {
+    zynq_tensor_.reset(new zynqmp::Tensor());
   }
-  if (typeid(T) == typeid(zynqmp::float16)) {
-    data_type = zynqmp::FP16;
-  }
+
   return zynq_tensor_->mutableData<R>(data_type, input_shape);
 }
 
@@ -268,14 +336,13 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
     memcpy(dst_data,
            src_data + static_cast<size_t>(begin * base) * sizeof(T),
            dst_dims.production() * sizeof(T));
-    dst.ZynqTensor()->saveToFile("_slice", true);
-
     return dst;
   }
 }
 
 template <typename T>
 void TensorLite::Slice(TensorLite &dst, int64_t begin, int64_t end) const {
+  // TODO(chonwhite) delete this function;
   CHECK_GE(begin, 0);
   CHECK_LE(end, dims_[0]);
   CHECK_LT(begin, end);

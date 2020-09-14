@@ -59,6 +59,7 @@ static void softmax(Tensor *X, Tensor *Y) {
   int batch_size = X->shape().num();
   int num_classes = dims[X->shape().dimSize() - 1];
   int channels = X->shape().numel() / batch_size / num_classes;
+
   float *x = X->data<float>();
   float *y = Y->mutableData<float>();
 
@@ -140,11 +141,11 @@ bool SoftmaxPE::init() {
 bool SoftmaxPE::dispatch() {
   Tensor *input = param_.input;
   Tensor *output = param_.output;
-  input->syncToCPU();
 
   Tensor float_input;
   Tensor float_output;
   float_input.mutableData<float>(DataType::FP32, input->shape());
+  input->syncToDevice();
   float_input.copyFrom(input);
 
   float *out_data =
@@ -154,6 +155,7 @@ bool SoftmaxPE::dispatch() {
   float_output.flush();
 
   output->copyFrom(&float_output);
+  output->flush();
   return true;
 }
 

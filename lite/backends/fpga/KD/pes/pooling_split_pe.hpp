@@ -15,15 +15,32 @@ limitations under the License. */
 #pragma once
 
 #include <algorithm>
+#include <vector>
 
 #include "lite/backends/fpga/KD/pe.hpp"
 #include "lite/backends/fpga/KD/pe_params.hpp"
+#include "lite/backends/fpga/KD/pes/concat_pe.hpp"
+#include "lite/backends/fpga/KD/pes/elementwise_add_pe.hpp"
+#include "lite/backends/fpga/KD/pes/pooling_process.hpp"
+#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
+#include "lite/backends/fpga/KD/pes/split_pe.hpp"
 
 namespace paddle {
 namespace zynqmp {
 
-class PoolingPE : public PE {
+class PoolingSplitPE : public PE {
  public:
+  inline int gcd_(int a, int b) {
+    while (b) {
+      int temp = a;
+      a = b;
+      b = temp % b;
+    }
+    return a;
+  }
+
+  inline int lcm_(int a, int b) { return a * b / gcd_(a, b); }
+
   bool init() {
     Tensor* output = param_.output;
     output->setAligned(true);
@@ -32,11 +49,13 @@ class PoolingPE : public PE {
   }
 
   void apply() {
-    Tensor* input = param_.input;
-    Tensor* output = param_.output;
+    PoolingParam& param = param_;
+    Tensor* input = param.input;
+    Tensor* output = param.output;
+    int channel = output->shape().channel();
 
-    uint32_t k_height = 1;
-    uint32_t k_width = 1;
+    int k_height = param_.kernelSize[1];
+    int k_width = param_.kernelSize[0];
 
     if (param_.globalPooling) {
       k_width = input->shape().width();
@@ -48,32 +67,32 @@ class PoolingPE : public PE {
       k_width = param_.kernelSize[1];
     }
 
-    PoolingArgs args = {0};
-    args.mode = param_.type;
-    if (param_.globalPooling) {
-      args.kernel_reciprocal = fp32_2_fp16(1.0f);
-    } else {
-      args.kernel_reciprocal = fp32_2_fp16(1.0f / (k_width * k_height));
-    }
-    args.image.address = input->data<float16>();
-    args.image.channels = input->shape().channel();
-    args.image.height = input->shape().height();
-    args.image.width = input->shape().width();
-    args.image.pad_height = param_.paddings[0];
-    args.image.pad_width = param_.paddings[1];
-    args.image.scale_address = input->scale();
-    args.output.address = output->mutableData<float16>();
-    args.output.scale_address = output->scale();
-    args.kernel.height = k_height;
-    args.kernel.width = k_width;
-    args.kernel.stride_h = param_.strides[0];
-    args.kernel.stride_w = param_.strides[1];
-    args.out_height = output->shape().height();
-    args.out_width = output->shape().width();
-    param_.poolingArgs = args;
-
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
                (k_width > 255 || k_height > 255);
+
+    if (use_cpu_) {
+      return;
+    }
+
+    pooling_split_channel(param, splitParams_);
+
+    if (splitParams_.size() > 1) {
+      SplitParam& split_param = splitPE_.param();
+      split_param.input = param_.input;
+      for (auto pooling_param : splitParams_) {
+        split_param.outputs.push_back(pooling_param->input);
+      }
+      splitPE_.init();
+      splitPE_.apply();
+
+      ConcatParam& concat_param = concatPE_.param();
+      for (auto pooling_param : splitParams_) {
+        concat_param.inputs.push_back(pooling_param->output);
+      }
+      concat_param.output = param_.output;
+      concatPE_.init();
+      concatPE_.apply();
+    }
   }
 
   void compute() {
@@ -122,6 +141,7 @@ class PoolingPE : public PE {
             for (int w = wstart; w < wend; ++w) {
               const int index = (h * image_width + w) * image_channels + c;
               float value = image_addr[index];
+              // ofs_out << value << std::endl;
               sum += value;
             }
           }
@@ -139,69 +159,24 @@ class PoolingPE : public PE {
     output->flush();
   }
 
-  void cpu_compute1() {
-    Tensor* input = param_.input;
-    Tensor* output = param_.output;
-    input->syncToCPU();
-
-    Tensor float_input;
-    float_input.mutableData<float>(FP32, input->shape());
-    float_input.copyFrom(input);
-    float16* data_out = output->data<float16>();
-
-    int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
-
-    float scale_max = 0;
-    for (int i = 0; i < output->shape().channel(); i++) {
-      float sum = 0;
-      for (int j = 0; j < kernel_hw; j++) {
-        float value = half_to_float(input->data<float16>()[i * kernel_hw + j]);
-        sum += value;
-      }
-      float value = sum / kernel_hw;
-      data_out[i] = float_to_half(value);
-      scale_max = std::max(scale_max, std::abs(value));
-    }
-    output->scale()[0] = scale_max / 127.0f;
-    output->scale()[1] = 127.0f / scale_max;
-    output->flush();
-  }
-
-  void cpu_compute() {
-    Tensor* input = param_.input;
-    Tensor* output = param_.output;
-    input->syncToCPU();
-
-    Tensor float_input;
-    float* float_input_data =
-        float_input.mutableData<float>(FP32, input->shape());
-    float_input.copyFrom(input);
-
-    float16* data_out = output->data<float16>();
-
-    int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
-
-    float scale_max = 0;
-    for (int i = 0; i < output->shape().channel(); i++) {
-      float sum = 0;
-      for (int j = 0; j < kernel_hw; j++) {
-        sum += float_input_data[i * kernel_hw + j];
-      }
-      float value = sum / kernel_hw;
-      data_out[i] = float_to_half(value);
-      scale_max = std::max(scale_max, std::abs(value));
-    }
-    output->scale()[0] = scale_max / 127.0f;
-    output->scale()[1] = 127.0f / scale_max;
-    output->flush();
-  }
-
   bool dispatch() {
+    Tensor* output = param_.output;
+    param_.input->syncToDevice();
+
     if (use_cpu_) {
-      // cpu_compute();
       compute();
       return true;
     }
+
+    if (splitParams_.size() > 1) {
+      splitPE_.dispatch();
+    }
+
+    int ret = 0;
+    int index = 0;
+
+    InplaceArgs inplace_ = {0};
+    GlobalPoolArgs globalPoolArgs;
     if (param_.globalPooling) {
       inplace_.relu_enable = false;
       inplace_.leaky_relu_enable = false;
@@ -213,10 +188,17 @@ class PoolingPE : public PE {
       int kernel_height = param_.kernelSize[1];
       int kernel_width = param_.kernelSize[0];
       globalPoolArgs.global_pool_factor =
-          float_to_half(1.0f / (kernel_height * kernel_width));
+          fp32_2_fp16(1.0f / (kernel_height * kernel_width));
       config_global_pool(globalPoolArgs);
     }
-    int ret = (compute_fpga_pool(param_.poolingArgs) == 0);
+    for (auto pooling_param : splitParams_) {
+      ret |= compute_fpga_pool(pooling_param->poolingArgs);
+
+      float* scale_address = pooling_param->poolingArgs.output.scale_address;
+      output->scale()[0] = scale_address[0];
+      output->scale()[1] = scale_address[1];
+    }
+
     if (param_.globalPooling) {
       inplace_.relu_enable = false;
       inplace_.leaky_relu_enable = false;
@@ -224,20 +206,36 @@ class PoolingPE : public PE {
       inplace_.sigmoid_enable = false;
       inplace_.global_pool_en = false;
       config_inplace(inplace_);
-      globalPoolArgs.global_pool_factor = float_to_half(0);
+      globalPoolArgs.global_pool_factor = fp32_2_fp16(1.0f);
       config_global_pool(globalPoolArgs);
     }
 
+    if (splitParams_.size() > 1) {
+      concatPE_.dispatch();
+    }
+
     return ret;
+  }
+
+  ~PoolingSplitPE() {
+    for (auto pooling_param : splitParams_) {
+      if (splitParams_.size() > 1) {
+        delete pooling_param->input;
+        delete pooling_param->output;
+        delete pooling_param;
+      }
+    }
+    splitParams_.clear();
   }
 
   PoolingParam& param() { return param_; }
 
  private:
   PoolingParam param_;
-  bool use_cpu_;
-  InplaceArgs inplace_ = {0};
-  GlobalPoolArgs globalPoolArgs;
+  ConcatPE concatPE_;
+  SplitPE splitPE_;
+  std::vector<PoolingParam*> splitParams_;
+  bool use_cpu_ = false;
 };
 
 }  // namespace zynqmp

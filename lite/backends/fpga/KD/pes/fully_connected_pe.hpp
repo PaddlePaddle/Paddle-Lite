@@ -38,7 +38,7 @@ class FullyConnectedPE : public PE {
     Tensor* input = param_.input;
     convParam_.input = param_.input;
     convParam_.output = param_.output;
-    // convParam_.relu = param_.relu;
+
     convParam_.activeParam.type = param_.activeParam.type;
     convParam_.groups = 1;
     convParam_.strides = {1, 1};
@@ -48,9 +48,6 @@ class FullyConnectedPE : public PE {
 
     int num = param_.filter->shape().channel();
     int chw = param_.filter->shape().num();
-    // if (num == 2) {
-    //   return;
-    // }
 
     int height = param_.input->shape().height();
     int width = param_.input->shape().width();

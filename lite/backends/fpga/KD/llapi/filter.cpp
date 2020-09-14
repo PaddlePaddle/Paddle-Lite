@@ -31,7 +31,7 @@ void saveToFile(std::string name, void* data_in, int size) {
   std::ofstream ofs;
   ofs.open(name);
 
-  int8_t* data = static_cast<int8_t*>(data_in);
+  int8_t* data = reinterpret_cast<int8_t*>(data_in);
   for (int i = 0; i < size; i++) {
     float value = data[i];
     ofs << value << std::endl;
@@ -86,6 +86,11 @@ int calc_num_per_div(int num, int group_num, int division_capacity) {
 
 int calc_pack_num(int num_per_group, int group, int division_capacity) {
   auto n = 1;
+  if (num_per_group * group % division_capacity == 0) {
+    n = num_per_group * group / division_capacity;
+    return n;
+  }
+
   while ((num_per_group * (group + n - 1) / n) > division_capacity) {
     n++;
   }
@@ -239,9 +244,10 @@ int8_t* format_filter(float* data_in,
 
   for (int n = 0; n < num; n++) {
     float* filter_start = data_in + n * chw;
+    float f_max = find_max(filter_start, chw);
     int8_t* quantized_start = quantized_data + n * chw;
-    quantize(filter_start, quantized_start, chw, max);
-    filter_max.push_back(1);
+    quantize(filter_start, quantized_start, chw, f_max);
+    filter_max.push_back(f_max);
   }
 
   int8_t* hwc_data =
@@ -377,7 +383,6 @@ size_t format_dwconv_filter(
     float** data_in, int num, int height, int width, float* scale_ptr) {
   quantize_to_fp16(data_in, num, height, width, scale_ptr);
   int16_t** quantize_data = reinterpret_cast<int16_t**>(data_in);
-
   convert_to_hwn(quantize_data, num, height, width);
   size_t size = align_element_n(quantize_data, num, height, width);
   fpga_flush(*quantize_data,
@@ -385,6 +390,7 @@ size_t format_dwconv_filter(
                  sizeof(int16_t));
   return size;
 }
+
 }  // namespace filter
 }  // namespace zynqmp
 }  // namespace paddle

@@ -106,73 +106,74 @@ class Optimizer {
     (defined LITE_WITH_ARM)
           "lite_elementwise_activation_fuse_pass",  //
 #endif
-          "identity_dropout_eliminate_pass",
-          "__xpu__resnet_fuse_pass",
-          "__xpu__resnet_d_fuse_pass",
-          "__xpu__resnet_cbam_fuse_pass",
-          "__xpu__conv2d_fuse_pass",
-          "__xpu__conv2d_link_previous_out_max_pass",
-          "__xpu__sfa_head_meanstd_fuse_pass",
-          "__xpu__sfa_head_moment_fuse_pass",
-          "__xpu__mmdnn_fuse_pass",
-          "__xpu__multi_encoder_fuse_pass",
-          "__xpu__embedding_with_eltwise_add_fuse_pass",
-          "__xpu__fc_fuse_pass",
-          "quantized_op_attributes_inference_pass",  // Only for fully
-                                                     // quantized model, infer
-                                                     // the output scale and
-                                                     // fix the attribute
-                                                     // 'enable_int8' for all
-                                                     // of the quantized ops.
-          "npu_subgraph_pass",
-          "huawei_ascend_npu_subgraph_pass",
-          "xpu_subgraph_pass",
-          "bm_subgraph_pass",
-          "apu_subgraph_pass",
-          "rknpu_subgraph_pass",
-          "mlu_subgraph_pass",
-          "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
-          "static_kernel_pick_pass",  // pick original kernel from graph
+           "identity_dropout_eliminate_pass",
+           "__xpu__resnet_fuse_pass",
+           "__xpu__resnet_d_fuse_pass",
+           "__xpu__resnet_cbam_fuse_pass",
+           "__xpu__conv2d_fuse_pass",
+           "__xpu__conv2d_link_previous_out_max_pass",
+           "__xpu__sfa_head_meanstd_fuse_pass",
+           "__xpu__sfa_head_moment_fuse_pass",
+           "__xpu__mmdnn_fuse_pass",
+           "__xpu__multi_encoder_fuse_pass",
+           "__xpu__embedding_with_eltwise_add_fuse_pass",
+           "__xpu__fc_fuse_pass",
+           "quantized_op_attributes_inference_pass",  // Only for fully
+                                                      // quantized model, infer
+                                                      // the output scale and
+                                                      // fix the attribute
+                                                      // 'enable_int8' for all
+                                                      // of the quantized ops.
+           "npu_subgraph_pass",
+           "huawei_ascend_npu_subgraph_pass",
+           "xpu_subgraph_pass",
+           "bm_subgraph_pass",
+           "apu_subgraph_pass",
+           "rknpu_subgraph_pass",
+           "mlu_subgraph_pass",
+           "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
+           "static_kernel_pick_pass",  // pick original kernel from graph
 
-          "remove_tf_redundant_ops_pass",
-          "variable_place_inference_pass",  // inference arg/var's
+           "remove_tf_redundant_ops_pass",
+           "variable_place_inference_pass",  // inference arg/var's
 
-          "mlu_postprocess_pass",
-          // info(target/precision/layout/device)
-          // using kernel info
-          "argument_type_display_pass",  // debug pass: show arg-type-node's
-                                         // info
-                                         // (target/precision/layout/device)
+           "mlu_postprocess_pass",
+           // info(target/precision/layout/device)
+           // using kernel info
+           "argument_type_display_pass",  // debug pass: show arg-type-node's
+                                          // info
+                                          // (target/precision/layout/device)
 
-          "type_target_cast_pass",  // add io_copy/io_copy_once if meet
-                                    // different targets when last and next
-                                    // node
-          "variable_place_inference_pass",  //
-          "argument_type_display_pass",     //
+           "type_target_cast_pass",  // add io_copy/io_copy_once if meet
+                                     // different targets when last and next
+                                     // node
+           "variable_place_inference_pass",  //
+           "argument_type_display_pass",     //
 
-          "io_copy_kernel_pick_pass",    //
-          "argument_type_display_pass",  //
+           "io_copy_kernel_pick_pass",    //
+           "argument_type_display_pass",  //
 
-          "variable_place_inference_pass",  //
-          "argument_type_display_pass",     //
+           "variable_place_inference_pass",  //
+           "argument_type_display_pass",     //
 
-          "type_precision_cast_pass",       //
-          "variable_place_inference_pass",  //
-          "argument_type_display_pass",     //
+           "type_precision_cast_pass",       //
+           "variable_place_inference_pass",  //
+           "argument_type_display_pass",     //
 
-          "type_layout_cast_pass",  // add layout/layout_once op if meet
-                                    // different layout when last and next node
-          "argument_type_display_pass",  //
+           "type_layout_cast_pass",  // add layout/layout_once op if meet
+                                     // different layout when last and next node
+           "argument_type_display_pass",  //
 
-          "variable_place_inference_pass",  //
-          "argument_type_display_pass",
+           "variable_place_inference_pass",  //
+           "argument_type_display_pass",
 
-          "runtime_context_assign_pass",
-          "argument_type_display_pass",
-          "lite_reshape_fuse_pass",
-          "memory_optimize_pass"  // you can comment this line when enable
-                                  // PRECISION_PROFILE
-      }};
+           "runtime_context_assign_pass",
+           "argument_type_display_pass",
+           "lite_reshape_fuse_pass",
+#if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
+           "memory_optimize_pass"
+#endif
+          }};
 
       if (passes.size() == 1) {
         // multi_stream_analysis_pass must be in the front of

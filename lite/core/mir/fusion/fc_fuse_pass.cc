@@ -32,9 +32,12 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser(graph.get());
 #endif
 #endif
-
   fusion::FcFuser fuser2(false);
   fuser2(graph.get());
+#ifdef LITE_WITH_FPGA
+  fusion::FcFuser fpga_fuser(true);
+  fpga_fuser(graph.get());
+#endif
 }
 
 }  // namespace mir
