@@ -21,6 +21,41 @@ namespace lite {
 namespace arm {
 namespace math {
 
+// todo: remove this function when all elementwise_add works
+template <typename T>
+static void naive_elementwise_op(
+    const T* dinx, const T* diny, T* dout, int num, std::function<T(T, T)> op) {
+  for (int i = 0; i < num; ++i) {
+    *dout = op(*dinx, *diny);
+    ++dinx;
+    ++diny;
+    ++dout;
+  }
+}
+// todo: remove this function when all elementwise_add works
+template <typename T>
+static T naive_add(T l, T r) {
+  return l + r;
+}
+
+// todo: use arm intrinsics
+template <>
+void elementwise_add<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  naive_elementwise_op<int32_t>(dinx, diny, dout, num, naive_add<int32_t>);
+}
+
+// todo: use arm intrinsics
+template <>
+void elementwise_add<int64_t>(const int64_t* dinx,
+                              const int64_t* diny,
+                              int64_t* dout,
+                              int num) {
+  naive_elementwise_op<int64_t>(dinx, diny, dout, num, naive_add<int64_t>);
+}
+
 template <>
 void elementwise_add<float>(const float* dinx,
                             const float* diny,
@@ -176,6 +211,54 @@ void elementwise_add_tanh<float>(const float* dinx,
       diny_ptr++;
     }
   }
+}
+
+// todo: remove this function when all elementwise_add works
+template <typename T>
+static void naive_elementwise_op_broadcast(const T* x_data,
+                                           const T* y_data,
+                                           T* out_data,
+                                           int batch,
+                                           int channels,
+                                           int num,
+                                           std::function<T(T, T)> op) {
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const T* din_ptr = x_data + offset;
+      const T diny_data = y_data[j];
+      T* dout_ptr = out_data + offset;
+      for (int k = 0; k < num; ++k) {
+        *dout_ptr = op(*din_ptr, diny_data);
+        dout_ptr++;
+        din_ptr++;
+      }
+    }
+  }
+}
+
+// todo: use arm intrinsics
+template <>
+void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+  naive_elementwise_op_broadcast<int32_t>(
+      dinx, diny, dout, batch, channels, num, naive_add<int32_t>);
+}
+
+// todo: use arm intrinsics
+template <>
+void elementwise_add_broadcast<int64_t>(const int64_t* dinx,
+                                        const int64_t* diny,
+                                        int64_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+  naive_elementwise_op_broadcast<int64_t>(
+      dinx, diny, dout, batch, channels, num, naive_add<int64_t>);
 }
 
 template <>
