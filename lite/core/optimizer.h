@@ -135,7 +135,7 @@ class Optimizer {
 
            "remove_tf_redundant_ops_pass",
            "variable_place_inference_pass",  // inference arg/var's
-
+           "kernel_place_correct_pass",
            "mlu_postprocess_pass",
            // info(target/precision/layout/device)
            // using kernel info
@@ -169,7 +169,7 @@ class Optimizer {
            "runtime_context_assign_pass",
            "argument_type_display_pass",
            "lite_reshape_fuse_pass",
-#ifndef LITE_WITH_PRECISION_PROFILE
+#if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
            "memory_optimize_pass"
 #endif
           }};

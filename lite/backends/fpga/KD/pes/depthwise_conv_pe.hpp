@@ -61,11 +61,6 @@ class DepthwiseConvPE : public PE {
     float16* b_data = bias_.mutableData<float16>(FP16, shape);
     if (param_.bias()->dataType() == FP32) {
       float* new_bias_data = param_.bias()->data<float>();
-      // bias从float转换成float16
-      // for (int i = 0; i < channel; i++) {
-      //   b_data[i] = float_to_half(new_bias_data[i]);
-      // }
-      // bias 按16对齐填充hw
       for (int i = 0; i < repeat; i++) {
         for (int j = 0; j < length; j++) {
           float16 value = float_to_half(new_bias_data[j]);
@@ -75,10 +70,8 @@ class DepthwiseConvPE : public PE {
       bias_.flush();
     } else {
       float16* new_bias_data = param_.bias()->data<float16>();
-      // memcpy(b_data, new_bias_data, channel * sizeof(float16));
       for (int i = 0; i < repeat; i++) {
         for (int j = 0; j < length; j++) {
-          // float16 value = float_to_half(bias_data_float[j]);
           b_data[i * length + j] = new_bias_data[j];
         }
       }
@@ -92,12 +85,10 @@ class DepthwiseConvPE : public PE {
       format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
 
     } else {
-      // filter 全为1时，且channal为对齐时
+      // TODO(chonwhite) filter fall one and channel aligned case
       float16* scale_data = param_.scale()->data<float16>();
       float16* filter_data = param.quantizedFilter()->mutableData<float16>(
           FP16, param.filter->shape());
-
-      // memcpy(filter_data, scale_data, channel * sizeof(float16));
       memcpy(filter_data,
              scale_data,
              param.filter->shape().numel() * sizeof(float16));

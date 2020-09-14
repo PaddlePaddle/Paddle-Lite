@@ -16,6 +16,7 @@
 #include <algorithm>
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/pes/pooling_pe.hpp"
+#include "lite/backends/fpga/KD/pes/pooling_split_pe.hpp"
 #include "lite/core/kernel.h"
 #include "lite/operators/pool_op.h"
 
@@ -36,6 +37,8 @@ class PoolCompute
 
  private:
   zynqmp::PoolingPE pe_;
+  zynqmp::PoolingSplitPE split_pe_;
+  int split_num_ = 1;
 };
 
 }  // namespace fpga

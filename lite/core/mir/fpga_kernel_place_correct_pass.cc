@@ -12,36 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/core/mir/fpga_kernel_place_correct_pass.h"
+#include <memory>
+#include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace fpga {
+namespace mir {
 
-using float16 = zynqmp::float16;
+void KernelPlaceCorrectPass::Apply(const std::unique_ptr<SSAGraph> &graph) {
+  CorrectArgumentPlace(graph.get());
+}
 
-class ScaleCompute
-    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
- public:
-  using param_t = operators::ScaleParam;
-
-  void PrepareForRun() override;
-  void Run() override;
-
-  virtual ~ScaleCompute() = default;
-
- private:
-  zynqmp::ScalePE pe_;
-  zynqmp::Tensor scale_;
-  zynqmp::Tensor bias_;
-};
-
-}  // namespace fpga
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_MIR_PASS(kernel_place_correct_pass,
+                  paddle::lite::mir::KernelPlaceCorrectPass)
+    .BindTargets({TARGET(kFPGA)});

@@ -25,12 +25,46 @@ namespace kernels {
 namespace fpga {
 
 using float16 = zynqmp::float16;
+using lite_api::ActivationType;
 
 void ConvCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   param.output->mutable_data<float16>();
   int pad_h = (*param.paddings)[0];
   int pad_w = (*param.paddings)[2];
+
+  zynqmp::ActiveType active_type = zynqmp::TYPE_NONE;
+  float leaky_relu_factor = 0;
+
+  switch (param.activation_param.active_type) {
+    case ActivationType::kIndentity:
+      active_type = zynqmp::TYPE_NONE;
+      break;
+    case ActivationType::kRelu:
+      active_type = zynqmp::TYPE_RELU;
+      break;
+    case ActivationType::kRelu6:
+      active_type = zynqmp::TYPE_RELU6;
+      break;
+    case ActivationType::kPRelu:
+    case ActivationType::kLeakyRelu:
+      active_type = zynqmp::TYPE_LEAKY_RELU;
+      leaky_relu_factor = param.activation_param.Leaky_relu_alpha;
+      break;
+    case ActivationType::kSigmoid:
+      active_type = zynqmp::TYPE_SIGMOID;
+      break;
+    case ActivationType::kTanh:
+    case ActivationType::kSwish:
+    case ActivationType::kExp:
+    case ActivationType::kAbs:
+    case ActivationType::kHardSwish:
+    case ActivationType::kReciprocal:
+    default:
+      throw("not supported activation");
+      break;
+  }
+
   // ====================================================
   if (param.x->ZynqTensor()->shape().channel() != 1 &&
       param.groups == param.x->ZynqTensor()->shape().channel()) {
@@ -45,11 +79,12 @@ void ConvCompute::PrepareForRun() {
     conv_param.paddings = std::vector<int>({pad_h, pad_w});
     conv_param.dilations = *param.dilations;
     fill_scale_bias_const(&conv_param);
-    conv_param.bias()->copyFrom(param.bias->ZynqTensor());
-
-    if (param.fuse_relu) {
-      conv_param.activeParam.type = zynqmp::TYPE_RELU;
+    if (param.bias != nullptr) {
+      conv_param.bias()->copyFrom(param.bias->ZynqTensor());
     }
+
+    conv_param.activeParam.type = active_type;
+    conv_param.activeParam.leaky_relu_factor = leaky_relu_factor;
 
     dw_conv_pe_.init();
     dw_conv_pe_.apply();
@@ -68,15 +103,8 @@ void ConvCompute::PrepareForRun() {
       conv_param.bias()->copyFrom(param.bias->ZynqTensor());
     }
 
-    if (param.fuse_relu) {
-      conv_param.activeParam.type = zynqmp::TYPE_RELU;
-    }
-
-    // conv_param.filter->saveToFile("conv_filter_", true);
-    // if (param.bias != nullptr) {
-    //   std::cout << "param.bias != nullptr" << std::endl;
-    //   conv_param.bias()->saveToFile("conv_bias_", true);
-    // }
+    conv_param.activeParam.type = active_type;
+    conv_param.activeParam.leaky_relu_factor = leaky_relu_factor;
 
     conv_pe_.init();
     conv_pe_.apply();
@@ -93,9 +121,7 @@ void ConvCompute::Run() {
     Debugger::get_instance().registerOutput("dwconv", dwconv_param.output);
 #endif
   } else {
-    // zynqmp::ConvParam& conv_param = conv_pe_.param();
     conv_pe_.dispatch();
-
 #ifdef FPGA_PRINT_TENSOR
     zynqmp::ConvParam& conv_param = conv_pe_.param();
     Debugger::get_instance().registerOutput("conv", conv_param.output);
