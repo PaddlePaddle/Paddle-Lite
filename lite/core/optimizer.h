@@ -135,7 +135,7 @@ class Optimizer {
 
            "remove_tf_redundant_ops_pass",
            "variable_place_inference_pass",  // inference arg/var's
-
+           "kernel_place_correct_pass",
            "mlu_postprocess_pass",
            // info(target/precision/layout/device)
            // using kernel info
@@ -169,8 +169,10 @@ class Optimizer {
            "runtime_context_assign_pass",
            "argument_type_display_pass",
            "lite_reshape_fuse_pass",
-
-           "memory_optimize_pass"}};
+#ifndef LITE_WITH_FPGA
+           "memory_optimize_pass"
+#endif
+          }};
 
       if (passes.size() == 1) {
         // multi_stream_analysis_pass must be in the front of

@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
+#include <string>
+#include "lite/backends/fpga/KD/pes/resize_pe.hpp"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -23,25 +23,28 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
-
-class ScaleCompute
+class BilinearInterpCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
-  using param_t = operators::ScaleParam;
-
-  void PrepareForRun() override;
   void Run() override;
 
-  virtual ~ScaleCompute() = default;
-
- private:
-  zynqmp::ScalePE pe_;
-  zynqmp::Tensor scale_;
-  zynqmp::Tensor bias_;
+  virtual ~BilinearInterpCompute() = default;
 };
 
-}  // namespace fpga
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+class NearestInterpCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  virtual ~NearestInterpCompute() = default;
+
+ private:
+  zynqmp::ResizePE pe_;
+};
+
+} /* namespace fpga */
+} /* namespace kernels */
+} /* namespace lite */
+} /* namespace paddle */

@@ -35,8 +35,6 @@ class ConvCompute
 
   void Run() override;
 
-  ~ConvCompute() {}
-
  private:
   zynqmp::ConvPE conv_pe_;
   zynqmp::DepthwiseConvPE dw_conv_pe_;

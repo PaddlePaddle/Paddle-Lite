@@ -44,6 +44,16 @@ void CalibComputeFP16ToFp32::Run() {
   return;
 }
 
+void CalibComputeFloat2Int::Run() {
+  auto& param = this->Param<operators::CalibParam>();
+  const auto* din = param.input->data<float>();
+  auto* dout = param.output->mutable_data<int>();
+  // param.output->ZynqTensor()->copyFrom(param.input->ZynqTensor());
+  auto out_lod = param.output->mutable_lod();
+  *out_lod = param.input->lod();
+  return;
+}
+
 }  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
@@ -58,10 +68,26 @@ REGISTER_LITE_KERNEL(calib,
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(calib,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::CalibComputeFloat2Int,
+                     float_2_int_fpga)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt32),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
@@ -70,7 +96,7 @@ REGISTER_LITE_KERNEL(calib,
                      kFP16,
                      kNHWC,
                      paddle::lite::kernels::fpga::CalibComputeFP16ToFp32,
-                     fp16_to_fp32_fpga)
+                     float_to_int_fpga)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
