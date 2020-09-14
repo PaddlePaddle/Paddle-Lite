@@ -45,8 +45,7 @@ void RunModel() {
 #ifdef DEMO_WITH_OPENCL
   std::vector<Place> valid_places{
       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)},
-      Place{TARGET(kARM), PRECISION(kFloat)}};
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)}};
 #else
   std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
 #endif
