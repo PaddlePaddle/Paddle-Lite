@@ -836,7 +836,6 @@ void LoadModelNaiveFromFile(const std::string &filename,
                             cpp::ProgramDesc *cpp_prog) {
   CHECK(cpp_prog);
   CHECK(scope);
-  cpp_prog->ClearBlocks();
   // ModelFile
   const std::string prog_path = filename;
 
@@ -929,7 +928,7 @@ void LoadModelFbsFromFile(const std::string &filename,
                           cpp::ProgramDesc *cpp_prog) {
   CHECK(cpp_prog);
   CHECK(scope);
-  cpp_prog->ClearBlocks();
+  CHECK_EQ(cpp_prog->BlocksSize(), 0);
   // Offset
   uint64_t offset = sizeof(uint16_t);
 
