@@ -46,7 +46,6 @@ void LightPredictor::Build(const std::string& model_dir,
     case lite_api::LiteModelType::kProtobuf:
       LoadModelPb(model_dir, "", "", scope_.get(), program_desc_.get());
       break;
-#endif
     case lite_api::LiteModelType::kNaiveBuffer: {
       if (model_from_memory) {
         LoadModelNaiveFromMemory(
@@ -56,6 +55,7 @@ void LightPredictor::Build(const std::string& model_dir,
       }
       break;
     }
+#endif
     default:
       LOG(FATAL) << "Unknown model type";
   }
