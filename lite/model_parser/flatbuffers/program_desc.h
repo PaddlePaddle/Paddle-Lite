@@ -48,7 +48,7 @@ class ProgramDescView : public ProgramDescAPI {
 
   void InitProgramDesc() {
     desc_ = proto::GetProgramDesc(buf_.data());
-    blocks_.resize(BlocksSize());
+    blocks_.resize(desc_->blocks()->size());
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {
       blocks_[idx] = BlockDescView(desc_->blocks()->Get(idx));
     }
@@ -59,7 +59,7 @@ class ProgramDescView : public ProgramDescAPI {
     Init(buf_);
   }
 
-  size_t BlocksSize() const override { return desc_->blocks()->size(); }
+  size_t BlocksSize() const override { return blocks_.size(); }
 
   template <typename T>
   T const* GetBlock(int32_t idx) const;
