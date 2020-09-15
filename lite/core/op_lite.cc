@@ -322,6 +322,7 @@ std::vector<float> OpInfo::GetOutputScale(const std::string &name,
     int index;
     CHECK(GetOutputArgname(name, &argname));
     CHECK(GetOutputIndex(name, &index));
+    scale_name = argname + to_string(index) + "_scale";
   }
   return GetAttr<std::vector<float>>(scale_name);
 }
