@@ -167,7 +167,7 @@ adb push ./mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb /data/lo
 adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            /data/local/tmp/opencl/mobilenetv1_light_api \
            /data/local/tmp/opencl/mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb \
-           1 3 224 224 \
+           1,3,224,224 \
            100 10 0" # round=100, warmup=10, print_output_tensor=0
 ```
 
