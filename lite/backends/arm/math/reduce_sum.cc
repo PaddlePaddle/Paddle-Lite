@@ -374,13 +374,6 @@ void reduce_sum_hw<float>(const float* src,
                           int channel_in,
                           int height_in,
                           int width_in) {
-  // reduce h first
-  //   DDimLite ddimA({num_in, channel_in, 1, width_in});
-  //   lite::Tensor tensor_tmp;
-  //   tensor_tmp.Resize(ddimA);
-  //   float* tmp_out = tensor_tmp.mutable_data<float>();
-  //   reduce_sum_h(src, tmp_out, num_in, channel_in, height_in, width_in);
-  //   reduce_sum_w(tmp_out, dst, num_in, channel_in, 1, width_in);
   int hw_size = height_in * width_in;
   int nc_size = num_in * channel_in;
   reduce_sum_w(src, dst, nc_size, 1, 1, hw_size);

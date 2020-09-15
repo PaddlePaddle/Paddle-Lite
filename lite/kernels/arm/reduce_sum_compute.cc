@@ -58,7 +58,8 @@ void ReduceSumCompute::Run() {
         n_in = x_dims[0];
         break;
       default:
-        LOG(FATAL) << "x_dim's size over than 4, which is not supported now!!";
+        LOG(FATAL) << "x_dims.size is " << x_dims.size()
+                   << ", which should not be over than 4.";
     }
 
     if (dim.size() == 1) {
@@ -76,7 +77,8 @@ void ReduceSumCompute::Run() {
           lite::arm::math::reduce_sum_w(input, output, n_in, c_in, h_in, w_in);
           break;
         default:
-          LOG(FATAL) << "dim[0] should be less than 4.";
+          LOG(FATAL) << "dim[0] is " << dim[0]
+                     << ", which should be less than 4.";
       }
     } else if (dim.size() == 2) {
       if (dim[0] == 0 && dim[1] == 1) {
@@ -90,7 +92,8 @@ void ReduceSumCompute::Run() {
             << "Only support the values of the dim are 0,1 1,2 or 2,3 for now.";
       }
     } else {
-      LOG(FATAL) << "dim's size over than 2, which is not supported now!!";
+      LOG(FATAL) << "dim's size: " << dim.size()
+                 << " over than 2, which is not supported now!!";
     }
   }
 }
