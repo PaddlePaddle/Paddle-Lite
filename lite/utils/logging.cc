@@ -35,7 +35,6 @@ void gen_log(STL::ostream& log_stream_,
              const int kMaxLen) {
   const int len = strlen(file);
 
-  std::string time_str;
   struct tm tm_time;  // Time of creation of LogMessage
   time_t timestamp = time(NULL);
   localtime_r(&timestamp, &tm_time);

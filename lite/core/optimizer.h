@@ -143,7 +143,10 @@ class Optimizer {
 
            "mlu_postprocess_pass",
 
-           "memory_optimize_pass"}};
+#ifndef LITE_WITH_PRECISION_PROFILE
+           "memory_optimize_pass"
+#endif
+          }};
 
       if (passes.size() == 1) {
         // multi_stream_analysis_pass must be in the front of
