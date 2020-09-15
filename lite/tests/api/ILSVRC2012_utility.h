@@ -25,7 +25,7 @@ namespace paddle {
 namespace lite {
 
 template <class T = float>
-std::vector<std::vector<T>> read_raw_data(
+std::vector<std::vector<T>> ReadRawData(
     const std::string& raw_data_dir,
     const std::vector<int>& input_shape = {1, 3, 224, 224},
     int iteration = 100) {
@@ -61,8 +61,8 @@ std::vector<std::vector<T>> read_raw_data(
   return raw_data;
 }
 
-float cal_out_accuracy(const std::vector<std::vector<float>>& out_rets,
-                       const std::string& labels_dir) {
+float CalOutAccuracy(const std::vector<std::vector<float>>& out_rets,
+                     const std::string& labels_dir) {
   std::vector<int> labels;
   std::vector<int> out_top1;
   int right_num = 0;

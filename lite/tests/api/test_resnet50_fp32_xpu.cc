@@ -21,7 +21,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
-#include "lite/tests/api/image_classification_test_helper.h"
+#include "lite/tests/api/ILSVRC2012_utility.h"
 #include "lite/utils/cp_logging.h"
 
 DEFINE_string(data_dir, "", "data dir");
@@ -44,7 +44,7 @@ TEST(Resnet50, test_resnet50_fp32_xpu) {
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
   std::vector<int> input_shape{
       FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
-  auto raw_data = read_raw_data(raw_data_dir, input_shape, FLAGS_iteration);
+  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
 
   int input_size = 1;
   for (auto i : input_shape) {
@@ -95,7 +95,7 @@ TEST(Resnet50, test_resnet50_fp32_xpu) {
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
-  float out_accuracy = cal_out_accuracy(out_rets, labels_dir);
+  float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
   ASSERT_GT(out_accuracy, 0.6f);
 }
 
