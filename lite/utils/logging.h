@@ -189,9 +189,7 @@ class LogMessageFatal : public LogMessage {
 #ifndef LITE_ON_TINY_PUBLISH
     abort();
 #else
-    // If we decide whether the process exits according to the NDEBUG macro
-    // definition, assert() can be used here.
-    abort();
+    assert(false);
 #endif
 #endif
   }
@@ -252,11 +250,7 @@ class VoidifyFatal : public Voidify {
 #ifdef LITE_WITH_EXCEPTION
   ~VoidifyFatal() noexcept(false) { throw std::exception(); }
 #else
-  ~VoidifyFatal() {
-    // If we decide whether the process exits according to the NDEBUG macro
-    // definition, assert() can be used here.
-    abort();
-  }
+  ~VoidifyFatal() { assert(false); }
 #endif
 };
 
