@@ -58,6 +58,10 @@ else()
         set(TARGET_COMIPILE_FLAGS "-fdata-sections")
         if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc
             set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
+            # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
+            if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
+                set(TARGET_COMIPILE_FLAGS "")
+            endif()
         endif()
         set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
         add_dependencies(paddle_light_api_shared op_list_h kernel_list_h)
