@@ -368,7 +368,8 @@ imgdnn_network_object ImgdnnManager::createNetworkObject(
   const imgdnn_network_object_flags flags = 0;
 
   std::string options_str;
-  std::string ddk_root{"/home/jasonwang/imgtools/ndk/main/"};
+  // std::string ddk_root{"/home/jasonwang/imgtools/ndk/main/"};
+  std::string ddk_root{STR2(IMAGINATION_NNA_SDK_ROOT)};
   std::string hwconfig =
       ddk_root + "nna-tools/config/mirage_hw_config06_23_2_6500_301.json";
   std::string mapconfig = ddk_root + "nna-tools/config/mapconfig_q8a.json";

@@ -44,6 +44,9 @@ static inline void CheckAndPrint(bool cond,
 #define ASSERT(statement, msg) \
   lite::imagination_nna::CheckAndPrint(statement, msg, __LINE__, __FILE__)
 
+#define STR1(R) #R
+#define STR2(R) STR1(R)
+
 class ImgdnnManager {
   imgdnn_err_code err_;
   imgdnn_device device_;
