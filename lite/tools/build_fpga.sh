@@ -25,6 +25,6 @@ cmake .. \
         -DLITE_WITH_PROFILE=OFF \
         -DLITE_WITH_LOG=OFF
 
-make -j42
+make -j1
 
 cd -
