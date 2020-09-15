@@ -37,9 +37,9 @@ std::string ShapePrint(const std::vector<shape_t>& shapes) {
     for (auto i : shape) {
       shape_str += std::to_string(i) + ",";
     }
-    shapes_str = (shape_idx != 0 && shape_idx == shapes.size() - 1)
-                     ? shape_str + " : "
-                     : shape_str;
+    shapes_str += shape_str;
+    shapes_str +=
+        (shape_idx != 0 && shape_idx == shapes.size() - 1) ? "" : " : ";
   }
   return shapes_str;
 }
@@ -157,15 +157,18 @@ void RunModel(std::string model_dir,
       CreatePaddlePredictor<MobileConfig>(config);
 
   // 3. Prepare input data
-  for (size_t input_idx = 0; input_idx < input_shapes.size(); ++input_idx) {
-    auto input_shape = input_shapes[input_idx];
-    std::unique_ptr<Tensor> input_tensor(
-        std::move(predictor->GetInput(input_idx)));
-    input_tensor->Resize(
-        {input_shape[0], input_shape[1], input_shape[2], input_shape[3]});
-    auto* data = input_tensor->mutable_data<float>();
-    for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-      data[i] = 1;
+  std::cout << "input_shapes.size():" << input_shapes.size() << std::endl;
+  for (int j = 0; j < input_shapes.size(); ++j) {
+    auto input_tensor = predictor->GetInput(j);
+    input_tensor->Resize(input_shapes[j]);
+    auto input_data = input_tensor->mutable_data<float>();
+    int input_num = 1;
+    for (int i = 0; i < input_shapes[j].size(); ++i) {
+      input_num *= input_shapes[j][i];
+    }
+
+    for (int i = 0; i < input_num; ++i) {
+      input_data[i] = 1.f;
     }
   }
 
@@ -255,10 +258,10 @@ int main(int argc, char** argv) {
 
   std::string model_dir = argv[1];
   if (argc >= 6) {
+    input_shapes.clear();
     std::string raw_input_shapes = argv[2];
     std::cout << "raw_input_shapes: " << raw_input_shapes << std::endl;
     str_input_shapes = split_string(raw_input_shapes);
-
     for (size_t i = 0; i < str_input_shapes.size(); ++i) {
       std::cout << "input shape: " << str_input_shapes[i] << std::endl;
       input_shapes.push_back(get_shape(str_input_shapes[i]));
