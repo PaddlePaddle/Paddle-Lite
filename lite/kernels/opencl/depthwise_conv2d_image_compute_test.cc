@@ -32,6 +32,93 @@ namespace lite {
 // #define TEST_DEPTHWISE_CONV_IMAGE_BASIC
 #define TEST_DEPTHWISE_CONV_IMAGE_3X3
 
+template <typename Dtype1, typename Dtype2>
+static void conv_basic(const Dtype1* din,
+                       Dtype2* dout,
+                       int num,
+                       int chout,
+                       int hout,
+                       int wout,
+                       int chin,
+                       int hin,
+                       int win,
+                       const Dtype1* weights,
+                       const Dtype2* bias,
+                       int group,
+                       int kernel_w,
+                       int kernel_h,
+                       int stride_w,
+                       int stride_h,
+                       int dila_w,
+                       int dila_h,
+                       int pad_w,
+                       int pad_h,
+                       bool flag_bias,
+                       bool flag_relu) {
+  CHECK(!flag_relu);
+  auto src_data = din;
+  auto dst_data_ref = dout;
+  auto weights_data = weights;
+  auto with_bias = flag_bias;
+  auto bias_data = bias;
+
+  int in_num = num;
+  int out_channels = chout;
+  int out_h = hout;
+  int out_w = wout;
+
+  int in_channel = chin;
+  int in_h = hin;
+  int in_w = win;
+  int out_c_group = out_channels / group;
+  int in_c_group = in_channel / group;
+
+  for (int n = 0; n < in_num; ++n) {
+    for (int g = 0; g < group; ++g) {
+      for (int oc = 0; oc < out_c_group; ++oc) {
+        for (int oh = 0; oh < out_h; ++oh) {
+          for (int ow = 0; ow < out_w; ++ow) {
+            int out_idx = n * group * out_c_group * out_h * out_w +
+                          g * out_c_group * out_h * out_w + oc * out_h * out_w +
+                          oh * out_w + ow;
+            Dtype2 bias_d =
+                with_bias ? (bias_data[g * out_c_group + oc]) : (Dtype2)0;
+            dst_data_ref[out_idx] = bias_d;
+            for (int ic = 0; ic < in_c_group; ++ic) {
+              for (int kh = 0; kh < kernel_h; ++kh) {
+                for (int kw = 0; kw < kernel_w; ++kw) {
+                  int iw = ow * stride_w - pad_w + kw * (dila_w);
+                  int ih = oh * stride_h - pad_h + kh * (dila_h);
+                  if (iw < 0 || iw >= in_w) continue;
+                  if (ih < 0 || ih >= in_h) continue;
+
+                  int iidx = n * in_channel * in_h * in_w +
+                             g * in_c_group * in_h * in_w + ic * in_h * in_w +
+                             ih * in_w + iw;
+                  int widx =
+                      g * out_c_group * in_c_group * kernel_h * kernel_w +
+                      oc * in_c_group * kernel_h * kernel_w +
+                      ic * kernel_h * kernel_w + kh * kernel_w + kw;
+
+                  dst_data_ref[out_idx] += src_data[iidx] * weights_data[widx];
+                  /*
+                  if (out_idx == 0) {
+                     VLOG(5) << "src[" << iidx << "]: " << src_data[iidx]
+                             << "\tweights[" << widx << "]: "
+                             << weights_data[widx]
+                             << "\tdst[" << out_idx << "]: "
+                             << dst_data_ref[out_idx];
+                  */
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 template <typename T, int STRIDE_H = 1, int STRIDE_W = 1>
 void depth_conv(const T* input_data,
                 const lite::DDim& input_dims,
@@ -384,11 +471,14 @@ TEST(depthwise_conv2d, compute_basic) {
 #ifdef TEST_DEPTHWISE_CONV_IMAGE_3X3
 // #define LOOP_TEST
 TEST(depthwise_conv2d, compute_image2d_3x3) {
+  const int fc = 1;
   const int fw = 3;
   const int fh = fw;
-  int dilation = 1;
-  int stride = 1;
-  int pad = 0;
+  const int dilation = 4;
+  const int stride = 2;
+  const int pad = 2;
+  const bool bias_flag = false;
+  const bool relu_flag = false;
 #ifdef LOOP_TEST
   // for (int batch_size = 1; batch_size < 2; ++batch_size) {
   for (int oc = 4; oc < 10; oc += 1) {      // oc = ic
@@ -399,12 +489,18 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
   const int ih = 112;
   const int iw = 112;
 #endif
-        stride = (stride == 1) ? 2 : 1;
-        // pad = (pad == 0) ? 1 : 0;
         const int fb = oc;
         const int ic = oc;
         const int oh = ConvOutputSize(ih, fh, dilation, pad, pad, stride);
         const int ow = ConvOutputSize(iw, fw, dilation, pad, pad, stride);
+        if (oh <= 0 || ow <= 0) {
+#ifdef LOOP_TEST
+          continue;
+#else
+    LOG(FATAL) << "Output tensor of depthwise conv is illegal!"
+               << "Please check your input dims and conv params";
+#endif
+        }
 
         LOG(INFO) << "to get kernel ...";
         auto kernels =
@@ -417,7 +513,7 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         auto kernel = std::move(kernels.front());
 
         LOG(INFO) << "get kernel";
-        lite::Tensor input, filter, output;
+        lite::Tensor input, filter, bias, output;
         operators::ConvParam param;
         param.x = &input;
         param.filter = &filter;
@@ -428,6 +524,8 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         param.strides = std::vector<int>{stride, stride};
         std::vector<int> dilations = {dilation, dilation};
         param.dilations = std::make_shared<std::vector<int>>(dilations);
+        param.bias = bias_flag ? &bias : nullptr;
+        param.fuse_relu = relu_flag;
 
         std::unique_ptr<KernelContext> context(new KernelContext);
         context->As<OpenCLContext>().InitOnce();
@@ -442,9 +540,11 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         const DDim& input_dim =
             lite::DDim{std::vector<int64_t>({1, ic, ih, iw})};
         const DDim& filter_dim =
-            lite::DDim{std::vector<int64_t>({fb, 1, 3, 3})};
+            lite::DDim{std::vector<int64_t>({fb, fc, fh, fw})};
         const DDim& output_dim =
             lite::DDim{std::vector<int64_t>({1, oc, oh, ow})};
+        // element wise bias
+        const DDim bias_dim = DDim(std::vector<DDim::value_type>{oc});
         input.Resize(input_dim);
         filter.Resize(filter_dim);
         output.Resize(output_dim);
@@ -459,6 +559,14 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         }
         for (auto& f : filter_v) {
           f = gen(engine);
+        }
+        std::vector<float> bias_v;
+        if (bias_flag) {
+          bias.Resize(bias_dim);
+          bias_v.resize(bias_dim.production());
+          for (auto& b : bias_v) {
+            b = gen(engine);
+          }
         }
 
         LOG(INFO) << "prepare input";
@@ -496,21 +604,29 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         lite::Tensor out_ref;
         out_ref.Resize(output_dim);
         auto* out_ref_data = out_ref.mutable_data<float>(TARGET(kARM));
-        if (stride == 1) {
-          depth_conv<float, 1, 1>(input_v.data(),
-                                  input.dims(),
-                                  filter_v.data(),
-                                  filter.dims(),
-                                  out_ref_data,
-                                  out_ref.dims());
-        } else if (stride == 2) {
-          depth_conv<float, 2, 2>(input_v.data(),
-                                  input.dims(),
-                                  filter_v.data(),
-                                  filter.dims(),
-                                  out_ref_data,
-                                  out_ref.dims());
-        }
+
+        conv_basic<float, float>(input_v.data(),
+                                 out_ref_data,
+                                 1,
+                                 oc,
+                                 oh,
+                                 ow,
+                                 ic,
+                                 ih,
+                                 iw,
+                                 filter_v.data(),
+                                 bias_v.data(),
+                                 param.groups,
+                                 fw,
+                                 fh,
+                                 stride,
+                                 stride,
+                                 dilation,
+                                 dilation,
+                                 pad,
+                                 pad,
+                                 bias_flag,
+                                 relu_flag);
 
         const size_t cl_image2d_row_pitch{0};
         const size_t cl_image2d_slice_pitch{0};
@@ -538,7 +654,7 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
           EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                        abs_diff > FP16_ABS_DIFF);
           if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
-            LOG(FATAL) << "error idx:" << i << "output_v[" << i
+            LOG(FATAL) << "error idx:" << i << " output_v[" << i
                        << "]:" << output_v[i] << " "
                                                  "out_ref_data["
                        << i << "]:" << out_ref_data[i];
