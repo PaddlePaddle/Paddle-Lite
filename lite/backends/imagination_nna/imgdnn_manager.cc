@@ -14,6 +14,7 @@
 
 #include "imgdnn_manager.h"  // NOLINT
 #include <utility>
+#include "ImgdnnManagerConfig.h"
 
 namespace paddle {
 namespace lite {
@@ -367,15 +368,14 @@ imgdnn_network_object ImgdnnManager::createNetworkObject(
     imgdnn_tensor *outputs) {
   const imgdnn_network_object_flags flags = 0;
 
+  //  Add " --dump_debug_binaries enabled" to options_str if need debug info.
   std::string options_str;
-  std::string ddk_root{"/home/jasonwang/imgtools/imagination_nna_sdk/"};
-  // std::string ddk_root{STR2(IMAGINATION_NNA_SDK_ROOT)};
+  std::string ddk_root{IMAGINATION_NNA_SDK_ROOT};
   std::string hwconfig =
       ddk_root + "nna-tools/config/mirage_hw_config06_23_2_6500_301.json";
   std::string mapconfig = ddk_root + "nna-tools/config/mapconfig_q8a.json";
   options_str += "-h " + hwconfig;
   options_str += " -m " + mapconfig;
-  // options_str += " --dump_debug_binaries enabled";
 
   net_obj_ = imgdnnCreateNetworkObject(device_,
                                        context_,
