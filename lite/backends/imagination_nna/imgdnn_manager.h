@@ -222,6 +222,13 @@ class ImgdnnManager {
     return desc;
   }
 
+  imgdnn_tensor_descriptor getTensorDescriptor(imgdnn_tensor tensor) {
+    imgdnn_tensor_descriptor desc;
+    err_ = imgdnnGetTensorDescriptor(tensor, &desc);
+    ASSERT(err_ != IMGDNN_SUCCESS, "GetTensorDescriptors failed!");
+    return desc;
+  }
+
   size_t getDescriptorSize(const imgdnn_tensor_descriptor *const descriptor) {
     size_t size = imgdnnGetDescriptorSize(descriptor, &err_);
     ASSERT(err_ != IMGDNN_SUCCESS, "GetDescriptorSize failed!");

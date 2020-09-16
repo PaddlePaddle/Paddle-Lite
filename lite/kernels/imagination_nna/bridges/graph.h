@@ -79,28 +79,16 @@ class Graph {
  public:
   explicit Graph(lite::imagination_nna::ImgdnnManager* pMgr) {
     pImgdnnMgr = pMgr;
-    std::cout << "graph construct" << std::endl;
   }
 
-  ~Graph() { std::cout << "Graph deconst" << std::endl; }
-
-  // Add 1
-  int Add(const std::string& name, std::shared_ptr<Node> node);
-
-  // Add 2, weights,bias
+  // Add constant tensor, such as weights,bias
   std::shared_ptr<Node> Add(const std::string& name,
                             const void* const const_data,
                             std::vector<int64_t> shape,
                             const TensorInfo& qnt,
-                            Node::Role role /* = Node::Role::kData*/);
-
-  // Add 3
-  std::shared_ptr<Node> Add(const std::string& name,
-                            const Tensor& tensor,
-                            std::vector<int64_t> shape,
-                            const TensorInfo& qnt,
                             Node::Role role);
-  // Add 4
+
+  // Add input tensor
   std::shared_ptr<Node> Add(const std::string& name,
                             const Tensor& tensor,
                             const TensorInfo& qnt,
@@ -108,15 +96,14 @@ class Graph {
     return Add(name, tensor, tensor.dims().Vectorize(), qnt, role);
   }
 
-  // Used to add intermediate tensor
-  // Add 5
+  // Add intermediate activation tensor
   int Add(const std::string& name,
-          imgdnn_tensor tensor,
+          imgdnn_tensor img_tensor,
           imgdnn_type type,
           DataLayoutType layout = DATALAYOUT(kNCHW)) {
     Node::Role role = Node::Role::kData;
     auto node = std::make_shared<Node>(type, layout, role);
-    node->set_data(tensor);
+    node->set_data(img_tensor);
     return Add(name, node);  // call Add 1
   }
 
@@ -135,11 +122,19 @@ class Graph {
   }
 
  private:
+  int Add(const std::string& name, std::shared_ptr<Node> node);
+
+  std::shared_ptr<Node> Add(const std::string& name,
+                            const Tensor& tensor,
+                            std::vector<int64_t> shape,
+                            const TensorInfo& qnt,
+                            Node::Role role);
+
   std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
   lite::imagination_nna::ImgdnnManager* pImgdnnMgr{nullptr};
 };
-}  // namespace imagination_nna
 
+}  // namespace imagination_nna
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle

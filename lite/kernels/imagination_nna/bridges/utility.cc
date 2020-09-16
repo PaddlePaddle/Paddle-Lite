@@ -55,9 +55,7 @@ void TensorInfoReset(TensorInfo* qnt) {
   qnt->count = 0;
   qnt->axis = 0;
   qnt->scales.clear();
-  // qnt.scales.shrink_to_fit();
   qnt->zero_points.clear();
-  // qnt.zero_points.shrink_to_fit();
   qnt->layout = DATALAYOUT(kNCHW);
 }
 

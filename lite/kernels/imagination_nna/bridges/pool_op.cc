@@ -97,9 +97,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  ksize);
 
   // ceil mode
-  /* bool ceil_mode =
-      op_info->HasAttr("ceil_mode") && op_info->GetAttr<bool>("ceil_mode");
-  */
+  if (op_info->HasAttr("ceil_mode"))
+    LOG(WARNING) << "[NNA] imgdnn has no ceil_mode: "
+                 << op_info->GetAttr<bool>("ceil_mode");
 
   unsigned int img_ksize[2] = {(unsigned int)ksize[0], (unsigned int)ksize[1]};
   unsigned int img_stride[2] = {(unsigned int)strides[0],
@@ -126,11 +126,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                               pad_to_end,
                                               img_pool_type);
 
-  // LOG(INFO) << "pooling op output:" << static_cast<int>(pooling_out);
-
-  imgdnn_tensor_descriptor desc;
-  imgdnn_err_code err = imgdnnGetTensorDescriptor(pooling_out, &desc);
-  CHECK(err == IMGDNN_SUCCESS) << "fail get tensor description(POOL)";
+  imgdnn_tensor_descriptor desc =
+      graph->GetBuilder()->getTensorDescriptor(pooling_out);
 
   graph->Add(out_name, pooling_out, desc.type);
 

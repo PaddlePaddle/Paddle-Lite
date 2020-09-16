@@ -87,7 +87,7 @@ else()
             target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
         endif()
         if (LITE_WITH_IMAGINATION_NNA)
-            # Need to add IMG IMAGINATION_NNA runtime libs (libhiai.so) dependency
+            # Need to add IMG IMAGINATION_NNA runtime libs (libimgdnn.so, libnnasession.so) dependency
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
     endif()
@@ -123,8 +123,8 @@ if(LITE_WITH_RKNPU)
 endif()
 
 if(LITE_WITH_IMAGINATION_NNA)
-    set(light_api_deps ${light_api_deps} ${nna_deps})
-    set(cxx_api_deps ${cxx_api_deps} ${nna_deps})
+    set(light_api_deps ${light_api_deps} ${imagination_nna_deps})
+    set(cxx_api_deps ${cxx_api_deps} ${imagination_nna_deps})
 endif()
 
 if(LITE_WITH_HUAWEI_ASCEND_NPU)

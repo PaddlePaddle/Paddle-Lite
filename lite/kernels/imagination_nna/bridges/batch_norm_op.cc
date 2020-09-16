@@ -30,7 +30,7 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " + op_type + "...";
 
-  // Get iimagination_nnat and output vars and op attributes
+  // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
@@ -43,24 +43,14 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto variance_name = op_info->Input("Variance").front();
   auto variance = scope->FindMutableTensor(variance_name);
   auto y_name = op_info->Output("Y").front();
-  // float momentum = op_info->GetAttr<float>("momentum");
   float epsilon = op_info->GetAttr<float>("epsilon");
-  // int mode = 1;  // bnScale, bnBias tensor dims are 1xCx1x1
-  /*
-  bool use_global_stats = !op_info->HasAttr("use_global_stats") ||
-                          op_info->GetAttr<bool>("use_global_stats");
-  if (!use_global_stats) {
-    LOG(WARNING) << "[NNA] Only use_global_stats=true is supported by DDK";
-  }
-  */
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    // x_node = graph->Add(x_name, *x);
-    LOG(WARNING) << "BatchNormConverter:x_node not in graph";
+    LOG(WARNING) << "[Imagination NNA] BatchNormConverter: x_node not in graph";
   }
 
   ConvNetBuilder& builder = graph->GetBuilder();
@@ -71,7 +61,6 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   bn_out = builder.createScaleLayer(
       bn_out, true, scale->mutable_data<float>(), bias->mutable_data<float>());
 
-  // PrecisionType precision = x->precision();
   imgdnn_tensor_descriptor desc;
   imgdnn_err_code err = imgdnnGetTensorDescriptor(bn_out, &desc);
   CHECK(err == IMGDNN_SUCCESS) << "fail get tensor description(BN)";

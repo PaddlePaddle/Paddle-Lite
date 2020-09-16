@@ -19,4 +19,3 @@ USE_SUBGRAPH_BRIDGE(conv2d, kImaginationNNA);
 USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kImaginationNNA);
 USE_SUBGRAPH_BRIDGE(fc, kImaginationNNA);
 USE_SUBGRAPH_BRIDGE(pool2d, kImaginationNNA);
-// USE_SUBGRAPH_BRIDGE(softmax, kImaginationNNA);

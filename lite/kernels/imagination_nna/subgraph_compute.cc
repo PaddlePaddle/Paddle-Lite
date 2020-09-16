@@ -97,8 +97,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
   imgdnn_mgr_.getNetworkObjectInputs(
       std::numeric_limits<unsigned int>::max(), nullptr, &num_inputs);
   CHECK_EQ(num_inputs, device_inames_.size());
-  // origin_idims_.resize(num_inputs);
-  // origin_itensors_.resize(num_inputs);
   device_itensors_.resize(num_inputs);
   imgdnn_mgr_.getNetworkObjectInputs(
       num_inputs, device_itensors_.data(), nullptr);
@@ -108,9 +106,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
     auto node = graph.Get(device_inames_[i]);
     auto type = node->type();
     auto layout = node->layout();
-    // origin_itensors_[i] = scope_->FindMutableTensor(device_inames_[i]);
-    // CHECK(origin_itensors_[i]);
-    // origin_idims_[i] = origin_itensors_[i]->dims();
     VLOG(3) << "[NNA] Inputs[" << i << "] name: " << device_inames_[i]
             << " type: " << type << " layout: " << DataLayoutToStr(layout);
   }
@@ -119,8 +114,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
   imgdnn_mgr_.getNetworkObjectOutputs(
       std::numeric_limits<unsigned int>::max(), nullptr, &num_outputs);
   CHECK_EQ(num_outputs, device_onames_.size());
-  // origin_odims_.resize(num_outputs);
-  // origin_otensors_.resize(num_outputs);
   device_otensors_.resize(num_outputs);
   imgdnn_mgr_.getNetworkObjectOutputs(
       num_outputs, device_otensors_.data(), nullptr);
@@ -129,9 +122,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
     auto node = graph.Get(device_onames_[i]);
     auto type = node->type();
     auto layout = node->layout();
-    // origin_otensors_[i] = scope_->FindMutableTensor(device_onames_[i]);
-    // CHECK(origin_otensors_[i]);
-    // origin_odims_[i] = origin_otensors_[i]->dims();
     VLOG(3) << "[NNA] Outputs[" << i << "] name: " << device_onames_[i]
             << " type: " << type << " layout: " << DataLayoutToStr(layout);
     // Prepare the device output tensors
@@ -161,8 +151,10 @@ bool SubgraphEngine::BuildDeviceProgram() {
 }
 
 bool SubgraphEngine::LaunchDeviceProgram() {
-  if (!device_program_ready)  // build device program fail
+  if (!device_program_ready) {
+    LOG(WARNING) << "[NNA] Build device program fail, run origin program";
     LaunchOriginProgram();
+  }
 
   // Set input buffer
   for (size_t i = 0; i < origin_itensors_.size(); i++) {

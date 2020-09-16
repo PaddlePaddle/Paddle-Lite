@@ -45,7 +45,7 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
                                  const void* const const_data,
                                  std::vector<int64_t> shape,
                                  const TensorInfo& qnt,
-                                 Node::Role role /* = Node::Role::kData*/) {
+                                 Node::Role role) {
   auto node = std::make_shared<Node>(qnt.type, qnt.layout, role);
   auto idx = Add(name, node);
   CHECK_GE(idx, 1);
