@@ -53,9 +53,9 @@ class GatherComputeTest : public arena::TestCase {
     out_dims[0] = batch_size;
     out->Resize(out_dims);
 
-    auto x_data = x->data<float>();
-    auto index_data = index->data<int>();
-    auto out_data = out->mutable_data<float>();
+    auto x_data = x->data<int64_t>();
+    auto index_data = index->data<int64_t>();
+    auto out_data = out->mutable_data<int64_t>();
 
     auto slice_num = x_dims[0];
     auto slice_size = x_dims.Slice(1, x_dims.size()).production();
@@ -66,7 +66,7 @@ class GatherComputeTest : public arena::TestCase {
       CHECK_GE(index, 0) << "gather ids[i] expected >= 0 but got " << index;
       memcpy(out_data + i * slice_size,
              x_data + index * slice_size,
-             slice_size * sizeof(float));
+             slice_size * sizeof(int64_t));
     }
   }
 
@@ -78,11 +78,11 @@ class GatherComputeTest : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> x(x_dims_.production());
-    fill_data_rand(x.data(), -1.f, 1.f, x_dims_.production());
+    std::vector<int64_t> x(x_dims_.production());
+    fill_data_rand(x.data(), int64_t(-1), int64_t(1), x_dims_.production());
 
-    std::vector<int32_t> index(index_dims_.production());
-    fill_data_rand<int32_t>(
+    std::vector<int64_t> index(index_dims_.production());
+    fill_data_rand<int64_t>(
         index.data(), 0, x_dims_[0] - 1, index_dims_.production());
 
     SetCommonTensor(x_, x_dims_, x.data());
