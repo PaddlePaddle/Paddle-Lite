@@ -30,7 +30,8 @@ void bilinear_interp(const float* src,
                      int h_out,
                      float scale_x,
                      float scale_y,
-                     bool with_align);
+                     bool align_corners,
+                     bool align_mode);
 
 void nearest_interp(const float* src,
                     int w_in,
@@ -40,7 +41,7 @@ void nearest_interp(const float* src,
                     int h_out,
                     float scale_x,
                     float scale_y,
-                    bool with_align);
+                    bool align_corners);
 
 void interpolate(lite::Tensor* X,
                  lite::Tensor* OutSize,
@@ -50,7 +51,8 @@ void interpolate(lite::Tensor* X,
                  int out_height,
                  int out_width,
                  float scale,
-                 bool with_align,
+                 bool align_corners,
+                 bool align_mode,
                  std::string interpolate_type);
 
 } /* namespace math */
