@@ -48,20 +48,6 @@ void BoxCoderCompute::Run() {
   output_box->Resize({row, col, len});  // N x M x 4
   auto* output = output_box->mutable_data<float>();
 
-  // for debug
-  VLOG(3) << "prior_box dims is: " << prior_box->dims().repr();
-  VLOG(3) << "target_box dims is: " << target_box->dims().repr();
-  VLOG(3) << "prior_box_var dims is: " << prior_box_var->dims().repr();
-  VLOG(3) << "output_box dims is: " << output_box->dims().repr();
-
-  VLOG(3) << "code_type = <" << code_type << ">";
-  VLOG(3) << "normalized = <" << normalized << ">";
-  VLOG(3) << "printing variance ...";
-  for (size_t i = 0; i < variance.size(); ++i) {
-    VLOG(3) << "variance[" << i << "]=" << variance[i];
-  }
-  VLOG(3) << "axis = <" << axis << ">";
-
   const float* target_box_data = target_box->data<float>();
   const float* prior_box_data = prior_box->data<float>();
   const float* prior_box_var_data =
