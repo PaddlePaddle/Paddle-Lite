@@ -68,6 +68,7 @@ add_kernel(sequence_topk_avg_pooling_compute_x86 X86 basic SRCS sequence_topk_av
 add_kernel(search_fc_compute_x86 X86 basic SRCS search_fc_compute.cc DEPS ${lite_kernel_deps} search_fc)
 
 add_kernel(matmul_compute_x86 X86 basic SRCS matmul_compute.cc DEPS ${lite_kernel_deps} blas)
+add_kernel(box_coder_compute_x86 X86 basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} box_coder)
 
 lite_cc_test(test_conv2d_compute_x86 SRCS conv_compute_test.cc DEPS conv_compute_x86)
 lite_cc_test(test_mul_compute_x86 SRCS mul_compute_test.cc DEPS mul_compute_x86)
