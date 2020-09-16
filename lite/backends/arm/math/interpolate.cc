@@ -70,7 +70,8 @@ void bilinear_interp(const float* src,
                      int h_out,
                      float scale_x,
                      float scale_y,
-                     bool with_align) {
+                     bool align_corners,
+                     bool align_mode) {
   int* buf = new int[w_out + h_out + w_out * 2 + h_out * 2];
 
   int* xofs = buf;
@@ -78,14 +79,13 @@ void bilinear_interp(const float* src,
 
   float* alpha = reinterpret_cast<float*>(buf + w_out + h_out);
   float* beta = reinterpret_cast<float*>(buf + w_out + h_out + w_out * 2);
+  bool with_align = (align_mode == 0 && !align_corners);
 
   float fx = 0.0f;
   float fy = 0.0f;
   int sx = 0;
   int sy = 0;
-  if (with_align) {
-    scale_x = static_cast<float>(w_in - 1) / (w_out - 1);
-    scale_y = static_cast<float>(h_in - 1) / (h_out - 1);
+  if (!with_align) {
     // calculate x axis coordinate
     for (int dx = 0; dx < w_out; dx++) {
       fx = dx * scale_x;
@@ -105,8 +105,6 @@ void bilinear_interp(const float* src,
       beta[dy * 2 + 1] = fy;
     }
   } else {
-    scale_x = static_cast<float>(w_in) / w_out;
-    scale_y = static_cast<float>(h_in) / h_out;
     // calculate x axis coordinate
     for (int dx = 0; dx < w_out; dx++) {
       fx = scale_x * (dx + 0.5f) - 0.5f;
@@ -468,15 +466,9 @@ void nearest_interp(const float* src,
                     float* dst,
                     int w_out,
                     int h_out,
-                    float scale_x,
-                    float scale_y,
+                    float scale_w_new,
+                    float scale_h_new,
                     bool with_align) {
-  float scale_w_new = (with_align)
-                          ? (static_cast<float>(w_in - 1) / (w_out - 1))
-                          : (static_cast<float>(w_in) / (w_out));
-  float scale_h_new = (with_align)
-                          ? (static_cast<float>(h_in - 1) / (h_out - 1))
-                          : (static_cast<float>(h_in) / (h_out));
   if (with_align) {
     for (int h = 0; h < h_out; ++h) {
       float* dst_p = dst + h * w_out;
@@ -506,7 +498,8 @@ void interpolate(lite::Tensor* X,
                  int out_height,
                  int out_width,
                  float scale,
-                 bool with_align,
+                 bool align_corners,
+                 bool align_mode,
                  std::string interpolate_type) {
   int in_h = X->dims()[2];
   int in_w = X->dims()[3];
@@ -531,12 +524,12 @@ void interpolate(lite::Tensor* X,
       out_width = out_size_data[1];
     }
   }
-  float height_scale = scale;
-  float width_scale = scale;
-  if (out_width > 0 && out_height > 0) {
-    height_scale = static_cast<float>(out_height / X->dims()[2]);
-    width_scale = static_cast<float>(out_width / X->dims()[3]);
-  }
+  // float height_scale = scale;
+  // float width_scale = scale;
+  // if (out_width > 0 && out_height > 0) {
+  //   height_scale = static_cast<float>(out_height / X->dims()[2]);
+  //   width_scale = static_cast<float>(out_width / X->dims()[3]);
+  // }
   int num_cout = X->dims()[0];
   int c_cout = X->dims()[1];
   Out->Resize({num_cout, c_cout, out_height, out_width});
@@ -551,6 +544,10 @@ void interpolate(lite::Tensor* X,
   int spatial_in = in_h * in_w;
   int spatial_out = out_h * out_w;
 
+  float scale_x = (align_corners) ? (static_cast<float>(in_w - 1) / (out_w - 1))
+                                  : (static_cast<float>(in_w) / (out_w));
+  float scale_y = (align_corners) ? (static_cast<float>(in_h - 1) / (out_h - 1))
+                                  : (static_cast<float>(in_h) / (out_h));
   if ("Bilinear" == interpolate_type) {
 #pragma omp parallel for
     for (int i = 0; i < count; ++i) {
@@ -560,9 +557,10 @@ void interpolate(lite::Tensor* X,
                       dout + spatial_out * i,
                       out_w,
                       out_h,
-                      1.f / width_scale,
-                      1.f / height_scale,
-                      with_align);
+                      scale_x,
+                      scale_y,
+                      align_corners,
+                      align_mode);
     }
   } else if ("Nearest" == interpolate_type) {
 #pragma omp parallel for
@@ -573,9 +571,9 @@ void interpolate(lite::Tensor* X,
                      dout + spatial_out * i,
                      out_w,
                      out_h,
-                     1.f / width_scale,
-                     1.f / height_scale,
-                     with_align);
+                     scale_x,
+                     scale_y,
+                     align_corners);
     }
   }
 }
