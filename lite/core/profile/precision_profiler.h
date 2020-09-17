@@ -23,6 +23,8 @@
 #include <time.h>
 
 #include <cmath>
+#include <cstdlib>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -127,7 +129,14 @@ class PrecisionProfiler {
     std::string inst_precison_str = GetInstPrecision(inst);
   }
 
-  PrecisionProfiler() { MkDirRecur(log_dir_); }
+  PrecisionProfiler() {
+    MkDirRecur(log_dir_);
+    const char* write_to_file_raw =
+        std::getenv("PADDLELITE_PRECISION_WRITE_TO_FILE");
+    write_result_to_file_ = (write_to_file_raw && atoi(write_to_file_raw) > 0)
+                                ? atoi(write_to_file_raw) > 0
+                                : false;
+  }
 
   std::string GetSummaryHeader() {
     using std::setw;
@@ -151,6 +160,18 @@ class PrecisionProfiler {
       fprintf(fp, "%s\n", header_str.c_str());
       fclose(fp);
     }
+    return ss.str();
+  }
+
+  std::string GetSummaryTail() {
+    STL::stringstream ss;
+    ss << "[note]" << std::endl;
+    ss << "1. `ave_grow_rate`: show the sequence value of tensor when std_dev "
+          "& mean are same."
+       << std::endl;
+    ss << "2. Enable write each output tensor to file: `export "
+          "PADDLELITE_PRECISION_WRITE_TO_FILE=1` on ADB command line."
+       << std::endl;
     return ss.str();
   }
 
@@ -197,6 +218,17 @@ class PrecisionProfiler {
       return true;
     }
     return false;
+  }
+
+  std::string rename_out_for_mem_reuse_pass(const std::string& old_name) {
+    if (out_tensor_names_map.find(old_name) == out_tensor_names_map.end()) {
+      out_tensor_names_map[old_name] = 1;
+    } else {
+      ++out_tensor_names_map[old_name];
+    }
+    std::string new_name =
+        old_name + "_" + std::to_string(out_tensor_names_map[old_name]);
+    return new_name;
   }
 
   void compute_tensor_precision_info(const Tensor* in,
@@ -350,13 +382,12 @@ class PrecisionProfiler {
     using std::left;
     using std::fixed;
     STL::stringstream ss;
-    bool write_result_to_file = true;
 
     VLOG(1) << ">> Running kernel: " << inst->op()->op_info()->Repr()
             << " registered on " << TargetToStr(inst->kernel()->target()) << "/"
             << PrecisionToStr(inst->kernel()->precision()) << "/"
             << DataLayoutToStr(inst->kernel()->layout())
-            << ", write_result_to_file:" << write_result_to_file;
+            << ", write_result_to_file_:" << write_result_to_file_;
 
     std::string kernel_repr = inst->op()->op_info()->Repr();
     std::string kernel_place = TargetToStr(inst->kernel()->target()) + "/" +
@@ -383,6 +414,7 @@ class PrecisionProfiler {
           std::string mean_str{"unused"};
           std::string std_dev_str{"unused"};
           std::string ave_grow_rate_str{"unused"};
+          std::string new_out_name = rename_out_for_mem_reuse_pass(out_name);
 
           if (!is_unused(tout)) {
             compute_tensor_precision_info(tout,
@@ -392,14 +424,14 @@ class PrecisionProfiler {
                                           &mean,
                                           &std_dev,
                                           &ave_grow_rate,
-                                          out_name,
-                                          write_result_to_file);
+                                          new_out_name,
+                                          write_result_to_file_);
             mean_str = std::to_string(mean);
             std_dev_str = std::to_string(std_dev);
             ave_grow_rate_str = std::to_string(ave_grow_rate);
           }
           std::string kernel_info = op_name + ":" + kernel_place;
-          std::string output_arg_info = out_name + ":" +
+          std::string output_arg_info = new_out_name + ":" +
                                         TargetToStr(type->target()) + "/" +
                                         PrecisionToStr(type->precision()) +
                                         "/" + DataLayoutToStr(type->layout());
@@ -420,6 +452,7 @@ class PrecisionProfiler {
             std::string mean_str{"unused"};
             std::string std_dev_str{"unused"};
             std::string ave_grow_rate_str{"unused"};
+            std::string new_out_name = rename_out_for_mem_reuse_pass(out_name);
 
             if (!is_unused(tout)) {
               compute_tensor_precision_info(tout,
@@ -429,14 +462,14 @@ class PrecisionProfiler {
                                             &mean,
                                             &std_dev,
                                             &ave_grow_rate,
-                                            out_name,
-                                            write_result_to_file);
+                                            new_out_name,
+                                            write_result_to_file_);
               mean_str = std::to_string(mean);
               std_dev_str = std::to_string(std_dev);
               ave_grow_rate_str = std::to_string(ave_grow_rate);
             }
             std::string kernel_info = op_name + ":" + kernel_place;
-            std::string output_arg_info = out_name + ":" +
+            std::string output_arg_info = new_out_name + ":" +
                                           TargetToStr(type->target()) + "/" +
                                           PrecisionToStr(type->precision()) +
                                           "/" + DataLayoutToStr(type->layout());
@@ -458,6 +491,8 @@ class PrecisionProfiler {
   std::string log_dir_{"/storage/emulated/0/PaddleLite_" + get_date_str() +
                        "/"};
   std::string summary_log_dir_{log_dir_ + "precision_summary.log"};
+  std::map<std::string, size_t> out_tensor_names_map;
+  bool write_result_to_file_{false};
 };
 
 }  // namespace profile

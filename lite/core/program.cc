@@ -284,7 +284,9 @@ void RuntimeProgram::Run() {
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
 #endif
 #ifdef LITE_WITH_PRECISION_PROFILE
-  LOG(INFO) << "\n" << precision_profiler_summary;
+  LOG(INFO) << "\n"
+            << precision_profiler_summary
+            << inst_precision_profiler.GetSummaryTail();
 #endif
 }
 
