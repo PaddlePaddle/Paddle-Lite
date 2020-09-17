@@ -133,7 +133,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
 
   param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-  auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+  std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
   auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
   param_.dilations = std::make_shared<std::vector<int>>(dilations);
   param_.groups = op_desc.GetAttr<int>("groups");
