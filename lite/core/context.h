@@ -29,6 +29,7 @@
 #include "lite/backends/mlu/mlu_utils.h"
 #endif
 #ifdef LITE_WITH_XPU
+#include <fcntl.h>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #endif
 
@@ -188,6 +189,45 @@ class Context<TargetType::kXPU> {
   }
 
   std::string name() const { return "XPUContext"; }
+
+  inline static int LockXPU() {
+    _reentrant = 0;
+    int xpu_l3_lock_fd = -1;
+    struct flock f_lock;
+    f_lock.l_whence = 0;
+    f_lock.l_len = 0;
+
+    if (_reentrant == 0) {
+      int pd = 0;  // TODO(luohang): need get from lite api
+      std::string buf = "/opt/xpu_lock" + std::to_string(pd);
+      xpu_l3_lock_fd = open(buf.c_str(), O_RDWR);
+      CHECK(xpu_l3_lock_fd > 0) << "open " << buf
+                                << " failed: " << xpu_l3_lock_fd;
+
+      // lock
+      f_lock.l_type = F_WRLCK;
+      fcntl(xpu_l3_lock_fd, F_SETLKW, &f_lock);
+    }
+    _reentrant++;
+    return xpu_l3_lock_fd;
+  }
+
+  inline static void ReleaseXPU(int lock_fd) {
+    if (lock_fd < 0) return;
+
+    if (_reentrant == 1) {
+      struct flock f_lock;
+      f_lock.l_whence = 0;
+      f_lock.l_len = 0;
+      f_lock.l_type = F_UNLCK;
+      fcntl(lock_fd, F_SETLKW, &f_lock);
+      close(lock_fd);
+    }
+    _reentrant--;
+  }
+
+ private:
+  static int _reentrant;
 };
 #endif
 

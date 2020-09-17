@@ -293,7 +293,16 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
+#ifdef LITE_WITH_XPU
+    auto need_lock_l3 = std::getenv("XPU_L3_LOCK_REQUIRED");
+    int lock_fd = -1;
+    if (need_lock_l3) lock_fd = Context<TargetType::kXPU>::LockXPU();
+#endif
     inst.Run();
+#ifdef LITE_WITH_XPU
+    if (need_lock_l3 && lock_fd >= 0)
+      Context<TargetType::kXPU>::ReleaseXPU(lock_fd);
+#endif
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
     precision_profiler_summary +=
@@ -442,44 +451,7 @@ void Instruction::Run() {
     CHECK(op_->CheckShape());
   }
 
-#ifdef LITE_WITH_XPU
-  static int reentrant = 0;
-  int xpu_l3_lock_fd;
-  auto need_lock_l3 = std::getenv("XPU_L3_LOCK_REQUIRED");
-  struct flock f_lock;
-  f_lock.l_whence = 0;
-  f_lock.l_len = 0;
-
-  if (reentrant == 0) {
-    if (need_lock_l3) {
-      int pd = 0;  // TODO(luohang): need get from lite api
-      std::string buf = "/opt/xpu_lock" + std::to_string(pd);
-      xpu_l3_lock_fd = open(buf.c_str(), O_RDWR);
-      CHECK(xpu_l3_lock_fd > 0) << "open " << buf
-                                << " failed: " << xpu_l3_lock_fd;
-
-      // lock
-      f_lock.l_type = F_WRLCK;
-      fcntl(xpu_l3_lock_fd, F_SETLKW, &f_lock);
-    } else {
-      xpu_l3_lock_fd = -1;
-    }
-  }
-  reentrant++;
-#endif
-
-  bool run_res = op_->run_once() && has_run_;
-
-#ifdef LITE_WITH_XPU
-  if (need_lock_l3 && reentrant == 1) {
-    f_lock.l_type = F_UNLCK;
-    fcntl(xpu_l3_lock_fd, F_SETLKW, &f_lock);
-    close(xpu_l3_lock_fd);
-  }
-  reentrant--;
-#endif
-
-  if (run_res) {
+  if (op_->run_once() && has_run_) {
     return;
   }
 

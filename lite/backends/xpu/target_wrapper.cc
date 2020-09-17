@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/xpu/target_wrapper.h"
+#include "lite/core/context.h"
 #include "lite/utils/macros.h"
 
 namespace paddle {
@@ -78,6 +79,7 @@ XPUScratchPadGuard TargetWrapperXPU::MallocScratchPad(size_t size,
 std::string TargetWrapperXPU::multi_encoder_precision;  // NOLINT
 int TargetWrapperXPU::workspace_l3_size_per_thread{0};
 LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
+int Context<TargetType::kXPU>::_reentrant{0};
 
 }  // namespace lite
 }  // namespace paddle
