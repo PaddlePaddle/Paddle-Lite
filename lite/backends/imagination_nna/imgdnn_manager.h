@@ -51,14 +51,15 @@ class ImgdnnManager {
   imgdnn_context context_{nullptr};
   imgdnn_binding binding_{nullptr};
   imgdnn_network_object net_obj_{nullptr};
-
   std::vector<uint8_t *> coef_pool;
+
+  imgdnn_tensor convertQuantTensorType(imgdnn_tensor a_tensor,
+                                       imgdnn_quant_param *dst_quant_param);
 
  public:
   ImgdnnManager();
 
   virtual ~ImgdnnManager() {
-    std::cout << "~ImgdnnManager called" << std::endl;
     if (net_obj_) err_ = imgdnnNetworkObjectDestroy(net_obj_);
     if (context_) err_ = imgdnnContextDestroy(context_);
     if (binding_) err_ = imgdnnBindingDestroy(binding_);

@@ -68,10 +68,7 @@ class SubgraphCompute : public KernelLite<TARGET(kImaginationNNA),
 
   void Run() override;
 
-  virtual ~SubgraphCompute() {  // = default;
-    std::cout << "~SubgraphCompute" << std::endl;
-    engine_.reset();
-  }
+  virtual ~SubgraphCompute() = default;
 
  private:
   std::unique_ptr<SubgraphEngine> engine_;
