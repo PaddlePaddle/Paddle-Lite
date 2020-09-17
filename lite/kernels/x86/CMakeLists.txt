@@ -69,6 +69,7 @@ add_kernel(search_fc_compute_x86 X86 basic SRCS search_fc_compute.cc DEPS ${lite
 
 add_kernel(matmul_compute_x86 X86 basic SRCS matmul_compute.cc DEPS ${lite_kernel_deps} blas)
 add_kernel(box_coder_compute_x86 X86 basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} box_coder)
+add_kernel(density_prior_box_compute_x86 X86 basic SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps} prior_box)
 
 lite_cc_test(test_conv2d_compute_x86 SRCS conv_compute_test.cc DEPS conv_compute_x86)
 lite_cc_test(test_mul_compute_x86 SRCS mul_compute_test.cc DEPS mul_compute_x86)
