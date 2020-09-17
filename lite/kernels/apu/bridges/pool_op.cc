@@ -45,7 +45,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
-  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
 
   // pool mode
   if ((pooling_type == "max") || (pooling_type == "avg")) {
