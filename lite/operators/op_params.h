@@ -294,6 +294,16 @@ struct ScaleParam : ParamBase {
   }
 };
 
+// For Scatter OP
+struct ScatterParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* indexs{};
+  lite::Tensor* updates{};
+  lite::Tensor* output{};
+
+  bool overwrite{true};
+};
+
 // For Softmax op
 struct SoftmaxParam : ParamBase {
   lite::Tensor* x{};

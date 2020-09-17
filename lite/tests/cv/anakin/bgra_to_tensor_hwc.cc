@@ -30,7 +30,7 @@ void bgra_to_tensor_hwc(const uint8_t* bgr,
   float b_scales = scales[2];
 
   int dim8 = width >> 3;
-  int remain = wwidth - (dim8 << 3);
+  int remain = width - (dim8 << 3);
 
   float32x4_t vrmean = vdupq_n_f32(r_means);
   float32x4_t vgmean = vdupq_n_f32(g_means);
