@@ -32,7 +32,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(Resnet50, test_resnet50_fp32_xpu) {
+TEST(VGG19, test_vgg19_fp32_xpu) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
@@ -96,7 +96,7 @@ TEST(Resnet50, test_resnet50_fp32_xpu) {
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GT(out_accuracy, 0.6f);
+  ASSERT_GT(out_accuracy, 0.56f);
 }
 
 }  // namespace lite
