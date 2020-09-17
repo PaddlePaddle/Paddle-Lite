@@ -13,6 +13,10 @@
 // limitations under the License.
 
 #include "lite/api/light_api.h"
+#ifndef LITE_ON_TINY_PUBLISH
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
+#endif
 #include <algorithm>
 #include <map>
 
