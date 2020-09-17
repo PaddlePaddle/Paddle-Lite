@@ -77,8 +77,6 @@ class KernelPlaceCorrectPass : public DebugPass {
             return "";
           };
 
-      bool need_correct_place = true;
-
       auto in = x->inlinks.front();
       if (!in) {
         break;
@@ -88,7 +86,6 @@ class KernelPlaceCorrectPass : public DebugPass {
 
       std::string node_name = out->AsArg().name;
       std::string arg_name = get_argname(node_name, inst.op_info()->outputs());
-
       auto op_type = inst.op_type();
 
       if (op_type == "reshape" || op_type == "reshape2") {
