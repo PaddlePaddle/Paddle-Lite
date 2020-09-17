@@ -23,12 +23,20 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-std::vector<char> LoadFile(const std::string& path) {
+std::vector<char> LoadFile(const std::string& path,
+                           const size_t& offset,
+                           const size_t& size) {
+  // open file in readonly mode
   FILE* file = fopen(path.c_str(), "rb");
-  CHECK(file);
-  fseek(file, 0, SEEK_END);
-  uint64_t length = ftell(file);
-  rewind(file);
+  CHECK(file) << "Unable to open file: " << path;
+  // move fstream pointer backward for offset
+  uint64_t length = size;
+  if (size == 0) {
+    fseek(file, 0L, SEEK_END);
+    length = ftell(file) - offset;
+  }
+  fseek(file, offset, SEEK_SET);
+  // read data of `length` into buf
   std::vector<char> buf(length);
   CHECK_EQ(fread(buf.data(), 1, length, file), length);
   fclose(file);

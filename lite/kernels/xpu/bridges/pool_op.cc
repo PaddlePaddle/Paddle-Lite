@@ -37,7 +37,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_name = op_info->Output("Out").front();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto ceil_mode = op_info->GetAttr<bool>("ceil_mode");
-  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
   auto strides = op_info->GetAttr<std::vector<int>>("strides");

@@ -42,6 +42,8 @@ void XPUSequencePoolCompute::Run() {
 
   xdnn::Pooling_t pool_type = xdnn::Pooling_t::MAX_WITHOUT_INDEX;
   if (pool_type_str == "MAX") {
+  } else if (pool_type_str == "SUM") {
+    pool_type = xdnn::Pooling_t::SUM;
   } else if (pool_type_str == "LAST") {
     pool_type = xdnn::Pooling_t::LAST;
   } else {

@@ -35,7 +35,7 @@ int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto out_name = op_info->Output("Out").front();
-  auto padding = op_info->GetAttr<std::vector<int>>("paddings");
+  std::vector<int> padding = op_info->GetAttr<std::vector<int>>("paddings");
   CHECK_EQ(padding.size(), 4);
 
   // X node

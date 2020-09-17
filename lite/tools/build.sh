@@ -37,7 +37,6 @@ WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
 HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
 PYTHON_EXECUTABLE_OPTION=""
-ENABLE_FLATBUFFERS_DESC_VIEW=OFF
 IOS_DEPLOYMENT_TARGET=9.0
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
@@ -148,8 +147,7 @@ function make_tiny_publish_so {
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
-      -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang} \
-      -DLITE_ON_FLATBUFFERS_DESC_VIEW=${ENABLE_FLATBUFFERS_DESC_VIEW}
+      -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
@@ -438,7 +436,6 @@ function print_usage {
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
-    echo -e "--enable_flatbuffers_view: (OFF|ON); Use the flatbuffers read-only view to load the model. If ON, the naive buffer will no longer be supported."
     echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
     echo
     echo -e "argument choices:"
@@ -582,10 +579,6 @@ function main {
                 ;;
             --huawei_ascend_npu_ddk_root=*)
                 HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
-                shift
-                ;;
-            --enable_flatbuffers_view=*)
-                ENABLE_FLATBUFFERS_DESC_VIEW="${i#*=}"
                 shift
                 ;;
             --ios_deployment_target=*)

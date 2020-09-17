@@ -13,6 +13,7 @@
 // limitations under the License.
 #pragma once
 
+#include <vector>
 #include "lite/backends/x86/math/sequence_padding.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -33,6 +34,30 @@ class SequenceUnpadCompute
   void Run() override {
     auto& param = this->template Param<param_t>();
     auto& ctx = this->ctx_->template As<X86Context>();
+
+    auto x_dims = param.X->dims();
+    auto len_dims = param.Length->dims();
+
+    auto* seq_len_ptr = param.Length->template data<int64_t>();
+    int64_t batch_size = len_dims[0];
+    std::vector<uint64_t> out_lod0(batch_size + 1, 0);
+    for (int64_t i = 0; i < batch_size; ++i) {
+      out_lod0[i + 1] = out_lod0[i] + seq_len_ptr[i];
+    }
+    paddle::lite::LoD out_lod;
+    out_lod.push_back(out_lod0);
+
+    int64_t out_dim0 = out_lod0.back();
+    std::vector<int64_t> out_dims{out_dim0};
+    if (x_dims.size() == 2) {
+      out_dims.push_back(1);
+    } else {
+      for (size_t i = 2; i < x_dims.size(); ++i) {
+        out_dims.push_back(x_dims[i]);
+      }
+    }
+    param.Out->Resize(out_dims);
+    param.Out->set_lod(out_lod);
 
     param.Out->template mutable_data<T>();
     int64_t padded_length = param.X->dims()[1];
