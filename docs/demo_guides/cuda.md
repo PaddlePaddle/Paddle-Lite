@@ -1,5 +1,7 @@
 # PaddleLite使用CUDA预测部署
 
+**注意**: Lite CUDA仅作为Nvidia GPU加速库，支持模型有限，如有需要请使用[PaddleInference](https://paddle-inference.readthedocs.io/en/latest)。
+
 Lite支持在x86_64，arm64架构上（如：TX2）进行CUDA的编译运行。
 
 ## 编译

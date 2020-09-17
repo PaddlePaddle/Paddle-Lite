@@ -58,6 +58,16 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
                                           config.mlu_input_layout(),
                                           config.mlu_firstconv_param());
 #endif  // LITE_WITH_MLU
+
+#ifdef LITE_WITH_BM
+    Env<TARGET(kBM)>::Init();
+    int device_id = 0;
+    if (const char *c_id = getenv("BM_VISIBLE_DEVICES")) {
+      device_id = static_cast<int>(*c_id) - 48;
+    }
+    TargetWrapper<TARGET(kBM)>::SetDevice(device_id);
+#endif  // LITE_WITH_BM
+
     auto use_layout_preprocess_pass =
         config.model_dir().find("OPENCL_PRE_PRECESS");
     VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;
