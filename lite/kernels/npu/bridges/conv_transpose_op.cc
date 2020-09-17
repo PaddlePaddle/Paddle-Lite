@@ -59,8 +59,8 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_size = op_info->GetAttr<std::vector<int>>("output_size");
   }
 
-  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
-  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
   CHECK_EQ(dilations.size(), 2L);
   std::string padding_algorithm =
       op_info->HasAttr("padding_algorithm")
