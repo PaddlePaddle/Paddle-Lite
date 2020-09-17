@@ -58,13 +58,13 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // 2. one of them is 1
   for (int i = axis; i < x_shape.size(); i++) {
     if (x_dims[i] != y_dims[i - axis]) {
-      // input 1 compatible dimensions as input0
+      // Input 1 compatible dimensions as input0
       if (y_dims[i - axis] != 1) {
         LOG(WARNING) << i << ":" << axis << ":" << y_dims[i - axis];
         return FAILED;
       }
     }
-  }  // end of for
+  }  // End of for
 
   int32_t fuse_val[1] = {NEURON_FUSED_NONE};
   // Act node
@@ -85,7 +85,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       LOG(WARNING) << "Support act_type: " << act_type;
       return FAILED;
     }
-  }  // end of if
+  }  // End of if
   VLOG(3) << "x_name" << x_name;
 
   CHECK(op_info->HasInputScale(x_name));
@@ -110,7 +110,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     VLOG(3) << "Graph has " << x_name;
-    // input operand already exist
     if (graph->IsInput(x_name)) {
       VLOG(3) << x_name << "is input and already exist";
       x_name = "transpose_" + x_name;
@@ -122,7 +121,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
     x_node = graph->Get(x_name);
   } else {
-    // add input operand
     if (graph->IsInput(x_name)) {
       insert_transpose_node(ctx,
                             x_name,
@@ -136,14 +134,14 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                             xType.scale,
                             xType.zeroPoint);
 
-      // change x name
+      // Change x name after insert transpose op for x data relayout
       x_name = "transpose_" + x_name;
       x_node = graph->Get(x_name);
     } else {
-      NeuronModel_addOperand(model, &xType);  // input 0
+      NeuronModel_addOperand(model, &xType);
       x_node = graph->Add(x_name, dims_x);
     }
-  }  // end of else
+  }  // End of else
   VLOG(3) << "x node idx: " << x_node->index() << "x_dims: " << x_dims
           << ": x_scale: " << x_scale << ", xType: " << xType.dimensions[0]
           << ":" << xType.dimensions[1] << ":" << xType.dimensions[2] << ":"
@@ -164,10 +162,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> y_node = nullptr;
   if (graph->Has(y_name)) {
     VLOG(3) << "Graph has " << y_name;
-    // input operand already exist
     y_node = graph->Get(y_name);
   } else {
-    // add input operand
     if (graph->IsInput(y_name)) {
       insert_transpose_node(ctx,
                             y_name,
@@ -181,11 +177,10 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                             yType.scale,
                             yType.zeroPoint);
 
-      // change x name
       y_name = "transpose_" + y_name;
       y_node = graph->Get(y_name);
     } else {
-      NeuronModel_addOperand(model, &yType);  // input 1
+      NeuronModel_addOperand(model, &yType);
       y_node = graph->Add(y_name, dims_y);
     }
   }
@@ -202,7 +197,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Add fuse operand
   std::shared_ptr<Node> fuse_node = nullptr;
-  NeuronModel_addOperand(model, &int32Type);  // 2: fuse
+  NeuronModel_addOperand(model, &int32Type);  // Operand 2: fuse
   fuse_node = graph->Add(out_name + "_fuse", dims_int32);
 
   // Add out tensor type
@@ -220,15 +215,13 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::shared_ptr<Node> out_node = nullptr;
   if (graph->Has(out_name)) {
     VLOG(3) << "Graph has " << out_name;
-    // output operand already exist
     out_node = graph->Get(out_name);
   } else {
-    // add output operand
     if (graph->IsOutput(out_name)) {
-      NeuronModel_addOperand(model, &outType);  // output
+      NeuronModel_addOperand(model, &outType);
       out_node = graph->Add("transpose_" + out_name, dims_out);
     } else {
-      NeuronModel_addOperand(model, &outType);  // output
+      NeuronModel_addOperand(model, &outType);
       out_node = graph->Add(out_name, dims_out);
     }
   }
@@ -238,7 +231,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           << outType.dimensions[1] << ":" << outType.dimensions[2] << ":"
           << outType.dimensions[3];
 
-  // set fuse value
+  // Set fuse value
   NeuronModel_setOperandValue(
       model, fuse_node->index(), fuse_val, sizeof(int32_t) * 1);
 

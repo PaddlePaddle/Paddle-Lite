@@ -85,7 +85,7 @@ int insert_requant_node(void* ctx,
     VLOG(3) << "Has " << input_name;
     input_node = graph->Get(input_name);
   } else {
-    neuron_errCode = NeuronModel_addOperand(model, &inType);  // input
+    neuron_errCode = NeuronModel_addOperand(model, &inType);
     if (NEURON_NO_ERROR != neuron_errCode) {
       LOG(FATAL) << "Insert mtk_requant op fail!";
       return -1;
@@ -102,13 +102,13 @@ int insert_requant_node(void* ctx,
   outType.dimensionCount = output_shape.size();
   outType.dimensions = &output_shape[0];
 
-  NeuronModel_addOperand(model, &outType);  // output
+  NeuronModel_addOperand(model, &outType);
   std::shared_ptr<Node> output_node = nullptr;
   output_node = graph->Add(output_name, output_shape);
 
-  std::vector<uint32_t> addInIndex = {input_node->index()};  // 0: input
+  std::vector<uint32_t> addInIndex = {input_node->index()};
 
-  std::vector<uint32_t> addOutIndex = {output_node->index()};  // 1: output
+  std::vector<uint32_t> addOutIndex = {output_node->index()};
 
   neuron_errCode = NeuronModel_addOperationExtension(model,
                                                      "MTK_REQUANTIZE",
@@ -151,7 +151,7 @@ int insert_transpose_node(void* ctx,
     VLOG(5) << "Has " << input_name;
     input_node = graph->Get(input_name);
   } else {
-    neuron_errCode = NeuronModel_addOperand(model, &inType);  // input
+    neuron_errCode = NeuronModel_addOperand(model, &inType);
     if (NEURON_NO_ERROR != neuron_errCode) {
       LOG(FATAL) << "Insert transpose op fail!";
       return -1;
@@ -167,7 +167,7 @@ int insert_transpose_node(void* ctx,
   uint32_t dims_perms[1] = {4};
   permsType.dimensions = dims_perms;
 
-  neuron_errCode = NeuronModel_addOperand(model, &permsType);  // perm
+  neuron_errCode = NeuronModel_addOperand(model, &permsType);
   if (NEURON_NO_ERROR != neuron_errCode) {
     LOG(FATAL) << "Insert transpose op fail!";
     return -1;
@@ -177,7 +177,7 @@ int insert_transpose_node(void* ctx,
 
   VLOG(5) << "axis :" << axis[0] << ":" << axis[1] << ":" << axis[2] << ":"
           << axis[3];
-  //  &axis[0], sizeof(int32_t) * axis.size());
+
   neuron_errCode = NeuronModel_setOperandValue(
       model, perms_node->index(), &axis[0], sizeof(int32_t) * axis.size());
   if (NEURON_NO_ERROR != neuron_errCode) {
@@ -193,7 +193,7 @@ int insert_transpose_node(void* ctx,
   outType.dimensionCount = output_shape.size();
   outType.dimensions = &output_shape[0];
 
-  NeuronModel_addOperand(model, &outType);  // output
+  NeuronModel_addOperand(model, &outType);
   std::shared_ptr<Node> output_node = nullptr;
   output_node = graph->Add(output_name, output_shape);
 
@@ -266,8 +266,8 @@ void transposeAsym(const int8_t* input_data,
               dim[axis[0]] * shape[axis[1]] * shape[axis[2]] * shape[axis[3]] +
               dim[axis[1]] * shape[axis[2]] * shape[axis[3]] +
               dim[axis[2]] * shape[axis[3]] + dim[axis[3]];
-
-          output_data[new_index] = input_data[old_index] + 128;  // per layer
+          // Per layer op is asym op and need to add 128
+          output_data[new_index] = input_data[old_index] + 128;
         }
       }
     }

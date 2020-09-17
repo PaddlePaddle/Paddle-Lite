@@ -77,12 +77,10 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   inType.dimensions = &dims_in[0];
   std::shared_ptr<Node> in_node = nullptr;
   if (graph->Has(input_name)) {
-    // input operand already exist
     in_node = graph->Get(input_name);
     VLOG(3) << "Graph has " << input_name << ",index: " << in_node->index();
   } else {
-    // add input operand
-    NeuronModel_addOperand(model, &inType);  // 0: input
+    NeuronModel_addOperand(model, &inType);  // Operand 0: input
     in_node = graph->Add(input_name, dims_in);
   }
   VLOG(3) << "input_scale: " << input_scale
@@ -97,7 +95,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   wType.dimensionCount = w_dims.size();
   std::vector<uint32_t> dims_w = {(uint32_t)w_dims[1], (uint32_t)w_dims[0]};
   wType.dimensions = &dims_w[0];
-  NeuronModel_addOperand(model, &wType);  // 1: weight
+  NeuronModel_addOperand(model, &wType);  // Operand 1: weight
   std::shared_ptr<Node> w_node = nullptr;
   w_node = graph->Add(w_name, dims_w);
   VLOG(3) << "w_scale size: " << w_scale.size() << ",w_scale: " << w_scale[0]
@@ -119,7 +117,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     biasType.dimensionCount = bias_dims.size();
     std::vector<uint32_t> dims_bias = {(uint32_t)bias_dims[0]};
     biasType.dimensions = &dims_bias[0];
-    NeuronModel_addOperand(model, &biasType);  // 2: bias
+    NeuronModel_addOperand(model, &biasType);  // Operand 2: bias
     bias_node = graph->Add(bias_name, dims_bias);
     VLOG(3) << "Bias name: " << bias_name << ", bias dims: " << bias_dims
             << ", bias scale: " << biasType.scale
@@ -128,7 +126,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     biasType.dimensionCount = 1;
     std::vector<uint32_t> dims_bias = {(uint32_t)n};
     biasType.dimensions = &dims_bias[0];
-    NeuronModel_addOperand(model, &biasType);  // 2: bias
+    NeuronModel_addOperand(model, &biasType);  // Operand 2: bias
     bias_node = graph->Add(w_name + "_default_bias", dims_bias);
   }
 
@@ -137,7 +135,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   fuseType.type = NEURON_INT32;
   fuseType.dimensionCount = 0;
   std::vector<uint32_t> dims_int32 = {0};
-  NeuronModel_addOperand(model, &fuseType);  // 3: fuse
+  NeuronModel_addOperand(model, &fuseType);  // Operand 3: fuse
   std::shared_ptr<Node> fuse_node = nullptr;
   fuse_node = graph->Add(w_name + "_fuse", dims_int32);
 
@@ -153,7 +151,7 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "out_scale: " << out_scale
           << ", outType: " << outType.dimensions[0] << " : "
           << outType.dimensions[1];
-  NeuronModel_addOperand(model, &outType);  // output
+  NeuronModel_addOperand(model, &outType);
   std::shared_ptr<Node> out_node = nullptr;
   out_node = graph->Add(out_name, dims_out);
 
@@ -191,29 +189,31 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         NeuronModel_setOperandValue(model,
                                     bias_node->index(),
                                     bias->raw_data(),
-                                    bias->memory_size());  // 2: bias
+                                    bias->memory_size());  // Operand 2: bias
   } else {
     auto int32_bias = std::make_shared<Tensor>();
     int32_bias->Resize({1, out_dims[1]});
     int32_bias->mutable_data<int32_t>();
     memset(int32_bias->mutable_data<int32_t>(), 0, int32_bias->memory_size());
     VLOG(3) << "default: " << int32_bias->memory_size();
-    neuron_errCode =
-        NeuronModel_setOperandValue(model,
-                                    bias_node->index(),
-                                    int32_bias->raw_data(),
-                                    int32_bias->memory_size());  // 2: bias
+    neuron_errCode = NeuronModel_setOperandValue(
+        model,
+        bias_node->index(),
+        int32_bias->raw_data(),
+        int32_bias->memory_size());  // Operand 2: bias
     bias_node->set_data(int32_bias);
   }
   // Add fuse value
   int32_t fuse_val[1] = {0};
-  NeuronModel_setOperandValue(
-      model, fuse_node->index(), fuse_val, sizeof(int32_t) * 1);  // 3: fuse
+  NeuronModel_setOperandValue(model,
+                              fuse_node->index(),
+                              fuse_val,
+                              sizeof(int32_t) * 1);  // Operand 3: fuse
 
-  std::vector<uint32_t> addInIndex = {in_node->index(),
-                                      w_node->index(),
-                                      bias_node->index(),
-                                      fuse_node->index()};
+  std::vector<uint32_t> addInIndex = {in_node->index(),     // 0: input
+                                      w_node->index(),      // 1: weight
+                                      bias_node->index(),   // 2: bias
+                                      fuse_node->index()};  // 3: fuse
   std::vector<uint32_t> addOutIndex = {out_node->index()};
   neuron_errCode = NeuronModel_addOperation(model,
                                             NEURON_FULLY_CONNECTED,

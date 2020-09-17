@@ -95,7 +95,7 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
                                       filter_dims);
 
   std::vector<int> output_dims;
-  // set output_dims batches
+  // Set output_dims: batches
   output_dims.push_back(input_dims[0]);
 
   std::vector<int> output_size;
@@ -104,11 +104,11 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   }
 
   if (output_size.size() > 2) {
-    // set output_dims height, width
+    // Set output_dims: height, width
     output_dims.push_back(output_size[0]);
     output_dims.push_back(output_size[1]);
   } else {
-    // compute output size
+    // Compute output size
     for (int i = 0; i < strides.size(); i++) {
       int kernel_ext = filter_dims[i + 2];
       int output_size = (input_dims[i + 2] - 1) * strides[i] + kernel_ext -
@@ -149,10 +149,10 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   std::shared_ptr<Node> input_node = nullptr;
   if (graph->Has(input_name)) {
     VLOG(3) << "Graph has " << input_name;
-    // input operand already exist
+    // Input operand already created by previous OP
     input_node = graph->Get(input_name);
   } else {
-    // add input operand
+    // Add input operand
     if (graph->IsInput(input_name)) {
       // Insert transpose for NCHW -> NHWC
       insert_transpose_node(ctx,
@@ -167,12 +167,12 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
                             inType.scale,
                             inType.zeroPoint);
 
-      // change input_name
+      // Change input_name because we add transpose op
       input_name = "transpose_" + input_name;
       input_node = graph->Get(input_name);
       if (input_node == nullptr) return subgraph::FAILED;
     } else {
-      NeuronModel_addOperand(model, &inType);  // input
+      NeuronModel_addOperand(model, &inType);
       input_node = graph->Add(input_name, dims_in);
     }
   }
@@ -186,7 +186,7 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   NeuronOperandType biasType;
 
   // Add filter type
-  // filter (Cin,Cout,H,W) -> (depth_out, h, w, depth_in)
+  // Relay out filter (Cin,Cout,H,W) -> (depth_out, h, w, depth_in)
   Tensor transpose_filter;
   std::vector<uint32_t> dims_filter;
   transpose_filter.Resize({(uint32_t)filter_dims[1],
@@ -227,38 +227,9 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
           << filterType.dimensions[2] << ":" << filterType.dimensions[2] << ":"
           << filterType.dimensions[3];
 
-#if DEBUG
-
-  std::ofstream myfile;
-  std::string filename = "paddle_conv2d_transpose_filter.bin";
-  myfile.open(filename, std::ios::out | std::ios::binary);
-  myfile.write(reinterpret_cast<char *>(filter->raw_data()),
-               filter->memory_size());
-  myfile.close();
-
-  int8_t *tmp = reinterpret_cast<int8_t *>(filter->raw_data());
-  for (int i = 0; i < 24; i++) {
-    VLOG(3) << i << ":" << static_cast<int>(tmp[i]);
-  }
-#endif
-
   memcpy(filter->mutable_data<int8_t>(),
          transpose_filter.mutable_data<uint8_t>(),
          filter->memory_size());
-
-#if DEBUG
-  std::string filename1 = "vpu_conv2d_transpose_filter.bin";
-  myfile.open(filename1, std::ios::out | std::ios::binary);
-  myfile.write(reinterpret_cast<char *>(filter->raw_data()),
-               filter->memory_size());
-  myfile.close();
-
-  tmp = reinterpret_cast<int8_t *>(filter->raw_data());
-  for (int i = 0; i < 24; i++) {
-    VLOG(3) << i << ":" << static_cast<int>(tmp[i * 128]);
-  }
-
-#endif
 
   // Set filter value
   neuron_errCode = NeuronModel_setOperandValue(
@@ -290,7 +261,7 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
     for (int i = 0; i < bias_dims.size(); i++)
       dims_bias.push_back(bias_dims[i]);
     biasType.dimensions = &dims_bias[0];
-    NeuronModel_addOperand(model, &biasType);  // 2: bias
+    NeuronModel_addOperand(model, &biasType);  // Operand 2: bias
     bias_node = graph->Add(bias_name, dims_bias);
     VLOG(3) << "node idx: " << bias_node->index()
             << ": Bias name: " << bias_name
@@ -299,11 +270,11 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
             << " ,channel_size:" << channel_size;
 
   } else {
-    // create default bias with value 0
+    // Create default bias with value 0
     biasType.dimensionCount = 1;
     dims_bias = {(uint32_t)output_dims[1]};
     biasType.dimensions = &dims_bias[0];
-    NeuronModel_addOperand(model, &biasType);  // 2: bias
+    NeuronModel_addOperand(model, &biasType);  // Operand 2: bias
     bias_node = graph->Add(filter_name + "_default_bias", dims_bias);
     VLOG(3) << "node idx: " << bias_node->index()
             << ": Bias name: default_bias "
@@ -317,38 +288,38 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   std::vector<uint32_t> dims_int32 = {1};
 
   std::shared_ptr<Node> paddingL_node = nullptr;
-  NeuronModel_addOperand(model, &int32Type);  // 3: padding left
+  NeuronModel_addOperand(model, &int32Type);  // Operand 3: padding left
   paddingL_node = graph->Add(filter_name + "_padding_left", dims_int32);
 
   std::shared_ptr<Node> paddingR_node = nullptr;
-  NeuronModel_addOperand(model, &int32Type);  // 4: padding right
+  NeuronModel_addOperand(model, &int32Type);  // Operand 4: padding right
   paddingR_node = graph->Add(filter_name + "_padding_right", dims_int32);
 
   std::shared_ptr<Node> paddingT_node = nullptr;
-  NeuronModel_addOperand(model, &int32Type);  // 5: padding top
+  NeuronModel_addOperand(model, &int32Type);  // Operand 5: padding top
   paddingT_node = graph->Add(filter_name + "_padding_top", dims_int32);
 
   std::shared_ptr<Node> paddingB_node = nullptr;
-  NeuronModel_addOperand(model, &int32Type);  // 6: padding bottom
+  NeuronModel_addOperand(model, &int32Type);  // Operand 6: padding bottom
   paddingB_node = graph->Add(filter_name + "_padding_bottom", dims_int32);
 
   std::shared_ptr<Node> strideW_node = nullptr;
-  NeuronModel_addOperand(model, &int32Type);  // 7: stride width
+  NeuronModel_addOperand(model, &int32Type);  // Operand 7: stride width
   strideW_node = graph->Add(filter_name + "_stride_width", dims_int32);
 
   std::shared_ptr<Node> strideH_node = nullptr;
-  NeuronModel_addOperand(model, &int32Type);  // 8: stride height
+  NeuronModel_addOperand(model, &int32Type);  // Operand 8: stride height
   strideH_node = graph->Add(filter_name + "_stride_height", dims_int32);
 
   std::shared_ptr<Node> fuse_node = nullptr;
-  NeuronModel_addOperand(model, &int32Type);  // 9: fuse
+  NeuronModel_addOperand(model, &int32Type);  // Operand 9: fuse
   fuse_node = graph->Add(filter_name + "_fuse", dims_int32);
 
   NeuronOperandType boolType;
   boolType.type = NEURON_BOOL;
   boolType.dimensionCount = 0;  // Must be 0 for scalars.
   std::shared_ptr<Node> layout_node = nullptr;
-  NeuronModel_addOperand(model, &boolType);  // 9: fuse
+  NeuronModel_addOperand(model, &boolType);  // Operand 9: fuse
   layout_node = graph->Add(filter_name + "_layout", dims_int32);
 
   // Add output tensor type
@@ -366,9 +337,8 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   if (graph->Has(output_name)) {
     output_node = graph->Get(output_name);
   } else {
-    // add output operand
     if (graph->IsOutput(output_name)) {
-      NeuronModel_addOperand(model, &outType);  // output
+      NeuronModel_addOperand(model, &outType);
       output_node = graph->Add("transpose_" + output_name, dims_out);
     } else {
       NeuronModel_addOperand(model, &outType);
@@ -463,10 +433,10 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
 
   // Add Stride
   int32_t stride_val[1];
-  stride_val[0] = strides[1];  // width
+  stride_val[0] = strides[1];  // entry 1: width stride
   NeuronModel_setOperandValue(
       model, strideW_node->index(), stride_val, sizeof(int32_t) * 1);
-  stride_val[0] = strides[0];  // height
+  stride_val[0] = strides[0];  // entry 0: height stride
   NeuronModel_setOperandValue(
       model, strideH_node->index(), stride_val, sizeof(int32_t) * 1);
 

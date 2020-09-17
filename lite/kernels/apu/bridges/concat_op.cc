@@ -39,7 +39,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto axis = op_info->GetAttr<int>("axis");
   auto num = x_names.size();
 
-  // process data layout axis change
+  // Process data layout axis change
   if (axis == 1)
     axis = 3;
   else if (axis == 2)
@@ -48,7 +48,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     axis = 2;
 
   // Limitation:
-  // all input tensors of NEURON_TENSOR_QUANT8_ASYMM must
+  // All input tensors of NEURON_TENSOR_QUANT8_ASYMM must
   // have the same scale and zeroPoint as the output tensor
   CHECK(op_info->HasOutputScale(out_name));
   auto output_scale = op_info->GetOutputScale(out_name)[0];
@@ -85,10 +85,9 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         VLOG(3) << x_name << "is input and output node";
         x_name = "transpose_" + x_name;
       }
-      // input operand already exist
       x_node = graph->Get(x_name);
     } else {
-      // add input operand
+      // Add input operand
       if (graph->IsInput(x_name)) {
         // Insert transpose for NCHW -> NHWC
         insert_transpose_node(ctx,
@@ -103,14 +102,14 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                               xType.scale,
                               xType.zeroPoint);
 
-        // change x_name
+        // Change x_name because we add transpose op
         x_name = "transpose_" + x_name;
         x_node = graph->Get(x_name);
       } else {
-        NeuronModel_addOperand(model, &xType);  // 0~n x
+        NeuronModel_addOperand(model, &xType);
         x_node = graph->Add(x_name, dims_x);
       }
-    }  // end of else
+    }  // End of else
     if (x_node == nullptr) return subgraph::FAILED;
     input_nodes.push_back(x_node);
 
@@ -119,7 +118,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
             << ":" << x_dims[1] << ":" << x_dims
             << ", inType: " << xType.dimensions[0] << ":" << xType.dimensions[1]
             << ":" << xType.dimensions[2] << ":" << xType.dimensions[3];
-  }  // end of for
+  }  // End of for
 
   if (input_nodes.size() != num) {
     LOG(WARNING) << "Create input operand failed!";
@@ -157,12 +156,11 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(out_name)) {
     out_node = graph->Get(out_name);
   } else {
-    // add output operand
     if (graph->IsOutput(out_name)) {
-      NeuronModel_addOperand(model, &outType);  // out
+      NeuronModel_addOperand(model, &outType);
       out_node = graph->Add("transpose_" + out_name, dims_out);
     } else {
-      NeuronModel_addOperand(model, &outType);  // out
+      NeuronModel_addOperand(model, &outType);
       out_node = graph->Add(out_name, dims_out);
     }
   }
@@ -177,7 +175,6 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NeuronModel_setOperandValue(
       model, axis_node->index(), axis_val, sizeof(int32_t) * 1);
 
-  // Add
   std::vector<uint32_t> addInIndex;
   for (auto& node : input_nodes) {
     addInIndex.push_back(node->index());
