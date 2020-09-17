@@ -9,11 +9,16 @@ if(LITE_WITH_ARM)
 endif()
 
 function(xpu_x86_without_xtcl_test TARGET MODEL DATA)
+    set(test_args "--model_dir=${LITE_MODEL_DIR}/${MODEL}")
+    if(NOT ${DATA} STREQUAL "")
+        set(test_args "--model_dir=${LITE_MODEL_DIR}/${MODEL} --data_dir=${LITE_MODEL_DIR}/${DATA}")
+    endif()
+
     lite_cc_test(${TARGET} SRCS ${TARGET}.cc
         DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
         ${ops} ${host_kernels} ${x86_kernels} ${xpu_kernels}
-        ARGS --model_dir=${LITE_MODEL_DIR}/${MODEL}
-             --data_dir=${LITE_MODEL_DIR}/${DATA})
+        ARGS ${test_args})
+
     if(WITH_TESTING)
         add_dependencies(${TARGET} extern_lite_download_${MODEL}_tar_gz)
         if(NOT ${DATA} STREQUAL "")
@@ -26,8 +31,8 @@ if(LITE_WITH_XPU AND NOT LITE_WITH_XTCL)
     xpu_x86_without_xtcl_test(test_resnet50_fp32_xpu resnet50 ILSVRC2012_small)
     xpu_x86_without_xtcl_test(test_googlenet_fp32_xpu GoogLeNet ILSVRC2012_small)
     xpu_x86_without_xtcl_test(test_vgg19_fp32_xpu VGG19 ILSVRC2012_small)
-    xpu_x86_without_xtcl_test(test_ernie_fp32_xpu ernie "")
-    xpu_x86_without_xtcl_test(test_bert_fp32_xpu bert "")
+    xpu_x86_without_xtcl_test(test_ernie_fp32_xpu ernie bert_data)
+    xpu_x86_without_xtcl_test(test_bert_fp32_xpu bert bert_data)
 endif()
 
 if(LITE_WITH_RKNPU)
