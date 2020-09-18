@@ -15,14 +15,14 @@
 | CV | 分类 | shufflenet | ARM |
 | CV | 分类 | inceptionv4 | ARM，X86，NPU |
 | CV | 分类 | vgg16 | ARM |
+| CV | 分类 | vgg19 | XPU|
 | CV | 分类 | googlenet | ARM，X86 |
-| CV | 分类 | SENet | XPU |
-| CV | 检测 | mobilenet_ssd | ARM，NPU*，XPU |
-| CV | 检测 | mobilenet_yolov3 | ARM，NPU*，XPU |
-| CV | 检测 | Faster RCNN | ARM，XPU |
-| CV | 检测 | Mask RCNN | ARM，XPU |
+| CV | 检测 | mobilenet_ssd | ARM，NPU* |
+| CV | 检测 | mobilenet_yolov3 | ARM，NPU* |
+| CV | 检测 | Faster RCNN | ARM |
+| CV | 检测 | Mask RCNN | ARM |
 | CV | 分割 | Deeplabv3 | ARM |
-| CV | 分割 | unet | ARM，XPU |
+| CV | 分割 | unet | ARM |
 | CV | 人脸 | facedetection | ARM |
 | CV | 人脸 | facebox | ARM |
 | CV | 人脸 | blazeface | ARM |
