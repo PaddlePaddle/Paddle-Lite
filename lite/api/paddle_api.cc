@@ -356,5 +356,12 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
   model_from_memory_ = true;
 }
 
+// This is the method for allocating workspace_size according to L3Cache size
+void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
+                                     int absolute_val) {
+  lite::DeviceInfo::Global().SetArmL3CacheSize(static_cast<int>(method),
+                                               absolute_val);
+}
+
 }  // namespace lite_api
 }  // namespace paddle
