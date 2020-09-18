@@ -740,6 +740,7 @@ TEST(PriorBox, precision) {
 TEST(DensityPriorBox, precision) {
 #ifdef LITE_WITH_X86
   Place place(TARGET(kX86));
+  test_density_prior_box(place);
 #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
