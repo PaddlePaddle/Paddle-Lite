@@ -47,6 +47,7 @@ DEFINE_bool(basic_test, true, "do all tests");
 #else
 DEFINE_bool(basic_test, false, "do all tests");
 #endif
+
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(M, 512, "gemm: M");

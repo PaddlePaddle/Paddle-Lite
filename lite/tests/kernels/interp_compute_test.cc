@@ -416,11 +416,6 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
   for (auto x_dims : std::vector<std::vector<int64_t>>{{3, 4, 8, 9}}) {
     for (bool align_corners : {true, false}) {
       for (int align_mode : {0, 1}) {
-        // may exist bug in arm kernel
-        if (place == TARGET(kARM) && align_mode == 1 && !align_corners) {
-          continue;
-        }
-        // align_mode = 0 && align_corners = false NOT supported in Huawei
         // Ascend NPU DDK
         if (place == TARGET(kHuaweiAscendNPU) && align_mode == 0 &&
             !align_corners) {

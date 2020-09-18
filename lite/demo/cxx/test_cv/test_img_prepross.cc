@@ -128,7 +128,7 @@ bool test_convert(bool cv_run,
   for (int i = 0; i < test_iter; i++) {
     clock_t begin = clock();
     // resize default linear
-    image_preprocess.imageConvert(src, resize_lite);
+    image_preprocess.image_convert(src, resize_lite);
     clock_t end = clock();
     to_lite += (end - begin);
   }
@@ -226,7 +226,7 @@ bool test_flip(bool cv_run,
   for (int i = 0; i < test_iter; i++) {
     clock_t begin = clock();
     // resize default linear
-    image_preprocess.imageFlip(src, resize_lite);
+    image_preprocess.image_flip(src, resize_lite);
     clock_t end = clock();
     to_lite += (end - begin);
   }
@@ -330,7 +330,7 @@ bool test_rotate(bool cv_run,
   for (int i = 0; i < test_iter; i++) {
     clock_t begin = clock();
     // resize default linear
-    image_preprocess.imageRotate(src, resize_lite);
+    image_preprocess.image_rotate(src, resize_lite);
     clock_t end = clock();
     to_lite += (end - begin);
   }
@@ -426,7 +426,7 @@ bool test_resize(bool cv_run,
   for (int i = 0; i < test_iter; i++) {
     clock_t begin = clock();
     // resize default linear
-    image_preprocess.imageResize(src, resize_lite);
+    image_preprocess.image_resize(src, resize_lite);
     clock_t end = clock();
     to_lite += (end - begin);
   }
@@ -526,7 +526,7 @@ bool test_crop(bool cv_run,
   std::cout << "lite compute:" << std::endl;
   for (int i = 0; i < test_iter; i++) {
     clock_t begin = clock();
-    image_preprocess.imageCrop(
+    image_preprocess.image_crop(
         src, resize_lite, dstFormat, srcw, srch, left_x, left_y, dstw, dsth);
     clock_t end = clock();
     to_lite += (end - begin);
