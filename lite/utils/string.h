@@ -62,7 +62,7 @@ static std::string to_string(const T& v) {
 }
 
 static std::string to_string(int index) {
-  const int BUFFER_LENGTH = 15;
+  const int BUFFER_LENGTH = 32;
   char buffer[BUFFER_LENGTH];
   snprintf(buffer, sizeof(buffer), "%d", index);
   return std::string(buffer);
