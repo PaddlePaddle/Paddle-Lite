@@ -44,7 +44,6 @@ Paddle Lite提供了C++、Java、Python三种API的完整使用示例和开发�
 - [iOS示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/ios_app_demo.html)
 - [ARMLinux示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/linux_arm_demo.html)
 - [X86示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/x86.html)
-- [CUDA示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/cuda.html)
 - [OpenCL示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/opencl.html)
 - [FPGA示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/fpga.html)
 - [华为NPU示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/huawei_kirin_npu.html)
