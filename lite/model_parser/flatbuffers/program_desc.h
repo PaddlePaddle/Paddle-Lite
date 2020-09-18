@@ -83,7 +83,7 @@ class ProgramDescView : public ProgramDescAPI {
     CHECK_EQ(BlocksSize(), 0u) << "For backward compatibility, in the "
                                   "read-only flatbuffers version, this "
                                   "interface degenerates to force the number "
-                                  "of check blocks to be zero.";
+                                  "of blocks to be zero.";
   }
 
   proto::ProgramDesc const* raw_desc() const { return desc_; }
