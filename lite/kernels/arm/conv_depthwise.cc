@@ -28,11 +28,15 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto w_dims = param.filter->dims();
   auto kw = w_dims[3];
+  auto channel = w_dims[0];
+  auto hin = param.x->dims()[2];
+  auto win = param.x->dims()[3];
   auto paddings = *param.paddings;
+  bool ch_four = channel <= 4 * win;
   // select dw conv kernel
   if (kw == 3) {
     bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
-    if (pads_less && paddings[0] == paddings[2] &&
+    if (ch_four && pads_less && paddings[0] == paddings[2] &&
         (paddings[0] == 0 || paddings[0] == 1)) {
       flag_trans_weights_ = false;
     } else {
@@ -397,6 +401,14 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
         &ctx,
         w_scale_.data());
 }
+
+#ifdef LITE_WITH_PROFILE
+template <>
+void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::
+    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  ch->kernel_func_name = kernel_func_name_;
+}
+#endif
 
 }  // namespace arm
 }  // namespace kernels
