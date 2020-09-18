@@ -163,7 +163,7 @@ void test_convert(const std::vector<int>& cluster_id,
 
       for (int i = 0; i < test_iter; ++i) {
         t_lite.Start();
-        image_preprocess.imageConvert(src, lite_dst);
+        image_preprocess.image_convert(src, lite_dst);
         t_lite.Stop();
       }
       LOG(INFO) << "image Convert avg time : " << t_lite.LapTimes().Avg()
@@ -284,7 +284,7 @@ void test_resize(const std::vector<int>& cluster_id,
 
       for (int i = 0; i < test_iter; ++i) {
         t_rotate.Start();
-        image_preprocess.imageResize(src, lite_dst);
+        image_preprocess.image_resize(src, lite_dst);
         t_rotate.Stop();
       }
       LOG(INFO) << "image Resize avg time : " << t_rotate.LapTimes().Avg()
@@ -405,7 +405,7 @@ void test_flip(const std::vector<int>& cluster_id,
 
       for (int i = 0; i < test_iter; ++i) {
         t_lite.Start();
-        image_preprocess.imageFlip(src, lite_dst);
+        image_preprocess.image_flip(src, lite_dst);
         t_lite.Stop();
       }
       LOG(INFO) << "image flip avg time : " << t_lite.LapTimes().Avg()
@@ -523,7 +523,7 @@ void test_rotate(const std::vector<int>& cluster_id,
 
       for (int i = 0; i < test_iter; ++i) {
         t_lite.Start();
-        image_preprocess.imageRotate(src, lite_dst);
+        image_preprocess.image_rotate(src, lite_dst);
         t_lite.Stop();
       }
       LOG(INFO) << "image rotate avg time : " << t_lite.LapTimes().Avg()
@@ -667,14 +667,14 @@ void test_to_tensor(const std::vector<int>& cluster_id,
 
       for (int i = 0; i < test_iter; ++i) {
         t_lite.Start();
-        image_preprocess.image2Tensor(src,
-                                      &dst_tensor,
-                                      (ImageFormat)dstFormat,
-                                      dstw,
-                                      dsth,
-                                      layout,
-                                      means,
-                                      scales);
+        image_preprocess.image_to_tensor(src,
+                                         &dst_tensor,
+                                         (ImageFormat)dstFormat,
+                                         dstw,
+                                         dsth,
+                                         layout,
+                                         means,
+                                         scales);
         t_lite.Stop();
       }
       LOG(INFO) << "image tensor avg time : " << t_lite.LapTimes().Avg()
