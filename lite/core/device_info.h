@@ -67,11 +67,11 @@ class DeviceInfo {
   int l3_cache_size() const { return L3_cache_[active_ids_[0]]; }
   // Methods for allocating L3Cache on Arm platform
   // enum class L3CacheSetMethod {
-  //  kDeviceL3Cache = 0, // Use the system L3 Cache size, best performance.
+  //  kDeviceL3Cache = 0, // Use the system L3 Cache size, best performancei.
   //  kDeviceL2Cache = 1, // Use the system L2 Cache size, trade off performance
-  //                      // with memory consuption.
+  //                      // with less memory consumption.
   //  kAbsolute = 2,      // Use the external setting.
-  //  // kAutoGrow = 3,   // Not supported yet, least memory consuption.
+  //  // kAutoGrow = 3,   // Not supported yet, least memory consumption.
   // };
   void SetArmL3CacheSize(int method = 0, int absolute_val = -1) {
     l3_cache_method_ = method;
@@ -87,6 +87,7 @@ class DeviceInfo {
                                              : L2_cache_[active_ids_[0]];
         break;
       // kDeviceL2Cache = 1, use the system L2 Cache size, trade off performance
+      // with less memory consumption.
       case 1:
         size = L2_cache_[active_ids_[0]];
         break;
@@ -156,7 +157,7 @@ class DeviceInfo {
   //  kDeviceL2Cache = 1, use the system L2 Cache size, trade off performance
   //                      with memory consuption.
   //  kAbsolute = 2,      use the external setting.
-  //  // kAutoGrow = 3,   not supported yet, least memory consuption.
+  //  // kAutoGrow = 3,   not supported yet, least memory consumption.
   // };
   int l3_cache_method_{0};
   int absolute_l3cache_size_{-1};

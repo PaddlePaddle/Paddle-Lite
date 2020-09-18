@@ -36,9 +36,9 @@ enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
 enum class L3CacheSetMethod {
   kDeviceL3Cache = 0,  // Use the system L3 Cache size, best performance.
   kDeviceL2Cache = 1,  // Use the system L2 Cache size, trade off performance
-                       // with memory consuption.
+                       // with less memory consumption.
   kAbsolute = 2,       // Use the external setting.
-  // kAutoGrow = 3,   // Not supported yet, least memory consuption.
+  // kAutoGrow = 3,   // Not supported yet, least memory consumption.
 };
 
 // return true if current device supports OpenCL model
