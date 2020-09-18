@@ -110,7 +110,6 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
   }
-  LOG(INFO) << x_dims << " " << y_dims << " " << output_dims;
   auto axis = op_info->GetAttr<int>("axis");
   int op_code{-1};
   if (op_type == "elementwise_mul") {
