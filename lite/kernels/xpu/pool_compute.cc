@@ -38,8 +38,7 @@ void Pool2DCompute::Run() {
   auto& paddings = *param.paddings;
   auto type = xdnn::MAX_WITHOUT_INDEX;
   if (param.pooling_type == "avg") {
-    if (paddings[0] == 0 && paddings[1] == 0 && paddings[2] == 0 &&
-        paddings[3] == 0) {
+    if (param.exclusive) {
       type = xdnn::AVG_WITHOUT_PAD;
     } else {
       type = xdnn::AVG_WITH_PAD;
