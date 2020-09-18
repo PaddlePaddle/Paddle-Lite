@@ -1000,14 +1000,17 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 #ifndef LITE_ON_TINY_PUBLISH
       LoadModelNaiveV0FromMemory(model_buffer, scope, cpp_prog);
 #else
-      LOG(FATAL) << "Error: Unsupported model type.";
+      LOG(FATAL) << "Paddle-Lite v2.7 has upgraded the naive-buffer model "
+                    "format. Please use the OPT to generate a new model. "
+                    "Thanks!";
 #endif
       break;
     case 1:
       LoadModelNaiveV1FromMemory(model_buffer, scope, cpp_prog);
       break;
     default:
-      LOG(FATAL) << "Error: Unsupported model type.";
+      LOG(FATAL) << "The model format cannot be recognized. Please make sure "
+                    "you use the correct interface and model file.";
       break;
   }
 }
