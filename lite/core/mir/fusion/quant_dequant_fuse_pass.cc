@@ -61,5 +61,4 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_quant_dequant_fuse_pass,
                   paddle::lite::mir::QuantDequantFusePass)
-    .BindTargets({TARGET(kAny)})
-    .BindKernel("calib");
+    .BindTargets({TARGET(kAny)});
