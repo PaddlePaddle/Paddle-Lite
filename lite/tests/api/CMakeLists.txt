@@ -9,15 +9,17 @@ if(LITE_WITH_ARM)
 endif()
 
 function(xpu_x86_without_xtcl_test TARGET MODEL DATA)
-    set(test_args "--model_dir=${LITE_MODEL_DIR}/${MODEL}")
-    if(NOT ${DATA} STREQUAL "")
-        set(test_args "--model_dir=${LITE_MODEL_DIR}/${MODEL} --data_dir=${LITE_MODEL_DIR}/${DATA}")
+    if(${DATA} STREQUAL "")
+        lite_cc_test(${TARGET} SRCS ${TARGET}.cc
+            DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+            ${ops} ${host_kernels} ${x86_kernels} ${xpu_kernels}
+            ARGS --model_dir=${LITE_MODEL_DIR}/${MODEL})
+    else()
+        lite_cc_test(${TARGET} SRCS ${TARGET}.cc
+            DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
+            ${ops} ${host_kernels} ${x86_kernels} ${xpu_kernels}
+            ARGS --model_dir=${LITE_MODEL_DIR}/${MODEL} --data_dir=${LITE_MODEL_DIR}/${DATA})
     endif()
-
-    lite_cc_test(${TARGET} SRCS ${TARGET}.cc
-        DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-        ${ops} ${host_kernels} ${x86_kernels} ${xpu_kernels}
-        ARGS ${test_args})
 
     if(WITH_TESTING)
         add_dependencies(${TARGET} extern_lite_download_${MODEL}_tar_gz)
