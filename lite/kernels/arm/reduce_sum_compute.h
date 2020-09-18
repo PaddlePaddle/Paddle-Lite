@@ -23,12 +23,11 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename IndexType>
-class GatherCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class ReduceSumCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   void Run() override;
 
-  ~GatherCompute() {}
+  virtual ~ReduceSumCompute() = default;
 };
 
 }  // namespace arm

@@ -53,7 +53,9 @@
 #include "lite/backends/arm/math/reduce_max.h"
 #include "lite/backends/arm/math/reduce_mean.h"
 #include "lite/backends/arm/math/reduce_prod.h"
+#include "lite/backends/arm/math/reduce_sum.h"
 #include "lite/backends/arm/math/scale.h"
+#include "lite/backends/arm/math/scatter.h"
 #include "lite/backends/arm/math/sequence_expand.h"
 #include "lite/backends/arm/math/sequence_pool.h"
 #include "lite/backends/arm/math/sequence_pool_grad.h"
@@ -355,6 +357,15 @@ inline float32x4_t div_ps(float32x4_t a, float32x4_t b) {
 inline float32x4_t pow_ps(float32x4_t a, float32x4_t b) {
   // pow(x, m) = exp(m * log(x))
   return exp_ps(vmulq_f32(b, log_ps(a)));
+}
+
+inline float32x4_t vpaddq_f32(float32x4_t a, float32x4_t b) {
+  float32x4_t vrst;
+  vrst[0] = a[0] + a[1];
+  vrst[1] = a[2] + a[3];
+  vrst[2] = b[0] + b[1];
+  vrst[3] = b[2] + b[3];
+  return vrst;
 }
 
 template <typename T>

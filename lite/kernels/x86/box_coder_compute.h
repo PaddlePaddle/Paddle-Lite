@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace x86 {
 
-template <typename IndexType>
-class GatherCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class BoxCoderCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
+  using param_t = operators::BoxCoderParam;
+
   void Run() override;
 
-  ~GatherCompute() {}
+  virtual ~BoxCoderCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace x86
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

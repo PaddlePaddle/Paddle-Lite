@@ -39,6 +39,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
+
 #ifdef LITE_WITH_ARM
 // sgemm_test wiil not be operated except that it's
 // on arm backend.
@@ -46,6 +47,7 @@ DEFINE_bool(basic_test, true, "do all tests");
 #else
 DEFINE_bool(basic_test, false, "do all tests");
 #endif
+
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(M, 512, "gemm: M");

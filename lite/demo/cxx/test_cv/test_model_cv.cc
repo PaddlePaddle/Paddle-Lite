@@ -88,13 +88,13 @@ void pre_process(const cv::Mat& img, int width, int height, Tensor dstTensor) {
   uint8_t* rgb_ptr = new uint8_t[img.cols * img.rows * 3];
   uint8_t* resize_ptr = new uint8_t[width * height * 3];
   // do convert bgr--rgb
-  img_process.imageConvert(img_ptr, rgb_ptr);
+  img_process.image_convert(img_ptr, rgb_ptr);
   // do resize
-  img_process.imageResize(rgb_ptr, resize_ptr);
+  img_process.image_resize(rgb_ptr, resize_ptr);
   // data--tensor and normalize
   float means[3] = {103.94f, 116.78f, 123.68f};
   float scales[3] = {0.017f, 0.017f, 0.017f};
-  img_process.image2Tensor(
+  img_process.image_to_tensor(
       resize_ptr, &dstTensor, LayoutType::kNCHW, means, scales);
   float* data = dstTensor.mutable_data<float>();
 #else
