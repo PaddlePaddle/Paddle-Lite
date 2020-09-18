@@ -5,23 +5,25 @@ Mobile 在这次升级为 Lite 架构， 侧重多硬件、高性能的支持，
 - 引入 Type system，强化多硬件、量化方法、data layout 的混合调度能力
 - 硬件细节隔离，通过不同编译开关，对支持的任何硬件可以自由插拔
 - 引入 MIR(Machine IR) 的概念，强化带执行环境下的优化支持
-- 优化期和执行期严格隔离，保证预测时轻量和高效率
+- 图优化模块和执行引擎实现了良好的解耦拆分，保证预测执行阶段的轻量和高效率
 
 架构图如下
 
-![Paddle Inference Refactor1.0](https://user-images.githubusercontent.com/52520497/64949619-26e49580-d8ac-11e9-855a-514feb9b75af.png)
+<p align="center"><img width="500" src="https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.6/docs/images/architecture.png"/></p>
 
-## 编译期和执行期严格隔离设计
+## 模型优化阶段和预测执行阶段的隔离设计
 
-- compile time 优化完毕可以将优化信息存储到模型中；execution time 载入并执行
-- 两套 API 及对应的预测lib，满足不同场景
-  - `CxxPredictor` 打包了 `Compile Time` 和 `Execution Time`，可以 runtime 在具体硬件上做分析和优化，得到最优效果
-  - `MobilePredictor` 只打包 `Execution Time`，保持部署和执行的轻量
+- Analysis Phase为模型优化阶段，输入为Paddle的推理模型，通过Lite的模型加速和优化策略对计算图进行相关的优化分析，包含算子融合，计算裁剪，存储优化，量化精度转换、存储优化、Kernel优选等多类图优化手段。优化后的模型更轻量级，在相应的硬件上运行时耗费资源更少，并且执行速度也更快。
+- Execution Phase为预测执行阶段，输入为优化后的Lite模型，仅做模型加载和预测执行两步操作，支持极致的轻量级部署，无任何第三方依赖。
 
-## `Execution Time` 轻量级设计和实现
+Lite设计了两套 API 及对应的预测库，满足不同场景需求：
+  - `CxxPredictor` 同时包含 `Analysis Phase` 和 `Execution Phase`，支持一站式的预测任务，同时支持模型进行分析优化与预测执行任务，适用于对预测库大小不敏感的硬件场景。
+  - `MobilePredictor` 只包含 `Execution Phase`，保持预测部署和执行的轻量级和高性能，支持从内存或者文件中加载优化后的模型，并进行预测执行。
 
-- 每个 batch 实际执行只包含两个步骤执行
-  - `Op.InferShape`
+## Execution Phase轻量级设计和实现
+
+- 在预测执行阶段，每个 batch 实际执行只包含两个步骤执行
+  - `OpLite.InferShape` 基于输入推断得到输出的维度
   - `Kernel.Run`，Kernel 相关参数均使用指针提前确定，后续无查找或传参消耗
   - 设计目标，执行时，只有 kernel 计算本身消耗
 - 轻量级 `Op` 及 `Kernel` 设计，避免框架额外消耗
