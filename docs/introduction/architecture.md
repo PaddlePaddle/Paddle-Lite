@@ -9,7 +9,7 @@ Mobile 在这次升级为 Lite 架构， 侧重多硬件、高性能的支持，
 
 架构图如下
 
-<p align="center"><img width="500" src="https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.6/docs/images/architecture.png"/></p>
+<p align="center"><img width="500" src="https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.7/docs/images/architecture.png"/></p>
 
 ## 模型优化阶段和预测执行阶段的隔离设计
 
