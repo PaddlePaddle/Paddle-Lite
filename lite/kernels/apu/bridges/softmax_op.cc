@@ -104,7 +104,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Add out operand
   NeuronOperandType outType;
   outType.type = NEURON_TENSOR_QUANT8_ASYMM;
-  outType.scale = out_scale / 127;
+  outType.scale = out_scale;
   outType.zeroPoint = 128;
   outType.dimensionCount = x_dims.size();
   outType.dimensions = &dims_x[0];
