@@ -293,14 +293,14 @@ void test_img(const std::vector<int>& cluster_id,
 
         // LOG(INFO) << "image convert saber compute";
         t_convert.Start();
-        // 方法一: image_preprocess.image_convert(src, lite_dst);
+        // method1: image_preprocess.image_convert(src, lite_dst);
         image_preprocess.image_convert(
             src, lite_dst, (ImageFormat)srcFormat, (ImageFormat)dstFormat);
         t_convert.Stop();
 
         // LOG(INFO) << "image resize saber compute";
         t_resize.Start();
-        // 方法一:image_preprocess.image_resize(lite_dst, resize_tmp);
+        // method1:image_preprocess.image_resize(lite_dst, resize_tmp);
         image_preprocess.image_resize(lite_dst,
                                       resize_tmp,
                                       (ImageFormat)dstFormat,
@@ -312,7 +312,7 @@ void test_img(const std::vector<int>& cluster_id,
 
         // LOG(INFO) << "image rotate saber compute";
         t_rotate.Start();
-        // 方法一: image_preprocess.image_rotate(resize_tmp, tv_out_ratote);
+        // method1: image_preprocess.image_rotate(resize_tmp, tv_out_ratote);
         image_preprocess.image_rotate(resize_tmp,
                                       tv_out_ratote,
                                       (ImageFormat)dstFormat,
@@ -323,14 +323,14 @@ void test_img(const std::vector<int>& cluster_id,
 
         // LOG(INFO) << "image flip saber compute";
         t_flip.Start();
-        // 方法一: image_preprocess.image_flip(resize_tmp, tv_out_flip);
+        // method1: image_preprocess.image_flip(resize_tmp, tv_out_flip);
         image_preprocess.image_flip(
             resize_tmp, tv_out_flip, (ImageFormat)dstFormat, dstw, dsth, flip);
         t_flip.Stop();
 
         // LOG(INFO) << "image to tensor compute";
         t_tensor.Start();
-        // 方法一: image_preprocess.image_to_tensor(
+        // method1: image_preprocess.image_to_tensor(
         //  resize_tmp, &dst_tensor, layout, means, scales);
         image_preprocess.image_to_tensor(resize_tmp,
                                          &dst_tensor,
