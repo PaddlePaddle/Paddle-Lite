@@ -102,9 +102,9 @@ void slice_compute(const lite::Tensor* in,
 
         start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
         end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
-        start = std::max(start, 0);
-        end = std::max(end, 0);
-        end = std::min(end, dim_value);
+        start = (std::max)(start, 0);
+        end = (std::max)(end, 0);
+        end = (std::min)(end, dim_value);
         CHECK_GT(end, start) << "end should greater than start";
         out_dims[axes[i]] = end - start;
       }
@@ -172,7 +172,7 @@ void slice_compute(const lite::Tensor* in,
     if (start < 0) {
       start = (start + in_dims[axes[i]]);
     }
-    start = std::max(start, 0);
+    start = (std::max)(start, 0);
     offsets[axes[i]] = start;
   }
   auto in_t =

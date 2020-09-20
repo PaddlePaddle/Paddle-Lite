@@ -55,7 +55,7 @@ class SequenceArithmeticCompute
         auto input_x = x_data + x_seq_offset[i] * inner_size;
         auto input_y = y_data + y_seq_offset[i] * inner_size;
         auto t_out = out_data + x_seq_offset[i] * inner_size;
-        int len = std::min(len_x, len_y);
+        int len = (std::min)(len_x, len_y);
         for (int j = 0; j < len; j++) {
           t_out[j] = input_x[j] + input_y[j];
         }
@@ -73,7 +73,7 @@ class SequenceArithmeticCompute
         auto input_x = x_data + x_seq_offset[i] * inner_size;
         auto input_y = y_data + y_seq_offset[i] * inner_size;
         auto t_out = out_data + x_seq_offset[i] * inner_size;
-        int len = std::min(len_x, len_y);
+        int len = (std::min)(len_x, len_y);
         for (int j = 0; j < len; j++) {
           t_out[j] = input_x[j] - input_y[j];
         }
@@ -91,7 +91,7 @@ class SequenceArithmeticCompute
         auto input_x = x_data + x_seq_offset[i] * inner_size;
         auto input_y = y_data + y_seq_offset[i] * inner_size;
         auto t_out = out_data + x_seq_offset[i] * inner_size;
-        int len = std::min(len_x, len_y);
+        int len = (std::min)(len_x, len_y);
         for (int j = 0; j < len; j++) {
           t_out[j] = input_x[j] * input_y[j];
         }
