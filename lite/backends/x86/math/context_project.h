@@ -180,8 +180,8 @@ class ContextProjectFunctor {
         }
         if (down_pad > 0) {  // add down pad
           int down_pad_begin_row =
-              (std::max)(0,
-                       (sequence_height - context_start - context_length) + 1) +
+              (std::max)(
+                  0, (sequence_height - context_start - context_length) + 1) +
               1;
           int padding_begin = (std::max)(0, context_start - sequence_height);
           int padding_size =
