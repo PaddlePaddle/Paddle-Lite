@@ -70,7 +70,7 @@ cd "%build_directory%"
 
 call "%vcvarsall_dir%" amd64
 
-msbuild /m /p:Configuration=Release lite\publish_inference.vcxproj >mylog.txt 2>&1
+msbuild /m /p:Configuration=Release lite\publish_inference.vcxproj
 goto:eof
 
 :prepare_thirdparty 
