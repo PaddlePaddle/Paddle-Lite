@@ -129,7 +129,7 @@ inline void UpdatePadding(std::vector<int> *paddings,
       int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
       int pad_sum =
           (std::max)((out_size - 1) * strides[i] + ksize[i] - data_dims[i + 2],
-                   (int64_t)0);
+                     (int64_t)0);
       int pad_0 = pad_sum / 2;
       int pad_1 = pad_sum - pad_0;
       *(paddings->begin() + i * 2) = pad_0;
