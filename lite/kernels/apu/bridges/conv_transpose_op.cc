@@ -356,20 +356,6 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
     auto bias_name = op_info->Input("Bias").front();
     auto bias = scope->FindMutableTensor(bias_name);
 
-#if DEBUG
-    std::ofstream myfile;
-    std::string filename = "vpu_conv2d_transpose_bias_float.bin";
-    myfile.open(filename, std::ios::out | std::ios::binary);
-    myfile.write(reinterpret_cast<char *>(bias->raw_data()),
-                 bias->memory_size());
-    myfile.close();
-
-    float *tmp_float = reinterpret_cast<float *>(bias->raw_data());
-    for (int i = 0; i < 64; i++) {
-      VLOG(3) << i << ":" << (tmp_float[i]);
-    }
-#endif
-
     int32_t *int32_bias_data =
         reinterpret_cast<int32_t *>(bias->mutable_data<float>());
     float2int32(
@@ -378,20 +364,6 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
     VLOG(3) << "int32_bias_data: " << int32_bias_data[0] << ":"
             << int32_bias_data[1] << ":" << int32_bias_data[2] << ":"
             << int32_bias_data[3];
-
-#if DEBUG
-    myfile;
-    filename = "vpu_conv2d_transpose_bias.bin";
-    myfile.open(filename, std::ios::out | std::ios::binary);
-    myfile.write(reinterpret_cast<char *>(bias->raw_data()),
-                 bias->memory_size());
-    myfile.close();
-
-    int32_t *tmp = reinterpret_cast<int32_t *>(bias->raw_data());
-    for (int i = 0; i < 24; i++) {
-      VLOG(3) << i << ":" << static_cast<int>(tmp[i]);
-    }
-#endif
 
     neuron_errCode = NeuronModel_setOperandValue(
         model, bias_node->index(), bias->raw_data(), bias->memory_size());
