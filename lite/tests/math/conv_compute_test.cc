@@ -329,7 +329,12 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
                                    weights_dim,
                                    c,
                                    {stride, stride},
+#ifdef __aarch64__
                                    {pad_top, pad_bottom, pad_left, pad_right},
+#else
+                                   // only run one case, the result is ok
+                                   {pad_top, pad_top, pad_left, pad_left},
+#endif
                                    {1, 1},
                                    flag_bias,
                                    flag_act,
