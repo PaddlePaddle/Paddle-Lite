@@ -391,7 +391,7 @@ void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {
   }
   {  // the 3rd field, tensor data
     uint64_t size = tensor.memory_size();
-    CHECK_LT(size, std::numeric_limits<std::streamsize>::max())
+    CHECK_LT(size, (std::numeric_limits<std::streamsize>::max)())
         << "Index overflow when writing tensor";
 
 #ifdef LITE_WITH_CUDA
@@ -461,7 +461,7 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
   }
   desc.SetDim(tensor.dims().Vectorize());
   uint64_t size = tensor.memory_size();
-  CHECK_LT(size, std::numeric_limits<std::streamsize>::max())
+  CHECK_LT(size, (std::numeric_limits<std::streamsize>::max)())
       << "Index overflow when writing tensor";
 
 #ifdef LITE_WITH_CUDA
