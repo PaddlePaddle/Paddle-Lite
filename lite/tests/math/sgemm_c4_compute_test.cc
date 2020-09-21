@@ -98,9 +98,9 @@ bool test_sgemm_c4(
   basic_trans_mat_to_c4(da, da_c4, k, m, k, true);
   basic_trans_mat_to_c4(db, db_c4, n, k, n, false);
 
-  LOG(INFO) << "sgemm_c4 M: " << m << ", N: " << n << ", K: " << k
-            << ", relu: " << (has_relu ? "true" : "false")
-            << ", bias: " << (has_bias ? "true" : "false");
+  VLOG(4) << "sgemm_c4 M: " << m << ", N: " << n << ", K: " << k
+          << ", relu: " << (has_relu ? "true" : "false")
+          << ", bias: " << (has_bias ? "true" : "false");
 
   if (FLAGS_check_result) {
     basic_gemm_c4(false,
@@ -331,10 +331,10 @@ TEST(TestSgemmC4, test_func_sgemm_c4_prepacked) {
                 auto flag = test_sgemm_c4(
                     m, n, k, has_bias, has_relu, FLAGS_power_mode, th);
                 if (flag) {
-                  LOG(INFO) << "test m = " << m << ", n=" << n << ", k=" << k
-                            << ", bias: " << (has_bias ? "true" : "false")
-                            << ", relu: " << (has_relu ? "true" : "false")
-                            << " passed\n";
+                  VLOG(4) << "test m = " << m << ", n=" << n << ", k=" << k
+                          << ", bias: " << (has_bias ? "true" : "false")
+                          << ", relu: " << (has_relu ? "true" : "false")
+                          << " passed\n";
                 } else {
                   LOG(FATAL) << "test m = " << m << ", n=" << n << ", k=" << k
                              << ", bias: " << (has_bias ? "true" : "false")
@@ -364,10 +364,10 @@ TEST(TestSgemmC8, test_func_sgemm_c8_prepacked) {
                 auto flag = test_sgemm_c8(
                     m, n, k, has_bias, has_relu, FLAGS_power_mode, th);
                 if (flag) {
-                  LOG(INFO) << "test m = " << m << ", n=" << n << ", k=" << k
-                            << ", bias: " << (has_bias ? "true" : "false")
-                            << ", relu: " << (has_relu ? "true" : "false")
-                            << " passed\n";
+                  VLOG(4) << "test m = " << m << ", n=" << n << ", k=" << k
+                          << ", bias: " << (has_bias ? "true" : "false")
+                          << ", relu: " << (has_relu ? "true" : "false")
+                          << " passed\n";
                 } else {
                   LOG(FATAL) << "test m = " << m << ", n=" << n << ", k=" << k
                              << ", bias: " << (has_bias ? "true" : "false")

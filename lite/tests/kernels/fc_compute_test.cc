@@ -121,9 +121,9 @@ class FcOPTest : public arena::TestCase {
     int k = wdims_[0];
     int n = wdims_[1];
 
-    LOG(INFO) << "M=" << m << ", N=" << n << ", K=" << k
-              << ", bias=" << flag_bias << ", with_relu=" << with_relu_
-              << ", padding_weights=" << padding_weights_;
+    VLOG(4) << "M=" << m << ", N=" << n << ", K=" << k << ", bias=" << flag_bias
+            << ", with_relu=" << with_relu_
+            << ", padding_weights=" << padding_weights_;
 
     if (m == 1) {
       basic_gemv(n,
