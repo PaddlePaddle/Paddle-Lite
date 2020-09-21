@@ -56,10 +56,10 @@ void ReadRawData(const std::string& input_data_dir,
 }
 
 template <class T = int64_t>
-void fill_tensor(const std::shared_ptr<lite_api::PaddlePredictor>& predictor,
-                 int tensor_id,
-                 const std::vector<int64_t>& tensor_shape,
-                 const std::vector<T>& tensor_value) {
+void FillTensor(const std::shared_ptr<lite_api::PaddlePredictor>& predictor,
+                int tensor_id,
+                const std::vector<int64_t>& tensor_shape,
+                const std::vector<T>& tensor_value) {
   predictor->GetInput(tensor_id)->Resize(tensor_shape);
   int64_t tensor_size = 1;
   for (size_t i = 0; i < tensor_shape.size(); i++) {

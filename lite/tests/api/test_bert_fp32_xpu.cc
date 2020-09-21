@@ -52,7 +52,7 @@ TEST(Bert, test_bert_fp32_xpu) {
     std::vector<int64_t> shape = {1, 64, 1};
     std::vector<int64_t> fill_value(64, 0);
     for (int j = 0; j < 4; j++) {
-      fill_tensor(predictor, j, shape, fill_value);
+      FillTensor(predictor, j, shape, fill_value);
     }
     predictor->Run();
   }
@@ -61,10 +61,10 @@ TEST(Bert, test_bert_fp32_xpu) {
   out_rets.resize(FLAGS_iteration);
   double cost_time = 0;
   for (int i = 0; i < FLAGS_iteration; ++i) {
-    fill_tensor(predictor, 0, input_shapes[i], input0[i]);
-    fill_tensor(predictor, 1, input_shapes[i], input1[i]);
-    fill_tensor(predictor, 2, input_shapes[i], input2[i]);
-    fill_tensor(predictor, 3, input_shapes[i], input3[i]);
+    FillTensor(predictor, 0, input_shapes[i], input0[i]);
+    FillTensor(predictor, 1, input_shapes[i], input1[i]);
+    FillTensor(predictor, 2, input_shapes[i], input2[i]);
+    FillTensor(predictor, 3, input_shapes[i], input3[i]);
 
     double start = GetCurrentUS();
     predictor->Run();
