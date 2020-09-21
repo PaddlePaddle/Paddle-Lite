@@ -16,69 +16,12 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
 
 ### 已支持的Paddle模型
 
-- [ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz)
-- [BERT](https://paddlelite-demo.bj.bcebos.com/models/bert_fp32_fluid.tar.gz)
-- [ERNIE](https://paddlelite-demo.bj.bcebos.com/models/ernie_fp32_fluid.tar.gz)
-- YOLOv3
-- Mask R-CNN
-- Faster R-CNN
-- UNet
-- SENet
-- SSD
+- [开源模型支持列表](../introduction/support_model_list)
 - 百度内部业务模型（由于涉密，不方便透露具体细节）
 
 ### 已支持（或部分支持）的Paddle算子（Kernel接入方式）
 
-- scale
-- relu
-- tanh
-- sigmoid
-- stack
-- matmul
-- pool2d
-- slice
-- lookup_table
-- elementwise_add
-- elementwise_sub
-- cast
-- batch_norm
-- mul
-- layer_norm
-- softmax
-- conv2d
-- io_copy
-- io_copy_once
-- __xpu__fc
-- __xpu__multi_encoder
-- __xpu__resnet50
-- __xpu__embedding_with_eltwise_add
-
-### 已支持（或部分支持）的Paddle算子（子图/XTCL接入方式）
-
-- relu
-- tanh
-- conv2d
-- depthwise_conv2d
-- elementwise_add
-- pool2d
-- softmax
-- mul
-- batch_norm
-- stack
-- gather
-- scale
-- lookup_table
-- slice
-- transpose
-- transpose2
-- reshape
-- reshape2
-- layer_norm
-- gelu
-- dropout
-- matmul
-- cast
-- yolo_box
+- [算子支持列表](../introduction/support_operation_list)
 
 
 ## 参考示例演示
@@ -233,7 +176,7 @@ $ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build
 ```
 
 - 将编译生成的build.lite.x86/inference_lite_lib/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/amd64/include目录；
-- 将编译生成的build.lite.x86/inference_lite_lib/cxx/include/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/amd64/lib/libpaddle_full_api_shared.so文件；
+- 将编译生成的build.lite.x86/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/amd64/lib/libpaddle_full_api_shared.so文件；
 - 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.xpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
 - 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.xpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件。
 
