@@ -288,6 +288,13 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
        set_target_properties(test_mobilenetv1 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
     endif()
+    
+    lite_cc_test(test_mobilenetv1_int16 SRCS mobilenetv1_int16_test.cc
+       DEPS ${lite_model_test_DEPS} ${light_lib_DEPS}
+       CL_DEPS ${opencl_kernels}
+       NPU_DEPS ${npu_kernels} ${npu_bridges}
+       ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
+            --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int16 SERIAL)
 
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}
