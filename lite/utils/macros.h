@@ -54,8 +54,9 @@
 #define FLT_MAX __FLT_MAX__
 #endif  // __FLT_MAX__
 
-#if (defined __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) && \
-    (__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 90000)
+#if ((defined __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) &&  \
+     (__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 90000)) || \
+    (defined _WIN32)
 // Thread local storage will be ignored because the linker for iOS 8 does not
 // support it.
 #define LITE_THREAD_LOCAL
