@@ -57,8 +57,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
     }
   }
 
-  // Collect the valid input and output nodes in the IMGDNN IR graph and update
-  // the input and output names
+  // Collect the valid input and output nodes in the IMGDNN IR graph and
+  // update the input and output names
   device_inames_.clear();
   std::vector<imgdnn_tensor> device_inodes;
   for (auto& input_name : input_names_) {
