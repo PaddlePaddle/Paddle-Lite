@@ -96,7 +96,6 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   const cl::Image2D* input_image_p_{nullptr};
   const cl::Image2D* filter_image_p_{nullptr};
   const cl::Image2D* bias_image_p_{nullptr};
-  const cl::Image2D* output_image_p_{nullptr};
 
   int stride_h_{-1};
   int stride_w_{-1};

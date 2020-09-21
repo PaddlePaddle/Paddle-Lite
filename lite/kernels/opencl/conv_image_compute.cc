@@ -363,8 +363,6 @@ void ConvImageCompute::PrepareForRun() {
   input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
   filter_image_p_ = filter_gpu_image_->data<half_t, cl::Image2D>();
   bias_image_p_ = bias_gpu_image_->data<half_t, cl::Image2D>();
-  output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
-      output_image_w_, output_image_h_);
 
   build_options_.push_back(build_options_single);
 
@@ -501,9 +499,6 @@ void ConvImageCompute::ReInitWhenNeeded() {
 
     // define image pointer for input, output
     input_image_p_ = conv_param_->x->data<half_t, cl::Image2D>();
-    output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
-        output_image_w_, output_image_h_);
-
     GetGlobalWorkSize();
   }
 }
@@ -635,7 +630,10 @@ void ConvImageCompute::Conv2d1x1opt(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -689,7 +687,10 @@ void ConvImageCompute::Conv2d3x3(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -748,7 +749,10 @@ void ConvImageCompute::Conv2d3x3opt(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -806,7 +810,10 @@ void ConvImageCompute::Conv2d5x5(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -856,7 +863,10 @@ void ConvImageCompute::Conv2d5x5opt(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -908,7 +918,10 @@ void ConvImageCompute::Conv2d7x7(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -958,7 +971,10 @@ void ConvImageCompute::Conv2d7x7opt(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -1011,7 +1027,10 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -1062,7 +1081,10 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -1113,7 +1135,10 @@ void ConvImageCompute::DepthwiseConv2d(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(5, *bias_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ =
+      kernel_.setArg(6,
+                     *conv_param_->output->mutable_data<half_t, cl::Image2D>(
+                         output_image_w_, output_image_h_));
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(7, stride_h_);
   CL_CHECK_FATAL(status_);
@@ -1180,7 +1205,6 @@ void ConvImageCompute::PrintConvInfo() {
   LOG(INFO) << "input_image_p_:" << input_image_p_;
   LOG(INFO) << "filter_image_p_:" << filter_image_p_;
   LOG(INFO) << "bias_image_p_:" << bias_image_p_;
-  LOG(INFO) << "output_image_p_:" << output_image_p_;
 
   LOG(INFO) << "stride_h_:" << stride_h_;
   LOG(INFO) << "stride_w_:" << stride_w_;
