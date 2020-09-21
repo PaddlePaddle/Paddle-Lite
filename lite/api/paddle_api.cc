@@ -360,8 +360,7 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
 void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
                                      int absolute_val) {
 #ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetArmL3CacheSize(static_cast<int>(method),
-                                               absolute_val);
+  lite::DeviceInfo::Global().SetArmL3CacheSize(method, absolute_val);
 #endif
 }
 
