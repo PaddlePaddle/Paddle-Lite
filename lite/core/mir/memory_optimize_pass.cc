@@ -148,7 +148,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
           int cur_life =
               (*lifecycles)[TargetToStr(target_type)][var_name].second;
           (*lifecycles)[TargetToStr(target_type)][var_name].second =
-              std::max(max_lifecycle_, cur_life);
+              (std::max)(max_lifecycle_, cur_life);
         }
       }
       ++max_lifecycle_;
