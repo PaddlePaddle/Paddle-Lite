@@ -32,7 +32,8 @@ bool CvtDtype(int dtype, int* ptype) {
       *ptype = DTYPE_INT16;
       break;
     case 2:
-      *ptype = DTYPE_FP32;
+    case 3:
+      *ptype = DTYPE_INT32;
       break;
     case 5:
       *ptype = DTYPE_FP32;
