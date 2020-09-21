@@ -97,9 +97,9 @@ bool test_gemv_int8(bool tra,
     scale_merge_int8[j] = scale_merge_fp32[j] / scale_c[0];
   }
 
-  LOG(INFO) << "gemv_int8 M: " << m << ", N: " << n
-            << ", transA: " << (tra ? "true" : "false") << ", act: " << flag_act
-            << ", bias: " << (has_bias ? "true" : "false");
+  VLOG(4) << "gemv_int8 M: " << m << ", N: " << n
+          << ", transA: " << (tra ? "true" : "false") << ", act: " << flag_act
+          << ", bias: " << (has_bias ? "true" : "false");
 #ifdef LITE_WITH_ARM
   auto da = ta.mutable_data<int8_t>();
   auto db = tb.mutable_data<int8_t>();
@@ -336,11 +336,11 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
                                            six,
                                            alpha);
                 if (flag) {
-                  LOG(INFO) << "test m = " << m << ", n=" << n
-                            << ", bias: " << (has_bias ? "true" : "false")
-                            << ",  relu: " << (has_relu ? "true" : "false")
-                            << ", trans A: " << (tra ? "true" : "false")
-                            << " passed\n";
+                  VLOG(4) << "test m = " << m << ", n=" << n
+                          << ", bias: " << (has_bias ? "true" : "false")
+                          << ",  relu: " << (has_relu ? "true" : "false")
+                          << ", trans A: " << (tra ? "true" : "false")
+                          << " passed\n";
                 } else {
                   LOG(FATAL) << "test m = " << m << ", n=" << n
                              << ", bias: " << (has_bias ? "true" : "false")
