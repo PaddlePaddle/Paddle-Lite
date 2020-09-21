@@ -74,6 +74,10 @@ class DeviceInfo {
       int absolute_val = -1) {
     l3_cache_method_ = method;
     absolute_l3cache_size_ = absolute_val;
+    // Realloc memory for sgemm in this context.
+    workspace_.clear();
+    workspace_.Resize({llc_size()});
+    workspace_.mutable_data<int8_t>();
   }
 
   int llc_size() const {
