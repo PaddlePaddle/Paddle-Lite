@@ -130,7 +130,6 @@ void TestCast(Place place, float abs_error, int in_dtype, int out_dtype) {
 }
 
 TEST(Cast, precision) {
-  LOG(INFO) << "test cast op";
   Place place;
   float abs_error = 2e-5;
 #if defined(LITE_WITH_ARM)
@@ -150,7 +149,7 @@ TEST(Cast, precision) {
   TestCast(place, abs_error, 20, 5);
 #endif
   TestCast(place, abs_error, 2, 5);
-#if defined(LITE_WITH_XPU) || defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   TestCast(place, abs_error, 3, 5);
   TestCast(place, abs_error, 5, 3);
 #endif
