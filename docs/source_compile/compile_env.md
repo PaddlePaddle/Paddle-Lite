@@ -19,7 +19,6 @@ Paddle Lite提供了Android/iOS/X86平台的官方Release预测库下载，如�
 - [ArmLinux源码编译](../source_compile/compile_linux)
 - [X86源码编译](../demo_guides/x86)
 - [OpenCL源码编译](../demo_guides/opencl)
-- [CUDA源码编译](../demo_guides/cuda)
 - [FPGA源码编译](../demo_guides/fpga)
 - [华为NPU源码编译](../demo_guides/huawei_kirin_npu)
 - [百度XPU源码编译](../demo_guides/baidu_xpu)
