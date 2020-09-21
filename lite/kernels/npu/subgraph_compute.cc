@@ -320,11 +320,68 @@ bool DeviceProgram::ZeroCopyRun(
   return true;
 }
 
+bool SubgraphEngine::GenerateValidInputOutputNames() {
+  if (!origin_program_) {
+    BuildOriginProgram();
+  }
+
+  // Convert all of ops and their input vars and weights to HiAI IR nodes,
+  // then added them into the HiAI IR graph
+  int status = 0;
+  subgraph::npu::Graph graph;
+  const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
+  CHECK(origin_program_) << "[NPU] The origin program is not initialized!";
+  CHECK_GT(origin_program_->instructions(kRootBlockIdx).size(), 0)
+      << "[NPU] No instructions found in the origin program!";
+  const auto& insts = origin_program_->instructions(kRootBlockIdx);
+  for (auto& inst : insts) {
+    auto op = const_cast<OpLite*>(inst.op());
+    CHECK(op);
+    op->CheckShape();
+    op->InferShape();
+    std::string op_type = op->op_info()->Type();
+    if (!bridges.Exists(op_type, TARGET(kNPU))) {
+      return false;
+    }
+    auto kernel = inst.kernel();
+    status |= bridges.Select(op_type, TARGET(kNPU))(
+        reinterpret_cast<void*>(&graph), op, const_cast<KernelBase*>(kernel));
+    if (subgraph::CHECK_FAILED(status)) {
+      return false;
+    }
+  }
+
+  // update input_names and output_names because some inputs or outputs may be
+  // useless
+  for (size_t i = 0; i < input_names_.size(); i++) {
+    if (!graph.Has(input_names_[i])) {
+      input_names_.erase(input_names_.begin() + i);
+      origin_itensors_.erase(origin_itensors_.begin() + i);
+      i--;
+    }
+  }
+  CHECK_GT(input_names_.size(), 0UL);
+  CHECK_EQ(input_names_.size(), origin_itensors_.size());
+
+  for (size_t i = 0; i < output_names_.size(); i++) {
+    if (!graph.Has(output_names_[i])) {
+      output_names_.erase(output_names_.begin() + i);
+      origin_otensors_.erase(origin_otensors_.begin() + i);
+      i--;
+    }
+  }
+  CHECK_GT(output_names_.size(), 0UL);
+  CHECK_EQ(output_names_.size(), origin_otensors_.size());
+
+  return true;
+}
+
 bool SubgraphEngine::PrepareWorkspaceForDeviceProgram() {
   // Obtain the origin input tensors, and create the origin output
   // tensors(Don't try to access them before launch the device program or the
   // origin program)
   PrepareWorkspaceForOriginProgram();
+  GenerateValidInputOutputNames();
   // Create the device input and output tensors, but don't initialize them
   // with the dimensions
   device_itensors_.resize(input_names_.size());

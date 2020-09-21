@@ -87,6 +87,10 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
   bool BuildDeviceProgram() override;
   bool LaunchDeviceProgram() override;
 
+  // try building device graph to get valid input and output names.
+  // some output names may be useless for npu
+  bool GenerateValidInputOutputNames();
+
   std::vector<std::shared_ptr<hiai::AiTensor>> device_itensors_{};
   std::vector<std::shared_ptr<hiai::AiTensor>> device_otensors_{};
   std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<DeviceProgram>>
