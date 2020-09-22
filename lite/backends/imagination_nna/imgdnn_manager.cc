@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "imgdnn_manager.h"  // NOLINT
+#include <unistd.h>
 #include <utility>
 #include "ImgdnnManagerConfig.h"
 
@@ -81,6 +82,22 @@ imgdnn_tensor ImgdnnManager::convertQuantTensorType(
   ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn CastOp failed!");
 
   return converted_tensor;
+}
+
+bool ImgdnnManager::testConfigFileExists(const std::string &hwconfig,
+                                         const std::string &mapconfig) {
+  if (access(hwconfig.c_str(), F_OK) == -1) goto testConfigFileExistsError;
+  if (access(mapconfig.c_str(), F_OK) == -1) goto testConfigFileExistsError;
+
+  return true;
+
+testConfigFileExistsError:
+  char *pwd = getcwd(NULL, 0);
+  std::string err_msg{"Could not find Imagination NNA config files: "};
+  std::cerr << err_msg << hwconfig << "," << mapconfig << std::endl;
+  std::cerr << "Please place config files at: " << pwd << std::endl;
+  free(pwd);
+  exit(EXIT_FAILURE);
 }
 
 imgdnn_tensor ImgdnnManager::createConvolutionLayer(
@@ -321,14 +338,15 @@ imgdnn_network_object ImgdnnManager::createNetworkObject(
     imgdnn_tensor *outputs) {
   const imgdnn_network_object_flags flags = 0;
 
-  //  Add " --dump_debug_binaries enabled" to options_str if need debug info.
-  std::string options_str;
-  std::string ddk_root{IMAGINATION_NNA_SDK_ROOT};
-  std::string hwconfig =
-      ddk_root + "nna-tools/config/mirage_hw_config06_23_2_6500_301.json";
-  std::string mapconfig = ddk_root + "nna-tools/config/mapconfig_q8a.json";
+  const std::string hwconfig = "config/mirage_hw_config06_23_2_6500_301.json";
+  const std::string mapconfig = "config/mapconfig_q8a.json";
+
+  testConfigFileExists(hwconfig, mapconfig)
+
+      std::string options_str;
   options_str += "-h " + hwconfig;
   options_str += " -m " + mapconfig;
+  //  Add " --dump_debug_binaries enabled" to options_str if need debug info.
 
   net_obj_ = imgdnnCreateNetworkObject(device_,
                                        context_,

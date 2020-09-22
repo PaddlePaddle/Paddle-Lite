@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <unistd.h>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -55,6 +56,10 @@ class ImgdnnManager {
 
   imgdnn_tensor convertQuantTensorType(imgdnn_tensor a_tensor,
                                        imgdnn_quant_param *dst_quant_param);
+
+  bool testConfigFileExists(const std::string &hwconfig,
+                            const std::string &mapconfig);
+  { return (access(name.c_str(), F_OK) != -1); }
 
  public:
   ImgdnnManager();
