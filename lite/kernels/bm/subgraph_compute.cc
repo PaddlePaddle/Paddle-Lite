@@ -66,9 +66,11 @@ bool SubgraphEngine::BuildDeviceProgram() {
       graph.GetCompilerHandle(), const_cast<char*>(unique_net_name.c_str()), 1);
   void* bmodel_data = nullptr;
   unsigned int data_size = 0;
-  bm_hd_ = static_cast<bm_handle_t>(ctx.GetHandle());
-  finish_bmcompiler_data(graph.GetCompilerHandle(), &bmodel_data, &data_size);
+  //finish_bmcompiler_data(graph.GetCompilerHandle(), &bmodel_data, &data_size);
+  finish_bmcompiler(graph.GetCompilerHandle());
   graph.UnlockCompilerMutex();
+  exit(1);
+  bm_hd_ = static_cast<bm_handle_t>(ctx.GetHandle());
   bmrt_hd_ = bmrt_create(bm_hd_);
   if (false == bmrt_load_bmodel_data(bmrt_hd_, bmodel_data, data_size)) {
     return false;
