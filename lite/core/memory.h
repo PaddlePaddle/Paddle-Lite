@@ -153,7 +153,7 @@ class Buffer {
       data_ = TargetWrapperCL::MallocImage<T>(
           cl_image2d_width_, cl_image2d_height_, host_ptr);
       target_ = target;
-      space_ = sizeof(T) * cl_image2d_height_ * cl_image2d_height_ *
+      space_ = sizeof(T) * cl_image2d_width_ * cl_image2d_height_ *
                4;  // un-used for opencl Image2D, 4 for RGBA,
       cl_use_image2d_ = true;
     }
