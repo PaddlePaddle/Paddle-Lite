@@ -14,9 +14,9 @@
 
 #include "lite/operators/pool_op.h"
 #include "imgdnn.h"  // NOLINT
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/imagination_nna/bridges/graph.h"
 #include "lite/kernels/imagination_nna/bridges/utility.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {

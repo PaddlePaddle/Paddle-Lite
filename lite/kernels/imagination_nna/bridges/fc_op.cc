@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "imgdnn.h"  // NOLINT
+#include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/imagination_nna/bridges/graph.h"
-#include "lite/kernels/npu/bridges/registry.h"
 
 namespace paddle {
 namespace lite {

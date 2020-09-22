@@ -33,7 +33,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
   // Convert all of ops and their input vars and weights and added into the NNA
   // IMG IR graph
   subgraph::imagination_nna::Graph graph{&imgdnn_mgr_};
-  const auto& bridges = subgraph::Registry::Instance();
+  const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   if (!origin_program_) {
     BuildOriginProgram();
   }
@@ -57,8 +57,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
     }
   }
 
-  // Collect the valid input and output nodes in the IMGDNN IR graph and
-  // update the input and output names
+  // Collect the valid input and output nodes in the IMGDNN IR graph and update
+  // the input and output names
   device_inames_.clear();
   std::vector<imgdnn_tensor> device_inodes;
   for (auto& input_name : input_names_) {

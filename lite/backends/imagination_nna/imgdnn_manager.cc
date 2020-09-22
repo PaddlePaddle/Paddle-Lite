@@ -342,9 +342,9 @@ imgdnn_network_object ImgdnnManager::createNetworkObject(
       "nna_config/mirage_hw_config06_23_2_6500_301.json";
   const std::string mapconfig = "nna_config/mapconfig_q8a.json";
 
-  testConfigFileExists(hwconfig, mapconfig)
+  testConfigFileExists(hwconfig, mapconfig);
 
-      std::string options_str;
+  std::string options_str;
   options_str += "-h " + hwconfig;
   options_str += " -m " + mapconfig;
   //  Add " --dump_debug_binaries enabled" to options_str if need debug info.

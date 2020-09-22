@@ -59,7 +59,6 @@ class ImgdnnManager {
 
   bool testConfigFileExists(const std::string &hwconfig,
                             const std::string &mapconfig);
-  { return (access(name.c_str(), F_OK) != -1); }
 
  public:
   ImgdnnManager();
