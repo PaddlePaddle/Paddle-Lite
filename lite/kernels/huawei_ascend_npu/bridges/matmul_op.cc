@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
+
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/huawei_ascend_npu/bridges/graph.h"
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
