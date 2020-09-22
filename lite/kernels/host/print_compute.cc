@@ -128,7 +128,7 @@ class TensorFormatter {
   void FormatData(const Tensor& print_tensor, std::stringstream& log_stream) {
     int64_t print_size = summarize_ == -1
                              ? print_tensor.numel()
-                             : std::min(summarize_, print_tensor.numel());
+                             : (std::min)(summarize_, print_tensor.numel());
     const T* data = print_tensor.data<T>();  // Always kHost, so unnessary to
                                              // copy the data from device
     log_stream << "  - data: [";

@@ -35,7 +35,7 @@ inline static uint64_t MaximumSequenceLength(
   uint64_t seq_num = seq_offset.size() - 1;
   uint64_t max_seq_len = 0;
   for (size_t i = 0; i < seq_num; ++i) {
-    max_seq_len = std::max(max_seq_len, seq_offset[i + 1] - seq_offset[i]);
+    max_seq_len = (std::max)(max_seq_len, seq_offset[i + 1] - seq_offset[i]);
   }
   return max_seq_len;
 }

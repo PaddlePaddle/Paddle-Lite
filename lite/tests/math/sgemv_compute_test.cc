@@ -75,9 +75,9 @@ bool test_sgemv(bool tra,
   // fill_tensor_const(tb, 1.f);
   fill_tensor_rand(tbias, -1.f, 1.f);
 
-  LOG(INFO) << "sgemv M: " << m << ", K: " << k
-            << ", transA: " << (tra ? "true" : "false") << ", act: " << flag_act
-            << ", bias: " << (has_bias ? "true" : "false");
+  VLOG(4) << "sgemv M: " << m << ", K: " << k
+          << ", transA: " << (tra ? "true" : "false") << ", act: " << flag_act
+          << ", bias: " << (has_bias ? "true" : "false");
 #ifdef LITE_WITH_ARM
 
   auto da = ta.mutable_data<float>();
@@ -209,11 +209,11 @@ TEST(TestLiteSgemv, Sgemv) {
                                        six,
                                        alpha);
                 if (flag) {
-                  LOG(INFO) << "test m = " << m << ", k=" << k
-                            << ", bias: " << (has_bias ? "true" : "false")
-                            << ", flag act: " << flag_act
-                            << ", trans A: " << (tra ? "true" : "false")
-                            << ", threads: " << th << " passed\n";
+                  VLOG(4) << "test m = " << m << ", k=" << k
+                          << ", bias: " << (has_bias ? "true" : "false")
+                          << ", flag act: " << flag_act
+                          << ", trans A: " << (tra ? "true" : "false")
+                          << ", threads: " << th << " passed\n";
                 } else {
                   LOG(FATAL) << "test m = " << m << ", k=" << k
                              << ", bias: " << (has_bias ? "true" : "false")

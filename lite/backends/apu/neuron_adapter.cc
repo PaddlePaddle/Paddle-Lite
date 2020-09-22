@@ -82,16 +82,20 @@ void NeuronAdapter::InitFunctions() {
   PADDLE_DLSYM(NeuronModel_setOperandValue);
   PADDLE_DLSYM(NeuronModel_setOperandSymmPerChannelQuantParams);
   PADDLE_DLSYM(NeuronModel_addOperation);
+  PADDLE_DLSYM(NeuronModel_addOperationExtension);
   PADDLE_DLSYM(NeuronModel_identifyInputsAndOutputs);
   PADDLE_DLSYM(NeuronCompilation_create);
   PADDLE_DLSYM(NeuronCompilation_free);
   PADDLE_DLSYM(NeuronCompilation_finish);
+  PADDLE_DLSYM(NeuronCompilation_createForDevices);
   PADDLE_DLSYM(NeuronExecution_create);
   PADDLE_DLSYM(NeuronExecution_free);
   PADDLE_DLSYM(NeuronExecution_setInput);
   PADDLE_DLSYM(NeuronExecution_setOutput);
   PADDLE_DLSYM(NeuronExecution_compute);
-
+  PADDLE_DLSYM(Neuron_getDeviceCount);
+  PADDLE_DLSYM(Neuron_getDevice);
+  PADDLE_DLSYM(NeuronDevice_getName);
 #undef PADDLE_DLSYM
 }
 
@@ -146,6 +150,25 @@ int NeuronModel_addOperation(NeuronModel* model,
       model, type, inputCount, inputs, outputCount, outputs);
 }
 
+int NeuronModel_addOperationExtension(NeuronModel* model,
+                                      const char* name,
+                                      const char* vendor,
+                                      const NeuronDevice* device,
+                                      uint32_t inputCount,
+                                      const uint32_t* inputs,
+                                      uint32_t outputCount,
+                                      const uint32_t* outputs) {
+  return paddle::lite::NeuronAdapter::Global()
+      ->NeuronModel_addOperationExtension()(model,
+                                            name,
+                                            vendor,
+                                            device,
+                                            inputCount,
+                                            inputs,
+                                            outputCount,
+                                            outputs);
+}
+
 int NeuronModel_identifyInputsAndOutputs(NeuronModel* model,
                                          uint32_t inputCount,
                                          const uint32_t* inputs,
@@ -170,6 +193,15 @@ void NeuronCompilation_free(NeuronCompilation* compilation) {
 int NeuronCompilation_finish(NeuronCompilation* compilation) {
   return paddle::lite::NeuronAdapter::Global()->NeuronCompilation_finish()(
       compilation);
+}
+
+int NeuronCompilation_createForDevices(NeuronModel* model,
+                                       const NeuronDevice* const* devices,
+                                       uint32_t numDevices,
+                                       NeuronCompilation** compilation) {
+  return paddle::lite::NeuronAdapter::Global()
+      ->NeuronCompilation_createForDevices()(
+          model, devices, numDevices, compilation);
 }
 
 int NeuronExecution_create(NeuronCompilation* compilation,
@@ -204,4 +236,19 @@ int NeuronExecution_setOutput(NeuronExecution* execution,
 int NeuronExecution_compute(NeuronExecution* execution) {
   return paddle::lite::NeuronAdapter::Global()->NeuronExecution_compute()(
       execution);
+}
+
+int Neuron_getDeviceCount(uint32_t* numDevices) {
+  return paddle::lite::NeuronAdapter::Global()->Neuron_getDeviceCount()(
+      numDevices);
+}
+
+int Neuron_getDevice(uint32_t devIndex, NeuronDevice** device) {
+  return paddle::lite::NeuronAdapter::Global()->Neuron_getDevice()(devIndex,
+                                                                   device);
+}
+
+int NeuronDevice_getName(const NeuronDevice* device, const char** name) {
+  return paddle::lite::NeuronAdapter::Global()->NeuronDevice_getName()(device,
+                                                                       name);
 }
