@@ -79,14 +79,14 @@ bool SubgraphEngine::BuildDeviceProgram() {
   // input
   device_inputs_.resize(input_names_.size());
   for (size_t i = 0; i < input_names_.size(); i++) {
-    origin_itensors_[i] =
+    auto origin_itensor =
         exec_scope_->FindMutableTensor(net_info_->input_names[i]);
-    CHECK(origin_itensors_[i]);
+    CHECK(origin_itensor);
     bm_device_mem_t* p_mem =
         static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
     CHECK_EQ(bm_malloc_device_byte(
-                 bm_hd_, p_mem, origin_itensors_[i]->memory_size()),
+                 bm_hd_, p_mem, origin_itensor->memory_size()),
              BM_SUCCESS);
     bmrt_tensor_with_device(&device_inputs_[i],
                             *p_mem,
@@ -124,9 +124,11 @@ bool SubgraphEngine::BuildDeviceProgram() {
 
 bool SubgraphEngine::LaunchDeviceProgram() {
   for (size_t i = 0; i < device_inputs_.size(); i++) {
+   auto origin_itensor =
+        exec_scope_->FindMutableTensor(net_info_->input_names[i]);
     bm_memcpy_s2d(bm_hd_,
                   device_inputs_[i].device_mem,
-                  const_cast<void*>(origin_itensors_[i]->raw_data()));
+                  const_cast<void*>(origin_itensor->raw_data()));
   }
   bmrt_launch_tensor_ex(bmrt_hd_,
                         net_names_[0],
