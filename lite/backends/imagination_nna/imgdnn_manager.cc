@@ -338,8 +338,9 @@ imgdnn_network_object ImgdnnManager::createNetworkObject(
     imgdnn_tensor *outputs) {
   const imgdnn_network_object_flags flags = 0;
 
-  const std::string hwconfig = "config/mirage_hw_config06_23_2_6500_301.json";
-  const std::string mapconfig = "config/mapconfig_q8a.json";
+  const std::string hwconfig =
+      "nna_config/mirage_hw_config06_23_2_6500_301.json";
+  const std::string mapconfig = "nna_config/mapconfig_q8a.json";
 
   testConfigFileExists(hwconfig, mapconfig)
 
