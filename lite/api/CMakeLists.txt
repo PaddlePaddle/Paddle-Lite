@@ -295,6 +295,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        NPU_DEPS ${npu_kernels} ${npu_bridges}
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int16 SERIAL)
+    add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_int16_tar_gz)
 
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}
