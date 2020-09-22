@@ -70,7 +70,8 @@ TEST(CxxApi, run) {
 TEST(LightApi, run) {
   lite_api::MobileConfig config;
   config.set_model_from_file(FLAGS_model_dir + ".opt2.naive.nb");
-
+  // disable L3 cache on workspace_ allocating
+  config.SetArmL3CacheSize(L3CacheSetMethod::kDeviceL2Cache);
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   auto inputs = predictor->GetInputNames();
@@ -111,6 +112,8 @@ TEST(MobileConfig, LoadfromMemory) {
   // set model buffer and run model
   lite_api::MobileConfig config;
   config.set_model_from_buffer(model_buffer);
+  // allocate 1M initial space for workspace_
+  config.SetArmL3CacheSize(L3CacheSetMethod::kAbsolute, 1024 * 1024);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
   auto input_tensor = predictor->GetInput(0);
