@@ -26,7 +26,7 @@ namespace x86 {
 
 static void SetNumThreads(int num_threads) {
 #ifdef PADDLE_WITH_MKLML
-  int real_num_threads = std::max(num_threads, 1);
+  int real_num_threads = (std::max)(num_threads, 1);
   x86::MKL_Set_Num_Threads(real_num_threads);
   omp_set_num_threads(real_num_threads);
 #endif
@@ -52,14 +52,14 @@ static inline void RunParallelFor(const int64_t begin,
   }
 
 #ifdef PADDLE_WITH_MKLML
-  int64_t num_threads = std::min(GetMaxThreads(), end - begin);
+  int64_t num_threads = (std::min)(GetMaxThreads(), end - begin);
   if (num_threads > 1) {
 #pragma omp parallel num_threads(num_threads)
     {
       int64_t tid = omp_get_thread_num();
       int64_t chunk_size = (end - begin + num_threads - 1) / num_threads;
       int64_t begin_tid = begin + tid * chunk_size;
-      f(begin_tid, std::min(end, chunk_size + begin_tid));
+      f(begin_tid, (std::min)(end, chunk_size + begin_tid));
     }
     return;
   }

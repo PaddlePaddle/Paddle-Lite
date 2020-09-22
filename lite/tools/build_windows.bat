@@ -100,7 +100,6 @@ cd "%build_directory%"
             -DPYTHON_EXECUTABLE="%python_path%"
 
 call "%vcvarsall_dir%" amd64
-cd "%build_directory%"
 
 if "%BUILD_FOR_CI%"=="ON" (
     msbuild /m /p:Configuration=Release lite\lite_compile_deps.vcxproj
