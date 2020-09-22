@@ -124,7 +124,7 @@ TEST(Gather, precision) {
   for (auto x_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 4}, {8, 3, 5}, {12, 3}}) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
-#if defined(LITE_WITH_XPU) && defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_XPU) || defined(LITE_WITH_NPU)
       TestGather<float, int>(x_dims, index_dims, place, abs_error, "def");
 #else
       TestGather<float, int64_t>(x_dims, index_dims, place, abs_error, "int64");
