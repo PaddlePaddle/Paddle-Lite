@@ -306,7 +306,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                     const float leakey_relu_scale) {}
 #endif  // LITE_WITH_ARM
 
-#if 0  // 3x3dw if only run one case. its ok
+#if 0   // 3x3dw if only run one case. its ok
 TEST(TestConv3x3DW, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
