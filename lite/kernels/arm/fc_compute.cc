@@ -26,6 +26,88 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+template <typename Dtype>
+void naive_transpose(const Dtype* din, Dtype* dout, int m, int n) {
+  int k = 0;
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < m; ++j) {
+      dout[k++] = din[j * n + i];
+    }
+  }
+}
+
+template <PrecisionType PType>
+void fc_trans_weights(const Tensor& tin, Tensor* tout);
+
+template <>
+void fc_trans_weights<PRECISION(kFloat)>(const Tensor& tin, Tensor* tout) {
+  CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
+  int m = tin.dims()[0];
+  int n = tin.dims()[1];
+  tout->Resize({n, m});
+  auto* ptr_in = tin.data<float>();
+  auto* ptr_out = tout->mutable_data<float>();
+  naive_transpose(ptr_in, ptr_out, m, n);
+}
+
+template <>
+void fc_trans_weights<PRECISION(kInt8)>(const Tensor& tin, Tensor* tout) {
+  CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
+  int m = tin.dims()[0];
+  int n = tin.dims()[1];
+  tout->Resize({n, m});
+  auto* ptr_in = tin.data<int8_t>();
+  auto* ptr_out = tout->mutable_data<int8_t>();
+  naive_transpose(ptr_in, ptr_out, m, n);
+}
+
+template <PrecisionType PType, PrecisionType OutType>
+bool check_fc_use_gemm(int m, const std::vector<float>& scale, bool has_bias) {
+  return m > 1;
+}
+
+template <>
+bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kFloat)>(
+    int m, const std::vector<float>& scale, bool has_bias) {
+  CHECK_GT(scale.size(), 0) << "Int8 FC param must has weight_scale";
+  return m > 1 && scale.size() == 1;
+}
+
+template <>
+bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kInt8)>(
+    int m, const std::vector<float>& scale, bool has_bias) {
+  CHECK_GT(scale.size(), 0) << "Int8 FC param must has weight_scale";
+  return m > 1 && scale.size() == 1 && !has_bias;
+}
+
+template <PrecisionType PType, PrecisionType OutType>
+void FcCompute<PType, OutType>::ReInitWhenNeeded() {
+  auto& param = this->template Param<operators::FcParam>();
+  auto x_dims = param.input->dims();
+  if (last_shape_ == x_dims) {
+    return;
+  }
+  last_shape_ = x_dims;
+  auto w_dims = param.w->dims();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+
+  CHECK_GE(x_dims.size(), 2UL);
+  CHECK_EQ(w_dims.size(), 2UL);
+  CHECK_GE(param.output->dims().size(), 2UL);
+
+  m_ = x_dims.Slice(0, param.in_num_col_dims).production();
+  k_ = x_dims.Slice(param.in_num_col_dims, x_dims.size()).production();
+  CHECK_EQ(k_, w_dims[0]);
+  n_ = w_dims[1];
+  CHECK_EQ(k_, static_cast<int>(w_dims[0]));
+  flag_gemm_ = check_fc_use_gemm<PType, OutType>(
+      m_, param.weight_scale, param.bias != nullptr);
+  if (!flag_trans_weights_ && !flag_gemm_) {
+    flag_trans_weights_ = true;
+    fc_trans_weights<PType>(*param.w, &weights_);
+  }
+}
+
 ///  for fp32 kernel
 template <>
 void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
@@ -71,8 +153,8 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   /// update bias
   if (param.bias) {
     bias_.Resize(param.bias->dims());
-    auto ptr = bias_.mutable_data<float>();
-    auto ptr_in = bias_.data<float>();
+    auto* ptr = bias_.mutable_data<float>();
+    auto* ptr_in = bias_.data<float>();
     float out_scale = param.output_scale;
     for (int i = 0; i < bias_.numel(); ++i) {
       ptr[i] = ptr_in[i] / out_scale;
@@ -86,9 +168,9 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<operators::FcParam>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
-  auto i_data = param.input->data<float>();
-  auto o_data = param.output->mutable_data<float>();
-  auto w_data = param.w->data<float>();
+  auto* i_data = param.input->data<float>();
+  auto* o_data = param.output->mutable_data<float>();
+  auto* w_data = flag_gemm_ ? param.w->data<float>() : weights_.data<float>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
@@ -125,8 +207,8 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     }
   } else {
     for (int i = 0; i < m_; ++i) {
-      auto i_data_batch = i_data + i * k_;
-      auto o_data_batch = o_data + i * n_;
+      auto* i_data_batch = i_data + i * k_;
+      auto* o_data_batch = o_data + i * n_;
       lite::arm::math::sgemv(w_data,
                              i_data_batch,
                              o_data_batch,
@@ -147,9 +229,10 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<operators::FcParam>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
-  auto i_data = param.input->data<int8_t>();
-  auto o_data = param.output->mutable_data<float>();
-  auto w_data = param.w->data<int8_t>();
+  auto* i_data = param.input->data<int8_t>();
+  auto* o_data = param.output->mutable_data<float>();
+  auto* w_data =
+      flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
@@ -182,8 +265,8 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     }
   } else {
     for (int i = 0; i < m_; ++i) {
-      auto i_data_batch = i_data + i * k_;
-      auto o_data_batch = o_data + i * n_;
+      auto* i_data_batch = i_data + i * k_;
+      auto* o_data_batch = o_data + i * n_;
       lite::arm::math::gemv_int8(w_data,
                                  i_data_batch,
                                  o_data_batch,
@@ -205,9 +288,10 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& param = this->Param<operators::FcParam>();
   auto& ctx = this->ctx_->template As<ARMContext>();
 
-  auto i_data = param.input->data<int8_t>();
-  auto o_data = param.output->mutable_data<int8_t>();
-  auto w_data = param.w->data<int8_t>();
+  auto* i_data = param.input->data<int8_t>();
+  auto* o_data = param.output->mutable_data<int8_t>();
+  auto* w_data =
+      flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
@@ -240,8 +324,8 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                              &ctx);
   } else {
     for (int i = 0; i < m_; ++i) {
-      auto i_data_batch = i_data + i * k_;
-      auto o_data_batch = o_data + i * n_;
+      auto* i_data_batch = i_data + i * k_;
+      auto* o_data_batch = o_data + i * n_;
       lite::arm::math::gemv_int8(w_data,
                                  i_data_batch,
                                  o_data_batch,
