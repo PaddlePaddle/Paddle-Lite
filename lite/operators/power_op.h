@@ -23,6 +23,9 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
+/**
+ * @deprecated There is NO power op in paddle fluid
+ */
 class PowerOp : public OpLite {
  public:
   PowerOp() {}
