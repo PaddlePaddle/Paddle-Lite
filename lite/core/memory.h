@@ -144,7 +144,7 @@ class Buffer {
                         const size_t img_w_req,
                         const size_t img_h_req,
                         void* host_ptr = nullptr) {
-    if (target != target_ || img_w_cur_ < img_w_req ||
+    if (target != target_ || cl_image2d_width_ < img_w_req ||
         cl_image2d_height_ < img_h_req || host_ptr != nullptr) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       cl_image2d_width_ = std::max(cl_image2d_width_, img_w_req);
