@@ -121,6 +121,7 @@ add_operator(max_pool_with_index_op extra SRCS max_pool_with_index_op.cc DEPS ${
 add_operator(pixel_shuffle_op extra SRCS pixel_shuffle_op.cc DEPS ${op_DEPS})
 add_operator(clip_op extra SRCS clip_op.cc DEPS ${op_DEPS})
 add_operator(print_op extra SRCS print_op.cc DEPS ${op_DEPS})
+add_operator(scatter extra SRCS scatter_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
