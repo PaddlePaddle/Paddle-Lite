@@ -66,10 +66,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
       graph.GetCompilerHandle(), const_cast<char*>(unique_net_name.c_str()), 1);
   void* bmodel_data = nullptr;
   unsigned int data_size = 0;
-  //finish_bmcompiler_data(graph.GetCompilerHandle(), &bmodel_data, &data_size);
-  finish_bmcompiler(graph.GetCompilerHandle());
+  finish_bmcompiler_data(graph.GetCompilerHandle(), &bmodel_data, &data_size);
   graph.UnlockCompilerMutex();
-  exit(1);
   bm_hd_ = static_cast<bm_handle_t>(ctx.GetHandle());
   bmrt_hd_ = bmrt_create(bm_hd_);
   if (false == bmrt_load_bmodel_data(bmrt_hd_, bmodel_data, data_size)) {
@@ -87,9 +85,9 @@ bool SubgraphEngine::BuildDeviceProgram() {
     bm_device_mem_t* p_mem =
         static_cast<bm_device_mem_t*>(malloc(sizeof(bm_device_mem_t)));
     CHECK(p_mem != nullptr);
-    CHECK_EQ(bm_malloc_device_byte(
-                 bm_hd_, p_mem, origin_itensor->memory_size()),
-             BM_SUCCESS);
+    CHECK_EQ(
+        bm_malloc_device_byte(bm_hd_, p_mem, origin_itensor->memory_size()),
+        BM_SUCCESS);
     bmrt_tensor_with_device(&device_inputs_[i],
                             *p_mem,
                             net_info_->input_dtypes[i],
@@ -126,7 +124,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
 
 bool SubgraphEngine::LaunchDeviceProgram() {
   for (size_t i = 0; i < device_inputs_.size(); i++) {
-   auto origin_itensor =
+    auto origin_itensor =
         exec_scope_->FindMutableTensor(net_info_->input_names[i]);
     bm_memcpy_s2d(bm_hd_,
                   device_inputs_[i].device_mem,
