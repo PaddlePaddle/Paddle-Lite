@@ -42,12 +42,25 @@ class NeuronAdapter final {
                                                 const uint32_t *,
                                                 uint32_t,
                                                 const uint32_t *);
+  using NeuronModel_addOperationExtension_Type = int (*)(NeuronModel *,
+                                                         const char *,
+                                                         const char *,
+                                                         const NeuronDevice *,
+                                                         uint32_t,
+                                                         const uint32_t *,
+                                                         uint32_t,
+                                                         const uint32_t *);
   using NeuronModel_identifyInputsAndOutputs_Type = int (*)(
       NeuronModel *, uint32_t, const uint32_t *, uint32_t, const uint32_t *);
   using NeuronCompilation_create_Type = int (*)(NeuronModel *,
                                                 NeuronCompilation **);
   using NeuronCompilation_free_Type = void (*)(NeuronCompilation *);
   using NeuronCompilation_finish_Type = int (*)(NeuronCompilation *);
+  using NeuronCompilation_createForDevices_Type =
+      int (*)(NeuronModel *,
+              const NeuronDevice *const *,
+              uint32_t,
+              NeuronCompilation **);
   using NeuronExecution_create_Type = int (*)(NeuronCompilation *,
                                               NeuronExecution **);
   using NeuronExecution_free_Type = void (*)(NeuronExecution *);
@@ -59,6 +72,10 @@ class NeuronAdapter final {
   using NeuronExecution_setOutput_Type = int (*)(
       NeuronExecution *, int32_t, const NeuronOperandType *, void *, size_t);
   using NeuronExecution_compute_Type = int (*)(NeuronExecution *);
+  using Neuron_getDeviceCount_Type = int (*)(uint32_t *);
+  using Neuron_getDevice_Type = int (*)(uint32_t, NeuronDevice **);
+  using NeuronDevice_getName_Type = int (*)(const NeuronDevice *,
+                                            const char **);
 
   Neuron_getVersion_Type Neuron_getVersion() {
     CHECK(Neuron_getVersion_ != nullptr) << "Cannot load Neuron_getVersion!";
@@ -105,6 +122,12 @@ class NeuronAdapter final {
     return NeuronModel_addOperation_;
   }
 
+  NeuronModel_addOperationExtension_Type NeuronModel_addOperationExtension() {
+    CHECK(NeuronModel_addOperationExtension_ != nullptr)
+        << "Cannot load NeuronModel_addOperationExtension!";
+    return NeuronModel_addOperationExtension_;
+  }
+
   NeuronModel_identifyInputsAndOutputs_Type
   NeuronModel_identifyInputsAndOutputs() {
     CHECK(NeuronModel_identifyInputsAndOutputs_ != nullptr)
@@ -128,6 +151,12 @@ class NeuronAdapter final {
     CHECK(NeuronCompilation_finish_ != nullptr)
         << "Cannot load NeuronCompilation_finish!";
     return NeuronCompilation_finish_;
+  }
+
+  NeuronCompilation_createForDevices_Type NeuronCompilation_createForDevices() {
+    CHECK(NeuronCompilation_createForDevices_ != nullptr)
+        << "Cannot load NeuronCompilation_createForDevices!";
+    return NeuronCompilation_createForDevices_;
   }
 
   NeuronExecution_create_Type NeuronExecution_create() {
@@ -160,6 +189,23 @@ class NeuronAdapter final {
     return NeuronExecution_compute_;
   }
 
+  Neuron_getDeviceCount_Type Neuron_getDeviceCount() {
+    CHECK(Neuron_getDeviceCount_ != nullptr)
+        << "Cannot load Neuron_getDeviceCount!";
+    return Neuron_getDeviceCount_;
+  }
+
+  Neuron_getDevice_Type Neuron_getDevice() {
+    CHECK(Neuron_getDevice_ != nullptr) << "Cannot load Neuron_getDevice!";
+    return Neuron_getDevice_;
+  }
+
+  NeuronDevice_getName_Type NeuronDevice_getName() {
+    CHECK(NeuronDevice_getName_ != nullptr)
+        << "Cannot load NeuronDevice_getName!";
+    return NeuronDevice_getName_;
+  }
+
  private:
   NeuronAdapter();
   NeuronAdapter(const NeuronAdapter &) = delete;
@@ -176,16 +222,23 @@ class NeuronAdapter final {
   NeuronModel_setOperandSymmPerChannelQuantParams_Type
       NeuronModel_setOperandSymmPerChannelQuantParams_{nullptr};
   NeuronModel_addOperation_Type NeuronModel_addOperation_{nullptr};
+  NeuronModel_addOperationExtension_Type NeuronModel_addOperationExtension_{
+      nullptr};
   NeuronModel_identifyInputsAndOutputs_Type
       NeuronModel_identifyInputsAndOutputs_{nullptr};
   NeuronCompilation_create_Type NeuronCompilation_create_{nullptr};
   NeuronCompilation_free_Type NeuronCompilation_free_{nullptr};
   NeuronCompilation_finish_Type NeuronCompilation_finish_{nullptr};
+  NeuronCompilation_createForDevices_Type NeuronCompilation_createForDevices_{
+      nullptr};
   NeuronExecution_create_Type NeuronExecution_create_{nullptr};
   NeuronExecution_free_Type NeuronExecution_free_{nullptr};
   NeuronExecution_setInput_Type NeuronExecution_setInput_{nullptr};
   NeuronExecution_setOutput_Type NeuronExecution_setOutput_{nullptr};
   NeuronExecution_compute_Type NeuronExecution_compute_{nullptr};
+  Neuron_getDeviceCount_Type Neuron_getDeviceCount_{nullptr};
+  Neuron_getDevice_Type Neuron_getDevice_{nullptr};
+  NeuronDevice_getName_Type NeuronDevice_getName_{nullptr};
 };
 }  // namespace lite
 }  // namespace paddle
