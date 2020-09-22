@@ -372,7 +372,7 @@ function make_x86 {
   build_directory=$BUILD_DIR/build.lite.x86
 
   if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
-    export CXX=/usr/bin/g++ # Ascend need g++ in centos
+    export CXX=g++ # Huawei Ascend NPU need g++
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
 
