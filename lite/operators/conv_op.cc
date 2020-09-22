@@ -62,7 +62,7 @@ void UpdatePaddingAndDilation(std::vector<int>* paddings,
   if (padding_algorithm == "SAME") {
     for (size_t i = 0; i < strides.size(); ++i) {
       int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
-      int pad_sum = std::max(
+      int pad_sum = (std::max)(
           (out_size - 1) * strides[i] + ksize[i + 2] - data_dims[i + 2],
           (int64_t)0);
       int pad_0 = pad_sum / 2;

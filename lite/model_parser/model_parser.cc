@@ -391,7 +391,7 @@ void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {
   }
   {  // the 3rd field, tensor data
     uint64_t size = tensor.memory_size();
-    CHECK_LT(size, std::numeric_limits<std::streamsize>::max())
+    CHECK_LT(size, (std::numeric_limits<std::streamsize>::max)())
         << "Index overflow when writing tensor";
 
 #ifdef LITE_WITH_CUDA
@@ -461,7 +461,7 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
   }
   desc.SetDim(tensor.dims().Vectorize());
   uint64_t size = tensor.memory_size();
-  CHECK_LT(size, std::numeric_limits<std::streamsize>::max())
+  CHECK_LT(size, (std::numeric_limits<std::streamsize>::max)())
       << "Index overflow when writing tensor";
 
 #ifdef LITE_WITH_CUDA
@@ -1000,14 +1000,17 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 #ifndef LITE_ON_TINY_PUBLISH
       LoadModelNaiveV0FromMemory(model_buffer, scope, cpp_prog);
 #else
-      LOG(FATAL) << "Error: Unsupported model type.";
+      LOG(FATAL) << "Paddle-Lite v2.7 has upgraded the naive-buffer model "
+                    "format. Please use the OPT to generate a new model. "
+                    "Thanks!";
 #endif
       break;
     case 1:
       LoadModelNaiveV1FromMemory(model_buffer, scope, cpp_prog);
       break;
     default:
-      LOG(FATAL) << "Error: Unsupported model type.";
+      LOG(FATAL) << "The model format cannot be recognized. Please make sure "
+                    "you use the correct interface and model file.";
       break;
   }
 }

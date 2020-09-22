@@ -49,8 +49,8 @@ class SequenceConvCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     bool padding_trainable = false;
     const Tensor* padding_data = nullptr;
 
-    int up_pad = std::max(0, -context_start);
-    int down_pad = std::max(0, context_start + context_length - 1);
+    int up_pad = (std::max)(0, -context_start);
+    int down_pad = (std::max)(0, context_start + context_length - 1);
     auto sequence_width = static_cast<int64_t>(in->dims()[1]);
 
     std::vector<int64_t> col_shape{in->dims()[0],

@@ -61,7 +61,7 @@ class StaticKernelPickPass : public mir::StmtPass {
     float final_score{-1.};
     Place winner_place{places[0]};
     const int kMax =
-        std::numeric_limits<core::KernelPickFactor::value_type>::max();
+        (std::numeric_limits<core::KernelPickFactor::value_type>::max)();
     size_t place_size = places.size();
 
     // NOTE: We compare kernel's place with place in valid_places to select the
