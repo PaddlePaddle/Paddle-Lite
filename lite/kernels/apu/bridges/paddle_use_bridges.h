@@ -22,3 +22,6 @@ USE_SUBGRAPH_BRIDGE(elementwise_mul, kAPU);
 USE_SUBGRAPH_BRIDGE(fc, kAPU);
 USE_SUBGRAPH_BRIDGE(pool2d, kAPU);
 USE_SUBGRAPH_BRIDGE(softmax, kAPU);
+USE_SUBGRAPH_BRIDGE(concat, kAPU);
+USE_SUBGRAPH_BRIDGE(fusion_elementwise_add_activation, kAPU);
+USE_SUBGRAPH_BRIDGE(conv2d_transpose, kAPU);

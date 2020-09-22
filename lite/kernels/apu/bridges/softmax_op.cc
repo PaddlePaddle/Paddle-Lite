@@ -64,12 +64,10 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   xType.dimensions = &dims_x[0];
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
-    // input operand already exist
     x_node = graph->Get(x_name);
     VLOG(3) << "Graph has " << x_name << ",index: " << x_node->index();
   } else {
-    // add input operand
-    NeuronModel_addOperand(model, &xType);  // 0: input
+    NeuronModel_addOperand(model, &xType);  // Operand 0: input
     x_node = graph->Add(x_name, dims_x);
   }
   VLOG(3) << "input_scale size: " << input_scale
@@ -80,7 +78,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NeuronOperandType betaType;
   betaType.type = NEURON_FLOAT32;
   betaType.dimensionCount = 0;
-  NeuronModel_addOperand(model, &betaType);  // 1: beta
+  NeuronModel_addOperand(model, &betaType);  // Operand 1: beta
   std::shared_ptr<Node> beta_node = nullptr;
   beta_node = graph->Add(x_name + "_beta", dims_int32);
 
@@ -88,7 +86,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   NeuronOperandType axisType;
   axisType.type = NEURON_INT32;
   axisType.dimensionCount = 0;
-  NeuronModel_addOperand(model, &axisType);  // 2: axis
+  NeuronModel_addOperand(model, &axisType);  // Operand 2: axis
   std::shared_ptr<Node> axis_node = nullptr;
   axis_node = graph->Add(x_name + "_axis", dims_int32);
 
@@ -99,7 +97,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   outType.zeroPoint = 128;
   outType.dimensionCount = x_dims.size();
   outType.dimensions = &dims_x[0];
-  NeuronModel_addOperand(model, &outType);  // 3: output
+  NeuronModel_addOperand(model, &outType);  // Operand 3: output
   std::shared_ptr<Node> out_node = nullptr;
   out_node = graph->Add(out_name, dims_x);
   VLOG(3) << "out_scale: " << out_scale;
@@ -112,8 +110,9 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   axis_val[0] = axis;
   NeuronModel_setOperandValue(
       model, axis_node->index(), axis_val, sizeof(int32_t) * 1);
-  std::vector<uint32_t> addInIndex = {
-      x_node->index(), beta_node->index(), axis_node->index()};
+  std::vector<uint32_t> addInIndex = {x_node->index(),      // 0: input
+                                      beta_node->index(),   // 1: beta
+                                      axis_node->index()};  // 2: axis
   std::vector<uint32_t> addOutIndex = {out_node->index()};
   int neuron_errCode = NeuronModel_addOperation(model,
                                                 NEURON_SOFTMAX,
