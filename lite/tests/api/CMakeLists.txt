@@ -8,6 +8,17 @@ if(LITE_WITH_ARM)
     endif()
 endif()
 
+if(LITE_WITH_NPU)
+    lite_cc_test(test_mobilenetv1_fp32_huawei_kirin_npu SRCS test_mobilenetv1_fp32_huawei_kirin_npu.cc
+        DEPS ${lite_model_test_DEPS} paddle_api_full
+        APU_DEPS ${npu_kernels} ${npu_bridges}
+        ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 --data_dir=${LITE_MODEL_DIR}/ILSVRC2012_small SERIAL)
+    if(WITH_TESTING)
+        add_dependencies(test_mobilenetv1_fp32_huawei_kirin_npu extern_lite_download_mobilenet_v1_tar_gz)
+        add_dependencies(test_mobilenetv1_fp32_huawei_kirin_npu extern_lite_download_ILSVRC2012_small_tar_gz)
+    endif()
+endif()
+
 function(xpu_x86_without_xtcl_test TARGET MODEL DATA)
     if(${DATA} STREQUAL "")
         lite_cc_test(${TARGET} SRCS ${TARGET}.cc
@@ -38,15 +49,23 @@ if(LITE_WITH_XPU AND NOT LITE_WITH_XTCL)
 endif()
 
 if(LITE_WITH_RKNPU)
-    lite_cc_test(test_mobilenetv1_int8_rknpu SRCS test_mobilenetv1_int8_rknpu.cc
+    lite_cc_test(test_mobilenetv1_int8_rockchip_npu SRCS test_mobilenetv1_int8_rockchip_npu.cc
         DEPS ${lite_model_test_DEPS} paddle_api_full
-        RKNPU_DEPS ${rknpu_kernels} ${rknpu_bridges}
-        ARGS --model_dir=${LITE_MODEL_DIR}/MobilenetV1_full_quant SERIAL)
+        APU_DEPS ${rknpu_kernels} ${rknpu_bridges}
+        ARGS --model_dir=${LITE_MODEL_DIR}/mobilenetv1_int8_for_rockchip_apu --data_dir=${LITE_MODEL_DIR}/ILSVRC2012_small SERIAL)
+    if(WITH_TESTING)
+        add_dependencies(test_mobilenetv1_int8_rockchip_apu extern_lite_download_mobilenetv1_int8_for_rockchip_apu_tar_gz)
+        add_dependencies(test_mobilenetv1_int8_rockchip_apu extern_lite_download_ILSVRC2012_small_tar_gz)
+    endif()
 endif()
 
 if(LITE_WITH_APU)
-    lite_cc_test(test_mobilenetv1_int8_apu SRCS test_mobilenetv1_int8_apu.cc
+    lite_cc_test(test_mobilenetv1_int8_mediatek_apu SRCS test_mobilenetv1_int8_mediatek_apu.cc
         DEPS ${lite_model_test_DEPS} paddle_api_full
         APU_DEPS ${apu_kernels} ${apu_bridges}
-        ARGS --model_dir=${LITE_MODEL_DIR}/MobilenetV1_full_quant SERIAL)
+        ARGS --model_dir=${LITE_MODEL_DIR}/mobilenetv1_int8_for_mediatek_apu --data_dir=${LITE_MODEL_DIR}/ILSVRC2012_small SERIAL)
+    if(WITH_TESTING)
+        add_dependencies(test_mobilenetv1_int8_mediatek_apu extern_lite_download_mobilenetv1_int8_for_mediatek_apu_tar_gz)
+        add_dependencies(test_mobilenetv1_int8_mediatek_apu extern_lite_download_ILSVRC2012_small_tar_gz)
+    endif()
 endif()
