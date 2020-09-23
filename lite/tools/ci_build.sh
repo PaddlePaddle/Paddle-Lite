@@ -22,7 +22,7 @@ USE_ADB_EMULATOR=ON
 ADB_DEVICE_LIST=""
 # The list of tests which are ignored, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
 TEST_SKIP_LIST=""
-# The list of model tests, its format is "<target_name>,<extra_args>,<model_dir>,<data_dir>,<config_dir>", use '-' if an argument is empty, such as
+# The list of model tests, its format is "<target_name>,<extra_args>,<model_dir>,<data_dir>,<config_dir>;", use '-' if an argument is empty, such as
 # "test_mobilenetv1_fp32_huawei_kirin_npu,-,mobilenet_v1,ILSVRC2012_small,-;test_mobilenetv2_fp32_huawei_kirin_npu,-,mobilenet_v2_relu,ILSVRC2012_small,-;"
 TEST_MODEL_LIST=""
 LITE_WITH_COVERAGE=OFF
@@ -542,7 +542,7 @@ function run_all_tests_on_adb_device {
                 for test_model_param in ${test_model_params[@]}; do
                     local slots=(${test_model_param//,/ })
                     if [[ "${slots[0]}" == "$test_name" ]]; then
-                        run_test_case_on_adb_device $adb_device_name $adb_work_dir $test_name "${slots[1]}" "${slots[2]}" "${slots[3]}" "${slots[4]}"
+                        run_test_case_on_adb_device $adb_device_name $adb_work_dir $test_name ${slots[1]} ${slots[2]} ${slots[3]} ${slots[4]}
                         is_skip=1
                         break
                     fi
