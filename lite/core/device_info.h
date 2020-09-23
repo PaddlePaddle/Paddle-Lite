@@ -40,6 +40,8 @@ typedef enum {
   kA73 = 73,
   kA75 = 75,
   kA76 = 76,
+  kA77 = 77,
+  kA78 = 78,
   kARMArch_UNKOWN = -1
 } ARMArch;
 
