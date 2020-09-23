@@ -95,7 +95,7 @@ TEST(MobileNetV1, test_mobilenetv1_int8_rockchip_apu) {
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GT(out_accuracy, 0.6f);
+  ASSERT_GE(out_accuracy, 0.52f);
 }
 
 }  // namespace lite
