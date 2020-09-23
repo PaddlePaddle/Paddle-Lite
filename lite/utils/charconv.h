@@ -156,9 +156,10 @@ from_chars_result aton_unsigned(const char* str,
     }
     val += cv;
   }
-  if (UNLIKELY(i > std::numeric_limits<T>::digits10 + 1 ||
-               (i > std::numeric_limits<T>::digits10 &&
-                val > static_cast<uint64_t>((std::numeric_limits<T>::max)())))) {
+  if (UNLIKELY(
+          i > std::numeric_limits<T>::digits10 + 1 ||
+          (i > std::numeric_limits<T>::digits10 &&
+           val > static_cast<uint64_t>((std::numeric_limits<T>::max)())))) {
     value = static_cast<T>((std::numeric_limits<T>::max)());
     result.ec = std::errc::result_out_of_range;
     return result;
@@ -209,9 +210,10 @@ from_chars_result aton_signed(const char* str,
     val += cv;
   }
   if (LIKELY(!negative)) {
-    if (UNLIKELY(i > std::numeric_limits<T>::digits10 + 1 ||
-                 (i > std::numeric_limits<T>::digits10 &&
-                  val > static_cast<int64_t>((std::numeric_limits<T>::max)())))) {
+    if (UNLIKELY(
+            i > std::numeric_limits<T>::digits10 + 1 ||
+            (i > std::numeric_limits<T>::digits10 &&
+             val > static_cast<int64_t>((std::numeric_limits<T>::max)())))) {
       value = static_cast<T>((std::numeric_limits<T>::max)());
       result.ec = std::errc::result_out_of_range;
       return result;
