@@ -59,8 +59,11 @@
 // Thread local storage will be ignored because the linker for iOS 8 does not
 // support it.
 #define LITE_THREAD_LOCAL
-#elif __cplusplus >= 201103
+#elif defined(__cplusplus) && (__cplusplus >= 201103)
+#define LITE_THREAD_LOCAL thread_local
+#elif defined(_WIN32)
+// The MSVC compiler does not support standards switches for C++11.
 #define LITE_THREAD_LOCAL thread_local
 #else
-#error "C++11 support is required for paddle-lite compilation."
+#error "[Paddle-Lite] C++11 support is required for paddle-lite compilation."
 #endif
