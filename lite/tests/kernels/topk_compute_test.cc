@@ -109,6 +109,8 @@ TEST(Topk, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-3;  // Using fp16 in NPU
+  // TODO(zhupengyang): enable later
+  return;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else

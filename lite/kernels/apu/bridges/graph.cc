@@ -28,7 +28,7 @@ int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
     LOG(FATAL) << "[APU] Node" << name << " is redefined.";
     return -1;
   } else {
-    VLOG(3) << " Add: " << name << " : " << node->index();
+    VLOG(5) << " Add: " << name << " : " << node->index();
     auto ret = nodes_.insert(
         std::make_pair(name, std::vector<std::shared_ptr<Node>>()));
     CHECK(ret.second);

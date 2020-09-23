@@ -17,6 +17,7 @@
 #include <cstdarg>
 #include <string>
 #include <vector>
+#include "lite/api/paddle_api.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
 #ifdef LITE_WITH_MLU
@@ -27,6 +28,7 @@
 namespace paddle {
 namespace lite {
 
+using L3CacheSetMethod = lite_api::L3CacheSetMethod;
 #if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
 
 typedef enum {
@@ -38,6 +40,8 @@ typedef enum {
   kA73 = 73,
   kA75 = 75,
   kA76 = 76,
+  kA77 = 77,
+  kA78 = 78,
   kARMArch_UNKOWN = -1
 } ARMArch;
 
@@ -65,11 +69,41 @@ class DeviceInfo {
   int l1_cache_size() const { return L1_cache_[active_ids_[0]]; }
   int l2_cache_size() const { return L2_cache_[active_ids_[0]]; }
   int l3_cache_size() const { return L3_cache_[active_ids_[0]]; }
+  // Methods for allocating L3Cache on Arm platform
+  // Enum class L3CacheSetMethod is declared in `lite/api/paddle_api.h`
+  void SetArmL3CacheSize(
+      L3CacheSetMethod method = L3CacheSetMethod::kDeviceL3Cache,
+      int absolute_val = -1) {
+    l3_cache_method_ = method;
+    absolute_l3cache_size_ = absolute_val;
+    // Realloc memory for sgemm in this context.
+    workspace_.clear();
+    workspace_.Resize({llc_size()});
+    workspace_.mutable_data<int8_t>();
+  }
+
   int llc_size() const {
-    auto size = L3_cache_[active_ids_[0]] > 0 ? L3_cache_[active_ids_[0]]
-                                              : L2_cache_[active_ids_[0]];
+    auto size = absolute_l3cache_size_;
+    switch (l3_cache_method_) {
+      // kDeviceL3Cache = 0, use the system L3 Cache size, best performance.
+      case L3CacheSetMethod::kDeviceL3Cache:
+        size = L3_cache_[active_ids_[0]] > 0 ? L3_cache_[active_ids_[0]]
+                                             : L2_cache_[active_ids_[0]];
+        break;
+      // kDeviceL2Cache = 1, use the system L2 Cache size, trade off performance
+      // with less memory consumption.
+      case L3CacheSetMethod::kDeviceL2Cache:
+        size = L2_cache_[active_ids_[0]];
+        break;
+      // kAbsolute = 2, use the external setting.
+      case L3CacheSetMethod::kAbsolute:
+        break;
+      default:
+        LOG(FATAL) << "Error: unknown l3_cache_method_ !";
+    }
     return size > 0 ? size : 512 * 1024;
   }
+
   bool has_dot() const { return dot_[active_ids_[0]]; }
   bool has_fp16() const { return fp16_[active_ids_[0]]; }
 
@@ -121,6 +155,10 @@ class DeviceInfo {
   void RequestPowerRandHighMode(int shift_num, int thread_num);
   void RequestPowerRandLowMode(int shift_num, int thread_num);
 
+  // Methods for allocating L3Cache on Arm platform
+  // Enum class L3CacheSetMethod is declared in `lite/api/paddle_api.h`
+  L3CacheSetMethod l3_cache_method_{L3CacheSetMethod::kDeviceL3Cache};
+  int absolute_l3cache_size_{-1};
   DeviceInfo() = default;
 };
 #endif  // LITE_WITH_ARM

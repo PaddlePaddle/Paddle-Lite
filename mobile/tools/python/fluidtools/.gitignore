@@ -1,6 +1,0 @@
-*
-!run.py
-!.gitignore
-!/model-encrypt-tool
-!test_wrap.py
-!run_multi_feed.py
