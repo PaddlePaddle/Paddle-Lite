@@ -25,6 +25,7 @@ lite_cc_library(mir_passes
       fusion/scale_activation_fuse_pass.cc
       fusion/reshape_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
+      fusion/__xpu__res2net_fuse_pass.cc
       fusion/__xpu__resnet_cbam_fuse_pass.cc
       fusion/__xpu__multi_encoder_fuse_pass.cc
       fusion/__xpu__embedding_with_eltwise_add_fuse_pass.cc

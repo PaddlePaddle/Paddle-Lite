@@ -62,6 +62,7 @@ USE_MIR_PASS(quantized_op_attributes_inference_pass);
 USE_MIR_PASS(control_flow_op_unused_inputs_and_outputs_eliminate_pass)
 USE_MIR_PASS(lite_scale_activation_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
+USE_MIR_PASS(__xpu__res2net_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_d_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_cbam_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_fuse_pass);

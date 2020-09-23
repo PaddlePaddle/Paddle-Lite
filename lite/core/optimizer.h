@@ -109,6 +109,7 @@ class Optimizer {
           "identity_dropout_eliminate_pass",
           "__xpu__resnet_fuse_pass",
           "__xpu__resnet_d_fuse_pass",
+          "__xpu__res2net_fuse_pass",
           "__xpu__resnet_cbam_fuse_pass",
           "__xpu__conv2d_fuse_pass",
           "__xpu__conv2d_link_previous_out_max_pass",

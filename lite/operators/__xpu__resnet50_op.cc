@@ -63,3 +63,4 @@ bool XPUResNet50Op::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
 REGISTER_LITE_OP(__xpu__resnet50, paddle::lite::operators::XPUResNet50Op);
 REGISTER_LITE_OP(__xpu__resnet50_d, paddle::lite::operators::XPUResNet50Op);
+REGISTER_LITE_OP(__xpu__res2net50, paddle::lite::operators::XPUResNet50Op);
