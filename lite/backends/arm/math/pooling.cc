@@ -2225,10 +2225,10 @@ void pooling3x3s2p1_max(const float* din,
     w_unroll_remian = wout - w_unroll_size * 4;
   }
   int w_needed = wout * 2 + 1;
-  int pad_right_ = w_needed - win - pad_bottom;
-  int w_2 = pad_right_ > 0 ? w_unroll_remian : w_unroll_remian + 1;
+  int need_right = w_needed - win - pad_bottom;
+  int w_2 = need_right > 0 ? w_unroll_remian : w_unroll_remian + 1;
   w_2 = w_unroll_size <= 0 ? w_2 - 1 : w_2;
-  pad_right_ = wout > 1 ? pad_right_ : 0;
+  need_right = wout > 1 ? need_right : 0;
   float minval = std::numeric_limits<float>::lowest();
   float32x4_t vmin = vdupq_n_f32(minval);
 
@@ -2367,7 +2367,7 @@ void pooling3x3s2p1_max(const float* din,
           dr2 += 2;
         }
 
-        if (pad_right_) {
+        if (need_right) {
           float tmp = minval;
           int idx = win - 1;
           tmp = std::max(tmp, std::max(pr0[idx], pr1[idx]));
