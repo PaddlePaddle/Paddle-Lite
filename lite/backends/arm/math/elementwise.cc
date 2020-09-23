@@ -59,15 +59,6 @@ void elementwise_add<int32_t>(const int32_t* dinx,
   naive_elementwise_op<int32_t>(dinx, diny, dout, num, naive_add<int32_t>);
 }
 
-// todo: use arm intrinsics
-template <>
-void elementwise_add<int64_t>(const int64_t* dinx,
-                              const int64_t* diny,
-                              int64_t* dout,
-                              int num) {
-  naive_elementwise_op<int64_t>(dinx, diny, dout, num, naive_add<int64_t>);
-}
-
 template <>
 void elementwise_add<float>(const float* dinx,
                             const float* diny,
@@ -259,18 +250,6 @@ void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
                                         int num) {
   naive_elementwise_op_broadcast<int32_t>(
       dinx, diny, dout, batch, channels, num, naive_add<int32_t>);
-}
-
-// todo: use arm intrinsics
-template <>
-void elementwise_add_broadcast<int64_t>(const int64_t* dinx,
-                                        const int64_t* diny,
-                                        int64_t* dout,
-                                        int batch,
-                                        int channels,
-                                        int num) {
-  naive_elementwise_op_broadcast<int64_t>(
-      dinx, diny, dout, batch, channels, num, naive_add<int64_t>);
 }
 
 template <>
@@ -494,15 +473,6 @@ void elementwise_sub<int32_t>(const int32_t* dinx,
   naive_elementwise_op<int32_t>(dinx, diny, dout, num, naive_sub<int32_t>);
 }
 
-// todo: use arm intrinsics
-template <>
-void elementwise_sub<int64_t>(const int64_t* dinx,
-                              const int64_t* diny,
-                              int64_t* dout,
-                              int num) {
-  naive_elementwise_op<int64_t>(dinx, diny, dout, num, naive_sub<int64_t>);
-}
-
 template <>
 void elementwise_sub<float>(const float* dinx,
                             const float* diny,
@@ -613,18 +583,6 @@ void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
                                         int num) {
   naive_elementwise_op_broadcast<int32_t>(
       dinx, diny, dout, batch, channels, num, naive_sub<int32_t>);
-}
-
-// todo: use arm intrinsics
-template <>
-void elementwise_sub_broadcast<int64_t>(const int64_t* dinx,
-                                        const int64_t* diny,
-                                        int64_t* dout,
-                                        int batch,
-                                        int channels,
-                                        int num) {
-  naive_elementwise_op_broadcast<int64_t>(
-      dinx, diny, dout, batch, channels, num, naive_sub<int64_t>);
 }
 
 template <>
