@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #elif defined(_WIN32)
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
+#define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <windows.h>
 #else
 #include <unistd.h>
