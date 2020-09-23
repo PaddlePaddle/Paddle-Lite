@@ -160,6 +160,9 @@ TEST(Concat, precision) {
 
   for (int axis : {1, 2}) {
     for (bool is_use_axis_tensor : {false, true}) {
+#ifdef LITE_WITH_NPU
+      if (is_use_axis_tensor) continue;
+#endif
       LOG(INFO) << "axis:" << axis
                 << ", is_use_axis_tensor:" << is_use_axis_tensor;
       std::unique_ptr<arena::TestCase> tester(

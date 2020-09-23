@@ -163,7 +163,9 @@ void TestTranspose4D(Place place, float abs_error) {
 #if !defined(LITE_WITH_XPU)
     {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 2, 1, 3}, {3, 1, 2, 0}, {3, 1, 0, 2},
 #endif
+#if !defined(LITE_WITH_NPU)
         {0, 2, 3, 1}, {0, 3, 1, 2},
+#endif
   };
   for (auto axis : axes) {
     std::unique_ptr<arena::TestCase> tester(
@@ -174,7 +176,6 @@ void TestTranspose4D(Place place, float abs_error) {
 }
 
 TEST(Transpose, precision) {
-  LOG(INFO) << "test Transpose op";
   float abs_error = 2e-5;
   Place place;
 #if defined(LITE_WITH_NPU)
