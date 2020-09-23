@@ -22,8 +22,8 @@ USE_ADB_EMULATOR=ON
 ADB_DEVICE_LIST=""
 # The list of tests which are ignored, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
 TEST_SKIP_LIST=""
-# The list of model tests, its format is "<target_name>,<extra_args>,<model_dir>,<data_dir>,<config_dir>;", use '-' if an argument is empty, such as
-# "test_mobilenetv1_fp32_huawei_kirin_npu,-,mobilenet_v1,ILSVRC2012_small,-;test_mobilenetv2_fp32_huawei_kirin_npu,-,mobilenet_v2_relu,ILSVRC2012_small,-;"
+# The list of model tests, its format is "<target_name>,<extra_args>,<model_dir>,<data_dir>,<config_dir>:", use '-' if an argument is empty, such as
+# "test_mobilenetv1_fp32_huawei_kirin_npu,-,mobilenet_v1,ILSVRC2012_small,-:test_mobilenetv2_fp32_huawei_kirin_npu,-,mobilenet_v2_relu,ILSVRC2012_small,-:"
 TEST_MODEL_LIST=""
 LITE_WITH_COVERAGE=OFF
 
@@ -518,7 +518,7 @@ function run_all_tests_on_adb_device {
     local test_archs=(${test_arch_list//,/ })
     local test_toolchains=(${test_toolchain_list//,/ })
     local test_skip_names=(${test_skip_list//,/ })
-    local test_model_params=(${test_model_list//;/ })
+    local test_model_params=(${test_model_list//:/ })
     for arch in $test_archs; do
         for toolchain in $test_toolchains; do
             # Build all tests and prepare device environment for running tests
