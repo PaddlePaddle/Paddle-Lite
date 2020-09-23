@@ -2225,7 +2225,7 @@ void pooling3x3s2p1_max(const float* din,
     w_unroll_remian = wout - w_unroll_size * 4;
   }
   int w_needed = wout * 2 + 1;
-  int need_right = w_needed - win - pad_bottom;
+  int need_right = w_needed - win - pad_right;
   int w_2 = need_right > 0 ? w_unroll_remian : w_unroll_remian + 1;
   w_2 = w_unroll_size <= 0 ? w_2 - 1 : w_2;
   need_right = wout > 1 ? need_right : 0;
