@@ -20,8 +20,11 @@ NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 USE_ADB_EMULATOR=ON
 # Use real android devices, set the device names for adb connection, ignored if USE_ADB_EMULATOR=ON
 ADB_DEVICE_LIST=""
-# The list of test names which are ignored, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
+# The list of tests which are ignored, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
 TEST_SKIP_LIST=""
+# The list of model tests, its format is "<target_name>,<extra_args>,<model_dir>,<data_dir>,<config_dir>", use '-' if an argument is empty, such as
+# "test_mobilenetv1_fp32_huawei_kirin_npu,-,mobilenet_v1,ILSVRC2012_small,-;test_mobilenetv2_fp32_huawei_kirin_npu,-,mobilenet_v2_relu,ILSVRC2012_small,-;"
+TEST_MODEL_LIST=""
 LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
@@ -398,11 +401,11 @@ function build_test_xpu {
 
 function is_available_adb_device {
     local adb_device_name=$1
-    if [ -n "$adb_device_name" ]; then
+    if [[ -n "$adb_device_name" ]]; then
         for line in `adb devices | grep -v "List"  | awk '{print $1}'`
         do
             online_device_name=`echo $line | awk '{print $1}'`
-            if [ "$adb_device_name" == "$online_device_name" ];then
+            if [[ "$adb_device_name" == "$online_device_name" ]];then
                 return 0
             fi
         done
@@ -415,7 +418,7 @@ function pick_an_available_adb_device {
     local adb_device_names=(${adb_device_list//,/ })
     for adb_device_name in ${adb_device_names[@]}; do
         is_available_adb_device $adb_device_name
-        if [ $? -eq 0 ]; then
+        if [[ $? -eq 0 ]]; then
             echo $adb_device_name
             return 0
         fi
@@ -424,58 +427,134 @@ function pick_an_available_adb_device {
     return 1
 }
 
-function run_test_on_adb_device {
-    # Support all of the ADB-supported devices, such as android devices and
-    # armlinux devices(RK1808 EVB)
+function run_test_case_on_adb_device {
+    # Support all of the ADB-supported devices, such as android and armlinux devices(RK1808 EVB)
     local adb_device_name=$1
     local adb_work_dir=$2
-    local test_name=$3
-    local test_args=$4
+    local target_name=$3
+    local extra_args=$4
     local model_dir=$5
     local data_dir=$6
+    local config_dir=$7
 
     # Check device is available
     is_available_adb_device $adb_device_name
-    if [ $? -ne 0 ]; then
+    if [[ $? -ne 0 ]]; then
         echo "${adb_device_name} not found!"
         exit 1
     fi
 
      # Be careful!!! Don't delete the root or system directories if the device is rooted.
-    if [ -z "$adb_work_dir" ]; then
+    if [[ -z "$adb_work_dir" ]]; then
         echo "$adb_work_dir can't be empty!"
         exit 1
     fi
-    if [ "$adb_work_dir" == "/" ]; then
+    if [[ "$adb_work_dir" == "/" ]]; then
         echo "$adb_work_dir can't be root dir!"
         exit 1
     fi
 
     # Copy the executable unit test to the remote device
-    local test_path=$(find ./lite -name $test_name)
-    if [ -z "$test_path" ]; then
-        echo "$test_name not found!"
+    local target_path=$(find ./lite -name $target_name)
+    if [[ -z "$target_path" ]]; then
+        echo "$target_name not found!"
         exit 1
     fi
-    adb -s ${adb_device_name} shell "rm -f ${adb_work_dir}/${test_name}"
-    adb -s ${adb_device_name} push "${test_path}" ${adb_work_dir}
+    adb -s ${adb_device_name} shell "rm -f ${adb_work_dir}/${target_name}"
+    adb -s ${adb_device_name} push "${target_path}" ${adb_work_dir}
+
+    # Add the extra arguments into the test command
+    local cmd_args=""
+    if [[ -n "$extra_args" && "$extra_args" != "-" ]]; then
+        cmd_args="${cmd_args} ${extra_args}"
+    fi
 
     # Copy the model files to the remote device
-    if [ -n "$model_dir" ]; then
+    if [[ -n "$model_dir" && "$model_dir" != "-" ]]; then
         adb -s ${adb_device_name} shell "rm -rf ${adb_work_dir}/${model_dir}"
         adb -s ${adb_device_name} push "./third_party/install/${model_dir}" ${adb_work_dir}
-        test_args="${test_args} --model_dir ./${model_dir}"
+        cmd_args="${cmd_args} --model_dir ./${model_dir}"
     fi
 
     # Copy the test data files to the remote device
-    if [ -n "$data_dir" ]; then
+    if [[ -n "$data_dir" && "$data_dir" != "-" ]]; then
         adb -s ${adb_device_name} shell "rm -rf ${adb_work_dir}/${data_dir}"
         adb -s ${adb_device_name} push "./third_party/install/${data_dir}" ${adb_work_dir}
-        test_args="${test_args} --data_dir ./${data_dir}"
+        cmd_args="${cmd_args} --data_dir ./${data_dir}"
+    fi
+
+    # Copy the config files to the remote device
+    if [[ -n "$config_dir" && "$config_dir" != "-"  ]]; then
+        adb -s ${adb_device_name} shell "rm -rf ${adb_work_dir}/${config_dir}"
+        adb -s ${adb_device_name} push "./third_party/install/${config_dir}" ${adb_work_dir}
+        cmd_args="${cmd_args} --config_dir ./${config_dir}"
     fi
     
     # Run the model on the remote device
-    adb -s ${adb_device_name} shell "cd ${adb_work_dir}; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. ./${test_name} ${test_args}"
+    adb -s ${adb_device_name} shell "cd ${adb_work_dir}; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. ./${target_name} ${cmd_args}"
+}
+
+function run_all_tests_on_adb_device {
+    local adb_device_list=$1
+    local test_skip_list=$2
+    local test_model_list=$3
+    local adb_work_dir=$4
+    local sdk_root_dir=$5
+    local test_arch_list=$6
+    local test_toolchain_list=$7
+    local build_targets_func=$8
+    local prepare_devices_func=$9
+
+    # Pick the first available adb device from list
+    local adb_device_name=$(pick_an_available_adb_device $adb_device_list)
+    if [[ -z $adb_device_name ]]; then
+        echo "No adb device available!"
+        exit 1
+    else
+        echo "Found a device'${adb_device_name}'."
+    fi
+
+    # Run all of unittests and model tests
+    local test_archs=(${test_arch_list//,/ })
+    local test_toolchains=(${test_toolchain_list//,/ })
+    local test_skip_names=(${test_skip_list//,/ })
+    local test_model_params=(${test_model_list//;/ })
+    for arch in $test_archs; do
+        for toolchain in $test_toolchains; do
+            # Build all tests and prepare device environment for running tests
+            echo "Build tests for MediaTek APU with ${arch}+${toolchain}"
+            ${build_targets_func} $arch $toolchain $sdk_root_dir
+            ${prepare_devices_func} $adb_device_name $adb_work_dir $arch $toolchain $sdk_root_dir
+            # Run all of unit tests and model tests
+            for test_name in $(cat $TESTS_FILE); do
+                local is_skip=0
+                for test_skip_name in ${test_skip_names[@]}; do
+                    if [[ "$test_skip_name" == "$test_name" ]]; then
+                        echo "skip " $test_name
+                        is_skip=1
+                        break
+                    fi
+                done
+                if [[ $is_skip -ne 0 ]]; then
+                    continue
+                fi
+                is_skip=0
+                for test_model_param in ${test_model_params[@]}; do
+                    local slots=(${test_model_param//,/ })
+                    if [[ "${slots[0]}" == "$test_name" ]]; then
+                        run_test_case_on_adb_device $adb_device_name $adb_work_dir $test_name "${slots[1]}" "${slots[2]}" "${slots[3]}" "${slots[4]}"
+                        is_skip=1
+                        break
+                    fi
+                done
+                if [[ $is_skip -ne 0 ]]; then
+                    continue
+                fi
+                run_test_case_on_adb_device $adb_device_name $adb_work_dir $test_name
+            done
+            cd - > /dev/null
+        done
+    done
 }
 
 # Huawei Kirin NPU
@@ -488,14 +567,14 @@ function huawei_kirin_npu_prepare_device {
 
     # Check device is available
     is_available_adb_device $adb_device_name
-    if [ $? -ne 0 ]; then
+    if [[ $? -ne 0 ]]; then
         echo "${adb_device_name} not found!"
         exit 1
     fi
 
     # Only root user can use HiAI runtime libraries in the android shell executables
     adb -s ${adb_device_name} root
-    if [ $? -ne 0 ]; then
+    if [[ $? -ne 0 ]]; then
         echo "${adb_device_name} hasn't the root permission!"
         exit 1
     fi
@@ -543,51 +622,7 @@ function huawei_kirin_npu_build_targets {
 }
 
 function huawei_kirin_npu_build_and_test {
-    local adb_device_list=$1
-    local test_skip_list=$2
-    local adb_work_dir="/data/local/tmp"
-    local sdk_root_dir=$(readlink -f ./hiai_ddk_lib_330)
-
-    # Pick the first available adb device from list
-    local adb_device_name=$(pick_an_available_adb_device $adb_device_list)
-    if [ -z $adb_device_name ]; then
-        echo "No adb device available!"
-        exit 1
-    else
-        echo "Found a device'${adb_device_name}'."
-    fi
-
-    # Run all of unittests and model tests
-    local test_archs=("armv7")
-    local test_toolchains=("gcc" "clang")
-    local test_skip_names=(${test_skip_list//,/ })
-    for arch in $test_archs; do
-        for toolchain in $test_toolchains; do
-            # Build all tests and prepare device environment for running tests
-            echo "Build tests for Huawei Kirin NPU with ${arch}+${toolchain}"
-            huawei_kirin_npu_build_targets $arch $toolchain $sdk_root_dir
-            huawei_kirin_npu_prepare_device $adb_device_name $adb_work_dir $arch $toolchain $sdk_root_dir
-            # Unit tests
-            for test_name in $(cat $TESTS_FILE); do
-                local is_skip=0
-                for test_skip_name in ${test_skip_names[@]}; do
-                    if [ "$test_skip_name" == "$test_name" ]; then
-                        echo "skip " $test_name
-                        is_skip=1
-                    fi
-                done
-                if [ $is_skip -ne 0 ]; then
-                    continue
-                fi
-                run_test_on_adb_device $adb_device_name $adb_work_dir $test_name
-            done
-            # Test models
-            run_test_on_adb_device $adb_device_name $adb_work_dir test_mobilenetv1_fp32_huawei_kirin_npu "" mobilenet_v1 ILSVRC2012_small
-            run_test_on_adb_device $adb_device_name $adb_work_dir test_mobilenetv2_fp32_huawei_kirin_npu "" mobilenet_v2_relu ILSVRC2012_small
-            run_test_on_adb_device $adb_device_name $adb_work_dir test_resnet50_fp32_huawei_kirin_npu "" resnet50 ILSVRC2012_small
-            cd - > /dev/null
-        done
-    done
+    run_all_tests_on_adb_device $1 $2 $3 "/data/local/tmp" "$(readlink -f ./hiai_ddk_lib_330)" "armv7" "gcc,clang" huawei_kirin_npu_build_targets huawei_kirin_npu_prepare_device
 }
 
 # Rockchip NPU
@@ -600,7 +635,7 @@ function rockchip_npu_prepare_device {
 
     # Check device is available
     is_available_adb_device $adb_device_name
-    if [ $? -ne 0 ]; then
+    if [[ $? -ne 0 ]]; then
         echo "${adb_device_name} not found!"
         exit 1
     fi
@@ -653,49 +688,7 @@ function rockchip_npu_build_targets {
 }
 
 function rockchip_npu_build_and_test {
-    local adb_device_list=$1
-    local test_skip_list=$2
-    local adb_work_dir="/data/local/tmp"
-    local sdk_root_dir=$(readlink -f ./rknpu_ddk)
-
-    # Pick the first available adb device from list
-    local adb_device_name=$(pick_an_available_adb_device $adb_device_list)
-    if [ -z $adb_device_name ]; then
-        echo "No adb device available!"
-        exit 1
-    else
-        echo "Found a device'${adb_device_name}'."
-    fi
-
-    # Run all of unittests and model tests
-    local test_archs=("armv8")
-    local test_toolchains=("gcc")
-    local test_skip_names=(${test_skip_list//,/ })
-    for arch in $test_archs; do
-        for toolchain in $test_toolchains; do
-            # Build all tests and prepare device environment for running tests
-            echo "Build tests for Rockchip NPU with ${arch}+${toolchain}"
-            rockchip_npu_build_targets $arch $toolchain $sdk_root_dir
-            rockchip_npu_prepare_device $adb_device_name $adb_work_dir $arch $toolchain $sdk_root_dir
-            # Unit tests
-            for test_name in $(cat $TESTS_FILE); do
-                local is_skip=0
-                for test_skip_name in ${test_skip_names[@]}; do
-                    if [ "$test_skip_name" == "$test_name" ]; then
-                        echo "skip " $test_name
-                        is_skip=1
-                    fi
-                done
-                if [ $is_skip -ne 0 ]; then
-                    continue
-                fi
-                run_test_on_adb_device $adb_device_name $adb_work_dir $test_name
-            done
-            # Test models
-            run_test_on_adb_device $adb_device_name $adb_work_dir test_mobilenetv1_int8_rockchip_npu "" mobilenet_v1_int8_for_rockchip_npu ILSVRC2012_small
-            cd - > /dev/null
-        done
-    done
+    run_all_tests_on_adb_device $1 $2 $3 "/userdata/bin" "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_targets rockchip_npu_prepare_device
 }
 
 # MediaTek APU
@@ -708,14 +701,14 @@ function mediatek_apu_prepare_device {
 
     # Check device is available
     is_available_adb_device $adb_device_name
-    if [ $? -ne 0 ]; then
+    if [[ $? -ne 0 ]]; then
         echo "${adb_device_name} not found!"
         exit 1
     fi
 
     # Use high performance mode
     adb -s ${adb_device_name} root
-    if [ $? -ne 0 ]; then
+    if [[ $? -ne 0 ]]; then
         echo "${adb_device_name} hasn't the root permission!"
         exit 1
     fi
@@ -760,49 +753,7 @@ function mediatek_apu_build_targets {
 }
 
 function mediatek_apu_build_and_test {
-    local adb_device_list=$1
-    local test_skip_list=$2
-    local adb_work_dir="/data/local/tmp"
-    local sdk_root_dir=$(readlink -f ./apu_ddk)
-
-    # Pick the first available adb device from list
-    local adb_device_name=$(pick_an_available_adb_device $adb_device_list)
-    if [ -z $adb_device_name ]; then
-        echo "No adb device available!"
-        exit 1
-    else
-        echo "Found a device'${adb_device_name}'."
-    fi
-
-    # Run all of unittests and model tests
-    local test_archs=("armv8")
-    local test_toolchains=("gcc")
-    local test_skip_names=(${test_skip_list//,/ })
-    for arch in $test_archs; do
-        for toolchain in $test_toolchains; do
-            # Build all tests and prepare device environment for running tests
-            echo "Build tests for MediaTek APU with ${arch}+${toolchain}"
-            mediatek_apu_build_targets $arch $toolchain $sdk_root_dir
-            mediatek_apu_prepare_device $adb_device_name $adb_work_dir $arch $toolchain $sdk_root_dir
-            # Unit tests
-            for test_name in $(cat $TESTS_FILE); do
-                local is_skip=0
-                for test_skip_name in ${test_skip_names[@]}; do
-                    if [ "$test_skip_name" == "$test_name" ]; then
-                        echo "skip " $test_name
-                        is_skip=1
-                    fi
-                done
-                if [ $is_skip -ne 0 ]; then
-                    continue
-                fi
-                run_test_on_adb_device $adb_device_name $adb_work_dir $test_name
-            done
-            # Test models
-            run_test_on_adb_device $adb_device_name $adb_work_dir test_mobilenetv1_int8_mediatek_apu "" mobilenet_v1_int8_for_mediatek_apu ILSVRC2012_small
-            cd - > /dev/null
-        done
-    done
+    run_all_tests_on_adb_device $1 $2 $3 "/data/local/tmp" "$(readlink -f ./apu_ddk)" "armv8" "gcc" mediatek_apu_build_targets mediatek_apu_prepare_device
 }
 
 function cmake_huawei_ascend_npu {
@@ -1417,6 +1368,10 @@ function main {
                 TEST_SKIP_LIST="${i#*=}"
                 shift
                 ;;
+            --test_model_list=*)
+                TEST_MODEL_LIST="${i#*=}"
+                shift
+                ;;
             --lite_with_coverage=*)
                 LITE_WITH_COVERAGE="${i#*=}"
                 shift
@@ -1492,18 +1447,15 @@ function main {
                 shift
                 ;;
             huawei_kirin_npu_build_and_test)
-                TEST_SKIP_LIST="test_mobilenetv1_fp32_huawei_kirin_npu,test_mobilenetv2_fp32_huawei_kirin_npu,test_resnet50_fp32_huawei_kirin_npu,test_cxx_api,test_mobilenetv1_int8,test_mobilenetv1,test_mobilenetv2,test_resnet50,test_inceptionv4,test_light_api,test_apis,test_paddle_api,sgemm_compute_test,sgemv_compute_test,sgemm_c4_compute_test,gemm_int8_compute_test,gemv_int8_compute_test,conv_compute_test,conv_transpose_compute_test,conv_int8_compute_test,pool_compute_test,deformable_conv_compute_test,layout_compute_test,test_transformer_with_mask_fp32_arm,test_gen_code,test_generated_code,test_arena_framework,test_resnet50_fpga,test_kernel_conv_compute,test_kernel_conv_transpose_compute,test_kernel_scale_compute,test_kernel_power_compute,test_kernel_shuffle_channel_compute,test_kernel_yolo_box_compute,test_kernel_fc_compute,test_kernel_elementwise_compute,test_kernel_lrn_compute,test_kernel_decode_bboxes_compute,test_kernel_box_coder_compute,test_kernel_activation_compute,test_kernel_argmax_compute,test_kernel_axpy_compute,test_kernel_norm_compute,test_kernel_cast_compute,test_kernel_instance_norm_compute,test_kernel_grid_sampler_compute,test_kernel_group_norm_compute,test_kernel_compare_compute,test_kernel_logical_compute,test_kernel_topk_compute,test_kernel_increment_compute,test_kernel_write_to_array_compute,test_kernel_read_from_array_compute,test_kernel_concat_compute,test_kernel_transpose_compute,test_kernel_reshape_compute,test_kernel_layer_norm_compute,test_kernel_dropout_compute,test_kernel_softmax_compute,test_kernel_mul_compute,test_kernel_multiclass_nms_compute,test_kernel_batch_norm_compute,test_kernel_pool_compute,test_kernel_fill_constant_compute,test_kernel_fill_constant_batch_size_like_compute,test_gru_unit,test_kernel_sequence_conv_compute,test_kernel_reduce_max_compute,test_kernel_unsqueeze_compute,test_kernel_assign_compute,test_kernel_assign_value_compute,test_kernel_box_clip_compute,test_kernel_reduce_mean_compute,test_kernel_reduce_sum_compute,test_kernel_reduce_prod_compute,test_kernel_stack_compute,test_kernel_range_compute,test_kernel_affine_channel_compute,test_kernel_anchor_generator_compute,test_kernel_search_aligned_mat_mul_compute,test_kernel_search_seq_fc_compute,test_kernel_lookup_table_compute,test_kernel_lookup_table_dequant_compute,test_kernel_gather_compute,test_kernel_ctc_align_compute,test_kernel_clip_compute,test_kernel_pixel_shuffle_compute,test_kernel_scatter_compute,test_kernel_sequence_expand_as_compute,test_kernel_mean_compute,test_kernel_activation_grad_compute,test_kernel_elementwise_grad_compute,test_kernel_mul_grad_compute,test_kernel_sgd_compute,test_kernel_sequence_pool_grad_compute,test_kernel_pad2d_compute,test_kernel_prior_box_compute,test_kernel_negative_compute,test_kernel_interp_compute,test_kernel_shape_compute,test_kernel_is_empty_compute,test_kernel_crop_compute,test_kernel_sequence_expand_compute,test_kernel_squeeze_compute,test_kernel_slice_compute,test_kernel_expand_compute,test_kernel_expand_as_compute,test_kernel_matmul_compute,test_kernel_flatten_compute,test_uniform_random_compute"
-                huawei_kirin_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
+                huawei_kirin_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST $TEST_MODEL_LIST
                 shift
                 ;;
             rockchip_npu_build_and_test)
-                TEST_SKIP_LIST="test_mobilenetv1_int8_rockchip_npu,test_cxx_api,test_mobilenetv1_int8,test_mobilenetv1,test_mobilenetv2,test_resnet50,test_inceptionv4,test_light_api,test_apis,test_paddle_api,sgemm_compute_test,sgemv_compute_test,sgemm_c4_compute_test,gemm_int8_compute_test,gemv_int8_compute_test,conv_compute_test,conv_transpose_compute_test,conv_int8_compute_test,pool_compute_test,deformable_conv_compute_test,layout_compute_test,test_transformer_with_mask_fp32_arm,test_gen_code,test_generated_code"
-                rockchip_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
+                rockchip_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST $TEST_MODEL_LIST
                 shift
                 ;;
             mediatek_apu_build_and_test)
-                TEST_SKIP_LIST="test_mobilenetv1_int8_mediatek_apu,test_cxx_api,test_mobilenetv1_int8,test_mobilenetv1,test_mobilenetv2,test_resnet50,test_inceptionv4,test_light_api,test_apis,test_paddle_api,sgemm_compute_test,sgemv_compute_test,sgemm_c4_compute_test,gemm_int8_compute_test,gemv_int8_compute_test,conv_compute_test,conv_transpose_compute_test,conv_int8_compute_test,pool_compute_test,deformable_conv_compute_test,layout_compute_test,test_transformer_with_mask_fp32_arm,test_gen_code,test_generated_code"
-                mediatek_apu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
+                mediatek_apu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST $TEST_MODEL_LIST
                 shift
                 ;;
             build_test_huawei_ascend_npu)
