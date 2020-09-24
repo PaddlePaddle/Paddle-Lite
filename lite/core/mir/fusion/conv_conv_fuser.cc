@@ -128,13 +128,12 @@ void ConvConvFuser::BuildPattern() {
                 conv_op_desc0->HasAttr("enable_int8") ? true : false;
             bool enable1_int8 =
                 conv_op_desc1->HasAttr("enable_int8") ? true : false;
-            if (ch_in_0 == ch_out_0 && ch_out_0 == groups0) continue;
             if (!(kw == 1 && kh == 1)) {
               VLOG(5) << "The kernel size of the second conv must be 1x1";
               continue;
             }
-            if (groups1 != 1) {
-              VLOG(5) << "The groups of weight1_dim must be 1";
+            if (groups1 != 1 || groups0 != 1 ) {
+              VLOG(5) << "The all groups of weight_dim must be 1";
               continue;
             }
             if (ch_out_0 != ch_in_1) {
