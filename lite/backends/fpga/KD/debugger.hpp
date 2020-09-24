@@ -25,7 +25,8 @@
 namespace paddle {
 namespace lite {
 
-#define FPGA_PRINT_TENSOR
+// uncomment line below to print tensors;
+// #define FPGA_PRINT_TENSOR
 
 class Debugger {
  public:
@@ -36,7 +37,7 @@ class Debugger {
 
   void registerOutput(std::string op_type, zynqmp::Tensor* tensor) {
     if (op_config[op_type]) {
-      // tensor->saveToFile(op_type, true);
+      tensor->saveToFile(op_type, true);
     }
   }
 

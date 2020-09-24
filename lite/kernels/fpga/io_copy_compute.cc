@@ -291,25 +291,3 @@ REGISTER_LITE_KERNEL(io_copy,
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNCHW))})
     .Finalize();
-
-//  ==========================================================
-
-// std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
-//   std::unique_ptr<type_infer_handler_t> res(new type_infer_handler_t);
-//   *res = [](const std::map<std::string, const Type*>& inputs,
-//             const std::string& out) -> const Type* {
-//     CHECK(!inputs.empty());
-//     auto* type = inputs.at("Input");
-//     CHECK(type->target() == TARGET(kHost));
-
-//     auto out_place = type->place();
-//     out_place.target = TARGET(kFPGA);
-//     auto* out_type = Type::Get(type->id(),
-//                                out_place.target,
-//                                out_place.precision,
-//                                out_place.layout,
-//                                out_place.device);
-//     return out_type;
-//   };
-//   return res;
-// }
