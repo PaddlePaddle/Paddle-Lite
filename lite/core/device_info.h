@@ -56,7 +56,7 @@ class DeviceInfo {
   }
 
   int Setup();
-
+  bool set_a53_valid();
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
   void SetCache(int l1size, int l2size, int l3size);
   void SetArch(ARMArch arch) { arch_ = arch; }
