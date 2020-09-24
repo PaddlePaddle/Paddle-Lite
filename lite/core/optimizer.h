@@ -86,7 +86,6 @@ class Optimizer {
           "lite_conv_elementwise_fuse_pass",      // conv-elemwise-bn
           "lite_conv_bn_fuse_pass",               //
           "lite_conv_elementwise_fuse_pass",      // conv-bn-elemwise
-          "lite_conv_conv_fuse_pass",             //
           // TODO(Superjomn) Refine the fusion related design to select fusion
           // kernels for devices automatically.
           "lite_conv_activation_fuse_pass",              //
@@ -102,6 +101,7 @@ class Optimizer {
           "elementwise_mul_constant_eliminate_pass",     //
           "lite_sequence_pool_concat_fuse_pass",         //
           "lite_scale_activation_fuse_pass",             //
+
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
           "lite_elementwise_activation_fuse_pass",  //
