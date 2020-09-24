@@ -620,10 +620,8 @@ void conv_depthwise_3x3_fp32(const void* din,
   int pad = pad_w;
   bool flag_bias = param.bias != nullptr;
   bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
-  bool ch_four = ch_in <= 4 * w_in;
   if (stride == 1) {
-    if (ch_four && pads_less && (pad_h == pad_w) &&
-        (pad < 2)) {  // support pad = [0, 1]
+    if (pads_less && (pad_h == pad_w) && (pad < 2)) {  // support pad = [0, 1]
       conv_depthwise_3x3s1_fp32(reinterpret_cast<const float*>(din),
                                 reinterpret_cast<float*>(dout),
                                 num,
@@ -656,8 +654,7 @@ void conv_depthwise_3x3_fp32(const void* din,
                                 ctx);
     }
   } else if (stride == 2) {
-    if (ch_four && pads_less && pad_h == pad_w &&
-        (pad < 2)) {  // support pad = [0, 1]
+    if (pads_less && pad_h == pad_w && (pad < 2)) {  // support pad = [0, 1]
       conv_depthwise_3x3s2_fp32(reinterpret_cast<const float*>(din),
                                 reinterpret_cast<float*>(dout),
                                 num,
