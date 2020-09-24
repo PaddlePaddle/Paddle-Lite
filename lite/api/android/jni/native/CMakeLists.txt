@@ -17,7 +17,6 @@ if (NOT LITE_ON_TINY_PUBLISH)
     # Unlike static library, module library has to link target to be able to work
     # as a single .so lib.
     target_link_libraries(paddle_lite_jni ${lib_DEPS} ${arm_kernels} ${npu_kernels})
-    add_dependencies(paddle_lite_jni fbs_headers)
     if (LITE_WITH_NPU)
         # Strips the symbols of our protobuf functions to fix the conflicts during
         # loading HIAI builder libs (libhiai_ir.so and libhiai_ir_build.so)

@@ -58,6 +58,16 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
                                           config.mlu_input_layout(),
                                           config.mlu_firstconv_param());
 #endif  // LITE_WITH_MLU
+
+#ifdef LITE_WITH_BM
+    Env<TARGET(kBM)>::Init();
+    int device_id = 0;
+    if (const char *c_id = getenv("BM_VISIBLE_DEVICES")) {
+      device_id = static_cast<int>(*c_id) - 48;
+    }
+    TargetWrapper<TARGET(kBM)>::SetDevice(device_id);
+#endif  // LITE_WITH_BM
+
     auto use_layout_preprocess_pass =
         config.model_dir().find("OPENCL_PRE_PRECESS");
     VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;
@@ -86,7 +96,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       config.subgraph_model_cache_dir());
 #endif
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
-    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
+    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL) && !defined(__APPLE__)
   int num_threads = config.x86_math_library_num_threads();
   int real_num_threads = num_threads > 1 ? num_threads : 1;
   paddle::lite::x86::MKL_Set_Num_Threads(real_num_threads);

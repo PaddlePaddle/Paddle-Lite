@@ -21,23 +21,16 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
+#include "lite/tests/api/bert_utility.h"
 #include "lite/utils/cp_logging.h"
+
+DEFINE_string(data_dir, "", "data dir");
+DEFINE_int32(iteration, 9, "iteration times to run");
 
 namespace paddle {
 namespace lite {
 
-template <typename T>
-lite::Tensor GetTensorWithShape(std::vector<int64_t> shape) {
-  lite::Tensor ret;
-  ret.Resize(shape);
-  T* ptr = ret.mutable_data<T>();
-  for (int i = 0; i < ret.numel(); ++i) {
-    ptr[i] = (T)1;
-  }
-  return ret;
-}
-
-TEST(Ernie, test_ernie_fp32_xpu) {
+TEST(Bert, test_bert_fp32_xpu) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
@@ -46,56 +39,58 @@ TEST(Ernie, test_ernie_fp32_xpu) {
   config.set_xpu_workspace_l3_size_per_thread();
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  int64_t batch_size = 1;
-  int64_t seq_len = 64;
-  Tensor sample_input = GetTensorWithShape<int64_t>({batch_size, seq_len, 1});
-  std::vector<int64_t> input_shape{batch_size, seq_len, 1};
-  predictor->GetInput(0)->Resize(input_shape);
-  predictor->GetInput(1)->Resize(input_shape);
-  predictor->GetInput(2)->Resize(input_shape);
-  predictor->GetInput(3)->Resize(input_shape);
-
-  memcpy(predictor->GetInput(0)->mutable_data<int64_t>(),
-         sample_input.raw_data(),
-         sizeof(int64_t) * batch_size * seq_len);
-  memcpy(predictor->GetInput(1)->mutable_data<int64_t>(),
-         sample_input.raw_data(),
-         sizeof(int64_t) * batch_size * seq_len);
-  memcpy(predictor->GetInput(2)->mutable_data<int64_t>(),
-         sample_input.raw_data(),
-         sizeof(int64_t) * batch_size * seq_len);
-  memcpy(predictor->GetInput(3)->mutable_data<int64_t>(),
-         sample_input.raw_data(),
-         sizeof(int64_t) * batch_size * seq_len);
+  std::string input_data_file = FLAGS_data_dir + std::string("/bert_in.txt");
+  std::vector<std::vector<int64_t>> input0;
+  std::vector<std::vector<int64_t>> input1;
+  std::vector<std::vector<int64_t>> input2;
+  std::vector<std::vector<int64_t>> input3;
+  std::vector<std::vector<int64_t>> input_shapes;
+  ReadRawData(
+      input_data_file, &input0, &input1, &input2, &input3, &input_shapes);
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
+    std::vector<int64_t> shape = {1, 64, 1};
+    std::vector<int64_t> fill_value(64, 0);
+    for (int j = 0; j < 4; j++) {
+      FillTensor(predictor, j, shape, fill_value);
+    }
     predictor->Run();
   }
 
-  auto start = GetCurrentUS();
-  for (int i = 0; i < FLAGS_repeats; ++i) {
+  std::vector<std::vector<float>> out_rets;
+  out_rets.resize(FLAGS_iteration);
+  double cost_time = 0;
+  for (int i = 0; i < FLAGS_iteration; ++i) {
+    FillTensor(predictor, 0, input_shapes[i], input0[i]);
+    FillTensor(predictor, 1, input_shapes[i], input1[i]);
+    FillTensor(predictor, 2, input_shapes[i], input2[i]);
+    FillTensor(predictor, 3, input_shapes[i], input3[i]);
+
+    double start = GetCurrentUS();
     predictor->Run();
+    cost_time += GetCurrentUS() - start;
+
+    auto output_tensor = predictor->GetOutput(0);
+    auto output_shape = output_tensor->shape();
+    auto output_data = output_tensor->data<float>();
+    ASSERT_EQ(output_shape.size(), 2UL);
+    ASSERT_EQ(output_shape[0], 1);
+    ASSERT_EQ(output_shape[1], 3);
+
+    int output_size = output_shape[0] * output_shape[1];
+    out_rets[i].resize(output_size);
+    memcpy(&(out_rets[i].at(0)), output_data, sizeof(float) * output_size);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
-            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
-            << " ms in average.";
+            << ", warmup: " << FLAGS_warmup
+            << ", iteration: " << FLAGS_iteration << ", spend "
+            << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 
-  std::vector<std::vector<float>> results;
-  results.emplace_back(std::vector<float>({0.278893, 0.330888, 0.39022}));
-  auto out = predictor->GetOutput(0);
-  ASSERT_EQ(out->shape().size(), 2);
-  ASSERT_EQ(out->shape()[0], 1);
-  ASSERT_EQ(out->shape()[1], 3);
-
-  for (size_t i = 0; i < results.size(); ++i) {
-    for (size_t j = 0; j < results[i].size(); ++j) {
-      EXPECT_NEAR(
-          out->data<float>()[j + (out->shape()[1] * i)], results[i][j], 3e-5);
-    }
-  }
+  std::string ref_out_file = FLAGS_data_dir + std::string("/bert_out.txt");
+  float out_accuracy = CalBertOutAccuracy(out_rets, ref_out_file);
+  ASSERT_GT(out_accuracy, 0.95f);
 }
 
 }  // namespace lite

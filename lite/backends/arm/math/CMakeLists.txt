@@ -127,8 +127,10 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       anchor_generator.cc
       split_merge_lod_tenosr.cc
       reduce_prod.cc
+      reduce_sum.cc
       lstm.cc
       clip.cc
       pixel_shuffle.cc
+      scatter.cc
       DEPS ${lite_kernel_deps} context tensor)
 endif()

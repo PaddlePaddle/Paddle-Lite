@@ -33,6 +33,14 @@ bool SubgraphEngine::BuildDeviceProgram() {
     BuildOriginProgram();
   }
 
+  auto GetCurrentUS = []() -> double {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return 1e+6 * time.tv_sec + time.tv_usec;
+  };
+
+  auto start_time = GetCurrentUS();
+
   unsigned int version;
   Neuron_getVersion(&version);
   VLOG(3) << "Neuron Adapter version: " << version;
@@ -108,18 +116,16 @@ bool SubgraphEngine::BuildDeviceProgram() {
   }
   VLOG(3) << "[APU] APU NIR model created!";
 
-  auto GetCurrentUS = []() -> double {
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    return 1e+6 * time.tv_sec + time.tv_usec;
-  };
-  auto start_time = GetCurrentUS();
+  VLOG(1) << "[APU] APU NIR model created, Create cost "
+          << GetCurrentUS() - start_time << " us";
+
+  start_time = GetCurrentUS();
   compilation_ = lite::apu::Device::Global().Build(model_);
   if (compilation_ == nullptr) {
     LOG(WARNING) << "[APU] Build APU DLA model failed!";
     return false;
   }
-  VLOG(3) << "[APU] APU DLA model created, Build cost "
+  VLOG(1) << "[APU] APU DLA model created, Build cost "
           << GetCurrentUS() - start_time << " us";
   return true;
 }
@@ -176,7 +182,7 @@ bool SubgraphEngine::LaunchDeviceProgram() {
     }
   }
   NeuronExecution_free(run);
-  VLOG(3) << "[APU] Process cost " << GetCurrentUS() - start_time << " us";
+  VLOG(1) << "[APU] Process cost " << GetCurrentUS() - start_time << " us";
   return true;
 }
 

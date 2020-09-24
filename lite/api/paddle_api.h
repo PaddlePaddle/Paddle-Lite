@@ -32,6 +32,14 @@ using shape_t = std::vector<int64_t>;
 using lod_t = std::vector<std::vector<uint64_t>>;
 
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
+// Methods for allocating L3Cache on Arm platform
+enum class L3CacheSetMethod {
+  kDeviceL3Cache = 0,  // Use the system L3 Cache size, best performance.
+  kDeviceL2Cache = 1,  // Use the system L2 Cache size, trade off performance
+                       // with less memory consumption.
+  kAbsolute = 2,       // Use the external setting.
+  // kAutoGrow = 3,   // Not supported yet, least memory consumption.
+};
 
 // return true if current device supports OpenCL model
 LITE_API bool IsOpenCLBackendValid();
@@ -294,6 +302,11 @@ class LITE_API MobileConfig : public ConfigBase {
 
   // NOTE: This is a deprecated API and will be removed in latter release.
   const std::string& param_buffer() const { return param_buffer_; }
+
+  // This is the method for allocating workspace_size according to L3Cache size
+  void SetArmL3CacheSize(
+      L3CacheSetMethod method = L3CacheSetMethod::kDeviceL3Cache,
+      int absolute_val = -1);
 };
 
 template <typename ConfigT>

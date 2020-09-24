@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -57,6 +56,15 @@ class AbsCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~AbsCompute() = default;
 };
 
+class ExpCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~ExpCompute() = default;
+};
+
 class SquareCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
@@ -64,6 +72,15 @@ class SquareCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual void Run();
 
   virtual ~SquareCompute() = default;
+};
+
+class ReciprocalCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~ReciprocalCompute() = default;
 };
 
 class SqrtCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
@@ -77,7 +94,7 @@ class SqrtCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 
 class PowCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ActivationParam;
+  using param_t = operators::PowParam;
 
   virtual void Run();
 

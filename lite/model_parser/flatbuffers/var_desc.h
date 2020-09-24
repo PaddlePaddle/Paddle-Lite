@@ -67,14 +67,12 @@ class VarDescView : public VarDescAPI {
 
  public:
   VarDescView() = default;
-  void SetDataType(Type data_type) { NotImplemented(); }
-  void SetShape(const std::vector<int64_t>& dims) { NotImplemented(); }
+  void SetDataType(Type data_type) { LITE_MODEL_INTERFACE_NOT_IMPLEMENTED; }
+  void SetShape(const std::vector<int64_t>& dims) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
 
  private:
-  void NotImplemented() const {
-    LOG(FATAL) << "The additional interfaces of VarDescView is temporarily "
-                  "unavailable in read-only mode.";
-  }
   std::vector<int64_t> shape_;
 };
 

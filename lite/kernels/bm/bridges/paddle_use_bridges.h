@@ -39,6 +39,7 @@ USE_SUBGRAPH_BRIDGE(norm, kBM);
 USE_SUBGRAPH_BRIDGE(prior_box, kBM);
 USE_SUBGRAPH_BRIDGE(box_coder, kBM);
 USE_SUBGRAPH_BRIDGE(multiclass_nms, kBM);
+USE_SUBGRAPH_BRIDGE(multiclass_nms2, kBM);
 USE_SUBGRAPH_BRIDGE(nearest_interp, kBM);
 USE_SUBGRAPH_BRIDGE(bilinear_interp, kBM);
 USE_SUBGRAPH_BRIDGE(yolo_box, kBM);

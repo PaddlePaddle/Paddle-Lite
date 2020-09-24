@@ -23,7 +23,7 @@ int TargetWrapperBM::device_id_ = 0;
 std::map<int, void*> TargetWrapperBM::bm_hds_;
 
 size_t TargetWrapperBM::num_devices() {
-  int count = 0;
+  int count = 1;
   bm_status_t ret = bm_dev_getcount(&count);
   CHECK_EQ(ret, BM_SUCCESS) << "Failed with error code: "
                             << static_cast<int>(ret);

@@ -340,10 +340,10 @@ TEST(ReduceSum, precision) {
   Place place(TARGET(kX86));
   test_reduce_sum(place);
 #endif
-  // #ifdef LITE_WITH_ARM
-  //  Place place(TARGET(kARM));
-  //  test_reduce_sum(place);
-  // #endif
+#ifdef LITE_WITH_ARM
+  Place place(TARGET(kARM));
+  test_reduce_sum(place);
+#endif
 }
 
 }  // namespace lite

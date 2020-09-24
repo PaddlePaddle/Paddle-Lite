@@ -21,7 +21,13 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
+#include "lite/tests/api/ILSVRC2012_utility.h"
 #include "lite/utils/cp_logging.h"
+
+DEFINE_string(data_dir, "", "data dir");
+DEFINE_int32(iteration, 100, "iteration times to run");
+DEFINE_int32(batch, 1, "batch of image");
+DEFINE_int32(channel, 3, "image channel");
 
 namespace paddle {
 namespace lite {
@@ -35,52 +41,62 @@ TEST(Resnet50, test_resnet50_fp32_xpu) {
   config.set_xpu_workspace_l3_size_per_thread();
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  auto input_tensor = predictor->GetInput(0);
-  std::vector<int64_t> input_shape{1, 3, 224, 224};
-  input_tensor->Resize(input_shape);
-  auto* data = input_tensor->mutable_data<float>();
-  int input_num = 1;
-  for (size_t i = 0; i < input_shape.size(); ++i) {
-    input_num *= input_shape[i];
-  }
-  for (int i = 0; i < input_num; i++) {
-    data[i] = 1;
+  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
+  std::vector<int> input_shape{
+      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
+  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
+
+  int input_size = 1;
+  for (auto i : input_shape) {
+    input_size *= i;
   }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
+    auto input_tensor = predictor->GetInput(0);
+    input_tensor->Resize(
+        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
+    auto* data = input_tensor->mutable_data<float>();
+    for (int j = 0; j < input_size; j++) {
+      data[j] = 0.f;
+    }
     predictor->Run();
   }
 
-  auto start = GetCurrentUS();
-  for (int i = 0; i < FLAGS_repeats; ++i) {
+  std::vector<std::vector<float>> out_rets;
+  out_rets.resize(FLAGS_iteration);
+  double cost_time = 0;
+  for (size_t i = 0; i < raw_data.size(); ++i) {
+    auto input_tensor = predictor->GetInput(0);
+    input_tensor->Resize(
+        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
+    auto* data = input_tensor->mutable_data<float>();
+    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
+
+    double start = GetCurrentUS();
     predictor->Run();
+    cost_time += GetCurrentUS() - start;
+
+    auto output_tensor = predictor->GetOutput(0);
+    auto output_shape = output_tensor->shape();
+    auto output_data = output_tensor->data<float>();
+    ASSERT_EQ(output_shape.size(), 2UL);
+    ASSERT_EQ(output_shape[0], 1);
+    ASSERT_EQ(output_shape[1], 1000);
+
+    int output_size = output_shape[0] * output_shape[1];
+    out_rets[i].resize(output_size);
+    memcpy(&(out_rets[i].at(0)), output_data, sizeof(float) * output_size);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
-            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
-            << " ms in average.";
+            << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
+            << ", iteration: " << FLAGS_iteration << ", spend "
+            << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 
-  std::vector<std::vector<float>> results;
-  results.emplace_back(std::vector<float>(
-      {0.000268651, 0.000174053, 0.000213181, 0.000396771, 0.000591516,
-       0.00018169,  0.000289721, 0.000855934, 0.000732185, 9.2055e-05,
-       0.000220664, 0.00235289,  0.00571265,  0.00357688,  0.00129667,
-       0.000465392, 0.000143775, 0.000211628, 0.000617144, 0.000265033}));
-  auto out = predictor->GetOutput(0);
-  ASSERT_EQ(out->shape().size(), 2);
-  ASSERT_EQ(out->shape()[0], 1);
-  ASSERT_EQ(out->shape()[1], 1000);
-
-  int step = 50;
-  for (size_t i = 0; i < results.size(); ++i) {
-    for (size_t j = 0; j < results[i].size(); ++j) {
-      EXPECT_NEAR(out->data<float>()[j * step + (out->shape()[1] * i)],
-                  results[i][j],
-                  1e-5);
-    }
-  }
+  std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
+  float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
+  ASSERT_GT(out_accuracy, 0.6f);
 }
 
 }  // namespace lite

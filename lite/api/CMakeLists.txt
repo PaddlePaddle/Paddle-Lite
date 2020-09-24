@@ -15,7 +15,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     #full api dynamic library
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS paddle_api paddle_api_light  paddle_api_full)
-    target_sources(paddle_full_api_shared PUBLIC ${__lite_cc_files})
     add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto op_registry fbs_headers)
     target_link_libraries(paddle_full_api_shared framework_proto op_registry)
     if(LITE_WITH_X86)
@@ -70,6 +69,10 @@ else()
         set(TARGET_COMIPILE_FLAGS "-fdata-sections")
         if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc
             set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
+            # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
+            if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
+                set(TARGET_COMIPILE_FLAGS "")
+            endif()
         endif()
         set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
         add_dependencies(paddle_light_api_shared op_list_h kernel_list_h fbs_headers)
@@ -288,6 +291,14 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
        set_target_properties(test_mobilenetv1 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
     endif()
+    
+    lite_cc_test(test_mobilenetv1_int16 SRCS mobilenetv1_int16_test.cc
+       DEPS ${lite_model_test_DEPS} ${light_lib_DEPS}
+       CL_DEPS ${opencl_kernels}
+       NPU_DEPS ${npu_kernels} ${npu_bridges}
+       ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
+            --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int16 SERIAL)
+    add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_int16_tar_gz)
 
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}

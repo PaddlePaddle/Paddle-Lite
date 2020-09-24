@@ -51,9 +51,9 @@ bool SliceOp::InferShapeImpl() const {
       if (dim_value > 0) {
         start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
         end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
-        start = std::max(start, 0);
-        end = std::max(end, 0);
-        end = std::min(end, dim_value);
+        start = (std::max)(start, 0);
+        end = (std::max)(end, 0);
+        end = (std::min)(end, dim_value);
         out_dims[axes[i]] = end - start;
       }
     }
