@@ -355,7 +355,7 @@ void sgemm_prepack(bool is_transB,
         (has_act == false) ||
         (has_act == true && act_type == lite_api::ActivationType::kRelu);
     bool has_beta = fabsf(beta) > 1e-8f ? true : false;
-    bool a53_sgemm = act_flag && !has_beta;
+    bool a53_sgemm = act_flag && !has_beta && ctx->has_a53_valid();
     if (a53_sgemm) {
       sgemm_prepacked_6x8_a53(is_transB,
                               M,

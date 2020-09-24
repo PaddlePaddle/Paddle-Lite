@@ -1026,6 +1026,15 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
   }
 }
 
+bool set_a53_valid() {
+  auto dev_name = get_cpu_name();
+  if (dev_name == "MT8765WA" || dev_name == "MT8167S") {  // xiaodu device_name
+    return false;
+  } else {
+    return true;
+  }
+}
+
 int DeviceInfo::Setup() {
   core_num_ = get_cpu_num();
   mem_size_ = get_mem_size();
