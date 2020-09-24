@@ -1027,7 +1027,10 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
 }
 
 bool DeviceInfo::set_a53_valid() {
-  auto dev_name = get_cpu_name();
+  auto dev_name = "null";
+#ifdef LITE_WITH_LINUX
+  dev_name = get_cpu_name();
+#endif
   // xiaodu device_name
   if (dev_name.find("MT8765WA") != std::string::npos ||
       dev_name.find("MT8167S") != std::string::npos) {
