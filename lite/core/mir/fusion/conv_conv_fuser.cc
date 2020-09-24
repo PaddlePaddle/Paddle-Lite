@@ -132,7 +132,7 @@ void ConvConvFuser::BuildPattern() {
               VLOG(5) << "The kernel size of the second conv must be 1x1";
               continue;
             }
-            if (groups0 != 1 || groups1 != 1 ) {
+            if (groups0 != 1 || groups1 != 1) {
               VLOG(5) << "The all groups of weight_dim must be 1";
               continue;
             }
