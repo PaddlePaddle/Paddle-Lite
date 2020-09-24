@@ -38,9 +38,6 @@ void MatMul(const Tensor& mat_a,
   auto dim_a = mat_a.dims();
   auto dim_b = mat_b.dims();
   auto dim_out = mat_out->dims();
-  assert(dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2);
-  assert(mat_a.target() == mat_b.target() &&
-         mat_a.target() == mat_out->target());
 
   int M = dim_out[0];
   int N = dim_out[1];
@@ -73,7 +70,6 @@ void DeformableConvComputeHost<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   // this implementation only support v2
   // to support v1, you could follow
   // "paddle/fluid/operators/deformable_conv_v1_op.h"
-  assert(param.modulated == true);
 
   const auto* input = param.x;
   const auto* offset = param.offset;
