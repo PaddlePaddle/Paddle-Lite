@@ -399,20 +399,6 @@ TEST(elementwise_op, compute_i32) {
   }
 }
 
-TEST(elementwise_op, compute_i64) {
-  do_elementwise_compute<ElementwiseAddCompute, int64_t, PRECISION(kInt64)>(
-      "add");
-  do_elementwise_compute<ElementwiseSubCompute, int64_t, PRECISION(kInt64)>(
-      "sub");
-  do_elementwise_compute<ElementwiseMulCompute, int64_t, PRECISION(kInt64)>(
-      "mul");
-  do_elementwise_compute<ElementwiseDivCompute, int64_t, PRECISION(kInt64)>(
-      "div");
-  if (::testing::Test::HasFailure()) {
-    FAIL();
-  }
-}
-
 TEST(fusion_elementwise_add_activation_arm, retrive_op) {
   auto fusion_elementwise_add_activation =
       KernelRegistry::Global().Create("fusion_elementwise_add_activation");
