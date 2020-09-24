@@ -73,10 +73,10 @@ void GatherCompute<IndexType>::Run() {
 
 REGISTER_LITE_KERNEL(gather,
                      kARM,
-                     kAny,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::arm::GatherCompute<int32_t>,
-                     def)
+                     int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
@@ -85,10 +85,10 @@ REGISTER_LITE_KERNEL(gather,
 
 REGISTER_LITE_KERNEL(gather,
                      kARM,
-                     kAny,
+                     kFloat,
                      kNCHW,
                      paddle::lite::kernels::arm::GatherCompute<int64_t>,
-                     def_int64_idx)
+                     int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
