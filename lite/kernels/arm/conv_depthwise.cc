@@ -401,14 +401,6 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
         w_scale_.data());
 }
 
-#ifdef LITE_WITH_PROFILE
-template <>
-void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
-#endif
-
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
