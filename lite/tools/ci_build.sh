@@ -22,9 +22,6 @@ USE_ADB_EMULATOR=ON
 ADB_DEVICE_LIST=""
 # The list of tests which are ignored, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
 TEST_SKIP_LIST=""
-# The list of model tests, its format is "<target_name>,<extra_args>,<model_dir>,<data_dir>,<config_dir>:", use '-' if an argument is empty, such as
-# "test_mobilenetv1_fp32_huawei_kirin_npu,-,mobilenet_v1,ILSVRC2012_small,-:test_mobilenetv2_fp32_huawei_kirin_npu,-,mobilenet_v2_relu,ILSVRC2012_small,-:"
-TEST_MODEL_LIST=""
 LITE_WITH_COVERAGE=OFF
 
 # if operating in mac env, we should expand the maximum file num
@@ -428,19 +425,49 @@ function pick_an_available_adb_device {
 }
 
 function run_test_case_on_adb_device {
-    # Support all of the ADB-supported devices, such as android and armlinux devices(RK1808 EVB)
-    local adb_device_name=$1
-    local adb_work_dir=$2
-    local target_name=$3
-    local extra_args=$4
-    local model_dir=$5
-    local data_dir=$6
-    local config_dir=$7
+    local adb_device_name=""
+    local adb_work_dir=""
+    local target_name=""
+    local model_dir=""
+    local data_dir=""
+    local config_dir=""
+    # Extract arguments from command line
+    for i in "$@"; do
+        case $i in
+            --adb_device_name=*)
+                adb_device_name="${i#*=}"
+                shift
+                ;;
+            --adb_work_dir=*)
+                adb_work_dir="${i#*=}"
+                shift
+                ;;
+            --target_name=*)
+                target_name="${i#*=}"
+                shift
+                ;;
+            --model_dir=*)
+                model_dir="${i#*=}"
+                shift
+                ;;
+            --data_dir=*)
+                data_dir="${i#*=}"
+                shift
+                ;;
+            --config_dir=*)
+                config_dir="${i#*=}"
+                shift
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 
     # Check device is available
     is_available_adb_device $adb_device_name
     if [[ $? -ne 0 ]]; then
-        echo "${adb_device_name} not found!"
+        echo "$adb_device_name not found!"
         exit 1
     fi
 
@@ -460,50 +487,47 @@ function run_test_case_on_adb_device {
         echo "$target_name not found!"
         exit 1
     fi
-    adb -s ${adb_device_name} shell "rm -f ${adb_work_dir}/${target_name}"
-    adb -s ${adb_device_name} push "${target_path}" ${adb_work_dir}
+    adb -s $adb_device_name shell "rm -f $adb_work_dir/$target_name"
+    adb -s $adb_device_name push $target_path $adb_work_dir
 
-    # Add the extra arguments into the test command
-    local cmd_args=""
-    if [[ -n "$extra_args" && "$extra_args" != "-" ]]; then
-        cmd_args="${cmd_args} ${extra_args}"
-    fi
-
+    local command_line="./$target_name"
     # Copy the model files to the remote device
-    if [[ -n "$model_dir" && "$model_dir" != "-" ]]; then
-        adb -s ${adb_device_name} shell "rm -rf ${adb_work_dir}/${model_dir}"
-        adb -s ${adb_device_name} push "./third_party/install/${model_dir}" ${adb_work_dir}
-        cmd_args="${cmd_args} --model_dir ./${model_dir}"
+    if [[ -n "$model_dir" ]]; then
+        local model_name=$(basename $model_dir)
+        adb -s $adb_device_name shell "rm -rf $adb_work_dir/$model_name"
+        adb -s $adb_device_name push $model_dir $adb_work_dir
+        command_line="$command_line --model_dir ./$model_name"
     fi
 
     # Copy the test data files to the remote device
-    if [[ -n "$data_dir" && "$data_dir" != "-" ]]; then
-        adb -s ${adb_device_name} shell "rm -rf ${adb_work_dir}/${data_dir}"
-        adb -s ${adb_device_name} push "./third_party/install/${data_dir}" ${adb_work_dir}
-        cmd_args="${cmd_args} --data_dir ./${data_dir}"
+    if [[ -n "$data_dir" ]]; then
+        local data_name=$(basename $data_dir)
+        adb -s $adb_device_name shell "rm -rf $adb_work_dir/$data_name"
+        adb -s $adb_device_name push $data_dir $adb_work_dir
+        command_line="$command_line --data_dir ./$data_name"
     fi
 
     # Copy the config files to the remote device
-    if [[ -n "$config_dir" && "$config_dir" != "-"  ]]; then
-        adb -s ${adb_device_name} shell "rm -rf ${adb_work_dir}/${config_dir}"
-        adb -s ${adb_device_name} push "./third_party/install/${config_dir}" ${adb_work_dir}
-        cmd_args="${cmd_args} --config_dir ./${config_dir}"
+    if [[ -n "$config_dir" ]]; then
+        local config_name=$(basename $config_dir)
+        adb -s $adb_device_name shell "rm -rf $adb_work_dir/$config_name"
+        adb -s $adb_device_name push $config_dir $adb_work_dir
+        command_line="$command_line --config_dir ./$config_name"
     fi
     
     # Run the model on the remote device
-    adb -s ${adb_device_name} shell "cd ${adb_work_dir}; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. ./${target_name} ${cmd_args}"
+    adb -s $adb_device_name shell "cd $adb_work_dir; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
 }
 
 function run_all_tests_on_adb_device {
     local adb_device_list=$1
     local test_skip_list=$2
-    local test_model_list=$3
-    local adb_work_dir=$4
-    local sdk_root_dir=$5
-    local test_arch_list=$6
-    local test_toolchain_list=$7
-    local build_targets_func=$8
-    local prepare_devices_func=$9
+    local adb_work_dir=$3
+    local sdk_root_dir=$4
+    local test_arch_list=$5
+    local test_toolchain_list=$6
+    local build_targets_func=$7
+    local prepare_devices_func=$8
 
     # Pick the first available adb device from list
     local adb_device_name=$(pick_an_available_adb_device $adb_device_list)
@@ -511,7 +535,7 @@ function run_all_tests_on_adb_device {
         echo "No adb device available!"
         exit 1
     else
-        echo "Found a device'${adb_device_name}'."
+        echo "Found a device $adb_device_name."
     fi
 
     # Run all of unittests and model tests
@@ -522,7 +546,7 @@ function run_all_tests_on_adb_device {
     for arch in $test_archs; do
         for toolchain in $test_toolchains; do
             # Build all tests and prepare device environment for running tests
-            echo "Build tests for MediaTek APU with ${arch}+${toolchain}"
+            echo "Build tests for MediaTek APU with $arch+$toolchain"
             ${build_targets_func} $arch $toolchain $sdk_root_dir
             ${prepare_devices_func} $adb_device_name $adb_work_dir $arch $toolchain $sdk_root_dir
             # Run all of unit tests and model tests
@@ -538,19 +562,9 @@ function run_all_tests_on_adb_device {
                 if [[ $is_skip -ne 0 ]]; then
                     continue
                 fi
-                is_skip=0
-                for test_model_param in ${test_model_params[@]}; do
-                    local slots=(${test_model_param//,/ })
-                    if [[ "${slots[0]}" == "$test_name" ]]; then
-                        run_test_case_on_adb_device $adb_device_name $adb_work_dir $test_name ${slots[1]} ${slots[2]} ${slots[3]} ${slots[4]}
-                        is_skip=1
-                        break
-                    fi
-                done
-                if [[ $is_skip -ne 0 ]]; then
-                    continue
-                fi
-                run_test_case_on_adb_device $adb_device_name $adb_work_dir $test_name
+                # Extract the arguments from ctest command line
+                test_args=$(echo $(ctest -V -N -R ${test_name}) | sed "/.*${test_name} \"\(.*\)\".*/ s//\1/g")
+                run_test_case_on_adb_device --adb_device_name=$adb_device_name --adb_work_dir=$adb_work_dir --target_name=$test_name $test_args
             done
             cd - > /dev/null
         done
@@ -568,28 +582,28 @@ function huawei_kirin_npu_prepare_device {
     # Check device is available
     is_available_adb_device $adb_device_name
     if [[ $? -ne 0 ]]; then
-        echo "${adb_device_name} not found!"
+        echo "$adb_device_name not found!"
         exit 1
     fi
 
     # Only root user can use HiAI runtime libraries in the android shell executables
-    adb -s ${adb_device_name} root
+    adb -s $adb_device_name root
     if [[ $? -ne 0 ]]; then
-        echo "${adb_device_name} hasn't the root permission!"
+        echo "$adb_device_name hasn't the root permission!"
         exit 1
     fi
 
     # Copy the runtime libraries of HiAI DDK to the target device
     local sdk_lib_dir=""
-    if [[ ${arch} == "armv8" ]]; then
-        sdk_lib_dir="${sdk_root_dir}/lib64"
-    elif [[ ${arch} == "armv7" ]]; then
-        sdk_lib_dir="${sdk_root_dir}/lib"
+    if [[ $arch == "armv8" ]]; then
+        sdk_lib_dir="$sdk_root_dir/lib64"
+    elif [[ $arch == "armv7" ]]; then
+        sdk_lib_dir="$sdk_root_dir/lib"
     else
-        echo "${arch} isn't supported by HiAI DDK!"
+        echo "$arch isn't supported by HiAI DDK!"
         exit 1
     fi
-    adb -s ${adb_device_name} push ${sdk_lib_dir}/. ${adb_work_dir}
+    adb -s $adb_device_name push $sdk_lib_dir/. $adb_work_dir
 }
 
 function huawei_kirin_npu_build_targets {
@@ -616,13 +630,13 @@ function huawei_kirin_npu_build_targets {
         -DLITE_WITH_TRAIN=ON \
         -DANDROID_STL_TYPE="c++_shared" \
         -DLITE_WITH_NPU=ON \
-        -DNPU_DDK_ROOT="${sdk_root_dir}" \
+        -DNPU_DDK_ROOT="$sdk_root_dir" \
         -DARM_TARGET_OS="android" -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
 function huawei_kirin_npu_build_and_test {
-    run_all_tests_on_adb_device $1 $2 $3 "/data/local/tmp" "$(readlink -f ./hiai_ddk_lib_330)" "armv7" "gcc,clang" huawei_kirin_npu_build_targets huawei_kirin_npu_prepare_device
+    run_all_tests_on_adb_device $1 $2 "/data/local/tmp" "$(readlink -f ./hiai_ddk_lib_330)" "armv7" "gcc,clang" huawei_kirin_npu_build_targets huawei_kirin_npu_prepare_device
 }
 
 # Rockchip NPU
@@ -636,27 +650,27 @@ function rockchip_npu_prepare_device {
     # Check device is available
     is_available_adb_device $adb_device_name
     if [[ $? -ne 0 ]]; then
-        echo "${adb_device_name} not found!"
+        echo "$adb_device_name not found!"
         exit 1
     fi
 
     # Use high performance mode
-    adb -s ${adb_device_name} shell "echo userspace > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    adb -s ${adb_device_name} shell "echo 1608000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
-    adb -s ${adb_device_name} shell "echo userspace > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
-    adb -s ${adb_device_name} shell "echo 1608000 > /sys/devices/system/cpu/cpu1/cpufreq/scaling_setspeed"
+    adb -s $adb_device_name shell "echo userspace > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    adb -s $adb_device_name shell "echo 1608000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+    adb -s $adb_device_name shell "echo userspace > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
+    adb -s $adb_device_name shell "echo 1608000 > /sys/devices/system/cpu/cpu1/cpufreq/scaling_setspeed"
 
     # Copy the runtime libraries of Rockchip NPU to the target device
     local sdk_lib_dir=""
-    if [[ ${arch} == "armv8" ]]; then
-        sdk_lib_dir="${sdk_root_dir}/lib64"
-    elif [[ ${arch} == "armv7" ]]; then
-        sdk_lib_dir="${sdk_root_dir}/lib"
+    if [[ $arch == "armv8" ]]; then
+        sdk_lib_dir="$sdk_root_dir/lib64"
+    elif [[ $arch == "armv7" ]]; then
+        sdk_lib_dir="$sdk_root_dir/lib"
     else
-        echo "${arch} isn't supported by Rockchip NPU SDK!"
+        echo "$arch isn't supported by Rockchip NPU SDK!"
         exit 1
     fi
-    adb -s ${adb_device_name} push ${sdk_lib_dir}/. ${adb_work_dir}
+    adb -s $adb_device_name push $sdk_lib_dir/. $adb_work_dir
 }
 
 function rockchip_npu_build_targets {
@@ -682,13 +696,13 @@ function rockchip_npu_build_targets {
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
         -DLITE_WITH_RKNPU=ON \
-        -DRKNPU_DDK_ROOT="${sdk_root_dir}" \
+        -DRKNPU_DDK_ROOT="$sdk_root_dir" \
         -DARM_TARGET_OS="armlinux" -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
 function rockchip_npu_build_and_test {
-    run_all_tests_on_adb_device $1 $2 $3 "/userdata/bin" "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_targets rockchip_npu_prepare_device
+    run_all_tests_on_adb_device $1 $2 "/userdata/bin" "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_targets rockchip_npu_prepare_device
 }
 
 # MediaTek APU
@@ -702,26 +716,26 @@ function mediatek_apu_prepare_device {
     # Check device is available
     is_available_adb_device $adb_device_name
     if [[ $? -ne 0 ]]; then
-        echo "${adb_device_name} not found!"
+        echo "$adb_device_name not found!"
         exit 1
     fi
 
     # Use high performance mode
-    adb -s ${adb_device_name} root
+    adb -s $adb_device_name root
     if [[ $? -ne 0 ]]; then
-        echo "${adb_device_name} hasn't the root permission!"
+        echo "$adb_device_name hasn't the root permission!"
         exit 1
     fi
-    adb -s ${adb_device_name} shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    adb -s ${adb_device_name} shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
-    adb -s ${adb_device_name} shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
-    adb -s ${adb_device_name} shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
-    adb -s ${adb_device_name} shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
-    adb -s ${adb_device_name} shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
-    adb -s ${adb_device_name} shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
-    adb -s ${adb_device_name} shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
-    adb -s ${adb_device_name} shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
-    adb -s ${adb_device_name} shell "echo 0 > /proc/sys/kernel/printk"
+    adb -s $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    adb -s $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
+    adb -s $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
+    adb -s $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
+    adb -s $adb_device_name shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
+    adb -s $adb_device_name shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
+    adb -s $adb_device_name shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
+    adb -s $adb_device_name shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
+    adb -s $adb_device_name shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
+    adb -s $adb_device_name shell "echo 0 > /proc/sys/kernel/printk"
 }
 
 function mediatek_apu_build_targets {
@@ -747,13 +761,13 @@ function mediatek_apu_build_targets {
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
         -DLITE_WITH_APU=ON \
-        -DAPU_DDK_ROOT="${sdk_root_dir}" \
+        -DAPU_DDK_ROOT="$sdk_root_dir" \
         -DARM_TARGET_OS="android" -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
 function mediatek_apu_build_and_test {
-    run_all_tests_on_adb_device $1 $2 $3 "/data/local/tmp" "$(readlink -f ./apu_ddk)" "armv7" "gcc" mediatek_apu_build_targets mediatek_apu_prepare_device
+    run_all_tests_on_adb_device $1 $2 "/data/local/tmp" "$(readlink -f ./apu_ddk)" "armv7" "gcc" mediatek_apu_build_targets mediatek_apu_prepare_device
 }
 
 function cmake_huawei_ascend_npu {
@@ -1368,10 +1382,6 @@ function main {
                 TEST_SKIP_LIST="${i#*=}"
                 shift
                 ;;
-            --test_model_list=*)
-                TEST_MODEL_LIST="${i#*=}"
-                shift
-                ;;
             --lite_with_coverage=*)
                 LITE_WITH_COVERAGE="${i#*=}"
                 shift
@@ -1447,15 +1457,15 @@ function main {
                 shift
                 ;;
             huawei_kirin_npu_build_and_test)
-                huawei_kirin_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST $TEST_MODEL_LIST
+                huawei_kirin_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
             rockchip_npu_build_and_test)
-                rockchip_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST $TEST_MODEL_LIST
+                rockchip_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
             mediatek_apu_build_and_test)
-                mediatek_apu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST $TEST_MODEL_LIST
+                mediatek_apu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
             build_test_huawei_ascend_npu)
