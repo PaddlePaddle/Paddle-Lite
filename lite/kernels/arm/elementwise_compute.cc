@@ -441,6 +441,16 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
+using elementwise_mul_int64_t =
+    paddle::lite::kernels::arm::ElementwiseMulCompute<int64_t,
+                                                      PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(
+    elementwise_mul, kARM, kInt64, kNCHW, elementwise_mul_int64_t, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+
 using elementwise_mul_float_t =
     paddle::lite::kernels::arm::ElementwiseMulCompute<float, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(
