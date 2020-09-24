@@ -177,7 +177,7 @@ $ paddle_lite_opt \
 
 打开新保存的debug_log.txt文件，搜索`final program`关键字，拷贝在这之后的以`digraph G {`开头和以`} // end G`结尾的文本用[webgraphviz](http://www.webgraphviz.com/)查看，也是同样的模型拓扑结构，存在`subgraph1`和`subgraph3`两个子图，两个子图中间同样是被禁用NPU的`batch_norm`算子，如右图所示。
 
-![img](https://paddlelite-data.bj.bcebos.com/doc_images/model_visualization/final_program.png)
+<p align="center"><img src="https://paddlelite-data.bj.bcebos.com/doc_images/model_visualization/final_program.png"/></p>
 
 之后继续在debug_log.txt文件中，搜索`subgraphs`关键字，可以得到所有子图的.dot格式内容如下：
 
@@ -209,8 +209,6 @@ digraph G {
 
 将以上文本复制到[webgraphviz](http://www.webgraphviz.com/)查看，即可显示两个子图分别在整个模型中的结构，如下图所示。可以看到图中绿色高亮的方形节点的为`subgraph1`中的算子，红色高亮的方形节点为`subgraph2`中的算子，两个子图中间白色不高亮的方形节点即为被禁用NPU的`batch_norm`算子。
 
-
-![img](https://paddlelite-data.bj.bcebos.com/doc_images/model_visualization/subgraph2.png)
-
+<p align="center"><img src="https://paddlelite-data.bj.bcebos.com/doc_images/model_visualization/subgraph2.png"/></p>
 
 **注意：** 本章节用到的recognize_digits模型代码位于[PaddlePaddle/book](https://github.com/PaddlePaddle/book/tree/develop/02.recognize_digits)
