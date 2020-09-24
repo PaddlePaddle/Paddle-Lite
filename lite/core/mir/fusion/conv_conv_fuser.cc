@@ -128,6 +128,7 @@ void ConvConvFuser::BuildPattern() {
                 conv_op_desc0->HasAttr("enable_int8") ? true : false;
             bool enable1_int8 =
                 conv_op_desc1->HasAttr("enable_int8") ? true : false;
+            if (ch_in_0 == ch_out_0 && ch_out_0 == groups0) continue;
             if (!(kw == 1 && kh == 1)) {
               VLOG(5) << "The kernel size of the second conv must be 1x1";
               continue;
@@ -267,6 +268,7 @@ void ConvConvFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     }
   }
   conv_op_desc->SetType(conv_type0_);
+  conv_op_desc->SetAttr("groups", 1);
   conv_op_desc->SetInput("Input", {matched.at("conv_input0")->arg()->name});
   conv_op_desc->SetInput("Filter", {matched.at("conv_weight0")->arg()->name});
   conv_op_desc->SetOutput("Output", {matched.at("conv_out1")->arg()->name});
