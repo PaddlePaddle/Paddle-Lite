@@ -753,7 +753,7 @@ function mediatek_apu_build_targets {
 }
 
 function mediatek_apu_build_and_test {
-    run_all_tests_on_adb_device $1 $2 $3 "/data/local/tmp" "$(readlink -f ./apu_ddk)" "armv8" "gcc" mediatek_apu_build_targets mediatek_apu_prepare_device
+    run_all_tests_on_adb_device $1 $2 $3 "/data/local/tmp" "$(readlink -f ./apu_ddk)" "armv7" "gcc" mediatek_apu_build_targets mediatek_apu_prepare_device
 }
 
 function cmake_huawei_ascend_npu {
