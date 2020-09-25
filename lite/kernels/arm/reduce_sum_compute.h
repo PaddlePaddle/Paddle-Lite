@@ -12,29 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/memory.h"
-#include <gtest/gtest.h>
+#pragma once
+#include <stdint.h>
+#include "lite/backends/arm/math/type_trans.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace arm {
 
-TEST(memory, test) {
-  auto* buf = TargetMalloc(TARGET(kX86), 10);
-  ASSERT_TRUE(buf);
-  TargetFree(TARGET(kX86), buf);
+class ReduceSumCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
 
-#ifdef LITE_WITH_CUDA
-  auto* buf_cuda = TargetMalloc(TARGET(kCUDA), 10);
-  ASSERT_TRUE(buf_cuda);
-  TargetFree(TARGET(kCUDA), buf_cuda);
-#endif
+  virtual ~ReduceSumCompute() = default;
+};
 
-#ifdef LITE_WITH_OPENCL
-  auto* buf_cl = TargetMalloc(TARGET(kOpenCL), 10);
-  ASSERT_TRUE(buf_cl);
-  TargetFree(TARGET(kOpenCL), buf_cl);
-#endif
-}
-
+}  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -420,7 +420,6 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
         if (place == TARGET(kARM) && align_mode == 1 && !align_corners) {
           continue;
         }
-        // align_mode = 0 && align_corners = false NOT supported in Huawei
         // Ascend NPU DDK
         if (place == TARGET(kHuaweiAscendNPU) && align_mode == 0 &&
             !align_corners) {

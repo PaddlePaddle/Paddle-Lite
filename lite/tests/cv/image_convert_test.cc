@@ -293,53 +293,53 @@ void test_img(const std::vector<int>& cluster_id,
 
         // LOG(INFO) << "image convert saber compute";
         t_convert.Start();
-        // 方法一: image_preprocess.imageCovert(src, lite_dst);
-        image_preprocess.imageConvert(
+        // method1: image_preprocess.image_convert(src, lite_dst);
+        image_preprocess.image_convert(
             src, lite_dst, (ImageFormat)srcFormat, (ImageFormat)dstFormat);
         t_convert.Stop();
 
         // LOG(INFO) << "image resize saber compute";
         t_resize.Start();
-        // 方法一:image_preprocess.imageResize(lite_dst, resize_tmp);
-        image_preprocess.imageResize(lite_dst,
-                                     resize_tmp,
-                                     (ImageFormat)dstFormat,
-                                     srcw,
-                                     srch,
-                                     dstw,
-                                     dsth);
+        // method1:image_preprocess.image_resize(lite_dst, resize_tmp);
+        image_preprocess.image_resize(lite_dst,
+                                      resize_tmp,
+                                      (ImageFormat)dstFormat,
+                                      srcw,
+                                      srch,
+                                      dstw,
+                                      dsth);
         t_resize.Stop();
 
         // LOG(INFO) << "image rotate saber compute";
         t_rotate.Start();
-        // 方法一: image_preprocess.imageRotate(resize_tmp, tv_out_ratote);
-        image_preprocess.imageRotate(resize_tmp,
-                                     tv_out_ratote,
-                                     (ImageFormat)dstFormat,
-                                     dstw,
-                                     dsth,
-                                     rotate);
+        // method1: image_preprocess.image_rotate(resize_tmp, tv_out_ratote);
+        image_preprocess.image_rotate(resize_tmp,
+                                      tv_out_ratote,
+                                      (ImageFormat)dstFormat,
+                                      dstw,
+                                      dsth,
+                                      rotate);
         t_rotate.Stop();
 
         // LOG(INFO) << "image flip saber compute";
         t_flip.Start();
-        // 方法一: image_preprocess.imageFlip(resize_tmp, tv_out_flip);
-        image_preprocess.imageFlip(
+        // method1: image_preprocess.image_flip(resize_tmp, tv_out_flip);
+        image_preprocess.image_flip(
             resize_tmp, tv_out_flip, (ImageFormat)dstFormat, dstw, dsth, flip);
         t_flip.Stop();
 
         // LOG(INFO) << "image to tensor compute";
         t_tensor.Start();
-        // 方法一: image_preprocess.image2Tensor(
+        // method1: image_preprocess.image_to_tensor(
         //  resize_tmp, &dst_tensor, layout, means, scales);
-        image_preprocess.image2Tensor(resize_tmp,
-                                      &dst_tensor,
-                                      (ImageFormat)dstFormat,
-                                      dstw,
-                                      dsth,
-                                      layout,
-                                      means,
-                                      scales);
+        image_preprocess.image_to_tensor(resize_tmp,
+                                         &dst_tensor,
+                                         (ImageFormat)dstFormat,
+                                         dstw,
+                                         dsth,
+                                         layout,
+                                         means,
+                                         scales);
         t_tensor.Stop();
         t1.Stop();
       }
@@ -680,7 +680,7 @@ void test_rotate(const std::vector<int>& cluster_id,
 
       for (int i = 0; i < test_iter; ++i) {
         t_rotate.Start();
-        image_preprocess.imageRotate(src, lite_dst);
+        image_preprocess.image_rotate(src, lite_dst);
         t_rotate.Stop();
       }
       LOG(INFO) << "image rotate avg time : " << t_rotate.LapTimes().Avg()
@@ -847,7 +847,7 @@ void test_flip(const std::vector<int>& cluster_id,
 
       for (int i = 0; i < test_iter; ++i) {
         t_rotate.Start();
-        image_preprocess.imageFlip(src, lite_dst);
+        image_preprocess.image_flip(src, lite_dst);
         t_rotate.Stop();
       }
       LOG(INFO) << "image flip avg time : " << t_rotate.LapTimes().Avg()
@@ -1016,7 +1016,7 @@ void test_resize(const std::vector<int>& cluster_id,
 
       for (int i = 0; i < test_iter; ++i) {
         t_rotate.Start();
-        image_preprocess.imageResize(src, lite_dst);
+        image_preprocess.image_resize(src, lite_dst);
         t_rotate.Stop();
       }
       LOG(INFO) << "image Resize avg time : " << t_rotate.LapTimes().Avg()
@@ -1191,7 +1191,7 @@ void test_convert(const std::vector<int>& cluster_id,
 
       for (int i = 0; i < test_iter; ++i) {
         t_rotate.Start();
-        image_preprocess.imageConvert(src, lite_dst);
+        image_preprocess.image_convert(src, lite_dst);
         t_rotate.Stop();
       }
       LOG(INFO) << "image Convert avg time : " << t_rotate.LapTimes().Avg()

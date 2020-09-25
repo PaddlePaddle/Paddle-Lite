@@ -29,12 +29,58 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
+std::string ShapePrint(const std::vector<shape_t>& shapes) {
+  std::string shapes_str{""};
+  for (size_t shape_idx = 0; shape_idx < shapes.size(); ++shape_idx) {
+    auto shape = shapes[shape_idx];
+    std::string shape_str;
+    for (auto i : shape) {
+      shape_str += std::to_string(i) + ",";
+    }
+    shapes_str += shape_str;
+    shapes_str +=
+        (shape_idx != 0 && shape_idx == shapes.size() - 1) ? "" : " : ";
+  }
+  return shapes_str;
+}
+
 std::string ShapePrint(const shape_t& shape) {
   std::string shape_str{""};
   for (auto i : shape) {
     shape_str += std::to_string(i) + " ";
   }
   return shape_str;
+}
+
+std::vector<std::string> split_string(const std::string& str_in) {
+  std::vector<std::string> str_out;
+  std::string tmp_str = str_in;
+  while (!tmp_str.empty()) {
+    size_t next_offset = tmp_str.find(":");
+    str_out.push_back(tmp_str.substr(0, next_offset));
+    if (next_offset == std::string::npos) {
+      break;
+    } else {
+      tmp_str = tmp_str.substr(next_offset + 1);
+    }
+  }
+  return str_out;
+}
+
+std::vector<int64_t> get_shape(const std::string& str_shape) {
+  std::vector<int64_t> shape;
+  std::string tmp_str = str_shape;
+  while (!tmp_str.empty()) {
+    int dim = atoi(tmp_str.data());
+    shape.push_back(dim);
+    size_t next_offset = tmp_str.find(",");
+    if (next_offset == std::string::npos) {
+      break;
+    } else {
+      tmp_str = tmp_str.substr(next_offset + 1);
+    }
+  }
+  return shape;
 }
 
 template <typename T>
@@ -70,7 +116,7 @@ inline double GetCurrentUS() {
 }
 
 void RunModel(std::string model_dir,
-              const shape_t& input_shape,
+              const std::vector<shape_t>& input_shapes,
               size_t repeats,
               size_t warmup,
               size_t print_output_elem,
@@ -111,12 +157,19 @@ void RunModel(std::string model_dir,
       CreatePaddlePredictor<MobileConfig>(config);
 
   // 3. Prepare input data
-  std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
-  input_tensor->Resize(
-      {input_shape[0], input_shape[1], input_shape[2], input_shape[3]});
-  auto* data = input_tensor->mutable_data<float>();
-  for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-    data[i] = 1;
+  std::cout << "input_shapes.size():" << input_shapes.size() << std::endl;
+  for (int j = 0; j < input_shapes.size(); ++j) {
+    auto input_tensor = predictor->GetInput(j);
+    input_tensor->Resize(input_shapes[j]);
+    auto input_data = input_tensor->mutable_data<float>();
+    int input_num = 1;
+    for (int i = 0; i < input_shapes[j].size(); ++i) {
+      input_num *= input_shapes[j][i];
+    }
+
+    for (int i = 0; i < input_num; ++i) {
+      input_data[i] = 1.f;
+    }
   }
 
   // 4. Run predictor
@@ -142,7 +195,7 @@ void RunModel(std::string model_dir,
   }
   avg_duration = sum_duration / static_cast<float>(repeats);
   std::cout << "\n======= benchmark summary =======\n"
-            << "input_shape(NCHW):" << ShapePrint(input_shape) << "\n"
+            << "input_shape(s) (NCHW):" << ShapePrint(input_shapes) << "\n"
             << "model_dir:" << model_dir << "\n"
             << "warmup:" << warmup << "\n"
             << "repeats:" << repeats << "\n"
@@ -184,18 +237,19 @@ void RunModel(std::string model_dir,
 }
 
 int main(int argc, char** argv) {
-  shape_t input_shape{1, 3, 224, 224};  // shape_t ==> std::vector<int64_t>
+  std::vector<std::string> str_input_shapes;
+  std::vector<shape_t> input_shapes{
+      {1, 3, 224, 224}};  // shape_t ==> std::vector<int64_t>
+
   int repeats = 10;
   int warmup = 10;
   int print_output_elem = 0;
 
-  if (argc > 2 && argc < 9) {
+  if (argc > 2 && argc < 6) {
     std::cerr << "usage: ./" << argv[0] << "\n"
               << "  <naive_buffer_model_dir>\n"
-              << "  <input_n>\n"
-              << "  <input_c>\n"
-              << "  <input_h>\n"
-              << "  <input_w>\n"
+              << "  <raw_input_shapes>, eg: 1,3,224,224 for 1 input; "
+                 "1,3,224,224:1,5 for 2 inputs\n"
               << "  <repeats>\n"
               << "  <warmup>\n"
               << "  <print_output>" << std::endl;
@@ -203,14 +257,19 @@ int main(int argc, char** argv) {
   }
 
   std::string model_dir = argv[1];
-  if (argc >= 9) {
-    input_shape[0] = atoi(argv[2]);
-    input_shape[1] = atoi(argv[3]);
-    input_shape[2] = atoi(argv[4]);
-    input_shape[3] = atoi(argv[5]);
-    repeats = atoi(argv[6]);
-    warmup = atoi(argv[7]);
-    print_output_elem = atoi(argv[8]);
+  if (argc >= 6) {
+    input_shapes.clear();
+    std::string raw_input_shapes = argv[2];
+    std::cout << "raw_input_shapes: " << raw_input_shapes << std::endl;
+    str_input_shapes = split_string(raw_input_shapes);
+    for (size_t i = 0; i < str_input_shapes.size(); ++i) {
+      std::cout << "input shape: " << str_input_shapes[i] << std::endl;
+      input_shapes.push_back(get_shape(str_input_shapes[i]));
+    }
+
+    repeats = atoi(argv[3]);
+    warmup = atoi(argv[4]);
+    print_output_elem = atoi(argv[5]);
   }
   // set arm power mode:
   // 0 for big cluster, high performance
@@ -220,7 +279,7 @@ int main(int argc, char** argv) {
   size_t power_mode = 0;
 
   RunModel(
-      model_dir, input_shape, repeats, warmup, print_output_elem, power_mode);
+      model_dir, input_shapes, repeats, warmup, print_output_elem, power_mode);
 
   return 0;
 }
