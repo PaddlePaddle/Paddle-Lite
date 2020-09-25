@@ -248,6 +248,42 @@ class SoftsignCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~SoftsignCompute() = default;
 };
 
+// relu6(x) = min(max(0, x), 6)
+template <typename T>
+struct Relu6Functor {
+  float threshold;
+  explicit Relu6Functor(float threshold_) : threshold(threshold_) {}
+
+  template <typename Device, typename X, typename Out>
+  void operator()(Device d, X x, Out out) const {
+    out.device(d) =
+        x.cwiseMax(static_cast<T>(0)).cwiseMin(static_cast<T>(threshold));
+  }
+};
+
+template <typename T>
+class Relu6Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ActivationParam>();
+
+    param.Out->template mutable_data<T>();
+    auto X = param.X;
+    auto Out = param.Out;
+    auto place = lite::fluid::EigenDeviceType<TARGET(kX86)>();
+    CHECK(X);
+    CHECK(Out);
+    auto x = lite::fluid::EigenVector<T>::Flatten(*X);
+    auto out = lite::fluid::EigenVector<T>::Flatten(*Out);
+    Relu6Functor<T> functor(param.threshold);
+    functor(place, x, out);
+  }
+
+  virtual ~Relu6Compute() = default;
+};
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
