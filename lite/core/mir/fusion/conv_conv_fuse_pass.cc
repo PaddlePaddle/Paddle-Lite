@@ -27,7 +27,7 @@ namespace mir {
 void ConvConvFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // initialze fuser params
   std::vector<bool> conv_has_bias_cases{true, false};
-  std::vector<std::string> conv_type_cases{"conv2d", "depthwise_conv2d"};
+  std::vector<std::string> conv_type_cases{"conv2d"};
   bool has_int8 = false;
   bool has_weight_quant = false;
   for (auto& place : graph->valid_places()) {

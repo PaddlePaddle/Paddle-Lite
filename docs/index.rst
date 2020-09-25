@@ -46,6 +46,7 @@ Welcome to Paddle-Lite's documentation!
   user_guides/post_quant_with_data
   user_guides/post_quant_no_data
   user_guides/model_quantization
+  user_guides/model_visualization
   user_guides/debug
 
 .. toctree::
