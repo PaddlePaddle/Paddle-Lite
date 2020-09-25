@@ -312,8 +312,8 @@ class MatrixNmsComputeTester : public arena::TestCase {
     auto out_dim = box_dim + 2;
 
     Tensor boxes_slice, scores_slice;
-    size_t num_out = 0;
-    std::vector<size_t> offsets = {0};
+    int64_t num_out = 0;
+    std::vector<int64_t> offsets = {0};
     std::vector<float> detections;
     std::vector<int> indices;
     detections.reserve(out_dim * num_boxes * batch_size);
@@ -340,20 +340,20 @@ class MatrixNmsComputeTester : public arena::TestCase {
       offsets.push_back(offsets.back() + num_out);
     }
 
-    size_t num_kept = offsets.back();
+    int64_t num_kept = offsets.back();
     if (num_kept == 0) {
       outs->Resize({0, out_dim});
       index->Resize({0, 1});
     } else {
-      outs->Resize({static_cast<int64_t>(num_kept), out_dim});
-      index->Resize({static_cast<int64_t>(num_kept), 1});
+      outs->Resize({num_kept, out_dim});
+      index->Resize({num_kept, 1});
       std::copy(
           detections.begin(), detections.end(), outs->mutable_data<float>());
       std::copy(indices.begin(), indices.end(), index->mutable_data<int>());
     }
 
     LoD lod;
-    lod.emplace_back(offsets);
+    lod.emplace_back(std::vector<uint64_t>(offsets.begin(), offsets.end()));
     outs->set_lod(lod);
     index->set_lod(lod);
   }
