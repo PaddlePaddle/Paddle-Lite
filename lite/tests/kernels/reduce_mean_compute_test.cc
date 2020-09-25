@@ -333,9 +333,10 @@ void test_reduce_mean(Place place) {
 }
 
 TEST(ReduceMean, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
+#ifdef LITE_WITH_X86
+  Place place(TARGET(kX86));
+  test_reduce_mean(place);
+#endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
   test_reduce_mean(place);
