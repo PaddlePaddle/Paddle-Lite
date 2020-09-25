@@ -58,6 +58,7 @@ class DeviceInfo {
   }
 
   int Setup();
+  bool set_a53_valid();
 
   void SetRunMode(lite_api::PowerMode mode, int thread_num);
   void SetCache(int l1size, int l2size, int l3size);
@@ -69,6 +70,7 @@ class DeviceInfo {
   int l1_cache_size() const { return L1_cache_[active_ids_[0]]; }
   int l2_cache_size() const { return L2_cache_[active_ids_[0]]; }
   int l3_cache_size() const { return L3_cache_[active_ids_[0]]; }
+
   // Methods for allocating L3Cache on Arm platform
   // Enum class L3CacheSetMethod is declared in `lite/api/paddle_api.h`
   void SetArmL3CacheSize(
