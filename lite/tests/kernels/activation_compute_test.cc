@@ -58,6 +58,7 @@ class ActivationComputeTester : public arena::TestCase {
   float hard_swish_offset = 3.0;
   float relu_threshold_ = 1.0;
   float elu_alpha_ = 1.0;
+  float threshold_ = 6.0;
   DDim dims_{{1}};
   std::string type_ = "";
   activation_type_test act_type_ = RELU;
@@ -170,7 +171,8 @@ class ActivationComputeTester : public arena::TestCase {
       case RELU6: {
         for (int i = 0; i < dims_.production(); i++) {
           output_data[i] = x_data[i] > 0.f ? x_data[i] : 0.f;
-          output_data[i] = output_data[i] < 6.0 ? output_data[i] : 6.0;
+          output_data[i] =
+              output_data[i] < threshold_ ? output_data[i] : threshold_;
         }
         break;
       }
@@ -272,6 +274,9 @@ class ActivationComputeTester : public arena::TestCase {
     }
     if (act_type_ == ELU) {
       op_desc->SetAttr("alpha", elu_alpha_);
+    }
+    if (act_type_ == RELU6) {
+      op_desc->SetAttr("threshold", threshold_);
     }
   }
 
@@ -510,6 +515,8 @@ TEST(Activation_relu6, precision) {
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #else
   return;
 #endif
