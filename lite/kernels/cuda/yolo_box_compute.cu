@@ -152,7 +152,7 @@ __global__ void KeYoloBoxFw(const T* input,
         scores, input, label_idx, score_idx, class_num, conf, grid_num);
   }
 }
-
+// fixme: yolo box has updated, check arm kernel to get more info
 void YoloBoxCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<CUDAContext>();
