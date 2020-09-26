@@ -740,6 +740,7 @@ TEST(PriorBox, precision) {
 TEST(DensityPriorBox, precision) {
 #if defined(LITE_WITH_X86) && !defined(LITE_WITH_XPU)
   Place place(TARGET(kX86));
+  test_density_prior_box(place);
 #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
