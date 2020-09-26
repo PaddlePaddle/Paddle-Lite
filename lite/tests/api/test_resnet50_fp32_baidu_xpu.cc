@@ -34,6 +34,7 @@ namespace lite {
 
 TEST(Resnet50, test_resnet50_fp32_xpu) {
   lite_api::CxxConfig config;
+  LOG(INFO) << "model_dir: " << FLAGS_model_dir;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
