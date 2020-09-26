@@ -30,7 +30,7 @@ DEFINE_int32(iteration, 9, "iteration times to run");
 namespace paddle {
 namespace lite {
 
-TEST(Bert, test_bert_fp32_xpu) {
+TEST(Bert, test_bert_fp32_baidu_xpu) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
