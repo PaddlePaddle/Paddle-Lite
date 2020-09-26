@@ -33,7 +33,7 @@ namespace paddle {
 namespace lite {
 
 TEST(MobileNetV1, test_mobilenetv1_int8_mediatek_apu) {
-  std::string subgraph_model_cache_dir = "/data/local/tmp/cache";
+  std::string subgraph_model_cache_dir = FLAGS_model_dir;
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kARM), PRECISION(kFloat)},

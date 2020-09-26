@@ -306,7 +306,6 @@ bool SubgraphEngine::BuildDeviceProgram() {
   }
 
   // Get the index of output tensors
-  PrepareWorkspaceForOriginProgram();
   auto device_program = device_programs_[origin_idims_];
   CHECK(device_program && device_program->model_);
   for (int i = 0; i < output_names_.size(); i++) {
