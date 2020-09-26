@@ -21,16 +21,18 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
-#include "lite/tests/api/bert_utility.h"
+#include "lite/tests/api/ILSVRC2012_utility.h"
 #include "lite/utils/cp_logging.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 9, "iteration times to run");
+DEFINE_int32(iteration, 100, "iteration times to run");
+DEFINE_int32(batch, 1, "batch of image");
+DEFINE_int32(channel, 3, "image channel");
 
 namespace paddle {
 namespace lite {
 
-TEST(Bert, test_bert_fp32_xpu) {
+TEST(VGG19, test_vgg19_fp32_xpu) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
@@ -39,20 +41,23 @@ TEST(Bert, test_bert_fp32_xpu) {
   config.set_xpu_workspace_l3_size_per_thread();
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  std::string input_data_file = FLAGS_data_dir + std::string("/bert_in.txt");
-  std::vector<std::vector<int64_t>> input0;
-  std::vector<std::vector<int64_t>> input1;
-  std::vector<std::vector<int64_t>> input2;
-  std::vector<std::vector<int64_t>> input3;
-  std::vector<std::vector<int64_t>> input_shapes;
-  ReadRawData(
-      input_data_file, &input0, &input1, &input2, &input3, &input_shapes);
+  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
+  std::vector<int> input_shape{
+      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
+  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
+
+  int input_size = 1;
+  for (auto i : input_shape) {
+    input_size *= i;
+  }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
-    std::vector<int64_t> shape = {1, 64, 1};
-    std::vector<int64_t> fill_value(64, 0);
-    for (int j = 0; j < 4; j++) {
-      FillTensor(predictor, j, shape, fill_value);
+    auto input_tensor = predictor->GetInput(0);
+    input_tensor->Resize(
+        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
+    auto* data = input_tensor->mutable_data<float>();
+    for (int j = 0; j < input_size; j++) {
+      data[j] = 0.f;
     }
     predictor->Run();
   }
@@ -60,11 +65,12 @@ TEST(Bert, test_bert_fp32_xpu) {
   std::vector<std::vector<float>> out_rets;
   out_rets.resize(FLAGS_iteration);
   double cost_time = 0;
-  for (int i = 0; i < FLAGS_iteration; ++i) {
-    FillTensor(predictor, 0, input_shapes[i], input0[i]);
-    FillTensor(predictor, 1, input_shapes[i], input1[i]);
-    FillTensor(predictor, 2, input_shapes[i], input2[i]);
-    FillTensor(predictor, 3, input_shapes[i], input3[i]);
+  for (size_t i = 0; i < raw_data.size(); ++i) {
+    auto input_tensor = predictor->GetInput(0);
+    input_tensor->Resize(
+        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
+    auto* data = input_tensor->mutable_data<float>();
+    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
 
     double start = GetCurrentUS();
     predictor->Run();
@@ -75,7 +81,7 @@ TEST(Bert, test_bert_fp32_xpu) {
     auto output_data = output_tensor->data<float>();
     ASSERT_EQ(output_shape.size(), 2UL);
     ASSERT_EQ(output_shape[0], 1);
-    ASSERT_EQ(output_shape[1], 3);
+    ASSERT_EQ(output_shape[1], 1000);
 
     int output_size = output_shape[0] * output_shape[1];
     out_rets[i].resize(output_size);
@@ -84,13 +90,13 @@ TEST(Bert, test_bert_fp32_xpu) {
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup
+            << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 
-  std::string ref_out_file = FLAGS_data_dir + std::string("/bert_out.txt");
-  float out_accuracy = CalBertOutAccuracy(out_rets, ref_out_file);
-  ASSERT_GT(out_accuracy, 0.95f);
+  std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
+  float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
+  ASSERT_GT(out_accuracy, 0.56f);
 }
 
 }  // namespace lite
