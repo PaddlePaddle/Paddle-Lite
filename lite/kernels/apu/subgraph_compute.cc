@@ -82,13 +82,13 @@ bool DeviceProgram::LoadFromCacheFile(
     return false;
   }
 
-  VLOG(1) << "[APU] Complete Load model!";
+  VLOG(3) << "[APU] Complete Load model!";
 
   // Deserialize the preicisions and shapes of the origin output tensors from
   // the
   // cached configuration file
   auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
-  VLOG(1) << "[APU] Load configuration from " << config_path;
+  VLOG(3) << "[APU] Load configuration from " << config_path;
   std::vector<char> config_buffer;
   if (!ReadFile(config_path, &config_buffer)) {
     LOG(WARNING) << "[APU] read from " << config_path << " failed!";
@@ -106,9 +106,6 @@ bool DeviceProgram::LoadFromCacheFile(
     CHECK_EQ(items.size(), 2);  // precision and shapes
     origin_otypes_[i] = static_cast<PrecisionType>(std::stoi(items[0]));
     origin_odims_[i] = Split<int64_t>(items[1], ",");
-    for (auto dim : origin_odims_[i]) {
-      VLOG(1) << dim << ",";
-    }
   }
   return true;
 }
@@ -181,6 +178,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   }
 
   // Get the index of output tensors
+  std::vector<uint32_t> output_indices;
   for (int i = 0; i < output_names.size(); i++) {
     CHECK(graph.Has(output_names[i])) << "[APU] Failed to find output node "
                                       << output_names[i];
@@ -240,7 +238,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
         LOG(WARNING) << "[APU] Serialization DLA failed!";
       }
 
-      VLOG(1) << "[APU] Export the model to " << model_path;
+      VLOG(3) << "[APU] Export the model to " << model_path;
       if (!WriteFile(model_path, model_buffer)) {
         LOG(WARNING) << "[APU] Open " << model_path << " for writting failed!";
       }
@@ -259,7 +257,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     auto str = os.str();
     std::vector<char> config_buffer(str.begin(), str.end());
     auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
-    VLOG(1) << "[APU] Save configuration to " << config_path;
+    VLOG(3) << "[APU] Save configuration to " << config_path;
     if (!WriteFile(config_path, config_buffer)) {
       LOG(WARNING) << "[APU] Open " << config_path << " for writting failed!";
     }
@@ -311,7 +309,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
   for (int i = 0; i < output_names_.size(); i++) {
     origin_otensors_[i]->Resize(device_program->origin_odims_[i]);
     origin_otensors_[i]->mutable_data<int8_t>();
-    VLOG(1) << "[APU] Output[" << i << "] name " << output_names_[i] << " dims "
+    VLOG(3) << "[APU] Output[" << i << "] name " << output_names_[i] << " dims "
             << origin_otensors_[i]->dims() << " memory_size "
             << origin_otensors_[i]->memory_size();
   }
@@ -344,7 +342,6 @@ bool SubgraphEngine::LaunchDeviceProgram() {
   for (size_t i = 0; i < origin_itensors_.size(); i++) {
     auto origin_data = origin_itensors_[i]->mutable_data<int8_t>();
     auto converted_data = reinterpret_cast<uint8_t*>(origin_data);
-    VLOG(1) << "in" << i << ":" << origin_itensors_[i]->memory_size();
     for (int j = 0; j < origin_itensors_[i]->data_size(); j++) {
       converted_data[j] =
           static_cast<uint8_t>(static_cast<int16_t>(origin_data[j]) + 128);
@@ -355,7 +352,6 @@ bool SubgraphEngine::LaunchDeviceProgram() {
 
   // Set output buffer
   for (size_t i = 0; i < origin_otensors_.size(); i++) {
-    VLOG(1) << "out" << i << ":" << origin_otensors_[i]->memory_size();
     NeuronExecution_setOutput(
         run,
         i,

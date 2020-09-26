@@ -53,8 +53,8 @@ class DeviceProgram {
   std::string model_name_{""};
   std::vector<std::vector<int64_t>> origin_odims_;
   std::vector<PrecisionType> origin_otypes_;
-  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<DeviceProgram>>
-      device_programs_;
+  NeuronModel* model_;
+  NeuronCompilation* compilation_;
 };
 
 class SubgraphEngine : public subgraph::SubgraphEngineBase {
@@ -78,8 +78,8 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
   bool BuildDeviceProgram() override;
   bool LaunchDeviceProgram() override;
 
-  NeuronModel* model_;
-  NeuronCompilation* compilation_;
+  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<DeviceProgram>>
+      device_programs_;
 };
 
 class SubgraphCompute
