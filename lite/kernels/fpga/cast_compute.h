@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/backends/fpga/KD/float16.hpp"
-#include "lite/backends/fpga/KD/pes/scale_pe.hpp"
+#include <stdint.h>
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -23,22 +23,18 @@ namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
-
-class ScaleCompute
+class CastCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
-  using param_t = operators::ScaleParam;
+  using param_t = operators::CastParam;
 
   void PrepareForRun() override;
+
   void Run() override;
 
-  virtual ~ScaleCompute() = default;
+  ~CastCompute() {}
 
  private:
-  zynqmp::ScalePE pe_;
-  zynqmp::Tensor scale_;
-  zynqmp::Tensor bias_;
 };
 
 }  // namespace fpga

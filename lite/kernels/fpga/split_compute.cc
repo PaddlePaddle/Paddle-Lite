@@ -12,47 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/fpga/fc_compute.h"
-#include "lite/kernels/fpga/activation_compute.h"
-
-#include "lite/backends/fpga/KD/debugger.hpp"
-#include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
+#include "lite/kernels/fpga/split_compute.h"
+#include <vector>
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
 
-using float16 = zynqmp::float16;
-
-void FcCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-
-  // ====================================================
-  zynqmp::FullyConnectedParam& fc_param = pe_.param();
-
-  param.output->mutable_data<float16>();
-  fc_param.input = param.input->ZynqTensor();
-  fc_param.output = param.output->ZynqTensor();
-  fc_param.filter = param.w->ZynqTensor();
-  fc_param.bias = param.bias->ZynqTensor();
-  fc_param.bias->flush();
-
-  if (activation_map.count(param.activation_type)) {
-    fc_param.activeParam.type = activation_map[param.activation_type];
+void SplitCompute::PrepareForRun() {
+  auto& param = Param<operators::SplitParam>();
+  zynqmp::SplitParam& split_param = pe_.param();
+  split_param.input = param.x->ZynqTensor();
+  auto& dout = param.output;
+  for (int i = 0; i < dout.size(); i++) {
+    dout[i]->mutable_data<zynqmp::float16>();
+    split_param.outputs.push_back(dout[i]->ZynqTensor());
   }
 
   pe_.init();
   pe_.apply();
 }
 
-void FcCompute::Run() {
+void SplitCompute::Run() {
+  zynqmp::SplitParam& split_param = pe_.param();
   pe_.dispatch();
 
 #ifdef FPGA_PRINT_TENSOR
-  zynqmp::FullyConnectedParam& fc_param = pe_.param();
-  Debugger::get_instance().registerOutput("fc", fc_param.output);
+  auto& dout = param.output;
+  for (int i = 0; i < dout.size(); i++) {
+    Debugger::get_instance().registerOutput("split", split_param.outputs[0]);
+  }
+
 #endif
 }
 
@@ -62,13 +54,15 @@ void FcCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    fc, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::FcCompute, def)
-    .BindInput("Input",
+    split, kFPGA, kFP16, kNHWC, paddle::lite::kernels::fpga::SplitCompute, def)
+    .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SectionsTensorList",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),

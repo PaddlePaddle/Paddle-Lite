@@ -28,7 +28,7 @@ limitations under the License. */
 namespace paddle {
 namespace zynqmp {
 
-#define PADDLE_MOBILE_OS_LINUX
+#define PADDLE_OS_LINUX
 
 static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
@@ -38,7 +38,7 @@ static size_t memory_size_max = 0;
 static size_t memory_size = 0;
 
 static inline int do_ioctl(uint64_t req, const void *arg) {
-#ifdef PADDLE_MOBILE_OS_LINUX
+#ifdef PADDLE_OS_LINUX
   return ioctl(fd, req, arg);
 #else
   return -1;
@@ -48,6 +48,11 @@ static inline int do_ioctl(uint64_t req, const void *arg) {
 int open_device() {
   if (fd == -1) {
     fd = open(device_path, O_RDWR);
+
+    if (fd == -1) {
+      std::cout << "please check if driver has insmoded!" << std::endl;
+      exit(-1);
+    }
   }
   return fd;
 }
@@ -61,28 +66,33 @@ void reset_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
-#ifdef PADDLE_MOBILE_OS_LINUX
-
+#ifdef PADDLE_OS_LINUX
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+
   if (ptr == MAP_FAILED) {
-    std::cout << "not enough memory !";
-    exit(-1);
+    if (errno == ENOMEM) {
+      std::cout << "mmap failed with not enough memory ! (size=" << size << ")"
+                << std::endl;
+      throw(-1);
+    }
+    if (errno == EINVAL) {
+      std::cout << "mmap failed with invalid arguments ! (size=" << size << ")"
+                << std::endl;
+      throw(-1);
+    }
+    std::cout << "mmap failed with other than memory usage and invalid "
+                 "arguments! errno="
+              << errno << ", (size=" << size << ")" << std::endl;
+    throw(-1);
   }
-  if (errno == ENOMEM) {
-    std::cout << "mmap failed with not enough memory !";
-    exit(-1);
-  }
-  if (errno == EINVAL) {
-    std::cout << "mmap failed with invalid arguments ! (size=" << size << ")"
-              << std::endl;
-    exit(-1);
-  }
+
   if (ptr == NULL) {
     std::cout << "NULL returned, errno=" << errno
-              << ", mmap failed with other errors other than memory usage !"
+              << ", null retured, mmap failed with other errors other than "
+                 "memory usage !"
               << std::endl;
-    exit(-1);
+    throw(-1);
   }
 
   memory_map.insert(std::make_pair(ptr, size));
@@ -103,7 +113,7 @@ size_t fpga_get_memory_size_max() { return memory_size_max; }
 
 size_t fpga_diagnose_memory(int detailed) {
   size_t total = 0;
-  auto iter = memory_map.begin();
+  auto iter = memory_map.begin();  // std::map<void *, size_t>::iterator
   while (iter != memory_map.end()) {
     total += iter->second;
     iter++;
@@ -113,7 +123,7 @@ size_t fpga_diagnose_memory(int detailed) {
 
 void fpga_free(void *ptr) {
   size_t size = 0;
-  auto iter = memory_map.find(ptr);
+  auto iter = memory_map.find(ptr);  // std::map<void *, size_t>::iterator
   if (iter != memory_map.end()) {
     size = iter->second;
     memory_map.erase(iter);
@@ -121,7 +131,8 @@ void fpga_free(void *ptr) {
 
   memory_size -= size;
 
-#ifdef PADDLE_MOBILE_OS_LINUX
+#ifdef PADDLE_OS_LINUX
+
   munmap(ptr, size);
 #else
   free(ptr);
@@ -175,19 +186,6 @@ int compute_fpga_conv_basic(const struct ConvArgs &args) {
   return do_ioctl(IOCTL_CONFIG_CONV, &args);
 }
 
-int compute_fpga_conv(const struct SplitConvArgs &args) {
-  int split_num = args.split_num;
-  int ret = -1;
-  for (int i = 0; i < split_num; i++) {
-    ret = compute_fpga_conv_basic(args.conv_arg[i]);
-  }
-
-  if (split_num > 1) {
-    exit(-1);
-  }
-  return ret;
-}
-
 int compute_fpga_pool(const struct PoolingArgs &args) {
   return do_ioctl(IOCTL_CONFIG_POOLING, &args);
 }
@@ -196,9 +194,8 @@ int compute_fpga_ewadd(const struct EWAddArgs &args) {
   return do_ioctl(IOCTL_CONFIG_EW, &args);
 }
 
-int get_device_info(const struct DeviceInfo &args) {
-  int ret = do_ioctl(IOCTL_DEVICE_INFO, &args);
-  return ret;
+int get_device_info(const struct DeviceInfoArgs &args) {
+  return do_ioctl(IOCTL_DEVICE_INFO, &args);
 }
 
 int perform_bypass(const struct BypassArgs &args) {
@@ -257,26 +254,6 @@ int perform_bypass(const struct BypassArgs &args) {
 int compute_fpga_concat(const struct ConcatArgs &args) { return -1; }
 
 int compute_fpga_scale(const struct ScaleArgs &args) {
-#ifdef ENABLE_DEBUG
-  std::cout << "======Compute Scale======";
-  std::cout << "scale_address:" << args.scale_address << std::endl;
-  std::cout << "bias_address:" << args.bias_address << std::endl;
-
-  std::cout << "wc_alignment:" << args.wc_alignment << std::endl;
-  std::cout << "channel_alignment:" << args.channel_alignment << std::endl;
-
-  std::cout << "   image_address:" << args.image.address
-            << "   image_scale_address:" << args.image.scale_address
-            << "   image_channels:" << args.image.channels
-            << "   image_height:" << args.image.height
-            << "   image_width:" << args.image.width
-            << "   pad_height:" << args.image.pad_height
-            << "   pad_width:" << args.image.pad_width;
-
-  std::cout << "   out_address:" << args.output.address
-            << "   out_scale_address:" << args.output.scale_address;
-
-#endif
   return do_ioctl(IOCTL_CONFIG_SCALE, &args);
 }
 
@@ -286,6 +263,10 @@ int compute_fpga_dwconv(const struct DWconvArgs &args) {
 
 int config_activation(const struct ActiveParamterArgs &args) {
   return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
+}
+
+int config_global_pool(const struct GlobalPoolArgs &args) {
+  return do_ioctl(IOCTL_CONFIG_GLOBAL_POOL_PARAMETER, &args);
 }
 
 int config_inplace(const struct InplaceArgs &args) {
@@ -302,6 +283,10 @@ int compute_norm(const struct NormalizeArgs &args) {
 
 int compute_fpga_resize(const struct ResizeArgs &args) {
   return do_ioctl(IOCTL_CONFIG_RESIZE, &args);
+}
+
+int compute_preprocess(const struct PreprocessArgs &args) {
+  return do_ioctl(IOCTL_PREPROCESS, &args);
 }
 
 int16_t fp32_2_fp16(float fp32_num) {

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
+#include <memory>
 
 #include "lite/backends/fpga/KD/pe.hpp"
 #include "lite/backends/fpga/KD/pe_params.hpp"
@@ -23,9 +24,11 @@ class PriorBoxPE : public PE {
  public:
   bool init() {
     param_.outputBoxes->setAligned(false);
-    param_.outputVariances->setAligned(false);
     param_.outputBoxes->setDataLocation(CPU);
+    param_.outputBoxes->setCacheable(true);
+    param_.outputVariances->setAligned(false);
     param_.outputVariances->setDataLocation(CPU);
+    param_.outputVariances->setCacheable(true);
     return true;
   }
 
@@ -37,8 +40,9 @@ class PriorBoxPE : public PE {
 
  private:
   PriorBoxParam param_;
-  Tensor* cachedBoxes_ = nullptr;
-  Tensor* cachedVariances_ = nullptr;
+  // TODO(chonwhite) use unique_ptr;
+  std::unique_ptr<Tensor> cachedBoxes_;
+  std::unique_ptr<Tensor> cachedVariances_;
 
   void compute_prior_box();
 };

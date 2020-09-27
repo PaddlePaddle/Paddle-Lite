@@ -14,6 +14,7 @@
 
 #include "lite/kernels/fpga/softmax_compute.h"
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/fpga/KD/debugger.hpp"
 
 namespace paddle {
 namespace lite {
@@ -26,7 +27,7 @@ void SoftmaxCompute::PrepareForRun() {
   zynqmp::SoftmaxParam& softmax_param = pe_.param();
   auto& param = Param<operators::SoftmaxParam>();
 
-  param.output->mutable_data<float16>();
+  param.output->mutable_data<float>();
   softmax_param.input = param.x->ZynqTensor();
   softmax_param.output = param.output->ZynqTensor();
   pe_.init();
@@ -34,9 +35,9 @@ void SoftmaxCompute::PrepareForRun() {
 }
 
 void SoftmaxCompute::Run() {
+  zynqmp::SoftmaxParam& softmax_param = pe_.param();
   pe_.dispatch();
 #ifdef FPGA_PRINT_TENSOR
-  zynqmp::SoftmaxParam& softmax_param = pe_.param();
   Debugger::get_instance().registerOutput("softmax", softmax_param.output);
 #endif
 }
@@ -56,8 +57,5 @@ REGISTER_LITE_KERNEL(softmax,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kFPGA),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kNHWC))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
