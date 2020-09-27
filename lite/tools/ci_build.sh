@@ -564,6 +564,8 @@ function run_all_tests_on_adb_device {
                 fi
                 # Extract the arguments from ctest command line
                 test_args=$(echo $(ctest -V -N -R ${test_name}) | sed "/.*${test_name} \"\(.*\)\".*/ s//\1/g")
+                # Remove the quotes
+                test_args=$(echo $test_args | sed "s/\"//g")
                 run_test_case_on_adb_device --adb_device_name=$adb_device_name --adb_work_dir=$adb_work_dir --target_name=$test_name $test_args
             done
             cd - > /dev/null
