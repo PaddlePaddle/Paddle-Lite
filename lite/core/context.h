@@ -144,6 +144,21 @@ class Context<TargetType::kAPU> {
 
   APUContext& operator=(const APUContext& ctx) {}
   std::string name() const { return "APUContext"; }
+
+  static void SetSubgraphModelCacheDir(Scope* scope,
+                                       std::string subgraph_model_cache_dir) {
+    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_model_cache_dir;
+  }
+
+  static std::string SubgraphModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
 };
 #endif
 
