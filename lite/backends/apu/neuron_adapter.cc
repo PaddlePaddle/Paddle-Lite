@@ -84,10 +84,14 @@ void NeuronAdapter::InitFunctions() {
   PADDLE_DLSYM(NeuronModel_addOperation);
   PADDLE_DLSYM(NeuronModel_addOperationExtension);
   PADDLE_DLSYM(NeuronModel_identifyInputsAndOutputs);
+  PADDLE_DLSYM(NeuronModel_restoreFromCompiledNetwork);
   PADDLE_DLSYM(NeuronCompilation_create);
   PADDLE_DLSYM(NeuronCompilation_free);
   PADDLE_DLSYM(NeuronCompilation_finish);
+  PADDLE_DLSYM(NeuronCompilation_setCaching);
+  PADDLE_DLSYM(NeuronCompilation_storeCompiledNetwork);
   PADDLE_DLSYM(NeuronCompilation_createForDevices);
+  PADDLE_DLSYM(NeuronCompilation_getCompiledNetworkSize);
   PADDLE_DLSYM(NeuronExecution_create);
   PADDLE_DLSYM(NeuronExecution_free);
   PADDLE_DLSYM(NeuronExecution_setInput);
@@ -179,6 +183,15 @@ int NeuronModel_identifyInputsAndOutputs(NeuronModel* model,
           model, inputCount, inputs, outputCount, outputs);
 }
 
+int NeuronModel_restoreFromCompiledNetwork(NeuronModel** model,
+                                           NeuronCompilation** compilation,
+                                           const void* buffer,
+                                           const size_t size) {
+  return paddle::lite::NeuronAdapter::Global()
+      ->NeuronModel_restoreFromCompiledNetwork()(
+          model, compilation, buffer, size);
+}
+
 int NeuronCompilation_create(NeuronModel* model,
                              NeuronCompilation** compilation) {
   return paddle::lite::NeuronAdapter::Global()->NeuronCompilation_create()(
@@ -193,6 +206,26 @@ void NeuronCompilation_free(NeuronCompilation* compilation) {
 int NeuronCompilation_finish(NeuronCompilation* compilation) {
   return paddle::lite::NeuronAdapter::Global()->NeuronCompilation_finish()(
       compilation);
+}
+
+int NeuronCompilation_setCaching(NeuronCompilation* compilation,
+                                 const char* cacheDir,
+                                 const uint8_t* token) {
+  return paddle::lite::NeuronAdapter::Global()->NeuronCompilation_setCaching()(
+      compilation, cacheDir, token);
+}
+
+int NeuronCompilation_storeCompiledNetwork(NeuronCompilation* compilation,
+                                           void* buffer,
+                                           const size_t size) {
+  return paddle::lite::NeuronAdapter::Global()
+      ->NeuronCompilation_storeCompiledNetwork()(compilation, buffer, size);
+}
+
+int NeuronCompilation_getCompiledNetworkSize(NeuronCompilation* compilation,
+                                             size_t* size) {
+  return paddle::lite::NeuronAdapter::Global()
+      ->NeuronCompilation_getCompiledNetworkSize()(compilation, size);
 }
 
 int NeuronCompilation_createForDevices(NeuronModel* model,
