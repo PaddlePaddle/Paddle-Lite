@@ -53,7 +53,7 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
 
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   CHECK_EQ(strides.size(), 2L);
-  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
   if (groups > 1) {
     LOG(WARNING) << "[NPU] only support groups == 1";
@@ -70,7 +70,7 @@ int ConvTransposeConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   auto fuse_relu =
       op_info->HasAttr("fuse_relu") && op_info->GetAttr<bool>("fuse_relu");
 
-  auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
+  std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
   CHECK_EQ(dilations.size(), 2L);
   std::string padding_algorithm =
       op_info->HasAttr("padding_algorithm")
