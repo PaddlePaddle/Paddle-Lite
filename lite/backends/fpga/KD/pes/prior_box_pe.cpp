@@ -93,8 +93,8 @@ void PriorBoxPE::compute_prior_box() {
   const float &step_h = param.stepH;
   const float &offset = param.offset;
 
-  Tensor *output_boxes = this->cachedBoxes_;
-  Tensor *output_variances = this->cachedVariances_;
+  Tensor *output_boxes = this->cachedBoxes_.get();
+  Tensor *output_variances = this->cachedVariances_.get();
 
   Tensor boxes;
   Tensor variances;
@@ -241,7 +241,6 @@ void PriorBoxPE::compute_prior_box() {
   }
 
   boxes.flush();
-  boxes.syncToCPU();
   variances.flush();
   output_boxes->copyFrom(&boxes);
   output_variances->copyFrom(&variances);
@@ -251,8 +250,8 @@ void PriorBoxPE::apply() {}
 
 bool PriorBoxPE::dispatch() {
   if (cachedBoxes_ == nullptr) {
-    cachedBoxes_ = new Tensor();
-    cachedVariances_ = new Tensor();
+    cachedBoxes_.reset(new Tensor());
+    cachedVariances_.reset(new Tensor());
     cachedBoxes_->mutableData<float>(FP32, param_.outputBoxes->shape());
     cachedVariances_->mutableData<float>(FP32, param_.outputVariances->shape());
     cachedBoxes_->setDataLocation(CPU);
@@ -260,12 +259,14 @@ bool PriorBoxPE::dispatch() {
     compute_prior_box();
   }
 
-  param_.outputBoxes->copyFrom(this->cachedBoxes_);
+  param_.outputBoxes->copyFrom(this->cachedBoxes_.get());
+  param_.outputVariances->copyFrom(this->cachedVariances_.get());
 
-  param_.outputVariances->copyFrom(this->cachedVariances_);
   param_.outputBoxes->flush();
-  param_.outputBoxes->syncToCPU();
   param_.outputVariances->flush();
+  param_.outputBoxes->setCached(true);
+  param_.outputVariances->setCached(true);
+  return true;
 }
 
 }  // namespace zynqmp

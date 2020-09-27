@@ -64,7 +64,7 @@ void PriorBoxCompute::PrepareForRun() {
   float offset = param.offset;
   std::vector<float> aspect_ratios_vec;
   ExpandAspectRatios(aspect_ratio, is_flip, &aspect_ratios_vec);
-  size_t prior_num = aspect_ratios_vec.size() * min_size.size();
+  int prior_num = aspect_ratios_vec.size() * min_size.size();
   prior_num += max_size.size();
   std::vector<std::string> order = param.order;
   bool min_max_aspect_ratios_order = param.min_max_aspect_ratios_order;
@@ -78,6 +78,7 @@ void PriorBoxCompute::PrepareForRun() {
 
   param.boxes->mutable_data<float>();
   param.variances->mutable_data<float>();
+
   zynqmp::PriorBoxParam& priobox_param = pe_.param();
   priobox_param.input = param.input->ZynqTensor();
   priobox_param.image = param.image->ZynqTensor();

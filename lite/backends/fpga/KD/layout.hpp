@@ -26,6 +26,7 @@ enum LayoutType {
   N,
   NC,
   NCHW,
+  CNHW,
   NHWC,
   NHW,
 };
@@ -71,6 +72,19 @@ struct NHWC : Layout {
     return dims[0] * dims[1] * align_image(dims[2] * dims[3]);
   }
   virtual int elementCount(const std::vector<int>& dims) {
+    return dims[0] * dims[1] * dims[2] * dims[3];
+  }
+};
+
+struct CNHW : Layout {
+  int numIndex() { return 1; }
+  int channelIndex() { return 0; }
+  int heightIndex() { return 2; }
+  int widthIndex() { return 3; }
+  int alignedElementCount(const std::vector<int>& dims) {
+    return dims[1] * dims[2] * align_image(dims[0] * dims[3]);
+  }
+  int elementCount(const std::vector<int>& dims) {
     return dims[0] * dims[1] * dims[2] * dims[3];
   }
 };

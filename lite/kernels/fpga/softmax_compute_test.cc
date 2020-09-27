@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/fpga/softmax_compute.h"
 #include <gtest/gtest.h>
-
 #include <limits>
 #include <vector>
-
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/fpga/softmax_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -123,7 +121,9 @@ TEST(softmax_arm, compute) {
 }
 
 TEST(softmax, retrive_op) {
-  auto softmax = KernelRegistry::Global().Create("softmax");
+  auto softmax =
+      KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFP16)>(
+          "softmax");
   ASSERT_FALSE(softmax.empty());
   ASSERT_TRUE(softmax.front());
 }
