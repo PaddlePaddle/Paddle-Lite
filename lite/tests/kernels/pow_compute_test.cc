@@ -65,15 +65,11 @@ class PowComputeTester : public arena::TestCase {
 };
 
 void test_pow(Place place) {
-  for (float scale : {0.923, 2., 1.2}) {
-    for (float shift : {1., 0., 1.2331}) {
-      for (float factor : {1., 1.2, 1.6}) {
-        std::unique_ptr<arena::TestCase> tester(
-            new PowComputeTester(place, "def", factor));
-        arena::Arena arena(std::move(tester), place, 2e-4);
-        arena.TestPrecision();
-      }
-    }
+  for (float factor : {1., 1.2, 1.6}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new PowComputeTester(place, "def", factor));
+    arena::Arena arena(std::move(tester), place, 2e-4);
+    arena.TestPrecision();
   }
 }
 
