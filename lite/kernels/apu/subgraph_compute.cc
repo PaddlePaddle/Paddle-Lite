@@ -85,8 +85,7 @@ bool DeviceProgram::LoadFromCacheFile(
   VLOG(3) << "[APU] Complete Load model!";
 
   // Deserialize the preicisions and shapes of the origin output tensors from
-  // the
-  // cached configuration file
+  // the cached configuration file
   auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
   VLOG(3) << "[APU] Load configuration from " << config_path;
   std::vector<char> config_buffer;
@@ -264,6 +263,9 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
       LOG(WARNING) << "[APU] Open " << config_path << " for writting failed!";
     }
 
+    // Workaround: after calling storeCompiledNetwork, model will be modificated
+    // that will cause a low performace, so we need restore it. after we fix
+    // this bug, below code will be deleted
     NeuronCompilation_free(compilation_);
     NeuronModel_free(model_);
     model_ = nullptr;
