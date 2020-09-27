@@ -213,6 +213,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   VLOG(1) << "[APU] APU DLA model created, Build cost "
           << GetCurrentUS() - start_time << " us";
 
+  start_time = GetCurrentUS();
   CHECK_EQ(origin_otensors.size(), output_names.size());
   origin_otypes_.resize(output_names.size());
   origin_odims_.resize(output_names.size());
@@ -228,9 +229,10 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     size_t compilationSize;
     status = NeuronCompilation_getCompiledNetworkSize(compilation_,
                                                       &compilationSize);
+    std::vector<char> model_buffer;
     if (status == NEURON_NO_ERROR) {
       // Serialization DLA
-      std::vector<char> model_buffer;
+
       model_buffer.resize(compilationSize);
       status = NeuronCompilation_storeCompiledNetwork(
           compilation_, &model_buffer[0], compilationSize);
@@ -261,6 +263,20 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     if (!WriteFile(config_path, config_buffer)) {
       LOG(WARNING) << "[APU] Open " << config_path << " for writting failed!";
     }
+
+    NeuronCompilation_free(compilation_);
+    NeuronModel_free(model_);
+    model_ = nullptr;
+    compilation_ = nullptr;
+    status = NeuronModel_restoreFromCompiledNetwork(
+        &model_, &compilation_, &model_buffer[0], compilationSize);
+    if (status != NEURON_NO_ERROR) {
+      LOG(WARNING) << "[APU] Load model failed!" << compilationSize;
+      return false;
+    }
+    VLOG(3) << "[APU] Complete Load model!";
+    VLOG(1) << "[APU] APU DLA model cached, cache cost "
+            << GetCurrentUS() - start_time << " us";
   }
 
   return true;
