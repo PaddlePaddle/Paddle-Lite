@@ -199,7 +199,7 @@ class FileReader {
   }
 };
 
-TEST(MMDNN, test_mmdnn_fp32_xpu) {
+TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
   lite_api::CxxConfig config;
   // config.set_model_dir(FLAGS_model_dir);
   config.set_model_file(FLAGS_model_dir + "/__model__");
