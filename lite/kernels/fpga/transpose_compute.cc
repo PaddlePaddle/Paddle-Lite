@@ -34,17 +34,12 @@ void transposeCompute(operators::TransposeParam param) {
   input_x->ZynqTensor()->invalidate();
   input_x->ZynqTensor()->unalignImage();
 
-  Tensor float_input;
-  float_input.Resize(input_x_dims);
-  float_input.mutable_data<float>();
-  float_input.ZynqTensor()->copyFrom(input_x->ZynqTensor());
-
-  const auto* input_x_data = float_input.data<float>();
+  const auto* input_x_data = input_x->data<float16>();
 
   auto* out = param.output;
   const auto axis = param.axis;
 
-  auto* out_data = out->mutable_data<float>();
+  auto* out_data = out->mutable_data<float16>();
 
   size_t ndim = axis.size();
   std::vector<int> xdim(ndim);
@@ -81,19 +76,35 @@ void transposeCompute(operators::TransposeParam param) {
 }
 
 // Transpose
-void TransposeCompute::Run() { auto& param = this->Param<param_t>(); }
+void TransposeCompute::Run() {
+  auto& param = this->Param<param_t>();
+  param.output->mutable_data<zynqmp::float16>();
+  param.x->ZynqTensor()->unalignImage();
+  if (param.x->dims().size() != 4) {
+    transposeCompute(param);
+    param.output->ZynqTensor()->setAligned(param.x->ZynqTensor()->aligned());
+  } else {
+    param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
+  }
+}
 
 // Transpose2
 void Transpose2Compute::Run() {
   auto& param = this->Param<param_t>();
-  param.output->mutable_data<float>();
-  param.x->ZynqTensor()->invalidate();
+  param.output->mutable_data<float16>();
+  // param.x->ZynqTensor()->syncToCPU();
   param.x->ZynqTensor()->unalignImage();
+  param.x->ZynqTensor()->flush();
+  param.x->ZynqTensor()->invalidate();
+
   if (param.x->dims().size() != 4) {
     transposeCompute(param);
+    param.output->ZynqTensor()->setAligned(param.x->ZynqTensor()->aligned());
   } else {
     param.output->ZynqTensor()->copyFrom(param.x->ZynqTensor());
   }
+
+  param.output->ZynqTensor()->flush();
 }
 
 }  // namespace fpga
@@ -129,6 +140,9 @@ REGISTER_LITE_KERNEL(transpose2,
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

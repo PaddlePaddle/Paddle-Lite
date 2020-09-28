@@ -16,12 +16,6 @@ cmake_minimum_required(VERSION 3.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(lite_utils)
 
-lite_option(WITH_PADDLE_MOBILE   "Use the paddle-mobile legacy build"    OFF)
-if (WITH_PADDLE_MOBILE)
-    add_subdirectory(mobile)
-    return()
-endif(WITH_PADDLE_MOBILE)
-
 set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_CXX_STANDARD 11)

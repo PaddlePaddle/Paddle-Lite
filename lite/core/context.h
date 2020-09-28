@@ -145,6 +145,21 @@ class Context<TargetType::kAPU> {
 
   APUContext& operator=(const APUContext& ctx) {}
   std::string name() const { return "APUContext"; }
+
+  static void SetSubgraphModelCacheDir(Scope* scope,
+                                       std::string subgraph_model_cache_dir) {
+    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_model_cache_dir;
+  }
+
+  static std::string SubgraphModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
 };
 #endif
 
@@ -232,6 +247,7 @@ class Context<TargetType::kARM> {
   int llc_size() const { return DeviceInfo::Global().llc_size(); }
   bool has_dot() const { return DeviceInfo::Global().has_dot(); }
   bool has_fp16() const { return DeviceInfo::Global().has_fp16(); }
+  bool has_a53_valid() const { return DeviceInfo::Global().set_a53_valid(); }
 
   template <typename T>
   T* workspace_data() {

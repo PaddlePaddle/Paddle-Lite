@@ -94,6 +94,7 @@ T PolyIoU(const T* box1,
           const size_t box_size,
           const bool normalized) {
   LOG(FATAL) << "PolyIoU not implement.";
+  return *box1;
 }
 
 template <class T>
@@ -142,7 +143,6 @@ void NMSFast(const Tensor& bbox,
   selected_indices->clear();
   T adaptive_threshold = nms_threshold;
   const T* bbox_data = bbox.data<T>();
-
   while (sorted_indices.size() != 0) {
     const int idx = sorted_indices.front().second;
     bool keep = true;
@@ -195,14 +195,14 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
   T score_threshold = static_cast<T>(param.score_threshold);
 
   int num_det = 0;
-  int64_t class_num = scores_size == 3 ? scores.dims()[0] : scores.dims()[1];
 
+  int64_t class_num = scores_size == 3 ? scores.dims()[0] : scores.dims()[1];
+  Tensor bbox_slice, score_slice;
   for (int64_t c = 0; c < class_num; ++c) {
-    Tensor bbox_slice, score_slice;
     if (c == background_label) continue;
+
     if (scores_size == 3) {
       scores.Slice<T>(score_slice, c, c + 1);
-      bbox_slice = bboxes;
     } else {
       score_slice.Resize({scores.dims()[0], 1});
       bbox_slice.Resize({scores.dims()[0], 4});
@@ -226,8 +226,6 @@ void MultiClassNMS(const operators::MulticlassNmsParam& param,
   *num_nmsed_out = num_det;
   const T* scores_data = scores.data<T>();
   if (keep_top_k > -1 && num_det > keep_top_k) {
-    Tensor score_slice;
-
     const T* sdata;
     std::vector<std::pair<float, std::pair<int, int>>> score_index_pairs;
     for (const auto& it : *indices) {
@@ -275,7 +273,9 @@ void MultiClassOutput(const Tensor& scores,
                       const Tensor& bboxes,
                       const std::map<int, std::vector<int>>& selected_indices,
                       const int scores_size,
-                      Tensor* outs) {
+                      Tensor* outs,
+                      int* oindices = nullptr,
+                      const int offset = 0) {
   int64_t class_num = scores.dims()[1];
   int64_t predict_dim = scores.dims()[1];
   int64_t box_size = bboxes.dims()[1];
@@ -305,9 +305,15 @@ void MultiClassOutput(const Tensor& scores,
       if (scores_size == 3) {
         bdata = bboxes_data + idx * box_size;
         odata[count * out_dim + 1] = sdata[idx];  // score
+        if (oindices != nullptr) {
+          oindices[count] = offset + idx;
+        }
       } else {
         bdata = bbox.data<T>() + idx * box_size;
         odata[count * out_dim + 1] = *(scores_data + idx * class_num + label);
+        if (oindices != nullptr) {
+          oindices[count] = offset + idx * class_num + label;
+        }
       }
       // xmin, ymin, xmax, ymax or multi-points coordinates
       std::memcpy(odata + count * out_dim + 2, bdata, box_size * sizeof(T));
@@ -321,18 +327,15 @@ void MulticlassNmsCompute::Run() {
   auto* boxes = param.bboxes;
   auto* scores = param.scores;
   auto* outs = param.out;
-  outs->mutable_data<float>();
-
+  bool return_index = param.index ? true : false;
+  auto* index = param.index;
   auto score_dims = scores->dims();
   auto score_size = score_dims.size();
-
-  auto box_dims = boxes->dims();
-  int64_t box_dim = boxes->dims()[2];
 
   std::vector<std::map<int, std::vector<int>>> all_indices;
   std::vector<uint64_t> batch_starts = {0};
   int64_t batch_size = score_dims[0];
-
+  int64_t box_dim = boxes->dims()[2];
   int64_t out_dim = box_dim + 2;
   int num_nmsed_out = 0;
   Tensor boxes_slice, scores_slice;
@@ -357,45 +360,80 @@ void MulticlassNmsCompute::Run() {
 
   uint64_t num_kept = batch_starts.back();
   if (num_kept == 0) {
-    outs->Resize({1, 1});
-    float* od = outs->mutable_data<float>();
-    od[0] = -1;
-    batch_starts = {0, 1};
+    if (return_index) {
+      outs->Resize({0, out_dim});
+      index->Resize({0, 1});
+      outs->mutable_data<float>();
+      index->mutable_data<int64_t>();
+    } else {
+      outs->Resize({1, 1});
+      float* od = outs->mutable_data<float>();
+      od[0] = -1;
+      batch_starts = {0, 1};
+    }
   } else {
     outs->Resize({static_cast<int64_t>(num_kept), out_dim});
+    outs->mutable_data<float>();
+    int offset = 0;
+    int* oindices = nullptr;
     for (int i = 0; i < n; ++i) {
       if (score_size == 3) {
         scores->Slice<float>(scores_slice, i, i + 1);
         boxes->Slice<float>(boxes_slice, i, i + 1);
         scores_slice.Resize({score_dims[1], score_dims[2]});
         boxes_slice.Resize({score_dims[2], box_dim});
+        if (return_index) {
+          offset = i * score_dims[2];
+        }
       } else {
         auto boxes_lod = boxes->lod().back();
         scores->Slice<float>(scores_slice, boxes_lod[i], boxes_lod[i + 1]);
         boxes->Slice<float>(boxes_slice, boxes_lod[i], boxes_lod[i + 1]);
+        if (return_index) {
+          offset = boxes_lod[i] * score_dims[1];
+        }
       }
       int64_t s = static_cast<int64_t>(batch_starts[i]);
       int64_t e = static_cast<int64_t>(batch_starts[i + 1]);
-
       if (e > s) {
         Tensor out;
         outs->Slice<float>(out, s, e);
-        MultiClassOutput<float>(
-            scores_slice, boxes_slice, all_indices[i], score_dims.size(), &out);
+        Tensor index_int32;
+        if (return_index) {
+          index->Resize({static_cast<int64_t>(num_kept), 1});
+
+          index_int32.Resize(index->dims());
+          int32_t* output_idx = index_int32.mutable_data<int32_t>();
+
+          oindices = output_idx + s;
+        }
+        MultiClassOutput<float>(scores_slice,
+                                boxes_slice,
+                                all_indices[i],
+                                score_dims.size(),
+                                &out,
+                                oindices,
+                                offset);
         outs->ZynqTensor()->copyFrom(out.ZynqTensor());
+        outs->ZynqTensor()->flush();
+
+        if (return_index) {
+          int64_t* index_int64_data = index->mutable_data<int64_t>();
+          const int32_t* index_int32_data = index_int32.data<int32_t>();
+          for (int i = 0; i < index_int32.numel(); ++i) {
+            index_int64_data[i] = index_int32_data[i];
+          }
+        }
       }
-      outs->Resize({static_cast<int64_t>(e - s), out_dim});
     }
   }
+
   LoD lod;
   lod.emplace_back(batch_starts);
+  if (return_index) {
+    index->set_lod(lod);
+  }
   outs->set_lod(lod);
-
-#ifdef FPGA_PRINT_TENSOR
-  Debugger::get_instance().registerOutput("boxes", boxes->ZynqTensor());
-  Debugger::get_instance().registerOutput("scores", scores->ZynqTensor());
-  Debugger::get_instance().registerOutput("nms", outs->ZynqTensor());
-#endif
 }
 }  // namespace fpga
 }  // namespace kernels
@@ -408,24 +446,20 @@ REGISTER_LITE_KERNEL(multiclass_nms,
                      kNHWC,
                      paddle::lite::kernels::fpga::MulticlassNmsCompute,
                      def)
-    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(multiclass_nms,
+REGISTER_LITE_KERNEL(multiclass_nms2,
                      kFPGA,
                      kFP16,
                      kNHWC,
                      paddle::lite::kernels::fpga::MulticlassNmsCompute,
                      def2)
-    .BindInput("BBoxes",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
-    .BindInput("Scores",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kNHWC))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Index",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

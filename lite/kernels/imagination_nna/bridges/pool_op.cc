@@ -42,8 +42,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_name = op_info->Output("Out").front();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
-  auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
-  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  std::vector<int> ksize = op_info->GetAttr<std::vector<int>>("ksize");
+  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
 
   // for quantization
   CHECK(op_info->HasOutputScale(out_name));
@@ -87,7 +87,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("adaptive")) {
     adaptive = op_info->GetAttr<bool>("adaptive");
   }
-  auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
   lite::operators::UpdatePadding(&paddings,
                                  global_pooling,
                                  adaptive,

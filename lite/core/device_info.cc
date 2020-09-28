@@ -176,6 +176,9 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
         case 0xd0a:
           arch_type = kA75;
           break;
+        case 0xd0d:
+          arch_type = kA77;
+          break;
         case 0xd40:
           arch_type = kA76;
           break;
@@ -637,6 +640,20 @@ void DeviceInfo::SetArchInfo(int argc, ...) {
 
 bool DeviceInfo::SetCPUInfoByName() {
   /* Snapdragon */
+  if (dev_name_.find("KONA") != std::string::npos) {  // 865
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {4, 5, 6, 7};
+    little_core_ids_ = {0, 1, 2, 3};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(2, kA77, kA55);
+    SetCacheInfo(0, 2, 192 * 1024, 256 * 1024);
+    SetCacheInfo(1, 2, 768 * 1024, 512 * 1024);
+    SetCacheInfo(2, 1, 4 * 1024 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(2, 1, 1);
+    return true;
+  }
   if (dev_name_.find("SM8150") != std::string::npos) {  // 855
     core_num_ = 8;
     core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -1006,6 +1023,20 @@ void DeviceInfo::RequestPowerRandLowMode(int shift_num, int thread_num) {
         active_ids_.push_back(big_core_ids_[i]);
       }
     }
+  }
+}
+
+bool DeviceInfo::set_a53_valid() {
+  std::string dev_name = "null";
+#ifdef LITE_WITH_LINUX
+  dev_name = get_cpu_name();
+#endif
+  // xiaodu device_name
+  if (dev_name.find("MT8765WA") != std::string::npos ||
+      dev_name.find("MT8167S") != std::string::npos) {
+    return false;
+  } else {
+    return true;
   }
 }
 
