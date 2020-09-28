@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -27,14 +28,43 @@ namespace lite {
 namespace kernels {
 namespace apu {
 
+class DeviceProgram {
+ public:
+  DeviceProgram() {}
+  ~DeviceProgram() {}
+  std::string GenerateModelName(
+      const std::vector<std::string>& input_names,
+      const std::vector<std::string>& output_names,
+      const std::vector<std::vector<int64_t>>& origin_idims);
+  bool LoadFromCacheFile(const std::vector<std::string>& input_names,
+                         const std::vector<std::string>& output_names,
+                         const std::vector<std::vector<int64_t>>& origin_idims,
+                         const std::string& model_cache_dir);
+  bool BuildGraphAndCacheToFile(
+      RuntimeProgram* origin_program,
+      const std::vector<std::string>& input_names,
+      const std::vector<std::string>& output_names,
+      const std::vector<std::vector<int64_t>>& origin_idims,
+      const std::vector<Tensor*>& origin_itensors,
+      const std::vector<Tensor*>& origin_otensors,
+      const std::string& model_cache_dir);
+
+ public:
+  std::string model_name_{""};
+  std::vector<std::vector<int64_t>> origin_odims_;
+  std::vector<PrecisionType> origin_otypes_;
+  NeuronModel* model_;
+  NeuronCompilation* compilation_;
+};
+
 class SubgraphEngine : public subgraph::SubgraphEngineBase {
  public:
-  SubgraphEngine(KernelContext *ctx,
+  SubgraphEngine(KernelContext* ctx,
                  int block_idx,
-                 const std::shared_ptr<const cpp::ProgramDesc> &program_desc,
-                 Scope *exec_scope,
-                 const std::vector<std::string> &input_names,
-                 const std::vector<std::string> &output_names)
+                 const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+                 Scope* exec_scope,
+                 const std::vector<std::string>& input_names,
+                 const std::vector<std::string>& output_names)
       : subgraph::SubgraphEngineBase(ctx,
                                      block_idx,
                                      program_desc,
@@ -48,8 +78,8 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
   bool BuildDeviceProgram() override;
   bool LaunchDeviceProgram() override;
 
-  NeuronModel *model_;
-  NeuronCompilation *compilation_;
+  std::map<std::vector<std::vector<int64_t>>, std::shared_ptr<DeviceProgram>>
+      device_programs_;
 };
 
 class SubgraphCompute
