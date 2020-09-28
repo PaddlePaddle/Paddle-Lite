@@ -91,28 +91,28 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       pooling.cc
       elementwise.cc
       layout.cc
-      lrn.cc
-      decode_bboxes.cc
-      concat.cc
-      type_trans.cc
-      box_coder.cc
-      split.cc
-      shuffle_channel.cc
-      activation.cc
-      yolo_box.cc
-      dropout.cc
-          pow.cc
+          lrn.cc
+          decode_bboxes.cc
+          concat.cc
+          type_trans.cc
+          box_coder.cc
+          split.cc
+          shuffle_channel.cc
+          activation.cc
+          yolo_box.cc
+          dropout.cc
+          power.cc
           interpolate.cc
-      argmax.cc
-      axpy.cc
-      fill_bias_relu.cc
-      col_im_transform.cc
-      im2sequence.cc
-      prior_box.cc
-      sequence_softmax.cc
-      norm.cc
-      topk.cc
-      increment.cc
+          argmax.cc
+          axpy.cc
+          fill_bias_relu.cc
+          col_im_transform.cc
+          im2sequence.cc
+          prior_box.cc
+          sequence_softmax.cc
+          norm.cc
+          topk.cc
+          increment.cc
       pad2d.cc
       negative.cc
       beam_search.cc

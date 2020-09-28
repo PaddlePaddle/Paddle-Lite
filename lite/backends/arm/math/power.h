@@ -20,12 +20,12 @@ namespace arm {
 namespace math {
 
 template <typename T>
-void pow(const T* din,
-         T* dout,
-         const int num,
-         float scale_,
-         float shift_,
-         float factor_);
+void power(const T* din,
+           T* dout,
+           const int num,
+           float scale_,
+           float shift_,
+           float factor_);
 
 } /* namespace math */
 } /* namespace arm */

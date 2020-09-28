@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/pow.h"
+#include "lite/backends/arm/math/power.h"
 
 #include "lite/backends/arm/math/funcs.h"
 
