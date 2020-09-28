@@ -52,8 +52,9 @@ int insert_requant_node(void* ctx,
   auto model = graph->model();
 
   uint32_t numDevices = 0;
-  CHECK_EQ(Neuron_getDeviceCount(&numDevices), NEURON_NO_ERROR);
-  CHECK_GT(numDevices, (uint32_t)0);
+  CHECK_EQ(Neuron_getDeviceCount(&numDevices),
+           static_cast<int>(NEURON_NO_ERROR));
+  CHECK_GT(numDevices, static_cast<uint32_t>(0));
 
   NeuronDevice* targetDevice = nullptr;
 
