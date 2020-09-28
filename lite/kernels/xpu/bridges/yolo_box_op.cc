@@ -21,6 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace xpu {
 
+// fixme: yolo box has updated, check arm kernel to get more info
 int YoloBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
