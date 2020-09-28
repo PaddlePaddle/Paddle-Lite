@@ -85,8 +85,7 @@ bool DeviceProgram::LoadFromCacheFile(
   VLOG(3) << "[APU] Complete Load model!";
 
   // Deserialize the preicisions and shapes of the origin output tensors from
-  // the
-  // cached configuration file
+  // the cached configuration file
   auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
   VLOG(3) << "[APU] Load configuration from " << config_path;
   std::vector<char> config_buffer;
@@ -213,6 +212,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   VLOG(1) << "[APU] APU DLA model created, Build cost "
           << GetCurrentUS() - start_time << " us";
 
+  start_time = GetCurrentUS();
   CHECK_EQ(origin_otensors.size(), output_names.size());
   origin_otypes_.resize(output_names.size());
   origin_odims_.resize(output_names.size());
@@ -228,9 +228,10 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     size_t compilationSize;
     status = NeuronCompilation_getCompiledNetworkSize(compilation_,
                                                       &compilationSize);
+    std::vector<char> model_buffer;
     if (status == NEURON_NO_ERROR) {
       // Serialization DLA
-      std::vector<char> model_buffer;
+
       model_buffer.resize(compilationSize);
       status = NeuronCompilation_storeCompiledNetwork(
           compilation_, &model_buffer[0], compilationSize);
@@ -261,6 +262,23 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     if (!WriteFile(config_path, config_buffer)) {
       LOG(WARNING) << "[APU] Open " << config_path << " for writting failed!";
     }
+
+    // Workaround: after calling storeCompiledNetwork, model will be modificated
+    // that will cause a low performace, so we need restore it. after we fix
+    // this bug, below code will be deleted
+    NeuronCompilation_free(compilation_);
+    NeuronModel_free(model_);
+    model_ = nullptr;
+    compilation_ = nullptr;
+    status = NeuronModel_restoreFromCompiledNetwork(
+        &model_, &compilation_, &model_buffer[0], compilationSize);
+    if (status != NEURON_NO_ERROR) {
+      LOG(WARNING) << "[APU] Load model failed!" << compilationSize;
+      return false;
+    }
+    VLOG(3) << "[APU] Complete Load model!";
+    VLOG(1) << "[APU] APU DLA model cached, cache cost "
+            << GetCurrentUS() - start_time << " us";
   }
 
   return true;
