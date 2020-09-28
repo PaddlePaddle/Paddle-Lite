@@ -49,9 +49,12 @@ __host__ __device__ inline void GetYoloBox(T* box,
                                            int index,
                                            int stride,
                                            int img_height,
-                                           int img_width) {
-  box[0] = (i + sigmoid<T>(x[index])) * img_width / grid_size;
-  box[1] = (j + sigmoid<T>(x[index + stride])) * img_height / grid_size;
+                                           int img_width,
+                                           float scale,
+                                           float bias) {
+  box[0] = (i + sigmoid<T>(x[index]) * scale + bias) * img_width / grid_size;
+  box[1] = (j + sigmoid<T>(x[index + stride]) * scale + bias) * img_height /
+           grid_size;
   box[2] = std::exp(x[index + 2 * stride]) * anchors[2 * an_idx] * img_width /
            input_size;
   box[3] = std::exp(x[index + 3 * stride]) * anchors[2 * an_idx + 1] *
@@ -63,12 +66,16 @@ __host__ __device__ inline void CalcDetectionBox(T* boxes,
                                                  T* box,
                                                  const int box_idx,
                                                  const int img_height,
-                                                 const int img_width) {
+                                                 const int img_width,
+                                                 bool clip_bbox) {
   boxes[box_idx] = box[0] - box[2] / 2;
   boxes[box_idx + 1] = box[1] - box[3] / 2;
   boxes[box_idx + 2] = box[0] + box[2] / 2;
   boxes[box_idx + 3] = box[1] + box[3] / 2;
 
+  if (!clip_bbox) {
+    return;
+  }
   boxes[box_idx] = boxes[box_idx] > 0 ? boxes[box_idx] : static_cast<T>(0);
   boxes[box_idx + 1] =
       boxes[box_idx + 1] > 0 ? boxes[box_idx + 1] : static_cast<T>(0);
@@ -106,7 +113,10 @@ __global__ void KeYoloBoxFw(const T* input,
                             const int an_num,
                             const int class_num,
                             const int box_num,
-                            int input_size) {
+                            int input_size,
+                            bool clip_bbox,
+                            float scale,
+                            float bias) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
   int stride = blockDim.x * gridDim.x;
   T box[4];
@@ -141,9 +151,11 @@ __global__ void KeYoloBoxFw(const T* input,
                   box_idx,
                   grid_num,
                   img_height,
-                  img_width);
+                  img_width,
+                  scale,
+                  bias);
     box_idx = (i * box_num + j * grid_num + k * w + l) * 4;
-    CalcDetectionBox<T>(boxes, box, box_idx, img_height, img_width);
+    CalcDetectionBox<T>(boxes, box, box_idx, img_height, img_width, clip_bbox);
 
     int label_idx =
         GetEntryIndex(i, j, k * w + l, an_num, an_stride, grid_num, 5);
@@ -166,6 +178,9 @@ void YoloBoxCompute::Run() {
   int class_num = param.class_num;
   float conf_thresh = param.conf_thresh;
   int downsample_ratio = param.downsample_ratio;
+  bool clip_bbox = param.clip_bbox;
+  float scale_x_y = param.scale_x_y;
+  float bias = -0.5 * (scale_x_y - 1.);
 
   const float* input = X->data<float>();
   const int* imgsize = ImgSize->data<int>();
@@ -207,7 +222,10 @@ void YoloBoxCompute::Run() {
                                                      an_num,
                                                      class_num,
                                                      box_num,
-                                                     input_size);
+                                                     input_size,
+                                                     clip_bbox,
+                                                     scale_x_y,
+                                                     bias);
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) LOG(INFO) << cudaGetErrorString(error);
 }
