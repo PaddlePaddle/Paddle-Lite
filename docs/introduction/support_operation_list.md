@@ -159,8 +159,7 @@
 | not_equal | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | one_hot | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | pixel_shuffle | Y | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |
-| pow | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| power | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| pow | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
 | print | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | read_from_array | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | reciprocal | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |

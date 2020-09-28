@@ -29,9 +29,7 @@ void PowCompute::Run() {
   float shift = 0.0;
   float power = param.factor;
 
-  // fixme: update lite::arm::math::power if necessary, for scale and shift is
-  // not used
-  lite::arm::math::power(
+  lite::arm::math::pow(
       x_data, output_data, x_dims.production(), scale, shift, power);
 }
 

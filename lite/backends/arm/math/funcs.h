@@ -15,6 +15,7 @@
 #pragma once
 
 #include <arm_neon.h>
+
 #include <algorithm>
 #include <cmath>
 
@@ -48,7 +49,7 @@
 #include "lite/backends/arm/math/packed_sgemm_c4.h"
 #include "lite/backends/arm/math/pad2d.h"
 #include "lite/backends/arm/math/pooling.h"
-#include "lite/backends/arm/math/power.h"
+#include "lite/backends/arm/math/pow.h"
 #include "lite/backends/arm/math/prior_box.h"
 #include "lite/backends/arm/math/reduce_max.h"
 #include "lite/backends/arm/math/reduce_mean.h"

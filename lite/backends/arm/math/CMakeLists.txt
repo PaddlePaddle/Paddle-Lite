@@ -101,8 +101,8 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       activation.cc
       yolo_box.cc
       dropout.cc
-      power.cc
-      interpolate.cc
+          pow.cc
+          interpolate.cc
       argmax.cc
       axpy.cc
       fill_bias_relu.cc
