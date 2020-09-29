@@ -64,6 +64,12 @@ class XPUFcFuser : public FuseBase {
     auto mul = matched.at("mul")->stmt()->op();
     auto* scope = mul->scope();
 
+    std::string precision = "int16";
+    if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
+        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
+      precision = "int31";
+      VLOG(3) << "Use int31 in XPUFcOp";
+    }
     // convert W from float to int16, and transpose W
     auto weight_name = matched.at("W")->arg()->name;
     auto* weight_t = scope->FindMutableTensor(weight_name);
@@ -73,18 +79,29 @@ class XPUFcFuser : public FuseBase {
     float max_f =
         paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
 
-    std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
-    std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
-    paddle::lite::xpu::math::ConvertFP32ToInt16(
-        weight_on_host, weight_int16.get(), max_f, weight_len);
-    paddle::lite::xpu::math::Transpose(weight_int16.get(),
-                                       weight_trans_int16.get(),
-                                       weight_dims[0],
-                                       weight_dims[1]);
-    memcpy(
-        weight_on_host, weight_trans_int16.get(), weight_len * sizeof(int16_t));
+    if (precision == "int31") {
+      std::unique_ptr<float[]> weight_trans_fp32(new float[weight_len]);
+      paddle::lite::xpu::math::Transpose(weight_on_host,
+                                         weight_trans_fp32.get(),
+                                         weight_dims[0],
+                                         weight_dims[1]);
+      memcpy(
+          weight_on_host, weight_trans_fp32.get(), weight_len * sizeof(float));
+    } else {
+      std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
+      std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
+      paddle::lite::xpu::math::ConvertFP32ToInt16(
+          weight_on_host, weight_int16.get(), max_f, weight_len);
+      paddle::lite::xpu::math::Transpose(weight_int16.get(),
+                                         weight_trans_int16.get(),
+                                         weight_dims[0],
+                                         weight_dims[1]);
+      memcpy(weight_on_host,
+             weight_trans_int16.get(),
+             weight_len * sizeof(int16_t));
+    }
 
-    auto op_desc = GenOpDesc(matched, max_f, true);
+    auto op_desc = GenOpDesc(matched, max_f, true, precision);
     auto fc_op = LiteOpRegistry::Global().Create("__xpu__fc");
     auto& valid_places = mul->valid_places();
     fc_op->Attach(op_desc, scope);
@@ -100,7 +117,8 @@ class XPUFcFuser : public FuseBase {
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched,
                         float w_max,
-                        bool transpose_w) {
+                        bool transpose_w,
+                        const std::string& precision) {
     cpp::OpDesc op_desc = *matched.at("mul")->stmt()->op_info();
     op_desc.mutable_inputs()->clear();
     op_desc.mutable_outputs()->clear();
@@ -117,6 +135,7 @@ class XPUFcFuser : public FuseBase {
     if (with_relu_) {
       op_desc.SetAttr("activation_type", std::string{"relu"});
     }
+    op_desc.SetAttr<std::string>("precision", precision);
     return op_desc;
   }
 
@@ -129,7 +148,6 @@ class XPUFcFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
-
     fusion::XPUFcFuser fuser(true /* with_relu */);
     fuser(graph.get());
 
