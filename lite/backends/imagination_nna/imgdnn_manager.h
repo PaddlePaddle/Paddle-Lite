@@ -28,21 +28,6 @@
 namespace paddle {
 namespace lite {
 namespace imagination_nna {
-static inline void CheckAndPrint(bool cond,
-                                 const char *msg,
-                                 int line,
-                                 const char *filename) {
-  if (cond) {
-    std::stringstream err_msg;
-    err_msg << "ERROR: " << msg << "\n";
-    err_msg << "Violated condition at line " << line << " in " << filename;
-    std::cerr << err_msg.str() << "\n";
-    exit(EXIT_FAILURE);
-  }
-}
-
-#define SSERT(statement, msg) \
-  lite::imagination_nna::CheckAndPrint(statement, msg, __LINE__, __FILE__)
 
 class ImgdnnManager {
   imgdnn_err_code err_;
