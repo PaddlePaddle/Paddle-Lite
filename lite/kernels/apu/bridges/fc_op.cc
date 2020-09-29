@@ -36,14 +36,17 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
+  auto input_scale_name = "Input0_scale";
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
   CHECK_GE(input_dims.size(), 2UL);
   auto w_name = op_info->Input("W").front();
+  auto w_scale_name = "W0_scale";
   auto w = scope->FindMutableTensor(w_name);
   auto w_dims = w->dims();
   CHECK_EQ(w_dims.size(), 2UL);
   auto out_name = op_info->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
@@ -56,12 +59,12 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           << " out_dims: " << out_dims << " m: " << m << " k: " << k
           << " n: " << n;
 
-  CHECK(op_info->HasInputScale(input_name));
-  auto input_scale = op_info->GetInputScale(input_name)[0];
-  CHECK(op_info->HasInputScale(w_name));
-  auto w_scale = op_info->GetInputScale(w_name);
-  CHECK(op_info->HasOutputScale(out_name));
-  auto out_scale = op_info->GetOutputScale(out_name)[0];
+  CHECK(op_info->HasInputScale(input_scale_name, true));
+  auto input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+  CHECK(op_info->HasInputScale(w_scale_name, true));
+  auto w_scale = op_info->GetInputScale(w_scale_name, true);
+  CHECK(op_info->HasOutputScale(out_scale_name, true));
+  auto out_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   // Add input tensor type
   NeuronOperandType inType;

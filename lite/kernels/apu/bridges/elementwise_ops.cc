@@ -34,14 +34,17 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
+  auto x_scale_name = "X0_scale";
   auto x = scope->FindTensor(x_name);
   auto x_dims = x->dims();
 
   auto y_name = op_info->Input("Y").front();
+  auto y_scale_name = "Y0_scale";
   auto y = scope->FindTensor(y_name);
   auto y_dims = y->dims();
 
   auto out_name = op_info->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
   auto out = scope->FindTensor(out_name);
   auto out_dims = out->dims();
 
@@ -88,12 +91,12 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }  // End of if
   VLOG(3) << "x_name" << x_name;
 
-  CHECK(op_info->HasInputScale(x_name));
-  auto x_scale = op_info->GetInputScale(x_name)[0];
-  CHECK(op_info->HasInputScale(y_name));
-  auto y_scale = op_info->GetInputScale(y_name)[0];
-  CHECK(op_info->HasOutputScale(out_name));
-  auto out_scale = op_info->GetOutputScale(out_name)[0];
+  CHECK(op_info->HasInputScale(x_scale_name, true));
+  auto x_scale = op_info->GetInputScale(x_scale_name, true)[0];
+  CHECK(op_info->HasInputScale(y_scale_name, true));
+  auto y_scale = op_info->GetInputScale(y_scale_name, true)[0];
+  CHECK(op_info->HasOutputScale(out_scale_name, true));
+  auto out_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   // Add x tensor type
   NeuronOperandType xType;

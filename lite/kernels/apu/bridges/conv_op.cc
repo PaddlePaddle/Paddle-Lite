@@ -40,14 +40,17 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
+  auto input_scale_name = "Input0_scale";
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
 
   auto filter_name = op_info->Input("Filter").front();
+  auto filter_scale_name = "Filter0_scale";
   auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
 
   auto output_name = op_info->Output("Output").front();
+  auto output_scale_name = "Output0_scale";
   auto output = scope->FindMutableTensor(output_name);
   auto output_dims = output->dims();
 
@@ -97,13 +100,13 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       input_dims,
                                       filter_dims);
 
-  CHECK(op_info->HasInputScale(input_name));
-  auto input_scale = op_info->GetInputScale(input_name)[0];
-  CHECK(op_info->HasInputScale(filter_name));
-  auto filter_scale = op_info->GetInputScale(filter_name);
-  CHECK(op_info->HasOutputScale(output_name));
-  auto output_scale = op_info->GetOutputScale(output_name)[0];
-  auto orig_output_scale = op_info->GetOutputScale(output_name)[0];
+  CHECK(op_info->HasInputScale(input_scale_name, true));
+  auto input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+  CHECK(op_info->HasInputScale(filter_scale_name, true));
+  auto filter_scale = op_info->GetInputScale(filter_scale_name, true);
+  CHECK(op_info->HasOutputScale(output_scale_name, true));
+  auto output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
+  auto orig_output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
 
   VLOG(3) << "strides.size(): " << strides.size() << " ,groups: " << groups
           << " ,dilations: " << dilations[0] << ":" << dilations[1];
