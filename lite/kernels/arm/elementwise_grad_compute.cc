@@ -40,18 +40,24 @@ inline DDim trim_trailing_singular_dims(const DDim& dims) {
   return DDim(trim_dims);
 }
 
-inline bool is_broadcast(const DDim& x_dims,
-                         const DDim& y_dims,
-                         int axis,
-                         int* pre,
-                         int* n,
-                         int* post) {
-  if (axis < 0) {
+inline bool is_fast_broadcast(const DDim& x_dims,
+                              const DDim& y_dims,
+                              int axis,
+                              int* pre,
+                              int* n,
+                              int* post) {
+  if (axis == -1) {
     axis = x_dims.size() - y_dims.size();
+  }
+  if (axis < 0) {
+    LOG(INFO) << "Fast broadcast chk fail, for x_dims smaller.";
+    return false;
   }
   DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
   axis = (y_dim_trim.size() == 0) ? x_dims.size() : axis;
   if (x_dims.size() == y_dim_trim.size()) {
+    LOG(INFO)
+        << "Fast broadcast chk fail, for y's shape not really contained in x";
     return false;
   }
   *pre = 1;
@@ -61,8 +67,10 @@ inline bool is_broadcast(const DDim& x_dims,
     (*pre) *= x_dims[i];
   }
   for (int i = 0; i < y_dim_trim.size(); ++i) {
-    CHECK_EQ(x_dims[i + axis], y_dim_trim[i])
-        << "Broadcast dimension mismatch.";
+    if (x_dims[i + axis] != y_dim_trim[i]) {
+      LOG(WARNING) << "Fast broadcast chk fail, for dimension mismatch.";
+      return false;
+    }
     (*n) *= y_dim_trim[i];
   }
   for (int i = axis + y_dim_trim.size(); i < x_dims.size(); ++i) {
@@ -103,10 +111,10 @@ void ElementwiseAddGradCompute::Run() {
   }
 
   if (x_dims.size() < y_dims.size() &&
-      is_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
+      is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_add_grad_broadcast(
         out_grad_data, y_grad_data, x_grad_data, pre, n, post);
-  } else if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  } else if (is_fast_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_add_grad_broadcast(
         out_grad_data, x_grad_data, y_grad_data, pre, n, post);
   } else {
@@ -151,7 +159,7 @@ void ElementwiseSubGradCompute::Run() {
   if (x_dims.size() < y_dims.size()) {
     LOG(FATAL) << "elewise sub grad don't support x_dims size < y_dims size";
   }
-  if (is_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  if (is_fast_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     lite::arm::math::elementwise_sub_grad_broadcast(
         out_data, x_grad_data, y_grad_data, pre, n, post);
   } else {
