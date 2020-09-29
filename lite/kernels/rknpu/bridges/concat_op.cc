@@ -34,6 +34,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_names = op_info->Input("X");
   auto out_name = op_info->Output("Out").front();
   auto output = scope->FindMutableTensor(out_name);
+  auto out_scale_name = "Out0_scale";
 
   auto axis = op_info->GetAttr<int>("axis");
   auto num = x_names.size();
@@ -49,8 +50,8 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("enable_int8")) {
     enable_int8 = op_info->GetAttr<bool>("enable_int8");
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(out_name));
-    output_scale = op_info->GetOutputScale(out_name)[0];
+    CHECK(op_info->HasOutputScale(out_scale_name, true));
+    output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
     if (enable_int8) {
       precision = PRECISION(kInt8);
@@ -62,8 +63,9 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;
   std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;
 
-  int idx = 1;
-  for (auto& x_name : x_names) {
+  for (int i = 0; i < num; i++) {
+    auto x_name = x_names[i];
+    auto x_scale_name = "X" + paddle::lite::to_string(i) + "_scale";
     auto x = scope->FindMutableTensor(x_name);
     auto x_dims = x->dims();
     std::shared_ptr<Node> x_node = nullptr;
@@ -75,8 +77,8 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       qnt.enable_int8 = enable_int8;
 
       if (enable_int8) {
-        CHECK(op_info->HasInputScale(x_name));
-        input_scale = op_info->GetInputScale(x_name)[0];
+        CHECK(op_info->HasInputScale(x_scale_name, true));
+        input_scale = op_info->GetInputScale(x_scale_name, true)[0];
         qnt.quant_bits = bit_length;
         qnt.scale.push_back(input_scale);
         x->mutable_data<int8_t>();
@@ -85,7 +87,6 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
 
     inputs.push_back(x_node->data());
-    idx++;
   }
 
   std::shared_ptr<Node> output_node = nullptr;

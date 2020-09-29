@@ -37,9 +37,11 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
+  auto x_scale_name = "X0_scale";
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto out_name = op_info->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
@@ -90,10 +92,10 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  ksize);
 
   // Add x tensor type
-  CHECK(op_info->HasInputScale(x_name));
-  auto x_scale = op_info->GetInputScale(x_name)[0];
-  CHECK(op_info->HasOutputScale(out_name));
-  auto out_scale = op_info->GetOutputScale(out_name)[0];
+  CHECK(op_info->HasInputScale(x_scale_name, true));
+  auto x_scale = op_info->GetInputScale(x_scale_name, true)[0];
+  CHECK(op_info->HasOutputScale(out_scale_name, true));
+  auto out_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   NeuronOperandType xType;
   xType.type = NEURON_TENSOR_QUANT8_ASYMM;

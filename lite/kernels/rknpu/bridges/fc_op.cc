@@ -31,14 +31,17 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "[RKNPU] Converting " + op_type + "...";
 
   auto input_name = op_info->Input("Input").front();
+  auto input_scale_name = "Input0_scale";
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
   CHECK_GE(input_dims.size(), 2UL);
   auto w_name = op_info->Input("W").front();
+  auto w_scale_name = "W0_scale";
   auto w = scope->FindMutableTensor(w_name);
   auto w_dims = w->dims();
   CHECK_EQ(w_dims.size(), 2UL);
   auto out_name = op_info->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
   auto output = scope->FindMutableTensor(out_name);
   int in_num_col_dims = op_info->GetAttr<int>("in_num_col_dims");
   int m = input_dims.Slice(0, in_num_col_dims).production();
@@ -58,11 +61,11 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   if (op_info->HasAttr("enable_int8")) {
     enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    CHECK(op_info->HasInputScale(input_name));
-    input_scale = op_info->GetInputScale(input_name)[0];
+    CHECK(op_info->HasInputScale(input_scale_name, true));
+    input_scale = op_info->GetInputScale(input_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(out_name));
-    output_scale = op_info->GetOutputScale(out_name)[0];
+    CHECK(op_info->HasOutputScale(out_scale_name, true));
+    output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
     if (enable_int8) {
       precision = PRECISION(kInt8);
     }
@@ -85,8 +88,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   if (enable_int8) {
     QuantizationInfo filter_qnt;
-    CHECK(op_info->HasInputScale(w_name));
-    auto weight_scale = op_info->GetInputScale(w_name);
+    CHECK(op_info->HasInputScale(w_scale_name, true));
+    auto weight_scale = op_info->GetInputScale(w_scale_name, true);
     filter_qnt.enable_int8 = enable_int8;
     filter_qnt.scale = weight_scale;
     filter_qnt.quant_bits = bit_length;
@@ -131,8 +134,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       if (enable_int8) {
         auto bias_name_qnt = bias_name + "/qnt";
         auto* bias_qnt = scope->NewTensor(bias_name_qnt);
-        CHECK(op_info->HasInputScale(w_name));
-        auto weight_scale = op_info->GetInputScale(w_name);
+        CHECK(op_info->HasInputScale(w_scale_name, true));
+        auto weight_scale = op_info->GetInputScale(w_scale_name, true);
 
         bias_qnt->Resize(bias_shape);
         bias_qnt->set_persistable(true);
@@ -175,8 +178,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     bias->set_persistable(true);
 
     if (enable_int8) {
-      CHECK(op_info->HasInputScale(w_name));
-      auto weight_scale = op_info->GetInputScale(w_name);
+      CHECK(op_info->HasInputScale(w_scale_name, true));
+      auto weight_scale = op_info->GetInputScale(w_scale_name, true);
       bias->set_precision(PrecisionType::kInt32);
       auto* bias_data = bias->mutable_data<int32_t>();
 
