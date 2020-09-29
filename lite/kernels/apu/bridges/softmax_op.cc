@@ -37,10 +37,12 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
+  auto x_scale_name = "X0_scale";
   auto x_dims = x->dims();
   CHECK_GE(x_dims.size(), 2UL);
   auto x_rank = x_dims.size();
   auto out_name = op_info->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
 
   // Check output shape
   auto axis = op_info->GetAttr<int>("axis");
@@ -48,10 +50,10 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     axis += x_rank;
   }
 
-  CHECK(op_info->HasInputScale(x_name));
-  auto input_scale = op_info->GetInputScale(x_name)[0];
-  CHECK(op_info->HasOutputScale(out_name));
-  auto out_scale = op_info->GetOutputScale(out_name)[0];
+  CHECK(op_info->HasInputScale(x_scale_name, true));
+  auto input_scale = op_info->GetInputScale(x_scale_name, true)[0];
+  CHECK(op_info->HasOutputScale(out_scale_name, true));
+  auto out_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   // Check output scale
   NeuronOperandType xType;

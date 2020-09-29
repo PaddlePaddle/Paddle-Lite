@@ -36,6 +36,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get input and output vars and op attributes
   auto x_names = op_info->Input("X");
   auto out_name = op_info->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
   auto axis = op_info->GetAttr<int>("axis");
   auto num = x_names.size();
 
@@ -50,19 +51,21 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Limitation:
   // All input tensors of NEURON_TENSOR_QUANT8_ASYMM must
   // have the same scale and zeroPoint as the output tensor
-  CHECK(op_info->HasOutputScale(out_name));
-  auto output_scale = op_info->GetOutputScale(out_name)[0];
+  CHECK(op_info->HasOutputScale(out_scale_name, true));
+  auto output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   // Traverse all of input nodes
   std::vector<std::shared_ptr<Node>> input_nodes;
   NeuronOperandType xType;
-  for (auto& x_name : x_names) {
+  for (int i = 0; i < num; i++) {
+    auto x_name = x_names[i];
+    auto x_scale_name = "X" + paddle::lite::to_string(i) + "_scale";
     auto x = scope->FindMutableTensor(x_name);
     auto x_dims = x->dims();
     std::shared_ptr<Node> x_node = nullptr;
 
-    CHECK(op_info->HasInputScale(x_name));
-    auto input_scale = op_info->GetInputScale(x_name)[0];
+    CHECK(op_info->HasInputScale(x_scale_name, true));
+    auto input_scale = op_info->GetInputScale(x_scale_name, true)[0];
 
     // Add x tensor type
     xType.type = NEURON_TENSOR_QUANT8_ASYMM;
