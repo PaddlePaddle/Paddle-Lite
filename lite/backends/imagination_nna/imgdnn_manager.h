@@ -28,7 +28,6 @@
 namespace paddle {
 namespace lite {
 namespace imagination_nna {
-
 static inline void CheckAndPrint(bool cond,
                                  const char *msg,
                                  int line,
@@ -42,7 +41,7 @@ static inline void CheckAndPrint(bool cond,
   }
 }
 
-#define ASSERT(statement, msg) \
+#define SSERT(statement, msg) \
   lite::imagination_nna::CheckAndPrint(statement, msg, __LINE__, __FILE__)
 
 class ImgdnnManager {
@@ -146,7 +145,7 @@ class ImgdnnManager {
                                                     max_clamp,
                                                     negative_slope,
                                                     &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "ReLU OP fails");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "ReLU OP fails";
 
     imgdnn_tensor_descriptor in_desc, relu_desc;
     imgdnnGetTensorDescriptor(in_tensor, &in_desc);
@@ -154,7 +153,7 @@ class ImgdnnManager {
     if (relu_desc.type != in_desc.type) {
       relu_tensor = imgdnnNetworkCastOp(
           net_, relu_tensor, in_desc.type, &in_desc.quant_param, &err_);
-      ASSERT(err_ != IMGDNN_SUCCESS, "ReLU cast fails");
+      CHECK_EQ(err_, IMGDNN_SUCCESS) << "ReLU cast fails";
     }
 
     return relu_tensor;
@@ -171,83 +170,83 @@ class ImgdnnManager {
       imgdnn_import_mem_type import_mem_type = IMGDNN_IMPORT_MEM_TYPE_CPU) {
     imgdnn_memory mem =
         imgdnnImportMemory(context_, memory, size, import_mem_type, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "ImportMemory fails");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "ImportMemory fails";
     return mem;
   }
 
   imgdnn_memory allocateMemory(size_t size) {
     imgdnn_memory mem = imgdnnAllocateMemory(context_, size, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "AllocateMemory fails");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "AllocateMemory fails";
     return mem;
   }
 
   void destroyMemory(imgdnn_memory memory) {
     err_ = imgdnnMemoryDestroy(memory);
-    ASSERT(err_ != IMGDNN_SUCCESS, "MemoryDestroy fails");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "MemoryDestroy fails";
   }
 
   void *lockMemory(imgdnn_memory memory, imgdnn_lock_access lock_access) {
     void *mem = imgdnnMemoryLock(memory, lock_access, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "MemoryLock fails");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "MemoryLock fails";
     return mem;
   }
 
   void unlockMemory(imgdnn_memory memory) {
     err_ = imgdnnMemoryUnlock(memory);
-    ASSERT(err_ != IMGDNN_SUCCESS, "MemoryUnLock fails");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "MemoryUnLock fails";
   }
 
   void getNetworkObjectInputs(unsigned int max_inputs,
                               imgdnn_input inputs[],
                               unsigned int *num_inputs) {
-    ASSERT(net_obj_ == nullptr, "NetworkObject NULL when get its inputs");
+    CHECK(net_obj_ != nullptr) << "NetworkObject NULL when get its inputs";
     err_ =
         imgdnnNetworkObjectGetInputs(net_obj_, max_inputs, inputs, num_inputs);
-    ASSERT(err_ != IMGDNN_SUCCESS, "NetworkObjectGetInputs failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "NetworkObjectGetInputs failed!";
   }
 
   void getNetworkObjectOutputs(unsigned int max_outputs,
                                imgdnn_output outputs[],
                                unsigned int *num_outputs) {
-    ASSERT(net_obj_ == nullptr, "NetworkObject NULL when get its outputs");
+    CHECK(net_obj_ != nullptr) << "NetworkObject NULL when get its outputs";
     err_ = imgdnnNetworkObjectGetOutputs(
         net_obj_, max_outputs, outputs, num_outputs);
-    ASSERT(err_ != IMGDNN_SUCCESS, "NetworkObjectGetOutputs failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "NetworkObjectGetOutputs failed!";
   }
 
   imgdnn_tensor_descriptor getInputDescriptor(imgdnn_input input) {
     imgdnn_tensor_descriptor desc = imgdnnGetInputDescriptor(input, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "GetInputDescriptors failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "GetInputDescriptors failed!";
     return desc;
   }
 
   imgdnn_tensor_descriptor getOutputDescriptor(imgdnn_output output) {
     imgdnn_tensor_descriptor desc = imgdnnGetOutputDescriptor(output, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "GetOutputDescriptors failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "GetOutputDescriptors failed!";
     return desc;
   }
 
   imgdnn_tensor_descriptor getTensorDescriptor(imgdnn_tensor tensor) {
     imgdnn_tensor_descriptor desc;
     err_ = imgdnnGetTensorDescriptor(tensor, &desc);
-    ASSERT(err_ != IMGDNN_SUCCESS, "GetTensorDescriptors failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "GetTensorDescriptors failed!";
     return desc;
   }
 
   size_t getDescriptorSize(const imgdnn_tensor_descriptor *const descriptor) {
     size_t size = imgdnnGetDescriptorSize(descriptor, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "GetDescriptorSize failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "GetDescriptorSize failed!";
     return size;
   }
 
   void addBindingInput(imgdnn_input input, imgdnn_memory memory) {
     err_ = imgdnnBindingAddInput(binding_, input, memory);
-    ASSERT(err_ != IMGDNN_SUCCESS, "BindingAddInput failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "BindingAddInput failed!";
   }
 
   void addBindingOutput(imgdnn_output output, imgdnn_memory memory) {
     err_ = imgdnnBindingAddOutput(binding_, output, memory);
-    ASSERT(err_ != IMGDNN_SUCCESS, "BindingAddOutput failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "BindingAddOutput failed!";
   }
 
   void executeNetworkObject(bool blocking_execute,
@@ -260,7 +259,7 @@ class ImgdnnManager {
                                       num_events_in_wait_list,
                                       event_wait_list,
                                       event);
-    ASSERT(err_ != IMGDNN_SUCCESS, "NetworkObjectExecute failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "NetworkObjectExecute failed!";
   }
 };
 

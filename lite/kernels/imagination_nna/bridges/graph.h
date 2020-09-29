@@ -117,7 +117,7 @@ class Graph {
   }
 
   lite::imagination_nna::ImgdnnManager* GetBuilder() {
-    ASSERT(pImgdnnMgr == nullptr, "pImgdnnMgr used before initialize");
+    CHECK(pImgdnnMgr != nullptr) << "pImgdnnMgr used before initialize";
     return pImgdnnMgr;
   }
 

@@ -15,7 +15,6 @@
 #include "imgdnn_manager.h"  // NOLINT
 #include <unistd.h>
 #include <utility>
-#include "ImgdnnManagerConfig.h"
 
 namespace paddle {
 namespace lite {
@@ -50,25 +49,25 @@ static void err_callback(imgdnn_report_flags flags,
 ImgdnnManager::ImgdnnManager() {
   err_ = imgdnnSetErrorHandler(err_callback);
   net_ = imgdnnCreateNetwork(&err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "CreateNetwork failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "CreateNetwork failed!";
 
   unsigned int num_devices;
   err_ = imgdnnGetDevices(
       IMGDNN_DEVICE_TYPE_ACCELERATOR, 1, &device_, &num_devices);
-  ASSERT(err_ != IMGDNN_SUCCESS, "GetDevices failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "GetDevices failed!";
   context_ = imgdnnCreateContext(num_devices, &device_, 0, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "CreateContext failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "CreateContext failed!";
   binding_ = imgdnnCreateBinding(&err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "CreateBinding failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "CreateBinding failed!";
 }
 
 imgdnn_tensor ImgdnnManager::convertQuantTensorType(
     imgdnn_tensor a_tensor, imgdnn_quant_param *dst_quant_param) {
-  ASSERT(dst_quant_param == nullptr, "dst_quant_param is NULL");
+  CHECK_NE(dst_quant_param, NULL) << "dst_quant_param is NULL";
 
   imgdnn_tensor_descriptor desc;
   err_ = imgdnnGetTensorDescriptor(a_tensor, &desc);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn GetTensorDescriptor failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn GetTensorDescriptor failed!";
 
   imgdnn_type dst_tensor_type;
   if (desc.type == IMGDNN_TYPE_Q_I8 || desc.type == IMGDNN_TYPE_Q_U8) {
@@ -79,7 +78,7 @@ imgdnn_tensor ImgdnnManager::convertQuantTensorType(
 
   imgdnn_tensor converted_tensor = imgdnnNetworkCastOp(
       net_, a_tensor, dst_tensor_type, dst_quant_param, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn CastOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn CastOp failed!";
 
   return converted_tensor;
 }
@@ -88,7 +87,6 @@ bool ImgdnnManager::testConfigFileExists(const std::string &hwconfig,
                                          const std::string &mapconfig) {
   if (access(hwconfig.c_str(), F_OK) == -1) goto testConfigFileExistsError;
   if (access(mapconfig.c_str(), F_OK) == -1) goto testConfigFileExistsError;
-
   return true;
 
 testConfigFileExistsError:
@@ -134,31 +132,31 @@ imgdnn_tensor ImgdnnManager::createConvolutionLayer(
                                                    dilation,
                                                    &err_);
   }
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn Convolution2dOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn Convolution2dOp failed!";
 
   imgdnn_tensor conv2d_tensor = convw_tensor;
   if (bias_tensor) {
     imgdnn_tensor convw_int_tensor = imgdnnNetworkCastOp(
         net_, convw_tensor, IMGDNN_TYPE_I32, nullptr, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn CastOp failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn CastOp failed!";
 
     imgdnn_tensor_descriptor bias_desc;
     imgdnnGetTensorDescriptor(convw_tensor, &bias_desc);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn GetTensorDescriptor failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn GetTensorDescriptor failed!";
 
     imgdnn_tensor broadcast2_tensor;
     broadcast2_tensor = imgdnnNetworkBroadcastOp(
         net_, bias_tensor, 2, bias_desc.size[2], &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
 
     imgdnn_tensor broadcast3_tensor;
     broadcast3_tensor = imgdnnNetworkBroadcastOp(
         net_, broadcast2_tensor, 3, bias_desc.size[3], &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
 
     conv2d_tensor = imgdnnNetworkBinaryOp(
         net_, convw_int_tensor, broadcast3_tensor, IMGDNN_OPERATION_ADD, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BinaryOp ADD failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BinaryOp ADD failed!";
   }
 
   return convertQuantTensorType(conv2d_tensor, &dst_quant_param);
@@ -173,7 +171,7 @@ imgdnn_tensor ImgdnnManager::createBatchNormLayer(imgdnn_tensor input_tensor,
 
   imgdnn_tensor_descriptor in_desc;
   imgdnnGetTensorDescriptor(input_tensor, &in_desc);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn GetTensorDescriptor failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn GetTensorDescriptor failed!";
 
   imgdnn_tensor_descriptor av_desc;
   av_desc.dimensions = 2;
@@ -184,13 +182,13 @@ imgdnn_tensor ImgdnnManager::createBatchNormLayer(imgdnn_tensor input_tensor,
   imgdnn_tensor average_tensor = createFixedInputTensor(&av_desc, avg_in, true);
   broadcast2_tensor =
       imgdnnNetworkBroadcastOp(net_, average_tensor, 2, in_desc.size[2], &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
   broadcast3_tensor = imgdnnNetworkBroadcastOp(
       net_, broadcast2_tensor, 3, in_desc.size[3], &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
   imgdnn_tensor bna_tensor = imgdnnNetworkBinaryOp(
       net_, input_tensor, broadcast3_tensor, IMGDNN_OPERATION_SUB, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BinaryOp SUB failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BinaryOp SUB failed!";
 
   imgdnn_tensor_descriptor va_desc;
   va_desc.dimensions = 2;
@@ -199,7 +197,7 @@ imgdnn_tensor ImgdnnManager::createBatchNormLayer(imgdnn_tensor input_tensor,
   va_desc.size[1] = in_desc.size[1];
 
   unsigned int buffer_size = imgdnnGetDescriptorSize(&va_desc, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn GetDescriptorSize failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn GetDescriptorSize failed!";
   float *variance = reinterpret_cast<float *>(GetBufromPool(buffer_size));
   memcpy(variance, var_in, buffer_size);
   // Perform 1/sqrt(var+eps) and Update var_data.
@@ -212,13 +210,13 @@ imgdnn_tensor ImgdnnManager::createBatchNormLayer(imgdnn_tensor input_tensor,
       createFixedInputTensor(&va_desc, variance, false);
   broadcast2_tensor = imgdnnNetworkBroadcastOp(
       net_, variance_tensor, 2, in_desc.size[2], &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
   broadcast3_tensor = imgdnnNetworkBroadcastOp(
       net_, broadcast2_tensor, 3, in_desc.size[3], &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
   imgdnn_tensor bn_tensor = imgdnnNetworkBinaryOp(
       net_, bna_tensor, broadcast3_tensor, IMGDNN_OPERATION_MUL, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BinaryOp MUL failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BinaryOp MUL failed!";
 
   return bn_tensor;
 }
@@ -233,7 +231,7 @@ imgdnn_tensor ImgdnnManager::createPoolingLayer(
     imgdnn_pooling_type type) {
   imgdnn_tensor pool_tensor = imgdnnNetworkPooling2dOp_v2(
       net_, in_tensor, size, stride, pad_to_begin, pad_to_end, type, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn Pooling2dOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn Pooling2dOp failed!";
 
   return convertQuantTensorType(pool_tensor, &dst_quant_param);
 }
@@ -245,7 +243,7 @@ imgdnn_tensor ImgdnnManager::createFullyConnectedLayer(
     imgdnn_quant_param dst_quant_param) {
   imgdnn_tensor_descriptor in_desc;
   imgdnnGetTensorDescriptor(input_tensor, &in_desc);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn GetTensorDescriptor failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn GetTensorDescriptor failed!";
 
   // int flatten_dim = 1
   for (unsigned i = 2; i < in_desc.dimensions; ++i)
@@ -254,20 +252,20 @@ imgdnn_tensor ImgdnnManager::createFullyConnectedLayer(
 
   auto reshaped_input =
       imgdnnNetworkReshapeOp(net_, input_tensor, &in_desc, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn ReshapeOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn ReshapeOp failed!";
 
   imgdnn_tensor fcw_tensor = imgdnnNetworkBinaryOp(
       net_, reshaped_input, weights_tensor, IMGDNN_OPERATION_MATMUL, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BinaryOp MATMUL failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BinaryOp MATMUL failed!";
 
   imgdnn_tensor fcb_tensor;
   if (bias_tensor) {
     imgdnn_tensor fcw_int_tensor =
         imgdnnNetworkCastOp(net_, fcw_tensor, IMGDNN_TYPE_I32, nullptr, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn CastOp failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn CastOp failed!";
     fcb_tensor = imgdnnNetworkBinaryOp(
         net_, fcw_int_tensor, bias_tensor, IMGDNN_OPERATION_ADD, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BinaryOp ADD failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BinaryOp ADD failed!";
   } else {
     fcb_tensor = fcw_tensor;
   }
@@ -282,7 +280,7 @@ imgdnn_tensor ImgdnnManager::createSoftmaxLayer(
     imgdnn_quant_param dst_quant_param) {
   imgdnn_tensor softmax_tensor =
       imgdnnNetworkSoftmaxOp(net_, input_tensor, beta, axis, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn SoftmaxOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn SoftmaxOp failed!";
   return convertQuantTensorType(softmax_tensor, &dst_quant_param);
 }
 
@@ -295,7 +293,7 @@ imgdnn_tensor ImgdnnManager::createScaleLayer(imgdnn_tensor input_tensor,
 
   imgdnn_tensor_descriptor in_desc;
   imgdnnGetTensorDescriptor(input_tensor, &in_desc);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn GetTensorDescriptor failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn GetTensorDescriptor failed!";
 
   imgdnn_tensor_descriptor sc_desc;
   sc_desc.dimensions = 2;
@@ -306,26 +304,26 @@ imgdnn_tensor ImgdnnManager::createScaleLayer(imgdnn_tensor input_tensor,
   imgdnn_tensor scale_tensor = createFixedInputTensor(&sc_desc, scale, true);
   broadcast2_tensor =
       imgdnnNetworkBroadcastOp(net_, scale_tensor, 2, in_desc.size[2], &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
   broadcast3_tensor = imgdnnNetworkBroadcastOp(
       net_, broadcast2_tensor, 3, in_desc.size[3], &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
   imgdnn_tensor sc_tensor = imgdnnNetworkBinaryOp(
       net_, input_tensor, broadcast3_tensor, IMGDNN_OPERATION_MUL, &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BinaryOp MUL failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BinaryOp MUL failed!";
 
   if (with_biasscale) {
     imgdnn_tensor biasscale_tensor =
         createFixedInputTensor(&sc_desc, bias, true);
     broadcast2_tensor = imgdnnNetworkBroadcastOp(
         net_, biasscale_tensor, 2, in_desc.size[2], &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
     broadcast3_tensor = imgdnnNetworkBroadcastOp(
         net_, broadcast2_tensor, 3, in_desc.size[3], &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BroadcastOp failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
     sc_tensor = imgdnnNetworkBinaryOp(
         net_, sc_tensor, broadcast3_tensor, IMGDNN_OPERATION_ADD, &err_);
-    ASSERT(err_ != IMGDNN_SUCCESS, "imgdnn BinaryOp ADD failed!");
+    CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BinaryOp ADD failed!";
   }
 
   return sc_tensor;
@@ -359,7 +357,7 @@ imgdnn_network_object ImgdnnManager::createNetworkObject(
                                        flags,
                                        options_str.c_str(),
                                        &err_);
-  ASSERT(err_ != IMGDNN_SUCCESS, "CreateNetworkObject failed!");
+  CHECK_EQ(err_, IMGDNN_SUCCESS) << "CreateNetworkObject failed!";
   return net_obj_;
 }
 
