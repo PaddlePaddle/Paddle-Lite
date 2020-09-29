@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <cmath>
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 

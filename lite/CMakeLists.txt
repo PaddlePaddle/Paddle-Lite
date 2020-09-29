@@ -464,8 +464,10 @@ if (LITE_WITH_BM)
         COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
         COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
         COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/api/libpaddle_full_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
-        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmcompiler" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
-        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmnn/pcie" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmcompiler" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib1682"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc5_libs/lib/bmcompiler" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib1684"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmnn/pcie" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib1682"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc5_libs/lib/bmnn/pcie" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib1684"
         COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_place.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
         COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_api.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
     )

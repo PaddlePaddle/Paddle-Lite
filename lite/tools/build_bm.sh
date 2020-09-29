@@ -60,12 +60,11 @@ function prepare_workspace {
     mkdir -p ./${DEBUG_TOOL_PATH_PREFIX}
     cp ../${DEBUG_TOOL_PATH_PREFIX}/analysis_tool.py ./${DEBUG_TOOL_PATH_PREFIX}/
 
-    # clone submodule
-    # git submodule update --init --recursive
-    prepare_thirdparty
 }
 
 function build_bm {
+    prepare_thirdparty
+    
     build_dir=${workspace}/build.lite.bm
     mkdir -p $build_dir
     cd $build_dir
