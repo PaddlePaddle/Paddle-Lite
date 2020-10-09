@@ -322,19 +322,19 @@ void test_reduce_mean(Place place) {
               for (auto dims : {1, 2, 3, 4}) {
                 switch (dims) {
                   case 1:
-                    x_dims = DDim(std::vector<int64_t>({n});
+                    x_dims = DDim(std::vector<int64_t>({n}));
                     break;
                   case 2:
-                    x_dims = DDim(std::vector<int64_t>({n, c});
+                    x_dims = DDim(std::vector<int64_t>({n, c}));
                     break;
                   case 3:
-                    x_dims = DDim(std::vector<int64_t>({n, c, h});
+                    x_dims = DDim(std::vector<int64_t>({n, c, h}));
                     break;
                   case 4:
-                    x_dims = DDim(std::vector<int64_t>({n, c, h, w});
+                    x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
                     break;
                   default:
-                    x_dims = DDim(std::vector<int64_t>({n, c, h, w});
+                    x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
                     break;
                 }
                 if (!dim.empty() && x_dims.size() < dim.back() - 1) continue;
