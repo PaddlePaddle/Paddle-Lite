@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/operators/pool_op.h"
-#include "imgdnn.h"  // NOLINT
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/imagination_nna/bridges/graph.h"
 #include "lite/kernels/imagination_nna/bridges/utility.h"
@@ -101,13 +100,16 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     LOG(WARNING) << "[NNA] imgdnn has no ceil_mode: "
                  << op_info->GetAttr<bool>("ceil_mode");
 
-  unsigned int img_ksize[2] = {(unsigned int)ksize[0], (unsigned int)ksize[1]};
-  unsigned int img_stride[2] = {(unsigned int)strides[0],
-                                (unsigned int)strides[1]};
-  unsigned int pad_to_begin[2] = {(unsigned int)paddings[0],
-                                  (unsigned int)paddings[2]};  // top,left
-  unsigned int pad_to_end[2] = {(unsigned int)paddings[1],
-                                (unsigned int)paddings[3]};  // bottom,right
+  unsigned int img_ksize[2] = {static_cast<unsigned int>(ksize[0]),
+                               static_cast<unsigned int>(ksize[1])};
+  unsigned int img_stride[2] = {static_cast<unsigned int>(strides[0]),
+                                static_cast<unsigned int>(strides[1])};
+  // top,left
+  unsigned int pad_to_begin[2] = {static_cast<unsigned int>(paddings[0]),
+                                  static_cast<unsigned int>(paddings[2])};
+  // bottom,right
+  unsigned int pad_to_end[2] = {static_cast<unsigned int>(paddings[1]),
+                                static_cast<unsigned int>(paddings[3])};
 
   if (global_pooling) {
     img_ksize[0] = x_dims[2];
@@ -118,7 +120,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   output_quant_param.scale = output_scale;
   output_quant_param.zero_point = 128;
   imgdnn_tensor pooling_out =
-      graph->GetBuilder()->createPoolingLayer(x_node->data(),
+      graph->GetBuilder()->CreatePoolingLayer(x_node->data(),
                                               output_quant_param,
                                               img_ksize,
                                               img_stride,
@@ -127,7 +129,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                               img_pool_type);
 
   imgdnn_tensor_descriptor desc =
-      graph->GetBuilder()->getTensorDescriptor(pooling_out);
+      graph->GetBuilder()->GetTensorDescriptor(pooling_out);
 
   graph->Add(out_name, pooling_out, desc.type);
 

@@ -150,7 +150,7 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   // 0: {oc}
   // 1: {1, oc, oh, ow}
   // 2: {n, oc, oh, ow}
-  std::shared_ptr<Node> bias_node = NULL;
+  std::shared_ptr<Node> bias_node;
   imgdnn_tensor bias_tensor = nullptr;
   if (HasInputArg(op_info, scope, "Bias")) {
     auto bias_name = op_info->Input("Bias").front();
@@ -216,21 +216,23 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
     }
   }
 
-  unsigned int img_stride[2] = {(unsigned int)strides[0],
-                                (unsigned int)strides[1]};
-  unsigned int pad_to_begin[2] = {(unsigned int)paddings[0],
-                                  (unsigned int)paddings[2]};  // top,left
-  unsigned int pad_to_end[2] = {(unsigned int)paddings[1],
-                                (unsigned int)paddings[3]};  // bottom,right
-  unsigned int img_dilation[2] = {(unsigned int)dilations[0],
-                                  (unsigned int)dilations[1]};
+  unsigned int img_stride[2] = {static_cast<unsigned int>(strides[0]),
+                                static_cast<unsigned int>(strides[1])};
+  // top,left
+  unsigned int pad_to_begin[2] = {static_cast<unsigned int>(paddings[0]),
+                                  static_cast<unsigned int>(paddings[2])};
+  // bottom,right
+  unsigned int pad_to_end[2] = {static_cast<unsigned int>(paddings[1]),
+                                static_cast<unsigned int>(paddings[3])};
+  unsigned int img_dilation[2] = {static_cast<unsigned int>(dilations[0]),
+                                  static_cast<unsigned int>(dilations[1])};
 
   imgdnn_quant_param output_quant_param;
   output_quant_param.scale = output_scale;
   output_quant_param.zero_point = 128;
 
   imgdnn_tensor conv_out =
-      graph->GetBuilder()->createConvolutionLayer(in_tensor,
+      graph->GetBuilder()->CreateConvolutionLayer(in_tensor,
                                                   filter_tensor,
                                                   bias_tensor,
                                                   output_quant_param,
@@ -243,13 +245,13 @@ int ConvConverter(void *ctx, OpLite *op, KernelBase *kernel) {
   if (!act_type.empty()) {
     imgdnn_tensor act_out;
     if (act_type == "leaky_relu") {
-      act_out = graph->GetBuilder()->createReLULayer(
+      act_out = graph->GetBuilder()->CreateReLULayer(
           conv_out, false, 0.0, false, 0.0, leaky_relu_alpha);
     } else if (act_type == "relu6") {
-      act_out = graph->GetBuilder()->createReLULayer(
+      act_out = graph->GetBuilder()->CreateReLULayer(
           conv_out, true, 0.0, true, 6.0, false);
     } else if (act_type == "relu") {
-      act_out = graph->GetBuilder()->createReLULayer(
+      act_out = graph->GetBuilder()->CreateReLULayer(
           conv_out, true, 0.0, false, 0.0, false);
     } else {
       VLOG(3) << "act_type: " << act_type << " Not handled";

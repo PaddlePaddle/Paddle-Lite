@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <imgdnn.h>
 #include <unistd.h>
 #include <cmath>
 #include <memory>
@@ -21,7 +22,6 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "imgdnn.h"  // NOLINT
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 
@@ -36,13 +36,13 @@ class ImgdnnManager {
   imgdnn_context context_{nullptr};
   imgdnn_binding binding_{nullptr};
   imgdnn_network_object net_obj_{nullptr};
-  std::vector<uint8_t *> coef_pool;
+  std::vector<std::unique_ptr<uint8_t[]>> coef_pool;
 
-  imgdnn_tensor convertQuantTensorType(imgdnn_tensor a_tensor,
+  imgdnn_tensor ConvertQuantTensorType(imgdnn_tensor a_tensor,
                                        imgdnn_quant_param *dst_quant_param);
 
-  bool testConfigFileExists(const std::string &hwconfig,
-                            const std::string &mapconfig);
+  bool CheckConfigFileExists(const std::string &hwconfig,
+                             const std::string &mapconfig);
 
  public:
   ImgdnnManager();
@@ -52,23 +52,20 @@ class ImgdnnManager {
     if (context_) err_ = imgdnnContextDestroy(context_);
     if (binding_) err_ = imgdnnBindingDestroy(binding_);
     if (net_) err_ = imgdnnNetworkDestroy(net_);
-
-    for (auto buf : coef_pool) delete[] buf;
   }
 
   uint8_t *GetBufromPool(size_t size) {
-    uint8_t *buf = new uint8_t[size];
-    coef_pool.push_back(buf);
-    return buf;
+    coef_pool.emplace_back(new uint8_t[size]);
+    return coef_pool.back().get();
   }
 
   imgdnn_network GetNetwork() { return net_; }
 
-  imgdnn_tensor createInputTensor(imgdnn_tensor_descriptor *desc) {
+  imgdnn_tensor CreateInputTensor(imgdnn_tensor_descriptor *desc) {
     return imgdnnNetworkInput(net_, desc, &err_);
   }
 
-  imgdnn_tensor createFixedInputTensor(imgdnn_tensor_descriptor *desc,
+  imgdnn_tensor CreateFixedInputTensor(imgdnn_tensor_descriptor *desc,
                                        const void *const fixed_data,
                                        bool mem_copy) {
     imgdnn_tensor fixed_input;
@@ -83,7 +80,7 @@ class ImgdnnManager {
     return fixed_input;
   }
 
-  imgdnn_tensor createConvolutionLayer(imgdnn_tensor input_tensor,
+  imgdnn_tensor CreateConvolutionLayer(imgdnn_tensor input_tensor,
                                        imgdnn_tensor weights_tensor,
                                        imgdnn_tensor bias_tensor,
                                        imgdnn_quant_param dst_quant_param,
@@ -92,31 +89,31 @@ class ImgdnnManager {
                                        unsigned int pad_end[2],
                                        unsigned int dilation[2],
                                        bool use_dwconv = false);
-  imgdnn_tensor createBatchNormLayer(imgdnn_tensor input_tensor,
+  imgdnn_tensor CreateBatchNormLayer(imgdnn_tensor input_tensor,
                                      const void *const avg_in,
                                      const void *const var_in,
                                      const float eps);
-  imgdnn_tensor createPoolingLayer(imgdnn_tensor in_tensor,
+  imgdnn_tensor CreatePoolingLayer(imgdnn_tensor in_tensor,
                                    imgdnn_quant_param dst_quant_param,
                                    const unsigned int size[2],
                                    const unsigned int stride[2],
                                    const unsigned int pad_to_begin[2],
                                    const unsigned int pad_to_end[2],
                                    imgdnn_pooling_type type);
-  imgdnn_tensor createFullyConnectedLayer(imgdnn_tensor input_tensor,
+  imgdnn_tensor CreateFullyConnectedLayer(imgdnn_tensor input_tensor,
                                           imgdnn_tensor weights_tensor,
                                           imgdnn_tensor bias_tensor,
                                           imgdnn_quant_param dst_quant_param);
-  imgdnn_tensor createSoftmaxLayer(imgdnn_tensor in_tensor,
+  imgdnn_tensor CreateSoftmaxLayer(imgdnn_tensor in_tensor,
                                    float beta,
                                    unsigned int axis,
                                    imgdnn_quant_param dst_quant_param);
-  imgdnn_tensor createScaleLayer(imgdnn_tensor input_tensor,
+  imgdnn_tensor CreateScaleLayer(imgdnn_tensor input_tensor,
                                  bool with_biasscale,
                                  const void *const scale,
                                  const void *const bias);
 
-  imgdnn_tensor createReLULayer(imgdnn_tensor in_tensor,
+  imgdnn_tensor CreateReLULayer(imgdnn_tensor in_tensor,
                                 bool has_min_clamp,
                                 float min_clamp,
                                 bool has_max_clamp,
@@ -144,12 +141,12 @@ class ImgdnnManager {
     return relu_tensor;
   }
 
-  imgdnn_network_object createNetworkObject(unsigned int num_inputs,
+  imgdnn_network_object CreateNetworkObject(unsigned int num_inputs,
                                             imgdnn_tensor *inputs,
                                             unsigned int num_outputs,
                                             imgdnn_tensor *outputs);
 
-  imgdnn_memory importMemory(
+  imgdnn_memory ImportMemory(
       void *memory,
       size_t size,
       imgdnn_import_mem_type import_mem_type = IMGDNN_IMPORT_MEM_TYPE_CPU) {
@@ -159,29 +156,29 @@ class ImgdnnManager {
     return mem;
   }
 
-  imgdnn_memory allocateMemory(size_t size) {
+  imgdnn_memory AllocateMemory(size_t size) {
     imgdnn_memory mem = imgdnnAllocateMemory(context_, size, &err_);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "AllocateMemory fails";
     return mem;
   }
 
-  void destroyMemory(imgdnn_memory memory) {
+  void DestroyMemory(imgdnn_memory memory) {
     err_ = imgdnnMemoryDestroy(memory);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "MemoryDestroy fails";
   }
 
-  void *lockMemory(imgdnn_memory memory, imgdnn_lock_access lock_access) {
+  void *LockMemory(imgdnn_memory memory, imgdnn_lock_access lock_access) {
     void *mem = imgdnnMemoryLock(memory, lock_access, &err_);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "MemoryLock fails";
     return mem;
   }
 
-  void unlockMemory(imgdnn_memory memory) {
+  void UnlockMemory(imgdnn_memory memory) {
     err_ = imgdnnMemoryUnlock(memory);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "MemoryUnLock fails";
   }
 
-  void getNetworkObjectInputs(unsigned int max_inputs,
+  void GetNetworkObjectInputs(unsigned int max_inputs,
                               imgdnn_input inputs[],
                               unsigned int *num_inputs) {
     CHECK(net_obj_ != nullptr) << "NetworkObject NULL when get its inputs";
@@ -190,7 +187,7 @@ class ImgdnnManager {
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "NetworkObjectGetInputs failed!";
   }
 
-  void getNetworkObjectOutputs(unsigned int max_outputs,
+  void GetNetworkObjectOutputs(unsigned int max_outputs,
                                imgdnn_output outputs[],
                                unsigned int *num_outputs) {
     CHECK(net_obj_ != nullptr) << "NetworkObject NULL when get its outputs";
@@ -199,42 +196,42 @@ class ImgdnnManager {
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "NetworkObjectGetOutputs failed!";
   }
 
-  imgdnn_tensor_descriptor getInputDescriptor(imgdnn_input input) {
+  imgdnn_tensor_descriptor GetInputDescriptor(imgdnn_input input) {
     imgdnn_tensor_descriptor desc = imgdnnGetInputDescriptor(input, &err_);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "GetInputDescriptors failed!";
     return desc;
   }
 
-  imgdnn_tensor_descriptor getOutputDescriptor(imgdnn_output output) {
+  imgdnn_tensor_descriptor GetOutputDescriptor(imgdnn_output output) {
     imgdnn_tensor_descriptor desc = imgdnnGetOutputDescriptor(output, &err_);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "GetOutputDescriptors failed!";
     return desc;
   }
 
-  imgdnn_tensor_descriptor getTensorDescriptor(imgdnn_tensor tensor) {
+  imgdnn_tensor_descriptor GetTensorDescriptor(imgdnn_tensor tensor) {
     imgdnn_tensor_descriptor desc;
     err_ = imgdnnGetTensorDescriptor(tensor, &desc);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "GetTensorDescriptors failed!";
     return desc;
   }
 
-  size_t getDescriptorSize(const imgdnn_tensor_descriptor *const descriptor) {
+  size_t GetDescriptorSize(const imgdnn_tensor_descriptor *const descriptor) {
     size_t size = imgdnnGetDescriptorSize(descriptor, &err_);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "GetDescriptorSize failed!";
     return size;
   }
 
-  void addBindingInput(imgdnn_input input, imgdnn_memory memory) {
+  void AddBindingInput(imgdnn_input input, imgdnn_memory memory) {
     err_ = imgdnnBindingAddInput(binding_, input, memory);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "BindingAddInput failed!";
   }
 
-  void addBindingOutput(imgdnn_output output, imgdnn_memory memory) {
+  void AddBindingOutput(imgdnn_output output, imgdnn_memory memory) {
     err_ = imgdnnBindingAddOutput(binding_, output, memory);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "BindingAddOutput failed!";
   }
 
-  void executeNetworkObject(bool blocking_execute,
+  void ExecuteNetworkObject(bool blocking_execute,
                             unsigned int num_events_in_wait_list,
                             const imgdnn_event event_wait_list[],
                             imgdnn_event *event) {

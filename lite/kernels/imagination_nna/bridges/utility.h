@@ -14,12 +14,12 @@
 
 #pragma once
 
+#include <imgdnn.h>
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "imgdnn.h"  // NOLINT
 #include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
 

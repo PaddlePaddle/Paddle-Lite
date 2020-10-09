@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "imgdnn_manager.h"  // NOLINT
+#include "lite/backends/imagination_nna/imgdnn_manager.h"
 #include <unistd.h>
 #include <utility>
 
@@ -61,7 +61,7 @@ ImgdnnManager::ImgdnnManager() {
   CHECK_EQ(err_, IMGDNN_SUCCESS) << "CreateBinding failed!";
 }
 
-imgdnn_tensor ImgdnnManager::convertQuantTensorType(
+imgdnn_tensor ImgdnnManager::ConvertQuantTensorType(
     imgdnn_tensor a_tensor, imgdnn_quant_param *dst_quant_param) {
   CHECK_NE(dst_quant_param, NULL) << "dst_quant_param is NULL";
 
@@ -83,13 +83,13 @@ imgdnn_tensor ImgdnnManager::convertQuantTensorType(
   return converted_tensor;
 }
 
-bool ImgdnnManager::testConfigFileExists(const std::string &hwconfig,
-                                         const std::string &mapconfig) {
-  if (access(hwconfig.c_str(), F_OK) == -1) goto testConfigFileExistsError;
-  if (access(mapconfig.c_str(), F_OK) == -1) goto testConfigFileExistsError;
+bool ImgdnnManager::CheckConfigFileExists(const std::string &hwconfig,
+                                          const std::string &mapconfig) {
+  if (access(hwconfig.c_str(), F_OK) == -1) goto CheckConfigFileExistsError;
+  if (access(mapconfig.c_str(), F_OK) == -1) goto CheckConfigFileExistsError;
   return true;
 
-testConfigFileExistsError:
+CheckConfigFileExistsError:
   char *pwd = getcwd(NULL, 0);
   std::string err_msg{"Could not find Imagination NNA config files: "};
   std::cerr << err_msg << hwconfig << "," << mapconfig << std::endl;
@@ -98,7 +98,7 @@ testConfigFileExistsError:
   exit(EXIT_FAILURE);
 }
 
-imgdnn_tensor ImgdnnManager::createConvolutionLayer(
+imgdnn_tensor ImgdnnManager::CreateConvolutionLayer(
     imgdnn_tensor input_tensor,
     imgdnn_tensor weights_tensor,
     imgdnn_tensor bias_tensor,
@@ -159,10 +159,10 @@ imgdnn_tensor ImgdnnManager::createConvolutionLayer(
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BinaryOp ADD failed!";
   }
 
-  return convertQuantTensorType(conv2d_tensor, &dst_quant_param);
+  return ConvertQuantTensorType(conv2d_tensor, &dst_quant_param);
 }
 
-imgdnn_tensor ImgdnnManager::createBatchNormLayer(imgdnn_tensor input_tensor,
+imgdnn_tensor ImgdnnManager::CreateBatchNormLayer(imgdnn_tensor input_tensor,
                                                   const void *const avg_in,
                                                   const void *const var_in,
                                                   const float eps) {
@@ -179,7 +179,7 @@ imgdnn_tensor ImgdnnManager::createBatchNormLayer(imgdnn_tensor input_tensor,
   av_desc.size[0] = in_desc.size[0];
   av_desc.size[1] = in_desc.size[1];
 
-  imgdnn_tensor average_tensor = createFixedInputTensor(&av_desc, avg_in, true);
+  imgdnn_tensor average_tensor = CreateFixedInputTensor(&av_desc, avg_in, true);
   broadcast2_tensor =
       imgdnnNetworkBroadcastOp(net_, average_tensor, 2, in_desc.size[2], &err_);
   CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
@@ -207,7 +207,7 @@ imgdnn_tensor ImgdnnManager::createBatchNormLayer(imgdnn_tensor input_tensor,
   }
 
   imgdnn_tensor variance_tensor =
-      createFixedInputTensor(&va_desc, variance, false);
+      CreateFixedInputTensor(&va_desc, variance, false);
   broadcast2_tensor = imgdnnNetworkBroadcastOp(
       net_, variance_tensor, 2, in_desc.size[2], &err_);
   CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
@@ -221,7 +221,7 @@ imgdnn_tensor ImgdnnManager::createBatchNormLayer(imgdnn_tensor input_tensor,
   return bn_tensor;
 }
 
-imgdnn_tensor ImgdnnManager::createPoolingLayer(
+imgdnn_tensor ImgdnnManager::CreatePoolingLayer(
     imgdnn_tensor in_tensor,
     imgdnn_quant_param dst_quant_param,
     const unsigned int size[2],
@@ -233,10 +233,10 @@ imgdnn_tensor ImgdnnManager::createPoolingLayer(
       net_, in_tensor, size, stride, pad_to_begin, pad_to_end, type, &err_);
   CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn Pooling2dOp failed!";
 
-  return convertQuantTensorType(pool_tensor, &dst_quant_param);
+  return ConvertQuantTensorType(pool_tensor, &dst_quant_param);
 }
 
-imgdnn_tensor ImgdnnManager::createFullyConnectedLayer(
+imgdnn_tensor ImgdnnManager::CreateFullyConnectedLayer(
     imgdnn_tensor input_tensor,
     imgdnn_tensor weights_tensor,
     imgdnn_tensor bias_tensor,
@@ -270,10 +270,10 @@ imgdnn_tensor ImgdnnManager::createFullyConnectedLayer(
     fcb_tensor = fcw_tensor;
   }
 
-  return convertQuantTensorType(fcb_tensor, &dst_quant_param);
+  return ConvertQuantTensorType(fcb_tensor, &dst_quant_param);
 }
 
-imgdnn_tensor ImgdnnManager::createSoftmaxLayer(
+imgdnn_tensor ImgdnnManager::CreateSoftmaxLayer(
     imgdnn_tensor input_tensor,
     float beta,
     unsigned int axis,
@@ -281,10 +281,10 @@ imgdnn_tensor ImgdnnManager::createSoftmaxLayer(
   imgdnn_tensor softmax_tensor =
       imgdnnNetworkSoftmaxOp(net_, input_tensor, beta, axis, &err_);
   CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn SoftmaxOp failed!";
-  return convertQuantTensorType(softmax_tensor, &dst_quant_param);
+  return ConvertQuantTensorType(softmax_tensor, &dst_quant_param);
 }
 
-imgdnn_tensor ImgdnnManager::createScaleLayer(imgdnn_tensor input_tensor,
+imgdnn_tensor ImgdnnManager::CreateScaleLayer(imgdnn_tensor input_tensor,
                                               bool with_biasscale,
                                               const void *const scale,
                                               const void *const bias) {
@@ -301,7 +301,7 @@ imgdnn_tensor ImgdnnManager::createScaleLayer(imgdnn_tensor input_tensor,
   sc_desc.size[0] = in_desc.size[0];
   sc_desc.size[1] = in_desc.size[1];
 
-  imgdnn_tensor scale_tensor = createFixedInputTensor(&sc_desc, scale, true);
+  imgdnn_tensor scale_tensor = CreateFixedInputTensor(&sc_desc, scale, true);
   broadcast2_tensor =
       imgdnnNetworkBroadcastOp(net_, scale_tensor, 2, in_desc.size[2], &err_);
   CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
@@ -314,7 +314,7 @@ imgdnn_tensor ImgdnnManager::createScaleLayer(imgdnn_tensor input_tensor,
 
   if (with_biasscale) {
     imgdnn_tensor biasscale_tensor =
-        createFixedInputTensor(&sc_desc, bias, true);
+        CreateFixedInputTensor(&sc_desc, bias, true);
     broadcast2_tensor = imgdnnNetworkBroadcastOp(
         net_, biasscale_tensor, 2, in_desc.size[2], &err_);
     CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn BroadcastOp failed!";
@@ -329,7 +329,7 @@ imgdnn_tensor ImgdnnManager::createScaleLayer(imgdnn_tensor input_tensor,
   return sc_tensor;
 }
 
-imgdnn_network_object ImgdnnManager::createNetworkObject(
+imgdnn_network_object ImgdnnManager::CreateNetworkObject(
     unsigned int num_inputs,
     imgdnn_tensor *inputs,
     unsigned int num_outputs,
@@ -340,7 +340,7 @@ imgdnn_network_object ImgdnnManager::createNetworkObject(
       "nna_config/mirage_hw_config06_23_2_6500_301.json";
   const std::string mapconfig = "nna_config/mapconfig_q8a.json";
 
-  testConfigFileExists(hwconfig, mapconfig);
+  CheckConfigFileExists(hwconfig, mapconfig);
 
   std::string options_str;
   options_str += "-h " + hwconfig;

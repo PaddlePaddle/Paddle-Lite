@@ -198,7 +198,6 @@ class Context<TargetType::kImaginationNNA> {
   void InitOnce() {}
   void CopySharedTo(ImaginationNNAContext* ctx) {}
 
-  // NNAContext& operator=(const NNAContext& ctx) {}
   std::string name() const { return "ImaginationNNAContext"; }
 };
 #endif

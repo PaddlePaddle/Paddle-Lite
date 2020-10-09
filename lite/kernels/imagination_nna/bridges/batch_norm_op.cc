@@ -54,17 +54,14 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   ConvNetBuilder& builder = graph->GetBuilder();
-  auto bn_out = builder.createBatchNormLayer(x_node->data(),
+  auto bn_out = builder.CreateBatchNormLayer(x_node->data(),
                                              mean->mutable_data<float>(),
                                              variance->mutable_data<float>(),
                                              epsilon);
-  bn_out = builder.createScaleLayer(
+  bn_out = builder.CreateScaleLayer(
       bn_out, true, scale->mutable_data<float>(), bias->mutable_data<float>());
 
-  imgdnn_tensor_descriptor desc;
-  imgdnn_err_code err = imgdnnGetTensorDescriptor(bn_out, &desc);
-  CHECK(err == IMGDNN_SUCCESS) << "fail get tensor description(BN)";
-
+  imgdnn_tensor_descriptor desc = builder.GetTensorDescriptor(bn_out);
   graph->Add(y_name, bn_out, desc.type);
 
   return SUCCESS;

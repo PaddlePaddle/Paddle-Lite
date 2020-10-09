@@ -29,8 +29,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " + op_type + "...";
 
-  CHECK(op_info->HasAttr("enable_int8") &&
-        op_info->GetAttr<bool>("enable_int8"));
+  CHECK(op_info->HasAttr("enable_int8"));
+  CHECK(op_info->GetAttr<bool>("enable_int8"));
 
   auto input_name = op_info->Input("Input").front();
   auto input = scope->FindTensor(input_name);
@@ -104,7 +104,6 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       bias_node = graph->Get(bias_name);
     } else {
       auto bias = scope->FindTensor(bias_name);
-      // CHECK_EQ(bias->precision(), PRECISION(kFloat));
       auto bias_dims = bias->dims();
       CHECK_EQ(bias_dims.production(), n);
 
@@ -148,15 +147,12 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   imgdnn_quant_param output_quant_param;
   output_quant_param.scale = output_scale;
   output_quant_param.zero_point = 128;
-  imgdnn_tensor fc_out_tensor = graph->GetBuilder()->createFullyConnectedLayer(
+  imgdnn_tensor fc_out_tensor = graph->GetBuilder()->CreateFullyConnectedLayer(
       input_node->data(), weight_node->data(), bias_tensor, output_quant_param);
 
-  imgdnn_tensor_descriptor desc;
-  imgdnn_err_code err = imgdnnGetTensorDescriptor(fc_out_tensor, &desc);
+  imgdnn_tensor_descriptor desc =
+      graph->GetBuilder()->GetTensorDescriptor(fc_out_tensor);
   graph->Add(out_name, fc_out_tensor, desc.type);
-  CHECK(err == IMGDNN_SUCCESS) << "fail get tensor description(FC)";
-
-  // reshape to out_dims
 
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

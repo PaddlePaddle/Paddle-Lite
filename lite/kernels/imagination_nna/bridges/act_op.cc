@@ -48,17 +48,14 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    // x_node = graph->Add(x_name, *x);
-    LOG(WARNING) << "ActConverter:x_node not in graph";
+    LOG(FATAL) << "[NNA] input node: " << x_name << ", could not be found";
   }
 
-  imgdnn_tensor relu_output = graph->GetBuilder()->createReLULayer(
+  imgdnn_tensor relu_output = graph->GetBuilder()->CreateReLULayer(
       x_node->data(), true, 0.0, false, 0.0, 0.0);
 
-  imgdnn_tensor_descriptor desc;
-  imgdnn_err_code err = imgdnnGetTensorDescriptor(relu_output, &desc);
-  CHECK(err == IMGDNN_SUCCESS) << "fail get tensor description(RELU)";
-
+  imgdnn_tensor_descriptor desc =
+      graph->GetBuilder()->GetTensorDescriptor(relu_output);
   graph->Add(out_name, relu_output, desc.type);
 
   return SUCCESS;

@@ -14,13 +14,13 @@
 
 #pragma once
 
+#include <imgdnn.h>
 #include <math.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "imgdnn.h"  // NOLINT
 #include "lite/backends/imagination_nna/imgdnn_manager.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"

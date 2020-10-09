@@ -21,8 +21,8 @@ namespace subgraph {
 namespace imagination_nna {
 
 int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
-  CHECK(ctx != nullptr);
-  CHECK(op != nullptr);
+  CHECK(ctx);
+  CHECK(op);
   auto graph = static_cast<Graph*>(ctx);
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
@@ -58,7 +58,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     imgdnn_quant_param output_quant_param;
     output_quant_param.scale = output_scale;
     output_quant_param.zero_point = 128;
-    imgdnn_tensor softmax_out_tensor = graph->GetBuilder()->createSoftmaxLayer(
+    imgdnn_tensor softmax_out_tensor = graph->GetBuilder()->CreateSoftmaxLayer(
         x_node->data(), 1.0, axis, output_quant_param);
 
     graph->Add(out_name, softmax_out_tensor, IMGDNN_TYPE_Q_U8);
