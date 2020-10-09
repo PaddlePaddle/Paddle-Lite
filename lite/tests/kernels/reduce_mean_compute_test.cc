@@ -311,19 +311,40 @@ class ReduceMeanComputeTester : public arena::TestCase {
 
 void test_reduce_mean(Place place) {
   std::vector<std::vector<int>> reduce_dim{
-      {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
+      {}, {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
   for (auto n : {1, 3}) {
     for (auto c : {1, 2}) {
       for (auto h : {1, 3}) {
         for (auto w : {1, 3}) {
           for (bool keep_dim : {false, true}) {
             for (auto dim : reduce_dim) {
-              auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
-              std::unique_ptr<arena::TestCase> tester(
-                  new ReduceMeanComputeTester(
-                      place, "def", dim, keep_dim, x_dims));
-              arena::Arena arena(std::move(tester), place, 2e-5);
-              arena.TestPrecision();
+              DDim x_dims;
+              for (auto dims : {1, 2, 3, 4}) {
+                switch (dims) {
+                  case 1:
+                    x_dims = DDim(std::vector<int64_t>({n});
+                    break;
+                  case 2:
+                    x_dims = DDim(std::vector<int64_t>({n, c});
+                    break;
+                  case 3:
+                    x_dims = DDim(std::vector<int64_t>({n, c, h});
+                    break;
+                  case 4:
+                    x_dims = DDim(std::vector<int64_t>({n, c, h, w});
+                    break;
+                  default:
+                    x_dims = DDim(std::vector<int64_t>({n, c, h, w});
+                    break;
+                }
+                if (!dim.empty() && x_dims.size() < dim.back() - 1) continue;
+
+                std::unique_ptr<arena::TestCase> tester(
+                    new ReduceMeanComputeTester(
+                        place, "def", dim, keep_dim, x_dims));
+                arena::Arena arena(std::move(tester), place, 2e-5);
+                arena.TestPrecision();
+              }
             }
           }
         }

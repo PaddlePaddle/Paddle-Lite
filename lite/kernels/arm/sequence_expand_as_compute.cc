@@ -35,8 +35,8 @@ void SequenceExpandAsCompute::Run() {
   std::vector<uint64_t> out_lod;
   out_lod.push_back(0);
   int sum = 0;
-  for (int i = 0; i < y_lod[0].size(); i++) {
-    int repeat_num = y_lod[0][i];
+  for (int i = 1; i < y_lod[0].size(); i++) {
+    int repeat_num = y_lod[0][i] - y_lod[0][i - 1];
     if (repeat_num == 0) {
       continue;
     } else {
