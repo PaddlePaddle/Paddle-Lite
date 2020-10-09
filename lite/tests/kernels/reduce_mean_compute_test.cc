@@ -255,10 +255,14 @@ class ReduceMeanComputeTester : public arena::TestCase {
     }
 
     auto* out_data = out->mutable_data<float>();
-    int in_n = x_dims_[0];
-    int in_c = x_dims_[1];
-    int in_h = x_dims_[2];
-    int in_w = x_dims_[3];
+    size_t new_dims[] = {1, 1, 1, 1};
+    for (size_t j = 0; j < x_dims_.size(); ++j) {
+      new_dims[j] = x_dims_[j];
+    }
+    int in_n = new_dims[0];
+    int in_c = new_dims[1];
+    int in_h = new_dims[2];
+    int in_w = new_dims[3];
 
     if (dim_.size() == 0) {
       reduce_mean_all(x_data, out_data, in_n, in_c, in_h, in_w);
@@ -311,7 +315,7 @@ class ReduceMeanComputeTester : public arena::TestCase {
 
 void test_reduce_mean(Place place) {
   std::vector<std::vector<int>> reduce_dim{
-      {}, {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
+      {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
   for (auto n : {1, 3}) {
     for (auto c : {1, 2}) {
       for (auto h : {1, 3}) {
@@ -319,7 +323,7 @@ void test_reduce_mean(Place place) {
           for (bool keep_dim : {false, true}) {
             for (auto dim : reduce_dim) {
               DDim x_dims;
-              for (auto dims : {1, 2, 3, 4}) {
+              for (auto dims : {2, 3, 4}) {
                 switch (dims) {
                   case 1:
                     x_dims = DDim(std::vector<int64_t>({n}));
@@ -335,9 +339,14 @@ void test_reduce_mean(Place place) {
                     break;
                   default:
                     x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
-                    break;
                 }
-                if (!dim.empty() && x_dims.size() < dim.back() - 1) continue;
+
+                int last_dim = dim.back();
+                if (dim.back() < 0) {
+                  last_dim += x_dims.size();
+                  if (last_dim < 1) continue;
+                }
+                if (last_dim > x_dims.size() - 1) continue;
 
                 std::unique_ptr<arena::TestCase> tester(
                     new ReduceMeanComputeTester(
