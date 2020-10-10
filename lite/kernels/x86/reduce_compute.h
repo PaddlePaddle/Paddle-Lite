@@ -115,6 +115,7 @@ class ReduceMeanCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       HANDLE_DIM(4, 1, MeanFunctor);
       HANDLE_DIM(3, 2, MeanFunctor);
       HANDLE_DIM(3, 1, MeanFunctor);
+      HANDLE_DIM(2, 2, MeanFunctor);
       HANDLE_DIM(2, 1, MeanFunctor);
       HANDLE_DIM(1, 1, MeanFunctor);
     }
