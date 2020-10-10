@@ -263,6 +263,14 @@ template <typename T>
 void elementwise_mod_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 
+// pow 操作
+template <typename T>
+void elementwise_pow(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_pow_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
