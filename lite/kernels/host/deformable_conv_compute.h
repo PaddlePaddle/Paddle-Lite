@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,28 +13,21 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
-#include "lite/core/tensor.h"
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
-void yolobox(lite::Tensor* X,
-             lite::Tensor* ImgSize,
-             lite::Tensor* Boxes,
-             lite::Tensor* Scores,
-             std::vector<int> anchors,
-             int class_num,
-             float conf_thresh,
-             int downsample_ratio,
-             bool clip_bbox,
-             float scale,
-             float bias);
+template <PrecisionType Ptype, PrecisionType OutType>
+class DeformableConvComputeHost : public KernelLite<TARGET(kHost), Ptype> {
+ public:
+  void Run() override;
+  ~DeformableConvComputeHost() = default;
+};
 
-}  // namespace math
-}  // namespace arm
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

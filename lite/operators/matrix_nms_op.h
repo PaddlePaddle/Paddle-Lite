@@ -14,27 +14,32 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
-#include "lite/core/tensor.h"
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace operators {
 
-void yolobox(lite::Tensor* X,
-             lite::Tensor* ImgSize,
-             lite::Tensor* Boxes,
-             lite::Tensor* Scores,
-             std::vector<int> anchors,
-             int class_num,
-             float conf_thresh,
-             int downsample_ratio,
-             bool clip_bbox,
-             float scale,
-             float bias);
+class MatrixNmsOpLite : public OpLite {
+ public:
+  MatrixNmsOpLite() {}
+  explicit MatrixNmsOpLite(const std::string &op_type) : OpLite(op_type) {}
 
-}  // namespace math
-}  // namespace arm
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "matrix_nms"; }
+
+ private:
+  mutable MatrixNmsParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

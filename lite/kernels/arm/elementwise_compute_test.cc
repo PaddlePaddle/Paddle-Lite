@@ -33,7 +33,7 @@ TEST(elementwise_add_arm, retrive_op) {
 }
 
 TEST(elementwise_add_arm, init) {
-  ElementwiseAddCompute elementwise_add;
+  ElementwiseAddCompute<float, PRECISION(kFloat)> elementwise_add;
   ASSERT_EQ(elementwise_add.precision(), PRECISION(kFloat));
   ASSERT_EQ(elementwise_add.target(), TARGET(kARM));
 }
@@ -101,6 +101,20 @@ void elementwise_compute_ref(const operators::ElementwiseParam& param,
         dtype* dout_ptr = out_data + offset;
         for (int k = 0; k < num; ++k) {
           *dout_ptr = *din_ptr * diny_data;
+          dout_ptr++;
+          din_ptr++;
+        }
+      }
+    }
+  } else if (elt_type == "div") {
+    for (int i = 0; i < batch; ++i) {
+      for (int j = 0; j < channels; ++j) {
+        int offset = (i * channels + j) * num;
+        const dtype* din_ptr = x_data + offset;
+        const dtype diny_data = y_data[j];
+        dtype* dout_ptr = out_data + offset;
+        for (int k = 0; k < num; ++k) {
+          *dout_ptr = *din_ptr / diny_data;
           dout_ptr++;
           din_ptr++;
         }
@@ -254,10 +268,22 @@ template void elementwise_imod_compute_ref<int32_t>(
 template void elementwise_imod_compute_ref<int64_t>(
     const operators::ElementwiseParam& param, const std::string act_type);
 
-TEST(elementwise_add, compute) {
-  ElementwiseAddCompute elementwise_add;
+template <class T>
+bool is_fp_close(T v1, T v2, T rel_tol = 1e-4, T abs_tol = 1e-5) {
+  bool abs_chk = std::abs(v1 - v2) < abs_tol;
+  bool rel_chk =
+      (std::abs(v1 - v2) / std::min(std::abs(v1), std::abs(v2))) < rel_tol;
+  return abs_chk || rel_chk;
+}
+
+template <template <class, PrecisionType> class ElementWiseComputeTemplate,
+          typename T,
+          PrecisionType PType>
+void do_elementwise_compute(const char* op_type_str) {
+  ElementWiseComputeTemplate<T, PType> elementwise_add;
   operators::ElementwiseParam param;
   lite::Tensor x, y, output, output_ref;
+  unsigned int rand_seed = 1;
 
 #if 1
   for (auto n : {1, 3, 4}) {
@@ -305,15 +331,17 @@ TEST(elementwise_add, compute) {
               y.Resize(y_dim);
               output.Resize(x_dim);
               output_ref.Resize(x_dim);
-              auto* x_data = x.mutable_data<float>();
-              auto* y_data = y.mutable_data<float>();
-              auto* output_data = output.mutable_data<float>();
-              auto* output_ref_data = output_ref.mutable_data<float>();
+              T* x_data = x.mutable_data<T>();
+              T* y_data = y.mutable_data<T>();
+              T* output_data = output.mutable_data<T>();
+              T* output_ref_data = output_ref.mutable_data<T>();
               for (int i = 0; i < x_dim.production(); i++) {
-                x_data[i] = i;
+                x_data[i] = 1.0 * rand_r(&rand_seed) * rand_r(&rand_seed) /
+                            (rand_r(&rand_seed) + 1);
               }
               for (int i = 0; i < y_dim.production(); i++) {
-                y_data[i] = i;
+                y_data[i] = 1.0 * rand_r(&rand_seed) * rand_r(&rand_seed) /
+                            (rand_r(&rand_seed) + 1);
               }
               param.X = &x;
               param.Y = &y;
@@ -322,15 +350,52 @@ TEST(elementwise_add, compute) {
               elementwise_add.SetParam(param);
               elementwise_add.Run();
               param.Out = &output_ref;
-              elementwise_compute_ref<float>(param, "add", "");
-              for (int i = 0; i < output.dims().production(); i++) {
-                EXPECT_NEAR(output_data[i], output_ref_data[i], 1e-5);
+              elementwise_compute_ref<T>(param, op_type_str, "");
+              if (std::is_floating_point<T>::value) {
+                for (int i = 0; i < output.dims().production(); i++) {
+                  ASSERT_EQ(is_fp_close(output_data[i], output_ref_data[i]),
+                            true)
+                      << op_type_str << "Value differ at index " << i;
+                }
+              } else {
+                for (int i = 0; i < output.dims().production(); i++) {
+                  ASSERT_EQ(output_data[i], output_ref_data[i])
+                      << op_type_str << "Value differ at index " << i;
+                }
               }
             }
           }
         }
       }
     }
+  }
+}
+
+TEST(elementwise_op, compute_fp32) {
+  do_elementwise_compute<ElementwiseAddCompute, float, PRECISION(kFloat)>(
+      "add");
+  do_elementwise_compute<ElementwiseSubCompute, float, PRECISION(kFloat)>(
+      "sub");
+  do_elementwise_compute<ElementwiseMulCompute, float, PRECISION(kFloat)>(
+      "mul");
+  do_elementwise_compute<ElementwiseDivCompute, float, PRECISION(kFloat)>(
+      "div");
+  if (::testing::Test::HasFailure()) {
+    FAIL();
+  }
+}
+
+TEST(elementwise_op, compute_i32) {
+  do_elementwise_compute<ElementwiseAddCompute, int32_t, PRECISION(kInt32)>(
+      "add");
+  do_elementwise_compute<ElementwiseSubCompute, int32_t, PRECISION(kInt32)>(
+      "sub");
+  do_elementwise_compute<ElementwiseMulCompute, int32_t, PRECISION(kInt32)>(
+      "mul");
+  do_elementwise_compute<ElementwiseDivCompute, int32_t, PRECISION(kInt32)>(
+      "div");
+  if (::testing::Test::HasFailure()) {
+    FAIL();
   }
 }
 
