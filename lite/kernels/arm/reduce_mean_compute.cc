@@ -37,10 +37,15 @@ void ReduceMeanCompute::Run() {
       }
     }
   }
-  int n_in = x_dims[0];
-  int c_in = x_dims[1];
-  int h_in = x_dims[2];
-  int w_in = x_dims[3];
+
+  size_t new_dims[] = {1, 1, 1, 1};
+  for (size_t j = 0; j < x_dims.size(); ++j) {
+    new_dims[j] = x_dims[j];
+  }
+  int n_in = new_dims[0];
+  int c_in = new_dims[1];
+  int h_in = new_dims[2];
+  int w_in = new_dims[3];
   if (dim.size() == 0) {
     lite::arm::math::reduce_mean_all(input, output, n_in, c_in, h_in, w_in);
   } else if (dim.size() == 1) {
