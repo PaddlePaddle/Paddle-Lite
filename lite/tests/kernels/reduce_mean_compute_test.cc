@@ -325,9 +325,6 @@ void test_reduce_mean(Place place) {
               DDim x_dims;
               for (auto dims : {2, 3, 4}) {
                 switch (dims) {
-                  case 1:
-                    x_dims = DDim(std::vector<int64_t>({n}));
-                    break;
                   case 2:
                     x_dims = DDim(std::vector<int64_t>({n, c}));
                     break;
