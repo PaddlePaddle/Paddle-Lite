@@ -157,16 +157,21 @@ struct BatchElementWiseArg {
    * @param x_dims pointer to x's dim array, which is `dim_size` length
    * @param y_dims pointer to y's dim array, which is `dim_size` length
    * @param z_dims pointer to z's dim array, which is `dim_size` length
-   * @param x_stride x's memory stride, e.g. &data[i][j][k] == data+i*stride[0]
-   * + j*stride[1] + k*stride[3]
-   * @param y_stride y's memory stride, e.g. &data[i][j][k] == data+i*stride[0]
-   * + j*stride[1] + k*stride[3]
-   * @param z_stride z's memory stride, e.g. &data[i][j][k] == data+i*stride[0]
-   * + j*stride[1] + k*stride[3]
+   * @param x_stride x's memory stride
+   * @param y_stride y's memory stride
+   * @param z_stride z's memory stride
    * @param dim_size dim array's length
    * @param broadcast_type Could get from get_broadcast_type(), if set to
    * BroadcastType::UNKNOWN, this function will call get_broadcast_type
    * automatically
+   *
+   * @Note the memory stride describes how element are stored in memory.
+   * e.g. Given tensor X has a dim [C,H,W], then X.At(i,j,k) should be stored
+   * at X.data() + x_stride[0]*i + x_stride[1]*j + x_stride[2]*k
+   *
+   * @Warning the element in X, Y and Z must be stored as low dimension first,
+   * e.g. Tensor X has a dim [5,6,7] ,then X.At(0,0,0) -> X.At(0,0,7) must be
+   * stored at X.data() continuously
    */
   void Update(const Elem_t *x_data,
               const Elem_t *y_data,
