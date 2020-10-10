@@ -60,10 +60,17 @@ using BinaryOpFn = T(T, T);
 template <class T>
 using UaryOpFn = T(T);
 
-template <class T, BinaryOpFn<T> binaryop, UaryOpFn<T> uaryop>
-T FusedOp(T a, T b) {
-  return uaryop(binaryop(a, b));
+template <class T, BinaryOpFn<T> binary_op, UaryOpFn<T> uary_op>
+T naive_fused_op(T a, T b) {
+  return uary_op(binary_op(a, b));
 }
+
+template <class T>
+T naive_relu(T a) {
+  return a > 0 ? a : 0;
+}
+
+enum class ElementwiseFusedActType { NONE, RELU, TANH };
 
 /**
  * in Z = X op Y , there must be a minimal continuous mem in X or Y that could
