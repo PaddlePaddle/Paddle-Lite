@@ -105,7 +105,7 @@ void common_elmentwise_op_arm(
   auto bcast_type = batch_arg.BcastType();
   int range_length = batch_arg.ElemNumPerBatch();
   switch (bcast_type) {
-    case (lite::kernels::host::BroadcastType::X_AS_CONTINUOS): {
+    case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
       for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
         lite::kernels::host::element_wise_range_to_one<Elem_t>(
             batch_arg.XAtBatch(batch_id),
@@ -116,7 +116,7 @@ void common_elmentwise_op_arm(
       }
       break;
     }
-    case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOS): {
+    case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
       for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
         lite::kernels::host::element_wise_one_to_range<Elem_t>(
             batch_arg.XAtBatch(batch_id),
@@ -127,7 +127,7 @@ void common_elmentwise_op_arm(
       }
       break;
     }
-    case (lite::kernels::host::BroadcastType::BOTH_CONTINUOS): {
+    case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
       for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
         elementwise_fn(batch_arg.XAtBatch(batch_id),
                        batch_arg.YAtBatch(batch_id),

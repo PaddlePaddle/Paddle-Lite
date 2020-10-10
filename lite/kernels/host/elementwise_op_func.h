@@ -55,20 +55,20 @@ T naive_mod(T a, T b) {
 }
 
 /**
- * in Z = X op Y , there must be a minimal continuos mem in X and Y that could
- * do SIMD there are only three patterns a. X's minimal continuos mem has same
- * length with Y -> BOTH_CONTINUOS b. X's minimal continuos mem could do SIMD
- * with Y's single value -> X_AS_CONTINUOS c. Y's minimal continuos mem could do
- * SIMD with X's single value -> Y_AS_CONTINUOS
+ * in Z = X op Y , there must be a minimal continuous mem in X and Y that could
+ * do SIMD there are only three patterns a. X's minimal continuous mem has same
+ * length with Y -> BOTH_CONTINUOUS b. X's minimal continuous mem could do SIMD
+ * with Y's single value -> X_AS_CONTINUOUS c. Y's minimal continuous mem could
+ * do SIMD with X's single value -> Y_AS_CONTINUOUS
  */
 enum class BroadcastType {
   UNKNOWN,
   DIM_NOT_MATCH,  // could not do elementwise
   SAME_DIM,  // if x and y had a same dim, it could be treated as broadcast,but
   // not recommended.
-  X_AS_CONTINUOS,  // e.g. X.shape=[1,1,3,5],Y.shape=[2,4,1,1]
-  Y_AS_CONTINUOS,  // e.g. X.shape=[2,4,1,1],Y.shape=[1,1,3,5]
-  BOTH_CONTINUOS   // e.g. X.Shape=[1,1,3,5],Y.shape=[8,9,3,5]
+  X_AS_CONTINUOUS,  // e.g. X.shape=[1,1,3,5],Y.shape=[2,4,1,1]
+  Y_AS_CONTINUOUS,  // e.g. X.shape=[2,4,1,1],Y.shape=[1,1,3,5]
+  BOTH_CONTINUOUS   // e.g. X.Shape=[1,1,3,5],Y.shape=[8,9,3,5]
 };
 
 /**
@@ -102,13 +102,13 @@ BroadcastType get_broadcast_type(DimValue_t *x_dims,
     --pos;
   }
   if (x_dims[pos] == y_dims[pos]) {
-    return ret = BroadcastType::BOTH_CONTINUOS;
+    return ret = BroadcastType::BOTH_CONTINUOUS;
   }
   if (x_dims[pos] != 1) {
-    return ret = BroadcastType::X_AS_CONTINUOS;
+    return ret = BroadcastType::X_AS_CONTINUOUS;
   }
   if (y_dims[pos] != 1) {
-    return ret = BroadcastType::Y_AS_CONTINUOS;
+    return ret = BroadcastType::Y_AS_CONTINUOUS;
   }
   return ret;
 }
@@ -116,18 +116,18 @@ BroadcastType get_broadcast_type(DimValue_t *x_dims,
 template <class Elem_t, class DimValue_t>
 struct BatchElementWiseArg {
   BroadcastType BcastType() const { return broadcast_type_; }
-  int64_t ElemNumPerBatch() const { return continuos_length_; }
-  int64_t BatchNum() const { return z_num_ / continuos_length_; }
+  int64_t ElemNumPerBatch() const { return continuous_length_; }
+  int64_t BatchNum() const { return z_num_ / continuous_length_; }
   const Elem_t *XAtBatch(int64_t batch_id) const {
     return x_data_ +
-           ElemID2Offset(batch_id * continuos_length_, bcast_x_stride_);
+           ElemID2Offset(batch_id * continuous_length_, bcast_x_stride_);
   }
   const Elem_t *YAtBatch(int64_t batch_id) const {
     return y_data_ +
-           ElemID2Offset(batch_id * continuos_length_, bcast_y_stride_);
+           ElemID2Offset(batch_id * continuous_length_, bcast_y_stride_);
   }
   Elem_t *ZAtBatch(int64_t batch_id) const {
-    return z_data_ + ElemID2Offset(batch_id * continuos_length_, z_stride_);
+    return z_data_ + ElemID2Offset(batch_id * continuous_length_, z_stride_);
   }
 
   /**
@@ -169,7 +169,7 @@ struct BatchElementWiseArg {
   int64_t z_num_ = 0;
 
   int dim_size_ = 0;
-  int64_t continuos_length_ = 0;
+  int64_t continuous_length_ = 0;
   BroadcastType broadcast_type_ = BroadcastType::UNKNOWN;
 
   std::vector<DimValue_t> bcast_x_stride_;
@@ -218,8 +218,8 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
     return;
   }
   if (broadcast_type == BroadcastType::SAME_DIM) {
-    broadcast_type = BroadcastType::BOTH_CONTINUOS;
-    // SAME_DIM is a special case of BOTH_CONTINUOS
+    broadcast_type = BroadcastType::BOTH_CONTINUOUS;
+    // SAME_DIM is a special case of BOTH_CONTINUOUS
   }
 
   // generate element_id stride
@@ -242,44 +242,44 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
     total_elem_num *= z_dims[i];
   }
 
-  // get_continuos_length
+  // get_continuous_length
   if (x_stride[dim_size - 1] != 1 || y_stride[dim_size - 1] != 1 ||
       z_stride[dim_size - 1] != 1) {
     return;
   }
-  int64_t continuos_elem_num = z_dims[dim_size - 1];
+  int64_t continuous_elem_num = z_dims[dim_size - 1];
   int end_pos = dim_size - 2;
   switch (broadcast_type) {
-    case BroadcastType::X_AS_CONTINUOS: {
+    case BroadcastType::X_AS_CONTINUOUS: {
       while (end_pos >= 0 && y_dims[end_pos] == 1) {
         if (HasGapToNextDim(z_dims, z_stride, end_pos) ||
             HasGapToNextDim(x_dims, x_stride, end_pos)) {
           break;
         }
-        continuos_elem_num *= z_dims[end_pos];
+        continuous_elem_num *= z_dims[end_pos];
         --end_pos;
       }
       break;
     }
-    case BroadcastType::Y_AS_CONTINUOS: {
+    case BroadcastType::Y_AS_CONTINUOUS: {
       while (end_pos >= 0 && x_dims[end_pos] == 1) {
         if (HasGapToNextDim(z_dims, z_stride, end_pos) ||
             HasGapToNextDim(y_dims, y_stride, end_pos)) {
           break;
         }
-        continuos_elem_num *= z_dims[end_pos];
+        continuous_elem_num *= z_dims[end_pos];
         --end_pos;
       }
       break;
     }
-    case BroadcastType::BOTH_CONTINUOS: {
+    case BroadcastType::BOTH_CONTINUOUS: {
       while (end_pos >= 0 && x_dims[end_pos] == y_dims[end_pos]) {
         if (HasGapToNextDim(z_dims, z_stride, end_pos) ||
             HasGapToNextDim(x_dims, x_stride, end_pos) ||
             HasGapToNextDim(y_dims, y_stride, end_pos)) {
           break;
         }
-        continuos_elem_num *= z_dims[end_pos];
+        continuous_elem_num *= z_dims[end_pos];
         --end_pos;
       }
       break;
@@ -296,7 +296,7 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
   z_num_ = total_elem_num;
 
   dim_size_ = dim_size;
-  continuos_length_ = continuos_elem_num;
+  continuous_length_ = continuous_elem_num;
   broadcast_type_ = broadcast_type;
 
   bcast_x_stride_ = std::move(bcast_x_stride);
@@ -356,7 +356,7 @@ void common_elmentwise_op_naive_cpu(
   auto bcast_type = batch_arg.BcastType();
   int range_length = batch_arg.ElemNumPerBatch();
   switch (bcast_type) {
-    case (BroadcastType::X_AS_CONTINUOS): {
+    case (BroadcastType::X_AS_CONTINUOUS): {
       for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
         element_wise_range_to_one(batch_arg.XAtBatch(batch_id),
                                   batch_arg.YAtBatch(batch_id),
@@ -366,7 +366,7 @@ void common_elmentwise_op_naive_cpu(
       }
       break;
     }
-    case (BroadcastType::Y_AS_CONTINUOS): {
+    case (BroadcastType::Y_AS_CONTINUOUS): {
       for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
         element_wise_one_to_range(batch_arg.XAtBatch(batch_id),
                                   batch_arg.YAtBatch(batch_id),
@@ -376,7 +376,7 @@ void common_elmentwise_op_naive_cpu(
       }
       break;
     }
-    case (BroadcastType::BOTH_CONTINUOS): {
+    case (BroadcastType::BOTH_CONTINUOUS): {
       for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
         element_wise_range_to_range(batch_arg.XAtBatch(batch_id),
                                     batch_arg.YAtBatch(batch_id),
