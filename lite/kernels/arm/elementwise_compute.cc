@@ -90,13 +90,13 @@ template <class T>
 using ElementWiseFn = void(const T* dinx, const T* diny, T* dout, int num);
 
 template <class T>
-using SingleElemOp = T(T, T);
+using BinaryOpFn = lite::kernels::host::BinaryOpFn<T>;
 
 enum class OprandSwapable { NO, YES };
 
 template <class Elem_t,
           class DimValue_t,
-          SingleElemOp<Elem_t> op,
+          BinaryOpFn<Elem_t> op,
           ElementWiseFn<Elem_t> elementwise_fn>
 void common_elmentwise_op_arm(
     const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
@@ -142,7 +142,7 @@ void common_elmentwise_op_arm(
 template <class T,
           FastBCastFn<T> fast_bcast_fn,
           ElementWiseFn<T> elementwise_fn,
-          SingleElemOp<T> op,
+          BinaryOpFn<T> op,
           OprandSwapable opd_swap_able>
 inline void elementwise_compute_template(paddle::lite::KernelBase* kernel) {
   auto& param = kernel->template Param<operators::ElementwiseParam>();

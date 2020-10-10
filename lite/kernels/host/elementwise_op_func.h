@@ -54,6 +54,17 @@ T naive_mod(T a, T b) {
   return a % b;
 }
 
+template <class T>
+using BinaryOpFn = T(T, T);
+
+template <class T>
+using UaryOpFn = T(T);
+
+template <class T, BinaryOpFn<T> binaryop, UaryOpFn<T> uaryop>
+T FusedOp(T a, T b) {
+  return uaryop(binaryop(a, b));
+}
+
 /**
  * in Z = X op Y , there must be a minimal continuous mem in X or Y that could
  * do SIMD.
