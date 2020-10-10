@@ -118,6 +118,15 @@ class ElementwiseModCompute : public KernelLite<TARGET(kARM), PType> {
 //   virtual ~ElementwiseModActivationCompute() = default;
 // };
 
+// 新增 float pow 操作
+class ElementwisePowCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwisePowCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

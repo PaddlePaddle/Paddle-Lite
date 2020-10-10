@@ -1971,6 +1971,17 @@ struct OneHotParam : ParamBase {
   bool allow_out_of_range;
 };
 
+// 新增sin和cos op
+struct SinParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct CosParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
