@@ -99,7 +99,8 @@ class ImgdnnManager {
                                    const unsigned int stride[2],
                                    const unsigned int pad_to_begin[2],
                                    const unsigned int pad_to_end[2],
-                                   imgdnn_pooling_type type);
+                                   imgdnn_pooling_type type,
+                                   bool inclusive);
   imgdnn_tensor CreateFullyConnectedLayer(imgdnn_tensor input_tensor,
                                           imgdnn_tensor weights_tensor,
                                           imgdnn_tensor bias_tensor,

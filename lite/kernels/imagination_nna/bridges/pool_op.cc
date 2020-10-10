@@ -31,8 +31,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " + op_type + "...";
 
-  CHECK(op_info->HasAttr("enable_int8") &&
-        op_info->GetAttr<bool>("enable_int8"));
+  CHECK(op_info->HasAttr("enable_int8"));
+  CHECK(op_info->GetAttr<bool>("enable_int8"));
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
@@ -44,6 +44,10 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<int> ksize = op_info->GetAttr<std::vector<int>>("ksize");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
 
+  bool exclusive = true;
+  if (op_info->HasAttr("exclusive"))
+    exclusive = op_info->GetAttr<bool>("exclusive");
+
   // for quantization
   CHECK(op_info->HasOutputScale(out_name));
   float output_scale = op_info->GetOutputScale(out_name)[0];
@@ -53,8 +57,7 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    // x_node = graph->Add(x_name, *x);
-    LOG(INFO) << "[NNA] Pooling input not found: " << x_name;
+    LOG(FATAL) << "[NNA] Pooling input not found: " << x_name;
   }
 
   // pool mode
@@ -95,21 +98,49 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                  strides,
                                  ksize);
 
-  // ceil mode
-  if (op_info->HasAttr("ceil_mode"))
-    LOG(WARNING) << "[NNA] imgdnn has no ceil_mode: "
-                 << op_info->GetAttr<bool>("ceil_mode");
-
   unsigned int img_ksize[2] = {static_cast<unsigned int>(ksize[0]),
                                static_cast<unsigned int>(ksize[1])};
+
   unsigned int img_stride[2] = {static_cast<unsigned int>(strides[0]),
                                 static_cast<unsigned int>(strides[1])};
+
   // top,left
-  unsigned int pad_to_begin[2] = {static_cast<unsigned int>(paddings[0]),
-                                  static_cast<unsigned int>(paddings[2])};
+  unsigned int pad_begin[2] = {static_cast<unsigned int>(paddings[0]),
+                               static_cast<unsigned int>(paddings[2])};
   // bottom,right
-  unsigned int pad_to_end[2] = {static_cast<unsigned int>(paddings[1]),
-                                static_cast<unsigned int>(paddings[3])};
+  unsigned int pad_end[2] = {static_cast<unsigned int>(paddings[1]),
+                             static_cast<unsigned int>(paddings[3])};
+
+  bool ceil_mode = false;
+  if (op_info->HasAttr("ceil_mode"))
+    ceil_mode = op_info->GetAttr<bool>("ceil_mode");
+
+  unsigned pool_h, pool_w;
+
+  if (!ceil_mode) {
+    pool_h = ((x_dims[2] + pad_begin[0] + pad_end[0] - img_ksize[0]) /
+              img_stride[0]) +
+             1;
+    pool_w = ((x_dims[3] + pad_begin[1] + pad_end[1] - img_ksize[1]) /
+              img_stride[1]) +
+             1;
+  } else {
+    pool_h = ((x_dims[2] + pad_begin[0] + pad_end[0] - img_ksize[0] +
+               img_stride[0] - 1) /
+              img_stride[0]) +
+             1;
+    pool_w = ((x_dims[3] + pad_begin[1] + pad_end[1] - img_ksize[1] +
+               img_stride[1] - 1) /
+              img_stride[1]) +
+             1;
+  }
+
+  if ((pool_h - 1) * img_stride[0] + img_ksize[0] >= x_dims[2] + pad_begin[0])
+    pad_end[0] =
+        (pool_h - 1) * img_stride[0] + img_ksize[0] - x_dims[2] - pad_begin[0];
+  if ((pool_w - 1) * img_stride[1] + img_ksize[1] >= x_dims[3] + pad_begin[1])
+    pad_end[1] =
+        (pool_w - 1) * img_stride[1] + img_ksize[1] - x_dims[3] - pad_begin[1];
 
   if (global_pooling) {
     img_ksize[0] = x_dims[2];
@@ -124,9 +155,10 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                               output_quant_param,
                                               img_ksize,
                                               img_stride,
-                                              pad_to_begin,
-                                              pad_to_end,
-                                              img_pool_type);
+                                              pad_begin,
+                                              pad_end,
+                                              img_pool_type,
+                                              !exclusive);
 
   imgdnn_tensor_descriptor desc =
       graph->GetBuilder()->GetTensorDescriptor(pooling_out);

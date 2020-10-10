@@ -228,9 +228,17 @@ imgdnn_tensor ImgdnnManager::CreatePoolingLayer(
     const unsigned int stride[2],
     const unsigned int pad_to_begin[2],
     const unsigned int pad_to_end[2],
-    imgdnn_pooling_type type) {
-  imgdnn_tensor pool_tensor = imgdnnNetworkPooling2dOp_v2(
-      net_, in_tensor, size, stride, pad_to_begin, pad_to_end, type, &err_);
+    imgdnn_pooling_type type,
+    bool inclusive) {
+  imgdnn_tensor pool_tensor = imgdnnNetworkPooling2dOp_v3(net_,
+                                                          in_tensor,
+                                                          size,
+                                                          stride,
+                                                          pad_to_begin,
+                                                          pad_to_end,
+                                                          type,
+                                                          inclusive,
+                                                          &err_);
   CHECK_EQ(err_, IMGDNN_SUCCESS) << "imgdnn Pooling2dOp failed!";
 
   return ConvertQuantTensorType(pool_tensor, &dst_quant_param);
