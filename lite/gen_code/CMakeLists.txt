@@ -17,6 +17,7 @@ lite_cc_test(test_gen_code SRCS gen_code_test.cc
         NPU_DEPS ${npu_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
         RKNPU_DEPS ${rknpu_kernels}
+        IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
         XPU_DEPS ${xpu_kernels}
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -47,6 +48,7 @@ lite_cc_test(test_generated_code SRCS generated_code_test.cc DEPS __generated_co
     NPU_DEPS ${npu_kernels}
     HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
     RKNPU_DEPS ${rknpu_kernels}
+    IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
     XPU_DEPS ${xpu_kernels}
     CL_DEPS ${opencl_kernels}
     FPGA_DEPS ${fpga_kernels}
