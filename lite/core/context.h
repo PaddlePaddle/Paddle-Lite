@@ -64,6 +64,7 @@ using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
 using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
+using ImaginationNNAContext = Context<TargetType::kImaginationNNA>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -185,6 +186,19 @@ class Context<TargetType::kRKNPU> {
 
   RKNPUContext& operator=(const RKNPUContext& ctx) {}
   std::string name() const { return "RKNPUContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_IMAGINATION_NNA
+template <>
+class Context<TargetType::kImaginationNNA> {
+ public:
+  Context() {}
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(ImaginationNNAContext* ctx) {}
+
+  std::string name() const { return "ImaginationNNAContext"; }
 };
 #endif
 
@@ -487,6 +501,13 @@ class ContextScheduler {
             &ctx->As<BMContext>());
         break;
 #endif
+#ifdef LITE_WITH_IMAGINATION_NNA
+      case TARGET(kImaginationNNA):
+        kernel_contexts_[TargetType::kImaginationNNA]
+            .As<ImaginationNNAContext>()
+            .CopySharedTo(&ctx->As<ImaginationNNAContext>());
+        break;
+#endif
 #ifdef LITE_WITH_MLU
       case TARGET(kMLU): {
         int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
@@ -549,6 +570,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_MLU
     InitContext<TargetType::kMLU, MLUContext>();
+#endif
+#ifdef LITE_WITH_IMAGINATION_NNA
+    InitContext<TargetType::kImaginationNNA, ImaginationNNAContext>();
 #endif
   }
 
