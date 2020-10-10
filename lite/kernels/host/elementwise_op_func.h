@@ -377,14 +377,14 @@ void element_wise_range_to_range(const T *x,
 }
 
 /**
- * This function can handle any kinds of element-wise operation,
+ * This function can handle any kinds of element-wise operation technically,
  * But it's recommended to use this function only when there is broadcast
  * needed.
  * @note: This function is easy to parallelized, check the final part,
  *  1. in every loop, we are handling a batch
  *  2. different loop process individual batch
  *
- * @see BatchElementWiseArg::Update to get info about args
+ * @note see BatchElementWiseArg::Update to get info about args
  */
 template <class Elem_t, class DimValue_t>
 void common_elmentwise_op_naive_cpu(
@@ -427,17 +427,30 @@ void common_elmentwise_op_naive_cpu(
   }
 }
 
+/**
+ * fix missing dim of paddle lite tensor to fit this broadcast system.
+ * @tparam DimValue_t
+ * @param X
+ * @param Y
+ * @param Out
+ * @param axis axis defined by paddle
+ * @param out_dim_size dim size of Out
+ * @param [out] p_x_dims fixed dim value of x
+ * @param [out] p_y_dims fixed dim value of y
+ */
 template <class DimValue_t>
 void fix_x_y_dims(const Tensor *X,
                   const Tensor *Y,
                   const Tensor *Out,
                   int axis,
-                  int out_dim_size,
                   std::vector<DimValue_t> *p_x_dims,
                   std::vector<DimValue_t> *p_y_dims) {
   auto &x_dims = *p_x_dims;
   auto &y_dims = *p_y_dims;
-  // fix missing dim in x_dims and y_dims
+  int out_dim_size = Out->dims().size();
+  x_dims.resize(out_dim_size, 1);
+  y_dims.resize(out_dim_size, 1);
+
   if (axis == -1) {
     int i_raw = 0;
     int i_new = out_dim_size - X->dims().size();
@@ -468,9 +481,9 @@ BatchElementWiseArg<T, int64_t> GenBatchElementWiseArg(const lite::Tensor *X,
                                                        lite::Tensor *Out,
                                                        int axis = -1) {
   int out_dim_size = Out->dims().size();
-  std::vector<int64_t> x_dims(out_dim_size, 1);
-  std::vector<int64_t> y_dims(out_dim_size, 1);
-  fix_x_y_dims<int64_t>(X, Y, Out, axis, out_dim_size, &x_dims, &y_dims);
+  std::vector<int64_t> x_dims;
+  std::vector<int64_t> y_dims;
+  fix_x_y_dims<int64_t>(X, Y, Out, axis, &x_dims, &y_dims);
 
   auto &z_dims = Out->dims().data();
   // gen stride
