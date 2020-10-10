@@ -110,11 +110,32 @@ BroadcastType get_broadcast_type(DimValue_t *x_dims,
   return BroadcastType::UNKNOWN;
 }
 
+template <class Elem_t>
+struct BatchElementWiseArgMemPointer {
+  const Elem_t *x_data = nullptr;
+  const Elem_t *y_data = nullptr;
+  Elem_t *z_data = nullptr;
+};
+
 template <class Elem_t, class DimValue_t>
 struct BatchElementWiseArg {
   BroadcastType BcastType() const { return broadcast_type_; }
   int64_t ElemNumPerBatch() const { return continuous_length_; }
   int64_t BatchNum() const { return z_num_ / continuous_length_; }
+
+  BatchElementWiseArgMemPointer<Elem_t> AllAtBatch(int64_t elem_id) {
+    BatchElementWiseArgMemPointer<Elem_t> ret = {x_data_, y_data_, z_data_};
+    int64_t ind = 0;
+    for (int64_t i = 0; i < dim_size_; ++i) {
+      ind = elem_id / element_id_stride_[i];
+      ret.x_data += bcast_x_stride_[i] * ind;
+      ret.y_data += bcast_y_stride_[i] * ind;
+      ret.z_data += z_stride_[i] * ind;
+      elem_id -= (element_id_stride_[i] * ind);
+    }
+    return ret;
+  }
+
   const Elem_t *XAtBatch(int64_t batch_id) const {
     return x_data_ +
            ElemID2Offset(batch_id * continuous_length_, bcast_x_stride_);
@@ -174,16 +195,27 @@ struct BatchElementWiseArg {
   std::vector<DimValue_t> z_stride_;
   std::vector<DimValue_t> element_id_stride_;
 
+  /**
+   * Every element of some **FULL** tensor has its own logic id, ElemID2Offset
+   * will convert this id to its memory offset
+   * eg. given x.dims=[1,1,2,3] y.dims=[4,5,1,1],
+   * then the full tensor's dim should be [4,5,2,3],
+   * and, the element at [i,j,k,l] will get the elem_id of `i*30 + j*6 + k* 3
+   * +l` this elem_id works for all tensor X, Y and Z.
+   * @param elem_id
+   * @param stride
+   * @return
+   */
   int64_t ElemID2Offset(int64_t elem_id,
                         const std::vector<DimValue_t> &stride) const {
     int64_t ind = 0;
-    int64_t ret = 0;
+    int64_t offset = 0;
     for (int64_t i = 0; i < dim_size_; ++i) {
       ind = elem_id / element_id_stride_[i];
-      ret += stride[i] * ind;
+      offset += stride[i] * ind;
       elem_id -= (element_id_stride_[i] * ind);
     }
-    return ret;
+    return offset;
   }
 
   bool HasGapToNextDim(const DimValue_t *dims,
