@@ -162,7 +162,7 @@ inline void elementwise_compute_template(paddle::lite::KernelBase* kernel) {
     fast_bcast_fn(y_data, x_data, out_data, pre, n, post);
   } else {
     auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
-        param.X, param.Y, param.Out);
+        param.X, param.Y, param.Out, axis);
     common_elmentwise_op_arm<T, int64_t, op, elementwise_fn>(batch_arg);
   }
 }
