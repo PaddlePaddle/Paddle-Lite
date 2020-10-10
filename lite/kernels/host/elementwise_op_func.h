@@ -205,19 +205,17 @@ struct BatchElementWiseArg {
    * will convert this id to its memory offset
    * eg. given x.dims=[1,1,2,3] y.dims=[4,5,1,1],
    * then the full tensor's dim should be [4,5,2,3],
-   * and, the element at [i,j,k,l] will get the elem_id of `i*30 + j*6 + k* 3
-   * +l` this elem_id works for all tensor X, Y and Z.
-   * @param elem_id
-   * @param stride
-   * @return
+   * and, the element at [i,j,k,l] will get the
+   * elem_id of `i*30 + j*6 + k*3 +l`
+   * this elem_id works for all tensor X, Y and Z.
    */
   int64_t ElemID2Offset(int64_t elem_id,
-                        const std::vector<DimValue_t> &stride) const {
+                        const std::vector<DimValue_t> &bcast_stride) const {
     int64_t ind = 0;
     int64_t offset = 0;
     for (int64_t i = 0; i < dim_size_; ++i) {
       ind = elem_id / element_id_stride_[i];
-      offset += stride[i] * ind;
+      offset += bcast_stride[i] * ind;
       elem_id -= (element_id_stride_[i] * ind);
     }
     return offset;
@@ -243,17 +241,27 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
     const DimValue_t *z_stride,
     int dim_size,
     BroadcastType broadcast_type) {
-  // pre process
+  // arg checking
   if (broadcast_type == BroadcastType::UNKNOWN) {
+    LOG(INFO) << "No broadcast type input";
     broadcast_type = get_broadcast_type(x_dims, y_dims, dim_size);
   }
   if (broadcast_type == BroadcastType::UNKNOWN ||
       broadcast_type == BroadcastType::DIM_NOT_MATCH) {
+    LOG(FATAL) << "Wrong broadcast type";
     return;
   }
   if (broadcast_type == BroadcastType::SAME_DIM) {
     broadcast_type = BroadcastType::BOTH_CONTINUOUS;
-    // SAME_DIM is a special case of BOTH_CONTINUOUS
+    LOG(INFO) << "Same dim detected";
+    // SAME_DIM should not be treated as broadcast. For SAME_DIM is a special
+    // case of BOTH_CONTINUOUS, we could still process it.
+  }
+
+  if (x_stride[dim_size - 1] != 1 || y_stride[dim_size - 1] != 1 ||
+      z_stride[dim_size - 1] != 1) {
+    LOG(FATAL) << "data are not stored continuously";
+    return;
   }
 
   // generate element_id stride
@@ -277,10 +285,6 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
   }
 
   // get_continuous_length
-  if (x_stride[dim_size - 1] != 1 || y_stride[dim_size - 1] != 1 ||
-      z_stride[dim_size - 1] != 1) {
-    return;
-  }
   int64_t continuous_elem_num = z_dims[dim_size - 1];
   int end_pos = dim_size - 2;
   switch (broadcast_type) {
