@@ -70,6 +70,11 @@ T naive_relu(T a) {
   return a > 0 ? a : 0;
 }
 
+template <class T>
+T naive_tanh(T a) {
+  return std::tanh(static_cast<double>(a));
+}
+
 enum class ElementwiseFusedActType { NONE, RELU, TANH };
 
 /**

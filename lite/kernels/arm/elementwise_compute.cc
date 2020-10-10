@@ -153,17 +153,22 @@ inline void elementwise_compute_template(paddle::lite::KernelBase* kernel) {
   auto x_dims = param.X->dims();
   auto y_dims = param.Y->dims();
   int pre, n, post;
-  if (x_dims == y_dims) {
+  if (elementwise_fn && x_dims == y_dims) {
     elementwise_fn(x_data, y_data, out_data, x_dims.production());
-  } else if (is_fast_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
+  } else if (fast_bcast_fn &&
+             is_fast_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
     fast_bcast_fn(x_data, y_data, out_data, pre, n, post);
-  } else if (opd_swap_able == OprandSwapable::YES && axis == -1 &&
+  } else if (fast_bcast_fn && opd_swap_able == OprandSwapable::YES &&
+             axis == -1 &&
              is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     fast_bcast_fn(y_data, x_data, out_data, pre, n, post);
-  } else {
+  } else if (elementwise_fn) {
     auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
         param.X, param.Y, param.Out, axis);
     common_elmentwise_op_arm<T, int64_t, op, elementwise_fn>(batch_arg);
+  }
+  if (!elementwise_fn && !fast_bcast_fn) {
+    LOG(FATAL) << "unsupported elementwise_compute called";
   }
 }
 
@@ -178,39 +183,34 @@ void ElementwiseAddCompute<T, PType>::Run() {
 
 void ElementwiseAddActivationCompute::Run() {
   auto& param = Param<operators::FusionElementwiseActivationParam>();
-  const float* x_data = param.X->data<float>();
-  const float* y_data = param.Y->data<float>();
-  float* out_data = param.Out->mutable_data<float>();
-  int axis = param.axis;
-  std::string act_type = param.act_type;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
-  int pre, n, post;
-  if (x_dims.size() < y_dims.size() &&
-      is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_add_relu_broadcast(
-          y_data, x_data, out_data, pre, n, post);
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
-  } else if (is_fast_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_add_relu_broadcast(
-          x_data, y_data, out_data, pre, n, post);
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
-  } else {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_add_relu(
-          x_data, y_data, out_data, x_dims.production());
-    } else if (act_type == "tanh") {
-      lite::arm::math::elementwise_add_tanh(
-          x_data, y_data, out_data, x_dims.production());
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<
+        float,
+        lite::arm::math::elementwise_add_relu_broadcast<float>,
+        lite::arm::math::elementwise_add_relu<float>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float,
+            paddle::lite::kernels::host::naive_add<float>,
+            paddle::lite::kernels::host::naive_relu<float>>,
+        OprandSwapable::YES>(this);
+  }
+
+  if (param.act_type == "tanh") {
+    act_supported = true;
+    elementwise_compute_template<
+        float,
+        nullptr,
+        lite::arm::math::elementwise_add_tanh<float>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float,
+            paddle::lite::kernels::host::naive_add<float>,
+            paddle::lite::kernels::host::naive_tanh<float>>,
+        OprandSwapable::YES>(this);
+  }
+  if (!act_supported) {
+    LOG(FATAL) << "unsupported Activation type: " << param.act_type;
   }
 }
 
@@ -225,28 +225,21 @@ void ElementwiseSubCompute<T, PType>::Run() {
 
 void ElementwiseSubActivationCompute::Run() {
   auto& param = Param<operators::FusionElementwiseActivationParam>();
-  const float* x_data = param.X->data<float>();
-  const float* y_data = param.Y->data<float>();
-  float* out_data = param.Out->mutable_data<float>();
-  int axis = param.axis;
-  std::string act_type = param.act_type;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
-  int pre, n, post;
-
-  if (act_type != "relu") {
-    LOG(FATAL) << "unsupported Activation type: " << act_type;
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<
+        float,
+        lite::arm::math::elementwise_sub_relu_broadcast<float>,
+        lite::arm::math::elementwise_sub_relu<float>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float,
+            paddle::lite::kernels::host::naive_sub<float>,
+            paddle::lite::kernels::host::naive_relu<float>>,
+        OprandSwapable::NO>(this);
   }
-  if (x_dims.size() < y_dims.size() &&
-      is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_sub_relu_broadcast(
-        y_data, x_data, out_data, pre, n, post);
-  } else if (is_fast_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    lite::arm::math::elementwise_sub_relu_broadcast(
-        x_data, y_data, out_data, pre, n, post);
-  } else {
-    lite::arm::math::elementwise_sub_relu(
-        x_data, y_data, out_data, x_dims.production());
+  if (!act_supported) {
+    LOG(FATAL) << "unsupported Activation type: " << param.act_type;
   }
 }
 
@@ -263,36 +256,21 @@ template <typename T, PrecisionType PType>
 void ElementwiseMulActivationCompute<T, PType>::Run() {
   auto& param =
       this->template Param<operators::FusionElementwiseActivationParam>();
-  auto* x_data = param.X->template data<T>();
-  auto* y_data = param.Y->template data<T>();
-  auto* out_data = param.Out->template mutable_data<T>();
-  int axis = param.axis;
-  std::string act_type = param.act_type;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
-  int pre, n, post;
-  if (x_dims.size() < y_dims.size() &&
-      is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_mul_relu_broadcast<T>(
-          y_data, x_data, out_data, pre, n, post);
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
-  } else if (is_fast_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_mul_relu_broadcast<T>(
-          x_data, y_data, out_data, pre, n, post);
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
-  } else {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_mul_relu<T>(
-          x_data, y_data, out_data, x_dims.production());
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<
+        T,
+        lite::arm::math::elementwise_mul_relu_broadcast<T>,
+        lite::arm::math::elementwise_mul_relu<T>,
+        paddle::lite::kernels::host::naive_fused_op<
+            T,
+            paddle::lite::kernels::host::naive_mul<T>,
+            paddle::lite::kernels::host::naive_relu<T>>,
+        OprandSwapable::YES>(this);
+  }
+  if (!act_supported) {
+    LOG(FATAL) << "unsupported Activation type: " << param.act_type;
   }
 }
 
@@ -307,36 +285,21 @@ void ElementwiseMaxCompute::Run() {
 
 void ElementwiseMaxActivationCompute::Run() {
   auto& param = Param<operators::FusionElementwiseActivationParam>();
-  const float* x_data = param.X->data<float>();
-  const float* y_data = param.Y->data<float>();
-  float* out_data = param.Out->mutable_data<float>();
-  int axis = param.axis;
-  std::string act_type = param.act_type;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
-  int pre, n, post;
-  if (x_dims.size() < y_dims.size() &&
-      is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_max_relu_broadcast<float>(
-          y_data, x_data, out_data, pre, n, post);
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
-  } else if (is_fast_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_max_relu_broadcast(
-          x_data, y_data, out_data, pre, n, post);
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
-  } else {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_max_relu(
-          x_data, y_data, out_data, x_dims.production());
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<
+        float,
+        lite::arm::math::elementwise_max_relu_broadcast<float>,
+        lite::arm::math::elementwise_max_relu<float>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float,
+            paddle::lite::kernels::host::naive_max<float>,
+            paddle::lite::kernels::host::naive_relu<float>>,
+        OprandSwapable::YES>(this);
+  }
+  if (!act_supported) {
+    LOG(FATAL) << "unsupported Activation type: " << param.act_type;
   }
 }
 
@@ -351,31 +314,21 @@ void ElementwiseDivCompute<T, PType>::Run() {
 
 void ElementwiseDivActivationCompute::Run() {
   auto& param = Param<operators::FusionElementwiseActivationParam>();
-  const float* x_data = param.X->data<float>();
-  const float* y_data = param.Y->data<float>();
-  float* out_data = param.Out->mutable_data<float>();
-  int axis = param.axis;
-  std::string act_type = param.act_type;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
-  if (x_dims.size() < y_dims.size()) {
-    LOG(FATAL) << "elewise div don't support x_dims size < y_dims size";
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<
+        float,
+        lite::arm::math::elementwise_div_relu_broadcast<float>,
+        lite::arm::math::elementwise_div_relu<float>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float,
+            paddle::lite::kernels::host::naive_div<float>,
+            paddle::lite::kernels::host::naive_relu<float>>,
+        OprandSwapable::NO>(this);
   }
-  int pre, n, post;
-  if (is_fast_broadcast(x_dims, y_dims, axis, &pre, &n, &post)) {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_div_relu_broadcast(
-          x_data, y_data, out_data, pre, n, post);
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
-  } else {
-    if (act_type == "relu") {
-      lite::arm::math::elementwise_div_relu(
-          x_data, y_data, out_data, x_dims.production());
-    } else {
-      LOG(FATAL) << "unsupported Activation type: " << act_type;
-    }
+  if (!act_supported) {
+    LOG(FATAL) << "unsupported Activation type: " << param.act_type;
   }
 }
 
