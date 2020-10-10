@@ -55,11 +55,8 @@ T naive_mod(T a, T b) {
 }
 
 /**
- * in Z = X op Y , there must be a minimal continuous mem in X and Y that could
- * do SIMD there are only three patterns a. X's minimal continuous mem has same
- * length with Y -> BOTH_CONTINUOUS b. X's minimal continuous mem could do SIMD
- * with Y's single value -> X_AS_CONTINUOUS c. Y's minimal continuous mem could
- * do SIMD with X's single value -> Y_AS_CONTINUOUS
+ * in Z = X op Y , there must be a minimal continuous mem in X or Y that could
+ * do SIMD.
  */
 enum class BroadcastType {
   UNKNOWN,
@@ -72,14 +69,15 @@ enum class BroadcastType {
 };
 
 /**
- * Get broadcast type, x and y must have same dim_size, the dimension which will
- * be brodcasted should be set to 1 e.g. x_dims=[3,1,1,5] and y_dims=[1,2,4,1]
- * is ok
+ * Get broadcast type, x_dims and x_dims must have same dim_size. The dimension
+ * which will be broadcast should be set to 1, and the 1 at high dimension
+ * should not be omitted
+ * e.g. x_dims=[3,1,1,5] and y_dims=[1,2,4,1] is fine, but y_dims should not be
+ * [2,4,1]
  * @tparam DimValue_t data type of dim's value
  * @param x_dims pointer to x's dim array, which is `dim_size` length
  * @param y_dims pointer to y's dim array, which is `dim_size` length
  * @param dim_size dim_size of x and y
- * @return
  */
 template <class DimValue_t>
 BroadcastType get_broadcast_type(DimValue_t *x_dims,
@@ -89,11 +87,10 @@ BroadcastType get_broadcast_type(DimValue_t *x_dims,
     return BroadcastType::SAME_DIM;
   }
 
-  BroadcastType ret = BroadcastType::UNKNOWN;
   // check if it is broadcast
   for (int i = 0; i < dim_size; ++i) {
     if (x_dims[i] != 1 && y_dims[i] != 1 && x_dims[i] != y_dims[i]) {
-      return ret = BroadcastType::DIM_NOT_MATCH;
+      return BroadcastType::DIM_NOT_MATCH;
     }
   }
 
@@ -102,15 +99,15 @@ BroadcastType get_broadcast_type(DimValue_t *x_dims,
     --pos;
   }
   if (x_dims[pos] == y_dims[pos]) {
-    return ret = BroadcastType::BOTH_CONTINUOUS;
+    return BroadcastType::BOTH_CONTINUOUS;
   }
   if (x_dims[pos] != 1) {
-    return ret = BroadcastType::X_AS_CONTINUOUS;
+    return BroadcastType::X_AS_CONTINUOUS;
   }
   if (y_dims[pos] != 1) {
-    return ret = BroadcastType::Y_AS_CONTINUOUS;
+    return BroadcastType::Y_AS_CONTINUOUS;
   }
-  return ret;
+  return BroadcastType::UNKNOWN;
 }
 
 template <class Elem_t, class DimValue_t>
