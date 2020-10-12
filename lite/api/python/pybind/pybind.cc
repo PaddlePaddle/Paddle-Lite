@@ -273,20 +273,7 @@ void BindLiteTensor(py::module *m) {
   DO_GETTER_ONCE(data_type__, name__##_data)
 
   DATA_GETTER_SETTER_ONCE(int8_t, int8);
-#ifdef LITE_WITH_MLU
-  tensor.def("set_uint8_data",
-             [](Tensor &self,
-                const std::vector<uint8_t> &data,
-                TargetType type = TargetType::kHost) {
-               if (type == TargetType::kHost) {
-                 self.CopyFromCpu<uint8_t, TargetType::kHost>(data.data());
-               }
-             },
-             py::arg("data"),
-             py::arg("type") = TargetType::kHost);
-
-  DO_GETTER_ONCE(uint8_t, "uint8_data");
-#endif
+  DATA_GETTER_SETTER_ONCE(uint8_t, uint8);
   DATA_GETTER_SETTER_ONCE(int32_t, int32);
   DATA_GETTER_SETTER_ONCE(float, float);
 #undef DO_GETTER_ONCE
