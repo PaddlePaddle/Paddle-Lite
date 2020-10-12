@@ -126,6 +126,23 @@ class ElementwiseComputeTester : public arena::TestCase {
           }
         }
       }
+    } else if (elt_type_ == "pow") {
+      for (int n = 0; n < xn; n++) {
+        for (int c = 0; c < xc; c++) {
+          for (int h = 0; h < xh; h++) {
+            for (int w = 0; w < xw; w++) {
+              int x_offset = n * xc * xh * xw + c * xh * xw + h * xw + w;
+              int y_offset = 0;
+              if (yn != 1) y_offset += n * yc * yh * yw;
+              if (yc != 1) y_offset += c * yh * yw;
+              if (yh != 1) y_offset += h * yw;
+              if (yw != 1) y_offset += w;
+              out_data[x_offset] =
+                  std::pow(out_data[x_offset], y_data[y_offset]);
+            }
+          }
+        }
+      }
     } else {
       LOG(FATAL) << "unsupported";
     }
@@ -173,7 +190,7 @@ class ElementwiseComputeTester : public arena::TestCase {
   }
 };
 
-// add sub mul div max   +act
+// add sub mul div max pow  +act
 
 void TestElt(Place place,
              float abs_error,
@@ -211,7 +228,7 @@ void TestEltDims(Place place, float abs_error) {
 
 void TestEltTypes(Place place, float abs_error) {
   for (auto elt_type :
-       std::vector<std::string>{"add", "sub", "mul", "div", "max"}) {
+       std::vector<std::string>{"add", "sub", "mul", "div", "max", "pow"}) {
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
   }

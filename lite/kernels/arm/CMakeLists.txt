@@ -82,7 +82,9 @@ add_kernel(clip_compute_arm ARM extra SRCS clip_compute.cc DEPS ${lite_kernel_de
 add_kernel(pixel_shuffle_compute_arm ARM extra SRCS pixel_shuffle_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(scatter_compute_arm ARM extra SRCS scatter_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(sequence_expand_as_compute_arm ARM extra SRCS sequence_expand_as_compute.cc DEPS ${lite_kernel_deps} math_arm)
-
+add_kernel(sin_compute_arm ARM extra SRCS sin_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(cos_compute_arm ARM extra SRCS cos_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(pow_compute_arm ARM extra SRCS pow_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 # for OCR specific
 add_kernel(gru_unit_compute_arm ARM extra SRCS gru_unit_compute.cc DEPS ${lite_kernel_deps} math_arm)
