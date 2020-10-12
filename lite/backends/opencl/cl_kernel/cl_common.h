@@ -117,6 +117,11 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 #endif
 
 #ifdef LEAKY_RELU
+  // note: `(ushort4)(in >= 0)` causes error: invalid conversion
+  // between ext-vector type 'ushort4' and 'short
+  // __attribute__((ext_vector_type(4)))'
+  // thus, using `(ushort4)(in.x >= 0, in.y >= 0, in.z >= 0, in.w >= 0)`
+  // instead.
   output = select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in,
                   (CL_DTYPE4)in,
                   (ushort4)(in.x >= 0, in.y >= 0, in.z >= 0, in.w >= 0));
