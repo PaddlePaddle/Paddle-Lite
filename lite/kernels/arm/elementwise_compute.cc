@@ -94,13 +94,12 @@ using BinaryOpFn = lite::kernels::host::BinaryOpFn<T>;
 
 enum class OprandSwapable { NO, YES };
 
-template <class Elem_t,
-          class DimValue_t,
-          BinaryOpFn<Elem_t> op,
-          ElementWiseFn<Elem_t> elementwise_fn>
+template <class Elem_t, class DimValue_t>
 void common_elmentwise_op_arm(
     const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
-        batch_arg) {
+        batch_arg,
+    BinaryOpFn<Elem_t> op,
+    ElementWiseFn<Elem_t> elementwise_fn) {
   int batch_num = batch_arg.BatchNum();
   auto bcast_type = batch_arg.BcastType();
   int range_length = batch_arg.ElemNumPerBatch();
@@ -139,12 +138,11 @@ void common_elmentwise_op_arm(
   }
 }
 
-template <class T,
-          FastBCastFn<T> fast_bcast_fn,
-          ElementWiseFn<T> elementwise_fn,
-          BinaryOpFn<T> op,
-          OprandSwapable opd_swap_able>
-inline void elementwise_compute_template(paddle::lite::KernelBase* kernel) {
+template <class T, OprandSwapable opd_swap_able>
+inline void elementwise_compute_template(paddle::lite::KernelBase* kernel,
+                                         FastBCastFn<T> fast_bcast_fn,
+                                         ElementWiseFn<T> elementwise_fn,
+                                         BinaryOpFn<T> op) {
   auto& param = kernel->template Param<operators::ElementwiseParam>();
   auto* x_data = param.X->template data<T>();
   auto* y_data = param.Y->template data<T>();
@@ -165,7 +163,7 @@ inline void elementwise_compute_template(paddle::lite::KernelBase* kernel) {
   } else if (elementwise_fn) {
     auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
         param.X, param.Y, param.Out, axis);
-    common_elmentwise_op_arm<T, int64_t, op, elementwise_fn>(batch_arg);
+    common_elmentwise_op_arm<T, int64_t>(batch_arg, op, elementwise_fn);
   }
   if (!elementwise_fn && !fast_bcast_fn) {
     LOG(FATAL) << "unsupported elementwise_compute called";
@@ -174,11 +172,11 @@ inline void elementwise_compute_template(paddle::lite::KernelBase* kernel) {
 
 template <typename T, PrecisionType PType>
 void ElementwiseAddCompute<T, PType>::Run() {
-  elementwise_compute_template<T,
-                               lite::arm::math::elementwise_add_broadcast<T>,
-                               lite::arm::math::elementwise_add<T>,
-                               paddle::lite::kernels::host::naive_add<T>,
-                               OprandSwapable::YES>(this);
+  elementwise_compute_template<T, OprandSwapable::YES>(
+      this,
+      lite::arm::math::elementwise_add_broadcast<T>,
+      lite::arm::math::elementwise_add<T>,
+      paddle::lite::kernels::host::naive_add<T>);
 }
 
 void ElementwiseAddActivationCompute::Run() {
@@ -186,28 +184,26 @@ void ElementwiseAddActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<
-        float,
+    elementwise_compute_template<float, OprandSwapable::YES>(
+        this,
         lite::arm::math::elementwise_add_relu_broadcast<float>,
         lite::arm::math::elementwise_add_relu<float>,
         paddle::lite::kernels::host::naive_fused_op<
             float,
             paddle::lite::kernels::host::naive_add<float>,
-            paddle::lite::kernels::host::naive_relu<float>>,
-        OprandSwapable::YES>(this);
+            paddle::lite::kernels::host::naive_relu<float>>);
   }
 
   if (param.act_type == "tanh") {
     act_supported = true;
-    elementwise_compute_template<
-        float,
+    elementwise_compute_template<float, OprandSwapable::YES>(
+        this,
         nullptr,
         lite::arm::math::elementwise_add_tanh<float>,
         paddle::lite::kernels::host::naive_fused_op<
             float,
             paddle::lite::kernels::host::naive_add<float>,
-            paddle::lite::kernels::host::naive_tanh<float>>,
-        OprandSwapable::YES>(this);
+            paddle::lite::kernels::host::naive_tanh<float>>);
   }
   if (!act_supported) {
     LOG(FATAL) << "unsupported Activation type: " << param.act_type;
@@ -216,11 +212,11 @@ void ElementwiseAddActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseSubCompute<T, PType>::Run() {
-  elementwise_compute_template<T,
-                               lite::arm::math::elementwise_sub_broadcast<T>,
-                               lite::arm::math::elementwise_sub<T>,
-                               paddle::lite::kernels::host::naive_sub<T>,
-                               OprandSwapable::NO>(this);
+  elementwise_compute_template<T, OprandSwapable::NO>(
+      this,
+      lite::arm::math::elementwise_sub_broadcast<T>,
+      lite::arm::math::elementwise_sub<T>,
+      paddle::lite::kernels::host::naive_sub<T>);
 }
 
 void ElementwiseSubActivationCompute::Run() {
@@ -228,15 +224,14 @@ void ElementwiseSubActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<
-        float,
+    elementwise_compute_template<float, OprandSwapable::NO>(
+        this,
         lite::arm::math::elementwise_sub_relu_broadcast<float>,
         lite::arm::math::elementwise_sub_relu<float>,
         paddle::lite::kernels::host::naive_fused_op<
             float,
             paddle::lite::kernels::host::naive_sub<float>,
-            paddle::lite::kernels::host::naive_relu<float>>,
-        OprandSwapable::NO>(this);
+            paddle::lite::kernels::host::naive_relu<float>>);
   }
   if (!act_supported) {
     LOG(FATAL) << "unsupported Activation type: " << param.act_type;
@@ -245,11 +240,11 @@ void ElementwiseSubActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseMulCompute<T, PType>::Run() {
-  elementwise_compute_template<T,
-                               lite::arm::math::elementwise_mul_broadcast<T>,
-                               lite::arm::math::elementwise_mul<T>,
-                               paddle::lite::kernels::host::naive_mul<T>,
-                               OprandSwapable::YES>(this);
+  elementwise_compute_template<T, OprandSwapable::YES>(
+      this,
+      lite::arm::math::elementwise_mul_broadcast<T>,
+      lite::arm::math::elementwise_mul<T>,
+      paddle::lite::kernels::host::naive_mul<T>);
 }
 
 template <typename T, PrecisionType PType>
@@ -259,15 +254,14 @@ void ElementwiseMulActivationCompute<T, PType>::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<
-        T,
+    elementwise_compute_template<T, OprandSwapable::YES>(
+        this,
         lite::arm::math::elementwise_mul_relu_broadcast<T>,
         lite::arm::math::elementwise_mul_relu<T>,
         paddle::lite::kernels::host::naive_fused_op<
             T,
             paddle::lite::kernels::host::naive_mul<T>,
-            paddle::lite::kernels::host::naive_relu<T>>,
-        OprandSwapable::YES>(this);
+            paddle::lite::kernels::host::naive_relu<T>>);
   }
   if (!act_supported) {
     LOG(FATAL) << "unsupported Activation type: " << param.act_type;
@@ -275,12 +269,11 @@ void ElementwiseMulActivationCompute<T, PType>::Run() {
 }
 
 void ElementwiseMaxCompute::Run() {
-  elementwise_compute_template<
-      float,
+  elementwise_compute_template<float, OprandSwapable::YES>(
+      this,
       lite::arm::math::elementwise_max_broadcast<float>,
       lite::arm::math::elementwise_max<float>,
-      paddle::lite::kernels::host::naive_max<float>,
-      OprandSwapable::YES>(this);
+      paddle::lite::kernels::host::naive_max<float>);
 }
 
 void ElementwiseMaxActivationCompute::Run() {
@@ -288,15 +281,14 @@ void ElementwiseMaxActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<
-        float,
+    elementwise_compute_template<float, OprandSwapable::YES>(
+        this,
         lite::arm::math::elementwise_max_relu_broadcast<float>,
         lite::arm::math::elementwise_max_relu<float>,
         paddle::lite::kernels::host::naive_fused_op<
             float,
             paddle::lite::kernels::host::naive_max<float>,
-            paddle::lite::kernels::host::naive_relu<float>>,
-        OprandSwapable::YES>(this);
+            paddle::lite::kernels::host::naive_relu<float>>);
   }
   if (!act_supported) {
     LOG(FATAL) << "unsupported Activation type: " << param.act_type;
@@ -305,11 +297,11 @@ void ElementwiseMaxActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseDivCompute<T, PType>::Run() {
-  elementwise_compute_template<T,
-                               lite::arm::math::elementwise_div_broadcast<T>,
-                               lite::arm::math::elementwise_div<T>,
-                               paddle::lite::kernels::host::naive_div<T>,
-                               OprandSwapable::NO>(this);
+  elementwise_compute_template<T, OprandSwapable::NO>(
+      this,
+      lite::arm::math::elementwise_div_broadcast<T>,
+      lite::arm::math::elementwise_div<T>,
+      paddle::lite::kernels::host::naive_div<T>);
 }
 
 void ElementwiseDivActivationCompute::Run() {
@@ -317,15 +309,14 @@ void ElementwiseDivActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<
-        float,
+    elementwise_compute_template<float, OprandSwapable::NO>(
+        this,
         lite::arm::math::elementwise_div_relu_broadcast<float>,
         lite::arm::math::elementwise_div_relu<float>,
         paddle::lite::kernels::host::naive_fused_op<
             float,
             paddle::lite::kernels::host::naive_div<float>,
-            paddle::lite::kernels::host::naive_relu<float>>,
-        OprandSwapable::NO>(this);
+            paddle::lite::kernels::host::naive_relu<float>>);
   }
   if (!act_supported) {
     LOG(FATAL) << "unsupported Activation type: " << param.act_type;
@@ -334,11 +325,11 @@ void ElementwiseDivActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseModCompute<T, PType>::Run() {
-  elementwise_compute_template<T,
-                               lite::arm::math::elementwise_mod_broadcast<T>,
-                               lite::arm::math::elementwise_mod<T>,
-                               paddle::lite::kernels::host::naive_mod<T>,
-                               OprandSwapable::NO>(this);
+  elementwise_compute_template<T, OprandSwapable::NO>(
+      this,
+      lite::arm::math::elementwise_mod_broadcast<T>,
+      lite::arm::math::elementwise_mod<T>,
+      paddle::lite::kernels::host::naive_mod<T>);
 }
 
 }  // namespace arm
