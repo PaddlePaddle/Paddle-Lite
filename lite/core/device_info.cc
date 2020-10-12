@@ -1055,8 +1055,8 @@ int DeviceInfo::Setup() {
   }
 #endif
   // xiaodu device_name
-  if (dev_name.find("MT8765WA") != std::string::npos ||
-      dev_name.find("MT8167S") != std::string::npos) {
+  if (dev_name_.find("MT8765WA") != std::string::npos ||
+      dev_name_.find("MT8167S") != std::string::npos) {
     has_a53_valid_ = false;
   } else {
     has_a53_valid_ = true;
