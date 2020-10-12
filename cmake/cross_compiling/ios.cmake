@@ -120,9 +120,6 @@
 #
 
 ## Lite settings
-if (LITE_WITH_LTO)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-endif()
 if (ARM_TARGET_OS STREQUAL "ios")
   set(PLATFORM "OS")
 elseif(ARM_TARGET_OS STREQUAL "ios64")
