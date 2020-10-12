@@ -139,10 +139,10 @@ void common_elmentwise_op_arm(
 }
 
 template <class T, OprandSwapable opd_swap_able>
-inline void elementwise_compute_template(paddle::lite::KernelBase* kernel,
-                                         FastBCastFn<T> fast_bcast_fn,
-                                         ElementWiseFn<T> elementwise_fn,
-                                         BinaryOpFn<T> op) {
+void elementwise_compute_template(paddle::lite::KernelBase* kernel,
+                                  FastBCastFn<T> fast_bcast_fn,
+                                  ElementWiseFn<T> elementwise_fn,
+                                  BinaryOpFn<T> op) {
   auto& param = kernel->template Param<operators::ElementwiseParam>();
   auto* x_data = param.X->template data<T>();
   auto* y_data = param.Y->template data<T>();
