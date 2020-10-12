@@ -117,7 +117,10 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 #endif
 
 #ifdef LEAKY_RELU
-  output = select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in, in, (ushort4)(in >= 0));
+  output =
+      select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in,
+             in,
+             (short __attribute__((ext_vector_type(4))))(in >= 0));  // NOLINT
 #endif
   return output;
 }
