@@ -77,7 +77,7 @@ TEST(search_fc_x86, run_test) {
   w.Resize(lite::DDim(w_shape));
   std::vector<int64_t> b_shape{3};
   b.Resize(lite::DDim(b_shape));
-  std::vector<int64_t> out_shape{1, 4};
+  std::vector<int64_t> out_shape{1, 3};
   out.Resize(lite::DDim(out_shape));
   out_ref.Resize(lite::DDim(out_shape));
   auto x_data = x.mutable_data<float>();
