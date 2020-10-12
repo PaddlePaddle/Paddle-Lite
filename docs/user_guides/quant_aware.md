@@ -1,6 +1,19 @@
 # 模型量化-量化训练
 
-本文主要介绍使用Paddle-Lite加载PaddlePaddle产出的量化模型，并进行推理执行。
+首先我们介绍一下Paddle支持的模型量化方法，让大家有一个整体的认识。
+
+Paddle模型量化包含三种量化方法，分别是动态离线量化方法、静态离线量化方法和量化训练方法。
+
+下图展示了如何选择模型量化方法。
+
+![img](https://user-images.githubusercontent.com/52520497/95644539-e7f23500-0ae9-11eb-80a8-596cfb285e17.png)
+
+下图综合对比了模型量化方法的使用条件、易用性、精度损失和预期收益。
+
+![img](https://user-images.githubusercontent.com/52520497/95644609-59ca7e80-0aea-11eb-8897-208d7ccd5af1.png)
+)
+
+本文主要介绍使用PaddleSlim量化训练方法产出的量化模型，使用PaddleLite加载量化模型进行推理部署。
 
 ## 1 简介
 
@@ -8,7 +21,7 @@
 
 使用条件：
 * 有预训练模型
-* 有较多训练数据（大于5000）
+* 有较多训练数据（通常大于5000）
 
 使用步骤：
 * 产出量化模型：使用PaddlePaddle调用量化训练接口，产出量化模型
@@ -21,18 +34,18 @@
 缺点：
 * 使用条件较苛刻，使用门槛稍高
 
-建议首先使用“有校准数据训练后量化”对模型进行量化，然后使用使用量化模型进行预测。如果该量化模型的精度达不到要求，再使用“量化训练”。
+建议首先使用“静态离线量化”方法对模型进行量化，然后使用使用量化模型进行预测。如果该量化模型的精度达不到要求，再使用“量化训练”方法。
 
 ## 2 产出量化模型
 
-目前，PaddleSlim 框架的量化训练主要针对卷积层（包括二维卷积和Depthwise卷积）、和全连接层，对应算子是conv2d、depthwise_conv2d和mul。Paddle-Lite支持运行PaddlePaddle框架量化训练产出的模型，可以进一步加快模型在移动端的执行速度。
+目前，PaddleSlim 框架的量化训练主要针对卷积层和全连接层，对应算子是conv2d、depthwise_conv2d、conv2d_tranpose和mul。Paddle-Lite支持运行PaddlePaddle框架量化训练产出的模型，可以进一步加快模型在移动端的执行速度。
 
-温馨提示：如果您是初次接触PaddlePaddle框架，建议首先学习[新人入门](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/beginners_guide/index_cn.html)和[使用指南](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/user_guides/index_cn.html)。
+温馨提示：如果您是初次接触PaddlePaddle框架，建议首先学习[新人入门](https://www.paddlepaddle.org.cn/documentation/docs/zh/beginners_guide/index_cn.html)和[使用指南](https://www.paddlepaddle.org.cn/documentation/docs/zh/advanced_guide/index_cn.html)。
 
 使用PaddleSlim模型压缩工具训练量化模型，请参考文档：
-* 量化训练[快速开始教程](https://paddlepaddle.github.io/PaddleSlim/quick_start/quant_aware_tutorial.html)
-* 量化训练[API接口说明](https://paddlepaddle.github.io/PaddleSlim/api_cn/quantization_api.html)
-* 量化训练[Demo](https://github.com/PaddlePaddle/PaddleSlim/tree/release/1.0.1/demo/quant/quant_aware)
+* 量化训练[快速开始教程](https://paddleslim.readthedocs.io/zh_CN/latest/quick_start/quant_aware_tutorial.html)
+* 量化训练[API接口说明](https://paddleslim.readthedocs.io/zh_CN/latest/api_cn/quantization_api.html)
+* 量化训练[Demo](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/quant/quant_aware)
 
 ## 3 使用Paddle-Lite运行量化模型推理
 
