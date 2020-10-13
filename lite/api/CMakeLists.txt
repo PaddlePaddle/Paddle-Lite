@@ -30,6 +30,9 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     if(LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" ${cuda_kernels} "-Wl,--no-whole-archive")
     endif(LITE_WITH_CUDA)
+    if(LITE_WITH_CV)
+      target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" paddle_cv_arm "-Wl,--no-whole-archive")
+    endif(LITE_WITH_CV)
 
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared SHARED SRCS paddle_api.cc light_api.cc light_api_impl.cc
