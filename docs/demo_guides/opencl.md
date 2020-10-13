@@ -222,3 +222,8 @@ adb shell "export GLOG_v=4; \
 注：这里给出的链接会跳转到线上最新develop分支的代码，很可能与您本地的代码存在差异，建议参考自己本地位于`lite/demo/cxx/`目录的代码，查看如何使用。
 
 **NOTE：** 对OpenCL的支持还在持续开发中。
+
+## 4. 常见问题
+
+1. opencl计算过程中大多以`cl::Image2D`的数据排布进行计算，不同gpu支持的最大`cl::Image2D`的宽度和高度有限制，模型输入的数据格式是buffer形式的`NCHW`数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的`cl::Image2D`最大宽度和高度均为16384），可以通过公式`image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4`计算当前层NCHW排布的Tensor所需的`cl::Image2D`的宽度和高度；
+2. 部署时需考虑不支持opencl的情况，可预先使用API`bool ::IsOpenCLBackendValid()`判断，对于不支持的情况加载CPU模型，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
