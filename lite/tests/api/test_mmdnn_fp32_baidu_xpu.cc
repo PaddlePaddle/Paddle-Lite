@@ -24,11 +24,8 @@
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
 
-DEFINE_bool(perf, false, "perf?");
-DEFINE_string(perf_input, "perf_input", "perf_input");
-DEFINE_int32(perf_batch_size, 40, "perf_batch_size");
-DEFINE_bool(use_xpu, true, "use_xpu?");
-DEFINE_int32(perf_dev, 0, "perf_dev");
+DEFINE_string(data_dir, "", "data dir");
+DEFINE_int32(iteration, 1000, "iteration times to run");
 
 namespace paddle {
 namespace lite {
@@ -220,43 +217,6 @@ TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
   }
   config.set_xpu_workspace_l3_size_per_thread();
   auto predictor = lite_api::CreatePaddlePredictor(config);
-
-  if (FLAGS_perf) {
-    FileReader file_reader;
-    file_reader.Init(FLAGS_perf_input);
-    int UB_batch = FLAGS_perf_batch_size;  //  upper bound of batch
-    int iter = 0;
-    double tsc_sum = 0;
-
-    while (true) {
-      int batch = file_reader.Read(UB_batch);
-      if (batch <= 0) {
-        break;
-      }
-      ++iter;
-      for (size_t i = 0; i < file_reader.data.size(); ++i) {
-        auto input_x = predictor->GetInput(i);
-        input_x->Resize({(int64_t)file_reader.data[i].size(), 1});
-        input_x->SetLoD({file_reader.lod[i]});
-        auto* data_x = input_x->mutable_data<int64_t>();
-        memcpy(data_x,
-               file_reader.data[i].data(),
-               file_reader.data[i].size() * sizeof(int64_t));
-      }
-
-      auto start = GetCurrentUS();
-      predictor->Run();
-      auto end = GetCurrentUS();
-      tsc_sum += end - start;
-    }
-    LOG(INFO) << "================== Speed Report ===================";
-    LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num "
-              << FLAGS_threads << ", warmup: " << FLAGS_warmup
-              << ", repeats: " << iter << ", spend " << tsc_sum / iter / 1000.0
-              << " ms in average.";
-
-    return;
-  }
 
   SampleReader sample_reader;
   sample_reader.Read();
