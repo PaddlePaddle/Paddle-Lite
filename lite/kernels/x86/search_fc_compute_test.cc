@@ -95,7 +95,7 @@ TEST(search_fc_x86, run_test) {
     b_data[i] = static_cast<float>(i);
   }
 
-  fc_cpu_base(&x, &w, &b, 4, &out_ref);
+  fc_cpu_base(&x, &w, &b, 3, &out_ref);
 
   SearchFcCompute<float> fc;
   operators::SearchFcParam param;
@@ -103,7 +103,7 @@ TEST(search_fc_x86, run_test) {
   param.W = &w;
   param.b = &b;
   param.Out = &out;
-  param.out_size = 4;
+  param.out_size = 3;
   fc.SetParam(param);
   fc.SetContext(std::move(ctx));
   fc.Run();
