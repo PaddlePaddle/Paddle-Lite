@@ -141,6 +141,8 @@ class CLWrapper final {
       cl_device_id,
       cl_command_queue_properties,
       cl_int *);
+  using clGetCommandQueueInfoType = cl_int (*)(
+      cl_command_queue, cl_command_queue_info, size_t, void *, size_t *);
   using clCreateCommandQueueWithPropertiesType = cl_command_queue (*)(
       cl_context, cl_device_id, const cl_queue_properties *, cl_int *);
   using clReleaseCommandQueueType = cl_int (*)(cl_command_queue);
@@ -355,6 +357,12 @@ class CLWrapper final {
     return clCreateCommandQueue_;
   }
 
+  clGetCommandQueueInfoType clGetCommandQueueInfo() {
+    CHECK(clGetCommandQueueInfo_ != nullptr)
+        << "Cannot load clGetCommandQueueInfo!";
+    return clGetCommandQueueInfo_;
+  }
+
   clCreateCommandQueueWithPropertiesType clCreateCommandQueueWithProperties() {
     CHECK(clCreateCommandQueueWithProperties_ != nullptr)
         << "Cannot load clCreateCommandQueueWithProperties!";
@@ -544,6 +552,7 @@ class CLWrapper final {
   clEnqueueMapBufferType clEnqueueMapBuffer_{nullptr};
   clEnqueueMapImageType clEnqueueMapImage_{nullptr};
   clCreateCommandQueueType clCreateCommandQueue_{nullptr};
+  clGetCommandQueueInfoType clGetCommandQueueInfo_{nullptr};
   clCreateCommandQueueWithPropertiesType clCreateCommandQueueWithProperties_{
       nullptr};
   clReleaseCommandQueueType clReleaseCommandQueue_{nullptr};
