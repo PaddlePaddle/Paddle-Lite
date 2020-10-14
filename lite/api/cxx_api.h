@@ -92,11 +92,13 @@ class LITE_API Predictor {
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
-      bool memory_from_memory = false);
+      bool memory_from_memory = false,
+      int quant_bits = 16);
 
   void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
              const std::vector<Place>& valid_places,
-             const std::vector<std::string>& passes = {});
+             const std::vector<std::string>& passes = {},
+             int quant_bits = 16);
 
   //////////////////////////////////////////////////////////
   // Function: Clone

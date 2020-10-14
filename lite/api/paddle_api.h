@@ -177,6 +177,8 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string param_file_;
   std::vector<std::string> passes_internal_{};
   bool model_from_memory_{false};
+  bool quant_model_{false};  // Enable post_quant_dynamic in opt
+  int quant_bits_{16};
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
@@ -262,6 +264,11 @@ class LITE_API CxxConfig : public ConfigBase {
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
+
+  void set_quant_model(bool quant_model) { quant_model_ = quant_model; }
+  bool quant_model() const { return quant_model_; }
+  void set_quant_bits(int quant_bits) { quant_bits_ = quant_bits; }
+  int quant_bits() const { return quant_bits_; }
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip
