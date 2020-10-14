@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/arm/math/power.h"
+
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
@@ -26,13 +27,13 @@ void power<float>(const float* din,
                   const int num,
                   float scale_,
                   float shift_,
-                  float power_) {
+                  float factor_) {
   int cnt = num >> 4;
   int remain = num % 16;
   bool _do_power = true;
   bool _do_scale = true;
   bool _do_shift = true;
-  if (fabsf(power_ - 1.f) < 1e-6f) {
+  if (fabsf(factor_ - 1.f) < 1e-6f) {
     _do_power = false;
   }
   if (fabsf(scale_ - 1.f) < 1e-6f) {
@@ -45,7 +46,7 @@ void power<float>(const float* din,
   const float* ptr_in = din;
   float32x4_t vscale = vdupq_n_f32(scale_);
   float32x4_t vshift = vdupq_n_f32(shift_);
-  float32x4_t vpower = vdupq_n_f32(power_);
+  float32x4_t vpower = vdupq_n_f32(factor_);
 #pragma omp parallel for
   for (int nums = 0; nums < cnt; ++nums) {
     float32x4_t vr0 = vld1q_f32(ptr_in);
@@ -84,7 +85,7 @@ void power<float>(const float* din,
     ptr_out += 4;
   }
   for (int j = 0; j < remain; ++j) {
-    ptr_out[0] = std::pow((ptr_in[0] * scale_ + shift_), power_);
+    ptr_out[0] = std::pow((ptr_in[0] * scale_ + shift_), factor_);
     ptr_in++;
     ptr_out++;
   }
