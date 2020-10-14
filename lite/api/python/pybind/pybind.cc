@@ -31,8 +31,8 @@
 
 #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
-#include "lite/core/tensor.h"
 #include "lite/api/python/pybind/tensor_py.h"
+#include "lite/core/tensor.h"
 
 namespace py = pybind11;
 
@@ -245,9 +245,10 @@ void BindLiteTensor(py::module *m) {
       .def("precision", &Tensor::precision)
       .def("lod", &Tensor::lod)
       .def("set_lod", &Tensor::SetLoD)
-      .def("from_numpy", SetTensorFromPyArray,
-           py::arg("array"), py::arg("place") = TargetType::kHost);
-
+      .def("from_numpy",
+           SetTensorFromPyArray,
+           py::arg("array"),
+           py::arg("place") = TargetType::kHost);
 
 #define DO_GETTER_ONCE(data_type__, name__)                           \
   tensor.def(#name__, [=](Tensor &self) -> std::vector<data_type__> { \
@@ -286,8 +287,6 @@ void BindLiteTensor(py::module *m) {
 #undef DO_SETTER_ONCE
 #undef DATA_GETTER_SETTER_ONCE
 }
-
-
 
 #ifndef LITE_ON_TINY_PUBLISH
 void BindLiteCxxPredictor(py::module *m) {

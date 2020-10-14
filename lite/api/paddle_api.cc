@@ -78,7 +78,7 @@ void Tensor::Resize(const shape_t &shape) {
   tensor(raw_tensor_)->Resize(shape);
 }
 
-bool Tensor::IsInitialized() const{
+bool Tensor::IsInitialized() const {
   return tensor(raw_tensor_)->IsInitialized();
 }
 

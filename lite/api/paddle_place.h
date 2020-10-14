@@ -145,7 +145,7 @@ struct PrecisionTypeTrait {
 #define _ForEachPrecisionType(callback)                   \
   _ForEachPrecisionTypeHelper(callback, bool, kBool);     \
   _ForEachPrecisionTypeHelper(callback, float, kFloat);   \
-  _ForEachPrecisionTypeHelper(callback, uint8_t, kUInt8);   \
+  _ForEachPrecisionTypeHelper(callback, uint8_t, kUInt8); \
   _ForEachPrecisionTypeHelper(callback, int8_t, kInt8);   \
   _ForEachPrecisionTypeHelper(callback, int16_t, kInt16); \
   _ForEachPrecisionTypeHelper(callback, int, kInt32);     \

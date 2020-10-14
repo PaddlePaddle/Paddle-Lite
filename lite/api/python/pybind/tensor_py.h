@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/api/python/pybind/pybind.h"
+#ifndef LITE_API_PYTHON_PYBIND_TENSOR_PY_H_  // NOLINT
+#define LITE_API_PYTHON_PYBIND_TENSOR_PY_H_
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 #include <cstring>
@@ -23,14 +24,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-/*
-#ifndef LITE_ON_TINY_PUBLISH
-#include "lite/api/cxx_api.h"
-#include "lite/api/opt_base.h"
-#endif*/
-
-// #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
+#include "lite/api/python/pybind/pybind.h"
 #include "lite/core/tensor.h"
 
 namespace py = pybind11;
@@ -51,16 +46,19 @@ using lite_api::PrecisionType;
 using lite_api::TargetType;
 using lite_api::Tensor;
 
-
-inline std::string TensorDTypeToPyDTypeStr(
-    PrecisionType type) {
- #define TENSOR_DTYPE_TO_PY_DTYPE(T, proto_type)                             \
-  if (type == proto_type) {                                                 \
-    if (proto_type == PrecisionType::kFP16) {                                \
-      return "e";                                                           \
-    } else {                                                                \
-      return py::format_descriptor<T>::format();                            \
-    }                                                                       \
+////////////////////////////////////////////////////////////////
+// Function Name: TensorDTypeToPyDTypeStr
+// Usage: Transform Lite PresionType name into corresponding
+//        numpy name.
+////////////////////////////////////////////////////////////////
+inline std::string TensorDTypeToPyDTypeStr(PrecisionType type) {
+#define TENSOR_DTYPE_TO_PY_DTYPE(T, proto_type)  \
+  if (type == proto_type) {                      \
+    if (proto_type == PrecisionType::kFP16) {    \
+      return "e";                                \
+    } else {                                     \
+      return py::format_descriptor<T>::format(); \
+    }                                            \
   }
 
   TENSOR_DTYPE_TO_PY_DTYPE(float, PrecisionType::kFloat)
@@ -73,14 +71,15 @@ inline std::string TensorDTypeToPyDTypeStr(
   TENSOR_DTYPE_TO_PY_DTYPE(int64_t, PrecisionType::kInt64)
   TENSOR_DTYPE_TO_PY_DTYPE(int16_t, PrecisionType::kInt16)
 
- #undef TENSOR_DTYPE_TO_PY_DTYPE
-  LOG(FATAL) << "Error: Unsupported tensor data type!";  
+#undef TENSOR_DTYPE_TO_PY_DTYPE
+  LOG(FATAL) << "Error: Unsupported tensor data type!";
   return "";
 }
 
-
-
-
+////////////////////////////////////////////////////////////////
+// Function Name: TensorToPyArray
+// Usage: Transform tensor's data into numpy array
+////////////////////////////////////////////////////////////////
 inline py::array TensorToPyArray(const Tensor &tensor,
                                  bool need_deep_copy = false) {
   if (!tensor.IsInitialized()) {
@@ -100,17 +99,20 @@ inline py::array TensorToPyArray(const Tensor &tensor,
     numel *= py_dims[i];
   }
 
-  const void *tensor_buf_ptr = static_cast<const void*>(tensor.data<int8_t>());
+  const void *tensor_buf_ptr = static_cast<const void *>(tensor.data<int8_t>());
   std::string py_dtype_str = TensorDTypeToPyDTypeStr(tensor.precision());
   auto base = py::cast(std::move(tensor));
-  return py::array(py::dtype(py_dtype_str.c_str()), py_dims, py_strides,
-                   const_cast<void *>(tensor_buf_ptr), base);
+  return py::array(py::dtype(py_dtype_str.c_str()),
+                   py_dims,
+                   py_strides,
+                   const_cast<void *>(tensor_buf_ptr),
+                   base);
 }
 
-
-
-
-
+////////////////////////////////////////////////////////////////
+// Function Name: SetTensorFromPyArrayT
+// Usage: Transform numpy of specified precision into tensor
+////////////////////////////////////////////////////////////////
 template <typename T>
 void SetTensorFromPyArrayT(
     Tensor *self,
@@ -127,9 +129,15 @@ void SetTensorFromPyArrayT(
   std::memcpy(dst, array.data(), array.nbytes());
 }
 
-
-// float16 and uint16_t inputs are not supported on Paddle-Lite, while uint16_t and float16 are supported on PaddlePaddle
-void SetTensorFromPyArray(Tensor *self, const py::object &obj,
+////////////////////////////////////////////////////////////////
+// Function Name: SetTensorFromPyArrayT
+// Usage: Create a tensor from input numpy array
+// Todo: float16 and uint16_t inputs are not supported on
+//       Paddle-Lite, while these two precision type are supported
+//       on PaddlePaddle.
+////////////////////////////////////////////////////////////////
+void SetTensorFromPyArray(Tensor *self,
+                          const py::object &obj,
                           const TargetType &place) {
   auto array = obj.cast<py::array>();
   if (py::isinstance<py::array_t<float>>(array)) {
@@ -152,13 +160,15 @@ void SetTensorFromPyArray(Tensor *self, const py::object &obj,
     // obj may be any type, obj.cast<py::array>() may be failed,
     // then the array.dtype will be string of unknown meaning,
     LOG(FATAL) << "Input object type error or incompatible array data type. "
-        "tensor.from_numpy(numpy.array, PrecisionType) supports numpy array input in  bool, float32, "
-        "float64, int8, int16, int32, int64 or uint8, please check your input or input array data type.";
+                  "tensor.from_numpy(numpy.array, PrecisionType) supports "
+                  "numpy array input in  bool, float32, "
+                  "float64, int8, int16, int32, int64 or uint8, please check "
+                  "your input or input array data type.";
   }
 }
-
-
 
 }  // namespace pybind
 }  // namespace lite
 }  // namespace paddle
+
+#endif  // NOLINT
