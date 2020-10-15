@@ -240,7 +240,7 @@ class LITE_API CxxConfig : public ConfigBase {
   const std::vector<Place>& valid_places() const { return valid_places_; }
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
-  bool model_from_memory() const { return model_buffer_; }
+  bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
 
 #ifdef LITE_WITH_X86
   void set_x86_math_library_num_threads(int threads) {

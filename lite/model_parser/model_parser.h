@@ -34,7 +34,8 @@ namespace lite {
 #ifndef LITE_ON_TINY_PUBLISH
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string& path, bool program_from_memory = false);
+    const std::string& path,
+    std::shared_ptr<lite_api::ModelBuffer> model_buffer = nullptr);
 
 template <typename T>
 void ReadModelDataFromFile(T* data,
