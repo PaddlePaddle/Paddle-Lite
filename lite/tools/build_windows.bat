@@ -10,6 +10,8 @@ set WITH_LOG=ON
 set WITH_PROFILE=OFF
 set WITH_TESTING=OFF
 set BUILD_FOR_CI=OFF
+set BUILD_TAILOR=OFF
+set OPTMODEL_DIR=""
 set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
 set workspace=%source_path%
@@ -22,6 +24,11 @@ if /I "%1"=="with_extra" (
     set WITH_PYTHON=ON
 ) else if /I  "%1"=="with_profile" (
     set WITH_PROFILE=ON
+) else if /I  "%1"=="without_log" (
+    set WITH_LOG=OFF
+) else if /I  "%1"=="build_tailor" (
+    set BUILD_TAILOR=ON
+    set OPTMODEL_DIR="%2"
 ) else if /I  "%1"=="build_for_ci" (
     set BUILD_FOR_CI=ON
     set WITH_TESTING=ON
@@ -40,20 +47,19 @@ goto round
 cd "%workspace%"
 
 echo "------------------------------------------------------------------------------------------------------|"
+echo "|  WITH_LOG=%WITH_LOG%                                                                                |"
 echo "|  BUILD_EXTRA=%BUILD_EXTRA%                                                                          |"
-echo "|  WITH_PYTHON=%WITH_PYTHON%                                                                         |"
+echo "|  WITH_PYTHON=%WITH_PYTHON%                                                                          |"
 echo "|  LITE_WITH_PROFILE=%WITH_PROFILE%                                                                   |"
 echo "|  WITH_TESTING=%WITH_TESTING%                                                                        |"
+echo "|  BUILD_TAILOR=%BUILD_TAILOR%                                                                        |"
+echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                                                        |"
 echo "------------------------------------------------------------------------------------------------------|"
 
-:set_vcvarsall_dir
-SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat   =======>"
-set tmp_var=!vcvarsall_dir!
-call:remove_space
-set vcvarsall_dir=!tmp_var!   
+
+set vcvarsall_dir=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
 IF NOT EXIST "%vcvarsall_dir%" (
-    echo "------------%vcvarsall_dir% not exist------------"
-    goto:eof
+  goto set_vcvarsall_dir
 )
 
 call:prepare_thirdparty
@@ -86,7 +92,8 @@ copy "%root_dir%\lite\tools\debug\analysis_tool.py" "%DEBUG_TOOL_PATH_PREFIX%\"
 
 cd "%build_directory%"
 
-  cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64  -DWITH_MKL=ON      ^
+  cmake %root_dir%  -G "Visual Studio 14 2015 Win64" ^
+            -T host=x64  -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
             -DLITE_WITH_X86=ON  ^
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
@@ -97,34 +104,28 @@ cd "%build_directory%"
             -DLITE_BUILD_EXTRA=%BUILD_EXTRA% ^
             -DLITE_WITH_PYTHON=%WITH_PYTHON% ^
             -DWITH_TESTING=%WITH_TESTING%    ^
+            -DLITE_WITH_LOG=%WITH_LOG%       ^
+            -DLITE_BUILD_TAILOR=%BUILD_TAILOR%  ^
+            -DLITE_OPTMODEL_DIR=%OPTMODEL_DIR%  ^
             -DPYTHON_EXECUTABLE="%python_path%"
 
 call "%vcvarsall_dir%" amd64
 
 if "%BUILD_FOR_CI%"=="ON" (
-    msbuild /m /p:Configuration=Release lite\lite_compile_deps.vcxproj
+    msbuild /m:4 /p:Configuration=Release lite\lite_compile_deps.vcxproj
     call:test_server
     cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
-    msbuild /m /p:Configuration=Release lite\api\opt.vcxproj
+    msbuild /m:4 /p:Configuration=Release lite\api\opt.vcxproj
 ) else (
-    msbuild /m /p:Configuration=Release lite\publish_inference.vcxproj 
+    msbuild /m:4 /p:Configuration=Release lite\publish_inference.vcxproj 
 )
 goto:eof
 
 :prepare_thirdparty 
-    SET /P python_path="Please input the path of python.exe, such as C:\Python35\python.exe, C:\Python35\python3.exe   =======>"
-    set tmp_var=!python_path!
-    call:remove_space
-    set python_path=!tmp_var!   
-    if "!python_path!"=="" (
-      set python_path=python.exe
-    ) else (
-      if NOT exist "!python_path!" (
-        echo "------------!python_path! not exist------------" 
-        goto:eof
-      )  
+    set python_path=C:\Python27\python.exe
+    IF NOT EXIST "%python_path%" (
+      goto set_python_path
     )
-
     if  EXIST "%workspace%\third-party" (
         if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
             echo "The directory of third_party exists, the third-party-05b862.tar.gz not exists."            
@@ -161,6 +162,31 @@ goto:eof
     rd /s /q  "%~1" >nul 2>&1
 goto:eof
 
+:set_vcvarsall_dir
+SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat   =======>"
+set tmp_var=!vcvarsall_dir!
+call:remove_space
+set vcvarsall_dir=!tmp_var!   
+IF NOT EXIST "%vcvarsall_dir%" (
+    echo "------------%vcvarsall_dir% not exist------------"
+    goto:eof
+)
+goto:eof
+
+:set_python_path
+SET /P python_path="Please input the path of python.exe, such as C:\Python35\python.exe, C:\Python35\python3.exe   =======>"
+set tmp_var=!python_path!
+call:remove_space
+set python_path=!tmp_var!   
+if "!python_path!"=="" (
+  set python_path=python.exe
+) else (
+  if NOT exist "!python_path!" (
+    echo "------------!python_path! not exist------------" 
+    goto:eof
+  )  
+)
+goto:eof
 
 :remove_space
 :remove_left_space
@@ -186,11 +212,14 @@ echo "|  print help information:                                                
 echo "|      build_windows.bat help                                                                         |"
 echo "|                                                                                                     |"
 echo "|  optional argument:                                                                                 |"
+echo "|      without_log: Diable print log information. Default  ON.                                        |"
 echo "|      with_profile: Enable profile mode in lite framework. Default  OFF.                             |"
 echo "|      with_python: Enable Python api lib in lite mode. Default  OFF.                                 |"
 echo "|      with_extra: Enable extra algorithm support in Lite, both kernels and operators. Default OFF.   |"
+echo "|      build_tailor: Enable tailoring library according to model. Default OFF.                        |"
 echo "|  for example:                                                                                       |"   
-echo "|      build_windows.bat with_profile  with_python with_extra                                         |"
+echo "|      build_windows.bat with_profile with_python with_extra                                          |"
+echo "|      build_windows.bat build_tailor D:\Paddle-Lite\opt_model_dir                                    |"
 echo "------------------------------------------------------------------------------------------------------|"
 goto:eof
 
