@@ -95,6 +95,7 @@ void TensorFromStream(std::istream &is, lite::Tensor *tensor) {
     // SET_TENSOR(BOOL, bool, PRECISION(kBool));
     SET_TENSOR(FP32, float, PRECISION(kFloat));
     SET_TENSOR(INT8, int8_t, PRECISION(kInt8));
+    SET_TENSOR(UINT8, uint8_t, PRECISION(kUInt8));
     SET_TENSOR(INT16, int16_t, PRECISION(kInt16));
     SET_TENSOR(INT32, int32_t, PRECISION(kInt32));
     SET_TENSOR(INT64, int64_t, PRECISION(kInt64));
@@ -663,6 +664,7 @@ void GetParamInfoNaive(const naive_buffer::ParamDesc &desc,
 
     // SET_TENSOR(BOOL, bool, PRECISION(kBool));
     SET_TENSOR(FP32, float, PRECISION(kFloat));
+    SET_TENSOR(UINT8, uint8_t, PRECISION(kUInt8));
     SET_TENSOR(INT8, int8_t, PRECISION(kInt8));
     SET_TENSOR(INT16, int16_t, PRECISION(kInt16));
     SET_TENSOR(INT32, int32_t, PRECISION(kInt32));
