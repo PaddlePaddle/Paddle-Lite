@@ -85,8 +85,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else if (target_repr == "imagination_nna") {
-      valid_places.emplace_back(TARGET(kImaginationNNA));
-      valid_places.emplace_back(
+      valid_places_.emplace_back(TARGET(kImaginationNNA));
+      valid_places_.emplace_back(
           Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else {
       LOG(FATAL) << lite::string_format(

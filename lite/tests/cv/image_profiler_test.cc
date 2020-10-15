@@ -894,7 +894,7 @@ TEST(TestImageResizeRand, test_func_image_resize_preprocess) {
 #if 1
 TEST(TestImageFlipRand, test_func_image_flip_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 8, 16, 112, 224, 1092}) {
+    for (auto w : {1, 8, 16, 112, 224, 1080}) {
       for (auto h : {1, 16, 112, 224}) {
         for (auto rotate : {90}) {
           for (auto flip : {-1, 0, 1}) {

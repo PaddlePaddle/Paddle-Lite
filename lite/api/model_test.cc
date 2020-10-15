@@ -184,7 +184,7 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
       sum1 += out_data[i];
     }
     if (flag_out) {
-      fclose(fp);
+      fclose(fp1);
     }
     printf("out mean: %f \n", sum1 / output_tensor_numel);
 
