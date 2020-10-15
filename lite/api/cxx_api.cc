@@ -252,8 +252,9 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   const std::string &model_path = config.model_dir();
   const std::string &model_file = config.model_file();
   const std::string &param_file = config.param_file();
-  const bool model_from_memory = config.model_from_memory();
-  if (model_from_memory) {
+  std::shared_ptr<lite_api::ModelBuffer> model_buffer =
+      config.get_model_buffer();
+  if (model_buffer) {
     LOG(INFO) << "Load model from memory.";
   } else {
     LOG(INFO) << "Load model from file.";
@@ -264,7 +265,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
         valid_places,
         passes,
         model_type,
-        model_from_memory);
+        model_buffer);
 }
 void Predictor::Build(const std::string &model_path,
                       const std::string &model_file,
@@ -272,7 +273,7 @@ void Predictor::Build(const std::string &model_path,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type,
-                      bool model_from_memory) {
+                      std::shared_ptr<lite_api::ModelBuffer> model_buffer) {
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf: {
       bool combined_param = false;
@@ -285,7 +286,7 @@ void Predictor::Build(const std::string &model_path,
                   scope_.get(),
                   program_desc_.get(),
                   combined_param,
-                  model_from_memory);
+                  model_buffer);
     } break;
     case lite_api::LiteModelType::kNaiveBuffer:
       CHECK(!model_path.empty())

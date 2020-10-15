@@ -279,6 +279,30 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+ModelBuffer::ModelBuffer(const char *model_buffer,
+                         size_t model_buffer_size,
+                         const char *param_buffer,
+                         size_t param_buffer_size) {
+  model_ = std::string(model_buffer, model_buffer + model_buffer_size);
+  param_ = std::string(param_buffer, param_buffer + param_buffer_size);
+}
+
+ModelBuffer::ModelBuffer(std::string &&model_buffer,
+                         std::string &&param_buffer) {
+  model_ = std::forward<std::string>(model_buffer);
+  param_ = std::forward<std::string>(param_buffer);
+}
+
+std::string ModelBuffer::release_model() {
+  CHECK(!model_.empty());
+  return std::move(model_);
+}
+
+std::string ModelBuffer::release_param() {
+  CHECK(!param_.empty());
+  return std::move(param_);
+}
+
 #ifdef LITE_WITH_MLU
 void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
   mlu_core_version_ = core_version;

@@ -92,7 +92,7 @@ class LITE_API Predictor {
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
-      bool memory_from_memory = false);
+      std::shared_ptr<lite_api::ModelBuffer> model_buffer = nullptr);
 
   void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
              const std::vector<Place>& valid_places,

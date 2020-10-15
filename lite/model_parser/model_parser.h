@@ -23,6 +23,7 @@
 #include "lite/core/framework.pb.h"
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 #endif
+#include "lite/api/paddle_api.h"
 #include "lite/core/scope.h"
 #include "lite/core/variable.h"
 #include "lite/model_parser/compatible_pb.h"
@@ -51,10 +52,11 @@ void LoadParams(const std::string& path);
 // Load a single parameter to an output tensor.
 void LoadParam(const std::string& path, Variable* out);
 
-void LoadCombinedParamsPb(const std::string& path,
-                          lite::Scope* scope,
-                          const cpp::ProgramDesc& prog,
-                          bool params_from_memory = false);
+void LoadCombinedParamsPb(
+    const std::string& path,
+    lite::Scope* scope,
+    const cpp::ProgramDesc& prog,
+    std::shared_ptr<lite_api::ModelBuffer> model_buffer = nullptr);
 
 // Read a model and files of parameters in pb format.
 void LoadModelPb(const std::string& model_dir,
@@ -63,7 +65,7 @@ void LoadModelPb(const std::string& model_dir,
                  Scope* scope,
                  cpp::ProgramDesc* prog,
                  bool combined = false,
-                 bool model_from_memory = false);
+                 std::shared_ptr<lite_api::ModelBuffer> model_buffer = nullptr);
 
 // Save a model and files of parameters in pb format.
 void SaveModelPb(const std::string& model_dir,
