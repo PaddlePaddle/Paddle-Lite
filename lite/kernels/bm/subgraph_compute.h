@@ -61,7 +61,6 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
   const char **net_names_;
   const bm_net_info_t *net_info_;
   bm_handle_t bm_hd_;
-  std::vector<Tensor *> last_origin_itensors_;
 };
 
 class SubgraphCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
