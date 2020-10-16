@@ -172,21 +172,21 @@ class LITE_API ConfigBase {
 
 class LITE_API ModelBuffer {
  public:
-  ModelBuffer(const char* model_buffer,
-              size_t model_buffer_size,
-              const char* param_buffer,
-              size_t param_buffer_size);
-  ModelBuffer(std::string&& model_buffer, std::string&& param_buffer);
-  std::string release_model();
-  std::string release_param();
+  ModelBuffer(const char* program_buffer,
+              size_t program_buffer_size,
+              const char* params_buffer,
+              size_t params_buffer_size);
+  ModelBuffer(std::string&& program_buffer, std::string&& params_buffer);
+  std::string release_program();
+  std::string release_params();
 
   ModelBuffer() = default;
   ModelBuffer(const ModelBuffer&) = delete;
   ModelBuffer& operator=(const ModelBuffer&) = delete;
 
  private:
-  std::string model_;
-  std::string param_;
+  std::string program_;
+  std::string params_;
 };
 
 /// CxxConfig is the config for the Full feature predictor.

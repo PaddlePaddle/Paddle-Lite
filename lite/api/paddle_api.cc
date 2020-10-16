@@ -279,26 +279,26 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
-ModelBuffer::ModelBuffer(const char *model_buffer,
-                         size_t model_buffer_size,
-                         const char *param_buffer,
-                         size_t param_buffer_size) {
-  model_ = std::string(model_buffer, model_buffer + model_buffer_size);
-  param_ = std::string(param_buffer, param_buffer + param_buffer_size);
+ModelBuffer::ModelBuffer(const char *program_buffer,
+                         size_t program_buffer_size,
+                         const char *params_buffer,
+                         size_t params_buffer_size) {
+  program_ = std::string(program_buffer, program_buffer + program_buffer_size);
+  params_ = std::string(params_buffer, params_buffer + params_buffer_size);
 }
 
-ModelBuffer::ModelBuffer(std::string &&model_buffer,
-                         std::string &&param_buffer) {
-  model_ = std::forward<std::string>(model_buffer);
-  param_ = std::forward<std::string>(param_buffer);
+ModelBuffer::ModelBuffer(std::string &&program_buffer,
+                         std::string &&params_buffer) {
+  program_ = std::forward<std::string>(program_buffer);
+  params_ = std::forward<std::string>(params_buffer);
 }
 
-std::string ModelBuffer::release_model() {
+std::string ModelBuffer::release_program() {
   CHECK(!model_.empty());
   return std::move(model_);
 }
 
-std::string ModelBuffer::release_param() {
+std::string ModelBuffer::release_params() {
   CHECK(!param_.empty());
   return std::move(param_);
 }

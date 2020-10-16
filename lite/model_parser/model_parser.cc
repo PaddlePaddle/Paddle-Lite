@@ -152,7 +152,7 @@ std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
     ReadBinaryFile(path, &desc_str);
     main_program->ParseFromString(desc_str);
   } else {
-    main_program->ParseFromString(model_buffer->release_model());
+    main_program->ParseFromString(model_buffer->release_program());
   }
   return main_program;
 }
@@ -207,7 +207,7 @@ void LoadCombinedParamsPb(const std::string &path,
   };
 
   if (model_buffer) {
-    std::stringstream fin(model_buffer->release_param());
+    std::stringstream fin(model_buffer->release_params());
     load_var_func(fin);
   } else {
     std::ifstream fin(path, std::ios::binary);
