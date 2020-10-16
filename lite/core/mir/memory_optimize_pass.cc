@@ -148,7 +148,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
           int cur_life =
               (*lifecycles)[TargetToStr(target_type)][var_name].second;
           (*lifecycles)[TargetToStr(target_type)][var_name].second =
-              std::max(max_lifecycle_, cur_life);
+              (std::max)(max_lifecycle_, cur_life);
         }
       }
       ++max_lifecycle_;
@@ -315,4 +315,5 @@ REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
                      TARGET(kRKNPU),
                      TARGET(kAPU),
                      TARGET(kMLU),
-                     TARGET(kHuaweiAscendNPU)});
+                     TARGET(kHuaweiAscendNPU),
+                     TARGET(kImaginationNNA)});

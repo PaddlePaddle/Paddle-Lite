@@ -53,6 +53,7 @@ USE_MIR_PASS(multi_stream_analysis_pass);
 USE_MIR_PASS(elementwise_mul_constant_eliminate_pass)
 USE_MIR_PASS(npu_subgraph_pass);
 USE_MIR_PASS(huawei_ascend_npu_subgraph_pass);
+USE_MIR_PASS(imagination_nna_subgraph_pass);
 USE_MIR_PASS(xpu_subgraph_pass);
 USE_MIR_PASS(mlu_subgraph_pass);
 USE_MIR_PASS(mlu_postprocess_pass);
@@ -62,6 +63,7 @@ USE_MIR_PASS(quantized_op_attributes_inference_pass);
 USE_MIR_PASS(control_flow_op_unused_inputs_and_outputs_eliminate_pass)
 USE_MIR_PASS(lite_scale_activation_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
+USE_MIR_PASS(__xpu__resnet_d_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_cbam_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_fuse_pass);
 USE_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass);

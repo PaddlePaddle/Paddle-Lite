@@ -1,6 +1,6 @@
 # 支持算子
 
-当前Paddle-Lite共计支持算子204个，其中基础算子78个，附加算子126个。
+当前Paddle-Lite共计支持算子204个，其中基础算子78个，附加算子127个。
 
 ### 基础算子
 
@@ -90,7 +90,7 @@
 
 ### 附加算子
 
-附加算子共计126个，需要在编译时打开`--build_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
+附加算子共计127个，需要在编译时打开`--build_extra=ON`开关才会编译，具体请参考[参数详情](../source_compile/library)。
 
 | OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU |
 |-:|-|-|-|-|-|-|-|-|-|-|
@@ -159,8 +159,7 @@
 | not_equal | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | one_hot | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | pixel_shuffle | Y | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |
-| pow | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| power | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
+| pow | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
 | print | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | read_from_array | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | reciprocal | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
@@ -220,3 +219,4 @@
 | __xpu__resnet_cbam | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
 | __xpu__resnet50 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
 | __xpu__sfa_head | 　 | 　 | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 |
+| matrix_nms | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |

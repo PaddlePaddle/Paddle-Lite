@@ -78,6 +78,10 @@ void Tensor::Resize(const shape_t &shape) {
   tensor(raw_tensor_)->Resize(shape);
 }
 
+bool Tensor::IsInitialized() const {
+  return tensor(raw_tensor_)->IsInitialized();
+}
+
 template <typename T>
 const T *Tensor::data() const {
   return ctensor(raw_tensor_)->data<T>();
@@ -96,18 +100,24 @@ T *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<T>(type);
 }
 
+template const double *Tensor::data<double>() const;
 template const float *Tensor::data<float>() const;
-template const int8_t *Tensor::data<int8_t>() const;
-template const uint8_t *Tensor::data<uint8_t>() const;
 template const int64_t *Tensor::data<int64_t>() const;
 template const int32_t *Tensor::data<int32_t>() const;
+template const int16_t *Tensor::data<int16_t>() const;
+template const int8_t *Tensor::data<int8_t>() const;
+template const uint8_t *Tensor::data<uint8_t>() const;
+template const bool *Tensor::data<bool>() const;
 template const void *Tensor::data<void>() const;
 
-template int *Tensor::mutable_data(TargetType type) const;
+template double *Tensor::mutable_data(TargetType type) const;
 template float *Tensor::mutable_data(TargetType type) const;
+template int64_t *Tensor::mutable_data(TargetType type) const;
+template int *Tensor::mutable_data(TargetType type) const;
+template int16_t *Tensor::mutable_data(TargetType type) const;
 template int8_t *Tensor::mutable_data(TargetType type) const;
 template uint8_t *Tensor::mutable_data(TargetType type) const;
-template int64_t *Tensor::mutable_data(TargetType type) const;
+template bool *Tensor::mutable_data(TargetType type) const;
 
 template <typename T, TargetType type>
 void Tensor::CopyFromCpu(const T *src_data) {
@@ -176,6 +186,7 @@ template void Tensor::CopyFromCpu<uint8_t, TargetType::kARM>(const uint8_t *);
 template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
 template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
+template void Tensor::CopyFromCpu<uint8_t, TargetType::kCUDA>(const uint8_t *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
 
 template void Tensor::CopyFromCpu<int, TargetType::kMLU>(const int *);
@@ -354,6 +365,14 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
   model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
   param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
   model_from_memory_ = true;
+}
+
+// This is the method for allocating workspace_size according to L3Cache size
+void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
+                                     int absolute_val) {
+#ifdef LITE_WITH_ARM
+  lite::DeviceInfo::Global().SetArmL3CacheSize(method, absolute_val);
+#endif
 }
 
 }  // namespace lite_api

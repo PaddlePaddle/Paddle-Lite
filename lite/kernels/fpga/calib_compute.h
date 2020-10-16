@@ -45,6 +45,18 @@ class CalibComputeFP16ToFp32
  private:
 };
 
+class CalibComputeFloat2Int
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeFloat2Int() override{};
+
+ private:
+};
+
 }  // namespace fpga
 }  // namespace kernels
 }  // namespace lite

@@ -34,9 +34,12 @@ inline void get_yolo_box(float* box,
                          int index,
                          int stride,
                          int img_height,
-                         int img_width) {
-  box[0] = (i + sigmoid(x[index])) * img_width / grid_size;
-  box[1] = (j + sigmoid(x[index + stride])) * img_height / grid_size;
+                         int img_width,
+                         float scale,
+                         float bias) {
+  box[0] = (i + sigmoid(x[index]) * scale + bias) * img_width / grid_size;
+  box[1] =
+      (j + sigmoid(x[index + stride]) * scale + bias) * img_height / grid_size;
   box[2] = std::exp(x[index + 2 * stride]) * anchors[2 * an_idx] * img_width /
            input_size;
   box[3] = std::exp(x[index + 3 * stride]) * anchors[2 * an_idx + 1] *
@@ -57,21 +60,25 @@ inline void calc_detection_box(float* boxes,
                                float* box,
                                const int box_idx,
                                const int img_height,
-                               const int img_width) {
+                               const int img_width,
+                               bool clip_bbox) {
   boxes[box_idx] = box[0] - box[2] / 2;
   boxes[box_idx + 1] = box[1] - box[3] / 2;
   boxes[box_idx + 2] = box[0] + box[2] / 2;
   boxes[box_idx + 3] = box[1] + box[3] / 2;
 
-  boxes[box_idx] = boxes[box_idx] > 0 ? boxes[box_idx] : static_cast<float>(0);
-  boxes[box_idx + 1] =
-      boxes[box_idx + 1] > 0 ? boxes[box_idx + 1] : static_cast<float>(0);
-  boxes[box_idx + 2] = boxes[box_idx + 2] < img_width - 1
-                           ? boxes[box_idx + 2]
-                           : static_cast<float>(img_width - 1);
-  boxes[box_idx + 3] = boxes[box_idx + 3] < img_height - 1
-                           ? boxes[box_idx + 3]
-                           : static_cast<float>(img_height - 1);
+  if (clip_bbox) {
+    boxes[box_idx] =
+        boxes[box_idx] > 0 ? boxes[box_idx] : static_cast<float>(0);
+    boxes[box_idx + 1] =
+        boxes[box_idx + 1] > 0 ? boxes[box_idx + 1] : static_cast<float>(0);
+    boxes[box_idx + 2] = boxes[box_idx + 2] < img_width - 1
+                             ? boxes[box_idx + 2]
+                             : static_cast<float>(img_width - 1);
+    boxes[box_idx + 3] = boxes[box_idx + 3] < img_height - 1
+                             ? boxes[box_idx + 3]
+                             : static_cast<float>(img_height - 1);
+  }
 }
 
 inline void calc_label_score(float* scores,
@@ -94,7 +101,10 @@ void yolobox(lite::Tensor* X,
              std::vector<int> anchors,
              int class_num,
              float conf_thresh,
-             int downsample_ratio) {
+             int downsample_ratio,
+             bool clip_bbox,
+             float scale,
+             float bias) {
   const int n = X->dims()[0];
   const int h = X->dims()[2];
   const int w = X->dims()[3];
@@ -111,8 +121,10 @@ void yolobox(lite::Tensor* X,
   int* ImgSize_data = ImgSize->mutable_data<int>();
 
   float* Boxes_data = Boxes->mutable_data<float>();
+  memset(Boxes_data, 0, Boxes->numel() * sizeof(float));
 
   float* Scores_data = Scores->mutable_data<float>();
+  memset(Scores_data, 0, Scores->numel() * sizeof(float));
 
   float box[4];
   for (int i = 0; i < n; i++) {
@@ -142,9 +154,12 @@ void yolobox(lite::Tensor* X,
                        box_idx,
                        stride,
                        img_height,
-                       img_width);
+                       img_width,
+                       scale,
+                       bias);
           box_idx = (i * b_num + j * stride + k * w + l) * 4;
-          calc_detection_box(Boxes_data, box, box_idx, img_height, img_width);
+          calc_detection_box(
+              Boxes_data, box, box_idx, img_height, img_width, clip_bbox);
 
           int label_idx =
               get_entry_index(i, j, k * w + l, an_num, an_stride, stride, 5);

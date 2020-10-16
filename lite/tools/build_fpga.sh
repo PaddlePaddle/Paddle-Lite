@@ -19,7 +19,12 @@ cmake .. \
         -DLITE_WITH_OPENMP=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=OFF \
-        -DARM_TARGET_OS=armlinux
+        -DARM_TARGET_OS=armlinux \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_PYTHON=OFF \
+        -DLITE_WITH_PROFILE=OFF \
+        -DLITE_WITH_LOG=OFF \
+        -DLITE_WITH_CV=ON
 
 make -j8
 

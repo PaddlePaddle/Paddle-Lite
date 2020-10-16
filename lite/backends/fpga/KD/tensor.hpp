@@ -38,6 +38,7 @@ enum DataType : int {
   FP16 = 1,
   INT8 = 2,
   INT32 = 3,
+  INT64 = 4,
 };
 
 enum DataSyncStatus : int {
@@ -58,6 +59,8 @@ inline int CellSize(DataType type) {
       return sizeof(int32_t);
     case INT8:
       return sizeof(int8_t);
+    case INT64:
+      return sizeof(int64_t);
     default:
       return 0;
   }
@@ -66,17 +69,16 @@ inline int CellSize(DataType type) {
 
 class PlaceHolder {
  public:
-  PlaceHolder() {}
   explicit PlaceHolder(size_t size) {
     size_ = size;
     data_ = fpga_malloc(size_);
+    memset(data_, 0, size);
+    fpga_flush(data_, size);
   }
 
   void* data() { return data_; }
-  void set_data(const void* ptr) { data_ = const_cast<void*>(ptr); }
 
   size_t memorySize() { return size_; }
-  void set_size(size_t new_size) { size_ = new_size; }
 
   ~PlaceHolder() { fpga_free(data_); }
 
@@ -99,7 +101,7 @@ class Tensor {
       return nullptr;
     }
     void* ptr = reinterpret_cast<char*>(this->placeHolder_->data()) +
-                offset * CellSize(dataType_);
+                offset_ * CellSize(dataType_);
     return reinterpret_cast<Dtype*>(ptr);
   }
 
@@ -116,7 +118,7 @@ class Tensor {
   template <typename Dtype>
   Dtype* mutableData() {
     size_t memorySize =
-        shape_->memorySize(CellSize(dataType_)) * mem_scale_factor_;
+        shape_->memorySize(CellSize(dataType_)) * mem_factor_ + 16;
     if (placeHolder_ != nullptr) {
       if (memorySize > placeHolder_->memorySize()) {
         placeHolder_.reset(new PlaceHolder(memorySize));
@@ -133,6 +135,10 @@ class Tensor {
     }
     return placeHolder_->memorySize();
   }
+
+  void setMemScale(float mem_factor) { mem_factor_ = mem_factor; }
+
+  void setOffset(int offset) { offset_ = offset; }
 
   void setDataType(DataType dataType) { this->dataType_ = dataType; }
 
@@ -240,10 +246,6 @@ class Tensor {
     }
   }
 
-  void setMemScale(float scale_factor) {
-    this->mem_scale_factor_ = scale_factor;
-  }
-
   void shareDataWith(Tensor* src) { shareDataWith(src, src->shape()); }
 
   void shareDataWith(Tensor* src, const Shape& shape, int offset = 0) {
@@ -254,7 +256,7 @@ class Tensor {
     this->dataType_ = src->dataType_;
     this->aligned_ = src->aligned_;
     this->dateLocation_ = src->dateLocation_;
-    this->offset = offset;
+    this->offset_ = offset;
     shape_ = new Shape(const_cast<Shape&>(shape));
   }
 
@@ -279,16 +281,13 @@ class Tensor {
                   .height = 1,
                   .pad_width = 0u,
                   .pad_height = 0u};
-
-    ImageOutputArgs output = {
+    args.output = {
         .address = data<void>(), .scale_address = scale(),
     };
-    args.output = output;
     src->syncToDevice();
     size_t aligned_remainder = src->shape().numel() % 16;
     if (aligned_remainder > 0) {
-      size_t dtype_size =
-          src->dataType_ == FP32 ? sizeof(float) : sizeof(float16);
+      size_t dtype_size = CellSize(src->dataType_);
       void* dst = src->data<char>() + src->shape().numel() * dtype_size;
       memset(dst, 0, aligned_remainder * dtype_size);
       fpga_flush(dst, aligned_remainder * dtype_size);
@@ -299,14 +298,10 @@ class Tensor {
     this->invalidate();
   }
 
-  void flush() {
-    size_t memorySize = placeHolder_->memorySize();
-    fpga_flush(placeHolder_->data(), memorySize);
-  }
+  void flush() { fpga_flush(placeHolder_->data(), placeHolder_->memorySize()); }
 
   void invalidate() {
-    size_t memorySize = placeHolder_->memorySize();
-    fpga_invalidate(placeHolder_->data(), memorySize);
+    fpga_invalidate(placeHolder_->data(), placeHolder_->memorySize());
   }
 
   void sync() {
@@ -348,16 +343,17 @@ class Tensor {
     }
   }
 
-  void printScale(std::string type) { printScale(); }
-
   std::string dimsFileName() {
-    return paddle::lite::to_string(shape_->num()) + "_" +
-           paddle::lite::to_string(shape_->channel()) + "_" +
-           paddle::lite::to_string(shape_->height()) + "_" +
-           paddle::lite::to_string(shape_->width()) + ".txt";
+    return std::to_string(shape_->num()) + "_" +
+           std::to_string(shape_->channel()) + "_" +
+           std::to_string(shape_->height()) + "_" +
+           std::to_string(shape_->width()) + ".txt";
   }
 
-  void saveToFile() { std::string path = dimsFileName(); }
+  void saveToFile() {
+    std::string path = dimsFileName();
+    // saveToFile(path);
+  }
 
   void saveToFile(std::string prefix, bool with_shape) {
     std::string path = prefix;
@@ -371,33 +367,60 @@ class Tensor {
 
   void saveToFile(std::string path) {
     syncToCPU();
-    invalidate();
     std::ofstream ofs;
     static int counter = 0;
-    std::string npath = paddle::lite::to_string(counter) + "_" + path;
+    std::string npath = std::to_string(counter) + "_" + path;
     counter++;
     save_file_with_name(npath);
   }
 
   void save_file_with_name(std::string path) {
     invalidate();
+
+    Tensor* t = this;
+    Tensor unaligned;
+    if (this->aligned_) {
+      unaligned.dataType_ = this->dataType_;
+      unaligned.aligned_ = this->aligned_;
+      unaligned.mutableData<void>(dataType_, *shape_);
+      unaligned.copyFrom(this);
+      unaligned.unalignImage();
+      unaligned.syncToCPU();
+      t = &unaligned;
+    }
+
     std::ofstream ofs;
     ofs.open(path);
-    ofs << scale()[0] << " / " << scale()[1] << std::endl;
-
+    ofs << "type:" << dataType_ << " scale: " << scale()[0] << " id:" << id_
+        << std::endl;
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
-      if (dataType_ == FP32) {
-        value = data<float>()[i];
-      } else if (dataType_ == FP16) {
-        value = half_to_float(data<float16>()[i]);
-      } else {
-        value = data<int8_t>()[i];
+      switch (dataType_) {
+        case FP16:
+          value = half_to_float(t->data<float16>()[i]);
+          break;
+        case FP32:
+          value = t->data<float>()[i];
+          break;
+        case INT8:
+          value = t->data<int8_t>()[i];
+          break;
+        case INT32:
+          value = data<int32_t>()[i];
+          break;
+        case INT64:
+          value = data<int64_t>()[i];
+          break;
+        default:
+          std::cout << "Unknown type!! \n";
+          exit(-1);
       }
       ofs << value << std::endl;
     }
     ofs.close();
   }
+
+  void releaseData() { placeHolder_.reset(); }
 
   void readFromFile(std::string path) {
     std::ifstream file_stream;
@@ -408,48 +431,25 @@ class Tensor {
     int num = shape_->numel();
     invalidate();
     float max = 0.0f;
-    if (dataType_ == FP16) {
-      float16* data = mutableData<float16>();
-      for (int i = 0; i < num; ++i) {
-        float value = 0;
-        file_stream >> value;
-        max = std::max(std::abs(value), max);
-        data[i] = float_to_half(value);
-      }
-    } else {
-      float* data = mutableData<float>();
-      for (int i = 0; i < num; ++i) {
-        float value = 0;
-        file_stream >> value;
-        max = std::max(std::abs(value), max);
-        data[i] = value;
-      }
+    float16* data = mutableData<float16>();
+    for (int i = 0; i < num; ++i) {
+      float value = 0;
+      file_stream >> value;
+      max = std::max(std::abs(value), max);
+      data[i] = float_to_half(value);
     }
     flush();
     placeHolder_->scale_[0] = max / 127.0f;
     placeHolder_->scale_[1] = 127.0f / max;
   }
 
-  friend std::ostream& operator<<(std::ostream& os, Tensor& tensor) {
-    os << "tensor:"
-       << "\n";
-    os << "dims: {";
-    for (int i = 0; i < tensor.shape().dimSize(); ++i) {
-      os << tensor.shape()[i] << " ";
-    }
-    os << "}\n";
-    for (int i = 0; i < tensor.shape().numel(); i++) {
-      float value = 0;
-      if (tensor.dataType() == FP32) {
-        value = tensor.data<float>()[i];
-      } else {
-        value = half_to_float(tensor.data<float16>()[i]);
-      }
-      os << value << " ";
-    }
-    os << "\n";
-    return os;
-  }
+  void setCacheable(bool cacheable) { cacheable_ = cacheable; }
+
+  bool cacheable() { return cacheable_; }
+
+  void setCached(bool cached) { cached_ = cached; }
+
+  bool cached() { return cached_; }
 
   ~Tensor() {
     if (shape_ != nullptr) {
@@ -459,8 +459,10 @@ class Tensor {
   }
 
  private:
-  int offset = 0;
-  float mem_scale_factor_ = 1.0f;
+  bool cacheable_ = false;
+  bool cached_ = false;
+  int offset_ = 0;
+  float mem_factor_ = 1.0f;
   std::shared_ptr<PlaceHolder> placeHolder_;
   Shape* shape_ = nullptr;
   DataType dataType_ = FP32;

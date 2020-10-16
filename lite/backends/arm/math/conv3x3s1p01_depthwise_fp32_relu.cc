@@ -2307,12 +2307,10 @@ void conv_depthwise_3x3s1p0_bias_no_relu(float *dout,
         //! process bottom pad
         if (i + 3 >= h_in) {
           switch (i + 3 - h_in) {
-            case 3:
-              din_ptr1 = zero_ptr;
             case 2:
-              din_ptr2 = zero_ptr;
+              din_ptr1 = zero_ptr;
             case 1:
-              din_ptr3 = zero_ptr;
+              din_ptr2 = zero_ptr;
             case 0:
               din_ptr3 = zero_ptr;
             default:
@@ -2591,12 +2589,10 @@ void conv_depthwise_3x3s1p0_bias_relu(float *dout,
         //! process bottom pad
         if (i + 3 >= h_in) {
           switch (i + 3 - h_in) {
-            case 3:
-              din_ptr1 = zero_ptr;
             case 2:
-              din_ptr2 = zero_ptr;
+              din_ptr1 = zero_ptr;
             case 1:
-              din_ptr3 = zero_ptr;
+              din_ptr2 = zero_ptr;
             case 0:
               din_ptr3 = zero_ptr;
             default:
@@ -2730,12 +2726,10 @@ void conv_depthwise_3x3s1p0_bias_s_no_relu(float *dout,
 
         if (j + 3 >= h_in) {
           switch (j + 3 - h_in) {
-            case 3:
-              dr1 = zero_ptr;
             case 2:
-              dr2 = zero_ptr;
+              dr1 = zero_ptr;
             case 1:
-              dr3 = zero_ptr;
+              dr2 = zero_ptr;
               doutr1 = trash_buf;
             case 0:
               dr3 = zero_ptr;
@@ -2889,12 +2883,10 @@ void conv_depthwise_3x3s1p0_bias_s_relu(float *dout,
 
         if (j + 3 >= h_in) {
           switch (j + 3 - h_in) {
-            case 3:
-              dr1 = zero_ptr;
             case 2:
-              dr2 = zero_ptr;
+              dr1 = zero_ptr;
             case 1:
-              dr3 = zero_ptr;
+              dr2 = zero_ptr;
               doutr1 = trash_buf;
             case 0:
               dr3 = zero_ptr;

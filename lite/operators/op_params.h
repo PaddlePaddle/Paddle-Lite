@@ -264,6 +264,8 @@ struct YoloBoxParam : ParamBase {
   int class_num{0};
   float conf_thresh{0.f};
   int downsample_ratio{0};
+  bool clip_bbox{true};
+  float scale_x_y{1.0f};
 };
 
 // For Scale Op
@@ -403,6 +405,8 @@ struct ActivationParam : ParamBase {
   float relu_threshold{1.0f};
   // elu
   float Elu_alpha{1.0f};
+  // relu6
+  float threshold{6.0f};
 
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
@@ -888,6 +892,22 @@ struct MulticlassNmsParam : ParamBase {
   float nms_eta{1.0f};
   int keep_top_k;
   bool normalized{true};
+};
+
+/// ----------------------- matrix_nms operators ----------------------
+struct MatrixNmsParam : ParamBase {
+  const lite::Tensor* bboxes{};
+  const lite::Tensor* scores{};
+  lite::Tensor* out{};
+  lite::Tensor* index{};
+  int background_label{0};
+  float score_threshold{};
+  float post_threshold{0.0f};
+  int nms_top_k{};
+  int keep_top_k;
+  bool normalized{true};
+  bool use_gaussian{false};
+  float gaussian_sigma{2.0f};
 };
 
 /// ----------------------- priorbox operators ----------------------

@@ -23,17 +23,36 @@ namespace fpga {
 
 using float16 = zynqmp::float16;
 
+void resize_output(const Tensor* input, Tensor& out) {  // NOLINT
+  auto in_type = input->ZynqTensor()->dataType();
+  out.Resize(input->dims());
+  switch (in_type) {
+    case zynqmp::FP16:
+    case zynqmp::FP32:
+      out.mutable_data<float>();
+      break;
+    case zynqmp::INT32:
+      out.mutable_data<int32_t>();
+      break;
+    case zynqmp::INT64:
+      out.mutable_data<int64_t>();
+      break;
+    default:
+      break;
+  }
+}
+
 void FetchCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-  // ====================================================
+
   zynqmp::OutputParam& fetch_param = pe_.param();
   auto fetch_list = param.fetch_list;
   if (fetch_list->size() <= static_cast<size_t>(param.col)) {
     fetch_list->resize(param.col + 1);
   }
+
   Tensor& out = param.fetch_list->at(param.col);
-  out.Resize(param.input->dims());
-  out.mutable_data<float>();
+  resize_output(param.input, out);
 
   fetch_param.input = param.input->ZynqTensor();
   fetch_param.output = out.ZynqTensor();
@@ -48,13 +67,16 @@ void FetchCompute::Run() {
   if (fetch_list->size() <= static_cast<size_t>(param.col)) {
     fetch_list->resize(param.col + 1);
   }
+
   Tensor& out = param.fetch_list->at(param.col);
-  out.Resize(param.input->dims());
+  resize_output(param.input, out);
+
   pe_.dispatch();
 
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::OutputParam& fetch_param = pe_.param();
   Debugger::get_instance().registerOutput("fetch", fetch_param.output);
+  Debugger::get_instance().setEnable(true);
 #endif
 }
 
@@ -62,19 +84,6 @@ void FetchCompute::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(fetch,
-                     kFPGA,
-                     kFP16,
-                     kNHWC,
-                     paddle::lite::kernels::fpga::FetchCompute,
-                     fpga_host)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kFPGA),
-                                      PRECISION(kAny),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-    .Finalize();
 
 REGISTER_LITE_KERNEL(fetch,
                      kFPGA,

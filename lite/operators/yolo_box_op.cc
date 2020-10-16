@@ -72,6 +72,8 @@ bool YoloBoxOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.class_num = op_desc.GetAttr<int>("class_num");
   param_.conf_thresh = op_desc.GetAttr<float>("conf_thresh");
   param_.downsample_ratio = op_desc.GetAttr<int>("downsample_ratio");
+  param_.clip_bbox = op_desc.GetAttr<bool>("clip_bbox");
+  param_.scale_x_y = op_desc.GetAttr<float>("scale_x_y");
   return true;
 }
 

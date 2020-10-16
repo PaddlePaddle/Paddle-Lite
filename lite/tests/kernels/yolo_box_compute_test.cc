@@ -100,6 +100,8 @@ class YoloBoxComputeTester : public arena::TestCase {
   int class_num_ = 0;
   float conf_thresh_ = 0.f;
   int downsample_ratio_ = 0;
+  bool clip_bbox_ = true;
+  float scale_x_y_ = 1.0;
 
   DDim _dims0_{{1, 255, 13, 13}};
   DDim _dims1_{{1, 2}};
@@ -212,6 +214,8 @@ class YoloBoxComputeTester : public arena::TestCase {
     op_desc->SetAttr("class_num", class_num_);
     op_desc->SetAttr("conf_thresh", conf_thresh_);
     op_desc->SetAttr("downsample_ratio", downsample_ratio_);
+    op_desc->SetAttr("clip_bbox", clip_bbox_);
+    op_desc->SetAttr("scale_x_y", scale_x_y_);
   }
 
   void PrepareData() override {

@@ -29,7 +29,10 @@ void yolobox(lite::Tensor* X,
              std::vector<int> anchors,
              int class_num,
              float conf_thresh,
-             int downsample_ratio);
+             int downsample_ratio,
+             bool clip_bbox,
+             float scale,
+             float bias);
 
 }  // namespace math
 }  // namespace arm

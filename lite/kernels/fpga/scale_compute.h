@@ -37,6 +37,8 @@ class ScaleCompute
 
  private:
   zynqmp::ScalePE pe_;
+  zynqmp::Tensor scale_;
+  zynqmp::Tensor bias_;
 };
 
 }  // namespace fpga

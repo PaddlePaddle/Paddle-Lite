@@ -645,7 +645,6 @@ void conv_3x3s1_depthwise_fp32_bias(const float* i_data,
   bool flag_bias = param.bias != nullptr;
 
   /// get workspace
-  LOG(INFO) << "conv_3x3s1_depthwise_fp32_bias: ";
   float* ptr_zero = ctx->workspace_data<float>();
   memset(ptr_zero, 0, sizeof(float) * win_round);
   float* ptr_write = ptr_zero + win_round;

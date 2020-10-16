@@ -127,9 +127,13 @@ endif()
 
 if (LITE_WITH_ARM)
     add_definitions("-DLITE_WITH_ARM")
-    if (LITE_WITH_CV)
-        add_definitions("-DLITE_WITH_CV")
+endif()
+
+if (LITE_WITH_CV)
+    if(NOT LITE_WITH_ARM)
+        message(FATAL_ERROR "CV functions uses the ARM instructions, so LITE_WITH_ARM must be turned on")
     endif()
+    add_definitions("-DLITE_WITH_CV")
 endif()
 
 if (LITE_WITH_TRAIN)
@@ -173,6 +177,10 @@ endif()
 
 if (LITE_WITH_MLU)
 add_definitions("-DLITE_WITH_MLU")
+endif()
+
+if (LITE_WITH_IMAGINATION_NNA)
+  add_definitions("-DLITE_WITH_IMAGINATION_NNA")
 endif()
 
 if (LITE_WITH_HUAWEI_ASCEND_NPU)
