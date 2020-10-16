@@ -14,6 +14,8 @@
 
 #pragma once
 #include <memory>
+#include <string>
+#include <vector>
 #include "lite/core/mir/pass.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
@@ -30,11 +32,20 @@ namespace mir {
  */
 class PostQuantDynamicPass : public ProgramPass {
  public:
+  enum class QuantType { PER_LAYER, PER_CHANNEL };
+
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
   void SetQuantBits(int quant_bits) { quant_bits_ = quant_bits; }
+  void SetQuantOps(const std::vector<std::string>& quant_ops) {
+    quant_ops_ = quant_ops;
+  }
+  void SetQuantType(QuantType quant_type) { quant_type_ = quant_type; }
 
  private:
   int quant_bits_{16};
+  std::vector<std::string> quant_ops_{"conv2d", "mul"};
+  QuantType quant_type_{QuantType::PER_CHANNEL};
+  static const std::vector<std::string> quant_axis1_ops;
 };
 
 }  // namespace mir
