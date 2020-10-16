@@ -185,7 +185,7 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   i_pri_out_shape_data[1] = 2;
   i_pri_out_shape_data[2] = boxes->data_size();
   auto bm_priorbox_name = lite::subgraph::bm::UniqueName("bm_priorbox");
-#if 0
+#ifndef BM_DYNAMIC_COMPILE
   float* cpu_data = compute_density_priorbox_kernel(op, &param);
   add_priorbox_layer(graph->GetCompilerHandle(),
                      const_cast<const int*>(&i_input_shape_data[0]),
