@@ -16,6 +16,7 @@
 
 #include <bmcompiler_if.h>
 #include <bmruntime_interface.h>
+#include <bmruntime_legacy.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -50,15 +51,17 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
  protected:
   bool BuildDeviceProgram() override;
   bool LaunchDeviceProgram() override;
+  bool InputShapeChanged() override;
 
  private:
-  void *bmrt_hd_;
+  void *bmrt_hd_ = nullptr;
   std::vector<bm_tensor_t> device_inputs_;
   std::vector<bm_tensor_t> device_outputs_;
   std::map<std::string, int> outname_map_;
   const char **net_names_;
   const bm_net_info_t *net_info_;
   bm_handle_t bm_hd_;
+  std::vector<Tensor *> last_origin_itensors_;
 };
 
 class SubgraphCompute : public KernelLite<TARGET(kBM), PRECISION(kFloat)> {
