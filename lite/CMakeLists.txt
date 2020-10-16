@@ -464,17 +464,17 @@ if (ARM_TARGET_OS STREQUAL "armlinux")
 endif()
 
 if (LITE_WITH_BM)
-    add_custom_target(publish_inference_bm1682_cxx_demos ${TARGET}
+    add_custom_target(publish_inference_bm_cxx_demos ${TARGET}
         COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
         COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/bm_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
         COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
         COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
         COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/api/libpaddle_full_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
-        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmcompiler" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
-        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmnn/pcie" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
+        COMMAND cp -r "${BM_SDK_ROOT}/lib/bmcompiler" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
+        COMMAND cp -r "${BM_SDK_ROOT}/lib/bmnn/pcie" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
         COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_place.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
         COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_api.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
     )
-    add_dependencies(publish_inference_bm1682_cxx_demos paddle_full_api_shared)
-    add_dependencies(publish_inference publish_inference_bm1682_cxx_demos)
+    add_dependencies(publish_inference_bm_cxx_demos paddle_full_api_shared)
+    add_dependencies(publish_inference publish_inference_bm_cxx_demos)
 endif()
