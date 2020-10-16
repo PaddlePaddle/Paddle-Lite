@@ -167,11 +167,11 @@ adb push ./mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb /data/lo
 adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            /data/local/tmp/opencl/mobilenetv1_light_api \
            /data/local/tmp/opencl/mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb \
-           1 3 224 224 \
+           1,3,224,224 \
            100 10 0" # round=100, warmup=10, print_output_tensor=0
 ```
 
-**注：** 权重参数会在第一次运行时加载，所以第一次执行时间略长。一般将warmup的值设为10，repeats值设为多次。
+**注：** 权重参数会在第一次运行时加载，且`.cl`文件也会在第一次运行时在线编译，所以第一次执行时间略长。一般将warmup的值设为10，repeats值设为多次。
 
 ### 2.2 运行示例2: test_mobilenetv1单元测试
 
@@ -183,9 +183,9 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
 # 在/data/local/tmp目录下创建OpenCL文件目录
 adb shell mkdir -p /data/local/tmp/opencl
 
-# 将mobilenet_v1的模型文件推送到/data/local/tmp/opencl目录下
-adb shell mkdir -p /data/local/tmp/opencl/mobilenet_v1
-adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1/
+# 将mobilenet_v1的fluid格式模型文件推送到/data/local/tmp/opencl目录下
+adb shell mkdir -p /data/local/tmp/opencl/mobilenetv1_fluid
+adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/ /data/local/tmp/opencl/mobilenetv1_fluid/
 
 # 将OpenCL单元测试程序test_mobilenetv1，推送到/data/local/tmp/opencl目录下
 adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/local/tmp/opencl
