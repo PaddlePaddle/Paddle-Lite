@@ -820,7 +820,7 @@ function test_huawei_ascend_npu {
 function build_test_huawei_ascend_npu {
     cur_dir=$(pwd)
 
-    build_dir=$cur_dir/build.lite.huawei_ascend_npu_test
+    build_dir=$cur_dir/build.lite.huawei_ascend_npu
     mkdir -p $build_dir
     cd $build_dir
 

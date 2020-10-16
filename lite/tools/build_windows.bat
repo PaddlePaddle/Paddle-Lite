@@ -6,11 +6,11 @@ set source_path=%~dp0\\..\\..\\
 set BUILD_EXTRA=OFF
 set WITH_PYTHON=OFF
 set BUILD_DIR=%source_path%
-set WITH_LOG=ON  
+set WITH_LOG=OFF
 set WITH_PROFILE=OFF
 set WITH_TESTING=OFF
 set BUILD_FOR_CI=OFF
-set BUILD_TAILOR=OFF
+set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
 set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -24,10 +24,10 @@ if /I "%1"=="with_extra" (
     set WITH_PYTHON=ON
 ) else if /I  "%1"=="with_profile" (
     set WITH_PROFILE=ON
-) else if /I  "%1"=="without_log" (
-    set WITH_LOG=OFF
-) else if /I  "%1"=="build_tailor" (
-    set BUILD_TAILOR=ON
+) else if /I  "%1"=="with_log" (
+    set WITH_LOG=ON
+) else if /I  "%1"=="with_strip" (
+    set WITH_STRIP=ON
     set OPTMODEL_DIR="%2"
 ) else if /I  "%1"=="build_for_ci" (
     set BUILD_FOR_CI=ON
@@ -52,7 +52,7 @@ echo "|  BUILD_EXTRA=%BUILD_EXTRA%                                              
 echo "|  WITH_PYTHON=%WITH_PYTHON%                                                                          |"
 echo "|  LITE_WITH_PROFILE=%WITH_PROFILE%                                                                   |"
 echo "|  WITH_TESTING=%WITH_TESTING%                                                                        |"
-echo "|  BUILD_TAILOR=%BUILD_TAILOR%                                                                        |"
+echo "|  WITH_STRIP=%WITH_STRIP%                                                                        |"
 echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                                                        |"
 echo "------------------------------------------------------------------------------------------------------|"
 
@@ -105,7 +105,7 @@ cd "%build_directory%"
             -DLITE_WITH_PYTHON=%WITH_PYTHON% ^
             -DWITH_TESTING=%WITH_TESTING%    ^
             -DLITE_WITH_LOG=%WITH_LOG%       ^
-            -DLITE_BUILD_TAILOR=%BUILD_TAILOR%  ^
+            -DLITE_BUILD_TAILOR=%WITH_STRIP%  ^
             -DLITE_OPTMODEL_DIR=%OPTMODEL_DIR%  ^
             -DPYTHON_EXECUTABLE="%python_path%"
 
@@ -212,14 +212,14 @@ echo "|  print help information:                                                
 echo "|      build_windows.bat help                                                                         |"
 echo "|                                                                                                     |"
 echo "|  optional argument:                                                                                 |"
-echo "|      without_log: Diable print log information. Default  ON.                                        |"
+echo "|      with_log: Enable print log information. Default  OFF.                                          |"
 echo "|      with_profile: Enable profile mode in lite framework. Default  OFF.                             |"
 echo "|      with_python: Enable Python api lib in lite mode. Default  OFF.                                 |"
 echo "|      with_extra: Enable extra algorithm support in Lite, both kernels and operators. Default OFF.   |"
-echo "|      build_tailor: Enable tailoring library according to model. Default OFF.                        |"
+echo "|      with_strip: Enable tailoring library according to model. Default OFF.                          |"
 echo "|  for example:                                                                                       |"   
-echo "|      build_windows.bat with_profile with_python with_extra                                          |"
-echo "|      build_windows.bat build_tailor D:\Paddle-Lite\opt_model_dir                                    |"
+echo "|      build_windows.bat with_log with_profile with_python with_extra                                 |"
+echo "|      build_windows.bat with_strip D:\Paddle-Lite\opt_model_dir                                      |"
 echo "------------------------------------------------------------------------------------------------------|"
 goto:eof
 
