@@ -90,7 +90,7 @@ rm ./lite/api/paddle_use_ops.h
 编译产物位于`build.lite.android.armv8.gcc.opencl`下的`inference_lite_lib.android.armv8.opencl`文件夹内，根据编译参数不同，文件夹名字会略有不同。这里仅罗列关键产物：
 
 - `cxx`:该目录是编译目标的C++的头文件和库文件;
-- `demo`:该目录包含了两个demo，用来调用使用`libpaddle_api_full_bundled.a`和`libpaddle_api_light_bundled.a`，分别对应`mobile_full`和`mobile_light`文件夹。编译对应的demo仅需在`mobile_full`或`mobile_light`文
+- `demo`:该目录包含了两个demo，用来调用使用`libpaddle_api_full_bundled.a`和`libpaddle_api_light_bundled.a`，分别对应`mobile_full`和`mobile_light`文件夹。编译对应的demo仅需在`mobile_full`或`mobile_light`文件夹下执行`make`
   - `mobile_full`:使用cxx config，可直接加载fluid模型，若使用OpenCL需要在`mobilenetv1_full_api.cc`代码里开启`DEMO_USE_OPENCL`的宏，详细见该文件的代码注释;
   - `mobile_light`:使用mobile config，只能加载`model_optimize_tool`优化过的模型。
 注：`opencl`实现的相关kernel已经打包到动态库中。
