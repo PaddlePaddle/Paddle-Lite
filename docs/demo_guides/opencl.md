@@ -184,8 +184,7 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
 adb shell mkdir -p /data/local/tmp/opencl
 
 # 将mobilenet_v1的fluid格式模型文件推送到/data/local/tmp/opencl目录下
-adb shell mkdir -p /data/local/tmp/opencl/mobilenetv1
-adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenetv1/
+adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/ /data/local/tmp/opencl/
 
 # 将OpenCL单元测试程序test_mobilenetv1，推送到/data/local/tmp/opencl目录下
 adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/local/tmp/opencl
@@ -198,7 +197,7 @@ adb shell chmod +x /data/local/tmp/opencl/test_mobilenetv1
 
 adb shell "export GLOG_v=1; \
    /data/local/tmp/opencl/test_mobilenetv1 \
-  --model_dir=/data/local/tmp/opencl/mobilenetv1/ \
+  --model_dir=/data/local/tmp/opencl/mobilenet_v1/ \
   --warmup=10 \
   --repeats=100"
 ```
