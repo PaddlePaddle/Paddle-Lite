@@ -322,8 +322,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         img_to_buf_kernel_vec[i]->SetParam(img_to_buf_params[i]);
 
         std::unique_ptr<KernelContext> img_to_buf_context(new KernelContext);
-        ctx_->As<OpenCLContext>().CopySharedTo(
-            &(img_to_buf_context->As<OpenCLContext>()));
+        context.CopySharedTo(&(img_to_buf_context->As<OpenCLContext>()));
         img_to_buf_kernel_vec[i]->SetContext(std::move(img_to_buf_context));
       }
       // 3.2 concat_mul_buf
@@ -343,8 +342,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       buf_to_img_kernel->SetParam(buf_to_img_param);
 
       std::unique_ptr<KernelContext> buf_to_img_context(new KernelContext);
-      ctx_->As<OpenCLContext>().CopySharedTo(
-          &(buf_to_img_context->As<OpenCLContext>()));
+      context.CopySharedTo(&(buf_to_img_context->As<OpenCLContext>()));
       buf_to_img_kernel->SetContext(std::move(buf_to_img_context));
 
       // step4. run kernels
