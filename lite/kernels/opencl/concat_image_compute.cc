@@ -190,7 +190,8 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       status = kernel.setArg(7, width_);
       CL_CHECK_FATAL(status);
 
-      status = EnqueueNDRangeKernel(kernel,
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
                                     cl::NullRange,
                                     global_work_size,
                                     cl::NullRange,
