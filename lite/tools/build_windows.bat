@@ -122,10 +122,19 @@ if "%BUILD_FOR_CI%"=="ON" (
 goto:eof
 
 :prepare_thirdparty 
-    set python_path=C:\Python27\python.exe
-    IF NOT EXIST "%python_path%" (
-      goto set_python_path
+    SET /P python_path="Please input the path of python.exe, such as C:\Python35\python.exe, C:\Python35\python3.exe   =======>"
+    set tmp_var=!python_path!
+    call:remove_space
+    set python_path=!tmp_var!   
+    if "!python_path!"=="" (
+      set python_path=python.exe
+    ) else (
+      if NOT exist "!python_path!" (
+        echo "------------!python_path! not exist------------" 
+        goto:eof
+      )  
     )
+
     if  EXIST "%workspace%\third-party" (
         if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
             echo "The directory of third_party exists, the third-party-05b862.tar.gz not exists."            
@@ -170,21 +179,6 @@ set vcvarsall_dir=!tmp_var!
 IF NOT EXIST "%vcvarsall_dir%" (
     echo "------------%vcvarsall_dir% not exist------------"
     goto:eof
-)
-goto:eof
-
-:set_python_path
-SET /P python_path="Please input the path of python.exe, such as C:\Python35\python.exe, C:\Python35\python3.exe   =======>"
-set tmp_var=!python_path!
-call:remove_space
-set python_path=!tmp_var!   
-if "!python_path!"=="" (
-  set python_path=python.exe
-) else (
-  if NOT exist "!python_path!" (
-    echo "------------!python_path! not exist------------" 
-    goto:eof
-  )  
 )
 goto:eof
 
