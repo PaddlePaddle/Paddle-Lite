@@ -61,6 +61,14 @@ void sgemm_prepack_c8_int16_small(int M,
                                   const int16_t* B,
                                   int32_t* C,
                                   ARMContext* ctx);
+void sgemm_prepack_c8_int16_alpha_small(int M,
+                                        int N,
+                                        int K,
+                                        const int16_t* A_packed,
+                                        const int16_t* B,
+                                        int32_t* C,
+                                        int beta,
+                                        ARMContext* ctx);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
