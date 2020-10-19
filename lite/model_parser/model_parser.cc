@@ -143,7 +143,7 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string &path, const lite_api::ModelBuffer &model_buffer) {
+    const std::string &path, const lite_api::CxxModelBuffer &model_buffer) {
   std::unique_ptr<framework::proto::ProgramDesc> main_program(
       new framework::proto::ProgramDesc);
   if (model_buffer.is_empty()) {
@@ -177,7 +177,7 @@ bool IsPersistable(const cpp::VarDesc &var) {
 void LoadCombinedParamsPb(const std::string &path,
                           lite::Scope *scope,
                           const cpp::ProgramDesc &cpp_prog,
-                          const lite_api::ModelBuffer &model_buffer) {
+                          const lite_api::CxxModelBuffer &model_buffer) {
   CHECK(scope);
   auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
@@ -223,7 +223,7 @@ void LoadModelPb(const std::string &model_dir,
                  Scope *scope,
                  cpp::ProgramDesc *cpp_prog,
                  bool combined,
-                 const lite_api::ModelBuffer &model_buffer) {
+                 const lite_api::CxxModelBuffer &model_buffer) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();

@@ -170,19 +170,19 @@ class LITE_API ConfigBase {
   int get_device_id() const { return device_id_; }
 };
 
-class LITE_API ModelBuffer {
+class LITE_API CxxModelBuffer {
  public:
-  ModelBuffer(const char* program_buffer,
-              size_t program_buffer_size,
-              const char* params_buffer,
-              size_t params_buffer_size);
-  ModelBuffer(std::string&& program_buffer, std::string&& params_buffer);
+  CxxModelBuffer(const char* program_buffer,
+                 size_t program_buffer_size,
+                 const char* params_buffer,
+                 size_t params_buffer_size);
+  CxxModelBuffer(std::string&& program_buffer, std::string&& params_buffer);
   const std::string& get_program() const;
   const std::string& get_params() const;
   bool is_empty() const;
 
-  ModelBuffer() = default;
-  ModelBuffer(const ModelBuffer&) = delete;
+  CxxModelBuffer() = default;
+  CxxModelBuffer(const CxxModelBuffer&) = delete;
 
  private:
   std::string program_;
@@ -194,7 +194,7 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<Place> valid_places_;
   std::string model_file_;
   std::string param_file_;
-  std::shared_ptr<ModelBuffer> model_buffer_{nullptr};
+  std::shared_ptr<CxxModelBuffer> model_buffer_{nullptr};
   std::vector<std::string> passes_internal_{};
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
@@ -218,13 +218,13 @@ class LITE_API CxxConfig : public ConfigBase {
                         size_t model_buffer_size,
                         const char* param_buffer,
                         size_t param_buffer_size) {
-    model_buffer_.reset(new ModelBuffer(
+    model_buffer_.reset(new CxxModelBuffer(
         model_buffer, model_buffer_size, param_buffer, param_buffer_size));
   }
-  void set_model_buffer(std::shared_ptr<ModelBuffer> model_buffer) {
+  void set_model_buffer(std::shared_ptr<CxxModelBuffer> model_buffer) {
     model_buffer_ = model_buffer;
   }
-  const ModelBuffer& get_model_buffer() const;
+  const CxxModelBuffer& get_model_buffer() const;
   // internal inference to choose passes for model optimizing,
   // it's designed for internal developer and not recommanded
   // for comman users.

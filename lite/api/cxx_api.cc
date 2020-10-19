@@ -274,7 +274,7 @@ void Predictor::Build(const std::string &model_path,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type,
-                      const lite_api::ModelBuffer &model_buffer) {
+                      const lite_api::CxxModelBuffer &model_buffer) {
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf: {
       bool combined_param = false;

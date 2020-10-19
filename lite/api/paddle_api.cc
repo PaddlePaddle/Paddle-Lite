@@ -279,36 +279,36 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
-ModelBuffer::ModelBuffer(const char *program_buffer,
-                         size_t program_buffer_size,
-                         const char *params_buffer,
-                         size_t params_buffer_size) {
+CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
+                               size_t program_buffer_size,
+                               const char *params_buffer,
+                               size_t params_buffer_size) {
   program_ = std::string(program_buffer, program_buffer + program_buffer_size);
   params_ = std::string(params_buffer, params_buffer + params_buffer_size);
 }
 
-ModelBuffer::ModelBuffer(std::string &&program_buffer,
-                         std::string &&params_buffer) {
+CxxModelBuffer::CxxModelBuffer(std::string &&program_buffer,
+                               std::string &&params_buffer) {
   program_ = std::forward<std::string>(program_buffer);
   params_ = std::forward<std::string>(params_buffer);
 }
 
-const std::string &ModelBuffer::get_program() const {
+const std::string &CxxModelBuffer::get_program() const {
   CHECK(!program_.empty());
   return program_;
 }
 
-const std::string &ModelBuffer::get_params() const {
+const std::string &CxxModelBuffer::get_params() const {
   CHECK(!params_.empty());
   return params_;
 }
 
-bool ModelBuffer::is_empty() const {
+bool CxxModelBuffer::is_empty() const {
   CHECK(program_.empty() == params_.empty());
   return program_.empty();
 }
 
-const ModelBuffer &CxxConfig::get_model_buffer() const {
+const CxxModelBuffer &CxxConfig::get_model_buffer() const {
   CHECK(model_buffer_) << "Cannot get an empty model buffer.";
   return *model_buffer_;
 }
