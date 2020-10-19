@@ -1,6 +1,6 @@
 # PaddleLite使用Bitmain：Sophon BM1682/BM1684 预测部署
 
-Paddle Lite已支持在比特大陆的Sophon BM1682/BM1684处理器上进行预测部署。
+Paddle Lite已支持在比特大陆的Sophon BM1682/BM1684处理器上进行预测部署. 目前支持子图接入
 
 
 ## 支持现状
@@ -10,19 +10,18 @@ Paddle Lite已支持在比特大陆的Sophon BM1682/BM1684处理器上进行预�
 - Sophon BM1682
 - Sophon BM1684
 
+### 已支持的设备
+* Sophon SC3 加速卡 (BM1682 X86 PCI-E)
+* Sophon SC5 加速卡 (BM1684 X86 PCI-E)
+
+
 ### 已支持的Paddle模型
 
-- [Mobilenet](https://paddlelite-demo.bj.bcebos.com/mobilenet_v1.tar.gz)
-- [Yolov3]
-- [Mobilenet-ssd]
-- [Inceptionv4](https://paddlelite-demo.bj.bcebos.com/inception_v4_simple.tar.gz)
-- [Vgg16]
-- [DarkNet-YOLOv3]
-- [PyramidBox]
-- 百度内部业务模型（由于涉密，不方便透露具体细节）
+- [Mobilenet](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz)
 
 ### 已支持（或部分支持）的Paddle算子
 
+- norm
 - relu
 - leaky_relu
 - sqrt
@@ -49,7 +48,7 @@ Paddle Lite已支持在比特大陆的Sophon BM1682/BM1684处理器上进行预�
 - matmul
 - mul
 - multiclass_nms
-- norm
+- multiclass_nms2
 - pool2d
 - max_pool2d_with_index
 - prior_box
@@ -57,78 +56,92 @@ Paddle Lite已支持在比特大陆的Sophon BM1682/BM1684处理器上进行预�
 - reduce_mean
 - reduce_max
 - reshape
+- reshape2
 - flatten
+- flatten2
 - scale
 - shape
 - slice
 - softmax
 - split
+- squeeze
+- squeeze2
 - swish
 - transpose
 - yolo_box
 
 ## 参考示例演示
 
-### 测试设备(Sophon BM1682)
-
 ### 准备设备环境
-
-- 将Sophon BM1682或者BM1684 处理器安装到主机上后，下载对应的硬件驱动
+- 请确保您的 Sophon 加速卡已经可以在主机中正常工作.您可以对照下面的步骤快速验证, 如有任何问题, 请联系BITMAIN解决.
+    - 可以使用BMNNSDK内附带的`bm-smi`程序进行测试,如果设备已经正常驱动,您应该能看到一个(或多个)PCIE模式的加速设备.
+    - 可以使用`ls /dev/bm*`, 您应该能看到若干个`bm`前缀的设备.例如`/dev/bmdev-ctl /dev/bm-sophon0`
+- 简易安装指南(仅供参考,请以BITMAIN的安装指南为准)
+  - 可以使用bmnnsdk_root/scripts/目录的`install_libs.sh`及`sudo install_driver_pcie.sh`完成安装.
+  - 对于部分BM1684设备,您可能需要为每个芯片启用icache.在`bmnnsdk_root/bin/x86`目录下,使用`./test_update_fw ./bm168x_bmdnn_en_icache.bin ./bm168x_bmdnn_s_en_icache.bin chip_id`来启用icache,chip_id为0,1,2等值,代表不同芯片.
 
 ### 准备本地编译环境
 
-1. Docker 容器环境；
-2. Linux（推荐 Ubuntu 16.04）环境。
-
-请先根据[编译环境准备](compile_env)中的内容，根据您的开发环境安装编译预测库所需的编译环境
- **NOTE：** 在创建docker容器时，设置好挂载device的路径。例如：sudo docker run -it --name work_bm -v $PWD:/code --device=/dev/bm1682-dev0:/dev/bm1682-dev0 --device=/dev/bmdev-ctl:/dev/bmdev-ctl --net=host 1423ff1080e5 /bin/bash）
+- 目前仅在Ubuntu16.04环境进行过测试,为了避免环境不一致带来的麻烦,建议使用Docker编译环境,请先根据[编译环境准备](../source_compile/compile_env)下载好`paddlepaddle/paddle-lite`Docker镜像.
+- 在执行`docker run`启动容器时,请确保宿主机内`/dev/bm*`设备均被正确映射到容器中.可以参考下面的指令启动容器.
+  
+```bash
+sudo docker run -it \
+     --name work_bm \
+     -v $HOME:/code \
+     --device=/dev/bm1682-dev0:/dev/bm1682-dev0 \
+     --device=/dev/bmdev-ctl:/dev/bmdev-ctl \
+     --net=host \
+     paddlepaddle/paddle-lite:latest /bin/bash
 
-### 编译Paddle-Lite工程
+```
 
+
+### 编译Paddle-Lite工程
 1. 下载代码
-  ```
-  git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-  ```
+  
+```bash
+git clone https://github.com/PaddlePaddle/Paddle-Lite.git
+```
 
 2. 编译
-  ```
-  # 进入代码目录
-  cd Paddle-Lite
 
-  # 运行编译脚本
-  ./lite/tools/build_bm.sh --target_name=BM1682 --test=ON
+```bash
+# 进入代码目录
+cd Paddle-Lite
 
-  # 编译结束会在本目录下生成 build.lite.bm 目录
+# 运行编译脚本
+./lite/tools/build_bm.sh --target_name=BM1682
+# 或 ./lite/tools/build_bm.sh --target_name=BM1684
 
+```
 
-  # 测试的demo在build.lite.bm/inference_lite_lib/demo/cxx/bm_demo/目录下
-  ```
 3. 编译结果说明
-  ```
-  # 编译生成的库目录
-  build.lite.bm/lite/api
+编译产物将输出至`build.lite.bm/inference_lite_lib`目录下,该目录结构为
+```bash
+.
+|-- cxx 
+|   |-- include #cxx头文件目录
+|   `-- lib #cxx库目录
+|       `-- third_party #第三方cxx依赖库目录
+`-- demo
+    `-- cxx # cxx示例程序
 
-  # 运行编译脚本
-  ./lite/tools/build_bm.sh --target_name=BM1682 --test=ON
-
-  # 编译结束会在本目录下生成 build.lite.bm 目录
-
-  ```
+```
 
 ### 运行demo
 
+```bash
+# 测试demo在build.lite.bm/inference_lite_lib/demo/cxx/目录下
+cd build.lite.bm/inference_lite_lib/demo/cxx/
+
+wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
+
+tar -xvf mobilenet_v1.tar.gz
+
+./build.sh
+
+./mobilenet_full_api ./mobilenet_v1 224 224
+
+# 如果运行正常,程序最后会输出Done.
 ```
-  # 测试的demo在build.lite.bm/inference_lite_lib/demo/cxx/bm_demo/目录下
-  打开Demo文件夹，运行build.sh
-  ./build.sh
-
-  # build.lite.bm/inference_lite_lib/demo/cxx/bm_demo/目录下的lib和include文件夹
-  lib：部署demo需要的动态库
-  include：需要的头文件
-```
-
-
-## 其它说明
-
-- 如需更进一步的了解相关产品的信息，请联系欧阳剑ouyangjian@baidu.com；
-- 百度昆仑的研发同学正在持续适配更多的Paddle算子，以便支持更多的Paddle模型。
