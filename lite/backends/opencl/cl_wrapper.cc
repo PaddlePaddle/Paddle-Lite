@@ -108,9 +108,9 @@ bool CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clEnqueueMapBuffer);
   PADDLE_DLSYM(clEnqueueMapImage);
   PADDLE_DLSYM(clCreateCommandQueue);
-  // note(ysh329): consider compatibility for cl_driver_version 1.10
-  // using clCreateCommandQueue instead.
-  // PADDLE_DLSYM(clCreateCommandQueueWithProperties);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+  PADDLE_DLSYM(clCreateCommandQueueWithProperties);
+#endif
   PADDLE_DLSYM(clGetCommandQueueInfo);
   PADDLE_DLSYM(clReleaseCommandQueue);
   PADDLE_DLSYM(clCreateProgramWithBinary);
@@ -124,14 +124,16 @@ bool CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clRetainKernel);
   PADDLE_DLSYM(clCreateBuffer);
   PADDLE_DLSYM(clCreateImage2D);
-  PADDLE_DLSYM(clCreateImage);
   PADDLE_DLSYM(clCreateUserEvent);
   PADDLE_DLSYM(clCreateProgramWithSource);
   PADDLE_DLSYM(clReleaseKernel);
   PADDLE_DLSYM(clGetDeviceInfo);
   PADDLE_DLSYM(clGetDeviceIDs);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
   PADDLE_DLSYM(clRetainDevice);
   PADDLE_DLSYM(clReleaseDevice);
+  PADDLE_DLSYM(clCreateImage);
+#endif
   PADDLE_DLSYM(clRetainEvent);
   PADDLE_DLSYM(clGetKernelWorkGroupInfo);
   PADDLE_DLSYM(clGetEventInfo);
@@ -445,7 +447,7 @@ clGetCommandQueueInfo(cl_command_queue command_queue,
                       cl_command_queue_info param_name,
                       size_t param_value_size,
                       void *param_value,
-                      size_t *param_value_size_ret) {
+                      size_t *param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
   return paddle::lite::CLWrapper::Global()->clGetCommandQueueInfo()(
       command_queue,
       param_name,
@@ -459,14 +461,9 @@ CL_API_ENTRY cl_command_queue CL_API_CALL clCreateCommandQueueWithProperties(
     cl_device_id device,
     const cl_queue_properties *properties,
     cl_int *errcode_ret) CL_API_SUFFIX__VERSION_2_0 {
-  // note(ysh329): consider compatibility for cl_driver_version 1.10
-  // using clCreateCommandQueue instead.
-  // return paddle::lite::CLWrapper::Global()
-  //     ->clCreateCommandQueueWithProperties()(
-  //         context, device, properties, errcode_ret);
-  //
-  return paddle::lite::CLWrapper::Global()->clCreateCommandQueue()(
-      context, device, 0, errcode_ret);
+  return paddle::lite::CLWrapper::Global()
+      ->clCreateCommandQueueWithProperties()(
+          context, device, properties, errcode_ret);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseCommandQueue(
