@@ -177,12 +177,12 @@ class LITE_API ModelBuffer {
               const char* params_buffer,
               size_t params_buffer_size);
   ModelBuffer(std::string&& program_buffer, std::string&& params_buffer);
-  std::string release_program();
-  std::string release_params();
+  const std::string& get_program() const;
+  const std::string& get_params() const;
+  const bool is_empty() const;
 
   ModelBuffer() = default;
   ModelBuffer(const ModelBuffer&) = delete;
-  ModelBuffer& operator=(const ModelBuffer&) = delete;
 
  private:
   std::string program_;
@@ -224,9 +224,7 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_model_buffer(std::shared_ptr<ModelBuffer> model_buffer) {
     model_buffer_ = model_buffer;
   }
-  std::shared_ptr<ModelBuffer> get_model_buffer() const {
-    return model_buffer_;
-  }
+  const ModelBuffer& get_model_buffer() const;
   // internal inference to choose passes for model optimizing,
   // it's designed for internal developer and not recommanded
   // for comman users.
@@ -240,7 +238,7 @@ class LITE_API CxxConfig : public ConfigBase {
   const std::vector<Place>& valid_places() const { return valid_places_; }
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
-  bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
+  bool is_model_from_memory() const { return static_cast<bool>(model_buffer_); }
 
 #ifdef LITE_WITH_X86
   void set_x86_math_library_num_threads(int threads) {
@@ -313,7 +311,7 @@ class LITE_API MobileConfig : public ConfigBase {
 
   // return model_from_memory_, which indicates whether to load model from
   // memory buffer.
-  bool model_from_memory() const { return model_from_memory_; }
+  bool is_model_from_memory() const { return model_from_memory_; }
 
   // NOTE: This is a deprecated API and will be removed in latter release.
   void set_model_buffer(const char* model_buffer,

@@ -293,14 +293,24 @@ ModelBuffer::ModelBuffer(std::string &&program_buffer,
   params_ = std::forward<std::string>(params_buffer);
 }
 
-std::string ModelBuffer::release_program() {
-  CHECK(!model_.empty());
-  return std::move(model_);
+const std::string &ModelBuffer::get_program() const {
+  CHECK(!program_.empty());
+  return program_;
 }
 
-std::string ModelBuffer::release_params() {
-  CHECK(!param_.empty());
-  return std::move(param_);
+const std::string &ModelBuffer::get_params() const {
+  CHECK(!params_.empty());
+  return params_;
+}
+
+const bool ModelBuffer::is_empty() const {
+  CHECK(program_.empty() == params_.empty());
+  return program_.empty();
+}
+
+const ModelBuffer &CxxConfig::get_model_buffer() const {
+  CHECK(model_buffer_) << "Cannot get an empty model buffer.";
+  return *model_buffer_;
 }
 
 #ifdef LITE_WITH_MLU

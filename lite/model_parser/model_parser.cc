@@ -143,16 +143,15 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string &path,
-    std::shared_ptr<lite_api::ModelBuffer> model_buffer) {
+    const std::string &path, const lite_api::ModelBuffer &model_buffer) {
   std::unique_ptr<framework::proto::ProgramDesc> main_program(
       new framework::proto::ProgramDesc);
-  if (!model_buffer) {
+  if (model_buffer.is_empty()) {
     std::string desc_str;
     ReadBinaryFile(path, &desc_str);
     main_program->ParseFromString(desc_str);
   } else {
-    main_program->ParseFromString(model_buffer->release_program());
+    main_program->ParseFromString(model_buffer.get_program());
   }
   return main_program;
 }
@@ -178,7 +177,7 @@ bool IsPersistable(const cpp::VarDesc &var) {
 void LoadCombinedParamsPb(const std::string &path,
                           lite::Scope *scope,
                           const cpp::ProgramDesc &cpp_prog,
-                          std::shared_ptr<lite_api::ModelBuffer> model_buffer) {
+                          const lite_api::ModelBuffer &model_buffer) {
   CHECK(scope);
   auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
@@ -206,8 +205,10 @@ void LoadCombinedParamsPb(const std::string &path,
                     << " LoadCombinedParamsPb, use LoadParam instead.";
   };
 
-  if (model_buffer) {
-    std::stringstream fin(model_buffer->release_params());
+  if (!model_buffer.is_empty()) {
+    // The params buffer in the configuration object will be automatically
+    // released. So we use the const lvalue reference here.
+    std::stringstream fin(model_buffer.get_params());
     load_var_func(fin);
   } else {
     std::ifstream fin(path, std::ios::binary);
@@ -222,7 +223,7 @@ void LoadModelPb(const std::string &model_dir,
                  Scope *scope,
                  cpp::ProgramDesc *cpp_prog,
                  bool combined,
-                 std::shared_ptr<lite_api::ModelBuffer> model_buffer) {
+                 const lite_api::ModelBuffer &model_buffer) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
@@ -242,7 +243,7 @@ void LoadModelPb(const std::string &model_dir,
   // Load Params
   // NOTE: Only main block be used now.
   VLOG(4) << "Start load model params...";
-  CHECK(!(!combined && model_buffer))
+  CHECK(!(!combined && !model_buffer.is_empty()))
       << "If you want use the model_from_memory,"
       << " you should load the combined model using cfg.set_model_buffer "
          "interface.";

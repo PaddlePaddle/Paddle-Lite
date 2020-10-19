@@ -35,7 +35,7 @@ namespace lite {
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
     const std::string& path,
-    std::shared_ptr<lite_api::ModelBuffer> model_buffer = nullptr);
+    const lite_api::ModelBuffer& model_buffer = lite_api::ModelBuffer());
 
 template <typename T>
 void ReadModelDataFromFile(T* data,
@@ -57,16 +57,17 @@ void LoadCombinedParamsPb(
     const std::string& path,
     lite::Scope* scope,
     const cpp::ProgramDesc& prog,
-    std::shared_ptr<lite_api::ModelBuffer> model_buffer = nullptr);
+    const lite_api::ModelBuffer& model_buffer = lite_api::ModelBuffer());
 
 // Read a model and files of parameters in pb format.
-void LoadModelPb(const std::string& model_dir,
-                 const std::string& model_file,
-                 const std::string& param_file,
-                 Scope* scope,
-                 cpp::ProgramDesc* prog,
-                 bool combined = false,
-                 std::shared_ptr<lite_api::ModelBuffer> model_buffer = nullptr);
+void LoadModelPb(
+    const std::string& model_dir,
+    const std::string& model_file,
+    const std::string& param_file,
+    Scope* scope,
+    cpp::ProgramDesc* prog,
+    bool combined = false,
+    const lite_api::ModelBuffer& model_buffer = lite_api::ModelBuffer());
 
 // Save a model and files of parameters in pb format.
 void SaveModelPb(const std::string& model_dir,
