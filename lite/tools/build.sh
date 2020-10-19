@@ -43,6 +43,10 @@ readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/t
 
 readonly workspace=$PWD
 
+function readlinkf() {
+    perl -MCwd -e 'print Cwd::abs_path shift' "$1";
+}
+
 # if operating in mac env, we should expand the maximum file num
 os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then
@@ -385,7 +389,7 @@ function make_x86 {
 
   prepare_workspace $root_dir $build_directory
 
-  cmake ..  -DWITH_MKL=ON       \
+  cmake $root_dir  -DWITH_MKL=ON       \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
             -DLITE_WITH_PROFILE=OFF \
@@ -395,7 +399,9 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
-            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
+            -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
+            -DLITE_OPTMODEL_DIR=${OPTMODEL_DIR} \
             -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -504,6 +510,7 @@ function main {
 		;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
+                OPTMODEL_DIR=$(readlinkf $OPTMODEL_DIR)
                 shift
                 ;;
             --build_tailor=*)
