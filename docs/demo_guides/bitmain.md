@@ -93,7 +93,7 @@ sudo docker run -it \
      --device=/dev/bmdev-ctl:/dev/bmdev-ctl \
      --net=host \
      paddlepaddle/paddle-lite:latest /bin/bash
-
+
 ```
 
 
