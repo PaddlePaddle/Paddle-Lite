@@ -14,6 +14,7 @@
 
 #include "lite/core/mir/post_quant_dynamic_pass.h"
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -25,7 +26,9 @@ namespace mir {
 
 const std::vector<std::string> PostQuantDynamicPass::quant_axis1_ops{"mul"};
 
-static bool abs_compare(float a, float b) { return std::abs(a) < std::abs(b); }
+static bool abs_compare(float a, float b) {
+  return std::fabs(a) < std::fabs(b);
+}
 
 void FindAbsMaxPerChannel(const Tensor& tensor,
                           int quant_axis,
@@ -58,7 +61,7 @@ void FindAbsMaxPerChannel(const Tensor& tensor,
         const float* start = data + j * channel * inner_size + i * inner_size;
         const float* end = start + inner_size;
         const float* iter = std::max_element(start, end, abs_compare);
-        float tmp = std::abs(*iter);
+        float tmp = std::fabs(*iter);
         abs_max = tmp > abs_max ? tmp : abs_max;
       }
       res->push_back(abs_max);
@@ -85,7 +88,7 @@ void QuantizeWeightPerChannel(const Tensor& src,
       const float* src_end = src_data + (i + 1) * channel_size;
       T* dest_start = dest_data + i * channel_size;
       std::transform(src_start, src_end, dest_start, [scale](float x) {
-        return static_cast<T>(std::round(x / scale));
+        return static_cast<T>(round(x / scale));
       });
     }
   } else if (quant_axis == 1) {
