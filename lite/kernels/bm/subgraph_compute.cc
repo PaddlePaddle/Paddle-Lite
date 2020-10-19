@@ -185,9 +185,6 @@ bool SubgraphEngine::InputShapeChanged() {
         if (j > 0 && (origin_idim[j] != origin_idims_[i][j])) {
           changed = true;
           break;
-        } else if (j == 0 && origin_idim[j] > origin_idims_[i][j]) {
-          changed = true;
-          break;
         }
       }
     }
