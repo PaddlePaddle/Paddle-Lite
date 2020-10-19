@@ -303,7 +303,7 @@ const std::string &ModelBuffer::get_params() const {
   return params_;
 }
 
-const bool ModelBuffer::is_empty() const {
+bool ModelBuffer::is_empty() const {
   CHECK(program_.empty() == params_.empty());
   return program_.empty();
 }

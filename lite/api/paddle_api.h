@@ -179,7 +179,7 @@ class LITE_API ModelBuffer {
   ModelBuffer(std::string&& program_buffer, std::string&& params_buffer);
   const std::string& get_program() const;
   const std::string& get_params() const;
-  const bool is_empty() const;
+  bool is_empty() const;
 
   ModelBuffer() = default;
   ModelBuffer(const ModelBuffer&) = delete;
