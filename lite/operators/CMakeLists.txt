@@ -60,7 +60,6 @@ add_operator(sign_op extra SRCS sign_op.cc DEPS ${op_DEPS})
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
 add_operator(crop_op extra SRCS crop_op.cc DEPS ${op_DEPS})
 add_operator(assign_op extra SRCS assign_op.cc DEPS ${op_DEPS})
-add_operator(power_op extra SRCS power_op.cc DEPS ${op_DEPS})
 add_operator(group_norm_op extra SRCS group_norm_op.cc DEPS ${op_DEPS})
 add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
 
@@ -122,6 +121,7 @@ add_operator(pixel_shuffle_op extra SRCS pixel_shuffle_op.cc DEPS ${op_DEPS})
 add_operator(clip_op extra SRCS clip_op.cc DEPS ${op_DEPS})
 add_operator(print_op extra SRCS print_op.cc DEPS ${op_DEPS})
 add_operator(scatter extra SRCS scatter_op.cc DEPS ${op_DEPS})
+add_operator(matrix_nms_op_lite extra SRCS matrix_nms_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})

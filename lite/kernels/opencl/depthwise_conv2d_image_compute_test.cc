@@ -32,6 +32,7 @@ namespace lite {
 // #define TEST_DEPTHWISE_CONV_IMAGE_BASIC
 #define TEST_DEPTHWISE_CONV_IMAGE_3X3
 
+#define LEAKY_RELU_ALPHA (0.1)
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
                        Dtype2* dout,
@@ -54,8 +55,8 @@ static void conv_basic(const Dtype1* din,
                        int pad_w,
                        int pad_h,
                        bool flag_bias,
-                       bool flag_relu) {
-  CHECK(!flag_relu);
+                       std::string flag_relu,
+                       float leaky_relu_alpha = LEAKY_RELU_ALPHA) {
   auto src_data = din;
   auto dst_data_ref = dout;
   auto weights_data = weights;
@@ -111,6 +112,24 @@ static void conv_basic(const Dtype1* din,
                   */
                 }
               }
+            }
+
+            if (flag_relu == "relu") {
+              dst_data_ref[out_idx] = dst_data_ref[out_idx] > (Dtype2)0
+                                          ? dst_data_ref[out_idx]
+                                          : (Dtype2)0;
+            } else if (flag_relu == "relu6") {
+              auto dst_tmp = (dst_data_ref[out_idx] > (Dtype2)0)
+                                 ? dst_data_ref[out_idx]
+                                 : (Dtype2)0;
+              dst_data_ref[out_idx] = (dst_tmp < 6.f) ? dst_tmp : 6.f;
+            } else if (flag_relu == "leaky_relu") {
+              dst_data_ref[out_idx] =
+                  dst_data_ref[out_idx] > (Dtype2)0
+                      ? dst_data_ref[out_idx]
+                      : (Dtype2)(dst_data_ref[out_idx] * leaky_relu_alpha);
+            } else {
+              VLOG(4) << "this act type: " << flag_relu << " does not support";
             }
           }
         }
@@ -186,6 +205,7 @@ void depth_conv(const T* input_data,
     }
   }
 }
+
 int ConvOutputSize(int input_size,
                    int filter_size,
                    int dilation,
@@ -211,8 +231,7 @@ TEST(depthwise_conv2d, compute_basic) {
   const int fc = 1;
   const int batch_size = 1;
   const int bias_flag = false;
-  const bool relu_flag = false;
-
+  const std::string relu_flag = "relu";
 //  int loop_cnt = 0;
 
 #ifdef LOOP_TEST
@@ -257,7 +276,26 @@ TEST(depthwise_conv2d, compute_basic) {
           if (bias_flag) {
             param.bias = &bias;
           }
-          param.fuse_relu = relu_flag;
+
+          if (relu_flag == "relu") {
+            param.fuse_relu = true;  // relu only
+            param.activation_param.has_active = true;
+            param.activation_param.active_type =
+                lite_api::ActivationType::kRelu;
+          } else if (relu_flag == "relu6") {
+            param.activation_param.Relu_clipped_coef = 6.f;
+            param.activation_param.has_active = true;
+            param.activation_param.active_type =
+                lite_api::ActivationType::kRelu6;
+          } else if (relu_flag == "leaky_relu") {
+            param.activation_param.active_type =
+                lite_api::ActivationType::kLeakyRelu;
+            param.activation_param.has_active = true;
+            param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
+          } else {
+            param.fuse_relu = false;  // relu only
+            param.activation_param.has_active = false;
+          }
 
           std::vector<int> paddings = {pad, pad, pad, pad};
           std::vector<int> dilations = {dilation, dilation};
@@ -287,9 +325,6 @@ TEST(depthwise_conv2d, compute_basic) {
           param.x->Resize(input_dim);
           param.filter->Resize(filter_dim);
           param.output->Resize(out_dim);
-          if (bias_flag) {
-            param.bias->Resize(bias_dim);
-          }
 
           kernel->SetParam(param);
 
@@ -469,7 +504,7 @@ TEST(depthwise_conv2d, compute_basic) {
 #endif
 
 #ifdef TEST_DEPTHWISE_CONV_IMAGE_3X3
-// #define LOOP_TEST
+#define LOOP_TEST
 TEST(depthwise_conv2d, compute_image2d_3x3) {
   const int fc = 1;
   const int fw = 3;
@@ -478,7 +513,7 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
   const int stride = 2;
   const int pad = 2;
   const bool bias_flag = false;
-  const bool relu_flag = false;
+  const std::string relu_flag = "leaky_relu";
 #ifdef LOOP_TEST
   // for (int batch_size = 1; batch_size < 2; ++batch_size) {
   for (int oc = 4; oc < 10; oc += 1) {      // oc = ic
@@ -525,7 +560,24 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         std::vector<int> dilations = {dilation, dilation};
         param.dilations = std::make_shared<std::vector<int>>(dilations);
         param.bias = bias_flag ? &bias : nullptr;
-        param.fuse_relu = relu_flag;
+
+        if (relu_flag == "relu") {
+          param.fuse_relu = true;  // relu only
+          param.activation_param.has_active = true;
+          param.activation_param.active_type = lite_api::ActivationType::kRelu;
+        } else if (relu_flag == "relu6") {
+          param.activation_param.Relu_clipped_coef = 6.f;
+          param.activation_param.has_active = true;
+          param.activation_param.active_type = lite_api::ActivationType::kRelu6;
+        } else if (relu_flag == "leaky_relu") {
+          param.activation_param.active_type =
+              lite_api::ActivationType::kLeakyRelu;
+          param.activation_param.has_active = true;
+          param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
+        } else {
+          param.fuse_relu = false;  // relu only
+          param.activation_param.has_active = false;
+        }
 
         std::unique_ptr<KernelContext> context(new KernelContext);
         context->As<OpenCLContext>().InitOnce();

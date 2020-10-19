@@ -81,7 +81,8 @@ const std::string& TargetToStr(TargetType target) {
                                               "mlu",
                                               "rknpu",
                                               "apu",
-                                              "huawei_ascend_npu"};
+                                              "huawei_ascend_npu",
+                                              "imagination_nna"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -96,7 +97,8 @@ const std::string& PrecisionToStr(PrecisionType precision) {
                                                  "float16",
                                                  "bool",
                                                  "int64_t",
-                                                 "int16_t"};
+                                                 "int16_t",
+                                                 "uint8_t"};
   auto x = static_cast<int>(precision);
   CHECK_LT(x, static_cast<int>(PRECISION(NUM)));
   return precision2string[x];
@@ -125,7 +127,8 @@ const std::string& TargetRepr(TargetType target) {
                                               "kMLU",
                                               "kRKNPU",
                                               "kAPU",
-                                              "kHuaweiAscendNPU"};
+                                              "kHuaweiAscendNPU",
+                                              "kImaginationNNA"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];
@@ -171,7 +174,8 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kAPU),
                                                TARGET(kRKNPU),
                                                TARGET(kFPGA),
-                                               TARGET(kHuaweiAscendNPU)});
+                                               TARGET(kHuaweiAscendNPU),
+                                               TARGET(kImaginationNNA)});
   if (target == TARGET(kAny)) {
     return valid_set;
   }

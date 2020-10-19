@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
 #include <string>
 #include "lite/api/paddle_place.h"
 #include "lite/core/target_wrapper.h"
@@ -140,20 +141,21 @@ class Buffer {
 #ifdef LITE_WITH_OPENCL
   template <typename T>
   void ResetLazyImage2D(TargetType target,
-                        const size_t img_w,
-                        const size_t img_h,
+                        const size_t img_w_req,
+                        const size_t img_h_req,
                         void* host_ptr = nullptr) {
-    if (target != target_ || cl_image2d_width_ < img_w ||
-        cl_image2d_height_ < img_h || host_ptr != nullptr) {
+    if (target != target_ || cl_image2d_width_ < img_w_req ||
+        cl_image2d_height_ < img_h_req || host_ptr != nullptr) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
+      cl_image2d_width_ = std::max(cl_image2d_width_, img_w_req);
+      cl_image2d_height_ = std::max(cl_image2d_height_, img_h_req);
       Free();
-      data_ = TargetWrapperCL::MallocImage<T>(img_w, img_h, host_ptr);
+      data_ = TargetWrapperCL::MallocImage<T>(
+          cl_image2d_width_, cl_image2d_height_, host_ptr);
       target_ = target;
-      space_ = sizeof(T) * img_w * img_h *
+      space_ = sizeof(T) * cl_image2d_width_ * cl_image2d_height_ *
                4;  // un-used for opencl Image2D, 4 for RGBA,
       cl_use_image2d_ = true;
-      cl_image2d_width_ = img_w;
-      cl_image2d_height_ = img_h;
     }
   }
 #endif

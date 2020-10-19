@@ -33,14 +33,23 @@ bool HasInputArg(const OpInfo* op_info,
                  const Scope* scope,
                  const std::string& argname);
 
-void insert_transpose_node(void* ctx,
-                           const std::string& input_name,
-                           const std::string& output_name,
-                           std::vector<uint32_t> input_shape,
-                           std::vector<uint32_t> output_shape,
-                           std::vector<int32_t> axis,
-                           float scale,
-                           int32_t zeroPoint);
+int insert_requant_node(void* ctx,
+                        const std::string& input_name,
+                        const std::string& output_name,
+                        std::vector<uint32_t> input_shape,
+                        std::vector<uint32_t> output_shape,
+                        float scale_in,
+                        float scale_out,
+                        int32_t zeroPoint);
+
+int insert_transpose_node(void* ctx,
+                          const std::string& input_name,
+                          const std::string& output_name,
+                          std::vector<uint32_t> input_shape,
+                          std::vector<uint32_t> output_shape,
+                          std::vector<int32_t> axis,
+                          float scale,
+                          int32_t zeroPoint);
 
 void transpose(const int8_t* input_data,
                uint8_t* output_data,

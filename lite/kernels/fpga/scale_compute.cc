@@ -29,8 +29,8 @@ void ScaleCompute::PrepareForRun() {
   scale_param.output = param.output->ZynqTensor();
 
   int channel = scale_param.input->shape().channel();
-  zynqmp::Tensor* scale = new zynqmp::Tensor();
-  zynqmp::Tensor* bias = new zynqmp::Tensor();
+  zynqmp::Tensor* scale = &scale_;
+  zynqmp::Tensor* bias = &bias_;
   zynqmp::Shape shape(zynqmp::N, {channel});
   float* scale_data = scale->mutableData<float>(zynqmp::FP32, shape);
   float* bias_data = bias->mutableData<float>(zynqmp::FP32, shape);

@@ -79,6 +79,13 @@ class ProgramDescView : public ProgramDescAPI {
     return desc_->version()->version();
   }
 
+  void ClearBlocks() override {
+    CHECK_EQ(BlocksSize(), 0u) << "For backward compatibility, in the "
+                                  "read-only flatbuffers version, this "
+                                  "interface degenerates to force the number "
+                                  "of blocks to be zero.";
+  }
+
   proto::ProgramDesc const* raw_desc() const { return desc_; }
 
   const std::vector<char>& buf() const { return buf_; }

@@ -1,0 +1,5 @@
+conv	[1 96 112 112]	(ch_out=48, stride=[1 1], group=1, kernel=1x1, pad=[0 0 0 0], dilation=[1 1], flag_bias=0, flag_act=0, dtype=float)
+fc	[4 8]	(flag_bias=1, param_dim=8x1000)
+batchnorm	[1 8 64 64]	(epsilon=1e-4f, momentum=0.9f)
+pooling	[1 8 64 64]	(stride=[2 2], kernel=2x2, pad=[0 0 0 0], exclusive=0, pooling_type=avg)
+activation	[1 8 64 64]	(act_type=relu)

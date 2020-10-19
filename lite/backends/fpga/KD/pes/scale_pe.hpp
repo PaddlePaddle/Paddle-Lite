@@ -141,22 +141,22 @@ class ScalePE : public PE {
     Tensor* output = param_.output;
     Tensor float_input;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
-    input->syncToCPU();
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
 
-    float* scale_data = param_.scale->data<float>();
+    float16* scale_data = param_.scale->data<float16>();
 
     int wh = input->shape().width() * input->shape().height();
 
     float16* in_data = input->data<float16>();
-
     float max = 0;
 
     for (int i = 0; i < wh; i++) {
       for (int c = 0; c < input->shape().channel(); c++) {
         int index = i * input->shape().channel() + c;
-        float value = half_to_float(in_data[index]) * scale_data[c];
+        float x = image_addr[index];
+        float y = half_to_float(scale_data[c]);
+        float value = x * y;
         data_out[index] = float_to_half(value);
 
         if (value < 0) {
@@ -180,7 +180,6 @@ class ScalePE : public PE {
              param_.scale->shape().numel() * sizeof(float16));
       dw_param.quantizedFilter()->scale()[0] = param_.scale->scale()[0];
       dw_param.quantizedFilter()->scale()[1] = param_.scale->scale()[1];
-
       dw_param.quantizedFilter()->flush();
     }
     param_.input->syncToDevice();

@@ -71,7 +71,7 @@ inline void get_mid_dims(const lite::DDim &x_dims,
         for (size_t j = 0; j < i; ++j) {
           (*pre) *= y_dims[j];
         }
-        *n = std::max(x_dims[i + axis], y_dims[i]);
+        *n = (std::max)(x_dims[i + axis], y_dims[i]);
         *mid_flag = 1;
         mid = i;
         break;

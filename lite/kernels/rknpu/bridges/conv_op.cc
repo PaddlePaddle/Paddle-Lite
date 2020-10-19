@@ -34,12 +34,15 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
+  auto input_scale_name = "Input0_scale";
   auto input = scope->FindMutableTensor(input_name);
   auto input_dims = input->dims();
   auto filter_name = op_info->Input("Filter").front();
+  auto filter_scale_name = "Filter0_scale";
   auto filter = scope->FindMutableTensor(filter_name);
   auto filter_dims = filter->dims();
   auto output_name = op_info->Output("Output").front();
+  auto output_scale_name = "Output0_scale";
   auto output = scope->FindMutableTensor(output_name);
   auto output_dims = output->dims();
   auto bs = input_dims[0];
@@ -59,8 +62,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(dilations.size(), 2L);
   // Check depthwise mode
   bool is_depthwise_mode = (ic == groups && oc == groups && groups != 1);
-  CHECK(op_info->HasInputScale(filter_name));
-  auto weight_scale = op_info->GetInputScale(filter_name);
+  CHECK(op_info->HasInputScale(filter_scale_name, true));
+  auto weight_scale = op_info->GetInputScale(filter_scale_name, true);
 
   // for quantization
   bool enable_int8 = false;
@@ -72,11 +75,11 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   if (op_info->HasAttr("enable_int8")) {
     enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    CHECK(op_info->HasInputScale(input_name));
-    input_scale = op_info->GetInputScale(input_name)[0];
+    CHECK(op_info->HasInputScale(input_scale_name, true));
+    input_scale = op_info->GetInputScale(input_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(output_name));
-    output_scale = op_info->GetOutputScale(output_name)[0];
+    CHECK(op_info->HasOutputScale(output_scale_name, true));
+    output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
 
     if (enable_int8) {
       precision = PRECISION(kInt8);

@@ -64,6 +64,7 @@ using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
 using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
+using ImaginationNNAContext = Context<TargetType::kImaginationNNA>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -144,6 +145,21 @@ class Context<TargetType::kAPU> {
 
   APUContext& operator=(const APUContext& ctx) {}
   std::string name() const { return "APUContext"; }
+
+  static void SetSubgraphModelCacheDir(Scope* scope,
+                                       std::string subgraph_model_cache_dir) {
+    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_model_cache_dir;
+  }
+
+  static std::string SubgraphModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
 };
 #endif
 
@@ -170,6 +186,19 @@ class Context<TargetType::kRKNPU> {
 
   RKNPUContext& operator=(const RKNPUContext& ctx) {}
   std::string name() const { return "RKNPUContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_IMAGINATION_NNA
+template <>
+class Context<TargetType::kImaginationNNA> {
+ public:
+  Context() {}
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(ImaginationNNAContext* ctx) {}
+
+  std::string name() const { return "ImaginationNNAContext"; }
 };
 #endif
 
@@ -217,6 +246,7 @@ class Context<TargetType::kARM> {
   int llc_size() const { return DeviceInfo::Global().llc_size(); }
   bool has_dot() const { return DeviceInfo::Global().has_dot(); }
   bool has_fp16() const { return DeviceInfo::Global().has_fp16(); }
+  bool has_a53_valid() const { return DeviceInfo::Global().set_a53_valid(); }
 
   template <typename T>
   T* workspace_data() {
@@ -471,6 +501,13 @@ class ContextScheduler {
             &ctx->As<BMContext>());
         break;
 #endif
+#ifdef LITE_WITH_IMAGINATION_NNA
+      case TARGET(kImaginationNNA):
+        kernel_contexts_[TargetType::kImaginationNNA]
+            .As<ImaginationNNAContext>()
+            .CopySharedTo(&ctx->As<ImaginationNNAContext>());
+        break;
+#endif
 #ifdef LITE_WITH_MLU
       case TARGET(kMLU): {
         int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
@@ -533,6 +570,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_MLU
     InitContext<TargetType::kMLU, MLUContext>();
+#endif
+#ifdef LITE_WITH_IMAGINATION_NNA
+    InitContext<TargetType::kImaginationNNA, ImaginationNNAContext>();
 #endif
   }
 

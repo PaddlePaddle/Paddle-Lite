@@ -25,14 +25,24 @@ namespace fpga {
 class ReshapeCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
+  void PrepareForRun() override;
   void Run() override;
 
   virtual ~ReshapeCompute() = default;
 };
 
+class FlattenCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  void Run() override;
+
+  virtual ~FlattenCompute() = default;
+};
+
 class ReshapeComputeFpgaToHost
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
+  void PrepareForRun() override;
   void Run() override;
 
   virtual ~ReshapeComputeFpgaToHost() = default;
