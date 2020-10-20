@@ -1,7 +1,7 @@
 set(LITE_URL "http://paddle-inference-dist.bj.bcebos.com" CACHE STRING "inference download url")
 
 function(lite_download_and_uncompress INSTALL_DIR URL FILENAME)
-    message(STATUS "Download inference test stuff from ${URL}/${FILENAME}")
+    message(STATUS "Download inference test stuff: ${FILENAME}")
     string(REGEX REPLACE "[-%.]" "_" FILENAME_EX ${FILENAME})
     set(EXTERNAL_PROJECT_NAME "extern_lite_download_${FILENAME_EX}")
     set(UNPACK_DIR "${INSTALL_DIR}/src/${EXTERNAL_PROJECT_NAME}")
@@ -9,7 +9,7 @@ function(lite_download_and_uncompress INSTALL_DIR URL FILENAME)
             ${EXTERNAL_PROJECT_NAME}
             ${EXTERNAL_PROJECT_LOG_ARGS}
             PREFIX                ${INSTALL_DIR}
-            DOWNLOAD_COMMAND      wget --no-check-certificate --no-proxy -q -O ${INSTALL_DIR}/${FILENAME} ${URL}/${FILENAME} && ${CMAKE_COMMAND} -E tar xzf ${INSTALL_DIR}/${FILENAME}
+            DOWNLOAD_COMMAND      wget --no-check-certificate -q -O ${INSTALL_DIR}/${FILENAME} ${URL}/${FILENAME} && ${CMAKE_COMMAND} -E tar xzf ${INSTALL_DIR}/${FILENAME}
             DOWNLOAD_DIR          ${INSTALL_DIR}
             DOWNLOAD_NO_PROGRESS  1
             CONFIGURE_COMMAND     ""

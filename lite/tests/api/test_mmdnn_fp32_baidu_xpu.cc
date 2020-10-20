@@ -26,8 +26,8 @@
 #include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 1000, "iteration times to run");
-DEFINE_int32(batch, 1, "batch_size to run");
+DEFINE_int32(iteration, 100, "iteration times to run");
+DEFINE_int32(batch, 10, "batch_size to run");
 
 namespace paddle {
 namespace lite {
@@ -109,13 +109,9 @@ TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
       FillTensor(predictor, i, tensor_shape, tensor_value, tensor_lod);
     }
 
-    LOG(INFO) << "--- 11";
     double start = GetCurrentUS();
-    LOG(INFO) << "--- 12";
     predictor->Run();
-    LOG(INFO) << "--- 13";
     cost_time += GetCurrentUS() - start;
-    LOG(INFO) << "--- 14";
 
     auto output_tensor = predictor->GetOutput(0);
     auto output_shape = output_tensor->shape();
@@ -127,14 +123,13 @@ TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
     for (int i = 0; i < FLAGS_batch; i++) {
       out_rets.push_back(output_data[i]);
     }
-
-    LOG(INFO) << "================== Speed Report ===================";
-    LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num "
-              << FLAGS_threads << ", warmup: " << FLAGS_warmup
-              << ", batch: " << FLAGS_batch
-              << ", iteration: " << FLAGS_iteration << ", spend "
-              << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
   }
+
+  LOG(INFO) << "================== Speed Report ===================";
+  LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
+            << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
+            << ", iteration: " << FLAGS_iteration << ", spend "
+            << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 }
 
 }  // namespace lite
