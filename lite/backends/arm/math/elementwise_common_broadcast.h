@@ -30,20 +30,20 @@ namespace lite {
 namespace arm {
 namespace math {
 
-enum class FusedActive { NO, YES };
-enum class HasNeonActive { NO, YES };
+enum class HasActive { NO, YES };
+enum class NeonActiveDefined { NO, YES };
 
 template <class T,
           class NeonT,
           T naive_op(T, T),
+          NeonT neon_op(NeonT, NeonT),
           NeonT neon_dup(T),
           NeonT neon_ld(const T*),
           void neon_st(T*, NeonT),
-          NeonT neon_op(NeonT, NeonT),
-          NeonT neon_active(const NeonT&) = nullptr,
           T naive_active(T) = nullptr,
-          FusedActive fused_active = FusedActive::NO,
-          HasNeonActive has_neon_active = HasNeonActive::NO>
+          HasActive has_active = HasActive::NO,
+          NeonT neon_active(const NeonT&) = nullptr,
+          NeonActiveDefined neon_active_defined = NeonActiveDefined::NO>
 inline void neon_elementwise_range_to_one(const T* dinx,
                                           const T* diny,
                                           T* dout,
@@ -68,13 +68,13 @@ inline void neon_elementwise_range_to_one(const T* dinx,
     din2 = neon_op(din2, rb);
     din3 = neon_op(din3, rb);
 
-    if (fused_active == FusedActive::YES &&
-        has_neon_active == HasNeonActive::YES) {
+    if (has_active == HasActive::YES &&
+        neon_active_defined == NeonActiveDefined::YES) {
       din0 = neon_active(din0);
       din1 = neon_active(din1);
       din2 = neon_active(din2);
       din3 = neon_active(din3);
-    } else if (fused_active == FusedActive::YES) {
+    } else if (has_active == HasActive::YES) {
       for (int k = 0; k < 4; ++k) {
         din0[k] = naive_active(din0[k]);
         din1[k] = naive_active(din1[k]);
@@ -99,11 +99,11 @@ inline void neon_elementwise_range_to_one(const T* dinx,
     din0 = neon_op(din0, rb);
     din1 = neon_op(din1, rb);
 
-    if (fused_active == FusedActive::YES &&
-        has_neon_active == HasNeonActive::YES) {
+    if (has_active == HasActive::YES &&
+        neon_active_defined == NeonActiveDefined::YES) {
       din0 = neon_active(din0);
       din1 = neon_active(din1);
-    } else if (fused_active == FusedActive::YES) {
+    } else if (has_active == HasActive::YES) {
       for (int k = 0; k < 4; ++k) {
         din0[k] = naive_active(din0[k]);
         din1[k] = naive_active(din1[k]);
@@ -122,10 +122,10 @@ inline void neon_elementwise_range_to_one(const T* dinx,
 
     din0 = neon_op(din0, rb);
 
-    if (fused_active == FusedActive::YES &&
-        has_neon_active == HasNeonActive::YES) {
+    if (has_active == HasActive::YES &&
+        neon_active_defined == NeonActiveDefined::YES) {
       din0 = neon_active(din0);
-    } else if (fused_active == FusedActive::YES) {
+    } else if (has_active == HasActive::YES) {
       for (int k = 0; k < 4; ++k) {
         din0[k] = naive_active(din0[k]);
       }
@@ -139,7 +139,7 @@ inline void neon_elementwise_range_to_one(const T* dinx,
     T tmp = 0;
     for (int p = 0; p < remain; p++) {
       tmp = naive_op(*dinx_ptr, diny_data);
-      if (fused_active == FusedActive::YES) {
+      if (has_active == HasActive::YES) {
         tmp = naive_active(tmp);
       }
       *dout_ptr = tmp;
@@ -152,14 +152,14 @@ inline void neon_elementwise_range_to_one(const T* dinx,
 template <class T,
           class NeonT,
           T naive_op(T, T),
+          NeonT neon_op(NeonT, NeonT),
           NeonT neon_dup(T),
           NeonT neon_ld(const T*),
           void neon_st(T*, NeonT),
-          NeonT neon_op(NeonT, NeonT),
-          NeonT neon_active(const NeonT&) = nullptr,
           T naive_active(T) = nullptr,
-          FusedActive fused_active = FusedActive::NO,
-          HasNeonActive has_neon_active = HasNeonActive::NO>
+          HasActive has_active = HasActive::NO,
+          NeonT neon_active(const NeonT&) = nullptr,
+          NeonActiveDefined neon_active_defined = NeonActiveDefined::NO>
 inline void neon_elementwise_one_to_range(const T* dinx,
                                           const T* diny,
                                           T* dout,
@@ -184,13 +184,13 @@ inline void neon_elementwise_one_to_range(const T* dinx,
     din2 = neon_op(rb, din2);
     din3 = neon_op(rb, din3);
 
-    if (fused_active == FusedActive::YES &&
-        has_neon_active == HasNeonActive::YES) {
+    if (has_active == HasActive::YES &&
+        neon_active_defined == NeonActiveDefined::YES) {
       din0 = neon_active(din0);
       din1 = neon_active(din1);
       din2 = neon_active(din2);
       din3 = neon_active(din3);
-    } else if (fused_active == FusedActive::YES) {
+    } else if (has_active == HasActive::YES) {
       for (int k = 0; k < 4; ++k) {
         din0[k] = naive_active(din0[k]);
         din1[k] = naive_active(din1[k]);
@@ -214,11 +214,11 @@ inline void neon_elementwise_one_to_range(const T* dinx,
     din0 = neon_op(rb, din0);
     din1 = neon_op(rb, din1);
 
-    if (fused_active == FusedActive::YES &&
-        has_neon_active == HasNeonActive::YES) {
+    if (has_active == HasActive::YES &&
+        neon_active_defined == NeonActiveDefined::YES) {
       din0 = neon_active(din0);
       din1 = neon_active(din1);
-    } else if (fused_active == FusedActive::YES) {
+    } else if (has_active == HasActive::YES) {
       for (int k = 0; k < 4; ++k) {
         din0[k] = naive_active(din0[k]);
         din1[k] = naive_active(din1[k]);
@@ -237,10 +237,10 @@ inline void neon_elementwise_one_to_range(const T* dinx,
 
     din0 = neon_op(rb, din0);
 
-    if (fused_active == FusedActive::YES &&
-        has_neon_active == HasNeonActive::YES) {
+    if (has_active == HasActive::YES &&
+        neon_active_defined == NeonActiveDefined::YES) {
       din0 = neon_active(din0);
-    } else if (fused_active == FusedActive::YES) {
+    } else if (has_active == HasActive::YES) {
       for (int k = 0; k < 4; ++k) {
         din0[k] = naive_active(din0[k]);
       }
@@ -254,7 +254,7 @@ inline void neon_elementwise_one_to_range(const T* dinx,
     T tmp = 0;
     for (int p = 0; p < remain; p++) {
       tmp = naive_op(dinx_data, *diny_ptr);
-      if (fused_active == FusedActive::YES) {
+      if (has_active == HasActive::YES) {
         tmp = naive_active(tmp);
       }
       *dout_ptr = tmp;
@@ -267,13 +267,14 @@ inline void neon_elementwise_one_to_range(const T* dinx,
 template <class T,
           class NeonT,
           T naive_op(T, T),
+          NeonT neon_op(NeonT, NeonT),
+          NeonT neon_dup(T),
           NeonT neon_ld(const T*),
           void neon_st(T*, NeonT),
-          NeonT neon_op(NeonT, NeonT),
-          NeonT neon_active(const NeonT&) = nullptr,
           T naive_active(T) = nullptr,
-          FusedActive fused_active = FusedActive::NO,
-          HasNeonActive has_neon_active = HasNeonActive::NO>
+          HasActive has_active = HasActive::NO,
+          NeonT neon_active(const NeonT&) = nullptr,
+          NeonActiveDefined neon_active_defined = NeonActiveDefined::NO>
 inline void neon_elementwise_range_to_range(const T* dinx,
                                             const T* diny,
                                             T* dout,
@@ -302,13 +303,13 @@ inline void neon_elementwise_range_to_range(const T* dinx,
     dinx2 = neon_op(dinx2, diny2);
     dinx3 = neon_op(dinx3, diny3);
 
-    if (fused_active == FusedActive::YES &&
-        has_neon_active == HasNeonActive::YES) {
+    if (has_active == HasActive::YES &&
+        neon_active_defined == NeonActiveDefined::YES) {
       dinx0 = neon_active(dinx0);
       dinx1 = neon_active(dinx1);
       dinx2 = neon_active(dinx2);
       dinx3 = neon_active(dinx3);
-    } else if (fused_active == FusedActive::YES) {
+    } else if (has_active == HasActive::YES) {
       for (int k = 0; k < 4; ++k) {
         dinx0[k] = naive_active(dinx0[k]);
         dinx1[k] = naive_active(dinx1[k]);
@@ -337,11 +338,11 @@ inline void neon_elementwise_range_to_range(const T* dinx,
     dinx0 = neon_op(dinx0, diny0);
     dinx1 = neon_op(dinx1, diny1);
 
-    if (fused_active == FusedActive::YES &&
-        has_neon_active == HasNeonActive::YES) {
+    if (has_active == HasActive::YES &&
+        neon_active_defined == NeonActiveDefined::YES) {
       dinx0 = neon_active(dinx0);
       dinx1 = neon_active(dinx1);
-    } else if (fused_active == FusedActive::YES) {
+    } else if (has_active == HasActive::YES) {
       for (int k = 0; k < 4; ++k) {
         dinx0[k] = naive_active(dinx0[k]);
         dinx1[k] = naive_active(dinx1[k]);
@@ -363,10 +364,10 @@ inline void neon_elementwise_range_to_range(const T* dinx,
 
     dinx0 = neon_op(dinx0, diny0);
 
-    if (fused_active == FusedActive::YES &&
-        has_neon_active == HasNeonActive::YES) {
+    if (has_active == HasActive::YES &&
+        neon_active_defined == NeonActiveDefined::YES) {
       dinx0 = neon_active(dinx0);
-    } else if (fused_active == FusedActive::YES) {
+    } else if (has_active == HasActive::YES) {
       for (int k = 0; k < 4; ++k) {
         dinx0[k] = naive_active(dinx0[k]);
       }
@@ -381,7 +382,7 @@ inline void neon_elementwise_range_to_range(const T* dinx,
     T tmp = 0;
     for (int p = 0; p < remain; p++) {
       tmp = naive_op(*dinx_ptr, *diny_ptr);
-      if (fused_active == FusedActive::YES) {
+      if (has_active == HasActive::YES) {
         tmp = naive_active(tmp);
       }
       *dout_ptr = tmp;
@@ -392,143 +393,7 @@ inline void neon_elementwise_range_to_range(const T* dinx,
   }
 }
 
-///////////////////// Helper Functions Int32 /////////////////////
-
-template <int32x4_t neon_op(int32x4_t, int32x4_t),
-          int32_t naive_op(int32_t, int32_t),
-          int32_t naive_active(int32_t) = nullptr,
-          FusedActive fused_active = FusedActive::NO,
-          int32x4_t neon_active(const int32x4_t&) = nullptr,
-          HasNeonActive has_neon_active = HasNeonActive::NO>
-inline void neon_elementwise_range_to_one_i32(const int32_t* dinx,
-                                              const int32_t* diny,
-                                              int32_t* dout,
-                                              int num) {
-  neon_elementwise_range_to_one<int32_t,
-                                int32x4_t,
-                                naive_op,
-                                vdupq_n_s32,
-                                vld1q_s32,
-                                vst1q_s32,
-                                neon_op,
-                                neon_active,
-                                naive_active,
-                                fused_active,
-                                has_neon_active>(dinx, diny, dout, num);
-}
-
-template <int32x4_t neon_op(int32x4_t, int32x4_t),
-          int32_t naive_op(int32_t, int32_t),
-          int32_t naive_active(int32_t) = nullptr,
-          FusedActive fused_active = FusedActive::NO,
-          int32x4_t neon_active(const int32x4_t&) = nullptr,
-          HasNeonActive has_neon_active = HasNeonActive::NO>
-inline void neon_elementwise_one_to_range_i32(const int32_t* dinx,
-                                              const int32_t* diny,
-                                              int32_t* dout,
-                                              int num) {
-  neon_elementwise_one_to_range<int32_t,
-                                int32x4_t,
-                                naive_op,
-                                vdupq_n_s32,
-                                vld1q_s32,
-                                vst1q_s32,
-                                neon_op,
-                                naive_active,
-                                fused_active,
-                                has_neon_active>(dinx, diny, dout, num);
-}
-
-template <int32x4_t neon_op(int32x4_t, int32x4_t),
-          int32_t naive_op(int32_t, int32_t),
-          int32_t naive_active(int32_t) = nullptr,
-          FusedActive fused_active = FusedActive::NO,
-          int32x4_t neon_active(const int32x4_t&) = nullptr,
-          HasNeonActive has_neon_active = HasNeonActive::NO>
-inline void neon_elementwise_range_to_range_i32(const int32_t* dinx,
-                                                const int32_t* diny,
-                                                int32_t* dout,
-                                                int num) {
-  neon_elementwise_range_to_range<int32_t,
-                                  int32x4_t,
-                                  naive_op,
-                                  vld1q_s32,
-                                  vst1q_s32,
-                                  neon_op,
-                                  neon_active,
-                                  naive_active,
-                                  fused_active,
-                                  has_neon_active>(dinx, diny, dout, num);
-}
-
-///////////////////// Helper Functions Float /////////////////////
-
-template <float32x4_t neon_op(float32x4_t, float32x4_t),
-          float naive_op(float, float),
-          float naive_active(float) = nullptr,
-          FusedActive fused_active = FusedActive::NO,
-          float32x4_t neon_active(const float32x4_t&) = nullptr,
-          HasNeonActive has_neon_active = HasNeonActive::NO>
-inline void neon_elementwise_range_to_one_i32(const float* dinx,
-                                              const float* diny,
-                                              float* dout,
-                                              int num) {
-  neon_elementwise_range_to_one<float,
-                                float32x4_t,
-                                naive_op,
-                                vdupq_n_f32,
-                                vld1q_f32,
-                                vst1q_f32,
-                                neon_op,
-                                neon_active,
-                                naive_active,
-                                fused_active,
-                                has_neon_active>(dinx, diny, dout, num);
-}
-
-template <float32x4_t neon_op(float32x4_t, float32x4_t),
-          float naive_op(float, float),
-          float naive_active(float) = nullptr,
-          FusedActive fused_active = FusedActive::NO,
-          float32x4_t neon_active(const float32x4_t&) = nullptr,
-          HasNeonActive has_neon_active = HasNeonActive::NO>
-inline void neon_elementwise_one_to_range_i32(const float* dinx,
-                                              const float* diny,
-                                              float* dout,
-                                              int num) {
-  neon_elementwise_one_to_range<float,
-                                float32x4_t,
-                                naive_op,
-                                vdupq_n_f32,
-                                vld1q_f32,
-                                vst1q_f32,
-                                neon_op,
-                                naive_active,
-                                fused_active,
-                                has_neon_active>(dinx, diny, dout, num);
-}
-
-template <float32x4_t neon_op(float32x4_t, float32x4_t),
-          float naive_op(float, float),
-          float naive_active(float) = nullptr,
-          FusedActive fused_active = FusedActive::NO,
-          float32x4_t neon_active(const float32x4_t&) = nullptr,
-          HasNeonActive has_neon_active = HasNeonActive::NO>
-inline void neon_elementwise_range_to_range_i32(const float* dinx,
-                                                const float* diny,
-                                                float* dout,
-                                                int num) {
-  neon_elementwise_range_to_range<float,
-                                  float32x4_t,
-                                  naive_op,
-                                  vld1q_f32,
-                                  vst1q_f32,
-                                  neon_op,
-                                  neon_active,
-                                  naive_active,
-                                  fused_active,
-                                  has_neon_active>(dinx, diny, dout, num);
-}
+///////////////////////////// Partial Specialization
 
 }  // namespace math
 }  // namespace arm
