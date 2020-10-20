@@ -23,6 +23,7 @@
 #include "lite/core/framework.pb.h"
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 #endif
+#include "lite/api/paddle_api.h"
 #include "lite/core/scope.h"
 #include "lite/core/variable.h"
 #include "lite/model_parser/base/io.h"
@@ -33,7 +34,8 @@ namespace lite {
 #ifndef LITE_ON_TINY_PUBLISH
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string& path, bool program_from_memory = false);
+    const std::string& path,
+    const lite_api::CxxModelBuffer& model_buffer = lite_api::CxxModelBuffer());
 
 template <typename T>
 void ReadModelDataFromFile(T* data,
@@ -51,19 +53,21 @@ void LoadParams(const std::string& path);
 // Load a single parameter to an output tensor.
 void LoadParam(const std::string& path, Variable* out);
 
-void LoadCombinedParamsPb(const std::string& path,
-                          lite::Scope* scope,
-                          const cpp::ProgramDesc& prog,
-                          bool params_from_memory = false);
+void LoadCombinedParamsPb(
+    const std::string& path,
+    lite::Scope* scope,
+    const cpp::ProgramDesc& prog,
+    const lite_api::CxxModelBuffer& model_buffer = lite_api::CxxModelBuffer());
 
 // Read a model and files of parameters in pb format.
-void LoadModelPb(const std::string& model_dir,
-                 const std::string& model_file,
-                 const std::string& param_file,
-                 Scope* scope,
-                 cpp::ProgramDesc* prog,
-                 bool combined = false,
-                 bool model_from_memory = false);
+void LoadModelPb(
+    const std::string& model_dir,
+    const std::string& model_file,
+    const std::string& param_file,
+    Scope* scope,
+    cpp::ProgramDesc* prog,
+    bool combined = false,
+    const lite_api::CxxModelBuffer& model_buffer = lite_api::CxxModelBuffer());
 
 // Save a model and files of parameters in pb format.
 void SaveModelPb(const std::string& model_dir,

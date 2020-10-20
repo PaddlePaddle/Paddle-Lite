@@ -19,6 +19,7 @@
 #include <set>
 #include <utility>
 
+#include "lite/api/paddle_api.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
@@ -50,14 +51,14 @@ void LoadLoDTensor(model_parser::pb::LoDTensorDeserializer *loader,
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string &path, bool program_from_memory) {
+    const std::string &path, const lite_api::CxxModelBuffer &model_buffer) {
   std::unique_ptr<framework::proto::ProgramDesc> main_program(
       new framework::proto::ProgramDesc);
   if (model_buffer.is_empty()) {
     model_parser::BinaryFileReader file(path);
     main_program->ParseFromString(file.ReadToString(file.length()));
   } else {
-    main_program->ParseFromString(path);
+    main_program->ParseFromString(model_buffer.get_program());
   }
   return main_program;
 }
@@ -129,7 +130,7 @@ void LoadModelPb(const std::string &model_dir,
     prog_path = model_file;
   }
   framework::proto::ProgramDesc pb_proto_prog =
-      *LoadProgram(prog_path, model_from_memory);
+      *LoadProgram(prog_path, model_buffer);
   pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   TransformProgramDescAnyToCpp(pb_prog, cpp_prog);
@@ -137,12 +138,12 @@ void LoadModelPb(const std::string &model_dir,
   // Load Params
   // NOTE: Only main block be used now.
   VLOG(4) << "Start load model params...";
-  CHECK(!(!combined && model_from_memory))
+  CHECK(!(!combined && !model_buffer.is_empty()))
       << "If you want use the model_from_memory,"
       << " you should load the combined model using cfg.set_model_buffer "
          "interface.";
   if (combined) {
-    LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_from_memory);
+    LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_buffer);
   } else {
     auto main_block = pb_proto_prog.blocks(0);
     for (auto &var : main_block.vars()) {
