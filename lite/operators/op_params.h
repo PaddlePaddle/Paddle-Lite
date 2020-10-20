@@ -1742,6 +1742,7 @@ struct XPUFcParam : ParamBase {
   float w_max{0.0f};
   bool transpose_w{true};
   std::string activation_type{""};
+  std::string precision{};
 };
 
 struct XPUResNetCbamParam : ParamBase {
