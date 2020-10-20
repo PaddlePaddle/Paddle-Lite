@@ -364,7 +364,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-### `model_from_memory()`
+### `is_model_from_memory()`
 
 是否从内存中加载模型，当使用`set_model_buffer`接口时返回`true`
 
