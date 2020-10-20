@@ -9,7 +9,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
 
 # global variables
@@ -24,6 +24,7 @@ BUILD_CV=OFF
 WITH_LOG=ON
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
+WITH_LTO=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -232,6 +233,7 @@ function make_full_publish_so {
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_LTO=${WITH_LTO} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -273,7 +275,8 @@ function make_all_tests {
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
-      -DLITE_WITH_PROFILE=OFF \
+      -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_LTO=${WITH_LTO} \
       -DLITE_WITH_PRECISION_PROFILE=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -351,6 +354,7 @@ function make_cuda {
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=OFF  \
             -DLITE_WITH_PROFILE=OFF \
+            -DLITE_WITH_LTO=${WITH_LTO} \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
@@ -405,6 +409,7 @@ function make_x86 {
             -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_LTO=${WITH_LTO} \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -534,6 +539,10 @@ function main {
                 ;;
             --with_profile=*)
                 WITH_PROFILE="${i#*=}"
+                shift
+                ;;
+            --with_lto=*)
+                WITH_LTO="${i#*=}"
                 shift
                 ;;
             --build_npu=*)
