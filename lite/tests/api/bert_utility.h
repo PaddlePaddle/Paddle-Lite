@@ -60,7 +60,7 @@ void FillTensor(const std::shared_ptr<lite_api::PaddlePredictor>& predictor,
                 int tensor_id,
                 const std::vector<int64_t>& tensor_shape,
                 const std::vector<T>& tensor_value,
-                const std::vector<int64_t> tensor_lod = {}) {
+                const std::vector<std::vector<uint64_t>> tensor_lod = {}) {
   auto tensor_x = predictor->GetInput(tensor_id);
   tensor_x->Resize(tensor_shape);
   int64_t tensor_size = 1;
