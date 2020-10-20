@@ -27,7 +27,28 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
+/**
+ *
+ * @tparam Config Config is a struct that stores parameters to run this
+ * function.
+ *
+ * e.g. A F32AddReluConfig will looks like
+ *
+ * ```cpp
+ * struct F32AddReluConfig{
+ *   using T = float;
+ *   using NeonT = float32x4_t;
+ *   constexpr static auto neon_dup = vdupq_n_f32;
+ *   constexpr static auto neon_ld = vld1q_f32;
+ *   constexpr static auto neon_st = vst1q_f32;
+ *   constexpr static float (*naive_active)(float) = naive_relu<float>;
+ *   constexpr static float32x4_t (*neon_active)(const float32x4_t&) =
+ *   neon_relu_float;
+ *   constexpr static auto naive_op = naive_add<float>;
+ *   constexpr static auto neon_op = vaddq_f32;
+ * };
+ * ```
+ */
 template <class Config>
 inline void neon_elementwise_range_to_one(const typename Config::T* dinx,
                                           const typename Config::T* diny,
@@ -143,6 +164,9 @@ inline void neon_elementwise_range_to_one(const typename Config::T* dinx,
   }
 }
 
+/**
+ * see neon_elementwise_range_to_one to get how to use Config
+ */
 template <class Config>
 inline void neon_elementwise_one_to_range(const typename Config::T* dinx,
                                           const typename Config::T* diny,
@@ -257,6 +281,9 @@ inline void neon_elementwise_one_to_range(const typename Config::T* dinx,
   }
 }
 
+/**
+ * see neon_elementwise_range_to_one to get how to use Config
+ */
 template <class Config>
 inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
                                             const typename Config::T* diny,

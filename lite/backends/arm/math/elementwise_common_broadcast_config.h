@@ -52,6 +52,9 @@ neon_relu_float(const float32x4_t& a) {
 template <class Config1, class Config2>
 struct MergeConfig : public Config1, public Config2 {};
 
+/**
+ * see neon_elementwise_range_to_one to get how to use Config
+ */
 template <class DataType>
 struct BasicConfig;
 
