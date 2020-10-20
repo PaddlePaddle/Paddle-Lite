@@ -24,13 +24,28 @@ namespace lite {
 namespace arm {
 namespace math {
 
+template <class NeonT>
+inline NeonT __attribute__((__always_inline__)) neon_relu(const NeonT& a);
+
+template <>
+inline float32x4_t __attribute__((__always_inline__))
+neon_relu(const float32x4_t& a) {
+  constexpr float32x4_t zero = {0, 0, 0, 0};
+  return vmaxq_f32(a, zero);
+}
+
 template <>
 void elementwise_add<int32_t>(const int32_t* dinx,
                               const int32_t* diny,
                               int32_t* dout,
                               int num) {
-  neon_elementwise_range_to_range_i32<vaddq_s32, naive_add<int32_t>>(
-      dinx, diny, dout, num);
+  neon_elementwise_range_to_range<int32_t,
+                                  int32x4_t,
+                                  naive_add<int32_t>,
+                                  vaddq_s32,
+                                  vdupq_n_s32,
+                                  vld1q_s32,
+                                  vst1q_s32>(dinx, diny, dout, num);
 }
 
 template <>
@@ -205,7 +220,13 @@ void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
       const auto* diny_ptr = diny + j;
       auto* dout_ptr = dout + offset;
 
-      neon_elementwise_range_to_one_i32<vaddq_s32, naive_add<int32_t>>(
+      neon_elementwise_range_to_one<int32_t,
+                                    int32x4_t,
+                                    naive_add<int32_t>,
+                                    vaddq_s32,
+                                    vdupq_n_s32,
+                                    vld1q_s32,
+                                    vst1q_s32>(
           dinx_ptr, diny_ptr, dout_ptr, num);
     }
   }
@@ -428,8 +449,13 @@ void elementwise_sub<int32_t>(const int32_t* dinx,
                               const int32_t* diny,
                               int32_t* dout,
                               int num) {
-  neon_elementwise_range_to_range_i32<vsubq_s32, naive_sub<int32_t>>(
-      dinx, diny, dout, num);
+  neon_elementwise_range_to_one<int32_t,
+                                int32x4_t,
+                                naive_sub<int32_t>,
+                                vsubq_s32,
+                                vdupq_n_s32,
+                                vld1q_s32,
+                                vst1q_s32>(dinx, diny, dout, num);
 }
 
 template <>
@@ -547,7 +573,13 @@ void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
       const auto* diny_ptr = diny + j;
       auto* dout_ptr = dout + offset;
 
-      neon_elementwise_range_to_one_i32<vsubq_s32, naive_sub<int32_t>>(
+      neon_elementwise_range_to_one<int32_t,
+                                    int32x4_t,
+                                    naive_sub<int32_t>,
+                                    vsubq_s32,
+                                    vdupq_n_s32,
+                                    vld1q_s32,
+                                    vst1q_s32>(
           dinx_ptr, diny_ptr, dout_ptr, num);
     }
   }
