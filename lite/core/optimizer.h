@@ -178,20 +178,23 @@ class Optimizer {
 
     // multi_stream_analysis_pass must be in the front of
     // runtime_context_assign_pass
+    // post_quant_dynamic_pass must be in the behind of
+    // lite_quant_dequant_fuse_pass
     const std::string msa_pass{"multi_stream_analysis_pass"};
     const std::string msa_depend_pass{"runtime_context_assign_pass"};
     const std::string pqd_pass{"post_quant_dynamic_pass"};
+    const std::string pqd_depend_pass{"lite_quant_dequant_fuse_pass"};
     for (const std::string& pass : passes) {
       if (pass == msa_pass) {
         auto iter = std::find(
             passes_local.begin(), passes_local.end(), msa_depend_pass);
-        if (iter != passes_local.end()) {
-          passes_local.insert(iter, msa_pass);
-        } else {
-          CHECK(false) << "Not find " << msa_depend_pass;
-        }
+        CHECK(iter != passes_local.end()) << "No find " << msa_depend_pass;
+        passes_local.insert(iter, msa_pass);
       } else if (pass == pqd_pass) {
-        passes_local.insert(passes_local.begin(), pqd_pass);
+        auto iter = std::find(
+            passes_local.begin(), passes_local.end(), pqd_depend_pass);
+        CHECK(iter != passes_local.end()) << "No find " << pqd_depend_pass;
+        passes_local.insert(iter + 1, pqd_pass);
       } else {
         passes_local.push_back(pass);
       }
