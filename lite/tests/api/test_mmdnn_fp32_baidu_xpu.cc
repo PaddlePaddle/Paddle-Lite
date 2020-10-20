@@ -14,6 +14,7 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
+#include <cmath>
 #include <vector>
 #include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
@@ -56,6 +57,21 @@ void ReadRawDataMmdnn(const std::string& input_data_dir,
       lod->at(i - 1).push_back(lod->at(i - 1).back() + data_es.size());
     }
   }
+}
+
+float CalMmdnnOutAccuracy(const std::vector<float>& out,
+                          const std::string& out_file) {
+  std::string ref_out_str = ReadFile(out_file);
+  std::vector<float> ref_out = Split<float>(ref_out_str, "\n");
+
+  int right_num = 0;
+  for (size_t i = 0; i < out.size(); i++) {
+    if (std::fabs(out[i] - ref_out[i]) < 1e-3) {
+      right_num++;
+    }
+  }
+
+  return static_cast<float>(right_num) / static_cast<float>(out.size());
 }
 
 TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
@@ -130,6 +146,11 @@ TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
             << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
+
+  std::string ref_out_file =
+      FLAGS_data_dir + std::string("/res_for_crmm_0608.txt.small");
+  float out_accuracy = CalMmdnnOutAccuracy(out_rets, ref_out_file);
+  ASSERT_GT(out_accuracy, 0.99f);
 }
 
 }  // namespace lite
