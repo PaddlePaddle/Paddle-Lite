@@ -26,8 +26,8 @@
 #include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 100, "iteration times to run");
-DEFINE_int32(batch, 10, "batch_size to run");
+DEFINE_int32(iteration, 1000, "iteration times to run");
+DEFINE_int32(batch, 1, "batch_size to run");
 
 namespace paddle {
 namespace lite {
@@ -69,57 +69,65 @@ TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_workspace_l3_size_per_thread();
   auto predictor = lite_api::CreatePaddlePredictor(config);
-  LOG(INFO) << "--- 06";
 
   std::string input_data_file =
       FLAGS_data_dir + std::string("/test.expand.pc.small");
-  LOG(INFO) << "--- 07";
   std::vector<std::vector<int64_t>> data;
-  LOG(INFO) << "--- 08";
   std::vector<std::vector<uint64_t>> lod;
-  LOG(INFO) << "--- 09";
   ReadRawDataMmdnn(input_data_file, &data, &lod);
-  LOG(INFO) << "--- 010";
 
-  for (int i = 0; i < FLAGS_warmup; ++i) {
-    int iter = 0;
-    for (size_t i = 1; i < data.size(); i++) {
-      int64_t start_pos = lod[i - 1][iter * FLAGS_batch];
-      int64_t end_pos = lod[i - 1][(iter + 1) * FLAGS_batch];
-      std::vector<int64_t> tensor_shape{end_pos - start_pos, 1};
-      std::vector<int64_t> tensor_value(data[i - 1].begin() + start_pos,
-                                        data[i - 1].begin() + end_pos);
-      std::vector<std::vector<uint64_t>> tensor_lod{{0}};
-      for (int k = 0; k < FLAGS_batch; k++) {
-        tensor_lod[0].push_back(lod[i - 1][iter * FLAGS_batch + k + 1] -
-                                start_pos);
-      }
-      FillTensor(predictor, i - 1, tensor_shape, tensor_value, tensor_lod);
-    }
+  // for (int i = 0; i < FLAGS_warmup; ++i) {
+  //   int iter = 0;
+  //   for (size_t i = 1; i < data.size(); i++) {
+  //     int64_t start_pos = lod[i - 1][iter * FLAGS_batch];
+  //     int64_t end_pos = lod[i - 1][(iter + 1) * FLAGS_batch];
+  //     std::vector<int64_t> tensor_shape{end_pos - start_pos, 1};
+  //     std::vector<int64_t> tensor_value(data[i - 1].begin() + start_pos,
+  //                                       data[i - 1].begin() + end_pos);
+  //     std::vector<std::vector<uint64_t>> tensor_lod{{0}};
+  //     for (int k = 0; k < FLAGS_batch; k++) {
+  //       tensor_lod[0].push_back(lod[i - 1][iter * FLAGS_batch + k + 1] -
+  //                               start_pos);
+  //     }
+  //     FillTensor(predictor, i - 1, tensor_shape, tensor_value, tensor_lod);
+  //   }
 
-    predictor->Run();
-  }
+  //   predictor->Run();
+  // }
 
   std::vector<float> out_rets;
   double cost_time = 0;
   for (int iter = 0; iter < FLAGS_iteration; iter++) {
-    for (size_t i = 1; i < data.size(); i++) {
-      int64_t start_pos = lod[i - 1][iter * FLAGS_batch];
-      int64_t end_pos = lod[i - 1][(iter + 1) * FLAGS_batch];
+    for (size_t i = 0; i < data.size(); i++) {
+      int64_t start_pos = lod[i][iter * FLAGS_batch];
+      int64_t end_pos = lod[i][(iter + 1) * FLAGS_batch];
       std::vector<int64_t> tensor_shape{end_pos - start_pos, 1};
-      std::vector<int64_t> tensor_value(data[i - 1].begin() + start_pos,
-                                        data[i - 1].begin() + end_pos);
+      std::vector<int64_t> tensor_value(data[i].begin() + start_pos,
+                                        data[i].begin() + end_pos);
       std::vector<std::vector<uint64_t>> tensor_lod{{0}};
       for (int k = 0; k < FLAGS_batch; k++) {
-        tensor_lod[0].push_back(lod[i - 1][iter * FLAGS_batch + k + 1] -
-                                start_pos);
+        tensor_lod[0].push_back(lod[i][iter * FLAGS_batch + k + 1] - start_pos);
       }
-      FillTensor(predictor, i - 1, tensor_shape, tensor_value, tensor_lod);
+      LOG(INFO) << "--- i: " << i;
+      for (int n = 0; n < tensor_shape.size(); n++) {
+        LOG(INFO) << "--- tensor_shape[" << n << "]: " << tensor_shape[n];
+      }
+      for (int n = 0; n < tensor_value.size(); n++) {
+        LOG(INFO) << "+++ tensor_value[" << n << "]: " << tensor_value[n];
+      }
+      for (int n = 0; n < tensor_lod[0].size(); n++) {
+        LOG(INFO) << "--- tensor_lod[" << n << "]: " << tensor_lod[0][n];
+      }
+      FillTensor(predictor, i, tensor_shape, tensor_value, tensor_lod);
     }
 
+    LOG(INFO) << "--- 11";
     double start = GetCurrentUS();
+    LOG(INFO) << "--- 12";
     predictor->Run();
+    LOG(INFO) << "--- 13";
     cost_time += GetCurrentUS() - start;
+    LOG(INFO) << "--- 14";
 
     auto output_tensor = predictor->GetOutput(0);
     auto output_shape = output_tensor->shape();
