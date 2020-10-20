@@ -29,7 +29,7 @@ inline NeonT __attribute__((__always_inline__)) neon_relu(const NeonT& a);
 
 template <>
 inline float32x4_t __attribute__((__always_inline__))
-neon_relu(const float32x4_t& a) {
+neon_relu<float32x4_t>(const float32x4_t& a) {
   constexpr float32x4_t zero = {0, 0, 0, 0};
   return vmaxq_f32(a, zero);
 }
