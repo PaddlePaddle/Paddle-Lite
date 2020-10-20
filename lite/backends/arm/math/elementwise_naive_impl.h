@@ -61,7 +61,7 @@ static inline T __attribute__((__always_inline__)) naive_mod(T l, T r) {
   return l % r;
 }
 
-template <typename T, T naive_op(T, T), T active(T) = nullptr>
+template <typename T, T naive_op(T, T)>
 static void naive_elementwise_op(const T* dinx,
                                  const T* diny,
                                  T* dout,
@@ -88,12 +88,6 @@ static void naive_elementwise_op(const T* dinx,
     dinx2 = naive_op(dinx2, diny2);
     dinx3 = naive_op(dinx3, diny3);
 
-    if (active) {
-      dinx0 = active(dinx0);
-      dinx1 = active(dinx1);
-      dinx2 = active(dinx2);
-      dinx3 = active(dinx3);
-    }
     dout_ptr[0] = dinx0;
     dout_ptr[1] = dinx1;
     dout_ptr[2] = dinx2;
@@ -106,15 +100,12 @@ static void naive_elementwise_op(const T* dinx,
     T tmp = 0;
     for (int i = 0; i < remain; i++) {
       tmp = naive_op(*dinx_ptr++, *diny_ptr++);
-      if (active) {
-        tmp = active(tmp);
-      }
       *dout_ptr++ = tmp;
     }
   }
 }
 
-template <typename T, T naive_op(T, T), T active(T) = nullptr>
+template <typename T, T naive_op(T, T)>
 static void naive_elementwise_op_broadcast(const T* x_data,
                                            const T* y_data,
                                            T* out_data,
@@ -140,12 +131,6 @@ static void naive_elementwise_op_broadcast(const T* x_data,
         dinx2 = naive_op(dinx2, diny_data);
         dinx3 = naive_op(dinx3, diny_data);
 
-        if (active) {
-          dinx0 = active(dinx0);
-          dinx1 = active(dinx1);
-          dinx2 = active(dinx2);
-          dinx3 = active(dinx3);
-        }
         dout_ptr[0] = dinx0;
         dout_ptr[1] = dinx1;
         dout_ptr[2] = dinx2;
@@ -157,9 +142,6 @@ static void naive_elementwise_op_broadcast(const T* x_data,
         T tmp = 0;
         for (int p = 0; p < remain; p++) {
           tmp = naive_op(*din_ptr++, diny_data);
-          if (active) {
-            tmp = active(tmp);
-          }
           *dout_ptr++ = tmp;
         }
       }
