@@ -24,16 +24,6 @@ namespace lite {
 namespace arm {
 namespace math {
 
-template <class NeonT>
-inline NeonT __attribute__((__always_inline__)) neon_relu(const NeonT& a);
-
-template <>
-inline float32x4_t __attribute__((__always_inline__))
-neon_relu<float32x4_t>(const float32x4_t& a) {
-  constexpr float32x4_t zero = {0, 0, 0, 0};
-  return vmaxq_f32(a, zero);
-}
-
 template <>
 void elementwise_add<int32_t>(const int32_t* dinx,
                               const int32_t* diny,
@@ -449,13 +439,13 @@ void elementwise_sub<int32_t>(const int32_t* dinx,
                               const int32_t* diny,
                               int32_t* dout,
                               int num) {
-  neon_elementwise_range_to_one<int32_t,
-                                int32x4_t,
-                                naive_sub<int32_t>,
-                                vsubq_s32,
-                                vdupq_n_s32,
-                                vld1q_s32,
-                                vst1q_s32>(dinx, diny, dout, num);
+  neon_elementwise_range_to_range<int32_t,
+                                  int32x4_t,
+                                  naive_sub<int32_t>,
+                                  vsubq_s32,
+                                  vdupq_n_s32,
+                                  vld1q_s32,
+                                  vst1q_s32>(dinx, diny, dout, num);
 }
 
 template <>
