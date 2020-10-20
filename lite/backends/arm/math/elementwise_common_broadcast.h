@@ -30,6 +30,18 @@ namespace lite {
 namespace arm {
 namespace math {
 
+/**
+ * @note The inline behavior varies among compilers, and in current compiler,
+ * the aarch64-linux-android-g++ in ndk-17 doesn't work as expected, so we use
+ * _impl_xxx plus some helper functions to help it to generate expected assembly
+ * code.
+ *
+ * In other compiler , the template parameter `has_active` and
+ * `neon_active_defined` might be replaced by
+ * `constexpr bool has_active=naive_active;`and
+ * `constexpr bool neon_active_defined = neon_active`
+ * and then, all helper functions would not be needed.
+ */
 enum class HasActive { NO, YES };
 enum class NeonActiveDefined { NO, YES };
 
@@ -396,10 +408,7 @@ inline void _impl_neon_elementwise_range_to_range(const T* dinx,
 ///////////////////////////// Forward Helper /////////////////////////////
 
 /**
- * These functions are used to help compiler to generate correct inline code
- * Because `constexpr bool has_active = naive_active` cannot work in all
- * situation,
- * compiler cannot generate two specialization for one function template
+ * These functions are used to help compiler to generate correct inline code.
  */
 
 template <class T,
