@@ -26,6 +26,7 @@
 
 DEFINE_bool(perf, false, "perf?");
 DEFINE_string(perf_input, "perf_input", "perf_input");
+DEFINE_string(data_dir, "", "");
 DEFINE_int32(perf_batch_size, 40, "perf_batch_size");
 DEFINE_bool(use_xpu, true, "use_xpu?");
 DEFINE_int32(perf_dev, 0, "perf_dev");
