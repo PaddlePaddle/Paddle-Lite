@@ -783,7 +783,7 @@ function cmake_huawei_ascend_npu {
         -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
-        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5" \
+        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc7.3.0" \
         -DCMAKE_BUILD_TYPE=Release
 }
 
@@ -820,14 +820,14 @@ function test_huawei_ascend_npu {
 function build_test_huawei_ascend_npu {
     cur_dir=$(pwd)
 
-    build_dir=$cur_dir/build.lite.huawei_ascend_npu_test
+    build_dir=$cur_dir/build.lite.huawei_ascend_npu
     mkdir -p $build_dir
     cd $build_dir
 
     cmake_huawei_ascend_npu
     build_huawei_ascend_npu
 
-    test_huawei_ascend_npu
+    # test_huawei_ascend_npu
 }
 
 # test_arm_android <some_test_name> <adb_port_number>
@@ -939,8 +939,8 @@ function test_model_optimize_tool_compile {
     # Check whether opt can transform fp32 model to quantized model by post_quant_dynamic.
     wget --no-check-certificate https://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
     tar zxf mobilenet_v1.tar.gz
-    ./opt --model_dir=./mobilenet_v1 --valid_targets=arm --optimize_out=mobilenetv1_int8 --quant_model --quant_type=INT8
-    ./opt --model_dir=./mobilenet_v1 --valid_targets=arm --optimize_out=mobilenetv1_int16 --quant_model --quant_type=INT16
+    ./opt --model_dir=./mobilenet_v1 --valid_targets=arm --optimize_out=mobilenetv1_int8 --quant_model --quant_type=QUANT_INT8
+    ./opt --model_dir=./mobilenet_v1 --valid_targets=arm --optimize_out=mobilenetv1_int16 --quant_model --quant_type=QUANT_INT16
     if [ ! -f mobilenetv1_int8.nb ] || [ ! -f mobilenetv1_int16.nb ]; then
        echo -e "Error! Resulted opt can not tramsform fp32 model to quantized model!"
        exit 1

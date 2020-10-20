@@ -98,6 +98,9 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   if (op_desc.HasAttr("transpose_w")) {
     param_.transpose_w = op_desc.GetAttr<bool>("transpose_w");
   }
+  if (op_desc.HasAttr("precision")) {
+    param_.precision = op_desc.GetAttr<std::string>("precision");
+  }
 
   return true;
 }

@@ -78,6 +78,10 @@ void Tensor::Resize(const shape_t &shape) {
   tensor(raw_tensor_)->Resize(shape);
 }
 
+bool Tensor::IsInitialized() const {
+  return tensor(raw_tensor_)->IsInitialized();
+}
+
 template <typename T>
 const T *Tensor::data() const {
   return ctensor(raw_tensor_)->data<T>();
@@ -96,18 +100,24 @@ T *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<T>(type);
 }
 
+template const double *Tensor::data<double>() const;
 template const float *Tensor::data<float>() const;
-template const int8_t *Tensor::data<int8_t>() const;
-template const uint8_t *Tensor::data<uint8_t>() const;
 template const int64_t *Tensor::data<int64_t>() const;
 template const int32_t *Tensor::data<int32_t>() const;
+template const int16_t *Tensor::data<int16_t>() const;
+template const int8_t *Tensor::data<int8_t>() const;
+template const uint8_t *Tensor::data<uint8_t>() const;
+template const bool *Tensor::data<bool>() const;
 template const void *Tensor::data<void>() const;
 
-template int *Tensor::mutable_data(TargetType type) const;
+template double *Tensor::mutable_data(TargetType type) const;
 template float *Tensor::mutable_data(TargetType type) const;
+template int64_t *Tensor::mutable_data(TargetType type) const;
+template int *Tensor::mutable_data(TargetType type) const;
+template int16_t *Tensor::mutable_data(TargetType type) const;
 template int8_t *Tensor::mutable_data(TargetType type) const;
 template uint8_t *Tensor::mutable_data(TargetType type) const;
-template int64_t *Tensor::mutable_data(TargetType type) const;
+template bool *Tensor::mutable_data(TargetType type) const;
 
 template <typename T, TargetType type>
 void Tensor::CopyFromCpu(const T *src_data) {
@@ -176,6 +186,7 @@ template void Tensor::CopyFromCpu<uint8_t, TargetType::kARM>(const uint8_t *);
 template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
 template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
+template void Tensor::CopyFromCpu<uint8_t, TargetType::kCUDA>(const uint8_t *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
 
 template void Tensor::CopyFromCpu<int, TargetType::kMLU>(const int *);
@@ -277,6 +288,40 @@ void ConfigBase::set_threads(int threads) {
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
 #endif
+}
+
+CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
+                               size_t program_buffer_size,
+                               const char *params_buffer,
+                               size_t params_buffer_size) {
+  program_ = std::string(program_buffer, program_buffer + program_buffer_size);
+  params_ = std::string(params_buffer, params_buffer + params_buffer_size);
+}
+
+CxxModelBuffer::CxxModelBuffer(std::string &&program_buffer,
+                               std::string &&params_buffer) {
+  program_ = std::forward<std::string>(program_buffer);
+  params_ = std::forward<std::string>(params_buffer);
+}
+
+const std::string &CxxModelBuffer::get_program() const {
+  CHECK(!program_.empty());
+  return program_;
+}
+
+const std::string &CxxModelBuffer::get_params() const {
+  CHECK(!params_.empty());
+  return params_;
+}
+
+bool CxxModelBuffer::is_empty() const {
+  CHECK(program_.empty() == params_.empty());
+  return program_.empty();
+}
+
+const CxxModelBuffer &CxxConfig::get_model_buffer() const {
+  CHECK(model_buffer_) << "Cannot get an empty model buffer.";
+  return *model_buffer_;
 }
 
 #ifdef LITE_WITH_MLU
