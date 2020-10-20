@@ -39,6 +39,7 @@ endif()
 
 if (WITH_TESTING)
     set(LITE_URL_FOR_UNITTESTS "http://paddle-inference-dist.bj.bcebos.com/PaddleLite/models_and_data_for_unittests")
+    set(LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS $ENV{LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS})
     # models
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "lite_naive_model.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v1.tar.gz")
@@ -62,10 +63,16 @@ if (WITH_TESTING)
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ernie.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "GoogLeNet.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "VGG19.tar.gz")
+        if (NOT "${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS}" STREQUAL "")
+            lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS} "mmdnn_model.tar.gz")
+        endif()
     endif()
     # data
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ILSVRC2012_small.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "bert_data.tar.gz")
+    if (NOT "${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS}" STREQUAL "")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS} "mmdnn_data.tar.gz")
+    endif()
 endif()
 
 # ----------------------------- PUBLISH -----------------------------

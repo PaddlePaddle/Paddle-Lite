@@ -1,7 +1,7 @@
 set(LITE_URL "http://paddle-inference-dist.bj.bcebos.com" CACHE STRING "inference download url")
 
 function(lite_download_and_uncompress INSTALL_DIR URL FILENAME)
-    message(STATUS "Download inference test stuff from ${URL}/${FILENAME}")
+    message(STATUS "Download inference test stuff: ${FILENAME}")
     string(REGEX REPLACE "[-%.]" "_" FILENAME_EX ${FILENAME})
     set(EXTERNAL_PROJECT_NAME "extern_lite_download_${FILENAME_EX}")
     set(UNPACK_DIR "${INSTALL_DIR}/src/${EXTERNAL_PROJECT_NAME}")
