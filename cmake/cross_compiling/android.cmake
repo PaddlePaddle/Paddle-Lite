@@ -83,6 +83,7 @@ if(ARM_TARGET_LANG STREQUAL "gcc")
 endif()
 
 if(ARM_TARGET_LANG STREQUAL "clang")
+    set(CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION ${ARM_TARGET_LANG})
     if(ARM_TARGET_ARCH_ABI STREQUAL "armv8")
         set(triple aarch64-v8a-linux-android)
     elseif(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
