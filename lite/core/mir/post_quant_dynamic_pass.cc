@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
@@ -150,6 +151,15 @@ void PostQuantDynamicPerChannel(OpInfo* op_info,
 }
 
 void PostQuantDynamicPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  int quant_bits = 16;
+  if (quant_type_ == lite_api::QuantType::INT8) {
+    quant_bits = 8;
+  } else if (quant_type_ == lite_api::QuantType::INT16) {
+    quant_bits = 16;
+  } else {
+    LOG(FATAL) << "Not support quant type:" << static_cast<int>(quant_type_);
+  }
+
   std::vector<mir::Node*> nodes;
   for (auto* node : graph->StmtTopologicalOrder()) {
     if (node->IsStmt()) {
@@ -168,22 +178,18 @@ void PostQuantDynamicPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     for (auto* in_node : node->inlinks) {
       CHECK(in_node->IsArg()) << "The input node should be variable.";
       if (in_node->arg()->is_weight) {
-        if (quant_type_ == QuantType::PER_CHANNEL) {
-          std::string weight_name = in_node->arg()->name;
-          Tensor* weight = scope->FindVar(weight_name)->GetMutable<Tensor>();
-          CHECK(weight) << "Can not find the weight in scope.";
-          if (weight->precision() != PrecisionType::kFloat) {
-            VLOG(4) << "The dtype of weight is not fp32, so skip quantization.";
-            continue;
-          }
-          auto iter = std::find(
-              quant_axis1_ops.begin(), quant_axis1_ops.end(), op_type);
-          int quant_axis = iter != quant_axis1_ops.end() ? 1 : 0;
-          PostQuantDynamicPerChannel(
-              op_info, weight, weight_name, quant_axis, quant_bits_);
-        } else {
-          LOG(FATAL) << "Post_quant_dynamic not support per-layer.";
+        std::string weight_name = in_node->arg()->name;
+        Tensor* weight = scope->FindVar(weight_name)->GetMutable<Tensor>();
+        CHECK(weight) << "Can not find the weight in scope.";
+        if (weight->precision() != PrecisionType::kFloat) {
+          VLOG(4) << "The dtype of weight is not fp32, so skip quantization.";
+          continue;
         }
+        auto iter =
+            std::find(quant_axis1_ops.begin(), quant_axis1_ops.end(), op_type);
+        int quant_axis = iter != quant_axis1_ops.end() ? 1 : 0;
+        PostQuantDynamicPerChannel(
+            op_info, weight, weight_name, quant_axis, quant_bits);
       }
     }
   }

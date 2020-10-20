@@ -18,6 +18,8 @@
 #include <string>
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
+#include "lite/core/mir/pass_manager.h"
+#include "lite/core/mir/post_quant_dynamic_pass.h"
 #include "lite/core/version.h"
 
 #ifndef LITE_ON_TINY_PUBLISH
@@ -79,6 +81,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 
     if (config.quant_model()) {
       passes.push_back("post_quant_dynamic_pass");
+      auto *pass = mir::PassManager::Global().LookUp<mir::PostQuantDynamicPass>(
+          "post_quant_dynamic_pass");
+      CHECK(pass);
+      pass->SetQuantType(config.quant_type());
     }
     raw_predictor_->Build(config, places, passes);
   } else {

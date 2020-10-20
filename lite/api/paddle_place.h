@@ -131,6 +131,11 @@ static size_t PrecisionTypeLength(PrecisionType type) {
   }
 }
 
+enum class QuantType : int {
+  INT8,
+  INT16,
+};
+
 template <typename T>
 struct PrecisionTypeTrait {
   constexpr static PrecisionType Type() { return PrecisionType::kUnk; }

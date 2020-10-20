@@ -253,7 +253,6 @@ void Predictor::Build(const lite_api::CxxConfig &config,
   const std::string &model_file = config.model_file();
   const std::string &param_file = config.param_file();
   const bool model_from_memory = config.model_from_memory();
-  int quant_bits = config.quant_bits();
   if (model_from_memory) {
     LOG(INFO) << "Load model from memory.";
   } else {
@@ -265,8 +264,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
         valid_places,
         passes,
         model_type,
-        model_from_memory,
-        quant_bits);
+        model_from_memory);
 }
 void Predictor::Build(const std::string &model_path,
                       const std::string &model_file,
@@ -274,8 +272,7 @@ void Predictor::Build(const std::string &model_path,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type,
-                      bool model_from_memory,
-                      int quant_bits) {
+                      bool model_from_memory) {
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf: {
       bool combined_param = false;
@@ -298,13 +295,12 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  Build(program_desc_, valid_places, passes, quant_bits);
+  Build(program_desc_, valid_places, passes);
 }
 
 void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
                       const std::vector<Place> &valid_places,
-                      const std::vector<std::string> &passes,
-                      int quant_bits) {
+                      const std::vector<std::string> &passes) {
   program_desc_ = program_desc;
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
@@ -350,7 +346,7 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   factor.ConsiderPrecision();
   factor.ConsiderDataLayout();
 
-  optimizer_.Run(std::move(program), inner_places, factor, passes, quant_bits);
+  optimizer_.Run(std::move(program), inner_places, factor, passes);
   exec_scope_ = optimizer_.exec_scope();
   PrepareFeedFetch();
 }

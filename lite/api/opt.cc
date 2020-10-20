@@ -61,10 +61,10 @@ DEFINE_bool(display_kernels, false, "Display kernel information");
 DEFINE_bool(quant_model,
             false,
             "Use post_quant_dynamic method to quantize the model weights.");
-DEFINE_int32(quant_bits,
-             16,
-             "Set the bit of quantized weights in post_quant_dynamic, "
-             "and quant_bits should be 8 or 16.");
+DEFINE_string(quant_type,
+              "INT16",
+              "Set the quant_type for post_quant_dynamic, "
+              "and it should be INT8 or INT16 for now.");
 DEFINE_bool(record_tailoring_info,
             false,
             "Record kernels and operators information of the optimized model "
@@ -159,7 +159,7 @@ void RunOptimize(const std::string& model_dir,
                  const std::vector<Place>& valid_places,
                  bool record_tailoring_info,
                  bool quant_model,
-                 int quant_bits) {
+                 const std::string& quant_type) {
   if (!model_file.empty() && !param_file.empty()) {
     LOG(WARNING)
         << "Load combined-param model. Option model_dir will be ignored";
@@ -171,7 +171,13 @@ void RunOptimize(const std::string& model_dir,
   config.set_param_file(param_file);
   config.set_valid_places(valid_places);
   config.set_quant_model(quant_model);
-  config.set_quant_bits(quant_bits);
+  if (quant_type == "INT8") {
+    config.set_quant_type(QuantType::INT8);
+  } else if (quant_type == "INT16") {
+    config.set_quant_type(QuantType::INT16);
+  } else {
+    LOG(FATAL) << "Unsupported quant type: " << quant_type;
+  }
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   LiteModelType model_type;
@@ -289,7 +295,7 @@ void PrintHelpInfo() {
       "imagination_nna)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "        `--quant_model=(true|false)`\n"
-      "        `--quant_bits=(8|16)`\n"
+      "        `--quant_type=(INT8|INT16)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
@@ -311,8 +317,8 @@ void PrintHelpInfo() {
 // Parse Input command
 void ParseInputCommand() {
   if (FLAGS_quant_model) {
-    if (FLAGS_quant_bits != 8 && FLAGS_quant_bits != 16) {
-      LOG(FATAL) << "quant_bits should be 8 or 16.";
+    if (FLAGS_quant_type != "INT8" && FLAGS_quant_type != "INT16") {
+      LOG(FATAL) << "quant_type should be `INT8` or `INT16` for now.";
     }
   }
 
@@ -439,7 +445,7 @@ void Main() {
                 valid_places,
                 FLAGS_record_tailoring_info,
                 FLAGS_quant_model,
-                FLAGS_quant_bits);
+                FLAGS_quant_type);
     return;
   }
 
@@ -480,7 +486,7 @@ void Main() {
                 valid_places,
                 FLAGS_record_tailoring_info,
                 FLAGS_quant_model,
-                FLAGS_quant_bits);
+                FLAGS_quant_type);
     LOG(INFO) << "Optimize done. ";
   }
 

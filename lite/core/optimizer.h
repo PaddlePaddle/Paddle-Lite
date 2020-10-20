@@ -61,8 +61,7 @@ class Optimizer {
   void Run(Program&& program,
            const std::vector<Place>& valid_places,
            core::KernelPickFactor kernel_pick_factor,
-           const std::vector<std::string>& passes = {},
-           int quant_bits = 16) {
+           const std::vector<std::string>& passes = {}) {
     program_ = &program;
     valid_places_ = valid_places;
     CHECK(!valid_places.empty()) << "At least one valid_place should be set";
@@ -80,7 +79,6 @@ class Optimizer {
     SpecifyKernelPickTactic(kernel_pick_factor);
     InitTargetTypeTransformPass();
     InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
-    InitPostQuantDynamicPass(quant_bits);
 
     std::vector<std::string> passes_local{
         {"lite_quant_dequant_fuse_pass",         //
@@ -226,13 +224,6 @@ class Optimizer {
     CHECK(pass);
     CHECK(!valid_places_.empty());
     pass->SetValidPlaces(valid_places_);
-  }
-
-  void InitPostQuantDynamicPass(int quant_bits) {
-    auto* pass = mir::PassManager::Global().LookUp<mir::PostQuantDynamicPass>(
-        "post_quant_dynamic_pass");
-    CHECK(pass);
-    pass->SetQuantBits(quant_bits);
   }
 
   void InitControlFlowOpUnusedInputsAndOutputsEliminatePass() {
