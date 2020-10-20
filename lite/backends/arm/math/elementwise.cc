@@ -24,18 +24,17 @@ namespace lite {
 namespace arm {
 namespace math {
 
+struct I32AddConfig : public BasicConfig<int32_t> {
+  constexpr static auto naive_op = naive_add<int32_t>;
+  constexpr static auto neon_op = vaddq_s32;
+};
+
 template <>
 void elementwise_add<int32_t>(const int32_t* dinx,
                               const int32_t* diny,
                               int32_t* dout,
                               int num) {
-  neon_elementwise_range_to_range<int32_t,
-                                  int32x4_t,
-                                  naive_add<int32_t>,
-                                  vaddq_s32,
-                                  vdupq_n_s32,
-                                  vld1q_s32,
-                                  vst1q_s32>(dinx, diny, dout, num);
+  neon_elementwise_range_to_range<I32AddConfig>(dinx, diny, dout, num);
 }
 
 template <>
@@ -434,18 +433,16 @@ void elementwise_add_grad_broadcast<float>(const float* dout_grad,
   }
 }
 
+struct I32SubConfig : public BasicConfig<int32_t> {
+  constexpr static auto naive_op = naive_sub<int32_t>;
+  constexpr static auto neon_op = vsubq_s32;
+};
 template <>
 void elementwise_sub<int32_t>(const int32_t* dinx,
                               const int32_t* diny,
                               int32_t* dout,
                               int num) {
-  neon_elementwise_range_to_range<int32_t,
-                                  int32x4_t,
-                                  naive_sub<int32_t>,
-                                  vsubq_s32,
-                                  vdupq_n_s32,
-                                  vld1q_s32,
-                                  vst1q_s32>(dinx, diny, dout, num);
+  neon_elementwise_range_to_range<I32SubConfig>(dinx, diny, dout, num);
 }
 
 template <>
