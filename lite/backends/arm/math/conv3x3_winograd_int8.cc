@@ -576,23 +576,22 @@ void conv_compute_4x4_3x3_int8(const int8_t* input,
         int col_idx = gi / 6;
         int row_idx = gi % 6;
         if (col_idx == 5 || row_idx == 5) {
-          sgemm_prepack_c8_int16_alpha_small(oc_8 * 8,
-                                             tile_count,
-                                             ic_8 * 8,
-                                             origin_A,
-                                             origin_B,
-                                             origin_C,
-                                             24,
-                                             ctx);
+          sgemm_prepack_c8_int16_small(oc_8 * 8,
+                                       tile_count,
+                                       ic_8 * 8,
+                                       origin_A,
+                                       origin_B,
+                                       origin_C,
+                                       ctx,
+                                       24);
         } else {
-          sgemm_prepack_c8_int16_alpha_small(oc_8 * 8,
-                                             tile_count,
-                                             ic_8 * 8,
-                                             origin_A,
-                                             origin_B,
-                                             origin_C,
-                                             1,
-                                             ctx);
+          sgemm_prepack_c8_int16_small(oc_8 * 8,
+                                       tile_count,
+                                       ic_8 * 8,
+                                       origin_A,
+                                       origin_B,
+                                       origin_C,
+                                       ctx);
         }
       }
 
