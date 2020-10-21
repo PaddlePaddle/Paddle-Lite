@@ -216,7 +216,7 @@ echo "|      with_profile: Enable profile mode in lite framework. Default  OFF. 
 echo "|      with_python: Enable Python api lib in lite mode. Default  OFF.                                 |"
 echo "|      with_extra: Enable extra algorithm support in Lite, both kernels and operators. Default OFF.   |"
 echo "|      with_strip: Enable tailoring library according to model. Default OFF.                          |"
-echo "|      build_x64: Enable building for Windows X64 platform. Default is OFF.                           |"
+echo "|      build_x64: Enable building for Windows X64 platform. Default is X86.                           |"
 echo "|  for example:                                                                                       |"   
 echo "|      build_windows.bat with_log with_profile with_python with_extra                                 |"
 echo "|      build_windows.bat build_x64 with_strip D:\Paddle-Lite\opt_model_dir                            |"
