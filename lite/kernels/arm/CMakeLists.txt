@@ -53,6 +53,8 @@ add_kernel(grid_sampler_compute_arm ARM basic SRCS grid_sampler_compute.cc DEPS 
 add_kernel(negative_compute_arm ARM extra SRCS negative_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(crop_compute_arm ARM extra SRCS crop_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(pow_compute_arm ARM extra SRCS pow_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(sin_compute_arm ARM extra SRCS sin_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(cos_compute_arm ARM extra SRCS cos_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(norm_compute_arm ARM extra SRCS norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(group_norm_compute ARM extra SRCS group_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 ## 3. extra kernels
