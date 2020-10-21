@@ -18,6 +18,7 @@
 #include "lite/backends/arm/math/elementwise_common_broadcast.h"
 #include "lite/backends/arm/math/elementwise_common_broadcast_config.h"
 #include "lite/backends/arm/math/elementwise_naive_impl.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
