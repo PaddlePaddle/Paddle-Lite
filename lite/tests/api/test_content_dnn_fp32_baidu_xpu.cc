@@ -27,16 +27,15 @@
 #include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 200, "iteration times to run");
-DEFINE_int32(batch, 5, "batch_size to run");
+DEFINE_int32(iteration, 100, "iteration times to run");
+DEFINE_int32(batch, 10, "batch_size to run");
 
 namespace paddle {
 namespace lite {
 
-TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
+TEST(CONTENT_DNN, test_content_dnn_fp32_baidu_xpu) {
   lite_api::CxxConfig config;
-  config.set_model_file(FLAGS_model_dir + "/__model__");
-  config.set_param_file(FLAGS_model_dir + "/__param__");
+  config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kXPU), PRECISION(kInt64)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
@@ -46,7 +45,7 @@ TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string input_data_file =
-      FLAGS_data_dir + std::string("/test.expand.pc.small");
+      FLAGS_data_dir + std::string("/test.expand.small");
   std::vector<std::vector<int64_t>> data;
   std::vector<std::vector<uint64_t>> lod;
   ReadMmdnnRawData(input_data_file, &data, &lod);
@@ -106,8 +105,7 @@ TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 
-  std::string ref_out_file =
-      FLAGS_data_dir + std::string("/res_for_crmm_0608.txt.small");
+  std::string ref_out_file = FLAGS_data_dir + std::string("/ref_out.txt");
   float out_accuracy = CalMmdnnOutAccuracy(out_rets, ref_out_file);
   ASSERT_GT(out_accuracy, 0.99f);
 }
