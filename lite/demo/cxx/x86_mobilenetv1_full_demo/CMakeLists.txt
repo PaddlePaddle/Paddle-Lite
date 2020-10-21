@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 set(TARGET mobilenet_full_api)
 
 # 1. path to Paddle-Lite lib and mklml lib
-set(LITE_DIR "${PROJECT_SOURCE_DIR}/../../../cxx")
-set(MKLML_DIR "${PROJECT_SOURCE_DIR}/../../../third_party/mklml/")
+set(LITE_DIR "${PROJECT_SOURCE_DIR}/../../../../cxx")
+set(MKLML_DIR "${PROJECT_SOURCE_DIR}/../../../../third_party/mklml/")
 
 if (WIN32)
   add_definitions("/DGOOGLE_GLOG_DLL_DECL=")
