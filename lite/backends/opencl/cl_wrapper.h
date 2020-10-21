@@ -17,6 +17,16 @@ limitations under the License. */
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/utils/cp_logging.h"
 
+#ifndef CL_TARGET_OPENCL_VERSION
+#define CL_TARGET_OPENCL_VERSION 200
+#endif
+#ifndef CL_HPP_TARGET_OPENCL_VERSION
+#define CL_HPP_TARGET_OPENCL_VERSION 110
+#endif
+#ifndef CL_HPP_MINIMUM_OPENCL_VERSION
+#define CL_HPP_MINIMUM_OPENCL_VERSION 110
+#endif
+
 #if CL_HPP_TARGET_OPENCL_VERSION < 200
 #define CL_API_SUFFIX__VERSION_2_0
 #endif
@@ -143,8 +153,10 @@ class CLWrapper final {
       cl_int *);
   using clGetCommandQueueInfoType = cl_int (*)(
       cl_command_queue, cl_command_queue_info, size_t, void *, size_t *);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
   using clCreateCommandQueueWithPropertiesType = cl_command_queue (*)(
       cl_context, cl_device_id, const cl_queue_properties *, cl_int *);
+#endif
   using clReleaseCommandQueueType = cl_int (*)(cl_command_queue);
   using clCreateProgramWithBinaryType = cl_program (*)(cl_context,
                                                        cl_uint,
@@ -363,11 +375,15 @@ class CLWrapper final {
     return clGetCommandQueueInfo_;
   }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
   clCreateCommandQueueWithPropertiesType clCreateCommandQueueWithProperties() {
     CHECK(clCreateCommandQueueWithProperties_ != nullptr)
         << "Cannot load clCreateCommandQueueWithProperties!";
     return clCreateCommandQueueWithProperties_;
   }
+
+#endif
 
   clReleaseCommandQueueType clReleaseCommandQueue() {
     CHECK(clReleaseCommandQueue_ != nullptr)
@@ -431,10 +447,14 @@ class CLWrapper final {
     return clCreateImage2D_;
   }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+
   clCreateImageType clCreateImage() {
     CHECK(clCreateImage_ != nullptr) << "Cannot load clCreateImage!";
     return clCreateImage_;
   }
+
+#endif
 
   clCreateUserEventType clCreateUserEvent() {
     CHECK(clCreateUserEvent_ != nullptr) << "Cannot load clCreateUserEvent!";
@@ -462,6 +482,8 @@ class CLWrapper final {
     return clGetDeviceIDs_;
   }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+
   clRetainDeviceType clRetainDevice() {
     CHECK(clRetainDevice_ != nullptr) << "Cannot load clRetainDevice!";
     return clRetainDevice_;
@@ -471,6 +493,8 @@ class CLWrapper final {
     CHECK(clReleaseDevice_ != nullptr) << "Cannot load clReleaseDevice!";
     return clReleaseDevice_;
   }
+
+#endif
 
   clRetainEventType clRetainEvent() {
     CHECK(clRetainEvent_ != nullptr) << "Cannot load clRetainEvent!";
@@ -553,8 +577,10 @@ class CLWrapper final {
   clEnqueueMapImageType clEnqueueMapImage_{nullptr};
   clCreateCommandQueueType clCreateCommandQueue_{nullptr};
   clGetCommandQueueInfoType clGetCommandQueueInfo_{nullptr};
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
   clCreateCommandQueueWithPropertiesType clCreateCommandQueueWithProperties_{
       nullptr};
+#endif
   clReleaseCommandQueueType clReleaseCommandQueue_{nullptr};
   clCreateProgramWithBinaryType clCreateProgramWithBinary_{nullptr};
   clRetainContextType clRetainContext_{nullptr};
@@ -567,14 +593,16 @@ class CLWrapper final {
   clRetainKernelType clRetainKernel_{nullptr};
   clCreateBufferType clCreateBuffer_{nullptr};
   clCreateImage2DType clCreateImage2D_{nullptr};
-  clCreateImageType clCreateImage_{nullptr};
   clCreateUserEventType clCreateUserEvent_{nullptr};
   clCreateProgramWithSourceType clCreateProgramWithSource_{nullptr};
   clReleaseKernelType clReleaseKernel_{nullptr};
   clGetDeviceInfoType clGetDeviceInfo_{nullptr};
   clGetDeviceIDsType clGetDeviceIDs_{nullptr};
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
   clRetainDeviceType clRetainDevice_{nullptr};
   clReleaseDeviceType clReleaseDevice_{nullptr};
+  clCreateImageType clCreateImage_{nullptr};
+#endif
   clRetainEventType clRetainEvent_{nullptr};
   clGetKernelWorkGroupInfoType clGetKernelWorkGroupInfo_{nullptr};
   clGetEventInfoType clGetEventInfo_{nullptr};
