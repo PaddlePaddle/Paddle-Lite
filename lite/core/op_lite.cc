@@ -233,67 +233,98 @@ bool OpInfo::GetOutputIndex(const std::string &output_name, int *out) const {
   return false;
 }
 
-bool OpInfo::HasInputScale(const std::string &input_name) const {
-  std::string argname;
-  int index;
-  if (GetInputArgname(input_name, &argname) &&
-      GetInputIndex(input_name, &index)) {
-    return HasAttr(argname + to_string(index) + "_scale");
+bool OpInfo::HasInputScale(const std::string &name, bool is_scale_name) const {
+  bool res = false;
+  if (is_scale_name) {
+    res = HasAttr(name);
   } else {
-    return false;
+    std::string argname;
+    int index;
+    if (GetInputArgname(name, &argname) && GetInputIndex(name, &index)) {
+      res = HasAttr(argname + to_string(index) + "_scale");
+    }
   }
+  return res;
 }
 
-bool OpInfo::HasOutputScale(const std::string &output_name) const {
-  std::string argname;
-  int index;
-  if (GetOutputArgname(output_name, &argname) &&
-      GetOutputIndex(output_name, &index)) {
-    return HasAttr(argname + to_string(index) + "_scale");
+bool OpInfo::HasOutputScale(const std::string &name, bool is_scale_name) const {
+  bool res = false;
+  if (is_scale_name) {
+    res = HasAttr(name);
   } else {
-    return false;
+    std::string argname;
+    int index;
+    if (GetOutputArgname(name, &argname) && GetOutputIndex(name, &index)) {
+      res = HasAttr(argname + to_string(index) + "_scale");
+    }
   }
+  return res;
 }
 
-void OpInfo::SetInputScale(const std::string &input_name,
-                           const std::vector<float> &scale_value) {
-  std::string argname;
-  int index;
-  CHECK(GetInputArgname(input_name, &argname));
-  CHECK(GetInputIndex(input_name, &index));
-  CHECK(scale_value.size() > 0)
-      << "Error in SetInputScale: the scales should not be empty";
-  SetAttr<std::vector<float>>(argname + to_string(index) + "_scale",
-                              scale_value);
+void OpInfo::SetInputScale(const std::string &name,
+                           const std::vector<float> &scale_value,
+                           bool is_scale_name) {
+  std::string scale_name;
+  if (is_scale_name) {
+    scale_name = name;
+  } else {
+    std::string argname;
+    int index;
+    CHECK(GetInputArgname(name, &argname));
+    CHECK(GetInputIndex(name, &index));
+    CHECK(scale_value.size() > 0)
+        << "Error in SetInputScale: the scales should not be empty";
+    scale_name = argname + to_string(index) + "_scale";
+  }
+  SetAttr<std::vector<float>>(scale_name, scale_value);
 }
 
-void OpInfo::SetOutputScale(const std::string &output_name,
-                            const std::vector<float> &scale_value) {
-  std::string argname;
-  int index;
-  CHECK(GetOutputArgname(output_name, &argname));
-  CHECK(GetOutputIndex(output_name, &index));
-  CHECK(scale_value.size() > 0)
-      << "Error in SetOutputScale: the scales should not be empty";
-  SetAttr<std::vector<float>>(argname + to_string(index) + "_scale",
-                              scale_value);
+void OpInfo::SetOutputScale(const std::string &name,
+                            const std::vector<float> &scale_value,
+                            bool is_scale_name) {
+  std::string scale_name;
+  if (is_scale_name) {
+    scale_name = name;
+  } else {
+    std::string argname;
+    int index;
+    CHECK(GetOutputArgname(name, &argname));
+    CHECK(GetOutputIndex(name, &index));
+    CHECK(scale_value.size() > 0)
+        << "Error in SetOutputScale: the scales should not be empty";
+    scale_name = argname + to_string(index) + "_scale";
+  }
+  SetAttr<std::vector<float>>(scale_name, scale_value);
 }
 
-std::vector<float> OpInfo::GetInputScale(const std::string &input_name) const {
-  std::string argname;
-  int index;
-  CHECK(GetInputArgname(input_name, &argname));
-  CHECK(GetInputIndex(input_name, &index));
-  return GetAttr<std::vector<float>>(argname + to_string(index) + "_scale");
+std::vector<float> OpInfo::GetInputScale(const std::string &name,
+                                         bool is_scale_name) const {
+  std::string scale_name;
+  if (is_scale_name) {
+    scale_name = name;
+  } else {
+    std::string argname;
+    int index;
+    CHECK(GetInputArgname(name, &argname));
+    CHECK(GetInputIndex(name, &index));
+    scale_name = argname + to_string(index) + "_scale";
+  }
+  return GetAttr<std::vector<float>>(scale_name);
 }
 
-std::vector<float> OpInfo::GetOutputScale(
-    const std::string &output_name) const {
-  std::string argname;
-  int index;
-  CHECK(GetOutputArgname(output_name, &argname));
-  CHECK(GetOutputIndex(output_name, &index));
-  return GetAttr<std::vector<float>>(argname + to_string(index) + "_scale");
+std::vector<float> OpInfo::GetOutputScale(const std::string &name,
+                                          bool is_scale_name) const {
+  std::string scale_name;
+  if (is_scale_name) {
+    scale_name = name;
+  } else {
+    std::string argname;
+    int index;
+    CHECK(GetOutputArgname(name, &argname));
+    CHECK(GetOutputIndex(name, &index));
+    scale_name = argname + to_string(index) + "_scale";
+  }
+  return GetAttr<std::vector<float>>(scale_name);
 }
 
 }  // namespace lite

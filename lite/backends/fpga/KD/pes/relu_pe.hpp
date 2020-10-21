@@ -23,43 +23,27 @@ class ReluPE : public PE {
  public:
   bool init() {
     Tensor* output = param_.output;
-    output->setAligned(true);
-    output->setDataLocation(Device);
+    output->setAligned(param_.input->aligned());
+    output->setDataLocation(CPU);
     return true;
   }
 
-  void apply() {
-    Tensor* src = param_.input;
-
-    args_.input_data_type = DATA_TYPE_FP16;
-    args_.output_data_type = DATA_TYPE_FP16;
-    args_.input_layout_type = LAYOUT_HWC;
-    args_.output_layout_type = LAYOUT_HWC;
-    args_.image = {.address = src->data<void>(),
-                   .scale_address = src->scale(),
-                   .channels = (uint32_t)src->shape().channel(),
-                   .width = (uint32_t)src->shape().width(),
-                   .height = (uint32_t)src->shape().height(),
-                   .pad_width = 0u,
-                   .pad_height = 0u};
-    args_.output = {
-        .address = param_.output->data<void>(),
-        .scale_address = param_.output->scale(),
-    };
-
-    inplace_.relu_enable = false;
-    inplace_.power_enable = false;
-    inplace_.normalize_enable = false;
-  }
+  void apply() {}
 
   bool dispatch() {
-    inplace_.relu_enable = true;
-    config_inplace(inplace_);
-    param_.input->syncToDevice();
-    param_.output->copyFrom(param_.input);
-    param_.output->invalidate();
-    inplace_.relu_enable = false;
-    config_inplace(inplace_);
+    param_.input->invalidate();
+    int16_t* input_data = param_.input->data<int16_t>();
+    float16* out_data = param_.output->data<float16>();
+    for (int i = 0; i < param_.input->shape().alignedElementCount(); i++) {
+      int16_t v = param_.input->data<float16>()[i];
+      if (v > 0) {
+        out_data[i] = input_data[i];
+      } else {
+        out_data[i] = zero;
+      }
+    }
+    param_.output->copyScaleFrom(param_.input);
+    param_.output->flush();
     return true;
   }
 
@@ -67,8 +51,7 @@ class ReluPE : public PE {
 
  private:
   InputParam param_;
-  BypassArgs args_;
-  InplaceArgs inplace_;
+  float16 zero = float_to_half(0.0f);
 };
 
 }  // namespace zynqmp

@@ -34,17 +34,20 @@ class ParamDescReadAPI {
 
 class ParamDescWriteAPI {
  public:
-  virtual void SetName(const std::string &name) { NotImplemented(); }
-  virtual void SetDim(const std::vector<int64_t> &dim) { NotImplemented(); }
-  virtual void SetDataType(VarDataType data_type) { NotImplemented(); }
-  virtual void SetData(const void *data, size_t byte_size) { NotImplemented(); }
+  virtual void SetName(const std::string &name) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
+  virtual void SetDim(const std::vector<int64_t> &dim) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
+  virtual void SetDataType(VarDataType data_type) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
+  virtual void SetData(const void *data, size_t byte_size) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
 
   virtual ~ParamDescWriteAPI() = default;
-
- private:
-  void NotImplemented() const {
-    LOG(FATAL) << "ParamDescWriteAPI is not available in model read-only mode.";
-  }
 };
 
 class CombinedParamsDescReadAPI {
@@ -57,16 +60,10 @@ class CombinedParamsDescReadAPI {
 class CombinedParamsDescWriteAPI {
  public:
   virtual ParamDescWriteAPI *AddParamDesc() {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return nullptr;
   }
   virtual ~CombinedParamsDescWriteAPI() = default;
-
- private:
-  void NotImplemented() const {
-    LOG(FATAL) << "CombinedParamsDescWriteAPI is not available in model "
-                  "read-only mode.";
-  }
 };
 
 // The reading and writing of the model are one-time and separate.

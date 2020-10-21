@@ -125,6 +125,10 @@ std::vector<Place> ParserValidPlaces() {
     } else if (target_repr == "apu") {
       valid_places.emplace_back(
           Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
+    } else if (target_repr == "imagination_nna") {
+      valid_places.emplace_back(TARGET(kImaginationNNA));
+      valid_places.emplace_back(
+          Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -204,6 +208,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kRKNPU",
                                       "kAPU",
                                       "kHuaweiAscendNPU",
+                                      "kImaginationNNA",
                                       "kAny",
                                       "kUnk"};
   int maximum_optype_length = 0;
@@ -269,16 +274,21 @@ void PrintHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu)`\n"
+      "`--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "imagination_nna)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "imagination_nna)"
+      "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu)`"
+      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "imagination_nna)"
+      "`"
       "  Display operators in the input model\n";
   std::cout << "opt version:" << opt_version << std::endl
             << help_info << std::endl;
@@ -340,8 +350,7 @@ void CheckIfModelSupported() {
     prog_path = FLAGS_model_file;
   }
   lite::cpp::ProgramDesc cpp_prog;
-  framework::proto::ProgramDesc pb_proto_prog =
-      *lite::LoadProgram(prog_path, false);
+  framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   lite::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);

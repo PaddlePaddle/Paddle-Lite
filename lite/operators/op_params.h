@@ -264,6 +264,8 @@ struct YoloBoxParam : ParamBase {
   int class_num{0};
   float conf_thresh{0.f};
   int downsample_ratio{0};
+  bool clip_bbox{true};
+  float scale_x_y{1.0f};
 };
 
 // For Scale Op
@@ -292,6 +294,16 @@ struct ScaleParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+};
+
+// For Scatter OP
+struct ScatterParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* indexs{};
+  lite::Tensor* updates{};
+  lite::Tensor* output{};
+
+  bool overwrite{true};
 };
 
 // For Softmax op
@@ -393,6 +405,8 @@ struct ActivationParam : ParamBase {
   float relu_threshold{1.0f};
   // elu
   float Elu_alpha{1.0f};
+  // relu6
+  float threshold{6.0f};
 
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
@@ -878,6 +892,22 @@ struct MulticlassNmsParam : ParamBase {
   float nms_eta{1.0f};
   int keep_top_k;
   bool normalized{true};
+};
+
+/// ----------------------- matrix_nms operators ----------------------
+struct MatrixNmsParam : ParamBase {
+  const lite::Tensor* bboxes{};
+  const lite::Tensor* scores{};
+  lite::Tensor* out{};
+  lite::Tensor* index{};
+  int background_label{0};
+  float score_threshold{};
+  float post_threshold{0.0f};
+  int nms_top_k{};
+  int keep_top_k;
+  bool normalized{true};
+  bool use_gaussian{false};
+  float gaussian_sigma{2.0f};
 };
 
 /// ----------------------- priorbox operators ----------------------
@@ -1697,6 +1727,7 @@ struct XPUFcParam : ParamBase {
   float w_max{0.0f};
   bool transpose_w{true};
   std::string activation_type{""};
+  std::string precision{};
 };
 
 struct XPUResNetCbamParam : ParamBase {
@@ -1836,7 +1867,7 @@ struct XPUConv2dParam : ParamBase {
   lite::Tensor* OutputMax{nullptr};
 
   int groups{1};
-  int act_type{-1};
+  std::string act_type{""};
   std::string filter_type{""};
   std::vector<int> strides;
   std::shared_ptr<std::vector<int>> paddings;

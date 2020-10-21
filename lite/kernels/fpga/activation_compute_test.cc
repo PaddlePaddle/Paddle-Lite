@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/fpga/activation_compute.h"
 #include <gtest/gtest.h>
-
 #include <memory>
 #include <utility>
 #include <vector>
-
 #include "lite/core/op_registry.h"
-#include "lite/kernels/fpga/activation_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -39,7 +37,8 @@ void activation_compute_ref(const operators::ActivationParam& param) {
 }
 
 TEST(activation_fpga, retrive_op) {
-  auto activation = KernelRegistry::Global().Create("relu");
+  auto activation =
+      KernelRegistry::Global().Create<TARGET(kFPGA), PRECISION(kFP16)>("relu");
   ASSERT_FALSE(activation.empty());
   ASSERT_TRUE(activation.front());
 }

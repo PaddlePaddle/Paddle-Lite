@@ -51,7 +51,7 @@ class BlockDescView : public BlockDescAPI {
 
   template <typename T>
   T* GetVar(int32_t idx) {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return nullptr;
   }
 
@@ -66,7 +66,7 @@ class BlockDescView : public BlockDescAPI {
 
   template <typename T>
   T* GetOp(int32_t idx) {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return nullptr;
   }
 
@@ -82,12 +82,6 @@ class BlockDescView : public BlockDescAPI {
   proto::BlockDesc const* desc_;  // not_own
   std::vector<VarDescView> vars_;
   std::vector<OpDescView> ops_;
-
- private:
-  void NotImplemented() const {
-    LOG(FATAL) << "The additional interfaces of BlockDescView is temporarily "
-                  "unavailable in read-only mode.";
-  }
 };
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC

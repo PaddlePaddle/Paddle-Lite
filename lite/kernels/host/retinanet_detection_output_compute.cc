@@ -83,10 +83,10 @@ static inline T JaccardOverlap(const std::vector<T>& box1,
       box2[3] < box1[1]) {
     return static_cast<T>(0.);
   } else {
-    const T inter_xmin = std::max(box1[0], box2[0]);
-    const T inter_ymin = std::max(box1[1], box2[1]);
-    const T inter_xmax = std::min(box1[2], box2[2]);
-    const T inter_ymax = std::min(box1[3], box2[3]);
+    const T inter_xmin = (std::max)(box1[0], box2[0]);
+    const T inter_ymin = (std::max)(box1[1], box2[1]);
+    const T inter_xmax = (std::min)(box1[2], box2[2]);
+    const T inter_ymax = (std::min)(box1[3], box2[3]);
     T norm = normalized ? static_cast<T>(0.) : static_cast<T>(1.);
     T inter_w = inter_xmax - inter_xmin + norm;
     T inter_h = inter_ymax - inter_ymin + norm;
@@ -183,10 +183,10 @@ void DeltaScoreToPrediction(
     pred_box_xmax = pred_box_xmax / im_scale;
     pred_box_ymax = pred_box_ymax / im_scale;
 
-    pred_box_xmin = std::max(std::min(pred_box_xmin, im_width - 1), zero);
-    pred_box_ymin = std::max(std::min(pred_box_ymin, im_height - 1), zero);
-    pred_box_xmax = std::max(std::min(pred_box_xmax, im_width - 1), zero);
-    pred_box_ymax = std::max(std::min(pred_box_ymax, im_height - 1), zero);
+    pred_box_xmin = (std::max)((std::min)(pred_box_xmin, im_width - 1), zero);
+    pred_box_ymin = (std::max)((std::min)(pred_box_ymin, im_height - 1), zero);
+    pred_box_xmax = (std::max)((std::min)(pred_box_xmax, im_width - 1), zero);
+    pred_box_ymax = (std::max)((std::min)(pred_box_ymax, im_height - 1), zero);
 
     std::vector<T> one_pred;
     one_pred.push_back(pred_box_xmin);

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/fpga/feed_compute.h"
+
 #include "lite/backends/fpga/KD/debugger.hpp"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
@@ -28,7 +29,14 @@ void FeedCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   Tensor& x = param.feed_list->at(param.col);
   param.out->Resize(x.dims());
-  param.out->mutable_data<float16>();
+
+  auto in_type = x.ZynqTensor()->dataType();
+  if (in_type == zynqmp::FP32 || in_type == zynqmp::FP16) {
+    param.out->mutable_data<float16>();
+  }
+  if (in_type == zynqmp::INT32) {
+    param.out->mutable_data<int32_t>();
+  }
   // ====================================================
   zynqmp::InputParam& feed_param = pe_.param();
   feed_param.input = x.ZynqTensor();
@@ -40,8 +48,8 @@ void FeedCompute::PrepareForRun() {
 void FeedCompute::Run() {
   auto& param = this->Param<param_t>();
   Tensor& x = param.feed_list->at(param.col);
+  pe_.param().input = x.ZynqTensor();
   pe_.dispatch();
-
   auto out_lod = param.out->mutable_lod();
   *out_lod = x.lod();
 
@@ -61,7 +69,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
-                                      DATALAYOUT(kNHWC))})
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
@@ -73,7 +81,13 @@ REGISTER_LITE_KERNEL(feed,
                      kFP16,
                      kNHWC,
                      paddle::lite::kernels::fpga::FeedCompute,
-                     def_host)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+                     feed_int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kNCHW))})
     .Finalize();

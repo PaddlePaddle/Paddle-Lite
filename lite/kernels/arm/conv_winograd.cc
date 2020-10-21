@@ -58,36 +58,53 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
       threads;
   workspace_size_ = (temp_size + new_input_size) * sizeof(float);
 
-  //! update trans weights impl
-  choose_small_ = ow * oh / (tile_block * threads) < 36 ? true : false;
-  if (choose_small_) {
+  // select best wino_unit
+  int wino_unit = ow * oh / (tile_block * threads);
+  if (wino_unit < 16) {
     wino_iw = 4;
-
     if (last_function_ == 0) {
       return;
     }
     last_function_ = 0;
-  } else {
-    wino_iw = 8;
+  } else if (wino_unit < 36) {
+    wino_iw = 6;
     if (last_function_ == 1) {
       return;
     }
     last_function_ = 1;
+  } else {
+    wino_iw = 8;
+    if (last_function_ == 2) {
+      return;
+    }
+    last_function_ = 2;
   }
 
+  //! update trans weights impl
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
   void* trans_tmp_ptr = malloc(sizeof(float) * wino_iw * wino_iw * oc * ic);
   auto weights_data_ = weights_.mutable_data<float>();
   memset(reinterpret_cast<char*>(weights_data_),
          0,
          weights_.numel() * sizeof(float));
-  if (!choose_small_) {
-    lite::arm::math::weight_trans_c4_8x8(
-        weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
-  } else {
-    lite::arm::math::weight_trans_c4_4x4(
-        weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
+  switch (wino_iw) {
+    case 8:
+      lite::arm::math::weight_trans_c4_8x8(
+          weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
+      break;
+    case 6:
+      lite::arm::math::weight_trans_c4_6x6(
+          weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
+      break;
+    case 4:
+      lite::arm::math::weight_trans_c4_4x4(
+          weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
+      break;
+    default:
+      lite::arm::math::weight_trans_c4_8x8(
+          weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
   }
+
   free(trans_tmp_ptr);
 }
 
@@ -126,7 +143,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  if (!choose_small_) {
+  if (wino_iw == 8) {
     lite::arm::math::conv_compute_6x6_3x3(i_data,
                                           o_data,
                                           bs,
@@ -142,6 +159,23 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                           &ctx);
 #ifdef LITE_WITH_PROFILE
     kernel_func_name_ = "conv_compute_6x6_3x3";
+#endif
+  } else if (wino_iw == 6) {
+    lite::arm::math::conv_compute_4x4_3x3(i_data,
+                                          o_data,
+                                          bs,
+                                          oc,
+                                          oh,
+                                          ow,
+                                          ic,
+                                          ih,
+                                          iw,
+                                          w_data,
+                                          b_data,
+                                          param,
+                                          &ctx);
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv_compute_4x4_3x3";
 #endif
   } else {
     int tile_block = 8;

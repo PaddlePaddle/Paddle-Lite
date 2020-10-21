@@ -51,10 +51,17 @@ class IoCopyKernelPickPass : public StmtPass {
           // directly.
           if (TargetCompatibleTo(*outy, *out_arg_ty)) {
             LOG(INFO) << "get a IOCopy kernel";
+
+            if (kernel->target() == TargetType::kFPGA) {
+              node.outlinks.front()->AsArg().type = LiteType::GetTensorTy(
+                  kernel->target(), kernel->precision(), kernel->layout());
+            }
+
             auto x = std::move(kernel);
             kernels.clear();
             kernels.emplace_back(std::move(x));
             is_found = true;
+
             break;
           }
         }

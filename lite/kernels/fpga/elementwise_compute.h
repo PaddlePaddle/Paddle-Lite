@@ -61,6 +61,9 @@ class ElementwiseMulCompute
 
  private:
   zynqmp::ScalePE pe_;
+  zynqmp::Tensor scale_;
+  zynqmp::Tensor bias_;
+  zynqmp::float16 zero_ = zynqmp::float_to_half(0.0f);
 };
 
 }  // namespace fpga

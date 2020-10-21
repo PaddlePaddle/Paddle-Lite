@@ -29,6 +29,11 @@ class ConcatPE : public PE {
     Tensor* output = param_.output;
     output->setAligned(false);
     output->setDataLocation(CPU);
+    bool cacheable = true;
+    for (auto in : param_.inputs) {
+      cacheable &= in->cacheable();
+    }
+    output->setCacheable(cacheable);
     return true;
   }
 

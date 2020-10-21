@@ -1,0 +1,8 @@
+dev_info                      	armv7/v8  	core_num  	thread_num	power_mode	core0 arch	core1 arch	core2 arch	core3 arch	core4 arch	core5 arch	core6 arch	core7 arch
+Hisilicon Kirin980            	armv8     	8         	1         	ARM_A55  	ARM_A55  	ARM_A55  	ARM_A55  	ARM_A76  	ARM_A76  	ARM_A76  	ARM_A76  
+op_name   	input_dims	output_dims	param_info                                                                      	min_latency(ms)	max_latency(ms)	avg_latency(ms)
+conv      	[1 96 112 112]	[1 48 114 114]	(ch_out=48,stride=[1 1],pad=[0 0 0 0],kernel=1x1,group=1,dilation=[1 1],flag_bias=0,flag_act=0,dtype=float)	3.472     	5.384     	3.97393   
+fc        	[4 8]     	[4 1000]  	(param_dim=8x1000,flag_bias=1,dtype=float)                                      	0.009     	0.023     	0.00951   
+batchnorm 	[1 8 64 64]	[1 8 64 64]	(epsilon=1e-4f,momentum=0.9f,dtype=float)                                       	0.01      	0.012     	0.0114    
+pooling   	[1 8 64 64]	[1 8 32 32]	(stride=[2 2],pad=[0 0 0 0],kernel=2x2,ceil_mode=0,flag_global=0,exclusive=0,pooling_type=avg,dtype=float)	0.009     	0.01      	0.00969   
+activation	[1 8 64 64]	[1 8 64 64]	(act_type=relu,dtype=float)                                                     	0.01      	0.028     	0.01098   

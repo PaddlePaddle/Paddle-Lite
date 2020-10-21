@@ -32,6 +32,7 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
+  auto x_scale_name = "X0_scale";
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto scale_name = op_info->Input("Scale").front();
@@ -43,6 +44,7 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto variance_name = op_info->Input("Variance").front();
   auto variance = scope->FindMutableTensor(variance_name);
   auto y_name = op_info->Output("Y").front();
+  auto y_scale_name = "Y0_scale";
   auto y = scope->FindMutableTensor(y_name);
   float momentum = op_info->GetAttr<float>("momentum");
   float epsilon = op_info->GetAttr<float>("epsilon");
@@ -59,11 +61,11 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   if (op_info->HasAttr("enable_int8")) {
     enable_int8 = op_info->GetAttr<bool>("enable_int8");
-    CHECK(op_info->HasInputScale(x_name));
-    input_scale = op_info->GetInputScale(x_name)[0];
+    CHECK(op_info->HasInputScale(x_scale_name, true));
+    input_scale = op_info->GetInputScale(x_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(y_name));
-    output_scale = op_info->GetOutputScale(y_name)[0];
+    CHECK(op_info->HasOutputScale(y_scale_name, true));
+    output_scale = op_info->GetOutputScale(y_scale_name, true)[0];
 
     if (enable_int8) {
       precision = PRECISION(kInt8);

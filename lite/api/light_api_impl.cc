@@ -17,6 +17,10 @@
 #include "lite/api/paddle_api.h"
 #include "lite/core/version.h"
 #include "lite/model_parser/model_parser.h"
+#ifndef LITE_ON_TINY_PUBLISH
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -28,11 +32,11 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
         new LightPredictor(config.model_dir(),
                            config.model_buffer(),
                            config.param_buffer(),
-                           config.model_from_memory(),
+                           config.is_model_from_memory(),
                            lite_api::LiteModelType::kNaiveBuffer));
   } else {
     raw_predictor_.reset(new LightPredictor(config.lite_model_file(),
-                                            config.model_from_memory()));
+                                            config.is_model_from_memory()));
   }
   mode_ = config.power_mode();
   threads_ = config.threads();
@@ -43,6 +47,14 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   Context<TargetType::kNPU>::SetSubgraphModelCacheDir(
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
+
+#ifdef LITE_WITH_APU
+  // Store the model-level configuration into scope for kernels, and use
+  // exe_scope to store the execution-level configuration
+  Context<TargetType::kAPU>::SetSubgraphModelCacheDir(
+      raw_predictor_->scope(), config.subgraph_model_cache_dir());
+#endif
+
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
   Context<TargetType::kHuaweiAscendNPU>::SetHuaweiAscendDeviceID(
       config.get_device_id());

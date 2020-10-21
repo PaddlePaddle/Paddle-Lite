@@ -14,6 +14,8 @@
 
 #pragma once
 #include <algorithm>
+#include <map>
+#include <string>
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/pes/relu_pe.hpp"
 #include "lite/core/kernel.h"
@@ -23,6 +25,13 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace fpga {
+
+static std::map<std::string, zynqmp::ActiveType> activation_map = {
+    {"relu", zynqmp::TYPE_RELU},
+    {"relu6", zynqmp::TYPE_RELU6},
+    {"leaky_relu", zynqmp::TYPE_LEAKY_RELU},
+    {"sigmoid", zynqmp::TYPE_SIGMOID},
+    {"", zynqmp::TYPE_NONE}};
 
 class ReluCompute
     : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
@@ -38,6 +47,16 @@ class ReluCompute
   zynqmp::ReluPE pe_;
   zynqmp::Tensor input_;
   zynqmp::Tensor output_;
+};
+
+class SigmoidCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SigmoidCompute() = default;
 };
 
 }  // namespace fpga

@@ -108,6 +108,7 @@ class Optimizer {
 #endif
            "identity_dropout_eliminate_pass",
            "__xpu__resnet_fuse_pass",
+           "__xpu__resnet_d_fuse_pass",
            "__xpu__resnet_cbam_fuse_pass",
            "__xpu__conv2d_fuse_pass",
            "__xpu__conv2d_link_previous_out_max_pass",
@@ -125,6 +126,7 @@ class Optimizer {
                                                       // of the quantized ops.
            "npu_subgraph_pass",
            "huawei_ascend_npu_subgraph_pass",
+           "imagination_nna_subgraph_pass",
            "xpu_subgraph_pass",
            "bm_subgraph_pass",
            "apu_subgraph_pass",
@@ -169,8 +171,10 @@ class Optimizer {
            "runtime_context_assign_pass",
            "argument_type_display_pass",
            "lite_reshape_fuse_pass",
-
-           "memory_optimize_pass"}};
+#if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
+           "memory_optimize_pass"
+#endif
+          }};
 
       if (passes.size() == 1) {
         // multi_stream_analysis_pass must be in the front of

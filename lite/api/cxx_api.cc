@@ -249,22 +249,24 @@ void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type) {
-  const std::string &model_path = config.model_dir();
-  const std::string &model_file = config.model_file();
-  const std::string &param_file = config.param_file();
-  const bool model_from_memory = config.model_from_memory();
-  if (model_from_memory) {
+  if (config.is_model_from_memory()) {
     LOG(INFO) << "Load model from memory.";
+    Build(config.model_dir(),
+          config.model_file(),
+          config.param_file(),
+          valid_places,
+          passes,
+          model_type,
+          config.get_model_buffer());
   } else {
     LOG(INFO) << "Load model from file.";
+    Build(config.model_dir(),
+          config.model_file(),
+          config.param_file(),
+          valid_places,
+          passes,
+          model_type);
   }
-  Build(model_path,
-        model_file,
-        param_file,
-        valid_places,
-        passes,
-        model_type,
-        model_from_memory);
 }
 void Predictor::Build(const std::string &model_path,
                       const std::string &model_file,
@@ -272,11 +274,12 @@ void Predictor::Build(const std::string &model_path,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type,
-                      bool model_from_memory) {
+                      const lite_api::CxxModelBuffer &model_buffer) {
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf: {
       bool combined_param = false;
-      if (!model_file.empty() && !param_file.empty()) {
+      if (!model_buffer.is_empty() ||
+          (!model_file.empty() && !param_file.empty())) {
         combined_param = true;
       }
       LoadModelPb(model_path,
@@ -285,7 +288,7 @@ void Predictor::Build(const std::string &model_path,
                   scope_.get(),
                   program_desc_.get(),
                   combined_param,
-                  model_from_memory);
+                  model_buffer);
     } break;
     case lite_api::LiteModelType::kNaiveBuffer:
       CHECK(!model_path.empty())

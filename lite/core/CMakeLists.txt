@@ -2,7 +2,7 @@ if (WITH_TESTING)
     lite_cc_library(lite_gtest_main SRCS lite_gtest_main.cc DEPS gtest gflags)
 endif()
 lite_cc_library(target_wrapper SRCS target_wrapper.cc
-  DEPS target_wrapper_host place
+  DEPS target_wrapper_host place fbs_headers
   X86_DEPS target_wrapper_x86
   CUDA_DEPS target_wrapper_cuda
   XPU_DEPS target_wrapper_xpu
@@ -142,7 +142,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
   add_subdirectory(arena)
 endif()
 
-if(LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU)
+if(LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU OR LITE_WITH_IMAGINATION_NNA)
     lite_cc_library(subgraph_bridge_registry
       SRCS subgraph_bridge_registry.cc
       DEPS op)

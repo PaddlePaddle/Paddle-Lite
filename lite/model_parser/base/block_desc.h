@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "lite/model_parser/base/traits.h"
 #include "lite/utils/cp_logging.h"
 
 namespace paddle {
@@ -47,30 +48,29 @@ class BlockDescReadAPI {
 
 class BlockDescWriteAPI {
  public:
-  virtual void SetIdx(int32_t idx) { NotImplemented(); }
-  virtual void SetParentIdx(int32_t idx) { NotImplemented(); }
-  virtual void ClearVars() { NotImplemented(); }
-  virtual void ClearOps() { NotImplemented(); }
-  virtual void SetForwardBlockIdx(int32_t idx) { NotImplemented(); }
+  virtual void SetIdx(int32_t idx) { LITE_MODEL_INTERFACE_NOT_IMPLEMENTED; }
+  virtual void SetParentIdx(int32_t idx) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
+  virtual void ClearVars() { LITE_MODEL_INTERFACE_NOT_IMPLEMENTED; }
+  virtual void ClearOps() { LITE_MODEL_INTERFACE_NOT_IMPLEMENTED; }
+  virtual void SetForwardBlockIdx(int32_t idx) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
 
   template <typename T>
   T* AddVar() {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return nullptr;
   }
 
   template <typename T>
   T* AddOp() {
-    NotImplemented();
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
     return nullptr;
   }
 
   virtual ~BlockDescWriteAPI() = default;
-
- private:
-  void NotImplemented() const {
-    LOG(FATAL) << "BlockDescWriteAPI is not available in model read-only mode.";
-  }
 };
 
 // The reading and writing of the model are one-time and separate.

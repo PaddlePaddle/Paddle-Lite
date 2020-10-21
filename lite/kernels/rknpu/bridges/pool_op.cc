@@ -33,16 +33,18 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
+  auto x_scale_name = "X0_scale";
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
 
   auto out_name = op_info->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
   auto output = scope->FindMutableTensor(out_name);
 
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   auto ksize = op_info->GetAttr<std::vector<int>>("ksize");
-  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
 
   // for quantization
   bool enable_int8 = false;
@@ -55,11 +57,11 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (x->precision() == PRECISION(kInt8)) {
     // enable_int8 = op_info->GetAttr<bool>("enable_int8");
     enable_int8 = true;
-    CHECK(op_info->HasInputScale(x_name));
-    input_scale = op_info->GetInputScale(x_name)[0];
+    CHECK(op_info->HasInputScale(x_scale_name, true));
+    input_scale = op_info->GetInputScale(x_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-    CHECK(op_info->HasOutputScale(out_name));
-    output_scale = op_info->GetOutputScale(out_name)[0];
+    CHECK(op_info->HasOutputScale(out_scale_name, true));
+    output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
     if (enable_int8) {
       precision = PRECISION(kInt8);

@@ -41,7 +41,9 @@ class InputPE : public PE {
       src = &half_tensor;
     }
     output->mutableData<void>();
-    src->alignImage(output, true);
+    src->alignImage();
+    output->copyFrom(src);
+    // src->alignImage(output, true);
     return true;
   }
 

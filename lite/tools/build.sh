@@ -9,7 +9,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
 
 # global variables
@@ -24,6 +24,7 @@ BUILD_CV=OFF
 WITH_LOG=ON
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
+WITH_LTO=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -37,12 +38,15 @@ WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
 HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
 PYTHON_EXECUTABLE_OPTION=""
-ENABLE_FLATBUFFERS_DESC_VIEW=OFF
 IOS_DEPLOYMENT_TARGET=9.0
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
 readonly workspace=$PWD
+
+function readlinkf() {
+    perl -MCwd -e 'print Cwd::abs_path shift' "$1";
+}
 
 # if operating in mac env, we should expand the maximum file num
 os_name=`uname -s`
@@ -148,8 +152,7 @@ function make_tiny_publish_so {
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
-      -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang} \
-      -DLITE_ON_FLATBUFFERS_DESC_VIEW=${ENABLE_FLATBUFFERS_DESC_VIEW}
+      -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
@@ -230,6 +233,7 @@ function make_full_publish_so {
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_LTO=${WITH_LTO} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -271,7 +275,8 @@ function make_all_tests {
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
-      -DLITE_WITH_PROFILE=OFF \
+      -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_LTO=${WITH_LTO} \
       -DLITE_WITH_PRECISION_PROFILE=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -349,6 +354,7 @@ function make_cuda {
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=OFF  \
             -DLITE_WITH_PROFILE=OFF \
+            -DLITE_WITH_LTO=${WITH_LTO} \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
@@ -374,7 +380,7 @@ function make_x86 {
   build_directory=$BUILD_DIR/build.lite.x86
 
   if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
-    export CXX=/usr/bin/g++ # Ascend need g++ in centos
+    export CXX=g++ # Huawei Ascend NPU need g++
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
 
@@ -387,7 +393,7 @@ function make_x86 {
 
   prepare_workspace $root_dir $build_directory
 
-  cmake ..  -DWITH_MKL=ON       \
+  cmake $root_dir  -DWITH_MKL=ON       \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
             -DLITE_WITH_PROFILE=OFF \
@@ -397,10 +403,13 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
-            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
+            -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
+            -DLITE_OPTMODEL_DIR=${OPTMODEL_DIR} \
             -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_LTO=${WITH_LTO} \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -438,7 +447,6 @@ function print_usage {
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
-    echo -e "--enable_flatbuffers_view: (OFF|ON); Use the flatbuffers read-only view to load the model. If ON, the naive buffer will no longer be supported."
     echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
     echo
     echo -e "argument choices:"
@@ -507,6 +515,7 @@ function main {
 		;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
+                OPTMODEL_DIR=$(readlinkf $OPTMODEL_DIR)
                 shift
                 ;;
             --build_tailor=*)
@@ -530,6 +539,10 @@ function main {
                 ;;
             --with_profile=*)
                 WITH_PROFILE="${i#*=}"
+                shift
+                ;;
+            --with_lto=*)
+                WITH_LTO="${i#*=}"
                 shift
                 ;;
             --build_npu=*)
@@ -582,10 +595,6 @@ function main {
                 ;;
             --huawei_ascend_npu_ddk_root=*)
                 HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
-                shift
-                ;;
-            --enable_flatbuffers_view=*)
-                ENABLE_FLATBUFFERS_DESC_VIEW="${i#*=}"
                 shift
                 ;;
             --ios_deployment_target=*)

@@ -23,6 +23,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace zynqmp {
+
 class NormPE : public PE {
  public:
   bool init() {
@@ -106,21 +107,19 @@ class NormPE : public PE {
   }
 
   bool dispatch() {
-    cpuCompute();
-    // std::cout << "CPU normalize ---------------------" << std::endl;
-
-    // param_.input->syncToDevice();
-    // // param_.input->saveToFile("normalize_fpga_", true);
-    // config_norm_param(norm_param_args_);
-    // inplace_args_.normalize_enable = true;
-    // config_inplace(inplace_args_);
-
-    // perform_bypass(bypass_args_);
-    // inplace_args_.normalize_enable = false;
-    // config_inplace(inplace_args_);
-    // compute_norm(norm_args_);
-    // param_.output->saveToFile("normalize_fpga_", true);
+    // cpuCompute();
     // std::cout << "FPGA normalize ---------------------" << std::endl;
+
+    param_.input->syncToDevice();
+    config_norm_param(norm_param_args_);
+    inplace_args_.normalize_enable = true;
+    config_inplace(inplace_args_);
+
+    perform_bypass(bypass_args_);
+    inplace_args_.normalize_enable = false;
+    config_inplace(inplace_args_);
+    compute_norm(norm_args_);
+
     return true;
   }
 
@@ -135,5 +134,6 @@ class NormPE : public PE {
 
   NormalizeArgs norm_args_ = {0};
 };
+
 }  // namespace zynqmp
 }  // namespace paddle

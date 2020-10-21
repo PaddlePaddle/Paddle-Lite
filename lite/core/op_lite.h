@@ -251,19 +251,31 @@ class OpInfo : public cpp::OpDesc {
   bool GetInputIndex(const std::string &input_name, int *out) const;
   bool GetOutputIndex(const std::string &output_name, int *out) const;
 
-  bool HasInputScale(const std::string &input_name) const;
-  bool HasOutputScale(const std::string &output_name) const;
+  // If a quantized op has two input argname (X, Y) and one output
+  // argname (Out). The scales of input argname X are saved in op desc as
+  // (X0_scale, scale_value_0), (X1_scale, scale_value_1)...
+  // The following APIs get or set the quantized scale in op_desc.
+  // If use the input or output name, the is_scale_name should be false.
+  // If use the scale_name such as (X0_scale, scale_value_0),
+  // the is_scale_name should be true.
+  bool HasInputScale(const std::string &name, bool is_scale_name = false) const;
+  bool HasOutputScale(const std::string &name,
+                      bool is_scale_name = false) const;
 
   void SetInputScale(const std::string &input_name,
-                     const std::vector<float> &scale_value);
+                     const std::vector<float> &scale_value,
+                     bool is_scale_name = false);
   void SetOutputScale(const std::string &output_name,
-                      const std::vector<float> &scale_value);
+                      const std::vector<float> &scale_value,
+                      bool is_scale_name = false);
 
   // For conv2d, depthwise_conv2d and mul, the scale of weight are a vector.
   // Otherwise, all input and output scales are scalar, but we save these
   // as vecotr.
-  std::vector<float> GetInputScale(const std::string &input_name) const;
-  std::vector<float> GetOutputScale(const std::string &output_name) const;
+  std::vector<float> GetInputScale(const std::string &name,
+                                   bool is_scale_name = false) const;
+  std::vector<float> GetOutputScale(const std::string &name,
+                                    bool is_scale_name = false) const;
 };
 
 }  // namespace lite
