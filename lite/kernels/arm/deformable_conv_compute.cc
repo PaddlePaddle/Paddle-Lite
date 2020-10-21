@@ -137,13 +137,13 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
         for (int fh = 0; fh < kh; fh++) {
           for (int fw = 0; fw < kw; fw++) {
             const float* offset_data_ptr_h =
-                offset_data_ptr + (2 * (fh * kw + fw)) * out_size;
+                offset_data_ptr + (2 * (fh * kw + fw)) * in_size;
             const float* offset_data_ptr_w =
-                offset_data_ptr + (2 * (fh * kw + fw) + 1) * out_size;
+                offset_data_ptr + (2 * (fh * kw + fw) + 1) * in_size;
             float* col_data_g_ksize = col_data_ch + (fh * kw + fw) * in_size;
             for (int ih = 0; ih < hout; ih++) {
-              const float* offset_data_ptr_h_w = offset_data_ptr_h + ih * wout;
-              const float* offset_data_ptr_w_w = offset_data_ptr_w + ih * wout;
+              const float* offset_data_ptr_h_w = offset_data_ptr_h + ih * win;
+              const float* offset_data_ptr_w_w = offset_data_ptr_w + ih * win;
               float* col_data_g_ksize_h = col_data_g_ksize + ih * win;
               for (int iw = 0; iw < wout; iw++) {
                 const float offset_h = *offset_data_ptr_h_w++;
