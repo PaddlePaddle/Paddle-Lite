@@ -456,6 +456,8 @@ clGetCommandQueueInfo(cl_command_queue command_queue,
       param_value_size_ret);
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
 CL_API_ENTRY cl_command_queue CL_API_CALL clCreateCommandQueueWithProperties(
     cl_context context,
     cl_device_id device,
@@ -465,6 +467,8 @@ CL_API_ENTRY cl_command_queue CL_API_CALL clCreateCommandQueueWithProperties(
       ->clCreateCommandQueueWithProperties()(
           context, device, properties, errcode_ret);
 }
+
+#endif
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseCommandQueue(
     cl_command_queue command_queue) CL_API_SUFFIX__VERSION_1_0 {
@@ -572,6 +576,8 @@ clCreateImage2D(cl_context context,
                                                               errcode_ret);
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+
 CL_API_ENTRY cl_mem CL_API_CALL
 clCreateImage(cl_context context,
               cl_mem_flags flags,
@@ -582,6 +588,8 @@ clCreateImage(cl_context context,
   return paddle::lite::CLWrapper::Global()->clCreateImage()(
       context, flags, image_format, image_desc, host_ptr, errcode_ret);
 }
+
+#endif
 
 CL_API_ENTRY cl_event CL_API_CALL clCreateUserEvent(
     cl_context context, cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_1 {
@@ -624,6 +632,8 @@ CL_API_ENTRY cl_int CL_API_CALL clGetDeviceIDs(cl_platform_id platform,
       platform, device_type, num_entries, devices, num_devices);
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+
 CL_API_ENTRY cl_int CL_API_CALL clRetainDevice(cl_device_id device)
     CL_API_SUFFIX__VERSION_1_2 {
   return paddle::lite::CLWrapper::Global()->clRetainDevice()(device);
@@ -633,6 +643,8 @@ CL_API_ENTRY cl_int CL_API_CALL clReleaseDevice(cl_device_id device)
     CL_API_SUFFIX__VERSION_1_2 {
   return paddle::lite::CLWrapper::Global()->clReleaseDevice()(device);
 }
+
+#endif
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainEvent(cl_event event)
     CL_API_SUFFIX__VERSION_1_0 {
