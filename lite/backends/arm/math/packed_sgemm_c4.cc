@@ -1685,7 +1685,8 @@ void sgemm_prepack_c8_int16_small(int M,
                                   const int16_t* A_packed,
                                   const int16_t* B,
                                   int32_t* C,
-                                  ARMContext* ctx) {
+                                  ARMContext* ctx,
+                                  int beta) {
   const int m_round = (M + 7) / 8 * 8;
   const int k_round = (K + 7) / 8 * 8;
   const int mloop = m_round >> 3;
@@ -1708,166 +1709,166 @@ void sgemm_prepack_c8_int16_small(int M,
         "ld1 {v0.8h, v1.8h}, [%[a]], #32 \n" //load a0, a1
         "ld1 {v4.8h, v5.8h}, [%[b]], #32 \n" //load b0, b1
         "ld1 {v6.8h, v7.8h}, [%[b]], #32 \n" //load b2, b3
-        
+
         "smull v20.4s, v0.4h, v4.h[0] \n"
         "smull v21.4s, v0.4h, v5.h[0] \n"
         "smull v22.4s, v0.4h, v6.h[0] \n"
         "smull v23.4s, v0.4h, v7.h[0] \n"
         "ld1 {v8.8h, v9.8h}, [%[b]], #32 \n" //load b0, b1
         "ld1 {v10.8h, v11.8h}, [%[b]], #32 \n" //load b2, b3
-        
-        "smull2 v24.4s, v0.8h, v4.h[0] \n"        
-        "smull2 v25.4s, v0.8h, v5.h[0] \n"        
-        "smull2 v26.4s, v0.8h, v6.h[0] \n"        
-        "smull2 v27.4s, v0.8h, v7.h[0] \n"        
+
+        "smull2 v24.4s, v0.8h, v4.h[0] \n"
+        "smull2 v25.4s, v0.8h, v5.h[0] \n"
+        "smull2 v26.4s, v0.8h, v6.h[0] \n"
+        "smull2 v27.4s, v0.8h, v7.h[0] \n"
         "ld1 {v2.8h, v3.8h}, [%[a]], #32 \n" //load a2, a3
 
-        "smlal v20.4s, v1.4h, v4.h[1] \n"        
-        "smlal v21.4s, v1.4h, v5.h[1] \n"        
-        "smlal v22.4s, v1.4h, v6.h[1] \n"        
+        "smlal v20.4s, v1.4h, v4.h[1] \n"
+        "smlal v21.4s, v1.4h, v5.h[1] \n"
+        "smlal v22.4s, v1.4h, v6.h[1] \n"
         "smlal v23.4s, v1.4h, v7.h[1] \n"
 
-        "smlal2 v24.4s, v1.8h, v4.h[1] \n"        
-        "smlal2 v25.4s, v1.8h, v5.h[1] \n"        
-        "smlal2 v26.4s, v1.8h, v6.h[1] \n"        
-        "smlal2 v27.4s, v1.8h, v7.h[1] \n"        
+        "smlal2 v24.4s, v1.8h, v4.h[1] \n"
+        "smlal2 v25.4s, v1.8h, v5.h[1] \n"
+        "smlal2 v26.4s, v1.8h, v6.h[1] \n"
+        "smlal2 v27.4s, v1.8h, v7.h[1] \n"
 
         "smull v12.4s, v0.4h, v8.h[0] \n"
         "smull v13.4s, v0.4h, v9.h[0] \n"
         "smull v14.4s, v0.4h, v10.h[0] \n"
         "smull v15.4s, v0.4h, v11.h[0] \n"
-        
-        "smull2 v16.4s, v0.8h, v8.h[0] \n"        
-        "smull2 v17.4s, v0.8h, v9.h[0] \n"        
-        "smull2 v18.4s, v0.8h, v10.h[0] \n"        
-        "smull2 v19.4s, v0.8h, v11.h[0] \n"        
 
-        "smlal v12.4s, v1.4h, v8.h[1] \n"        
-        "smlal v13.4s, v1.4h, v9.h[1] \n"        
-        "smlal v14.4s, v1.4h, v10.h[1] \n"        
-        "smlal v15.4s, v1.4h, v11.h[1] \n"        
+        "smull2 v16.4s, v0.8h, v8.h[0] \n"
+        "smull2 v17.4s, v0.8h, v9.h[0] \n"
+        "smull2 v18.4s, v0.8h, v10.h[0] \n"
+        "smull2 v19.4s, v0.8h, v11.h[0] \n"
 
-        "smlal2 v16.4s, v1.8h, v8.h[1] \n"        
-        "smlal2 v17.4s, v1.8h, v9.h[1] \n"        
-        "smlal2 v18.4s, v1.8h, v10.h[1] \n"        
-        "smlal2 v19.4s, v1.8h, v11.h[1] \n"        
+        "smlal v12.4s, v1.4h, v8.h[1] \n"
+        "smlal v13.4s, v1.4h, v9.h[1] \n"
+        "smlal v14.4s, v1.4h, v10.h[1] \n"
+        "smlal v15.4s, v1.4h, v11.h[1] \n"
 
-        "smlal v20.4s, v2.4h, v4.h[2] \n"        
-        "smlal v21.4s, v2.4h, v5.h[2] \n"        
-        "smlal v22.4s, v2.4h, v6.h[2] \n"        
-        "smlal v23.4s, v2.4h, v7.h[2] \n"        
+        "smlal2 v16.4s, v1.8h, v8.h[1] \n"
+        "smlal2 v17.4s, v1.8h, v9.h[1] \n"
+        "smlal2 v18.4s, v1.8h, v10.h[1] \n"
+        "smlal2 v19.4s, v1.8h, v11.h[1] \n"
+
+        "smlal v20.4s, v2.4h, v4.h[2] \n"
+        "smlal v21.4s, v2.4h, v5.h[2] \n"
+        "smlal v22.4s, v2.4h, v6.h[2] \n"
+        "smlal v23.4s, v2.4h, v7.h[2] \n"
         "ld1 {v0.8h, v1.8h}, [%[a]], #32 \n" //load a0, a1
-        "smlal2 v24.4s, v2.8h, v4.h[2] \n"        
-        "smlal2 v25.4s, v2.8h, v5.h[2] \n"        
-        "smlal2 v26.4s, v2.8h, v6.h[2] \n"        
-        "smlal2 v27.4s, v2.8h, v7.h[2] \n"        
-        "smlal v12.4s, v2.4h, v8.h[2] \n"        
-        "smlal v13.4s, v2.4h, v9.h[2] \n"        
-        "smlal v14.4s, v2.4h, v10.h[2] \n"        
-        "smlal v15.4s, v2.4h, v11.h[2] \n"        
-        "smlal2 v16.4s, v2.8h, v8.h[2] \n"        
-        "smlal2 v17.4s, v2.8h, v9.h[2] \n"        
-        "smlal2 v18.4s, v2.8h, v10.h[2] \n"        
-        "smlal2 v19.4s, v2.8h, v11.h[2] \n"        
+        "smlal2 v24.4s, v2.8h, v4.h[2] \n"
+        "smlal2 v25.4s, v2.8h, v5.h[2] \n"
+        "smlal2 v26.4s, v2.8h, v6.h[2] \n"
+        "smlal2 v27.4s, v2.8h, v7.h[2] \n"
+        "smlal v12.4s, v2.4h, v8.h[2] \n"
+        "smlal v13.4s, v2.4h, v9.h[2] \n"
+        "smlal v14.4s, v2.4h, v10.h[2] \n"
+        "smlal v15.4s, v2.4h, v11.h[2] \n"
+        "smlal2 v16.4s, v2.8h, v8.h[2] \n"
+        "smlal2 v17.4s, v2.8h, v9.h[2] \n"
+        "smlal2 v18.4s, v2.8h, v10.h[2] \n"
+        "smlal2 v19.4s, v2.8h, v11.h[2] \n"
 
-        "smlal v20.4s, v3.4h, v4.h[3] \n"        
-        "smlal v21.4s, v3.4h, v5.h[3] \n"        
-        "smlal v22.4s, v3.4h, v6.h[3] \n"        
-        "smlal v23.4s, v3.4h, v7.h[3] \n"        
-        "smlal2 v24.4s, v3.8h, v4.h[3] \n"        
-        "smlal2 v25.4s, v3.8h, v5.h[3] \n"        
-        "smlal2 v26.4s, v3.8h, v6.h[3] \n"        
+        "smlal v20.4s, v3.4h, v4.h[3] \n"
+        "smlal v21.4s, v3.4h, v5.h[3] \n"
+        "smlal v22.4s, v3.4h, v6.h[3] \n"
+        "smlal v23.4s, v3.4h, v7.h[3] \n"
+        "smlal2 v24.4s, v3.8h, v4.h[3] \n"
+        "smlal2 v25.4s, v3.8h, v5.h[3] \n"
+        "smlal2 v26.4s, v3.8h, v6.h[3] \n"
         "smlal2 v27.4s, v3.8h, v7.h[3] \n"
-        "smlal v12.4s, v3.4h, v8.h[3] \n"        
-        "smlal v13.4s, v3.4h, v9.h[3] \n"        
-        "smlal v14.4s, v3.4h, v10.h[3] \n"        
-        "smlal v15.4s, v3.4h, v11.h[3] \n"        
-        "smlal2 v16.4s, v3.8h, v8.h[3] \n"        
-        "smlal2 v17.4s, v3.8h, v9.h[3] \n"        
-        "smlal2 v18.4s, v3.8h, v10.h[3] \n"        
-        "smlal2 v19.4s, v3.8h, v11.h[3] \n"        
+        "smlal v12.4s, v3.4h, v8.h[3] \n"
+        "smlal v13.4s, v3.4h, v9.h[3] \n"
+        "smlal v14.4s, v3.4h, v10.h[3] \n"
+        "smlal v15.4s, v3.4h, v11.h[3] \n"
+        "smlal2 v16.4s, v3.8h, v8.h[3] \n"
+        "smlal2 v17.4s, v3.8h, v9.h[3] \n"
+        "smlal2 v18.4s, v3.8h, v10.h[3] \n"
+        "smlal2 v19.4s, v3.8h, v11.h[3] \n"
 
         "smlal v20.4s, v0.4h, v4.h[4] \n"
         "smlal v21.4s, v0.4h, v5.h[4] \n"
         "smlal v22.4s, v0.4h, v6.h[4] \n"
         "smlal v23.4s, v0.4h, v7.h[4] \n"
-        
-        "smlal2 v24.4s, v0.8h, v4.h[4] \n"        
-        "smlal2 v25.4s, v0.8h, v5.h[4] \n"        
-        "smlal2 v26.4s, v0.8h, v6.h[4] \n"        
-        "smlal2 v27.4s, v0.8h, v7.h[4] \n"        
+
+        "smlal2 v24.4s, v0.8h, v4.h[4] \n"
+        "smlal2 v25.4s, v0.8h, v5.h[4] \n"
+        "smlal2 v26.4s, v0.8h, v6.h[4] \n"
+        "smlal2 v27.4s, v0.8h, v7.h[4] \n"
         "ld1 {v2.8h, v3.8h}, [%[a]], #32 \n" //load a2, a3
 
-        "smlal v20.4s, v1.4h, v4.h[5] \n"        
-        "smlal v21.4s, v1.4h, v5.h[5] \n"        
-        "smlal v22.4s, v1.4h, v6.h[5] \n"        
+        "smlal v20.4s, v1.4h, v4.h[5] \n"
+        "smlal v21.4s, v1.4h, v5.h[5] \n"
+        "smlal v22.4s, v1.4h, v6.h[5] \n"
         "smlal v23.4s, v1.4h, v7.h[5] \n"
 
-        "smlal2 v24.4s, v1.8h, v4.h[5] \n"        
-        "smlal2 v25.4s, v1.8h, v5.h[5] \n"        
-        "smlal2 v26.4s, v1.8h, v6.h[5] \n"        
-        "smlal2 v27.4s, v1.8h, v7.h[5] \n"        
+        "smlal2 v24.4s, v1.8h, v4.h[5] \n"
+        "smlal2 v25.4s, v1.8h, v5.h[5] \n"
+        "smlal2 v26.4s, v1.8h, v6.h[5] \n"
+        "smlal2 v27.4s, v1.8h, v7.h[5] \n"
 
         "smlal v12.4s, v0.4h, v8.h[4] \n"
         "smlal v13.4s, v0.4h, v9.h[4] \n"
         "smlal v14.4s, v0.4h, v10.h[4] \n"
         "smlal v15.4s, v0.4h, v11.h[4] \n"
-        
-        "smlal2 v16.4s, v0.8h, v8.h[4] \n"        
-        "smlal2 v17.4s, v0.8h, v9.h[4] \n"        
-        "smlal2 v18.4s, v0.8h, v10.h[4] \n"        
-        "smlal2 v19.4s, v0.8h, v11.h[4] \n"        
 
-        "smlal v12.4s, v1.4h, v8.h[5] \n"        
-        "smlal v13.4s, v1.4h, v9.h[5] \n"        
-        "smlal v14.4s, v1.4h, v10.h[5] \n"        
-        "smlal v15.4s, v1.4h, v11.h[5] \n"        
+        "smlal2 v16.4s, v0.8h, v8.h[4] \n"
+        "smlal2 v17.4s, v0.8h, v9.h[4] \n"
+        "smlal2 v18.4s, v0.8h, v10.h[4] \n"
+        "smlal2 v19.4s, v0.8h, v11.h[4] \n"
 
-        "smlal2 v16.4s, v1.8h, v8.h[5] \n"        
-        "smlal2 v17.4s, v1.8h, v9.h[5] \n"        
-        "smlal2 v18.4s, v1.8h, v10.h[5] \n"        
-        "smlal2 v19.4s, v1.8h, v11.h[5] \n"        
+        "smlal v12.4s, v1.4h, v8.h[5] \n"
+        "smlal v13.4s, v1.4h, v9.h[5] \n"
+        "smlal v14.4s, v1.4h, v10.h[5] \n"
+        "smlal v15.4s, v1.4h, v11.h[5] \n"
 
-        "smlal v20.4s, v2.4h, v4.h[6] \n"        
-        "smlal v21.4s, v2.4h, v5.h[6] \n"        
-        "smlal v22.4s, v2.4h, v6.h[6] \n"        
-        "smlal v23.4s, v2.4h, v7.h[6] \n"        
+        "smlal2 v16.4s, v1.8h, v8.h[5] \n"
+        "smlal2 v17.4s, v1.8h, v9.h[5] \n"
+        "smlal2 v18.4s, v1.8h, v10.h[5] \n"
+        "smlal2 v19.4s, v1.8h, v11.h[5] \n"
+
+        "smlal v20.4s, v2.4h, v4.h[6] \n"
+        "smlal v21.4s, v2.4h, v5.h[6] \n"
+        "smlal v22.4s, v2.4h, v6.h[6] \n"
+        "smlal v23.4s, v2.4h, v7.h[6] \n"
         "ld1 {v0.8h, v1.8h}, [%[a]], #32 \n" //load a0, a1
-        "smlal2 v24.4s, v2.8h, v4.h[6] \n"        
-        "smlal2 v25.4s, v2.8h, v5.h[6] \n"        
-        "smlal2 v26.4s, v2.8h, v6.h[6] \n"        
-        "smlal2 v27.4s, v2.8h, v7.h[6] \n"        
+        "smlal2 v24.4s, v2.8h, v4.h[6] \n"
+        "smlal2 v25.4s, v2.8h, v5.h[6] \n"
+        "smlal2 v26.4s, v2.8h, v6.h[6] \n"
+        "smlal2 v27.4s, v2.8h, v7.h[6] \n"
         "sub %[b], %[b], #128         \n"
-        "add %[b], %[b], %[ldb]        \n"        
-        "smlal v20.4s, v3.4h, v4.h[7] \n"        
-        "smlal v21.4s, v3.4h, v5.h[7] \n"        
-        "smlal v22.4s, v3.4h, v6.h[7] \n"        
-        "smlal v23.4s, v3.4h, v7.h[7] \n"        
-        "smlal2 v24.4s, v3.8h, v4.h[7] \n"        
-        "smlal2 v25.4s, v3.8h, v5.h[7] \n"        
-        "smlal2 v26.4s, v3.8h, v6.h[7] \n"        
+        "add %[b], %[b], %[ldb]        \n"
+        "smlal v20.4s, v3.4h, v4.h[7] \n"
+        "smlal v21.4s, v3.4h, v5.h[7] \n"
+        "smlal v22.4s, v3.4h, v6.h[7] \n"
+        "smlal v23.4s, v3.4h, v7.h[7] \n"
+        "smlal2 v24.4s, v3.8h, v4.h[7] \n"
+        "smlal2 v25.4s, v3.8h, v5.h[7] \n"
+        "smlal2 v26.4s, v3.8h, v6.h[7] \n"
         "smlal2 v27.4s, v3.8h, v7.h[7] \n"
         "ld1 {v4.8h, v5.8h}, [%[b]], #32 \n" //load b0, b1
         "ld1 {v6.8h, v7.8h}, [%[b]], #32 \n" //load b2, b3
 
-        "smlal v12.4s, v2.4h, v8.h[6] \n"        
-        "smlal v13.4s, v2.4h, v9.h[6] \n"        
-        "smlal v14.4s, v2.4h, v10.h[6] \n"        
-        "smlal v15.4s, v2.4h, v11.h[6] \n"        
-        "smlal2 v16.4s, v2.8h, v8.h[6] \n"        
-        "smlal2 v17.4s, v2.8h, v9.h[6] \n"        
-        "smlal2 v18.4s, v2.8h, v10.h[6] \n"        
-        "smlal2 v19.4s, v2.8h, v11.h[6] \n"        
+        "smlal v12.4s, v2.4h, v8.h[6] \n"
+        "smlal v13.4s, v2.4h, v9.h[6] \n"
+        "smlal v14.4s, v2.4h, v10.h[6] \n"
+        "smlal v15.4s, v2.4h, v11.h[6] \n"
+        "smlal2 v16.4s, v2.8h, v8.h[6] \n"
+        "smlal2 v17.4s, v2.8h, v9.h[6] \n"
+        "smlal2 v18.4s, v2.8h, v10.h[6] \n"
+        "smlal2 v19.4s, v2.8h, v11.h[6] \n"
         "subs   %w[cnt], %w[cnt], #1      \n"
 
-        "smlal v12.4s, v3.4h, v8.h[7] \n"        
-        "smlal v13.4s, v3.4h, v9.h[7] \n"        
-        "smlal v14.4s, v3.4h, v10.h[7] \n"        
-        "smlal v15.4s, v3.4h, v11.h[7] \n"        
-        "smlal2 v16.4s, v3.8h, v8.h[7] \n"        
-        "smlal2 v17.4s, v3.8h, v9.h[7] \n"        
-        "smlal2 v18.4s, v3.8h, v10.h[7] \n"        
-        "smlal2 v19.4s, v3.8h, v11.h[7] \n"        
+        "smlal v12.4s, v3.4h, v8.h[7] \n"
+        "smlal v13.4s, v3.4h, v9.h[7] \n"
+        "smlal v14.4s, v3.4h, v10.h[7] \n"
+        "smlal v15.4s, v3.4h, v11.h[7] \n"
+        "smlal2 v16.4s, v3.8h, v8.h[7] \n"
+        "smlal2 v17.4s, v3.8h, v9.h[7] \n"
+        "smlal2 v18.4s, v3.8h, v10.h[7] \n"
+        "smlal2 v19.4s, v3.8h, v11.h[7] \n"
 
         "beq 2f                         \n"
         "1:\n"
@@ -1877,162 +1878,179 @@ void sgemm_prepack_c8_int16_small(int M,
         "smlal v23.4s, v0.4h, v7.h[0] \n"
         "ld1 {v8.8h, v9.8h}, [%[b]], #32 \n" //load b0, b1
         "ld1 {v10.8h, v11.8h}, [%[b]], #32 \n" //load b2, b3
-        
-        "smlal2 v24.4s, v0.8h, v4.h[0] \n"        
-        "smlal2 v25.4s, v0.8h, v5.h[0] \n"        
-        "smlal2 v26.4s, v0.8h, v6.h[0] \n"        
-        "smlal2 v27.4s, v0.8h, v7.h[0] \n"        
+
+        "smlal2 v24.4s, v0.8h, v4.h[0] \n"
+        "smlal2 v25.4s, v0.8h, v5.h[0] \n"
+        "smlal2 v26.4s, v0.8h, v6.h[0] \n"
+        "smlal2 v27.4s, v0.8h, v7.h[0] \n"
         "ld1 {v2.8h, v3.8h}, [%[a]], #32 \n" //load a2, a3
 
-        "smlal v20.4s, v1.4h, v4.h[1] \n"        
-        "smlal v21.4s, v1.4h, v5.h[1] \n"        
-        "smlal v22.4s, v1.4h, v6.h[1] \n"        
+        "smlal v20.4s, v1.4h, v4.h[1] \n"
+        "smlal v21.4s, v1.4h, v5.h[1] \n"
+        "smlal v22.4s, v1.4h, v6.h[1] \n"
         "smlal v23.4s, v1.4h, v7.h[1] \n"
 
-        "smlal2 v24.4s, v1.8h, v4.h[1] \n"        
-        "smlal2 v25.4s, v1.8h, v5.h[1] \n"        
-        "smlal2 v26.4s, v1.8h, v6.h[1] \n"        
-        "smlal2 v27.4s, v1.8h, v7.h[1] \n"        
+        "smlal2 v24.4s, v1.8h, v4.h[1] \n"
+        "smlal2 v25.4s, v1.8h, v5.h[1] \n"
+        "smlal2 v26.4s, v1.8h, v6.h[1] \n"
+        "smlal2 v27.4s, v1.8h, v7.h[1] \n"
 
         "smlal v12.4s, v0.4h, v8.h[0] \n"
         "smlal v13.4s, v0.4h, v9.h[0] \n"
         "smlal v14.4s, v0.4h, v10.h[0] \n"
         "smlal v15.4s, v0.4h, v11.h[0] \n"
-        
-        "smlal2 v16.4s, v0.8h, v8.h[0] \n"        
-        "smlal2 v17.4s, v0.8h, v9.h[0] \n"        
-        "smlal2 v18.4s, v0.8h, v10.h[0] \n"        
-        "smlal2 v19.4s, v0.8h, v11.h[0] \n"        
 
-        "smlal v12.4s, v1.4h, v8.h[1] \n"        
-        "smlal v13.4s, v1.4h, v9.h[1] \n"        
-        "smlal v14.4s, v1.4h, v10.h[1] \n"        
-        "smlal v15.4s, v1.4h, v11.h[1] \n"        
+        "smlal2 v16.4s, v0.8h, v8.h[0] \n"
+        "smlal2 v17.4s, v0.8h, v9.h[0] \n"
+        "smlal2 v18.4s, v0.8h, v10.h[0] \n"
+        "smlal2 v19.4s, v0.8h, v11.h[0] \n"
 
-        "smlal2 v16.4s, v1.8h, v8.h[1] \n"        
-        "smlal2 v17.4s, v1.8h, v9.h[1] \n"        
-        "smlal2 v18.4s, v1.8h, v10.h[1] \n"        
-        "smlal2 v19.4s, v1.8h, v11.h[1] \n"        
+        "smlal v12.4s, v1.4h, v8.h[1] \n"
+        "smlal v13.4s, v1.4h, v9.h[1] \n"
+        "smlal v14.4s, v1.4h, v10.h[1] \n"
+        "smlal v15.4s, v1.4h, v11.h[1] \n"
 
-        "smlal v20.4s, v2.4h, v4.h[2] \n"        
-        "smlal v21.4s, v2.4h, v5.h[2] \n"        
-        "smlal v22.4s, v2.4h, v6.h[2] \n"        
-        "smlal v23.4s, v2.4h, v7.h[2] \n"        
+        "smlal2 v16.4s, v1.8h, v8.h[1] \n"
+        "smlal2 v17.4s, v1.8h, v9.h[1] \n"
+        "smlal2 v18.4s, v1.8h, v10.h[1] \n"
+        "smlal2 v19.4s, v1.8h, v11.h[1] \n"
+
+        "smlal v20.4s, v2.4h, v4.h[2] \n"
+        "smlal v21.4s, v2.4h, v5.h[2] \n"
+        "smlal v22.4s, v2.4h, v6.h[2] \n"
+        "smlal v23.4s, v2.4h, v7.h[2] \n"
         "ld1 {v0.8h, v1.8h}, [%[a]], #32 \n" //load a0, a1
-        "smlal2 v24.4s, v2.8h, v4.h[2] \n"        
-        "smlal2 v25.4s, v2.8h, v5.h[2] \n"        
-        "smlal2 v26.4s, v2.8h, v6.h[2] \n"        
-        "smlal2 v27.4s, v2.8h, v7.h[2] \n"        
-        "smlal v12.4s, v2.4h, v8.h[2] \n"        
-        "smlal v13.4s, v2.4h, v9.h[2] \n"        
-        "smlal v14.4s, v2.4h, v10.h[2] \n"        
-        "smlal v15.4s, v2.4h, v11.h[2] \n"        
-        "smlal2 v16.4s, v2.8h, v8.h[2] \n"        
-        "smlal2 v17.4s, v2.8h, v9.h[2] \n"        
-        "smlal2 v18.4s, v2.8h, v10.h[2] \n"        
-        "smlal2 v19.4s, v2.8h, v11.h[2] \n"        
+        "smlal2 v24.4s, v2.8h, v4.h[2] \n"
+        "smlal2 v25.4s, v2.8h, v5.h[2] \n"
+        "smlal2 v26.4s, v2.8h, v6.h[2] \n"
+        "smlal2 v27.4s, v2.8h, v7.h[2] \n"
+        "smlal v12.4s, v2.4h, v8.h[2] \n"
+        "smlal v13.4s, v2.4h, v9.h[2] \n"
+        "smlal v14.4s, v2.4h, v10.h[2] \n"
+        "smlal v15.4s, v2.4h, v11.h[2] \n"
+        "smlal2 v16.4s, v2.8h, v8.h[2] \n"
+        "smlal2 v17.4s, v2.8h, v9.h[2] \n"
+        "smlal2 v18.4s, v2.8h, v10.h[2] \n"
+        "smlal2 v19.4s, v2.8h, v11.h[2] \n"
 
-        "smlal v20.4s, v3.4h, v4.h[3] \n"        
-        "smlal v21.4s, v3.4h, v5.h[3] \n"        
-        "smlal v22.4s, v3.4h, v6.h[3] \n"        
-        "smlal v23.4s, v3.4h, v7.h[3] \n"        
-        "smlal2 v24.4s, v3.8h, v4.h[3] \n"        
-        "smlal2 v25.4s, v3.8h, v5.h[3] \n"        
-        "smlal2 v26.4s, v3.8h, v6.h[3] \n"        
+        "smlal v20.4s, v3.4h, v4.h[3] \n"
+        "smlal v21.4s, v3.4h, v5.h[3] \n"
+        "smlal v22.4s, v3.4h, v6.h[3] \n"
+        "smlal v23.4s, v3.4h, v7.h[3] \n"
+        "smlal2 v24.4s, v3.8h, v4.h[3] \n"
+        "smlal2 v25.4s, v3.8h, v5.h[3] \n"
+        "smlal2 v26.4s, v3.8h, v6.h[3] \n"
         "smlal2 v27.4s, v3.8h, v7.h[3] \n"
-        "smlal v12.4s, v3.4h, v8.h[3] \n"        
-        "smlal v13.4s, v3.4h, v9.h[3] \n"        
-        "smlal v14.4s, v3.4h, v10.h[3] \n"        
-        "smlal v15.4s, v3.4h, v11.h[3] \n"        
-        "smlal2 v16.4s, v3.8h, v8.h[3] \n"        
-        "smlal2 v17.4s, v3.8h, v9.h[3] \n"        
-        "smlal2 v18.4s, v3.8h, v10.h[3] \n"        
-        "smlal2 v19.4s, v3.8h, v11.h[3] \n"        
+        "smlal v12.4s, v3.4h, v8.h[3] \n"
+        "smlal v13.4s, v3.4h, v9.h[3] \n"
+        "smlal v14.4s, v3.4h, v10.h[3] \n"
+        "smlal v15.4s, v3.4h, v11.h[3] \n"
+        "smlal2 v16.4s, v3.8h, v8.h[3] \n"
+        "smlal2 v17.4s, v3.8h, v9.h[3] \n"
+        "smlal2 v18.4s, v3.8h, v10.h[3] \n"
+        "smlal2 v19.4s, v3.8h, v11.h[3] \n"
 
         "smlal v20.4s, v0.4h, v4.h[4] \n"
         "smlal v21.4s, v0.4h, v5.h[4] \n"
         "smlal v22.4s, v0.4h, v6.h[4] \n"
         "smlal v23.4s, v0.4h, v7.h[4] \n"
-        
-        "smlal2 v24.4s, v0.8h, v4.h[4] \n"        
-        "smlal2 v25.4s, v0.8h, v5.h[4] \n"        
-        "smlal2 v26.4s, v0.8h, v6.h[4] \n"        
-        "smlal2 v27.4s, v0.8h, v7.h[4] \n"        
+
+        "smlal2 v24.4s, v0.8h, v4.h[4] \n"
+        "smlal2 v25.4s, v0.8h, v5.h[4] \n"
+        "smlal2 v26.4s, v0.8h, v6.h[4] \n"
+        "smlal2 v27.4s, v0.8h, v7.h[4] \n"
         "ld1 {v2.8h, v3.8h}, [%[a]], #32 \n" //load a2, a3
 
-        "smlal v20.4s, v1.4h, v4.h[5] \n"        
-        "smlal v21.4s, v1.4h, v5.h[5] \n"        
-        "smlal v22.4s, v1.4h, v6.h[5] \n"        
+        "smlal v20.4s, v1.4h, v4.h[5] \n"
+        "smlal v21.4s, v1.4h, v5.h[5] \n"
+        "smlal v22.4s, v1.4h, v6.h[5] \n"
         "smlal v23.4s, v1.4h, v7.h[5] \n"
 
-        "smlal2 v24.4s, v1.8h, v4.h[5] \n"        
-        "smlal2 v25.4s, v1.8h, v5.h[5] \n"        
-        "smlal2 v26.4s, v1.8h, v6.h[5] \n"        
-        "smlal2 v27.4s, v1.8h, v7.h[5] \n"        
+        "smlal2 v24.4s, v1.8h, v4.h[5] \n"
+        "smlal2 v25.4s, v1.8h, v5.h[5] \n"
+        "smlal2 v26.4s, v1.8h, v6.h[5] \n"
+        "smlal2 v27.4s, v1.8h, v7.h[5] \n"
 
         "smlal v12.4s, v0.4h, v8.h[4] \n"
         "smlal v13.4s, v0.4h, v9.h[4] \n"
         "smlal v14.4s, v0.4h, v10.h[4] \n"
         "smlal v15.4s, v0.4h, v11.h[4] \n"
-        
-        "smlal2 v16.4s, v0.8h, v8.h[4] \n"        
-        "smlal2 v17.4s, v0.8h, v9.h[4] \n"        
-        "smlal2 v18.4s, v0.8h, v10.h[4] \n"        
-        "smlal2 v19.4s, v0.8h, v11.h[4] \n"        
 
-        "smlal v12.4s, v1.4h, v8.h[5] \n"        
-        "smlal v13.4s, v1.4h, v9.h[5] \n"        
-        "smlal v14.4s, v1.4h, v10.h[5] \n"        
-        "smlal v15.4s, v1.4h, v11.h[5] \n"        
+        "smlal2 v16.4s, v0.8h, v8.h[4] \n"
+        "smlal2 v17.4s, v0.8h, v9.h[4] \n"
+        "smlal2 v18.4s, v0.8h, v10.h[4] \n"
+        "smlal2 v19.4s, v0.8h, v11.h[4] \n"
 
-        "smlal2 v16.4s, v1.8h, v8.h[5] \n"        
-        "smlal2 v17.4s, v1.8h, v9.h[5] \n"        
-        "smlal2 v18.4s, v1.8h, v10.h[5] \n"        
-        "smlal2 v19.4s, v1.8h, v11.h[5] \n"        
+        "smlal v12.4s, v1.4h, v8.h[5] \n"
+        "smlal v13.4s, v1.4h, v9.h[5] \n"
+        "smlal v14.4s, v1.4h, v10.h[5] \n"
+        "smlal v15.4s, v1.4h, v11.h[5] \n"
 
-        "smlal v20.4s, v2.4h, v4.h[6] \n"        
-        "smlal v21.4s, v2.4h, v5.h[6] \n"        
-        "smlal v22.4s, v2.4h, v6.h[6] \n"        
-        "smlal v23.4s, v2.4h, v7.h[6] \n"        
+        "smlal2 v16.4s, v1.8h, v8.h[5] \n"
+        "smlal2 v17.4s, v1.8h, v9.h[5] \n"
+        "smlal2 v18.4s, v1.8h, v10.h[5] \n"
+        "smlal2 v19.4s, v1.8h, v11.h[5] \n"
+
+        "smlal v20.4s, v2.4h, v4.h[6] \n"
+        "smlal v21.4s, v2.4h, v5.h[6] \n"
+        "smlal v22.4s, v2.4h, v6.h[6] \n"
+        "smlal v23.4s, v2.4h, v7.h[6] \n"
         "ld1 {v0.8h, v1.8h}, [%[a]], #32 \n" //load a0, a1
-        "smlal2 v24.4s, v2.8h, v4.h[6] \n"        
-        "smlal2 v25.4s, v2.8h, v5.h[6] \n"        
-        "smlal2 v26.4s, v2.8h, v6.h[6] \n"        
-        "smlal2 v27.4s, v2.8h, v7.h[6] \n"        
+        "smlal2 v24.4s, v2.8h, v4.h[6] \n"
+        "smlal2 v25.4s, v2.8h, v5.h[6] \n"
+        "smlal2 v26.4s, v2.8h, v6.h[6] \n"
+        "smlal2 v27.4s, v2.8h, v7.h[6] \n"
         "sub %[b], %[b], #128         \n"
-        "add %[b], %[b], %[ldb]        \n"        
-        "smlal v20.4s, v3.4h, v4.h[7] \n"        
-        "smlal v21.4s, v3.4h, v5.h[7] \n"        
-        "smlal v22.4s, v3.4h, v6.h[7] \n"        
-        "smlal v23.4s, v3.4h, v7.h[7] \n"        
-        "smlal2 v24.4s, v3.8h, v4.h[7] \n"        
-        "smlal2 v25.4s, v3.8h, v5.h[7] \n"        
-        "smlal2 v26.4s, v3.8h, v6.h[7] \n"        
+        "add %[b], %[b], %[ldb]        \n"
+        "smlal v20.4s, v3.4h, v4.h[7] \n"
+        "smlal v21.4s, v3.4h, v5.h[7] \n"
+        "smlal v22.4s, v3.4h, v6.h[7] \n"
+        "smlal v23.4s, v3.4h, v7.h[7] \n"
+        "smlal2 v24.4s, v3.8h, v4.h[7] \n"
+        "smlal2 v25.4s, v3.8h, v5.h[7] \n"
+        "smlal2 v26.4s, v3.8h, v6.h[7] \n"
         "smlal2 v27.4s, v3.8h, v7.h[7] \n"
         "ld1 {v4.8h, v5.8h}, [%[b]], #32 \n" //load b0, b1
         "ld1 {v6.8h, v7.8h}, [%[b]], #32 \n" //load b2, b3
 
-        "smlal v12.4s, v2.4h, v8.h[6] \n"        
-        "smlal v13.4s, v2.4h, v9.h[6] \n"        
-        "smlal v14.4s, v2.4h, v10.h[6] \n"        
-        "smlal v15.4s, v2.4h, v11.h[6] \n"        
-        "smlal2 v16.4s, v2.8h, v8.h[6] \n"        
-        "smlal2 v17.4s, v2.8h, v9.h[6] \n"        
-        "smlal2 v18.4s, v2.8h, v10.h[6] \n"        
-        "smlal2 v19.4s, v2.8h, v11.h[6] \n"        
+        "smlal v12.4s, v2.4h, v8.h[6] \n"
+        "smlal v13.4s, v2.4h, v9.h[6] \n"
+        "smlal v14.4s, v2.4h, v10.h[6] \n"
+        "smlal v15.4s, v2.4h, v11.h[6] \n"
+        "smlal2 v16.4s, v2.8h, v8.h[6] \n"
+        "smlal2 v17.4s, v2.8h, v9.h[6] \n"
+        "smlal2 v18.4s, v2.8h, v10.h[6] \n"
+        "smlal2 v19.4s, v2.8h, v11.h[6] \n"
         "subs   %w[cnt], %w[cnt], #1      \n"
 
-        "smlal v12.4s, v3.4h, v8.h[7] \n"        
-        "smlal v13.4s, v3.4h, v9.h[7] \n"        
-        "smlal v14.4s, v3.4h, v10.h[7] \n"        
-        "smlal v15.4s, v3.4h, v11.h[7] \n"        
-        "smlal2 v16.4s, v3.8h, v8.h[7] \n"        
-        "smlal2 v17.4s, v3.8h, v9.h[7] \n"        
-        "smlal2 v18.4s, v3.8h, v10.h[7] \n"        
-        "smlal2 v19.4s, v3.8h, v11.h[7] \n"        
-        
-        "bne 1b                         \n"        
+        "smlal v12.4s, v3.4h, v8.h[7] \n"
+        "smlal v13.4s, v3.4h, v9.h[7] \n"
+        "smlal v14.4s, v3.4h, v10.h[7] \n"
+        "smlal v15.4s, v3.4h, v11.h[7] \n"
+        "smlal2 v16.4s, v3.8h, v8.h[7] \n"
+        "smlal2 v17.4s, v3.8h, v9.h[7] \n"
+        "smlal2 v18.4s, v3.8h, v10.h[7] \n"
+        "smlal2 v19.4s, v3.8h, v11.h[7] \n"
+
+        "bne 1b                         \n"
         "2:                             \n"
+        "dup v10.4s, %w[beta]        \n"
+        "mul v20.4s, v20.4s, v10.4s \n"
+        "mul v21.4s, v21.4s, v10.4s \n"
+        "mul v22.4s, v22.4s, v10.4s \n"
+        "mul v23.4s, v23.4s, v10.4s \n"
+        "mul v24.4s, v24.4s, v10.4s \n"
+        "mul v25.4s, v25.4s, v10.4s \n"
+        "mul v26.4s, v26.4s, v10.4s \n"
+        "mul v27.4s, v27.4s, v10.4s \n"
+        "mul v12.4s, v12.4s, v10.4s \n"
+        "mul v13.4s, v13.4s, v10.4s \n"
+        "mul v14.4s, v14.4s, v10.4s \n"
+        "mul v15.4s, v15.4s, v10.4s \n"
+        "mul v16.4s, v16.4s, v10.4s \n"
+        "mul v17.4s, v17.4s, v10.4s \n"
+        "mul v18.4s, v18.4s, v10.4s \n"
+        "mul v19.4s, v19.4s, v10.4s \n"
         "stp q20, q24, [%[c]], #32 \n"
         "stp q21, q25, [%[c]], #32 \n"
         "stp q22, q26, [%[c]], #32 \n"
@@ -2045,10 +2063,11 @@ void sgemm_prepack_c8_int16_small(int M,
           [b] "+r" (b_ptr),
           [c] "+r" (C),
           [cnt] "+r" (cnt)
-        : [ldb] "r" (ldb_byte)
-        : "v0", "v1", "v2", "v3", "v4","v5", "v6", "v7", "v8", "v9", 
+        : [ldb] "r" (ldb_byte),
+          [beta] "r" (beta)
+        : "v0", "v1", "v2", "v3", "v4","v5", "v6", "v7", "v8", "v9",
           "v10", "v11", "13", "14", "15", "16", "17", "18", "19","v20",
-           "v21", "v22", "v23", "v24", "v25", "v26", "v27", "cc", "memory" 
+           "v21", "v22", "v23", "v24", "v25", "v26", "v27", "cc", "memory"
       );
       // clang format on
       b += 64;
@@ -2061,7 +2080,7 @@ void sgemm_prepack_c8_int16_small(int M,
       asm volatile(
         "ld1 {v0.8h, v1.8h}, [%[a]], #32 \n"
         "ld1 {v4.8h, v5.8h}, [%[b]], #32 \n"
-        
+
         "smull v8.4s, v0.4h, v4.h[0] \n"
         "smull v9.4s, v0.4h, v5.h[0] \n"
         "ld1 {v6.8h, v7.8h}, [%[b]], #32 \n"
@@ -2232,6 +2251,16 @@ void sgemm_prepack_c8_int16_small(int M,
 
         "bne 1b \n"
         "2: \n"
+
+        "dup v20.4s, %w[beta]        \n"
+        "mul v8.4s, v8.4s, v20.4s \n"
+        "mul v9.4s, v9.4s, v20.4s \n"
+        "mul v10.4s, v10.4s, v20.4s \n"
+        "mul v11.4s, v11.4s, v20.4s \n"
+        "mul v12.4s, v12.4s, v20.4s \n"
+        "mul v13.4s, v13.4s, v20.4s \n"
+        "mul v14.4s, v14.4s, v20.4s \n"
+        "mul v15.4s, v15.4s, v20.4s \n"
         "stp q8, q10, [%[c]], #32 \n"
         "stp q9, q11, [%[c]], #32 \n"
         "stp q12, q14, [%[c]], #32 \n"
@@ -2240,8 +2269,9 @@ void sgemm_prepack_c8_int16_small(int M,
           [b] "+r" (b_ptr),
           [c] "+r" (C),
           [cnt] "+r" (cnt)
-        : [ldb] "r" (ldb_byte)
-        : "v0", "v1", "v2", "v3", "v4","v5", "v6", "v7", "v8", "v9", 
+        : [ldb] "r" (ldb_byte),
+          [beta] "r" (beta)
+        : "v0", "v1", "v2", "v3", "v4","v5", "v6", "v7", "v8", "v9",
           "v10", "v11","v12", "v13", "v14", "v15", "cc", "memory"
       );
       // clang-format on
@@ -2256,65 +2286,69 @@ void sgemm_prepack_c8_int16_small(int M,
         "ld1 {v0.8h, v1.8h}, [%[a]], #32 \n"
         "ld1 {v4.8h}, [%[b]], #16 \n"
         "ld1 {v2.8h, v3.8h}, [%[a]], #32 \n"
-        "smull v5.4s, v0.4h, v4.h[0] \n" 
+        "smull v5.4s, v0.4h, v4.h[0] \n"
         "smull2 v6.4s, v0.8h, v4.h[0] \n"
         "ld1 {v10.8h, v11.8h}, [%[a]], #32 \n"
-        "smlal v5.4s, v1.4h, v4.h[1] \n" 
+        "smlal v5.4s, v1.4h, v4.h[1] \n"
         "smlal2 v6.4s, v1.8h, v4.h[1] \n"
         "ld1 {v12.8h, v13.8h}, [%[a]], #32 \n"
-        "smlal v5.4s, v2.4h, v4.h[2] \n" 
+        "smlal v5.4s, v2.4h, v4.h[2] \n"
         "smlal2 v6.4s, v2.8h, v4.h[2] \n"
-        "smlal v5.4s, v3.4h, v4.h[3] \n" 
+        "smlal v5.4s, v3.4h, v4.h[3] \n"
         "smlal2 v6.4s, v3.8h, v4.h[3] \n"
         "sub %[b], %[b], #16 \n"
         "add %[b], %[b], %[ldb] \n"
-        "smlal v5.4s, v10.4h, v4.h[4] \n" 
+        "smlal v5.4s, v10.4h, v4.h[4] \n"
         "smlal2 v6.4s, v10.8h, v4.h[4] \n"
-        "smlal v5.4s, v11.4h, v4.h[5] \n" 
+        "smlal v5.4s, v11.4h, v4.h[5] \n"
         "smlal2 v6.4s, v11.8h, v4.h[5] \n"
         "subs %w[cnt], %w[cnt], #1 \n"
         "ld1 {v0.8h, v1.8h}, [%[a]], #32 \n"
-        "smlal v5.4s, v12.4h, v4.h[6] \n" 
+        "smlal v5.4s, v12.4h, v4.h[6] \n"
         "smlal2 v6.4s, v12.8h, v4.h[6] \n"
-        "smlal v5.4s, v13.4h, v4.h[7] \n" 
+        "smlal v5.4s, v13.4h, v4.h[7] \n"
         "smlal2 v6.4s, v13.8h, v4.h[7] \n"
 
         "beq 2f \n"
         "1: \n"
         "ld1 {v4.8h}, [%[b]], #16 \n"
         "ld1 {v2.8h, v3.8h}, [%[a]], #32 \n"
-        "smlal v5.4s, v0.4h, v4.h[0] \n" 
+        "smlal v5.4s, v0.4h, v4.h[0] \n"
         "smlal2 v6.4s, v0.8h, v4.h[0] \n"
         "ld1 {v10.8h, v11.8h}, [%[a]], #32 \n"
-        "smlal v5.4s, v1.4h, v4.h[1] \n" 
+        "smlal v5.4s, v1.4h, v4.h[1] \n"
         "smlal2 v6.4s, v1.8h, v4.h[1] \n"
         "ld1 {v12.8h, v13.8h}, [%[a]], #32 \n"
-        "smlal v5.4s, v2.4h, v4.h[2] \n" 
+        "smlal v5.4s, v2.4h, v4.h[2] \n"
         "smlal2 v6.4s, v2.8h, v4.h[2] \n"
-        "smlal v5.4s, v3.4h, v4.h[3] \n" 
+        "smlal v5.4s, v3.4h, v4.h[3] \n"
         "smlal2 v6.4s, v3.8h, v4.h[3] \n"
         "sub %[b], %[b], #16 \n"
         "add %[b], %[b], %[ldb] \n"
-        "smlal v5.4s, v10.4h, v4.h[4] \n" 
+        "smlal v5.4s, v10.4h, v4.h[4] \n"
         "smlal2 v6.4s, v10.8h, v4.h[4] \n"
-        "smlal v5.4s, v11.4h, v4.h[5] \n" 
+        "smlal v5.4s, v11.4h, v4.h[5] \n"
         "smlal2 v6.4s, v11.8h, v4.h[5] \n"
         "subs %w[cnt], %w[cnt], #1 \n"
         "ld1 {v0.8h, v1.8h}, [%[a]], #32 \n"
-        "smlal v5.4s, v12.4h, v4.h[6] \n" 
+        "smlal v5.4s, v12.4h, v4.h[6] \n"
         "smlal2 v6.4s, v12.8h, v4.h[6] \n"
-        "smlal v5.4s, v13.4h, v4.h[7] \n" 
+        "smlal v5.4s, v13.4h, v4.h[7] \n"
         "smlal2 v6.4s, v13.8h, v4.h[7] \n"
         "bne 1b \n"
 
         "2: \n"
+        "dup v10.4s, %w[beta]        \n"
+        "mul v5.4s, v5.4s, v10.4s \n"
+        "mul v6.4s, v6.4s, v10.4s \n"
         "st1 {v5.4s, v6.4s}, [%[c]], #32 \n"
         : [a] "+r" (a_ptr),
           [b] "+r" (b_ptr),
           [c] "+r" (C),
           [cnt] "+r" (cnt)
-        : [ldb] "r" (ldb_byte)
-        : "v0", "v1", "v2", "v3", "v4","v5", "v6", "cc", "memory" 
+        : [ldb] "r" (ldb_byte),
+          [beta] "r" (beta)
+        : "v0", "v1", "v2", "v3", "v4","v5", "v6", "cc", "memory"
       );
       // clang-format on
       b += 8;
@@ -2486,6 +2520,15 @@ void sgemm_prepack_c8_int16_small(int M,
 
         "bne 1b \n"
         "2: \n"
+        "vdup.32 q7, %[beta]          \n"
+        "vmul.i32 q8, q8, q7          \n"
+        "vmul.i32 q9, q9, q7          \n"
+        "vmul.i32 q10, q10, q7        \n"
+        "vmul.i32 q11, q11, q7        \n"
+        "vmul.i32 q12, q12, q7        \n"
+        "vmul.i32 q13, q13, q7        \n"
+        "vmul.i32 q14, q14, q7        \n"
+        "vmul.i32 q15, q15, q7        \n"
         "vst1.32 {d16-d17}, [%[c]]! \n"
         "vst1.32 {d20-d21}, [%[c]]! \n"
         "vst1.32 {d18-d19}, [%[c]]! \n"
@@ -2498,9 +2541,10 @@ void sgemm_prepack_c8_int16_small(int M,
           [b] "+r" (b_ptr),
           [c] "+r" (C),
           [cnt] "+r" (cnt)
-        : [ldb] "r" (ldb_byte)
+        : [ldb] "r" (ldb_byte),
+          [beta] "r" (beta)
         : "q0", "q1", "q2", "q3", "q4","q5", "q6", "q7", "q8",
-          "q9", "q10", "q11", "q12", "q13", "q14", "q15", "cc", "memory" 
+          "q9", "q10", "q11", "q12", "q13", "q14", "q15", "cc", "memory"
       );
       // clang format on
       b += 32;
@@ -2521,7 +2565,7 @@ void sgemm_prepack_c8_int16_small(int M,
         "vmlal.s16 q9, d7, d0[1] \n"
         "add %[b], %[b], %[ldb]   \n"
         "subs %[cnt], %[cnt], #1   \n"
-        
+
         "vld1.16 {d4-d7}, [%[a]]! \n"
         "vmlal.s16 q8, d8, d0[2] \n"
         "vmlal.s16 q9, d9, d0[2] \n"
@@ -2549,7 +2593,7 @@ void sgemm_prepack_c8_int16_small(int M,
         "vmlal.s16 q9, d7, d0[1] \n"
         "add %[b], %[b], %[ldb]   \n"
         "subs %[cnt], %[cnt], #1   \n"
-        
+
         "vld1.16 {d4-d7}, [%[a]]! \n"
         "vmlal.s16 q8, d8, d0[2] \n"
         "vmlal.s16 q9, d9, d0[2] \n"
@@ -2568,14 +2612,18 @@ void sgemm_prepack_c8_int16_small(int M,
         "vmlal.s16 q9, d11, d1[3] \n"
         "bne 1b \n"
         "2: \n"
+        "vdup.32 q7, %[beta]       \n"
+        "vmul.i32 q8, q8, q7        \n"
+        "vmul.i32 q9, q9, q7        \n"
         "vst1.32 {d16-d19}, [%[c]]! \n" 
         : [a] "+r" (a_ptr),
           [b] "+r" (b_ptr),
           [c] "+r" (C),
           [cnt] "+r" (cnt)
-        : [ldb] "r" (ldb_byte)
+        : [ldb] "r" (ldb_byte),
+          [beta] "r" (beta)
         : "q0", "q1", "q2", "q3", "q4","q5", "q6", "q7", "q8",
-          "q9", "cc", "memory" 
+          "q9", "cc", "memory"
       );
       // clang-format on
       b += 8;
