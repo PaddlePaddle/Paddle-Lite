@@ -4797,7 +4797,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "ldp  q4, q5, [%[b_ptr]], #32\n"        // load b0~b3 to q4, q5
             // Unroll 1
             "fmla v8.4s, v6.4s, v1.s[0]\n"          // out0 += b0 * a0[0]
-            "prfm   pldl1keep, [%[b_ptr], #192]\n"
+            "prfm   pldl1keep, [%[b_ptr], #64]\n"
             "fmla v10.4s, v6.4s, v1.s[1]\n"         // out1 += b0 * a0[1]
             "fmla v12.4s, v6.4s, v1.s[2]\n"         // out1 += b0 * a0[2]
             "fmla v14.4s, v6.4s, v1.s[3]\n"         // out1 += b0 * a0[3]
@@ -4819,7 +4819,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "ldp  q4, q5, [%[b_ptr]], #32\n"        // load b0~b3 to q4, q5
             // Unroll 3
             "fmla v8.4s, v6.4s, v3.s[0]\n"          // out0 += b0 * a0[0]
-            "prfm   pldl1keep, [%[a_ptr], #128]\n"
+            "prfm   pldl1keep, [%[a_ptr], #64]\n"
             "fmla v10.4s, v6.4s, v3.s[1]\n"         // out1 += b0 * a0[1]
             "fmla v12.4s, v6.4s, v3.s[2]\n"         // out1 += b0 * a0[2]
             "fmla v14.4s, v6.4s, v3.s[3]\n"         // out1 += b0 * a0[3]
