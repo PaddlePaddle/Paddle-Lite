@@ -412,7 +412,7 @@ function is_available_adb_device {
     return 1
 }
 
-function adb_device_pick {
+function pick_an_available_adb_device {
     local adb_device_list=$1
     local adb_device_names=(${adb_device_list//,/ })
     for adb_device_name in ${adb_device_names[@]}; do
@@ -446,7 +446,7 @@ function is_available_ssh_device {
     ssh_device_run $ssh_device_name test
 }
 
-function ssh_device_pick {
+function pick_an_available_ssh_device {
     local ssh_device_list=$1
     local ssh_device_names=(${ssh_device_list//:/ })
     for ssh_device_name in ${ssh_device_names[@]}; do
@@ -585,19 +585,15 @@ function run_test_case_on_remote_device {
 }
 
 function run_all_tests_on_remote_device {
-    local remote_device_list=$1
+    local remote_device_name=$1
     local remote_device_work_dir=$2
-    local remote_device_pick=$3
-    local remote_device_run=$4
-    local test_skip_list=$5
-    local sdk_root_dir=$6
-    local test_arch_list=$7
-    local test_toolchain_list=$8
-    local build_target_func=$9
-    local prepare_device_func=${10}
-
-    # Pick the first available remote device from list
-    local remote_device_name=$($remote_device_pick $remote_device_list)
+    local remote_device_run=$3
+    local test_skip_list=$4
+    local sdk_root_dir=$5
+    local test_arch_list=$6
+    local test_toolchain_list=$7
+    local build_target_func=$8
+    local prepare_device_func=$9
     if [[ -z "$remote_device_name" ]]; then
         echo "No remote device available!"
         exit 1
@@ -710,7 +706,7 @@ function huawei_kirin_npu_build_target {
 }
 
 function huawei_kirin_npu_build_and_test {
-    run_all_tests_on_remote_device $1 "/data/local/tmp" adb_device_pick adb_device_run $2 "$(readlink -f ./hiai_ddk_lib_330)" "armv7" "gcc,clang" huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device
+    run_all_tests_on_remote_device "$(echo $(pick_an_available_adb_device $1))" "/data/local/tmp" adb_device_run $2 "$(readlink -f ./hiai_ddk_lib_330)" "armv7" "gcc,clang" huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device
 }
 
 # Rockchip NPU
@@ -776,7 +772,7 @@ function rockchip_npu_build_target {
 }
 
 function rockchip_npu_build_and_test {
-    run_all_tests_on_remote_device $1 "/userdata/bin" adb_device_pick adb_device_run $2 "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_target rockchip_npu_prepare_device
+    run_all_tests_on_remote_device "$(echo $(pick_an_available_adb_device $1))" "/userdata/bin" adb_device_run $2 "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_target rockchip_npu_prepare_device
 }
 
 # MediaTek APU
@@ -841,7 +837,7 @@ function mediatek_apu_build_target {
 }
 
 function mediatek_apu_build_and_test {
-    run_all_tests_on_remote_device $1 "/data/local/tmp" adb_device_pick adb_device_run $2 "$(readlink -f ./apu_ddk)" "armv7" "gcc" mediatek_apu_build_target mediatek_apu_prepare_device
+    run_all_tests_on_remote_device "$(echo $(pick_an_available_adb_device $1))" "/data/local/tmp" adb_device_run $2 "$(readlink -f ./apu_ddk)" "armv7" "gcc" mediatek_apu_build_target mediatek_apu_prepare_device
 }
 
 # Imagination NNA
@@ -906,7 +902,7 @@ function imagination_nna_build_target {
 }
 
 function imagination_nna_build_and_test {
-    run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_run $2 "$(readlink -f ./imagination_nna_sdk)" "armv8" "gcc" imagination_nna_build_target imagination_nna_prepare_device
+    run_all_tests_on_remote_device "$(echo $(pick_an_available_ssh_device $1))" "~/ci" ssh_device_run $2 "$(readlink -f ./imagination_nna_sdk)" "armv8" "gcc" imagination_nna_build_target imagination_nna_prepare_device
 }
 
 function cmake_huawei_ascend_npu {
