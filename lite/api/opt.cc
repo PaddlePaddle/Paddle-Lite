@@ -294,6 +294,7 @@ void PrintHelpInfo() {
       "`--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
       "imagination_nna)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
+      "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
       "  Arguments of model checking and ops information:\n"

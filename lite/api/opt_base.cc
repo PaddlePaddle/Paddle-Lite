@@ -40,6 +40,20 @@ void OptBase::SetModelType(std::string optimize_out_type) {
   }
 }
 
+void OptBase::SetQuantModel(bool quant_model) {
+  opt_config_.set_quant_model(quant_model);
+}
+
+void OptBase::SetQuantType(const std::string& quant_type) {
+  if (quant_type == "QUANT_INT8") {
+    opt_config_.set_quant_type(lite_api::QuantType::QUANT_INT8);
+  } else if (quant_type == "QUANT_INT16") {
+    opt_config_.set_quant_type(lite_api::QuantType::QUANT_INT16);
+  } else {
+    LOG(FATAL) << "Unsupported quant type: " << quant_type;
+  }
+}
+
 void OptBase::SetPassesInternal(
     const std::vector<std::string>& passes_internal) {
   opt_config_.set_passes_internal(passes_internal);
@@ -286,6 +300,9 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "`--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
       "nna)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
+      "  Arguments of mode quantization in opt:\n"
+      "        `--quant_model=(true|false)`\n"
+      "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
@@ -414,8 +431,7 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
     prog_path = opt_config_.model_file();
   }
   lite::cpp::ProgramDesc cpp_prog;
-  framework::proto::ProgramDesc pb_proto_prog =
-      *lite::LoadProgram(prog_path, false);
+  framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   lite::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);

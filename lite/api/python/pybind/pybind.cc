@@ -65,6 +65,8 @@ void BindLiteOpt(py::module *m) {
       .def("set_valid_places", &OptBase::SetValidPlaces)
       .def("set_optimize_out", &OptBase::SetOptimizeOut)
       .def("set_model_type", &OptBase::SetModelType)
+      .def("set_quant_model", &OptBase::SetQuantModel)
+      .def("set_quant_type", &OptBase::SetQuantType)
       .def("record_model_info", &OptBase::RecordModelInfo)
       .def("set_passes_internal", &OptBase::SetPassesInternal)
       .def("run", &OptBase::Run)
@@ -125,9 +127,8 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_param_file", &CxxConfig::set_param_file)
       .def("param_file", &CxxConfig::param_file)
       .def("set_valid_places", &CxxConfig::set_valid_places)
-      .def("set_model_buffer", &CxxConfig::set_model_buffer)
       .def("set_passes_internal", &CxxConfig::set_passes_internal)
-      .def("model_from_memory", &CxxConfig::model_from_memory);
+      .def("is_model_from_memory", &CxxConfig::is_model_from_memory);
 #ifdef LITE_WITH_ARM
   cxx_config.def("set_threads", &CxxConfig::set_threads)
       .def("threads", &CxxConfig::threads)
@@ -154,7 +155,7 @@ void BindLiteMobileConfig(py::module *m) {
       .def("set_model_dir", &MobileConfig::set_model_dir)
       .def("model_dir", &MobileConfig::model_dir)
       .def("set_model_buffer", &MobileConfig::set_model_buffer)
-      .def("model_from_memory", &MobileConfig::model_from_memory);
+      .def("is_model_from_memory", &MobileConfig::is_model_from_memory);
 #ifdef LITE_WITH_ARM
   mobile_config.def("set_threads", &MobileConfig::set_threads)
       .def("threads", &MobileConfig::threads)

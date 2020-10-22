@@ -102,6 +102,24 @@ opt.set_valid_places("arm, opencl")
 
 - `optimized_model_name(str)`
 
+
+### `set_quant_model(quant_model)`
+
+设置是否使用 `opt` 中的动态离线量化功能。
+
+参数：
+
+- `quant_model(bool)`
+
+### `set_quant_type(quant_type)`
+
+设置动态离线量化的方式，支持两种量化方式（`QUANT_INT16`和`QUANT_INT8`），即分别量化为`int16`和`int8`。量化为`int8`对模型精度有一点影响，模型体积大概减小4倍。量化为`int16`对模型精度基本没有影响，模型体积大概减小2倍。
+
+参数：
+
+- `quant_type(str)`-支持设置为`QUANT_INT16`和`QUANT_INT8`
+
+
 ### `run()`
 
 执行模型优化，用以上接口设置完 `模型路径`、`model_type`、`optimize_out`和`valid_places`后，执行`run()`接口会根据以上设置转化模型，转化后模型保存在当前路径下。
