@@ -443,21 +443,7 @@ function adb_device_run {
 }
 
 function is_available_ssh_device {
-    local ssh_device_name=$1
-    if [[ -n "$ssh_device_name" ]]; then
-        local ssh_device_items=(${ssh_device_name//,/ })
-        if [[ ${#ssh_device_items[@]} -eq 3 ]]; then
-            local ssh_device_ip_addr=${ssh_device_items[0]}
-            local ssh_device_usr_id=${ssh_device_items[1]}
-            local ssh_device_usr_pwd=${ssh_device_items[2]}
-            if [[ -n "$ssh_device_ip_addr" && -n "$ssh_device_usr_id" ]]; then
-                # Check if SSH connection is established?
-                sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=3 $ssh_device_usr_id@$ssh_device_ip_addr "exit 0" &> /dev/null
-                return $?
-            fi
-        fi
-    fi
-    return 1
+    ssh_device_run $ssh_device_name test
 }
 
 function ssh_device_pick {
@@ -477,14 +463,28 @@ function ssh_device_pick {
 function ssh_device_run {
     local ssh_device_name=$1
     local ssh_device_cmd=$2
+    if [[ -z "$ssh_device_name" ]]; then
+        echo "SSH device name is empty!"
+        exit 1
+    fi
     local ssh_device_items=(${ssh_device_name//,/ })
+    if [[ ${#ssh_device_items[@]} -ne 3 ]]; then
+        echo "SSH device name parse failed!"
+        exit 1
+    fi
     local ssh_device_ip_addr=${ssh_device_items[0]}
     local ssh_device_usr_id=${ssh_device_items[1]}
     local ssh_device_usr_pwd=${ssh_device_items[2]}
+    if [[ -z "$ssh_device_ip_addr" || -z "$ssh_device_usr_id" ]]; then
+        echo "SSH device IP Address or User ID is empty!"
+        exit 1
+    fi
     if [[ "$ssh_device_cmd" == "shell" ]]; then
         sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "$3"
     elif [[ "$ssh_device_cmd" == "push" ]]; then
         sshpass -p $ssh_device_usr_pwd scp -r -o ConnectTimeout=3 -o StrictHostKeyChecking=no $3 $ssh_device_usr_id@$ssh_device_ip_addr:$4
+    elif [[ "$ssh_device_cmd" == "test" ]]; then
+        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "exit 0" &> /dev/null
     else
         echo "Unknown command $ssh_device_cmd!"
         exit 1
