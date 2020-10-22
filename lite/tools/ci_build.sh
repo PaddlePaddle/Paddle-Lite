@@ -482,9 +482,9 @@ function ssh_device_run {
     local ssh_device_usr_id=${ssh_device_items[1]}
     local ssh_device_usr_pwd=${ssh_device_items[2]}
     if [[ "$ssh_device_cmd" == "shell" ]]; then
-        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=3 $ssh_device_usr_id@$ssh_device_ip_addr "$3"
+        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "$3"
     elif [[ "$ssh_device_cmd" == "push" ]]; then
-        sshpass -p $ssh_device_usr_pwd scp -r -o ConnectTimeout=3 $3 $ssh_device_usr_id@$ssh_device_ip_addr:$4
+        sshpass -p $ssh_device_usr_pwd scp -r -o ConnectTimeout=3 -o StrictHostKeyChecking=no $3 $ssh_device_usr_id@$ssh_device_ip_addr:$4
     else
         echo "Unknown command $ssh_device_cmd!"
         exit 1
