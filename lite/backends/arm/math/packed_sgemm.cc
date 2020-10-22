@@ -2314,6 +2314,7 @@ void loadb(
 
   uint32_t *outptr_row = outptr;
   int stride_out = 12 * y_len;
+  int cnt_y = 4 * (y_len / 4);
 
   uint32x4_t vzero = vdupq_n_u32(0);
   uint32x4_t vmask1 =
@@ -2437,7 +2438,7 @@ void loadb(
   }
 
 #pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  for (int y = cnt_y; y < y_len; ++y) {
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * 12;
 
@@ -2725,6 +2726,7 @@ void loadb_eight(
 
   uint32_t *outptr_row = outptr;
   int stride_out = 8 * y_len;
+  int cnt_y = 4 * (y_len / 4);
 
   uint32x4_t vzero = vdupq_n_u32(0);
   uint32x4_t vmask1 =
@@ -2801,12 +2803,11 @@ void loadb_eight(
     }
   }
 #pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  for (int y = cnt_y; y < y_len; ++y) {
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * 8;
     int i = 0;
     for (; i < x_len - 7; i += 8) {
-      uint32_t *ptr_out = outptr_row_col;
       asm volatile(
           "ldp q0, q1, [%[ptr0]], #32\n"
           "stp q0, q1, [%[outptr]], #32\n"
@@ -2816,7 +2817,6 @@ void loadb_eight(
       outptr_row_col += stride_out;
     }
     if (right_remain > 0) {
-      uint32_t *ptr_out = outptr_row_col;
       asm volatile(
           "ldp q0, q1, [%[ptr0]], #32\n"
           "bif v0.16b, %[vzero].16b, %[vmask1].16b\n"
@@ -5422,8 +5422,6 @@ void sgemm_prepacked_6x8(bool is_transB,
     tail_pre = KBLOCK;
   }
 
-  //! merge tail_pre and flag_act
-  tail_pre = (tail_pre << 2 | flag_act);
   bool flag_p_remain = false;
   int remain = 0;
 

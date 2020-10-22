@@ -249,7 +249,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
     paddle::lite::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemm test";
-    for (auto& m : {1, 3, 8, 32, 397}) {
+    for (auto& m : {1, 3, 6, 8, 12, 32, 397}) {
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
         for (auto& k : {1, 3, 8, 59, 234}) {
           for (auto& tra : {false, true}) {
