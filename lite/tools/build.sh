@@ -22,6 +22,7 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
+WITH_MKL=ON
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
 WITH_LTO=OFF
@@ -393,7 +394,7 @@ function make_x86 {
 
   prepare_workspace $root_dir $build_directory
 
-  cmake $root_dir  -DWITH_MKL=ON       \
+  cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
             -DLITE_WITH_PROFILE=OFF \
@@ -524,6 +525,10 @@ function main {
                 ;;
             --with_log=*)
                 WITH_LOG="${i#*=}"
+                shift
+                ;;
+            --with_mkl=*)
+                WITH_MKL="${i#*=}"
                 shift
                 ;;
             --with_exception=*)

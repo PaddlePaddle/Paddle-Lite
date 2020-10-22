@@ -83,7 +83,9 @@ class Pad2dComputeTester : public arena::TestCase {
     int in_h = h - pad_bottom - pad_top;
     int spatial_size_out = w * h;
     int spatial_size_in = in_w * in_h;
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
+#endif
     for (int i = 0; i < n * c; ++i) {
       const float* din_batch = x_data + i * spatial_size_in;
       float* dout_batch = out_data + i * spatial_size_out;

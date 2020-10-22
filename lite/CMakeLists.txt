@@ -270,8 +270,11 @@ if (LITE_WITH_X86)
            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light"
            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full"
            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
-           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/mklml" "${INFER_LITE_PUBLISH_ROOT}/third_party/"
        )
+    if(WITH_MKL)
+        add_custom_command(TARGET publish_inference_x86_cxx_demos POST_BUILD
+            COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/mklml" "${INFER_LITE_PUBLISH_ROOT}/third_party/")
+    endif()
     add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
     add_dependencies(publish_inference_x86_cxx_demos paddle_full_api_shared eigen3)
     add_dependencies(publish_inference publish_inference_x86_cxx_lib)
