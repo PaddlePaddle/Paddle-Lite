@@ -185,7 +185,7 @@ void conv1x1s1_gemm(const float* i_data,
   int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
-  if (n > 1) {
+  if (n > 1 && m > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
   //! use gemv when the output channel size = 1
@@ -215,6 +215,13 @@ void conv1x1s1_gemm(const float* i_data,
               act_param.Relu_clipped_coef,
               act_param.Leaky_relu_alpha);
       } else if (m == 1) {
+        float bias_ptr[1024000] = {0.f};  // NOLINT
+        if (flag_bias) {
+          for (int i = 0; i < n; i++) {
+            bias_ptr[i] = bias_group[0];
+          }
+        }
+
         sgemv(din_group,
               weights_group,
               dout_group,
@@ -222,7 +229,7 @@ void conv1x1s1_gemm(const float* i_data,
               n,
               k,
               flag_bias,
-              bias_group,
+              bias_ptr,
               act_param.has_active,
               act_param.active_type,
               ctx,
@@ -273,7 +280,7 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
   int k_roundup = ROUNDUP(k, KBLOCK_INT8);
   int m_roundup = ROUNDUP(m, hblock);
   int weights_size_per_group = m * k;
-  if (n > 1) {
+  if (n > 1 && m > 1) {
     weights_size_per_group = ((m_roundup * k_roundup + 15) / 16) * 16;
   }
   bool flag_relu = param.fuse_relu;
@@ -304,6 +311,12 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   act_param.Relu_clipped_coef,
                   act_param.Leaky_relu_alpha);
       } else if (m == 1) {
+        float bias_ptr[1024000] = {0.f};  // NOLINT
+        if (flag_bias) {
+          for (int i = 0; i < n; i++) {
+            bias_ptr[i] = bias_group[0];
+          }
+        }
         gemv_int8(din_group,
                   weights_group,
                   dout_group,
@@ -312,7 +325,7 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   k,
                   scale_group,
                   flag_bias,
-                  bias_group,
+                  bias_ptr,
                   act_param.has_active,
                   act_param.active_type,
                   ctx,
@@ -400,7 +413,7 @@ void conv_im2col_gemm(const float* i_data,
   int weights_size_per_group = m * k;
 
   auto act_param = param.activation_param;
-  if (n > 1) {
+  if (n > 1 && m > 1) {
     weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
   }
 
@@ -451,6 +464,12 @@ void conv_im2col_gemm(const float* i_data,
               act_param.Relu_clipped_coef,
               act_param.Leaky_relu_alpha);
       } else if (m == 1) {
+        float bias_ptr[1024000] = {0.f};  // NOLINT
+        if (flag_bias) {
+          for (int i = 0; i < n; i++) {
+            bias_ptr[i] = bias_group[0];
+          }
+        }
         sgemv(dB,
               weights_group,
               dout_group,
@@ -458,7 +477,7 @@ void conv_im2col_gemm(const float* i_data,
               n,
               k,
               flag_bias,
-              bias_group,
+              bias_ptr,
               act_param.has_active,
               act_param.active_type,
               ctx,
@@ -527,7 +546,7 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
   int k_roundup = ROUNDUP(k, KBLOCK_INT8);
   int m_roundup = ROUNDUP(m, hblock);
   int weights_size_per_group = m * k;
-  if (n > 1) {
+  if (n > 1 && m > 1) {
     weights_size_per_group = ((m_roundup * k_roundup + 15) / 16) * 16;
   }
 
@@ -578,6 +597,12 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   act_param.Relu_clipped_coef,
                   act_param.Leaky_relu_alpha);
       } else if (m == 1) {
+        float bias_ptr[1024000] = {0.f};  // NOLINT
+        if (flag_bias) {
+          for (int i = 0; i < n; i++) {
+            bias_ptr[i] = bias_group[0];
+          }
+        }
         gemv_int8(dB,
                   weights_group,
                   dout_group,
@@ -586,7 +611,7 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   k,
                   scale_group,
                   flag_bias,
-                  bias_group,
+                  bias_ptr,
                   act_param.has_active,
                   act_param.active_type,
                   ctx,
