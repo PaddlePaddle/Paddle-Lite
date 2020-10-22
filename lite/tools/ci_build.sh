@@ -20,6 +20,8 @@ NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 USE_ADB_EMULATOR=ON
 # Use real android devices, set the device names for adb connection, ignored if USE_ADB_EMULATOR=ON
 ADB_DEVICE_LIST=""
+# Use real armlinux devices, its format is "dev0_ip_addr,dev0_usr_id,dev0_usr_pwd:dev1_ip_addr,dev1_usr_id,dev1_usr_pwd"
+SSH_DEVICE_LIST=""
 # The list of tests which are ignored, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
 TEST_SKIP_LIST=""
 LITE_WITH_COVERAGE=OFF
@@ -424,9 +426,75 @@ function pick_an_available_adb_device {
     return 1
 }
 
-function run_test_case_on_adb_device {
-    local adb_device_name=""
-    local adb_work_dir=""
+function adb_device_run {
+    local adb_device_name=$1
+    local adb_device_cmd=$2
+    if [[ "$adb_device_cmd" == "shell" ]]; then
+        adb -s $adb_device_name shell "$3"
+    elif [[ "$adb_device_cmd" == "push" ]]; then
+        adb -s $adb_device_name push "$3" "$4"
+    elif [[ "$adb_device_cmd" == "root" ]]; then
+        adb -s $adb_device_name root
+    elif [[ "$adb_device_cmd" == "remount" ]]; then
+        adb -s $adb_device_name remount
+    else
+        echo "Unknown command $adb_device_cmd!"
+    fi
+}
+
+function is_available_ssh_device {
+    ssh_device_run $ssh_device_name test
+}
+
+function pick_an_available_ssh_device {
+    local ssh_device_list=$1
+    local ssh_device_names=(${ssh_device_list//:/ })
+    for ssh_device_name in ${ssh_device_names[@]}; do
+        is_available_ssh_device $ssh_device_name
+        if [[ $? -eq 0 ]]; then
+            echo $ssh_device_name
+            return 0
+        fi
+    done
+    echo ""
+    return 1
+}
+
+function ssh_device_run {
+    local ssh_device_name=$1
+    local ssh_device_cmd=$2
+    if [[ -z "$ssh_device_name" ]]; then
+        echo "SSH device name is empty!"
+        exit 1
+    fi
+    local ssh_device_items=(${ssh_device_name//,/ })
+    if [[ ${#ssh_device_items[@]} -ne 3 ]]; then
+        echo "SSH device name parse failed!"
+        exit 1
+    fi
+    local ssh_device_ip_addr=${ssh_device_items[0]}
+    local ssh_device_usr_id=${ssh_device_items[1]}
+    local ssh_device_usr_pwd=${ssh_device_items[2]}
+    if [[ -z "$ssh_device_ip_addr" || -z "$ssh_device_usr_id" ]]; then
+        echo "SSH device IP Address or User ID is empty!"
+        exit 1
+    fi
+    if [[ "$ssh_device_cmd" == "shell" ]]; then
+        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "$3"
+    elif [[ "$ssh_device_cmd" == "push" ]]; then
+        sshpass -p $ssh_device_usr_pwd scp -r -o ConnectTimeout=3 -o StrictHostKeyChecking=no $3 $ssh_device_usr_id@$ssh_device_ip_addr:$4
+    elif [[ "$ssh_device_cmd" == "test" ]]; then
+        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "exit 0" &> /dev/null
+    else
+        echo "Unknown command $ssh_device_cmd!"
+        exit 1
+    fi
+}
+
+function run_test_case_on_remote_device {
+    local remote_device_name=""
+    local remote_device_work_dir=""
+    local remote_device_run=""
     local target_name=""
     local model_dir=""
     local data_dir=""
@@ -434,12 +502,16 @@ function run_test_case_on_adb_device {
     # Extract arguments from command line
     for i in "$@"; do
         case $i in
-            --adb_device_name=*)
-                adb_device_name="${i#*=}"
+            --remote_device_name=*)
+                remote_device_name="${i#*=}"
                 shift
                 ;;
-            --adb_work_dir=*)
-                adb_work_dir="${i#*=}"
+            --remote_device_work_dir=*)
+                remote_device_work_dir="${i#*=}"
+                shift
+                ;;
+            --remote_device_run=*)
+                remote_device_run="${i#*=}"
                 shift
                 ;;
             --target_name=*)
@@ -464,20 +536,13 @@ function run_test_case_on_adb_device {
         esac
     done
 
-    # Check device is available
-    is_available_adb_device $adb_device_name
-    if [[ $? -ne 0 ]]; then
-        echo "$adb_device_name not found!"
+    # Be careful!!! Don't delete the root or system directories if the device is rooted.
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
         exit 1
     fi
-
-     # Be careful!!! Don't delete the root or system directories if the device is rooted.
-    if [[ -z "$adb_work_dir" ]]; then
-        echo "$adb_work_dir can't be empty!"
-        exit 1
-    fi
-    if [[ "$adb_work_dir" == "/" ]]; then
-        echo "$adb_work_dir can't be root dir!"
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
         exit 1
     fi
 
@@ -487,55 +552,53 @@ function run_test_case_on_adb_device {
         echo "$target_name not found!"
         exit 1
     fi
-    adb -s $adb_device_name shell "rm -f $adb_work_dir/$target_name"
-    adb -s $adb_device_name push $target_path $adb_work_dir
+    $remote_device_run $remote_device_name shell "rm -f $remote_device_work_dir/$target_name"
+    $remote_device_run $remote_device_name push $target_path $remote_device_work_dir
 
     local command_line="./$target_name"
     # Copy the model files to the remote device
     if [[ -n "$model_dir" ]]; then
         local model_name=$(basename $model_dir)
-        adb -s $adb_device_name shell "rm -rf $adb_work_dir/$model_name"
-        adb -s $adb_device_name push $model_dir $adb_work_dir
+        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$model_name"
+        $remote_device_run $remote_device_name push $model_dir $remote_device_work_dir
         command_line="$command_line --model_dir ./$model_name"
     fi
 
     # Copy the test data files to the remote device
     if [[ -n "$data_dir" ]]; then
         local data_name=$(basename $data_dir)
-        adb -s $adb_device_name shell "rm -rf $adb_work_dir/$data_name"
-        adb -s $adb_device_name push $data_dir $adb_work_dir
+        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$data_name"
+        $remote_device_run $remote_device_name push $data_dir $remote_device_work_dir
         command_line="$command_line --data_dir ./$data_name"
     fi
 
     # Copy the config files to the remote device
     if [[ -n "$config_dir" ]]; then
         local config_name=$(basename $config_dir)
-        adb -s $adb_device_name shell "rm -rf $adb_work_dir/$config_name"
-        adb -s $adb_device_name push $config_dir $adb_work_dir
+        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$config_name"
+        $remote_device_run $remote_device_name push $config_dir $remote_device_work_dir
         command_line="$command_line --config_dir ./$config_name"
     fi
     
     # Run the model on the remote device
-    adb -s $adb_device_name shell "cd $adb_work_dir; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
+    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
 }
 
-function run_all_tests_on_adb_device {
-    local adb_device_list=$1
-    local test_skip_list=$2
-    local adb_work_dir=$3
-    local sdk_root_dir=$4
-    local test_arch_list=$5
-    local test_toolchain_list=$6
-    local build_targets_func=$7
-    local prepare_devices_func=$8
-
-    # Pick the first available adb device from list
-    local adb_device_name=$(pick_an_available_adb_device $adb_device_list)
-    if [[ -z $adb_device_name ]]; then
-        echo "No adb device available!"
+function run_all_tests_on_remote_device {
+    local remote_device_name=$1
+    local remote_device_work_dir=$2
+    local remote_device_run=$3
+    local test_skip_list=$4
+    local sdk_root_dir=$5
+    local test_arch_list=$6
+    local test_toolchain_list=$7
+    local build_target_func=$8
+    local prepare_device_func=$9
+    if [[ -z "$remote_device_name" ]]; then
+        echo "No remote device available!"
         exit 1
     else
-        echo "Found a device $adb_device_name."
+        echo "Found a device $remote_device_name."
     fi
 
     # Run all of unittests and model tests
@@ -546,9 +609,9 @@ function run_all_tests_on_adb_device {
     for arch in $test_archs; do
         for toolchain in $test_toolchains; do
             # Build all tests and prepare device environment for running tests
-            echo "Build tests for MediaTek APU with $arch+$toolchain"
-            ${build_targets_func} $arch $toolchain $sdk_root_dir
-            ${prepare_devices_func} $adb_device_name $adb_work_dir $arch $toolchain $sdk_root_dir
+            echo "Build tests with $arch+$toolchain"
+            $build_target_func $arch $toolchain $sdk_root_dir
+            $prepare_device_func $remote_device_name $remote_device_work_dir $arch $toolchain $sdk_root_dir
             # Run all of unit tests and model tests
             for test_name in $(cat $TESTS_FILE); do
                 local is_skip=0
@@ -563,10 +626,15 @@ function run_all_tests_on_adb_device {
                     continue
                 fi
                 # Extract the arguments from ctest command line
-                test_args=$(echo $(ctest -V -N -R ${test_name}) | sed "/.*${test_name} \"\(.*\)\".*/ s//\1/g")
-                # Remove the quotes
-                test_args=$(echo $test_args | sed "s/\"//g")
-                run_test_case_on_adb_device --adb_device_name=$adb_device_name --adb_work_dir=$adb_work_dir --target_name=$test_name $test_args
+                test_cmds=$(ctest -V -N -R ${test_name})
+                reg_expr=".*Test command:.*\/${test_name} \(.*\) Test #[0-9]*: ${test_name}.*"
+                test_args=$(echo $test_cmds | sed -n "/$reg_expr/p")
+                if [[ -n "$test_args" ]]; then
+                    # Matched, extract and remove the quotes
+                    test_args=$(echo $test_cmds | sed "s/$reg_expr/\1/g")
+                    test_args=$(echo $test_args | sed "s/\"//g")
+                fi
+                run_test_case_on_remote_device --remote_device_name=$remote_device_name --remote_device_work_dir=$remote_device_work_dir --remote_device_run=$remote_device_run --target_name=$test_name $test_args
             done
             cd - > /dev/null
         done
@@ -576,7 +644,7 @@ function run_all_tests_on_adb_device {
 # Huawei Kirin NPU
 function huawei_kirin_npu_prepare_device {
     local adb_device_name=$1
-    local adb_work_dir=$2
+    local adb_device_work_dir=$2
     local arch=$3
     local toolchain=$4
     local sdk_root_dir=$5
@@ -589,7 +657,7 @@ function huawei_kirin_npu_prepare_device {
     fi
 
     # Only root user can use HiAI runtime libraries in the android shell executables
-    adb -s $adb_device_name root
+    adb_device_run $adb_device_name root
     if [[ $? -ne 0 ]]; then
         echo "$adb_device_name hasn't the root permission!"
         exit 1
@@ -605,10 +673,10 @@ function huawei_kirin_npu_prepare_device {
         echo "$arch isn't supported by HiAI DDK!"
         exit 1
     fi
-    adb -s $adb_device_name push $sdk_lib_dir/. $adb_work_dir
+    adb_device_run $adb_device_name push $sdk_lib_dir/. $adb_device_work_dir
 }
 
-function huawei_kirin_npu_build_targets {
+function huawei_kirin_npu_build_target {
     local arch=$1
     local toolchain=$2
     local sdk_root_dir=$3
@@ -638,13 +706,13 @@ function huawei_kirin_npu_build_targets {
 }
 
 function huawei_kirin_npu_build_and_test {
-    run_all_tests_on_adb_device $1 $2 "/data/local/tmp" "$(readlink -f ./hiai_ddk_lib_330)" "armv7" "gcc,clang" huawei_kirin_npu_build_targets huawei_kirin_npu_prepare_device
+    run_all_tests_on_remote_device "$(echo $(pick_an_available_adb_device $1))" "/data/local/tmp" adb_device_run $2 "$(readlink -f ./hiai_ddk_lib_330)" "armv7" "gcc,clang" huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device
 }
 
 # Rockchip NPU
 function rockchip_npu_prepare_device {
     local adb_device_name=$1
-    local adb_work_dir=$2
+    local adb_device_work_dir=$2
     local arch=$3
     local toolchain=$4
     local sdk_root_dir=$5
@@ -657,10 +725,10 @@ function rockchip_npu_prepare_device {
     fi
 
     # Use high performance mode
-    adb -s $adb_device_name shell "echo userspace > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    adb -s $adb_device_name shell "echo 1608000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
-    adb -s $adb_device_name shell "echo userspace > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
-    adb -s $adb_device_name shell "echo 1608000 > /sys/devices/system/cpu/cpu1/cpufreq/scaling_setspeed"
+    adb_device_run $adb_device_name shell "echo userspace > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    adb_device_run $adb_device_name shell "echo 1608000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+    adb_device_run $adb_device_name shell "echo userspace > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
+    adb_device_run $adb_device_name shell "echo 1608000 > /sys/devices/system/cpu/cpu1/cpufreq/scaling_setspeed"
 
     # Copy the runtime libraries of Rockchip NPU to the target device
     local sdk_lib_dir=""
@@ -672,10 +740,10 @@ function rockchip_npu_prepare_device {
         echo "$arch isn't supported by Rockchip NPU SDK!"
         exit 1
     fi
-    adb -s $adb_device_name push $sdk_lib_dir/. $adb_work_dir
+    adb_device_run $adb_device_name push $sdk_lib_dir/. $adb_device_work_dir
 }
 
-function rockchip_npu_build_targets {
+function rockchip_npu_build_target {
     local arch=$1
     local toolchain=$2
     local sdk_root_dir=$3
@@ -704,13 +772,13 @@ function rockchip_npu_build_targets {
 }
 
 function rockchip_npu_build_and_test {
-    run_all_tests_on_adb_device $1 $2 "/userdata/bin" "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_targets rockchip_npu_prepare_device
+    run_all_tests_on_remote_device "$(echo $(pick_an_available_adb_device $1))" "/userdata/bin" adb_device_run $2 "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_target rockchip_npu_prepare_device
 }
 
 # MediaTek APU
 function mediatek_apu_prepare_device {
     local adb_device_name=$1
-    local adb_work_dir=$2
+    local adb_device_work_dir=$2
     local arch=$3
     local toolchain=$4
     local sdk_root_dir=$5
@@ -723,24 +791,24 @@ function mediatek_apu_prepare_device {
     fi
 
     # Use high performance mode
-    adb -s $adb_device_name root
+    adb_device_run $adb_device_name root
     if [[ $? -ne 0 ]]; then
         echo "$adb_device_name hasn't the root permission!"
         exit 1
     fi
-    adb -s $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    adb -s $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
-    adb -s $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
-    adb -s $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
-    adb -s $adb_device_name shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
-    adb -s $adb_device_name shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
-    adb -s $adb_device_name shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
-    adb -s $adb_device_name shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
-    adb -s $adb_device_name shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
-    adb -s $adb_device_name shell "echo 0 > /proc/sys/kernel/printk"
+    adb_device_run $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    adb_device_run $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
+    adb_device_run $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
+    adb_device_run $adb_device_name shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
+    adb_device_run $adb_device_name shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
+    adb_device_run $adb_device_name shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
+    adb_device_run $adb_device_name shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
+    adb_device_run $adb_device_name shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
+    adb_device_run $adb_device_name shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
+    adb_device_run $adb_device_name shell "echo 0 > /proc/sys/kernel/printk"
 }
 
-function mediatek_apu_build_targets {
+function mediatek_apu_build_target {
     local arch=$1
     local toolchain=$2
     local sdk_root_dir=$3
@@ -769,7 +837,72 @@ function mediatek_apu_build_targets {
 }
 
 function mediatek_apu_build_and_test {
-    run_all_tests_on_adb_device $1 $2 "/data/local/tmp" "$(readlink -f ./apu_ddk)" "armv7" "gcc" mediatek_apu_build_targets mediatek_apu_prepare_device
+    run_all_tests_on_remote_device "$(echo $(pick_an_available_adb_device $1))" "/data/local/tmp" adb_device_run $2 "$(readlink -f ./apu_ddk)" "armv7" "gcc" mediatek_apu_build_target mediatek_apu_prepare_device
+}
+
+# Imagination NNA
+function imagination_nna_prepare_device {
+    local ssh_device_name=$1
+    local ssh_device_work_dir=$2
+    local arch=$3
+    local toolchain=$4
+    local sdk_root_dir=$5
+
+    # Check device is available
+    is_available_ssh_device $ssh_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$ssh_device_name not found!"
+        exit 1
+    fi
+
+    # Create work dir on the remote device
+    if [[ -z "$ssh_device_work_dir" ]]; then
+        echo "$ssh_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$ssh_device_work_dir" == "/" ]]; then
+        echo "$ssh_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    ssh_device_run $ssh_device_name shell "rm -rf $ssh_device_work_dir"
+    ssh_device_run $ssh_device_name shell "mkdir -p $ssh_device_work_dir"
+
+    # Copy sdk dynamic libraries and config to work dir
+    ssh_device_run $ssh_device_name push "$sdk_root_dir/lib/*" "$ssh_device_work_dir"
+    ssh_device_run $ssh_device_name shell "mkdir -p $ssh_device_work_dir/nna_config"
+    ssh_device_run $ssh_device_name push "$sdk_root_dir/nna-tools/config/*" "$ssh_device_work_dir/nna_config/"
+}
+
+function imagination_nna_build_target {
+    local arch=$1
+    local toolchain=$2
+    local sdk_root_dir=$3
+
+    # Build all of tests
+    rm -rf ./build
+    mkdir -p ./build
+    cd ./build
+    prepare_workspace
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DWITH_ARM_DOTPROD=ON   \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
+        -DLITE_WITH_IMAGINATION_NNA=ON \
+        -DIMAGINATION_NNA_SDK_ROOT="$sdk_root_dir" \
+        -DARM_TARGET_OS="armlinux" -DARM_TARGET_ARCH_ABI=$arch
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function imagination_nna_build_and_test {
+    run_all_tests_on_remote_device "$(echo $(pick_an_available_ssh_device $1))" "~/ci" ssh_device_run $2 "$(readlink -f ./imagination_nna_sdk)" "armv8" "gcc" imagination_nna_build_target imagination_nna_prepare_device
 }
 
 function cmake_huawei_ascend_npu {
@@ -1380,6 +1513,10 @@ function main {
                 fi
                 shift
                 ;;
+            --ssh_device_list=*)
+                SSH_DEVICE_LIST="${i#*=}"
+                shift
+                ;;
             --test_skip_list=*)
                 TEST_SKIP_LIST="${i#*=}"
                 shift
@@ -1468,6 +1605,10 @@ function main {
                 ;;
             mediatek_apu_build_and_test)
                 mediatek_apu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
+                shift
+                ;;
+            imagination_nna_build_and_test)
+                imagination_nna_build_and_test $SSH_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
             build_test_huawei_ascend_npu)
