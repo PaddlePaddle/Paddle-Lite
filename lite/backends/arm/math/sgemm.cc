@@ -52,7 +52,7 @@ void sgemm(bool is_transA,
   }
   if (M == 1) {
     float bias_ptr[N];  // NOLINT
-    if (is_bais) {
+    if (is_bias) {
       for (int i = 0; i < N; i++) {
         bias_ptr[i] = bias[0];
       }
