@@ -51,6 +51,12 @@ void sgemm(bool is_transA,
     return;
   }
   if (M == 1) {
+    float bias_ptr[N];  // NOLINT
+    if (is_bais) {
+      for (int i = 0; i < N; i++) {
+        bias_ptr[i] = bias[0];
+      }
+    }
     sgemv(B,
           A,
           C,
@@ -58,7 +64,7 @@ void sgemm(bool is_transA,
           N,
           K,
           is_bias,
-          bias,
+          bias_ptr,
           act_param.has_active,
           act_param.active_type,
           ctx);
