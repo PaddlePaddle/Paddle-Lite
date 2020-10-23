@@ -24,6 +24,14 @@ def main():
     parser.add_argument("--valid_targets", type=str, required=False,default="arm",\
         help="The targets this model optimized for, should be one of (arm,opencl, x86), splitted by space.")
 
+    # arguments of quantization
+    parser.add_argument("--quant_model", type=str, default="false",
+        help="{true, false} Use post_quant_dynamic method to quantize"
+             "the model weights. Default false.")
+    parser.add_argument("--quant_type", type=str, default="QUANT_INT16",
+        help="{QUANT_INT16, QUANT_INT8} Set the quant_type for " 
+             "post_quant_dynamic. Default QUANT_INT16.")
+
    # arguments of help information
     parser.add_argument("--print_supported_ops", type=str, default="false",\
         help="{true, false}\
@@ -68,6 +76,9 @@ def main():
          a.set_param_file(args.param_file)
     if args.record_tailoring_info == "true":
          a.record_model_info(True)
+    if args.quant_model == "true":
+        a.set_quant_model(True)
+        a.set_quant_type(args.quant_type)
     """ print ops info """
     if args.print_all_ops == "true":
          a.print_all_ops()
