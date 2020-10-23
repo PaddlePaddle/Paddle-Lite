@@ -1069,6 +1069,15 @@ function test_model_optimize_tool_compile {
        echo -e "Error! Resulted opt can not tramsform MobileNetV1_quant successfully!"
        exit 1
     fi
+    # Check whether opt can transform fp32 model to quantized model by post_quant_dynamic.
+    wget --no-check-certificate https://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
+    tar zxf mobilenet_v1.tar.gz
+    ./opt --model_dir=./mobilenet_v1 --valid_targets=arm --optimize_out=mobilenetv1_int8 --quant_model --quant_type=QUANT_INT8
+    ./opt --model_dir=./mobilenet_v1 --valid_targets=arm --optimize_out=mobilenetv1_int16 --quant_model --quant_type=QUANT_INT16
+    if [ ! -f mobilenetv1_int8.nb ] || [ ! -f mobilenetv1_int16.nb ]; then
+       echo -e "Error! Resulted opt can not tramsform fp32 model to quantized model!"
+       exit 1
+    fi
 }
 
 function _test_paddle_code_generator {

@@ -50,6 +50,8 @@ class LITE_API OptBase {
   void SetValidPlaces(const std::string &valid_places);
   void SetOptimizeOut(const std::string &lite_out_name);
   void RecordModelInfo(bool record_strip_info = true);
+  void SetQuantModel(bool quant_model);
+  void SetQuantType(const std::string &quant_type);
   // set optimized_model type
   void SetModelType(std::string model_type = "naive_buffer");
   // internal inference for developer, not recommanded.

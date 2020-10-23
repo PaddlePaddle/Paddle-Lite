@@ -35,7 +35,7 @@ PaddlePaddle模型有两种保存格式：
 **使用示例**：转化`mobilenet_v1`模型
 
 ```shell
-paddle_lite_opt --model_dir=./mobilenet_v1 \
+./opt --model_dir=./mobilenet_v1 \
       --valid_targets=arm \
       --optimize_out_type=naive_buffer \
       --optimize_out=mobilenet_v1_opt
@@ -48,14 +48,16 @@ paddle_lite_opt --model_dir=./mobilenet_v1 \
 (3) **更详尽的转化命令**总结：
 
 ```shell
-paddle_lite_opt \
+./opt \
     --model_dir=<model_param_dir> \
     --model_file=<model_path> \
     --param_file=<param_path> \
     --optimize_out_type=(protobuf|naive_buffer) \
     --optimize_out=<output_optimize_model_dir> \
     --valid_targets=(arm|opencl|x86|npu|xpu) \
-    --record_tailoring_info =(true|false)
+    --record_tailoring_info =(true|false) \
+    --quant_model=(true|false) \
+    --quant_type=(QUANT_INT8|QUANT_INT16)
 ```
 
 | 选项         | 说明 |
@@ -67,12 +69,15 @@ paddle_lite_opt \
 | --optimize_out      | 优化模型的输出路径。                                         |
 | --valid_targets     | 指定模型可执行的backend，默认为arm。目前可支持x86、arm、opencl、npu、xpu，可以同时指定多个backend(以空格分隔)，Model Optimize Tool将会自动选择最佳方式。如果需要支持华为NPU（Kirin 810/990 Soc搭载的达芬奇架构NPU），应当设置为npu, arm。 |
 | --record_tailoring_info | 当使用 [根据模型裁剪库文件](./library_tailoring.html) 功能时，则设置该选项为true，以记录优化后模型含有的kernel和OP信息，默认为false。 |
+| --quant_model       | 设置是否使用opt中的动态离线量化功能。 |
+| --quant_type        | 指定opt中动态离线量化功能的量化类型，可以设置为QUANT_INT8和QUANT_INT16，即分别量化为int8和int16。量化为int8对模型精度有一点影响，模型体积大概减小4倍。量化为int16对模型精度基本没有影响，模型体积大概减小2倍。|
 
 * 如果待优化的fluid模型是非combined形式，请设置`--model_dir`，忽略`--model_file`和`--param_file`。
 * 如果待优化的fluid模型是combined形式，请设置`--model_file`和`--param_file`，忽略`--model_dir`。
 * `naive_buffer`的优化后模型为以`.nb`名称结尾的单个文件。
 * `protobuf`的优化后模型为文件夹下的`model`和`params`两个文件。将`model`重命名为`__model__`用[Netron](https://lutzroeder.github.io/netron/)打开，即可查看优化后的模型结构。
 * 删除`prefer_int8_kernel`的输入参数，`opt`自动判别是否是量化模型，进行相应的优化操作。
+* `opt`中的动态离线量化功能和`PaddleSlim`中动态离线量化功能相同，`opt`提供该功能是为了用户方便使用。
 
 ### 功能二：统计模型算子信息、判断是否支持
 
