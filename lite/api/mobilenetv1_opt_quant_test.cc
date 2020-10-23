@@ -49,9 +49,9 @@ void TestModel(const std::string& model_dir,
 
   LOG(INFO) << "Save quantized model";
   std::string opt_model_path = "/data/local/tmp/mobilenetv1_opt_quant";
-  if (quant_type == QuantType::QUANT_INT8) {
+  if (quant_type == lite_api::QuantType::QUANT_INT8) {
     opt_model_path += "_int8";
-  } else if (quant_type == QuantType::QUANT_INT16) {
+  } else if (quant_type == lite_api::QuantType::QUANT_INT16) {
     opt_model_path += "_int16";
   }
   cxx_predictor->SaveOptimizedModel(opt_model_path,
@@ -93,7 +93,7 @@ TEST(bobileetv1_opt_quant_int16, test_arm) {
 
 TEST(mobilenetv1_opt_quant_int8, test_arm) {
   std::vector<float> ref = {
-      0.000191383, 0.000592063, 0.000112282, 6.27426e-05, 0.000127522};
+      0.0002320, 0.0006248689, 0.000112282, 6.27426e-05, 0.0001111296};
   float eps = 3e-5;
   TestModel(FLAGS_model_dir, ref, eps, paddle::lite_api::QuantType::QUANT_INT8);
 }

@@ -1647,7 +1647,7 @@ function main {
                 build_test_arm_subtask_model test_mobilenetv1 mobilenet_v1
                 build_test_arm_subtask_model test_mobilenetv1_int8 MobileNetV1_quant
                 build_test_arm_subtask_model test_mobilenetv1_int16 mobilenet_v1_int16
-                build_test_arm_subtask_model test_mobilenetv1_opt_quant mobilenet_v1_int16
+                build_test_arm_subtask_model test_mobilenetv1_opt_quant mobilenet_v1
                 build_test_arm_subtask_model test_mobilenetv2 mobilenet_v2_relu
                 build_test_arm_subtask_model test_resnet50 resnet50
                 build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
