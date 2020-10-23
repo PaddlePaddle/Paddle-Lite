@@ -22,8 +22,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "lite/core/op_lite.h"
-#include "lite/core/tensor.h"
+#include "lite/utils/logging.h"
 
 namespace paddle {
 namespace lite {
