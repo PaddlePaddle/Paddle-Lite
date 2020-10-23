@@ -40,10 +40,10 @@ static void err_callback(imgdnn_report_flags flags,
       msg_prefix = "WARNING";
       break;
     default:
-      std::cerr << "unknown report flag in error callback" << std::endl;
+      LOG(ERROR) << "unknown report flag in error callback";
   }
 
-  std::cerr << msg_prefix << ": " << error_message << std::endl;
+  LOG(ERROR) << msg_prefix << ": " << error_message;
 }
 
 ImgdnnManager::ImgdnnManager() {
@@ -85,17 +85,13 @@ imgdnn_tensor ImgdnnManager::ConvertQuantTensorType(
 
 bool ImgdnnManager::CheckConfigFileExists(const std::string &hwconfig,
                                           const std::string &mapconfig) {
-  if (access(hwconfig.c_str(), F_OK) == -1) goto CheckConfigFileExistsError;
-  if (access(mapconfig.c_str(), F_OK) == -1) goto CheckConfigFileExistsError;
+  CHECK_EQ(access(hwconfig.c_str(), F_OK), 0)
+      << "Could not find or access Imagination NNA hardware config file "
+      << hwconfig;
+  CHECK_EQ(access(mapconfig.c_str(), F_OK), 0)
+      << "Could not find or access Imagination NNA mapping config file "
+      << mapconfig;
   return true;
-
-CheckConfigFileExistsError:
-  char *pwd = getcwd(NULL, 0);
-  std::string err_msg{"Could not find Imagination NNA config files: "};
-  std::cerr << err_msg << hwconfig << "," << mapconfig << std::endl;
-  std::cerr << "Please place config files at: " << pwd << std::endl;
-  free(pwd);
-  exit(EXIT_FAILURE);
 }
 
 imgdnn_tensor ImgdnnManager::CreateConvolutionLayer(
