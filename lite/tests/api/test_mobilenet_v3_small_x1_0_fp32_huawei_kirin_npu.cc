@@ -32,13 +32,11 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(MobileNetV1, test_mobilenetv1_int8_imagination_nna) {
+TEST(MobileNetV3Small, test_mobilenet_v3_small_x1_0_fp32_huawei_kirin_npu) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  config.set_valid_places(
-      {lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-       lite_api::Place{TARGET(kARM), PRECISION(kInt8)},
-       lite_api::Place{TARGET(kImaginationNNA), PRECISION(kInt8)}});
+  config.set_valid_places({lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+                           lite_api::Place{TARGET(kNPU), PRECISION(kFloat)}});
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
@@ -96,7 +94,7 @@ TEST(MobileNetV1, test_mobilenetv1_int8_imagination_nna) {
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GE(out_accuracy, 0.51f);
+  ASSERT_GE(out_accuracy, 0.55f);
 }
 
 }  // namespace lite
