@@ -316,6 +316,11 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int16 SERIAL)
     add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_int16_tar_gz)
+    
+    lite_cc_test(test_mobilenetv1_opt_quant SRCS mobilenetv1_opt_quant_test.cc
+       DEPS ${lite_model_test_DEPS} ${light_lib_DEPS} paddle_api_full
+       ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
+    add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_tar_gz)
 
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}
