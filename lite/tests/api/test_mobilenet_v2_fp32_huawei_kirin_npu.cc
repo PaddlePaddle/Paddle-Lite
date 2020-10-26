@@ -32,7 +32,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(MobileNetV2, test_mobilenetv2_fp32_huawei_kirin_npu) {
+TEST(MobileNetV2, test_mobilenet_v2_fp32_huawei_kirin_npu) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kARM), PRECISION(kFloat)},

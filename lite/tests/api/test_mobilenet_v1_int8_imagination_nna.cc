@@ -32,14 +32,13 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(MobileNetV1, test_mobilenetv1_int8_mediatek_apu) {
-  std::string subgraph_model_cache_dir = FLAGS_model_dir;
+TEST(MobileNetV1, test_mobilenet_v1_int8_imagination_nna) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  config.set_valid_places({lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kARM), PRECISION(kInt8)},
-                           lite_api::Place{TARGET(kAPU), PRECISION(kInt8)}});
-  config.set_subgraph_model_cache_dir(subgraph_model_cache_dir);
+  config.set_valid_places(
+      {lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kARM), PRECISION(kInt8)},
+       lite_api::Place{TARGET(kImaginationNNA), PRECISION(kInt8)}});
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
@@ -97,7 +96,7 @@ TEST(MobileNetV1, test_mobilenetv1_int8_mediatek_apu) {
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GE(out_accuracy, 0.55f);
+  ASSERT_GE(out_accuracy, 0.51f);
 }
 
 }  // namespace lite
