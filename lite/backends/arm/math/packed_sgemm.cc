@@ -2808,6 +2808,7 @@ void loadb_eight(
     uint32_t *outptr_row_col = outptr_row + y * 8;
     int i = 0;
     for (; i < x_len - 7; i += 8) {
+      uint32_t *ptr_out = outptr_row_col;
       asm volatile(
           "ldp q0, q1, [%[ptr0]], #32\n"
           "stp q0, q1, [%[outptr]], #32\n"
@@ -2817,6 +2818,7 @@ void loadb_eight(
       outptr_row_col += stride_out;
     }
     if (right_remain > 0) {
+      uint32_t *ptr_out = outptr_row_col;
       asm volatile(
           "ldp q0, q1, [%[ptr0]], #32\n"
           "bif v0.16b, %[vzero].16b, %[vmask1].16b\n"
