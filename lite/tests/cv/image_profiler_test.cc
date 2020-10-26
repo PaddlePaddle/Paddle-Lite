@@ -26,7 +26,7 @@ DEFINE_int32(cluster, 3, "cluster id");
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 10, "repeats times");
-DEFINE_bool(basic_test, false, "do all tests");
+DEFINE_bool(basic_test, true, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(srcFormat, 12, "input image format NV12");
@@ -894,7 +894,7 @@ TEST(TestImageResizeRand, test_func_image_resize_preprocess) {
 #if 1
 TEST(TestImageFlipRand, test_func_image_flip_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 8, 16, 112, 224, 1092}) {
+    for (auto w : {1, 8, 16, 112, 224, 1080}) {
       for (auto h : {1, 16, 112, 224}) {
         for (auto rotate : {90}) {
           for (auto flip : {-1, 0, 1}) {

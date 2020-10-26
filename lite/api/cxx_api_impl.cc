@@ -18,6 +18,8 @@
 #include <string>
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
+#include "lite/core/mir/pass_manager.h"
+#include "lite/core/mir/post_quant_dynamic_pass.h"
 #include "lite/core/version.h"
 
 #ifndef LITE_ON_TINY_PUBLISH
@@ -44,7 +46,7 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       if (p.target == TARGET(kCUDA)) {
         Env<TARGET(kCUDA)>::Init();
         if (config_.multi_stream()) {
-          passes = {"multi_stream_analysis_pass"};
+          passes.push_back("multi_stream_analysis_pass");
           VLOG(3) << "add pass: " << passes[0];
         }
         break;
@@ -73,8 +75,16 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     VLOG(1) << "use_layout_preprocess_pass:" << use_layout_preprocess_pass;
     if (places[0].target == TARGET(kOpenCL) &&
         use_layout_preprocess_pass != std::string::npos) {
-      passes = {"type_layout_cast_preprocess_pass"};
+      passes.push_back("type_layout_cast_preprocess_pass");
       VLOG(1) << "add pass:" << passes[0];
+    }
+
+    if (config.quant_model()) {
+      passes.push_back("post_quant_dynamic_pass");
+      auto *pass = mir::PassManager::Global().LookUp<mir::PostQuantDynamicPass>(
+          "post_quant_dynamic_pass");
+      CHECK(pass);
+      pass->SetQuantType(config.quant_type());
     }
     raw_predictor_->Build(config, places, passes);
   } else {

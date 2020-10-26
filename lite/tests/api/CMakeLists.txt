@@ -54,11 +54,12 @@ if(LITE_WITH_NPU)
 endif()
 
 if(LITE_WITH_XPU AND NOT LITE_WITH_XTCL)
-    lite_cc_test_with_model_and_data(test_bert_fp32_baidu_xpu MODEL bert DATA bert_data)
+    lite_cc_test_with_model_and_data(test_bert_fp32_baidu_xpu MODEL bert_model DATA bert_data)
+    lite_cc_test_with_model_and_data(test_content_dnn_fp32_baidu_xpu MODEL content_dnn_model DATA content_dnn_data)
     lite_cc_test_with_model_and_data(test_ernie_fp32_baidu_xpu MODEL ernie DATA bert_data)
     lite_cc_test_with_model_and_data(test_googlenet_fp32_baidu_xpu MODEL GoogLeNet DATA ILSVRC2012_small)
     lite_cc_test_with_model_and_data(test_mmdnn_fp32_baidu_xpu MODEL mmdnn_model DATA mmdnn_data)
-    lite_cc_test_with_model_and_data(test_resnet50_fp32_baidu_xpu MODEL resnet50 DATA ILSVRC2012_small)
+    lite_cc_test_with_model_and_data(test_resnet50_fp32_baidu_xpu MODEL resnet50_model DATA ILSVRC2012_small)
     lite_cc_test_with_model_and_data(test_vgg19_fp32_baidu_xpu MODEL VGG19 DATA ILSVRC2012_small)
 endif()
 
@@ -68,4 +69,8 @@ endif()
 
 if(LITE_WITH_APU)
     lite_cc_test_with_model_and_data(test_mobilenetv1_int8_mediatek_apu MODEL mobilenet_v1_int8_for_mediatek_apu DATA ILSVRC2012_small)
+endif()
+
+if(LITE_WITH_IMAGINATION_NNA)
+    lite_cc_test_with_model_and_data(test_mobilenetv1_int8_imagination_nna MODEL mobilenet_v1_int8_for_imagination_nna DATA ILSVRC2012_small)
 endif()
