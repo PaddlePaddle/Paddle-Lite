@@ -48,11 +48,11 @@ void TestModel(const std::string& model_dir,
   auto cxx_predictor = lite_api::CreatePaddlePredictor(cxx_config);
 
   LOG(INFO) << "Save quantized model";
-  std::string opt_model_path = "/data/local/tmp/mobilenetv1_opt_quant";
+  std::string opt_model_path;
   if (quant_type == lite_api::QuantType::QUANT_INT8) {
-    opt_model_path += "_int8";
+    opt_model_path = model_dir + "/mobilenetv1_opt_quant_int8";
   } else if (quant_type == lite_api::QuantType::QUANT_INT16) {
-    opt_model_path += "_int16";
+    opt_model_path = model_dir + "/mobilenetv1_opt_quant_int16";
   }
   cxx_predictor->SaveOptimizedModel(opt_model_path,
                                     lite_api::LiteModelType::kNaiveBuffer);
