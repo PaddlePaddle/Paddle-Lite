@@ -967,6 +967,70 @@ function imagination_nna_build_and_test {
     run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "$(readlink -f ./imagination_nna_sdk)" "armv8" "gcc" imagination_nna_build_target imagination_nna_prepare_device
 }
 
+# ARMLinux (RK3399/pro, Raspberry pi etc.)
+function armlinux_prepare_device {
+    local remote_device_name=$1
+    local remote_device_work_dir=$2
+    local remote_device_check=$3
+    local remote_device_run=$4
+    local arch=$5
+    local toolchain=$6
+    local sdk_root_dir=$7
+
+    # Check device is available
+    $remote_device_check $remote_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$remote_device_name not found!"
+        exit 1
+    fi
+
+    # Create work dir on the remote device
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
+    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
+}
+
+function armlinux_build_target {
+    local arch=$1
+    local toolchain=$2
+    local sdk_root_dir=$3
+
+    # Build all of tests
+    rm -rf ./build
+    mkdir -p ./build
+    cd ./build
+    prepare_workspace
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DWITH_ARM_DOTPROD=ON   \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
+        -DARM_TARGET_OS="armlinux" -DARM_TARGET_ARCH_ABI=$arch
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function armlinux_arm64_build_and_test {
+    run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "." "armv8" "gcc" armlinux_build_target armlinux_prepare_device
+}
+
+function armlinux_armhf_build_and_test {
+    run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "." "armv7" "gcc" armlinux_build_target armlinux_prepare_device
+}
+
 function cmake_huawei_ascend_npu {
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     prepare_workspace
@@ -1684,6 +1748,14 @@ function main {
                 ;;
             imagination_nna_build_and_test)
                 imagination_nna_build_and_test $SSH_DEVICE_LIST $TEST_SKIP_LIST
+                shift
+                ;;
+            armlinux_arm64_build_and_test)
+                armlinux_arm64_build_and_test $SSH_DEVICE_LIST $TEST_SKIP_LIST
+                shift
+                ;;
+            armlinux_armhf_build_and_test)
+                armlinux_armhf_build_and_test $SSH_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
             build_test_huawei_ascend_npu)
