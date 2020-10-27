@@ -54,6 +54,7 @@ if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LIT
     lite_cc_test(test_kernel_pool_compute SRCS pool_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_constant_compute SRCS fill_constant_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_constant_batch_size_like_compute SRCS fill_constant_batch_size_like_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_elementwise_common_broadcast SRCS elementwise_common_broadcast.cc DEPS ${test_kernel_deps})
 
 if(LITE_BUILD_EXTRA)
     lite_cc_test(test_gru_unit SRCS gru_unit_test.cc DEPS ${test_kernel_deps})
