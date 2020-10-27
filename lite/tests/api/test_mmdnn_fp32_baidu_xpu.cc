@@ -27,8 +27,8 @@
 #include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 200, "iteration times to run");
-DEFINE_int32(batch, 5, "batch_size to run");
+DEFINE_int32(iteration, 100, "iteration times to run");
+DEFINE_int32(batch, 10, "batch_size to run");
 
 namespace paddle {
 namespace lite {
