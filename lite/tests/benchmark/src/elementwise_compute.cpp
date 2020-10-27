@@ -104,9 +104,6 @@ void do_broadcast_perf(const char* func_name) {
   }
 }
 
-// These tests are disabled by this macro by default, To speed up CI testing
-#ifdef ENABLE_ARM_PERF_TEST
-
 TEST(elementwise_compute_perf, i32) {
   do_element_perf<int32_t, paddle::lite::arm::math::elementwise_add<int32_t>>(
       "elementwise_add");
@@ -203,7 +200,7 @@ TEST(elementwise_compute_broadcast_relu_perf, f32) {
       paddle::lite::arm::math::elementwise_max_relu_broadcast<float>>(
       "elementwise_max_relu_broadcast");
 }
-#endif  // ENABLE_ARM_PERF_TEST
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
