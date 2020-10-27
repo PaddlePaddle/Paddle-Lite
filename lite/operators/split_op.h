@@ -37,6 +37,16 @@ class SplitOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "split"; }
 
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.x->dims());
+    ch->output_shape = ch->DimToStr(param_.output->dims());
+    ch->remark = "axis" + std::to_string(param_.axis) + "num" +
+                 std::string(param_.num) + "sections" +
+                 ch->DimToStr(param_.sections);
+  }
+#endif
+
  private:
   mutable SplitParam param_;
 };
