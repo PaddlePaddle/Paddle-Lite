@@ -25,6 +25,7 @@
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
+#include "lite/utils/env.h"
 
 namespace paddle {
 namespace lite {
@@ -161,7 +162,17 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
+#ifdef LITE_WITH_XPU
+    if (GetBoolFromEnv(XPU_LOCK_REQUIRED)) {
+      TargetWrapperXPU::LockXPU();
+    }
+#endif
     program_->Run();
+#ifdef LITE_WITH_XPU
+    if (GetBoolFromEnv(XPU_LOCK_REQUIRED)) {
+      TargetWrapperXPU::ReleaseXPU();
+    }
+#endif
   }
 
   // Get offset-th col of feed inputs.

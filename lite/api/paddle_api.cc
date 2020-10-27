@@ -20,6 +20,7 @@
 #include "lite/core/device_info.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
+#include "lite/utils/env.h"
 
 #ifdef LITE_WITH_CUDA
 #include "lite/backends/cuda/target_wrapper.h"
@@ -352,6 +353,9 @@ CxxConfig::mlu_firstconv_param() const {
 
 void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #ifdef LITE_WITH_XPU
+  if (lite::GetBoolFromEnv(XPU_LOCK_REQUIRED)) {
+    l3_size = -std::abs(l3_size);
+  }
   lite::TargetWrapperXPU::workspace_l3_size_per_thread = l3_size;
 #else
   LOG(WARNING) << "The invoking of the function "

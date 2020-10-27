@@ -96,11 +96,16 @@ class TargetWrapper<TARGET(kXPU)> {
     XPU_CALL(xpu_set_device(dev_no));
   }
 
+  static void LockXPU(int dev_no = 0);
+  static void ReleaseXPU(int dev_no = 0);
+
   static std::string multi_encoder_precision;  // NOLINT
   static int workspace_l3_size_per_thread;
 
  private:
   static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
+  static int reentrant_;
+  static int xpu_lock_fd_;
 };
 
 }  // namespace lite

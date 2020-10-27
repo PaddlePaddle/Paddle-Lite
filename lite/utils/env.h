@@ -33,6 +33,8 @@
 // target device model online during the execution phase.
 #define SUBGRAPH_ONLINE_MODE "SUBGRAPH_ONLINE_MODE"
 
+#define XPU_LOCK_REQUIRED "XPU_LOCK_REQUIRED"
+
 namespace paddle {
 namespace lite {
 
