@@ -75,7 +75,7 @@ TEST(LightAPI, loadNaiveBuffer) {
   LightPredictor predictor(config.model_dir(),
                            config.model_buffer(),
                            config.param_buffer(),
-                           config.model_from_memory(),
+                           config.is_model_from_memory(),
                            lite_api::LiteModelType::kNaiveBuffer);
 
   auto* input_tensor = predictor.GetInput(0);

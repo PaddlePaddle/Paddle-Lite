@@ -40,6 +40,7 @@ endif()
 
 if (WITH_TESTING)
     set(LITE_URL_FOR_UNITTESTS "http://paddle-inference-dist.bj.bcebos.com/PaddleLite/models_and_data_for_unittests")
+    set(LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS $ENV{LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS})
     # models
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "lite_naive_model.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v1.tar.gz")
@@ -50,8 +51,13 @@ if (WITH_TESTING)
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "resnet50.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "MobileNetV1_quant.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "transformer_with_mask_fp32.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "squeezenet.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "inception_v4.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v3_small_x1_0.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v3_large_x1_0.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v1_int8_for_mediatek_apu.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v1_int8_for_rockchip_npu.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v1_int8_for_imagination_nna.tar.gz")
     else()
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "GoogleNet_inference.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "step_rnn.tar.gz")
@@ -60,10 +66,20 @@ if (WITH_TESTING)
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ernie.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "GoogLeNet.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "VGG19.tar.gz")
+        if (NOT "${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS}" STREQUAL "")
+            lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS} "mmdnn_model.tar.gz")
+            lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS} "content_dnn_model.tar.gz")
+            lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS} "bert_model.tar.gz")
+            lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS} "resnet50_model.tar.gz")
+        endif()
     endif()
     # data
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ILSVRC2012_small.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "bert_data.tar.gz")
+    if (NOT "${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS}" STREQUAL "")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS} "mmdnn_data.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_BAIDU_XPU_INTERNAL_URL_FOR_UNITTESTS} "content_dnn_data.tar.gz")
+    endif()
 endif()
 
 # ----------------------------- PUBLISH -----------------------------
@@ -240,8 +256,10 @@ if (LITE_WITH_X86)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/third_party/mklml"
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/third_party/install/mklml" "${INFER_LITE_PUBLISH_ROOT}/third_party/mklml"
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo/*" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/*" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full/"
         )
         add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
         add_dependencies(publish_inference_x86_cxx_demos paddle_api_full_bundled eigen3)
@@ -259,8 +277,11 @@ if (LITE_WITH_X86)
            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light"
            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full"
            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
-           COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/mklml" "${INFER_LITE_PUBLISH_ROOT}/third_party/"
        )
+    if(WITH_MKL)
+        add_custom_command(TARGET publish_inference_x86_cxx_demos POST_BUILD
+            COMMAND cp -r "${CMAKE_BINARY_DIR}/third_party/install/mklml" "${INFER_LITE_PUBLISH_ROOT}/third_party/")
+    endif()
     add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
     add_dependencies(publish_inference_x86_cxx_demos paddle_full_api_shared eigen3)
     add_dependencies(publish_inference publish_inference_x86_cxx_lib)

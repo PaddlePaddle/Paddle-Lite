@@ -20,7 +20,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
         target_link_libraries(paddle_full_api_shared xxhash)
-        if (NOT LITE_ON_MODEL_OPTIMIZE_TOOL)
+        if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND WITH_MKL)
             add_dependencies(paddle_full_api_shared dynload_mklml)
         endif()
         if(WIN32)
@@ -316,6 +316,11 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int16 SERIAL)
     add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_int16_tar_gz)
+    
+    lite_cc_test(test_mobilenetv1_opt_quant SRCS mobilenetv1_opt_quant_test.cc
+       DEPS ${lite_model_test_DEPS} ${light_lib_DEPS} paddle_api_full
+       ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
+    add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_tar_gz)
 
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}

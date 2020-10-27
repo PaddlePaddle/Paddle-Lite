@@ -18,6 +18,7 @@
 #include <limits>
 #include <set>
 
+#include "lite/api/paddle_api.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/variable.h"
@@ -143,15 +144,15 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
-    const std::string &path, bool program_from_memory) {
+    const std::string &path, const lite_api::CxxModelBuffer &model_buffer) {
   std::unique_ptr<framework::proto::ProgramDesc> main_program(
       new framework::proto::ProgramDesc);
-  if (!program_from_memory) {
+  if (model_buffer.is_empty()) {
     std::string desc_str;
     ReadBinaryFile(path, &desc_str);
     main_program->ParseFromString(desc_str);
   } else {
-    main_program->ParseFromString(path);
+    main_program->ParseFromString(model_buffer.get_program());
   }
   return main_program;
 }
@@ -177,7 +178,7 @@ bool IsPersistable(const cpp::VarDesc &var) {
 void LoadCombinedParamsPb(const std::string &path,
                           lite::Scope *scope,
                           const cpp::ProgramDesc &cpp_prog,
-                          bool params_from_memory) {
+                          const lite_api::CxxModelBuffer &model_buffer) {
   CHECK(scope);
   auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
@@ -205,8 +206,10 @@ void LoadCombinedParamsPb(const std::string &path,
                     << " LoadCombinedParamsPb, use LoadParam instead.";
   };
 
-  if (params_from_memory) {
-    std::stringstream fin(path, std::ios::in | std::ios::binary);
+  if (!model_buffer.is_empty()) {
+    // The params buffer in the configuration object will be automatically
+    // released. So we use the const lvalue reference here.
+    std::stringstream fin(model_buffer.get_params());
     load_var_func(fin);
   } else {
     std::ifstream fin(path, std::ios::binary);
@@ -221,7 +224,7 @@ void LoadModelPb(const std::string &model_dir,
                  Scope *scope,
                  cpp::ProgramDesc *cpp_prog,
                  bool combined,
-                 bool model_from_memory) {
+                 const lite_api::CxxModelBuffer &model_buffer) {
   CHECK(cpp_prog);
   CHECK(scope);
   cpp_prog->ClearBlocks();
@@ -233,7 +236,7 @@ void LoadModelPb(const std::string &model_dir,
     prog_path = model_file;
   }
   framework::proto::ProgramDesc pb_proto_prog =
-      *LoadProgram(prog_path, model_from_memory);
+      *LoadProgram(prog_path, model_buffer);
   pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   TransformProgramDescAnyToCpp(pb_prog, cpp_prog);
@@ -241,12 +244,12 @@ void LoadModelPb(const std::string &model_dir,
   // Load Params
   // NOTE: Only main block be used now.
   VLOG(4) << "Start load model params...";
-  CHECK(!(!combined && model_from_memory))
+  CHECK(!(!combined && !model_buffer.is_empty()))
       << "If you want use the model_from_memory,"
       << " you should load the combined model using cfg.set_model_buffer "
          "interface.";
   if (combined) {
-    LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_from_memory);
+    LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_buffer);
   } else {
     auto main_block = pb_proto_prog.blocks(0);
     for (auto &var : main_block.vars()) {
@@ -855,14 +858,17 @@ void LoadModelNaiveFromFile(const std::string &filename,
 #ifndef LITE_ON_TINY_PUBLISH
       LoadModelNaiveV0FromFile(filename, scope, cpp_prog);
 #else
-      LOG(FATAL) << "Error, this model file is not supported.";
+      LOG(FATAL) << "Paddle-Lite v2.7 has upgraded the naive-buffer model "
+                    "format. Please use the OPT to generate a new model. "
+                    "Thanks!";
 #endif
       break;
     case 1:
       LoadModelFbsFromFile(filename, scope, cpp_prog);
       break;
     default:
-      LOG(FATAL) << "Error, this model file is not supported.";
+      LOG(FATAL) << "The model format cannot be recognized. Please make sure "
+                    "you use the correct interface and model file.";
       break;
   }
 }
