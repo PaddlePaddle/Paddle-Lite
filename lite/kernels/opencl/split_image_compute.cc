@@ -119,8 +119,8 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
       // compute global work size
       auto image_width = x_dims[3] * ((x_dims[1] + 3) / 4);
-      size_t work_size0 = x_dims[3];                // W
-      size_t work_size1 = image_width / x_dims[3];  // (C+3)/4
+      size_t work_size0 = image_width / x_dims[3];  // (C+3)/4
+      size_t work_size1 = x_dims[3];                // W
       size_t work_size2 = x_dims[0] * x_dims[2];    // NH
       gws_ = cl::NDRange{work_size0, work_size1, work_size2};
 
