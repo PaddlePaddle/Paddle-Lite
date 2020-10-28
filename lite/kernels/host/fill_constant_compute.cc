@@ -43,7 +43,7 @@ void FillConstantCompute::Run() {
     FillConstData<int8_t>();
   } else if (param.dtype ==
              static_cast<int32_t>(lite::core::FluidType::INT64)) {
-    FillConstData<int32_t>();
+    FillConstData<int64_t>();
   } else {
     LOG(FATAL) << "not supported dtype " << param.dtype;
   }
