@@ -55,8 +55,9 @@ echo "|  BUILD_EXTRA=%BUILD_EXTRA%                                              
 echo "|  WITH_PYTHON=%WITH_PYTHON%                                                                          |"
 echo "|  LITE_WITH_PROFILE=%WITH_PROFILE%                                                                   |"
 echo "|  WITH_TESTING=%WITH_TESTING%                                                                        |"
-echo "|  WITH_STRIP=%WITH_STRIP%                                                                        |"
+echo "|  WITH_STRIP=%WITH_STRIP%                                                                            |"
 echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                                                        |"
+echo "|  BUILD_X64=%BUILD_X64%                                                                              |"
 echo "------------------------------------------------------------------------------------------------------|"
 
 
@@ -219,7 +220,7 @@ echo "|      with_strip: Enable tailoring library according to model. Default OF
 echo "|      build_x64: Enable building for Windows X64 platform. Default is X86.                           |"
 echo "|  for example:                                                                                       |"   
 echo "|      build_windows.bat with_log with_profile with_python with_extra                                 |"
-echo "|      build_windows.bat build_x64 with_strip D:\Paddle-Lite\opt_model_dir       ß                     |"
+echo "|      build_windows.bat build_x64 with_strip D:\Paddle-Lite\opt_model_dir                            |"
 echo "------------------------------------------------------------------------------------------------------|"
 goto:eof
 
