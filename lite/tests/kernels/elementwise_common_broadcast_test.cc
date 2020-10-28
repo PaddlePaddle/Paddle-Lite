@@ -166,19 +166,15 @@ class ElementwiseComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    static unsigned int rand_seed = 0;
-
     std::vector<T> dx(x_dims_.production());
     for (size_t i = 0; i < dx.size(); i++) {
-      dx[i] = 1.0 * rand_r(&rand_seed) * rand_r(&rand_seed) /
-              (rand_r(&rand_seed) + 1);
+      dx[i] = i;
     }
     SetCommonTensor(x_, x_dims_, dx.data());
 
     std::vector<T> dy(y_dims_.production());
     for (size_t i = 0; i < dy.size(); i++) {
-      dy[i] = 1.0 * rand_r(&rand_seed) * rand_r(&rand_seed) /
-              (rand_r(&rand_seed) + 1);
+      dy[i] = 2 * i + 1;
     }
     SetCommonTensor(y_, y_dims_, dy.data());
   }
@@ -190,7 +186,7 @@ bool RunOnRandomArgs(const Place& place,
                      const std::string& elt_type,
                      const std::string& act_type,
                      const std::function<T(T, T)> op,
-                     double abs_error = 1e-6) {
+                     double abs_error = 1e-3) {
   const int MAX_DIM_SIZE = 8;
   const int MAX_SHAPE_VALUE = 10;
   // gen out_dim
