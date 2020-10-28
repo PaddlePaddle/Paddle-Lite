@@ -33,6 +33,8 @@
 // target device model online during the execution phase.
 #define SUBGRAPH_ONLINE_MODE "SUBGRAPH_ONLINE_MODE"
 
+// Only for XPU. If 'XPU_LOCK_REQUIRED' is set to true or 1 (default is false or
+// 0), XPU will support multi-process run.
 #define XPU_LOCK_REQUIRED "XPU_LOCK_REQUIRED"
 
 namespace paddle {
