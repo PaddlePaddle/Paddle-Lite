@@ -185,8 +185,10 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   i_pri_out_shape_data[1] = 2;
   i_pri_out_shape_data[2] = boxes->data_size();
   auto bm_priorbox_name = lite::subgraph::bm::UniqueName("bm_priorbox");
-#ifndef BM_DYNAMIC_COMPILE
   float* cpu_data = compute_density_priorbox_kernel(op, &param);
+  boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
+  i_pri_out_shape_data[2] = boxes->data_size();
+#ifndef BM_DYNAMIC_COMPILE
   add_priorbox_layer(graph->GetCompilerHandle(),
                      const_cast<const int*>(&i_input_shape_data[0]),
                      in_dims.size(),
@@ -211,6 +213,7 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                      0.f,
                      0.f);
 #else
+  free(cpu_data);
   user_cpu_param_t bm_param;
   bm_param.op_type = USER_PADDLE_DENSITY_PRIOR_BOX;
   CHECK_LE(param.fixed_sizes.size(), 20);
