@@ -1356,6 +1356,7 @@ struct GenerateProposalsParam : ParamBase {
   // outputs
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
+  lite::Tensor* RpnRoisLod{};
 };
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam : ParamBase {
