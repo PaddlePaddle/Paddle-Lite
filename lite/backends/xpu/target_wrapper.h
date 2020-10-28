@@ -29,8 +29,8 @@
 namespace paddle {
 namespace lite {
 
-// MAX(lod.size()) = 64
-const int XPU_MAX_LOD_SIZE = 64;
+// MAX(lod.size()) = 32
+const int XPU_MAX_LOD_SIZE = 32;
 // MAX(lod[i + 1] - lod[i]) = 512
 const int XPU_MAX_LOD_SEQ_LEN = 512;
 

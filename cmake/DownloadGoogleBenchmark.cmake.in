@@ -1,0 +1,31 @@
+# Copyright (c) 2016 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+CMAKE_MINIMUM_REQUIRED(VERSION 3.9 FATAL_ERROR)
+
+PROJECT(googlebenchmark-download NONE)
+
+MESSAGE(STATUS "Build this project will download and unzip google benchmark to ${GOOGLEBENCHMARK_SOURCE_DIR}")
+
+INCLUDE(ExternalProject)
+ExternalProject_Add(googlebenchmark-zip-download
+        URL https://github.com/google/benchmark/archive/v1.4.1.zip
+        URL_HASH SHA256=61ae07eb5d4a0b02753419eb17a82b7d322786bb36ab62bd3df331a4d47c00a7
+        SOURCE_DIR "${GOOGLEBENCHMARK_SOURCE_DIR}"
+        BINARY_DIR "${GOOGLEBENCHMARK_SOURCE_DIR}" # it is unused
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+        TEST_COMMAND ""
+        )

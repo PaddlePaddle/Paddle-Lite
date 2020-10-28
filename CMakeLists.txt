@@ -98,6 +98,7 @@ lite_option(LITE_WITH_EXCEPTION "Enable throwing the exception when error occurs
 lite_option(LITE_WITH_NVTX      "Enable nvtx or not, please enable LITE_WITH_CUDA first." OFF)
 lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
+lite_option(LITE_WITH_BENCHMARK_TEST "Build benchmark test cases" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA    "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 lite_option(LITE_BUILD_TAILOR   "Enable tailoring library according to model" OFF)
