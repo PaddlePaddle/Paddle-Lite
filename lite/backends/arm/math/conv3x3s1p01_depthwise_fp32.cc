@@ -1403,6 +1403,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
   "bif v13.16b, v21.16b, v19.16b \n"                      \
   "st1 {v12.4s}, [%[out1]]\n"                             \
   "st1 {v13.4s}, [%[out2]]\n"
+
 #define COMPUTE_S_S1_P0                                   \
   "prfm pldl1keep, [%[din0]]\n"                           \
   "prfm pldl1keep, [%[din1]]\n"                           \
@@ -2916,12 +2917,8 @@ void conv_depthwise_3x3s1p1_bias_s_relu6(float *dout,
                        "q14",
                        "q15");
 #endif
-        for (int w = 0; w < w_out; ++w) {
-          *doutr0++ = out_buf1[w];
-          *doutr1++ = out_buf2[w];
-        }
-        doutr0 = doutr1;
-        doutr1 += w_out;
+        doutr0 += 2 * w_out;
+        doutr1 += 2 * w_out;
       }  // end of processing heights
     }    // end of processing channels
   }      // end of processing batchs
@@ -3077,12 +3074,8 @@ void conv_depthwise_3x3s1p1_bias_s_leakyRelu(float *dout,
                        "q14",
                        "q15");
 #endif
-        for (int w = 0; w < w_out; ++w) {
-          *doutr0++ = out_buf1[w];
-          *doutr1++ = out_buf2[w];
-        }
-        doutr0 = doutr1;
-        doutr1 += w_out;
+        doutr0 += 2 * w_out;
+        doutr1 += 2 * w_out;
       }  // end of processing heights
     }    // end of processing channels
   }      // end of processing batchs
