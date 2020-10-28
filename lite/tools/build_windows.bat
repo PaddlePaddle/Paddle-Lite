@@ -55,8 +55,9 @@ echo "|  BUILD_EXTRA=%BUILD_EXTRA%                                              
 echo "|  WITH_PYTHON=%WITH_PYTHON%                                                                          |"
 echo "|  LITE_WITH_PROFILE=%WITH_PROFILE%                                                                   |"
 echo "|  WITH_TESTING=%WITH_TESTING%                                                                        |"
-echo "|  WITH_STRIP=%WITH_STRIP%                                                                        |"
+echo "|  WITH_STRIP=%WITH_STRIP%                                                                            |"
 echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                                                        |"
+echo "|  BUILD_X64=%BUILD_X64%                                                                              |"
 echo "------------------------------------------------------------------------------------------------------|"
 
 
