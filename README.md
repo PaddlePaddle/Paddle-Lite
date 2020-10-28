@@ -79,7 +79,7 @@ Paddle Lite提供了C++、Java、Python三种API，并且提供了相应API的�
 | FPGA | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
 | 华为NPU | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
 | 百度 XPU | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
-| RK NPU | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
+| RK NPU | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
 | MTK APU | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
 
 
