@@ -41,7 +41,7 @@ void argmax_func(const lite::Tensor *input,
 
   for (int n = 0; n < out_stride; n++) {
     for (int k = 0; k < in_stride; k++) {
-      const float *in_ptr = input->data<InType>() + n * in_channel + k;
+      const InType *in_ptr = input->data<InType>() + n * in_channel + k;
       std::vector<std::pair<InType, OutType>> vec;
       vec.resize(size);
       for (int i = 0; i < size; i++) {
@@ -59,6 +59,43 @@ void argmax_func(const lite::Tensor *input,
     }
   }
 }
+
+template void argmax_func<double, int32_t>(const lite::Tensor *input,
+                                           const int axis,
+                                           lite::Tensor *output);
+template void argmax_func<double, int64_t>(const lite::Tensor *input,
+                                           const int axis,
+                                           lite::Tensor *output);
+template void argmax_func<float, int32_t>(const lite::Tensor *input,
+                                          const int axis,
+                                          lite::Tensor *output);
+template void argmax_func<float, int64_t>(const lite::Tensor *input,
+                                          const int axis,
+                                          lite::Tensor *output);
+template void argmax_func<int64_t, int32_t>(const lite::Tensor *input,
+                                            const int axis,
+                                            lite::Tensor *output);
+template void argmax_func<int64_t, int64_t>(const lite::Tensor *input,
+                                            const int axis,
+                                            lite::Tensor *output);
+template void argmax_func<int32_t, int32_t>(const lite::Tensor *input,
+                                            const int axis,
+                                            lite::Tensor *output);
+template void argmax_func<int32_t, int64_t>(const lite::Tensor *input,
+                                            const int axis,
+                                            lite::Tensor *output);
+template void argmax_func<int16_t, int32_t>(const lite::Tensor *input,
+                                            const int axis,
+                                            lite::Tensor *output);
+template void argmax_func<int16_t, int64_t>(const lite::Tensor *input,
+                                            const int axis,
+                                            lite::Tensor *output);
+template void argmax_func<uint8_t, int32_t>(const lite::Tensor *input,
+                                            const int axis,
+                                            lite::Tensor *output);
+template void argmax_func<uint8_t, int64_t>(const lite::Tensor *input,
+                                            const int axis,
+                                            lite::Tensor *output);
 
 }  // namespace math
 }  // namespace arm
