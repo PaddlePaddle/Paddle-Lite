@@ -74,7 +74,7 @@ TEST(argmax_arm, retrive_op) {
 }
 
 TEST(argmax_arm, init) {
-  ArgmaxCompute argmax;
+  ArgmaxCompute<float> argmax;
   ASSERT_EQ(argmax.precision(), PRECISION(kFloat));
   ASSERT_EQ(argmax.target(), TARGET(kARM));
 }
@@ -105,7 +105,7 @@ TEST(argmax_arm, compute) {
           output_ref.Resize(output_size);
 
           // obtain output_data
-          ArgmaxCompute argmaxOp;
+          ArgmaxCompute<float> argmaxOp;
           std::unique_ptr<KernelContext> ctx(new KernelContext);
           ctx->As<ARMContext>();
           argmaxOp.SetContext(std::move(ctx));
