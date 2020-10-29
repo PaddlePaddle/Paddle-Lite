@@ -26,6 +26,7 @@ namespace lite {
 namespace arm {
 namespace math {
 
+template <typename InType, typename OutType>
 void argmax_func(const lite::Tensor *input,
                  const int axis,
                  lite::Tensor *output) {
@@ -40,8 +41,8 @@ void argmax_func(const lite::Tensor *input,
 
   for (int n = 0; n < out_stride; n++) {
     for (int k = 0; k < in_stride; k++) {
-      const float *in_ptr = input->data<float>() + n * in_channel + k;
-      std::vector<std::pair<float, int>> vec;
+      const float *in_ptr = input->data<InType>() + n * in_channel + k;
+      std::vector<std::pair<InType, OutType>> vec;
       vec.resize(size);
       for (int i = 0; i < size; i++) {
         vec[i] = std::make_pair(in_ptr[i * in_stride], i);
@@ -50,10 +51,10 @@ void argmax_func(const lite::Tensor *input,
       std::partial_sort(vec.begin(),
                         vec.begin() + 1,
                         vec.end(),
-                        std::greater<std::pair<float, int>>());
+                        std::greater<std::pair<InType, OutType>>());
 
       // out
-      int64_t *out_ptr = output->mutable_data<int64_t>() + n * out_channel + k;
+      OutType *out_ptr = output->mutable_data<OutType>() + n * out_channel + k;
       *out_ptr = vec[0].second;
     }
   }
