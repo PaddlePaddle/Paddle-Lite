@@ -111,18 +111,16 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
 
-      // compute image shape
-      lite::CLImageConverterDefault convertor;
-      x_img_shape_ = convertor.InitImageDimInfoWith(x_dims);
-      VLOG(1) << "x_img_shape_:  " << x_img_shape_[0] << "  "
-              << x_img_shape_[1];
-
       // compute global work size
-      auto image_width = x_dims[3] * ((x_dims[1] + 3) / 4);
-      size_t work_size0 = image_width / x_dims[3];  // (C+3)/4
-      size_t work_size1 = x_dims[3];                // W
-      size_t work_size2 = x_dims[0] * x_dims[2];    // NH
-      gws_ = cl::NDRange{work_size0, work_size1, work_size2};
+      auto x_img_shape = InitImageDimInfoWith(x_dims);
+      const auto& default_work_size =
+          DefaultWorkSize(x_dims,
+                          DDim(std::vector<DDim::value_type>{
+                              static_cast<int64_t>(x_img_shape["width"]),
+                              static_cast<int64_t>(x_img_shape["height"])}));
+      gws_ = cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
+                         static_cast<cl::size_type>(default_work_size[1]),
+                         static_cast<cl::size_type>(default_work_size[2])};
 
       GetVar(x_dims, axis_, &width_, &flag_);
     }
@@ -192,14 +190,11 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
   param_t* split_param_{nullptr};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
-  DDim x_img_shape_ = DDim(std::vector<DDim::value_type>(
-      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
   cl::Kernel kernel_;
-  cl::NDRange gws_ = cl::NDRange{
-      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  cl::NDRange gws_;
 };
 
 }  // namespace opencl

@@ -30,9 +30,9 @@ __kernel void split2(__read_only image2d_t input,
                             CLK_ADDRESS_CLAMP |
                             CLK_FILTER_NEAREST;
 
-  int2 in_pos = (int2)(channel_blk_idx * in_dims_last + width_idx, hb_idx);
-  CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, in_pos);
-  int c = channel_blk_idx * 4;
+  const int2 in_pos = (int2)(channel_blk_idx * in_dims_last + width_idx, hb_idx);
+  const CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, in_pos);
+  const int c = channel_blk_idx * 4;
 
   // write all data to output0 directly
   if (c < out0_dims_axis) {
@@ -57,7 +57,7 @@ __kernel void split2(__read_only image2d_t input,
 
   // deal with output1
   if (c + 4 >= out0_dims_axis) { // only theads for output1 hit this
-    int2 out_pos = (int2)((channel_blk_idx - out0_dims_axis / 4) * in_dims_last + width_idx, hb_idx);
+    const int2 out_pos = (int2)((channel_blk_idx - out0_dims_axis / 4) * in_dims_last + width_idx, hb_idx);
     if (channel_offset == 0) { // write all data to output1 directly
       WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
     } else {
