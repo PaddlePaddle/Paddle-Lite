@@ -95,6 +95,4 @@ static void paddle_f32_gemm(const benchmark::State &state, const char *net) {
 
 BENCHMARK_GEMM(paddle_f32_gemm)
 
-#ifndef XNNPACK_BENCHMARK_NO_MAIN
 BENCHMARK_MAIN();
-#endif
