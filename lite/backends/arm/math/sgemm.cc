@@ -36,17 +36,16 @@ void sgemm(bool is_transA,
            bool is_bias,
            const operators::ActivationParam act_param,
            ARMContext* ctx) {
-  // alpha default is 1; beta default is 0 or 1
+  // alpha default is 1;
   bool has_alpha = fabsf(alpha - 1.f) > 1e-8f ? 1 : 0;
-  bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
-  has_beta = has_beta && (fabsf(beta) > 1e-8f ? 1 : 0);
-  if (N == 1 && !has_alpha && !has_beta) {
+  if (N == 1 && !has_alpha) {
     sgemv(A,
           B,
           C,
           is_transA,
           M,
           K,
+          beta,
           is_bias,
           bias,
           act_param.has_active,
@@ -54,7 +53,7 @@ void sgemm(bool is_transA,
           ctx);
     return;
   }
-  if (M == 1 && !has_alpha && !has_beta) {
+  if (M == 1 && !has_alpha) {
     float bias_ptr[N];  // NOLINT
     if (is_bias) {
       for (int i = 0; i < N; i++) {
@@ -67,6 +66,7 @@ void sgemm(bool is_transA,
           !is_transB,
           N,
           K,
+          beta,
           is_bias,
           bias_ptr,
           act_param.has_active,
