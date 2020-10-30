@@ -490,11 +490,11 @@ function ssh_device_run {
         exit 1
     fi
     if [[ "$ssh_device_cmd" == "shell" ]]; then
-        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "$3"
+        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=60 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "$3"
     elif [[ "$ssh_device_cmd" == "push" ]]; then
-        sshpass -p $ssh_device_usr_pwd scp -r -o ConnectTimeout=3 -o StrictHostKeyChecking=no $3 $ssh_device_usr_id@$ssh_device_ip_addr:$4
+        sshpass -p $ssh_device_usr_pwd scp -r -o ConnectTimeout=60 -o StrictHostKeyChecking=no $3 $ssh_device_usr_id@$ssh_device_ip_addr:$4
     elif [[ "$ssh_device_cmd" == "test" ]]; then
-        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "exit 0" &> /dev/null
+        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=60 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "exit 0" &> /dev/null
     else
         echo "Unknown command $ssh_device_cmd!"
         exit 1
@@ -1028,7 +1028,7 @@ function armlinux_arm64_build_and_test {
 }
 
 function armlinux_armhf_build_and_test {
-    run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "." "armv7" "gcc" armlinux_build_target armlinux_prepare_device
+    run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "." "armv7hf" "gcc" armlinux_build_target armlinux_prepare_device
 }
 
 function cmake_huawei_ascend_npu {
