@@ -36,8 +36,10 @@ void sgemm(bool is_transA,
            bool is_bias,
            const operators::ActivationParam act_param,
            ARMContext* ctx) {
-  bool has_alpha = fabsf(alpha) > 1e-8f ? 1 : 0;
+  // alpha default is 1; beta default is 0 or 1
+  bool has_alpha = fabsf(alpha - 1.f) > 1e-8f ? 1 : 0;
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  has_beta = has_beta && (fabsf(beta) > 1e-8f ? 1 : 0);
   if (N == 1 && !has_alpha && !has_beta) {
     sgemv(A,
           B,
