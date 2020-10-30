@@ -459,7 +459,7 @@ TEST(Matmul2x2, precision) {
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
-// place = TARGET(kARM);
+  place = TARGET(kARM);
 // #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
 //   place = TARGET(kXPU);
 //   abs_error = 1e-2;  // use int16 in xpu
@@ -480,7 +480,7 @@ TEST(Matmul2x2_x_transpose, precision) {
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
-// place = TARGET(kARM);
+  place = TARGET(kARM);
 #else
   return;
 #endif
@@ -498,7 +498,7 @@ TEST(Matmul2x2_y_transpose, precision) {
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_ARM)
-// place = TARGET(kARM);
+  place = TARGET(kARM);
 // #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
 //   place = TARGET(kXPU);
 //   abs_error = 1e-2;  // use int16 in xpu
@@ -558,7 +558,7 @@ TEST(Matmulnx2, precision) {
   return;
 #endif
 
-  // test_matmulnx2(place, abs_error);
+  test_matmulnx2(place, abs_error);
   test_matmulnx2_xtranspose(place, abs_error);
   test_matmulnx2_ytranspose(place, abs_error);
   test_matmulnx2_xytranspose(place, abs_error);
