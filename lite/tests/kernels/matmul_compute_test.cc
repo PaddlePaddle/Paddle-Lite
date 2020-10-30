@@ -516,7 +516,7 @@ TEST(Matmul2x2_transpose, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
-                     // place = TARGET(kARM);
+  place = TARGET(kARM);
 #else
   return;
 #endif
