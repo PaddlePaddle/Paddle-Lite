@@ -63,6 +63,8 @@ REGISTER_LITE_KERNEL(fill_constant,
                      def)
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("ValueTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("ShapeTensorList",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
