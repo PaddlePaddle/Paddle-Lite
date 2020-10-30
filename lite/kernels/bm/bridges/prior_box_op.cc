@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <bmcompiler_if.h>
+#include <user_bmcpu_common.h>
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
@@ -173,7 +174,6 @@ float* compute_priorbox_kernel(OpLite* op, st_priorbox_param* param) {
       }
     }
   }
-
   if (param->clip) {
     for (int32_t d = 0; d < channel_size; ++d) {
       cpu_data[d] = std::min(std::max(cpu_data[d], 0.f), 1.f);
@@ -212,6 +212,10 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < in_dims.size(); i++) {
     i_input_shape_data[i] = static_cast<int32_t>(in_dims[i]);
   }
+  std::vector<int32_t> i_img_shape_data(img_dims.size());
+  for (size_t i = 0; i < img_dims.size(); i++) {
+    i_img_shape_data[i] = static_cast<int32_t>(img_dims[i]);
+  }
   // outputs
   auto boxes_var_name = op_info->Output("Boxes").front();
   auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
@@ -247,13 +251,16 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     param.min_max_aspect_ratios_order =
         op_info->GetAttr<bool>("min_max_aspect_ratios_order");
   }
-  float* cpu_data = compute_priorbox_kernel(op, &param);
   auto boxes_dims = boxes->dims();
   std::vector<int32_t> i_pri_out_shape_data(3);
   i_pri_out_shape_data[0] = 1;
   i_pri_out_shape_data[1] = 2;
   i_pri_out_shape_data[2] = boxes->data_size();
   auto bm_priorbox_name = lite::subgraph::bm::UniqueName("bm_priorbox");
+  float* cpu_data = compute_priorbox_kernel(op, &param);
+  boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
+  i_pri_out_shape_data[2] = boxes->data_size();
+#ifndef BM_DYNAMIC_COMPILE
   add_priorbox_layer(graph->GetCompilerHandle(),
                      const_cast<const int*>(&i_input_shape_data[0]),
                      in_dims.size(),
@@ -277,6 +284,72 @@ int PriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                      param.step_h,
                      param.step_w,
                      param.offset);
+#else
+  free(cpu_data);
+  user_cpu_param_t bm_param;
+  bm_param.op_type = USER_PADDLE_PRIOR_BOX;
+  CHECK_LE(param.min_sizes.size(), 20);
+  bm_param.u.prior_box_param.min_sizes_len = param.min_sizes.size();
+  memcpy(bm_param.u.prior_box_param.min_sizes,
+         &param.min_sizes[0],
+         param.min_sizes.size() * sizeof(float));
+
+  CHECK_LE(param.max_sizes.size(), 20);
+  bm_param.u.prior_box_param.max_sizes_len = param.max_sizes.size();
+  memcpy(bm_param.u.prior_box_param.max_sizes,
+         &param.max_sizes[0],
+         param.max_sizes.size() * sizeof(float));
+
+  CHECK_LE(param.aspect_ratios.size(), 20);
+  bm_param.u.prior_box_param.aspect_ratios_len = param.aspect_ratios.size();
+  memcpy(bm_param.u.prior_box_param.aspect_ratios,
+         &param.aspect_ratios[0],
+         param.aspect_ratios.size() * sizeof(float));
+
+  CHECK_LE(param.variances.size(), 20);
+  bm_param.u.prior_box_param.variances_len = param.variances.size();
+  memcpy(bm_param.u.prior_box_param.variances,
+         &param.variances[0],
+         param.variances.size() * sizeof(float));
+  bm_param.u.prior_box_param.step_w = param.step_w;
+  bm_param.u.prior_box_param.step_h = param.step_h;
+  bm_param.u.prior_box_param.offset = param.offset;
+  bm_param.u.prior_box_param.img_h = param.img_h;
+  bm_param.u.prior_box_param.img_w = param.img_w;
+  bm_param.u.prior_box_param.prior_num = param.prior_num;
+  bm_param.u.prior_box_param.min_max_aspect_ratios_order =
+      param.min_max_aspect_ratios_order;
+  bm_param.u.prior_box_param.clip = param.clip;
+  bm_param.u.prior_box_param.flip = param.flip;
+
+  int32_t* in_shape[2];
+  int32_t in_dim[2];
+  const char* in_name[2];
+  in_shape[0] = &i_input_shape_data[0];
+  in_shape[1] = &i_img_shape_data[0];
+  in_dim[0] = in_dims.size();
+  in_dim[1] = img_dims.size();
+  in_name[0] = static_cast<const char*>(in_var_name.c_str());
+  in_name[1] = static_cast<const char*>(img_var_name.c_str());
+  int32_t* out_shape[1];
+  int32_t out_dim[1];
+  const char* out_name[1];
+  out_shape[0] = &i_pri_out_shape_data[0];
+  out_dim[0] = 3;
+  out_name[0] = static_cast<const char*>(bm_priorbox_name.c_str());
+
+  add_user_cpu_layer(graph->GetCompilerHandle(),
+                     2,
+                     in_shape,
+                     in_dim,
+                     in_name,
+                     1,
+                     out_shape,
+                     out_dim,
+                     out_name,
+                     &bm_param,
+                     static_cast<int>(sizeof(bm_param)));
+#endif
   int32_t* shape[2];
   int32_t dim[2];
   const char* name[2];
