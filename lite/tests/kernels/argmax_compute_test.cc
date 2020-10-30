@@ -46,7 +46,6 @@ class ArgmaxComputeTester : public arena::TestCase {
         axis_(axis),
         keepdims_(keepdims),
         dtype_(dtype) {
-    //    alias_ = alias;
     dims_ = DDim(std::vector<int64_t>({n, c, h, w}));
   }
 
