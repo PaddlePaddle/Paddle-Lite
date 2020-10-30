@@ -99,15 +99,15 @@ class ArgmaxComputeTester : public arena::TestCase {
   // (dtype).
   template <typename T>
   void RunBaselineDtypeKernel(Scope* scope) {
-    if (alias_ == "fp32" || alias_ == "fp32_int32") {
+    if (alias_ == "fp32") {
       RunBaselineKernel<float, T>(scope);
-    } else if (alias_ == "int64" || alias_ == "int64_int32") {
+    } else if (alias_ == "int64") {
       RunBaselineKernel<int64_t, T>(scope);
-    } else if (alias_ == "int32" || alias_ == "int32_int32") {
+    } else if (alias_ == "int32") {
       RunBaselineKernel<int32_t, T>(scope);
-    } else if (alias_ == "int16" || alias_ == "int16_int32") {
+    } else if (alias_ == "int16") {
       RunBaselineKernel<int16_t, T>(scope);
-    } else if (alias_ == "uint8" || alias_ == "uint8_int32") {
+    } else if (alias_ == "uint8") {
       RunBaselineKernel<uint8_t, T>(scope);
     }
   }
@@ -132,35 +132,35 @@ class ArgmaxComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    if (alias_ == "fp32" || alias_ == "fp32_int32") {
+    if (alias_ == "fp32") {
       std::vector<float> data(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
         float sign = i % 3 == 0 ? -1.0f : 1.0f;
         data[i] = sign * static_cast<float>(i % 128) * 0.013f + 0.001;
       }
       SetCommonTensor(input_, dims_, data.data());
-    } else if (alias_ == "int64" || alias_ == "int64_int32") {
+    } else if (alias_ == "int64") {
       std::vector<int64_t> data(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
         float sign = i % 3 == 0 ? -1.0f : 1.0f;
         data[i] = sign * static_cast<int64_t>(i % 128);
       }
       SetCommonTensor(input_, dims_, data.data());
-    } else if (alias_ == "int32" || alias_ == "int32_int32") {
+    } else if (alias_ == "int32") {
       std::vector<int32_t> data(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
         float sign = i % 3 == 0 ? -1.0f : 1.0f;
         data[i] = sign * static_cast<int32_t>(i % 64);
       }
       SetCommonTensor(input_, dims_, data.data());
-    } else if (alias_ == "int16" || alias_ == "int16_int32") {
+    } else if (alias_ == "int16") {
       std::vector<int16_t> data(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
         float sign = i % 3 == 0 ? -1.0f : 1.0f;
         data[i] = sign * static_cast<int16_t>(i % 32);
       }
       SetCommonTensor(input_, dims_, data.data());
-    } else if (alias_ == "uint8" || alias_ == "uint8_int32") {
+    } else if (alias_ == "uint8") {
       std::vector<uint8_t> data(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
         data[i] = static_cast<uint8_t>(i % 32);
@@ -190,13 +190,6 @@ TEST(Argmax, precision) {
               for (int w : {9, 18}) {
                 std::vector<std::string> alias_vec{
                     "fp32", "int64", "int32", "int16", "uint8"};
-                if (dtype == 2) {
-                  alias_vec = {"fp32_int32",
-                               "int64_int32",
-                               "int32_int32",
-                               "int16_int32",
-                               "uint8_int32"};
-                }
                 for (std::string alias : alias_vec) {
                   std::unique_ptr<arena::TestCase> tester(
                       new ArgmaxComputeTester(
