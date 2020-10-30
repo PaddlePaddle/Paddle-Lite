@@ -62,7 +62,7 @@ void instance_run() {
       for (int i = 0; i < item_size / g_batch_size; i++) {
         fs >> data[i];
       }
-      data += j * item_size / g_batch_size;
+      data += item_size / g_batch_size;
     }
   }
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -73,7 +73,6 @@ void instance_run() {
   for (int i = 0; i < FLAGS_repeats; ++i) {
     predictor.Run();
   }
-
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats

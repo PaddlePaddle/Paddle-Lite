@@ -165,6 +165,13 @@ bool SubgraphEngine::LaunchDeviceProgram() {
   int out_index = 0;
   for (size_t i = 0; i < device_outputs_.size(); i++) {
     if (outname_map_.find(net_info_->output_names[i]) != outname_map_.end()) {
+      bm_tensor_t* bm_otensor = static_cast<bm_tensor_t*>(&device_outputs_[i]);
+      std::vector<int64_t> lite_odim;
+      for (size_t j = 0; j < bm_otensor->shape.num_dims; j++) {
+        lite_odim.push_back(bm_otensor->shape.dims[j]);
+      }
+      DDim shape_out(lite_odim);
+      origin_otensors_[out_index]->Resize(shape_out);
       bm_memcpy_d2s(bm_hd_,
                     const_cast<void*>(origin_otensors_[out_index]->raw_data()),
                     device_outputs_[i].device_mem);
