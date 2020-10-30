@@ -1396,7 +1396,7 @@ void sgemv_trans(const int M,
   /* end */                                \
   "4:                             @ end\n" \
   "vld1.32 {d2-d3}, [%[out]]      \n"      \
-  "vmla.32 q0, q1, %q[vbeta]      \n"      \
+  "vmla.f32 q0, q1, %q[vbeta]      \n"      \
   "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
 
 #define SGEMV_OUT_4_RELU_BETA                        \
@@ -1405,7 +1405,7 @@ void sgemv_trans(const int M,
   "vmov.i32   q1, #0              @ zero for relu\n" \
   "vld1.32 {d4-d5}, [%[out]]      \n"                \
   "vmax.f32   q0, q0, q1          @ relu\n"          \
-  "vmla.32 q0, q2, %q[vbeta]      \n"                \
+  "vmla.f32 q0, q2, %q[vbeta]      \n"                \
   "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
 
 #define SGEMV_OUT_4_RELU6_BETA                        \
@@ -1416,7 +1416,7 @@ void sgemv_trans(const int M,
   "vld1.32 {d6-d7}, [%[out]]      \n"                 \
   "vmax.f32   q0, q0, q1          @ relu6\n"          \
   "vmin.f32   q0, q0, q2          @ relu6\n"          \
-  "vmla.32 q0, q3, %q[vbeta]      \n"                 \
+  "vmla.f32 q0, q3, %q[vbeta]      \n"                 \
   "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
 
 #define SGEMV_OUT_4_LEAKEY_RELU_BETA                         \
@@ -1428,14 +1428,15 @@ void sgemv_trans(const int M,
   "vcge.f32   q3, q0, q1          @ vcgeq_f32 \n"            \
   "vmul.f32   q4, q0, q2          @ vmulq_f32 \n"            \
   "vbif q0,   q4, q3              @ choose \n"               \
-  "vmla.32 q0, q5, %q[vbeta]      \n"                        \
+  "vmla.f32 q0, q5, %q[vbeta]      \n"                        \
   "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
 
 #define SGEMV_OUT_1_BETA                   \
   /* end */                                \
   "4:                             @ end\n" \
   "vld1.32 {d2}, [%[out]]         \n"      \
-  "vmla.32 d0, d2, %e[vbeta]      \n"      \
+  "vdup.f32   d4, %[beta]         \n"      \
+  "vmla.f32 d0, d2, d4            \n"      \
   "vst1.32 {d0[0]}, [%[out]]      @ save result\n"
 
 #define SGEMV_OUT_1_RELU_BETA                        \
@@ -1444,7 +1445,8 @@ void sgemv_trans(const int M,
   "vmov.i32   d1, #0              @ zero for relu\n" \
   "vld1.32 {d2}, [%[out]]         \n"                \
   "vmax.f32   d0, d0, d1          @ relu\n"          \
-  "vmla.32 d0, d2, %e[vbeta]      \n"                \
+  "vdup.f32   d4, %[beta]         \n"                \
+  "vmla.f32 d0, d2, d4           \n"                 \
   "vst1.32 {d0[0]}, [%[out]]      @ save result\n"
 
 #define SGEMV_OUT_1_RELU6_BETA                        \
@@ -1454,11 +1456,12 @@ void sgemv_trans(const int M,
   "vdup.f32   d4, %[six]          @ six  for relu6\n" \
   "vld1.32 {d2}, [%[out]]         \n"                 \
   "vmax.f32   d0, d0, d1          @ relu6\n"          \
+  "vdup.f32   d6, %[beta]         \n"                 \
   "vmin.f32   d0, d0, d4          @ relu6\n"          \
-  "vmla.32 d0, d2, %e[vbeta]      \n"                \
+  "vmla.f32 d0, d2, d6             \n"                \
   "vst1.32 {d0[0]}, [%[out]]      @ save result\n"
 
-#define SGEMV_OUT_1_LEAKEY_RELU                                \
+#define SGEMV_OUT_1_LEAKEY_RELU_BETA                           \
   /* end */                                                    \
   "4:                               @ end\n"                   \
   "vmov.i32   d2, #0                @ zero  for leakey relu\n" \
@@ -1466,8 +1469,9 @@ void sgemv_trans(const int M,
   "vld1.32 {d4}, [%[out]]           \n"                        \
   "vcge.f32   d6, d0, d2            @ vcgeq_f32 \n"            \
   "vmul.f32   d8, d0, d3            @ vmulq_f32 \n"            \
+  "vdup.f32   d2, %[beta]         \n"                \
   "vbif d0,   d8, d6                @ choose \n"               \
-  "vmla.32 d0, d4, %e[vbeta]        \n"                        \
+  "vmla.f32 d0, d4, d2        \n"                        \
   "vst1.32 {d0[0]}, [%[out]]        @ save result\n"
 
 #endif
@@ -1671,7 +1675,7 @@ void sgemv(const int M,
                      [w0] "+r"(ptr_w0),
                      [cnt] "+r"(cnt_loop),
                      [tail] "+r"(tail_loop)
-                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [vbeta] "w"(beta)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
                    : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
     } else {
       asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1
@@ -1886,7 +1890,7 @@ void sgemv_relu(const int M,
                      [w0] "+r"(ptr_w0),
                      [cnt] "+r"(cnt_loop),
                      [tail] "+r"(tail_loop)
-                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [vbeta] "w"(vbeta)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
                    : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
     } else {
       asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU
@@ -2065,7 +2069,7 @@ void sgemv_relu6(const int M,
                     [bias2] "r"(bias2),
                     [bias3] "r"(bias3),
                     [six] "r" (six),
-                    [beta] "r"(beta)
+                    [vbeta] "w"(vbeta)
                   : "q0", "q1", "q2", "q3", "q4",
                     "q5", "q6", "q7", "q8", "q9",
                     "q10", "q11", "q12", "q13", "cc",
@@ -2104,13 +2108,26 @@ void sgemv_relu6(const int M,
     if (flag_bias) {
       bias0 = bias[j];
     }
-    asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias0] "r"(bias0), [six] "r"(six)
-                 : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [six] "r"(six),
+                     [beta] "r"(beta)
+                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    } else {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [six] "r"(six)
+                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    }
   }
 #endif  // __aarch64__
 }
@@ -2326,7 +2343,7 @@ void sgemv_leakey_relu(const int M,
           : [out] "r"(ptr_out),
             [bias0] "r"(bias0),
             [alpha] "r"(alpha),
-            [vbeta] "w"(vbeta)
+            [beta] "r"(beta)
           : "q0", "q1", "q3", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
     } else {
       asm volatile(
