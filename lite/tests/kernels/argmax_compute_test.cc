@@ -25,7 +25,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string input_ = "x";
   std::string output_ = "out";
-  std::string alias_ = "def";
+  std::string alias_ = "fp32";
   int64_t axis_ = 0.;
   bool keepdims_ = false;
   int dtype_ = -1;
@@ -163,7 +163,6 @@ class ArgmaxComputeTester : public arena::TestCase {
     } else if (alias_ == "uint8" || alias_ == "uint8_int32") {
       std::vector<uint8_t> data(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
-        float sign = i % 3 == 0 ? -1.0f : 1.0f;
         data[i] = static_cast<uint8_t>(i % 32);
       }
       SetCommonTensor(input_, dims_, data.data());
