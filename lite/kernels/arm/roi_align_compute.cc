@@ -138,7 +138,7 @@ void RoiAlignCompute::Run() {
   roi_batch_id_list.Resize({rois_num});
   int* roi_batch_id_data = roi_batch_id_list.mutable_data<int>();
 
-  if (param.RoisLod) {
+  if (param.RoisLod != nullptr) {
     int rois_batch_size = param.RoisLod->numel();
     auto* rois_lod = param.RoisLod->data<int64_t>();
     for (int n = 0; n < rois_batch_size - 1; ++n) {
