@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/sequence_unpad_compute.h"
+#include "lite/kernels/host/sequence_unpad_compute.h"
 
 REGISTER_LITE_KERNEL(sequence_unpad,
-                     kX86,
+                     kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::SequenceUnpadCompute<float>,
+                     paddle::lite::kernels::host::SequenceUnpadCompute<float>,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Length",
-               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
