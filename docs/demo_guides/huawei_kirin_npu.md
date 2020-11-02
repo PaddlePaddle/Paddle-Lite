@@ -61,7 +61,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ### 运行图像分类示例程序
 
-- 从[https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo.tar.gz)下载示例程序，解压后清单如下：
+- 下载示例程序[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo_v2_6_3.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-android-demo
@@ -96,8 +96,6 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
         ...
     - libs
       - PaddleLite
-        - bin
-          - opt # 适合Ubuntu x86平台、预编译的模型优化工具
         - armeabi-v7a # 适合armv7架构的PaddleLite预编译库以及HiAI运行时库
           - include # PaddleLite头文件，每次版本更新时记得替换掉，否则可能会出现segmentation fault或精度无法对齐的问题
           - lib
@@ -179,7 +177,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 - 常规Android应用程序
   
-  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器访问[https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/image_classification_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/image_classification_demo.apk)下载和安装已编译好的apk）
+  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器下载和安装已编译好的apk[image_classification_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/image_classification_demo_v2_6_3.apk)）
   - 访问[https://developer.android.google.cn/studio](https://developer.android.google.cn/studio/)下载安装Android Studio（当前Android demo app是基于Android Studio3.4开发的），如果无法访问，可以从[http://www.android-studio.org](http://www.android-studio.org/)下载；
   - 打开Android Studio，在"Welcome to Android Studio"窗口点击"Open an existing Android Studio project"，在弹出的路径选择窗口中进入"PaddleLite-android-demo/image_classification_demo/apk"目录，然后点击右下角的"Open"按钮即可导入工程；
   - 通过USB连接Android手机、平板或开发板；
@@ -200,9 +198,9 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成华为NPU模型，仅需将valid_targets设置为npu,arm即可。
 
   ```shell
-  注意：为了保证opt工具和库版本一致，使用了PaddleLite-android-demo.tar.gz自带的opt程序（需要在Ubuntu x86平台执行）演示NPU模型生成的过程。
+  注意：需要保证opt工具和库版本一致。
   $ cd PaddleLite-android-demo/image_classification_demo/assets/models
-  $ GLOG_v=5 ../../../libs/PaddleLite/bin/opt --model_dir=mobilenet_v1_fp32_224_fluid \
+  $ GLOG_v=5 ./opt --model_dir=mobilenet_v1_fp32_224_fluid \
       --optimize_out_type=naive_buffer \
       --optimize_out=opt_model \
       --valid_targets=npu,arm
@@ -264,7 +262,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ### 运行目标检测示例程序
 
-- 『运行图像分类示例程序』章节中的PaddleLite-android-demo.tar.gz同样包含基于[YOLOv3_MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz)的目标检测示例程序；
+- 『运行图像分类示例程序』章节中的[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo_v2_6_3.tar.gz)同样包含基于[YOLOv3_MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz)的目标检测示例程序；
 
   ```shell
   - PaddleLite-android-demo
@@ -334,7 +332,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 - 运行常规Android应用程序
 
-  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器访问[https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/object_detection_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/object_detection_demo.apk)下载和安装已编译好的apk）
+  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器下载和安装已编译好的apk[object_detection_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/object_detection_demo_v2_6_3.apk)）
   - 参考『运行图像分类示例程序』章节的类似步骤，通过Android Studio导入"PaddleLite-android-demo/object_detection_demo/apk"工程，生成和运行常规Android应用程序；
   - 默认使用ARM CPU模型进行推理，如下图所示，推理耗时55.1ms，整个流程（含预处理和后处理）的帧率约15fps；
 
@@ -379,7 +377,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
     ```shell
     $ cd PaddleLite-android-demo/object_detection_demo/assets/models
-    $ GLOG_v=5 ../../../libs/PaddleLite/bin/opt --model_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/model \
+    $ GLOG_v=5 ./opt --model_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/model \
         --param_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/params \
         --optimize_out_type=protobuf \
         --optimize_out=opt_model \
@@ -415,7 +413,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
       concat:yolo_box0.tmp_0,yolo_box1.tmp_0,yolo_box2.tmp_0:concat_2.tmp_0
       concat:transpose_0.tmp_0,transpose_1.tmp_0,transpose_2.tmp_0:concat_3.tmp_0
     $ export SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE=./subgraph_custom_partition_config_file.txt
-    $ GLOG_v=5 ../../../libs/PaddleLite/bin/opt --model_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/model \
+    $ GLOG_v=5 ./opt --model_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/model \
         --param_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/params \
         --optimize_out_type=protobuf \
         --optimize_out=opt_model \
