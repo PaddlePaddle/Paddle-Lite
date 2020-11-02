@@ -581,7 +581,7 @@ struct DropoutParam : ParamBase {
 struct SplitParam : ParamBase {
   lite::Tensor* x{};
   std::vector<lite::Tensor*> output{};
-  lite::Tensor* axis_tensor;
+  lite::Tensor* axis_tensor{};
   std::vector<lite::Tensor*> sections_tensor_list{};
 
   int axis{-1};
