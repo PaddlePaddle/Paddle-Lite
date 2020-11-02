@@ -25,6 +25,9 @@ class FillConstantCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::FillConstantParam;
 
+  template <typename T>
+  void FillConstData();
+
   void Run() override;
 
   ~FillConstantCompute() {}

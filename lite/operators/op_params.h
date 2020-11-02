@@ -692,6 +692,7 @@ struct FillConstantParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   std::vector<int64_t> shape{};
   lite::Tensor* shape_tensor{nullptr};
+  lite::Tensor* value_tensor{nullptr};
   std::vector<lite::Tensor*> shape_tensor_list{};
 
   float value{0.0f};
