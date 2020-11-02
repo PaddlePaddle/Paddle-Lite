@@ -140,14 +140,6 @@ void RoiAlignCompute::Run() {
 
   if (param.RoisLod) {
     int rois_batch_size = param.RoisLod->numel();
-
-    if (rois_batch_size - 1 != batch_size) {
-      LOG(FATAL) << "The batch size of rois and the batch size of images "
-                    " must be the same. But received the batch size of rois is"
-                 << rois_batch_size << "and the batch size of images is "
-                 << batch_size;
-    }
-
     auto* rois_lod = param.RoisLod->data<int64_t>();
     for (int n = 0; n < rois_batch_size - 1; ++n) {
       for (int i = rois_lod[n]; i < rois_lod[n + 1]; ++i) {
@@ -157,9 +149,6 @@ void RoiAlignCompute::Run() {
   } else {
     auto rois_lod = rois->lod().back();
     int rois_batch_size = rois_lod.size() - 1;
-    // CHECK_OR_FALSE(rois_batch_size == batch_size);
-    int rois_num_with_lod = rois_lod[rois_batch_size];
-    // CHECK_OR_FALSE(rois_num_with_lod == rois_num);
     for (int n = 0; n < rois_batch_size; ++n) {
       for (size_t i = rois_lod[n]; i < rois_lod[n + 1]; ++i) {
         roi_batch_id_data[i] = n;
