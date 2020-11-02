@@ -12,11 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/backends/x86/math/sequence_padding.h"
+#include "lite/backends/host/math/sequence_padding.h"
 
 namespace paddle {
 namespace lite {
-namespace x86 {
+namespace host {
 namespace math {
 
 template <typename T>
@@ -82,9 +82,9 @@ static void fast_mem_init(void* dest,
 }
 
 template <typename T>
-class PaddingLoDTensorFunctor<lite::TargetType::kX86, T> {
+class PaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
  public:
-  void operator()(const lite::Context<lite::TargetType::kX86>& context,
+  void operator()(const lite::Context<lite::TargetType::kHost>& context,
                   const lite::Tensor& seq_tensor,
                   lite::Tensor* pad_tensor,
                   const lite::Tensor& pad_value,
@@ -135,9 +135,9 @@ class PaddingLoDTensorFunctor<lite::TargetType::kX86, T> {
 };
 
 template <typename T>
-class UnpaddingLoDTensorFunctor<lite::TargetType::kX86, T> {
+class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
  public:
-  void operator()(const lite::Context<lite::TargetType::kX86>& context,
+  void operator()(const lite::Context<lite::TargetType::kHost>& context,
                   const lite::Tensor& pad_tensor,
                   lite::Tensor* seq_tensor,
                   int pad_seq_len = -1,
@@ -170,17 +170,17 @@ class UnpaddingLoDTensorFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class PaddingLoDTensorFunctor<lite::TargetType::kX86, int>;
-template class PaddingLoDTensorFunctor<lite::TargetType::kX86, int64_t>;
-template class PaddingLoDTensorFunctor<lite::TargetType::kX86, float>;
-template class PaddingLoDTensorFunctor<lite::TargetType::kX86, double>;
+template class PaddingLoDTensorFunctor<lite::TargetType::kHost, int>;
+template class PaddingLoDTensorFunctor<lite::TargetType::kHost, int64_t>;
+template class PaddingLoDTensorFunctor<lite::TargetType::kHost, float>;
+template class PaddingLoDTensorFunctor<lite::TargetType::kHost, double>;
 
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kX86, int>;
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kX86, int64_t>;
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kX86, float>;
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kX86, double>;
+template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, int>;
+template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, int64_t>;
+template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, float>;
+template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, double>;
 
 }  // namespace math
-}  // namespace x86
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
