@@ -79,7 +79,8 @@ void TestRunModel(std::shared_ptr<lite_api::PaddlePredictor> predictor,
   ASSERT_GT(out_accuracy, 0.6f);
 }
 
-TEST(multi_thread_resnet50, test_resnet50_fp32_baidu_xpu) {
+TEST(multi_thread_resnet50, test_multi_thread_baidu_xpu) {
+  setenv("XPU_LOCK_REQUIRED", "1", 1);
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
@@ -99,10 +100,35 @@ TEST(multi_thread_resnet50, test_resnet50_fp32_baidu_xpu) {
   std::thread th1(
       TestRunModel, predictor1, std::ref(raw_data), std::ref(input_shape));
 
-  // std::setenv("XPU_LOCK_REQUIRED", "1")
   th0.join();
   th1.join();
-  // std::unsetenv("XPU_LOCK_REQUIRED")
+  unsetenv("XPU_LOCK_REQUIRED");
+}
+
+TEST(multi_process_resnet50, test_multi_process_baidu_xpu) {
+  setenv("XPU_LOCK_REQUIRED", "1", 1);
+  lite_api::CxxConfig config;
+  config.set_model_dir(FLAGS_model_dir);
+  config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
+                           lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  config.set_xpu_workspace_l3_size_per_thread();
+  auto predictor0 = lite_api::CreatePaddlePredictor(config);
+  auto predictor1 = lite_api::CreatePaddlePredictor(config);
+
+  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
+  std::vector<int> input_shape{
+      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
+  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
+
+  pid_t fpid = fork();
+  CHECK_GE(fpid, 0) << "fork failed";
+  if (fpid == 0) {
+    TestRunModel(predictor0, raw_data, input_shape);
+  } else {
+    TestRunModel(predictor1, raw_data, input_shape);
+  }
+  unsetenv("XPU_LOCK_REQUIRED");
 }
 
 }  // namespace lite
