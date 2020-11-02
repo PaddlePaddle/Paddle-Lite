@@ -455,7 +455,7 @@ void GenerateProposalsCompute::Run() {
     tmp_lod.push_back(num_proposals);
   }
 
-  if (param.RpnRoisLod) {
+  if (param.RpnRoisLod != nullptr) {
     param.RpnRoisLod->Resize(DDim(std::vector<DDim::value_type>({num})));
     int64_t *lod_data = param.RpnRoisLod->mutable_data<int64_t>();
     for (int i = 0; i < num; i++) {
