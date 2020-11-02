@@ -28,8 +28,8 @@ class FillConstantComputeTester : public arena::TestCase {
   std::string value_tensor_ = "value_tensor";
   std::vector<std::string> shape_tensor_list_{};
 
-  std::vector<float> tensor_value_{};
   std::vector<int64_t> shape_{};
+  std::vector<float> tensor_value_{};
   float value_{0.0f};
   int dtype_{static_cast<int>(VarDescAPI::VarDataType::FP32)};
 
