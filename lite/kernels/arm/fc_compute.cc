@@ -133,6 +133,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                              false,
                              n_,
                              k_,
+                             0.f,
                              param.bias != nullptr,
                              b_data,
                              flag_act,
