@@ -86,5 +86,6 @@ int main(int argc, char** argv) {
   int im_height = std::stoi(argv[2]);
   int im_width = std::stoi(argv[3]);
   RunModel(model_dir, im_height, im_width);
+  std::cout << "Done" << std::endl;
   return 0;
 }
