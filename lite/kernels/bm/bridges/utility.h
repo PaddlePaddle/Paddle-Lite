@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <math.h>
 #include <memory>
 #include <string>
 #include <vector>
