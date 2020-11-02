@@ -52,7 +52,7 @@ Paddle Lite已支持RK NPU的预测部署。
 
 ### 运行图像分类示例程序
 
-- 从[https://paddlelite-demo.bj.bcebos.com/devices/rockchip/PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/PaddleLite-linux-demo.tar.gz)下载示例程序，解压后清单如下：
+- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/PaddleLite-linux-demo_v2_6_3.tar.gz)，解压后清单如下：
 
 ```shell
 - PaddleLite-linux-demo
@@ -100,7 +100,7 @@ Paddle Lite已支持RK NPU的预测部署。
 ```shell
 $ cd PaddleLite-linux-demo/image_classification_demo/shell
 $ ./run.sh arm64 # For RK1808 EVB
-$ ./run.sh armhf # For RK1806 EVB 
+$ ./run.sh armhf # For RK1806 EVB
 ...
 warmup: 5 repeat: 10, average: 6.499500 ms, max: 6.554000 ms, min: 6.468000 ms
 results: 3

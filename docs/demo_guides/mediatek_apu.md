@@ -46,7 +46,7 @@ Paddle Lite已支持MTK APU的预测部署。
 
 ### 运行图像分类示例程序
 
-- 从[https://paddlelite-demo.bj.bcebos.com/devices/mediatek/PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/PaddleLite-android-demo.tar.gz)下载示例程序，解压后清单如下：
+- 下载示例程序[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/PaddleLite-android-demo_v2_6_3.tar.gz)，解压后清单如下：
 
 ```shell
 - PaddleLite-android-demo
@@ -83,6 +83,7 @@ Paddle Lite已支持MTK APU的预测部署。
         - lib
           - libc++_shared.so
           - libpaddle_light_api_shared.so # 预编译PaddleLite库
+      - armeabi-v7a
     - OpenCV # OpenCV 4.2 for android
 ```
 
