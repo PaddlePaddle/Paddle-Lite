@@ -26,7 +26,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ArgmaxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T>
+class ArgmaxCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::ArgmaxParam;
 
