@@ -50,6 +50,7 @@ using lite_api::Place;
 using lite_api::MLUCoreVersion;
 using lite::LightPredictorImpl;
 using lite_api::OptBase;
+using lite_api::CxxModelBuffer;
 
 #ifndef LITE_ON_TINY_PUBLISH
 using lite::CxxPaddleApiImpl;
@@ -124,9 +125,14 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_param_file", &CxxConfig::set_param_file)
       .def("param_file", &CxxConfig::param_file)
       .def("set_valid_places", &CxxConfig::set_valid_places)
-      .def("set_model_buffer", &CxxConfig::set_model_buffer)
+      .def("set_model_buffer",
+           (void (CxxConfig::*)(const char *, size_t, const char *, size_t)) &
+               CxxConfig::set_model_buffer)
+      .def("set_model_buffer",
+           (void (CxxConfig::*)(std::shared_ptr<CxxModelBuffer>)) &
+               CxxConfig::set_model_buffer)
       .def("set_passes_internal", &CxxConfig::set_passes_internal)
-      .def("model_from_memory", &CxxConfig::model_from_memory);
+      .def("is_model_from_memory", &CxxConfig::is_model_from_memory);
 #ifdef LITE_WITH_ARM
   cxx_config.def("set_threads", &CxxConfig::set_threads)
       .def("threads", &CxxConfig::threads)
@@ -153,7 +159,7 @@ void BindLiteMobileConfig(py::module *m) {
       .def("set_model_dir", &MobileConfig::set_model_dir)
       .def("model_dir", &MobileConfig::model_dir)
       .def("set_model_buffer", &MobileConfig::set_model_buffer)
-      .def("model_from_memory", &MobileConfig::model_from_memory);
+      .def("is_model_from_memory", &MobileConfig::is_model_from_memory);
 #ifdef LITE_WITH_ARM
   mobile_config.def("set_threads", &MobileConfig::set_threads)
       .def("threads", &MobileConfig::threads)
