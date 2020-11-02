@@ -79,6 +79,8 @@ REGISTER_LITE_KERNEL(arg_max,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
 
+#ifdef LITE_BUILD_EXTRA
+// arg_max only supports float input except that LITE_WITH_EXTRA=ON
 REGISTER_LITE_KERNEL(arg_max,
                      kARM,
                      kAny,
@@ -118,3 +120,4 @@ REGISTER_LITE_KERNEL(arg_max,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kUInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
+#endif
