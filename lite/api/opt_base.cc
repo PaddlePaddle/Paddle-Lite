@@ -404,8 +404,7 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
     prog_path = opt_config_.model_file();
   }
   lite::cpp::ProgramDesc cpp_prog;
-  framework::proto::ProgramDesc pb_proto_prog =
-      *lite::LoadProgram(prog_path, false);
+  framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   lite::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);
