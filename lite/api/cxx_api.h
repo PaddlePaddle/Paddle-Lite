@@ -170,7 +170,7 @@ class LITE_API Predictor {
     program_->Run();
 #ifdef LITE_WITH_XPU
     if (GetBoolFromEnv(XPU_LOCK_REQUIRED)) {
-      TargetWrapperXPU::ReleaseXPU();
+      TargetWrapperXPU::UnlockXPU();
     }
 #endif
   }

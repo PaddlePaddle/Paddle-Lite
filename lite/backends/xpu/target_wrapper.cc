@@ -79,6 +79,7 @@ XPUScratchPadGuard TargetWrapperXPU::MallocScratchPad(size_t size,
 void TargetWrapperXPU::LockXPU(int dev_no) {
   // TODO(zhupengyang): support multi-xpu later
   if (reentrant_ == 0) {
+    mutex_.lock();
     struct flock f_lock;
     f_lock.l_whence = 0;
     f_lock.l_len = 0;
@@ -94,7 +95,7 @@ void TargetWrapperXPU::LockXPU(int dev_no) {
   reentrant_++;
 }
 
-void TargetWrapperXPU::ReleaseXPU(int dev_no) {
+void TargetWrapperXPU::UnlockXPU(int dev_no) {
   if (xpu_lock_fd_ < 0 && reentrant_ == 0) return;
 
   if (reentrant_ == 1) {
@@ -106,6 +107,7 @@ void TargetWrapperXPU::ReleaseXPU(int dev_no) {
     fcntl(xpu_lock_fd_, F_SETLKW, &f_lock);
     close(xpu_lock_fd_);
     xpu_lock_fd_ = -1;
+    mutex_.unlock();
   }
   reentrant_--;
 }
@@ -113,8 +115,9 @@ void TargetWrapperXPU::ReleaseXPU(int dev_no) {
 std::string TargetWrapperXPU::multi_encoder_precision;  // NOLINT
 int TargetWrapperXPU::workspace_l3_size_per_thread{0};
 LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
-int TargetWrapperXPU::reentrant_ = 0;
-int TargetWrapperXPU::xpu_lock_fd_ = -1;
+LITE_THREAD_LOCAL int TargetWrapperXPU::reentrant_{0};
+int TargetWrapperXPU::xpu_lock_fd_{-1};
+std::mutex TargetWrapperXPU::mutex_{};
 
 }  // namespace lite
 }  // namespace paddle

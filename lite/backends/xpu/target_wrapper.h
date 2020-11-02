@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>                                 // std::unique_ptr
+#include <mutex>                                  // NOLINT
 #include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
 #include "lite/core/target_wrapper.h"             // TargetWrapper
 #include "lite/utils/cp_logging.h"                // CHECK_EQ
@@ -97,15 +98,16 @@ class TargetWrapper<TARGET(kXPU)> {
   }
 
   static void LockXPU(int dev_no = 0);
-  static void ReleaseXPU(int dev_no = 0);
+  static void UnlockXPU(int dev_no = 0);
 
   static std::string multi_encoder_precision;  // NOLINT
   static int workspace_l3_size_per_thread;
 
  private:
   static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
-  static int reentrant_;
+  static LITE_THREAD_LOCAL int reentrant_;
   static int xpu_lock_fd_;
+  static std::mutex mutex_;
 };
 
 }  // namespace lite
