@@ -14,7 +14,32 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void split2(__read_only image2d_t input,
+__kernel void SplitBatch(__read_only image2d_t input,
+                    __write_only image2d_t output0,
+                    __write_only image2d_t output1,
+                    __private const int axis,
+                    __private const int out0_dims_axis,
+                    __private const int in_dims_second,
+                    __private const int in_dims_last,
+                    __private const int width) {
+  const int cw_idx = get_global_id(0);
+  const int hb_idx = get_global_id(1);
+
+  const int2 in_pos = (int2)(cw_idx, hb_idx);
+  const CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
+  const int n = hb_idx / width;
+
+  int2 out_pos;
+  if (n < out0_dims_axis) {
+    out_pos = in_pos;
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output0, out_pos, in_data);
+  } else {
+    out_pos.y = hb_idx - out0_dims_axis;
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
+  }
+}
+
+__kernel void SplitChannel(__read_only image2d_t input,
                     __write_only image2d_t output0,
                     __write_only image2d_t output1,
                     __private const int axis,
@@ -26,12 +51,8 @@ __kernel void split2(__read_only image2d_t input,
   const int width_idx = get_global_id(1);
   const int hb_idx = get_global_id(2);
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
-
   const int2 in_pos = (int2)(channel_blk_idx * in_dims_last + width_idx, hb_idx);
-  const CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, in_pos);
+  const CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
   const int c = channel_blk_idx * 4;
 
   // write all data to output0 directly
@@ -62,7 +83,7 @@ __kernel void split2(__read_only image2d_t input,
       WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
     } else {
       CL_DTYPE4 combined_val;
-      CL_DTYPE4 latter = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(in_pos.x + in_dims_last, in_pos.y));
+      CL_DTYPE4 latter = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_pos.x + in_dims_last, in_pos.y));
       if (channel_offset == 1) {
         combined_val = (CL_DTYPE4)(in_data.y, in_data.z, in_data.w, latter.x);
       } else if (channel_offset == 2) {
@@ -75,75 +96,52 @@ __kernel void split2(__read_only image2d_t input,
   }
 }
 
-/*
-
-__kernel void split2(__read_only image2d_t input,
+__kernel void SplitHeight(__read_only image2d_t input,
                     __write_only image2d_t output0,
                     __write_only image2d_t output1,
-                    __private const int flag,
+                    __private const int axis,
                     __private const int out0_dims_axis,
                     __private const int in_dims_second,
                     __private const int in_dims_last,
                     __private const int width) {
+  const int cw_idx = get_global_id(0);
+  const int hb_idx = get_global_id(1);
 
-  const int width_idx = get_global_id(0);
-  const int channel_blk_idx = get_global_id(1);
-  const int hb_idx = get_global_id(2);
+  const int2 in_pos = (int2)(cw_idx, hb_idx);
+  const CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
+  const int h = hb_idx % width;
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
-
-
-  int2 in_pos = (int2)(channel_blk_idx * in_dims_last + width_idx, hb_idx);
   int2 out_pos;
-  CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, in_pos);
-  CL_DTYPE4 out_data;
-  int c;
-
-  if (flag == 1) {
-    for (int i = 0; i < 4; i++) {
-      c = channel_blk_idx * 4 + i;
-      if (c >= in_dims_second) break;
-
-      int c_out;
-      CL_DTYPE4 in_data;
-      if (c < out0_dims_axis) {
-          out_pos = in_pos;
-      } else {
-          c_out = c - out0_dims_axis;
-          out_pos = (int2)((c_out / 4) * in_dims_last + width_idx, hb_idx);
-      }
-
-      int offset = c % 4;
-      CL_DTYPE val;
-      if (offset == 0) {
-          val = in_data.x;
-      } else if (offset == 1) {
-          val = in_data.y;
-      } else if (offset == 2) {
-          val = in_data.z;
-      } else if (offset == 3) {
-          val = in_data.w;
-      }
-
-      if (i == 0) {
-        out_data.x = val;
-      } else if (i == 1) {
-        out_data.y = val;
-      } else if (i == 2) {
-        out_data.z = val;
-      } else if (i == 3) {
-        out_data.w = val;
-      }
-    }
-
-    if (c < out0_dims_axis) {
-        WRITE_IMG_TYPE(CL_DTYPE_CHAR, output0, out_pos, out_data);
-    } else {
-        WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, out_data);
-    }
-  } else if (flag == 2) {
-      printf("not imple in split kernel\n");
+  if (h < out0_dims_axis) {
+    out_pos = in_pos;
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output0, out_pos, in_data);
+  } else {
+    out_pos.y = hb_idx - out0_dims_axis;
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
   }
-} */
+}
+
+__kernel void SplitWidth(__read_only image2d_t input,
+                    __write_only image2d_t output0,
+                    __write_only image2d_t output1,
+                    __private const int axis,
+                    __private const int out0_dims_axis,
+                    __private const int in_dims_second,
+                    __private const int in_dims_last,
+                    __private const int width) {
+  const int cw_idx = get_global_id(0);
+  const int hb_idx = get_global_id(1);
+
+  const int2 in_pos = (int2)(cw_idx, hb_idx);
+  const CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
+  const int w = cw_idx % in_dims_last;
+
+  int2 out_pos;
+  if (w < out0_dims_axis) {
+    out_pos = in_pos;
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output0, out_pos, in_data);
+  } else {
+    out_pos.x = cw_idx - out0_dims_axis;
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
+  }
+}
