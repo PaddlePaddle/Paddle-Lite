@@ -199,6 +199,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
   ```shell
   注意：需要保证opt工具和库版本一致。
+  $ cd PaddleLite-android-demo/image_classification_demo/assets/models
   $ GLOG_v=5 ./opt --model_dir=mobilenet_v1_fp32_224_fluid \
       --optimize_out_type=naive_buffer \
       --optimize_out=opt_model \
