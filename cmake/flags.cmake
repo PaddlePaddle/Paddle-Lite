@@ -148,7 +148,7 @@ set(GPU_COMMON_FLAGS
     -Wno-error=array-bounds # Warnings in Eigen::array
     -gencode arch=compute_62,code=sm_62
 )
-if(NOT LITE_WITH_CUDA) 
+if(NOT LITE_WITH_CUDA AND NOT(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64.*|AARCH64.*)"))
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
 endif()
 endif(NOT WIN32)
