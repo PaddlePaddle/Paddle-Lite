@@ -36,6 +36,44 @@ void sgemm(bool is_transA,
            bool is_bias,
            const operators::ActivationParam act_param,
            ARMContext* ctx) {
+  // alpha default is 1;
+  bool has_alpha = fabsf(alpha - 1.f) > 1e-8f ? 1 : 0;
+  if (N == 1 && !has_alpha) {
+    sgemv(A,
+          B,
+          C,
+          is_transA,
+          M,
+          K,
+          beta,
+          is_bias,
+          bias,
+          act_param.has_active,
+          act_param.active_type,
+          ctx);
+    return;
+  }
+  if (M == 1 && !has_alpha) {
+    float bias_ptr[N];  // NOLINT
+    if (is_bias) {
+      for (int i = 0; i < N; i++) {
+        bias_ptr[i] = bias[0];
+      }
+    }
+    sgemv(B,
+          A,
+          C,
+          !is_transB,
+          N,
+          K,
+          beta,
+          is_bias,
+          bias_ptr,
+          act_param.has_active,
+          act_param.active_type,
+          ctx);
+    return;
+  }
   int hblock = get_hblock(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
   ctx->ExtendWorkspace(m_roundup * K * sizeof(float));
