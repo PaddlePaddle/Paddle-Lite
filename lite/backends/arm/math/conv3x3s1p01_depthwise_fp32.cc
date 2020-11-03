@@ -1471,7 +1471,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                           \
   "fadd v12.4s, v12.4s, v11.4s\n"                         \
   "fadd v13.4s, v13.4s, v14.4s\n"                         \
-  "fadd v13.4s, v13.4s, v15.4s\n"  
+  "fadd v13.4s, v13.4s, v15.4s\n"
 
 #else
 #define INIT_S1                                                    \
@@ -3479,8 +3479,8 @@ void conv_depthwise_3x3s1p0_bias_s_relu6(float *dout,
                        [mask2] "w"(vmask_rp2),
                        [vzero] "w"(vzero),
                        [vsix] "w"(vsix),
-                       [out1] "r"(doutr0),
-                       [out2] "r"(doutr1)
+                       [out1] "r"(out_buf1),
+                       [out2] "r"(out_buf2)
                      : "cc",
                        "memory",
                        "v0",
@@ -3512,8 +3512,8 @@ void conv_depthwise_3x3s1p0_bias_s_relu6(float *dout,
                        [vzero] "w"(vzero),
                        [six_ptr] "r"(six),
                        [bias_val] "r"(bias_val),
-                       [out1] "r"(doutr0),
-                       [out2] "r"(doutr1)
+                       [out1] "r"(out_buf1),
+                       [out2] "r"(out_buf2)
                      : "cc",
                        "memory",
                        "q4",
@@ -3930,8 +3930,8 @@ void conv_depthwise_3x3s1p0_bias_s_leakyRelu(float *dout,
                        [mask2] "w"(vmask_rp2),
                        [vzero] "w"(vzero),
                        [vscale] "w"(vscale),
-                       [out1] "r"(doutr0),
-                       [out2] "r"(doutr1)
+                       [out1] "r"(out_buf1),
+                       [out2] "r"(out_buf2)
                      : "cc",
                        "memory",
                        "v0",
@@ -3970,8 +3970,8 @@ void conv_depthwise_3x3s1p0_bias_s_leakyRelu(float *dout,
                        [vzero] "w"(vzero),
                        [scale_ptr] "r"(scale),
                        [bias_val] "r"(bias_val),
-                       [out1] "r"(doutr0),
-                       [out2] "r"(doutr1)
+                       [out1] "r"(out_buf1),
+                       [out2] "r"(out_buf2)
                      : "cc",
                        "memory",
                        "q4",
