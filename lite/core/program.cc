@@ -20,6 +20,7 @@
 #include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
 #include "lite/operators/while_op.h"
+#include "lite/utils/env.h"
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
@@ -257,6 +258,11 @@ RuntimeProgram::RuntimeProgram(
 }
 
 void RuntimeProgram::Run() {
+#ifdef LITE_WITH_XPU
+  if (GetBoolFromEnv(XPU_LOCK_REQUIRED)) {
+    TargetWrapperXPU::LockXPU();
+  }
+#endif
 #ifdef LITE_WITH_PRECISION_PROFILE
   auto inst_precision_profiler = paddle::lite::profile::PrecisionProfiler();
   std::string precision_profiler_summary =
@@ -298,6 +304,11 @@ void RuntimeProgram::Run() {
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
+#ifdef LITE_WITH_XPU
+  if (GetBoolFromEnv(XPU_LOCK_REQUIRED)) {
+    TargetWrapperXPU::UnlockXPU();
+  }
+#endif
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
 #endif
