@@ -143,9 +143,9 @@ class ElementwiseComputeTester : public arena::TestCase {
     out->Resize(out_dims_);
     auto i64_out_dim = out->dims().Vectorize();
     std::vector<int32_t> out_dim(i64_out_dim.begin(), i64_out_dim.end());
-    BroadcastCPURef<T>(x->data<T>(),
-                       y->data<T>(),
-                       out->mutable_data<T>(),
+    BroadcastCPURef<T>(x->template data<T>(),
+                       y->template data<T>(),
+                       out->template mutable_data<T>(),
                        x_dim_full_,
                        y_dim_full_,
                        out_dim,
