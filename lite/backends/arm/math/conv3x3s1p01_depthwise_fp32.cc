@@ -1471,12 +1471,7 @@ void conv_depthwise_3x3s1_fp32(const float *din,
                                                           \
   "fadd v12.4s, v12.4s, v11.4s\n"                         \
   "fadd v13.4s, v13.4s, v14.4s\n"                         \
-  "fadd v13.4s, v13.4s, v15.4s\n"  // \
-                    // "prfm pldl1keep, [%[out1]]\n" \
-                    // "prfm pldl1keep, [%[out2]]\n" \
-                    // \
-                    // "st1 {v12.4s}, [%[out1]]\n" \
-                    // "st1 {v13.4s}, [%[out2]]\n" \
+  "fadd v13.4s, v13.4s, v15.4s\n"  
 
 #else
 #define INIT_S1                                                    \
@@ -2869,8 +2864,8 @@ void conv_depthwise_3x3s1p1_bias_s_relu6(float *dout,
                        [mask] "w"(vmask_rp),
                        [bias] "w"(wbias),
                        [vsix] "w"(vsix),
-                       [out1] "r"(doutr0),
-                       [out2] "r"(doutr1)
+                       [out1] "r"(out_buf1),
+                       [out2] "r"(out_buf2)
                      : "v0",
                        "v1",
                        "v2",
@@ -2902,8 +2897,8 @@ void conv_depthwise_3x3s1p1_bias_s_relu6(float *dout,
                        [mask] "w"(vmask_rp),
                        [bias] "w"(wbias),
                        [six_ptr] "r"(six),
-                       [out1] "r"(doutr0),
-                       [out2] "r"(doutr1)
+                       [out1] "r"(out_buf1),
+                       [out2] "r"(out_buf2)
                      : "cc",
                        "memory",
                        "q6",
@@ -3026,8 +3021,8 @@ void conv_depthwise_3x3s1p1_bias_s_leakyRelu(float *dout,
                        [mask] "w"(vmask_rp),
                        [bias] "w"(wbias),
                        [vscale] "w"(vscale),
-                       [out1] "r"(doutr0),
-                       [out2] "r"(doutr1)
+                       [out1] "r"(out_buf1),
+                       [out2] "r"(out_buf2)
                      : "v0",
                        "v1",
                        "v2",
@@ -3045,7 +3040,11 @@ void conv_depthwise_3x3s1p1_bias_s_leakyRelu(float *dout,
                        "v14",
                        "v15",
                        "v16",
-                       "v17");
+                       "v17",
+                       "v18",
+                       "v19",
+                       "v20",
+                       "v21");
 #else
         asm volatile(COMPUTE_S_S1 RESULT_S_S1_LEAKY_RELU
                      : [din0] "+r"(dr0_ptr),
@@ -3059,8 +3058,8 @@ void conv_depthwise_3x3s1p1_bias_s_leakyRelu(float *dout,
                        [mask] "w"(vmask_rp),
                        [bias] "w"(wbias),
                        [scale_ptr] "r"(scale),
-                       [out1] "r"(doutr0),
-                       [out2] "r"(doutr1)
+                       [out1] "r"(out_buf1),
+                       [out2] "r"(out_buf2)
                      : "cc",
                        "memory",
                        "q6",
@@ -3942,7 +3941,14 @@ void conv_depthwise_3x3s1p0_bias_s_leakyRelu(float *dout,
                        "v12",
                        "v13",
                        "v14",
-                       "v15");
+                       "v15",
+                       "v16",
+                       "v17",
+                       "v18",
+                       "v19",
+                       "v20",
+                       "v21");
+
 #else
         asm volatile(COMPUTE_S_S1_P0 RESULT_S_S1_LEAKY_RELU
                      : [din0] "+r"(dr0),
