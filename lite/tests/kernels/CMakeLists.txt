@@ -86,7 +86,9 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_pixel_shuffle_compute SRCS pixel_shuffle_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_scatter_compute SRCS scatter_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_sequence_expand_as_compute SRCS sequence_expand_as_compute_test.cc DEPS ${test_kernel_deps})
-
+    lite_cc_test(test_kernel_sin_compute SRCS sin_compute_test.cc DEPS arena_framework ${test_kernel_deps})
+    lite_cc_test(test_kernel_cos_compute SRCS cos_compute_test.cc DEPS arena_framework ${test_kernel_deps})
+    
     # for training kernel
     if (LITE_WITH_TRAIN)
         lite_cc_test(test_kernel_mean_compute SRCS mean_compute_test.cc DEPS ${test_kernel_deps})
