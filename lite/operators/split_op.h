@@ -42,7 +42,7 @@ class SplitOp : public OpLite {
     ch->input_shape = ch->DimToStr(param_.x->dims());
     ch->output_shape = ch->DimToStr(param_.output->dims());
     ch->remark = "axis" + std::to_string(param_.axis) + "num" +
-                 std::string(param_.num) + "sections" +
+                 std::to_string(param_.num) + "sections" +
                  ch->DimToStr(param_.sections);
   }
 #endif
