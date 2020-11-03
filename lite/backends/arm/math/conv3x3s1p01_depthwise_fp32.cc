@@ -2912,8 +2912,12 @@ void conv_depthwise_3x3s1p1_bias_s_relu6(float *dout,
                        "q14",
                        "q15");
 #endif
-        doutr0 += 2 * w_out;
-        doutr1 += 2 * w_out;
+        for (int w = 0; w < w_out; ++w) {
+          *doutr0++ = out_buf1[w];
+          *doutr1++ = out_buf2[w];
+        }
+        doutr0 = doutr1;
+        doutr1 += w_out;
       }  // end of processing heights
     }    // end of processing channels
   }      // end of processing batchs
@@ -3073,8 +3077,12 @@ void conv_depthwise_3x3s1p1_bias_s_leakyRelu(float *dout,
                        "q14",
                        "q15");
 #endif
-        doutr0 += 2 * w_out;
-        doutr1 += 2 * w_out;
+        for (int w = 0; w < w_out; ++w) {
+          *doutr0++ = out_buf1[w];
+          *doutr1++ = out_buf2[w];
+        }
+        doutr0 = doutr1;
+        doutr1 += w_out;
       }  // end of processing heights
     }    // end of processing channels
   }      // end of processing batchs
