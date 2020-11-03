@@ -42,6 +42,7 @@ DEFINE_int32(flag_act, 0, "do act");
 DEFINE_bool(flag_bias, false, "with bias");
 DEFINE_double(leakey_relu_alpha, 1.0, "leakey relu alpha");
 DEFINE_double(clipped_coef, 6.0, "clipped relu coef");
+DEFINE_double(beta, 0.0, "beta");
 bool test_sgemv(bool tra,
                 int m,
                 int k,
@@ -50,7 +51,8 @@ bool test_sgemv(bool tra,
                 int cls,
                 int ths,
                 float six = 6.f,
-                float alpha = 1.f) {
+                float alpha = 1.f,
+                float beta = 0.f) {
   Tensor ta;
   Tensor tb;
   Tensor tc;
@@ -103,7 +105,7 @@ bool test_sgemv(bool tra,
                dbias,
                dc_basic,
                1.f,
-               0.f,
+               beta,
                tra,
                has_bias,
                flag_act,
@@ -125,6 +127,7 @@ bool test_sgemv(bool tra,
                                    tra,
                                    m,
                                    k,
+                                   beta,
                                    has_bias,
                                    dbias,
                                    flag_act > 0,
@@ -143,6 +146,7 @@ bool test_sgemv(bool tra,
                                    tra,
                                    m,
                                    k,
+                                   beta,
                                    has_bias,
                                    dbias,
                                    flag_act > 0,
@@ -199,6 +203,7 @@ TEST(TestLiteSgemv, Sgemv) {
               for (auto& th : {1, 2, 4}) {
                 float six = 6.f;
                 float alpha = 8.88f;
+                float beta = 0.f;
                 auto flag = test_sgemv(tra,
                                        m,
                                        k,
@@ -207,17 +212,18 @@ TEST(TestLiteSgemv, Sgemv) {
                                        FLAGS_cluster,
                                        th,
                                        six,
-                                       alpha);
+                                       alpha,
+                                       beta);
                 if (flag) {
                   VLOG(4) << "test m = " << m << ", k=" << k
                           << ", bias: " << (has_bias ? "true" : "false")
-                          << ", flag act: " << flag_act
+                          << ", flag act: " << flag_act << ", beta: " << beta
                           << ", trans A: " << (tra ? "true" : "false")
                           << ", threads: " << th << " passed\n";
                 } else {
                   LOG(FATAL) << "test m = " << m << ", k=" << k
                              << ", bias: " << (has_bias ? "true" : "false")
-                             << ", flag_act: " << flag_act
+                             << ", flag_act: " << flag_act << ", beta: " << beta
                              << ", trans A: " << (tra ? "true" : "false")
                              << ", threads: " << th << " failed\n";
                 }
@@ -242,13 +248,16 @@ TEST(TestSgemvCustom, Sgemv_custom) {
                          FLAGS_cluster,
                          FLAGS_threads,
                          FLAGS_clipped_coef,
-                         FLAGS_leakey_relu_alpha);
+                         FLAGS_leakey_relu_alpha,
+                         FLAGS_beta);
   if (!flag) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", k=" << FLAGS_K
                << ", trans A: " << FLAGS_traA << ", bias: " << FLAGS_flag_bias
-               << ", act: " << FLAGS_flag_act << " failed!!";
+               << ", act: " << FLAGS_flag_act << ", beta: " << FLAGS_beta
+               << " failed!!";
   }
   LOG(INFO) << "test m = " << FLAGS_M << ", k=" << FLAGS_K
             << ", trans A: " << FLAGS_traA << ", bias: " << FLAGS_flag_bias
-            << ", act: " << FLAGS_flag_act << " passed!!";
+            << ", act: " << FLAGS_flag_act << ", beta: " << FLAGS_beta
+            << " passed!!";
 }

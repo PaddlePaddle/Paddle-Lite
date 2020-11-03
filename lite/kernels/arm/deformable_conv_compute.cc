@@ -198,6 +198,7 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
             false,
             m,
             k,
+            0.f,
             is_bias,
             bias_group,
             param.conv_param.activation_param.has_active,

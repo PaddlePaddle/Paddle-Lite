@@ -59,6 +59,15 @@ bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.value = opdesc.GetAttr<float>("value");
   param_.force_cpu = opdesc.GetAttr<bool>("force_cpu");
 
+  if (opdesc.HasInput("ValueTensor") && !opdesc.Input("ValueTensor").empty()) {
+    auto value_tensor_name = opdesc.Input("ValueTensor").front();
+    param_.value_tensor = GetMutableVar<lite::Tensor>(scope, value_tensor_name);
+    CHECK_EQ(param_.value_tensor->numel(), 1)
+        << "When use Tensor as value to set Tensor value in fill_cosntant, "
+           "value input(ValueTensor) size must be 1, but get "
+        << param_.value_tensor->numel();
+  }
+
   if (opdesc.HasInput("ShapeTensor") && !opdesc.Input("ShapeTensor").empty()) {
     auto shape_tensor_name = opdesc.Input("ShapeTensor").front();
     param_.shape_tensor = GetMutableVar<lite::Tensor>(scope, shape_tensor_name);

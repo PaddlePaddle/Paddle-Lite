@@ -25,9 +25,11 @@ class FillConstantComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string out_ = "out";
   std::string shape_tensor_ = "shape_tensor";
+  std::string value_tensor_ = "value_tensor";
   std::vector<std::string> shape_tensor_list_{};
 
   std::vector<int64_t> shape_{};
+  std::vector<float> tensor_value_{};
   float value_{0.0f};
   int dtype_{static_cast<int>(VarDescAPI::VarDataType::FP32)};
 
@@ -40,12 +42,14 @@ class FillConstantComputeTester : public arena::TestCase {
   FillConstantComputeTester(const Place& place,
                             const std::string& alias,
                             std::vector<int64_t> shape,
+                            std::vector<float> tensor_value,
                             float value,
                             int dtype,
                             const bool is_use_shape_tensor = false,
                             const bool is_use_shape_tensor_list = false)
       : TestCase(place, alias),
         shape_(shape),
+        tensor_value_(tensor_value),
         value_(value),
         dtype_(dtype),
         is_use_shape_tensor_(is_use_shape_tensor),
@@ -76,6 +80,9 @@ class FillConstantComputeTester : public arena::TestCase {
     }
     out->Resize(out_shape);
 
+    if (!tensor_value_.empty()) {
+      value_ = tensor_value_[0];
+    }
     auto* output_data = out->mutable_data<float>();
     for (int i = 0; i < out->numel(); i++) {
       output_data[i] = value_;
@@ -84,6 +91,9 @@ class FillConstantComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("fill_constant");
+    if (!tensor_value_.empty()) {
+      op_desc->SetInput("ValueTensor", {value_tensor_});
+    }
     if (is_use_shape_tensor_) {
       op_desc->SetInput("ShapeTensor", {shape_tensor_});
     } else if (is_use_shape_tensor_list_) {
@@ -98,6 +108,13 @@ class FillConstantComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
+    if (!tensor_value_.empty()) {
+      std::vector<float> ddata_tensor{tensor_value_.begin(),
+                                      tensor_value_.end()};
+      SetCommonTensor(value_tensor_,
+                      DDim({static_cast<int64_t>(tensor_value_.size())}),
+                      ddata_tensor.data());
+    }
     if (is_use_shape_tensor_) {
       std::vector<int> dshape_tensor(shape_.begin(), shape_.end());
       SetCommonTensor(shape_tensor_,
@@ -117,10 +134,12 @@ void TestFillConstantShape(Place place, float abs_error) {
   std::vector<std::vector<int64_t>> out_shapes{
       {2, 3, 4, 5}, {2, 3, 4}, {3, 4}, {4}};
   for (auto out_shape : out_shapes) {
+    std::vector<float> value_tensor = {2.f};
     std::unique_ptr<arena::TestCase> tester(new FillConstantComputeTester(
         place,
         "def",
         out_shape,
+        value_tensor,
         1.f,
         static_cast<int>(VarDescAPI::VarDataType::FP32)));
     arena::Arena arena(std::move(tester), place, abs_error);
@@ -135,6 +154,7 @@ void TestFillConstantValue(Place place, float abs_error) {
         place,
         "def",
         {2, 3},
+        {},
         value,
         static_cast<int>(VarDescAPI::VarDataType::FP32)));
     arena::Arena arena(std::move(tester), place, abs_error);
@@ -147,6 +167,7 @@ void TestFillConstantShapeTensor(Place place, float abs_error) {
       place,
       "def",
       {2, 3, 4},
+      {},
       1.f,
       static_cast<int>(VarDescAPI::VarDataType::FP32),
       true));
@@ -159,6 +180,7 @@ void TestFillConstantShapeTensorList(Place place, float abs_error) {
       place,
       "def",
       {2, 3, 4},
+      {},
       1.f,
       static_cast<int>(VarDescAPI::VarDataType::FP32),
       false,
