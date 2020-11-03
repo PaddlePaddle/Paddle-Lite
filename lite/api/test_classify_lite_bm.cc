@@ -39,7 +39,11 @@ void instance_run() {
   std::vector<std::string> passes;
   std::vector<Place> valid_places({Place{TARGET(kBM), PRECISION(kFloat)},
                                    Place{TARGET(kX86), PRECISION(kFloat)}});
-  predictor.Build(FLAGS_model_dir, "", "", valid_places, passes);
+  predictor.Build(FLAGS_model_dir,
+                  FLAGS_model_dir + "/model",
+                  FLAGS_model_dir + "/params",
+                  valid_places,
+                  passes);
   auto* input_tensor = predictor.GetInput(0);
   input_tensor->Resize(DDim(std::vector<DDim::value_type>(
       {g_batch_size, 3, FLAGS_im_height, FLAGS_im_width})));
@@ -58,7 +62,7 @@ void instance_run() {
       for (int i = 0; i < item_size / g_batch_size; i++) {
         fs >> data[i];
       }
-      data += j * item_size / g_batch_size;
+      data += item_size / g_batch_size;
     }
   }
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -69,7 +73,6 @@ void instance_run() {
   for (int i = 0; i < FLAGS_repeats; ++i) {
     predictor.Run();
   }
-
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
             << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats

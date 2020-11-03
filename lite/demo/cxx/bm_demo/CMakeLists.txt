@@ -3,8 +3,8 @@ project(demo CXX C)
 
 set(TARGET mobilenet_full_api)
 # 1. lib & include
-link_directories(${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/lib/pcie ${PROJECT_SOURCE_DIR}/lib/bmcompiler)
-include_directories(${PROJECT_SOURCE_DIR}/include)
+link_directories(${PROJECT_SOURCE_DIR}/../../cxx/lib ${PROJECT_SOURCE_DIR}/../../cxx/lib/third_party)
+include_directories(${PROJECT_SOURCE_DIR}/../../cxx/include)
 # 2. compile options 
 add_definitions(-std=c++11 -g -O3 -DNDEBUG -pthread)
 #add_definitions(-g  )

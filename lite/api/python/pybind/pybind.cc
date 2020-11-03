@@ -201,6 +201,7 @@ void BindLitePlace(py::module *m) {
   py::enum_<PrecisionType>(*m, "PrecisionType")
       .value("FP16", PrecisionType::kFP16)
       .value("FP32", PrecisionType::kFloat)
+      .value("FP64", PrecisionType::kFP64)
       .value("UINT8", PrecisionType::kUInt8)
       .value("INT8", PrecisionType::kInt8)
       .value("INT16", PrecisionType::kInt16)

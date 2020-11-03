@@ -19,31 +19,31 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+template <typename T>
+void FillConstantCompute::FillConstData() {
+  auto& param = *param_.get_mutable<param_t>();
+  T value = param.value;
+  if (param.value_tensor) {
+    value = param.value_tensor->template mutable_data<T>()[0];
+  }
+  auto data = param.out->template mutable_data<T>();
+  for (int i = 0; i < param.out->numel(); i++) {
+    data[i] = value;
+  }
+}
+
 void FillConstantCompute::Run() {
   auto& param = *param_.get_mutable<param_t>();
-
   if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
-    auto data = param.out->template mutable_data<float>();
-    for (int i = 0; i < param.out->numel(); i++) {
-      data[i] = param.value;
-    }
+    FillConstData<float>();
   } else if (param.dtype ==
              static_cast<int32_t>(lite::core::FluidType::INT32)) {
-    auto data = param.out->template mutable_data<int32_t>();
-    for (int i = 0; i < param.out->numel(); i++) {
-      data[i] = param.value;
-    }
+    FillConstData<int32_t>();
   } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::INT8)) {
-    auto data = param.out->template mutable_data<int8_t>();
-    for (int i = 0; i < param.out->numel(); i++) {
-      data[i] = param.value;
-    }
+    FillConstData<int8_t>();
   } else if (param.dtype ==
              static_cast<int32_t>(lite::core::FluidType::INT64)) {
-    auto data = param.out->template mutable_data<int64_t>();
-    for (int i = 0; i < param.out->numel(); i++) {
-      data[i] = param.value;
-    }
+    FillConstData<int64_t>();
   } else {
     LOG(FATAL) << "not supported dtype " << param.dtype;
   }
@@ -63,6 +63,8 @@ REGISTER_LITE_KERNEL(fill_constant,
                      def)
     .BindInput("ShapeTensor",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("ValueTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("ShapeTensorList",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
