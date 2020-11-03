@@ -42,7 +42,6 @@ class SinComputeTest : public arena::TestCase {
 
     auto x_data = x->data<float>();
     auto out_data = out->mutable_data<float>();
-    auto x_rank = x_dims_.size();
 
     for (int i = 0; i < x_dims_.production(); i++) {
       out_data[i] = sin(x_data[i]);
