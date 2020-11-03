@@ -60,11 +60,10 @@ void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
   cpp_desc->SetPersistable(any_desc.Persistable());
   if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
     VarDataType type = cpp_desc->GetType();
-    if (type == VarDataType::LOD_TENSOR) { 
+    if (type == VarDataType::LOD_TENSOR) {
       cpp_desc->SetDataType(any_desc.GetDataType());
     }
-    if (type == VarDataType::LOD_TENSOR ||
-        type == VarDataType::SELECTED_ROWS ||
+    if (type == VarDataType::LOD_TENSOR || type == VarDataType::SELECTED_ROWS ||
         type == VarDataType::LOD_TENSOR_ARRAY) {
       cpp_desc->SetShape(any_desc.GetShape());
     }
@@ -78,11 +77,10 @@ void TransformVarDescAnyToCpp<fbs::VarDesc>(const fbs::VarDesc &any_desc,
   cpp_desc->SetPersistable(any_desc.Persistable());
   if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
     VarDataType type = cpp_desc->GetType();
-    if (type == VarDataType::LOD_TENSOR) { 
+    if (type == VarDataType::LOD_TENSOR) {
       cpp_desc->SetDataType(any_desc.GetDataType());
     }
-    if (type == VarDataType::LOD_TENSOR ||
-        type == VarDataType::SELECTED_ROWS ||
+    if (type == VarDataType::LOD_TENSOR || type == VarDataType::SELECTED_ROWS ||
         type == VarDataType::LOD_TENSOR_ARRAY) {
       cpp_desc->SetShape(any_desc.GetShape());
     }
