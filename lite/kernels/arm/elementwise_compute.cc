@@ -332,6 +332,15 @@ void ElementwiseModCompute<T, PType>::Run() {
       paddle::lite::kernels::host::naive_mod<T>);
 }
 
+template <typename T, PrecisionType PType>
+void ElementwisePowCompute<T, PType>::Run() {
+  elementwise_compute_template<T, OprandSwapable::YES>(
+      this,
+      lite::arm::math::elementwise_pow_broadcast<T>,
+      lite::arm::math::elementwise_pow<T>,
+      paddle::lite::kernels::host::naive_pow<T>);
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -527,4 +536,25 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+
+using elementwise_pow_fp32_t =
+    paddle::lite::kernels::arm::ElementwisePowCompute<float, PRECISION(kFloat)>;
+
+REGISTER_LITE_KERNEL(
+    elementwise_pow, kARM, kFloat, kNCHW, elementwise_pow_fp32_t, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using elementwise_pow_int32_t =
+    paddle::lite::kernels::arm::ElementwisePowCompute<int32_t,
+                                                      PRECISION(kInt32)>;
+
+REGISTER_LITE_KERNEL(
+    elementwise_pow, kARM, kInt32, kNCHW, elementwise_pow_int32_t, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
