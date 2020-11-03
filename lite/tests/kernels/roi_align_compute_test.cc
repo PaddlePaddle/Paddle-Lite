@@ -122,7 +122,7 @@ class RoiAlignComputeTester : public arena::TestCase {
   RoiAlignComputeTester(const Place& place,
                         const std::string& alias,
                         bool test_fluid_v18_api)
-      : test_fluid_v18_api_(test_fluid_v18_api), TestCase(place, alias) {}
+      : TestCase(place, alias), test_fluid_v18_api_(test_fluid_v18_api) {}
 
   DDim stride(const DDim& ddim) {
     DDim strides = ddim;
@@ -142,7 +142,6 @@ class RoiAlignComputeTester : public arena::TestCase {
     auto sampling_ratio = sampling_ratio_;
 
     auto in_dims = in->dims();
-    int batch_size = in_dims[0];
     int channels = in_dims[1];
     int height = in_dims[2];
     int width = in_dims[3];
@@ -176,7 +175,6 @@ class RoiAlignComputeTester : public arena::TestCase {
       auto lod = rois->lod();
       auto rois_lod = lod.back();
       int rois_batch_size = rois_lod.size() - 1;
-      int rois_num_with_lod = rois_lod[rois_batch_size];
       for (int n = 0; n < rois_batch_size; ++n) {
         for (size_t i = rois_lod[n]; i < rois_lod[n + 1]; ++i) {
           roi_batch_id_data[i] = n;
