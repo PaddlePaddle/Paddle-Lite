@@ -23,7 +23,7 @@ limitations under the License. */
 
 namespace paddle {
 namespace lite {
-namespace x86 {
+namespace host {
 namespace math {
 
 enum PadLayout { kBatchLengthWidth = 0, kLengthBatchWidth };
@@ -108,6 +108,6 @@ class UnpaddingLoDTensorFunctor {
 };
 
 }  // namespace math
-}  // namespace x86
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
