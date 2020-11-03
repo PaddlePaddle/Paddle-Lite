@@ -31,11 +31,12 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-void GetVar(const DDimLite& in_dims,
-            const int axis,
-            std::string& kernel_func_name,
-            int* width,
-            int* flag) {
+/* Pick kernel and assign width & flag */
+static void HelperFunc(const DDimLite& in_dims,
+                       const int axis,
+                       std::string* kernel_func_name,
+                       int* width,
+                       int* flag) {
   if (in_dims.size() < 4) {
     if (in_dims.size() - axis == 1) {
       *width = in_dims[1];
@@ -47,19 +48,19 @@ void GetVar(const DDimLite& in_dims,
   } else {
     switch (axis) {
       case 0:
-        kernel_func_name = "SplitBatch";
+        *kernel_func_name = "SplitBatch";
         *width = in_dims[2];
         break;
       case 1:
-        kernel_func_name = "SplitChannel";
+        *kernel_func_name = "SplitChannel";
         *width = in_dims[3];
         break;
       case 2:
-        kernel_func_name = "SplitHeight";
+        *kernel_func_name = "SplitHeight";
         *width = in_dims[0];
         break;
       case 3:
-        kernel_func_name = "SplitWidth";
+        *kernel_func_name = "SplitWidth";
         *width = in_dims[1];
         break;
       default:
@@ -90,7 +91,7 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
     if (outs.size() != 2) {
       LOG(FATAL) << "NOT imple yet!";
     }
-    GetVar(x_dims, axis_, kernel_func_name_, &width_, &flag_);
+    HelperFunc(x_dims, axis_, &kernel_func_name_, &width_, &flag_);
 
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -123,7 +124,7 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
                          static_cast<cl::size_type>(default_work_size[1]),
                          static_cast<cl::size_type>(default_work_size[2])};
 
-      GetVar(x_dims, axis_, kernel_func_name_, &width_, &flag_);
+      HelperFunc(x_dims, axis_, &kernel_func_name_, &width_, &flag_);
     }
   }
 
@@ -156,10 +157,10 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, out0_dims_axis);
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(arg_idx++, static_cast<int>(x_dims[1]));  // in_c
+      status = kernel_.setArg(arg_idx++, static_cast<int>(x_dims[1]));
       CL_CHECK_FATAL(status);
-      status = kernel_.setArg(
-          arg_idx++, static_cast<int>(x_dims[x_dims.size() - 1]));  // in_w
+      status = kernel_.setArg(arg_idx++,
+                              static_cast<int>(x_dims[x_dims.size() - 1]));
       CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, width_);
       CL_CHECK_FATAL(status);
@@ -173,6 +174,7 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                     event_);
       CL_CHECK_FATAL(status);
     } else {
+      LOG(FATAL) << "NOT imple yet!";
     }
   }
 

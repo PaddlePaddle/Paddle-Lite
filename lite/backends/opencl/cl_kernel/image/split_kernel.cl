@@ -15,17 +15,18 @@ limitations under the License. */
 #include <cl_common.h>
 
 __kernel void SplitBatch(__read_only image2d_t input,
-                    __write_only image2d_t output0,
-                    __write_only image2d_t output1,
-                    __private const int axis,
-                    __private const int out0_dims_axis,
-                    __private const int in_dims_second,
-                    __private const int in_dims_last,
-                    __private const int width) {
-  const int cw_idx = get_global_id(0);
-  const int hb_idx = get_global_id(1);
+                         __write_only image2d_t output0,
+                         __write_only image2d_t output1,
+                         __private const int axis,
+                         __private const int out0_dims_axis,
+                         __private const int in_dims_second,
+                         __private const int in_dims_last,
+                         __private const int width) {
+  const int channel_blk_idx = get_global_id(0);
+  const int width_idx = get_global_id(1);
+  const int hb_idx = get_global_id(2);
 
-  const int2 in_pos = (int2)(cw_idx, hb_idx);
+  const int2 in_pos = (int2)(channel_blk_idx * in_dims_last + width_idx, hb_idx);
   const CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
   const int n = hb_idx / width;
 
@@ -40,13 +41,13 @@ __kernel void SplitBatch(__read_only image2d_t input,
 }
 
 __kernel void SplitChannel(__read_only image2d_t input,
-                    __write_only image2d_t output0,
-                    __write_only image2d_t output1,
-                    __private const int axis,
-                    __private const int out0_dims_axis,
-                    __private const int in_dims_second,
-                    __private const int in_dims_last,
-                    __private const int width) {
+                           __write_only image2d_t output0,
+                           __write_only image2d_t output1,
+                           __private const int axis,
+                           __private const int out0_dims_axis,
+                           __private const int in_dims_second,
+                           __private const int in_dims_last,
+                           __private const int width) {
   const int channel_blk_idx = get_global_id(0);
   const int width_idx = get_global_id(1);
   const int hb_idx = get_global_id(2);
@@ -97,17 +98,18 @@ __kernel void SplitChannel(__read_only image2d_t input,
 }
 
 __kernel void SplitHeight(__read_only image2d_t input,
-                    __write_only image2d_t output0,
-                    __write_only image2d_t output1,
-                    __private const int axis,
-                    __private const int out0_dims_axis,
-                    __private const int in_dims_second,
-                    __private const int in_dims_last,
-                    __private const int width) {
-  const int cw_idx = get_global_id(0);
-  const int hb_idx = get_global_id(1);
+                          __write_only image2d_t output0,
+                          __write_only image2d_t output1,
+                          __private const int axis,
+                          __private const int out0_dims_axis,
+                          __private const int in_dims_second,
+                          __private const int in_dims_last,
+                          __private const int width) {
+  const int channel_blk_idx = get_global_id(0);
+  const int width_idx = get_global_id(1);
+  const int hb_idx = get_global_id(2);
 
-  const int2 in_pos = (int2)(cw_idx, hb_idx);
+  const int2 in_pos = (int2)(channel_blk_idx * in_dims_last + width_idx, hb_idx);
   const CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
   const int h = hb_idx % width;
 
@@ -122,26 +124,26 @@ __kernel void SplitHeight(__read_only image2d_t input,
 }
 
 __kernel void SplitWidth(__read_only image2d_t input,
-                    __write_only image2d_t output0,
-                    __write_only image2d_t output1,
-                    __private const int axis,
-                    __private const int out0_dims_axis,
-                    __private const int in_dims_second,
-                    __private const int in_dims_last,
-                    __private const int width) {
-  const int cw_idx = get_global_id(0);
-  const int hb_idx = get_global_id(1);
+                         __write_only image2d_t output0,
+                         __write_only image2d_t output1,
+                         __private const int axis,
+                         __private const int out0_dims_axis,
+                         __private const int in_dims_second,
+                         __private const int in_dims_last,
+                         __private const int width) {
+  const int channel_blk_idx = get_global_id(0);
+  const int width_idx = get_global_id(1);
+  const int hb_idx = get_global_id(2);
 
-  const int2 in_pos = (int2)(cw_idx, hb_idx);
+  const int2 in_pos = (int2)(channel_blk_idx * in_dims_last + width_idx, hb_idx);
   const CL_DTYPE4 in_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, in_pos);
-  const int w = cw_idx % in_dims_last;
 
   int2 out_pos;
-  if (w < out0_dims_axis) {
+  if (width_idx < out0_dims_axis) {
     out_pos = in_pos;
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output0, out_pos, in_data);
   } else {
-    out_pos.x = cw_idx - out0_dims_axis;
+    out_pos.x = width_idx - out0_dims_axis;
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output1, out_pos, in_data);
   }
 }
