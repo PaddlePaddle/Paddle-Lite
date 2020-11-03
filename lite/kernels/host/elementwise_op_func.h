@@ -55,6 +55,11 @@ T naive_mod(T a, T b) {
 }
 
 template <class T>
+T naive_pow(T a, T b) {
+  return std::pow(a, b);
+}
+
+template <class T>
 using BinaryOpFn = T(T, T);
 
 template <class T>
