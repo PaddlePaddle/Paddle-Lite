@@ -55,13 +55,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
 
     // TODO(ysh329): add instance_norm + relu pass
     // std::string build_options_ += "-DRELU";
-    if (out_h == 128) {
-      build_options_ += " -DLOCAL_MEM_128";
-    } else if (out_h == 64) {
-      build_options_ += " -DLOCAL_MEM_64";
-    } else if (out_h > 256) {
-      LOG(FATAL) << "Unsupported input height:" << out_h << " of instance norm";
-    }
+    build_options_ += " -DLOCAL_MEM=" + std::to_string(out_w);
 
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -89,8 +83,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     auto device_info = CLRuntime::Global()->GetDeviceInfo();
     int max_work_item_size1 = device_info["CL_DEVICE_MAX_WORK_ITEM_SIZES_1"];
     int lws0 = 1;
-    int lws1 =
-        std::min(static_cast<int>(max_work_item_size1), std::min(256, out_w));
+    int lws1 = std::min(static_cast<int>(max_work_item_size1), out_w);
     int lws2 = 1;
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(out_n * out_c_group),
