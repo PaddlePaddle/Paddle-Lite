@@ -54,6 +54,9 @@ limitations under the License. */
 #define _CONVERT_TYPE_TO(value, type) convert_##type(value)
 #define CONVERT_TYPE_TO(value, type) _CONVERT_TYPE_TO(value, type)
 
+__constant sampler_t SAMPLER =
+    CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
 /////////////////////////////////
 // WRITE_IMG_TYPE / READ_IMG_TYPE
 /////////////////////////////////
