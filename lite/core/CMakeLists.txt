@@ -77,7 +77,8 @@ add_custom_command(
   ${kernels_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_kernels.h
   "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
-  LITE_BUILD_TAILOR
+  ${LITE_BUILD_TAILOR}
+  ${LITE_BUILD_EXTRA}
   OUTPUT kernels.h # not a real path to the output to force it execute every time.
   )
 # A trick to generate the paddle_use_ops.h
@@ -86,7 +87,7 @@ add_custom_command(
   ${ops_src_list}
   ${CMAKE_SOURCE_DIR}/lite/api/paddle_use_ops.h
   "${LITE_OPTMODEL_DIR}/.tailored_ops_list"
-  LITE_BUILD_TAILOR
+  ${LITE_BUILD_TAILOR}
   OUTPUT ops.h # not a real path to the output to force it execute every time.
   )
 # generate fake kernels for memory_optimize_tool

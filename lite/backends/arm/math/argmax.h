@@ -25,6 +25,7 @@ namespace lite {
 namespace arm {
 namespace math {
 
+template <typename InType, typename OutType>
 void argmax_func(const lite::Tensor* input,
                  const int axis,
                  lite::Tensor* output);

@@ -796,6 +796,8 @@ struct ArgmaxParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
   int Axis{0};
+  int dtype{-1};
+  bool keepdims{false};
 };
 
 ///----------------------- axpy operators ----------------------
