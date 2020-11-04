@@ -16,10 +16,19 @@
 
 #include <random>
 
-#include "lite/tests/benchmark/src/gemm_configs.h"
-
 #include "lite/core/context.h"
 #include "lite/kernels/arm/matmul_compute.h"
+
+static void gemm_args(benchmark::internal::Benchmark *b) {
+  b->ArgNames({"M", "N", "K"});
+  for (auto m : {1, 10, 100}) {
+    for (auto n : {1, 10, 100}) {
+      for (auto k : {1, 10, 100}) {
+        b->Args({m, n, k});
+      }
+    }
+  }
+}
 
 static void LiteGEMMBench(const benchmark::State &state_in) {
   // const in parameter is used to pass CI system
@@ -93,6 +102,8 @@ static void paddle_f32_gemm(const benchmark::State &state, const char *net) {
   LiteGEMMBench(state);
 }
 
-BENCHMARK_GEMM(paddle_f32_gemm)
+BENCHMARK_CAPTURE(paddle_f32_gemm, paddle_f32_gemm_bench, "loop_args")
+    ->Apply(gemm_args)
+    ->UseRealTime();
 
 BENCHMARK_MAIN();
