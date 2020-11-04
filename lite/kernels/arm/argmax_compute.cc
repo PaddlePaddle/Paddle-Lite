@@ -120,4 +120,4 @@ REGISTER_LITE_KERNEL(arg_max,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kUInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
-#endif
+#endif  // LITE_BUILD_EXTRA
