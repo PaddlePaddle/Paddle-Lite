@@ -690,6 +690,7 @@ struct FillConstantParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   std::vector<int64_t> shape{};
   lite::Tensor* shape_tensor{nullptr};
+  lite::Tensor* value_tensor{nullptr};
   std::vector<lite::Tensor*> shape_tensor_list{};
 
   float value{0.0f};
@@ -795,6 +796,8 @@ struct ArgmaxParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
   int Axis{0};
+  int dtype{-1};
+  bool keepdims{false};
 };
 
 ///----------------------- axpy operators ----------------------
@@ -1338,6 +1341,7 @@ struct GenerateProposalsParam : ParamBase {
   // outputs
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
+  lite::Tensor* RpnRoisLod{};
 };
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam : ParamBase {
@@ -1446,6 +1450,7 @@ struct AssignParam : ParamBase {
 struct RoiAlignParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
+  lite::Tensor* RoisLod{};
   lite::Tensor* Out{};
   float spatial_scale{1.0};
   int pooled_height{1};

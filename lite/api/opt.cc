@@ -340,8 +340,7 @@ void CheckIfModelSupported() {
     prog_path = FLAGS_model_file;
   }
   lite::cpp::ProgramDesc cpp_prog;
-  framework::proto::ProgramDesc pb_proto_prog =
-      *lite::LoadProgram(prog_path, false);
+  framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   lite::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);

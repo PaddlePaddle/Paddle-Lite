@@ -331,6 +331,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
             << origin_otensors_[i]->dims() << " memory_size "
             << origin_otensors_[i]->memory_size();
   }
+  return true;
 }
 
 bool SubgraphEngine::LaunchDeviceProgram() {
