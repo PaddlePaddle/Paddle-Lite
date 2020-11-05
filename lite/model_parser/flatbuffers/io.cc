@@ -85,6 +85,7 @@ void SetScopeWithCombinedParams(lite::Scope* scope,
     const auto& param = *params.GetParamDesc(i);
     auto* tensor = scope->Var(param.Name())->GetMutable<lite::Tensor>();
     SetTensorWithParam(tensor, param);
+    tensor->set_persistable(true);
   }
 }
 
