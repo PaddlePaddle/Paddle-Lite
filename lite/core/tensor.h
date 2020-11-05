@@ -260,6 +260,8 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
 template <typename TensorT>
 bool TensorCompareWith(const TensorT &a, const TensorT &b) {
   if (a.dims() != b.dims()) return false;
+  if (a.precision() != b.precision()) return false;
+  if (a.persistable() != b.persistable()) return false;
   if (memcmp(a.raw_data(), b.raw_data(), a.data_size()) != 0) return false;
   return true;
 }
