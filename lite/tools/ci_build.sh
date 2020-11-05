@@ -1227,7 +1227,7 @@ function build_ios {
             -DLITE_WITH_CV=$BUILD_CV \
             -DARM_TARGET_OS=$os
 
-    make publish_inference -j$NUM_PROC
+    make publish_inference -j$NUM_CORES_FOR_COMPILE
     cd -
 }
 
