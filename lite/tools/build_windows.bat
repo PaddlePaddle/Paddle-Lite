@@ -4,14 +4,15 @@ setlocal enabledelayedexpansion
 
 set source_path=%~dp0\\..\\..\\
 set BUILD_EXTRA=OFF
-set WITH_PYTHON=OFF
+set WITH_PYTHON=ON
 set BUILD_DIR=%source_path%
-set WITH_LOG=OFF
+set WITH_LOG=ON
 set WITH_PROFILE=OFF
 set WITH_TESTING=OFF
 set BUILD_FOR_CI=OFF
 set BUILD_PLATFORM=x64
 set BUILD_X64_PLATFORM=ON
+set MSCV_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
@@ -23,18 +24,20 @@ set workspace=%source_path%
 @echo off
 if /I "%1"=="with_extra" (
     set BUILD_EXTRA=ON
-) else if /I "%1"=="with_python" (
-    set WITH_PYTHON=ON
+) else if /I "%1"=="without_python" (
+    set WITH_PYTHON=OFF
 ) else if /I  "%1"=="with_profile" (
     set WITH_PROFILE=ON
-) else if /I  "%1"=="with_log" (
-    set WITH_LOG=ON
+) else if /I  "%1"=="without_log" (
+    set WITH_LOG=OFF
 ) else if /I  "%1"=="with_strip" (
     set WITH_STRIP=ON
     set OPTMODEL_DIR="%2"
 ) else if /I  "%1"=="build_x86" (
     set BUILD_PLATFORM=Win32
     set BUILD_X64_PLATFORM=OFF
+) else if /I  "%1"=="with_dynamic_crt" (
+    set MSVC_STATIC_CRT=OFF
 ) else if /I  "%1"=="with_static_mkl" (
     set WITH_STATIC_MKL=ON
 ) else if /I  "%1"=="build_for_ci" (
@@ -64,6 +67,7 @@ echo "|  WITH_STRIP=%WITH_STRIP%                                                
 echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                                                        |"
 echo "|  BUILD_X64_PLATFORM=%BUILD_X64_PLATFORM%                                                            |"
 echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                                                  |"
+echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
 echo "------------------------------------------------------------------------------------------------------|"
 
 
@@ -104,6 +108,7 @@ cd "%build_directory%"
 
     cmake %root_dir%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
             -DBUILD_X64_PLATFORM=%BUILD_X64_PLATFORM% ^
+            -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
             -DLITE_WITH_X86=ON  ^
@@ -221,12 +226,13 @@ echo "|  print help information:                                                
 echo "|      build_windows.bat help                                                                         |"
 echo "|                                                                                                     |"
 echo "|  optional argument:                                                                                 |"
-echo "|      with_log: Enable print log information. Default  OFF.                                          |"
+echo "|      without_log: Disable print log information. Default  ON.                                       |"
+echo "|      without_python: Disable Python api lib in lite mode. Default ON.                               |"
 echo "|      with_profile: Enable profile mode in lite framework. Default  OFF.                             |"
-echo "|      with_python: Enable Python api lib in lite mode. Default  OFF.                                 |"
 echo "|      with_extra: Enable extra algorithm support in Lite, both kernels and operators. Default OFF.   |"
 echo "|      with_strip: Enable tailoring library according to model. Default OFF.                          |"
 echo "|      build_x86: Enable building for Windows x86 platform. Default is x64.                           |"
+echo "|      with_dynamic_crt: Enable building for MSVC Dynamic Runtime. Default is Static.                 |"
 echo "|      with_static_mkl: Enable Static linking Intel(R) MKL. Default is Dynamic.                       |"
 echo "|  for example:                                                                                       |"   
 echo "|      build_windows.bat with_log with_profile with_python with_extra                                 |"
