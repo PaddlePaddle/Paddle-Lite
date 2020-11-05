@@ -27,7 +27,11 @@ namespace x86 {
 static void SetNumThreads(int num_threads) {
 #ifdef PADDLE_WITH_MKLML
   int real_num_threads = (std::max)(num_threads, 1);
+#ifdef LITE_WITH_STATIC_MKL
+  MKL_Set_Num_Threads(real_num_threads);
+#else
   x86::MKL_Set_Num_Threads(real_num_threads);
+#endif
   omp_set_num_threads(real_num_threads);
 #endif
 }

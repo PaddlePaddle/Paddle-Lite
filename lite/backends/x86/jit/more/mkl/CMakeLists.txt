@@ -1,6 +1,11 @@
 
-cc_library(jit_kernel_mkl SRCS mkl.cc DEPS jit_kernel_base dynload_mklml)
-set(JIT_KERNEL_DEPS ${JIT_KERNEL_DEPS} dynload_mklml jit_kernel_mkl PARENT_SCOPE)
+if(WITH_STATIC_MKL)
+  cc_library(jit_kernel_mkl SRCS mkl.cc DEPS jit_kernel_base ${MKLML_LIBRARIES})
+  set(JIT_KERNEL_DEPS ${JIT_KERNEL_DEPS} ${MKLML_LIBRARIES} jit_kernel_mkl PARENT_SCOPE)
+else(WITH_STATIC_MKL)
+  cc_library(jit_kernel_mkl SRCS mkl.cc DEPS jit_kernel_base dynload_mklml)
+  set(JIT_KERNEL_DEPS ${JIT_KERNEL_DEPS} dynload_mklml jit_kernel_mkl PARENT_SCOPE)
+endif(WITH_STATIC_MKL)
 
 # use mkl kernels by name and type
 USE_JITKERNEL_MORE_LITE(kMatMul, mkl)
