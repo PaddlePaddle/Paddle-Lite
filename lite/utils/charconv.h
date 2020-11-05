@@ -144,9 +144,9 @@ from_chars_result aton_unsigned(const char* str,
     // basic type.
     if (UNLIKELY(i > std::numeric_limits<uint32_t>::digits10 + 1) &&
         i == std::numeric_limits<uint64_t>::digits10) {
-      uint64_t mx = static_cast<uint64_t>(std::numeric_limits<T>::max());
+      uint64_t mx = static_cast<uint64_t>((std::numeric_limits<T>::max)());
       if (val > mx / 10 || mx - (val * base) < cv) {
-        value = static_cast<T>(std::numeric_limits<T>::max());
+        value = static_cast<T>((std::numeric_limits<T>::max)());
         result.ec = std::errc::result_out_of_range;
         return result;
       }
@@ -226,8 +226,8 @@ from_chars_result aton_signed(const char* str,
     ret *= -1;
   }
   if (i > std::numeric_limits<T>::digits10 + 1 ||
-      ret < static_cast<int64_t>(std::numeric_limits<T>::min())) {
-    value = static_cast<T>(std::numeric_limits<T>::min());
+      ret < static_cast<int64_t>((std::numeric_limits<T>::min)())) {
+    value = static_cast<T>((std::numeric_limits<T>::min)());
     result.ec = std::errc::result_out_of_range;
     return result;
   }
@@ -262,7 +262,7 @@ from_chars_result aton_float(const char* str, int len, T& value) {  // NOLINT
     ++str;
     --len;
   }
-  ssize_t dot_pos = -1;
+  int16_t dot_pos = -1;
   int i = 0;
   for (; i < len; ++i) {
     char c = str[i];
@@ -299,8 +299,8 @@ from_chars_result aton_float(const char* str, int len, T& value) {  // NOLINT
     val += static_cast<double>(rval) / rdiv;
   }
 
-  if (!negative && val > static_cast<double>(std::numeric_limits<T>::max())) {
-    value = static_cast<T>(std::numeric_limits<T>::max());
+  if (!negative && val > static_cast<double>((std::numeric_limits<T>::max)())) {
+    value = static_cast<T>((std::numeric_limits<T>::max)());
     result.ec = std::errc::result_out_of_range;
     return result;
   }
@@ -309,8 +309,8 @@ from_chars_result aton_float(const char* str, int len, T& value) {  // NOLINT
     return result;
   }
   val *= -1;
-  if (val < static_cast<double>(-std::numeric_limits<T>::max())) {
-    value = static_cast<T>(std::numeric_limits<T>::min());
+  if (val < static_cast<double>(-(std::numeric_limits<T>::max)())) {
+    value = static_cast<T>((std::numeric_limits<T>::min)());
     result.ec = std::errc::result_out_of_range;
     return result;
   }
