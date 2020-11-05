@@ -26,7 +26,7 @@ DEFINE_int32(cluster, 3, "cluster id");
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, false, "do all tests");
+DEFINE_bool(basic_test, true, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(srcFormat, 0, "input image format RGBA");
@@ -1044,10 +1044,10 @@ void test_resize(const std::vector<int>& cluster_id,
           }
         }
         if (std::abs(max_ratio) >= 1e-5f) {
-          int width = size / srcw;
+          int width = size / srch;
           printf("din: \n");
           print_int8(src, size, width);
-          width = out_size / dstw;
+          width = out_size / dsth;
           printf("saber result: \n");
           print_int8(lite_dst, out_size, width);
           printf("basic result: \n");
@@ -1202,6 +1202,13 @@ void test_convert(const std::vector<int>& cluster_id,
       double max_diff = 0;
       const double eps = 1e-6f;
       if (FLAGS_check_result) {
+        image_convert_basic(src,
+                            basic_dst,
+                            (ImageFormat)srcFormat,
+                            (ImageFormat)dstFormat,
+                            srcw,
+                            srch,
+                            out_size);
         LOG(INFO) << "diff, image convert size: " << out_size;
         uint8_t* diff_v = new uint8_t[out_size];
         for (int i = 0; i < out_size; i++) {
@@ -1294,7 +1301,7 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
           for (auto hh : {8, 112}) {
             for (auto rotate : {180}) {
               for (auto flip : {0}) {
-                for (auto srcFormat : {0, 1, 2, 3, 4, 11, 12}) {
+                for (auto srcFormat : {0, 1, 2, 3, 4}) {
                   for (auto layout : {1}) {
                     auto dstFormat = srcFormat;
                     if (srcFormat == ImageFormat::NV12 ||
@@ -1328,11 +1335,11 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
 #if 1
 TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 8, 16, 112, 224, 1092}) {
+    for (auto w : {1, 8, 16, 112, 224, 1080}) {
       for (auto h : {1, 16, 112, 224}) {
         for (auto rotate : {90, 180, 270}) {
           for (auto flip : {-1, 0, 1}) {
-            for (auto srcFormat : {0, 1, 2, 3, 4}) {
+            for (auto srcFormat : {0, 1, 2, 3}) {
               for (auto layout : {1, 3}) {
                 auto dstFormat = srcFormat;
                 if (srcFormat == ImageFormat::NV12 ||
