@@ -2,7 +2,12 @@
 set -ex
 
 # global variables with default value
-NEUWARE_HOME="${NEUWARE_HOME}"
+if [   $NEUWARE_HOME   ];
+then
+  NEUWARE_HOME="${NEUWARE_HOME}"
+else
+  NEUWARE_HOME="/usr/local/neuware/"
+fi
 TARGET_NAME="all"    # default target
 BUILD_EXTRA=ON                      # ON(with sequence ops)/OFF
 WITH_TESTING=ON                     # ON/OFF

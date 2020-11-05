@@ -132,8 +132,7 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
     origin_itensors_.clear();
     origin_otensors_.clear();
 
-    auto* sub_block_desc =
-        program_desc_->GetBlock()<cpp::BlockDesc>(block_idx_);
+    auto* sub_block_desc = program_desc_->GetBlock<cpp::BlockDesc>(block_idx_);
     auto data_order = sub_block_desc->GetOp<cpp::OpDesc>(0)->Type() == "layout"
                           ? CNML_NCHW
                           : CNML_NHWC;
