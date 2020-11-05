@@ -1,7 +1,7 @@
 # PaddleLite使用百度XPU预测部署
 
 Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）上进行预测部署。
-目前支持Kernel和子图两种接入方式，其中子图接入方式与之前华为NPU类似，即加载并分析Paddle模型，将Paddle算子转成XTCL组网API进行网络构建，在线生成并执行模型。
+目前支持Kernel和子图两种接入方式，其中子图接入方式与之前华为Kirin NPU类似，即加载并分析Paddle模型，将Paddle算子转成XTCL组网API进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
@@ -54,14 +54,15 @@ $ sudo make install
 
 ### 运行图像分类示例程序
 
-- 从[https://paddlelite-demo.bj.bcebos.com/devices/baidu/PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/baidu/PaddleLite-linux-demo.tar.gz)下载示例程序，解压后清单如下：
+- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/baidu/PaddleLite-linux-demo.tar.gz)，解压后清单如下：
 
 ```shell
 - PaddleLite-linux-demo
   - image_classification_demo
     - assets
-      - images 
+      - images
         - tabby_cat.jpg # 测试图片
+        - tabby_cat.raw # 经过convert_to_raw_image.py处理后的RGB Raw图像
       - labels
         - synset_words.txt # 1000分类label文件
       - models
@@ -133,7 +134,7 @@ Prediction time: 2.098400 ms
 Postprocess time: 0.081000 ms
 ```
 
-- 如果需要更改测试图片，可将图片拷贝到PaddleLite-linux-demo/image_classification_demo/assets/images目录下，然后将run.sh的IMAGE_NAME设置成指定文件名即可；
+- 如果需要更改测试图片，请将图片拷贝到PaddleLite-linux-demo/image_classification_demo/assets/images目录下，修改并执行convert_to_raw_image.py生成相应的RGB Raw图像，最后修改run.sh的IMAGE_NAME即可；
 - 如果需要重新编译示例程序，直接运行./build.sh amd64或./build.sh arm64即可。
 
 ```shell
