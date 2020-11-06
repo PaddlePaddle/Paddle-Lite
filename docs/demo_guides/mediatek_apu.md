@@ -159,7 +159,7 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
   - 如果需要更改测试图片，可将图片拷贝到PaddleLite-android-demo/image_classification_demo/assets/images目录下，然后将run.sh的IMAGE_NAME设置成指定文件名即可；
   - 如果需要重新编译示例程序，直接运行./build.sh即可。
-  - 由于MTK APU暂时只支持NHWC的数据布局格式，而PaddleLite默认使用NCHW的数据布局格式，导致额外增加了预测中输入张量的NCHW到NHWC的转换，大约耗费8~9ms。
+  - 由于MediaTek APU暂时只支持NHWC的数据布局格式，而PaddleLite默认使用NCHW的数据布局格式，导致额外增加了预测中输入张量的NCHW到NHWC的转换，大约耗费8~9ms。
 
 - 常规Android应用程序
   - 安装Android Studio 3.4
@@ -197,11 +197,11 @@ Paddle Lite已支持MediaTek APU的预测部署。
       --optimize_out=opt_model \
       --valid_targets=apu,arm
 
-  替换自带的APU模型
+  替换自带的MediaTek APU模型
   $ cp opt_model.nb mobilenet_v1_int8_224_for_mediatek_apu/model.nb
   ```
 
-- 注意：opt生成的模型只是标记了MTK APU支持的Paddle算子，并没有真正生成MediaTek APU模型，只有在执行时才会将标记的Paddle算子转成MTK Neuron adapter API调用实现组网，最终生成并执行模型。
+- 注意：opt生成的模型只是标记了MediaTek APU支持的Paddle算子，并没有真正生成MediaTek APU模型，只有在执行时才会将标记的Paddle算子转成MTK Neuron adapter API调用实现组网，最终生成并执行模型。
 
 ### 更新支持MediaTek APU的Paddle Lite库
 
