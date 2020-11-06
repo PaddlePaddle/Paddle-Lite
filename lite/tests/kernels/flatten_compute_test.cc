@@ -104,5 +104,101 @@ TEST(flatten, precision) {
   TestFlatten(place, abs_error);
 }
 
+static std::vector<int64_t> GetOutputShape(const DDim in_dims,
+                                           int start_axis,
+                                           int stop_axis) {
+  int64_t outer = 1;
+  std::vector<int64_t> out_shape;
+  size_t in_dims_size = in_dims.size();
+  out_shape.reserve(in_dims_size - stop_axis + start_axis);
+
+  for (int i = 0; i < start_axis; ++i) {
+    out_shape.push_back(in_dims[i]);
+  }
+  for (int i = start_axis; i <= stop_axis; i++) {
+    outer *= in_dims[i];
+  }
+  out_shape.push_back(outer);
+  for (size_t i = stop_axis + 1; i < in_dims_size; i++) {
+    out_shape.push_back(in_dims[i]);
+  }
+  return out_shape;
+}
+
+class FlattenContiguousRangeTester : public arena::TestCase {
+ protected:
+  std::string op_type_ = "flatten_contiguous_range";
+  std::string input_ = "x";
+  std::string output_ = "out";
+  std::string xshape_ = "xshape";
+  DDim dims_;
+  int start_axis_{};
+  int stop_axis_{};
+
+ public:
+  FlattenContiguousRangeTester(const Place& place,
+                               const std::string& alias,
+                               DDim dims,
+                               int start_axis,
+                               int stop_axis)
+      : TestCase(place, alias),
+        dims_(dims),
+        start_axis_(start_axis),
+        stop_axis_(stop_axis) {}
+
+  void RunBaseline(Scope* scope) override {
+    auto* out = scope->NewTensor(output_);
+    CHECK(out);
+
+    auto* x = scope->FindTensor(input_);
+    auto out_shape = GetOutputShape(x->dims(), start_axis_, stop_axis_);
+    out->Resize(out_shape);
+
+    auto x_data = x->data<float>();
+    auto out_data = out->mutable_data<float>();
+    memcpy(out_data, x_data, sizeof(float) * dims_.production());
+  }
+
+  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+    op_desc->SetType(op_type_);
+    op_desc->SetInput("X", {input_});
+    op_desc->SetOutput("Out", {output_});
+    op_desc->SetOutput("XShape", {xshape_});
+    op_desc->SetAttr("start_axis", start_axis_);
+    op_desc->SetAttr("stop_axis", stop_axis_);
+  }
+
+  void PrepareData() override {
+    std::vector<float> din(dims_.production());
+    fill_data_rand(din.data(), -1.f, 1.f, dims_.production());
+    SetCommonTensor(input_, dims_, din.data());
+  }
+};
+
+void TestFlattenContiguous(Place place, float abs_error) {
+  DDim dims{{2, 3, 4, 5}};
+  for (int start_axis : {1, 2}) {
+    for (int stop_axis : {2, 3}) {
+      std::unique_ptr<arena::TestCase> tester(new FlattenContiguousRangeTester(
+          place, "def", dims, start_axis, stop_axis));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision({"xshape"});
+    }
+  }
+}
+
+TEST(flatten_contiguous_range, precision) {
+  LOG(INFO) << "test flatten_contiguous_range op";
+  Place place;
+  float abs_error = 1e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#else
+  return;
+#endif
+
+  TestFlattenContiguous(place, abs_error);
+}
+
 }  // namespace lite
 }  // namespace paddle

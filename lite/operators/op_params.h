@@ -1987,6 +1987,14 @@ struct CosParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct FlattenContiguousRangeParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* xshape;
+  int start_axis;
+  int stop_axis;
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
