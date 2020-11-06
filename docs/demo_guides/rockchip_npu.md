@@ -1,4 +1,4 @@
-# PaddleLite使用Rockchip NPU预测部署
+# PaddleLite使用瑞芯微NPU预测部署
 
 Paddle Lite已支持Rockchip NPU的预测部署。
 其接入原理是与之前华为Kirin NPU类似，即加载并分析Paddle模型，将Paddle算子转成Rockchip NPU组网API进行网络构建，在线生成并执行模型。
@@ -9,6 +9,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
 - RK1808
 - RK1806
+注意：暂时不支持RK3399Pro
 
 ### 已支持的设备
 
