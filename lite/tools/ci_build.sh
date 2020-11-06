@@ -1299,7 +1299,7 @@ function build_ios {
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_ARCH_ABI=$abi \
-            -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
+            -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_CV=$BUILD_CV \
             -DARM_TARGET_OS=$os
 
