@@ -27,6 +27,7 @@ void sgemv(const int M,
            const float *A,
            const float *x,
            float *y,
+           float beta,
            bool flag_bias,
            const float *bias);
 
@@ -35,6 +36,7 @@ void sgemv_relu(const int M,
                 const float *A,
                 const float *x,
                 float *y,
+                float beta,
                 bool flag_bias,
                 const float *bias);
 
@@ -43,6 +45,7 @@ void sgemv_relu6(const int M,
                  const float *A,
                  const float *x,
                  float *y,
+                 float beta,
                  bool flag_bias,
                  const float *bias,
                  const float six);
@@ -52,6 +55,7 @@ void sgemv_leakey_relu(const int M,
                        const float *A,
                        const float *x,
                        float *y,
+                       float beta,
                        bool flag_bias,
                        const float *bias,
                        const float alpha);
@@ -61,6 +65,7 @@ void sgemv_trans(const int M,
                  const float *A,
                  const float *x,
                  float *y,
+                 float beta,
                  bool flag_bias,
                  const float *bias,
                  bool flag_act,
@@ -75,6 +80,7 @@ bool sgemv(const float *A,
            bool transA,
            int M,
            int N,
+           float beta,
            bool is_bias,
            const float *bias,
            bool flag_act,
@@ -83,21 +89,22 @@ bool sgemv(const float *A,
            float six,
            float alpha) {
   if (transA) {
-    sgemv_trans(M, N, A, x, y, is_bias, bias, flag_act, act, ctx, six, alpha);
+    sgemv_trans(
+        M, N, A, x, y, beta, is_bias, bias, flag_act, act, ctx, six, alpha);
   } else {
     if (flag_act) {
       if (act == lite_api::ActivationType::kRelu) {
-        sgemv_relu(M, N, A, x, y, is_bias, bias);
+        sgemv_relu(M, N, A, x, y, beta, is_bias, bias);
       } else if (act == lite_api::ActivationType::kRelu6) {
-        sgemv_relu6(M, N, A, x, y, is_bias, bias, six);
+        sgemv_relu6(M, N, A, x, y, beta, is_bias, bias, six);
       } else if (act == lite_api::ActivationType::kLeakyRelu) {
-        sgemv_leakey_relu(M, N, A, x, y, is_bias, bias, alpha);
+        sgemv_leakey_relu(M, N, A, x, y, beta, is_bias, bias, alpha);
       } else {
         LOG(FATAL)
             << "sgemv no transA only support relu, relu6, leakey relu fusion";
       }
     } else {
-      sgemv(M, N, A, x, y, is_bias, bias);
+      sgemv(M, N, A, x, y, beta, is_bias, bias);
     }
   }
   return true;
@@ -109,6 +116,7 @@ void sgemv_trans(const int M,
                  const float *A,
                  const float *x,
                  float *y,
+                 float beta,
                  bool flag_bias,
                  const float *bias,
                  bool flag_act,
@@ -127,6 +135,7 @@ void sgemv_trans(const int M,
   int block_cnt = valid_block / 4;
   float zero_buf[M];           // NOLINT
   float y_buf[valid_ths * M];  // NOLINT
+  bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   memset(zero_buf, 0, M * sizeof(float));
   if (flag_bias) {
     memcpy(y_buf, bias, M * sizeof(float));
@@ -336,73 +345,150 @@ void sgemv_trans(const int M,
     valid_ths = rdc_ths;
     rdc_ths = rdc_ths >> 1;
   }
-  if (flag_act) {
-    float *in_y = y_buf;
-    float32x4_t vzero = vdupq_n_f32(0.f);
-    if (act == lite_api::ActivationType::kRelu) {
-      if (cnt4 > 0) {
-        int cnt = cnt4;
-        asm volatile(
-            "ld1  {v0.4s},  [%[in_y]], #16  \n" /*  load y to v0    */
-            "1:\n"
-            "fmax v1.4s, v0.4s, %[vzero].4s \n" /*      v0 relu     */
-            "ld1  {v0.4s},  [%[in_y]], #16  \n" /*   load y to v0   */
-            "subs %w[cnt],  %w[cnt], #1     \n" /*      sub cnt     */
-            "st1  {v1.4s},  [%[out_y]], #16 \n" /*  store v1 to y   */
-            "bne  1b                        \n" /* branch to label 1*/
-            "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
-            : [cnt] "+r"(cnt), [in_y] "+r"(in_y), [out_y] "+r"(y)
-            : [vzero] "w"(vzero)
-            : "v0", "v1", "cc", "memory");
+  if (has_beta) {
+    if (flag_act) {
+      float *in_y = y_buf;
+      float32x4_t vzero = vdupq_n_f32(0.f);
+      float32x4_t vbeta = vdupq_n_f32(beta);
+      if (act == lite_api::ActivationType::kRelu) {
+        if (cnt4 > 0) {
+          int cnt = cnt4;
+          asm volatile(
+              "ld1  {v0.4s},  [%[in_y]], #16  \n" /*  load y to v0    */
+              "1:\n"
+              "fmax v1.4s, v0.4s, %[vzero].4s \n" /*      v0 relu     */
+              "fadd v1.4s, v1.4s, %[vbeta].4s \n"
+              "ld1  {v0.4s},  [%[in_y]], #16  \n" /*   load y to v0   */
+              "subs %w[cnt],  %w[cnt], #1     \n" /*      sub cnt     */
+              "st1  {v1.4s},  [%[out_y]], #16 \n" /*  store v1 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
+              : [cnt] "+r"(cnt), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [vbeta] "w"(vbeta)
+              : "v0", "v1", "cc", "memory");
+        }
+        for (int r = 0; r < remain; ++r) {
+          y[r] = beta * y[r] + in_y[r] > 0.f ? in_y[r] : 0.f;
+        }
+      } else if (act == lite_api::ActivationType::kRelu6) {
+        float32x4_t vsix = vdupq_n_f32(six);
+        if (cnt4 > 0) {
+          int cnt = cnt4;
+          asm volatile(
+              "ld1  {v0.4s},  [%[in_y]], #16  \n" /*  load y to v0    */
+              "1:\n"
+              "fmax v1.4s, v0.4s, %[vzero].4s \n" /*      v0 relu6    */
+              "fmin v1.4s, v1.4s, %[vsix].4s  \n" /*      v1 relu6    */
+              "ld1  {v0.4s},  [%[in_y]], #16  \n" /*   load y to v0   */
+              "fadd v1.4s, v1.4s, %[vbeta].4s \n"
+              "subs %w[cnt],  %w[cnt], #1     \n" /*      sub cnt     */
+              "st1  {v1.4s},  [%[out_y]], #16 \n" /*  store v1 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
+              : [cnt] "+r"(cnt), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [vsix] "w"(vsix), [vbeta] "w"(vbeta)
+              : "v0", "v1", "cc", "memory");
+        }
+        for (int r = 0; r < remain; ++r) {
+          float tmp = in_y[r] > 0.f ? in_y[r] : 0.f;
+          y[r] = beta * y[r] + (tmp > six ? six : y[r]);
+        }
+      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+        float32x4_t valpha = vdupq_n_f32(alpha);
+        if (cnt4 > 0) {
+          int cnt = cnt4;
+          asm volatile(
+              "1:\n"
+              "ld1   {v0.4s},  [%[in_y]],   #16 \n" /*   load y to v0   */
+              "fcmge v4.4s, v0.4s,  %[vzero].4s \n" /*    vcgeq_f32     */
+              "fmul  v5.4s, v0.4s, %[valpha].4s \n" /*    vmulq_f32     */
+              "bif   v0.16b,   v5.16b,   v4.16b \n" /*      choose      */
+              "fadd  v0.4s, v0.4s, %[vbeta].4s \n"
+              "subs  %w[cnt],  %w[cnt], #1      \n" /*      sub cnt     */
+              "st1   {v0.4s},  [%[out_y]], #16  \n" /*  store v0 to y   */
+              "bne   1b                         \n" /* branch to label 1*/
+              : [cnt] "+r"(cnt), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [valpha] "w"(valpha), [vbeta] "w"(vbeta)
+              : "v0", "v4", "v5", "cc", "memory");
+        }
+        for (int r = 0; r < remain; ++r) {
+          y[r] = beta * y[r] + (in_y[r] < 0.f ? alpha * in_y[r] : in_y[r]);
+        }
       }
-      for (int r = 0; r < remain; ++r) {
-        y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
-      }
-    } else if (act == lite_api::ActivationType::kRelu6) {
-      float32x4_t vsix = vdupq_n_f32(six);
-      if (cnt4 > 0) {
-        int cnt = cnt4;
-        asm volatile(
-            "ld1  {v0.4s},  [%[in_y]], #16  \n" /*  load y to v0    */
-            "1:\n"
-            "fmax v1.4s, v0.4s, %[vzero].4s \n" /*      v0 relu6    */
-            "fmin v1.4s, v1.4s, %[vsix].4s  \n" /*      v1 relu6    */
-            "ld1  {v0.4s},  [%[in_y]], #16  \n" /*   load y to v0   */
-            "subs %w[cnt],  %w[cnt], #1     \n" /*      sub cnt     */
-            "st1  {v1.4s},  [%[out_y]], #16 \n" /*  store v1 to y   */
-            "bne  1b                        \n" /* branch to label 1*/
-            "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
-            : [cnt] "+r"(cnt), [in_y] "+r"(in_y), [out_y] "+r"(y)
-            : [vzero] "w"(vzero), [vsix] "w"(vsix)
-            : "v0", "v1", "cc", "memory");
-      }
-      for (int r = 0; r < remain; ++r) {
-        y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
-        y[r] = y[r] > six ? six : y[r];
-      }
-    } else if (act == lite_api::ActivationType::kLeakyRelu) {
-      float32x4_t valpha = vdupq_n_f32(alpha);
-      if (cnt4 > 0) {
-        int cnt = cnt4;
-        asm volatile(
-            "1:\n"
-            "ld1   {v0.4s},  [%[in_y]],   #16 \n" /*   load y to v0   */
-            "fcmge v4.4s, v0.4s,  %[vzero].4s \n" /*    vcgeq_f32     */
-            "fmul  v5.4s, v0.4s, %[valpha].4s \n" /*    vmulq_f32     */
-            "bif   v0.16b,   v5.16b,   v4.16b \n" /*      choose      */
-            "subs  %w[cnt],  %w[cnt], #1      \n" /*      sub cnt     */
-            "st1   {v0.4s},  [%[out_y]], #16  \n" /*  store v0 to y   */
-            "bne   1b                         \n" /* branch to label 1*/
-            : [cnt] "+r"(cnt), [in_y] "+r"(in_y), [out_y] "+r"(y)
-            : [vzero] "w"(vzero), [valpha] "w"(valpha)
-            : "v0", "v4", "v5", "cc", "memory");
-      }
-      for (int r = 0; r < remain; ++r) {
-        y[r] = in_y[r] < 0.f ? alpha * in_y[r] : in_y[r];
+    } else {
+      for (int i = 0; i < M; i++) {
+        y[i] = beta * y[i] + y_buf[i];
       }
     }
   } else {
-    memcpy(y, y_buf, M * sizeof(float));
+    if (flag_act) {
+      float *in_y = y_buf;
+      float32x4_t vzero = vdupq_n_f32(0.f);
+      if (act == lite_api::ActivationType::kRelu) {
+        if (cnt4 > 0) {
+          int cnt = cnt4;
+          asm volatile(
+              "ld1  {v0.4s},  [%[in_y]], #16  \n" /*  load y to v0    */
+              "1:\n"
+              "fmax v1.4s, v0.4s, %[vzero].4s \n" /*      v0 relu     */
+              "ld1  {v0.4s},  [%[in_y]], #16  \n" /*   load y to v0   */
+              "subs %w[cnt],  %w[cnt], #1     \n" /*      sub cnt     */
+              "st1  {v1.4s},  [%[out_y]], #16 \n" /*  store v1 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
+              : [cnt] "+r"(cnt), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero)
+              : "v0", "v1", "cc", "memory");
+        }
+        for (int r = 0; r < remain; ++r) {
+          y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
+        }
+      } else if (act == lite_api::ActivationType::kRelu6) {
+        float32x4_t vsix = vdupq_n_f32(six);
+        if (cnt4 > 0) {
+          int cnt = cnt4;
+          asm volatile(
+              "ld1  {v0.4s},  [%[in_y]], #16  \n" /*  load y to v0    */
+              "1:\n"
+              "fmax v1.4s, v0.4s, %[vzero].4s \n" /*      v0 relu6    */
+              "fmin v1.4s, v1.4s, %[vsix].4s  \n" /*      v1 relu6    */
+              "ld1  {v0.4s},  [%[in_y]], #16  \n" /*   load y to v0   */
+              "subs %w[cnt],  %w[cnt], #1     \n" /*      sub cnt     */
+              "st1  {v1.4s},  [%[out_y]], #16 \n" /*  store v1 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
+              : [cnt] "+r"(cnt), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [vsix] "w"(vsix)
+              : "v0", "v1", "cc", "memory");
+        }
+        for (int r = 0; r < remain; ++r) {
+          y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
+          y[r] = y[r] > six ? six : y[r];
+        }
+      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+        float32x4_t valpha = vdupq_n_f32(alpha);
+        if (cnt4 > 0) {
+          int cnt = cnt4;
+          asm volatile(
+              "1:\n"
+              "ld1   {v0.4s},  [%[in_y]],   #16 \n" /*   load y to v0   */
+              "fcmge v4.4s, v0.4s,  %[vzero].4s \n" /*    vcgeq_f32     */
+              "fmul  v5.4s, v0.4s, %[valpha].4s \n" /*    vmulq_f32     */
+              "bif   v0.16b,   v5.16b,   v4.16b \n" /*      choose      */
+              "subs  %w[cnt],  %w[cnt], #1      \n" /*      sub cnt     */
+              "st1   {v0.4s},  [%[out_y]], #16  \n" /*  store v0 to y   */
+              "bne   1b                         \n" /* branch to label 1*/
+              : [cnt] "+r"(cnt), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [valpha] "w"(valpha)
+              : "v0", "v4", "v5", "cc", "memory");
+        }
+        for (int r = 0; r < remain; ++r) {
+          y[r] = in_y[r] < 0.f ? alpha * in_y[r] : in_y[r];
+        }
+      }
+    } else {
+      memcpy(y, y_buf, M * sizeof(float));
+    }
   }
 }
 #else
@@ -411,6 +497,7 @@ void sgemv_trans(const int M,
                  const float *A,
                  const float *x,
                  float *y,
+                 float beta,
                  bool flag_bias,
                  const float *bias,
                  bool flag_act,
@@ -429,6 +516,7 @@ void sgemv_trans(const int M,
   float zero_buf[M];           // NOLINT
   float y_buf[valid_ths * M];  // NOLINT
   memset(zero_buf, 0, M * sizeof(float));
+  bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   if (flag_bias) {
     memcpy(y_buf, bias, M * sizeof(float));
     memset(y_buf + M, 0, (valid_ths - 1) * M * sizeof(float));
@@ -600,75 +688,154 @@ void sgemv_trans(const int M,
     rdc_ths = rdc_ths >> 1;
   }
   // do activation
-  if (flag_act) {
-    float *in_y = y_buf;
-    float32x4_t vzero = vdupq_n_f32(0.f);
-    m_cnt4 = M >> 2;
-    m_remain = M & 3;
-    if (act == lite_api::ActivationType::kRelu) {
-      if (m_cnt4 > 0) {
-        int cnt4 = m_cnt4;
-        asm volatile(
-            "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*  load y to q0    */
-            "1:\n"
-            "vmax.f32 q1, q0,   %q[vzero]   \n" /*      q0 relu     */
-            "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*   load y to q0   */
-            "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
-            "vst1.32  {d2-d3},  [%[out_y]]! \n" /*  store q1 to y   */
-            "bne  1b                        \n" /* branch to label 1*/
-            "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
-            : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
-            : [vzero] "w"(vzero)
-            : "q0", "q1", "cc", "memory");
+  if (has_beta) {
+    if (flag_act) {
+      float *in_y = y_buf;
+      float32x4_t vzero = vdupq_n_f32(0.f);
+      float32x4_t vbeta = vdupq_n_f32(beta);
+      m_cnt4 = M >> 2;
+      m_remain = M & 3;
+      if (act == lite_api::ActivationType::kRelu) {
+        if (m_cnt4 > 0) {
+          int cnt4 = m_cnt4;
+          asm volatile(
+              "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*  load y to q0    */
+              "1:\n"
+              "vmax.f32 q1, q0,   %q[vzero]   \n" /*      q0 relu     */
+              "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*   load y to q0   */
+              "vadd.f32 q1, q1, %q[vbeta]     \n"
+              "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
+              "vst1.32  {d2-d3},  [%[out_y]]! \n" /*  store q1 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
+              : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [vbeta] "w"(vbeta)
+              : "q0", "q1", "cc", "memory");
+        }
+        for (int r = 0; r < m_remain; ++r) {
+          y[r] = beta * y[r] + (in_y[r] > 0.f ? in_y[r] : 0.f);
+        }
+      } else if (act == lite_api::ActivationType::kRelu6) {
+        float32x4_t vsix = vdupq_n_f32(six);
+        if (m_cnt4 > 0) {
+          int cnt4 = m_cnt4;
+          asm volatile(
+              "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*  load y to q0    */
+              "1:\n"
+              "vmax.f32 q1, q0,   %q[vzero]   \n" /*      q0 relu6    */
+              "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*   load y to q0   */
+              "vmin.f32 q1, q1,   %q[vsix]    \n" /*      q0 relu6    */
+              "vadd.f32 q1, q1, %q[vbeta]     \n"
+              "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
+              "vst1.32  {d2-d3},  [%[out_y]]! \n" /*  store q1 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
+              : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [vsix] "w"(vsix), [vbeta] "w"(vbeta)
+              : "q0", "q1", "cc", "memory");
+        }
+        for (int r = 0; r < m_remain; ++r) {
+          float tmp = in_y[r] > 0.f ? in_y[r] : 0.f;
+          y[r] = beta * y[r] + (tmp > six ? six : y[r]);
+        }
+      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+        float32x4_t valpha = vdupq_n_f32(alpha);
+        if (m_cnt4 > 0) {
+          int cnt4 = m_cnt4;
+          asm volatile(
+              "1:\n"
+              "vld1.32  {d0-d1}, [%[in_y]]!   \n" /*   load y to q0   */
+              "vcge.f32 q3, q0,  %q[vzero]    \n" /*    vcgeq_f32     */
+              "vmul.f32 q4, q0,  %q[valpha]   \n" /*    vmulq_f32     */
+              "vbif q0, q4, q3                \n" /*      choose      */
+              "vadd.f32 q0, q0, %q[vbeta]     \n"
+              "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
+              "vst1.32  {d0-d1}, [%[out_y]]!  \n" /*  store q0 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [valpha] "w"(valpha), [vbeta] "w"(vbeta)
+              : "q0", "q3", "q4", "cc", "memory");
+        }
+        for (int r = 0; r < m_remain; ++r) {
+          y[r] = beta * y[r] + (in_y[r] < 0.f ? alpha * in_y[r] : in_y[r]);
+        }
       }
-      for (int r = 0; r < m_remain; ++r) {
-        y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
-      }
-    } else if (act == lite_api::ActivationType::kRelu6) {
-      float32x4_t vsix = vdupq_n_f32(six);
-      if (m_cnt4 > 0) {
-        int cnt4 = m_cnt4;
-        asm volatile(
-            "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*  load y to q0    */
-            "1:\n"
-            "vmax.f32 q1, q0,   %q[vzero]   \n" /*      q0 relu6    */
-            "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*   load y to q0   */
-            "vmin.f32 q1, q1,   %q[vsix]    \n" /*      q0 relu6    */
-            "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
-            "vst1.32  {d2-d3},  [%[out_y]]! \n" /*  store q1 to y   */
-            "bne  1b                        \n" /* branch to label 1*/
-            "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
-            : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
-            : [vzero] "w"(vzero), [vsix] "w"(vsix)
-            : "q0", "q1", "cc", "memory");
-      }
-      for (int r = 0; r < m_remain; ++r) {
-        y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
-        y[r] = y[r] > six ? six : y[r];
-      }
-    } else if (act == lite_api::ActivationType::kLeakyRelu) {
-      float32x4_t valpha = vdupq_n_f32(alpha);
-      if (m_cnt4 > 0) {
-        int cnt4 = m_cnt4;
-        asm volatile(
-            "1:\n"
-            "vld1.32  {d0-d1}, [%[in_y]]!   \n" /*   load y to q0   */
-            "vcge.f32 q3, q0,  %q[vzero]    \n" /*    vcgeq_f32     */
-            "vmul.f32 q4, q0,  %q[valpha]   \n" /*    vmulq_f32     */
-            "vbif q0, q4, q3                \n" /*      choose      */
-            "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
-            "vst1.32  {d0-d1}, [%[out_y]]!  \n" /*  store q0 to y   */
-            "bne  1b                        \n" /* branch to label 1*/
-            : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
-            : [vzero] "w"(vzero), [valpha] "w"(valpha)
-            : "q0", "q3", "q4", "cc", "memory");
-      }
-      for (int r = 0; r < m_remain; ++r) {
-        y[r] = in_y[r] < 0.f ? alpha * in_y[r] : in_y[r];
+    } else {
+      for (int i = 0; i < M; i++) {
+        y[i] = beta * y[i] + y_buf[i];
       }
     }
   } else {
-    memcpy(y, y_buf, M * sizeof(float));
+    if (flag_act) {
+      float *in_y = y_buf;
+      float32x4_t vzero = vdupq_n_f32(0.f);
+      m_cnt4 = M >> 2;
+      m_remain = M & 3;
+      if (act == lite_api::ActivationType::kRelu) {
+        if (m_cnt4 > 0) {
+          int cnt4 = m_cnt4;
+          asm volatile(
+              "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*  load y to q0    */
+              "1:\n"
+              "vmax.f32 q1, q0,   %q[vzero]   \n" /*      q0 relu     */
+              "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*   load y to q0   */
+              "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
+              "vst1.32  {d2-d3},  [%[out_y]]! \n" /*  store q1 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
+              : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero)
+              : "q0", "q1", "cc", "memory");
+        }
+        for (int r = 0; r < m_remain; ++r) {
+          y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
+        }
+      } else if (act == lite_api::ActivationType::kRelu6) {
+        float32x4_t vsix = vdupq_n_f32(six);
+        if (m_cnt4 > 0) {
+          int cnt4 = m_cnt4;
+          asm volatile(
+              "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*  load y to q0    */
+              "1:\n"
+              "vmax.f32 q1, q0,   %q[vzero]   \n" /*      q0 relu6    */
+              "vld1.32  {d0-d1},  [%[in_y]]!  \n" /*   load y to q0   */
+              "vmin.f32 q1, q1,   %q[vsix]    \n" /*      q0 relu6    */
+              "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
+              "vst1.32  {d2-d3},  [%[out_y]]! \n" /*  store q1 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              "sub  %[in_y],  %[in_y],  #16   \n" /*   restore in_y   */
+              : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [vsix] "w"(vsix)
+              : "q0", "q1", "cc", "memory");
+        }
+        for (int r = 0; r < m_remain; ++r) {
+          y[r] = in_y[r] > 0.f ? in_y[r] : 0.f;
+          y[r] = y[r] > six ? six : y[r];
+        }
+      } else if (act == lite_api::ActivationType::kLeakyRelu) {
+        float32x4_t valpha = vdupq_n_f32(alpha);
+        if (m_cnt4 > 0) {
+          int cnt4 = m_cnt4;
+          asm volatile(
+              "1:\n"
+              "vld1.32  {d0-d1}, [%[in_y]]!   \n" /*   load y to q0   */
+              "vcge.f32 q3, q0,  %q[vzero]    \n" /*    vcgeq_f32     */
+              "vmul.f32 q4, q0,  %q[valpha]   \n" /*    vmulq_f32     */
+              "vbif q0, q4, q3                \n" /*      choose      */
+              "subs %[cnt], %[cnt], #1        \n" /*      sub cnt     */
+              "vst1.32  {d0-d1}, [%[out_y]]!  \n" /*  store q0 to y   */
+              "bne  1b                        \n" /* branch to label 1*/
+              : [cnt] "+r"(cnt4), [in_y] "+r"(in_y), [out_y] "+r"(y)
+              : [vzero] "w"(vzero), [valpha] "w"(valpha)
+              : "q0", "q3", "q4", "cc", "memory");
+        }
+        for (int r = 0; r < m_remain; ++r) {
+          y[r] = in_y[r] < 0.f ? alpha * in_y[r] : in_y[r];
+        }
+      }
+    } else {
+      memcpy(y, y_buf, M * sizeof(float));
+    }
   }
 }
 #endif  // __aarch64__
@@ -928,6 +1095,128 @@ void sgemv_trans(const int M,
   "5:                           \n" /* leakey relu label */ \
   "str s8, [%[out]]             \n" /* save result */
 
+#define SGEMV_OUT_8_BETA                                 \
+  /* end */                                              \
+  "4:                          \n" /* end */             \
+  "mov v8.s[1], v9.s[0]        \n" /* ins s9 to  v8[1]*/ \
+  "ldp q0, q1, [%[out]]        \n"                       \
+  "mov v8.s[2], v10.s[0]       \n" /* ins s10 to v8[2]*/ \
+  "mov v8.s[3], v11.s[0]       \n" /* ins s11 to v8[3]*/ \
+  "mov v9.s[0], v12.s[0]       \n" /* ins s12 to v9[0]*/ \
+  "mov v9.s[1], v13.s[0]       \n" /* ins s13 to v9[1]*/ \
+  "fmla v8.4s, v0.4s, %[vbeta].4s\n"                    \
+  "mov v9.s[2], v14.s[0]       \n" /* ins s14 to v9[2]*/ \
+  "mov v9.s[3], v15.s[0]       \n" /* ins s15 to v9[3]*/ \
+  "fmla v9.4s, v1.4s, %[vbeta].4s\n"                    \
+  "stp q8, q9, [%[out]]        \n" /* save result */
+
+#define SGEMV_OUT_8_RELU_BETA                              \
+  /* end */                                                \
+  "4:                          \n" /* end */               \
+  "mov v8.s[1], v9.s[0]        \n" /* ins s9 to  v8[1]*/   \
+  "ldp q0, q1, [%[out]]        \n"                         \
+  "mov v8.s[2], v10.s[0]       \n" /* ins s10 to v8[2]*/   \
+  "mov v8.s[3], v11.s[0]       \n" /* ins s11 to v8[3]*/   \
+  "mov v9.s[0], v12.s[0]       \n" /* ins s12 to v9[0]*/   \
+  "mov v9.s[1], v13.s[0]       \n" /* ins s13 to v9[1]*/   \
+  "mov v9.s[2], v14.s[0]       \n" /* ins s14 to v9[2]*/   \
+  "mov v9.s[3], v15.s[0]       \n" /* ins s15 to v9[3]*/   \
+  "movi   v2.4s, #0            \n" /* zero data for relu */\
+  "fmax   v8.4s, v8.4s, v2.4s  \n" /* relu */              \
+  "fmax   v9.4s, v9.4s, v2.4s  \n" /* relu */              \
+  "fmla v8.4s, v0.4s, %[vbeta].4s\n"                      \
+  "fmla v9.4s, v1.4s, %[vbeta].4s\n"                      \
+  "stp q8, q9, [%[out]]        \n" /* save result */
+
+#define SGEMV_OUT_8_RELU6_BETA                                  \
+  /* end */                                                     \
+  "4:                              \n" /* end */                \
+  "mov v8.s[1], v9.s[0]            \n" /* ins s9 to  v8[1]*/    \
+  "ldp q0, q1, [%[out]]        \n"                              \
+  "mov v8.s[2], v10.s[0]           \n" /* ins s10 to v8[2]*/    \
+  "mov v8.s[3], v11.s[0]           \n" /* ins s11 to v8[3]*/    \
+  "mov v9.s[0], v12.s[0]           \n" /* ins s12 to v9[0]*/    \
+  "mov v9.s[1], v13.s[0]           \n" /* ins s13 to v9[1]*/    \
+  "mov v9.s[2], v14.s[0]           \n" /* ins s14 to v9[2]*/    \
+  "mov v9.s[3], v15.s[0]           \n" /* ins s15 to v9[3]*/    \
+  "movi   v2.4s, #0                \n" /* zero data for relu6 */\
+  "fmax   v8.4s, v8.4s, v2.4s      \n" /* relu6 */              \
+  "fmax   v9.4s, v9.4s, v2.4s      \n" /* relu6 */              \
+  "fmin   v8.4s, v8.4s, %[vsix].4s \n" /* relu */               \
+  "fmin   v9.4s, v9.4s, %[vsix].4s \n" /* relu */               \
+  "fmla v8.4s, v0.4s, %[vbeta].4s\n"                           \
+  "fmla v9.4s, v1.4s, %[vbeta].4s\n"                           \
+  "stp q8, q9, [%[out]]            \n" /* save result */
+
+#define SGEMV_OUT_8_LEAKEY_RELU_BETA                                    \
+  /* end */                                                             \
+  "4:                               \n" /* end */                       \
+  "mov v8.s[1], v9.s[0]             \n" /* ins s9 to  v8[1]*/           \
+  "ldp q0, q1, [%[out]]        \n"                                      \
+  "mov v8.s[2], v10.s[0]            \n" /* ins s10 to v8[2]*/           \
+  "mov v8.s[3], v11.s[0]            \n" /* ins s11 to v8[3]*/           \
+  "mov v9.s[0], v12.s[0]            \n" /* ins s12 to v9[0]*/           \
+  "mov v9.s[1], v13.s[0]            \n" /* ins s13 to v9[1]*/           \
+  "mov v9.s[2], v14.s[0]            \n" /* ins s14 to v9[2]*/           \
+  "mov v9.s[3], v15.s[0]            \n" /* ins s15 to v9[3]*/           \
+  "movi   v2.4s, #0                 \n" /* zero data for leakey relu */ \
+  "fcmge v4.4s, v8.4s,  v2.4s       \n" /* vcgeq_f32 */                 \
+  "fmul v5.4s, v8.4s,  %[valpha].4s \n" /* vmulq_f32 */                 \
+  "fcmge v6.4s, v9.4s,  v2.4s       \n" /* vcgeq_f32 */                 \
+  "fmul v7.4s, v9.4s,  %[valpha].4s \n" /* vmulq_f32 */                 \
+  "bif v8.16b, v5.16b, v4.16b       \n" /* choose*/                     \
+  "bif v9.16b, v7.16b, v6.16b       \n" /* choose*/                     \
+  "fmla v8.4s, v0.4s, %[vbeta].4s\n"                                   \
+  "fmla v9.4s, v1.4s, %[vbeta].4s\n"                                   \
+  "stp q8, q9, [%[out]]             \n" /* save result */
+
+#define SGEMV_OUT_1_BETA                            \
+  /* end */                                         \
+  "4:                         \n" /* end */         \
+  "ldr s1, [%[out]]           \n"                   \
+  "fmov   s2, %w[beta]        \n"                   \
+  "fmul s1, s1, s2            \n"                   \
+  "fadd s8, s8, s1            \n"                   \
+  "str s8, [%[out]]           \n" /* save result */
+
+#define SGEMV_OUT_1_RELU_BETA                              \
+  /* end */                                                \
+  "4:                         \n" /* end */                \
+  "movi   d1, #0              \n" /* zero data for relu */ \
+  "ldr s4, [%[out]]           \n"                          \
+  "fmov   s5, %w[beta]        \n"                          \
+  "fmax   s8, s8, s1          \n" /* relu */               \
+  "fmul s4, s4, s5            \n"                          \
+  "fadd s8, s8, s4            \n"                          \
+  "str s8, [%[out]]           \n" /* save result */
+
+#define SGEMV_OUT_1_RELU6_BETA                              \
+  /* end */                                                 \
+  "4:                         \n" /* end */                 \
+  "movi   d1, #0              \n" /* zero data for relu6 */ \
+  "fmov   s2, %w[six]         \n" /* mov six to s2  */      \
+  "ldr s4, [%[out]]           \n"                           \
+  "fmax   s8, s8, s1          \n" /* relu6 */               \
+  "fmov   s5, %w[beta]        \n"                           \
+  "fmin   s8, s8, s2          \n" /* relu6 */               \
+  "fmul s4, s4, s5            \n"                           \
+  "fadd s8, s8, s4            \n"                           \
+  "str s8, [%[out]]           \n" /* save result */
+
+#define SGEMV_OUT_1_LEAKEY_RELU_BETA                        \
+  /* end */                                                 \
+  "4:                           \n" /* end */               \
+  "fmov   s1, %w[alpha]         \n" /* mov alpha to s1  */  \
+  "ldr s4, [%[out]]           \n"                           \
+  "fcmp   s8, #0.0              \n" /* cmp with zero*/      \
+  "fmov   s5, %w[beta]        \n"                           \
+  "bge    5f                    \n" /* if ge zero */        \
+  "fmul   s8, s8, s1            \n" /* out * alpha */       \
+  "5:                           \n" /* leakey relu label */ \
+  "fmul s4, s4, s5            \n"                           \
+  "fadd s8, s8, s4            \n"                           \
+  "str s8, [%[out]]             \n" /* save result */
+
 #else  // __aarch64__
 
 #define SGEMV_IN_4                                                    \
@@ -1103,6 +1392,88 @@ void sgemv_trans(const int M,
   "vbif d0,   d8, d6                @ choose \n"               \
   "vst1.32 {d0[0]}, [%[out]]        @ save result\n"
 
+#define SGEMV_OUT_4_BETA                   \
+  /* end */                                \
+  "4:                             @ end\n" \
+  "vld1.32 {d2-d3}, [%[out]]      \n"      \
+  "vmla.f32 q0, q1, %q[vbeta]      \n"      \
+  "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
+
+#define SGEMV_OUT_4_RELU_BETA                        \
+  /* end */                                          \
+  "4:                             @ end\n"           \
+  "vmov.i32   q1, #0              @ zero for relu\n" \
+  "vld1.32 {d4-d5}, [%[out]]      \n"                \
+  "vmax.f32   q0, q0, q1          @ relu\n"          \
+  "vmla.f32 q0, q2, %q[vbeta]      \n"                \
+  "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
+
+#define SGEMV_OUT_4_RELU6_BETA                        \
+  /* end */                                           \
+  "4:                             @ end\n"            \
+  "vmov.i32   q1, #0              @ zero for relu6\n" \
+  "vdup.f32   q2, %[six]          @ six for relu6\n"  \
+  "vld1.32 {d6-d7}, [%[out]]      \n"                 \
+  "vmax.f32   q0, q0, q1          @ relu6\n"          \
+  "vmin.f32   q0, q0, q2          @ relu6\n"          \
+  "vmla.f32 q0, q3, %q[vbeta]      \n"                 \
+  "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
+
+#define SGEMV_OUT_4_LEAKEY_RELU_BETA                         \
+  /* end */                                                  \
+  "4:                             @ end\n"                   \
+  "vmov.i32   q1, #0              @ zero for leakey relu\n"  \
+  "vdup.f32   q2, %[alpha]        @ alpha for leakey relu\n" \
+  "vld1.32 {d10-d11}, [%[out]]      \n"                      \
+  "vcge.f32   q3, q0, q1          @ vcgeq_f32 \n"            \
+  "vmul.f32   q4, q0, q2          @ vmulq_f32 \n"            \
+  "vbif q0,   q4, q3              @ choose \n"               \
+  "vmla.f32 q0, q5, %q[vbeta]      \n"                        \
+  "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
+
+#define SGEMV_OUT_1_BETA                   \
+  /* end */                                \
+  "4:                             @ end\n" \
+  "vld1.32 {d2}, [%[out]]         \n"      \
+  "vdup.f32   d4, %[beta]         \n"      \
+  "vmla.f32 d0, d2, d4            \n"      \
+  "vst1.32 {d0[0]}, [%[out]]      @ save result\n"
+
+#define SGEMV_OUT_1_RELU_BETA                        \
+  /* end */                                          \
+  "4:                             @ end\n"           \
+  "vmov.i32   d1, #0              @ zero for relu\n" \
+  "vld1.32 {d2}, [%[out]]         \n"                \
+  "vmax.f32   d0, d0, d1          @ relu\n"          \
+  "vdup.f32   d4, %[beta]         \n"                \
+  "vmla.f32 d0, d2, d4           \n"                 \
+  "vst1.32 {d0[0]}, [%[out]]      @ save result\n"
+
+#define SGEMV_OUT_1_RELU6_BETA                        \
+  /* end */                                           \
+  "4:                             @ end\n"            \
+  "vmov.i32   d1, #0              @ zero for relu6\n" \
+  "vdup.f32   d4, %[six]          @ six  for relu6\n" \
+  "vld1.32 {d2}, [%[out]]         \n"                 \
+  "vmax.f32   d0, d0, d1          @ relu6\n"          \
+  "vdup.f32   d6, %[beta]         \n"                 \
+  "vmin.f32   d0, d0, d4          @ relu6\n"          \
+  "vmla.f32 d0, d2, d6             \n"                \
+  "vst1.32 {d0[0]}, [%[out]]      @ save result\n"
+
+#define SGEMV_OUT_1_LEAKEY_RELU_BETA                           \
+  /* end */                                                    \
+  "4:                               @ end\n"                   \
+  "vmov.i32   d2, #0                @ zero  for leakey relu\n" \
+  "vdup.f32   d3, %[alpha]          @ alpha for leakey relu\n" \
+  "vld1.32 {d4}, [%[out]]           \n"                        \
+  "vcge.f32   d6, d0, d2            @ vcgeq_f32 \n"            \
+  "vmul.f32   d8, d0, d3            @ vmulq_f32 \n"            \
+  "vdup.f32   d2, %[beta]         \n"                \
+  "vbif d0,   d8, d6                @ choose \n"               \
+  "vmla.f32 d0, d4, d2        \n"                        \
+  "vst1.32 {d0[0]}, [%[out]]        @ save result\n"
+
 #endif
 // clang-format on
 
@@ -1111,6 +1482,7 @@ void sgemv(const int M,
            const float *A,
            const float *x,
            float *y,
+           float beta,
            bool flag_bias,
            const float *bias) {
   float *data_out = y;
@@ -1119,6 +1491,8 @@ void sgemv(const int M,
 
   int cnt = N >> 3;
   int tail = N & 7;
+  bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  float32x4_t vbeta = vdupq_n_f32(beta);
 
 #ifdef __aarch64__
   int out_cnt = M >> 3;
@@ -1150,7 +1524,8 @@ void sgemv(const int M,
     int cnt_loop = cnt;
     int tail_loop = tail;
     // clang-format off
-    asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8
+    if (has_beta) {
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_BETA
                  : [in] "+r"(ptr_in),
                    [w0] "+r"(ptr_w0),
                    [w1] "+r"(ptr_w1),
@@ -1162,11 +1537,30 @@ void sgemv(const int M,
                    [w7] "+r"(ptr_w7),
                    [cnt] "+r"(cnt_loop),
                    [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local)
+                 : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), [vbeta] "w" (vbeta)
                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
                    "v24", "v25", "cc", "memory");
+    } else {
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [w4] "+r"(ptr_w4),
+                    [w5] "+r"(ptr_w5),
+                    [w6] "+r"(ptr_w6),
+                    [w7] "+r"(ptr_w7),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local)
+                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+                    "v24", "v25", "cc", "memory");
+    }
     // clang-format on
   }
 //! deal with remains
@@ -1181,13 +1575,23 @@ void sgemv(const int M,
     if (flag_bias) {
       bias0 = bias[j];
     }
-    asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias0] "r"(bias0)
-                 : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
+                   : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc");
+    } else {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0)
+                   : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc");
+    }
   }
 #else  // __aarch64__
   int out_cnt = M >> 2;
@@ -1213,23 +1617,44 @@ void sgemv(const int M,
     int cnt_loop = cnt;
     int tail_loop = tail;
     // clang-format off
-    asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [w1] "+r"(ptr_w1),
-                   [w2] "+r"(ptr_w2),
-                   [w3] "+r"(ptr_w3),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out),
-                   [bias0] "r"(bias0),
-                   [bias1] "r"(bias1),
-                   [bias2] "r"(bias2),
-                   [bias3] "r"(bias3)
-                 : "q0", "q1", "q2", "q3", "q4",
-                   "q5", "q6", "q7", "q8", "q9",
-                   "q10", "q11", "q12", "q13", "cc",
-                   "memory");
+    if (has_beta) {
+        asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out),
+                    [bias0] "r"(bias0),
+                    [bias1] "r"(bias1),
+                    [bias2] "r"(bias2),
+                    [bias3] "r"(bias3),
+                    [vbeta] "w" (vbeta)
+                  : "q0", "q1", "q2", "q3", "q4",
+                    "q5", "q6", "q7", "q8", "q9",
+                    "q10", "q11", "q12", "q13", "cc",
+                    "memory");
+    } else {
+        asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out),
+                    [bias0] "r"(bias0),
+                    [bias1] "r"(bias1),
+                    [bias2] "r"(bias2),
+                    [bias3] "r"(bias3)
+                  : "q0", "q1", "q2", "q3", "q4",
+                    "q5", "q6", "q7", "q8", "q9",
+                    "q10", "q11", "q12", "q13", "cc",
+                    "memory");
+    }
     // clang-format on
   }
 //! deal with remains
@@ -1244,13 +1669,23 @@ void sgemv(const int M,
     if (flag_bias) {
       bias0 = bias[j];
     }
-    asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias0] "r"(bias0)
-                 : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
+                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    } else {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0)
+                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    }
   }
 #endif  // __aarch64__
 }
@@ -1260,6 +1695,7 @@ void sgemv_relu(const int M,
                 const float *A,
                 const float *x,
                 float *y,
+                float beta,
                 bool flag_bias,
                 const float *bias) {
   float *data_out = y;
@@ -1268,6 +1704,8 @@ void sgemv_relu(const int M,
 
   int cnt = N >> 3;
   int tail = N & 7;
+  bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  float32x4_t vbeta = vdupq_n_f32(beta);
 
 #ifdef __aarch64__
   int out_cnt = M >> 3;
@@ -1299,23 +1737,43 @@ void sgemv_relu(const int M,
     int cnt_loop = cnt;
     int tail_loop = tail;
     // clang-format off
-    asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [w1] "+r"(ptr_w1),
-                   [w2] "+r"(ptr_w2),
-                   [w3] "+r"(ptr_w3),
-                   [w4] "+r"(ptr_w4),
-                   [w5] "+r"(ptr_w5),
-                   [w6] "+r"(ptr_w6),
-                   [w7] "+r"(ptr_w7),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local)
-                 : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                   "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                   "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
-                   "v24", "v25", "cc", "memory");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU_BETA
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [w4] "+r"(ptr_w4),
+                    [w5] "+r"(ptr_w5),
+                    [w6] "+r"(ptr_w6),
+                    [w7] "+r"(ptr_w7),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), [vbeta] "w"(vbeta)
+                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+                    "v24", "v25", "cc", "memory");
+    } else {
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [w4] "+r"(ptr_w4),
+                    [w5] "+r"(ptr_w5),
+                    [w6] "+r"(ptr_w6),
+                    [w7] "+r"(ptr_w7),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local)
+                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+                    "v24", "v25", "cc", "memory");
+    }
     // clang-format on
   }
 //! deal with remains
@@ -1330,14 +1788,25 @@ void sgemv_relu(const int M,
     if (flag_bias) {
       bias0 = bias[j];
     }
-    asm volatile(
-        SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU
-        : [in] "+r"(ptr_in),
-          [w0] "+r"(ptr_w0),
-          [cnt] "+r"(cnt_loop),
-          [tail] "+r"(tail_loop)
-        : [out] "r"(ptr_out), [bias0] "r"(bias0)
-        : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+    if (has_beta) {
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU_BETA
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
+          : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+    } else {
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias0] "r"(bias0)
+          : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+    }
   }
 #else  // __aarch64__
   int out_cnt = M >> 2;
@@ -1363,23 +1832,44 @@ void sgemv_relu(const int M,
     int cnt_loop = cnt;
     int tail_loop = tail;
     // clang-format off
-    asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [w1] "+r"(ptr_w1),
-                   [w2] "+r"(ptr_w2),
-                   [w3] "+r"(ptr_w3),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out),
-                   [bias0] "r"(bias0),
-                   [bias1] "r"(bias1),
-                   [bias2] "r"(bias2),
-                   [bias3] "r"(bias3)
-                 : "q0", "q1", "q2", "q3", "q4",
-                   "q5", "q6", "q7", "q8", "q9",
-                   "q10", "q11", "q12", "q13", "cc",
-                   "memory");
+    if (has_beta) {
+        asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU_BETA
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out),
+                    [bias0] "r"(bias0),
+                    [bias1] "r"(bias1),
+                    [bias2] "r"(bias2),
+                    [bias3] "r"(bias3),
+                    [vbeta] "w"(vbeta)
+                  : "q0", "q1", "q2", "q3", "q4",
+                    "q5", "q6", "q7", "q8", "q9",
+                    "q10", "q11", "q12", "q13", "cc",
+                    "memory");
+    } else {
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out),
+                    [bias0] "r"(bias0),
+                    [bias1] "r"(bias1),
+                    [bias2] "r"(bias2),
+                    [bias3] "r"(bias3)
+                  : "q0", "q1", "q2", "q3", "q4",
+                    "q5", "q6", "q7", "q8", "q9",
+                    "q10", "q11", "q12", "q13", "cc",
+                    "memory");
+    }
     // clang-format on
   }
 //! deal with remains
@@ -1394,13 +1884,23 @@ void sgemv_relu(const int M,
     if (flag_bias) {
       bias0 = bias[j];
     }
-    asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias0] "r"(bias0)
-                 : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
+                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    } else {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0)
+                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    }
   }
 #endif  // __aarch64__
 }
@@ -1410,6 +1910,7 @@ void sgemv_relu6(const int M,
                  const float *A,
                  const float *x,
                  float *y,
+                 float beta,
                  bool flag_bias,
                  const float *bias,
                  const float six) {
@@ -1420,6 +1921,9 @@ void sgemv_relu6(const int M,
   int cnt = N >> 3;
   int tail = N & 7;
   float32x4_t vsix = vdupq_n_f32(six);
+  bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  float32x4_t vbeta = vdupq_n_f32(beta);
+
 #ifdef __aarch64__
   int out_cnt = M >> 3;
 #pragma omp parallel for
@@ -1450,24 +1954,45 @@ void sgemv_relu6(const int M,
     int cnt_loop = cnt;
     int tail_loop = tail;
     // clang-format off
-    asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU6
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [w1] "+r"(ptr_w1),
-                   [w2] "+r"(ptr_w2),
-                   [w3] "+r"(ptr_w3),
-                   [w4] "+r"(ptr_w4),
-                   [w5] "+r"(ptr_w5),
-                   [w6] "+r"(ptr_w6),
-                   [w7] "+r"(ptr_w7),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), 
-                   [vsix] "w" (vsix)
-                 : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                   "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                   "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
-                   "v24", "v25", "cc", "memory");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU6_BETA
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [w4] "+r"(ptr_w4),
+                    [w5] "+r"(ptr_w5),
+                    [w6] "+r"(ptr_w6),
+                    [w7] "+r"(ptr_w7),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), 
+                    [vsix] "w" (vsix), [vbeta] "w"(vbeta)
+                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+                    "v24", "v25", "cc", "memory");
+    } else {
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU6
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [w4] "+r"(ptr_w4),
+                    [w5] "+r"(ptr_w5),
+                    [w6] "+r"(ptr_w6),
+                    [w7] "+r"(ptr_w7),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), 
+                    [vsix] "w" (vsix)
+                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+                    "v24", "v25", "cc", "memory");
+    }
     // clang-format on
   }
 //! deal with remains
@@ -1482,14 +2007,28 @@ void sgemv_relu6(const int M,
     if (flag_bias) {
       bias0 = bias[j];
     }
-    asm volatile(
-        SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6
-        : [in] "+r"(ptr_in),
-          [w0] "+r"(ptr_w0),
-          [cnt] "+r"(cnt_loop),
-          [tail] "+r"(tail_loop)
-        : [out] "r"(ptr_out), [bias0] "r"(bias0), [six] "r"(six)
-        : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+    if (has_beta) {
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6_BETA
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out),
+            [bias0] "r"(bias0),
+            [six] "r"(six),
+            [beta] "r"(beta)
+          : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+    } else {
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias0] "r"(bias0), [six] "r"(six)
+          : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+    }
   }
 #else  // __aarch64__
   int out_cnt = M >> 2;
@@ -1515,24 +2054,46 @@ void sgemv_relu6(const int M,
     int cnt_loop = cnt;
     int tail_loop = tail;
     // clang-format off
-    asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU6
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [w1] "+r"(ptr_w1),
-                   [w2] "+r"(ptr_w2),
-                   [w3] "+r"(ptr_w3),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out),
-                   [bias0] "r"(bias0),
-                   [bias1] "r"(bias1),
-                   [bias2] "r"(bias2),
-                   [bias3] "r"(bias3),
-                   [six] "r" (six)
-                 : "q0", "q1", "q2", "q3", "q4",
-                   "q5", "q6", "q7", "q8", "q9",
-                   "q10", "q11", "q12", "q13", "cc",
-                   "memory");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU6_BETA
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out),
+                    [bias0] "r"(bias0),
+                    [bias1] "r"(bias1),
+                    [bias2] "r"(bias2),
+                    [bias3] "r"(bias3),
+                    [six] "r" (six),
+                    [vbeta] "w"(vbeta)
+                  : "q0", "q1", "q2", "q3", "q4",
+                    "q5", "q6", "q7", "q8", "q9",
+                    "q10", "q11", "q12", "q13", "cc",
+                    "memory");
+    } else {
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU6
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out),
+                    [bias0] "r"(bias0),
+                    [bias1] "r"(bias1),
+                    [bias2] "r"(bias2),
+                    [bias3] "r"(bias3),
+                    [six] "r" (six)
+                  : "q0", "q1", "q2", "q3", "q4",
+                    "q5", "q6", "q7", "q8", "q9",
+                    "q10", "q11", "q12", "q13", "cc",
+                    "memory");
+    }
     // clang-format on
   }
 //! deal with remains
@@ -1547,13 +2108,26 @@ void sgemv_relu6(const int M,
     if (flag_bias) {
       bias0 = bias[j];
     }
-    asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias0] "r"(bias0), [six] "r"(six)
-                 : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [six] "r"(six),
+                     [beta] "r"(beta)
+                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    } else {
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [six] "r"(six)
+                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+    }
   }
 #endif  // __aarch64__
 }
@@ -1563,6 +2137,7 @@ void sgemv_leakey_relu(const int M,
                        const float *A,
                        const float *x,
                        float *y,
+                       float beta,
                        bool flag_bias,
                        const float *bias,
                        const float alpha) {
@@ -1572,6 +2147,8 @@ void sgemv_leakey_relu(const int M,
   int cnt = N >> 3;
   int tail = N & 7;
   float32x4_t valpha = vdupq_n_f32(alpha);
+  bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  float32x4_t vbeta = vdupq_n_f32(beta);
 #ifdef __aarch64__
   int out_cnt = M >> 3;
 #pragma omp parallel for
@@ -1602,24 +2179,45 @@ void sgemv_leakey_relu(const int M,
     int cnt_loop = cnt;
     int tail_loop = tail;
     // clang-format off
-    asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_LEAKEY_RELU
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [w1] "+r"(ptr_w1),
-                   [w2] "+r"(ptr_w2),
-                   [w3] "+r"(ptr_w3),
-                   [w4] "+r"(ptr_w4),
-                   [w5] "+r"(ptr_w5),
-                   [w6] "+r"(ptr_w6),
-                   [w7] "+r"(ptr_w7),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), 
-                   [valpha] "w" (valpha)
-                 : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                   "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                   "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
-                   "v24", "v25", "cc", "memory");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_LEAKEY_RELU_BETA
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [w4] "+r"(ptr_w4),
+                    [w5] "+r"(ptr_w5),
+                    [w6] "+r"(ptr_w6),
+                    [w7] "+r"(ptr_w7),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), 
+                    [valpha] "w" (valpha), [vbeta] "w"(vbeta)
+                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+                    "v24", "v25", "cc", "memory");
+    } else {
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_LEAKEY_RELU
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [w4] "+r"(ptr_w4),
+                    [w5] "+r"(ptr_w5),
+                    [w6] "+r"(ptr_w6),
+                    [w7] "+r"(ptr_w7),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), 
+                    [valpha] "w" (valpha)
+                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+                    "v24", "v25", "cc", "memory");
+    }
     // clang-format on
   }
 //! deal with remains
@@ -1634,14 +2232,28 @@ void sgemv_leakey_relu(const int M,
     if (flag_bias) {
       bias0 = bias[j];
     }
-    asm volatile(
-        SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU
-        : [in] "+r"(ptr_in),
-          [w0] "+r"(ptr_w0),
-          [cnt] "+r"(cnt_loop),
-          [tail] "+r"(tail_loop)
-        : [out] "r"(ptr_out), [bias0] "r"(bias0), [alpha] "r"(alpha)
-        : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+    if (has_beta) {
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU_BETA
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out),
+            [bias0] "r"(bias0),
+            [alpha] "r"(alpha),
+            [beta] "r"(beta)
+          : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+    } else {
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias0] "r"(bias0), [alpha] "r"(alpha)
+          : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+    }
   }
 #else  // __aarch64__
   int out_cnt = M >> 2;
@@ -1667,24 +2279,46 @@ void sgemv_leakey_relu(const int M,
     int cnt_loop = cnt;
     int tail_loop = tail;
     // clang-format off
-    asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_LEAKEY_RELU
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [w1] "+r"(ptr_w1),
-                   [w2] "+r"(ptr_w2),
-                   [w3] "+r"(ptr_w3),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out),
-                   [bias0] "r"(bias0),
-                   [bias1] "r"(bias1),
-                   [bias2] "r"(bias2),
-                   [bias3] "r"(bias3),
-                   [alpha] "r" (alpha)
-                 : "q0", "q1", "q2", "q3", "q4",
-                   "q5", "q6", "q7", "q8", "q9",
-                   "q10", "q11", "q12", "q13", "cc",
-                   "memory");
+    if (has_beta) {
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_LEAKEY_RELU_BETA
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out),
+                    [bias0] "r"(bias0),
+                    [bias1] "r"(bias1),
+                    [bias2] "r"(bias2),
+                    [bias3] "r"(bias3),
+                    [alpha] "r" (alpha),
+                    [vbeta] "w"(vbeta)
+                  : "q0", "q1", "q2", "q3", "q4",
+                    "q5", "q6", "q7", "q8", "q9",
+                    "q10", "q11", "q12", "q13", "cc",
+                    "memory");
+    } else {
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_LEAKEY_RELU
+                  : [in] "+r"(ptr_in),
+                    [w0] "+r"(ptr_w0),
+                    [w1] "+r"(ptr_w1),
+                    [w2] "+r"(ptr_w2),
+                    [w3] "+r"(ptr_w3),
+                    [cnt] "+r"(cnt_loop),
+                    [tail] "+r"(tail_loop)
+                  : [out] "r"(ptr_out),
+                    [bias0] "r"(bias0),
+                    [bias1] "r"(bias1),
+                    [bias2] "r"(bias2),
+                    [bias3] "r"(bias3),
+                    [alpha] "r" (alpha)
+                  : "q0", "q1", "q2", "q3", "q4",
+                    "q5", "q6", "q7", "q8", "q9",
+                    "q10", "q11", "q12", "q13", "cc",
+                    "memory");
+    }
     // clang-format on
   }
 //! deal with remains
@@ -1699,14 +2333,28 @@ void sgemv_leakey_relu(const int M,
     if (flag_bias) {
       bias0 = bias[j];
     }
-    asm volatile(
-        SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU
-        : [in] "+r"(ptr_in),
-          [w0] "+r"(ptr_w0),
-          [cnt] "+r"(cnt_loop),
-          [tail] "+r"(tail_loop)
-        : [out] "r"(ptr_out), [bias0] "r"(bias0), [alpha] "r"(alpha)
-        : "q0", "q1", "q3", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
+    if (has_beta) {
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU_BETA
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out),
+            [bias0] "r"(bias0),
+            [alpha] "r"(alpha),
+            [beta] "r"(beta)
+          : "q0", "q1", "q3", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
+    } else {
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias0] "r"(bias0), [alpha] "r"(alpha)
+          : "q0", "q1", "q3", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
+    }
   }
 #endif  // __aarch64__
 }

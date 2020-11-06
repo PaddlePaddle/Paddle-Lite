@@ -15,6 +15,9 @@ limitations under the License. */
 #pragma once
 
 #include <mkl.h>
+
+#ifndef LITE_WITH_STATIC_MKL
+
 #include <mutex>  // NOLINT
 #include "lite/backends/x86/dynamic_loader.h"
 #include "lite/backends/x86/port.h"
@@ -97,3 +100,5 @@ MKLML_ROUTINE_EACH(DECLARE_DYNAMIC_LOAD_MKLML_WRAP);
 }  // namespace x86
 }  // namespace lite
 }  // namespace paddle
+
+#endif  // LITE_WITH_STATIC_MKL

@@ -54,6 +54,7 @@ inline std::string TensorDTypeToPyDTypeStr(PrecisionType type) {
   }
 
   TENSOR_DTYPE_TO_PY_DTYPE(float, PrecisionType::kFloat)
+  TENSOR_DTYPE_TO_PY_DTYPE(double, PrecisionType::kFP64)
   TENSOR_DTYPE_TO_PY_DTYPE(float, PrecisionType::kFP16)
   TENSOR_DTYPE_TO_PY_DTYPE(bool, PrecisionType::kBool)
 

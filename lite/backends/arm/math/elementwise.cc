@@ -50,6 +50,11 @@ static T naive_div(T l, T r) {
   return l / r;
 }
 
+template <typename T>
+static T naive_pow(T l, T r) {
+  return std::pow(l, r);
+}
+
 // todo: use arm intrinsics
 template <>
 void elementwise_add<int32_t>(const int32_t* dinx,
@@ -1898,6 +1903,43 @@ template void elementwise_mod_broadcast<int64_t>(const int64_t* dinx,
                                                  int batch,
                                                  int channels,
                                                  int num);
+template <>
+void elementwise_pow<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  naive_elementwise_op<int32_t>(dinx, diny, dout, num, naive_pow<int32_t>);
+}
+
+template <>
+void elementwise_pow<float>(const float* dinx,
+                            const float* diny,
+                            float* dout,
+                            int num) {
+  naive_elementwise_op<float>(dinx, diny, dout, num, naive_pow<float>);
+}
+
+template <>
+void elementwise_pow_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+  naive_elementwise_op_broadcast<int32_t>(
+      dinx, diny, dout, batch, channels, num, naive_pow<int32_t>);
+}
+
+template <>
+void elementwise_pow_broadcast<float>(const float* dinx,
+                                      const float* diny,
+                                      float* dout,
+                                      int batch,
+                                      int channels,
+                                      int num) {
+  naive_elementwise_op_broadcast<float>(
+      dinx, diny, dout, batch, channels, num, naive_pow<float>);
+}
 
 }  // namespace math
 }  // namespace arm

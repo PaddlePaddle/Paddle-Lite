@@ -54,6 +54,11 @@ bool RoiAlignOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.ROIs =
       scope->FindVar(op_desc.Input("ROIs").front())->GetMutable<lite::Tensor>();
 
+  if (op_desc.HasInput("RoisLod") && !op_desc.Input("RoisLod").empty()) {
+    param_.RoisLod = scope->FindVar(op_desc.Input("RoisLod").front())
+                         ->GetMutable<lite::Tensor>();
+  }
+
   param_.spatial_scale = op_desc.GetAttr<float>("spatial_scale");
   param_.pooled_height = op_desc.GetAttr<int>("pooled_height");
   param_.pooled_width = op_desc.GetAttr<int>("pooled_width");

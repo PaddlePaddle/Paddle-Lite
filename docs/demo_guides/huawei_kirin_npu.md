@@ -1,4 +1,4 @@
-# PaddleLite使用华为NPU（Kirin SoC）预测部署
+# PaddleLite使用华为麒麟NPU预测部署
 
 Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭载的NPU）的预测框架。
 原理是在线分析Paddle模型，将Paddle算子转成HiAI IR后，调用HiAI IR/Builder/Runtime APIs生成并执行HiAI模型。
@@ -6,11 +6,15 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 ## 支持现状
 
 ### 已支持的芯片
-- Kirin 810/990/9000。
+
+- Kirin 810/820/990/985/9000
 
 ### 已支持的设备
 
-- HUAWEI nova5、nova5i Pro、mate30、mate30 pro、mate30 5G、荣耀v30、p40、p40 pro和即将推出的mate40。
+- Kirin 990：HUAWEI Mate 30系列, 荣耀 V20系列, nova 6系列，P40系列，Mate Xs
+- Kirin 985：HUAWEI nova 7 5G，nova 7 Pro 5G，荣耀 30
+- Kirin 820：HUAWEI nova 7 SE 5G，荣耀 30S
+- Kirin 810：HUAWEI nova 5系列，nova 6 SE，荣耀 9X系列，荣耀 Play4T Pro
 
 ### 已支持的Paddle模型
 
@@ -25,7 +29,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 - CycleGAN
 - 百度内部业务模型（由于涉密，不方便透露具体细节）
 
-带*表示该模型的部分算子不支持NPU加速，而是采用CPU+NPU异构计算方式获得支持。
+带*表示该模型的部分算子不支持华为Kirin NPU加速，而是采用ARM CPU+华为Kirin NPU异构计算方式获得支持。
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -61,7 +65,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ### 运行图像分类示例程序
 
-- 从[https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo.tar.gz)下载示例程序，解压后清单如下：
+- 下载示例程序[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-android-demo
@@ -75,8 +79,8 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
           - mobilenet_v1_fp32_224_fluid # Paddle fluid non-combined格式的mobilenetv1 float32模型
           - mobilenet_v1_fp32_224_for_cpu
             - model.nb # 已通过opt转好的、适合ARM CPU的mobilenetv1模型
-          - mobilenet_v1_fp32_224_for_npu
-            - model.nb # 已通过opt转好的、适合华为 NPU的mobilenetv1模型
+          - mobilenet_v1_fp32_224_for_huawei_kirin_npu
+            - model.nb # 已通过opt转好的、适合华为Kirin NPU的mobilenetv1模型
       - shell # android shell端的示例程序，注意：HiAI存在限制，拥有ROOT权限才能正常运行shell端程序
         - CMakeLists.txt # android shell端的示例程序CMake脚本
         - build
@@ -115,17 +119,43 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   ```
 
 - Android shell端的示例程序
-  - 按照以下命令分别运行转换后的ARM CPU模型和华为NPU模型，比较它们的性能和结果；
+  - 按照以下命令分别运行转换后的ARM CPU模型和华为Kirin NPU模型，比较它们的性能和结果；
 
     ```shell
     注意：
-    1）run.sh只能在连接设备的系统上运行，不能在docker环境执行（可能无法找到设备），也不能在设备上运行；
-    2）build.sh需要在docker环境中执行，否则，需要将build.sh的ANDROID_NDK修改为当前环境下的NDK路径；
-    3）以下执行结果均由armeabi-v7a库生成，如果需要测试arm64-v8a库，可将build.sh的ANDROID_ABI修改成arm64-v8a后重新生成image_classification_demo，同时将run.sh的ANDROID_ABI也修改成arm64-v8a即可)。
+    1）由于HiAI的限制，需要root权限才能执行shell示例程序；
+    2）run.sh只能在连接设备的系统上运行，不能在docker环境执行（可能无法找到设备），也不能在设备上运行；
+    3）build.sh需要在docker环境中执行，否则，需要将build.sh的ANDROID_NDK修改为当前环境下的NDK路径；
+    4）以下执行结果均由armeabi-v7a库生成，如果需要测试arm64-v8a库，可将build.sh的ANDROID_ABI修改成arm64-v8a后重新生成image_classification_demo，同时将run.sh的ANDROID_ABI也修改成arm64-v8a即可)。
 
-    运行适用于华为NPU的mobilenetv1模型
+    运行适用于ARM CPU的mobilenetv1模型
     $ cd PaddleLite-android-demo/image_classification_demo/assets/models
-    $ cp mobilenet_v1_fp32_224_for_npu/model.nb mobilenet_v1_fp32_224_fluid.nb
+    $ cp mobilenet_v1_fp32_224_for_cpu/model.nb mobilenet_v1_fp32_224_fluid.nb
+    $ cd ../../shell
+    $ ./run.sh
+      ...
+      iter 0 cost: 34.467999 ms
+      iter 1 cost: 34.514999 ms
+      iter 2 cost: 34.646000 ms
+      iter 3 cost: 34.713001 ms
+      iter 4 cost: 34.612000 ms
+      iter 5 cost: 34.551998 ms
+      iter 6 cost: 34.741001 ms
+      iter 7 cost: 34.655998 ms
+      iter 8 cost: 35.035000 ms
+      iter 9 cost: 34.661999 ms
+      warmup: 5 repeat: 10, average: 34.659999 ms, max: 35.035000 ms, min: 34.467999 ms
+      results: 3
+      Top0  tabby, tabby cat - 0.475008
+      Top1  Egyptian cat - 0.409487
+      Top2  tiger cat - 0.095745
+      Preprocess time: 2.040000 ms
+      Prediction time: 40.704300 ms
+      Postprocess time: 0.105000 ms
+
+    运行适用于华为Kirin NPU的mobilenetv1模型
+    $ cd PaddleLite-android-demo/image_classification_demo/assets/models
+    $ cp mobilenet_v1_fp32_224_for_huawei_kirin_npu/model.nb mobilenet_v1_fp32_224_fluid.nb
     $ cd ../../shell
     $ ./run.sh
       ...
@@ -148,30 +178,6 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
       Prediction time: 2.426900 ms
       Postprocess time: 0.127000 ms
 
-    运行适用于ARM CPU的mobilenetv1模型
-    $ cd PaddleLite-android-demo/image_classification_demo/assets/models
-    $ cp mobilenet_v1_fp32_224_for_cpu/model.nb mobilenet_v1_fp32_224_fluid.nb
-    $ cd ../../shell
-    $ ./run.sh
-      ...
-      iter 0 cost: 34.467999 ms
-      iter 1 cost: 34.514999 ms
-      iter 2 cost: 34.646000 ms
-      iter 3 cost: 34.713001 ms
-      iter 4 cost: 34.612000 ms
-      iter 5 cost: 34.551998 ms
-      iter 6 cost: 34.741001 ms
-      iter 7 cost: 34.655998 ms
-      iter 8 cost: 35.035000 ms
-      iter 9 cost: 34.661999 ms
-      warmup: 5 repeat: 10, average: 34.659999 ms, max: 35.035000 ms, min: 34.467999 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.475009
-      Top1  Egyptian cat - 0.409486
-      Top2  tiger cat - 0.095744
-      Preprocess time: 1.714000 ms
-      Prediction time: 34.659999 ms
-      Postprocess time: 0.082000 ms
     ```
 
   - 如果需要更改测试图片，可将图片拷贝到PaddleLite-android-demo/image_classification_demo/assets/images目录下，然后将run.sh的IMAGE_NAME设置成指定文件名即可；
@@ -179,7 +185,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 - 常规Android应用程序
   
-  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器访问[https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/image_classification_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/image_classification_demo.apk)下载和安装已编译好的apk）
+  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器下载和安装已编译好的apk[image_classification_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/image_classification_demo.apk)）
   - 访问[https://developer.android.google.cn/studio](https://developer.android.google.cn/studio/)下载安装Android Studio（当前Android demo app是基于Android Studio3.4开发的），如果无法访问，可以从[http://www.android-studio.org](http://www.android-studio.org/)下载；
   - 打开Android Studio，在"Welcome to Android Studio"窗口点击"Open an existing Android Studio project"，在弹出的路径选择窗口中进入"PaddleLite-android-demo/image_classification_demo/apk"目录，然后点击右下角的"Open"按钮即可导入工程；
   - 通过USB连接Android手机、平板或开发板；
@@ -189,7 +195,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
     ![huawei_mate30_5g_mobilenet_v1_cpu](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/huawei_mate30_5g_mobilenet_v1_cpu.jpg)
 
-  - 点击app界面右下角的设置按钮，在弹出的设置页面点击"Choose pre-installed models"，选择"mobilenet_v1_fp32_for_npu"，点击返回按钮后，app将切换到华为NPU模型，如下图所示，推理耗时下降到3.4ms，帧率提高到29fps（由于代码中帧率统计限制在30fps以内，因此实际帧率会更高，具体地，您可以手动计算截图中Read GLFBO time、Write GLTexture time、Predict time和Postprocess time的总耗时）。
+  - 点击app界面右下角的设置按钮，在弹出的设置页面点击"Choose pre-installed models"，选择"mobilenet_v1_fp32_for_huawei_kirin_npu"，点击返回按钮后，app将切换到华为Kirin NPU模型，如下图所示，推理耗时下降到3.4ms，帧率提高到29fps（由于代码中帧率统计限制在30fps以内，因此实际帧率会更高，具体地，您可以手动计算截图中Read GLFBO time、Write GLTexture time、Predict time和Postprocess time的总耗时）。
 
     ![huaewi_mate30_5g_mobilenet_v1_npu](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/huawei_mate30_5g_mobilenet_v1_npu.jpg)
 
@@ -197,12 +203,12 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 ### 更新模型
 
 - 通过Paddle Fluid训练，或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成华为NPU模型，仅需将valid_targets设置为npu,arm即可。
+- 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成华为Kirin NPU模型，仅需将valid_targets设置为npu,arm即可。
 
   ```shell
-  注意：为了保证opt工具和库版本一致，使用了PaddleLite-android-demo.tar.gz自带的opt程序（需要在Ubuntu x86平台执行）演示NPU模型生成的过程。
+  注意：需要保证opt工具和库版本一致。
   $ cd PaddleLite-android-demo/image_classification_demo/assets/models
-  $ GLOG_v=5 ../../../libs/PaddleLite/bin/opt --model_dir=mobilenet_v1_fp32_224_fluid \
+  $ GLOG_v=5 ./opt --model_dir=mobilenet_v1_fp32_224_fluid \
       --optimize_out_type=naive_buffer \
       --optimize_out=opt_model \
       --valid_targets=npu,arm
@@ -212,14 +218,14 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
     [I  8/12  6:56:25.461 ...te/lite/core/mir/generate_program_pass.h:37 GenProgram] insts.size 1
     [I  8/12  6:56:25.683 ...e-Lite/lite/model_parser/model_parser.cc:593 SaveModelNaive] Save naive buffer model in 'opt_model.nb' successfully
 
-  替换自带的NPU模型
-  $ cp opt_model.nb mobilenet_v1_fp32_224_for_npu/model.nb
+  替换自带的华为Kirin NPU模型
+  $ cp opt_model.nb mobilenet_v1_fp32_224_for_huawei_kirin_npu/model.nb
   ```
 
-- 注意：opt生成的模型只是标记了华为NPU支持的Paddle算子，并没有真正生成华为NPU模型，只有在执行时才会将标记的Paddle算子转成HiAI IR并组网得到HiAI IRGraph，然后生成并执行华为NPU模型（具体原理请参考Pull Request[#2576](https://github.com/PaddlePaddle/Paddle-Lite/pull/2576)）；
-- 不同模型，不同型号（ROM版本）的华为手机，在执行阶段，由于某些Paddle算子无法完全转成HiAI IR，或目标手机的HiAI版本过低等原因，可能导致HiAI模型无法成功生成，在这种情况下，Paddle Lite会调用CPU版算子进行运算完成整个预测任务。
+- 注意：opt生成的模型只是标记了华为Kirin NPU支持的Paddle算子，并没有真正生成华为Kirin NPU模型，只有在执行时才会将标记的Paddle算子转成HiAI IR并组网得到HiAI IRGraph，然后生成并执行华为Kirin NPU模型（具体原理请参考Pull Request[#2576](https://github.com/PaddlePaddle/Paddle-Lite/pull/2576)）；
+- 不同模型，不同型号（ROM版本）的华为手机，在执行阶段，由于某些Paddle算子无法完全转成HiAI IR，或目标手机的HiAI版本过低等原因，可能导致HiAI模型无法成功生成，在这种情况下，Paddle Lite会调用ARM CPU版算子进行运算完成整个预测任务。
 
-### 更新支持华为NPU的PaddleLite库
+### 更新支持华为Kirin NPU的PaddleLite库
 
 - 下载PaddleLite源码和最新版HiAI DDK
 
@@ -231,7 +237,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   $ tar -xvf hiai_ddk_lib_330.tar.gz
   ```
 
-- 编译并生成PaddleLite+NPU for armv8 and armv7的部署库
+- 编译并生成PaddleLite+HuaweiKirinNPU for armv8 and armv7的部署库
 
   ```shell
   For armv8
@@ -256,15 +262,15 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 - 将tiny_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件；
 - 将full_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_full_api_shared.so文件。
 
-## 如何支持CPU+NPU异构计算？
+## 如何支持CPU+华为Kirin NPU异构计算？
 
-- 上述示例中所使用的MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)，它的所有算子均能成功转成华为NPU的HiAI IR，因此，能够获得非常好的NPU加速效果；
-- 而实际情况是，你的模型中可能存在NPU不支持的算子，尽管opt工具可以成功生成CPU+NPU的异构模型，但可能因为一些限制等原因，模型最终执行失败或性能不够理想；
-- 我们首先用一个简单的目标检测示例程序让你直观感受到CPU+NPU异构模型带来的性能提升；然后，简要说明一下华为NPU接入PaddleLite的原理；最后，详细介绍如何使用『自定义子图分割』功能生成正常运行的CPU+NPU异构模型。
+- 上述示例中所使用的MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)，它的所有算子均能成功转成华为Kirin NPU的HiAI IR，因此，能够获得非常好的加速效果；
+- 而实际情况是，你的模型中可能存在华为Kirin NPU不支持的算子，尽管opt工具可以成功生成ARM CPU+华为Kirin NPU的异构模型，但可能因为一些限制等原因，模型最终执行失败或性能不够理想；
+- 我们首先用一个简单的目标检测示例程序让你直观感受到ARM CPU+华为Kirin NPU异构模型带来的性能提升；然后，简要说明一下华为Kirin NPU接入PaddleLite的原理；最后，详细介绍如何使用『自定义子图分割』功能生成正常运行的ARM CPU+华为Kirin NPU异构模型。
 
 ### 运行目标检测示例程序
 
-- 『运行图像分类示例程序』章节中的PaddleLite-android-demo.tar.gz同样包含基于[YOLOv3_MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz)的目标检测示例程序；
+- 『运行图像分类示例程序』章节中的[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo.tar.gz)同样包含基于[YOLOv3_MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz)的目标检测示例程序；
 
   ```shell
   - PaddleLite-android-demo
@@ -279,9 +285,9 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
         - models
           - yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid # Paddle fluid combined格式的、剪枝后的YOLOv3_MobileNetV3 float32模型
           - yolov3_mobilenet_v3_prune86_FPGM_fp32_320_for_cpu
-            - model.nb # 已通过opt转好的、适合CPU的YOLOv3_MobileNetV3模型
-          - yolov3_mobilenet_v3_prune86_FPGM_fp32_320_for_hybrid_cpu_npu
-            - model.nb # 已通过opt转好的、适合NPU+CPU的YOLOv3_MobileNetV3异构模型
+            - model.nb # 已通过opt转好的、适合ARM CPU的YOLOv3_MobileNetV3模型
+          - yolov3_mobilenet_v3_prune86_FPGM_fp32_320_for_hybrid_cpu_huawei_kirin_npu
+            - model.nb # 已通过opt转好的、适合ARM CPU+华为Kirin NPU的YOLOv3_MobileNetV3异构模型
            - subgraph_custom_partition_config_file.txt # YOLOv3_MobileNetV3自定义子图分割配置文件
       - shell # android shell端的示例程序，注意：HiAI存在限制，拥有ROOT权限才能正常运行shell端程序
         - CMakeLists.txt # android shell端的示例程序CMake脚本
@@ -294,10 +300,10 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   ```
 
 - 运行Android shell端的示例程序
-  - 参考『运行图像分类示例程序』章节的类似步骤，通过以下命令比较CPU模型、CPU+NPU异构模型的性能和结果；
+  - 参考『运行图像分类示例程序』章节的类似步骤，通过以下命令比较ARM CPU模型、ARM CPU+华为Kirin NPU异构模型的性能和结果；
 
     ```shell
-    运行YOLOv3_MobileNetV3 CPU模型
+    运行YOLOv3_MobileNetV3 ARM CPU模型
     $ cd PaddleLite-android-demo/object_detection_demo/assets/models
     $ cp yolov3_mobilenet_v3_prune86_FPGM_fp32_320_for_cpu/model.nb yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid.nb
     $ cd ../../shell
@@ -314,9 +320,9 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
       Prediction time: 53.963000 ms
       Postprocess time: 0.548000 ms
 
-    运行YOLOv3_MobileNetV3 CPU+NPU异构模型
+    运行YOLOv3_MobileNetV3 ARM CPU+华为Kirin NPU异构模型
     $ cd PaddleLite-android-demo/object_detection_demo/assets/models
-    $ cp yolov3_mobilenet_v3_prune86_FPGM_fp32_320_for_hybrid_cpu_npu/model.nb yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid.nb
+    $ cp yolov3_mobilenet_v3_prune86_FPGM_fp32_320_for_hybrid_cpu_huawei_kirin_npu/model.nb yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid.nb
     $ cd ../../shell
     $ ./run.sh
       ...
@@ -334,17 +340,17 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 - 运行常规Android应用程序
 
-  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器访问[https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/object_detection_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/object_detection_demo.apk)下载和安装已编译好的apk）
+  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器下载和安装已编译好的apk[object_detection_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/object_detection_demo.apk)）
   - 参考『运行图像分类示例程序』章节的类似步骤，通过Android Studio导入"PaddleLite-android-demo/object_detection_demo/apk"工程，生成和运行常规Android应用程序；
   - 默认使用ARM CPU模型进行推理，如下图所示，推理耗时55.1ms，整个流程（含预处理和后处理）的帧率约15fps；
 
     ![huawei_mate30_5g_yolov3_mobilenet_v3_cpu](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/huawei_mate30_5g_yolov3_mobilenet_v3_cpu.jpg)
 
-  - 选择"yolov3_mobilenet_v3_for_hybrid_cpu_npu"后，如下图所示，推理耗时下降到26.9ms，帧率提高到28fps
+  - 选择"yolov3_mobilenet_v3_for_hybrid_cpu_huawei_kirin_npu"后，如下图所示，推理耗时下降到26.9ms，帧率提高到28fps
 
     ![huawei_mate30_5g_yolov3_mobilenet_v3_hybrid_cpu_npu](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/huawei_mate30_5g_yolov3_mobilenet_v3_hybrid_cpu_npu.jpg)
 
-### PaddleLite是如何支持华为NPU的？
+### PaddleLite是如何支持华为Kirin NPU的？
 
 - PaddleLite是如何加载Paddle模型并执行一次推理的？
   - 如下图左半部分所示，Paddle模型的读取和执行，经历了Paddle推理模型文件的加载和解析、计算图的转化、图分析和优化、运行时程序的生成和执行等步骤：
@@ -356,30 +362,30 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   - 图分析和优化：由一些列pass（优化器）组成，pass是用于描述一个计算图优化生成另一个计算图的过程；例如conv2d_bn_fuse_pass，它用于将模型中每一个conv2d、batch_norm相连的算子对融合成一个conv2d算子以便获得性能上的提升；
   - 运行时程序的生成和执行：按照拓扑顺序遍历最终优化后的计算图，生成算子kernel列表，依次执行每一个算子kernel后即完成一次模型的推理。
 - PaddleLite是如何支持华为NPU呢？
-  - 为了支持华为NPU，我们额外增加了（如上图标黄的区域）：Subgraph detection pass、NPU subgraph op kernel和Paddle2HiAI op/tensor bridges。其中Subgraph detection pass是后续自定义子图划分涉及的关键步骤；
+  - 为了支持华为Kirin NPU，我们额外增加了（如上图标黄的区域）：Subgraph detection pass、NPU subgraph op kernel和Paddle2HiAI op/tensor bridges。其中Subgraph detection pass是后续自定义子图划分涉及的关键步骤；
   - Subgraph detection pass：该pass的作用是遍历计算图中所有的算子节点，标记能够转成HiAI IR的算子节点，然后通过图分割算法，将那些支持转为HiAI IR的、相邻的算子节点融合成一个subgraph（子图）算子节点（需要注意的是，这个阶段算子节点并没有真正转为HiAI IR，更没有生成HiAI模型）；
-  - NPU subgraph op kernel：根据Subgraph detection pass的分割结果，在生成的算子kernel列表中，可能存在多个subgraph算子kernel；每个subgraph算子kernel，都会将它所包裹的、能够转成HiAI IR的、所有Paddle算子，如上图右半部所示，依次调用对应的op bridge，组网生成一个HiAI Graph，最终，调用HiAI Runtime APIs生成并执行NPU模型；
+  - NPU subgraph op kernel：根据Subgraph detection pass的分割结果，在生成的算子kernel列表中，可能存在多个subgraph算子kernel；每个subgraph算子kernel，都会将它所包裹的、能够转成HiAI IR的、所有Paddle算子，如上图右半部所示，依次调用对应的op bridge，组网生成一个HiAI Graph，最终，调用HiAI Runtime APIs生成并执行华为Kirin NPU模型；
   - Paddle2HiAI op/tensor bridges：Paddle算子/张量转HiAI IR/tensor的桥接器，其目的是将Paddle算子、输入、输出张量转为HiAI组网IR和常量张量。
 
-### 编写配置文件完成自定义子图分割，生成华为NPU与ARM CPU的异构模型
+### 编写配置文件完成自定义子图分割，生成华为Kirin NPU与ARM CPU的异构模型
 
 - 为什么需要进行手动子图划分？如果模型中存在不支持转HiAI IR的算子，Subgraph detection pass会在没有人工干预的情况下，可能将计算图分割为许多小的子图，而出现如下问题：
   - 过多的子图会产生频繁的CPU<->NPU数据传输和NPU任务调度，影响整体性能；
-  - 由于NPU模型暂时不支持dynamic shape，因此，如果模型中存在输入和输出不定长的算子（例如一些检测类算子，NLP类算子），在模型推理过程中，可能会因输入、输出shape变化而不断生成NPU模型，从而导致性能变差，更有可能使得NPU模型生成失败。
+  - 由于华为Kirin NPU模型暂时不支持dynamic shape，因此，如果模型中存在输入和输出不定长的算子（例如一些检测类算子，NLP类算子），在模型推理过程中，可能会因输入、输出shape变化而不断生成HiAI模型，从而导致性能变差，更有可能使得HiAI模型生成失败。
 - 实现原理
-  - Subgraph detection pass在执行分割任务前，通过读取指定配置文件的方式获得禁用NPU的算子列表，实现人为干预分割结果的目的。
+  - Subgraph detection pass在执行分割任务前，通过读取指定配置文件的方式获得禁用华为Kirin NPU的算子列表，实现人为干预分割结果的目的。
 - 具体步骤（以YOLOv3_MobileNetV3目标检测示例程序为例）
   - 步骤1：查看[YOLOv3_MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz)的模型结构，具体是将PaddleLite-android-demo/object_detection_demo/assets/models/yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid目录下的model复制并重名为__model__后，拖入[Netron页面](https://lutzroeder.github.io/netron/)即得到如下图所示的网络结构（部分）：
 
     ![yolov3_mobilenet_v3_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/yolov3_mobilenet_v3_netron.jpg)
 
-  - 步骤2：访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)查看已支持的算子列表，发现NPU不支持yolo_box、multiclass_nms这两个算子；
+  - 步骤2：访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)查看已支持的算子列表，发现华为Kirin NPU不支持yolo_box、multiclass_nms这两个算子；
 
-  - 步骤3：如果直接使用opt工具生成NPU模型，会发现整个网络被分割成3个子图（即3个subgraph op），subgraph1为MobileNetV3 backbone，subgraph2为1个transpose2和1个concat，subgraph3为2个transpose2和1个concat，它们都将运行在NPU上；
+  - 步骤3：如果直接使用opt工具生成华为Kirin NPU模型，会发现整个网络被分割成3个子图（即3个subgraph op），subgraph1为MobileNetV3 backbone，subgraph2为1个transpose2和1个concat，subgraph3为2个transpose2和1个concat，它们都将运行在华为Kirin NPU上；
 
     ```shell
     $ cd PaddleLite-android-demo/object_detection_demo/assets/models
-    $ GLOG_v=5 ../../../libs/PaddleLite/bin/opt --model_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/model \
+    $ GLOG_v=5 ./opt --model_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/model \
         --param_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/params \
         --optimize_out_type=protobuf \
         --optimize_out=opt_model \
@@ -404,7 +410,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
     ![yolov3_mobilenet_v3_hybrid_cpu_npu_auto_split_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/yolov3_mobilenet_v3_hybrid_cpu_npu_auto_split_netron.jpg)
 
-  - 步骤4：为了防止CPU与NPU频繁切换，去除subgraph2和subgraph3，强制让transpose2和concat运行在CPU上。那么，我们就需要通过环境变量SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE设置『自定义子图分割配置文件』，实现人为干预分割结果；
+  - 步骤4：为了防止ARM CPU与华为Kirin NPU频繁切换，去除subgraph2和subgraph3，强制让transpose2和concat运行在ARM CPU上。那么，我们就需要通过环境变量SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE设置『自定义子图分割配置文件』，实现人为干预分割结果；
 
     ```shell
     $ cd PaddleLite-android-demo/object_detection_demo/assets/models
@@ -415,7 +421,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
       concat:yolo_box0.tmp_0,yolo_box1.tmp_0,yolo_box2.tmp_0:concat_2.tmp_0
       concat:transpose_0.tmp_0,transpose_1.tmp_0,transpose_2.tmp_0:concat_3.tmp_0
     $ export SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE=./subgraph_custom_partition_config_file.txt
-    $ GLOG_v=5 ../../../libs/PaddleLite/bin/opt --model_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/model \
+    $ GLOG_v=5 ./opt --model_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/model \
         --param_file=yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid/params \
         --optimize_out_type=protobuf \
         --optimize_out=opt_model \
@@ -443,18 +449,18 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
   - 步骤5：上述步骤中，PaddleLite-android-demo/object_detection_demo/assets/models/subgraph_custom_partition_config_file.txt是示例自带的『自定义子图分割配置文件』，它的格式是什么样的呢？
     - 每行记录由『算子类型:输入张量名列表:输出张量名列表』组成（即以分号分隔算子类型、输入和输出张量名列表），以逗号分隔输入、输出张量名列表中的每个张量名；
-    - 可省略输入、输出张量名列表中的部分张量名（如果不设置任何输入、输出张量列表，则代表计算图中该类型的所有算子节点均被强制运行在CPU上）；
+    - 可省略输入、输出张量名列表中的部分张量名（如果不设置任何输入、输出张量列表，则代表计算图中该类型的所有算子节点均被强制运行在ARM CPU上）；
     - 示例说明：
 
         ```
-        op_type0:var_name0,var_name1:var_name2          表示将算子类型为op_type0、输入张量为var_name0和var_name1、输出张量为var_name2的节点强制运行在CPU上
-        op_type1::var_name3                             表示将算子类型为op_type1、任意输入张量、输出张量为var_name3的节点强制运行在CPU上
-        op_type2:var_name4                              表示将算子类型为op_type2、输入张量为var_name4、任意输出张量的节点强制运行在CPU上
-        op_type3                                        表示任意算子类型为op_type3的节点均被强制运行在CPU上
+        op_type0:var_name0,var_name1:var_name2          表示将算子类型为op_type0、输入张量为var_name0和var_name1、输出张量为var_name2的节点强制运行在ARM CPU上
+        op_type1::var_name3                             表示将算子类型为op_type1、任意输入张量、输出张量为var_name3的节点强制运行在ARM CPU上
+        op_type2:var_name4                              表示将算子类型为op_type2、输入张量为var_name4、任意输出张量的节点强制运行在ARM CPU上
+        op_type3                                        表示任意算子类型为op_type3的节点均被强制运行在ARM CPU上
       ```
         
   - 步骤6：对于YOLOv3_MobileNetV3的模型，我们如何得到PaddleLite-android-demo/object_detection_demo/assets/models/subgraph_custom_partition_config_file.txt的配置呢？
-    - 重新在Netron打开PaddleLite-android-demo/object_detection_demo/assets/models/yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid模型，如下图所示，1~5号节点需要强制放在CPU上运行。
+    - 重新在Netron打开PaddleLite-android-demo/object_detection_demo/assets/models/yolov3_mobilenet_v3_prune86_FPGM_fp32_320_fluid模型，如下图所示，1~5号节点需要强制放在ARM CPU上运行。
 
       ![yolov3_mobilenet_v3_hybrid_cpu_npu_manual_split_step1_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/yolov3_mobilenet_v3_hybrid_cpu_npu_manual_split_step1_netron.jpg)
       
@@ -462,11 +468,11 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
       
       ![yolov3_mobilenet_v3_hybrid_cpu_npu_manual_split_step2_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/yolov3_mobilenet_v3_hybrid_cpu_npu_manual_split_step2_netron.jpg)
 
-  - 步骤7：将步骤4中的"optimize_out_type"修改为naive_buffer，重新执行步骤4即可以生成用于部署的CPU+NPU异构模型。
-       
+  - 步骤7：将步骤4中的"optimize_out_type"修改为naive_buffer，重新执行步骤4即可以生成用于部署的ARM CPU+华为Kirin NPU异构模型。
+
     
 ## 其它说明
 
-- 华为达芬奇架构的NPU内部大量采用float16进行运算，因此，预测结果会存在偏差，但大部分情况下精度不会有较大损失，可参考[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)中Image Classification Demo for Android对同一张图片CPU与NPU的预测结果。
+- 华为达芬奇架构的NPU内部大量采用float16进行运算，因此，预测结果会存在偏差，但大部分情况下精度不会有较大损失，可参考[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)中Image Classification Demo for Android对同一张图片CPU与华为Kirin NPU的预测结果。
 - 华为Kirin 810/990 Soc搭载的自研达芬奇架构的NPU，与Kirin 970/980 Soc搭载的寒武纪NPU不一样，同样的，与Hi3559A、Hi3519A使用的NNIE也不一样，Paddle Lite只支持华为自研达芬奇架构NPU。
 - 我们正在持续增加能够适配HiAI IR的Paddle算子bridge/converter，以便适配更多Paddle模型，同时华为研发同学也在持续对HiAI IR性能进行优化。

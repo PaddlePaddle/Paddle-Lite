@@ -58,6 +58,7 @@ if (WITH_TESTING)
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v1_int8_for_mediatek_apu.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v1_int8_for_rockchip_npu.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v1_int8_for_imagination_nna.tar.gz")
+        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "fast_rcnn_fluid184.tar.gz")
     else()
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "GoogleNet_inference.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "step_rnn.tar.gz")
@@ -487,17 +488,18 @@ if (ARM_TARGET_OS STREQUAL "armlinux")
 endif()
 
 if (LITE_WITH_BM)
-    add_custom_target(publish_inference_bm1682_cxx_demos ${TARGET}
+    add_custom_target(publish_inference_bm_cxx_demos ${TARGET}
         COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-        COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/bm_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
-        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
-        COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/api/libpaddle_full_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
-        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmcompiler" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
-        COMMAND cp -r "${CMAKE_SOURCE_DIR}/third-party/bmlibs/bm_sc3_libs/lib/bmnn/pcie" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/lib"
-        COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_place.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
-        COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_api.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/bm_demo/include"
+        COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/bm_demo/*" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/third_party"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+        COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_full_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/"
+        COMMAND cp "${BM_SDK_ROOT}/lib/bmcompiler/*" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/third_party/"
+        COMMAND cp "${BM_SDK_ROOT}/lib/bmnn/pcie/*" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib/third_party/"
+        COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include/"
     )
-    add_dependencies(publish_inference_bm1682_cxx_demos paddle_full_api_shared)
-    add_dependencies(publish_inference publish_inference_bm1682_cxx_demos)
+    add_dependencies(publish_inference_bm_cxx_demos paddle_full_api_shared)
+    add_dependencies(publish_inference publish_inference_bm_cxx_demos)
 endif()

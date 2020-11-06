@@ -68,13 +68,13 @@ int YoloBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto downsample_ratio = op_info->GetAttr<int>("downsample_ratio");
   auto conf_thresh = op_info->GetAttr<float>("conf_thresh");
   auto anchors = op_info->GetAttr<std::vector<int>>("anchors");
-  CHECK_LE(anchors.size(), 2000);
+  CHECK_LE(anchors.size(), 100);
   user_cpu_param_t bm_param;
   bm_param.op_type = USER_PADDLE_YOLO_BOX;
   bm_param.u.yolo_box_param.class_num = class_num;
   bm_param.u.yolo_box_param.downsample_ratio = downsample_ratio;
   bm_param.u.yolo_box_param.conf_thresh = conf_thresh;
-  memset(bm_param.u.yolo_box_param.anchors, 0, 2000 * sizeof(int));
+  memset(bm_param.u.yolo_box_param.anchors, 0, 100 * sizeof(int));
   memcpy(bm_param.u.yolo_box_param.anchors,
          &anchors[0],
          anchors.size() * sizeof(int));
