@@ -1,4 +1,4 @@
-# PaddleLite使用MediaTek APU预测部署
+# PaddleLite使用联发科APU预测部署
 
 Paddle Lite已支持MediaTek APU的预测部署。
 其接入原理是与之前华为Kirin NPU类似，即加载并分析Paddle模型，将Paddle算子转成MTK的Neuron adapter API（类似Android NN API）进行网络构建，在线生成并执行模型。
@@ -15,7 +15,7 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
 ### 已支持的Paddle模型
 
-- [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid.tar.gz)
+- [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid_v2_7_0.tar.gz)
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -46,7 +46,7 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/PaddleLite-android-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/PaddleLite-android-demo_v2_7_0.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-android-demo
@@ -167,11 +167,11 @@ Paddle Lite已支持MediaTek APU的预测部署。
   - 通过USB连接Android手机、平板或开发板；
   - 临时关闭selinux模式，允许app调用系统库；
 
-  ```shell
-  $ adb root
-  $ adb shell
-  # setenforce 0
-  ```
+    ```shell
+    $ adb root
+    $ adb shell
+    # setenforce 0
+    ```
 
   - 待工程加载完成后，点击菜单栏的Build->Rebuild Project按钮，如果提示CMake版本不匹配，请点击错误提示中的'Install CMake xxx.xxx.xx'按钮，重新安装CMake，然后再次点击菜单栏的Build->Rebuild Project按钮；
   - 待工程编译完成后，点击菜单栏的Run->Run 'App'按钮，在弹出的"Select Deployment Target"窗口选择已经连接的Android设备，然后点击"OK"按钮；
@@ -187,7 +187,7 @@ Paddle Lite已支持MediaTek APU的预测部署。
 ### 更新模型
 
 - 通过Paddle Fluid训练，或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型量化-有校准数据训练后量化](../user_guides/post_quant_with_data)使用PaddleSlim对float32模型进行量化（注意：由于MTK APU只支持量化OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid.tar.gz)；
+- 参考[模型量化-有校准数据训练后量化](../user_guides/post_quant_with_data)使用PaddleSlim对float32模型进行量化（注意：由于MTK APU只支持量化OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid_v2_7_0.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成MTK APU模型，仅需要将valid_targets设置为apu,arm即可。
 
   ```shell

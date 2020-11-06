@@ -1,4 +1,4 @@
-# PaddleLite使用华为NPU（Kirin SoC）预测部署
+# PaddleLite使用华为麒麟NPU预测部署
 
 Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭载的NPU）的预测框架。
 原理是在线分析Paddle模型，将Paddle算子转成HiAI IR后，调用HiAI IR/Builder/Runtime APIs生成并执行HiAI模型。
@@ -65,7 +65,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo_v2_7_0.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-android-demo
@@ -128,6 +128,31 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
     3）build.sh需要在docker环境中执行，否则，需要将build.sh的ANDROID_NDK修改为当前环境下的NDK路径；
     4）以下执行结果均由armeabi-v7a库生成，如果需要测试arm64-v8a库，可将build.sh的ANDROID_ABI修改成arm64-v8a后重新生成image_classification_demo，同时将run.sh的ANDROID_ABI也修改成arm64-v8a即可)。
 
+    运行适用于ARM CPU的mobilenetv1模型
+    $ cd PaddleLite-android-demo/image_classification_demo/assets/models
+    $ cp mobilenet_v1_fp32_224_for_cpu/model.nb mobilenet_v1_fp32_224_fluid.nb
+    $ cd ../../shell
+    $ ./run.sh
+      ...
+      iter 0 cost: 34.467999 ms
+      iter 1 cost: 34.514999 ms
+      iter 2 cost: 34.646000 ms
+      iter 3 cost: 34.713001 ms
+      iter 4 cost: 34.612000 ms
+      iter 5 cost: 34.551998 ms
+      iter 6 cost: 34.741001 ms
+      iter 7 cost: 34.655998 ms
+      iter 8 cost: 35.035000 ms
+      iter 9 cost: 34.661999 ms
+      warmup: 5 repeat: 10, average: 34.659999 ms, max: 35.035000 ms, min: 34.467999 ms
+      results: 3
+      Top0  tabby, tabby cat - 0.475008
+      Top1  Egyptian cat - 0.409487
+      Top2  tiger cat - 0.095745
+      Preprocess time: 2.040000 ms
+      Prediction time: 40.704300 ms
+      Postprocess time: 0.105000 ms
+
     运行适用于华为Kirin NPU的mobilenetv1模型
     $ cd PaddleLite-android-demo/image_classification_demo/assets/models
     $ cp mobilenet_v1_fp32_224_for_huawei_kirin_npu/model.nb mobilenet_v1_fp32_224_fluid.nb
@@ -153,30 +178,6 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
       Prediction time: 2.426900 ms
       Postprocess time: 0.127000 ms
 
-    运行适用于ARM CPU的mobilenetv1模型
-    $ cd PaddleLite-android-demo/image_classification_demo/assets/models
-    $ cp mobilenet_v1_fp32_224_for_cpu/model.nb mobilenet_v1_fp32_224_fluid.nb
-    $ cd ../../shell
-    $ ./run.sh
-      ...
-      iter 0 cost: 34.467999 ms
-      iter 1 cost: 34.514999 ms
-      iter 2 cost: 34.646000 ms
-      iter 3 cost: 34.713001 ms
-      iter 4 cost: 34.612000 ms
-      iter 5 cost: 34.551998 ms
-      iter 6 cost: 34.741001 ms
-      iter 7 cost: 34.655998 ms
-      iter 8 cost: 35.035000 ms
-      iter 9 cost: 34.661999 ms
-      warmup: 5 repeat: 10, average: 34.659999 ms, max: 35.035000 ms, min: 34.467999 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.475008
-      Top1  Egyptian cat - 0.409487
-      Top2  tiger cat - 0.095745
-      Preprocess time: 2.040000 ms
-      Prediction time: 40.704300 ms
-      Postprocess time: 0.105000 ms
     ```
 
   - 如果需要更改测试图片，可将图片拷贝到PaddleLite-android-demo/image_classification_demo/assets/images目录下，然后将run.sh的IMAGE_NAME设置成指定文件名即可；
@@ -184,7 +185,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 - 常规Android应用程序
   
-  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器下载和安装已编译好的apk[image_classification_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/image_classification_demo.apk)）
+  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器下载和安装已编译好的apk[image_classification_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/image_classification_demo_v2_7_0.apk)）
   - 访问[https://developer.android.google.cn/studio](https://developer.android.google.cn/studio/)下载安装Android Studio（当前Android demo app是基于Android Studio3.4开发的），如果无法访问，可以从[http://www.android-studio.org](http://www.android-studio.org/)下载；
   - 打开Android Studio，在"Welcome to Android Studio"窗口点击"Open an existing Android Studio project"，在弹出的路径选择窗口中进入"PaddleLite-android-demo/image_classification_demo/apk"目录，然后点击右下角的"Open"按钮即可导入工程；
   - 通过USB连接Android手机、平板或开发板；
@@ -269,7 +270,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ### 运行目标检测示例程序
 
-- 『运行图像分类示例程序』章节中的[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo.tar.gz)同样包含基于[YOLOv3_MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz)的目标检测示例程序；
+- 『运行图像分类示例程序』章节中的[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/PaddleLite-android-demo_v2_7_0.tar.gz)同样包含基于[YOLOv3_MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz)的目标检测示例程序；
 
   ```shell
   - PaddleLite-android-demo
@@ -339,7 +340,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 - 运行常规Android应用程序
 
-  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器下载和安装已编译好的apk[object_detection_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/object_detection_demo.apk)）
+  （如果不想按照以下步骤编译Android应用程序，可以直接在Android设备上通过浏览器下载和安装已编译好的apk[object_detection_demo.apk](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/object_detection_demo_v2_7_0.apk)）
   - 参考『运行图像分类示例程序』章节的类似步骤，通过Android Studio导入"PaddleLite-android-demo/object_detection_demo/apk"工程，生成和运行常规Android应用程序；
   - 默认使用ARM CPU模型进行推理，如下图所示，推理耗时55.1ms，整个流程（含预处理和后处理）的帧率约15fps；
 
