@@ -1,4 +1,4 @@
-# PaddleLite使用华为NPU（Kirin SoC）预测部署
+# PaddleLite使用华为麒麟NPU预测部署
 
 Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭载的NPU）的预测框架。
 原理是在线分析Paddle模型，将Paddle算子转成HiAI IR后，调用HiAI IR/Builder/Runtime APIs生成并执行HiAI模型。
@@ -128,6 +128,31 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
     3）build.sh需要在docker环境中执行，否则，需要将build.sh的ANDROID_NDK修改为当前环境下的NDK路径；
     4）以下执行结果均由armeabi-v7a库生成，如果需要测试arm64-v8a库，可将build.sh的ANDROID_ABI修改成arm64-v8a后重新生成image_classification_demo，同时将run.sh的ANDROID_ABI也修改成arm64-v8a即可)。
 
+    运行适用于ARM CPU的mobilenetv1模型
+    $ cd PaddleLite-android-demo/image_classification_demo/assets/models
+    $ cp mobilenet_v1_fp32_224_for_cpu/model.nb mobilenet_v1_fp32_224_fluid.nb
+    $ cd ../../shell
+    $ ./run.sh
+      ...
+      iter 0 cost: 34.467999 ms
+      iter 1 cost: 34.514999 ms
+      iter 2 cost: 34.646000 ms
+      iter 3 cost: 34.713001 ms
+      iter 4 cost: 34.612000 ms
+      iter 5 cost: 34.551998 ms
+      iter 6 cost: 34.741001 ms
+      iter 7 cost: 34.655998 ms
+      iter 8 cost: 35.035000 ms
+      iter 9 cost: 34.661999 ms
+      warmup: 5 repeat: 10, average: 34.659999 ms, max: 35.035000 ms, min: 34.467999 ms
+      results: 3
+      Top0  tabby, tabby cat - 0.475008
+      Top1  Egyptian cat - 0.409487
+      Top2  tiger cat - 0.095745
+      Preprocess time: 2.040000 ms
+      Prediction time: 40.704300 ms
+      Postprocess time: 0.105000 ms
+
     运行适用于华为Kirin NPU的mobilenetv1模型
     $ cd PaddleLite-android-demo/image_classification_demo/assets/models
     $ cp mobilenet_v1_fp32_224_for_huawei_kirin_npu/model.nb mobilenet_v1_fp32_224_fluid.nb
@@ -153,30 +178,6 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
       Prediction time: 2.426900 ms
       Postprocess time: 0.127000 ms
 
-    运行适用于ARM CPU的mobilenetv1模型
-    $ cd PaddleLite-android-demo/image_classification_demo/assets/models
-    $ cp mobilenet_v1_fp32_224_for_cpu/model.nb mobilenet_v1_fp32_224_fluid.nb
-    $ cd ../../shell
-    $ ./run.sh
-      ...
-      iter 0 cost: 34.467999 ms
-      iter 1 cost: 34.514999 ms
-      iter 2 cost: 34.646000 ms
-      iter 3 cost: 34.713001 ms
-      iter 4 cost: 34.612000 ms
-      iter 5 cost: 34.551998 ms
-      iter 6 cost: 34.741001 ms
-      iter 7 cost: 34.655998 ms
-      iter 8 cost: 35.035000 ms
-      iter 9 cost: 34.661999 ms
-      warmup: 5 repeat: 10, average: 34.659999 ms, max: 35.035000 ms, min: 34.467999 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.475008
-      Top1  Egyptian cat - 0.409487
-      Top2  tiger cat - 0.095745
-      Preprocess time: 2.040000 ms
-      Prediction time: 40.704300 ms
-      Postprocess time: 0.105000 ms
     ```
 
   - 如果需要更改测试图片，可将图片拷贝到PaddleLite-android-demo/image_classification_demo/assets/images目录下，然后将run.sh的IMAGE_NAME设置成指定文件名即可；
