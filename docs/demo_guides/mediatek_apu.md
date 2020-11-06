@@ -1,4 +1,4 @@
-# PaddleLite使用MediaTek APU预测部署
+# PaddleLite使用联发科APU预测部署
 
 Paddle Lite已支持MediaTek APU的预测部署。
 其接入原理是与之前华为Kirin NPU类似，即加载并分析Paddle模型，将Paddle算子转成MTK的Neuron adapter API（类似Android NN API）进行网络构建，在线生成并执行模型。
@@ -167,11 +167,11 @@ Paddle Lite已支持MediaTek APU的预测部署。
   - 通过USB连接Android手机、平板或开发板；
   - 临时关闭selinux模式，允许app调用系统库；
 
-  ```shell
-  $ adb root
-  $ adb shell
-  # setenforce 0
-  ```
+    ```shell
+    $ adb root
+    $ adb shell
+    # setenforce 0
+    ```
 
   - 待工程加载完成后，点击菜单栏的Build->Rebuild Project按钮，如果提示CMake版本不匹配，请点击错误提示中的'Install CMake xxx.xxx.xx'按钮，重新安装CMake，然后再次点击菜单栏的Build->Rebuild Project按钮；
   - 待工程编译完成后，点击菜单栏的Run->Run 'App'按钮，在弹出的"Select Deployment Target"窗口选择已经连接的Android设备，然后点击"OK"按钮；
