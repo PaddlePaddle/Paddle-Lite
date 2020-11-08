@@ -606,11 +606,7 @@ class GenerateProposalsComputeTester : public arena::TestCase {
     rpn_roi_probs->Resize({num_proposals, 1});
   }
 
-  void RunBaseline(Scope* scope) override {
-    auto* rois = scope->NewTensor(RpnRois_);
-    auto* probs = scope->NewTensor(RpnRoiProbs_);
-    Compute<float>(scope);
-  }
+  void RunBaseline(Scope* scope) override { Compute<float>(scope); }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("generate_proposals");
