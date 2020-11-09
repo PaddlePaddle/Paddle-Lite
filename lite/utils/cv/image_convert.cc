@@ -1832,29 +1832,29 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
           "ld4 {v12.8b - v15.8b}, [%[inptr3]], #32 \n"  // d8 = y0y3y6y9.. d9 =
                                                         // y1y4y7...
           // mul b
-          "umull v13.8h, v0.8b, v21.8b \n"   // v0 * vb
-          "umull v14.8h, v4.8b, v21.8b \n"   // v0 * vb
-          "umull v15.8h, v8.8b, v21.8b \n"   // v0 * vb
-          "umull v16.8h, v12.8b, v21.8b \n"  // v0 * vb
+          "umull v16.8h, v0.8b, v21.8b \n"   // v0 * vb
+          "umull v17.8h, v4.8b, v21.8b \n"   // v0 * vb
+          "umull v18.8h, v8.8b, v21.8b \n"   // v0 * vb
+          "umull v19.8h, v12.8b, v21.8b \n"  // v0 * vb
           // mul g
-          "umull v17.8h, v1.8b, v22.8b \n"   // v0 * vb
-          "umull v18.8h, v5.8b, v22.8b \n"   // v0 * vb
-          "umull v19.8h, v9.8b, v22.8b \n"   // v0 * vb
-          "umull v20.8h, v13.8b, v22.8b \n"  // v0 * vb
+          "umull v20.8h, v1.8b, v22.8b \n"   // v0 * vb
+          "umull v24.8h, v5.8b, v22.8b \n"   // v0 * vb
+          "umull v25.8h, v9.8b, v22.8b \n"   // v0 * vb
+          "umull v26.8h, v13.8b, v22.8b \n"  // v0 * vb
           // mul r
-          "umlal v13.8h, v2.8b, v23.8b \n"   // v0 * vb
-          "umlal v14.8h, v6.8b, v23.8b \n"   // v0 * vb
-          "umlal v15.8h, v10.8b, v23.8b \n"  // v0 * vb
-          "umlal v16.8h, v14.8b, v23.8b \n"  // v0 * vb
+          "umlal v16.8h, v2.8b, v23.8b \n"   // v0 * vb
+          "umlal v17.8h, v6.8b, v23.8b \n"   // v0 * vb
+          "umlal v18.8h, v10.8b, v23.8b \n"  // v0 * vb
+          "umlal v19.8h, v14.8b, v23.8b \n"  // v0 * vb
           // 16->32
-          "uaddl v0.4s, v17.4h, v13.4h \n"
-          "uaddl2 v1.4s, v17.8h, v13.8h \n"
-          "uaddl v2.4s, v18.4h, v14.4h \n"
-          "uaddl2 v3.4s, v18.8h, v14.8h \n"
-          "uaddl v4.4s, v19.4h, v15.4h \n"
-          "uaddl2 v5.4s, v19.8h, v15.8h \n"
-          "uaddl v6.4s, v20.4h, v16.4h \n"
-          "uaddl2 v7.4s, v20.8h, v16.8h \n"
+          "uaddl v0.4s, v20.4h, v16.4h \n"
+          "uaddl2 v1.4s, v20.8h, v16.8h \n"
+          "uaddl v2.4s, v24.4h, v17.4h \n"
+          "uaddl2 v3.4s, v24.8h, v17.8h \n"
+          "uaddl v4.4s, v25.4h, v18.4h \n"
+          "uaddl2 v5.4s, v25.8h, v18.8h \n"
+          "uaddl v6.4s, v26.4h, v19.4h \n"
+          "uaddl2 v7.4s, v26.8h, v19.8h \n"
           // 32->16 v0 >> 7
           "shrn v12.4h, v0.4s, #7 \n"
           "shrn2 v12.8h, v1.4s, #7 \n"
@@ -1910,7 +1910,10 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
             "v20",
             "v21",
             "v22",
-            "v23");
+            "v23",
+            "v24",
+            "v25",
+            "v26");
 #else
       asm volatile(
           "pld [%[inptr0]]                         @ preload a, 64byte\n"
