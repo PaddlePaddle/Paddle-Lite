@@ -33,15 +33,18 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(op_info->GetAttr<bool>("enable_int8"));
 
   auto input_name = op_info->Input("Input").front();
+  auto input_scale_name = "Input0_scale";
   auto input = scope->FindTensor(input_name);
   auto input_dims = input->dims();
 
   auto weight_name = op_info->Input("W").front();
+  auto weight_scale_name = "W0_scale";
   auto weights = scope->FindTensor(weight_name);
   auto w_dims = weights->dims();
   CHECK_EQ(w_dims.size(), 2UL);
 
   auto out_name = op_info->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
   auto out = scope->FindTensor(out_name);
   auto out_dims = out->dims();
 
@@ -60,12 +63,13 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "[NNA] input dims: " << input_dims << " w dims: " << w_dims
           << " m: " << m << " k: " << k << " n: " << n;
 
-  CHECK(op_info->HasInputScale(input_name));
-  float input_scale = op_info->GetInputScale(input_name)[0];
-  CHECK(op_info->HasInputScale(weight_name));
-  std::vector<float> weight_scale = op_info->GetInputScale(weight_name);
-  CHECK(op_info->HasOutputScale(out_name));
-  float output_scale = op_info->GetOutputScale(out_name)[0];
+  CHECK(op_info->HasInputScale(input_scale_name, true));
+  float input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+  CHECK(op_info->HasInputScale(weight_scale_name, true));
+  std::vector<float> weight_scale =
+      op_info->GetInputScale(weight_scale_name, true);
+  CHECK(op_info->HasOutputScale(out_scale_name, true));
+  float output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   // Create input node and reshape it to (m, k, 1, 1)
   std::shared_ptr<Node> input_node = nullptr;
