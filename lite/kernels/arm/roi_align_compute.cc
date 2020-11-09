@@ -239,6 +239,7 @@ REGISTER_LITE_KERNEL(roi_align,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("ROIs", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("RoisLod", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("RoisLod",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
