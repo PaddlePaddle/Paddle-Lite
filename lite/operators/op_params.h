@@ -581,7 +581,7 @@ struct DropoutParam : ParamBase {
 struct SplitParam : ParamBase {
   lite::Tensor* x{};
   std::vector<lite::Tensor*> output{};
-  lite::Tensor* axis_tensor;
+  lite::Tensor* axis_tensor{};
   std::vector<lite::Tensor*> sections_tensor_list{};
 
   int axis{-1};
@@ -1975,6 +1975,16 @@ struct OneHotParam : ParamBase {
   int depth;
   int dtype;
   bool allow_out_of_range;
+};
+
+struct SinParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct CosParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators

@@ -30,6 +30,8 @@ add_kernel(pixel_shuffle_compute_host Host extra SRCS pixel_shuffle_compute.cc D
 add_kernel(one_hot_compute_host Host extra SRCS one_hot_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(uniform_random_compute_host Host extra SRCS uniform_random_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(matrix_nms_compute_host Host extra SRCS matrix_nms_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(sin_compute_arm Host extra SRCS sin_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(cos_compute_arm Host extra SRCS cos_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} sequence_padding)
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)

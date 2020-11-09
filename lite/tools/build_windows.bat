@@ -4,13 +4,16 @@ setlocal enabledelayedexpansion
 
 set source_path=%~dp0\\..\\..\\
 set BUILD_EXTRA=OFF
-set WITH_PYTHON=OFF
+set WITH_PYTHON=ON
 set BUILD_DIR=%source_path%
-set WITH_LOG=OFF
+set WITH_LOG=ON
 set WITH_PROFILE=OFF
 set WITH_TESTING=OFF
 set BUILD_FOR_CI=OFF
-set BUILD_X64=OFF
+set BUILD_PLATFORM=x64
+set BUILD_X64_PLATFORM=ON
+set MSCV_STATIC_CRT=ON
+set WITH_STATIC_MKL=OFF
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
 set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
@@ -21,17 +24,22 @@ set workspace=%source_path%
 @echo off
 if /I "%1"=="with_extra" (
     set BUILD_EXTRA=ON
-) else if /I "%1"=="with_python" (
-    set WITH_PYTHON=ON
+) else if /I "%1"=="without_python" (
+    set WITH_PYTHON=OFF
 ) else if /I  "%1"=="with_profile" (
     set WITH_PROFILE=ON
-) else if /I  "%1"=="with_log" (
-    set WITH_LOG=ON
+) else if /I  "%1"=="without_log" (
+    set WITH_LOG=OFF
 ) else if /I  "%1"=="with_strip" (
     set WITH_STRIP=ON
     set OPTMODEL_DIR="%2"
-) else if /I  "%1"=="build_x64" (
-    set BUILD_X64=ON
+) else if /I  "%1"=="build_x86" (
+    set BUILD_PLATFORM=Win32
+    set BUILD_X64_PLATFORM=OFF
+) else if /I  "%1"=="with_dynamic_crt" (
+    set MSVC_STATIC_CRT=OFF
+) else if /I  "%1"=="with_static_mkl" (
+    set WITH_STATIC_MKL=ON
 ) else if /I  "%1"=="build_for_ci" (
     set BUILD_FOR_CI=ON
     set WITH_TESTING=ON
@@ -57,7 +65,9 @@ echo "|  LITE_WITH_PROFILE=%WITH_PROFILE%                                       
 echo "|  WITH_TESTING=%WITH_TESTING%                                                                        |"
 echo "|  WITH_STRIP=%WITH_STRIP%                                                                            |"
 echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                                                        |"
-echo "|  BUILD_X64=%BUILD_X64%                                                                              |"
+echo "|  BUILD_X64_PLATFORM=%BUILD_X64_PLATFORM%                                                            |"
+echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                                                  |"
+echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
 echo "------------------------------------------------------------------------------------------------------|"
 
 
@@ -96,8 +106,10 @@ copy "%root_dir%\lite\tools\debug\analysis_tool.py" "%DEBUG_TOOL_PATH_PREFIX%\"
 
 cd "%build_directory%"
 
-  cmake %root_dir%  -G "Visual Studio 14 2015 Win64" ^
-            -T host=x64  -DWITH_MKL=ON      ^
+    cmake %root_dir%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
+            -DBUILD_X64_PLATFORM=%BUILD_X64_PLATFORM% ^
+            -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
+            -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
             -DLITE_WITH_X86=ON  ^
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
@@ -109,21 +121,23 @@ cd "%build_directory%"
             -DLITE_WITH_PYTHON=%WITH_PYTHON% ^
             -DWITH_TESTING=%WITH_TESTING%    ^
             -DLITE_WITH_LOG=%WITH_LOG%       ^
+            -DWITH_STATIC_MKL=%WITH_STATIC_MKL%  ^
             -DLITE_BUILD_TAILOR=%WITH_STRIP%  ^
             -DLITE_OPTMODEL_DIR=%OPTMODEL_DIR%  ^
             -DPYTHON_EXECUTABLE="%python_path%"
 
-call "%vcvarsall_dir%" amd64
-
 if "%BUILD_FOR_CI%"=="ON" (
+    call "%vcvarsall_dir%" amd64
     msbuild /m:4 /p:Configuration=Release lite\lite_compile_deps.vcxproj
     call:test_server
     cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     msbuild /m:4 /p:Configuration=Release lite\api\opt.vcxproj
-) else if "%BUILD_X64%"=="ON" (
-    msbuild /m:4 /p:Configuration=Release /p:Platform=x64 lite\publish_inference.vcxproj 
+) else if "%BUILD_X64_PLATFORM%"=="ON" (
+    call "%vcvarsall_dir%" amd64
+    msbuild /maxcpucount:8 /p:Configuration=Release /p:Platform=x64 lite\publish_inference.vcxproj 
 ) else (
-    msbuild /m:4 /p:Configuration=Release lite\publish_inference.vcxproj 
+    call "%vcvarsall_dir%" x86
+    msbuild /maxcpucount:8 /p:Configuration=Release lite\publish_inference.vcxproj 
 )
 goto:eof
 
@@ -212,15 +226,17 @@ echo "|  print help information:                                                
 echo "|      build_windows.bat help                                                                         |"
 echo "|                                                                                                     |"
 echo "|  optional argument:                                                                                 |"
-echo "|      with_log: Enable print log information. Default  OFF.                                          |"
+echo "|      without_log: Disable print log information. Default  ON.                                       |"
+echo "|      without_python: Disable Python api lib in lite mode. Default ON.                               |"
 echo "|      with_profile: Enable profile mode in lite framework. Default  OFF.                             |"
-echo "|      with_python: Enable Python api lib in lite mode. Default  OFF.                                 |"
 echo "|      with_extra: Enable extra algorithm support in Lite, both kernels and operators. Default OFF.   |"
 echo "|      with_strip: Enable tailoring library according to model. Default OFF.                          |"
-echo "|      build_x64: Enable building for Windows X64 platform. Default is X86.                           |"
+echo "|      build_x86: Enable building for Windows x86 platform. Default is x64.                           |"
+echo "|      with_dynamic_crt: Enable building for MSVC Dynamic Runtime. Default is Static.                 |"
+echo "|      with_static_mkl: Enable Static linking Intel(R) MKL. Default is Dynamic.                       |"
 echo "|  for example:                                                                                       |"   
 echo "|      build_windows.bat with_log with_profile with_python with_extra                                 |"
-echo "|      build_windows.bat build_x64 with_strip D:\Paddle-Lite\opt_model_dir                            |"
+echo "|      build_windows.bat build_x86 with_strip D:\Paddle-Lite\opt_model_dir                            |"
 echo "------------------------------------------------------------------------------------------------------|"
 goto:eof
 

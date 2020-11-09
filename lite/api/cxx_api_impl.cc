@@ -117,7 +117,11 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL) && !defined(__APPLE__)
   int num_threads = config.x86_math_library_num_threads();
   int real_num_threads = num_threads > 1 ? num_threads : 1;
-  paddle::lite::x86::MKL_Set_Num_Threads(real_num_threads);
+#ifdef LITE_WITH_STATIC_MKL
+  MKL_Set_Num_Threads(real_num_threads);
+#else
+  x86::MKL_Set_Num_Threads(real_num_threads);
+#endif
   omp_set_num_threads(real_num_threads);
   VLOG(3) << "set_x86_math_library_math_threads() is set successfully and the "
              "number of threads is:"

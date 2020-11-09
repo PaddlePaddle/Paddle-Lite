@@ -354,6 +354,8 @@ void Program::PrepareWorkspace(
   auto VarDescType2PrecisionType =
       [](const lite::VarDescAPI::Type& type) -> PrecisionType {
     switch (type) {
+      case lite::VarDescAPI::Type::BOOL:
+        return PRECISION(kBool);
       case lite::VarDescAPI::Type::FP32:
         return PRECISION(kFloat);
       case lite::VarDescAPI::Type::FP16:
