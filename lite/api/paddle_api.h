@@ -240,6 +240,10 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string model_file() const { return model_file_; }
   std::string param_file() const { return param_file_; }
   bool is_model_from_memory() const { return static_cast<bool>(model_buffer_); }
+  // note: `model_from_memory` has the same effect as `is_model_from_memory`,
+  // but is_model_from_memory is recommended and `model_from_memory` will be
+  // abandoned in v3.0.
+  bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
 
 #ifdef LITE_WITH_X86
   void set_x86_math_library_num_threads(int threads) {

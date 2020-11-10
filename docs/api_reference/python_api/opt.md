@@ -18,7 +18,7 @@ from paddlelite.lite import *
 opt=Opt()
 # 2. 指定输入模型地址 
 opt.set_model_dir("./mobilenet_v1")
-# 3. 指定转化类型： arm、x86、opencl、xpu、npu
+# 3. 指定转化类型： arm、x86、opencl、npu
 opt.set_valid_places("arm")
 # 4. 指定模型转化类型： naive_buffer、protobuf
 opt.set_model_type("naive_buffer")
@@ -87,8 +87,9 @@ from paddlelite.lite import *
 
 # 1. 创建opt实例
 opt=Opt()
-# 2. 指定转化类型： arm、x86、opencl、xpu、npu
-opt.set_valid_places("arm, opencl")
+# 2. 指定转化类型： arm、x86、opencl、npu
+opt.set_valid_places("arm,opencl")
+# opt.set_valid_places("arm,npu")
 ```
 
 
