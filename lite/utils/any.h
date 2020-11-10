@@ -232,7 +232,9 @@ inline bool Any::is_type() const {
 template <typename T>
 inline void Any::check_type() const {
   CHECK_EQ((type_ == nullptr), false);
-  CHECK_EQ((*(type_->ptype_info) == typeid(T)), true);
+  CHECK_EQ((*(type_->ptype_info) == typeid(T)), true)
+      << "Any struct is stored in the type " << type_->ptype_info->name()
+      << ", but trying to obtain the type " << typeid(T).name() << ".";
 }
 
 template <typename T>
