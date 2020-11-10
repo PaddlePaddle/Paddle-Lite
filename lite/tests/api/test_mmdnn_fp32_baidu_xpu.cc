@@ -45,8 +45,7 @@ TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
   config.set_xpu_workspace_l3_size_per_thread();
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  std::string input_data_file =
-      FLAGS_data_dir + std::string("/test.expand.pc.small");
+  std::string input_data_file = FLAGS_data_dir + std::string("/test.expand.pc");
   std::vector<std::vector<int64_t>> data;
   std::vector<std::vector<uint64_t>> lod;
   ReadMmdnnRawData(input_data_file, &data, &lod);
@@ -107,7 +106,7 @@ TEST(MMDNN, test_mmdnn_fp32_baidu_xpu) {
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 
   std::string ref_out_file =
-      FLAGS_data_dir + std::string("/res_for_crmm_0608.txt.small");
+      FLAGS_data_dir + std::string("/res_for_crmm_0608.txt");
   float out_accuracy = CalMmdnnOutAccuracy(out_rets, ref_out_file);
   ASSERT_GT(out_accuracy, 0.99f);
 }
