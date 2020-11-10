@@ -502,5 +502,6 @@ REGISTER_LITE_KERNEL(generate_proposals,
     .BindInput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("RpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("RpnRoiProbs", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("RpnRoisLod", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("RpnRoisLod",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
