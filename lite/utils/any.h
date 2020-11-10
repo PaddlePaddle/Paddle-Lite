@@ -24,6 +24,7 @@
 namespace paddle {
 namespace lite {
 
+// Ported from github:dmlc-core
 class Any {
  public:
   inline Any() = default;
@@ -41,6 +42,9 @@ class Any {
 
   template <typename T>
   T* get_mutable();
+
+  template <typename T>
+  T* get_mutable_without_type_checking();
 
   template <typename T>
   inline explicit Any(T&& other);
@@ -244,7 +248,13 @@ inline const T& Any::get() const {
 }
 
 template <typename T>
+T* Any::get_mutable_without_type_checking() {
+  return Any::TypeInfo<T>::get_ptr(&(this->data_));
+}
+
+template <typename T>
 T* Any::get_mutable() {
+  this->check_type<T>();
   return Any::TypeInfo<T>::get_ptr(&(this->data_));
 }
 

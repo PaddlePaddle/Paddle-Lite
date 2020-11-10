@@ -404,10 +404,10 @@ class KernelContext {
  public:
   template <typename ContextT>
   ContextT& As() {
-    if (!ctx_.valid()) {
+    if (!ctx_.is_type<ContextT>()) {
       ctx_.set<ContextT>();
     }
-    return *ctx_.get_mutable<ContextT>();
+    return *ctx_.get_mutable_without_type_checking<ContextT>();
   }
 
  private:

@@ -32,16 +32,16 @@ class Variable {
   }
 
   template <typename T>
-  T* GetMutable() {
-    if (!blob_.valid()) {
-      blob_.set<T>();
-    }
-    return blob_.get_mutable<T>();
+  bool IsType() {
+    return blob_.is_type<T>();
   }
 
   template <typename T>
-  bool IsType() {
-    return blob_.is_type<T>();
+  T* GetMutable() {
+    if (!IsType<T>()) {
+      blob_.set<T>();
+    }
+    return blob_.get_mutable_without_type_checking<T>();
   }
 
  private:
