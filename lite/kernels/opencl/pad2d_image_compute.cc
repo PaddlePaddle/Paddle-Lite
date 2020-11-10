@@ -103,11 +103,11 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
-    auto default_work_size =
-        DefaultWorkSize(out_dims,
-                        DDim(std::vector<DDim::value_type>{
-                            static_cast<int64_t>(out_image_shape["width"]),
-                            static_cast<int64_t>(out_image_shape["height"])}));
+    auto default_work_size = DefaultGlobalWorkSize(
+        out_dims,
+        DDim(std::vector<DDim::value_type>{
+            static_cast<int64_t>(out_image_shape["width"]),
+            static_cast<int64_t>(out_image_shape["height"])}));
 #ifdef LITE_WITH_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[2];

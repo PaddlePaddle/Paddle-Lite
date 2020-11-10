@@ -83,11 +83,11 @@ class DropoutComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(++arg_idx, dropout_prob);
     CL_CHECK_FATAL(status);
 
-    const std::vector<size_t>& default_work_size =
-        DefaultWorkSize(out_dims,
-                        DDim(std::vector<DDim::value_type>{
-                            static_cast<int64_t>(out_image_shape["width"]),
-                            static_cast<int64_t>(out_image_shape["height"])}));
+    const std::vector<size_t>& default_work_size = DefaultGlobalWorkSize(
+        out_dims,
+        DDim(std::vector<DDim::value_type>{
+            static_cast<int64_t>(out_image_shape["width"]),
+            static_cast<int64_t>(out_image_shape["height"])}));
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(default_work_size.data()[0]),
                     static_cast<cl::size_type>(default_work_size.data()[1]),

@@ -104,11 +104,11 @@ class NearestInterpComputeImageDefault
             << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
 #endif
 
-    const std::vector<size_t>& default_work_size =
-        DefaultWorkSize(y_dims,
-                        DDim(std::vector<DDim::value_type>{
-                            static_cast<int64_t>(out_image_shape["width"]),
-                            static_cast<int64_t>(out_image_shape["height"])}));
+    const std::vector<size_t>& default_work_size = DefaultGlobalWorkSize(
+        y_dims,
+        DDim(std::vector<DDim::value_type>{
+            static_cast<int64_t>(out_image_shape["width"]),
+            static_cast<int64_t>(out_image_shape["height"])}));
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(default_work_size.data()[0]),
                     static_cast<cl::size_type>(default_work_size.data()[1]),

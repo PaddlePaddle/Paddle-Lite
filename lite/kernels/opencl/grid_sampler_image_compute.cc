@@ -76,10 +76,10 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void GetGlobalWorkSize() {
     auto default_work_size =
-        DefaultWorkSize(grid_param_->out->dims(),
-                        DDim(std::vector<DDim::value_type>{
-                            static_cast<int64_t>(out_img_shape_[0]),
-                            static_cast<int64_t>(out_img_shape_[1])}));
+        DefaultGlobalWorkSize(grid_param_->out->dims(),
+                              DDim(std::vector<DDim::value_type>{
+                                  static_cast<int64_t>(out_img_shape_[0]),
+                                  static_cast<int64_t>(out_img_shape_[1])}));
     global_work_size_ =
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                     static_cast<cl::size_type>(default_work_size[1]),
