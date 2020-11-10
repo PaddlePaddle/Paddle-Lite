@@ -32,6 +32,9 @@ void YoloBoxCompute::Run() {
   int class_num = param.class_num;
   float conf_thresh = param.conf_thresh;
   int downsample_ratio = param.downsample_ratio;
+  bool clip_bbox = param.clip_bbox;
+  float scale_x_y = param.scale_x_y;
+  float bias = -0.5 * (scale_x_y - 1.);
   Boxes->clear();
   Scores->clear();
   lite::arm::math::yolobox(X,
@@ -41,7 +44,10 @@ void YoloBoxCompute::Run() {
                            anchors,
                            class_num,
                            conf_thresh,
-                           downsample_ratio);
+                           downsample_ratio,
+                           clip_bbox,
+                           scale_x_y,
+                           bias);
 }
 
 }  // namespace arm
