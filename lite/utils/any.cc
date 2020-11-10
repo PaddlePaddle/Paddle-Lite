@@ -13,3 +13,11 @@
 // limitations under the License.
 
 #include "lite/utils/any.h"
+
+namespace paddle {
+namespace lite {
+
+size_t Any::kInvalidType{typeid(void).hash_code()};
+
+}  // namespace lite
+}  // namespace paddle
