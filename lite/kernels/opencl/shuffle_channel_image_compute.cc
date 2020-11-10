@@ -128,7 +128,7 @@ REGISTER_LITE_KERNEL(
     kFP16,
     kImageDefault,
     paddle::lite::kernels::opencl::ShuffleChannelComputeImage2D,
-    image2d)
+    def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
