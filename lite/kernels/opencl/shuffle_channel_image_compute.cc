@@ -49,6 +49,9 @@ class ShuffleChannelComputeImage2D
                                     "image/shuffle_channel_kernel.cl",
                                     build_options_,
                                     time_stamp_);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
   }
 
   void Run() override {
@@ -68,9 +71,6 @@ class ShuffleChannelComputeImage2D
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
     cl_int status;
 
     int arg_idx = 0;
