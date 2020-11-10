@@ -12,7 +12,7 @@ set WITH_TESTING=OFF
 set BUILD_FOR_CI=OFF
 set BUILD_PLATFORM=x64
 set BUILD_X64_PLATFORM=ON
-set MSCV_STATIC_CRT=ON
+set MSVC_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
@@ -65,6 +65,7 @@ echo "|  LITE_WITH_PROFILE=%WITH_PROFILE%                                       
 echo "|  WITH_TESTING=%WITH_TESTING%                                                                        |"
 echo "|  WITH_STRIP=%WITH_STRIP%                                                                            |"
 echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                                                        |"
+echo "|  BUILD_PLATFORM=%BUILD_PLATFORM%                                                                    |"
 echo "|  BUILD_X64_PLATFORM=%BUILD_X64_PLATFORM%                                                            |"
 echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                                                  |"
 echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
@@ -134,10 +135,10 @@ if "%BUILD_FOR_CI%"=="ON" (
     msbuild /m:4 /p:Configuration=Release lite\api\opt.vcxproj
 ) else if "%BUILD_X64_PLATFORM%"=="ON" (
     call "%vcvarsall_dir%" amd64
-    msbuild /maxcpucount:8 /p:Configuration=Release /p:Platform=x64 lite\publish_inference.vcxproj 
+    msbuild /maxcpucount:4 /p:Configuration=Release /p:Platform=x64 lite\publish_inference.vcxproj 
 ) else (
     call "%vcvarsall_dir%" x86
-    msbuild /maxcpucount:8 /p:Configuration=Release lite\publish_inference.vcxproj 
+    msbuild /maxcpucount:4 /p:Configuration=Release lite\publish_inference.vcxproj 
 )
 goto:eof
 
