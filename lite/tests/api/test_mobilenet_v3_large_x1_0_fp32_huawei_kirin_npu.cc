@@ -17,9 +17,6 @@
 #include <vector>
 #include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/tests/api/ILSVRC2012_utility.h"
 #include "lite/utils/cp_logging.h"
@@ -32,15 +29,24 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(MobileNetV1, test_mobilenetv1_int8_mediatek_apu) {
-  std::string subgraph_model_cache_dir = FLAGS_model_dir;
-  lite_api::CxxConfig config;
-  config.set_model_dir(FLAGS_model_dir);
-  config.set_valid_places({lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kARM), PRECISION(kInt8)},
-                           lite_api::Place{TARGET(kAPU), PRECISION(kInt8)}});
-  config.set_subgraph_model_cache_dir(subgraph_model_cache_dir);
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+TEST(MobileNetV3Large, test_mobilenet_v3_large_x1_0_fp32_huawei_kirin_npu) {
+  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
+  // Use the full api with CxxConfig to generate the optimized model
+  lite_api::CxxConfig cxx_config;
+  cxx_config.set_model_dir(FLAGS_model_dir);
+  cxx_config.set_valid_places(
+      {lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kNPU), PRECISION(kFloat)}});
+  predictor = lite_api::CreatePaddlePredictor(cxx_config);
+  predictor->SaveOptimizedModel(FLAGS_model_dir,
+                                paddle::lite_api::LiteModelType::kNaiveBuffer);
+  // Use the light api with MobileConfig to load and run the optimized model
+  paddle::lite_api::MobileConfig mobile_config;
+  mobile_config.set_model_from_file(FLAGS_model_dir + ".nb");
+  mobile_config.set_threads(FLAGS_threads);
+  mobile_config.set_power_mode(
+      static_cast<lite_api::PowerMode>(FLAGS_power_mode));
+  predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
   std::vector<int> input_shape{
@@ -97,7 +103,7 @@ TEST(MobileNetV1, test_mobilenetv1_int8_mediatek_apu) {
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GE(out_accuracy, 0.55f);
+  ASSERT_GE(out_accuracy, 0.69f);
 }
 
 }  // namespace lite
