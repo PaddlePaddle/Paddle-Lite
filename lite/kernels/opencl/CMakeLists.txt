@@ -23,6 +23,7 @@ add_kernel(activation_opencl_image OPENCL basic SRCS activation_image_compute.cc
 add_kernel(reshape_opencl_image OPENCL basic SRCS reshape_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(transpose_opencl_image OPENCL basic SRCS transpose_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl_image OPENCL basic SRCS conv_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(conv_transpose_opencl_image OPENCL basic SRCS conv_transpose_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(layout_opencl_image OPENCL basic SRCS layout_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(concat_opencl_image OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(split_opencl_image OPENCL basic SRCS split_image_compute.cc DEPS ${cl_kernel_deps})
