@@ -43,7 +43,7 @@ function(lite_cc_test_with_model_and_data TARGET)
     endif()
 endfunction()
 
-if(LITE_WITH_ARM)
+if(LITE_WITH_ARM AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     lite_cc_test_with_model_and_data(test_transformer_with_mask_fp32_arm MODEL transformer_with_mask_fp32)
 endif()
 

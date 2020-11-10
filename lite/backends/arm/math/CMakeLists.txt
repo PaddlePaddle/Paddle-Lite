@@ -1,9 +1,5 @@
-if(NOT (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM))
+if(NOT LITE_WITH_ARM)
     return()
-endif()
-
-if(NOT (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM))
-  return()
 endif()
 
 set(script_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../tools/)
