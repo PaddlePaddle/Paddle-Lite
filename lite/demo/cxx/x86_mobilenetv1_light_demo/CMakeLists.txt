@@ -43,7 +43,7 @@ if (WIN32)
        COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_DIR}/lib/libiomp5md.dll ${CMAKE_BINARY_DIR}/Release
    )
 else()
-    target_link_libraries(${TARGET} -lpaddle_light_api_shared)
+    target_link_libraries(${TARGET} -lpaddle_light_api_shared -ltcmalloc)
     target_link_libraries(${TARGET} -liomp5)
     target_link_libraries(${TARGET} -ldl)
 endif()
