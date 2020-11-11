@@ -259,7 +259,7 @@ class Voidify {
 class VoidifyFatal : public Voidify {
  public:
 #ifdef LITE_WITH_EXCEPTION
-  ~VoidifyFatal() noexcept(false) { throw PaddleLiteException("VoidifyFatal"); }
+  ~VoidifyFatal() noexcept(false) { throw std::exception(); }
 #else
   ~VoidifyFatal() { assert(false); }
 #endif
