@@ -228,6 +228,7 @@ void flip_hwc1_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
 }
 
 /*
@@ -388,6 +389,7 @@ void flip_hwc1_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
 }
 
 /*
@@ -548,16 +550,17 @@ void flip_hwc1_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
 }
 
 void flip_hwc3_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int h = h_in - 1;
   int win = w_in * 3;
-  uint8_t zerobuff[30000];
+  uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
-  uint8_t zerobuff2[30000];
+  uint8_t* zerobuff2 = new uint8_t[win];
   memset(zerobuff2, 0, win * sizeof(uint8_t));
-#pragma omp parallel for
+  // #pragma omp parallel for
   for (int i = 0; i < h_in; i += 4) {
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
@@ -720,13 +723,15 @@ void flip_hwc3_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
+  delete[] zerobuff2;
 }
 
 void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int win = w_in * 3;
-  uint8_t zerobuff[30000];
+  uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
-  uint8_t zerobuff2[30000];
+  uint8_t* zerobuff2 = new uint8_t[win];
   memset(zerobuff2, 0, win * sizeof(uint8_t));
   int64_t stride_w = 24;
 #pragma omp parallel for
@@ -977,14 +982,16 @@ void flip_hwc3_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
+  delete[] zerobuff2;
 }
 
 void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int64_t stride_w = 24;
   int win = w_in * 3;
-  uint8_t zerobuff[30000];
+  uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
-  uint8_t zerobuff2[30000];
+  uint8_t* zerobuff2 = new uint8_t[win];
   memset(zerobuff2, 0, win * sizeof(uint8_t));
 #pragma omp parallel for
   for (int i = 0; i < h_in; i += 4) {
@@ -1235,14 +1242,16 @@ void flip_hwc3_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
+  delete[] zerobuff2;
 }
 
 void flip_hwc4_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int h = h_in - 1;
   int win = w_in * 4;
-  uint8_t zerobuff[40000];
+  uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
-  uint8_t zerobuff2[40000];
+  uint8_t* zerobuff2 = new uint8_t[win];
   memset(zerobuff2, 0, win * sizeof(uint8_t));
 #pragma omp parallel for
   for (int i = 0; i < h_in; i += 4) {
@@ -1420,13 +1429,15 @@ void flip_hwc4_x(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
+  delete[] zerobuff2;
 }
 
 void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int win = w_in * 4;
-  uint8_t zerobuff[40000];
+  uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
-  uint8_t zerobuff2[40000];
+  uint8_t* zerobuff2 = new uint8_t[win];
   memset(zerobuff2, 0, win * sizeof(uint8_t));
   int64_t stride_w = 32;
 #pragma omp parallel for
@@ -1721,14 +1732,16 @@ void flip_hwc4_y(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
+  delete[] zerobuff2;
 }
 
 void flip_hwc4_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
   int64_t stride_w = 32;
   int win = w_in * 4;
-  uint8_t zerobuff[40000];
+  uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
-  uint8_t zerobuff2[40000];
+  uint8_t* zerobuff2 = new uint8_t[win];
   memset(zerobuff2, 0, win * sizeof(uint8_t));
 #pragma omp parallel for
   for (int i = 0; i < h_in; i += 4) {
@@ -2024,6 +2037,8 @@ void flip_hwc4_xy(const uint8_t* src, uint8_t* dst, int w_in, int h_in) {
       }
     }
   }
+  delete[] zerobuff;
+  delete[] zerobuff2;
 }
 }  // namespace cv
 }  // namespace utils
