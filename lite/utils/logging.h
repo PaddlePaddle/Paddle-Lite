@@ -117,6 +117,17 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 namespace paddle {
 namespace lite {
 
+#ifdef LITE_WITH_EXCEPTION
+struct PaddleLiteException : public std::exception {
+  const std::string exception_prefix = "Paddle-Lite C++ Exception: \n";
+  std::string message;
+  PaddleLiteException(const char* detail) {
+    message = exception_prefix + std::string(detail);
+  }
+  const char* what() const noexcept { return message.c_str(); }
+};
+#endif
+
 #ifdef LITE_WITH_LOG
 void gen_log(STL::ostream& log_stream_,
              const char* file,
@@ -184,14 +195,12 @@ class LogMessageFatal : public LogMessage {
     fprintf(stderr, "%s", log_stream_.str().c_str());
 
 #ifdef LITE_WITH_EXCEPTION
-    throw std::exception();
+    throw PaddleLiteException(log_stream_.str().c_str());
 #else
 #ifndef LITE_ON_TINY_PUBLISH
     abort();
 #else
-    // If we decide whether the process exits according to the NDEBUG macro
-    // definition, assert() can be used here.
-    abort();
+    assert(false);
 #endif
 #endif
   }
@@ -252,11 +261,7 @@ class VoidifyFatal : public Voidify {
 #ifdef LITE_WITH_EXCEPTION
   ~VoidifyFatal() noexcept(false) { throw std::exception(); }
 #else
-  ~VoidifyFatal() {
-    // If we decide whether the process exits according to the NDEBUG macro
-    // definition, assert() can be used here.
-    abort();
-  }
+  ~VoidifyFatal() { assert(false); }
 #endif
 };
 
