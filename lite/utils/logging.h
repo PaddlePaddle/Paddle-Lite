@@ -117,6 +117,20 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 namespace paddle {
 namespace lite {
 
+#ifdef LITE_WITH_EXCEPTION
+struct PaddleLiteException : public std::exception {
+  const std::string exception_prefix = "Paddle-Lite C++ Exception: \n";
+  std::string message;
+  PaddleLiteException(const char* detail) {
+    char buffer[1500];
+    snprintf(
+        buffer, sizeof(buffer), "%s%s\n", exception_prefix.c_str(), detail);
+    message = std::string(buffer);
+  }
+  const char* what() const noexcept { return message.c_str(); }
+};
+#endif
+
 #ifdef LITE_WITH_LOG
 void gen_log(STL::ostream& log_stream_,
              const char* file,
@@ -184,7 +198,7 @@ class LogMessageFatal : public LogMessage {
     fprintf(stderr, "%s", log_stream_.str().c_str());
 
 #ifdef LITE_WITH_EXCEPTION
-    throw std::exception();
+    throw PaddleLiteException(log_stream_.str().c_str());
 #else
 #ifndef LITE_ON_TINY_PUBLISH
     abort();
@@ -248,7 +262,7 @@ class Voidify {
 class VoidifyFatal : public Voidify {
  public:
 #ifdef LITE_WITH_EXCEPTION
-  ~VoidifyFatal() noexcept(false) { throw std::exception(); }
+  ~VoidifyFatal() noexcept(false) { throw PaddleLiteException("VoidifyFatal"); }
 #else
   ~VoidifyFatal() { assert(false); }
 #endif
