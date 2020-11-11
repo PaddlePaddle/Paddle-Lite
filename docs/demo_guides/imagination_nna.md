@@ -12,7 +12,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
 ### 已支持的设备
 
 - 海信F50，Roc1开发板（基于T7510的微型电脑主板）
-- 酷派X10（暂时未提供测试demo）
+- 酷派X10（暂未提供demo）
 
 ### 已支持的Paddle模型
 
