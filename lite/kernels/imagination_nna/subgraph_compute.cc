@@ -107,7 +107,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
     auto type = node->type();
     auto layout = node->layout();
     VLOG(3) << "[NNA] Inputs[" << i << "] name: " << device_inames_[i]
-            << " type: " << type << " layout: " << DataLayoutToStr(layout);
+            << " type: " << static_cast<int>(type)
+            << " layout: " << DataLayoutToStr(layout);
   }
 
   // outputs
@@ -123,7 +124,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
     auto type = node->type();
     auto layout = node->layout();
     VLOG(3) << "[NNA] Outputs[" << i << "] name: " << device_onames_[i]
-            << " type: " << type << " layout: " << DataLayoutToStr(layout);
+            << " type: " << static_cast<int>(type)
+            << " layout: " << DataLayoutToStr(layout);
     // Prepare the device output tensors
     switch (type) {
       case IMGDNN_TYPE_F32:
@@ -141,7 +143,8 @@ bool SubgraphEngine::BuildDeviceProgram() {
         break;
       default:
         LOG(FATAL) << "[NNA] " << device_onames_[i]
-                   << " can't mutable data with precision type " << type;
+                   << " can't mutable data with precision type "
+                   << static_cast<int>(type);
         break;
     }
   }

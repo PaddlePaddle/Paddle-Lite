@@ -54,6 +54,7 @@ if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LIT
     lite_cc_test(test_kernel_pool_compute SRCS pool_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_constant_compute SRCS fill_constant_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_constant_batch_size_like_compute SRCS fill_constant_batch_size_like_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_elementwise_common_broadcast SRCS elementwise_common_broadcast_test.cc DEPS ${test_kernel_deps})
 
 if(LITE_BUILD_EXTRA)
     lite_cc_test(test_gru_unit SRCS gru_unit_test.cc DEPS ${test_kernel_deps})
@@ -73,8 +74,8 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_anchor_generator_compute SRCS anchor_generator_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_matrix_nms_compute SRCS matrix_nms_compute_test.cc DEPS ${test_kernel_deps})
 
-    #lite_cc_test(test_kernel_generate_proposals_compute SRCS generate_proposals_compute_test.cc DEPS ${test_kernel_deps})
-    #lite_cc_test(test_kernel_roi_align_compute SRCS roi_align_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_generate_proposals_compute SRCS generate_proposals_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_roi_align_compute SRCS roi_align_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_search_aligned_mat_mul_compute SRCS search_aligned_mat_mul_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_search_seq_fc_compute SRCS search_seq_fc_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_lookup_table_compute SRCS lookup_table_compute_test.cc DEPS ${test_kernel_deps})
@@ -85,7 +86,9 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_pixel_shuffle_compute SRCS pixel_shuffle_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_scatter_compute SRCS scatter_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_sequence_expand_as_compute SRCS sequence_expand_as_compute_test.cc DEPS ${test_kernel_deps})
-
+    lite_cc_test(test_kernel_sin_compute SRCS sin_compute_test.cc DEPS arena_framework ${test_kernel_deps})
+    lite_cc_test(test_kernel_cos_compute SRCS cos_compute_test.cc DEPS arena_framework ${test_kernel_deps})
+    
     # for training kernel
     if (LITE_WITH_TRAIN)
         lite_cc_test(test_kernel_mean_compute SRCS mean_compute_test.cc DEPS ${test_kernel_deps})
