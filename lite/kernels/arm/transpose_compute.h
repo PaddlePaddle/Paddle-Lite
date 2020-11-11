@@ -29,6 +29,7 @@ class TransposeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   using param_t = operators::TransposeParam;
   void PrepareForRun() override;
   void Run() override;
+  void ReInitWhenNeeded() override;
 
   virtual ~TransposeCompute() = default;
 

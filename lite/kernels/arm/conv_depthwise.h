@@ -47,6 +47,7 @@ class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
   DepthwiseConv() = default;
   ~DepthwiseConv() {}
   virtual void PrepareForRun();
+  virtual void ReInitWhenNeeded();
   virtual void Run();
 
 #ifdef LITE_WITH_PROFILE
@@ -62,6 +63,7 @@ class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
   using param_t = operators::ConvParam;
   Tensor weights_;
   Tensor bias_;
+  DDim last_shape_;
   bool flag_trans_weights_{false};
   bool flag_trans_bias_{false};
   conv_dw_impl impl_{nullptr};
