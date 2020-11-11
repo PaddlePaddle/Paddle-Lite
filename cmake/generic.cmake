@@ -464,7 +464,6 @@ function(raw_cc_test TARGET_NAME)
 endfunction(raw_cc_test)
 
 function(_lite_cc_test args)
-  message(STATUS "building lite raw test: ${args}")
   raw_cc_test(${args} ${ARGN})
 endfunction()
 

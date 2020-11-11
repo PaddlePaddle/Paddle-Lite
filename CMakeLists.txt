@@ -21,7 +21,6 @@ set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_CXX_STANDARD 11)
 
 include(system)
-include(cross_compiling/preproject)
 
 project(paddle CXX C)
 message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: "
@@ -59,11 +58,13 @@ if(WIN32)
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
 endif()
 
-if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if(LITE_WITH_CUDA)
     find_package(CUDA QUIET)
 endif()
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
+
+
 
 include(simd)
 
@@ -162,6 +163,12 @@ include_directories("${PADDLE_SOURCE_DIR}")
 set(LITE_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}")
 include_directories("${LITE_GENERATED_INCLUDE_DIR}")
 
+set(ON_MOBILE_OR_IoT ${LITE_WITH_ARM})
+
+if (ON_MOBILE_OR_IoT)
+    include(cross_compiling/preproject)
+endif()
+
 if (LITE_WITH_PYTHON)
     include(external/python)    # download, build, install python
     include(external/pybind11)    # download, build, install pybind11
@@ -237,33 +244,38 @@ endif()
 
 include(coveralls)
 
-include(external/mklml)     # download mklml package
-include(external/xbyak)     # download xbyak package
+if (LITE_WITH_X86)
+    message(STATUS "X86 options: WITH_MKLML: ${WITH_MKLML}; WITH_MKLDNN: ${WITH_MKLDNN}")
+    include(external/mklml)     # download mklml package
+    include(external/openblas)  # download, build, install openblas
+    include(external/xbyak)     # download xbyak package
+    include(external/mkldnn)    # download, build, install mkldnn
+    include(external/libxsmm)   # download, build, install libxsmm
+endif()
 
-include(external/libxsmm)   # download, build, install libxsmm
 include(external/gflags)    # download, build, install gflags
 include(external/glog)      # download, build, install glog
 include(external/gtest)     # download, build, install gtest
 include(external/protobuf)  # download, build, install protobuf
-include(external/openblas)  # download, build, install openblas
-include(external/mkldnn)    # download, build, install mkldnn
 include(external/eigen)     # download eigen3
 include(external/xxhash)    # download install xxhash needed for x86 jit
 
-include(cudnn)
 include(configure)          # add paddle env configuration
+
+include(generic)            # simplify cmake module
+include(ccache)             # set ccache for compilation
+include(util)               # set unittest and link libs
+include(version)            # set PADDLE_VERSION
 
 if(LITE_WITH_CUDA)
   include(cuda)
+  include(cudnn)
 endif()
 
 if(LITE_WITH_BM)
   include(bm)
 endif()
-include(generic)            # simplify cmake module
-include(ccache)             # set ccache for compilation
-include(util)               # set unittest and link libs
-include(version)            # set PADDLE_VERSION
+
 if(NOT APPLE)
   include(flags)
 endif()
