@@ -242,7 +242,6 @@ void TransposeCompute::Run() {
   auto* input = param.x;
   auto* output = param.output;
   const std::vector<int> axis = param.axis;
-  int _num_axes = input->dims().size();
   //! only copy the data
   if (!need_trans) {
     output->CopyDataFrom(*input);
