@@ -171,7 +171,7 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
 
   ```shell
   For amd64，如果报找不到cxx11::符号的编译错误，请将gcc切换到4.8版本。
-  $ ./lite/tools/build.sh --build_xpu=ON --xpu_sdk_root=./xpu_toolchain x86
+  $ ./lite/tools/build.sh --build_xpu=ON --xpu_sdk_root=./xpu_toolchain --build_extra=ON x86
 
   For arm64(FT-2000+/64)
   $ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build_extra=ON --build_xpu=ON --xpu_sdk_root=./xpu_toolchain --with_log=ON full_publish
