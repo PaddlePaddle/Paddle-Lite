@@ -442,7 +442,7 @@ REGISTER_LITE_KERNEL(conv2d_transpose,
                      kFP16,
                      kImageDefault,
                      paddle::lite::kernels::opencl::ConvTransposeImageCompute,
-                     image2d)
+                     def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
@@ -460,7 +460,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d_transpose,
                      kFP16,
                      kImageDefault,
                      paddle::lite::kernels::opencl::ConvTransposeImageCompute,
-                     image2d)
+                     def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

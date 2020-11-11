@@ -92,6 +92,9 @@ void TestCase::PrepareInputsForInstruction() {
     for (auto& var : op_desc().Input(arg)) {
       const auto* type = instruction_->kernel()->GetInputDeclType(arg);
       CHECK(base_scope_->FindVar(var));
+      LOG(INFO) << "arg: " << arg;
+      LOG(INFO) << "var: " << var;
+      LOG(INFO) << "type: " << *type;
       /// Create a tensor or tensor_array in the instruction's scope,
       /// alloc memory and then copy data there.
       if (type->IsTensor() &&
@@ -101,24 +104,38 @@ void TestCase::PrepareInputsForInstruction() {
         CHECK(!base_tensor->dims().empty())
             << "The dims of input tensor is empty yet";
 #ifdef LITE_WITH_OPENCL
-        input_cpu_tensor.Resize(base_tensor->dims());
-        base_tensor->raw_data();
-        base_tensor->memory_size();
-        input_cpu_tensor.raw_data();
-        float* input_cpu_data = input_cpu_tensor.mutable_data<float>();
-        memcpy(input_cpu_data,
-               base_tensor->raw_data(),
-               base_tensor->numel() * sizeof(float));
-        const DDim& input_image_dims =
-            converter.InitImageDimInfoWith(base_tensor->dims());
-        input_image_cpu_tensor.Resize(
-            {1, input_image_dims[0], input_image_dims[1], 4});
-        uint16_t* input_image_cpu_data =
-            input_image_cpu_tensor.mutable_data<uint16_t>();
-        converter.NCHWToImage(
-            input_cpu_data, input_image_cpu_data, base_tensor->dims());
-        inst_tensor->mutable_data<half_t, cl::Image2D>(
-            input_image_dims[0], input_image_dims[1], input_image_cpu_data);
+        if (arg == "Filter") {
+          CLImageConverterConv2dTransposeTransWeight converter;
+          const DDim& input_image_dims =
+              converter.InitImageDimInfoWith(base_tensor->dims());
+          input_image_cpu_tensor_.Resize(
+              {1, input_image_dims[0], input_image_dims[1], 4});
+          uint16_t* input_image_cpu_data =
+              input_image_cpu_tensor_.mutable_data<uint16_t>();
+          converter.NCHWToImage(
+              const_cast<float*>(
+                  reinterpret_cast<const float*>(base_tensor->raw_data())),
+              input_image_cpu_data,
+              base_tensor->dims());
+          inst_tensor->mutable_data<half_t, cl::Image2D>(
+              input_image_dims[0], input_image_dims[1], input_image_cpu_data);
+        } else if (arg == "Bias") {
+          LOG(FATAL) << "NOT IMPLE YET";
+        } else {
+          const DDim& input_image_dims =
+              converter_.InitImageDimInfoWith(base_tensor->dims());
+          input_image_cpu_tensor_.Resize(
+              {1, input_image_dims[0], input_image_dims[1], 4});
+          uint16_t* input_image_cpu_data =
+              input_image_cpu_tensor_.mutable_data<uint16_t>();
+          converter_.NCHWToImage(
+              const_cast<float*>(
+                  reinterpret_cast<const float*>(base_tensor->raw_data())),
+              input_image_cpu_data,
+              base_tensor->dims());
+          inst_tensor->mutable_data<half_t, cl::Image2D>(
+              input_image_dims[0], input_image_dims[1], input_image_cpu_data);
+        }
 #else
         TargetCopy(type->target(),
                    inst_tensor->mutable_data(type->target(),
@@ -184,7 +201,7 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
     case TARGET(kOpenCL): {
       CLRuntime::Global()->command_queue().finish();
       const DDim& out_image_shape =
-          converter.InitImageDimInfoWith(inst_tensor->dims());
+          converter_.InitImageDimInfoWith(inst_tensor->dims());
       auto out_image_width = out_image_shape[0];
       auto out_image_height = out_image_shape[1];
       half_t* out_image_data = new half_t[out_image_shape.production() * 4];
@@ -198,10 +215,10 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
                                   IoDirection::DtoH);
 
       float* out_data = new float[out_image_shape.production() * 4];
-      converter.ImageToNCHW(out_image_data,
-                            inst_host_tensor.mutable_data<float>(),
-                            out_image_shape,
-                            inst_tensor->dims());
+      converter_.ImageToNCHW(out_image_data,
+                             inst_host_tensor.mutable_data<float>(),
+                             out_image_shape,
+                             inst_tensor->dims());
       inst_data = inst_host_tensor.data<T>();
       break;
     }
