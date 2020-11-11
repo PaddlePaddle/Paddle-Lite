@@ -1301,7 +1301,7 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
           for (auto hh : {8, 112}) {
             for (auto rotate : {180}) {
               for (auto flip : {0}) {
-                for (auto srcFormat : {0, 1, 2, 3}) {
+                for (auto srcFormat : {0, 1, 2, 3, 4}) {
                   for (auto layout : {1}) {
                     auto dstFormat = srcFormat;
                     if (srcFormat == ImageFormat::NV12 ||
