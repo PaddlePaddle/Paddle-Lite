@@ -122,10 +122,7 @@ struct PaddleLiteException : public std::exception {
   const std::string exception_prefix = "Paddle-Lite C++ Exception: \n";
   std::string message;
   PaddleLiteException(const char* detail) {
-    char buffer[1500];
-    snprintf(
-        buffer, sizeof(buffer), "%s%s\n", exception_prefix.c_str(), detail);
-    message = std::string(buffer);
+    message = exception_prefix + std::string(detail);
   }
   const char* what() const noexcept { return message.c_str(); }
 };
