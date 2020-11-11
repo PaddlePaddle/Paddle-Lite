@@ -138,12 +138,16 @@ void common_elmentwise_op_arm(
   }
 }
 
-template <class T, OprandSwapable opd_swap_able>
+template <class OpParamType, class T, OprandSwapable opd_swap_able>
 void elementwise_compute_template(paddle::lite::KernelBase* kernel,
                                   FastBCastFn<T> fast_bcast_fn,
                                   ElementWiseFn<T> elementwise_fn,
                                   BinaryOpFn<T> op) {
-  auto& param = kernel->template Param<operators::ElementwiseParam>();
+  // Note:
+  // Though this function will only access datas in operators::ElementwiseParam
+  // the `kernel-> template Param<>()` requires to use true type from now
+  // so `kernel->template Param<operators::ElementwiseParam>()` will not work
+  auto& param = kernel->template Param<OpParamType>();
   auto* x_data = param.X->template data<T>();
   auto* y_data = param.Y->template data<T>();
   auto* out_data = param.Out->template mutable_data<T>();
@@ -172,7 +176,9 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
 
 template <typename T, PrecisionType PType>
 void ElementwiseAddCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::YES>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::YES>(
       this,
       lite::arm::math::elementwise_add_broadcast<T>,
       lite::arm::math::elementwise_add<T>,
@@ -184,7 +190,9 @@ void ElementwiseAddActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::YES>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::YES>(
         this,
         lite::arm::math::elementwise_add_relu_broadcast<float>,
         lite::arm::math::elementwise_add_relu<float>,
@@ -196,7 +204,9 @@ void ElementwiseAddActivationCompute::Run() {
 
   if (param.act_type == "tanh") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::YES>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::YES>(
         this,
         nullptr,
         lite::arm::math::elementwise_add_tanh<float>,
@@ -212,7 +222,9 @@ void ElementwiseAddActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseSubCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::NO>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::NO>(
       this,
       lite::arm::math::elementwise_sub_broadcast<T>,
       lite::arm::math::elementwise_sub<T>,
@@ -224,7 +236,9 @@ void ElementwiseSubActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::NO>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::NO>(
         this,
         lite::arm::math::elementwise_sub_relu_broadcast<float>,
         lite::arm::math::elementwise_sub_relu<float>,
@@ -240,7 +254,9 @@ void ElementwiseSubActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseMulCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::YES>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::YES>(
       this,
       lite::arm::math::elementwise_mul_broadcast<T>,
       lite::arm::math::elementwise_mul<T>,
@@ -254,7 +270,9 @@ void ElementwiseMulActivationCompute<T, PType>::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<T, OprandSwapable::YES>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 T,
+                                 OprandSwapable::YES>(
         this,
         lite::arm::math::elementwise_mul_relu_broadcast<T>,
         lite::arm::math::elementwise_mul_relu<T>,
@@ -269,7 +287,9 @@ void ElementwiseMulActivationCompute<T, PType>::Run() {
 }
 
 void ElementwiseMaxCompute::Run() {
-  elementwise_compute_template<float, OprandSwapable::YES>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               float,
+                               OprandSwapable::YES>(
       this,
       lite::arm::math::elementwise_max_broadcast<float>,
       lite::arm::math::elementwise_max<float>,
@@ -281,7 +301,9 @@ void ElementwiseMaxActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::YES>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::YES>(
         this,
         lite::arm::math::elementwise_max_relu_broadcast<float>,
         lite::arm::math::elementwise_max_relu<float>,
@@ -297,7 +319,9 @@ void ElementwiseMaxActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseDivCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::NO>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::NO>(
       this,
       lite::arm::math::elementwise_div_broadcast<T>,
       lite::arm::math::elementwise_div<T>,
@@ -309,7 +333,9 @@ void ElementwiseDivActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::NO>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::NO>(
         this,
         lite::arm::math::elementwise_div_relu_broadcast<float>,
         lite::arm::math::elementwise_div_relu<float>,
@@ -325,7 +351,9 @@ void ElementwiseDivActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseModCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::NO>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::NO>(
       this,
       lite::arm::math::elementwise_mod_broadcast<T>,
       lite::arm::math::elementwise_mod<T>,
@@ -334,7 +362,9 @@ void ElementwiseModCompute<T, PType>::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwisePowCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::YES>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::YES>(
       this,
       lite::arm::math::elementwise_pow_broadcast<T>,
       lite::arm::math::elementwise_pow<T>,
