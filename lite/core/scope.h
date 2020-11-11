@@ -28,9 +28,6 @@ namespace lite {
 class Scope final {
  public:
   Scope() {
-    kids_lock_ = new lite::fluid::RWLock;
-    vars_lock_ = new lite::fluid::RWLock;
-    rwlock_.reset(new lite::fluid::RWLock);
   }
   // delete below two functions to allow pybind to recognise it cannot make a
   // copy
@@ -99,9 +96,6 @@ class Scope final {
   mutable std::list<Scope*> kids_;
   const Scope* parent_{nullptr};
   std::map<std::string, std::unique_ptr<Variable>> vars_;
-  lite::fluid::RWLock* kids_lock_{nullptr};
-  lite::fluid::RWLock* vars_lock_{nullptr};
-  std::unique_ptr<lite::fluid::RWLock> rwlock_{nullptr};
 };
 
 }  // namespace lite

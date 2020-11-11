@@ -414,6 +414,16 @@ if(NOT WITH_COVERAGE)
         BM_DEPS ${bm_kernels}
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
+    lite_cc_binary(light_api_mem_leak SRCS light_api_mem_leak.cc
+        DEPS light_api program mir_passes paddle_api_light
+        CL_DEPS ${opencl_kernels}
+        FPGA_DEPS ${fpga_kernels}
+        RKNPU_DEPS ${rknpu_kernels}
+        BM_DEPS ${bm_kernels}
+        ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
+    target_link_libraries(light_api_mem_leak tcmalloc)
+
+
     lite_cc_test(test_apis SRCS apis_test.cc
         DEPS cxx_api light_api ${ops} paddle_api_light
         CL_DEPS ${opencl_kernels}
