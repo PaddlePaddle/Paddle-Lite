@@ -1847,14 +1847,14 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
           "umlal v18.8h, v10.8b, v23.8b \n"  // v0 * vb
           "umlal v19.8h, v14.8b, v23.8b \n"  // v0 * vb
           // 16->32
-          "uaddl v0.4s, v16.4h, v20.4h \n"
-          "uaddl2 v1.4s, v16.8h, v20.8h \n"
-          "uaddl v2.4s, v17.4h, v24.4h \n"
-          "uaddl2 v3.4s, v17.8h, v24.8h \n"
-          "uaddl v4.4s, v18.4h, v25.4h \n"
-          "uaddl2 v5.4s, v18.8h, v25.8h \n"
-          "uaddl v6.4s, v19.4h, v26.4h \n"
-          "uaddl2 v7.4s, v19.8h, v26.8h \n"
+          "uaddl v0.4s, v20.4h, v16.4h \n"
+          "uaddl2 v1.4s, v20.8h, v16.8h \n"
+          "uaddl v2.4s, v24.4h, v17.4h \n"
+          "uaddl2 v3.4s, v24.8h, v17.8h \n"
+          "uaddl v4.4s, v25.4h, v18.4h \n"
+          "uaddl2 v5.4s, v25.8h, v18.8h \n"
+          "uaddl v6.4s, v26.4h, v19.4h \n"
+          "uaddl2 v7.4s, v26.8h, v19.8h \n"
           // 32->16 v0 >> 7
           "shrn v12.4h, v0.4s, #7 \n"
           "shrn2 v12.8h, v1.4s, #7 \n"

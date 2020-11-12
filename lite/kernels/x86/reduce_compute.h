@@ -87,14 +87,14 @@ class ReduceSumCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 template <typename T>
 class ReduceMeanCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ReduceParam;
+  using param_t = operators::ReduceMeanParam;
 
   void Run() override {
-    auto& param = *param_.get_mutable<operators::ReduceParam>();
+    auto& param = *param_.get_mutable<operators::ReduceMeanParam>();
     // auto& context = ctx_->As<X86Context>();
-    auto* input = param.x;
-    auto* output = param.output;
-    param.output->template mutable_data<T>();
+    auto* input = param.X;
+    auto* output = param.Out;
+    param.Out->template mutable_data<T>();
 
     const auto& dims = param.dim;
     bool keep_dim = param.keep_dim;
