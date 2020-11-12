@@ -59,7 +59,7 @@ bool SequencePadOp::InferShapeImpl() const {
   int max_seq_len = 0;
   for (int i = 0; i < seq_num; ++i) {
     max_seq_len =
-        std::max(max_seq_len, static_cast<int>(x_lod_0[i + 1] - x_lod_0[i]));
+        (std::max)(max_seq_len, static_cast<int>(x_lod_0[i + 1] - x_lod_0[i]));
   }
   int real_padded_length = param_.padded_length;
   if (real_padded_length == -1) {
