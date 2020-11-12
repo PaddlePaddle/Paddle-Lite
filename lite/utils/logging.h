@@ -121,7 +121,7 @@ namespace lite {
 struct PaddleLiteException : public std::exception {
   const std::string exception_prefix = "Paddle-Lite C++ Exception: \n";
   std::string message;
-  PaddleLiteException(const char* detail) {
+  explicit PaddleLiteException(const char* detail) {
     message = exception_prefix + std::string(detail);
   }
   const char* what() const noexcept { return message.c_str(); }
