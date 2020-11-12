@@ -33,13 +33,19 @@ __kernel void instance_norm_onnx(__private const int in_width,
 
   const sampler_t sampler =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-  __local float4 shared_mem[LOCAL_MEM];
+#ifdef LOCAL_MEM_128
+  __local float4 shared_mem[128];
+#elif defined(LOCAL_MEM_64)
+  __local float4 shared_mem[64];
+#else
+  __local float4 shared_mem[256];
+#endif
   int xOffset = c * in_width;
   int yOffset = n * in_height;
   float4 sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      sum += convert_float4(read_imageh(input, sampler, (int2)(xOffset + xIndex, yOffset + yIndex)));
+      sum += read_imagef(input, sampler, (int2)(xOffset + xIndex, yOffset + yIndex));
     }
   }
   shared_mem[local_id] = sum;
@@ -47,8 +53,19 @@ __kernel void instance_norm_onnx(__private const int in_width,
   barrier(CLK_LOCAL_MEM_FENCE);
 
   sum = 0.0f;
+  if (local_id < 32) {
+    for (int i = local_id + 32; i < local_total_size; i += 32) {
+      sum += shared_mem[i];
+    }
+  }
+  shared_mem[local_id] += sum;
+
+  barrier(CLK_LOCAL_MEM_FENCE);
+
+  sum = 0.0f;
   if (local_id == 0) {
-    for (int i = 0; i < local_total_size; i += 1) {
+    int top = min(32, local_total_size);
+    for (int i = 0; i < top; i += 1) {
       sum += shared_mem[i];
     }
     shared_mem[0] = sum / (in_width * in_height);
@@ -63,7 +80,7 @@ __kernel void instance_norm_onnx(__private const int in_width,
   sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      float4 temp = convert_float4(read_imageh(input, sampler, (int2)(xOffset + xIndex, yOffset + yIndex))) - mean_val;
+      float4 temp = read_imagef(input, sampler, (int2)(xOffset + xIndex, yOffset + yIndex)) - mean_val;
       sum += temp * temp;
     }
   }
@@ -72,8 +89,19 @@ __kernel void instance_norm_onnx(__private const int in_width,
   barrier(CLK_LOCAL_MEM_FENCE);
 
   sum = 0.0f;
+  if (local_id < 32) {
+    for (int i = local_id + 32; i < local_total_size; i += 32) {
+      sum += shared_mem[i];
+    }
+  }
+  shared_mem[local_id] += sum;
+
+  barrier(CLK_LOCAL_MEM_FENCE);
+
+  sum = 0.0f;
   if (local_id == 0) {
-    for (int i = 0; i < local_total_size; i += 1) {
+    int top = min(32, local_total_size);
+    for (int i = 0; i < top; i += 1) {
       sum += shared_mem[i];
     }
     shared_mem[0] = sum / (in_width * in_height);
@@ -88,7 +116,7 @@ __kernel void instance_norm_onnx(__private const int in_width,
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
       int2 intout_pos = (int2)(xOffset + xIndex, yOffset + yIndex);
-      float4 in_val = convert_float4(read_imageh(input, sampler, intout_pos));
+      float4 in_val = read_imagef(input, sampler, intout_pos);
       half4 out_val = convert_half4((in_val - mean_val) * s);
 #ifdef RELU
       out_val = activation(out_val);
