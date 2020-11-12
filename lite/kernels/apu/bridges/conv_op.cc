@@ -372,7 +372,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       if (output_scale < s * input_scale)
         output_scale = s * input_scale + 0.000001;
     }
-#ifdef LITE_MEDIATEK_APU_ENABLE_REQUANT
+#ifndef LITE_MEDIATEK_APU_ENABLE_REQUANT
     output_scale = orig_output_scale;
 #endif
   }
