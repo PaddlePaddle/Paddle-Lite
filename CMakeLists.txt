@@ -267,10 +267,8 @@ include(ccache)             # set ccache for compilation
 include(util)               # set unittest and link libs
 include(version)            # set PADDLE_VERSION
 
-if(LITE_WITH_CUDA)
-  include(cuda)
-  include(cudnn)
-endif()
+include(cuda)
+include(cudnn)
 
 if(LITE_WITH_BM)
   include(bm)
