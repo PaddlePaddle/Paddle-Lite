@@ -34,6 +34,7 @@ add_kernel(sin_compute_arm Host extra SRCS sin_compute.cc DEPS ${lite_kernel_dep
 add_kernel(cos_compute_arm Host extra SRCS cos_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} sequence_padding)
 add_kernel(flatten_contiguous_range_compute_arm Host extra SRCS flatten_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} sequence_padding)
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)

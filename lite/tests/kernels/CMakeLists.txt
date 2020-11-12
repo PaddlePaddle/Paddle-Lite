@@ -12,9 +12,10 @@ set(test_kernel_deps
     ${apu_kernels}
     ${imagination_nna_kernels}
     ${bm_kernels}
+    ${opencl_kernels}
 )
 
-if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WITH_X86 OR LITE_WITH_ARM))
+if((NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WITH_X86 OR LITE_WITH_ARM))
     lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_conv_transpose_compute SRCS conv_transpose_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_scale_compute SRCS scale_compute_test.cc DEPS ${test_kernel_deps})
@@ -74,7 +75,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_anchor_generator_compute SRCS anchor_generator_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_matrix_nms_compute SRCS matrix_nms_compute_test.cc DEPS ${test_kernel_deps})
 
-    #lite_cc_test(test_kernel_generate_proposals_compute SRCS generate_proposals_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_generate_proposals_compute SRCS generate_proposals_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_roi_align_compute SRCS roi_align_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_search_aligned_mat_mul_compute SRCS search_aligned_mat_mul_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_search_seq_fc_compute SRCS search_seq_fc_compute_test.cc DEPS ${test_kernel_deps})

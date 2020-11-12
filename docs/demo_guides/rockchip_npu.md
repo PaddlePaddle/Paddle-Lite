@@ -209,10 +209,13 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成Rockchip NPU模型，仅需要将valid_targets设置为rknpu,arm即可。
 
   ```shell
-  $ ./opt --model_dir=mobilenet_v1_int8_224_fluid \
+  $ ./opt --model_dir=mobilenet_v1_int8_224_for_rockchip_npu_fluid \
       --optimize_out_type=naive_buffer \
-      --optimize_out=mobilenet_v1_int8_224_for_rockchip_npu \
+      --optimize_out=opt_model \
       --valid_targets=rknpu,arm
+
+  替换自带的Rockchip NPU模型
+  $ cp opt_model.nb mobilenet_v1_int8_224_for_rockchip_npu/model.nb
   ```
 
 - 注意：opt生成的模型只是标记了Rockchip NPU支持的Paddle算子，并没有真正生成Rockchip NPU模型，只有在执行时才会将标记的Paddle算子转成Rockchip NPU组网API，最终生成并执行模型。

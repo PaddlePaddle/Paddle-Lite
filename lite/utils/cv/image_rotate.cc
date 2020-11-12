@@ -603,7 +603,7 @@ void rotate_hwc1_90(const uint8_t* src,
                     int h_in,
                     int w_out,
                     int h_out) {
-  uint8_t zerobuff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t* zerobuff = new uint8_t[8];
   // block 4*8. -- 8*4
   int i = 0;
   int stride_h = 4 * w_in;
@@ -699,6 +699,7 @@ void rotate_hwc1_90(const uint8_t* src,
       *outptr0 = *inptr0++;
     }
   }
+  delete[] zerobuff;
 }
 /*
 1 2 3 4
@@ -715,7 +716,7 @@ void rotate_hwc1_180(const uint8_t* src,
                      int h_in,
                      int w_out,
                      int h_out) {
-  uint8_t zerobuff[10000];
+  uint8_t* zerobuff = new uint8_t[w_in];
   memset(zerobuff, 0, w_in * sizeof(uint8_t));
   int stride_w = 8;
 #pragma omp parallel for
@@ -858,6 +859,7 @@ void rotate_hwc1_180(const uint8_t* src,
       }
     }
   }
+  delete[] zerobuff;
 }
 /*
 1 2 3
@@ -984,7 +986,7 @@ void rotate_hwc3_90(const uint8_t* src,
   int stride_h_w = 4 * win - 24;
   int stride_out = 4 * wout;
   int ww = w_out - 8;
-  uint8_t zerobuff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t* zerobuff = new uint8_t[8];
   // block 4*8. -- 8*4
   int i = 0;
 #pragma omp parallel for
@@ -1135,6 +1137,7 @@ void rotate_hwc3_90(const uint8_t* src,
       *outptr0++ = *inptr0++;
     }
   }
+  delete[] zerobuff;
 }
 
 void rotate_hwc3_180(const uint8_t* src,
@@ -1144,7 +1147,7 @@ void rotate_hwc3_180(const uint8_t* src,
                      int w_out,
                      int h_out) {
   int win = w_in * 3;
-  uint8_t zerobuff[30000];
+  uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
   int stride_w = 24;
 #pragma omp parallel for
@@ -1388,6 +1391,8 @@ void rotate_hwc3_180(const uint8_t* src,
       }
     }
   }
+  delete[] zerobuff;
+  delete[] zerobuff;
 }
 
 void rotate_hwc3_270(const uint8_t* src,
@@ -1642,7 +1647,7 @@ void rotate_hwc4_180(const uint8_t* src,
                      int w_out,
                      int h_out) {
   int win = w_in * 4;
-  uint8_t zerobuff[40000];
+  uint8_t* zerobuff = new uint8_t[win];
   memset(zerobuff, 0, win * sizeof(uint8_t));
   int stride_w = 32;
 #pragma omp parallel for
@@ -1917,6 +1922,7 @@ void rotate_hwc4_180(const uint8_t* src,
       }
     }
   }
+  delete[] zerobuff;
 }
 
 void rotate_hwc4_270(const uint8_t* src,
