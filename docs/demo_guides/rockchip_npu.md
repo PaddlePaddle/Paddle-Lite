@@ -122,20 +122,17 @@ Paddle Lite已支持Rockchip NPU的预测部署。
         - image_classification_demo.cc # 示例程序源码
         - convert_to_raw_image.py # 将测试图片保存为raw数据的python脚本
         - build.sh # 示例程序编译脚本
-        - run_with_adb.sh # RK1808 EVB的示例程序运行脚本
+        - run_with_adb.sh # RK1808/RK1806/RV1126/RV1109 EVB的示例程序运行脚本
         - run_with_ssh.sh # TB-RK1808S0 AI计算棒的示例程序运行脚本
     - libs
       - PaddleLite
-        - arm64
+        - arm64 # 适用于RK1808 EVB和TB-RK1808S0 AI计算棒的PaddleLite预编译库
           - include # PaddleLite头文件
           - lib
-            - libGAL.so # RK DDK库
-            - libOpenVX.so
-            - libVSC.so
-            - librknpu_ddk.so
+            - librknpu_ddk.so # RK DDK库
             - libgomp.so.1 # gnuomp库
             - libpaddle_light_api_shared.so # 预编译PaddleLite库
-        - armhf
+        - armhf # 适用于RK1806/RV1126/RV1109 EVB的PaddleLite预编译库
   ```
 
 - 按照以下命令分别运行转换后的ARM CPU模型和Rockchip NPU模型，比较它们的性能和结果；
@@ -165,8 +162,18 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     Prediction time: 266.276001 ms
     Postprocess time: 0.456000 ms
 
-  For RK1806 and RV1126 EVB
+  For RK1806/RV1126/RV1109 EVB
   $ ./run_with_adb.sh armhf
+    (RV1126 EVB)
+    warmup: 5 repeat: 10, average: 338.019904 ms, max: 371.528992 ms, min: 331.010010 ms
+    results: 3
+    Top0  tabby, tabby cat - 0.522023
+    Top1  Egyptian cat - 0.395266
+    Top2  tiger cat - 0.073605
+    Preprocess time: 3.443000 ms
+    Prediction time: 338.019904 ms
+    Postprocess time: 0.600000 ms
+  
     (RV1109 EVB)
     warmup: 5 repeat: 10, average: 335.438400 ms, max: 346.362000 ms, min: 331.894012 ms
     results: 3
@@ -208,9 +215,19 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     Prediction time: 6.663300 ms
     Postprocess time: 0.470000 ms
 
-  For RK1806 and RV1126 EVB
+  For RK1806/RV1126/RV1109 EVB
   $ ./run_with_adb.sh armhf
     (RV1126 EVB)
+    warmup: 5 repeat: 10, average: 5.956600 ms, max: 6.083000 ms, min: 5.860000 ms
+    results: 3
+    Top0  Egyptian cat - 0.497230
+    Top1  tabby, tabby cat - 0.409483
+    Top2  tiger cat - 0.081897
+    Preprocess time: 3.514000 ms
+    Prediction time: 5.956600 ms
+    Postprocess time: 0.539000 ms
+  
+    (RV1109 EVB)
     warmup: 5 repeat: 10, average: 7.163200 ms, max: 7.459000 ms, min: 7.055000 ms
     results: 3
     Top0  Egyptian cat - 0.497230
