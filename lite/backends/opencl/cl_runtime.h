@@ -89,7 +89,10 @@ class CLRuntime {
     return is_device_avaliable_for_opencl_;
   }
 
-  void set_auto_tune(bool enable_tune) { auto_tune_ = enable_tune; }
+  void set_auto_tune(size_t enable_tune) {
+    auto_tune_ = enable_tune;
+    command_queue_ = CreateCommandQueue(context());
+  }
 
   bool auto_tune() { return auto_tune_; }
 
@@ -168,6 +171,10 @@ class CLRuntime {
 #ifdef LITE_WITH_PROFILE
     properties |= CL_QUEUE_PROFILING_ENABLE;
 #endif  // LITE_WITH_PROFILE
+    if (auto_tune_ > 0) {
+      properties |= CL_QUEUE_PROFILING_ENABLE;
+    }
+
     auto queue = std::make_shared<cl::CommandQueue>(
         context, device(), properties, &status_);
     CL_CHECK_FATAL(status_);
@@ -198,7 +205,7 @@ class CLRuntime {
 
   bool is_platform_device_init_success_{false};
 
-  bool auto_tune_{false};
+  size_t auto_tune_{0};
 };
 
 }  // namespace lite
