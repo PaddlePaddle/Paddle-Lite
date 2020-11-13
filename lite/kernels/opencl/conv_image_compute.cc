@@ -399,7 +399,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   if (max_work_group_size <= 0 || !use_lws_ ||
       CLRuntime::Global()->auto_tune() <= 0) {
     if (!use_lws_) {
-      use_lws_ = cl::NullRange;
+      local_work_size_ = cl::NullRange;
     }
     return;
   }
@@ -478,7 +478,7 @@ void ConvImageCompute::ReInitWhenNeeded() {
     SetGlobalWorkSize();
   }
 }
-//
+
 void ConvImageCompute::SetGlobalWorkSize() {
   if (kernel_func_names_.size() <= 0) return;
   // general input_c_block
