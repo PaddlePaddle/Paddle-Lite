@@ -24,6 +24,7 @@
 namespace paddle {
 namespace lite {
 
+// Ported from github:dmlc-core
 class Any {
  public:
   inline Any() = default;
@@ -111,7 +112,7 @@ template <typename T>
 inline Any::Any(T&& other) {
   typedef typename std::decay<T>::type DT;
   if (std::is_same<DT, Any>::value) {
-    this->construct(std::forward<T>(other));
+    construct(std::forward<T>(other));
   } else {
     static_assert(std::is_copy_constructible<DT>::value,
                   "Any can only hold value that is copy constructable");
@@ -129,9 +130,9 @@ inline Any::Any(T&& other) {
   }
 }
 
-inline Any::Any(Any&& other) { this->construct(std::move(other)); }
+inline Any::Any(Any&& other) { construct(std::move(other)); }
 
-inline Any::Any(const Any& other) { this->construct(other); }
+inline Any::Any(const Any& other) { construct(other); }
 
 inline void Any::construct(Any&& other) {
   type_ = other.type_;
@@ -165,15 +166,15 @@ inline void Any::construct(Args&&... args) {
 
 template <typename T>
 void Any::set() {
-  this->construct<T>();
+  construct<T>();
 }
 
 template <typename T>
 void Any::set(T&& other) {
-  this->construct<T>(std::forward<T>(other));
+  construct<T>(std::forward<T>(other));
 }
 
-inline Any::~Any() { this->clear(); }
+inline Any::~Any() { clear(); }
 
 inline Any& Any::operator=(Any&& other) {
   Any(std::move(other)).swap(*this);
@@ -228,7 +229,9 @@ inline bool Any::is_type() const {
 template <typename T>
 inline void Any::check_type() const {
   CHECK_EQ((type_ == nullptr), false);
-  CHECK_EQ((*(type_->ptype_info) == typeid(T)), true);
+  CHECK_EQ((*(type_->ptype_info) == typeid(T)), true)
+      << "Any struct is stored in the type " << type_->ptype_info->name()
+      << ", but trying to obtain the type " << typeid(T).name() << ".";
 }
 
 template <typename T>
@@ -239,13 +242,14 @@ inline void Any::check_type_by_name() const {
 
 template <typename T>
 inline const T& Any::get() const {
-  this->check_type<T>();
-  return *Any::TypeInfo<T>::get_ptr(&(this->data_));
+  check_type<T>();
+  return *Any::TypeInfo<T>::get_ptr(&data_);
 }
 
 template <typename T>
 T* Any::get_mutable() {
-  return Any::TypeInfo<T>::get_ptr(&(this->data_));
+  check_type<T>();
+  return Any::TypeInfo<T>::get_ptr(&data_);
 }
 
 template <typename T>
