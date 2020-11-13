@@ -7,14 +7,15 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
 ### 已支持的芯片
 
-- RK1808
-- RK1806
+- RK1808/1806
+- RV1126/1109
 注意：暂时不支持RK3399Pro
 
 ### 已支持的设备
 
 - RK1808/1806 EVB
 - TB-RK1808S0 AI计算棒
+- RV1126/1109 EVB
 
 ### 已支持的Paddle模型
 
@@ -49,6 +50,10 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
   ![tb-rk1808s0](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/TB-RK1808S0.jpg)
 
+- RV1126 EVB
+
+   ![rk1126_evb](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/rv1126_evb.jpg)
+
 ### 准备设备环境
 
 - RK1808 EVB
@@ -69,9 +74,26 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     toybrick-server-1.4.1-2.rk1808.fc28.aarch64
     ```
 
+- RV1126 EVB
+
+   - 需要升级1.51的firmware（下载和烧录方法请联系RK相关同学），可通过以下命令确认librknn_runtime.so的版本：
+
+    ```shell
+    # strings /usr/lib/librknn_runtime.so | grep build |grep version
+    librknn_runtime version 1.5.1 (161f53f build: 2020-11-05 15:12:30 base: 1126)
+    ```
+
+   - 同样的，示例程序和PaddleLite库的编译需要采用交叉编译方式，通过adb进行设备的交互和示例程序的运行。
+   
+
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/compile_env)中的Docker开发环境进行配置。
+- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/compile_env)中的Docker开发环境进行配置；
+- 由于有些设备只提供网络访问方式（例如：TB-RK1808S0 AI计算棒），需要通过scp和ssh命令将交叉编译生成的PaddleLite库和示例程序传输到设备上执行，因此，在进入Docker容器后还需要安装如下软件：
+
+  ```
+  # apt-get install openssh-client sshpass
+  ```
 
 ### 运行图像分类示例程序
 
@@ -100,20 +122,17 @@ Paddle Lite已支持Rockchip NPU的预测部署。
         - image_classification_demo.cc # 示例程序源码
         - convert_to_raw_image.py # 将测试图片保存为raw数据的python脚本
         - build.sh # 示例程序编译脚本
-        - run_with_adb.sh # RK1808 EVB的示例程序运行脚本
+        - run_with_adb.sh # RK1808/RK1806/RV1126/RV1109 EVB的示例程序运行脚本
         - run_with_ssh.sh # TB-RK1808S0 AI计算棒的示例程序运行脚本
     - libs
       - PaddleLite
-        - arm64
+        - arm64 # 适用于RK1808 EVB和TB-RK1808S0 AI计算棒的PaddleLite预编译库
           - include # PaddleLite头文件
           - lib
-            - libGAL.so # RK DDK库
-            - libOpenVX.so
-            - libVSC.so
-            - librknpu_ddk.so
+            - librknpu_ddk.so # RK DDK库
             - libgomp.so.1 # gnuomp库
             - libpaddle_light_api_shared.so # 预编译PaddleLite库
-        - armhf
+        - armhf # 适用于RK1806/RV1126/RV1109 EVB的PaddleLite预编译库
   ```
 
 - 按照以下命令分别运行转换后的ARM CPU模型和Rockchip NPU模型，比较它们的性能和结果；
@@ -133,13 +152,6 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
   For RK1808 EVB
   $ ./run_with_adb.sh arm64
-
-  For RK1806 EVB
-  $ ./run_with_adb.sh armhf
-
-  For TB-RK1808S0 AI计算棒
-  $ ./run_with_ssh.sh arm64
-
     (RK1808 EVB)
     warmup: 5 repeat: 10, average: 266.276001 ms, max: 266.576996 ms, min: 266.158997 ms
     results: 3
@@ -150,6 +162,31 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     Prediction time: 266.276001 ms
     Postprocess time: 0.456000 ms
 
+  For RK1806/RV1126/RV1109 EVB
+  $ ./build.sh armhf
+  $ ./run_with_adb.sh armhf
+    (RV1126 EVB)
+    warmup: 5 repeat: 10, average: 338.019904 ms, max: 371.528992 ms, min: 331.010010 ms
+    results: 3
+    Top0  tabby, tabby cat - 0.522023
+    Top1  Egyptian cat - 0.395266
+    Top2  tiger cat - 0.073605
+    Preprocess time: 3.443000 ms
+    Prediction time: 338.019904 ms
+    Postprocess time: 0.600000 ms
+  
+    (RV1109 EVB)
+    warmup: 5 repeat: 10, average: 335.438400 ms, max: 346.362000 ms, min: 331.894012 ms
+    results: 3
+    Top0  tabby, tabby cat - 0.522023
+    Top1  Egyptian cat - 0.395266
+    Top2  tiger cat - 0.073605
+    Preprocess time: 3.420000 ms
+    Prediction time: 335.438400 ms
+    Postprocess time: 0.582000 ms
+
+  For TB-RK1808S0 AI计算棒
+  $ ./run_with_ssh.sh arm64
     (TB-RK1808S0 AI计算棒)
     warmup: 5 repeat: 10, average: 358.836304 ms, max: 361.001007 ms, min: 358.035004 ms
     results: 3
@@ -169,13 +206,6 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
   For RK1808 EVB
   $ ./run_with_adb.sh arm64
-
-  For RK1806 EVB
-  $ ./run_with_adb.sh armhf
-
-  For TB-RK1808S0 AI计算棒
-  $ ./run_with_ssh.sh arm64
-
     (RK1808 EVB)
     warmup: 5 repeat: 10, average: 6.663300 ms, max: 6.705000 ms, min: 6.590000 ms
     results: 3
@@ -186,6 +216,31 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     Prediction time: 6.663300 ms
     Postprocess time: 0.470000 ms
 
+  For RK1806/RV1126/RV1109 EVB
+  $ ./build.sh armhf
+  $ ./run_with_adb.sh armhf
+    (RV1126 EVB)
+    warmup: 5 repeat: 10, average: 5.956600 ms, max: 6.083000 ms, min: 5.860000 ms
+    results: 3
+    Top0  Egyptian cat - 0.497230
+    Top1  tabby, tabby cat - 0.409483
+    Top2  tiger cat - 0.081897
+    Preprocess time: 3.514000 ms
+    Prediction time: 5.956600 ms
+    Postprocess time: 0.539000 ms
+  
+    (RV1109 EVB)
+    warmup: 5 repeat: 10, average: 7.163200 ms, max: 7.459000 ms, min: 7.055000 ms
+    results: 3
+    Top0  Egyptian cat - 0.497230
+    Top1  tabby, tabby cat - 0.409483
+    Top2  tiger cat - 0.081897
+    Preprocess time: 3.465000 ms
+    Prediction time: 7.163200 ms
+    Postprocess time: 0.595000 ms
+
+  For TB-RK1808S0 AI计算棒
+  $ ./run_with_ssh.sh arm64
     (TB-RK1808S0 AI计算棒)
     warmup: 5 repeat: 10, average: 9.819400 ms, max: 9.970000 ms, min: 9.776000 ms
     results: 3
@@ -240,19 +295,19 @@ Paddle Lite已支持Rockchip NPU的预测部署。
   full_publish
   $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
 
-  For RK1806 EVB
+  For RK1806/RV1126/RV1109 EVB
   tiny_publish
-  $ ./lite/tools/build_linux.sh --arch=armv7 --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
+  $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
   full_publish
-  $ ./lite/tools/build_linux.sh --arch=armv7 --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
+  $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
   ```
 
 - 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
 - 将tiny_publish模式下编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
 - 将full_publish模式下编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件；
-- 将编译生成的build.lite.armlinux.armv7.gcc/inference_lite_lib.armlinux.armv7.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/armhf/include目录；
-- 将tiny_publish模式下编译生成的build.lite.armlinux.armv7.gcc/inference_lite_lib.armlinux.armv7.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.armlinux.armv7.gcc/inference_lite_lib.armlinux.armv7.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_full_api_shared.so文件。
+- 将编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/armhf/include目录；
+- 将tiny_publish模式下编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件；
+- 将full_publish模式下编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_full_api_shared.so文件。
 
 ## 其它说明
 
