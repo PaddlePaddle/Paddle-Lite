@@ -293,7 +293,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
   full_publish
   $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
 
-  For RK1806 and RK1126 EVB
+  For RK1806/RV1126/RV1109 EVB
   tiny_publish
   $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
   full_publish
