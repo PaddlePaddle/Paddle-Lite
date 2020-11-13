@@ -163,6 +163,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     Postprocess time: 0.456000 ms
 
   For RK1806/RV1126/RV1109 EVB
+  $ ./build.sh armhf
   $ ./run_with_adb.sh armhf
     (RV1126 EVB)
     warmup: 5 repeat: 10, average: 338.019904 ms, max: 371.528992 ms, min: 331.010010 ms
@@ -216,6 +217,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     Postprocess time: 0.470000 ms
 
   For RK1806/RV1126/RV1109 EVB
+  $ ./build.sh armhf
   $ ./run_with_adb.sh armhf
     (RV1126 EVB)
     warmup: 5 repeat: 10, average: 5.956600 ms, max: 6.083000 ms, min: 5.860000 ms
