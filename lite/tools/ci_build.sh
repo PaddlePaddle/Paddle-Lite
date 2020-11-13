@@ -782,7 +782,7 @@ function rockchip_npu_prepare_device {
         echo "$arch isn't supported by Rockchip NPU SDK!"
         exit 1
     fi
-    $remote_device_run $remote_device_name push "$sdk_lib_dir/*" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$sdk_lib_dir/librknpu_ddk.so" "$remote_device_work_dir"
 }
 
 function rockchip_npu_build_target {

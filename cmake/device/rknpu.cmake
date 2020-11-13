@@ -37,7 +37,7 @@ if(ARM_TARGET_ARCH_ABI STREQUAL "armv8")
     set(RKNPU_SUB_LIB_PATH "lib64")
 endif()
 
-if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
+if(ARM_TARGET_ARCH_ABI STREQUAL "armv7hf")
     set(RKNPU_SUB_LIB_PATH "lib")
 endif()
 
