@@ -399,7 +399,7 @@ function android_cpu_build_target {
 }
 
 function android_cpu_build_and_test {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST android_build_target android_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST android_cpu_build_target android_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
 # ARMLinux (RK3399/pro, Raspberry pi etc.)
