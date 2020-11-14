@@ -4,7 +4,7 @@ set -ex
 
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
-LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
+LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 readonly workspace=$PWD
@@ -14,7 +14,7 @@ NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 # Global variables
 # The list of os for building unit tests(android,armlinux), such as "android"
 OS_LIST="android"
-# The list of arch abi for building unit tests(armv8,armv7,armv7hf), such as "armv8,armv7" 
+# The list of arch abi for building unit tests(armv8,armv7,armv7hf), such as "armv8,armv7"
 # for android devices, "armv8" for RK3399, "armv7hf" for Raspberry pi 3B
 ARCH_LIST="armv8,armv7"
 # The list of toolchains for building unit tests(gcc,clang), such as "gcc,clang"
@@ -27,16 +27,16 @@ REMOTE_DEVICE_TYPE=0
 # The list of the device names for the real android devices, use commas to separate them, such as "2GX0119401000796,0123456789ABCDEF,5aba5d0ace0b89f6"
 # The list of the device infos for the real armlinux devices, its format is "dev0_ip_addr,dev0_usr_id,dev0_usr_pwd:dev1_ip_addr,dev1_usr_id,dev1_usr_pwd"
 REMOTE_DEVICE_LIST="2GX0119401000796,0123456789ABCDEF"
-# Work directory of the remote devices for running the unit tests 
+# Work directory of the remote devices for running the unit tests
 REMOTE_DEVICE_WORK_DIR="/data/local/tmp"
 
 # if operating in mac env, we should expand the maximum file num
-os_name=`uname -s`
+os_name=$(uname -s)
 if [ ${os_name} == "Darwin" ]; then
-   ulimit -n 1024
+    ulimit -n 1024
 fi
 
-function prepare_thirdparty {
+function prepare_thirdparty() {
     if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
         rm -rf $workspace/third-party
 
@@ -51,7 +51,7 @@ function prepare_thirdparty {
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.
 # here we fake an empty file to make cmake works.
-function prepare_workspace {
+function prepare_workspace() {
     # in build directory
     # 1. Prepare gen_code file
     GEN_CODE_PATH_PREFIX=lite/gen_code
@@ -68,13 +68,12 @@ function prepare_workspace {
     prepare_thirdparty
 }
 
-function adb_device_check {
+function adb_device_check() {
     local adb_device_name=$1
     if [[ -n "$adb_device_name" ]]; then
-        for line in `adb devices | grep -v "List"  | awk '{print $1}'`
-        do
-            online_device_name=`echo $line | awk '{print $1}'`
-            if [[ "$adb_device_name" == "$online_device_name" ]];then
+        for line in $(adb devices | grep -v "List" | awk '{print $1}'); do
+            online_device_name=$(echo $line | awk '{print $1}')
+            if [[ "$adb_device_name" == "$online_device_name" ]]; then
                 return 0
             fi
         done
@@ -82,7 +81,7 @@ function adb_device_check {
     return 1
 }
 
-function adb_device_pick {
+function adb_device_pick() {
     local adb_device_list=$1
     local adb_device_names=(${adb_device_list//,/ })
     for adb_device_name in ${adb_device_names[@]}; do
@@ -96,7 +95,7 @@ function adb_device_pick {
     return 1
 }
 
-function adb_device_run {
+function adb_device_run() {
     local adb_device_name=$1
     local adb_device_cmd=$2
     if [[ "$adb_device_cmd" == "shell" ]]; then
@@ -121,12 +120,12 @@ function adb_device_run {
     fi
 }
 
-function ssh_device_check {
+function ssh_device_check() {
     local ssh_device_name=$1
     ssh_device_run $ssh_device_name test
 }
 
-function ssh_device_pick {
+function ssh_device_pick() {
     local ssh_device_list=$1
     local ssh_device_names=(${ssh_device_list//:/ })
     for ssh_device_name in ${ssh_device_names[@]}; do
@@ -140,7 +139,7 @@ function ssh_device_pick {
     return 1
 }
 
-function ssh_device_run {
+function ssh_device_run() {
     local ssh_device_name=$1
     local ssh_device_cmd=$2
     if [[ -z "$ssh_device_name" ]]; then
@@ -164,14 +163,14 @@ function ssh_device_run {
     elif [[ "$ssh_device_cmd" == "push" ]]; then
         sshpass -p $ssh_device_usr_pwd scp -r -o ConnectTimeout=60 -o StrictHostKeyChecking=no $3 $ssh_device_usr_id@$ssh_device_ip_addr:$4
     elif [[ "$ssh_device_cmd" == "test" ]]; then
-        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=60 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "exit 0" &> /dev/null
+        sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=60 -o StrictHostKeyChecking=no $ssh_device_usr_id@$ssh_device_ip_addr "exit 0" &>/dev/null
     else
         echo "Unknown command $ssh_device_cmd!"
         exit 1
     fi
 }
 
-function run_unit_test_on_remote_device {
+function run_unit_test_on_remote_device() {
     local remote_device_name=""
     local remote_device_work_dir=""
     local remote_device_check=""
@@ -183,41 +182,41 @@ function run_unit_test_on_remote_device {
     # Extract arguments from command line
     for i in "$@"; do
         case $i in
-            --remote_device_name=*)
-                remote_device_name="${i#*=}"
-                shift
-                ;;
-            --remote_device_work_dir=*)
-                remote_device_work_dir="${i#*=}"
-                shift
-                ;;
-            --remote_device_check=*)
-                remote_device_check="${i#*=}"
-                shift
-                ;;
-            --remote_device_run=*)
-                remote_device_run="${i#*=}"
-                shift
-                ;;
-            --target_name=*)
-                target_name="${i#*=}"
-                shift
-                ;;
-            --model_dir=*)
-                model_dir="${i#*=}"
-                shift
-                ;;
-            --data_dir=*)
-                data_dir="${i#*=}"
-                shift
-                ;;
-            --config_dir=*)
-                config_dir="${i#*=}"
-                shift
-                ;;
-            *)
-                shift
-                ;;
+        --remote_device_name=*)
+            remote_device_name="${i#*=}"
+            shift
+            ;;
+        --remote_device_work_dir=*)
+            remote_device_work_dir="${i#*=}"
+            shift
+            ;;
+        --remote_device_check=*)
+            remote_device_check="${i#*=}"
+            shift
+            ;;
+        --remote_device_run=*)
+            remote_device_run="${i#*=}"
+            shift
+            ;;
+        --target_name=*)
+            target_name="${i#*=}"
+            shift
+            ;;
+        --model_dir=*)
+            model_dir="${i#*=}"
+            shift
+            ;;
+        --data_dir=*)
+            data_dir="${i#*=}"
+            shift
+            ;;
+        --config_dir=*)
+            config_dir="${i#*=}"
+            shift
+            ;;
+        *)
+            shift
+            ;;
         esac
     done
 
@@ -264,12 +263,12 @@ function run_unit_test_on_remote_device {
         $remote_device_run $remote_device_name push "$config_dir" "$remote_device_work_dir"
         command_line="$command_line --config_dir ./$config_name"
     fi
-    
+
     # Run the model on the remote device
     $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
 }
 
-function build_and_test_on_remote_device {
+function build_and_test_on_remote_device() {
     local os_list=$1
     local arch_list=$2
     local toolchain_list=$3
@@ -291,7 +290,7 @@ function build_and_test_on_remote_device {
         remote_device_run=adb_device_run
     fi
 
-     # Pick the first available remote device from list
+    # Pick the first available remote device from list
     local remote_device_name=$($remote_device_pick $remote_device_list)
     if [[ -z $remote_device_name ]]; then
         echo "No remote device available!"
@@ -336,14 +335,14 @@ function build_and_test_on_remote_device {
                     fi
                     run_unit_test_on_remote_device --remote_device_name=$remote_device_name --remote_device_work_dir=$remote_device_work_dir --remote_device_check=$remote_device_check --remote_device_run=$remote_device_run --target_name=$test_name $test_args
                 done
-                cd - > /dev/null
+                cd - >/dev/null
             done
         done
     done
 }
 
 # Android
-function android_cpu_prepare_device {
+function android_cpu_prepare_device() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -372,7 +371,7 @@ function android_cpu_prepare_device {
     $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
 }
 
-function android_cpu_build_target {
+function android_cpu_build_target() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -389,7 +388,7 @@ function android_cpu_build_target {
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
+        -DWITH_ARM_DOTPROD=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
@@ -398,12 +397,12 @@ function android_cpu_build_target {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
-function android_cpu_build_and_test {
+function android_cpu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST android_cpu_build_target android_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
 # ARMLinux (RK3399/pro, Raspberry pi etc.)
-function armlinux_cpu_prepare_device {
+function armlinux_cpu_prepare_device() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -432,7 +431,7 @@ function armlinux_cpu_prepare_device {
     $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
 }
 
-function armlinux_cpu_build_target {
+function armlinux_cpu_build_target() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -449,7 +448,7 @@ function armlinux_cpu_build_target {
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
+        -DWITH_ARM_DOTPROD=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
@@ -458,12 +457,12 @@ function armlinux_cpu_build_target {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
-function armlinux_cpu_build_and_test {
+function armlinux_cpu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST armlinux_cpu_build_target armlinux_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
 # Huawei Kirin NPU
-function huawei_kirin_npu_prepare_device {
+function huawei_kirin_npu_prepare_device() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -512,7 +511,7 @@ function huawei_kirin_npu_prepare_device {
     $remote_device_run $remote_device_name push "$sdk_lib_dir/*" "$remote_device_work_dir"
 }
 
-function huawei_kirin_npu_build_target {
+function huawei_kirin_npu_build_target() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -530,7 +529,7 @@ function huawei_kirin_npu_build_target {
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
+        -DWITH_ARM_DOTPROD=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
@@ -542,12 +541,12 @@ function huawei_kirin_npu_build_target {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
-function huawei_kirin_npu_build_and_test {
+function huawei_kirin_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./hiai_ddk_lib_330)"
 }
 
 # Rockchip NPU
-function rockchip_npu_prepare_device {
+function rockchip_npu_prepare_device() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -589,7 +588,7 @@ function rockchip_npu_prepare_device {
     $remote_device_run $remote_device_name push "$sdk_lib_dir/librknpu_ddk.so" "$remote_device_work_dir"
 }
 
-function rockchip_npu_build_target {
+function rockchip_npu_build_target() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -607,7 +606,7 @@ function rockchip_npu_build_target {
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
+        -DWITH_ARM_DOTPROD=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
@@ -618,12 +617,12 @@ function rockchip_npu_build_target {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
-function rockchip_npu_build_and_test {
+function rockchip_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST rockchip_npu_build_target rockchip_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./rknpu_ddk)"
 }
 
 # MediaTek APU
-function mediatek_apu_prepare_device {
+function mediatek_apu_prepare_device() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -670,7 +669,7 @@ function mediatek_apu_prepare_device {
     $remote_device_run $remote_device_name shell "echo 0 > /proc/sys/kernel/printk"
 }
 
-function mediatek_apu_build_target {
+function mediatek_apu_build_target() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -688,7 +687,7 @@ function mediatek_apu_build_target {
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
+        -DWITH_ARM_DOTPROD=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
@@ -699,12 +698,12 @@ function mediatek_apu_build_target {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
-function mediatek_apu_build_and_test {
+function mediatek_apu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST mediatek_apu_build_target mediatek_apu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./apu_ddk)"
 }
 
 # Imagination NNA
-function imagination_nna_prepare_device {
+function imagination_nna_prepare_device() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -739,7 +738,7 @@ function imagination_nna_prepare_device {
     $remote_device_run $remote_device_name push "$sdk_root_dir/nna-tools/config/*" "$remote_device_work_dir/nna_config/"
 }
 
-function imagination_nna_build_target {
+function imagination_nna_build_target() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -757,7 +756,7 @@ function imagination_nna_build_target {
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
+        -DWITH_ARM_DOTPROD=ON \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
@@ -768,71 +767,71 @@ function imagination_nna_build_target {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 }
 
-function imagination_nna_build_and_test {
+function imagination_nna_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST imagination_nna_build_target imagination_nna_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./imagination_nna_sdk)"
 }
 
-function main {
+function main() {
     # Parse command line.
     for i in "$@"; do
         case $i in
-            --os_list=*)
-                OS_LIST="${i#*=}"
-                shift
-                ;;
-            --arch_list=*)
-                ARCH_LIST="${i#*=}"
-                shift
-                ;;
-            --toolchain_list=*)
-                TOOLCHAIN_LIST="${i#*=}"
-                shift
-                ;;
-            --unit_test_skip_list=*)
-                UNIT_TEST_SKIP_LIST="${i#*=}"
-                shift
-                ;;
-            --remote_device_type=*)
-                REMOTE_DEVICE_TYPE="${i#*=}"
-                shift
-                ;;
-            --remote_device_list=*)
-                REMOTE_DEVICE_LIST="${i#*=}"
-                shift
-                ;;
-            --remote_device_work_dir=*)
-                REMOTE_DEVICE_WORK_DIR="${i#*=}"
-                shift
-                ;;
-            android_cpu_build_and_test)
-                android_cpu_build_and_test
-                shift
-                ;;
-            armlinux_cpu_build_and_test)
-                armlinux_cpu_build_and_test
-                shift
-                ;;
-            huawei_kirin_npu_build_and_test)
-                huawei_kirin_npu_build_and_test
-                shift
-                ;;
-            rockchip_npu_build_and_test)
-                rockchip_npu_build_and_test
-                shift
-                ;;
-            mediatek_apu_build_and_test)
-                mediatek_apu_build_and_test
-                shift
-                ;;
-            imagination_nna_build_and_test)
-                imagination_nna_build_and_test
-                shift
-                ;;
-            *)
-                # unknown option
-                print_usage
-                exit 1
-                ;;
+        --os_list=*)
+            OS_LIST="${i#*=}"
+            shift
+            ;;
+        --arch_list=*)
+            ARCH_LIST="${i#*=}"
+            shift
+            ;;
+        --toolchain_list=*)
+            TOOLCHAIN_LIST="${i#*=}"
+            shift
+            ;;
+        --unit_test_skip_list=*)
+            UNIT_TEST_SKIP_LIST="${i#*=}"
+            shift
+            ;;
+        --remote_device_type=*)
+            REMOTE_DEVICE_TYPE="${i#*=}"
+            shift
+            ;;
+        --remote_device_list=*)
+            REMOTE_DEVICE_LIST="${i#*=}"
+            shift
+            ;;
+        --remote_device_work_dir=*)
+            REMOTE_DEVICE_WORK_DIR="${i#*=}"
+            shift
+            ;;
+        android_cpu_build_and_test)
+            android_cpu_build_and_test
+            shift
+            ;;
+        armlinux_cpu_build_and_test)
+            armlinux_cpu_build_and_test
+            shift
+            ;;
+        huawei_kirin_npu_build_and_test)
+            huawei_kirin_npu_build_and_test
+            shift
+            ;;
+        rockchip_npu_build_and_test)
+            rockchip_npu_build_and_test
+            shift
+            ;;
+        mediatek_apu_build_and_test)
+            mediatek_apu_build_and_test
+            shift
+            ;;
+        imagination_nna_build_and_test)
+            imagination_nna_build_and_test
+            shift
+            ;;
+        *)
+            # unknown option
+            print_usage
+            exit 1
+            ;;
         esac
     done
 }
