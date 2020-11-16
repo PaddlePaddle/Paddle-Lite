@@ -12,9 +12,10 @@ set(test_kernel_deps
     ${apu_kernels}
     ${imagination_nna_kernels}
     ${bm_kernels}
+    ${opencl_kernels}
 )
 
-if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WITH_X86 OR LITE_WITH_ARM))
+if((NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WITH_X86 OR LITE_WITH_ARM))
     lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_conv_transpose_compute SRCS conv_transpose_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_scale_compute SRCS scale_compute_test.cc DEPS ${test_kernel_deps})
