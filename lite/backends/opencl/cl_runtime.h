@@ -157,7 +157,7 @@ class CLRuntime {
                                       nullptr,
                                       nullptr,
                                       &status_);
-    CL_CHECK_FATAL(status_);
+    CL_CHECK_FATAL_SOLID(status_);
     return context;
   }
 
@@ -170,7 +170,7 @@ class CLRuntime {
 #endif  // LITE_WITH_PROFILE
     auto queue = std::make_shared<cl::CommandQueue>(
         context, device(), properties, &status_);
-    CL_CHECK_FATAL(status_);
+    CL_CHECK_FATAL_SOLID(status_);
     return queue;
   }
 

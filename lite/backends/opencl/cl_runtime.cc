@@ -132,7 +132,7 @@ std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
       std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
   VLOG(4) << "OpenCL kernel file name: " << file_name;
   VLOG(4) << "Program source size: " << content.size();
-  CL_CHECK_FATAL(status_);
+  CL_CHECK_FATAL_SOLID(status_);
   return std::move(prog);
 }
 
@@ -140,7 +140,7 @@ std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
     const cl::Context& context) {
   auto event =
       std::unique_ptr<cl::UserEvent>(new cl::UserEvent(context, &status_));
-  CL_CHECK_FATAL(status_);
+  CL_CHECK_FATAL_SOLID(status_);
   return std::move(event);
 }
 
@@ -149,7 +149,7 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
   VLOG(4) << "OpenCL build_option: " << build_option;
   status_ = program->build({*device_}, build_option.c_str());
-  CL_CHECK_ERROR(status_);
+  CL_CHECK_FATAL_SOLID(status_);
 
   if (status_ != CL_SUCCESS) {
     if (program->getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device()) ==
@@ -166,7 +166,7 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
 bool CLRuntime::InitializePlatform() {
   std::vector<cl::Platform> all_platforms;
   status_ = cl::Platform::get(&all_platforms);
-  CL_CHECK_ERROR(status_);
+  CL_CHECK_FATAL_SOLID(status_);
   if (all_platforms.empty()) {
     LOG(FATAL) << "No OpenCL platform found!";
     return false;
@@ -217,7 +217,7 @@ bool CLRuntime::InitializeDevice() {
   // CL_DEVICE_MAX_CLOCK_FREQUENCY
   std::vector<cl::Device> all_devices;
   status_ = platform_->getDevices(CL_DEVICE_TYPE_GPU, &all_devices);
-  CL_CHECK_ERROR(status_);
+  CL_CHECK_FATAL_SOLID(status_);
   if (all_devices.empty()) {
     LOG(FATAL) << "No available OpenCL GPU device found!";
     return false;
