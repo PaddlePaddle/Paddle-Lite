@@ -11,7 +11,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-
 #include <cl_common.h>
 
 // onnx/pytorch instancenorm by lijian
@@ -28,8 +27,8 @@ __kernel void instance_norm_onnx(__private const int in_width,
   const int c = out_cn % in_c_group;
   const int w = get_local_id(1);
   const int h = get_local_id(2);
-  const int local_id = w * local_work_size_y + h;
-  const int local_total_size = local_work_size_x * local_work_size_y;
+  const int local_id = mad24(w, local_work_size_y, h);
+  const int local_total_size = mul24(local_work_size_x, local_work_size_y);
 
   const sampler_t sampler =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
@@ -40,8 +39,8 @@ __kernel void instance_norm_onnx(__private const int in_width,
 #else
   __local float4 shared_mem[256];
 #endif
-  int xOffset = c * in_width;
-  int yOffset = n * in_height;
+  int xOffset = mul24(c, in_width);
+  int yOffset = mul24(n, in_height);
   float4 sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
@@ -53,22 +52,11 @@ __kernel void instance_norm_onnx(__private const int in_width,
   barrier(CLK_LOCAL_MEM_FENCE);
 
   sum = 0.0f;
-  if (local_id < 32) {
-    for (int i = local_id + 32; i < local_total_size; i += 32) {
-      sum += shared_mem[i];
-    }
-  }
-  shared_mem[local_id] += sum;
-
-  barrier(CLK_LOCAL_MEM_FENCE);
-
-  sum = 0.0f;
   if (local_id == 0) {
-    int top = min(32, local_total_size);
-    for (int i = 0; i < top; i += 1) {
+    for (int i = 0; i < local_total_size; i += 1) {
       sum += shared_mem[i];
     }
-    shared_mem[0] = sum / (in_width * in_height);
+    shared_mem[0] = native_divide(sum, mul24(in_width, in_height));
   }
 
   barrier(CLK_LOCAL_MEM_FENCE);
@@ -89,29 +77,16 @@ __kernel void instance_norm_onnx(__private const int in_width,
   barrier(CLK_LOCAL_MEM_FENCE);
 
   sum = 0.0f;
-  if (local_id < 32) {
-    for (int i = local_id + 32; i < local_total_size; i += 32) {
-      sum += shared_mem[i];
-    }
-  }
-  shared_mem[local_id] += sum;
-
-  barrier(CLK_LOCAL_MEM_FENCE);
-
-  sum = 0.0f;
   if (local_id == 0) {
-    int top = min(32, local_total_size);
-    for (int i = 0; i < top; i += 1) {
+    for (int i = 0; i < local_total_size; i += 1) {
       sum += shared_mem[i];
     }
-    shared_mem[0] = sum / (in_width * in_height);
+    shared_mem[0] = native_divide(sum, mul24(in_width, in_height));
   }
 
   barrier(CLK_LOCAL_MEM_FENCE);
 
-  const float4 sigma = sqrt(shared_mem[0] + (float4)(epsilon));
-
-  float4 s = 1 / sigma;
+  const float4 s = native_rsqrt(shared_mem[0] + (float4)(epsilon));
 
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
