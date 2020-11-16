@@ -142,7 +142,11 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
       static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
 
   std::vector<cl::NDRange> lwss{tmp_lws};
-  if (generate_lws_type == 1) {
+  // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
+  if (generate_lws_type == 0) {
+    // 0 - None: nothing to do
+  } else if (generate_lws_type == 1 || generate_lws_type == 2 ||
+             generate_lws_type == 3) {
     for (auto tune_reverse : {true, false}) {
       for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
         tmp_lws = DefaultLocalWorkSize(
@@ -155,36 +159,37 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
         lwss.emplace_back(tmp_lws);
       }
     }
-  } else if (generate_lws_type == 2) {
+  } else {
     // todo
+    LOG(FATAL) << "Unsupported opencl tune type:" << generate_lws_type;
   }
 
   return lwss;
 }
 
-cl::NDRange CLContext::DefaultLocalWorkSize(cl::NDRange global_work_size,
-                                            size_t max_work_size,
-                                            int divisor /*=2*/,
-                                            bool tune_reverse /*=false*/) {
+cl::NDRange CLContext::DefaultLocalWorkSize(
+    cl::NDRange global_work_size,
+    size_t max_work_size,
+    int divisor /*=2*/,
+    bool tune_reverse /*=false*/,
+    size_t user_defined_max_work_size /*=0*/) {
   int preferred_lws = 0;
-  int gws0 = 0;
-  int gws1 = 0;
-  int gws2 = 0;
+  int gws0 = global_work_size[0];
+  int gws1 = global_work_size[1];
+  int gws2 = global_work_size[2];
 
   if (tune_reverse) {
     gws2 = global_work_size[0];
     gws1 = global_work_size[1];
     gws0 = global_work_size[2];
-  } else {
-    gws0 = global_work_size[0];
-    gws1 = global_work_size[1];
-    gws2 = global_work_size[2];
   }
+
   if (divisor > 1) {
     max_work_size /= divisor;
   }
-  if (preferred_lws > 0 && preferred_lws <= max_work_size) {
-    max_work_size = preferred_lws;
+  if (user_defined_max_work_size > 0 &&
+      user_defined_max_work_size <= max_work_size) {
+    max_work_size = user_defined_max_work_size;
   }
 
   while (gws1 > max_work_size && max_work_size > 0) {

@@ -138,8 +138,8 @@ void RunModel(std::string model_dir,
   if (is_opencl_backend_valid) {
     // give opencl nb model dir
     config.set_model_from_file(model_dir);
-    config.set_opencl_tune(0); // default(0) is disabled, better gpu performance
-  if enabled(1)
+    // opencl tune option: 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
+    config.set_opencl_tune(0);
   } else {
     std::cout << "Unsupport opencl nb model." << std::endl;
     exit(1);

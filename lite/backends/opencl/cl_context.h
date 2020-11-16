@@ -63,7 +63,8 @@ class CLContext {
   cl::NDRange DefaultLocalWorkSize(cl::NDRange global_work_size,
                                    size_t max_work_size,
                                    int divitor = 2,
-                                   bool tune_reverse = false);
+                                   bool tune_reverse = false,
+                                   size_t user_defined_max_work_size = 0);
 
   std::vector<cl::NDRange> GenerateLocalWorkSizes(cl::NDRange global_work_size,
                                                   size_t max_work_size);

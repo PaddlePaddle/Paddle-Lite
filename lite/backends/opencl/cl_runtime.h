@@ -205,7 +205,7 @@ class CLRuntime {
 
   bool is_platform_device_init_success_{false};
 
-  size_t auto_tune_{0};
+  size_t auto_tune_{0};  // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
 };
 
 }  // namespace lite
