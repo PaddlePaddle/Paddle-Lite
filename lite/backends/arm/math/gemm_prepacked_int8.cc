@@ -14,9 +14,11 @@
 
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include <arm_neon.h>
+#ifdef __aarch64__
 #include "lite/backends/arm/math/dotprod/gemm_sdot.h"
+#else
 #include "lite/backends/arm/math/dotprod/gemm_vsdot.h"
-
+#endif
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -89,19 +91,19 @@ void packb_sdot_trans_int8(int8_t* out,
                            int n0,
                            int nmax);
 void prepackA_m6k4_int8(int8_t* out,
-                    const int8_t* in,
-                    int ldin,
-                    int m0,
-                    int mmax,
-                    int k0,
-                    int kmax);
+                        const int8_t* in,
+                        int ldin,
+                        int m0,
+                        int mmax,
+                        int k0,
+                        int kmax);
 void prepackA_m6k4_trans_int8(int8_t* out,
-                    const int8_t* in,
-                    int ldin,
-                    int m0,
-                    int mmax,
-                    int k0,
-                    int kmax);
+                              const int8_t* in,
+                              int ldin,
+                              int m0,
+                              int mmax,
+                              int k0,
+                              int kmax);
 #endif
 
 void prepackA_int8(void* out,
@@ -155,38 +157,38 @@ void prepackA_int8(void* out,
   if (is_trans) {
     if (ctx->has_dot()) {
       prepackA_m6k4_trans_int8(static_cast<int8_t*>(out),
-                    static_cast<const int8_t*>(in),
-                    ldin,
-                    m0,
-                    mmax,
-                    k0,
-                    kmax);
-    } else {    
-      prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
                                static_cast<const int8_t*>(in),
                                ldin,
                                m0,
                                mmax,
                                k0,
                                kmax);
+    } else {
+      prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
+                                 static_cast<const int8_t*>(in),
+                                 ldin,
+                                 m0,
+                                 mmax,
+                                 k0,
+                                 kmax);
     }
   } else {
     if (ctx->has_dot()) {
       prepackA_m6k4_int8(static_cast<int8_t*>(out),
-                    static_cast<const int8_t*>(in),
-                    ldin,
-                    m0,
-                    mmax,
-                    k0,
-                    kmax);
-    } else {   
+                         static_cast<const int8_t*>(in),
+                         ldin,
+                         m0,
+                         mmax,
+                         k0,
+                         kmax);
+    } else {
       prepackA_m4k2x2_int8(static_cast<int8_t*>(out),
-                          static_cast<const int8_t*>(in),
-                          ldin,
-                          m0,
-                          mmax,
-                          k0,
-                          kmax);
+                           static_cast<const int8_t*>(in),
+                           ldin,
+                           m0,
+                           mmax,
+                           k0,
+                           kmax);
     }
   }
 #endif
@@ -1727,335 +1729,322 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 }
 #endif
 
-#else   // armv7
-#define GEMM_DOT_CVT_INT32_TO_FP32                                       \
-  "vld1.32  {d0-d1}, [%[scale]]!    \n"                                  \
-  "vld1.32  {d2-d3}, [%[bias_ptr]]! \n"                                  \
-  "vcvt.f32.s32     q2, q4          \n"                                  \
-  "vcvt.f32.s32     q3, q5          \n"                                  \
-  "vdup.32    q4,   d2[0]           \n"                                  \
-  "vdup.32    q5,   d2[0]           \n"                                  \
-  "vmla.f32   q4,   q2, d0[0]       \n"                                  \
-  "vmla.f32   q5,   q3, d0[0]       \n"                                  \
-  "vcvt.f32.s32     q2, q6          \n"                                  \
-  "vcvt.f32.s32     q3, q7          \n"                                  \
-  "vdup.32    q6,   d2[1]           \n"                                  \
-  "vdup.32    q7,   d2[1]           \n"                                  \
-  "vmla.f32   q6,   q2, d0[1]       \n"                                  \
-  "vmla.f32   q7,   q3, d0[1]       \n"                                  \
-  "vcvt.f32.s32     q2, q8          \n"                                  \
-  "vcvt.f32.s32     q3, q9          \n"                                  \
-  "vdup.32    q8,   d3[0]           \n"                                  \
-  "vdup.32    q9,   d3[0]           \n"                                  \
-  "vmla.f32   q8,   q2, d1[0]       \n"                                  \
-  "vmla.f32   q9,   q3, d1[0]       \n"                                  \
-  "vcvt.f32.s32     q2, q10         \n"                                  \
-  "vcvt.f32.s32     q3, q11         \n"                                  \
-  "vdup.32    q10,  d3[1]           \n"                                  \
-  "vdup.32    q11,  d3[1]           \n"                                  \
-  "vmla.f32   q10,  q2, d1[1]       \n"                                  \
-  "vmla.f32   q11,  q3, d1[1]       \n"                                  \
-  "vld1.32  {d0}, [%[scale]]        \n"                                  \
-  "vld1.32  {d2}, [%[bias_ptr]]     \n"                                  \
-  "vcvt.f32.s32     q2, q12         \n"                                  \
-  "vcvt.f32.s32     q3, q13         \n"                                  \
-  "vdup.32    q12,  d2[0]           \n"                                  \
-  "vdup.32    q13,  d2[0]           \n"                                  \
-  "vmla.f32   q12,  q2, d0[0]       \n"                                  \
-  "vmla.f32   q13,  q3, d0[0]       \n"                                  \
-  "vcvt.f32.s32     q2, q14         \n"                                  \
-  "vcvt.f32.s32     q3, q15         \n"                                  \
-  "vdup.32    q14,  d2[1]           \n"                                  \
-  "vdup.32    q15,  d2[1]           \n"                                  \
-  "vmla.f32   q14,  q2, d0[1]       \n"                                  \
-  "vmla.f32   q15,  q3, d0[1]       \n"                                  
+#else  // armv7
+#define GEMM_DOT_CVT_INT32_TO_FP32      \
+  "vld1.32  {d0-d1}, [%[scale]]!    \n" \
+  "vld1.32  {d2-d3}, [%[bias_ptr]]! \n" \
+  "vcvt.f32.s32     q2, q4          \n" \
+  "vcvt.f32.s32     q3, q5          \n" \
+  "vdup.32    q4,   d2[0]           \n" \
+  "vdup.32    q5,   d2[0]           \n" \
+  "vmla.f32   q4,   q2, d0[0]       \n" \
+  "vmla.f32   q5,   q3, d0[0]       \n" \
+  "vcvt.f32.s32     q2, q6          \n" \
+  "vcvt.f32.s32     q3, q7          \n" \
+  "vdup.32    q6,   d2[1]           \n" \
+  "vdup.32    q7,   d2[1]           \n" \
+  "vmla.f32   q6,   q2, d0[1]       \n" \
+  "vmla.f32   q7,   q3, d0[1]       \n" \
+  "vcvt.f32.s32     q2, q8          \n" \
+  "vcvt.f32.s32     q3, q9          \n" \
+  "vdup.32    q8,   d3[0]           \n" \
+  "vdup.32    q9,   d3[0]           \n" \
+  "vmla.f32   q8,   q2, d1[0]       \n" \
+  "vmla.f32   q9,   q3, d1[0]       \n" \
+  "vcvt.f32.s32     q2, q10         \n" \
+  "vcvt.f32.s32     q3, q11         \n" \
+  "vdup.32    q10,  d3[1]           \n" \
+  "vdup.32    q11,  d3[1]           \n" \
+  "vmla.f32   q10,  q2, d1[1]       \n" \
+  "vmla.f32   q11,  q3, d1[1]       \n" \
+  "vld1.32  {d0}, [%[scale]]        \n" \
+  "vld1.32  {d2}, [%[bias_ptr]]     \n" \
+  "vcvt.f32.s32     q2, q12         \n" \
+  "vcvt.f32.s32     q3, q13         \n" \
+  "vdup.32    q12,  d2[0]           \n" \
+  "vdup.32    q13,  d2[0]           \n" \
+  "vmla.f32   q12,  q2, d0[0]       \n" \
+  "vmla.f32   q13,  q3, d0[0]       \n" \
+  "vcvt.f32.s32     q2, q14         \n" \
+  "vcvt.f32.s32     q3, q15         \n" \
+  "vdup.32    q14,  d2[1]           \n" \
+  "vdup.32    q15,  d2[1]           \n" \
+  "vmla.f32   q14,  q2, d0[1]       \n" \
+  "vmla.f32   q15,  q3, d0[1]       \n"
 
-  #define GEMM_DOT_ST_FP32                                               \
-  "vst1.I32 {q4}, [%[c_ptr0]]! \n"                                       \
-  "vst1.I32 {q6}, [%[c_ptr1]]! \n"                                       \
-  "vst1.I32 {q5}, [%[c_ptr0]]! \n"                                       \
-  "vst1.I32 {q7}, [%[c_ptr1]]! \n"                                       \
-  "vst1.I32 {q8}, [%[c_ptr2]]! \n"                                       \
-  "vst1.I32 {q9}, [%[c_ptr2]]! \n"                                       \
-  "vst1.I32 {q10},[%[c_ptr3]]! \n"                                       \
-  "vst1.I32 {q11},[%[c_ptr3]]! \n"                                       \
-  "vst1.I32 {q12},[%[c_ptr4]]! \n"                                       \
-  "vst1.I32 {q13},[%[c_ptr4]]! \n"                                       \
-  "vst1.I32 {q14},[%[c_ptr5]]! \n"                                       \
-  "vst1.I32 {q15},[%[c_ptr5]]! \n"                
+#define GEMM_DOT_ST_FP32           \
+  "vst1.I32 {q4}, [%[c_ptr0]]! \n" \
+  "vst1.I32 {q6}, [%[c_ptr1]]! \n" \
+  "vst1.I32 {q5}, [%[c_ptr0]]! \n" \
+  "vst1.I32 {q7}, [%[c_ptr1]]! \n" \
+  "vst1.I32 {q8}, [%[c_ptr2]]! \n" \
+  "vst1.I32 {q9}, [%[c_ptr2]]! \n" \
+  "vst1.I32 {q10},[%[c_ptr3]]! \n" \
+  "vst1.I32 {q11},[%[c_ptr3]]! \n" \
+  "vst1.I32 {q12},[%[c_ptr4]]! \n" \
+  "vst1.I32 {q13},[%[c_ptr4]]! \n" \
+  "vst1.I32 {q14},[%[c_ptr5]]! \n" \
+  "vst1.I32 {q15},[%[c_ptr5]]! \n"
 
+#define GEMM_DOT_RELU                            \
+  "cmp    %[relu],   #0      \n" /* skip relu */ \
+  "beq    12f                \n"                 \
+  "cmp    %[relu],    #1     \n" /* skip relu */ \
+  "bne    13f                \n" /* other act */ \
+  "vmov.f32   q0, #0.0       \n" /* for relu*/   \
+  "vmax.f32   q4,   q4,   q0 \n" /* relu*/       \
+  "vmax.f32   q5,   q5,   q0 \n" /* relu*/       \
+  "vmax.f32   q6,   q6,   q0 \n" /* relu*/       \
+  "vmax.f32   q7,   q7,   q0 \n" /* relu*/       \
+  "vmax.f32   q8,   q8,   q0 \n" /* relu*/       \
+  "vmax.f32   q9,   q9,   q0 \n" /* relu*/       \
+  "vmax.f32   q10,  q10,  q0 \n" /* relu*/       \
+  "vmax.f32   q11,  q11,  q0 \n" /* relu*/       \
+  "vmax.f32   q12,  q12,  q0 \n" /* relu*/       \
+  "vmax.f32   q13,  q13,  q0 \n" /* relu*/       \
+  "vmax.f32   q14,  q14,  q0 \n" /* relu*/       \
+  "vmax.f32   q15,  q15,  q0 \n" /* relu*/       \
+  "b      12f                \n" /* relu end */
 
-#define GEMM_DOT_RELU                                 \
-  "cmp    %[relu],   #0      \n"     /* skip relu */  \
-  "beq    12f                \n"                      \
-  "cmp    %[relu],    #1     \n"     /* skip relu */  \
-  "bne    13f                \n"     /* other act */  \
-  "vmov.f32   q0, #0.0       \n"     /* for relu*/    \
-  "vmax.f32   q4,   q4,   q0 \n"     /* relu*/        \
-  "vmax.f32   q5,   q5,   q0 \n"     /* relu*/        \
-  "vmax.f32   q6,   q6,   q0 \n"     /* relu*/        \
-  "vmax.f32   q7,   q7,   q0 \n"     /* relu*/        \
-  "vmax.f32   q8,   q8,   q0 \n"     /* relu*/        \
-  "vmax.f32   q9,   q9,   q0 \n"     /* relu*/        \
-  "vmax.f32   q10,  q10,  q0 \n"     /* relu*/        \
-  "vmax.f32   q11,  q11,  q0 \n"     /* relu*/        \
-  "vmax.f32   q12,  q12,  q0 \n"     /* relu*/        \
-  "vmax.f32   q13,  q13,  q0 \n"     /* relu*/        \
-  "vmax.f32   q14,  q14,  q0 \n"     /* relu*/        \
-  "vmax.f32   q15,  q15,  q0 \n"     /* relu*/        \
-  "b      12f                \n"     /* relu end */
+#define GEMM_DOT_RELU6                         \
+  "13:                       \n"               \
+  "cmp    %[relu],   #2\n" /* skip relu6 */    \
+  "bne   14f\n"                                \
+  "vmov.f32   q0, #0.0\n"        /* for relu*/ \
+  "vmax.f32   q4,   q4,   q0 \n" /* relu*/     \
+  "vmax.f32   q5,   q5,   q0 \n" /* relu*/     \
+  "vmax.f32   q6,   q6,   q0 \n" /* relu*/     \
+  "vmax.f32   q7,   q7,   q0 \n" /* relu*/     \
+  "vld1.32    {d2-d3}, [%[alpha]]! \n"         \
+  "vmax.f32   q8,   q8,   q0 \n" /* relu*/     \
+  "vmax.f32   q9,   q9,   q0 \n" /* relu*/     \
+  "vmax.f32   q10,  q10,  q0 \n" /* relu*/     \
+  "vmax.f32   q11,  q11,  q0 \n" /* relu*/     \
+  "vmax.f32   q12,  q12,  q0 \n" /* relu*/     \
+  "vmax.f32   q13,  q13,  q0 \n" /* relu*/     \
+  "vmax.f32   q14,  q14,  q0 \n" /* relu*/     \
+  "vmax.f32   q15,  q15,  q0 \n" /* relu*/     \
+  "vmin.f32   q4,   q4,   q1 \n" /* relu6*/    \
+  "vmin.f32   q5,   q5,   q1 \n" /* relu6*/    \
+  "vmin.f32   q6,   q6,   q1 \n" /* relu6*/    \
+  "vmin.f32   q7,   q7,   q1 \n" /* relu6*/    \
+  "vmin.f32   q8,   q8,   q1 \n" /* relu6*/    \
+  "vmin.f32   q9,   q9,   q1 \n" /* relu6*/    \
+  "vmin.f32   q10,  q10,  q1 \n" /* relu6*/    \
+  "vmin.f32   q11,  q11,  q1 \n" /* relu6*/    \
+  "vmin.f32   q12,  q12,  q1 \n" /* relu6*/    \
+  "vmin.f32   q13,  q13,  q1 \n" /* relu6*/    \
+  "vmin.f32   q14,  q14,  q1 \n" /* relu6*/    \
+  "vmin.f32   q15,  q15,  q1 \n" /* relu6*/    \
+  "b      12f                \n" /* relu6 end */
 
-#define GEMM_DOT_RELU6                          \
-  "13:                       \n"                \
-  "cmp    %[relu],   #2\n"     /* skip relu6 */ \
-  "bne   14f\n"                                 \
-  "vmov.f32   q0, #0.0\n"       /* for relu*/   \
-  "vmax.f32   q4,   q4,   q0 \n"   /* relu*/    \
-  "vmax.f32   q5,   q5,   q0 \n"   /* relu*/    \
-  "vmax.f32   q6,   q6,   q0 \n"   /* relu*/    \
-  "vmax.f32   q7,   q7,   q0 \n"   /* relu*/    \
-  "vld1.32    {d2-d3}, [%[alpha]]! \n"          \
-  "vmax.f32   q8,   q8,   q0 \n"   /* relu*/    \
-  "vmax.f32   q9,   q9,   q0 \n"   /* relu*/    \
-  "vmax.f32   q10,  q10,  q0 \n"   /* relu*/    \
-  "vmax.f32   q11,  q11,  q0 \n"   /* relu*/    \
-  "vmax.f32   q12,  q12,  q0 \n"   /* relu*/    \
-  "vmax.f32   q13,  q13,  q0 \n"   /* relu*/    \
-  "vmax.f32   q14,  q14,  q0 \n"   /* relu*/    \
-  "vmax.f32   q15,  q15,  q0 \n"   /* relu*/    \
-  "vmin.f32   q4,   q4,   q1 \n"   /* relu6*/   \
-  "vmin.f32   q5,   q5,   q1 \n"   /* relu6*/   \
-  "vmin.f32   q6,   q6,   q1 \n"   /* relu6*/   \
-  "vmin.f32   q7,   q7,   q1 \n"   /* relu6*/   \
-  "vmin.f32   q8,   q8,   q1 \n"   /* relu6*/   \
-  "vmin.f32   q9,   q9,   q1 \n"   /* relu6*/   \
-  "vmin.f32   q10,  q10,  q1 \n"   /* relu6*/   \
-  "vmin.f32   q11,  q11,  q1 \n"   /* relu6*/   \
-  "vmin.f32   q12,  q12,  q1 \n"   /* relu6*/   \
-  "vmin.f32   q13,  q13,  q1 \n"   /* relu6*/   \
-  "vmin.f32   q14,  q14,  q1 \n"   /* relu6*/   \
-  "vmin.f32   q15,  q15,  q1 \n"   /* relu6*/   \
-  "b      12f                \n"   /* relu6 end */
-
-#define GEMM_DOT_LEAKY_RELU                      \
-  "14:                      \n"                  \
-  "vmov.f32   q0, #0.0      \n"       /* for leakyrelu*/   \
+#define GEMM_DOT_LEAKY_RELU                                \
+  "14:                      \n"                            \
+  "vmov.f32   q0, #0.0      \n"      /* for leakyrelu*/    \
   "vld1.32  {d2-d3}, [%[alpha]]! \n" /* leakyrelu alpha */ \
-  "vcge.f32 q2,   q4,   q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q4,   q1  \n" /* vmulq_f32 */  \
-  "vbif     q4,   q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q5,   q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q5,   q1  \n" /* vmulq_f32 */  \
-  "vbif     q5,   q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q6,   q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q6,   q1  \n" /* vmulq_f32 */  \
-  "vbif     q6,   q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q7,   q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q7,   q1  \n" /* vmulq_f32 */  \
-  "vbif     q7,   q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q8,   q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q8,   q1  \n" /* vmulq_f32 */  \
-  "vbif     q8,   q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q9,   q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q9,   q1  \n" /* vmulq_f32 */  \
-  "vbif     q9,   q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q10,  q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q10,  q1  \n" /* vmulq_f32 */  \
-  "vbif     q10,  q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q11,  q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q11,  q1  \n" /* vmulq_f32 */  \
-  "vbif     q11,  q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q12,  q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q12,  q1  \n" /* vmulq_f32 */  \
-  "vbif     q12,  q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q13,  q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q13,  q1  \n" /* vmulq_f32 */  \
-  "vbif     q13,  q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q14,  q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q14,  q1  \n" /* vmulq_f32 */  \
-  "vbif     q14,  q3,   q2  \n" /* choose*/      \
-  "vcge.f32 q2,   q15,  q0  \n" /* vcgeq_f32 */  \
-  "vmla.f32 q3,   q15,  q1  \n" /* vmulq_f32 */  \
-  "vbif     q15,  q3,   q2  \n" /* choose*/      \
+  "vcge.f32 q2,   q4,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q4,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q4,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q5,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q5,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q5,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q6,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q6,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q6,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q7,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q7,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q7,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q8,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q8,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q8,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q9,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q9,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q9,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q10,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q10,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q10,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q11,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q11,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q11,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q12,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q12,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q12,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q13,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q13,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q13,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q14,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q14,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q14,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q15,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q15,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q15,  q3,   q2  \n"      /* choose*/           \
   "12:                      \n"
 
+#define GEMM_DOT_ST_INT8                                     \
+  "add %[alpha],    #16             \n"                      \
+  "vld1.32    {d0-d1},    [%[alpha]]\n"                      \
+  "vmov.f32   q1,   #0.5            \n"                      \
+  "vmov.f32   q2,   #-0.5           \n"                      \
+  "vcgt.f32   q3,   q4,   #0        \n"                      \
+  "vbif.f32   q1,   q2,   q3        \n"                      \
+  "vadd.f32   q4,   q1,   q4        \n"                      \
+  "vmov.f32   q1,   #0.5            \n"                      \
+  "vcgt.f32   q3,   q5,   #0        \n"                      \
+  "vbif.f32   q1,   q2,   q3        \n"                      \
+  "vadd.f32   q5,   q1,   q5        \n" /* data >= -127 */   \
+  "vcge.f32   q1,   q4,   q0        \n"                      \
+  "vcge.f32   q2,   q5,   q0        \n"                      \
+  "vbif q4,   q0,   q1              \n"                      \
+  "vbif q5,   q0,   q2              \n" /* fp32 to int32 */  \
+  "vcvt.s32.f32     q1,   q4        \n"                      \
+  "vcvt.s32.f32     q2,   q5        \n" /* int32 to int16 */ \
+  "vqmovn.s32 d8,   q1              \n"                      \
+  "vqmovn.s32 d9,   q2              \n" /* int16 to int8 */  \
+  "vqmovn.s16 d2,   q4              \n"                      \
+  "vst1.32    {d2}, [%[c_ptr0]]!    \n"                      \
+                                                             \
+  "vmov.f32   q1,   #0.5            \n"                      \
+  "vmov.f32   q3,   #0.5            \n"                      \
+  "vmov.f32   q2,   #-0.5           \n"                      \
+  "vcgt.f32   q4,   q6,   #0        \n"                      \
+  "vcgt.f32   q5,   q7,   #0        \n"                      \
+  "vbif.f32   q1,   q2,   q4        \n"                      \
+  "vbif.f32   q3,   q2,   q5        \n"                      \
+  "vmov.f32   q4,   #0.5            \n"                      \
+  "vmov.f32   q5,   #0.5            \n"                      \
+  "vadd.f32   q6,   q1,   q6        \n"                      \
+  "vadd.f32   q7,   q3,   q7        \n"                      \
+  "vcgt.f32   q5,   q8,   #0        \n"                      \
+  "vbif.f32   q4,   q2,   q5        \n"                      \
+  "vadd.f32   q8,   q4,   q8        \n"                      \
+  "vcgt.f32   q5,   q9,   #0        \n" /* data >= -127 */   \
+  "vcge.f32   q1,   q6,   q0        \n"                      \
+  "vcge.f32   q3,   q7,   q0        \n"                      \
+  "vcge.f32   q4,   q8,   q0        \n"                      \
+  "vbif q6,   q0,   q1              \n"                      \
+  "vbif q7,   q0,   q3              \n"                      \
+  "vbif q8,   q0,   q4              \n" /* fp32 to int32 */  \
+  "vcvt.s32.f32     q1,   q6        \n"                      \
+  "vcvt.s32.f32     q3,   q7        \n"                      \
+  "vcvt.s32.f32     q4,   q8        \n" /* int32 to int16 */ \
+  "vqmovn.s32 d12,  q1              \n"                      \
+  "vqmovn.s32 d13,  q3              \n"                      \
+  "vqmovn.s32 d16,  q4              \n"                      \
+  "vmov.f32   q7,   #0.5            \n"                      \
+  "vbif.f32   q7,   q2,   q5        \n"                      \
+  "vadd.f32   q9,   q7,   q9        \n"                      \
+  "vcge.f32   q5,   q9,   q0        \n"                      \
+  "vbif q9,   q0,   q5              \n"                      \
+  "vcvt.s32.f32     q5,   q9        \n"                      \
+  "vqmovn.s32 d17,  q5              \n" /* int16 to int8 */  \
+  "vqmovn.s16 d19,  q8              \n"                      \
+  "vqmovn.s16 d18,  q6              \n"                      \
+  "vst1.32    {d18},[%[c_ptr1]]!    \n"                      \
+  "vst1.32    {d19},[%[c_ptr2]]!    \n"                      \
+                                                             \
+  "vmov.f32   q2,   #-0.5           \n"                      \
+  "vmov.f32   q1,   #0.5            \n"                      \
+  "vmov.f32   q3,   #0.5            \n"                      \
+  "vmov.f32   q4,   #0.5            \n"                      \
+  "vmov.f32   q5,   #0.5            \n"                      \
+  "vcgt.f32   q6,   q10,  #0        \n"                      \
+  "vcgt.f32   q7,   q11,  #0        \n"                      \
+  "vcgt.f32   q8,   q12,  #0        \n"                      \
+  "vcgt.f32   q9,   q13,  #0        \n"                      \
+  "vbif.f32   q1,   q2,   q6        \n"                      \
+  "vbif.f32   q3,   q2,   q7        \n"                      \
+  "vbif.f32   q4,   q2,   q8        \n"                      \
+  "vbif.f32   q5,   q2,   q9        \n"                      \
+  "vmov.f32   q6,   #0.5            \n"                      \
+  "vmov.f32   q7,   #0.5            \n"                      \
+  "vcgt.f32   q8,   q14,  #0        \n"                      \
+  "vcgt.f32   q9,   q15,  #0        \n"                      \
+  "vbif.f32   q6,   q2,   q8        \n"                      \
+  "vbif.f32   q7,   q2,   q9        \n"                      \
+  "vadd.f32   q10,  q1,   q10       \n"                      \
+  "vadd.f32   q11,  q3,   q11       \n"                      \
+  "vadd.f32   q12,  q4,   q12       \n"                      \
+  "vadd.f32   q13,  q5,   q13       \n"                      \
+  "vadd.f32   q14,  q6,   q14       \n"                      \
+  "vadd.f32   q15,  q7,   q15       \n"                      \
+                                                             \
+  "vcge.f32   q1,   q10,  q0        \n"                      \
+  "vcge.f32   q3,   q11,  q0        \n"                      \
+  "vcge.f32   q4,   q12,  q0        \n"                      \
+  "vcge.f32   q5,   q13,  q0        \n"                      \
+  "vcge.f32   q6,   q14,  q0        \n"                      \
+  "vcge.f32   q7,   q15,  q0        \n"                      \
+  "vbif       q10,  q0,   q1        \n"                      \
+  "vbif       q11,  q0,   q3        \n"                      \
+  "vbif       q12,  q0,   q4        \n"                      \
+  "vbif       q13,  q0,   q5        \n"                      \
+  "vbif       q14,  q0,   q6        \n"                      \
+  "vbif       q15,  q0,   q7        \n" /* fp32 to int32 */  \
+  "vcvt.s32.f32     q1,   q10       \n"                      \
+  "vcvt.s32.f32     q3,   q11       \n"                      \
+  "vcvt.s32.f32     q4,   q12       \n"                      \
+  "vcvt.s32.f32     q5,   q13       \n"                      \
+  "vcvt.s32.f32     q6,   q14       \n"                      \
+  "vcvt.s32.f32     q7,   q15       \n" /* int32 to int16 */ \
+  "vqmovn.s32 d16,  q1              \n"                      \
+  "vqmovn.s32 d17,  q3              \n"                      \
+  "vqmovn.s32 d18,  q4              \n"                      \
+  "vqmovn.s32 d19,  q5              \n"                      \
+  "vqmovn.s32 d20,  q6              \n"                      \
+  "vqmovn.s32 d21,  q7              \n" /* int16 to int8 */  \
+  "vqmovn.s16 d2,   q8              \n"                      \
+  "vqmovn.s16 d3,   q9              \n"                      \
+  "vqmovn.s16 d4,   q10             \n"                      \
+  "sub %[alpha], #16                \n"                      \
+  "vst1.32    {d2}, [%[c_ptr3]]!    \n"                      \
+  "vst1.32    {d3}, [%[c_ptr4]]!    \n"                      \
+  "vst1.32    {d4}, [%[c_ptr5]]!    \n"
 
-#define GEMM_DOT_ST_INT8                                        \
-  "add %[alpha],    #16             \n"                         \
-  "vld1.32    {d0-d1},    [%[alpha]]\n"                         \
-  "vmov.f32   q1,   #0.5            \n"                         \
-  "vmov.f32   q2,   #-0.5           \n"                         \
-  "vcgt.f32   q3,   q4,   #0        \n"                         \
-  "vbif.f32   q1,   q2,   q3        \n"                         \
-  "vadd.f32   q4,   q1,   q4        \n"                         \
-  "vmov.f32   q1,   #0.5            \n"                         \
-  "vcgt.f32   q3,   q5,   #0        \n"                         \
-  "vbif.f32   q1,   q2,   q3        \n"                         \
-  "vadd.f32   q5,   q1,   q5        \n"                         \
-  /* data >= -127 */                                            \
-  "vcge.f32   q1,   q4,   q0        \n"                         \
-  "vcge.f32   q2,   q5,   q0        \n"                         \
-  "vbif q4,   q0,   q1              \n"                         \
-  "vbif q5,   q0,   q2              \n"                         \
-  /* fp32 to int32 */                                           \
-  "vcvt.s32.f32     q1,   q4        \n"                         \
-  "vcvt.s32.f32     q2,   q5        \n"                         \
-  /* int32 to int16 */                                          \
-  "vqmovn.s32 d8,   q1              \n"                         \
-  "vqmovn.s32 d9,   q2              \n"                         \
-  /* int16 to int8 */                                           \
-  "vqmovn.s16 d2,   q4              \n"                         \
-  "vst1.32    {d2}, [%[c_ptr0]]!    \n"                         \
-                                                                \
-  "vmov.f32   q1,   #0.5            \n"                         \
-  "vmov.f32   q3,   #0.5            \n"                         \
-  "vmov.f32   q2,   #-0.5           \n"                         \
-  "vcgt.f32   q4,   q6,   #0        \n"                         \
-  "vcgt.f32   q5,   q7,   #0        \n"                         \
-  "vbif.f32   q1,   q2,   q4        \n"                         \
-  "vbif.f32   q3,   q2,   q5        \n"                         \
-  "vmov.f32   q4,   #0.5            \n"                         \
-  "vmov.f32   q5,   #0.5            \n"                         \
-  "vadd.f32   q6,   q1,   q6        \n"                         \
-  "vadd.f32   q7,   q3,   q7        \n"                         \
-  "vcgt.f32   q5,   q8,   #0        \n"                         \
-  "vbif.f32   q4,   q2,   q5        \n"                         \
-  "vadd.f32   q8,   q4,   q8        \n"                         \
-  "vcgt.f32   q5,   q9,   #0        \n"                         \
-  /* data >= -127 */                                            \
-  "vcge.f32   q1,   q6,   q0        \n"                         \
-  "vcge.f32   q3,   q7,   q0        \n"                         \
-  "vcge.f32   q4,   q8,   q0        \n"                         \
-  "vbif q6,   q0,   q1              \n"                         \
-  "vbif q7,   q0,   q3              \n"                         \
-  "vbif q8,   q0,   q4              \n"                         \
-  /* fp32 to int32 */                                           \
-  "vcvt.s32.f32     q1,   q6        \n"                         \
-  "vcvt.s32.f32     q3,   q7        \n"                         \
-  "vcvt.s32.f32     q4,   q8        \n"                         \
-  /* int32 to int16 */                                          \
-  "vqmovn.s32 d12,  q1              \n"                         \
-  "vqmovn.s32 d13,  q3              \n"                         \
-  "vqmovn.s32 d16,  q4              \n"                         \
-  "vmov.f32   q7,   #0.5            \n"                         \
-  "vbif.f32   q7,   q2,   q5        \n"                         \
-  "vadd.f32   q9,   q7,   q9        \n"                         \
-  "vcge.f32   q5,   q9,   q0        \n"                         \
-  "vbif q9,   q0,   q5              \n"                         \
-  "vcvt.s32.f32     q5,   q9        \n"                         \
-  "vqmovn.s32 d17,  q5              \n"                         \
-  /* int16 to int8 */                                           \
-  "vqmovn.s16 d19,  q8              \n"                         \
-  "vqmovn.s16 d18,  q6              \n"                         \
-  "vst1.32    {d18},[%[c_ptr1]]!    \n"                         \
-  "vst1.32    {d19},[%[c_ptr2]]!    \n"                         \
-                                                                \
-  "vmov.f32   q2,   #-0.5           \n"                         \
-  "vmov.f32   q1,   #0.5            \n"                         \
-  "vmov.f32   q3,   #0.5            \n"                         \
-  "vmov.f32   q4,   #0.5            \n"                         \
-  "vmov.f32   q5,   #0.5            \n"                         \
-  "vcgt.f32   q6,   q10,  #0        \n"                         \
-  "vcgt.f32   q7,   q11,  #0        \n"                         \
-  "vcgt.f32   q8,   q12,  #0        \n"                         \
-  "vcgt.f32   q9,   q13,  #0        \n"                         \
-  "vbif.f32   q1,   q2,   q6        \n"                         \
-  "vbif.f32   q3,   q2,   q7        \n"                         \
-  "vbif.f32   q4,   q2,   q8        \n"                         \
-  "vbif.f32   q5,   q2,   q9        \n"                         \
-  "vmov.f32   q6,   #0.5            \n"                         \
-  "vmov.f32   q7,   #0.5            \n"                         \
-  "vcgt.f32   q8,   q14,  #0        \n"                         \
-  "vcgt.f32   q9,   q15,  #0        \n"                         \
-  "vbif.f32   q6,   q2,   q8        \n"                         \
-  "vbif.f32   q7,   q2,   q9        \n"                         \
-  "vadd.f32   q10,  q1,   q10       \n"                         \
-  "vadd.f32   q11,  q3,   q11       \n"                         \
-  "vadd.f32   q12,  q4,   q12       \n"                         \
-  "vadd.f32   q13,  q5,   q13       \n"                         \
-  "vadd.f32   q14,  q6,   q14       \n"                         \
-  "vadd.f32   q15,  q7,   q15       \n"                         \
-                                                                \
-  "vcge.f32   q1,   q10,  q0        \n"                         \
-  "vcge.f32   q3,   q11,  q0        \n"                         \
-  "vcge.f32   q4,   q12,  q0        \n"                         \
-  "vcge.f32   q5,   q13,  q0        \n"                         \
-  "vcge.f32   q6,   q14,  q0        \n"                         \
-  "vcge.f32   q7,   q15,  q0        \n"                         \
-  "vbif       q10,  q0,   q1        \n"                         \
-  "vbif       q11,  q0,   q3        \n"                         \
-  "vbif       q12,  q0,   q4        \n"                         \
-  "vbif       q13,  q0,   q5        \n"                         \
-  "vbif       q14,  q0,   q6        \n"                         \
-  "vbif       q15,  q0,   q7        \n"                         \
-  /* fp32 to int32 */                                           \
-  "vcvt.s32.f32     q1,   q10       \n"                         \
-  "vcvt.s32.f32     q3,   q11       \n"                         \
-  "vcvt.s32.f32     q4,   q12       \n"                         \
-  "vcvt.s32.f32     q5,   q13       \n"                         \
-  "vcvt.s32.f32     q6,   q14       \n"                         \
-  "vcvt.s32.f32     q7,   q15       \n"                         \
-  /* int32 to int16 */                                          \
-  "vqmovn.s32 d16,  q1              \n"                         \
-  "vqmovn.s32 d17,  q3              \n"                         \
-  "vqmovn.s32 d18,  q4              \n"                         \
-  "vqmovn.s32 d19,  q5              \n"                         \
-  "vqmovn.s32 d20,  q6              \n"                         \
-  "vqmovn.s32 d21,  q7              \n"                         \
-  /* int16 to int8 */                                           \
-  "vqmovn.s16 d2,   q8              \n"                         \
-  "vqmovn.s16 d3,   q9              \n"                         \
-  "vqmovn.s16 d4,   q10             \n"                         \
-  "sub %[alpha], #16                \n"                         \
-  "vst1.32    {d2}, [%[c_ptr3]]!    \n"                         \
-  "vst1.32    {d3}, [%[c_ptr4]]!    \n"                         \
-  "vst1.32    {d4}, [%[c_ptr5]]!    \n"                                
-
-  #define GEMM_DOT_FP32_OUT                                     \
-  GEMM_DOT_CVT_INT32_TO_FP32                                    \
-  GEMM_DOT_RELU                                                 \
-  GEMM_DOT_RELU6                                                \
-  GEMM_DOT_LEAKY_RELU                                           \
+#define GEMM_DOT_FP32_OUT    \
+  GEMM_DOT_CVT_INT32_TO_FP32 \
+  GEMM_DOT_RELU              \
+  GEMM_DOT_RELU6             \
+  GEMM_DOT_LEAKY_RELU        \
   GEMM_DOT_ST_FP32
 
-  #define GEMM_DOT_INT8_OUT                                      \
-  GEMM_DOT_CVT_INT32_TO_FP32                                     \
-  GEMM_DOT_RELU                                                  \
-  GEMM_DOT_RELU6                                                 \
-  GEMM_DOT_LEAKY_RELU                                            \
+#define GEMM_DOT_INT8_OUT    \
+  GEMM_DOT_CVT_INT32_TO_FP32 \
+  GEMM_DOT_RELU              \
+  GEMM_DOT_RELU6             \
+  GEMM_DOT_LEAKY_RELU        \
   GEMM_DOT_ST_INT8
 
 template <typename Dtype>
 inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
-                                  const int8_t*& b_ptr,  // NOLINT
-                                  const float* bias,
-                                  Dtype*& c_ptr0,  // NOLINT
-                                  Dtype*& c_ptr1,  // NOLINT
-                                  Dtype*& c_ptr2,  // NOLINT
-                                  Dtype*& c_ptr3,  // NOLINT
-                                  Dtype*& c_ptr4,  // NOLINT
-                                  Dtype*& c_ptr5,  // NOLINT
-                                  const float32_t* scale,
-                                  const float32_t* alpha,
-                                  int is_relu,
-                                  int k,
-                                  int rem);
+                                 const int8_t*& b_ptr,  // NOLINT
+                                 const float* bias,
+                                 Dtype*& c_ptr0,  // NOLINT
+                                 Dtype*& c_ptr1,  // NOLINT
+                                 Dtype*& c_ptr2,  // NOLINT
+                                 Dtype*& c_ptr3,  // NOLINT
+                                 Dtype*& c_ptr4,  // NOLINT
+                                 Dtype*& c_ptr5,  // NOLINT
+                                 const float32_t* scale,
+                                 const float32_t* alpha,
+                                 int is_relu,
+                                 int k,
+                                 int rem);
 
 template <>
 inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
-                                  const int8_t*& b_ptr,  // NOLINT
-                                  const float* bias,
-                                  float32_t*& c_ptr0,  // NOLINT
-                                  float32_t*& c_ptr1,  // NOLINT
-                                  float32_t*& c_ptr2,  // NOLINT
-                                  float32_t*& c_ptr3,  // NOLINT
-                                  float32_t*& c_ptr4,  // NOLINT
-                                  float32_t*& c_ptr5,  // NOLINT
-                                  const float32_t* scale,
-                                  const float32_t* alpha,
-                                  int is_relu,
-                                  int k,
-                                  int tail) {
+                                 const int8_t*& b_ptr,  // NOLINT
+                                 const float* bias,
+                                 float32_t*& c_ptr0,  // NOLINT
+                                 float32_t*& c_ptr1,  // NOLINT
+                                 float32_t*& c_ptr2,  // NOLINT
+                                 float32_t*& c_ptr3,  // NOLINT
+                                 float32_t*& c_ptr4,  // NOLINT
+                                 float32_t*& c_ptr5,  // NOLINT
+                                 const float32_t* scale,
+                                 const float32_t* alpha,
+                                 int is_relu,
+                                 int k,
+                                 int tail) {
   // clang-format off
               asm volatile (
                GEMM_DOT_INT8_KERNEL GEMM_DOT_FP32_OUT
@@ -2076,19 +2065,19 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
 }
 template <>
 inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
-                                  const int8_t*& b_ptr,  // NOLINT
-                                  const float* bias,
-                                  int8_t*& c_ptr0,  // NOLINT
-                                  int8_t*& c_ptr1,  // NOLINT
-                                  int8_t*& c_ptr2,  // NOLINT
-                                  int8_t*& c_ptr3,  // NOLINT
-                                  int8_t*& c_ptr4,  // NOLINT
-                                  int8_t*& c_ptr5,  // NOLINT
-                                  const float32_t* scale,
-                                  const float32_t* alpha,
-                                  int is_relu,
-                                  int k,
-                                  int tail) {
+                                 const int8_t*& b_ptr,  // NOLINT
+                                 const float* bias,
+                                 int8_t*& c_ptr0,  // NOLINT
+                                 int8_t*& c_ptr1,  // NOLINT
+                                 int8_t*& c_ptr2,  // NOLINT
+                                 int8_t*& c_ptr3,  // NOLINT
+                                 int8_t*& c_ptr4,  // NOLINT
+                                 int8_t*& c_ptr5,  // NOLINT
+                                 const float32_t* scale,
+                                 const float32_t* alpha,
+                                 int is_relu,
+                                 int k,
+                                 int tail) {
   float new_ptr[8] = {
       alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
 
@@ -2108,7 +2097,7 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                : "q0","q1","q2",
                  "q3","q4","q5","q6","q7","q8","q9","q10",
                  "q11","q12","q13","q14","q15","cc","memory");
-                 
+
   // clang-format on
 }
 
@@ -2947,8 +2936,6 @@ void prepackA_m4k2x2_int8(int8_t* out,
   }
   free(zerobuff);
 }
-
-
 
 /***************************************************************************/
 // prepack A according to gemm kernel
@@ -4630,16 +4617,15 @@ void packb_sdot_trans_int8(int8_t* out,
     }
   }
 }
-#else //armv7
-
+#else  // armv7
 
 void prepackA_m6k4_int8(int8_t* out,
-                                const int8_t* in,
-                                const int ldin,
-                                const int m0,
-                                const int mmax,
-                                const int k0,
-                                const int kmax) {
+                        const int8_t* in,
+                        const int ldin,
+                        const int m0,
+                        const int mmax,
+                        const int k0,
+                        const int kmax) {
   int x_len = (kmax - k0);
   int8_t zerobuff[x_len];  // NOLINT
   memset(zerobuff, 0, sizeof(int8_t) * x_len);
@@ -4709,7 +4695,6 @@ void prepackA_m6k4_int8(int8_t* out,
              "cc", "memory"
             );
         }
-        int flag_mask = 1;
         for (; x > 7; x -= 8) {
             asm volatile(
             "vld1.s8 {d0}, [%[inptr0]]! \n" // d0=a0a1a2a3a4a5a6a7
@@ -4731,14 +4716,14 @@ void prepackA_m6k4_int8(int8_t* out,
             :[inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
             [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
             [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
-            [outptr] "+r"(outptr),[flag_mask] "+r"(flag_mask)
+            [outptr] "+r"(outptr)
             :
             : "q0", "q1", "q2", "q4",
              "cc", "memory"
             );
         }
             int8_t* outptr_temp =  outptr;
-       if(x > 3) {
+        if (x > 3) {
             asm volatile(
             "mov r1, #4 \n"
             "vld1.s8 {d0}, [%[inptr0]], r1 \n" // d0=a0a1a2a3a4a5a6a7
@@ -4765,7 +4750,6 @@ void prepackA_m6k4_int8(int8_t* out,
             : "q0", "q1", "q2", "q4", "r1", "cc", "memory"
             );
             x -= 4;
-
         }
 
     // clang-format on
@@ -4780,10 +4764,8 @@ void prepackA_m6k4_int8(int8_t* out,
         }
       }
     }
-
   }
-  
-  }
+}
 void prepackA_m6k4_trans_int8(int8_t* out,
                               const int8_t* in,
                               const int ldin,
@@ -4816,59 +4798,57 @@ void prepackA_m6k4_trans_int8(int8_t* out,
           inptr2 = zerobuff;
         case 1:
           inptr3 = zerobuff;
-          
+
         default:
           break;
       }
     }
 
     // clang-format off
+    asm volatile(
+    "pld    [%[inptr0]]       \n"
+    "pld   [%[inptr1]]        \n"
+    "pld   [%[inptr2]]        \n"
+    "pld   [%[inptr3]]        \n"
+    :
+    :[inptr0] "r"(inptr0), [inptr1] "r"(inptr1),
+      [inptr2] "r"(inptr2), [inptr3] "r"(inptr3)
+    :"memory"
+    );
+    int8_t *outptr_row = outptr + y * 6;
+    int x = x_len;
+    for (; x > 5; x -= 6) {
+        int8_t *out0 = outptr_row;
         asm volatile(
-        "pld    [%[inptr0]]       \n"
-        "pld   [%[inptr1]]        \n"
-        "pld   [%[inptr2]]        \n"
-        "pld   [%[inptr3]]        \n"
+        "mov r1, #6 \n"
+        "vld1.s8 {d0}, [%[inptr0]], r1\n" // d0=a0a1a2a3a4a5a6a7
+        "vld1.s8 {d2}, [%[inptr1]], r1\n" // d2=b0b1b2b3b4b5b6b7
+        "vld1.s8 {d1}, [%[inptr2]], r1\n" // d1=c0c1c2c3c4c5c6c7
+        "vld1.s8 {d3}, [%[inptr3]], r1\n" // d3=d0d1d2d3d4d5d6d7
+
+        "vtrn.8 q0, q1 \n" // q0=a0b0a2b2a4b4a6d6 c0d0c2d2c4d4c6d6
+                           // q1=a1b1a3b3a5c5a7b7 c1d1c3d3c5d5c7d7
+        
+        "vtrn.16 d0, d1 \n" // q0=a0b0c0d0a4b4c4d4 a2b2c2d2a6b6c6d6
+        "vtrn.16 d2, d3 \n" // q1=a1b1c1d1a5b5c5d5 a3b3c3d3a7b7c7d7
+        
+        "vtrn.32 q0, q1 \n" // q0=a0b0c0d0a1b1c1d1 a2b2c2d2a3b3c3d3
+                            // q1=a4b4c4d4a5b5c5d5 a6b6c6d6a7b7c7d7
+        "vst1.32 {d0-d1}, [%[outptr]]!\n"
+        "vst1.32 {d2}, [%[outptr]]!\n"
+
+        :[inptr0] "+r"(inptr0), [inptr1] "+r"(inptr1),
+        [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
+        [outptr] "+r"(out0)
         :
-        :[inptr0] "r"(inptr0), [inptr1] "r"(inptr1),
-          [inptr2] "r"(inptr2), [inptr3] "r"(inptr3)
-        :"memory"
+        : "q0", "q1", "q2", "r1", "cc", "memory"
         );
-        int8_t *outptr_row = outptr + y * 6;
-        int x = x_len;
- 
-        for (; x > 5; x -= 6) {
-            int8_t *out0 = outptr_row;
-            asm volatile(
-            "mov r1, #6 \n"
-            "vld1.s8 {d0}, [%[inptr0]], r1\n" // d0=a0a1a2a3a4a5a6a7
-            "vld1.s8 {d2}, [%[inptr1]], r1\n" // d2=b0b1b2b3b4b5b6b7
-            "vld1.s8 {d1}, [%[inptr2]], r1\n" // d1=c0c1c2c3c4c5c6c7
-            "vld1.s8 {d3}, [%[inptr3]], r1\n" // d3=d0d1d2d3d4d5d6d7
-
-            "vtrn.8 q0, q1 \n" // q0=a0b0a2b2a4b4a6d6 c0d0c2d2c4d4c6d6
-                               // q1=a1b1a3b3a5c5a7b7 c1d1c3d3c5d5c7d7
-            
-            "vtrn.16 d0, d1 \n" // q0=a0b0c0d0a4b4c4d4 a2b2c2d2a6b6c6d6
-            "vtrn.16 d2, d3 \n" // q1=a1b1c1d1a5b5c5d5 a3b3c3d3a7b7c7d7
-            
-            "vtrn.32 q0, q1 \n" // q0=a0b0c0d0a1b1c1d1 a2b2c2d2a3b3c3d3
-                                // q1=a4b4c4d4a5b5c5d5 a6b6c6d6a7b7c7d7
-            "vst1.32 {d0-d1}, [%[outptr]]!\n"
-            "vst1.32 {d2}, [%[outptr]]!\n"
-
-            :[inptr0] "+r"(inptr0), [inptr1] "+r"(inptr1),
-            [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
-            [outptr] "+r"(out0)
-            :
-            : "q0", "q1", "q2", "r1", "cc", "memory"
-            );
-            outptr_row += stride_out;
-
-        }
+        outptr_row += stride_out;
+    }
     // clang-format on
     if (right_remain > 0) {
       int8_t* out0 = outptr_row;
-      for (; x > 0 ; x--) {
+      for (; x > 0; x--) {
         *out0++ = *inptr0++;
         *out0++ = *inptr1++;
         *out0++ = *inptr2++;
@@ -4890,7 +4870,6 @@ void packb_dot_int8(int8_t* out,
                     const int kmax,
                     const int n0,
                     const int nmax) {
-
   int y_len = kmax - k0;
   int x_len = nmax - n0;
   int kup = ROUNDUP(y_len, KBLOCK_INT8);  //  4k
@@ -4966,7 +4945,7 @@ void packb_dot_int8(int8_t* out,
         }
 
     // clang-format on
-    int8_t* out0 = outptr_row; 
+    int8_t* out0 = outptr_row;
     for (; x < x_len; x++) {
       *out0++ = *inptr0++;
       *out0++ = *inptr1++;
@@ -4980,16 +4959,15 @@ void packb_dot_int8(int8_t* out,
       *out0++ = 0;
     }
   }
-
 }
 
 void packb_dot_trans_int8(int8_t* out,
-                           const int8_t* in,
-                           const int ldin,
-                           const int k0,
-                           const int kmax,
-                           const int n0,
-                           const int nmax) {
+                          const int8_t* in,
+                          const int ldin,
+                          const int k0,
+                          const int kmax,
+                          const int n0,
+                          const int nmax) {
   int8_t* outptr = out;
   const int8_t* inptr = in + n0 * ldin + k0;
   int y_len = nmax - n0;
@@ -5109,21 +5087,20 @@ void packb_dot_trans_int8(int8_t* out,
   }
 }
 
-
 template <typename Dtype>
 void gemm_prepack_vsdot_int8(const int8_t* A_packed,
-                            const int8_t* B,
-                            const float* bias,
-                            Dtype* C,
-                            int M,
-                            int N,
-                            int K,
-                            bool is_bias,
-                            int is_relu,
-                            bool is_transB,
-                            const float* scale,
-                            const float* alpha,
-                            ARMContext* ctx) {
+                             const int8_t* B,
+                             const float* bias,
+                             Dtype* C,
+                             int M,
+                             int N,
+                             int K,
+                             bool is_bias,
+                             int is_relu,
+                             bool is_transB,
+                             const float* scale,
+                             const float* alpha,
+                             ARMContext* ctx) {
   size_t llc_size = ctx->llc_size() / 4;
   auto workspace = ctx->workspace_data<int8_t>();
   int x_block = (llc_size - (MBLOCK_INT8_DOT * K)) /
@@ -5137,14 +5114,13 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
   x_block = x_block < NBLOCK_INT8_DOT ? NBLOCK_INT8_DOT : x_block;
   int kup = ROUNDUP(K, KBLOCK_INT8);
   int tail_pre = ((kup / 4) & (KBLOCK_INT8 - 1));
-  int k = (kup / 4) ;
+  int k = (kup / 4);
 
   bool flag_p_remain = false;
   int remain = 0;
 
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
-
     unsigned int xmax = x0 + x_block;
     if (xmax > N) {
       xmax = N;
@@ -5162,7 +5138,6 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
     } else {
       // N X K
       packb_dot_trans_int8(b_pannel, B, K, 0, K, x0, xmax);
-
     }
 #pragma omp parallel for
     for (unsigned int y = 0; y < M; y += MBLOCK_INT8_DOT) {
@@ -5179,7 +5154,6 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
         bias_local[3] = bias[y + 3];
         bias_local[4] = bias[y + 4];
         bias_local[5] = bias[y + 5];
-
       }
       float32_t scale_local[6];
       if (scale) {
@@ -5249,38 +5223,25 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
         const int8_t* a_ptr = a_ptr_l;
         int tail = tail_pre;
 
-                  float * tmp_ptr = (float*)c_ptr0;
-                  float * tmp_ptr1 = (float*)c_ptr1;
-        float * tmp_ptr2 = (float*)c_ptr2;
-
-        float * tmp_ptr3 = (float*)c_ptr3;
-
-
-        float * tmp_ptr4 = (float*)c_ptr4;
-        float * tmp_ptr5 = (float*)c_ptr5;
-
-
-
         float32_t* scale_ptr = scale_local;
         float32_t* bias_ptr = bias_local;
 
         gemm_dot_int8_kernel<Dtype>(a_ptr,
-                                     b_ptr,
-                                     bias_ptr,
-                                     c_ptr0,
-                                     c_ptr1,
-                                     c_ptr2,
-                                     c_ptr3, 
-                                     c_ptr4,
-                                     c_ptr5,
-                                     scale_ptr,
-                                     alpha,
-                                     is_relu,
-                                     k,
-                                     tail);
+                                    b_ptr,
+                                    bias_ptr,
+                                    c_ptr0,
+                                    c_ptr1,
+                                    c_ptr2,
+                                    c_ptr3,
+                                    c_ptr4,
+                                    c_ptr5,
+                                    scale_ptr,
+                                    alpha,
+                                    is_relu,
+                                    k,
+                                    tail);
         scale_ptr = scale_local;
         bias_ptr = bias_local;
-
 
         if (flag_p_remain && (xb == bblocks - 1)) {
           for (int i = 0; i < remain; ++i) {
@@ -5294,7 +5255,7 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
         }
       }
     }
-}
+  }
 }
 
 #endif  // dotprod  //NOLINT
@@ -5366,35 +5327,33 @@ void gemm_prepack_int8(const int8_t* A_packed,
   }
 #else
   if (ctx->has_dot()) {
-
     gemm_prepack_vsdot_int8<float32_t>(A_packed,
-                                      B,
-                                      bias,
-                                      C,
-                                      M,
-                                      N,
-                                      K,
-                                      is_bias,
-                                      flag_act,
-                                      is_transB,
-                                      scale,
-                                      alpha,
-                                      ctx);
+                                       B,
+                                       bias,
+                                       C,
+                                       M,
+                                       N,
+                                       K,
+                                       is_bias,
+                                       flag_act,
+                                       is_transB,
+                                       scale,
+                                       alpha,
+                                       ctx);
   } else {
-
-  gemm_prepack_oth_int8<float32_t>(A_packed,
-                                   B,
-                                   bias,
-                                   C,
-                                   M,
-                                   N,
-                                   K,
-                                   is_bias,
-                                   flag_act,
-                                   is_transB,
-                                   scale,
-                                   alpha,
-                                   ctx);
+    gemm_prepack_oth_int8<float32_t>(A_packed,
+                                     B,
+                                     bias,
+                                     C,
+                                     M,
+                                     N,
+                                     K,
+                                     is_bias,
+                                     flag_act,
+                                     is_transB,
+                                     scale,
+                                     alpha,
+                                     ctx);
   }
 #endif
 }
@@ -5467,32 +5426,32 @@ void gemm_prepack_int8(const int8_t* A_packed,
 #else
   if (ctx->has_dot()) {
     gemm_prepack_vsdot_int8<int8_t>(A_packed,
-                                      B,
-                                      bias,
-                                      C,
-                                      M,
-                                      N,
-                                      K,
-                                      is_bias,
-                                      flag_act,
-                                      is_transB,
-                                      scale,
-                                      alpha,
-                                      ctx);
+                                    B,
+                                    bias,
+                                    C,
+                                    M,
+                                    N,
+                                    K,
+                                    is_bias,
+                                    flag_act,
+                                    is_transB,
+                                    scale,
+                                    alpha,
+                                    ctx);
   } else {
-  gemm_prepack_oth_int8<int8_t>(A_packed,
-                                B,
-                                bias,
-                                C,
-                                M,
-                                N,
-                                K,
-                                is_bias,
-                                flag_act,
-                                is_transB,
-                                scale,
-                                alpha,
-                                ctx);
+    gemm_prepack_oth_int8<int8_t>(A_packed,
+                                  B,
+                                  bias,
+                                  C,
+                                  M,
+                                  N,
+                                  K,
+                                  is_bias,
+                                  flag_act,
+                                  is_transB,
+                                  scale,
+                                  alpha,
+                                  ctx);
   }
 #endif
 }
