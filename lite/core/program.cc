@@ -109,9 +109,9 @@ void RuntimeProgram::SaveToProgram(
                 SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
 #undef SET_DATATYPE
                 default:
-                  LOG(WARNING)
-                      << "Unknown precision type " << PrecisionToStr(precision)
-                      << " for var " << var_name << " in op " << op_type;
+                  LOG(WARNING) << "Unknown precision type "
+                               << PrecisionToStr(precision) << " for var "
+                               << var_name << " in op " << op_type;
               }
             }
           } else if (decl_type->IsTensorList()) {
