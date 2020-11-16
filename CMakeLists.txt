@@ -177,6 +177,12 @@ endif()
 
 include(external/flatbuffers)
 
+# for opencl
+if (LITE_WITH_OPENCL)
+    include(external/opencl-headers)
+    include(external/opencl-clhpp)
+endif()
+
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
@@ -195,12 +201,6 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
         include(external/gtest)     # download, build, install gtest
         include(ccache)             # set ccache for compilation
         include(external/protobuf)  # download, build, install protobuf
-    endif()
-
-    # for opencl
-    if (LITE_WITH_OPENCL)
-        include(external/opencl-headers)
-        include(external/opencl-clhpp)
     endif()
 
     include(generic)            # simplify cmake module

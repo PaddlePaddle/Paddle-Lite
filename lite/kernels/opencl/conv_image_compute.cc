@@ -14,6 +14,7 @@
 
 #include "lite/kernels/opencl/conv_image_compute.h"
 
+#include <cfloat>
 #include <iomanip>
 #include <sstream>
 #include "lite/backends/opencl/cl_image_converter.h"
