@@ -32,6 +32,19 @@ const char* opencl_error_to_str(cl_int error);
         __FILE__,                                                    \
         __LINE__);                                                   \
   }
+
+// CL_CHECK_FATAL, not hurt performance , must check
+#define CL_CHECK_FATAL_SOLID(err_code__)                             \
+  if (err_code__ != CL_SUCCESS) {                                    \
+    LOG(FATAL) << string_format(                                     \
+        "OpenCL error with code %s happened in file %s at line %d. " \
+        "Exiting.\n",                                                \
+        opencl_error_to_str(err_code__),                             \
+        __FILE__,                                                    \
+        __LINE__);                                                   \
+  }
+
+// CL_CHECK_FATAL, hurt performance ,will shutdown check when relase
 #ifdef LITE_WITH_LOG
 #define CL_CHECK_FATAL(err_code__)                                   \
   if (err_code__ != CL_SUCCESS) {                                    \

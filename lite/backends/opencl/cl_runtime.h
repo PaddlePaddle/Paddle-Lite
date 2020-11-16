@@ -157,6 +157,7 @@ class CLRuntime {
                                       nullptr,
                                       nullptr,
                                       &status_);
+    // use in is opencl valid check, do not exit here when release.
     CL_CHECK_FATAL(status_);
     return context;
   }
@@ -170,6 +171,7 @@ class CLRuntime {
 #endif  // LITE_WITH_PROFILE
     auto queue = std::make_shared<cl::CommandQueue>(
         context, device(), properties, &status_);
+    // use in is opencl valid check, do not exit here when release.
     CL_CHECK_FATAL(status_);
     return queue;
   }
