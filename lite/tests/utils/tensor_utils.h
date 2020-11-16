@@ -94,6 +94,7 @@ void fill_tensor_host_rand_impl<unsigned char>(unsigned char* dio,
     dio[i] = rand() % 256;  // NOLINT
   }
 }
+
 /**
  *  \brief Fill the host tensor buffer with rand value.
  *  \param The reference of input tensor.
@@ -315,26 +316,26 @@ void tensor_diff_kernel(const dtype* src1,
                         dtype* dst,
                         int64_t size,
                         PrecisionType precision) {
-    switch (precision) {
-      case PRECISION(kFloat):
-      case PRECISION(kInt32):
-          for (int i = 0; i < size; ++i) {
-            LOG(INFO)<<i<<"   "<<src1[i] << "  "<<src2[i];
-            dst[i] = src1[i] - src2[i];
-          }
-          return;
-      case PRECISION(kInt8):
-          for (int i = 0; i < size; ++i) {
-            dst[i] = src1[i] - src2[i];
-            if(((int)abs(dst[i])) > 0.1) {
-            LOG(INFO)<<i<<"   "<<(int)src1[i] << "  "<<(int)src2[i];
-            }
-          }
-          return;
-      default:
-        LOG(FATAL) << "data type error";
+  switch (precision) {
+    case PRECISION(kFloat):
+    case PRECISION(kInt32):
+      for (int i = 0; i < size; ++i) {
+        LOG(INFO) << i << "   " << src1[i] << "  " << src2[i];
+        dst[i] = src1[i] - src2[i];
+      }
+      return;
+    case PRECISION(kInt8):
+      for (int i = 0; i < size; ++i) {
+        dst[i] = src1[i] - src2[i];
+        if (static_cast<int>(abs(dst[i])) > 0.1) {
+          LOG(INFO) << i << "   " << static_cast<int>(src1[i]) << "  "
+                    << static_cast<int>(src2[i]);
+        }
+      }
+      return;
+    default:
+      LOG(FATAL) << "data type error";
   }
-
 }
 void tensor_diff(const Tensor& t1, const Tensor& t2, Tensor& tdiff) {  // NOLINT
   int64_t size1 = t1.numel();
@@ -356,8 +357,11 @@ void tensor_diff(const Tensor& t1, const Tensor& t2, Tensor& tdiff) {  // NOLINT
                          t1.precision());
       return;
     case PRECISION(kInt32):
-      tensor_diff_kernel(
-          t1.data<int>(), t2.data<int>(), tdiff.mutable_data<int>(), size1,t1.precision());
+      tensor_diff_kernel(t1.data<int>(),
+                         t2.data<int>(),
+                         tdiff.mutable_data<int>(),
+                         size1,
+                         t1.precision());
     case PRECISION(kInt8):
       tensor_diff_kernel(t1.data<int8_t>(),
                          t2.data<int8_t>(),
