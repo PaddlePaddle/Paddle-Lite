@@ -45,7 +45,8 @@ SET(OPTIONAL_ARGS "-DCMAKE_CXX_COMPILER=${HOST_CXX_COMPILER}"
 ExternalProject_Add(
     extern_flatbuffers
     ${EXTERNAL_PROJECT_LOG_ARGS}
-    GIT_REPOSITORY  "https://github.com/google/flatbuffers.git"
+#    GIT_REPOSITORY  "https://github.com/google/flatbuffers.git"
+    URL             https://paddlelite-data.bj.bcebos.com/third_party_libs/flatbuffers-1.12.0.zip
     GIT_TAG         "v1.12.0"
     SOURCE_DIR      ${FLATBUFFERS_SOURCES_DIR}
     PREFIX          ${FLATBUFFERS_PREFIX_DIR}

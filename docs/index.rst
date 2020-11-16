@@ -65,6 +65,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/baidu_xpu
   demo_guides/rockchip_npu
   demo_guides/mediatek_apu
+  demo_guides/imagination_nna
   demo_guides/bitmain
 
 .. toctree::
