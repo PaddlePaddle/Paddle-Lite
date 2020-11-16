@@ -149,7 +149,7 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
   VLOG(4) << "OpenCL build_option: " << build_option;
   status_ = program->build({*device_}, build_option.c_str());
-  CL_CHECK_FATAL_SOLID(status_);
+  CL_CHECK_ERROR(status_);
 
   if (status_ != CL_SUCCESS) {
     if (program->getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device()) ==
@@ -167,7 +167,7 @@ bool CLRuntime::InitializePlatform() {
   std::vector<cl::Platform> all_platforms;
   status_ = cl::Platform::get(&all_platforms);
   // has return status do not exit here when release
-  CL_CHECK_FATAL(status_);
+  CL_CHECK_ERROR(status_);
   if (all_platforms.empty()) {
     LOG(FATAL) << "No OpenCL platform found!";
     return false;
@@ -219,9 +219,9 @@ bool CLRuntime::InitializeDevice() {
   std::vector<cl::Device> all_devices;
   status_ = platform_->getDevices(CL_DEVICE_TYPE_GPU, &all_devices);
   // for is_opencl_valid_api .  do not exit here...
-  CL_CHECK_FATAL(status_);
+  CL_CHECK_ERROR(status_);
   if (all_devices.empty()) {
-    LOG(FATAL) << "No available OpenCL GPU device found!";
+    LOG(ERROR) << "No available OpenCL GPU device found!";
     return false;
   }
   device_ = std::make_shared<cl::Device>();
