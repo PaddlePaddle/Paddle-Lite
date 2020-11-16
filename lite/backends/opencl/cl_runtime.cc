@@ -110,7 +110,7 @@ cl::Context& CLRuntime::context() {
 
 cl::Device& CLRuntime::device() {
   if (device_ == nullptr) {
-    LOG(ERROR) << "device_ is not initialized!";
+    LOG(FATAL) << "device_ is not initialized!";
   }
   return *device_;
 }
@@ -219,7 +219,7 @@ bool CLRuntime::InitializeDevice() {
   status_ = platform_->getDevices(CL_DEVICE_TYPE_GPU, &all_devices);
   CL_CHECK_ERROR(status_);
   if (all_devices.empty()) {
-    LOG(ERROR) << "No available OpenCL GPU device found!";
+    LOG(FATAL) << "No available OpenCL GPU device found!";
     return false;
   }
   device_ = std::make_shared<cl::Device>();
