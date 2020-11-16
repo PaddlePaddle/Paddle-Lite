@@ -137,6 +137,11 @@ void TransposeCompute::ReInitWhenNeeded() {
   auto* input = param.x;
   auto* output = param.output;
 
+  auto x_dims = param.x->dims();
+  if (last_shape_ == x_dims) {
+    return;
+  }
+  last_shape_ = x_dims;
   int _num_axes = input->dims().size();
   CHECK(_num_axes == param.axis.size())
       << "axis size is not match to input dims";
