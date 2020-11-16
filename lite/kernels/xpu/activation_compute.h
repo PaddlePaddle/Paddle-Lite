@@ -112,7 +112,7 @@ class PowCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 
 class SignCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ActivationParam;
+  using param_t = operators::SignParam;
 
   virtual void Run();
 
