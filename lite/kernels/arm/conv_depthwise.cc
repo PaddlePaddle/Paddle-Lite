@@ -179,7 +179,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   } else {
     LOG(FATAL) << "this type dw conv not impl";
   }
-  last_shape_ = x_dims;
+  last_shape_ = param.x->dims();
 }
 
 template <>
@@ -292,7 +292,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   } else {
     LOG(FATAL) << "this type dw conv not impl";
   }
-  last_shape_ = x_dims;
+  last_shape_ = param.x->dims();
 }
 
 #ifdef LITE_WITH_PROFILE
