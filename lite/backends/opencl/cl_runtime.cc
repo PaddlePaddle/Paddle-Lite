@@ -166,7 +166,8 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
 bool CLRuntime::InitializePlatform() {
   std::vector<cl::Platform> all_platforms;
   status_ = cl::Platform::get(&all_platforms);
-  CL_CHECK_FATAL_SOLID(status_);
+  // has return status do not exit here when release
+  CL_CHECK_FATAL(status_);
   if (all_platforms.empty()) {
     LOG(FATAL) << "No OpenCL platform found!";
     return false;
@@ -217,7 +218,8 @@ bool CLRuntime::InitializeDevice() {
   // CL_DEVICE_MAX_CLOCK_FREQUENCY
   std::vector<cl::Device> all_devices;
   status_ = platform_->getDevices(CL_DEVICE_TYPE_GPU, &all_devices);
-  CL_CHECK_FATAL_SOLID(status_);
+  // for is_opencl_valid_api .  do not exit here...
+  CL_CHECK_FATAL(status_);
   if (all_devices.empty()) {
     LOG(FATAL) << "No available OpenCL GPU device found!";
     return false;

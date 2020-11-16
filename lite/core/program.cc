@@ -109,9 +109,9 @@ void RuntimeProgram::SaveToProgram(
                 SET_DATATYPE(kInt64, VarDescAPI::VarDataType::INT64);
 #undef SET_DATATYPE
                 default:
-                  LOG(WARNING) << "Unknown precision type "
-                               << PrecisionToStr(precision) << " for var "
-                               << var_name << " in op " << op_type;
+                  LOG(WARNING)
+                      << "Unknown precision type " << PrecisionToStr(precision)
+                      << " for var " << var_name << " in op " << op_type;
               }
             }
           } else if (decl_type->IsTensorList()) {
@@ -239,7 +239,8 @@ RuntimeProgram::RuntimeProgram(
             .CopySharedTo(&ctx->As<OpenCLContext>());
         kernel->SetContext(std::move(ctx));
       } else {
-        LOG(ERROR) << "opencl_valid:" << opencl_valid;
+        // if gpu not support , fatal when user init gpu model.
+        LOG(FATAL) << "opencl_valid:" << opencl_valid;
       }
     } else {
       kernel->SetContext(
