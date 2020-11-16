@@ -78,44 +78,41 @@ XPUScratchPadGuard TargetWrapperXPU::MallocScratchPad(size_t size,
 
 void TargetWrapperXPU::LockXPU(int dev_no) {
   // TODO(zhupengyang): support multi-xpu later
-  if (reentrant_ == 0) {
-    mutex_.lock();
-    struct flock f_lock;
-    f_lock.l_whence = 0;
-    f_lock.l_len = 0;
-    f_lock.l_type = F_WRLCK;
+  // lock thread mutex
+  mutex_.lock();
 
-    std::string buf = "/opt/xpu_lock" + std::to_string(dev_no);
-    CHECK_EQ(xpu_lock_fd_, -1) << "file: " << buf << " has been opened before.";
-    xpu_lock_fd_ = open(buf.c_str(), O_WRONLY | O_CREAT, S_IROTH | S_IWOTH);
-    CHECK_GT(xpu_lock_fd_, -1) << "open " << buf << " failed: " << xpu_lock_fd_;
+  // lock process mutex
+  struct flock f_lock;
+  f_lock.l_whence = 0;
+  f_lock.l_len = 0;
+  f_lock.l_type = F_WRLCK;
 
-    fcntl(xpu_lock_fd_, F_SETLKW, &f_lock);
-  }
-  reentrant_++;
+  std::string buf = "/opt/xpu_lock" + std::to_string(dev_no);
+  CHECK_EQ(xpu_lock_fd_, -1) << "file: " << buf << " has been opened before.";
+  xpu_lock_fd_ = open(buf.c_str(), O_WRONLY | O_CREAT, S_IROTH | S_IWOTH);
+  CHECK_GT(xpu_lock_fd_, -1) << "open " << buf << " failed: " << xpu_lock_fd_;
+
+  fcntl(xpu_lock_fd_, F_SETLKW, &f_lock);
 }
 
 void TargetWrapperXPU::UnlockXPU(int dev_no) {
-  if (xpu_lock_fd_ < 0 && reentrant_ == 0) return;
+  // unlock process mutex
+  struct flock f_lock;
+  f_lock.l_whence = 0;
+  f_lock.l_len = 0;
+  f_lock.l_type = F_UNLCK;
+  CHECK_GT(xpu_lock_fd_, -1) << "File may be closed before.";
+  fcntl(xpu_lock_fd_, F_SETLKW, &f_lock);
+  close(xpu_lock_fd_);
+  xpu_lock_fd_ = -1;
 
-  if (reentrant_ == 1) {
-    struct flock f_lock;
-    f_lock.l_whence = 0;
-    f_lock.l_len = 0;
-    f_lock.l_type = F_UNLCK;
-    CHECK_GT(xpu_lock_fd_, -1) << "File may be closed before.";
-    fcntl(xpu_lock_fd_, F_SETLKW, &f_lock);
-    close(xpu_lock_fd_);
-    xpu_lock_fd_ = -1;
-    mutex_.unlock();
-  }
-  reentrant_--;
+  // unlock thread mutex
+  mutex_.unlock();
 }
 
 std::string TargetWrapperXPU::multi_encoder_precision;  // NOLINT
 int TargetWrapperXPU::workspace_l3_size_per_thread{0};
 LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
-LITE_THREAD_LOCAL int TargetWrapperXPU::reentrant_{0};
 int TargetWrapperXPU::xpu_lock_fd_{-1};
 std::mutex TargetWrapperXPU::mutex_{};
 

@@ -105,7 +105,6 @@ class TargetWrapper<TARGET(kXPU)> {
 
  private:
   static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
-  static LITE_THREAD_LOCAL int reentrant_;
   static int xpu_lock_fd_;
   static std::mutex mutex_;
 };
