@@ -17,6 +17,7 @@
 #include <fstream>
 #include <limits>
 #include <set>
+#include <utility>
 
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
@@ -809,7 +810,7 @@ void ReadModelDataFromFile(T *data,
                            const std::string &prog_path,
                            uint64_t *offset,
                            const uint64_t &size) {
-  std::vector<char> prog_data = lite::fbs::LoadFile(prog_path, *offset, size);
+  lite::fbs::Buffer prog_data = lite::fbs::LoadFile(prog_path, *offset, size);
   memcpy(data, prog_data.data(), size);
   *offset = *offset + size;
 }
@@ -1073,7 +1074,7 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
       &prog_size, model_buffer, &offset, sizeof(uint64_t));
   VLOG(4) << "prog_size:" << prog_size;
 
-  std::vector<char> prog_data(prog_size);
+  fbs::Buffer prog_data(prog_size);
   memcpy(prog_data.data(), model_buffer.c_str() + offset, prog_size);
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   cpp_prog->Init(prog_data);
@@ -1087,12 +1088,12 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
   offset = offset + prog_size;
   VLOG(4) << "param_size:" << model_buffer.length() - offset;
 
-  std::vector<char> params_data(model_buffer.length() - offset);
+  fbs::Buffer params_data(model_buffer.length() - offset);
   memcpy(params_data.data(),
          model_buffer.c_str() + offset,
          model_buffer.length() - offset);
 
-  fbs::CombinedParamsDescView params(params_data);
+  fbs::CombinedParamsDescView params(std::move(params_data));
   fbs::SetScopeWithCombinedParams(scope, params);
 
   VLOG(4) << "Load model from naive buffer memory successfully";
