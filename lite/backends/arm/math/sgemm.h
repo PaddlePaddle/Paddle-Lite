@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include "lite/backends/arm/math/packed_sgemm.h"
+#include "lite/backends/arm/math/sgemv.h"
 #include "lite/core/context.h"
 #include "lite/core/device_info.h"
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,22 +13,31 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
+#include <string>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class PowerCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class SinCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
+  using param_t = operators::SinParam;
   void Run() override;
-
-  virtual ~PowerCompute() = default;
+  virtual ~SinCompute() = default;
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForSin"};
+#endif
 };
 
-} /* namespace arm */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

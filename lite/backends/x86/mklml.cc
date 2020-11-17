@@ -14,6 +14,8 @@ limitations under the License. */
 
 #include "lite/backends/x86/mklml.h"
 
+#ifndef LITE_WITH_STATIC_MKL
+
 namespace paddle {
 namespace lite {
 namespace x86 {
@@ -28,3 +30,5 @@ MKLML_ROUTINE_EACH(DEFINE_WRAP);
 }  // namespace x86
 }  // namespace lite
 }  // namespace paddle
+
+#endif  // LITE_WITH_STATIC_MKL

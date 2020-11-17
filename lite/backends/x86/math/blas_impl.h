@@ -26,31 +26,36 @@ template <typename T>
 struct CBlas;
 
 #ifdef PADDLE_WITH_MKLML
+
+#ifndef LITE_WITH_STATIC_MKL
+using namespace lite::x86;  // NOLINT
+#endif
+
 template <>
 struct CBlas<float> {
   template <typename... ARGS>
   static void GEMM(ARGS... args) {
-    lite::x86::cblas_sgemm(args...);
+    cblas_sgemm(args...);
   }
 
   template <typename... ARGS>
   static float *GEMM_ALLOC(ARGS... args) {
-    return lite::x86::cblas_sgemm_alloc(args...);
+    return cblas_sgemm_alloc(args...);
   }
 
   template <typename... ARGS>
   static void GEMM_PACK(ARGS... args) {
-    lite::x86::cblas_sgemm_pack(args...);
+    cblas_sgemm_pack(args...);
   }
 
   template <typename... ARGS>
   static void GEMM_COMPUTE(ARGS... args) {
-    lite::x86::cblas_sgemm_compute(args...);
+    cblas_sgemm_compute(args...);
   }
 
   template <typename... ARGS>
   static void GEMM_FREE(ARGS... args) {
-    lite::x86::cblas_sgemm_free(args...);
+    cblas_sgemm_free(args...);
   }
 
 #ifdef PADDLE_WITH_LIBXSMM
@@ -62,72 +67,72 @@ struct CBlas<float> {
 
   template <typename... ARGS>
   static void AXPY(ARGS... args) {
-    lite::x86::cblas_saxpy(args...);
+    cblas_saxpy(args...);
   }
 
   template <typename... ARGS>
   static void VCOPY(ARGS... args) {
-    lite::x86::cblas_scopy(args...);
+    cblas_scopy(args...);
   }
 
   template <typename... ARGS>
   static void GEMV(ARGS... args) {
-    lite::x86::cblas_sgemv(args...);
+    cblas_sgemv(args...);
   }
 
   template <typename... ARGS>
   static float DOT(ARGS... args) {
-    return lite::x86::cblas_sdot(args...);
+    return cblas_sdot(args...);
   }
 
   template <typename... ARGS>
   static void SCAL(ARGS... args) {
-    lite::x86::cblas_sscal(args...);
+    cblas_sscal(args...);
   }
 
   template <typename... ARGS>
   static float ASUM(ARGS... args) {
-    return lite::x86::cblas_sasum(args...);
+    return cblas_sasum(args...);
   }
 
   template <typename... ARGS>
   static void GEMM_BATCH(ARGS... args) {
-    lite::x86::cblas_sgemm_batch(args...);
+    cblas_sgemm_batch(args...);
   }
 
   template <typename... ARGS>
   static void VADD(ARGS... args) {
-    lite::x86::vsAdd(args...);
+    vsAdd(args...);
   }
 
   template <typename... ARGS>
   static void VMUL(ARGS... args) {
-    lite::x86::vsMul(args...);
+    vsMul(args...);
   }
 
   template <typename... ARGS>
   static void VEXP(ARGS... args) {
-    lite::x86::vsExp(args...);
+    vsExp(args...);
   }
 
   template <typename... ARGS>
   static void VSQUARE(ARGS... args) {
-    lite::x86::vsSqr(args...);
+    vsSqr(args...);
   }
 
   template <typename... ARGS>
   static void VPOW(ARGS... args) {
-    lite::x86::vsPowx(args...);
+    vsPowx(args...);
   }
 
   template <typename... ARGS>
   static void VINV(ARGS... args) {
-    lite::x86::vsInv(args...);
+    vsInv(args...);
   }
 
   template <typename... ARGS>
   static void VMERF(ARGS... args) {
-    lite::x86::vmsErf(args...);
+    vmsErf(args...);
   }
 };
 
@@ -135,27 +140,27 @@ template <>
 struct CBlas<double> {
   template <typename... ARGS>
   static void GEMM(ARGS... args) {
-    lite::x86::cblas_dgemm(args...);
+    cblas_dgemm(args...);
   }
 
   template <typename... ARGS>
   static double *GEMM_ALLOC(ARGS... args) {
-    return lite::x86::cblas_dgemm_alloc(args...);
+    return cblas_dgemm_alloc(args...);
   }
 
   template <typename... ARGS>
   static void GEMM_PACK(ARGS... args) {
-    lite::x86::cblas_dgemm_pack(args...);
+    cblas_dgemm_pack(args...);
   }
 
   template <typename... ARGS>
   static void GEMM_COMPUTE(ARGS... args) {
-    lite::x86::cblas_dgemm_compute(args...);
+    cblas_dgemm_compute(args...);
   }
 
   template <typename... ARGS>
   static void GEMM_FREE(ARGS... args) {
-    lite::x86::cblas_dgemm_free(args...);
+    cblas_dgemm_free(args...);
   }
 
 #ifdef PADDLE_WITH_LIBXSMM
@@ -167,72 +172,72 @@ struct CBlas<double> {
 
   template <typename... ARGS>
   static void AXPY(ARGS... args) {
-    lite::x86::cblas_daxpy(args...);
+    cblas_daxpy(args...);
   }
 
   template <typename... ARGS>
   static void VCOPY(ARGS... args) {
-    lite::x86::cblas_dcopy(args...);
+    cblas_dcopy(args...);
   }
 
   template <typename... ARGS>
   static void GEMV(ARGS... args) {
-    lite::x86::cblas_dgemv(args...);
+    cblas_dgemv(args...);
   }
 
   template <typename... ARGS>
   static double DOT(ARGS... args) {
-    return lite::x86::cblas_ddot(args...);
+    return cblas_ddot(args...);
   }
 
   template <typename... ARGS>
   static void SCAL(ARGS... args) {
-    lite::x86::cblas_dscal(args...);
+    cblas_dscal(args...);
   }
 
   template <typename... ARGS>
   static double ASUM(ARGS... args) {
-    return lite::x86::cblas_dasum(args...);
+    return cblas_dasum(args...);
   }
 
   template <typename... ARGS>
   static void GEMM_BATCH(ARGS... args) {
-    lite::x86::cblas_dgemm_batch(args...);
+    cblas_dgemm_batch(args...);
   }
 
   template <typename... ARGS>
   static void VADD(ARGS... args) {
-    lite::x86::vdAdd(args...);
+    vdAdd(args...);
   }
 
   template <typename... ARGS>
   static void VMUL(ARGS... args) {
-    lite::x86::vdMul(args...);
+    vdMul(args...);
   }
 
   template <typename... ARGS>
   static void VEXP(ARGS... args) {
-    lite::x86::vdExp(args...);
+    vdExp(args...);
   }
 
   template <typename... ARGS>
   static void VSQUARE(ARGS... args) {
-    lite::x86::vdSqr(args...);
+    vdSqr(args...);
   }
 
   template <typename... ARGS>
   static void VPOW(ARGS... args) {
-    lite::x86::vdPowx(args...);
+    vdPowx(args...);
   }
 
   template <typename... ARGS>
   static void VINV(ARGS... args) {
-    lite::x86::vdInv(args...);
+    vdInv(args...);
   }
 
   template <typename... ARGS>
   static void VMERF(ARGS... args) {
-    lite::x86::vmdErf(args...);
+    vmdErf(args...);
   }
 };
 

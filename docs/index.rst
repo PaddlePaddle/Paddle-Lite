@@ -35,6 +35,7 @@ Welcome to Paddle-Lite's documentation!
   quick_start/cpp_demo
   quick_start/java_demo
   quick_start/python_demo
+  quick_start/quant_post_dynamic_demo
 
 .. toctree::
   :maxdepth: 1
@@ -43,9 +44,9 @@ Welcome to Paddle-Lite's documentation!
 
   user_guides/x2paddle
   user_guides/model_optimize_tool
-  user_guides/post_quant_with_data
-  user_guides/post_quant_no_data
-  user_guides/model_quantization
+  user_guides/quant_post_static
+  user_guides/quant_post_dynamic
+  user_guides/quant_aware
   user_guides/model_visualization
   user_guides/debug
 
@@ -64,6 +65,8 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/baidu_xpu
   demo_guides/rockchip_npu
   demo_guides/mediatek_apu
+  demo_guides/imagination_nna
+  demo_guides/bitmain
 
 .. toctree::
   :maxdepth: 1

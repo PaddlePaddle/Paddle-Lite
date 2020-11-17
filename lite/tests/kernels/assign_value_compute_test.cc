@@ -17,6 +17,8 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
 
+using paddle::lite::core::FluidType;
+
 namespace paddle {
 namespace lite {
 
@@ -28,6 +30,8 @@ class AssignValueComputeTester : public arena::TestCase {
   std::vector<int> shape_{};
   std::vector<int> int32_values_{};
   std::vector<float> fp32_values_{};
+  std::vector<int64_t> int64_values_{};
+  std::vector<int> bool_values_{};
   size_t num_ = 1;
 
  public:
@@ -52,18 +56,39 @@ class AssignValueComputeTester : public arena::TestCase {
     CHECK(out);
     std::vector<int64_t> out_shape(shape_.begin(), shape_.end());
     out->Resize(out_shape);
-    if (dtype_ == 2) {
-      auto* out_data = out->mutable_data<int>();
-      for (int i = 0; i < out->numel(); i++) {
-        out_data[i] = int32_values_[i];
+    switch (static_cast<FluidType>(dtype_)) {
+      case FluidType::BOOL: {
+        auto* out_data = out->mutable_data<int>();
+        for (int i = 0; i < out->numel(); i++) {
+          out_data[i] = bool_values_[i];
+        }
+        break;
       }
-    } else if (dtype_ == 5) {
-      auto* out_data = out->mutable_data<float>();
-      for (int i = 0; i < out->numel(); i++) {
-        out_data[i] = fp32_values_[i];
+      case FluidType::INT32: {
+        auto* out_data = out->mutable_data<int>();
+        for (int i = 0; i < out->numel(); i++) {
+          out_data[i] = int32_values_[i];
+        }
+        break;
       }
-    } else {
-      LOG(FATAL) << "unsuport dtype_:" << dtype_;
+      case FluidType::FP32: {
+        auto* out_data = out->mutable_data<float>();
+        for (int i = 0; i < out->numel(); i++) {
+          out_data[i] = fp32_values_[i];
+        }
+        break;
+      }
+      case FluidType::INT64: {
+        auto* out_data = out->mutable_data<int64_t>();
+        for (int i = 0; i < out->numel(); i++) {
+          out_data[i] = int64_values_[i];
+        }
+        break;
+      }
+      default: {
+        LOG(FATAL) << "unsuport dtype_:" << dtype_;
+        break;
+      }
     }
   }
 
@@ -73,23 +98,45 @@ class AssignValueComputeTester : public arena::TestCase {
     op_desc->SetAttr("dtype", dtype_);
     op_desc->SetAttr("fp32_values", fp32_values_);
     op_desc->SetAttr("int32_values", int32_values_);
+    op_desc->SetAttr("int64_values", int64_values_);
+    op_desc->SetAttr("bool_values", bool_values_);
     op_desc->SetOutput("Out", {out_});
   }
 
   void PrepareData() override {
-    // int32
-    if (dtype_ == 2) {
-      int32_values_.resize(num_);
-      for (int i = 0; i < num_; i++) {
-        int32_values_[i] = i;
+    switch (static_cast<FluidType>(dtype_)) {
+      case FluidType::BOOL: {
+        bool_values_.resize(num_);
+        for (int i = 0; i < num_; i++) {
+          bool_values_[i] = i;
+        }
+        break;
       }
-    } else if (dtype_ == 5) {
-      fp32_values_.resize(num_);
-      for (int i = 0; i < num_; i++) {
-        fp32_values_[i] = i / 1.23f;
+      case FluidType::INT32: {
+        int32_values_.resize(num_);
+        for (int i = 0; i < num_; i++) {
+          int32_values_[i] = i;
+        }
+        break;
       }
-    } else {
-      LOG(FATAL) << "unsupport dtype_:" << dtype_;
+      case FluidType::FP32: {
+        fp32_values_.resize(num_);
+        for (int i = 0; i < num_; i++) {
+          fp32_values_[i] = i / 1.23f;
+        }
+        break;
+      }
+      case FluidType::INT64: {
+        int64_values_.resize(num_);
+        for (int i = 0; i < num_; i++) {
+          int64_values_[i] = i;
+        }
+        break;
+      }
+      default: {
+        LOG(FATAL) << "unsupport dtype_:" << dtype_;
+        break;
+      }
     }
   }
 };
@@ -102,7 +149,7 @@ TEST(AssignValue, precision) {
   return;
 #endif
 
-  for (int dtype : {2, 5}) {
+  for (int dtype : {2, 5, 3, 0}) {
     for (int n : {1}) {
       for (int c : {2}) {
         for (int h : {1}) {

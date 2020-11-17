@@ -148,7 +148,9 @@ static void basic_gemm_c4(bool trans_a,
                           bool flag_relu = false) {
   type2* tmp_c = reinterpret_cast<type2*>(malloc(m * ldc * sizeof(type2)));
   memset(tmp_c, 0, m * ldc * sizeof(type2));
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
+#endif
   for (int i = 0; i < m; ++i) {
     auto bias_data = static_cast<type2>(0);
     if (flag_bias) {
@@ -203,7 +205,9 @@ static void basic_gemm_c8(bool trans_a,
                           bool flag_relu = false) {
   type2* tmp_c = reinterpret_cast<type2*>(malloc(m * ldc * sizeof(type2)));
   memset(tmp_c, 0, m * ldc * sizeof(type2));
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
+#endif
   for (int i = 0; i < m; ++i) {
     auto bias_data = static_cast<type2>(0);
     if (flag_bias) {
@@ -255,7 +259,9 @@ static void basic_gemm(bool trans_a,
                        const type2* bias,
                        bool flag_bias = false,
                        bool flag_relu = false) {
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
+#endif
   for (int i = 0; i < m; ++i) {
     auto bias_data = static_cast<type2>(0);
     if (flag_bias) {
@@ -302,7 +308,9 @@ static void basic_gemv(int m,
                        int flag_act = false,
                        float six = 6.f,
                        float leakey_relu_alpha = 1.f) {
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
+#endif
   for (int i = 0; i < m; ++i) {
     auto bias_data = static_cast<type2>(0);
     if (flag_bias) {
@@ -383,7 +391,9 @@ static void conv_basic(const Dtype1* din,
   int in_c_group = in_channel / group;
 
   for (int n = 0; n < in_num; ++n) {
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for collapse(4)
+#endif
     for (int g = 0; g < group; ++g) {
       for (int oc = 0; oc < out_c_group; ++oc) {
         for (int oh = 0; oh < out_h; ++oh) {
@@ -699,7 +709,9 @@ void deformable_conv_basic(const Dtype1* in_data,
   int c_out_size = chout * out_size;
   int kernel_size = kernel_w * kernel_h;
   for (int n = 0; n < num; n++) {
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for collapse(4)
+#endif
     for (int g = 0; g < group; ++g) {
       for (int oc = 0; oc < out_c_group; ++oc) {
         for (int oh = 0; oh < hout; oh++) {

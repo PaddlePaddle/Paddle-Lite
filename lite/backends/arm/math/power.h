@@ -25,7 +25,7 @@ void power(const T* din,
            const int num,
            float scale_,
            float shift_,
-           float power_);
+           float factor_);
 
 } /* namespace math */
 } /* namespace arm */

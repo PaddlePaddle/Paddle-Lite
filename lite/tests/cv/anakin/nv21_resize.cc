@@ -332,8 +332,8 @@ void resize_one_channel_uv(const uint8_t* src,
       sx = 0;
       fx = 0.f;
     }
-    if (sx >= w_in - 1) {
-      sx = w_in - 2;
+    if (sx >= w_in / 2 - 1) {
+      sx = w_in / 2 - 2;
       fx = 1.f;
     }
 

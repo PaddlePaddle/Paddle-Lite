@@ -211,6 +211,7 @@ void MatMulCompute::Run() {
                                false,
                                m_,
                                k_,
+                               0.f,
                                false,
                                nullptr,
                                false,

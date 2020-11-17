@@ -14,6 +14,7 @@
 
 #include <bmcompiler_if.h>
 #include <math.h>
+#include <user_bmcpu_common.h>
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
@@ -155,6 +156,10 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < in_dims.size(); i++) {
     i_input_shape_data[i] = static_cast<int32_t>(in_dims[i]);
   }
+  std::vector<int32_t> i_img_shape_data(img_dims.size());
+  for (size_t i = 0; i < img_dims.size(); i++) {
+    i_img_shape_data[i] = static_cast<int32_t>(img_dims[i]);
+  }
   // outputs
   auto boxes_var_name = op_info->Output("Boxes").front();
   auto boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
@@ -167,7 +172,6 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   param.fixed_ratios = op_info->GetAttr<std::vector<float>>("fixed_ratios");
   param.variances = op_info->GetAttr<std::vector<float>>("variances");
   param.densities = op_info->GetAttr<std::vector<int>>("densities");
-
   param.offset = op_info->GetAttr<float>("offset");
   if (op_info->HasAttr("step_w")) {
     param.step_w = op_info->GetAttr<float>("step_w");
@@ -175,13 +179,16 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("step_h")) {
     param.step_h = op_info->GetAttr<float>("step_h");
   }
-  float* cpu_data = compute_density_priorbox_kernel(op, &param);
   auto boxes_dims = boxes->dims();
   std::vector<int32_t> i_pri_out_shape_data(3);
   i_pri_out_shape_data[0] = 1;
   i_pri_out_shape_data[1] = 2;
   i_pri_out_shape_data[2] = boxes->data_size();
   auto bm_priorbox_name = lite::subgraph::bm::UniqueName("bm_priorbox");
+  float* cpu_data = compute_density_priorbox_kernel(op, &param);
+  boxes = scope->FindVar(boxes_var_name)->GetMutable<lite::Tensor>();
+  i_pri_out_shape_data[2] = boxes->data_size();
+#ifndef BM_DYNAMIC_COMPILE
   add_priorbox_layer(graph->GetCompilerHandle(),
                      const_cast<const int*>(&i_input_shape_data[0]),
                      in_dims.size(),
@@ -205,6 +212,69 @@ int DensityPriorBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                      0.f,
                      0.f,
                      0.f);
+#else
+  free(cpu_data);
+  user_cpu_param_t bm_param;
+  bm_param.op_type = USER_PADDLE_DENSITY_PRIOR_BOX;
+  CHECK_LE(param.fixed_sizes.size(), 20);
+  bm_param.u.density_prior_box_param.fixed_sizes_len = param.fixed_sizes.size();
+  memcpy(bm_param.u.density_prior_box_param.fixed_sizes,
+         &param.fixed_sizes[0],
+         param.fixed_sizes.size() * sizeof(float));
+
+  CHECK_LE(param.fixed_ratios.size(), 20);
+  bm_param.u.density_prior_box_param.fixed_ratios_len =
+      param.fixed_ratios.size();
+  memcpy(bm_param.u.density_prior_box_param.fixed_ratios,
+         &param.fixed_ratios[0],
+         param.fixed_ratios.size() * sizeof(float));
+
+  CHECK_LE(param.densities.size(), 20);
+  bm_param.u.density_prior_box_param.densities_len = param.densities.size();
+  memcpy(bm_param.u.density_prior_box_param.densities,
+         &param.densities[0],
+         param.densities.size() * sizeof(int));
+
+  CHECK_LE(param.variances.size(), 20);
+  bm_param.u.density_prior_box_param.variances_len = param.variances.size();
+  memcpy(bm_param.u.density_prior_box_param.variances,
+         &param.variances[0],
+         param.variances.size() * sizeof(float));
+  bm_param.u.density_prior_box_param.step_w = param.step_w;
+  bm_param.u.density_prior_box_param.step_h = param.step_h;
+  bm_param.u.density_prior_box_param.offset = param.offset;
+  bm_param.u.density_prior_box_param.prior_num = param.prior_num;
+  bm_param.u.density_prior_box_param.clip = param.clip;
+  bm_param.u.density_prior_box_param.flatten_to_2d = param.flatten_to_2d;
+
+  int32_t* in_shape[2];
+  int32_t in_dim[2];
+  const char* in_name[2];
+  in_shape[0] = &i_input_shape_data[0];
+  in_shape[1] = &i_img_shape_data[0];
+  in_dim[0] = in_dims.size();
+  in_dim[1] = img_dims.size();
+  in_name[0] = static_cast<const char*>(in_var_name.c_str());
+  in_name[1] = static_cast<const char*>(img_var_name.c_str());
+  int32_t* out_shape[1];
+  int32_t out_dim[1];
+  const char* out_name[1];
+  out_shape[0] = &i_pri_out_shape_data[0];
+  out_dim[0] = 3;
+  out_name[0] = static_cast<const char*>(bm_priorbox_name.c_str());
+
+  add_user_cpu_layer(graph->GetCompilerHandle(),
+                     2,
+                     in_shape,
+                     in_dim,
+                     in_name,
+                     1,
+                     out_shape,
+                     out_dim,
+                     out_name,
+                     &bm_param,
+                     static_cast<int>(sizeof(bm_param)));
+#endif
   int32_t* shape[2];
   int32_t dim[2];
   const char* name[2];

@@ -20,23 +20,17 @@
 namespace paddle {
 namespace lite {
 
-class PowerComputeTester : public arena::TestCase {
+class PowComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
   std::string input_ = "X";
   std::string output_ = "Out";
-  float scale_ = 0.;
-  float shift_ = 0.;
-  float power_ = 0.;
+  float factor_ = 0.;
   DDim dims_{{5, 2}};
 
  public:
-  PowerComputeTester(const Place& place,
-                     const std::string& alias,
-                     float scale,
-                     float shift,
-                     float power)
-      : TestCase(place, alias), scale_(scale), shift_(shift), power_(power) {}
+  PowComputeTester(const Place& place, const std::string& alias, float factor)
+      : TestCase(place, alias), factor_(factor) {}
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
@@ -48,17 +42,15 @@ class PowerComputeTester : public arena::TestCase {
     const auto* x_data = x->data<float>();
 
     for (int i = 0; i < dims_.production(); i++) {
-      out_data[i] = std::pow((x_data[i] * scale_ + shift_), power_);
+      out_data[i] = std::pow(x_data[i], factor_);
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("power");
+    op_desc->SetType("pow");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("scale", scale_);
-    op_desc->SetAttr("shift", shift_);
-    op_desc->SetAttr("power", power_);
+    op_desc->SetAttr("factor", factor_);
   }
 
   void PrepareData() override {
@@ -72,26 +64,22 @@ class PowerComputeTester : public arena::TestCase {
   }
 };
 
-void test_power(Place place) {
-  for (float scale : {0.923, 2., 1.2}) {
-    for (float shift : {1., 0., 1.2331}) {
-      for (float power : {1., 1.2, 1.6}) {
-        std::unique_ptr<arena::TestCase> tester(
-            new PowerComputeTester(place, "def", scale, shift, power));
-        arena::Arena arena(std::move(tester), place, 2e-4);
-        arena.TestPrecision();
-      }
-    }
+void test_pow(Place place) {
+  for (float factor : {1., 1.2, 1.6}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new PowComputeTester(place, "def", factor));
+    arena::Arena arena(std::move(tester), place, 2e-4);
+    arena.TestPrecision();
   }
 }
 
-TEST(Power, precision) {
+TEST(Pow, precision) {
 // #ifdef LITE_WITH_X86
 //   Place place(TARGET(kX86));
 // #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-  test_power(place);
+  test_pow(place);
 #endif
 }
 

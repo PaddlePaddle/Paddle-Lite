@@ -46,7 +46,7 @@ CLRuntime::~CLRuntime() {
 
 bool CLRuntime::Init() {
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
+  VLOG(3) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
 #endif
   if (is_cl_runtime_initialized_) {
     return true;

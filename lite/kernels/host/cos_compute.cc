@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,34 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/power_compute.h"
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/kernels/host/cos_compute.h"
+#include <algorithm>
+#include <cmath>
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-void PowerCompute::Run() {
-  auto& param = Param<operators::PowerParam>();
+void CosCompute::Run() {
+  auto& param = Param<operators::CosParam>();
   const float* x_data = param.X->data<float>();
   float* output_data = param.Out->mutable_data<float>();
   DDim x_dims = param.X->dims();
-  float scale = param.scale;
-  float shift = param.shift;
-  float power = param.power;
-
-  lite::arm::math::power(
-      x_data, output_data, x_dims.production(), scale, shift, power);
+  for (int64_t i = 0; i < x_dims.production(); i++) {
+    output_data[i] = std::cos(x_data[i]);
+  }
+#ifdef LITE_WITH_PROFILE
+  kernel_func_name_ = "cos_func";
+#endif
+  return;
 }
 
-} /* namespace arm */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    power, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PowerCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    cos, kHost, kFloat, kNCHW, paddle::lite::kernels::host::CosCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

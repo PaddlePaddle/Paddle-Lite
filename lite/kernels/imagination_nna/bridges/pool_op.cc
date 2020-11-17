@@ -36,9 +36,12 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
+  auto x_scale_name = "X0_scale";
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto out_name = op_info->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
+
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
   std::vector<int> ksize = op_info->GetAttr<std::vector<int>>("ksize");
@@ -49,8 +52,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     exclusive = op_info->GetAttr<bool>("exclusive");
 
   // for quantization
-  CHECK(op_info->HasOutputScale(out_name));
-  float output_scale = op_info->GetOutputScale(out_name)[0];
+  CHECK(op_info->HasOutputScale(out_scale_name, true));
+  float output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;

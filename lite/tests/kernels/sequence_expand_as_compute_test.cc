@@ -56,7 +56,7 @@ TEST(sequence_expand_as, run_test) {
     y_data[i] = static_cast<float>(i);
   }
 
-  std::vector<std::vector<uint64_t>> lod{{0, 3, 3, 1, 1}};
+  std::vector<std::vector<uint64_t>> lod{{0, 3, 6, 7, 8}};
   y.set_lod(lod);
   paddle::lite::kernels::arm::SequenceExpandAsCompute sequence_expand_as;
 
@@ -76,7 +76,7 @@ TEST(sequence_expand_as, run_test) {
 
   int index = 1;
   auto out_lod = param.out->lod()[0];
-  int lod_sum = out_lod[index];
+  int lod_sum = out_lod[index] - out_lod[index - 1];
   LOG(INFO) << "output: ";
   for (int i = 0; i < out.dims().production(); i++) {
     LOG(INFO) << out_data[i];

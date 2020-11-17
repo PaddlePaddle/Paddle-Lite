@@ -14,26 +14,26 @@
 #pragma once
 
 #include <vector>
-#include "lite/backends/x86/math/sequence_padding.h"
+#include "lite/backends/host/math/sequence_padding.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace x86 {
+namespace host {
 
-namespace math = paddle::lite::x86::math;
+namespace math = paddle::lite::host::math;
 
 template <typename T>
 class SequenceUnpadCompute
-    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::SequenceUnpadParam;
 
   void Run() override {
     auto& param = this->template Param<param_t>();
-    auto& ctx = this->ctx_->template As<X86Context>();
+    auto& ctx = this->ctx_->template As<HostContext>();
 
     auto x_dims = param.X->dims();
     auto len_dims = param.Length->dims();
@@ -61,7 +61,7 @@ class SequenceUnpadCompute
 
     param.Out->template mutable_data<T>();
     int64_t padded_length = param.X->dims()[1];
-    math::UnpaddingLoDTensorFunctor<lite::TargetType::kX86, T>()(
+    math::UnpaddingLoDTensorFunctor<lite::TargetType::kHost, T>()(
         ctx,
         *param.X,
         param.Out,
@@ -74,7 +74,7 @@ class SequenceUnpadCompute
   virtual ~SequenceUnpadCompute() = default;
 };
 
-}  // namespace x86
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

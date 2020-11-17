@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set +ex
 
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
@@ -9,7 +9,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
 
 # global variables
@@ -22,8 +22,11 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
+WITH_MKL=ON
+WITH_STATIC_MKL=OFF
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
+WITH_LTO=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -42,6 +45,10 @@ IOS_DEPLOYMENT_TARGET=9.0
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
 readonly workspace=$PWD
+
+function readlinkf() {
+    perl -MCwd -e 'print Cwd::abs_path shift' "$1";
+}
 
 # if operating in mac env, we should expand the maximum file num
 os_name=`uname -s`
@@ -228,6 +235,7 @@ function make_full_publish_so {
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_LTO=${WITH_LTO} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -269,7 +277,8 @@ function make_all_tests {
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
-      -DLITE_WITH_PROFILE=OFF \
+      -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_LTO=${WITH_LTO} \
       -DLITE_WITH_PRECISION_PROFILE=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -347,6 +356,7 @@ function make_cuda {
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=OFF  \
             -DLITE_WITH_PROFILE=OFF \
+            -DLITE_WITH_LTO=${WITH_LTO} \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
@@ -385,7 +395,8 @@ function make_x86 {
 
   prepare_workspace $root_dir $build_directory
 
-  cmake ..  -DWITH_MKL=ON       \
+  cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
+            -DWITH_STATIC_MKL=${WITH_STATIC_MKL}  \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
             -DLITE_WITH_PROFILE=OFF \
@@ -395,10 +406,13 @@ function make_x86 {
             -DWITH_GPU=OFF \
             -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
-            -DLITE_BUILD_EXTRA=ON \
+            -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
+            -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
+            -DLITE_OPTMODEL_DIR=${OPTMODEL_DIR} \
             -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_LTO=${WITH_LTO} \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -504,6 +518,7 @@ function main {
 		;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
+                OPTMODEL_DIR=$(readlinkf $OPTMODEL_DIR)
                 shift
                 ;;
             --build_tailor=*)
@@ -512,6 +527,14 @@ function main {
                 ;;
             --with_log=*)
                 WITH_LOG="${i#*=}"
+                shift
+                ;;
+            --with_mkl=*)
+                WITH_MKL="${i#*=}"
+                shift
+                ;;
+            --with_static_mkl=*)
+                WITH_STATIC_MKL="${i#*=}"
                 shift
                 ;;
             --with_exception=*)
@@ -527,6 +550,10 @@ function main {
                 ;;
             --with_profile=*)
                 WITH_PROFILE="${i#*=}"
+                shift
+                ;;
+            --with_lto=*)
+                WITH_LTO="${i#*=}"
                 shift
                 ;;
             --build_npu=*)

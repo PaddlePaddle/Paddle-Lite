@@ -36,11 +36,17 @@ class ParamDescView : public ParamDescReadAPI {
     CHECK(desc_->variable_type() ==
           proto::ParamDesc_::VariableDesc_LoDTensorDesc);
     tensor_desc_ = desc_->variable_as<proto::ParamDesc_::LoDTensorDesc>();
+    CHECK(tensor_desc_);
+    CHECK(tensor_desc_->data());
   }
-  std::string Name() const override { return desc_->name()->c_str(); }
+  std::string Name() const override {
+    CHECK(desc_->name());
+    return desc_->name()->c_str();
+  }
 
   std::vector<int64_t> Dim() const override {
-    const auto& dims = tensor_desc_->dim();
+    const auto* dims = tensor_desc_->dim();
+    CHECK(dims);
     std::vector<int64_t> dims_vec;
     dims_vec.resize(dims->size());
     for (size_t i = 0; i < dims->size(); ++i) {
@@ -86,6 +92,8 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
 
   void InitParams() {
     desc_ = proto::GetCombinedParamsDesc(buf_.data());
+    CHECK(desc_);
+    CHECK(desc_->params());
     size_t params_size = desc_->params()->size();
     params_.resize(params_size);
     for (size_t idx = 0; idx < params_size; ++idx) {

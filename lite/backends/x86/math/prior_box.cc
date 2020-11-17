@@ -71,13 +71,13 @@ void density_prior_box(const int64_t img_width,
             for (int dj = 0; dj < density; ++dj) {
               float center_x_temp = density_center_x + dj * shift;
               float center_y_temp = density_center_y + di * shift;
-              boxes_data[offset++] = std::max(
+              boxes_data[offset++] = (std::max)(
                   (center_x_temp - box_width_ratio / 2.) / img_width, 0.);
-              boxes_data[offset++] = std::max(
+              boxes_data[offset++] = (std::max)(
                   (center_y_temp - box_height_ratio / 2.) / img_height, 0.);
-              boxes_data[offset++] = std::min(
+              boxes_data[offset++] = (std::min)(
                   (center_x_temp + box_width_ratio / 2.) / img_width, 1.);
-              boxes_data[offset++] = std::min(
+              boxes_data[offset++] = (std::min)(
                   (center_y_temp + box_height_ratio / 2.) / img_height, 1.);
             }
           }
@@ -92,7 +92,7 @@ void density_prior_box(const int64_t img_width,
 #pragma omp parallel for
 #endif
     for (int d = 0; d < channel_size; ++d) {
-      boxes_data[d] = std::min(std::max(boxes_data[d], 0.f), 1.f);
+      boxes_data[d] = (std::min)((std::max)(boxes_data[d], 0.f), 1.f);
     }
   }
 //! set the variance.

@@ -10,7 +10,7 @@ function bm1682_buid {
 
 # Build and run bm1682 tests. This is executed in the CI system.
 function bm1682_test {
-    cd /paddlelite/build.lite.bm/inference_lite_lib/demo/cxx/bm_demo
+    cd /paddlelite/build.lite.bm/inference_lite_lib/demo/cxx
     wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
     tar -xvf mobilenet_v1.tar.gz
     bash build.sh

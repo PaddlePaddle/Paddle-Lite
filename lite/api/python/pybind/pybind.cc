@@ -31,6 +31,7 @@
 
 #include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
+#include "lite/api/python/pybind/tensor_py.h"
 #include "lite/core/tensor.h"
 
 namespace py = pybind11;
@@ -50,6 +51,7 @@ using lite_api::PowerMode;
 using lite_api::PrecisionType;
 using lite_api::TargetType;
 using lite_api::Tensor;
+using lite_api::CxxModelBuffer;
 
 #ifndef LITE_ON_TINY_PUBLISH
 using lite::CxxPaddleApiImpl;
@@ -64,6 +66,8 @@ void BindLiteOpt(py::module *m) {
       .def("set_valid_places", &OptBase::SetValidPlaces)
       .def("set_optimize_out", &OptBase::SetOptimizeOut)
       .def("set_model_type", &OptBase::SetModelType)
+      .def("set_quant_model", &OptBase::SetQuantModel)
+      .def("set_quant_type", &OptBase::SetQuantType)
       .def("record_model_info", &OptBase::RecordModelInfo)
       .def("set_passes_internal", &OptBase::SetPassesInternal)
       .def("run", &OptBase::Run)
@@ -124,9 +128,14 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_param_file", &CxxConfig::set_param_file)
       .def("param_file", &CxxConfig::param_file)
       .def("set_valid_places", &CxxConfig::set_valid_places)
-      .def("set_model_buffer", &CxxConfig::set_model_buffer)
+      .def("set_model_buffer",
+           (void (CxxConfig::*)(const char *, size_t, const char *, size_t)) &
+               CxxConfig::set_model_buffer)
+      .def("set_model_buffer",
+           (void (CxxConfig::*)(std::shared_ptr<CxxModelBuffer>)) &
+               CxxConfig::set_model_buffer)
       .def("set_passes_internal", &CxxConfig::set_passes_internal)
-      .def("model_from_memory", &CxxConfig::model_from_memory);
+      .def("is_model_from_memory", &CxxConfig::is_model_from_memory);
 #ifdef LITE_WITH_ARM
   cxx_config.def("set_threads", &CxxConfig::set_threads)
       .def("threads", &CxxConfig::threads)
@@ -153,7 +162,7 @@ void BindLiteMobileConfig(py::module *m) {
       .def("set_model_dir", &MobileConfig::set_model_dir)
       .def("model_dir", &MobileConfig::model_dir)
       .def("set_model_buffer", &MobileConfig::set_model_buffer)
-      .def("model_from_memory", &MobileConfig::model_from_memory);
+      .def("is_model_from_memory", &MobileConfig::is_model_from_memory);
 #ifdef LITE_WITH_ARM
   mobile_config.def("set_threads", &MobileConfig::set_threads)
       .def("threads", &MobileConfig::threads)
@@ -199,6 +208,8 @@ void BindLitePlace(py::module *m) {
   py::enum_<PrecisionType>(*m, "PrecisionType")
       .value("FP16", PrecisionType::kFP16)
       .value("FP32", PrecisionType::kFloat)
+      .value("FP64", PrecisionType::kFP64)
+      .value("UINT8", PrecisionType::kUInt8)
       .value("INT8", PrecisionType::kInt8)
       .value("INT16", PrecisionType::kInt16)
       .value("INT32", PrecisionType::kInt32)
@@ -237,11 +248,16 @@ void BindLiteTensor(py::module *m) {
   py::class_<Tensor> tensor(*m, "Tensor");
 
   tensor.def("resize", &Tensor::Resize)
+      .def("numpy", [](Tensor &self) { return TensorToPyArray(self); })
       .def("shape", &Tensor::shape)
       .def("target", &Tensor::target)
       .def("precision", &Tensor::precision)
       .def("lod", &Tensor::lod)
-      .def("set_lod", &Tensor::SetLoD);
+      .def("set_lod", &Tensor::SetLoD)
+      .def("from_numpy",
+           SetTensorFromPyArray,
+           py::arg("array"),
+           py::arg("place") = TargetType::kHost);
 
 #define DO_GETTER_ONCE(data_type__, name__)                           \
   tensor.def(#name__, [=](Tensor &self) -> std::vector<data_type__> { \
@@ -273,20 +289,7 @@ void BindLiteTensor(py::module *m) {
   DO_GETTER_ONCE(data_type__, name__##_data)
 
   DATA_GETTER_SETTER_ONCE(int8_t, int8);
-#ifdef LITE_WITH_MLU
-  tensor.def("set_uint8_data",
-             [](Tensor &self,
-                const std::vector<uint8_t> &data,
-                TargetType type = TargetType::kHost) {
-               if (type == TargetType::kHost) {
-                 self.CopyFromCpu<uint8_t, TargetType::kHost>(data.data());
-               }
-             },
-             py::arg("data"),
-             py::arg("type") = TargetType::kHost);
-
-  DO_GETTER_ONCE(uint8_t, "uint8_data");
-#endif
+  DATA_GETTER_SETTER_ONCE(uint8_t, uint8);
   DATA_GETTER_SETTER_ONCE(int32_t, int32);
   DATA_GETTER_SETTER_ONCE(float, float);
 #undef DO_GETTER_ONCE

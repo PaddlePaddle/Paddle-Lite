@@ -20,8 +20,12 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
         target_link_libraries(paddle_full_api_shared xxhash)
-        if (NOT LITE_ON_MODEL_OPTIMIZE_TOOL)
-            add_dependencies(paddle_full_api_shared dynload_mklml)
+        if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND WITH_MKL)
+            if(WITH_STATIC_MKL)
+                add_dependencies(paddle_full_api_shared ${MKLML_LIBRARIES})
+            else()
+                add_dependencies(paddle_full_api_shared dynload_mklml)
+            endif()
         endif()
         if(WIN32)
              target_link_libraries(paddle_full_api_shared shlwapi.lib)
@@ -30,6 +34,9 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     if(LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" ${cuda_kernels} "-Wl,--no-whole-archive")
     endif(LITE_WITH_CUDA)
+    if(LITE_WITH_CV)
+      target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" paddle_cv_arm "-Wl,--no-whole-archive")
+    endif(LITE_WITH_CV)
 
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared SHARED SRCS paddle_api.cc light_api.cc light_api_impl.cc
@@ -313,6 +320,11 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int16 SERIAL)
     add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_int16_tar_gz)
+    
+    lite_cc_test(test_mobilenetv1_opt_quant SRCS mobilenetv1_opt_quant_test.cc
+       DEPS ${lite_model_test_DEPS} ${light_lib_DEPS} paddle_api_full
+       ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
+    add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_tar_gz)
 
     lite_cc_test(test_mobilenetv2 SRCS mobilenetv2_test.cc
        DEPS ${lite_model_test_DEPS}
@@ -343,6 +355,13 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
+
+    lite_cc_test(test_fast_rcnn SRCS fast_rcnn_test.cc
+       DEPS ${lite_model_test_DEPS} ${light_lib_DEPS} paddle_api_full
+       CL_DEPS ${opencl_kernels}
+       FPGA_DEPS ${fpga_kernels}
+       ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl)
+    add_dependencies(test_fast_rcnn extern_lite_download_fast_rcnn_fluid184_tar_gz)
 
    # brief: we comment ocr_test_ut because we do not supply ocr model to test, it is the reference to infer nlp model
    # lite_cc_test(test_ocr_attention SRCS ocr_attention_test.cc

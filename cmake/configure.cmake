@@ -127,9 +127,13 @@ endif()
 
 if (LITE_WITH_ARM)
     add_definitions("-DLITE_WITH_ARM")
-    if (LITE_WITH_CV)
-        add_definitions("-DLITE_WITH_CV")
+endif()
+
+if (LITE_WITH_CV)
+    if(NOT LITE_WITH_ARM)
+        message(FATAL_ERROR "CV functions uses the ARM instructions, so LITE_WITH_ARM must be turned on")
     endif()
+    add_definitions("-DLITE_WITH_CV")
 endif()
 
 if (LITE_WITH_TRAIN)
@@ -214,6 +218,10 @@ endif()
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
   add_definitions("-DLITE_ON_MODEL_OPTIMIZE_TOOL")
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
+
+if (LITE_BUILD_EXTRA)
+  add_definitions("-DLITE_BUILD_EXTRA")
+endif(LITE_BUILD_EXTRA)
 
 if (LITE_WITH_PYTHON)
   add_definitions("-DLITE_WITH_PYTHON")

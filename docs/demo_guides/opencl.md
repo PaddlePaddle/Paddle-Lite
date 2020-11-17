@@ -90,7 +90,7 @@ rm ./lite/api/paddle_use_ops.h
 编译产物位于`build.lite.android.armv8.gcc.opencl`下的`inference_lite_lib.android.armv8.opencl`文件夹内，根据编译参数不同，文件夹名字会略有不同。这里仅罗列关键产物：
 
 - `cxx`:该目录是编译目标的C++的头文件和库文件;
-- `demo`:该目录包含了两个demo，用来调用使用`libpaddle_api_full_bundled.a`和`libpaddle_api_light_bundled.a`，分别对应`mobile_full`和`mobile_light`文件夹。编译对应的demo仅需在`mobile_full`或`mobile_light`文
+- `demo`:该目录包含了两个demo，用来调用使用`libpaddle_api_full_bundled.a`和`libpaddle_api_light_bundled.a`，分别对应`mobile_full`和`mobile_light`文件夹。编译对应的demo仅需在`mobile_full`或`mobile_light`文件夹下执行`make`
   - `mobile_full`:使用cxx config，可直接加载fluid模型，若使用OpenCL需要在`mobilenetv1_full_api.cc`代码里开启`DEMO_USE_OPENCL`的宏，详细见该文件的代码注释;
   - `mobile_light`:使用mobile config，只能加载`model_optimize_tool`优化过的模型。
 注：`opencl`实现的相关kernel已经打包到动态库中。
@@ -167,11 +167,11 @@ adb push ./mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb /data/lo
 adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
            /data/local/tmp/opencl/mobilenetv1_light_api \
            /data/local/tmp/opencl/mobilenetv1_opencl_fp32_opt_releasev2.6_b8234efb_20200423.nb \
-           1 3 224 224 \
+           1,3,224,224 \
            100 10 0" # round=100, warmup=10, print_output_tensor=0
 ```
 
-**注：** 权重参数会在第一次运行时加载，所以第一次执行时间略长。一般将warmup的值设为10，repeats值设为多次。
+**注：** 权重参数会在第一次运行时加载，且`.cl`文件也会在第一次运行时在线编译，所以第一次执行时间略长。一般将warmup的值设为10，repeats值设为多次。
 
 ### 2.2 运行示例2: test_mobilenetv1单元测试
 
@@ -183,9 +183,8 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
 # 在/data/local/tmp目录下创建OpenCL文件目录
 adb shell mkdir -p /data/local/tmp/opencl
 
-# 将mobilenet_v1的模型文件推送到/data/local/tmp/opencl目录下
-adb shell mkdir -p /data/local/tmp/opencl/mobilenet_v1
-adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/* /data/local/tmp/opencl/mobilenet_v1/
+# 将mobilenet_v1的fluid格式模型文件推送到/data/local/tmp/opencl/mobilenet_v1目录下
+adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/ /data/local/tmp/opencl/mobilenet_v1
 
 # 将OpenCL单元测试程序test_mobilenetv1，推送到/data/local/tmp/opencl目录下
 adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/local/tmp/opencl
@@ -198,7 +197,7 @@ adb shell chmod +x /data/local/tmp/opencl/test_mobilenetv1
 
 adb shell "export GLOG_v=1; \
    /data/local/tmp/opencl/test_mobilenetv1 \
-  --model_dir=/data/local/tmp/opencl/mobilenetv1_fluid/ \
+  --model_dir=/data/local/tmp/opencl/mobilenet_v1/ \
   --warmup=10 \
   --repeats=100"
 ```
@@ -222,3 +221,8 @@ adb shell "export GLOG_v=4; \
 注：这里给出的链接会跳转到线上最新develop分支的代码，很可能与您本地的代码存在差异，建议参考自己本地位于`lite/demo/cxx/`目录的代码，查看如何使用。
 
 **NOTE：** 对OpenCL的支持还在持续开发中。
+
+## 4. 常见问题
+
+1. opencl计算过程中大多以`cl::Image2D`的数据排布进行计算，不同gpu支持的最大`cl::Image2D`的宽度和高度有限制，模型输入的数据格式是buffer形式的`NCHW`数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的`cl::Image2D`最大宽度和高度均为16384），可以通过公式`image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4`计算当前层NCHW排布的Tensor所需的`cl::Image2D`的宽度和高度；
+2. 部署时需考虑不支持opencl的情况，可预先使用API`bool ::IsOpenCLBackendValid()`判断，对于不支持的情况加载CPU模型，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。

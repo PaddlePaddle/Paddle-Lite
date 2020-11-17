@@ -416,8 +416,8 @@ void rotate_hwc4(
   "sub %[inptr2], %[inptr2], %[stride_h_w] \n"                                 \
   "sub %[inptr3], %[inptr3], %[stride_h_w] \n"                                 \
                                                                                \
-  "vtrn.16 d1, d5    @ trans data: \n" /* d0=40 50 60 70 04 14 24 34 */        \
-  "vtrn.16  d9, d13  @ trans data:\n"  /* d4=41 51 61 71 05 15 25 35 */        \
+  "vtrn.16 d1, d9    @ trans data: \n" /* d0=40 50 60 70 04 14 24 34 */        \
+  "vtrn.16 d5, d13  @ trans data:\n"   /* d4=41 51 61 71 05 15 25 35 */        \
                                                                                \
   "vtrn.32 d0, d1                  @ trans data: \n"                           \
   "vtrn.32  d8, d9                  @ trans data: \n"                          \
