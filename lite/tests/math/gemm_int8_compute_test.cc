@@ -100,19 +100,20 @@ bool test_gemm_int8(bool tra,
   bool has_relu = false;
   switch (relu_type) {
     case 0:
-      act_param.has_active = false;
+      has_relu = false;
+      act_param.has_active = has_relu;
       break;
     case 1:
       has_relu = true;
 
     case 2:
     case 3:
-      act_param.has_active = true;
+      act_param.has_active = has_relu;
       act_param.active_type = (paddle::lite_api::ActivationType)relu_type;
       break;
     default:
       has_relu = true;
-      act_param.has_active = true;
+      act_param.has_active = has_relu;
       act_param.active_type = (paddle::lite_api::ActivationType)1;
   }
 
