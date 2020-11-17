@@ -49,7 +49,9 @@ DEFINE_int32(K, 512, "gemm: K");
 DEFINE_bool(traA, false, "gemm: A transpose");
 DEFINE_bool(traB, false, "gemm: B transpose");
 
-DEFINE_int32(relu_type, 0, "relu type, 0: no relu; 1: relu; 2: relu6; 3: leaky_relu;");
+DEFINE_int32(relu_type,
+             0,
+             "relu type, 0: no relu; 1: relu; 2: relu6; 3: leaky_relu;");
 DEFINE_bool(flag_bias, true, "with bias");
 
 bool test_gemm_int8(bool tra,
@@ -96,19 +98,18 @@ bool test_gemm_int8(bool tra,
   std::vector<float> scale_merge_int8(static_cast<size_t>(m));
   ActivationParam act_param;
   bool has_relu = false;
-  switch(relu_type) {
+  switch (relu_type) {
     case 0:
-       act_param.has_active = false;
-       break;
+      act_param.has_active = false;
+      break;
     case 1:
       has_relu = true;
 
     case 2:
     case 3:
-       act_param.has_active = true;
-       act_param.active_type = (paddle::lite_api::ActivationType)relu_type;
-
-       break;
+      act_param.has_active = true;
+      act_param.active_type = (paddle::lite_api::ActivationType)relu_type;
+      break;
     default:
       has_relu = true;
       act_param.has_active = true;
@@ -345,15 +346,14 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
 #ifdef LITE_WITH_ARM
     paddle::lite::DeviceInfo::Init();
 #endif
-    for (auto& m : {1, 3, 8, 32, 33,34,35,38,41, 397}) {
+    for (auto& m : {1, 3, 8, 32, 33, 34, 35, 38, 41, 397}) {
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
-        for (auto& k : {1, 3, 8, 59, 60, 61,62,66,67,71}) {
+        for (auto& k : {1, 3, 8, 59, 60, 61, 62, 66, 67, 71}) {
           for (auto& tra : {false, true}) {
             for (auto& trb : {false, true}) {
-              for (auto& has_bias : {false,true}) {
+              for (auto& has_bias : {false, true}) {
                 for (auto& relu_type : {0, 1}) {
-                  for (auto& th : {1,2,4}) {
-
+                  for (auto& th : {1, 2, 4}) {
                     auto flag = test_gemm_int8(tra,
                                                trb,
                                                m,
