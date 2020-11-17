@@ -24,9 +24,7 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-Buffer LoadFile(const std::string& path,
-                const size_t& offset,
-                const size_t& size) {
+Buffer LoadFile(const std::string& path, size_t offset, size_t size) {
   // open file in readonly mode
   FILE* file = fopen(path.c_str(), "rb");
   CHECK(file) << "Unable to open file: " << path;

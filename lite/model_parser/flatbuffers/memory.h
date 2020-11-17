@@ -26,13 +26,14 @@ namespace fbs {
 class Buffer {
  public:
   Buffer() = default;
+  Buffer(const Buffer&) = delete;
 
   explicit Buffer(size_t size)
       : raw_{std::unique_ptr<lite::Buffer>{new lite::Buffer}} {
     ReallocateDownward(size);
   }
 
-  Buffer(const Buffer& other) {
+  void CopyDataFrom(const Buffer& other) {
     raw_ = std::unique_ptr<lite::Buffer>{new lite::Buffer};
     const auto* other_raw = other.raw();
     CHECK(other_raw);
@@ -66,7 +67,7 @@ class Buffer {
   const lite::Buffer* raw() const { return raw_.get(); }
 
  private:
-  std::unique_ptr<lite::Buffer> raw_{nullptr};
+  std::unique_ptr<lite::Buffer> raw_;
 };
 
 }  // namespace fbs

@@ -113,8 +113,6 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
 // Memory buffer manager.
 class Buffer {
  public:
-  Buffer() = default;
-  Buffer(Buffer&&) = default;
   Buffer(void* data, TargetType target, size_t size)
       : space_(size), data_(data), own_data_(false), target_(target) {}
 
@@ -181,6 +179,10 @@ class Buffer {
   }
 
   ~Buffer() { Free(); }
+
+  Buffer() = default;
+  Buffer(const Buffer&) = delete;
+  Buffer(Buffer&&) = default;
 
  private:
   // memory it actually malloced.
