@@ -15,6 +15,7 @@
 #pragma once
 
 #include <arm_neon.h>
+
 #include <algorithm>
 #include <cmath>
 

@@ -64,8 +64,8 @@ void resize_four_channel(const uint8_t* src,
       sx = 0;
       fx = 0.f;
     }
-    if (sx >= w_in - 1) {
-      sx = w_in - 2;
+    if (sx >= w_in / 4 - 1) {
+      sx = w_in / 4 - 2;
       fx = 1.f;
     }
     xofs[dx] = sx * 4;

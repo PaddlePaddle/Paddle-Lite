@@ -421,6 +421,7 @@ void GenerateProposalsCompute::Run() {
   lod0.push_back(0);
   anchors->Resize(std::vector<int64_t>({anchors->numel() / 4, 4}));
   variances->Resize(std::vector<int64_t>({variances->numel() / 4, 4}));
+  std::vector<int64_t> tmp_lod;
 
   int64_t num_proposals = 0;
   for (int64_t i = 0; i < num; ++i) {
@@ -451,7 +452,17 @@ void GenerateProposalsCompute::Run() {
 
     num_proposals += proposals.dims()[0];
     lod0.push_back(num_proposals);
+    tmp_lod.push_back(num_proposals);
   }
+
+  if (param.RpnRoisLod != nullptr) {
+    param.RpnRoisLod->Resize(DDim(std::vector<DDim::value_type>({num})));
+    int64_t *lod_data = param.RpnRoisLod->mutable_data<int64_t>();
+    for (int i = 0; i < num; i++) {
+      lod_data[i] = tmp_lod[i];
+    }
+  }
+
   rpn_rois->set_lod(lod);
   rpn_roi_probs->set_lod(lod);
   rpn_rois->Resize({num_proposals, 4});
@@ -491,4 +502,6 @@ REGISTER_LITE_KERNEL(generate_proposals,
     .BindInput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("RpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("RpnRoiProbs", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("RpnRoisLod",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

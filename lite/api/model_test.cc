@@ -39,6 +39,8 @@ DEFINE_string(backend,
               "choose backend for valid_places: arm_cpu | opencl. Compile "
               "OpenCL version if you choose opencl");
 DEFINE_string(arg_name, "", "the arg name");
+DEFINE_string(in_txt, "", "input text");
+DEFINE_string(out_txt, "", "output text");
 
 namespace paddle {
 namespace lite_api {
@@ -95,6 +97,15 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
   config.set_threads(thread_num);
 
   auto predictor = lite_api::CreatePaddlePredictor(config);
+  bool flag_in = true;
+  bool flag_out = true;
+  if (FLAGS_in_txt == "") {
+    flag_in = false;
+  }
+  if (FLAGS_out_txt == "") {
+    flag_out = false;
+  }
+  printf("flag_in: %d, flag_out: %d \n", flag_in, flag_out);
 
   for (int j = 0; j < input_shapes.size(); ++j) {
     auto input_tensor = predictor->GetInput(j);
@@ -104,9 +115,19 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
     for (int i = 0; i < input_shapes[j].size(); ++i) {
       input_num *= input_shapes[j][i];
     }
-
+    FILE* fp_r = nullptr;
+    if (flag_in) {
+      fp_r = fopen(FLAGS_in_txt.c_str(), "r");
+    }
     for (int i = 0; i < input_num; ++i) {
-      input_data[i] = 1.f;
+      if (flag_in) {
+        fscanf(fp_r, "%f\n", &input_data[i]);
+      } else {
+        input_data[i] = 1.f;
+      }
+    }
+    if (flag_in) {
+      fclose(fp_r);
     }
   }
 
@@ -151,6 +172,21 @@ void Run(const std::vector<std::vector<int64_t>>& input_shapes,
         paddle::lite::compute_mean<float>(out_data, output_tensor_numel);
     auto out_std_dev = paddle::lite::compute_standard_deviation<float>(
         out_data, output_tensor_numel, true, out_mean);
+    FILE* fp1 = nullptr;
+    if (flag_out) {
+      fp1 = fopen(FLAGS_out_txt.c_str(), "w");
+    }
+    double sum1 = 0.f;
+    for (int i = 0; i < output_tensor_numel; ++i) {
+      if (flag_out) {
+        fprintf(fp1, "%f\n", out_data[i]);
+      }
+      sum1 += out_data[i];
+    }
+    if (flag_out) {
+      fclose(fp1);
+    }
+    printf("out mean: %f \n", sum1 / output_tensor_numel);
 
     LOG(INFO) << "output tensor " << tidx << " dims:" << tensor_shape_str;
     LOG(INFO) << "output tensor " << tidx

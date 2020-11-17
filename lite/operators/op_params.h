@@ -581,7 +581,7 @@ struct DropoutParam : ParamBase {
 struct SplitParam : ParamBase {
   lite::Tensor* x{};
   std::vector<lite::Tensor*> output{};
-  lite::Tensor* axis_tensor;
+  lite::Tensor* axis_tensor{};
   std::vector<lite::Tensor*> sections_tensor_list{};
 
   int axis{-1};
@@ -692,6 +692,7 @@ struct FillConstantParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   std::vector<int64_t> shape{};
   lite::Tensor* shape_tensor{nullptr};
+  lite::Tensor* value_tensor{nullptr};
   std::vector<lite::Tensor*> shape_tensor_list{};
 
   float value{0.0f};
@@ -797,6 +798,8 @@ struct ArgmaxParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
   int Axis{0};
+  int dtype{-1};
+  bool keepdims{false};
 };
 
 ///----------------------- axpy operators ----------------------
@@ -1356,6 +1359,7 @@ struct GenerateProposalsParam : ParamBase {
   // outputs
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
+  lite::Tensor* RpnRoisLod{};
 };
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam : ParamBase {
@@ -1464,6 +1468,7 @@ struct AssignParam : ParamBase {
 struct RoiAlignParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
+  lite::Tensor* RoisLod{};
   lite::Tensor* Out{};
   float spatial_scale{1.0};
   int pooled_height{1};
@@ -1727,6 +1732,7 @@ struct XPUFcParam : ParamBase {
   float w_max{0.0f};
   bool transpose_w{true};
   std::string activation_type{""};
+  std::string precision{};
 };
 
 struct XPUResNetCbamParam : ParamBase {
@@ -1969,6 +1975,16 @@ struct OneHotParam : ParamBase {
   int depth;
   int dtype;
   bool allow_out_of_range;
+};
+
+struct SinParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+struct CosParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators

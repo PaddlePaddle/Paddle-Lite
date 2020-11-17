@@ -50,7 +50,8 @@ std::vector<std::vector<T>> ReadRawData(
       fin.seekg(0, std::ios::end);
       int file_size = fin.tellg();
       fin.seekg(0, std::ios::beg);
-      CHECK_EQ(file_size, image_size * sizeof(T) / sizeof(char));
+      CHECK_EQ(static_cast<size_t>(file_size),
+               static_cast<size_t>(image_size) * sizeof(T) / sizeof(char));
       fin.read(reinterpret_cast<char*>(data), file_size);
       fin.close();
       data += image_size;

@@ -28,7 +28,7 @@
 
 ### 2.1 安装PaddleSlim
 
-参考PaddleSlim[文档](https://paddlepaddle.github.io/PaddleSlim/install.html)进行安装。
+参考PaddleSlim[文档](https://paddleslim.readthedocs.io/zh_CN/latest/index.html)进行安装。
 
 ### 2.2 准备模型和校准数据
 
@@ -46,7 +46,7 @@
 
 ```python
 import paddle.fluid as fluid
-from paddleslim.quant import quant_post
+from paddleslim.quant import quant_post_static
 
 exe = fluid.Executor(fluid.CPUPlace())
 model_dir = path/to/fp32_model_params
@@ -66,7 +66,7 @@ batch_size = 10
 batch_nums = 10
 algo = "KL"
 quantizable_op_type = ["conv2d", "depthwise_conv2d", "mul"]
-quant_post(executor=exe,
+quant_post_static(executor=exe,
            model_dir=model_dir,
            model_filename=model_filename,
            params_filename=params_filename,
@@ -78,11 +78,11 @@ quant_post(executor=exe,
            quantizable_op_type=quantizable_op_type)
 ```
 
-快速开始请参考[文档](https://paddlepaddle.github.io/PaddleSlim/quick_start/quant_post_tutorial.html#)。
+快速开始请参考[文档](https://paddleslim.readthedocs.io/zh_CN/latest/quick_start/quant_post_static_tutorial.html)。
 
-API接口请参考[文档](https://paddlepaddle.github.io/PaddleSlim/api_cn/quantization_api.html#quant-post)。
+API接口请参考[文档](https://paddleslim.readthedocs.io/zh_CN/latest/api_cn/quantization_api.html)。
 
-Demo请参考[文档](https://github.com/PaddlePaddle/PaddleSlim/tree/release/1.0.1/demo/quant/quant_post)。
+Demo请参考[文档](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/demo/quant/quant_post)。
 
 ## 3 量化模型预测
 

@@ -187,8 +187,7 @@ TEST(Subgraph, detect_custom_model) {
               FLAGS_params_file,
               scope.get(),
               program_desc.get(),
-              !FLAGS_model_file.empty() && !FLAGS_params_file.empty(),
-              false);
+              !FLAGS_model_file.empty() && !FLAGS_params_file.empty());
   std::vector<Place> valid_places({
 #ifdef LITE_WITH_ARM
       Place{TARGET(kARM), PRECISION(kFloat)},

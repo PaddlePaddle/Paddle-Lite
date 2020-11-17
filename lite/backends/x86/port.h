@@ -64,6 +64,7 @@ static void *dlopen(const char *filename, int flag) {
   return reinterpret_cast<void *>(hModule);
 }
 
+#ifdef LITE_WITH_LOG
 extern struct timeval;
 static int gettimeofday(struct timeval *tp, void *tzp) {
   time_t clock;
@@ -84,6 +85,7 @@ static int gettimeofday(struct timeval *tp, void *tzp) {
 
   return (0);
 }
+#endif  // LITE_WITH_LOG
 #endif  // !_WIN32
 
 static void ExecShellCommand(const std::string &cmd, std::string *message) {

@@ -33,6 +33,8 @@ namespace lite {
 #define TEST_CONV_IMAGE_3x3
 #define TEST_CONV_IMAGE_5x5
 #define TEST_CONV_IMAGE_7x7
+
+#define LEAKY_RELU_ALPHA (0.1)
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
                        Dtype2* dout,
@@ -55,7 +57,8 @@ static void conv_basic(const Dtype1* din,
                        int pad_w,
                        int pad_h,
                        bool flag_bias,
-                       std::string flag_relu) {
+                       std::string flag_relu,
+                       float leaky_relu_alpha = LEAKY_RELU_ALPHA) {
   Dtype2 beta = 0;
   auto src_data = din;
   auto dst_data_ref = dout;
@@ -105,6 +108,7 @@ static void conv_basic(const Dtype1* din,
                 }
               }
             }
+
             if (flag_relu == "relu") {
               dst_data_ref[out_idx] = dst_data_ref[out_idx] > (Dtype2)0
                                           ? dst_data_ref[out_idx]
@@ -114,6 +118,13 @@ static void conv_basic(const Dtype1* din,
                                  ? dst_data_ref[out_idx]
                                  : (Dtype2)0;
               dst_data_ref[out_idx] = (dst_tmp < 6.f) ? dst_tmp : 6.f;
+            } else if (flag_relu == "leaky_relu") {
+              dst_data_ref[out_idx] =
+                  dst_data_ref[out_idx] > (Dtype2)0
+                      ? dst_data_ref[out_idx]
+                      : (Dtype2)(dst_data_ref[out_idx] * leaky_relu_alpha);
+            } else {
+              VLOG(4) << "this act type: " << flag_relu << " does not support";
             }
           }
         }
@@ -154,7 +165,7 @@ TEST(conv2d, compute_image2d_1x1) {
         int iw = ih;
         for (int ic = 2; ic < 10; ic += 1) {  // ic
           for (bool bias_flag : {true, false}) {
-            for (std::string relu_flag : {""}) {
+            for (std::string relu_flag : {"leaky_relu"}) {
 #else
   const int batch_size = 1;
   const int oc = 2;
@@ -162,7 +173,7 @@ TEST(conv2d, compute_image2d_1x1) {
   const int iw = 3;
   const int ic = 2;
   const bool bias_flag = false;
-  const std::string relu_flag = "";
+  const std::string relu_flag = "leaky_relu";
 #endif
               LOG(INFO) << "---------------------------- "
                            "conv1x1----------------------- "
@@ -204,14 +215,16 @@ TEST(conv2d, compute_image2d_1x1) {
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu;
-              } else if (relu_flag == "None") {
-                param.fuse_relu = false;
-                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else if (relu_flag == "leaky_relu") {
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kLeakyRelu;
+                param.activation_param.has_active = true;
+                param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
               } else {
                 param.fuse_relu = false;  // relu only
                 param.activation_param.has_active = false;
@@ -499,7 +512,7 @@ TEST(conv2d, compute_image2d_3x3) {
         int iw = ih;
         for (int ic = 1; ic < 10; ic += 1) {  // ic
           for (bool bias_flag : {true, false}) {
-            for (std::string relu_flag : {/*true,*/ "relu"}) {
+            for (std::string relu_flag : {"", "relu"}) {
 #else
   const int pad = 1;
   const int dilation = 1;
@@ -523,7 +536,7 @@ const int stride = 2;
 #endif
 
   const bool bias_flag = false;
-  const std::string relu_flag = "relu";
+  const std::string relu_flag = "leaky_relu";
 #endif
               int filter_channel = ic;
               if (group > 1) {
@@ -561,14 +574,16 @@ const int stride = 2;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu;
-              } else if (relu_flag == "None") {
-                param.fuse_relu = false;
-                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else if (relu_flag == "leaky_relu") {
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kLeakyRelu;
+                param.activation_param.has_active = true;
+                param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
               } else {
                 param.fuse_relu = false;  // relu only
                 param.activation_param.has_active = false;
@@ -867,7 +882,7 @@ TEST(conv2d, compute_image2d_5x5) {
   // ic = 1 会进入depthwise的路由 .
   const int ic = 2;
   const bool bias_flag = true;
-  const std::string relu_flag = "relu";
+  const std::string relu_flag = "leaky_relu";
 #endif
 
               const int oh =
@@ -900,14 +915,16 @@ TEST(conv2d, compute_image2d_5x5) {
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu;
-              } else if (relu_flag == "None") {
-                param.fuse_relu = false;
-                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else if (relu_flag == "leaky_relu") {
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kLeakyRelu;
+                param.activation_param.has_active = true;
+                param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
               } else {
                 param.fuse_relu = false;  // relu only
                 param.activation_param.has_active = false;
@@ -1191,7 +1208,7 @@ TEST(conv2d, compute_image2d_7x7) {
   // ic = 1会进入 depthwise路由
   const int ic = 2;
   const bool bias_flag = false;
-  const std::string relu_flag = "";
+  const std::string relu_flag = "leaky_relu";
 #endif
 
               const int oh =
@@ -1225,14 +1242,16 @@ TEST(conv2d, compute_image2d_7x7) {
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu;
-              } else if (relu_flag == "None") {
-                param.fuse_relu = false;
-                param.activation_param.has_active = false;
               } else if (relu_flag == "relu6") {
                 param.activation_param.Relu_clipped_coef = 6.f;
                 param.activation_param.has_active = true;
                 param.activation_param.active_type =
                     lite_api::ActivationType::kRelu6;
+              } else if (relu_flag == "leaky_relu") {
+                param.activation_param.active_type =
+                    lite_api::ActivationType::kLeakyRelu;
+                param.activation_param.has_active = true;
+                param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
               } else {
                 param.fuse_relu = false;  // relu only
                 param.activation_param.has_active = false;

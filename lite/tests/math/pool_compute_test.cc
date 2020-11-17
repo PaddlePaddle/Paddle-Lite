@@ -127,7 +127,9 @@ void pooling_basic(const float* din,
       for (int n = 0; n < num; ++n) {
         float* dout_batch = dout + n * chout * size_channel_out;
         const float* din_batch = din + n * chin * size_channel_in;
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
+#endif
         for (int c = 0; c < chout; ++c) {
           const float* din_ch = din_batch + c * size_channel_in;  // in address
           float tmp1 = din_ch[0];
@@ -144,7 +146,9 @@ void pooling_basic(const float* din,
       for (int n = 0; n < num; ++n) {
         float* dout_batch = dout + n * chout * size_channel_out;
         const float* din_batch = din + n * chin * size_channel_in;
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
+#endif
         for (int c = 0; c < chout; ++c) {
           const float* din_ch = din_batch + c * size_channel_in;  // in address
           float sum = 0.f;
@@ -159,7 +163,9 @@ void pooling_basic(const float* din,
     }
   } else {
     for (int ind_n = 0; ind_n < num; ++ind_n) {
+#ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
+#endif
       for (int ind_c = 0; ind_c < chin; ++ind_c) {
         for (int ind_h = 0; ind_h < hout; ++ind_h) {
           int sh = ind_h * stride_h;

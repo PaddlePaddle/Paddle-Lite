@@ -330,12 +330,14 @@ void resize_one_channel_uv(const uint8_t* src,
   float fy = 0.f;
   int sx = 0.f;
   int sy = 0.f;
+  int wout = w_out / 2;
+  int win = w_in / 2;
 
 #define SATURATE_CAST_SHORT(X)                                               \
   (int16_t)::std::min(                                                       \
       ::std::max(static_cast<int>(X + (X >= 0.f ? 0.5f : -0.5f)), SHRT_MIN), \
       SHRT_MAX);
-  for (int dx = 0; dx < w_out / 2; dx++) {
+  for (int dx = 0; dx < wout; dx++) {
     fx = static_cast<float>((dx + 0.5) * scale_x - 0.5);
     sx = floor(fx);
     fx -= sx;
@@ -344,8 +346,8 @@ void resize_one_channel_uv(const uint8_t* src,
       sx = 0;
       fx = 0.f;
     }
-    if (sx >= w_in - 1) {
-      sx = w_in - 2;
+    if (sx >= win - 1) {
+      sx = win - 2;
       fx = 1.f;
     }
 
@@ -399,7 +401,7 @@ void resize_one_channel_uv(const uint8_t* src,
 
       const int16_t* ialphap = ialpha;
       int16_t* rows1p = rows1;
-      for (int dx = 0; dx < w_out / 2; dx++) {
+      for (int dx = 0; dx < wout; dx++) {
         int sx = xofs[dx] * 2;
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];
@@ -418,7 +420,7 @@ void resize_one_channel_uv(const uint8_t* src,
       const int16_t* ialphap = ialpha;
       int16_t* rows0p = rows0;
       int16_t* rows1p = rows1;
-      for (int dx = 0; dx < w_out / 2; dx++) {
+      for (int dx = 0; dx < wout; dx++) {
         int sx = xofs[dx] * 2;
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];
@@ -516,11 +518,13 @@ void resize_three_channel(const uint8_t* src,
   float fy = 0.f;
   int sx = 0.f;
   int sy = 0.f;
+  int wout = w_out / 3;
+  int win = w_in / 3;
 #define SATURATE_CAST_SHORT(X)                                               \
   (int16_t)::std::min(                                                       \
       ::std::max(static_cast<int>(X + (X >= 0.f ? 0.5f : -0.5f)), SHRT_MIN), \
       SHRT_MAX);
-  for (int dx = 0; dx < w_out / 3; dx++) {
+  for (int dx = 0; dx < wout; dx++) {
     fx = static_cast<float>((dx + 0.5) * scale_x - 0.5);
     sx = floor(fx);
     fx -= sx;
@@ -528,8 +532,8 @@ void resize_three_channel(const uint8_t* src,
       sx = 0;
       fx = 0.f;
     }
-    if (sx >= w_in - 1) {
-      sx = w_in - 2;
+    if (sx >= win - 1) {
+      sx = win - 2;
       fx = 1.f;
     }
     xofs[dx] = sx * 3;
@@ -678,11 +682,13 @@ void resize_four_channel(const uint8_t* src,
   float fy = 0.f;
   int sx = 0.f;
   int sy = 0.f;
+  int wout = w_out / 4;
+  int win = w_in / 4;
 #define SATURATE_CAST_SHORT(X)                                               \
   (int16_t)::std::min(                                                       \
       ::std::max(static_cast<int>(X + (X >= 0.f ? 0.5f : -0.5f)), SHRT_MIN), \
       SHRT_MAX);
-  for (int dx = 0; dx < w_out / 4; dx++) {
+  for (int dx = 0; dx < wout; dx++) {
     fx = static_cast<float>((dx + 0.5) * scale_x - 0.5);
     sx = floor(fx);
     fx -= sx;
@@ -690,8 +696,8 @@ void resize_four_channel(const uint8_t* src,
       sx = 0;
       fx = 0.f;
     }
-    if (sx >= w_in - 1) {
-      sx = w_in - 2;
+    if (sx >= win - 1) {
+      sx = win - 2;
       fx = 1.f;
     }
     xofs[dx] = sx * 4;
@@ -735,7 +741,7 @@ void resize_four_channel(const uint8_t* src,
       const uint8_t* S1 = src + w_in * (sy + 1);
       const int16_t* ialphap = ialpha;
       int16_t* rows1p = rows1;
-      for (int dx = 0; dx < w_out / 4; dx++) {
+      for (int dx = 0; dx < wout; dx++) {
         int sx = xofs[dx];
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];
@@ -754,7 +760,7 @@ void resize_four_channel(const uint8_t* src,
       const int16_t* ialphap = ialpha;
       int16_t* rows0p = rows0;
       int16_t* rows1p = rows1;
-      for (int dx = 0; dx < w_out / 4; dx++) {
+      for (int dx = 0; dx < wout; dx++) {
         int sx = xofs[dx];
         int16_t a0 = ialphap[0];
         int16_t a1 = ialphap[1];

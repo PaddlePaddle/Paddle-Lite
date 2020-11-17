@@ -24,9 +24,7 @@ const int MALLOC_ALIGN = 64;
 void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
   char* p = static_cast<char*>(malloc(offset + size));
-  if (!p) {
-    return nullptr;
-  }
+  CHECK(p);
   void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) &
                                     (~(MALLOC_ALIGN - 1)));
   static_cast<void**>(r)[-1] = p;

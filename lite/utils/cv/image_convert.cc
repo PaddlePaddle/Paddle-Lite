@@ -1664,7 +1664,7 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
           "vmull.u8 q15, d13, d1 \n"
           // vr
           "vmlal.u8 q8, d5, d2 \n"
-          "vmlal.u8 q9, d6, d2 \n"
+          "vmlal.u8 q9, d8, d2 \n"
           "vmlal.u8 q10, d11, d2 \n"
           "vmlal.u8 q11, d14, d2 \n"
           // 16->32

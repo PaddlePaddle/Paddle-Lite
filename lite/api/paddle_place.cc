@@ -97,7 +97,9 @@ const std::string& PrecisionToStr(PrecisionType precision) {
                                                  "float16",
                                                  "bool",
                                                  "int64_t",
-                                                 "int16_t"};
+                                                 "int16_t",
+                                                 "uint8_t",
+                                                 "double"};
   auto x = static_cast<int>(precision);
   CHECK_LT(x, static_cast<int>(PRECISION(NUM)));
   return precision2string[x];

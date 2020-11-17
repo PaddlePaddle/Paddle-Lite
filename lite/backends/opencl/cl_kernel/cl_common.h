@@ -54,6 +54,9 @@ limitations under the License. */
 #define _CONVERT_TYPE_TO(value, type) convert_##type(value)
 #define CONVERT_TYPE_TO(value, type) _CONVERT_TYPE_TO(value, type)
 
+__constant sampler_t SAMPLER =
+    CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
 /////////////////////////////////
 // WRITE_IMG_TYPE / READ_IMG_TYPE
 /////////////////////////////////
@@ -88,6 +91,11 @@ inline CL_DTYPE activation(CL_DTYPE in
 #ifdef RELU6
   output = clamp(in, (CL_DTYPE)0, (CL_DTYPE)6);
 #endif
+
+#ifdef LEAKY_RELU
+  output =
+      select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in, (CL_DTYPE)in, (ushort)(in >= 0));
+#endif
   return output;
 }
 
@@ -109,6 +117,17 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 #ifdef RELU6
   in = fmax((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
   output = fmin((CL_DTYPE4)(6.0f, 6.0f, 6.0f, 6.0f), in);
+#endif
+
+#ifdef LEAKY_RELU
+  // note: `(ushort4)(in >= 0)` causes error: invalid conversion
+  // between ext-vector type 'ushort4' and 'short
+  // __attribute__((ext_vector_type(4)))'
+  // thus, using `(ushort4)(in.x >= 0, in.y >= 0, in.z >= 0, in.w >= 0)`
+  // instead.
+  output = select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in,
+                  (CL_DTYPE4)in,
+                  (ushort4)(in.x >= 0, in.y >= 0, in.z >= 0, in.w >= 0));
 #endif
   return output;
 }

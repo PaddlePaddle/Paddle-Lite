@@ -16,6 +16,7 @@
 
 #include <bmcompiler_if.h>
 #include <bmruntime_interface.h>
+#include <bmruntime_legacy.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -50,9 +51,10 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
  protected:
   bool BuildDeviceProgram() override;
   bool LaunchDeviceProgram() override;
+  bool InputShapeChanged() override;
 
  private:
-  void *bmrt_hd_;
+  void *bmrt_hd_ = nullptr;
   std::vector<bm_tensor_t> device_inputs_;
   std::vector<bm_tensor_t> device_outputs_;
   std::map<std::string, int> outname_map_;

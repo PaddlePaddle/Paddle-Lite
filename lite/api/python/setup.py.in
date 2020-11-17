@@ -48,7 +48,7 @@ shutil.copy('${PADDLE_SOURCE_DIR}/lite/api/python/bin/paddle_lite_opt', LITE_PAT
 # put all thirdparty libraries in paddlelite.libs
 PACKAGE_DATA['paddlelite.libs'] = []
 LIB_PATH = INFERENCE_LITE_LIB_PATH + '/python/install/libs/'
-if '${WITH_MKL}' == 'ON':
+if '${WITH_MKL}' == 'ON' and '${WITH_STATIC_MKL}' == 'OFF':
     shutil.copy('${MKLML_SHARED_IOMP_LIB}', LIB_PATH)
     shutil.copy('${MKLML_SHARED_LIB}', LIB_PATH)
     if os.name != 'nt':
@@ -57,6 +57,11 @@ if '${WITH_MKL}' == 'ON':
         PACKAGE_DATA['paddlelite.libs'] += ['libiomp5md.dll', 'mklml.dll']
         shutil.copy('${MKLML_SHARED_LIB_DEPS}', LIB_PATH)
         PACKAGE_DATA['paddlelite.libs'] += ['msvcr120.dll']
+
+if '${WITH_MKL}' == 'ON' and '${WITH_STATIC_MKL}' == 'ON' and os.name != 'nt':
+    shutil.copy('${MKLML_SHARED_IOMP_LIB}', LIB_PATH)
+    PACKAGE_DATA['paddlelite.libs'] += ['libiomp5.so']
+
 # link lite.so to paddlelite.libs
 if os.name != 'nt':
     COMMAND = "patchelf --set-rpath '$ORIGIN/libs/' " + LITE_PATH + "/lite.so"

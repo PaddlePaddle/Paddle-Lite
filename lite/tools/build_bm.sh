@@ -6,6 +6,7 @@ BM_SDK_ROOT="$(pwd)/third-party/bmlibs/bm_sc3_libs"     # BM SDK
 TARGET_NAME="BM1682"     # default target
 BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
 WITH_TESTING=ON                  # ON/OFF
+BM_DYNAMIC_COMPILE=OFF
 
 function print_usage {
     echo -e "\nUSAGE:"
@@ -62,11 +63,11 @@ function prepare_workspace {
 
     # clone submodule
     # git submodule update --init --recursive
-    prepare_thirdparty
 }
 
 function build_bm {
     build_dir=${workspace}/build.lite.bm
+    prepare_thirdparty
     mkdir -p $build_dir
     cd $build_dir
 
@@ -87,7 +88,9 @@ function build_bm {
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=OFF \
         -DLITE_WITH_BM=ON \
+        -DLITE_ON_TINY_PUBLISH=OFF \
         -DWITH_TESTING=${WITH_TESTING} \
+        -DBM_DYNAMIC_COMPILE=${BM_DYNAMIC_COMPILE} \
         -DBM_SDK_ROOT=${BM_SDK_ROOT}
 
     make publish_inference -j$NUM_CORES_FOR_COMPILE
@@ -106,6 +109,10 @@ function main {
                 ;;
             --test=*)
                 WITH_TESTING=${i#*=}
+                shift
+                ;;
+            --dynamic=*)
+                BM_DYNAMIC_COMPILE=${i#*=} 
                 shift
                 ;;
             *)

@@ -7,6 +7,8 @@ set +x
 ARCH=armv8
 # c++_static or c++_shared, default c++_static.
 ANDROID_STL=c++_static
+# android api level
+ANDROID_API_LEVEL=Default
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
 # ON or OFF, default OFF.
@@ -150,6 +152,16 @@ function make_tiny_publish_so {
       WITH_EXTRA=ON
   fi
 
+  # android api level for android version
+  if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
+      cmake_api_level_options=""
+  elif [ ${ANDROID_API_LEVEL} -gt 20 ]; then
+      cmake_api_level_options="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
+  else
+      echo "Error: ANDROID_API_LEVEL should be no less than 21, because Paddle-Lite doesn't support Android version that's lower than Android5.0."
+      exit 1
+  fi
+
 
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
@@ -170,6 +182,7 @@ function make_tiny_publish_so {
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
+      ${cmake_api_level_options} \
       ${cmake_mutable_options}  \
       -DLITE_ON_TINY_PUBLISH=ON 
 
@@ -207,6 +220,16 @@ function make_full_publish_so {
       WITH_EXTRA=ON
   fi
 
+  # android api level for android version
+  if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
+      cmake_api_level_options=""
+  elif [ ${ANDROID_API_LEVEL} -gt 20 ]; then
+      cmake_api_level_options="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
+  else
+      echo "Error: ANDROID_API_LEVEL should be no less than 21, because Paddle-Lite doesn't support Android version that's lower than Android5.0."
+      exit 1
+  fi
+
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
@@ -227,6 +250,7 @@ function make_full_publish_so {
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
+      ${cmake_api_level_options} \
       ${cmake_mutable_options}
 
   # todo: third_party of opencl should be moved into git submodule and cmake later
@@ -258,6 +282,9 @@ function print_usage {
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
+    echo -e "|     --android_api_level: (21~27); control android api level, default value is 22 when arch=armv7 , 23 when arch=armv8.               |"
+    echo -e "|                 eg. when android platform version is lower than Android6.0, we need to set android_api_level:                        |"
+    echo -e "|                     Android5.1: --android_api_level=22    Android5.0: --android_api_level=21     LowerThanAndroid5.0: not supported  |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
@@ -315,6 +342,10 @@ function main {
             # c++_static or c++_shared, default c++_static
             --android_stl=*)
                 ANDROID_STL="${i#*=}"
+                shift
+                ;;
+            --android_api_level=*)
+                ANDROID_API_LEVEL="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF

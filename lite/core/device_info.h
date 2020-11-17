@@ -132,6 +132,7 @@ class DeviceInfo {
   std::vector<bool> fp32_;
   std::vector<bool> fp16_;
   std::vector<bool> dot_;
+  bool has_a53_valid_;
 
   // LITE_POWER_HIGH stands for using big cores,
   // LITE_POWER_LOW stands for using small core,

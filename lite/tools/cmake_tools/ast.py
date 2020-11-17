@@ -191,9 +191,25 @@ class RegisterLiteKernelParser(SyntaxParser):
 
         self.kernels = []
 
-    def parse(self):
+    def parse(self, with_extra):
         find_registry_command = False
-
+        extra_command = []
+        # Get the code location of extra kernels registry
+        # extra kernels registries are surrounded by
+        # "#ifdef LITE_BUILD_EXTRA" and "#endif // LITE_BUILD_EXTRA"
+        while self.cur_pos < len(self.str):
+            start = self.str.find("#ifdef LITE_BUILD_EXTRA", self.cur_pos)
+            if start != -1:
+               self.cur_pos = start
+               end = self.str.find("#endif  // LITE_BUILD_EXTRA", self.cur_pos)
+               if end != -1:
+                   extra_command += extra_command + list(range(start, end + 1))
+                   self.cur_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
+               else:
+                   break
+            else:
+                break
+        self.cur_pos = 0
         while self.cur_pos < len(self.str):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
@@ -203,6 +219,10 @@ class RegisterLiteKernelParser(SyntaxParser):
                     skip commented code
                     '''
                     self.cur_pos = start + 1
+                    continue
+                # if with_extra == "OFF", extra kernels will not be parsed
+                if with_extra != "ON" and start in extra_command:
+                    self.cur_pos = start + len(self.KEYWORD) -1
                     continue
                 self.cur_pos = start
                 k = KernelRegistry()
