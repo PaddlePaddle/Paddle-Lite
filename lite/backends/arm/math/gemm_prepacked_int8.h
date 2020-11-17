@@ -54,9 +54,8 @@ const int NBLOCK_INT8_OTH = 8;
 const int MBLOCK_INT8_DOT = 6;
 const int NBLOCK_INT8_DOT = 8;
 
-
 inline int get_hblock_int8(ARMContext* ctx) {
-  #ifdef WITH_ARM_DOTPROD
+#ifdef WITH_ARM_DOTPROD
   if (ctx->has_dot()) {
     return MBLOCK_INT8_DOT;
   } else {
@@ -65,7 +64,7 @@ inline int get_hblock_int8(ARMContext* ctx) {
 #else
   return MBLOCK_INT8_OTH;
 #endif
- }
+}
 #endif  // __aarch64__
 
 void prepackA_int8(void* out,
