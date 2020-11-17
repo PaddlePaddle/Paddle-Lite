@@ -143,6 +143,10 @@ if (NOT LITE_ON_TINY_PUBLISH)
   add_subdirectory(arena)
 endif()
 
+if (LITE_WITH_XCODE)
+  add_subdirectory(profile)
+endif()
+
 if(LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_WITH_MLU OR LITE_WITH_APU OR LITE_WITH_HUAWEI_ASCEND_NPU OR LITE_WITH_IMAGINATION_NNA)
     lite_cc_library(subgraph_bridge_registry
       SRCS subgraph_bridge_registry.cc
