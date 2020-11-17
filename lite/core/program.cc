@@ -239,7 +239,8 @@ RuntimeProgram::RuntimeProgram(
             .CopySharedTo(&ctx->As<OpenCLContext>());
         kernel->SetContext(std::move(ctx));
       } else {
-        LOG(ERROR) << "opencl_valid:" << opencl_valid;
+        // if gpu not support , fatal when user init gpu model.
+        LOG(FATAL) << "opencl_valid:" << opencl_valid;
       }
     } else {
       kernel->SetContext(

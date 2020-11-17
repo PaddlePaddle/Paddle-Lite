@@ -37,7 +37,7 @@ static void CopyImageData(CLContext* context,
       static_cast<size_t>(width), static_cast<size_t>(height), 1};
   cl_int err = context->GetCommandQueue().enqueueReadImage(
       *image, CL_TRUE, origin, region, 0, 0, image_data, nullptr, nullptr);
-  CL_CHECK_FATAL(err);
+  CL_CHECK_FATAL_SOLID(err);
 
   auto* converter = cl_image.image_converter();
   converter->ImageToNCHW(
