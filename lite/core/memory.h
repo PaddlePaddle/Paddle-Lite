@@ -114,7 +114,7 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
 class Buffer {
  public:
   Buffer() = default;
-  Buffer(TargetType target, size_t size) : space_(size), target_(target) {}
+  Buffer(Buffer&&) = default;
   Buffer(void* data, TargetType target, size_t size)
       : space_(size), data_(data), own_data_(false), target_(target) {}
 

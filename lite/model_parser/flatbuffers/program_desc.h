@@ -20,6 +20,7 @@
 #include "lite/model_parser/base/program_desc.h"
 #include "lite/model_parser/flatbuffers/block_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "lite/model_parser/flatbuffers/memory.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
@@ -29,18 +30,9 @@ namespace fbs {
 class ProgramDescView : public ProgramDescAPI {
  public:
   ProgramDescView() = default;
-  explicit ProgramDescView(const std::vector<char>& buf) { Init(buf); }
-  explicit ProgramDescView(std::vector<char>&& buf) {
-    Init(std::forward<std::vector<char>>(buf));
-  }
+  explicit ProgramDescView(Buffer&& buf) { Init(std::forward<Buffer>(buf)); }
 
-  void Init(const std::vector<char>& buf) {
-    CHECK(buf.data());
-    buf_ = buf;
-    InitProgramDesc();
-  }
-
-  void Init(std::vector<char>&& buf) {
+  void Init(Buffer&& buf) {
     CHECK(buf.data());
     buf_ = std::move(buf);
     InitProgramDesc();
@@ -52,11 +44,6 @@ class ProgramDescView : public ProgramDescAPI {
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {
       blocks_[idx] = BlockDescView(desc_->blocks()->Get(idx));
     }
-  }
-
-  void CopyFrom(const ProgramDescView& other) {
-    buf_ = other.buf();
-    Init(buf_);
   }
 
   size_t BlocksSize() const override { return blocks_.size(); }
@@ -88,11 +75,11 @@ class ProgramDescView : public ProgramDescAPI {
 
   proto::ProgramDesc const* raw_desc() const { return desc_; }
 
-  const std::vector<char>& buf() const { return buf_; }
+  const Buffer& buf() const { return buf_; }
 
  private:
   proto::ProgramDesc const* desc_;
-  std::vector<char> buf_;
+  Buffer buf_;
   std::vector<BlockDescView> blocks_;
 
  private:
@@ -105,7 +92,7 @@ class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
 
-  explicit ProgramDesc(const std::vector<char>& buf) {
+  explicit ProgramDesc(const Buffer& buf) {
     const auto* raw_buf = proto::GetProgramDesc(buf.data());
     raw_buf->UnPackTo(&desc_);
     SyncBlocks();
@@ -140,10 +127,9 @@ class ProgramDesc : public ProgramDescAPI {
     desc_.version->version = version_in;
   }
 
-  std::vector<char> data() {
+  Buffer data() {
     SyncBuffer();
-    std::vector<char> cache;
-    cache.resize(buf_.size());
+    Buffer cache(buf_.size());
     std::memcpy(cache.data(), buf_.data(), buf_.size());
     return cache;
   }
