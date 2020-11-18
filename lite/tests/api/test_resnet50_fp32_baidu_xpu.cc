@@ -39,6 +39,7 @@ TEST(Resnet50, test_resnet50_fp32_baidu_xpu) {
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_workspace_l3_size_per_thread();
+  config.set_inputs<float>(0, {1, 3, 224, 224});
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");

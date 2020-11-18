@@ -80,6 +80,9 @@ struct LITE_API Tensor {
   void SetLoD(const lod_t& lod);
   bool IsInitialized() const;
 
+  // only use if your own the raw_tensor
+  void DeleteRawTensor();
+
  private:
   void* raw_tensor_;
 };
@@ -199,6 +202,13 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<std::string> passes_internal_{};
   bool quant_model_{false};  // Enable post_quant_dynamic in opt
   QuantType quant_type_{QuantType::QUANT_INT16};
+  // std::vector<shape_t> input_shapes_;
+  // std::vector<lod_t> input_lods_;
+  // std::vector<double> input_fill_value_;
+  // std::vector<PrecisionType> input_precisions_;
+  // std::vector<const void*> input_data_;
+  // std::vector<size_t> input_memory_size_;
+  std::vector<std::shared_ptr<Tensor>> input_tensors_;
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
@@ -291,6 +301,28 @@ class LITE_API CxxConfig : public ConfigBase {
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
+
+  template <class T>
+  void set_inputs(const int idx,
+                  const shape_t& shape,
+                  const lod_t& lod = {},
+                  const T fill_value = 0,
+                  const void* data = nullptr);
+  // const std::vector<shape_t>& input_shapes() const { return input_shapes_; }
+  // const std::vector<lod_t>& input_lods() const { return input_lods_; }
+  // const std::vector<double>& input_fill_value() const {
+  //   return input_fill_value_;
+  // }
+  // const std::vector<PrecisionType>& input_precisions() const {
+  //   return input_precisions_;
+  // }
+  // const std::vector<const void*>& input_data() const { return input_data_; }
+  // const std::vector<size_t>& input_memory_size() const {
+  //   return input_memory_size_;
+  // }
+  const std::vector<std::shared_ptr<Tensor>>& input_tensors() const {
+    return input_tensors_;
+  }
 
   void set_quant_model(bool quant_model) { quant_model_ = quant_model; }
   bool quant_model() const { return quant_model_; }

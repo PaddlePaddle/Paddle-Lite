@@ -14,6 +14,7 @@
 
 #include "lite/api/paddle_api.h"
 
+#include <functional>
 #include <utility>
 
 #include "lite/core/context.h"
@@ -234,6 +235,11 @@ std::unique_ptr<Tensor> PaddlePredictor::GetMutableTensor(
   return nullptr;
 }
 
+void Tensor::DeleteRawTensor() {
+  delete tensor(raw_tensor_);
+  raw_tensor_ = nullptr;
+}
+
 std::vector<std::string> PaddlePredictor::GetParamNames() {
   std::vector<std::string> null_result = {};
   LOG(FATAL)
@@ -378,6 +384,57 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
+
+template <class T>
+void CxxConfig::set_inputs(const int idx,
+                           const shape_t &shape,
+                           const lod_t &lod,
+                           const T fill_value,
+                           const void *data) {
+  size_t count = idx + 1;
+  // if (input_shapes_.size() < count) {
+  //   input_shapes_.resize(count);
+  //   input_lods_.resize(count);
+  //   input_fill_value_.resize(count, 0);
+  //   input_precisions_.resize(count);
+  //   input_data_.resize(count, nullptr);
+  //   input_memory_size_.resize(count, 0);
+  // }
+  if (input_tensors_.size() < count) {
+    std::shared_ptr<Tensor> in_tensor(
+        new Tensor(static_cast<void *>(new lite::Tensor)), [](Tensor *x) {
+          x->DeleteRawTensor();
+          delete x;
+          x = nullptr;
+        });
+    input_tensors_.emplace_back(in_tensor);
+  }
+
+  // input_shapes_[idx] = shape;
+  // input_lods_[idx] = lod;
+  // input_fill_value_[idx] = static_cast<double>(fill_value);
+  // input_precisions_[idx] = PrecisionTypeTrait<T>::Type();
+  // input_data_[idx] = data;
+  // input_memory_size_[idx] = memory_size;
+  input_tensors_[idx]->Resize(shape);
+  input_tensors_[idx]->SetLoD(lod);
+  auto input_data = input_tensors_[idx]->mutable_data<T>();
+  int64_t size = std::accumulate(
+      shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
+  if (data != nullptr) {
+    memcpy(input_data, data, sizeof(T) * size);
+  } else {
+    for (int64_t i = 0; i < size; i++) {
+      input_data[i] = fill_value;
+    }
+  }
+}
+
+template void CxxConfig::set_inputs<float>(const int idx,
+                                           const shape_t &shape,
+                                           const lod_t &lod,
+                                           const float fill_value,
+                                           const void *data);
 
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory
