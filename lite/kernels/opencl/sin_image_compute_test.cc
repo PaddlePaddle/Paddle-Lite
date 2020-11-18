@@ -108,10 +108,8 @@ TEST(sin_image2d_fp16, compute) {
               true);
     if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
       LOG(ERROR) << "error idx:" << i << " out_data[" << i
-                 << "]:" << out_data[i]
-                 << " "
-                    "out_ref["
-                 << i << "]:" << out_ref[i] << " abs_diff:" << abs_diff
+                 << "]:" << out_data[i] << " out_ref[" << i
+                 << "]:" << out_ref[i] << " abs_diff:" << abs_diff
                  << " relative_diff:" << relative_diff
                  << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
     }
