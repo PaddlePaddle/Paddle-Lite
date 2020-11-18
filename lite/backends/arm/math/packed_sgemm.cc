@@ -55,39 +55,6 @@ void sgemm_prepacked_8x12(bool is_transB,
                           const operators::ActivationParam act_param,
                           ARMContext *ctx);
 
-void prepackA_4x8(float *out,
-                  const float *in,
-                  float alpha,
-                  int ldin,
-                  int m0,
-                  int mmax,
-                  int k0,
-                  int kmax);
-
-void prepackA_trans_4x8(float *out,
-                        const float *in,
-                        float alpha,
-                        int ldin,
-                        int m0,
-                        int mmax,
-                        int k0,
-                        int kmax);
-
-void sgemm_prepacked_4x8(bool is_transB,
-                         int M,
-                         int N,
-                         int K,
-                         const float *A_packed,
-                         const float *B,
-                         int ldb,
-                         float beta,
-                         float *C,
-                         int ldc,
-                         const float *bias,
-                         bool has_bias,
-                         const operators::ActivationParam act_param,
-                         ARMContext *ctx);
-
 void pack_m4(float *out,
              const float *in,
              float alpha,
@@ -121,7 +88,6 @@ void sgemm_prepacked_4x4(bool is_transB,
                          const operators::ActivationParam act_param,
                          ARMContext *ctx);
 #else
-// for kA72
 void prepackA_6x8(float *out,
                   const float *in,
                   float alpha,
@@ -139,42 +105,9 @@ void prepackA_trans_6x8(float *out,
                         int mmax,
                         int k0,
                         int kmax);
-// for kA73
-void prepackA_4x8(float *out,
-                  const float *in,
-                  float alpha,
-                  int ldin,
-                  int m0,
-                  int mmax,
-                  int k0,
-                  int kmax);
 
-void prepackA_trans_4x8(float *out,
-                        const float *in,
-                        float alpha,
-                        int ldin,
-                        int m0,
-                        int mmax,
-                        int k0,
-                        int kmax);
-
-// for kA72, 6x8
+// v7: for kA72, 6x8
 void sgemm_prepacked_6x8(bool is_transB,
-                         int M,
-                         int N,
-                         int K,
-                         const float *A_packed,
-                         const float *B,
-                         int ldb,
-                         float beta,
-                         float *C,
-                         int ldc,
-                         const float *bias,
-                         bool has_bias,
-                         const operators::ActivationParam act_param,
-                         ARMContext *ctx);
-// for kA73, 4x8
-void sgemm_prepacked_4x8(bool is_transB,
                          int M,
                          int N,
                          int K,
@@ -203,6 +136,40 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
                              int is_relu,
                              ARMContext *ctx);
 #endif  // __aarch64__
+
+void prepackA_4x8(float *out,
+                  const float *in,
+                  float alpha,
+                  int ldin,
+                  int m0,
+                  int mmax,
+                  int k0,
+                  int kmax);
+
+void prepackA_trans_4x8(float *out,
+                        const float *in,
+                        float alpha,
+                        int ldin,
+                        int m0,
+                        int mmax,
+                        int k0,
+                        int kmax);
+
+// v7: for kA73, 4x8; M <= 4
+void sgemm_prepacked_4x8(bool is_transB,
+                         int M,
+                         int N,
+                         int K,
+                         const float *A_packed,
+                         const float *B,
+                         int ldb,
+                         float beta,
+                         float *C,
+                         int ldc,
+                         const float *bias,
+                         bool has_bias,
+                         const operators::ActivationParam act_param,
+                         ARMContext *ctx);
 
 /**
  * \brief input data is not transpose
@@ -258,7 +225,20 @@ void prepackA(TensorLite *tout,
               int group,
               bool is_trans,
               ARMContext *ctx) {
-  int hblock = get_hblock(ctx);
+  int hblock = 4;
+#ifdef __aarch64__
+  if (m <= 4) {
+    hblock = 4;
+  } else {
+    hblock = 8;
+  }
+#else
+  if (ctx->arch() == kA73 || m <= 4) {
+    hblock = 4;
+  } else {
+    hblock = 6;
+  }
+#endif
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
   if (tout->numel() < group_size_round_up * group) {
@@ -355,7 +335,7 @@ void sgemm_prepack(bool is_transB,
         (has_act == false) ||
         (has_act == true && act_type == lite_api::ActivationType::kRelu);
     bool has_beta = fabsf(beta) > 1e-8f ? true : false;
-    bool a53_sgemm = act_flag && !has_beta && ctx->has_a53_valid();
+    bool a53_sgemm = act_flag && !has_beta;
     if (a53_sgemm) {
       sgemm_prepacked_6x8_a53(is_transB,
                               M,
@@ -1226,7 +1206,7 @@ void prepackA_trans_4x8(float *outptr,
     for (; i < x_len - 3; i += 4) {
       float *ptr_out = outptr_row_col;
       asm volatile(
-          "cmp %[has_alpha], #0\n"
+          "cmp %w[has_alpha], #0\n"
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
           "beq  0f\n"
           "1: \n"
@@ -1968,6 +1948,7 @@ void loadb(
 
   uint32_t *outptr_row = outptr;
   int stride_out = 12 * y_len;
+  int cnt_y = 4 * (y_len / 4);
 
   uint32x4_t vzero = vdupq_n_u32(0);
   uint32x4_t vmask1 =
@@ -2091,7 +2072,7 @@ void loadb(
   }
 
 #pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  for (int y = cnt_y; y < y_len; ++y) {
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * 12;
 
@@ -2366,6 +2347,7 @@ void loadb_trans(
     }
   }
 }
+
 void loadb_eight(
     float *out, const float *in, int ldin, int k0, int kmax, int n0, int nmax) {
   auto outptr = reinterpret_cast<uint32_t *>(out);
@@ -2378,6 +2360,7 @@ void loadb_eight(
 
   uint32_t *outptr_row = outptr;
   int stride_out = 8 * y_len;
+  int cnt_y = 4 * (y_len / 4);
 
   uint32x4_t vzero = vdupq_n_u32(0);
   uint32x4_t vmask1 =
@@ -2454,7 +2437,7 @@ void loadb_eight(
     }
   }
 #pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  for (int y = cnt_y; y < y_len; ++y) {
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * 8;
     int i = 0;
@@ -2981,6 +2964,9 @@ void sgemm_prepacked_8x12(bool is_transB,
 
   bool flag_p_remain = false;
   int remain = 0;
+  if (tail_pre == 0) {
+    tail_pre = KBLOCK;
+  }
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
 
@@ -3930,7 +3916,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "ldp  q4, q5, [%[b_ptr]], #32\n"        // load b0~b3 to q4, q5
             // Unroll 1
             "fmla v8.4s, v6.4s, v1.s[0]\n"          // out0 += b0 * a0[0]
-            "prfm   pldl1keep, [%[b_ptr], #192]\n"
+            "prfm   pldl1keep, [%[b_ptr], #64]\n"
             "fmla v10.4s, v6.4s, v1.s[1]\n"         // out1 += b0 * a0[1]
             "fmla v12.4s, v6.4s, v1.s[2]\n"         // out1 += b0 * a0[2]
             "fmla v14.4s, v6.4s, v1.s[3]\n"         // out1 += b0 * a0[3]
@@ -3952,7 +3938,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "ldp  q4, q5, [%[b_ptr]], #32\n"        // load b0~b3 to q4, q5
             // Unroll 3
             "fmla v8.4s, v6.4s, v3.s[0]\n"          // out0 += b0 * a0[0]
-            "prfm   pldl1keep, [%[a_ptr], #128]\n"
+            "prfm   pldl1keep, [%[a_ptr], #64]\n"
             "fmla v10.4s, v6.4s, v3.s[1]\n"         // out1 += b0 * a0[1]
             "fmla v12.4s, v6.4s, v3.s[2]\n"         // out1 += b0 * a0[2]
             "fmla v14.4s, v6.4s, v3.s[3]\n"         // out1 += b0 * a0[3]
@@ -4555,12 +4541,12 @@ void sgemm_prepacked_6x8(bool is_transB,
     tail_pre = KBLOCK;
   }
 
-  //! merge tail_pre and flag_act
-  tail_pre = (tail_pre << 2 | flag_act);
   bool flag_p_remain = false;
   int remain = 0;
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  //! merge tail_pre and flag_act
+  tail_pre = (tail_pre << 2 | flag_act);
 
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
@@ -5194,7 +5180,16 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
         // clang-format off
         asm volatile(
             // sgemm 6x8 for a53
-            "vld1.32  {d2-d3},  [%[bias_ptr]]   \n"   /* load bias0-3 to d2,d3 */
+            "vld1.32  {d2-d4},  [%[bias_ptr]]   \n"   /* load bias0-5 to d2-d4 */
+            "pld [%[a_ptr]]                         @ preload a\n"
+            "vdup.i32   q12,d4[0]                   @ out40=0\n"
+            "pld [%[b_ptr]]                         @ preload b\n"
+            "vdup.i32   q13,d4[0]                   @ out41=0\n"
+            "pld [%[a_ptr], #64]                    @ preload a\n"
+            "vdup.i32   q14,d4[1]                   @ out50=0\n"
+            "pld [%[b_ptr], #64]                    @ preload b\n"
+            "vdup.i32   q15,d4[1]                   @ out51=0\n"
+            "pld [%[a_ptr], #128]                   @ preload a\n"
             "vdup.i32 q4, d2[0]                 \n"   /*  set out00 to bias0   */
             "vld1.32	{d0-d1},  [%[a_ptr] :64]  \n"   /* load a00-a30 to d0,d1 */
             "vdup.i32	q5, d2[0]                 \n"   /*  set out01 to bias0   */
@@ -5204,20 +5199,13 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
             "vdup.i32	q7, d2[1]                 \n"   /*  set out11 to bias1   */
             "ldr  r1, [%[a_ptr], #0x14]         \n"   /*    load a50 to r1     */
             "vdup.i32	q8, d3[0]                 \n"   /*  set out20 to bias2   */
-            "vldr d6, [%[bias_ptr], #0x10]      \n"   /*  load bias 4,5 to d6  */
-            "pld [%[a_ptr], #0x40]              \n"   /*    pre load apanel    */
-            "vdup.i32	q9, d3[0]                 \n"   /*  set out21 to bias2   */
-            "pld [%[b_ptr], #0x40]              \n"   /*    pre load bpanel    */
-            "vdup.i32	q10, d3[1]                \n"   /*  set out30 to bias3   */
             "pld [%[a_ptr], #0x80]              \n"   /*    pre load apanel    */
-            "vdup.i32	q11, d3[1]                \n"   /*  set out31 to bias3   */
+            "vdup.i32	q9, d3[0]                 \n"   /*  set out21 to bias2   */
             "pld [%[b_ptr], #0x80]              \n"   /*    pre load bpanel    */
-            "vdup.i32	q12, d6[0]                \n"   /*  set out40 to bias4   */
-            "vdup.i32	q13, d6[0]                \n"   /*  set out41 to bias4   */
-            "pld [%[a_ptr], #0xC0]              \n"   /*    pre load apanel    */
-            "vdup.i32	q14, d6[1]                \n"   /*  set out50 to bias5   */
-            "pld [%[b_ptr], #0XC0]              \n"   /*    pre load bpanel    */
-            "vdup.i32	q15, d6[1]                \n"   /*  set out51 to bias5   */
+            "vdup.i32	q10, d3[1]                \n"   /*  set out30 to bias3   */
+            "pld [%[a_ptr], #0xc0]              \n"   /*    pre load apanel    */
+            "vdup.i32	q11, d3[1]                \n"   /*  set out31 to bias3   */
+            "pld [%[b_ptr], #0xc0]              \n"   /*    pre load bpanel    */
             "cmp  %[k], #0                      \n"   /*      check k loop     */
             "beq  6f                            \n"   /*   k==0, branch to 6   */
             "1:\n"
