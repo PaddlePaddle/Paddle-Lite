@@ -1077,7 +1077,7 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
   fbs::Buffer prog_data(prog_size);
   memcpy(prog_data.data(), model_buffer.c_str() + offset, prog_size);
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
-  cpp_prog->Init(prog_data);
+  cpp_prog->Init(std::move(prog_data));
 #elif LITE_ON_TINY_PUBLISH
   LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
                 "the model cannot be loaded.";
