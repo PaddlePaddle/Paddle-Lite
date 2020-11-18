@@ -70,10 +70,16 @@ class CLContext {
                                                   size_t max_work_size);
   bool IsArmMali();
 
+  std::map<std::string, cl::NDRange> GetTunedLocalWorkSizeMap(
+      const std::string &key) {
+    return tuned_lwss_map_[key];
+  }
+
  private:
   std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::vector<std::shared_ptr<cl::Kernel>> kernels_;
   std::map<std::string, int> kernel_offset_;
+  std::map<std::string, cl::NDRange> tuned_lwss_map_;
 };
 
 }  // namespace lite
