@@ -35,15 +35,6 @@ void ConvImageCompute::PrepareForRun() {
 
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-  const bool is_mali = context.cl_context()->IsArmMali();
-
-  use_tune_ = CLRuntime::Global()->auto_tune();
-  if (!is_mali) {
-    use_tune_ = false;
-  }
-#ifdef LITE_WITH_LOG
-  LOG(INFO) << "use_tune_" << use_tune_;
-#endif
 
   auto filter_dims = conv_param_->filter->dims();
   filter_tensor_n_ = filter_dims[0];
@@ -75,7 +66,6 @@ void ConvImageCompute::PrepareForRun() {
   bool dilation_equal = dilation_h_ == dilation_w_;
 
 #ifdef LITE_WITH_LOG
-  VLOG(3) << "Is arm mali  / " << (is_mali ? "Yes" : "No");
   VLOG(3) << "Is relu fused? / " << (relu_fused_ ? "Yes" : "No");
   VLOG(3) << "groups:" << groups_ << " stride_h_:" << stride_h_
           << " stride_w_:" << stride_w_ << " pad_left_:" << pad_left_
@@ -329,7 +319,7 @@ void ConvImageCompute::PrepareForRun() {
                  << static_cast<int>(conv_param_->activation_param.active_type);
     }
   }
-  GetGlobalWorkSize();
+  SetGlobalWorkSize();
 
   // bias options
   const bool is_element_wise_bias =
@@ -384,79 +374,55 @@ void ConvImageCompute::PrepareForRun() {
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 
+  SetLocalWorkSize();
+}
+
+void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
+  auto& context = ctx_->As<OpenCLContext>();
   std::stringstream kernel_key;
   kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
   kernel_ = context.cl_context()->GetKernel(kernel_key.str());
   VLOG(4) << "kernel_key: " << kernel_key.str();
   VLOG(4) << "kernel ready ... " << kernel_key.str();
+
   size_t max_work_group_size = 0;
   kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                    CL_KERNEL_WORK_GROUP_SIZE,
                                    &max_work_group_size);
-
   VLOG(4) << "max_work_group_size: " << max_work_group_size;
-
-  if (max_work_group_size > 0 && use_lws_) {
-    double min_tune_time = DBL_MAX;
-    cl::NDRange best_local_work_size = context.cl_context()->LocalWorkSize(
-        global_work_size_, max_work_group_size);
-    VLOG(3) << "origin  :local_work_size_ : " << best_local_work_size[0] << " "
-            << best_local_work_size[1] << " " << best_local_work_size[2];
-    cl::NDRange last_local_work_size = cl::NDRange{
-        static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
-    if (use_tune_) {
-      for (size_t i = 1; i < 15; i++) {
-        if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
-          // todo use diff logics
-          local_work_size_ = context.cl_context()->LocalWorkSizeTune(
-              global_work_size_, max_work_group_size, i);
-        } else {
-          local_work_size_ = context.cl_context()->LocalWorkSizeTune(
-              global_work_size_, max_work_group_size, i);
-        }
-        if (last_local_work_size[0] == local_work_size_[0] &&
-            last_local_work_size[1] == local_work_size_[1] &&
-            last_local_work_size[2] == local_work_size_[2]) {
-          // skiped tuneed lws
-          continue;
-        }
-        auto tune_time = this->Tune(10);
-        if (min_tune_time > tune_time) {
-          min_tune_time = tune_time;
-          best_local_work_size = local_work_size_;
-        }
-        last_local_work_size = local_work_size_;
-      }
-      // reverse
-      for (size_t i = 1; i < 15; i++) {
-        if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
-          // todo use diff logics
-          local_work_size_ = context.cl_context()->LocalWorkSizeTuneReverse(
-              global_work_size_, max_work_group_size, i);
-        } else {
-          local_work_size_ = context.cl_context()->LocalWorkSizeTuneReverse(
-              global_work_size_, max_work_group_size, i);
-        }
-        if (last_local_work_size[0] == local_work_size_[0] &&
-            last_local_work_size[1] == local_work_size_[1] &&
-            last_local_work_size[2] == local_work_size_[2]) {
-          // skiped tuneed lws
-          continue;
-        }
-        auto tune_time = this->Tune(10);
-        if (min_tune_time > tune_time) {
-          min_tune_time = tune_time;
-          best_local_work_size = local_work_size_;
-        }
-        last_local_work_size = local_work_size_;
-      }
+  std::vector<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
+      global_work_size_, max_work_group_size);
+  CHECK(lwss.size() > 0) << "Possible local work sizes should bigger than zero";
+  local_work_size_ = lwss[0];
+  VLOG(1) << "local_work_size:" << static_cast<int>(local_work_size_[0]) << ","
+          << static_cast<int>(local_work_size_[1]) << ","
+          << static_cast<int>(local_work_size_[2]) << ",";
+  if (max_work_group_size <= 0 || !use_lws_ ||
+      CLRuntime::Global()->auto_tune() <= 0) {
+    if (!use_lws_) {
+      local_work_size_ = cl::NullRange;
     }
-    local_work_size_ = best_local_work_size;
-    VLOG(3) << "chossen :local_work_size_ : " << local_work_size_[0] << " "
-            << local_work_size_[1] << " " << local_work_size_[2];
-    VLOG(4) << "local_work_size_[3D]: {" << local_work_size_[0] << ","
-            << local_work_size_[1] << "," << local_work_size_[2] << "}";
+    return;
   }
+
+  double min_lws_time = DBL_MAX;
+  cl::NDRange min_lws = lwss[0];
+  for (size_t i = 0; i < lwss.size(); ++i) {
+    local_work_size_ = lwss[i];
+    double cur_lws_time = 0.0f;
+    for (size_t i = 0; i < repeats; ++i) {
+      Run();
+      cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
+    }
+    cur_lws_time /= repeats;
+    if (min_lws_time > cur_lws_time) {
+      min_lws = lwss[i];
+      min_lws_time = cur_lws_time;
+    }
+  }
+  local_work_size_ = min_lws;
+  VLOG(3) << "selected local_work_size_ : " << local_work_size_[0] << " "
+          << local_work_size_[1] << " " << local_work_size_[2];
 }
 
 void ConvImageCompute::ReInitWhenNeeded() {
@@ -510,11 +476,11 @@ void ConvImageCompute::ReInitWhenNeeded() {
     output_image_p_ = conv_param_->output->mutable_data<half_t, cl::Image2D>(
         output_image_w_, output_image_h_);
 
-    GetGlobalWorkSize();
+    SetGlobalWorkSize();
   }
 }
 
-void ConvImageCompute::GetGlobalWorkSize() {
+void ConvImageCompute::SetGlobalWorkSize() {
   if (kernel_func_names_.size() <= 0) return;
   // general input_c_block
   input_c_block_ = static_cast<int>(input_image_w_ / input_tensor_w_);
@@ -522,10 +488,10 @@ void ConvImageCompute::GetGlobalWorkSize() {
   // general gws
   auto output_dims = conv_param_->output->dims();
   const std::vector<size_t>& default_work_size =
-      DefaultWorkSize(output_dims,
-                      DDim(std::vector<DDim::value_type>{
-                          static_cast<int64_t>(output_image_w_),
-                          static_cast<int64_t>(output_image_h_)}));
+      DefaultGlobalWorkSize(output_dims,
+                            DDim(std::vector<DDim::value_type>{
+                                static_cast<int64_t>(output_image_w_),
+                                static_cast<int64_t>(output_image_h_)}));
   default_c_blk_ = default_work_size[0];
   default_w_blk_ = default_work_size[1];
   default_nh_blk_ = default_work_size[2];
@@ -623,12 +589,7 @@ void ConvImageCompute::GetGlobalWorkSize() {
   }
 }
 
-void ConvImageCompute::Conv2d1x1opt(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::Conv2d1x1opt() {
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -663,26 +624,10 @@ void ConvImageCompute::Conv2d1x1opt(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(16, default_w_blk_);
   CL_CHECK_FATAL(status_);
-
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 local_work_size_,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
-  if (enable_tune) {
-    CLRuntime::Global()->command_queue().finish();
-  }
 }
 
-void ConvImageCompute::Conv2d3x3(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::Conv2d3x3() {
+  use_lws_ = false;
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -725,23 +670,9 @@ void ConvImageCompute::Conv2d3x3(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(20, input_tensor_c_);
   CL_CHECK_FATAL(status_);
-
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 cl::NullRange,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
 }
 
-void ConvImageCompute::Conv2d3x3opt(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::Conv2d3x3opt() {
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -774,32 +705,10 @@ void ConvImageCompute::Conv2d3x3opt(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(15, output_tensor_h_);
   CL_CHECK_FATAL(status_);
-
-#ifdef LITE_WITH_LOG
-  //  VLOG(4) << "out_image: " << out_image;
-  VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
-          << global_work_size_[1] << "," << global_work_size_[2] << "}";
-#endif
-
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 local_work_size_,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
-  if (enable_tune) {
-    CLRuntime::Global()->command_queue().finish();
-  }
 }
 
-void ConvImageCompute::Conv2d5x5(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::Conv2d5x5() {
+  use_lws_ = false;
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -830,26 +739,9 @@ void ConvImageCompute::Conv2d5x5(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(14, output_tensor_h_);
   CL_CHECK_FATAL(status_);
-
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 cl::NullRange,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
-  if (enable_tune) {
-    CLRuntime::Global()->command_queue().finish();
-  }
 }
 
-void ConvImageCompute::Conv2d5x5opt(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::Conv2d5x5opt() {
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -882,26 +774,10 @@ void ConvImageCompute::Conv2d5x5opt(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(15, output_tensor_h_);
   CL_CHECK_FATAL(status_);
-
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 local_work_size_,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
-  if (enable_tune) {
-    CLRuntime::Global()->command_queue().finish();
-  }
 }
 
-void ConvImageCompute::Conv2d7x7(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::Conv2d7x7() {
+  use_lws_ = false;
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -932,26 +808,9 @@ void ConvImageCompute::Conv2d7x7(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(13, output_tensor_h_);
   CL_CHECK_FATAL(status_);
-
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 cl::NullRange,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
-  if (enable_tune) {
-    CLRuntime::Global()->command_queue().finish();
-  }
 }
 
-void ConvImageCompute::Conv2d7x7opt(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::Conv2d7x7opt() {
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -984,27 +843,9 @@ void ConvImageCompute::Conv2d7x7opt(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(15, output_tensor_h_);
   CL_CHECK_FATAL(status_);
-
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 local_work_size_,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
-
-  if (enable_tune) {
-    CLRuntime::Global()->command_queue().finish();
-  }
 }
 
-void ConvImageCompute::DepthwiseConv2d3x3s1(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::DepthwiseConv2d3x3s1() {
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -1035,27 +876,10 @@ void ConvImageCompute::DepthwiseConv2d3x3s1(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(14, output_tensor_h_);
   CL_CHECK_FATAL(status_);
-
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 local_work_size_,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
-
-  if (enable_tune) {
-    CLRuntime::Global()->command_queue().finish();
-  }
 }
 
-void ConvImageCompute::DepthwiseConv2d3x3(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::DepthwiseConv2d3x3() {
+  use_lws_ = false;
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -1086,27 +910,10 @@ void ConvImageCompute::DepthwiseConv2d3x3(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(14, output_tensor_h_);
   CL_CHECK_FATAL(status_);
-
-  status_ = EnqueueNDRangeKernel(context,
-                                 kernel_,
-                                 cl::NullRange,
-                                 global_work_size_,
-                                 cl::NullRange,
-                                 nullptr,
-                                 event_);
-  CL_CHECK_FATAL(status_);
-
-  if (enable_tune) {
-    CLRuntime::Global()->command_queue().finish();
-  }
 }
 
-void ConvImageCompute::DepthwiseConv2d(bool enable_tune) {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-  auto& context = ctx_->As<OpenCLContext>();
-
+void ConvImageCompute::DepthwiseConv2d() {
+  use_lws_ = false;
   status_ = kernel_.setArg(0, c_blk_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(1, w_blk_);
@@ -1141,22 +948,25 @@ void ConvImageCompute::DepthwiseConv2d(bool enable_tune) {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(16, filter_tensor_h_);
   CL_CHECK_FATAL(status_);
+}
 
+void ConvImageCompute::Run() {
+#ifdef LITE_WITH_LOG
+  PrintConvInfo();
+#endif
+  // setArg
+  (this->*impl_)();
+
+  auto& context = ctx_->As<OpenCLContext>();
   status_ = EnqueueNDRangeKernel(context,
                                  kernel_,
                                  cl::NullRange,
                                  global_work_size_,
-                                 cl::NullRange,
+                                 local_work_size_,
                                  nullptr,
                                  event_);
   CL_CHECK_FATAL(status_);
-
-  if (enable_tune) {
-    CLRuntime::Global()->command_queue().finish();
-  }
 }
-
-void ConvImageCompute::Run() { (this->*impl_)(false); }
 
 void ConvImageCompute::PrintConvInfo() {
   const bool is_element_wise_bias =
@@ -1183,10 +993,10 @@ void ConvImageCompute::PrintConvInfo() {
   LOG(INFO) << "================================";
   LOG(INFO) << "c_blk_=" << c_blk_ << ", w_blk_=" << w_blk_
             << ",nh_blk_=" << nh_blk_;
-  LOG(INFO) << "input_image_p_:" << input_image_p_;
-  LOG(INFO) << "filter_image_p_:" << filter_image_p_;
-  LOG(INFO) << "bias_image_p_:" << bias_image_p_;
-  LOG(INFO) << "output_image_p_:" << output_image_p_;
+  //  LOG(INFO) << "input_image_p_:" << input_image_p_;
+  //  LOG(INFO) << "filter_image_p_:" << filter_image_p_;
+  //  LOG(INFO) << "bias_image_p_:" << bias_image_p_;
+  //  LOG(INFO) << "output_image_p_:" << output_image_p_;
 
   LOG(INFO) << "stride_h_:" << stride_h_;
   LOG(INFO) << "stride_w_:" << stride_w_;
@@ -1228,20 +1038,6 @@ void ConvImageCompute::PrintConvInfo() {
 
   LOG(INFO) << "bias_image_h_" << bias_image_h_;
   LOG(INFO) << "bias_image_w_" << bias_image_w_;
-}
-
-double ConvImageCompute::Tune(int times) {
-  auto GetCurrentUS = []() -> double {
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    return 1e+6 * time.tv_sec + time.tv_usec;
-  };
-  auto start = GetCurrentUS();
-  for (size_t i = 0; i < times; i++) {
-    (this->*impl_)(true);
-  }
-  auto time_diff = (GetCurrentUS() - start) / times;
-  return time_diff;
 }
 
 }  // namespace opencl

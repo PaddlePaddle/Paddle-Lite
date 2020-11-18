@@ -222,7 +222,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       int output_tensor_c = output_tensor_dims[1];
       int output_tensor_w = output_tensor_dims[3];
 
-      const std::vector<size_t>& default_work_size = DefaultWorkSize(
+      const std::vector<size_t>& default_work_size = DefaultGlobalWorkSize(
           output_tensor_dims,
           DDim(std::vector<DDim::value_type>{
               static_cast<int64_t>(output_image_shape["width"]),

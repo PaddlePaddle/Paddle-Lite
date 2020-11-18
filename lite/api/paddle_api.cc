@@ -262,7 +262,7 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #endif
 }
 
-void ConfigBase::set_opencl_tune(bool enable_tune) {
+void ConfigBase::set_opencl_tune(size_t enable_tune) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
     enable_opencl_tune_ = enable_tune;
