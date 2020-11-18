@@ -39,7 +39,7 @@ add_kernel(box_coder_opencl_image OPENCL basic SRCS box_coder_image_compute.cc D
 add_kernel(pixel_shuffle_opencl_image OPENCL basic SRCS pixel_shuffle_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(expand_opencl_image OPENCL basic SRCS expand_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(shuffle_channel_opencl_image OPENCL basic SRCS shuffle_channel_image_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(sin_opencl_image OPENCL basic SRCS sin_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(trigonometric_opencl_image OPENCL basic SRCS trigonometric_image_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 
@@ -117,7 +117,7 @@ lite_cc_test(test_box_coder_image_opencl SRCS box_coder_image_compute_test.cc
              DEPS box_coder_opencl_image op_registry program context)
 
 lite_cc_test(test_sin_image_opencl SRCS sin_image_compute_test.cc
-             DEPS sin_opencl_image op_registry program context)
+             DEPS trigonometric_opencl_image op_registry program context)
 
 ######################
 # buffer kernel      #

@@ -14,7 +14,9 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-__kernel void sin(__read_only image2d_t input, __write_only image2d_t output) {
+// function name "sin" is not allowed by adreno
+__kernel void trigonometric_sin(__read_only image2d_t input,
+                                __write_only image2d_t output) {
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
