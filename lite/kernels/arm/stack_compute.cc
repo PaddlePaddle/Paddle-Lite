@@ -14,20 +14,42 @@
 
 #include "lite/kernels/arm/stack_compute.h"
 #include <vector>
-#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-void StackCompute::Run() {
-  auto& param = Param<operators::StackParam>();
-  std::vector<lite::Tensor*> x = param.X;
-  lite::Tensor* out = param.Out;
+template <typename T, PrecisionType PType>
+void StackCompute<T, PType>::Run() {
+  auto &param = this->template Param<operators::StackParam>();
+  std::vector<lite::Tensor *> x = param.X;
+  lite::Tensor *y = param.Out;
   int axis = param.axis;
 
-  lite::arm::math::stack(x, out, axis);
+  if (axis < 0) axis += (x[0]->dims().size() + 1);
+  int n = x.size();
+  auto *y_data = y->mutable_data<T>();
+  std::vector<const T *> x_datas(n);
+  for (int i = 0; i < n; i++) x_datas[i] = x[i]->data<T>();
+
+  int pre = 1, post = 1;
+  auto &dim = x[0]->dims();
+  for (auto i = 0; i < axis; ++i) pre *= dim[i];
+  for (auto i = axis; i < dim.size(); ++i) post *= dim[i];
+
+  auto x_data_arr = x_datas.data();
+
+  size_t x_offset = 0;
+  size_t y_offset = 0;
+  for (int i = 0; i < pre; i++) {
+    for (int j = 0; j < n; j++) {
+      std::memcpy(
+          y_data + y_offset, x_data_arr[j] + x_offset, post * sizeof(T));
+      y_offset += post;
+    }
+    x_offset += post;
+  }
 }
 
 } /* namespace arm */
@@ -35,8 +57,16 @@ void StackCompute::Run() {
 } /* namespace lite */
 } /* namespace paddle */
 
-REGISTER_LITE_KERNEL(
-    stack, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::StackCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+using stack_float =
+    paddle::lite::kernels::arm::StackCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kARM, kFloat, kNCHW, stack_float, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+using stack_int32 =
+    paddle::lite::kernels::arm::StackCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(stack, kARM, kInt32, kNCHW, stack_int32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
