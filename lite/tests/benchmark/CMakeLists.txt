@@ -33,6 +33,7 @@ IF (LITE_WITH_BENCHMARK_TEST)
     if(LITE_WITH_ARM)
         lite_cc_test(f32-gemm-bench SRCS src/f32-gemm.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels} benchmark)
         lite_cc_test(elementwise-arm-math-bench SRCS src/elementwise_arm_math.cpp DEPS ${arm_kernels} ${lite_ops} ${host_kernels} benchmark)
+        lite_cc_test(conv-bench SRCS src/convolution.cc DEPS ${arm_kernels} ${lite_ops} ${host_kernels} benchmark)
     endif()
 
 ENDIF ()
