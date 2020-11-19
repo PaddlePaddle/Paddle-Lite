@@ -22,10 +22,8 @@
 // If this demo is linked to static libaray:libpaddle_api_light_bundled.a
 // , you should include `paddle_use_ops.h` and `paddle_use_kernels.h`.
 /////////////////////////////////////////////////////////////////////////
-#if defined(_WIN32)
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
-#endif
+// #include "paddle_use_kernels.h"  // NOLINT
+// #include "paddle_use_ops.h"      // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
