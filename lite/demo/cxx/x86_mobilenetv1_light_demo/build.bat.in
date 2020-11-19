@@ -2,7 +2,7 @@
 setlocal
 setlocal enabledelayedexpansion
 
-set build_platform=@BUILD_PLATFORM@
+set build_platform=@CMAKE_GENERATOR_PLATFORM@
 
 set source_path=%~dp0
 
