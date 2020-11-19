@@ -254,10 +254,13 @@ if (LITE_WITH_X86)
         add_dependencies(publish_inference_x86_cxx_lib bundle_light_api)
         add_dependencies(publish_inference publish_inference_x86_cxx_lib)
 
+        message(STATUS "BUILD_PLATFORM: ${BUILD_PLATFORM}")
         message(STATUS "WITH_STATIC_MKL: ${WITH_STATIC_MKL}")
         message(STATUS "MSVC_STATIC_CRT: ${MSVC_STATIC_CRT}")
-        configure_file(${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo/CMakeLists.txt.in ${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo/CMakeLists.txt)
-        configure_file(${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/CMakeLists.txt.in ${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/CMakeLists.txt)
+        configure_file(${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo/CMakeLists.txt.in ${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo/CMakeLists.txt @ONLY)
+        configure_file(${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/CMakeLists.txt.in ${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/CMakeLists.txt @ONLY)
+        configure_file(${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo/build.bat.in ${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo/build.bat @ONLY)
+        configure_file(${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/build.bat.in ${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/build.bat @ONLY)
 
         add_custom_target(publish_inference_x86_cxx_demos ${TARGET}
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/third_party/mklml"
@@ -265,8 +268,8 @@ if (LITE_WITH_X86)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light"
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full"
-            COMMAND ${CMAKE_COMMAND} -E remove "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light/CMakeLists.txt.in"
-            COMMAND ${CMAKE_COMMAND} -E remove "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full/CMakeLists.txt.in"
+            # COMMAND ${CMAKE_COMMAND} -E remove "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light/CMakeLists.txt.in"
+            # COMMAND ${CMAKE_COMMAND} -E remove "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full/CMakeLists.txt.in"
         )
         add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
         add_dependencies(publish_inference_x86_cxx_demos paddle_api_full_bundled eigen3)
