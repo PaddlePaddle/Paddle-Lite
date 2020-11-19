@@ -36,26 +36,28 @@ class TrigonometricComputeImage2D
                         PRECISION(kFP16),
                         DATALAYOUT(kImageDefault)> {
  public:
-  using param_t = operators::SinParam;
+  using param_t = operators::TrigonometricParam;
 
   std::string doc() const override { return "Sin using cl::Image2D, kFP16"; }
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
+
+    context.cl_context()->AddKernel(KernelFunctionName(),
                                     "image/trigonometric_kernel.cl",
                                     build_options_,
                                     time_stamp_);
-    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+
+    VLOG(1) << "kernel_func_name_:" << KernelFunctionName();
 
     STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_key << KernelFunctionName() << build_options_ << time_stamp_;
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
   }
 
   void ReInitWhenNeeded() override {
-    sin_param_ = param_.get_mutable<param_t>();
-    auto x_dims = sin_param_->X->dims();
+    trigonometric_param_ = param_.get_mutable<param_t>();
+    auto x_dims = trigonometric_param_->X->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
@@ -63,8 +65,8 @@ class TrigonometricComputeImage2D
 
       // compute image shape
       paddle::lite::CLImageConverterDefault default_convertor;
-      out_img_shape_ =
-          default_convertor.InitImageDimInfoWith(sin_param_->Out->dims());
+      out_img_shape_ = default_convertor.InitImageDimInfoWith(
+          trigonometric_param_->Out->dims());
 
       // compute global work size
       GetGlobalWorkSize();
@@ -78,9 +80,10 @@ class TrigonometricComputeImage2D
   }
 
   void Run() override {
-    auto* x_img = sin_param_->X->data<half_t, cl::Image2D>();
-    auto* out_img = sin_param_->Out->mutable_data<half_t, cl::Image2D>(
-        out_img_shape_[0], out_img_shape_[1]);
+    auto* x_img = trigonometric_param_->X->data<half_t, cl::Image2D>();
+    auto* out_img =
+        trigonometric_param_->Out->mutable_data<half_t, cl::Image2D>(
+            out_img_shape_[0], out_img_shape_[1]);
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -102,20 +105,25 @@ class TrigonometricComputeImage2D
     CL_CHECK_FATAL(status);
   }
 
+  virtual std::string KernelFunctionName() {
+    CHECK(
+        "please extend TrigonometricComputeImage2D to support Trigonometric "
+        "kernels");
+    return "";
+  }
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
+    ch->kernel_func_name = KernelFunctionName();
     ch->cl_event =
         event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
   }
 #endif
 
  private:
-  std::string kernel_func_name_{"trigonometric_sin"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
 
-  param_t* sin_param_{nullptr};
+  param_t* trigonometric_param_{nullptr};
   cl::Kernel kernel_;
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
@@ -125,6 +133,9 @@ class TrigonometricComputeImage2D
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
 };
 
+class SinComputeImage2D : public TrigonometricComputeImage2D {
+  std::string KernelFunctionName() override { return "trigonometric_sin"; }
+};
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
@@ -134,7 +145,7 @@ REGISTER_LITE_KERNEL(sin,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     paddle::lite::kernels::opencl::TrigonometricComputeImage2D,
+                     paddle::lite::kernels::opencl::SinComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
