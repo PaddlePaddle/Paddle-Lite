@@ -24,8 +24,8 @@
 // If this demo is linked to static libaray:libpaddle_api_light_bundled.a
 // , you should include `paddle_use_ops.h` and `paddle_use_kernels.h`.
 /////////////////////////////////////////////////////////////////////////
-#include "paddle_use_kernels.h"  // NOLINT
-#include "paddle_use_ops.h"      // NOLINT
+// #include "paddle_use_kernels.h"  // NOLINT
+// #include "paddle_use_ops.h"      // NOLINT
 
 typedef paddle::lite_api::Tensor Tensor;
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
