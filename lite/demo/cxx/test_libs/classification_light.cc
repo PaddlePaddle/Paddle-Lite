@@ -17,6 +17,12 @@
 #include <iostream>
 #include "paddle_api.h"   // NOLINT
 #include "test_helper.h"  // NOLINT
+/////////////////////////////////////////////////////////////////////////
+// If this demo is linked to static libaray:libpaddle_api_light_bundled.a
+// , you should include `paddle_use_ops.h` and `paddle_use_kernels.h`.
+/////////////////////////////////////////////////////////////////////////
+#include "paddle_use_kernels.h"  // NOLINT
+#include "paddle_use_ops.h"      // NOLINT
 
 DEFINE_string(optimized_model_path, "", "the path of optimized model");
 DEFINE_string(img_path, "", "the path of input image");

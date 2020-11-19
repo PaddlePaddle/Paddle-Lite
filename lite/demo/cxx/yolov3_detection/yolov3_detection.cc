@@ -18,6 +18,12 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
 #include "paddle_api.h"  // NOLINT
+/////////////////////////////////////////////////////////////////////////
+// If this demo is linked to static libaray:libpaddle_api_light_bundled.a
+// , you should include `paddle_use_ops.h` and `paddle_use_kernels.h`.
+/////////////////////////////////////////////////////////////////////////
+#include "paddle_use_kernels.h"  // NOLINT
+#include "paddle_use_ops.h"      // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 

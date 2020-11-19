@@ -18,10 +18,12 @@
 #include "paddle_api.h"         // NOLINT
 #include "paddle_use_passes.h"  // NOLINT
 
-#if defined(_WIN32)
+/////////////////////////////////////////////////////////////////////////
+// If this demo is linked to static libaray:libpaddle_api_full_bundled.a
+// , you should include `paddle_use_ops.h` and `paddle_use_kernels.h`.
+/////////////////////////////////////////////////////////////////////////
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
-#endif
 
 using namespace paddle::lite_api;  // NOLINT
 
