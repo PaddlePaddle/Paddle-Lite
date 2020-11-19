@@ -184,6 +184,7 @@ function make_tiny_publish_so {
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
       ${cmake_mutable_options}  \
+      -DCMAKE_BUILD_TYPE=Debug \
       -DLITE_ON_TINY_PUBLISH=ON 
 
   # todo: third_party of opencl should be moved into git submodule and cmake later
@@ -251,6 +252,7 @@ function make_full_publish_so {
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
+      -DCMAKE_BUILD_TYPE=Debug  \
       ${cmake_mutable_options}
 
   # todo: third_party of opencl should be moved into git submodule and cmake later
