@@ -82,7 +82,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
     for (size_t i = 0; i < device_outputs_.size(); i++) {
       bmrt_free_device(bmrt_hd_, device_outputs_[i].device_mem);
     }
-    bmrt_hd_ == nullptr;
+    bmrt_hd_ = nullptr;
   }
   if (bmrt_hd_ == nullptr) {
     bmrt_hd_ = bmrt_create(bm_hd_);
