@@ -147,6 +147,13 @@ std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
 bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   /* -I +CLRuntime::Global()->cl_path() + "/cl_kernel"*/
   std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
+  if (build_option.find("CL_DTYPE_") == std::string::npos) {
+    if (support_half()) {
+      build_option += " -DCL_DTYPE_half ";
+    } else {
+      build_option += " -DCL_DTYPE_float -DCL_DTYPE_FLOAT_FORCE ";
+    }
+  }
   VLOG(4) << "OpenCL build_option: " << build_option;
   status_ = program->build({*device_}, build_option.c_str());
   CL_CHECK_ERROR(status_);

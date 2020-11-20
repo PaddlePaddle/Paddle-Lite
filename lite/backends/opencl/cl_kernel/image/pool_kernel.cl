@@ -129,7 +129,7 @@ __kernel void pool_avg_global(__read_only image2d_t input,
   const int pos_in_y = out_n * in_height;
   for (int y = 0; y < in_height; ++y) {
     for (int x = 0; x < in_width; ++x) {
-      half4 tmp = READ_IMG_TYPE(
+      CL_DTYPE4 tmp = READ_IMG_TYPE(
           CL_DTYPE_CHAR, input, sampler, (int2)(pos_in_x + x, pos_in_y + y));
 
       sum.x = convert_float(tmp.x) + sum.x;
@@ -139,11 +139,11 @@ __kernel void pool_avg_global(__read_only image2d_t input,
     }
   }
   const float global_size_div = 1.0f / (in_height * in_width);
-  half4 avg;
-  avg.x = convert_half((sum.x * global_size_div));
-  avg.y = convert_half((sum.y * global_size_div));
-  avg.z = convert_half((sum.z * global_size_div));
-  avg.w = convert_half((sum.w * global_size_div));
+  CL_DTYPE4 avg;
+  avg.x = CONVERT_TYPE_TO((sum.x * global_size_div), CL_COMPUTE_DTYPE);
+  avg.y = CONVERT_TYPE_TO((sum.y * global_size_div), CL_COMPUTE_DTYPE);
+  avg.z = CONVERT_TYPE_TO((sum.z * global_size_div), CL_COMPUTE_DTYPE);
+  avg.w = CONVERT_TYPE_TO((sum.w * global_size_div), CL_COMPUTE_DTYPE);
 
 #ifdef DEBUG
   if (out_c == 0) {
