@@ -1977,15 +1977,13 @@ struct OneHotParam : ParamBase {
   bool allow_out_of_range;
 };
 
-struct SinParam : ParamBase {
+struct TrigonometricParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
 };
 
-struct CosParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* Out{};
-};
+using SinParam = TrigonometricParam;
+using CosParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
   lite::Tensor* x{};
