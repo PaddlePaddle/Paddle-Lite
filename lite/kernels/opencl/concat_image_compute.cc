@@ -190,13 +190,13 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       status = kernel.setArg(7, width_);
       CL_CHECK_FATAL(status);
 
-      status = context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(
-          kernel,
-          cl::NullRange,
-          global_work_size,
-          cl::NullRange,
-          nullptr,
-          nullptr);
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
       CL_CHECK_FATAL(status);
     } else if (kernel_func_name_ == "concatByCWith3Inputs" ||
                kernel_func_name_ == "concatByCWith4Inputs") {
@@ -309,8 +309,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
           std::move(buf_to_img_kernels.front());
 
       // step3. create and set param, context to kernel
-      std::unique_ptr<KernelContext> kernel_context(new KernelContext);
-      kernel_context->As<OpenCLContext>().InitOnce();
       // 3.1 img_to_buf
       std::vector<operators::LayoutParam> img_to_buf_params(inputs_num);
       std::vector<lite::Tensor> outputs_vec(inputs_num);
@@ -324,8 +322,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         img_to_buf_kernel_vec[i]->SetParam(img_to_buf_params[i]);
 
         std::unique_ptr<KernelContext> img_to_buf_context(new KernelContext);
-        kernel_context->As<OpenCLContext>().CopySharedTo(
-            &(img_to_buf_context->As<OpenCLContext>()));
+        context.CopySharedTo(&(img_to_buf_context->As<OpenCLContext>()));
         img_to_buf_kernel_vec[i]->SetContext(std::move(img_to_buf_context));
       }
       // 3.2 concat_mul_buf
@@ -345,8 +342,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       buf_to_img_kernel->SetParam(buf_to_img_param);
 
       std::unique_ptr<KernelContext> buf_to_img_context(new KernelContext);
-      kernel_context->As<OpenCLContext>().CopySharedTo(
-          &(buf_to_img_context->As<OpenCLContext>()));
+      context.CopySharedTo(&(buf_to_img_context->As<OpenCLContext>()));
       buf_to_img_kernel->SetContext(std::move(buf_to_img_context));
 
       // step4. run kernels
@@ -360,7 +356,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       for (size_t i = 0; i < inputs_num; ++i) {
         auto* x_buf = outputs_buffer_pointers[i];
         int axis_dim_size = inputs[i]->dims()[axis_];
-        global_work_size = cl::NDRange{static_cast<size_t>(axis_dim_size)};
+        global_work_size = cl::NDRange{static_cast<size_t>(post_size_),
+                                       static_cast<size_t>(axis_dim_size),
+                                       static_cast<size_t>(pre_size_)};
         int total0 = axis_dim_size * post_size_;
 #ifdef LITE_WITH_LOG
         VLOG(2) << "--------------- i:" << i << " -----------------";
@@ -376,17 +374,11 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         CL_CHECK_FATAL(status);
         status = kernel.setArg(1, *conat_mul_buf_output_data);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, axis_dim_size);
+        status = kernel.setArg(2, cur_axis_start_idx);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, pre_size_);
+        status = kernel.setArg(3, total);
         CL_CHECK_FATAL(status);
-        status = kernel.setArg(4, post_size_);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(5, cur_axis_start_idx);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(6, total);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(7, total0);
+        status = kernel.setArg(4, total0);
         CL_CHECK_FATAL(status);
 
         status = EnqueueNDRangeKernel(context,
