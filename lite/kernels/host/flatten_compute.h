@@ -13,41 +13,26 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include "lite/backends/arm/math/funcs.h"
+#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/operators/conv_transpose_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class Conv2DTransposeCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class FlattenContiguousRangeCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::ConvParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::FlattenContiguousRangeParam;
 
   void Run() override;
 
-  ~Conv2DTransposeCompute() = default;
-
-#ifdef LITE_WITH_PROFILE
-  virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
-  }
-  std::string kernel_func_name_{"NotImplForConvTranspose"};
-#endif
-
- protected:
-  int workspace_size_{0};
-  bool depthwise_{false};
+  virtual ~FlattenContiguousRangeCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -140,7 +140,7 @@ class LITE_API ConfigBase {
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
   // gpu
-  bool enable_opencl_tune_{false};
+  size_t enable_opencl_tune_{0};
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
   int device_id_{0};
@@ -157,8 +157,8 @@ class LITE_API ConfigBase {
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
   // set GPU opencl tune
-  void set_opencl_tune(bool enable_tune);
-  bool opencl_tune() const { return enable_opencl_tune_; }
+  void set_opencl_tune(size_t enable_tune);
+  size_t opencl_tune() const { return enable_opencl_tune_; }
   // set subgraph_model_dir
   void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
     subgraph_model_cache_dir_ = subgraph_model_cache_dir;
@@ -324,6 +324,10 @@ class LITE_API MobileConfig : public ConfigBase {
   // return model_from_memory_, which indicates whether to load model from
   // memory buffer.
   bool is_model_from_memory() const { return model_from_memory_; }
+  // note: `model_from_memory` has the same effect as `is_model_from_memory`,
+  // but is_model_from_memory is recommended and `model_from_memory` will be
+  // abandoned in v3.0.
+  bool model_from_memory() const { return model_from_memory_; }
 
   // NOTE: This is a deprecated API and will be removed in latter release.
   void set_model_buffer(const char* model_buffer,
