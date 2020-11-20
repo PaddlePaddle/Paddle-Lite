@@ -1410,8 +1410,10 @@ struct UnsqueezeParam : ParamBase {
 
 /// ----------------------- expand operators ----------------------
 struct ExpandParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* ExpandTimes{nullptr};
+  const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
+  lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
 };
 
