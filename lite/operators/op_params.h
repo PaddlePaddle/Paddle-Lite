@@ -1960,6 +1960,20 @@ struct OneHotParam : ParamBase {
   bool allow_out_of_range;
 };
 
-}  // namespace operators
+lite::Tensor* X{};
+lite::Tensor* Out{};
+};  // namespace operators
+
+using SinParam = TrigonometricParam;
+using CosParam = TrigonometricParam;
+
+struct FlattenContiguousRangeParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* xshape;
+  int start_axis;
+  int stop_axis;
+};
+
 }  // namespace lite
 }  // namespace paddle
