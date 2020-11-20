@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -76,30 +76,36 @@ void slice_ref(const T* input,
 }
 
 template <class T>
-class CropComputeTester : public arena::TestCase {
+class CropTensorComputeTester : public arena::TestCase {
  protected:
   std::string x_ = "X";
-  std::string y_;
+  std::string shape_;
   std::string offsets_;
+  std::string shapetensor_;
+  std::string offsetstensor_;
   std::string out_ = "Out";
   std::vector<int> attr_shape_;
   std::vector<int> attr_offsets_;
   DDim x_dims_;
 
  public:
-  CropComputeTester(const Place& place,
-                    const std::string& alias,
-                    const std::vector<int>& shape,
-                    const std::vector<int>& offset,
-                    const DDim& x_dims,
-                    bool has_y = false,
-                    bool has_offsets = false)
+  CropTensorComputeTester(const Place& place,
+                          const std::string& alias,
+                          const std::vector<int>& shape,
+                          const std::vector<int>& offset,
+                          const DDim& x_dims,
+                          bool has_shape = false,
+                          bool has_offsets = false,
+                          bool has_shapetensor = false,
+                          bool has_offsetstensor = false)
       : TestCase(place, alias),
         attr_shape_(shape),
         attr_offsets_(offset),
         x_dims_(x_dims) {
-    if (has_y) y_ = "Y";
+    if (has_shape) shape_ = "Shape";
     if (has_offsets) offsets_ = "Offsets";
+    if (has_shapetensor) shapetensor_ = "ShapeTensor";
+    if (has_offsetstensor) offsetstensor_ = "OffsetsTensor";
   }
 
   void RunBaseline(Scope* scope) override {
@@ -123,10 +129,13 @@ class CropComputeTester : public arena::TestCase {
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("crop");
+    op_desc->SetType("crop_tensor");
     op_desc->SetInput("X", {x_});
-    if (!y_.empty()) op_desc->SetInput("Y", {y_});
+    if (!shape_.empty()) op_desc->SetInput("Shape", {shape_});
     if (!offsets_.empty()) op_desc->SetInput("Offsets", {offsets_});
+    if (!shapetensor_.empty()) op_desc->SetInput("ShapeTensor", {shapetensor_});
+    if (!offsetstensor_.empty())
+      op_desc->SetInput("OffsetsTensor", {offsetstensor_});
     op_desc->SetOutput("Out", {out_});
     op_desc->SetAttr("shape", attr_shape_);
     op_desc->SetAttr("offsets", attr_offsets_);
@@ -139,8 +148,8 @@ class CropComputeTester : public arena::TestCase {
     }
     SetCommonTensor(x_, x_dims_, x_data.data());
 
-    if (!y_.empty()) {
-      SetCommonTensor(y_,
+    if (!shape_.empty()) {
+      SetCommonTensor(shape_,
                       DDim({static_cast<int64_t>(attr_shape_.size())}),
                       attr_shape_.data());
     }
@@ -150,51 +159,103 @@ class CropComputeTester : public arena::TestCase {
                       DDim({static_cast<int64_t>(attr_offsets_.size())}),
                       attr_offsets_.data());
     }
+
+    if (!shapetensor_.empty()) {
+      std::vector<DDim> shapetensor_dims(attr_shape_.size(), DDim{{1}});
+      std::vector<std::vector<int>> shapetensor_data;
+      for (size_t i = 0; i < attr_shape_.size(); i++) {
+        shapetensor_data.push_back({attr_shape_[i]});
+      }
+      SetCommonTensorList(shapetensor_, shapetensor_dims, shapetensor_data);
+    }
+
+    if (!offsetstensor_.empty()) {
+      std::vector<DDim> offsetstensor_dims(attr_offsets_.size(), DDim{{1}});
+      std::vector<std::vector<int>> offsetstensor_data;
+      for (size_t i = 0; i < attr_offsets_.size(); i++) {
+        offsetstensor_data.push_back({attr_offsets_[i]});
+      }
+      SetCommonTensorList(
+          offsetstensor_, offsetstensor_dims, offsetstensor_data);
+    }
   }
 };
 
 template <class T = float>
-void TestCrop(Place place, float abs_error = 1e-5) {
+void TestCropTensor(Place place, float abs_error = 1e-5) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
 
   // test 1D
   std::unique_ptr<arena::TestCase> tester_1d(
-      new CropComputeTester<T>(place, "def", {1}, {3}, DDim({4})));
+      new CropTensorComputeTester<T>(place, "def", {1}, {3}, DDim({4})));
   arena::Arena arena_1d(std::move(tester_1d), place, abs_error);
   arena_1d.TestPrecision();
 
   // test 4D
-  std::unique_ptr<arena::TestCase> tester_4d(new CropComputeTester<T>(
+  std::unique_ptr<arena::TestCase> tester_4d(new CropTensorComputeTester<T>(
       place, "def", {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5})));
   arena::Arena arena_4d(std::move(tester_4d), place, abs_error);
   arena_4d.TestPrecision();
 }
 
 template <class T = float>
-void TestCropY(Place place, float abs_error = 1e-5) {
+void TestCropTensorShape(Place place, float abs_error = 1e-5) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
-  std::unique_ptr<arena::TestCase> tester(new CropComputeTester<T>(
+  std::unique_ptr<arena::TestCase> tester(new CropTensorComputeTester<T>(
       place, "def", {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5}), true));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
 
 template <class T = float>
-void TestCropOffsets(Place place, float abs_error = 1e-5) {
+void TestCropTensorOffsets(Place place, float abs_error = 1e-5) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
   std::unique_ptr<arena::TestCase> tester(
-      new CropComputeTester<T>(place,
-                               "def",
-                               {1, 1, 2, 3},
-                               {1, 0, 2, 1},
-                               DDim({2, 3, 4, 5}),
-                               false,
-                               true));
+      new CropTensorComputeTester<T>(place,
+                                     "def",
+                                     {1, 1, 2, 3},
+                                     {1, 0, 2, 1},
+                                     DDim({2, 3, 4, 5}),
+                                     false,
+                                     true));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
 
-TEST(crop, precision) {
+template <class T = float>
+void TestCropTensorShapeTensor(Place place, float abs_error = 1e-5) {
+  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  std::unique_ptr<arena::TestCase> tester(
+      new CropTensorComputeTester<T>(place,
+                                     "def",
+                                     {1, 1, 2, 3},
+                                     {1, 0, 2, 1},
+                                     DDim({2, 3, 4, 5}),
+                                     false,
+                                     false,
+                                     true));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
+
+template <class T = float>
+void TestCropTensorOffsetsTensor(Place place, float abs_error = 1e-5) {
+  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  std::unique_ptr<arena::TestCase> tester(
+      new CropTensorComputeTester<T>(place,
+                                     "def",
+                                     {1, 1, 2, 3},
+                                     {1, 0, 2, 1},
+                                     DDim({2, 3, 4, 5}),
+                                     false,
+                                     false,
+                                     false,
+                                     true));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
+
+TEST(crop_tensor, precision) {
   Place place;
 #if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
@@ -202,10 +263,12 @@ TEST(crop, precision) {
   return;
 #endif
 
-  TestCrop<float>(place);
-  TestCrop<int>(place);
-  TestCropY<float>(place);
-  TestCropOffsets<float>(place);
+  TestCropTensor<float>(place);
+  TestCropTensor<int>(place);
+  TestCropTensorShape<float>(place);
+  TestCropTensorOffsets<float>(place);
+  TestCropTensorShapeTensor<float>(place);
+  TestCropTensorOffsetsTensor<float>(place);
 }
 
 }  // namespace lite
