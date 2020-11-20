@@ -115,14 +115,14 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
       // compute global work size
       auto x_img_shape = InitImageDimInfoWith(x_dims);
-      const auto& default_work_size = DefaultGlobalWorkSize(
+      const auto& gws = DefaultGlobalWorkSize(
           x_dims,
           DDim(std::vector<DDim::value_type>{
               static_cast<int64_t>(x_img_shape["width"]),
               static_cast<int64_t>(x_img_shape["height"])}));
-      gws_ = cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
-                         static_cast<cl::size_type>(default_work_size[1]),
-                         static_cast<cl::size_type>(default_work_size[2])};
+      gws_ = cl::NDRange{static_cast<cl::size_type>(gws[0]),
+                         static_cast<cl::size_type>(gws[1]),
+                         static_cast<cl::size_type>(gws[2])};
 
       HelperFunc(x_dims, axis_, &kernel_func_name_, &width_, &flag_);
     }
