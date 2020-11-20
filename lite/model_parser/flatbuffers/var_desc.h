@@ -39,7 +39,6 @@ class VarDescView : public VarDescAPI {
   bool Persistable() const override { return desc_->persistable(); }
 
   std::vector<int64_t> GetShape() const override {
-    CHECK(GetType() == VarDescAPI::Type::LOD_TENSOR);
     const auto& dims = desc_->type()->lod_tensor()->tensor()->dims();
     std::vector<int64_t> dims_vec;
     dims_vec.resize(dims->size());
@@ -109,7 +108,6 @@ class VarDesc : public VarDescAPI {
   }
 
   std::vector<int64_t> GetShape() const override {
-    CHECK(GetType() == VarDescAPI::Type::LOD_TENSOR);
     return type_->lod_tensor->tensor->dims;
   }
 
