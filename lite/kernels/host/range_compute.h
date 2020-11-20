@@ -19,16 +19,17 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class RangeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <class T, PrecisionType PType>
+class RangeCompute : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
   virtual ~RangeCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
