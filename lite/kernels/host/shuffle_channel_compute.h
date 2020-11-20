@@ -11,11 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #pragma once
+#include <random>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-#define CL_TARGET_OPENCL_VERSION 200
-#define CL_HPP_TARGET_OPENCL_VERSION 110
-#define CL_HPP_MINIMUM_OPENCL_VERSION 110
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
 
-#include <CL/cl2.hpp>
+class ShuffleChannelCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  using param_t = operators::ShuffleChannelParam;
+
+  void Run() override;
+
+  virtual ~ShuffleChannelCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
