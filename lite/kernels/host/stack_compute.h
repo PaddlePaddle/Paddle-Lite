@@ -19,17 +19,17 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <typename T, PrecisionType PType>
-class StackCompute : public KernelLite<TARGET(kARM), PType> {
+class StackCompute : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
   virtual ~StackCompute() = default;
 };
 
-} /* namespace arm */
+} /* namespace host */
 } /* namespace kernels */
 } /* namespace lite */
 } /* namespace paddle */

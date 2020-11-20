@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/stack_compute.h"
+#include "lite/kernels/host/stack_compute.h"
 #include <vector>
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <typename T, PrecisionType PType>
 void StackCompute<T, PType>::Run() {
@@ -52,21 +52,29 @@ void StackCompute<T, PType>::Run() {
   }
 }
 
-} /* namespace arm */
+} /* namespace host */
 } /* namespace kernels */
 } /* namespace lite */
 } /* namespace paddle */
 
 using stack_float =
-    paddle::lite::kernels::arm::StackCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(stack, kARM, kFloat, kNCHW, stack_float, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    paddle::lite::kernels::host::StackCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_float, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(
+                    TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
     .Finalize();
 
 using stack_int32 =
-    paddle::lite::kernels::arm::StackCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(stack, kARM, kInt32, kNCHW, stack_int32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    paddle::lite::kernels::host::StackCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(stack, kHost, kInt32, kAny, stack_int32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(
+                    TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
     .Finalize();
