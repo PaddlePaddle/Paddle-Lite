@@ -25,7 +25,6 @@
 // #include "paddle_use_kernels.h"  // NOLINT
 // #include "paddle_use_ops.h"      // NOLINT
 
-
 DEFINE_string(model_dir,
               "",
               "the path of the model, the model and param files is under "
