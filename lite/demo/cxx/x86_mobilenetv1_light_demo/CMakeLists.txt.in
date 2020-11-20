@@ -8,7 +8,7 @@ set(MKLML_DIR "${PROJECT_SOURCE_DIR}/../../../third_party/mklml/")
 
 if (WIN32)
   add_definitions("/DGOOGLE_GLOG_DLL_DECL=")
-  option(MSVC_STATIC_CRT @MSVC_STATIC_CRT@)
+  set(MSVC_STATIC_CRT @MSVC_STATIC_CRT@)
   if(MSVC_STATIC_CRT)
     set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MTd")
     set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} /bigobj /MT")
@@ -34,8 +34,8 @@ endif()
 
 # 4.add executable output
 add_executable(${TARGET} ${TARGET}.cc)
-set(WITH_STATIC_MKL @WITH_STATIC_MKL@)
 if (WIN32)
+  set(WITH_STATIC_MKL @WITH_STATIC_MKL@)
   if(WITH_STATIC_MKL)
     set(MATH_LIB ${MKLML_DIR}/lib/libiomp5md${CMAKE_STATIC_LIBRARY_SUFFIX})
   else()
