@@ -14,22 +14,35 @@
 
 #pragma once
 
-#pragma GCC system_header
-#include <xpu/api.h>
-#include <xpu/golden.h>
-#include <xpu/refactor/fusion.h>
-#include <xpu/refactor/math.h>
-#include <xpu/refactor/nn.h>
-#include <xpu/runtime.h>
-
-#if defined(LITE_WITH_XTCL)
-#include <xtcl/xtcl.h>
-#endif
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace xpu {
 
-namespace xdnn = baidu::xpu::api;
+class PriorBoxCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::PriorBoxParam;
 
+  void PrepareForRun() override;
+
+  virtual void Run();
+
+  virtual ~PriorBoxCompute() = default;
+
+ private:
+  XPUScratchPadGuard xpu_aspect_ratios_guard_;
+  XPUScratchPadGuard xpu_min_sizes_guard_;
+  XPUScratchPadGuard xpu_max_sizes_guard_;
+  XPUScratchPadGuard variance_xpu_guard_;
+  int prior_num;
+  int ar_num;
+  int min_size_num;
+  int max_size_num;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

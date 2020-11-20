@@ -14,22 +14,23 @@
 
 #pragma once
 
-#pragma GCC system_header
-#include <xpu/api.h>
-#include <xpu/golden.h>
-#include <xpu/refactor/fusion.h>
-#include <xpu/refactor/math.h>
-#include <xpu/refactor/nn.h>
-#include <xpu/runtime.h>
-
-#if defined(LITE_WITH_XTCL)
-#include <xtcl/xtcl.h>
-#endif
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace xpu {
 
-namespace xdnn = baidu::xpu::api;
+class TransposeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::TransposeParam;
 
+  virtual void Run();
+
+  virtual ~TransposeCompute() = default;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
