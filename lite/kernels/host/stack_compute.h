@@ -12,31 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/stack_compute.h"
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
+#pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-void StackCompute::Run() {
-  auto& param = Param<operators::StackParam>();
-  std::vector<lite::Tensor*> x = param.X;
-  lite::Tensor* out = param.Out;
-  int axis = param.axis;
+template <typename T, PrecisionType PType>
+class StackCompute : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
+ public:
+  void Run() override;
 
-  lite::arm::math::stack(x, out, axis);
-}
+  virtual ~StackCompute() = default;
+};
 
-} /* namespace arm */
+} /* namespace host */
 } /* namespace kernels */
 } /* namespace lite */
 } /* namespace paddle */
-
-REGISTER_LITE_KERNEL(
-    stack, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::StackCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
-    .Finalize();

@@ -1424,8 +1424,10 @@ struct UnsqueezeParam : ParamBase {
 
 /// ----------------------- expand operators ----------------------
 struct ExpandParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* ExpandTimes{nullptr};
+  const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
+  lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
 };
 
@@ -1991,15 +1993,13 @@ struct OneHotParam : ParamBase {
   bool allow_out_of_range;
 };
 
-struct SinParam : ParamBase {
+struct TrigonometricParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
 };
 
-struct CosParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* Out{};
-};
+using SinParam = TrigonometricParam;
+using CosParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
   lite::Tensor* x{};

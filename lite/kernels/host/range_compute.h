@@ -11,20 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
-#include <cstddef>
-#include <vector>
-#include "lite/core/tensor.h"
+#pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
-void stack(std::vector<lite::Tensor*> x, lite::Tensor* out, int axis);
+template <class T, PrecisionType PType>
+class RangeCompute : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
+ public:
+  void Run() override;
 
-} /* namespace math */
-} /* namespace arm */
-} /* namespace lite */
-} /* namespace paddle */
+  virtual ~RangeCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
