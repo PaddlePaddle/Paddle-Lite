@@ -136,6 +136,26 @@ class TrigonometricComputeImage2D
 class SinComputeImage2D : public TrigonometricComputeImage2D {
   std::string KernelFunctionName() override { return "trigonometric_sin"; }
 };
+
+class CosComputeImage2D : public TrigonometricComputeImage2D {
+  std::string KernelFunctionName() override { return "trigonometric_cos"; }
+};
+
+class TanComputeImage2D : public TrigonometricComputeImage2D {
+  std::string KernelFunctionName() override { return "trigonometric_tan"; }
+};
+
+class AtanComputeImage2D : public TrigonometricComputeImage2D {
+  std::string KernelFunctionName() override { return "trigonometric_atan"; }
+};
+
+class AsinComputeImage2D : public TrigonometricComputeImage2D {
+  std::string KernelFunctionName() override { return "trigonometric_asin"; }
+};
+
+class AcosComputeImage2D : public TrigonometricComputeImage2D {
+  std::string KernelFunctionName() override { return "trigonometric_acos"; }
+};
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
@@ -146,6 +166,86 @@ REGISTER_LITE_KERNEL(sin,
                      kFP16,
                      kImageDefault,
                      paddle::lite::kernels::opencl::SinComputeImage2D,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(cos,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::CosComputeImage2D,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(tan,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::TanComputeImage2D,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(atan,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::AtanComputeImage2D,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(asin,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::AsinComputeImage2D,
+                     image2d)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(acos,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::AcosComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),

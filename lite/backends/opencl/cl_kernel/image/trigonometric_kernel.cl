@@ -30,3 +30,83 @@ __kernel void trigonometric_sin(__read_only image2d_t input,
   in.w = native_sin(in.w);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
+
+__kernel void trigonometric_cos(__read_only image2d_t input,
+                                __write_only image2d_t output) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
+
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  in.x = native_cos(in.x);
+  in.y = native_cos(in.y);
+  in.z = native_cos(in.z);
+  in.w = native_cos(in.w);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+__kernel void trigonometric_tan(__read_only image2d_t input,
+                                __write_only image2d_t output) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
+
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  in.x = native_tan(in.x);
+  in.y = native_tan(in.y);
+  in.z = native_tan(in.z);
+  in.w = native_tan(in.w);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+__kernel void trigonometric_atan(__read_only image2d_t input,
+                                 __write_only image2d_t output) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
+
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  in.x = atan(in.x);
+  in.y = atan(in.y);
+  in.z = atan(in.z);
+  in.w = atan(in.w);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+__kernel void trigonometric_asin(__read_only image2d_t input,
+                                 __write_only image2d_t output) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
+
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  in.x = asin(in.x);
+  in.y = asin(in.y);
+  in.z = asin(in.z);
+  in.w = asin(in.w);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+__kernel void trigonometric_acos(__read_only image2d_t input,
+                                 __write_only image2d_t output) {
+  const int x = get_global_id(0);  // image_width
+  const int y = get_global_id(1);  // image_height
+
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  in.x = acos(in.x);
+  in.y = acos(in.y);
+  in.z = acos(in.z);
+  in.w = acos(in.w);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}

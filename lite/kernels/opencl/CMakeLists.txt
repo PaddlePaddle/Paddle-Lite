@@ -116,7 +116,7 @@ lite_cc_test(test_pad2d_image_opencl SRCS pad2d_image_compute_test.cc
 lite_cc_test(test_box_coder_image_opencl SRCS box_coder_image_compute_test.cc
              DEPS box_coder_opencl_image op_registry program context)
 
-lite_cc_test(test_sin_image_opencl SRCS sin_image_compute_test.cc
+lite_cc_test(test_trigonometric_image_opencl SRCS trigonometric_image_compute_test.cc
              DEPS trigonometric_opencl_image op_registry program context)
 
 ######################
