@@ -50,18 +50,28 @@ bool CropTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.Out = scope->FindMutableTensor(op_desc.Output("Out").front());
 
   if (op_desc.HasInput("Shape")) {
-    param_.Shape = scope->FindTensor(op_desc.Input("Shape").front());
+    auto names = op_desc.Input("Shape");
+    if (!names.empty()) {
+      param_.Shape = scope->FindTensor(names.front());
+    }
   }
   if (op_desc.HasInput("Offsets")) {
-    param_.Offsets = scope->FindTensor(op_desc.Input("Offsets").front());
+    auto names = op_desc.Input("Offsets");
+    if (!names.empty()) {
+      param_.Offsets = scope->FindTensor(names.front());
+    }
   }
   if (op_desc.HasInput("ShapeTensor")) {
-    param_.ShapeTensor =
-        scope->FindTensorList(op_desc.Input("ShapeTensor").front());
+    auto names = op_desc.Input("ShapeTensor");
+    if (!names.empty()) {
+      param_.ShapeTensor = scope->FindTensorList(names.front());
+    }
   }
   if (op_desc.HasInput("OffsetsTensor")) {
-    param_.OffsetsTensor =
-        scope->FindTensorList(op_desc.Input("OffsetsTensor").front());
+    auto names = op_desc.Input("OffsetsTensor");
+    if (!names.empty()) {
+      param_.OffsetsTensor = scope->FindTensorList(names.front());
+    }
   }
 
   param_.offsets = op_desc.GetAttr<std::vector<int>>("offsets");
