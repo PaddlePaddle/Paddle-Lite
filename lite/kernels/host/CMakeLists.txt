@@ -30,8 +30,8 @@ add_kernel(activation_grad_compute_host Host train SRCS activation_grad_compute.
 add_kernel(pixel_shuffle_compute_host Host extra SRCS pixel_shuffle_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(one_hot_compute_host Host extra SRCS one_hot_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(uniform_random_compute_host Host extra SRCS uniform_random_compute.cc DEPS ${lite_kernel_deps})
-add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} sequence_padding)
-add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} sequence_padding)
+add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(crop_compute_host Host extra SRCS crop_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(crop_tensor_compute_host Host extra SRCS crop_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
 
