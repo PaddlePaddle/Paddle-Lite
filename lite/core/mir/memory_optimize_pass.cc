@@ -88,7 +88,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   };
 
   if (has_x86_opencl()) {
-    VLOG(1) << "skip x86 opencl target for reuse memory pass";
+    LOG(INFO) << "skip x86 opencl target for reuse memory pass";
     return;
   }
 
