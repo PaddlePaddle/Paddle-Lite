@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,16 +19,20 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class RangeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <class T, PrecisionType PType>
+class CropTensorCompute
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
  public:
+  using param_t = operators::CropTensorParam;
+
   void Run() override;
 
-  virtual ~RangeCompute() = default;
+  virtual ~CropTensorCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
