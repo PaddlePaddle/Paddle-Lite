@@ -59,6 +59,7 @@ add_operator(sign_op extra SRCS sign_op.cc DEPS ${op_DEPS})
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
 add_operator(crop_op extra SRCS crop_op.cc DEPS ${op_DEPS})
+add_operator(crop_tensor_op extra SRCS crop_tensor_op.cc DEPS ${op_DEPS})
 add_operator(assign_op extra SRCS assign_op.cc DEPS ${op_DEPS})
 add_operator(group_norm_op extra SRCS group_norm_op.cc DEPS ${op_DEPS})
 add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})

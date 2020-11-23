@@ -12,14 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/stack_compute.h"
+#pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-REGISTER_LITE_KERNEL(stack,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::StackCompute<float>,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+template <class T, PrecisionType PType>
+class RangeCompute : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
+ public:
+  void Run() override;
+
+  virtual ~RangeCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

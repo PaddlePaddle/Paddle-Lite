@@ -89,11 +89,11 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
       kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
       auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
-      auto default_work_size =
-          DefaultWorkSize(out_dims,
-                          DDim(std::vector<DDim::value_type>{
-                              static_cast<int64_t>(image_shape["width"]),
-                              static_cast<int64_t>(image_shape["height"])}));
+      auto default_work_size = DefaultGlobalWorkSize(
+          out_dims,
+          DDim(std::vector<DDim::value_type>{
+              static_cast<int64_t>(image_shape["width"]),
+              static_cast<int64_t>(image_shape["height"])}));
 
       int out_C = new_dims[1];
       int out_H = new_dims[2];

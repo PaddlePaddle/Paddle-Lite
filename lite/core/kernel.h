@@ -209,9 +209,9 @@ class KernelBase {
   int profile_id_{-1};
   bool is_first_epoch_for_profiler_{true};
   bool is_kernel_test_{true};
+#endif
 #ifdef LITE_WITH_OPENCL
   cl::Event event_;
-#endif
 #endif
 };
 

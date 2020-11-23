@@ -20,6 +20,13 @@
 #include <vector>
 
 #include "paddle_api.h"  // NOLINT
+/////////////////////////////////////////////////////////////////////////
+// If this demo is linked to static library:libpaddle_api_light_bundled.a
+// , you should include `paddle_use_ops.h` and `paddle_use_kernels.h` to
+// avoid linking errors such as `unsupport ops or kernels`.
+/////////////////////////////////////////////////////////////////////////
+// #include "paddle_use_kernels.h"  // NOLINT
+// #include "paddle_use_ops.h"      // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
@@ -138,7 +145,8 @@ void RunModel(std::string model_dir,
   if (is_opencl_backend_valid) {
     // give opencl nb model dir
     config.set_model_from_file(model_dir);
-    config.set_opencl_tune(false); // default is false
+    // opencl tune option: 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
+    config.set_opencl_tune(0);
   } else {
     std::cout << "Unsupport opencl nb model." << std::endl;
     exit(1);

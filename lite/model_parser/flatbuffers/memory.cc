@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
-
-class RangeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
-
-  virtual ~RangeCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+#include "lite/model_parser/flatbuffers/memory.h"
