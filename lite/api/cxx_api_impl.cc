@@ -128,46 +128,20 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
           << real_num_threads;
 #endif
 
-  // if (!config.input_shapes().empty()) {
-  //   for (size_t i = 0; i < config.input_shapes().size(); i++) {
-  //     auto in_tensor = GetInput(i);
-  //     auto shape = config.input_shapes()[i];
-  //     int64_t size = std::accumulate(
-  //         shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
-  //     in_tensor->Resize(shape);
-  //     in_tensor->SetLoD(config.input_lods()[i]);
-  //     switch (config.input_precisions()[i]) {
-  //       case lite_api::PrecisionType::kFloat: {
-  //         auto in_data = in_tensor->mutable_data<float>();
-  //         if (config.input_data()[i] != nullptr) {
-  //           memcpy(in_data, config.input_data()[i], sizeof(float) * size);
-  //         } else {
-  //           float fill_value =
-  //           static_cast<float>(config.input_fill_value()[i]);
-  //           for (int64_t j = 0; j < size; j++) {
-  //             in_data[j] = fill_value;
-  //           }
-  //         }
-  //       } break;
-  //       default:
-  //         LOG(FATAL) << "unsupport";
-  //     }
-  //   }
-  //   Run();
-  // }
   auto input_tensors = config.input_tensors();
   if (!input_tensors.empty()) {
     for (size_t i = 0; i < input_tensors.size(); i++) {
+      auto input_tensor = static_cast<lite::Tensor *>(input_tensors[i].get());
       auto in_tensor = GetInput(i);
-      auto shape = input_tensors[i]->shape();
+      auto shape = input_tensor->dims().Vectorize();
       in_tensor->Resize(shape);
-      in_tensor->SetLoD(input_tensors[i]->lod());
+      in_tensor->SetLoD(input_tensor->lod());
       int64_t size = std::accumulate(
           shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
-      switch (input_tensors[i]->precision()) {
+      switch (input_tensor->precision()) {
         case lite_api::PrecisionType::kFloat: {
           auto in_data = in_tensor->mutable_data<float>();
-          auto tmp_data = input_tensors[i]->data<float>();
+          auto tmp_data = input_tensor->data<float>();
           memcpy(in_data, tmp_data, sizeof(float) * size);
         } break;
         default:

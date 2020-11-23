@@ -235,11 +235,6 @@ std::unique_ptr<Tensor> PaddlePredictor::GetMutableTensor(
   return nullptr;
 }
 
-void Tensor::DeleteRawTensor() {
-  delete tensor(raw_tensor_);
-  raw_tensor_ = nullptr;
-}
-
 std::vector<std::string> PaddlePredictor::GetParamNames() {
   std::vector<std::string> null_result = {};
   LOG(FATAL)
@@ -392,33 +387,17 @@ void CxxConfig::set_inputs(const int idx,
                            const T fill_value,
                            const void *data) {
   size_t count = idx + 1;
-  // if (input_shapes_.size() < count) {
-  //   input_shapes_.resize(count);
-  //   input_lods_.resize(count);
-  //   input_fill_value_.resize(count, 0);
-  //   input_precisions_.resize(count);
-  //   input_data_.resize(count, nullptr);
-  //   input_memory_size_.resize(count, 0);
-  // }
   if (input_tensors_.size() < count) {
-    std::shared_ptr<Tensor> in_tensor(
-        new Tensor(static_cast<void *>(new lite::Tensor)), [](Tensor *x) {
-          x->DeleteRawTensor();
-          delete x;
-          x = nullptr;
-        });
-    input_tensors_.emplace_back(in_tensor);
+    std::shared_ptr<void> input_tensor(
+        static_cast<void *>(new lite::Tensor),
+        [](void *x) { delete static_cast<lite::Tensor *>(x); });
+    input_tensors_.emplace_back(input_tensor);
   }
 
-  // input_shapes_[idx] = shape;
-  // input_lods_[idx] = lod;
-  // input_fill_value_[idx] = static_cast<double>(fill_value);
-  // input_precisions_[idx] = PrecisionTypeTrait<T>::Type();
-  // input_data_[idx] = data;
-  // input_memory_size_[idx] = memory_size;
-  input_tensors_[idx]->Resize(shape);
-  input_tensors_[idx]->SetLoD(lod);
-  auto input_data = input_tensors_[idx]->mutable_data<T>();
+  auto input_tensor = static_cast<lite::Tensor *>(input_tensors_[idx].get());
+  input_tensor->Resize(shape);
+  input_tensor->set_lod(lod);
+  auto input_data = input_tensor->mutable_data<T>();
   int64_t size = std::accumulate(
       shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
   if (data != nullptr) {
