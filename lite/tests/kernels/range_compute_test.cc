@@ -103,15 +103,12 @@ TEST(Range, precision) {
 #if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
-  place = TARGET(kHost)
+  place = TARGET(kHost);
 #else
   return;
 #endif
 
   test_range<float>(place);
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kHost);
-#endif
   test_range<int>(place);
 }
 
