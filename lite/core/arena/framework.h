@@ -159,6 +159,12 @@ class TestCase {
  public:
   const Instruction& instruction() { return *instruction_; }
 
+#ifdef LITE_WITH_OPENCL
+  CLImageConverterDefault converter;
+  lite::Tensor input_image_cpu_tensor;
+  lite::Tensor input_cpu_tensor;
+#endif
+
  private:
   std::unique_ptr<KernelContext> ctx_;
   void CreateInstruction();

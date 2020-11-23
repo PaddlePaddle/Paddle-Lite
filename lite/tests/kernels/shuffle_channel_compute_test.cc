@@ -91,9 +91,12 @@ void test_shuffle_channel(Place place, float abs_error = 2e-5) {
 TEST(ShuffleChannel, precision) {
   Place place;
   float abs_error = 2e-5;
-#ifdef LITE_WITH_NPU
+#if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
 #else
   return;
 #endif
