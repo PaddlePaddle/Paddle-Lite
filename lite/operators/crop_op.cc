@@ -43,10 +43,16 @@ bool CropOpLite::InferShapeImpl() const {
 bool CropOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.X = scope->FindTensor(op_desc.Input("X").front());
   if (op_desc.HasInput("Y")) {
-    param_.Y = scope->FindTensor(op_desc.Input("Y").front());
+    auto names = op_desc.Input("Y");
+    if (!names.empty()) {
+      param_.Y = scope->FindTensor(names.front());
+    }
   }
   if (op_desc.HasInput("Offsets")) {
-    param_.Offsets = scope->FindTensor(op_desc.Input("Offsets").front());
+    auto names = op_desc.Input("Offsets");
+    if (!names.empty()) {
+      param_.Offsets = scope->FindTensor(names.front());
+    }
   }
   param_.Out = scope->FindMutableTensor(op_desc.Output("Out").front());
 
