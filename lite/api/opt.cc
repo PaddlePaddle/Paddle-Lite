@@ -117,6 +117,17 @@ std::vector<Place> ParserValidPlaces() {
     } else if (target_repr == "x86") {
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
+    } else if (target_repr == "x86_opencl") {
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places.emplace_back(TARGET(kNPU));
     } else if (target_repr == "huawei_ascend_npu") {
@@ -291,7 +302,8 @@ void PrintHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "`--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "ascend_npu|"
       "imagination_nna)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
@@ -301,12 +313,14 @@ void PrintHelpInfo() {
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "ascend_npu|"
       "imagination_nna)"
       "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "ascend_npu|"
       "imagination_nna)"
       "`"
       "  Display operators in the input model\n";
