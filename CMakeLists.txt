@@ -211,6 +211,12 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 endif()
 #################################  End of mobile compile ##############################
 
+# for opencl
+if (LITE_WITH_OPENCL)
+    include(external/opencl-headers)
+    include(external/opencl-clhpp)
+endif()
+
 set(WITH_MKLML ${WITH_MKL})
 if (NOT DEFINED WITH_MKLDNN)
     if (WITH_MKL AND AVX2_FOUND)
