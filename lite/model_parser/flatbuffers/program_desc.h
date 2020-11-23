@@ -17,10 +17,10 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "lite/model_parser/base/memory.h"
 #include "lite/model_parser/base/program_desc.h"
 #include "lite/model_parser/flatbuffers/block_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
-#include "lite/model_parser/flatbuffers/memory.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
@@ -30,9 +30,11 @@ namespace fbs {
 class ProgramDescView : public ProgramDescAPI {
  public:
   ProgramDescView() = default;
-  explicit ProgramDescView(Buffer&& buf) { Init(std::forward<Buffer>(buf)); }
+  explicit ProgramDescView(model_parser::Buffer&& buf) {
+    Init(std::forward<model_parser::Buffer>(buf));
+  }
 
-  void Init(Buffer&& buf) {
+  void Init(model_parser::Buffer&& buf) {
     CHECK(buf.data());
     buf_ = std::move(buf);
     InitProgramDesc();
@@ -75,11 +77,11 @@ class ProgramDescView : public ProgramDescAPI {
 
   proto::ProgramDesc const* raw_desc() const { return desc_; }
 
-  const Buffer& buf() const { return buf_; }
+  const model_parser::Buffer& buf() const { return buf_; }
 
  private:
   proto::ProgramDesc const* desc_;
-  Buffer buf_;
+  model_parser::Buffer buf_;
   std::vector<BlockDescView> blocks_;
 
  private:
@@ -92,7 +94,7 @@ class ProgramDesc : public ProgramDescAPI {
  public:
   ProgramDesc() = default;
 
-  explicit ProgramDesc(const Buffer& buf) {
+  explicit ProgramDesc(const model_parser::Buffer& buf) {
     const auto* raw_buf = proto::GetProgramDesc(buf.data());
     raw_buf->UnPackTo(&desc_);
     SyncBlocks();
@@ -127,9 +129,9 @@ class ProgramDesc : public ProgramDescAPI {
     desc_.version->version = version_in;
   }
 
-  Buffer data() {
+  model_parser::Buffer data() {
     SyncBuffer();
-    Buffer cache(buf_.size());
+    model_parser::Buffer cache(buf_.size());
     std::memcpy(cache.data(), buf_.data(), buf_.size());
     return cache;
   }

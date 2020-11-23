@@ -26,6 +26,7 @@
 #include "lite/core/version.h"
 #include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/flatbuffers/io.h"
+#include "lite/model_parser/immediate.h"
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
@@ -60,77 +61,12 @@ int SizeOfType(framework::proto::VarType::Type type) {
   return -1;
 }
 
-void TensorFromStream(std::istream &is, lite::Tensor *tensor) {
-  using Type = framework::proto::VarType::Type;
-  uint32_t version;
-  is.read(reinterpret_cast<char *>(&version), sizeof(version));
-  CHECK_EQ(version, 0U) << "Only version 0 is supported";
-  // read tensor desc
-  framework::proto::VarType::TensorDesc desc;
-  {
-    // int32_t size
-    // proto buffer
-    int32_t size;
-    is.read(reinterpret_cast<char *>(&size), sizeof(size));
-    std::unique_ptr<char[]> buf(new char[size]);
-    is.read(reinterpret_cast<char *>(buf.get()), size);
-    CHECK(desc.ParseFromArray(buf.get(), size)) << "Cannot parse tensor desc";
-  }
-
-  // read tensor
-  std::vector<int64_t> dims_vec;
-  std::copy(
-      desc.dims().begin(), desc.dims().end(), std::back_inserter(dims_vec));
-  lite::DDim dims(dims_vec);
-  tensor->Resize(dims);
-  void *buf;
-  size_t size = tensor->dims().production() * SizeOfType(desc.data_type());
-  // alllocate memory
-  switch (static_cast<int>(desc.data_type())) {
-#define SET_TENSOR(desc, type, precision) \
-  case Type::VarType_Type_##desc:         \
-    buf = tensor->mutable_data<type>();   \
-    tensor->set_precision(precision);     \
-    break
-
-    // SET_TENSOR(BOOL, bool, PRECISION(kBool));
-    SET_TENSOR(FP64, double, PRECISION(kFP64));
-    SET_TENSOR(FP32, float, PRECISION(kFloat));
-    SET_TENSOR(INT8, int8_t, PRECISION(kInt8));
-    SET_TENSOR(UINT8, uint8_t, PRECISION(kUInt8));
-    SET_TENSOR(INT16, int16_t, PRECISION(kInt16));
-    SET_TENSOR(INT32, int32_t, PRECISION(kInt32));
-    SET_TENSOR(INT64, int64_t, PRECISION(kInt64));
-#undef SET_TENSOR
-    default:
-      LOG(FATAL) << "unknown type " << desc.data_type();
-  }
-  tensor->set_persistable(true);
-
-  is.read(static_cast<char *>(buf), size);
-}
-
-void LoadLoDTensor(std::istream &is, Variable *var) {
+void LoadLoDTensor(model_parser::BytesReader *reader, Variable *var) {
   auto *tensor = var->GetMutable<lite::Tensor>();
-  uint32_t version{};
-  is.read(reinterpret_cast<char *>(&version), sizeof(version));
-  VLOG(3) << "model version " << version;
-
-  // Load LoD information
-  uint64_t lod_level{};
-  is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
-  auto &lod = *tensor->mutable_lod();
-  lod.resize(lod_level);
-  for (uint64_t i = 0; i < lod_level; ++i) {
-    uint64_t size;
-    is.read(reinterpret_cast<char *>(&size), sizeof(size));
-    std::vector<uint64_t> tmp(size / sizeof(uint64_t));
-    is.read(reinterpret_cast<char *>(tmp.data()),
-            static_cast<std::streamsize>(size));
-    lod[i] = tmp;
-  }
-
-  TensorFromStream(is, tensor);
+  CHECK(tensor);
+  CHECK(var);
+  model_parser::LoDTensorLoader loader(reader);
+  loader.LoadForward(tensor);
 }
 
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
@@ -163,9 +99,8 @@ void LoadParams(const std::string &path) {}
 
 // Load directly to CPU, and latter transfer to other devices.
 void LoadParam(const std::string &path, Variable *out) {
-  std::ifstream fin(path, std::ios::binary);
-  CHECK(fin.is_open()) << "failed to open file " << path;
-  LoadLoDTensor(fin, out);
+  model_parser::BinaryFileReader file_reader(path);
+  LoadLoDTensor(&file_reader, out);
 }
 
 bool IsPersistable(const cpp::VarDesc &var) {
@@ -195,28 +130,26 @@ void LoadCombinedParamsPb(const std::string &path,
   std::stable_sort(paramlist.begin(), paramlist.end());
 
   // Load vars
-  auto load_var_func = [&](std::istream &is) {
+  auto load_var_func = [&](model_parser::BytesReader *reader) {
     for (size_t i = 0; i < paramlist.size(); ++i) {
       auto *var = scope->Var(paramlist[i]);
       // Error checking
-      CHECK(static_cast<bool>(is))
+      CHECK(!reader->end())
           << "There is a problem with loading model parameters";
-      LoadLoDTensor(is, var);
+      LoadLoDTensor(reader, var);
     }
-    is.peek();
-    CHECK(is.eof()) << "You are not allowed to load partial data via"
-                    << " LoadCombinedParamsPb, use LoadParam instead.";
+    CHECK(reader->end()) << "You are not allowed to load partial data via"
+                         << " LoadCombinedParamsPb, use LoadParam instead.";
   };
 
   if (!model_buffer.is_empty()) {
     // The params buffer in the configuration object will be automatically
     // released. So we use the const lvalue reference here.
-    std::stringstream fin(model_buffer.get_params());
-    load_var_func(fin);
+    model_parser::BinaryBufferReader buffer_reader(model_buffer.get_params());
+    load_var_func(&buffer_reader);
   } else {
-    std::ifstream fin(path, std::ios::binary);
-    CHECK(fin.is_open());
-    load_var_func(fin);
+    model_parser::BinaryFileReader file_reader(path);
+    load_var_func(&file_reader);
   }
 }
 
@@ -261,10 +194,11 @@ void LoadModelPb(const std::string &model_dir,
       std::string file_path = model_dir + "/" + var.name();
       VLOG(4) << "reading weight " << var.name();
 
-      std::ifstream file(file_path, std::ios::binary);
+      model_parser::BinaryFileReader file_reader(file_path);
+
       switch (var.type().type()) {
         case framework::proto::VarType_Type_LOD_TENSOR:
-          LoadLoDTensor(file, scope->Var(var.name()));
+          LoadLoDTensor(&file_reader, scope->Var(var.name()));
           break;
         default:
           CHECK(false) << "unknown weight type";
@@ -817,7 +751,8 @@ void ReadModelDataFromFile(T *data,
                            const std::string &prog_path,
                            uint64_t *offset,
                            const uint64_t &size) {
-  lite::fbs::Buffer prog_data = lite::fbs::LoadFile(prog_path, *offset, size);
+  model_parser::Buffer prog_data =
+      lite::fbs::LoadFile(prog_path, *offset, size);
   memcpy(data, prog_data.data(), size);
   *offset = *offset + size;
 }
@@ -1084,7 +1019,7 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
       &prog_size, model_buffer, &offset, sizeof(uint64_t));
   VLOG(4) << "prog_size:" << prog_size;
 
-  fbs::Buffer prog_data(prog_size);
+  model_parser::Buffer prog_data(prog_size);
   memcpy(prog_data.data(), model_buffer.c_str() + offset, prog_size);
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   cpp_prog->Init(prog_data);
@@ -1098,7 +1033,7 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
   offset = offset + prog_size;
   VLOG(4) << "param_size:" << model_buffer.length() - offset;
 
-  fbs::Buffer params_data(model_buffer.length() - offset);
+  model_parser::Buffer params_data(model_buffer.length() - offset);
   memcpy(params_data.data(),
          model_buffer.c_str() + offset,
          model_buffer.length() - offset);

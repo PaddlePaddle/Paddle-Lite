@@ -24,12 +24,15 @@ else()
     lite_cc_library(compatible_pb SRCS compatible_pb.cc DEPS ${cpp_wrapper} ${naive_wrapper} fbs_io)
 endif()
 
+lite_cc_library(model_immediate SRCS immediate.cc DEPS scope)
+
 lite_cc_library(model_parser SRCS model_parser.cc DEPS
     variable scope tensor scope
     target_wrapper_host
     compatible_pb
     memory
     paddle_api
+    model_immediate
     CUDA_DEPS target_wrapper_cuda)
 lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc DEPS compatible_pb)
 

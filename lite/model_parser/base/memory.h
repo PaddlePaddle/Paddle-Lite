@@ -20,7 +20,7 @@
 
 namespace paddle {
 namespace lite {
-namespace fbs {
+namespace model_parser {
 
 // A simple inline package of core::Buffer.
 class Buffer {
@@ -28,13 +28,9 @@ class Buffer {
   Buffer() = default;
   Buffer(const Buffer&) = delete;
 
-  explicit Buffer(size_t size)
-      : raw_{std::unique_ptr<lite::Buffer>{new lite::Buffer}} {
-    ReallocateDownward(size);
-  }
+  explicit Buffer(size_t size) { ReallocateDownward(size); }
 
   void CopyDataFrom(const Buffer& other) {
-    raw_ = std::unique_ptr<lite::Buffer>{new lite::Buffer};
     const auto* other_raw = other.raw();
     CHECK(other_raw);
     raw_->CopyDataFrom(*other_raw, other.size());
@@ -67,9 +63,9 @@ class Buffer {
   const lite::Buffer* raw() const { return raw_.get(); }
 
  private:
-  std::unique_ptr<lite::Buffer> raw_;
+  std::unique_ptr<lite::Buffer> raw_{new lite::Buffer};
 };
 
-}  // namespace fbs
+}  // namespace model_parser
 }  // namespace lite
 }  // namespace paddle

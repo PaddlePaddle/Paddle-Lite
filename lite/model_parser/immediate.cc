@@ -12,4 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/memory.h"
+#include "lite/model_parser/immediate.h"
+
+namespace paddle {
+namespace lite {
+namespace model_parser {
+
+template <typename T>
+T BytesReader::ReadForward() {
+  T tmp;
+  ReadForward(&tmp, sizeof(T));
+  return tmp;
+}
+
+template int64_t BytesReader::ReadForward<int64_t>();
+template int32_t BytesReader::ReadForward<int32_t>();
+template uint32_t BytesReader::ReadForward<uint32_t>();
+template uint64_t BytesReader::ReadForward<uint64_t>();
+
+}  // namespace model_parser
+}  // namespace lite
+}  // namespace paddle
