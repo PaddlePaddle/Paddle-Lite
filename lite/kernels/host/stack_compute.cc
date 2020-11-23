@@ -62,10 +62,10 @@ using stack_float =
 REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
-                   TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+                   TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
     .BindOutput("Y",
                 {LiteType::GetTensorTy(
-                    TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+                    TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
     .Finalize();
 
 using stack_int32 =
@@ -73,8 +73,8 @@ using stack_int32 =
 REGISTER_LITE_KERNEL(stack, kHost, kInt32, kAny, stack_int32, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
-                   TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
     .BindOutput("Y",
                 {LiteType::GetTensorTy(
-                    TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
     .Finalize();
