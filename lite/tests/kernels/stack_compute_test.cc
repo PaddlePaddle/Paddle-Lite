@@ -110,14 +110,17 @@ TEST(Stack, precision) {
   Place place;
 #if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
-#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  place = TARGET(kHost);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #else
   return;
 #endif
 
   test_stack<float>(place);
 #ifndef LITE_WITH_XPU
+  place = TARGET(kHost);
   test_stack<int>(place);
 #endif
 }
