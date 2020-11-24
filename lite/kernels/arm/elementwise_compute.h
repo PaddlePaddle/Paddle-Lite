@@ -110,6 +110,14 @@ class ElementwiseModCompute : public KernelLite<TARGET(kARM), PType> {
   virtual ~ElementwiseModCompute() = default;
 };
 
+template <typename T, PrecisionType PType>
+class ElementwisePowCompute : public KernelLite<TARGET(kARM), PType> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwisePowCompute() = default;
+};
+
 // class ElementwiseModActivationCompute
 //     : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
 //  public:

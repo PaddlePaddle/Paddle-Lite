@@ -239,7 +239,8 @@ RuntimeProgram::RuntimeProgram(
             .CopySharedTo(&ctx->As<OpenCLContext>());
         kernel->SetContext(std::move(ctx));
       } else {
-        LOG(ERROR) << "opencl_valid:" << opencl_valid;
+        // if gpu not support , fatal when user init gpu model.
+        LOG(FATAL) << "opencl_valid:" << opencl_valid;
       }
     } else {
       kernel->SetContext(
@@ -354,6 +355,8 @@ void Program::PrepareWorkspace(
   auto VarDescType2PrecisionType =
       [](const lite::VarDescAPI::Type& type) -> PrecisionType {
     switch (type) {
+      case lite::VarDescAPI::Type::BOOL:
+        return PRECISION(kBool);
       case lite::VarDescAPI::Type::FP32:
         return PRECISION(kFloat);
       case lite::VarDescAPI::Type::FP16:

@@ -24,25 +24,29 @@ namespace jit {
 namespace more {
 namespace mkl {
 
+#ifndef LITE_WITH_STATIC_MKL
+using namespace lite::x86;  // NOLINT
+#endif
+
 template <>
 void MatMul<float>(const float* a,
                    const float* b,
                    float* c,
                    const matmul_attr_t* attr) {
-  lite::x86::cblas_sgemm(CblasRowMajor,
-                         CblasNoTrans,
-                         CblasNoTrans,
-                         attr->m,
-                         attr->n,
-                         attr->k,
-                         1.f,
-                         a,
-                         attr->k,
-                         b,
-                         attr->n,
-                         0.f,
-                         c,
-                         attr->n);
+  cblas_sgemm(CblasRowMajor,
+              CblasNoTrans,
+              CblasNoTrans,
+              attr->m,
+              attr->n,
+              attr->k,
+              1.f,
+              a,
+              attr->k,
+              b,
+              attr->n,
+              0.f,
+              c,
+              attr->n);
 }
 
 template <>
@@ -50,46 +54,46 @@ void MatMul<double>(const double* a,
                     const double* b,
                     double* c,
                     const matmul_attr_t* attr) {
-  lite::x86::cblas_dgemm(CblasRowMajor,
-                         CblasNoTrans,
-                         CblasNoTrans,
-                         attr->m,
-                         attr->n,
-                         attr->k,
-                         1.0,
-                         a,
-                         attr->k,
-                         b,
-                         attr->n,
-                         0.0,
-                         c,
-                         attr->n);
+  cblas_dgemm(CblasRowMajor,
+              CblasNoTrans,
+              CblasNoTrans,
+              attr->m,
+              attr->n,
+              attr->k,
+              1.0,
+              a,
+              attr->k,
+              b,
+              attr->n,
+              0.0,
+              c,
+              attr->n);
 }
 
 template <>
 void VMul<float>(const float* x, const float* y, float* z, int n) {
-  lite::x86::vsMul(n, x, y, z);
+  vsMul(n, x, y, z);
 }
 
 template <>
 void VMul<double>(const double* x, const double* y, double* z, int n) {
-  lite::x86::vdMul(n, x, y, z);
+  vdMul(n, x, y, z);
 }
 
 template <>
 void VAdd<float>(const float* x, const float* y, float* z, int n) {
-  lite::x86::vsAdd(n, x, y, z);
+  vsAdd(n, x, y, z);
 }
 
 template <>
 void VAdd<double>(const double* x, const double* y, double* z, int n) {
-  lite::x86::vdAdd(n, x, y, z);
+  vdAdd(n, x, y, z);
 }
 
 template <>
 void VScal<float>(const float* a, const float* x, float* y, int n) {
   if (x == y) {
-    lite::x86::cblas_sscal(n, *a, y, 1);
+    cblas_sscal(n, *a, y, 1);
   } else {
     refer::VScal<float>(a, x, y, n);
   }
@@ -98,7 +102,7 @@ void VScal<float>(const float* a, const float* x, float* y, int n) {
 template <>
 void VScal<double>(const double* a, const double* x, double* y, int n) {
   if (x == y) {
-    lite::x86::cblas_dscal(n, *a, y, 1);
+    cblas_dscal(n, *a, y, 1);
   } else {
     refer::VScal<double>(a, x, y, n);
   }
@@ -108,7 +112,7 @@ template <>
 void StrideScal<float>(
     const float* a, const float* x, float* y, int n, int stride) {
   if (x == y) {
-    lite::x86::cblas_sscal(n / stride, *a, y, stride);
+    cblas_sscal(n / stride, *a, y, stride);
   } else {
     refer::StrideScal<float>(a, x, y, n, stride);
   }
@@ -118,7 +122,7 @@ template <>
 void StrideScal<double>(
     const double* a, const double* x, double* y, int n, int stride) {
   if (x == y) {
-    lite::x86::cblas_dscal(n / stride, *a, y, stride);
+    cblas_dscal(n / stride, *a, y, stride);
   } else {
     refer::StrideScal<double>(a, x, y, n, stride);
   }
@@ -126,62 +130,62 @@ void StrideScal<double>(
 
 template <>
 void VExp<float>(const float* x, float* y, int n) {
-  lite::x86::vsExp(n, x, y);
+  vsExp(n, x, y);
 }
 
 template <>
 void VExp<double>(const double* x, double* y, int n) {
-  lite::x86::vdExp(n, x, y);
+  vdExp(n, x, y);
 }
 
 template <>
 void VSquare<float>(const float* x, float* y, int n) {
-  lite::x86::vsSqr(n, x, y);
+  vsSqr(n, x, y);
 }
 
 template <>
 void VSquare<double>(const double* x, double* y, int n) {
-  lite::x86::vdSqr(n, x, y);
+  vdSqr(n, x, y);
 }
 
 template <>
 void VCopy<float>(const float* x, float* y, int n) {
-  lite::x86::cblas_scopy(n, x, 1, y, 1);
+  cblas_scopy(n, x, 1, y, 1);
 }
 
 template <>
 void VCopy<double>(const double* x, double* y, int n) {
-  lite::x86::cblas_dcopy(n, x, 1, y, 1);
+  cblas_dcopy(n, x, 1, y, 1);
 }
 
 template <>
 void VAXPY<float>(float a, const float* x, float* y, int n) {
-  lite::x86::cblas_saxpy(n, a, x, 1, y, 1);
+  cblas_saxpy(n, a, x, 1, y, 1);
 }
 
 template <>
 void VAXPY<double>(double a, const double* x, double* y, int n) {
-  lite::x86::cblas_daxpy(n, a, x, 1, y, 1);
+  cblas_daxpy(n, a, x, 1, y, 1);
 }
 
 template <>
 void ASum<float>(const float* x, float* res, int n) {
-  res[0] = lite::x86::cblas_sasum(n, x, 1);
+  res[0] = cblas_sasum(n, x, 1);
 }
 
 template <>
 void ASum<double>(const double* x, double* res, int n) {
-  res[0] = lite::x86::cblas_dasum(n, x, 1);
+  res[0] = cblas_dasum(n, x, 1);
 }
 
 template <>
 void StrideASum<float>(const float* x, float* res, int n, int stride) {
-  res[0] = lite::x86::cblas_sasum(n / stride, x, stride);
+  res[0] = cblas_sasum(n / stride, x, stride);
 }
 
 template <>
 void StrideASum<double>(const double* x, double* res, int n, int stride) {
-  res[0] = lite::x86::cblas_dasum(n / stride, x, stride);
+  res[0] = cblas_dasum(n / stride, x, stride);
 }
 
 // TODO(TJ): tuning me carefully on AVX, AVX2 and AVX512

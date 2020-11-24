@@ -22,6 +22,7 @@
 #include <vector>
 #include "lite/model_parser/base/param_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "lite/model_parser/flatbuffers/memory.h"
 #include "lite/model_parser/flatbuffers/param_generated.h"
 #include "lite/model_parser/flatbuffers/traits.h"
 
@@ -36,11 +37,17 @@ class ParamDescView : public ParamDescReadAPI {
     CHECK(desc_->variable_type() ==
           proto::ParamDesc_::VariableDesc_LoDTensorDesc);
     tensor_desc_ = desc_->variable_as<proto::ParamDesc_::LoDTensorDesc>();
+    CHECK(tensor_desc_);
+    CHECK(tensor_desc_->data());
   }
-  std::string Name() const override { return desc_->name()->c_str(); }
+  std::string Name() const override {
+    CHECK(desc_->name());
+    return desc_->name()->c_str();
+  }
 
   std::vector<int64_t> Dim() const override {
-    const auto& dims = tensor_desc_->dim();
+    const auto* dims = tensor_desc_->dim();
+    CHECK(dims);
     std::vector<int64_t> dims_vec;
     dims_vec.resize(dims->size());
     for (size_t i = 0; i < dims->size(); ++i) {
@@ -67,18 +74,11 @@ class ParamDescView : public ParamDescReadAPI {
 class CombinedParamsDescView : public CombinedParamsDescReadAPI {
  public:
   CombinedParamsDescView() = default;
-  explicit CombinedParamsDescView(const std::vector<char>& buf) { Init(buf); }
-  explicit CombinedParamsDescView(std::vector<char>&& buf) {
-    Init(std::forward<std::vector<char>>(buf));
+  explicit CombinedParamsDescView(Buffer&& buf) {
+    Init(std::forward<Buffer>(buf));
   }
 
-  void Init(const std::vector<char>& buf) {
-    CHECK(buf.data());
-    buf_ = buf;
-    InitParams();
-  }
-
-  void Init(std::vector<char>&& buf) {
+  void Init(Buffer&& buf) {
     CHECK(buf.data());
     buf_ = std::move(buf);
     InitParams();
@@ -86,6 +86,8 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
 
   void InitParams() {
     desc_ = proto::GetCombinedParamsDesc(buf_.data());
+    CHECK(desc_);
+    CHECK(desc_->params());
     size_t params_size = desc_->params()->size();
     params_.resize(params_size);
     for (size_t idx = 0; idx < params_size; ++idx) {
@@ -102,7 +104,7 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
 
  private:
   std::vector<ParamDescView> params_;
-  std::vector<char> buf_;
+  Buffer buf_;
   proto::CombinedParamsDesc const* desc_;
 };
 
@@ -167,7 +169,7 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
  public:
   CombinedParamsDesc() = default;
 
-  explicit CombinedParamsDesc(const std::vector<char>& buf) {
+  explicit CombinedParamsDesc(const Buffer& buf) {
     const auto* raw_buf = proto::GetCombinedParamsDesc(buf.data());
     raw_buf->UnPackTo(&desc_);
     SyncParams();
@@ -186,10 +188,9 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
     return params_[params_.size() - 1].get();
   }
 
-  std::vector<char> data() {
+  Buffer data() {
     SyncBuffer();
-    std::vector<char> cache;
-    cache.resize(buf_.size());
+    Buffer cache(buf_.size());
     std::memcpy(cache.data(), buf_.data(), buf_.size());
     return cache;
   }

@@ -107,6 +107,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       axpy.cc
       fill_bias_relu.cc
       col_im_transform.cc
+      conv_transpose_depthwise.cc
       im2sequence.cc
       prior_box.cc
       sequence_softmax.cc
@@ -122,7 +123,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       sequence_expand.cc
       slice.cc
       reduce_mean.cc
-      stack.cc
       affine_channel.cc
       anchor_generator.cc
       split_merge_lod_tenosr.cc

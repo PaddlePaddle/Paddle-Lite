@@ -262,7 +262,7 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #endif
 }
 
-void ConfigBase::set_opencl_tune(bool enable_tune) {
+void ConfigBase::set_opencl_tune(size_t enable_tune) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
     enable_opencl_tune_ = enable_tune;
@@ -288,6 +288,40 @@ void ConfigBase::set_threads(int threads) {
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
 #endif
+}
+
+CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
+                               size_t program_buffer_size,
+                               const char *params_buffer,
+                               size_t params_buffer_size) {
+  program_ = std::string(program_buffer, program_buffer + program_buffer_size);
+  params_ = std::string(params_buffer, params_buffer + params_buffer_size);
+}
+
+CxxModelBuffer::CxxModelBuffer(std::string &&program_buffer,
+                               std::string &&params_buffer) {
+  program_ = std::forward<std::string>(program_buffer);
+  params_ = std::forward<std::string>(params_buffer);
+}
+
+const std::string &CxxModelBuffer::get_program() const {
+  CHECK(!program_.empty());
+  return program_;
+}
+
+const std::string &CxxModelBuffer::get_params() const {
+  CHECK(!params_.empty());
+  return params_;
+}
+
+bool CxxModelBuffer::is_empty() const {
+  CHECK(program_.empty() == params_.empty());
+  return program_.empty();
+}
+
+const CxxModelBuffer &CxxConfig::get_model_buffer() const {
+  CHECK(model_buffer_) << "Cannot get an empty model buffer.";
+  return *model_buffer_;
 }
 
 #ifdef LITE_WITH_MLU

@@ -16,7 +16,7 @@ limitations under the License. */
 
 __kernel void concat2(__global const CL_DTYPE* x_data0,
                       __global const CL_DTYPE* x_data1,
-                      __global CL_DTYPE* out_data, 
+                      __global CL_DTYPE* out_data,
                       int size,
                       int axis_size,
                       int pre_size,
@@ -24,35 +24,36 @@ __kernel void concat2(__global const CL_DTYPE* x_data0,
                       int total,
                       int total0,
                       int total1) {
-    const int index = get_global_id(0); 
-    if (index < size) {
-        for (int i = 0; i < pre_size; i++) {
-            int offset_out = index * post_size + i * total;
-            int offset_in = index * post_size + i * total0;
-            // memcpy(out_data + offset_out, x_data0 + offset_in, post_size);
-            __global CL_DTYPE* dst = (__global CL_DTYPE*)(out_data + offset_out);
-            __global CL_DTYPE* src = (__global CL_DTYPE*)(x_data0 + offset_in);
-            for (int k = 0; k < post_size; k++) {
-               *dst++ = *src++;
-            }
-        }
-    } else if (index < axis_size) {
-        for (int i = 0; i < pre_size; i++) {
-            int offset_out = index * post_size + i * total;
-            int offset_in = index * post_size + i * total1;
-            // memcpy(out_data + offset_out, x_data1 + offset_in, post_size);
-            __global CL_DTYPE* dst = (__global CL_DTYPE*)(out_data + offset_out);
-            __global CL_DTYPE* src = (__global CL_DTYPE*)(x_data1 + offset_in);
-            for (int k = 0; k < post_size; k++) {
-                *dst++ = *src++;
-            }
-        }
+  const int index = get_global_id(0);
+  if (index < size) {
+    for (int i = 0; i < pre_size; i++) {
+      int offset_out = index * post_size + i * total;
+      int offset_in = index * post_size + i * total0;
+      // memcpy(out_data + offset_out, x_data0 + offset_in, post_size);
+      __global CL_DTYPE* dst = (__global CL_DTYPE*)(out_data + offset_out);
+      __global CL_DTYPE* src = (__global CL_DTYPE*)(x_data0 + offset_in);
+      for (int k = 0; k < post_size; k++) {
+        *dst++ = *src++;
+      }
     }
+  } else if (index < axis_size) {
+    for (int i = 0; i < pre_size; i++) {
+      int offset_out = index * post_size + i * total;
+      int offset_in = index * post_size + i * total1;
+      // memcpy(out_data + offset_out, x_data1 + offset_in, post_size);
+      __global CL_DTYPE* dst = (__global CL_DTYPE*)(out_data + offset_out);
+      __global CL_DTYPE* src = (__global CL_DTYPE*)(x_data1 + offset_in);
+      for (int k = 0; k < post_size; k++) {
+        *dst++ = *src++;
+      }
+    }
+  }
 }
 
+/*
 __kernel void concat_mul_buffer(
                      __global const CL_DTYPE* x_data,
-                     __global CL_DTYPE* out_data, 
+                     __global CL_DTYPE* out_data,
                      int axis_size,
                      int pre_size,
                      int post_size,
@@ -65,11 +66,31 @@ __kernel void concat_mul_buffer(
             int offset_out = (start + index) * post_size + i * total;
             int offset_in = index * post_size + i * total0;
             // memcpy(out_data + offset_out, x_data + offset_in, post_size);
-            __global CL_DTYPE* dst = (__global CL_DTYPE*)(out_data + offset_out);
+            __global CL_DTYPE* dst = (__global CL_DTYPE*)(out_data +
+offset_out);
             __global CL_DTYPE* src = (__global CL_DTYPE*)(x_data + offset_in);
             for (int k = 0; k < post_size; k++) {
                 *dst++ = *src++;
             }
         }
     }
+}
+*/
+
+__kernel void concat_mul_buffer(__global const CL_DTYPE* x_data,
+                                __global CL_DTYPE* out_data,
+                                int start,
+                                int total,
+                                int total0) {
+  const int post_idx = get_global_id(0);  // [0, post_size)
+  const int axis_idx = get_global_id(1);  // [0, axis_size)
+  const int pre_idx = get_global_id(2);   // [0, pre_size)
+  const int post_size = get_global_size(0);
+
+  int offset_out = (start + axis_idx) * post_size + pre_idx * total;
+  int offset_in = axis_idx * post_size + pre_idx * total0;
+  int pos_out = offset_out + post_idx;
+  int pos_in = offset_in + post_idx;
+
+  out_data[pos_out] = x_data[pos_in];
 }

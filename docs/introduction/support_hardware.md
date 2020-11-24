@@ -32,15 +32,36 @@ Paddle Lite支持移动端GPU和Nvidia端上GPU设备，支持列表如下：
   
   Nvida tegra系列: tx1, tx2, nano, xavier
 
-## NPU
-Paddle Lite支持NPU，支持列表如下：
-- 华为达芬奇架构NPU
-
 ## FPGA
 Paddle Lite支持FPGA，支持列表如下：
 - 百度Edgeboard系列：ZU9, ZU5, ZU3
 
-## XPU
-Paddle Lite支持XPU，支持列表如下：
+## 百度 (Baidu) XPU
+Paddle Lite支持百度XPU，支持列表如下：
 - 百度昆仑818-100芯片
 - 百度昆仑818-300芯片
+
+## 华为 (Huawei) NPU
+Paddle Lite支持华为达芬奇架构NPU，支持列表如下：
+- 支持芯片：Kirin 810/990/985/9000, Ascend 310
+- 支持设备：
+  * Kirin 990：HUAWEI Mate 30系列, 荣耀 V20系列, nova 6系列，P40系列，Mate Xs
+  * Kirin 985：HUAWEI nova 7 5G，nova 7 Pro 5G，荣耀 30
+  * Kirin 820：HUAWEI nova 7 SE 5G，荣耀 30S
+  * Kirin 810：HUAWEI nova 5系列，nova 6 SE，荣耀 9X系列，荣耀 Play4T Pro
+  * Ascend 310：Atlas300推理卡
+
+## 瑞芯微 (Rockchip) NPU
+Paddle Lite支持 瑞芯微 (Rockchip) NPU，支持列表如下：
+- 支持芯片：RK1808, RK1806，暂不支持RK3399Pro
+- 支持设备：RK1808/1806 EVB，TB-RK1808S0
+
+## 联发科 (MediaTek) APU
+Paddle Lite支持 联发科 (MediaTek) APU，支持列表如下：
+- 支持芯片：MT8168/MT8175，及其他智能芯片
+- 支持设备：MT8168-P2V1 Tablet
+
+## 颖脉 (Imagination) NNA
+Paddle Lite支持 颖脉 (Imagination) NNA，支持列表如下：
+- 支持芯片：紫光展锐虎贲T7510
+- 支持设备：海信F50，Roc1开发板（基于T7510的微信电脑主板）

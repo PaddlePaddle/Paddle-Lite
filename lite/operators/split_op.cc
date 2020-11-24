@@ -32,9 +32,18 @@ bool SplitOp::CheckShape() const {
 bool SplitOp::InferShapeImpl() const {
   const auto &outs = param_.output;
   auto in_dims = param_.x->dims();
-  int axis = param_.axis;
   int num = param_.num;
   const auto &sections = param_.sections;
+
+  int axis = 0;
+  if (param_.axis_tensor != nullptr) {
+    axis = param_.axis_tensor->data<int>()[0];
+  } else {
+    axis = param_.axis;
+  }
+  if (axis < 0) {
+    axis += in_dims.size();
+  }
 
   const int outs_number = outs.size();
   std::vector<lite::DDim> outs_dims;
@@ -61,10 +70,6 @@ bool SplitOp::InferShapeImpl() const {
       dim[axis] = sections[i];
       outs_dims.push_back(dim);
     }
-  }
-
-  if (param_.axis_tensor != nullptr) {
-    axis = param_.axis_tensor->data<int>()[0];
   }
 
   for (size_t j = 0; j < outs_dims.size(); ++j) {

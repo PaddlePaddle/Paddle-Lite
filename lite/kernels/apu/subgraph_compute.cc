@@ -203,7 +203,6 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   VLOG(1) << "[APU] APU NIR model created, Create cost "
           << GetCurrentUS() - start_time << " us";
 
-  start_time = GetCurrentUS();
   compilation_ = lite::apu::Device::Global().Build(model_);
   if (compilation_ == nullptr) {
     LOG(WARNING) << "[APU] Build APU DLA model failed!";
@@ -228,10 +227,9 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     size_t compilationSize;
     status = NeuronCompilation_getCompiledNetworkSize(compilation_,
                                                       &compilationSize);
-    std::vector<char> model_buffer;
     if (status == NEURON_NO_ERROR) {
       // Serialization DLA
-
+      std::vector<char> model_buffer;
       model_buffer.resize(compilationSize);
       status = NeuronCompilation_storeCompiledNetwork(
           compilation_, &model_buffer[0], compilationSize);
@@ -262,23 +260,6 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     if (!WriteFile(config_path, config_buffer)) {
       LOG(WARNING) << "[APU] Open " << config_path << " for writting failed!";
     }
-
-    // Workaround: after calling storeCompiledNetwork, model will be modificated
-    // that will cause a low performace, so we need restore it. after we fix
-    // this bug, below code will be deleted
-    NeuronCompilation_free(compilation_);
-    NeuronModel_free(model_);
-    model_ = nullptr;
-    compilation_ = nullptr;
-    status = NeuronModel_restoreFromCompiledNetwork(
-        &model_, &compilation_, &model_buffer[0], compilationSize);
-    if (status != NEURON_NO_ERROR) {
-      LOG(WARNING) << "[APU] Load model failed!" << compilationSize;
-      return false;
-    }
-    VLOG(3) << "[APU] Complete Load model!";
-    VLOG(1) << "[APU] APU DLA model cached, cache cost "
-            << GetCurrentUS() - start_time << " us";
   }
 
   return true;
@@ -331,6 +312,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
             << origin_otensors_[i]->dims() << " memory_size "
             << origin_otensors_[i]->memory_size();
   }
+  return true;
 }
 
 bool SubgraphEngine::LaunchDeviceProgram() {

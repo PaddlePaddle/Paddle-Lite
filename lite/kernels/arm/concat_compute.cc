@@ -71,7 +71,19 @@ void ConcatCompute::Run() {
     axis += inputs[0]->dims().size();
   }
 
-  switch (inputs.front()->precision()) {
+  lite_api::PrecisionType type = PRECISION(kUnk);
+  for (auto* tensor : inputs) {
+    if (tensor->IsInitialized() && tensor->numel() > 0) {
+      if (type == PRECISION(kUnk)) {
+        type = tensor->precision();
+      } else {
+        CHECK(type == tensor->precision()) << "The precision of "
+                                           << "concat inputs should be same.";
+      }
+    }
+  }
+
+  switch (type) {
     case PRECISION(kFloat):
       ConcatFunc<float>(inputs, axis, out);
       break;
