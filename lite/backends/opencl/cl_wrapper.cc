@@ -13,7 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_wrapper.h"
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#else
 #include <dlfcn.h>
+#endif  // _MSC_VER
 #include <string>
 #include <vector>
 
@@ -33,10 +37,12 @@ CLWrapper::CLWrapper() {
 
 bool CLWrapper::InitHandle() {
   const std::vector<std::string> paths = {
-    "libOpenCL.so",
 #if defined(__MACOSX) || defined(__APPLE__)
-    "/System/Library/Frameworks/OpenCL.framework/OpenCL",
-#endif
+    "libOpenCL.so", "/System/Library/Frameworks/OpenCL.framework/OpenCL",
+#elif defined(_ANDROID__)
+    "libOpenCL.so",
+    "libGLES_mali.so",
+    "libmali.so",
 #if defined(__aarch64__)
     // Qualcomm Adreno with Android
     "/system/vendor/lib64/libOpenCL.so",
@@ -44,8 +50,6 @@ bool CLWrapper::InitHandle() {
     // Arm Mali with Android
     "/system/vendor/lib64/egl/libGLES_mali.so",
     "/system/lib64/egl/libGLES_mali.so",
-    // Arm Linux
-    "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
 #else
     // Qualcomm Adreno with Android
     "/system/vendor/lib/libOpenCL.so",
@@ -53,13 +57,21 @@ bool CLWrapper::InitHandle() {
     // Arm Mali with Android
     "/system/vendor/lib/egl/libGLES_mali.so",
     "/system/lib/egl/libGLES_mali.so",
-    // Arm Linux
+#endif // __aarch64
+#elif defined(__linux__)
+    "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
     "/usr/lib/arm-linux-gnueabihf/libOpenCL.so",
+#elif defined(_WIN64)
+    "C:/Windows/System32/OpenCL.dll",
+    "C:/Windows/SysWOW64/OpenCL.dll",
+#elif defined(_WIN32)
+    "C:/Windows/SysWOW64/OpenCL.dll",
+    "C:/Windows/System32/OpenCL.dll",
 #endif
   };
   std::string target_lib = "Unknown";
   for (auto path : paths) {
-    handle_ = dlopen(path.c_str(), RTLD_LAZY);
+    handle_ = dlopen(path.c_str(), 0x00001 /* RTLD_LAZY */);
     if (handle_ != nullptr) {
       target_lib = path;
       break;

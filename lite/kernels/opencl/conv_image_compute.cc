@@ -18,11 +18,7 @@
 #include <iomanip>
 #include <sstream>
 #include "lite/backends/opencl/cl_image_converter.h"
-#include "lite/backends/opencl/cl_include.h"
-#include "lite/backends/opencl/cl_utility.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
 
 #undef LITE_WITH_LOG
 
