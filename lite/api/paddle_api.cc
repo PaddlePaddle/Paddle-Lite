@@ -386,8 +386,7 @@ void CxxConfig::set_inputs(const int idx,
                            const lod_t &lod,
                            const T fill_value,
                            const void *data) {
-  size_t count = idx + 1;
-  if (input_tensors_.size() < count) {
+  while (input_tensors_.size() < idx + 1) {
     std::shared_ptr<void> input_tensor(
         static_cast<void *>(new lite::Tensor),
         [](void *x) { delete static_cast<lite::Tensor *>(x); });
