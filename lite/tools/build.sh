@@ -382,6 +382,10 @@ function make_x86 {
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
 
+  if [ ${BUILD_PYTHON} == "ON" ]; then
+    BUILD_EXTRA=ON
+  fi
+
   if [ -d $build_directory ]
   then
     rm -rf $build_directory
