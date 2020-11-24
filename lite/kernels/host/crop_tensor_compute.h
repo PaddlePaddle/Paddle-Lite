@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/stack_compute.h"
+#pragma once
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
-using stack_float =
-    paddle::lite::kernels::host::StackCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(stack, kX86, kFloat, kNCHW, stack_float, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+template <class T, PrecisionType PType>
+class CropTensorCompute
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
+ public:
+  using param_t = operators::CropTensorParam;
+
+  void Run() override;
+
+  virtual ~CropTensorCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

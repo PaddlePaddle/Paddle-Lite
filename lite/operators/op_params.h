@@ -787,8 +787,22 @@ struct Pad2dParam : ParamBase {
 
 /// ----------------------- Crop operators ----------------------
 struct CropParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Y{nullptr};
+  const lite::Tensor* Offsets{nullptr};
+  lite::Tensor* Out{nullptr};
+  std::vector<int> offsets;
+  std::vector<int> shape;
+};
+
+/// ----------------------- CropTensor operators ----------------------
+struct CropTensorParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Shape{nullptr};
+  const lite::Tensor* Offsets{nullptr};
+  const std::vector<lite::Tensor>* ShapeTensor{nullptr};
+  const std::vector<lite::Tensor>* OffsetsTensor{nullptr};
+  lite::Tensor* Out{nullptr};
   std::vector<int> offsets;
   std::vector<int> shape;
 };
@@ -1394,8 +1408,10 @@ struct UnsqueezeParam : ParamBase {
 
 /// ----------------------- expand operators ----------------------
 struct ExpandParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* ExpandTimes{nullptr};
+  const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
+  lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
 };
 

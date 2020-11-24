@@ -1,1 +1,4 @@
-lite_cc_library(sequence_padding SRCS sequence_padding.cc DEPS ${lite_kernel_deps})
+lite_cc_library(math_host SRCS
+    sequence_padding.cc
+    slice.cc
+    DEPS ${lite_kernel_deps})
