@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include <sys/time.h>
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#endif
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"

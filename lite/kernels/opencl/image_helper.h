@@ -18,6 +18,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#endif
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
 
