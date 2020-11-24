@@ -201,12 +201,12 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {
 
 template <>
 void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
-  ReInitWhenNeeded<float>();
+  ReInitWhenNeeded();
 }
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
-  ReInitWhenNeeded<int8>();
+  ReInitWhenNeeded();
   auto& param = this->Param<param_t>();
   /// update scale
   w_scale_ = param.weight_scale;
@@ -227,7 +227,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
-  ReInitWhenNeeded<float>();
+  ReInitWhenNeeded();
   auto& param = this->Param<param_t>();
   /// update scale
   /// update scale
