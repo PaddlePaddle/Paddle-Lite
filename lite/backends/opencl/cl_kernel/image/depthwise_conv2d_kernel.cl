@@ -84,7 +84,7 @@ __kernel void depth_conv2d_3x3(
                  in_pos_in_one_block.y - dilation < 0 ||
                  in_pos_in_one_block.x - dilation >= input_width ||
                  in_pos_in_one_block.y - dilation >= input_height)
-                << 15));
+                ));
 
   inputs[1] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -96,7 +96,7 @@ __kernel void depth_conv2d_3x3(
       ((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y - dilation < 0 ||
                  in_pos_in_one_block.x >= input_width ||
                  in_pos_in_one_block.y - dilation >= input_height)
-                << 15));
+                ));
 
   inputs[2] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -109,7 +109,7 @@ __kernel void depth_conv2d_3x3(
                  in_pos_in_one_block.y - dilation < 0 ||
                  in_pos_in_one_block.x + dilation >= input_width ||
                  in_pos_in_one_block.y - dilation >= input_height)
-                << 15));
+                ));
 
   inputs[3] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -121,7 +121,7 @@ __kernel void depth_conv2d_3x3(
       ((in_pos_in_one_block.x - dilation < 0 || in_pos_in_one_block.y < 0 ||
                  in_pos_in_one_block.x - dilation >= input_width ||
                  in_pos_in_one_block.y >= input_height)
-                << 15));
+                ));
 
   inputs[4] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -133,7 +133,7 @@ __kernel void depth_conv2d_3x3(
       ((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 ||
                  in_pos_in_one_block.x >= input_width ||
                  in_pos_in_one_block.y >= input_height)
-                << 15));
+                ));
 
   inputs[5] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -145,7 +145,7 @@ __kernel void depth_conv2d_3x3(
       ((in_pos_in_one_block.x + dilation < 0 || in_pos_in_one_block.y < 0 ||
                  in_pos_in_one_block.x + dilation >= input_width ||
                  in_pos_in_one_block.y >= input_height)
-                << 15));
+                ));
 
   inputs[6] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -158,7 +158,7 @@ __kernel void depth_conv2d_3x3(
                  in_pos_in_one_block.y + dilation < 0 ||
                  in_pos_in_one_block.x - dilation >= input_width ||
                  in_pos_in_one_block.y + dilation >= input_height)
-                << 15));
+                ));
 
   inputs[7] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -170,7 +170,7 @@ __kernel void depth_conv2d_3x3(
       ((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y + dilation < 0 ||
                  in_pos_in_one_block.x >= input_width ||
                  in_pos_in_one_block.y + dilation >= input_height)
-                << 15));
+                ));
 
   inputs[8] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
@@ -183,7 +183,7 @@ __kernel void depth_conv2d_3x3(
                  in_pos_in_one_block.y + dilation < 0 ||
                  in_pos_in_one_block.x + dilation >= input_width ||
                  in_pos_in_one_block.y + dilation >= input_height)
-                << 15));
+                ));
 
   CL_DTYPE4 filters[9];
   filters[0] =

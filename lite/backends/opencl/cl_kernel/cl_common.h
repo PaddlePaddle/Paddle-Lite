@@ -79,11 +79,11 @@ __constant sampler_t SAMPLER =
 // select
 /////////////////////////////////
 #ifdef CL_DTYPE_float
-#define SELECT(a, b, mask) select(a, b, (uint4)(mask))
+#define SELECT(a, b, mask) select(a, b, (uint4)((mask) << 31))
 #endif
 
 #ifdef CL_DTYPE_half
-#define SELECT(a, b, mask) select(a, b, (ushort4)(mask))
+#define SELECT(a, b, mask) select(a, b, (ushort4)((mask) << 15))
 #endif
 
 /////////////////////////////////
