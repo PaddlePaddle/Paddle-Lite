@@ -1880,19 +1880,20 @@ struct XPUMmdnnMergeAllParam : ParamBase {
 struct XPUConv2dParam : ParamBase {
   lite::Tensor* Input{nullptr};
   lite::Tensor* Filter{nullptr};
-  lite::Tensor* InputMax{nullptr};
   lite::Tensor* FilterMax{nullptr};
-  lite::Tensor* Bias{nullptr};
-  lite::Tensor* Branch{nullptr};
   lite::Tensor* Output{nullptr};
   lite::Tensor* OutputMax{nullptr};
+  lite::Tensor* InputMax{nullptr};
+  lite::Tensor* Bias{nullptr};
+  lite::Tensor* Branch{nullptr};
 
-  int groups{1};
-  std::string act_type{""};
-  std::string filter_type{""};
+  int act_type{0};
+  float act_param{0.0f};
+  std::vector<int> filter_dims;
   std::vector<int> strides;
   std::shared_ptr<std::vector<int>> paddings;
   std::shared_ptr<std::vector<int>> dilations;
+  int groups{1};
 };
 
 struct XPUSfaHeadParam : ParamBase {
