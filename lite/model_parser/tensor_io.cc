@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/memory.h"
+#include "lite/model_parser/tensor_io.h"
