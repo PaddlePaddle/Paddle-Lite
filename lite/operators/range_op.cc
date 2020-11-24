@@ -42,11 +42,25 @@ void GetSize(T start, T end, T step, int64_t* size) {
 }
 
 bool RangeOpLite::InferShapeImpl() const {
-  int start = param_.Start->data<float>()[0];
-  int end = param_.End->data<float>()[0];
-  int step = param_.Step->data<float>()[0];
   int64_t size = 0;
-  GetSize(start, end, step, &size);
+  switch (param_.Start->precision()) {
+    case PRECISION(kFloat):
+      GetSize(param_.Start->data<float>()[0],
+              param_.End->data<float>()[0],
+              param_.Step->data<float>()[0],
+              &size);
+      break;
+    case PRECISION(kInt32):
+      GetSize(param_.Start->data<int>()[0],
+              param_.End->data<int>()[0],
+              param_.Step->data<int>()[0],
+              &size);
+      break;
+    default:
+      LOG(FATAL) << "not supported precision type of range: "
+                 << lite_api::PrecisionToStr(param_.Start->precision());
+      break;
+  }
   param_.Out->Resize(std::vector<int64_t>({size}));
   return true;
 }
@@ -57,10 +71,10 @@ bool RangeOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto step = opdesc.Input("Step").front();
   auto out = opdesc.Output("Out").front();
 
-  param_.Start = scope->FindVar(start)->GetMutable<lite::Tensor>();
-  param_.End = scope->FindVar(end)->GetMutable<lite::Tensor>();
-  param_.Step = scope->FindVar(step)->GetMutable<lite::Tensor>();
-  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
+  param_.Start = scope->FindTensor(start);
+  param_.End = scope->FindTensor(end);
+  param_.Step = scope->FindTensor(step);
+  param_.Out = scope->FindMutableTensor(out);
 
   return true;
 }

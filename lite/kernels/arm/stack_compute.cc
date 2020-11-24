@@ -12,31 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/stack_compute.h"
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/kernels/host/stack_compute.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
-
-void StackCompute::Run() {
-  auto& param = Param<operators::StackParam>();
-  std::vector<lite::Tensor*> x = param.X;
-  lite::Tensor* out = param.Out;
-  int axis = param.axis;
-
-  lite::arm::math::stack(x, out, axis);
-}
-
-} /* namespace arm */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
-
-REGISTER_LITE_KERNEL(
-    stack, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::StackCompute, def)
+using stack_float =
+    paddle::lite::kernels::host::StackCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kARM, kFloat, kNCHW, stack_float, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using stack_int32 =
+    paddle::lite::kernels::host::StackCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(stack, kARM, kInt32, kNCHW, stack_int32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();

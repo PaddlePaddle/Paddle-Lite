@@ -11,39 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #pragma once
-#include <algorithm>
-#include <vector>
+#include <random>
 #include "lite/core/kernel.h"
-#include "lite/operators/crop_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class CropCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class ShuffleChannelCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::CropParam;
+  using param_t = operators::ShuffleChannelParam;
 
   void Run() override;
-  virtual ~CropCompute() = default;
-  void crop_fun(const lite::Tensor* input, lite::Tensor* output);
 
- private:
-  std::vector<int> offsets_;
-  std::vector<int> shape_;
-
-  int c_off;
-  int h_off;
-  int w_off;
-  int c_end;
-  int h_end;
-  int w_end;
+  virtual ~ShuffleChannelCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
