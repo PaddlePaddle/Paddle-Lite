@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,26 @@
 
 #pragma once
 
-#pragma GCC system_header
-#include <xpu/api.h>
-#include <xpu/golden.h>
-#include <xpu/refactor/fusion.h>
-#include <xpu/refactor/math.h>
-#include <xpu/refactor/nn.h>
-#include <xpu/runtime.h>
-
-#if defined(LITE_WITH_XTCL)
-#include <xtcl/xtcl.h>
-#endif
+#include <memory>
+#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace xpu {
 
-namespace xdnn = baidu::xpu::api;
+template <PrecisionType FilterPtype>
+class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
+ public:
+  using param_t = operators::ConvParam;
 
+  void Run() override;
+
+  virtual ~Conv2dTransposeCompute() = default;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
