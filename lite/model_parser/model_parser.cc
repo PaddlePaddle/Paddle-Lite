@@ -41,12 +41,14 @@ namespace paddle {
 namespace lite {
 
 #ifndef LITE_ON_TINY_PUBLISH
-void LoadLoDTensor(model_parser::LoDTensorDeserializer *loader, Variable *var) {
+void LoadLoDTensor(model_parser::LoDTensorDeserializer *loader,
+                   model_parser::ByteReader *reader,
+                   Variable *var) {
   auto *tensor = var->GetMutable<lite::Tensor>();
   CHECK(tensor) << "Can not get allocation of the tensor.";
   CHECK(loader) << "The input argument loader is nullptr.";
   CHECK(var) << "The input argument var is nullptr.";
-  loader->LoadForward(tensor);
+  loader->LoadWithForwardReader(tensor, reader);
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
@@ -65,8 +67,8 @@ std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
 // Load directly to CPU, and latter transfer to other devices.
 void LoadParam(const std::string &path, Variable *out) {
   model_parser::BinaryFileReader reader(path);
-  model_parser::LoDTensorDeserializer loader(&reader);
-  LoadLoDTensor(&loader, out);
+  model_parser::LoDTensorDeserializer loader;
+  LoadLoDTensor(&loader, &reader, out);
 }
 
 bool IsPersistable(const cpp::VarDesc &var) {
@@ -95,20 +97,20 @@ void LoadCombinedParamsPb(const std::string &path,
   }
   std::stable_sort(paramlist.begin(), paramlist.end());
 
-  std::unique_ptr<model_parser::BytesReader> reader;
+  std::unique_ptr<model_parser::ByteReader> reader;
   if (!model_buffer.is_empty()) {
     reader.reset(new model_parser::StringBufferReader(
         const_cast<std::string &&>(model_buffer.get_params())));
   } else {
     reader.reset(new model_parser::BinaryFileReader(path));
   }
-  model_parser::LoDTensorDeserializer loader(reader.get());
+  model_parser::LoDTensorDeserializer loader;
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = scope->Var(paramlist[i]);
-    LoadLoDTensor(&loader, var);
+    LoadLoDTensor(&loader, reader.get(), var);
   }
-  CHECK(reader->end()) << "You are not allowed to load partial data via"
-                       << " LoadCombinedParamsPb, use LoadParam instead.";
+  CHECK(reader->ReachEnd()) << "You are not allowed to load partial data via"
+                            << " LoadCombinedParamsPb, use LoadParam instead.";
 }
 
 void LoadModelPb(const std::string &model_dir,
@@ -153,11 +155,11 @@ void LoadModelPb(const std::string &model_dir,
       VLOG(4) << "reading weight " << var.name();
 
       model_parser::BinaryFileReader reader(file_path);
-      model_parser::LoDTensorDeserializer loader(&reader);
+      model_parser::LoDTensorDeserializer loader;
 
       switch (var.type().type()) {
         case framework::proto::VarType_Type_LOD_TENSOR:
-          LoadLoDTensor(&loader, scope->Var(var.name()));
+          LoadLoDTensor(&loader, &reader, scope->Var(var.name()));
           break;
         default:
           CHECK(false) << "unknown weight type";
@@ -201,13 +203,13 @@ void SaveModelPb(const std::string &model_dir,
       const std::string path = model_dir + "/" + item.name();
 
       model_parser::BinaryFileWriter file(path);
-      model_parser::LoDTensorSerializer saver(&file);
+      model_parser::LoDTensorSerializer saver;
       auto *var = exec_scope.FindVar(item.name());
       const auto &tensor = var->Get<lite::Tensor>();
       if (tensor.target() == TARGET(kCUDA)) {
         LOG(FATAL);
       }
-      saver.SaveForward(tensor);
+      saver.SaveWithForwardWriter(tensor, &file);
     }
   }
   VLOG(4) << "Save protobuf model in '" << model_dir << "'' successfully";
@@ -230,14 +232,15 @@ void SaveCombinedParamsPb(const std::string &path,
 
   // Save vars
   model_parser::BinaryFileWriter file(path);
-  model_parser::LoDTensorSerializer saver(&file);
+  model_parser::LoDTensorSerializer saver;
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = exec_scope.FindVar(paramlist[i]);
     const auto &tensor = var->Get<lite::Tensor>();
     if (tensor.target() == TARGET(kCUDA)) {
-      LOG(FATAL);
+      LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
+                    "please copy it to the Host Tensor temporarily.";
     }
-    saver.SaveForward(tensor);
+    saver.SaveWithForwardWriter(tensor, &file);
   }
 }
 

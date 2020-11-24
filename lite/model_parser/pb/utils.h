@@ -22,51 +22,11 @@ namespace paddle {
 namespace lite {
 namespace pb {
 
-inline lite::VarDataType ConvertVarType(
-    ::paddle::framework::proto::VarType_Type pb_type) {
-  typedef ::paddle::framework::proto::VarType_Type VarType_Type;
-  lite::VarDataType type{};
-  switch (pb_type) {
-#define CASE(vtype)                        \
-  case VarType_Type::VarType_Type_##vtype: \
-    type = lite::VarDataType::vtype;       \
-    break
-    CASE(FP64);
-    CASE(FP32);
-    CASE(INT8);
-    CASE(UINT8);
-    CASE(INT16);
-    CASE(INT32);
-    CASE(INT64);
-#undef CASE
-    default:
-      LOG(FATAL) << "unknown type " << pb_type;
-  }
-  return type;
-}
+lite::VarDataType ConvertVarType(
+    ::paddle::framework::proto::VarType_Type pb_type);
 
-inline ::paddle::framework::proto::VarType_Type ConvertVarType(
-    lite::VarDataType var_type) {
-  typedef ::paddle::framework::proto::VarType_Type VarType_Type;
-  VarType_Type type{};
-  switch (var_type) {
-#define CASE(vtype)                            \
-  case lite::VarDataType::vtype:               \
-    type = VarType_Type::VarType_Type_##vtype; \
-    break
-    CASE(FP64);
-    CASE(FP32);
-    CASE(INT8);
-    CASE(UINT8);
-    CASE(INT16);
-    CASE(INT32);
-    CASE(INT64);
-#undef CASE
-    default:
-      LOG(FATAL) << "unknown type " << static_cast<int>(var_type);
-  }
-  return type;
-}
+::paddle::framework::proto::VarType_Type ConvertVarType(
+    lite::VarDataType var_type);
 
 }  // namespace pb
 }  // namespace lite

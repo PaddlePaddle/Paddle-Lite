@@ -70,9 +70,9 @@ class Buffer {
   size_t size_{0};
 };
 
-class BytesReader {
+class ByteReader {
  public:
-  BytesReader() = default;
+  ByteReader() = default;
   virtual void ReadForward(void* dst, size_t size) const = 0;
   virtual std::string ReadForwardToString(size_t size) const {
     std::string tmp;
@@ -82,44 +82,44 @@ class BytesReader {
     return tmp;
   }
   virtual size_t length() const = 0;
-  virtual bool end() const = 0;
+  virtual bool ReachEnd() const = 0;
 
   template <typename T,
             typename = typename std::enable_if<
-                std::is_standard_layout<T>::value>::type>
+                std::is_trivially_copyable<T>::value>::type>
   T ReadForward() const {
     T tmp;
     ReadForward(&tmp, sizeof(T));
     return tmp;
   }
 
-  virtual ~BytesReader() = default;
+  virtual ~ByteReader() = default;
 
  private:
-  BytesReader(const BytesReader&) = delete;
-  BytesReader& operator=(const BytesReader&) = delete;
+  ByteReader(const ByteReader&) = delete;
+  ByteReader& operator=(const ByteReader&) = delete;
 };
 
-class BytesWriter {
+class ByteWriter {
  public:
-  BytesWriter() = default;
+  ByteWriter() = default;
   virtual void WriteForward(const void* src, size_t size) const = 0;
 
   template <typename T,
             typename = typename std::enable_if<
-                std::is_standard_layout<T>::value>::type>
+                std::is_trivially_copyable<T>::value>::type>
   void WriteForward(T elem) const {
     WriteForward(&elem, sizeof(T));
   }
 
-  virtual ~BytesWriter() = default;
+  virtual ~ByteWriter() = default;
 
  private:
-  BytesWriter(const BytesWriter&) = delete;
-  BytesWriter& operator=(const BytesWriter&) = delete;
+  ByteWriter(const ByteWriter&) = delete;
+  ByteWriter& operator=(const ByteWriter&) = delete;
 };
 
-class BinaryFileReader : public BytesReader {
+class BinaryFileReader : public ByteReader {
  public:
   explicit BinaryFileReader(const std::string& path, size_t offset = 0) {
     file_ = fopen(path.c_str(), "rb");
@@ -128,29 +128,37 @@ class BinaryFileReader : public BytesReader {
     length_ = ftell(file_) - offset;
     fseek(file_, offset, SEEK_SET);
   }
-  ~BinaryFileReader() { fclose(file_); }
+  ~BinaryFileReader() {
+    if (file_) {
+      fclose(file_);
+    }
+  }
   void ReadForward(void* dst, size_t size) const override {
     CHECK(dst);
-    CHECK_EQ(fread(dst, 1, size, file_), size)
-        << "Failed to read data correctly.";
+    CHECK_EQ(fread(dst, 1, size, file_), size) << "Failed to read " << size
+                                               << " bytes.";
     cur_ += size;
   }
-  bool end() const override { return cur_ >= length_; }
+  bool ReachEnd() const override { return cur_ >= length_; }
   size_t length() const override { return length_; }
 
  private:
-  FILE* file_;
+  FILE* file_{};
   size_t length_{0};
   mutable size_t cur_{0};
 };
 
-class BinaryFileWriter : public BytesWriter {
+class BinaryFileWriter : public ByteWriter {
  public:
   explicit BinaryFileWriter(const std::string& path) {
     file_ = fopen(path.c_str(), "wb");
     CHECK(file_) << "Unable to open file: " << path;
   }
-  ~BinaryFileWriter() { fclose(file_); }
+  ~BinaryFileWriter() {
+    if (file_) {
+      fclose(file_);
+    }
+  }
   void WriteForward(const void* src, size_t size) const override {
     CHECK(src);
     CHECK_EQ(fwrite(src, 1, size, file_), size)
@@ -159,11 +167,11 @@ class BinaryFileWriter : public BytesWriter {
   }
 
  private:
-  FILE* file_;
+  FILE* file_{};
   mutable size_t cur_{0};
 };
 
-class StringBufferReader : public BytesReader {
+class StringBufferReader : public ByteReader {
  public:
   explicit StringBufferReader(std::string&& buffer)
       : str_(std::forward<std::string>(buffer)),
@@ -177,7 +185,7 @@ class StringBufferReader : public BytesReader {
     lite::TargetCopy(TargetType::kHost, dst, buf_ + cur_, size);
     cur_ += size;
   }
-  bool end() const override { return cur_ < length_; }
+  bool ReachEnd() const override { return cur_ < length_; }
   size_t length() const override { return length_; }
 
  private:

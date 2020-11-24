@@ -26,16 +26,8 @@ namespace pb {
 
 class TensorInfoReader : public TensorInfoReadAPI {
  public:
-  TensorInfoReader(model_parser::BytesReader* reader,
-                   model_parser::Buffer* buffer) {
-    CHECK(reader);
-    CHECK(buffer);
-    int32_t size = reader->ReadForward<int32_t>();
-    buffer->ReallocateDownward(size);
-    reader->ReadForward(buffer->data(), size);
-    CHECK(desc_.ParseFromArray(buffer->data(), size))
-        << "Cannot parse tensor desc";
-  }
+  TensorInfoReader(model_parser::ByteReader* reader,
+                   model_parser::Buffer* buffer);
   std::vector<int64_t> Dim() const override {
     std::vector<int64_t> dims_vec;
     std::copy(
@@ -52,7 +44,7 @@ class TensorInfoReader : public TensorInfoReadAPI {
 
 class TensorInfoWriter : public TensorInfoWriteAPI {
  public:
-  TensorInfoWriter(model_parser::BytesWriter* writer,
+  TensorInfoWriter(model_parser::ByteWriter* writer,
                    model_parser::Buffer* buffer)
       : writer_(writer), buffer_(buffer) {
     CHECK(writer_);
@@ -60,23 +52,13 @@ class TensorInfoWriter : public TensorInfoWriteAPI {
   }
   void SetDim(const std::vector<int64_t>& dim) override { dim_ = dim; }
   void SetDataType(VarDataType data_type) override { data_type_ = data_type; }
-  void Sync() override {
-    desc_.set_data_type(ConvertVarType(data_type_));
-    auto* pb_dims = desc_.mutable_dims();
-    pb_dims->Resize(dim_.size(), 0);
-    std::copy(dim_.begin(), dim_.end(), pb_dims->begin());
-    int32_t desc_size = desc_.ByteSizeLong();
-    writer_->WriteForward<int32_t>(desc_size);
-    buffer_->ReallocateDownward(desc_.ByteSizeLong());
-    desc_.SerializeToArray(buffer_->data(), buffer_->size());
-    writer_->WriteForward(buffer_->data(), buffer_->size());
-  }
+  void Sync() override;
 
  private:
   framework::proto::VarType::TensorDesc desc_;
   std::vector<int64_t> dim_;
   VarDataType data_type_;
-  model_parser::BytesWriter* writer_;
+  model_parser::ByteWriter* writer_;
   model_parser::Buffer* buffer_;
 };
 
