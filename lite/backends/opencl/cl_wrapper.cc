@@ -13,7 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_wrapper.h"
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#else
 #include <dlfcn.h>
+#endif  // _MSC_VER
 #include <string>
 #include <vector>
 
@@ -33,7 +37,6 @@ CLWrapper::CLWrapper() {
 
 bool CLWrapper::InitHandle() {
   const std::vector<std::string> paths = {
-    "libOpenCL.so",
 #if defined(__aarch64__)
     // Qualcomm Adreno with Android
     "/system/vendor/lib64/libOpenCL.so",
@@ -43,7 +46,7 @@ bool CLWrapper::InitHandle() {
     "/system/lib64/egl/libGLES_mali.so",
     // Arm Linux
     "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
-#else
+#elif defined(__arm__)
     // Qualcomm Adreno with Android
     "/system/vendor/lib/libOpenCL.so",
     "/system/lib/libOpenCL.so",
@@ -52,11 +55,17 @@ bool CLWrapper::InitHandle() {
     "/system/lib/egl/libGLES_mali.so",
     // Arm Linux
     "/usr/lib/arm-linux-gnueabihf/libOpenCL.so",
+#elif defined(_WIN64)
+    "C:/Windows/System32/OpenCL.dll",
+    "C:/Windows/SysWOW64/OpenCL.dll",
+#elif defined(_WIN32)
+    "C:/Windows/SysWOW64/OpenCL.dll",
+    "C:/Windows/System32/OpenCL.dll",
 #endif
   };
   std::string target_lib = "Unknown";
   for (auto path : paths) {
-    handle_ = dlopen(path.c_str(), RTLD_LAZY);
+    handle_ = dlopen(path.c_str(), 0x00001 /* RTLD_LAZY */);
     if (handle_ != nullptr) {
       target_lib = path;
       break;
