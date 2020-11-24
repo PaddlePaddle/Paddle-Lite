@@ -60,6 +60,7 @@ void PoolCompute::Run() {
   bool win_ksize = (in_dims[2] > ksize[0]) && (in_dims[3] > ksize[1]);
   global_pooling = param.global_pooling || global_pooling;
   kps_equal = kps_equal && win_ksize;
+  auto x_dims = param.x->dims();
 
   if (global_pooling) {
     for (size_t i = 0; i < ksize.size(); ++i) {
@@ -91,7 +92,8 @@ void PoolCompute::Run() {
       return;
     }
   } else {
-    if (ksize[0] == 1 && strides[0] == 2 && paddings[0] == 0 && kps_equal) {
+    if (x_dims[-1] > 8 && ksize[0] == 1 && strides[0] == 2 &&
+        paddings[0] == 0 && kps_equal) {
       auto& ctx = this->ctx_->template As<ARMContext>();
       if (pooling_type == "max") {
         lite::arm::math::pooling1x1s2p0_max(din,
@@ -107,8 +109,8 @@ void PoolCompute::Run() {
                                             paddings[3]);
         return;
       }
-    } else if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 0 &&
-               kps_equal) {
+    } else if (x_dims[-1] > 8 && ksize[0] == 2 && strides[0] == 2 &&
+               paddings[0] == 0 && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling2x2s2p0_max(din,
                                             dout,
@@ -137,8 +139,8 @@ void PoolCompute::Run() {
                                             paddings[3]);
         return;
       }
-    } else if (ksize[0] == 2 && strides[0] == 2 && paddings[0] == 1 &&
-               kps_equal) {
+    } else if (x_dims[-1] > 8 && ksize[0] == 2 && strides[0] == 2 &&
+               paddings[0] == 1 && kps_equal) {
       if (pooling_type == "max") {
         lite::arm::math::pooling2x2s2p1_max(din,
                                             dout,
