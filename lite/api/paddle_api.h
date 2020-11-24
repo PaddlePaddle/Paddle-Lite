@@ -144,9 +144,7 @@ class LITE_API ConfigBase {
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
   int device_id_{0};
-#ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
-#endif
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -172,14 +170,6 @@ class LITE_API ConfigBase {
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
   int get_device_id() const { return device_id_; }
-#ifdef LITE_WITH_X86
-  void set_x86_math_library_num_threads(int threads) {
-    x86_math_library_math_threads_ = threads;
-  }
-  int x86_math_library_num_threads() const {
-    return x86_math_library_math_threads_;
-  }
-#endif
 };
 
 class LITE_API CxxModelBuffer {
