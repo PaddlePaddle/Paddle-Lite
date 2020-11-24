@@ -161,8 +161,8 @@ class BinaryFileWriter : public ByteWriter {
   }
   void WriteForward(const void* src, size_t size) const override {
     CHECK(src);
-    CHECK_EQ(fwrite(src, 1, size, file_), size)
-        << "Failed to read data correctly.";
+    CHECK_EQ(fwrite(src, 1, size, file_), size) << "Failed to read " << size
+                                                << "bytes.";
     cur_ += size;
   }
 
