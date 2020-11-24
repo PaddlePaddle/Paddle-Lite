@@ -29,13 +29,9 @@ class Buffer {
   Buffer() = default;
   Buffer(const Buffer&) = delete;
 
-  explicit Buffer(size_t size) { ReallocateDownward(size); }
+  explicit Buffer(size_t size) { ResetLazy(size); }
 
-  void CopyDataFrom(const Buffer& other) {
-    const auto* other_raw = other.raw();
-    CHECK(other_raw);
-    raw_->CopyDataFrom(*other_raw, other.size());
-  }
+  void CopyDataFrom(const Buffer& other);
 
   Buffer(Buffer&& other) { raw_ = other.Release(); }
   Buffer& operator=(Buffer&& other) {
@@ -56,11 +52,7 @@ class Buffer {
     return raw_->space();
   }
   size_t size() const { return size_; }
-  void ReallocateDownward(size_t size) {
-    CHECK(raw_);
-    raw_->ResetLazy(TargetType::kHost, size);
-    size_ = size;
-  }
+  void ResetLazy(size_t size);
 
   std::unique_ptr<lite::Buffer> Release() { return std::move(raw_); }
   const lite::Buffer* raw() const { return raw_.get(); }
@@ -74,13 +66,7 @@ class ByteReader {
  public:
   ByteReader() = default;
   virtual void ReadForward(void* dst, size_t size) const = 0;
-  virtual std::string ReadForwardToString(size_t size) const {
-    std::string tmp;
-    tmp.resize(size);
-    ReadForward(&tmp[0], size);
-    tmp.shrink_to_fit();
-    return tmp;
-  }
+  virtual std::string ReadForwardToString(size_t size) const;
   virtual size_t length() const = 0;
   virtual bool ReachEnd() const = 0;
 
@@ -121,24 +107,13 @@ class ByteWriter {
 
 class BinaryFileReader : public ByteReader {
  public:
-  explicit BinaryFileReader(const std::string& path, size_t offset = 0) {
-    file_ = fopen(path.c_str(), "rb");
-    CHECK(file_) << "Unable to open file: " << path;
-    fseek(file_, 0L, SEEK_END);
-    length_ = ftell(file_) - offset;
-    fseek(file_, offset, SEEK_SET);
-  }
+  explicit BinaryFileReader(const std::string& path, size_t offset = 0);
   ~BinaryFileReader() {
     if (file_) {
       fclose(file_);
     }
   }
-  void ReadForward(void* dst, size_t size) const override {
-    CHECK(dst);
-    CHECK_EQ(fread(dst, 1, size, file_), size) << "Failed to read " << size
-                                               << " bytes.";
-    cur_ += size;
-  }
+  void ReadForward(void* dst, size_t size) const override;
   bool ReachEnd() const override { return cur_ >= length_; }
   size_t length() const override { return length_; }
 
@@ -159,12 +134,7 @@ class BinaryFileWriter : public ByteWriter {
       fclose(file_);
     }
   }
-  void WriteForward(const void* src, size_t size) const override {
-    CHECK(src);
-    CHECK_EQ(fwrite(src, 1, size, file_), size) << "Failed to read " << size
-                                                << "bytes.";
-    cur_ += size;
-  }
+  void WriteForward(const void* src, size_t size) const override;
 
  private:
   FILE* file_{};
@@ -180,11 +150,7 @@ class StringBufferReader : public ByteReader {
     CHECK(buf_);
   }
   ~StringBufferReader() = default;
-  void ReadForward(void* dst, size_t size) const override {
-    CHECK(dst);
-    lite::TargetCopy(TargetType::kHost, dst, buf_ + cur_, size);
-    cur_ += size;
-  }
+  void ReadForward(void* dst, size_t size) const override;
   bool ReachEnd() const override { return cur_ < length_; }
   size_t length() const override { return length_; }
 
