@@ -25,6 +25,7 @@ add_kernel(transpose_opencl_image OPENCL basic SRCS transpose_image_compute.cc D
 add_kernel(conv_opencl_image OPENCL basic SRCS conv_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(layout_opencl_image OPENCL basic SRCS layout_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(concat_opencl_image OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(split_opencl_image OPENCL basic SRCS split_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(nearest_interp_opencl_image OPENCL basic SRCS nearest_interp_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(scale_opencl_image OPENCL basic SRCS scale_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(grid_sampler_opencl_image OPENCL basic SRCS grid_sampler_image_compute.cc DEPS ${cl_kernel_deps})
@@ -37,7 +38,7 @@ add_kernel(pad2d_opencl_image OPENCL basic SRCS pad2d_image_compute.cc DEPS ${cl
 add_kernel(box_coder_opencl_image OPENCL basic SRCS box_coder_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(pixel_shuffle_opencl_image OPENCL basic SRCS pixel_shuffle_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(expand_opencl_image OPENCL basic SRCS expand_image_compute.cc DEPS ${cl_kernel_deps})
-
+add_kernel(shuffle_channel_opencl_image OPENCL basic SRCS shuffle_channel_image_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 

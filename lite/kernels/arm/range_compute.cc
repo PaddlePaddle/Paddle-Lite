@@ -12,39 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/range_compute.h"
+#include "lite/kernels/host/range_compute.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
-
-void RangeCompute::Run() {
-  auto& param = Param<operators::RangeParam>();
-  // int start = static_cast<int>(param.Start->data<float>()[0]);
-  // int end = static_cast<int>(param.End->data<float>()[0]);
-  // int step = static_cast<int>(param.Step->data<float>()[0]);
-  int start = (param.Start->data<float>()[0]);
-  int end = (param.End->data<float>()[0]);
-  int step = (param.Step->data<float>()[0]);
-
-  float* out_data = param.Out->mutable_data<float>();
-  float value = start;
-  for (int i = 0; i < param.Out->dims().production(); ++i) {
-    out_data[i] = value;
-    value += step;
-  }
-}
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
-
-REGISTER_LITE_KERNEL(
-    range, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::RangeCompute, def)
+using range_float =
+    paddle::lite::kernels::host::RangeCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(range, kARM, kFloat, kNCHW, range_float, def)
     .BindInput("Start", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("End", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Step", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using range_int32 =
+    paddle::lite::kernels::host::RangeCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(range, kARM, kInt32, kNCHW, range_int32, def)
+    .BindInput("Start",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("End", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Step", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();

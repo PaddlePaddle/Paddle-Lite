@@ -18,6 +18,11 @@
 #include "paddle_api.h"         // NOLINT
 #include "paddle_use_passes.h"  // NOLINT
 
+/////////////////////////////////////////////////////////////////////////
+// If this demo is linked to static library:libpaddle_api_full_bundled.a
+// , you should include `paddle_use_ops.h` and `paddle_use_kernels.h` to
+// avoid linking errors such as `unsupport ops or kernels`.
+/////////////////////////////////////////////////////////////////////////
 #if defined(_WIN32)
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
@@ -28,6 +33,16 @@ using namespace paddle::lite_api;  // NOLINT
 DEFINE_string(model_dir, "", "Model dir path.");
 DEFINE_string(optimized_model_dir, "", "Optimized model dir.");
 DEFINE_bool(prefer_int8_kernel, false, "Prefer to run model with int8 kernels");
+DEFINE_int32(power_mode,
+             3,
+             "power mode: "
+             "0 for POWER_HIGH;"
+             "1 for POWER_LOW;"
+             "2 for POWER_FULL;"
+             "3 for NO_BIND");
+DEFINE_int32(threads, 1, "threads num");
+DEFINE_int32(warmup, 0, "warmup times");
+DEFINE_int32(repeats, 1, "repeats times");
 
 int64_t ShapeProduction(const shape_t& shape) {
   int64_t res = 1;
@@ -42,6 +57,8 @@ void RunModel() {
   // 1. Set CxxConfig
   CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
+  config.set_power_mode((paddle::lite_api::PowerMode)FLAGS_power_mode);
+  config.set_threads(FLAGS_threads);
 #ifdef DEMO_WITH_OPENCL
   std::vector<Place> valid_places{
       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
@@ -76,7 +93,13 @@ void RunModel() {
   }
 
   // 5. Run predictor
-  predictor->Run();
+  for (int i = 0; i < FLAGS_warmup; ++i) {
+    predictor->Run();
+  }
+
+  for (int j = 0; j < FLAGS_repeats; ++j) {
+    predictor->Run();
+  }
 
   // 6. Get output
   std::unique_ptr<const Tensor> output_tensor(
@@ -97,6 +120,7 @@ int main(int argc, char** argv) {
               << " --prefer_int8_kernel=[true|false]\n";
     exit(1);
   }
+
   RunModel();
   return 0;
 }

@@ -20,12 +20,13 @@
 namespace paddle {
 namespace lite {
 
+template <class T>
 void stack(std::vector<const lite::Tensor*> x, lite::Tensor* y, int axis) {
   if (axis < 0) axis += (x[0]->dims().size() + 1);
   int n = x.size();
-  auto* y_data = y->mutable_data<float>();
-  std::vector<const float*> x_datas(n);
-  for (int i = 0; i < n; i++) x_datas[i] = x[i]->data<float>();
+  auto* y_data = y->mutable_data<T>();
+  std::vector<const T*> x_datas(n);
+  for (int i = 0; i < n; i++) x_datas[i] = x[i]->data<T>();
 
   int pre = 1, post = 1;
   auto& dim = x[0]->dims();
@@ -39,13 +40,14 @@ void stack(std::vector<const lite::Tensor*> x, lite::Tensor* y, int axis) {
   for (int i = 0; i < pre; i++) {
     for (int j = 0; j < n; j++) {
       std::memcpy(
-          y_data + y_offset, x_data_arr[j] + x_offset, post * sizeof(float));
+          y_data + y_offset, x_data_arr[j] + x_offset, post * sizeof(T));
       y_offset += post;
     }
     x_offset += post;
   }
 }
 
+template <class T>
 class StackComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -71,7 +73,7 @@ class StackComputeTester : public arena::TestCase {
     auto vec = input_dims.Vectorize();
     vec.insert(vec.begin() + axis_, x.size());
     out->Resize(vec);
-    stack(x, out, axis_);
+    stack<T>(x, out, axis_);
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -82,21 +84,23 @@ class StackComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
+    std::vector<T> data(dims_.production());
 
     for (int i = 0; i < dims_.production(); i++) {
       data[i] = i * 1.01;
     }
 
-    SetCommonTensor(input1_, dims_, data.data());
-    SetCommonTensor(input2_, dims_, data.data());
+    SetCommonTensor<T>(input1_, dims_, data.data());
+    SetCommonTensor<T>(input2_, dims_, data.data());
   }
 };
 
+template <class T = float>
 void test_stack(Place place) {
+  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
   for (float axis : {0, 1, 3}) {
     std::unique_ptr<arena::TestCase> tester(
-        new StackComputeTester(place, "def", axis));
+        new StackComputeTester<T>(place, "def", axis));
     arena::Arena arena(std::move(tester), place, 2e-4);
     arena.TestPrecision();
   }
@@ -104,14 +108,21 @@ void test_stack(Place place) {
 
 TEST(Stack, precision) {
   Place place;
-#ifdef LITE_WITH_ARM
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #else
   return;
 #endif
-  test_stack(place);
+
+  test_stack<float>(place);
+#ifndef LITE_WITH_XPU
+  place = TARGET(kHost);
+  test_stack<int>(place);
+#endif
 }
 
 }  // namespace lite
