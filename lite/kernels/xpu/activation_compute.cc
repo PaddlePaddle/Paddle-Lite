@@ -25,12 +25,21 @@ void ReluCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),      /* context */
-      xdnn::Activation_t::RELU, /* type */
-      param.X->numel(),         /* len */
-      param.X->data<float>(),   /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r = xdnn::relu(ctx.GetRawContext(),
+                     param.X->data<float>(),
+                     param.Out->mutable_data<float>(TARGET(kXPU)),
+                     param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
+void Relu6Compute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::relu6(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -38,12 +47,10 @@ void TanhCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),      /* context */
-      xdnn::Activation_t::TANH, /* type */
-      param.X->numel(),         /* len */
-      param.X->data<float>(),   /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r = xdnn::tanh(ctx.GetRawContext(),
+                     param.X->data<float>(),
+                     param.Out->mutable_data<float>(TARGET(kXPU)),
+                     param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -51,12 +58,10 @@ void SigmoidCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),         /* context */
-      xdnn::Activation_t::SIGMOID, /* type */
-      param.X->numel(),            /* len */
-      param.X->data<float>(),      /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r = xdnn::sigmoid(ctx.GetRawContext(),
+                        param.X->data<float>(),
+                        param.Out->mutable_data<float>(TARGET(kXPU)),
+                        param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -64,12 +69,10 @@ void AbsCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),     /* context */
-      xdnn::Activation_t::ABS, /* type */
-      param.X->numel(),        /* len */
-      param.X->data<float>(),  /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r = xdnn::abs(ctx.GetRawContext(),
+                    param.X->data<float>(),
+                    param.Out->mutable_data<float>(TARGET(kXPU)),
+                    param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -77,12 +80,10 @@ void ExpCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),     /* context */
-      xdnn::Activation_t::EXP, /* type */
-      param.X->numel(),        /* len */
-      param.X->data<float>(),  /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r = xdnn::exp(ctx.GetRawContext(),
+                    param.X->data<float>(),
+                    param.Out->mutable_data<float>(TARGET(kXPU)),
+                    param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -90,12 +91,10 @@ void SquareCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),        /* context */
-      xdnn::Activation_t::SQUARE, /* type */
-      param.X->numel(),           /* len */
-      param.X->data<float>(),     /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r = xdnn::square(ctx.GetRawContext(),
+                       param.X->data<float>(),
+                       param.Out->mutable_data<float>(TARGET(kXPU)),
+                       param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -103,12 +102,12 @@ void ReciprocalCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),            /* context */
-      xdnn::Activation_t::RECIPROCAL, /* type */
-      param.X->numel(),               /* len */
-      param.X->data<float>(),         /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r =
+      xdnn::activation_forward(ctx.GetRawContext(),
+                               xdnn::Activation_t::RECIPROCAL,
+                               param.X->numel(),
+                               param.X->data<float>(),
+                               param.Out->mutable_data<float>(TARGET(kXPU)));
   CHECK_EQ(r, 0);
 }
 
@@ -116,12 +115,10 @@ void SqrtCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),      /* context */
-      xdnn::Activation_t::SQRT, /* type */
-      param.X->numel(),         /* len */
-      param.X->data<float>(),   /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r = xdnn::sqrt(ctx.GetRawContext(),
+                     param.X->data<float>(),
+                     param.Out->mutable_data<float>(TARGET(kXPU)),
+                     param.X->numel());
   CHECK_EQ(r, 0);
 }
 
@@ -132,12 +129,12 @@ void PowCompute::Run() {
   xdnn::Activation_t act_type(xdnn::Activation_t::ACT_POW);
   act_type.pow_factor = param.factor;
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),    /* context */
-      act_type,               /* type */
-      param.X->numel(),       /* len */
-      param.X->data<float>(), /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r =
+      xdnn::activation_forward(ctx.GetRawContext(),
+                               act_type,
+                               param.X->numel(),
+                               param.X->data<float>(),
+                               param.Out->mutable_data<float>(TARGET(kXPU)));
   CHECK_EQ(r, 0);
 }
 
@@ -145,12 +142,47 @@ void SignCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int r = xdnn::activation_forward(
-      ctx.GetRawContext(),      /* context */
-      xdnn::Activation_t::SIGN, /* type */
-      param.X->numel(),         /* len */
-      param.X->data<float>(),   /* x */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* y */);
+  int r =
+      xdnn::activation_forward(ctx.GetRawContext(),
+                               xdnn::Activation_t::SIGN,
+                               param.X->numel(),
+                               param.X->data<float>(),
+                               param.Out->mutable_data<float>(TARGET(kXPU)));
+  CHECK_EQ(r, 0);
+}
+
+void HardSwishCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::hard_swish(ctx.GetRawContext(),
+                           param.X->data<float>(),
+                           param.Out->mutable_data<float>(TARGET(kXPU)),
+                           param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
+void HardSigmoidCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::hard_sigmoid(ctx.GetRawContext(),
+                             param.X->data<float>(),
+                             param.Out->mutable_data<float>(TARGET(kXPU)),
+                             param.X->numel(),
+                             param.hard_sigmoid_slope);
+  CHECK_EQ(r, 0);
+}
+
+void LeakyReluCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::leaky_relu(ctx.GetRawContext(),
+                           param.X->data<float>(),
+                           param.Out->mutable_data<float>(TARGET(kXPU)),
+                           param.X->numel(),
+                           param.Leaky_relu_alpha);
   CHECK_EQ(r, 0);
 }
 
@@ -223,6 +255,42 @@ REGISTER_LITE_KERNEL(reciprocal,
                      kNCHW,
                      paddle::lite::kernels::xpu::ReciprocalCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(hard_sigmoid,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::HardSigmoidCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(hard_swish,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::HardSwishCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(leaky_relu,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::LeakyReluCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    relu6, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::Relu6Compute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
