@@ -14,8 +14,11 @@
 
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include <arm_neon.h>
+#ifdef __aarch64__
 #include "lite/backends/arm/math/dotprod/gemm_sdot.h"
-
+#else
+#include "lite/backends/arm/math/dotprod/gemm_vsdot.h"
+#endif
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -87,6 +90,20 @@ void packb_sdot_trans_int8(int8_t* out,
                            int kmax,
                            int n0,
                            int nmax);
+void prepackA_m6k4_int8(int8_t* out,
+                        const int8_t* in,
+                        int ldin,
+                        int m0,
+                        int mmax,
+                        int k0,
+                        int kmax);
+void prepackA_m6k4_trans_int8(int8_t* out,
+                              const int8_t* in,
+                              int ldin,
+                              int m0,
+                              int mmax,
+                              int k0,
+                              int kmax);
 #endif
 
 void prepackA_int8(void* out,
@@ -138,21 +155,41 @@ void prepackA_int8(void* out,
   }
 #else
   if (is_trans) {
-    prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
+    if (ctx->has_dot()) {
+      prepackA_m6k4_trans_int8(static_cast<int8_t*>(out),
                                static_cast<const int8_t*>(in),
                                ldin,
                                m0,
                                mmax,
                                k0,
                                kmax);
+    } else {
+      prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
+                                 static_cast<const int8_t*>(in),
+                                 ldin,
+                                 m0,
+                                 mmax,
+                                 k0,
+                                 kmax);
+    }
   } else {
-    prepackA_m4k2x2_int8(static_cast<int8_t*>(out),
+    if (ctx->has_dot()) {
+      prepackA_m6k4_int8(static_cast<int8_t*>(out),
                          static_cast<const int8_t*>(in),
                          ldin,
                          m0,
                          mmax,
                          k0,
                          kmax);
+    } else {
+      prepackA_m4k2x2_int8(static_cast<int8_t*>(out),
+                           static_cast<const int8_t*>(in),
+                           ldin,
+                           m0,
+                           mmax,
+                           k0,
+                           kmax);
+    }
   }
 #endif
 }
@@ -1692,7 +1729,378 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 }
 #endif
 
-#else   // armv7
+#else  // armv7
+#define GEMM_DOT_CVT_INT32_TO_FP32      \
+  "vld1.32  {d0-d1}, [%[scale]]!    \n" \
+  "vld1.32  {d2-d3}, [%[bias_ptr]]! \n" \
+  "vcvt.f32.s32     q2, q4          \n" \
+  "vcvt.f32.s32     q3, q5          \n" \
+  "vdup.32    q4,   d2[0]           \n" \
+  "vdup.32    q5,   d2[0]           \n" \
+  "vmla.f32   q4,   q2, d0[0]       \n" \
+  "vmla.f32   q5,   q3, d0[0]       \n" \
+  "vcvt.f32.s32     q2, q6          \n" \
+  "vcvt.f32.s32     q3, q7          \n" \
+  "vdup.32    q6,   d2[1]           \n" \
+  "vdup.32    q7,   d2[1]           \n" \
+  "vmla.f32   q6,   q2, d0[1]       \n" \
+  "vmla.f32   q7,   q3, d0[1]       \n" \
+  "vcvt.f32.s32     q2, q8          \n" \
+  "vcvt.f32.s32     q3, q9          \n" \
+  "vdup.32    q8,   d3[0]           \n" \
+  "vdup.32    q9,   d3[0]           \n" \
+  "vmla.f32   q8,   q2, d1[0]       \n" \
+  "vmla.f32   q9,   q3, d1[0]       \n" \
+  "vcvt.f32.s32     q2, q10         \n" \
+  "vcvt.f32.s32     q3, q11         \n" \
+  "vdup.32    q10,  d3[1]           \n" \
+  "vdup.32    q11,  d3[1]           \n" \
+  "vmla.f32   q10,  q2, d1[1]       \n" \
+  "vmla.f32   q11,  q3, d1[1]       \n" \
+  "vld1.32  {d0}, [%[scale]]        \n" \
+  "vld1.32  {d2}, [%[bias_ptr]]     \n" \
+  "vcvt.f32.s32     q2, q12         \n" \
+  "vcvt.f32.s32     q3, q13         \n" \
+  "vdup.32    q12,  d2[0]           \n" \
+  "vdup.32    q13,  d2[0]           \n" \
+  "vmla.f32   q12,  q2, d0[0]       \n" \
+  "vmla.f32   q13,  q3, d0[0]       \n" \
+  "vcvt.f32.s32     q2, q14         \n" \
+  "vcvt.f32.s32     q3, q15         \n" \
+  "vdup.32    q14,  d2[1]           \n" \
+  "vdup.32    q15,  d2[1]           \n" \
+  "vmla.f32   q14,  q2, d0[1]       \n" \
+  "vmla.f32   q15,  q3, d0[1]       \n"
+
+#define GEMM_DOT_ST_FP32           \
+  "vst1.I32 {q4}, [%[c_ptr0]]! \n" \
+  "vst1.I32 {q6}, [%[c_ptr1]]! \n" \
+  "vst1.I32 {q5}, [%[c_ptr0]]! \n" \
+  "vst1.I32 {q7}, [%[c_ptr1]]! \n" \
+  "vst1.I32 {q8}, [%[c_ptr2]]! \n" \
+  "vst1.I32 {q9}, [%[c_ptr2]]! \n" \
+  "vst1.I32 {q10},[%[c_ptr3]]! \n" \
+  "vst1.I32 {q11},[%[c_ptr3]]! \n" \
+  "vst1.I32 {q12},[%[c_ptr4]]! \n" \
+  "vst1.I32 {q13},[%[c_ptr4]]! \n" \
+  "vst1.I32 {q14},[%[c_ptr5]]! \n" \
+  "vst1.I32 {q15},[%[c_ptr5]]! \n"
+
+#define GEMM_DOT_RELU                            \
+  "cmp    %[relu],   #0      \n" /* skip relu */ \
+  "beq    12f                \n"                 \
+  "cmp    %[relu],    #1     \n" /* skip relu */ \
+  "bne    13f                \n" /* other act */ \
+  "vmov.f32   q0, #0.0       \n" /* for relu*/   \
+  "vmax.f32   q4,   q4,   q0 \n" /* relu*/       \
+  "vmax.f32   q5,   q5,   q0 \n" /* relu*/       \
+  "vmax.f32   q6,   q6,   q0 \n" /* relu*/       \
+  "vmax.f32   q7,   q7,   q0 \n" /* relu*/       \
+  "vmax.f32   q8,   q8,   q0 \n" /* relu*/       \
+  "vmax.f32   q9,   q9,   q0 \n" /* relu*/       \
+  "vmax.f32   q10,  q10,  q0 \n" /* relu*/       \
+  "vmax.f32   q11,  q11,  q0 \n" /* relu*/       \
+  "vmax.f32   q12,  q12,  q0 \n" /* relu*/       \
+  "vmax.f32   q13,  q13,  q0 \n" /* relu*/       \
+  "vmax.f32   q14,  q14,  q0 \n" /* relu*/       \
+  "vmax.f32   q15,  q15,  q0 \n" /* relu*/       \
+  "b      12f                \n" /* relu end */
+
+#define GEMM_DOT_RELU6                         \
+  "13:                       \n"               \
+  "cmp    %[relu],   #2\n" /* skip relu6 */    \
+  "bne   14f\n"                                \
+  "vmov.f32   q0, #0.0\n"        /* for relu*/ \
+  "vmax.f32   q4,   q4,   q0 \n" /* relu*/     \
+  "vmax.f32   q5,   q5,   q0 \n" /* relu*/     \
+  "vmax.f32   q6,   q6,   q0 \n" /* relu*/     \
+  "vmax.f32   q7,   q7,   q0 \n" /* relu*/     \
+  "vld1.32    {d2-d3}, [%[alpha]]! \n"         \
+  "vmax.f32   q8,   q8,   q0 \n" /* relu*/     \
+  "vmax.f32   q9,   q9,   q0 \n" /* relu*/     \
+  "vmax.f32   q10,  q10,  q0 \n" /* relu*/     \
+  "vmax.f32   q11,  q11,  q0 \n" /* relu*/     \
+  "vmax.f32   q12,  q12,  q0 \n" /* relu*/     \
+  "vmax.f32   q13,  q13,  q0 \n" /* relu*/     \
+  "vmax.f32   q14,  q14,  q0 \n" /* relu*/     \
+  "vmax.f32   q15,  q15,  q0 \n" /* relu*/     \
+  "vmin.f32   q4,   q4,   q1 \n" /* relu6*/    \
+  "vmin.f32   q5,   q5,   q1 \n" /* relu6*/    \
+  "vmin.f32   q6,   q6,   q1 \n" /* relu6*/    \
+  "vmin.f32   q7,   q7,   q1 \n" /* relu6*/    \
+  "vmin.f32   q8,   q8,   q1 \n" /* relu6*/    \
+  "vmin.f32   q9,   q9,   q1 \n" /* relu6*/    \
+  "vmin.f32   q10,  q10,  q1 \n" /* relu6*/    \
+  "vmin.f32   q11,  q11,  q1 \n" /* relu6*/    \
+  "vmin.f32   q12,  q12,  q1 \n" /* relu6*/    \
+  "vmin.f32   q13,  q13,  q1 \n" /* relu6*/    \
+  "vmin.f32   q14,  q14,  q1 \n" /* relu6*/    \
+  "vmin.f32   q15,  q15,  q1 \n" /* relu6*/    \
+  "b      12f                \n" /* relu6 end */
+
+#define GEMM_DOT_LEAKY_RELU                                \
+  "14:                      \n"                            \
+  "vmov.f32   q0, #0.0      \n"      /* for leakyrelu*/    \
+  "vld1.32  {d2-d3}, [%[alpha]]! \n" /* leakyrelu alpha */ \
+  "vcge.f32 q2,   q4,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q4,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q4,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q5,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q5,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q5,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q6,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q6,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q6,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q7,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q7,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q7,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q8,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q8,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q8,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q9,   q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q9,   q1  \n"      /* vmulq_f32 */       \
+  "vbif     q9,   q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q10,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q10,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q10,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q11,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q11,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q11,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q12,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q12,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q12,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q13,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q13,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q13,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q14,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q14,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q14,  q3,   q2  \n"      /* choose*/           \
+  "vcge.f32 q2,   q15,  q0  \n"      /* vcgeq_f32 */       \
+  "vmla.f32 q3,   q15,  q1  \n"      /* vmulq_f32 */       \
+  "vbif     q15,  q3,   q2  \n"      /* choose*/           \
+  "12:                      \n"
+
+#define GEMM_DOT_ST_INT8                                     \
+  "add %[alpha],    #16             \n"                      \
+  "vld1.32    {d0-d1},    [%[alpha]]\n"                      \
+  "vmov.f32   q1,   #0.5            \n"                      \
+  "vmov.f32   q2,   #-0.5           \n"                      \
+  "vcgt.f32   q3,   q4,   #0        \n"                      \
+  "vbif.f32   q1,   q2,   q3        \n"                      \
+  "vadd.f32   q4,   q1,   q4        \n"                      \
+  "vmov.f32   q1,   #0.5            \n"                      \
+  "vcgt.f32   q3,   q5,   #0        \n"                      \
+  "vbif.f32   q1,   q2,   q3        \n"                      \
+  "vadd.f32   q5,   q1,   q5        \n" /* data >= -127 */   \
+  "vcge.f32   q1,   q4,   q0        \n"                      \
+  "vcge.f32   q2,   q5,   q0        \n"                      \
+  "vbif q4,   q0,   q1              \n"                      \
+  "vbif q5,   q0,   q2              \n" /* fp32 to int32 */  \
+  "vcvt.s32.f32     q1,   q4        \n"                      \
+  "vcvt.s32.f32     q2,   q5        \n" /* int32 to int16 */ \
+  "vqmovn.s32 d8,   q1              \n"                      \
+  "vqmovn.s32 d9,   q2              \n" /* int16 to int8 */  \
+  "vqmovn.s16 d2,   q4              \n"                      \
+  "vst1.32    {d2}, [%[c_ptr0]]!    \n"                      \
+                                                             \
+  "vmov.f32   q1,   #0.5            \n"                      \
+  "vmov.f32   q3,   #0.5            \n"                      \
+  "vmov.f32   q2,   #-0.5           \n"                      \
+  "vcgt.f32   q4,   q6,   #0        \n"                      \
+  "vcgt.f32   q5,   q7,   #0        \n"                      \
+  "vbif.f32   q1,   q2,   q4        \n"                      \
+  "vbif.f32   q3,   q2,   q5        \n"                      \
+  "vmov.f32   q4,   #0.5            \n"                      \
+  "vmov.f32   q5,   #0.5            \n"                      \
+  "vadd.f32   q6,   q1,   q6        \n"                      \
+  "vadd.f32   q7,   q3,   q7        \n"                      \
+  "vcgt.f32   q5,   q8,   #0        \n"                      \
+  "vbif.f32   q4,   q2,   q5        \n"                      \
+  "vadd.f32   q8,   q4,   q8        \n"                      \
+  "vcgt.f32   q5,   q9,   #0        \n" /* data >= -127 */   \
+  "vcge.f32   q1,   q6,   q0        \n"                      \
+  "vcge.f32   q3,   q7,   q0        \n"                      \
+  "vcge.f32   q4,   q8,   q0        \n"                      \
+  "vbif q6,   q0,   q1              \n"                      \
+  "vbif q7,   q0,   q3              \n"                      \
+  "vbif q8,   q0,   q4              \n" /* fp32 to int32 */  \
+  "vcvt.s32.f32     q1,   q6        \n"                      \
+  "vcvt.s32.f32     q3,   q7        \n"                      \
+  "vcvt.s32.f32     q4,   q8        \n" /* int32 to int16 */ \
+  "vqmovn.s32 d12,  q1              \n"                      \
+  "vqmovn.s32 d13,  q3              \n"                      \
+  "vqmovn.s32 d16,  q4              \n"                      \
+  "vmov.f32   q7,   #0.5            \n"                      \
+  "vbif.f32   q7,   q2,   q5        \n"                      \
+  "vadd.f32   q9,   q7,   q9        \n"                      \
+  "vcge.f32   q5,   q9,   q0        \n"                      \
+  "vbif q9,   q0,   q5              \n"                      \
+  "vcvt.s32.f32     q5,   q9        \n"                      \
+  "vqmovn.s32 d17,  q5              \n" /* int16 to int8 */  \
+  "vqmovn.s16 d19,  q8              \n"                      \
+  "vqmovn.s16 d18,  q6              \n"                      \
+  "vst1.32    {d18},[%[c_ptr1]]!    \n"                      \
+  "vst1.32    {d19},[%[c_ptr2]]!    \n"                      \
+                                                             \
+  "vmov.f32   q2,   #-0.5           \n"                      \
+  "vmov.f32   q1,   #0.5            \n"                      \
+  "vmov.f32   q3,   #0.5            \n"                      \
+  "vmov.f32   q4,   #0.5            \n"                      \
+  "vmov.f32   q5,   #0.5            \n"                      \
+  "vcgt.f32   q6,   q10,  #0        \n"                      \
+  "vcgt.f32   q7,   q11,  #0        \n"                      \
+  "vcgt.f32   q8,   q12,  #0        \n"                      \
+  "vcgt.f32   q9,   q13,  #0        \n"                      \
+  "vbif.f32   q1,   q2,   q6        \n"                      \
+  "vbif.f32   q3,   q2,   q7        \n"                      \
+  "vbif.f32   q4,   q2,   q8        \n"                      \
+  "vbif.f32   q5,   q2,   q9        \n"                      \
+  "vmov.f32   q6,   #0.5            \n"                      \
+  "vmov.f32   q7,   #0.5            \n"                      \
+  "vcgt.f32   q8,   q14,  #0        \n"                      \
+  "vcgt.f32   q9,   q15,  #0        \n"                      \
+  "vbif.f32   q6,   q2,   q8        \n"                      \
+  "vbif.f32   q7,   q2,   q9        \n"                      \
+  "vadd.f32   q10,  q1,   q10       \n"                      \
+  "vadd.f32   q11,  q3,   q11       \n"                      \
+  "vadd.f32   q12,  q4,   q12       \n"                      \
+  "vadd.f32   q13,  q5,   q13       \n"                      \
+  "vadd.f32   q14,  q6,   q14       \n"                      \
+  "vadd.f32   q15,  q7,   q15       \n"                      \
+                                                             \
+  "vcge.f32   q1,   q10,  q0        \n"                      \
+  "vcge.f32   q3,   q11,  q0        \n"                      \
+  "vcge.f32   q4,   q12,  q0        \n"                      \
+  "vcge.f32   q5,   q13,  q0        \n"                      \
+  "vcge.f32   q6,   q14,  q0        \n"                      \
+  "vcge.f32   q7,   q15,  q0        \n"                      \
+  "vbif       q10,  q0,   q1        \n"                      \
+  "vbif       q11,  q0,   q3        \n"                      \
+  "vbif       q12,  q0,   q4        \n"                      \
+  "vbif       q13,  q0,   q5        \n"                      \
+  "vbif       q14,  q0,   q6        \n"                      \
+  "vbif       q15,  q0,   q7        \n" /* fp32 to int32 */  \
+  "vcvt.s32.f32     q1,   q10       \n"                      \
+  "vcvt.s32.f32     q3,   q11       \n"                      \
+  "vcvt.s32.f32     q4,   q12       \n"                      \
+  "vcvt.s32.f32     q5,   q13       \n"                      \
+  "vcvt.s32.f32     q6,   q14       \n"                      \
+  "vcvt.s32.f32     q7,   q15       \n" /* int32 to int16 */ \
+  "vqmovn.s32 d16,  q1              \n"                      \
+  "vqmovn.s32 d17,  q3              \n"                      \
+  "vqmovn.s32 d18,  q4              \n"                      \
+  "vqmovn.s32 d19,  q5              \n"                      \
+  "vqmovn.s32 d20,  q6              \n"                      \
+  "vqmovn.s32 d21,  q7              \n" /* int16 to int8 */  \
+  "vqmovn.s16 d2,   q8              \n"                      \
+  "vqmovn.s16 d3,   q9              \n"                      \
+  "vqmovn.s16 d4,   q10             \n"                      \
+  "sub %[alpha], #16                \n"                      \
+  "vst1.32    {d2}, [%[c_ptr3]]!    \n"                      \
+  "vst1.32    {d3}, [%[c_ptr4]]!    \n"                      \
+  "vst1.32    {d4}, [%[c_ptr5]]!    \n"
+
+#define GEMM_DOT_FP32_OUT    \
+  GEMM_DOT_CVT_INT32_TO_FP32 \
+  GEMM_DOT_RELU              \
+  GEMM_DOT_RELU6             \
+  GEMM_DOT_LEAKY_RELU        \
+  GEMM_DOT_ST_FP32
+
+#define GEMM_DOT_INT8_OUT    \
+  GEMM_DOT_CVT_INT32_TO_FP32 \
+  GEMM_DOT_RELU              \
+  GEMM_DOT_RELU6             \
+  GEMM_DOT_LEAKY_RELU        \
+  GEMM_DOT_ST_INT8
+
+template <typename Dtype>
+inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
+                                 const int8_t*& b_ptr,  // NOLINT
+                                 const float* bias,
+                                 Dtype*& c_ptr0,  // NOLINT
+                                 Dtype*& c_ptr1,  // NOLINT
+                                 Dtype*& c_ptr2,  // NOLINT
+                                 Dtype*& c_ptr3,  // NOLINT
+                                 Dtype*& c_ptr4,  // NOLINT
+                                 Dtype*& c_ptr5,  // NOLINT
+                                 const float32_t* scale,
+                                 const float32_t* alpha,
+                                 int is_relu,
+                                 int k,
+                                 int rem);
+
+template <>
+inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
+                                 const int8_t*& b_ptr,  // NOLINT
+                                 const float* bias,
+                                 float32_t*& c_ptr0,  // NOLINT
+                                 float32_t*& c_ptr1,  // NOLINT
+                                 float32_t*& c_ptr2,  // NOLINT
+                                 float32_t*& c_ptr3,  // NOLINT
+                                 float32_t*& c_ptr4,  // NOLINT
+                                 float32_t*& c_ptr5,  // NOLINT
+                                 const float32_t* scale,
+                                 const float32_t* alpha,
+                                 int is_relu,
+                                 int k,
+                                 int tail) {
+  // clang-format off
+              asm volatile (
+               GEMM_DOT_INT8_KERNEL GEMM_DOT_FP32_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [b_ptr] "+r"(b_ptr),
+                 [k] "+r"(k),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [c_ptr4] "+r"(c_ptr4),
+                 [c_ptr5] "+r"(c_ptr5)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu) ,[alpha] "r"(alpha)
+               : "q0","q1","q2",
+                 "q3","q4","q5","q6","q7","q8","q9","q10",
+                 "q11","q12","q13","q14","q15","cc","memory");
+  // clang-format on
+}
+template <>
+inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
+                                 const int8_t*& b_ptr,  // NOLINT
+                                 const float* bias,
+                                 int8_t*& c_ptr0,  // NOLINT
+                                 int8_t*& c_ptr1,  // NOLINT
+                                 int8_t*& c_ptr2,  // NOLINT
+                                 int8_t*& c_ptr3,  // NOLINT
+                                 int8_t*& c_ptr4,  // NOLINT
+                                 int8_t*& c_ptr5,  // NOLINT
+                                 const float32_t* scale,
+                                 const float32_t* alpha,
+                                 int is_relu,
+                                 int k,
+                                 int tail) {
+  float new_ptr[8] = {
+      alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
+
+  // clang-format off
+  asm volatile(GEMM_DOT_INT8_KERNEL   GEMM_DOT_INT8_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [b_ptr] "+r"(b_ptr),
+                 [k] "+r"(k),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [c_ptr4] "+r"(c_ptr4),
+                 [c_ptr5] "+r"(c_ptr5)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), 
+                 [alpha] "r"(new_ptr)
+               : "q0","q1","q2",
+                 "q3","q4","q5","q6","q7","q8","q9","q10",
+                 "q11","q12","q13","q14","q15","cc","memory");
+
+  // clang-format on
+}
+
 // clang-format off
 #define GEMM_INT8_KERNEL                                                  \
   "vld1.8 {d0-d1}, [%[a_ptr]: 128]!\n" /* load 4x2x2 int8, A, k2x2 */     \
@@ -2030,15 +2438,15 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vld1.f32 {d12-d13}, [%[alpha]] \n"                  \
   "sub %[alpha], #16 \n"                               \
   "vcge.f32 q7, q8, q6\n"   /* @ q8 >= -127 \n */      \
-  "vcge.f32 q10, q9, q6\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q11, q0, q6\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q12, q1, q6\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q13, q2, q6\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q14, q3, q6\n"   /* @ q8 >= -127 \n */     \
-  "vcge.f32 q15, q4, q6\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q10, q9, q6\n"   /* @ q9 >= -127 \n */     \
+  "vcge.f32 q11, q0, q6\n"   /* @ q0 >= -127 \n */     \
+  "vcge.f32 q12, q1, q6\n"   /* @ q1 >= -127 \n */     \
+  "vcge.f32 q13, q2, q6\n"   /* @ q2 >= -127 \n */     \
+  "vcge.f32 q14, q3, q6\n"   /* @ q3 >= -127 \n */     \
+  "vcge.f32 q15, q4, q6\n"   /* @ q4 >= -127 \n */     \
   /* choose data */                                    \
   "vbif q8, q6, q7\n"       /* @ choose */            \
-  "vcge.f32 q7, q5, q6\n"   /* @ q8 >= -127 \n */     \
+  "vcge.f32 q7, q5, q6\n"   /* @ q5 >= -127 \n */     \
   "vbif q9, q6, q10\n"       /* @ choose */             \
   "vbif q0, q6, q11\n"       /* @ choose */           \
   "vbif q1, q6, q12\n"       /* @ choose */           \
@@ -2134,6 +2542,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int rem) {
   float new_ptr[8] = {
       alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
+  // clang-format off
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -2165,6 +2574,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  "q15",
                  "cc",
                  "memory");
+  // clang-format on
 }
 #endif  // __aarch64__ // NOLINT
 
@@ -3462,7 +3872,6 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
 
   bool flag_p_remain = false;
   int remain = 0;
-
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
     unsigned int xmax = x0 + x_block;
@@ -3602,6 +4011,7 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
                                      is_relu,
                                      k,
                                      tail);
+
         if (flag_p_remain && (xb == bblocks - 1)) {
           for (int i = 0; i < remain; ++i) {
             *pout0++ = cout0[i];
@@ -4049,7 +4459,6 @@ void packb_sdot_trans_int8(int8_t* out,
   int stride_out = kup;
 
   int remain = x_len % 8;
-
 #pragma omp parallel for
   for (int y = 0; y < y_len; y += 12) {
     const int8_t* inptr_row[12];
@@ -4059,7 +4468,6 @@ void packb_sdot_trans_int8(int8_t* out,
     }
     if (y + 12 > y_len) {
       for (int i = y + 12 - y_len; i > 0; i--) {
-        // inptr_row[12 - i] = zero_ptr[12 - i - 1];
         inptr_row[12 - i] = zerobuff;
       }
     }
@@ -4209,6 +4617,647 @@ void packb_sdot_trans_int8(int8_t* out,
     }
   }
 }
+#else  // armv7
+
+void prepackA_m6k4_int8(int8_t* out,
+                        const int8_t* in,
+                        const int ldin,
+                        const int m0,
+                        const int mmax,
+                        const int k0,
+                        const int kmax) {
+  int x_len = (kmax - k0);
+  int8_t zerobuff[x_len];  // NOLINT
+  memset(zerobuff, 0, sizeof(int8_t) * x_len);
+  int8_t* dout = out;
+  const int8_t* inptr = in;
+  int kup = ROUNDUP(x_len, KBLOCK_INT8);
+  int stride = kup * 6;
+  int remain = x_len % 4;
+#pragma omp parallel for
+  for (int y = m0; y < mmax; y += 6) {
+    int8_t* outptr = dout + stride * (y - m0) / 6;
+    const int8_t* inptr_row[6];
+    inptr_row[0] = inptr + y * ldin + k0;
+    for (int i = 1; i < 6; i++) {
+      inptr_row[i] = inptr_row[i - 1] + ldin;
+    }
+    //! cope with row index exceed real size, set to zero buffer
+    if ((y + 5) >= mmax) {
+      switch ((y + 5) - mmax) {
+        case 4:
+          inptr_row[1] = zerobuff;
+        case 3:
+          inptr_row[2] = zerobuff;
+        case 2:
+          inptr_row[3] = zerobuff;
+        case 1:
+          inptr_row[4] = zerobuff;
+        case 0:
+          inptr_row[5] = zerobuff;
+        default:
+          break;
+      }
+    }
+    // clang-format off
+        int x = x_len;
+        for (; x > 15; x -= 16) {
+            asm volatile(
+            "vld1.s8 {d0-d1}, [%[inptr0]]! \n" // q0=a0~a3a4~a7 a8~a11a12~a15
+            "vld1.s8 {d2-d3}, [%[inptr1]]! \n" // q1=b0~b3b4~b7 b8~b11b12~b15
+            "vld1.s8 {d4-d5}, [%[inptr2]]! \n" // q2=c0~c3c4~c7 c8~c11c12~c15
+            "vld1.s8 {d6-d7}, [%[inptr3]]! \n" // q3=d0~d3d4~d7 d8~d11d12~d15
+
+            "vld1.s8 {d8-d9}, [%[inptr4]]! \n" // q4=e0~e3e4~e7 e8~e11e12~e15
+            "vld1.s8 {d10-d11}, [%[inptr5]]! \n" // q5=f0~f3f4~f7 f8~f11f12~f15
+
+            "vtrn.32 q0, q1 \n" // q0=a0~a3b0~b3 a8~a11b8~b11 q1=a4~a7b4~b7 a12~a15b12~b15
+            "vtrn.32 q2, q3 \n" // q2=c0~c3d0~d3 c8~c11d8~d11 q3=c4~c7d4~d7 c12~c15d12~d15
+            "vtrn.32 q4, q5 \n" // q4=e0~e3f0~f3 e8~e11f8~f11 q5=e4~e7f4~f7 e8~e11f12~f15
+
+            "vswp     d1, d4   \n"  // q0=a0~a3b0~b3 c0~c3d0~d3 q2=a8~a11b8~b11 c8~c11d8~d11
+            "vswp     d2, d9   \n"  // q1=e8~e11f8~f11 a12~a15b12~b15 q4=e0~e3f0~f3 a4~a7b4~b7
+            "vswp     d7, d10   \n" // q3=c4~c7d4~d7 e4~e7f4~f7 q5=c12~c15d12~d15 e8~e11f12~f15
+
+            "vst1.32 {d0-d1}, [%[outptr]]!\n"
+            "vst1.32 {d8-d9}, [%[outptr]]!\n"
+            "vst1.32 {d6-d7}, [%[outptr]]!\n"
+            "vst1.32 {d4-d5}, [%[outptr]]!\n"
+            "vst1.32 {d2-d3}, [%[outptr]]!\n"
+            "vst1.32 {d10-d11}, [%[outptr]]!\n"
+
+            :[inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+            [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+            [outptr] "+r"(outptr)
+            :
+            : "q0", "q1", "q2", "q3", "q4", "q5",
+             "cc", "memory"
+            );
+        }
+        for (; x > 7; x -= 8) {
+            asm volatile(
+            "vld1.s8 {d0}, [%[inptr0]]! \n" // d0=a0a1a2a3a4a5a6a7
+            "vld1.s8 {d2}, [%[inptr1]]! \n" // d2=c0c1c2c3c4c5c6c7
+            "vld1.s8 {d1}, [%[inptr2]]! \n" // d1=b0b1b2b3b4b5b6b7
+            "vld1.s8 {d3}, [%[inptr3]]! \n" // d3=d0d1d2d3d4d5d6d7
+
+            "vld1.s8 {d4}, [%[inptr4]]! \n" // d4=e0e1e2e3e4e5e6e7
+            "vld1.s8 {d5}, [%[inptr5]]! \n" // d5=f0f1f2f3f4f5f6f7
+
+            "vtrn.32 q0, q1 \n" // q0=a0~a3b0~b3 c0~c3d0~d3 q1=a4~a7b4~b7 c4~c7d4~d7
+            "vtrn.32 d4, d5 \n" // q2=e0~e3f0~f3 e4~e7f8~f11 
+
+            "vst1.32 {d0-d1}, [%[outptr]]!\n"
+            "vst1.32 {d4}, [%[outptr]]!\n"
+            "vst1.32 {d2-d3}, [%[outptr]]!\n"
+            "vst1.32 {d5}, [%[outptr]]!\n"
+
+            :[inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+            [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+            [outptr] "+r"(outptr)
+            :
+            : "q0", "q1", "q2", "q4",
+             "cc", "memory"
+            );
+        }
+            int8_t* outptr_temp =  outptr;
+        if (x > 3) {
+            asm volatile(
+            "mov r1, #4 \n"
+            "vld1.s8 {d0}, [%[inptr0]], r1 \n" // d0=a0a1a2a3a4a5a6a7
+            "vld1.s8 {d2}, [%[inptr1]], r1 \n" // d2=c0c1c2c3c4c5c6c7
+            "vld1.s8 {d1}, [%[inptr2]], r1 \n" // d1=b0b1b2b3b4b5b6b7
+            "vld1.s8 {d3}, [%[inptr3]], r1 \n" // d3=d0d1d2d3d4d5d6d7
+
+
+            "vld1.s8 {d4}, [%[inptr4]], r1 \n" // d4=e0e1e2e3e4e5e6e7
+            "vld1.s8 {d5}, [%[inptr5]], r1 \n" // d5=f0f1f2f3f4f5f6f7
+
+            "vtrn.32 q0, q1 \n" // q0=a0~a3b0~b3 c0~c3d0~d3 q1=a4~a7b4~b7 c4~c7d4~d7
+            "vtrn.32 d4, d5 \n" // q2=e0~e3f0~f3 
+
+
+            "vst1.32 {d0-d1}, [%[outptr]]!\n"
+            "vst1.32 {d4}, [%[outptr]]!\n"
+
+            :[inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+            [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+            [outptr] "+r"(outptr)
+            :
+            : "q0", "q1", "q2", "q4", "r1", "cc", "memory"
+            );
+            x -= 4;
+        }
+
+    // clang-format on
+
+    if (x > 0) {
+      for (int i = 0; i < 6; i++) {
+        for (int j = x; j > 0; j--) {
+          *outptr++ = *inptr_row[i]++;
+        }
+        for (int j = 0; j < 4 - remain; j++) {
+          *outptr++ = 0;
+        }
+      }
+    }
+  }
+}
+void prepackA_m6k4_trans_int8(int8_t* out,
+                              const int8_t* in,
+                              const int ldin,
+                              const int m0,
+                              const int mmax,
+                              const int k0,
+                              const int kmax) {
+  int8_t* outptr = out;
+  const int8_t* inptr = in + k0 * ldin + m0;
+  int x_len = mmax - m0;
+  int y_len = kmax - k0;
+  int right_remain = x_len % 6;
+  int kup = ROUNDUP(y_len, KBLOCK_INT8);
+  int stride_out = 6 * kup;
+  int8_t zerobuff[x_len];  // NOLINT
+  memset(zerobuff, 0, sizeof(int8_t) * x_len);
+
+#pragma omp parallel for
+  for (int y = 0; y < y_len; y += 4) {
+    const int8_t* inptr0 = inptr + y * ldin;
+    const int8_t* inptr1 = inptr0 + ldin;
+    const int8_t* inptr2 = inptr1 + ldin;
+    const int8_t* inptr3 = inptr2 + ldin;
+
+    if (y + 4 > y_len) {
+      switch (y + 4 - y_len) {
+        case 3:
+          inptr1 = zerobuff;
+        case 2:
+          inptr2 = zerobuff;
+        case 1:
+          inptr3 = zerobuff;
+
+        default:
+          break;
+      }
+    }
+
+    // clang-format off
+    asm volatile(
+    "pld    [%[inptr0]]       \n"
+    "pld   [%[inptr1]]        \n"
+    "pld   [%[inptr2]]        \n"
+    "pld   [%[inptr3]]        \n"
+    :
+    :[inptr0] "r"(inptr0), [inptr1] "r"(inptr1),
+      [inptr2] "r"(inptr2), [inptr3] "r"(inptr3)
+    :"memory"
+    );
+    int8_t *outptr_row = outptr + y * 6;
+    int x = x_len;
+    for (; x > 5; x -= 6) {
+        int8_t *out0 = outptr_row;
+        asm volatile(
+        "mov r1, #6 \n"
+        "vld1.s8 {d0}, [%[inptr0]], r1\n" // d0=a0a1a2a3a4a5a6a7
+        "vld1.s8 {d2}, [%[inptr1]], r1\n" // d2=b0b1b2b3b4b5b6b7
+        "vld1.s8 {d1}, [%[inptr2]], r1\n" // d1=c0c1c2c3c4c5c6c7
+        "vld1.s8 {d3}, [%[inptr3]], r1\n" // d3=d0d1d2d3d4d5d6d7
+
+        "vtrn.8 q0, q1 \n" // q0=a0b0a2b2a4b4a6d6 c0d0c2d2c4d4c6d6
+                           // q1=a1b1a3b3a5c5a7b7 c1d1c3d3c5d5c7d7
+        
+        "vtrn.16 d0, d1 \n" // q0=a0b0c0d0a4b4c4d4 a2b2c2d2a6b6c6d6
+        "vtrn.16 d2, d3 \n" // q1=a1b1c1d1a5b5c5d5 a3b3c3d3a7b7c7d7
+        
+        "vtrn.32 q0, q1 \n" // q0=a0b0c0d0a1b1c1d1 a2b2c2d2a3b3c3d3
+                            // q1=a4b4c4d4a5b5c5d5 a6b6c6d6a7b7c7d7
+        "vst1.32 {d0-d1}, [%[outptr]]!\n"
+        "vst1.32 {d2}, [%[outptr]]!\n"
+
+        :[inptr0] "+r"(inptr0), [inptr1] "+r"(inptr1),
+        [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
+        [outptr] "+r"(out0)
+        :
+        : "q0", "q1", "q2", "r1", "cc", "memory"
+        );
+        outptr_row += stride_out;
+    }
+    // clang-format on
+    if (right_remain > 0) {
+      int8_t* out0 = outptr_row;
+      for (; x > 0; x--) {
+        *out0++ = *inptr0++;
+        *out0++ = *inptr1++;
+        *out0++ = *inptr2++;
+        *out0++ = *inptr3++;
+      }
+      for (int i = 0; i < 6 - right_remain; i++) {
+        *out0++ = 0;
+        *out0++ = 0;
+        *out0++ = 0;
+        *out0++ = 0;
+      }
+    }
+  }
+}
+void packb_dot_int8(int8_t* out,
+                    const int8_t* in,
+                    const int ldin,
+                    const int k0,
+                    const int kmax,
+                    const int n0,
+                    const int nmax) {
+  int y_len = kmax - k0;
+  int x_len = nmax - n0;
+  int kup = ROUNDUP(y_len, KBLOCK_INT8);  //  4k
+  int8_t zerobuff[x_len];                 // NOLINT
+  memset(zerobuff, 0, sizeof(int8_t) * x_len);
+  int8_t* outptr = out;
+  const int8_t* inptr = in + k0 * ldin + n0;
+
+  int stride_out = 8 * kup;
+  int remain = x_len % 8;
+
+// data B is not transposed, transpose B to k * 8
+#pragma omp parallel for
+  for (int y = 0; y < y_len; y += 4) {
+    // cope with row index exceed real size, set to zero
+    const int8_t* inptr0 = inptr + y * ldin;
+    const int8_t* inptr1 = inptr0 + ldin;
+    const int8_t* inptr2 = inptr1 + ldin;
+    const int8_t* inptr3 = inptr2 + ldin;
+    if (y + 4 > y_len) {
+      switch (y + 4 - y_len) {
+        case 3:
+          inptr1 = zerobuff;
+        case 2:
+          inptr2 = zerobuff;
+        case 1:
+          inptr3 = zerobuff;
+        default:
+          break;
+      }
+    }
+    // clang-format off
+        asm volatile(
+        "pld   [%[inptr0]]        \n"
+        "pld   [%[inptr1]]        \n"
+        "pld   [%[inptr2]]        \n"
+        "pld   [%[inptr3]]        \n"
+        :
+        :[inptr0] "r"(inptr0), [inptr1] "r"(inptr1),
+          [inptr2] "r"(inptr2), [inptr3] "r"(inptr3)
+        :"memory"
+        );
+        int8_t* outptr_row = outptr + y * 8;
+        int x = 0;
+        for (; x < x_len - 7; x += 8) {
+            int8_t *out0 = outptr_row;
+            asm volatile (
+            "vld1.s8 {d0}, [%[inptr0]]! \n" // d0=a0a1a2a3a4a5a6a7
+            "vld1.s8 {d1}, [%[inptr1]]! \n" // d1=c0c1c2c3c4c5c6c7
+            "vld1.s8 {d2}, [%[inptr2]]! \n" // d2=b0b1b2b3b4b5b6b7
+            "vld1.s8 {d3}, [%[inptr3]]! \n" // d3=d0d1d2d3d4d5d6d7
+
+            "vtrn.8 d0, d1 \n" // d0=a0b0a2b2a4b4a6b6 d1=a1b1a3b3a5b5a7b7
+            "vtrn.8 d2, d3 \n" // d2=c0d0c2d2c4d4c6d6 d3=c1d1c3d3c5d5c7d7
+
+            "vtrn.16 d0, d2 \n" // d0=a0b0c0d0a4b4c4d4 d2=a2b2c2d2a6b6c6d6
+            "vtrn.16 d1, d3 \n" // d1=a1bac1d1a5b5c5d5 d3=a3b3c3d3a7b7c7d7
+
+            "vtrn.32 d0, d1 \n" // d0=a0b0c0d0a1bac1d1 d1=a4b4c4d4a5b5c5d5
+            "vtrn.32 d2, d3 \n" // d2=a2b2c2d2a3b3c3d3 d3=a6b6c6d6a7b7c7d7
+
+            "vst1.32 {d0}, [%[outptr]]!\n"
+            "vst1.32 {d2}, [%[outptr]]!\n"
+            "vst1.32 {d1}, [%[outptr]]!\n"
+            "vst1.32 {d3}, [%[outptr]]!\n"
+            : [inptr0] "+r"(inptr0), [inptr1] "+r"(inptr1),
+              [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
+              [outptr] "+r"(out0)
+            :
+            : "q0", "q1", "q2", "q3", "cc", "memory"
+            );
+            outptr_row += stride_out;
+        }
+
+    // clang-format on
+    int8_t* out0 = outptr_row;
+    for (; x < x_len; x++) {
+      *out0++ = *inptr0++;
+      *out0++ = *inptr1++;
+      *out0++ = *inptr2++;
+      *out0++ = *inptr3++;
+    }
+    for (int i = 0; i < 8 - remain; i++) {
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+    }
+  }
+}
+
+void packb_dot_trans_int8(int8_t* out,
+                          const int8_t* in,
+                          const int ldin,
+                          const int k0,
+                          const int kmax,
+                          const int n0,
+                          const int nmax) {
+  int8_t* outptr = out;
+  const int8_t* inptr = in + n0 * ldin + k0;
+  int y_len = nmax - n0;
+  int x_len = kmax - k0;
+
+  int kup = ROUNDUP(x_len, KBLOCK_INT8);  //  4
+
+  int8_t zerobuff[kup];  // NOLINT
+  memset(zerobuff, 0, sizeof(int8_t) * kup);
+
+  int stride_y = 4 * 8;
+  int stride_out = kup;
+
+  int remain = x_len % 8;
+
+#pragma omp parallel for
+  for (int y = 0; y < y_len; y += 8) {
+    const int8_t* inptr_row[8];
+    inptr_row[0] = inptr + y * ldin;
+    for (int i = 1; i < 8; i++) {
+      inptr_row[i] = inptr_row[i - 1] + ldin;
+    }
+    if (y + 8 > y_len) {
+      for (int i = y + 8 - y_len; i > 0; i--) {
+        inptr_row[8 - i] = zerobuff;
+      }
+    }
+    // clang-format off
+        asm volatile(
+        "pld [%[ptr0]]        \n"
+        "pld [%[ptr1]]        \n"
+        "pld [%[ptr2]]        \n"
+        "pld [%[ptr3]]        \n"
+        "pld [%[ptr4]]        \n"
+        "pld [%[ptr5]]        \n"
+        "pld [%[ptr6]]        \n"
+        "pld [%[ptr7]]        \n"
+        :
+        :[ptr0] "r"(inptr_row[0]), [ptr1] "r"(inptr_row[1]),
+         [ptr2] "r"(inptr_row[2]), [ptr3] "r"(inptr_row[3]),
+         [ptr4] "r"(inptr_row[4]), [ptr5] "r"(inptr_row[5]),
+         [ptr6] "r"(inptr_row[6]), [ptr7] "r"(inptr_row[7])
+        :"memory"
+        );
+
+        int right_remain = remain;
+        int8_t *outptr_row = outptr + y * stride_out;
+        for (int x = 0; x < x_len - 7; x += 8) {
+            int8_t *out0 = outptr_row;
+            int8_t *out1 = out0 + stride_y;
+            asm volatile(
+            "vld1.s8 {d0}, [%[inptr0]]! \n" // d0=a0a1a2a3a4a5a6a7
+            "vld1.s8 {d4}, [%[inptr1]]! \n" // d4=c0c1c2c3c4c5c6c7
+            "vld1.s8 {d1}, [%[inptr2]]! \n" // d1=b0b1b2b3b4b5b6b7
+            "vld1.s8 {d5}, [%[inptr3]]! \n" // d5=d0d1d2d3d4d5d6d7
+
+            "vld1.s8 {d2}, [%[inptr4]]! \n" // d2=e0e1e2e3e4e5e6e7
+            "vld1.s8 {d6}, [%[inptr5]]! \n" // d6=f0f1f2f3f4f5f6f7
+            "vld1.s8 {d3}, [%[inptr6]]! \n" // d3=g0g1g2g3g4g5g6g7
+            "vld1.s8 {d7}, [%[inptr7]]! \n" // d7=h0h1h2h3h4h5h6h7
+
+            "vtrn.32  q0, q2 \n"  //q0=a0~a3b0~b3c0~c3d0~d3 q2=a4~a7b4~b7c4~c7d4~d7
+            "vtrn.32  q1, q3 \n"  //q1=e0~e3f0~f3g0~g3h0~h3 q3=e4~e7f4~f7g4~g7h4~h7
+
+            "vst1.32 {d0,d1,d2,d3}, [%[outptr_row0]]! \n"
+            "vst1.32 {d4,d5,d6,d7}, [%[outptr_row1]]! \n"
+
+            : [inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+              [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+              [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+              [inptr6] "+r"(inptr_row[6]), [inptr7] "+r"(inptr_row[7]),
+              [outptr_row0] "+r"(out0), [outptr_row1] "+r"(out1)
+            :
+            : "q0", "q1", "q2", "q3", "cc", "memory"
+            );
+            outptr_row += 8*8;
+        }
+        int8_t *out0 = outptr_row;
+        if (right_remain >= 4) {
+            asm volatile(
+            "mov r1, #4 \n"
+            "vld1.s8 {d0}, [%[inptr0]], r1 \n" // d0=a0a1a2a3a4a5a6a7
+            "vld1.s8 {d4}, [%[inptr1]], r1 \n" // d4=c0c1c2c3c4c5c6c7
+            "vld1.s8 {d1}, [%[inptr2]], r1 \n" // d1=b0b1b2b3b4b5b6b7
+            "vld1.s8 {d5}, [%[inptr3]], r1 \n" // d5=d0d1d2d3d4d5d6d7
+
+            "vld1.s8 {d2}, [%[inptr4]], r1 \n" // d2=e0e1e2e3e4e5e6e7
+            "vld1.s8 {d6}, [%[inptr5]], r1 \n" // d6=f0f1f2f3f4f5f6f7
+            "vld1.s8 {d3}, [%[inptr6]], r1 \n" // d3=g0g1g2g3g4g5g6g7
+            "vld1.s8 {d7}, [%[inptr7]], r1 \n" // d7=h0h1h2h3h4h5h6h7
+
+            "vtrn.32  q0, q2 \n"  //q0=a0~a3b0~b3c0~c3d0~d3
+            "vtrn.32  q1, q3 \n"  //q1=e0~e3f0~f3g0~g3h0~h3
+
+            "vst1.32 {d0,d1,d2,d3}, [%[outptr_row0]]! \n"
+            : [inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+             [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+             [inptr6] "+r"(inptr_row[6]), [inptr7] "+r"(inptr_row[7]),
+              [outptr_row0] "+r"(out0)
+            :
+            : "r1", "q0", "q1", "q2", "q3", "cc", "memory"
+            );
+            right_remain -= 4;
+        }
+    // clang-format on
+    if (right_remain > 0) {
+      for (int i = 0; i < 8; i++) {
+        for (int x = 0; x < right_remain; x++) {
+          *out0++ = *inptr_row[i]++;
+        }
+        for (int x = 0; x < 4 - right_remain; x++) {
+          *out0++ = 0;
+        }
+      }
+    }
+  }
+}
+
+template <typename Dtype>
+void gemm_prepack_vsdot_int8(const int8_t* A_packed,
+                             const int8_t* B,
+                             const float* bias,
+                             Dtype* C,
+                             int M,
+                             int N,
+                             int K,
+                             bool is_bias,
+                             int is_relu,
+                             bool is_transB,
+                             const float* scale,
+                             const float* alpha,
+                             ARMContext* ctx) {
+  size_t llc_size = ctx->llc_size() / 4;
+  auto workspace = ctx->workspace_data<int8_t>();
+  int x_block = (llc_size - (MBLOCK_INT8_DOT * K)) /
+                (sizeof(int8_t) * (K + MBLOCK_INT8_DOT));
+  x_block /= NBLOCK_INT8_DOT;
+  x_block *= NBLOCK_INT8_DOT;
+  int x_num = (N + (x_block - 1)) / x_block;
+  x_block = (N + x_num - 1) / x_num;
+  x_block = (x_block + NBLOCK_INT8_DOT - 1) / NBLOCK_INT8_DOT;
+  x_block *= NBLOCK_INT8_DOT;
+  x_block = x_block < NBLOCK_INT8_DOT ? NBLOCK_INT8_DOT : x_block;
+  int kup = ROUNDUP(K, KBLOCK_INT8);
+  int tail_pre = ((kup / 4) & (KBLOCK_INT8 - 1));
+  int k = (kup / 4);
+
+  bool flag_p_remain = false;
+  int remain = 0;
+
+  //! apanel is pre_compute outside gemm
+  for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
+    unsigned int xmax = x0 + x_block;
+    if (xmax > N) {
+      xmax = N;
+    }
+    int bblocks = (xmax - x0 + NBLOCK_INT8_DOT - 1) / NBLOCK_INT8_DOT;
+    remain = xmax - x0 - (bblocks - 1) * NBLOCK_INT8_DOT;
+    if (remain > 0) {
+      flag_p_remain = true;
+    }
+    //! load bpanel
+    auto b_pannel = static_cast<int8_t*>(workspace);
+    if (!is_transB) {
+      // K * N
+      packb_dot_int8(b_pannel, B, N, 0, K, x0, xmax);
+    } else {
+      // N X K
+      packb_dot_trans_int8(b_pannel, B, K, 0, K, x0, xmax);
+    }
+#pragma omp parallel for
+    for (unsigned int y = 0; y < M; y += MBLOCK_INT8_DOT) {
+      unsigned int ymax = y + MBLOCK_INT8_DOT;
+      if (ymax > M) {
+        ymax = M;
+      }
+
+      float32_t bias_local[6] = {0, 0, 0, 0, 0, 0};
+      if (is_bias) {
+        bias_local[0] = bias[y];
+        bias_local[1] = bias[y + 1];
+        bias_local[2] = bias[y + 2];
+        bias_local[3] = bias[y + 3];
+        bias_local[4] = bias[y + 4];
+        bias_local[5] = bias[y + 5];
+      }
+      float32_t scale_local[6];
+      if (scale) {
+        scale_local[0] = scale[y];
+        scale_local[1] = scale[y + 1];
+        scale_local[2] = scale[y + 2];
+        scale_local[3] = scale[y + 3];
+        scale_local[4] = scale[y + 4];
+        scale_local[5] = scale[y + 5];
+      }
+
+      Dtype cout0[NBLOCK_INT8_DOT];
+      Dtype cout1[NBLOCK_INT8_DOT];
+      Dtype cout2[NBLOCK_INT8_DOT];
+      Dtype cout3[NBLOCK_INT8_DOT];
+      Dtype cout4[NBLOCK_INT8_DOT];
+      Dtype cout5[NBLOCK_INT8_DOT];
+
+      Dtype* c_ptr0 = C + y * N + x0;
+      Dtype* c_ptr1 = c_ptr0 + N;
+      Dtype* c_ptr2 = c_ptr1 + N;
+      Dtype* c_ptr3 = c_ptr2 + N;
+      Dtype* c_ptr4 = c_ptr3 + N;
+      Dtype* c_ptr5 = c_ptr4 + N;
+
+      Dtype* pout0 = c_ptr0;
+      Dtype* pout1 = c_ptr1;
+      Dtype* pout2 = c_ptr2;
+      Dtype* pout3 = c_ptr3;
+      Dtype* pout4 = c_ptr4;
+      Dtype* pout5 = c_ptr5;
+
+      const int8_t* a_ptr_l = A_packed + y * kup;
+      const int8_t* b_ptr = b_pannel;
+      for (int xb = 0; xb < bblocks; xb++) {
+        if ((y + 5) >= ymax) {
+          switch ((y + 5) - ymax) {
+            case 4:
+              c_ptr1 = cout1;
+            case 3:
+              c_ptr2 = cout2;
+            case 2:
+              c_ptr3 = cout3;
+            case 1:
+              c_ptr4 = cout4;
+            case 0:
+              c_ptr5 = cout5;
+            default:
+              break;
+          }
+        }
+        if (flag_p_remain && (xb == bblocks - 1)) {
+          pout0 = c_ptr0;
+          pout1 = c_ptr1;
+          pout2 = c_ptr2;
+          pout3 = c_ptr3;
+          pout4 = c_ptr4;
+          pout5 = c_ptr5;
+
+          c_ptr0 = cout0;
+          c_ptr1 = cout1;
+          c_ptr2 = cout2;
+          c_ptr3 = cout3;
+          c_ptr4 = cout4;
+          c_ptr5 = cout5;
+        }
+        const int8_t* a_ptr = a_ptr_l;
+        int tail = tail_pre;
+
+        float32_t* scale_ptr = scale_local;
+        float32_t* bias_ptr = bias_local;
+
+        gemm_dot_int8_kernel<Dtype>(a_ptr,
+                                    b_ptr,
+                                    bias_ptr,
+                                    c_ptr0,
+                                    c_ptr1,
+                                    c_ptr2,
+                                    c_ptr3,
+                                    c_ptr4,
+                                    c_ptr5,
+                                    scale_ptr,
+                                    alpha,
+                                    is_relu,
+                                    k,
+                                    tail);
+        scale_ptr = scale_local;
+        bias_ptr = bias_local;
+
+        if (flag_p_remain && (xb == bblocks - 1)) {
+          for (int i = 0; i < remain; ++i) {
+            *pout0++ = cout0[i];
+            *pout1++ = cout1[i];
+            *pout2++ = cout2[i];
+            *pout3++ = cout3[i];
+            *pout4++ = cout4[i];
+            *pout5++ = cout5[i];
+          }
+        }
+      }
+    }
+  }
+}
+
 #endif  // dotprod  //NOLINT
 
 template <>
@@ -4277,19 +5326,35 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                      ctx);
   }
 #else
-  gemm_prepack_oth_int8<float32_t>(A_packed,
-                                   B,
-                                   bias,
-                                   C,
-                                   M,
-                                   N,
-                                   K,
-                                   is_bias,
-                                   flag_act,
-                                   is_transB,
-                                   scale,
-                                   alpha,
-                                   ctx);
+  if (ctx->has_dot()) {
+    gemm_prepack_vsdot_int8<float32_t>(A_packed,
+                                       B,
+                                       bias,
+                                       C,
+                                       M,
+                                       N,
+                                       K,
+                                       is_bias,
+                                       flag_act,
+                                       is_transB,
+                                       scale,
+                                       alpha,
+                                       ctx);
+  } else {
+    gemm_prepack_oth_int8<float32_t>(A_packed,
+                                     B,
+                                     bias,
+                                     C,
+                                     M,
+                                     N,
+                                     K,
+                                     is_bias,
+                                     flag_act,
+                                     is_transB,
+                                     scale,
+                                     alpha,
+                                     ctx);
+  }
 #endif
 }
 
@@ -4359,19 +5424,35 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                   ctx);
   }
 #else
-  gemm_prepack_oth_int8<int8_t>(A_packed,
-                                B,
-                                bias,
-                                C,
-                                M,
-                                N,
-                                K,
-                                is_bias,
-                                flag_act,
-                                is_transB,
-                                scale,
-                                alpha,
-                                ctx);
+  if (ctx->has_dot()) {
+    gemm_prepack_vsdot_int8<int8_t>(A_packed,
+                                    B,
+                                    bias,
+                                    C,
+                                    M,
+                                    N,
+                                    K,
+                                    is_bias,
+                                    flag_act,
+                                    is_transB,
+                                    scale,
+                                    alpha,
+                                    ctx);
+  } else {
+    gemm_prepack_oth_int8<int8_t>(A_packed,
+                                  B,
+                                  bias,
+                                  C,
+                                  M,
+                                  N,
+                                  K,
+                                  is_bias,
+                                  flag_act,
+                                  is_transB,
+                                  scale,
+                                  alpha,
+                                  ctx);
+  }
 #endif
 }
 
