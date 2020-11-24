@@ -151,7 +151,7 @@ class StringBufferReader : public ByteReader {
   }
   ~StringBufferReader() = default;
   void ReadForward(void* dst, size_t size) const override;
-  bool ReachEnd() const override { return cur_ < length_; }
+  bool ReachEnd() const override { return cur_ >= length_; }
   size_t length() const override { return length_; }
 
  private:
