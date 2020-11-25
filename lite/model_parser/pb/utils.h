@@ -12,4 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/memory.h"
+#pragma once
+
+#include "lite/core/framework.pb.h"
+#include "lite/model_parser/base/traits.h"
+#include "lite/utils/logging.h"
+
+namespace paddle {
+namespace lite {
+namespace pb {
+
+lite::VarDataType ConvertVarType(
+    ::paddle::framework::proto::VarType_Type pb_type);
+
+::paddle::framework::proto::VarType_Type ConvertVarType(
+    lite::VarDataType var_type);
+
+}  // namespace pb
+}  // namespace lite
+}  // namespace paddle
