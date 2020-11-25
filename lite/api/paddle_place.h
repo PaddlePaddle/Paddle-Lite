@@ -138,7 +138,7 @@ static size_t PrecisionTypeLength(PrecisionType type) {
     default:
       LOG(FATAL) << "Unable to get the length of precision type: "
                  << static_cast<int>(type);
-      return -1;
+      return 0;
   }
 }
 
