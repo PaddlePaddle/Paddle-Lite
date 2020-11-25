@@ -12,24 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/kernels/host/crop_compute.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-#pragma GCC system_header
-#include <xpu/api.h>
-#include <xpu/golden.h>
-#include <xpu/refactor/fusion.h>
-#include <xpu/refactor/math.h>
-#include <xpu/refactor/nn.h>
-#include <xpu/runtime.h>
-
-#if defined(LITE_WITH_XTCL)
-#include <xtcl/xtcl.h>
-#endif
-
-namespace paddle {
-namespace lite {
-
-namespace xdnn = baidu::xpu::api;
-
-}  // namespace lite
-}  // namespace paddle
+using crop_float =
+    paddle::lite::kernels::host::CropCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(crop, kARM, kFloat, kNCHW, crop_float, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();

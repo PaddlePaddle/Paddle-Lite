@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,20 @@
 
 #pragma once
 
-#pragma GCC system_header
-#include <xpu/api.h>
-#include <xpu/golden.h>
-#include <xpu/refactor/fusion.h>
-#include <xpu/refactor/math.h>
-#include <xpu/refactor/nn.h>
-#include <xpu/runtime.h>
-
-#if defined(LITE_WITH_XTCL)
-#include <xtcl/xtcl.h>
-#endif
+#include "lite/core/framework.pb.h"
+#include "lite/model_parser/base/traits.h"
+#include "lite/utils/logging.h"
 
 namespace paddle {
 namespace lite {
+namespace pb {
 
-namespace xdnn = baidu::xpu::api;
+lite::VarDataType ConvertVarType(
+    ::paddle::framework::proto::VarType_Type pb_type);
 
+::paddle::framework::proto::VarType_Type ConvertVarType(
+    lite::VarDataType var_type);
+
+}  // namespace pb
 }  // namespace lite
 }  // namespace paddle

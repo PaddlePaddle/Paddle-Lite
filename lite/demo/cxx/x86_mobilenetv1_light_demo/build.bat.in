@@ -2,6 +2,8 @@
 setlocal
 setlocal enabledelayedexpansion
 
+set build_platform=@CMAKE_GENERATOR_PLATFORM@
+
 set source_path=%~dp0
 
 set build_directory=%source_path%\build
@@ -33,9 +35,13 @@ IF NOT EXIST "!vcvarsall_dir!" (
 D:
 cd "%build_directory%"
 
-cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64
+cmake ..  -G "Visual Studio 14 2015" -A %build_platform%
 
-call "%vcvarsall_dir%" amd64
+if "%build_platform%"=="x64" (
+    call "%vcvarsall_dir%" amd64
+) else (
+    call "%vcvarsall_dir%" x86   
+)
 
 msbuild /maxcpucount:8 /p:Configuration=Release  mobilenet_light_api.vcxproj
 

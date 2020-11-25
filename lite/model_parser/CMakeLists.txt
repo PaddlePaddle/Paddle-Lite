@@ -1,6 +1,7 @@
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(pb)
 endif()
+add_subdirectory(base)
 add_subdirectory(general)
 add_subdirectory(naive_buffer)
 add_subdirectory(flatbuffers)
@@ -20,8 +21,10 @@ endif()
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(compatible_pb SRCS compatible_pb.cc
       DEPS ${cpp_wrapper} ${naive_wrapper} ${pb_wrapper} framework_proto fbs_io)
+    lite_cc_library(tensor_io SRCS tensor_io.cc DEPS model_base_io scope ${pb_wrapper})
 else()
     lite_cc_library(compatible_pb SRCS compatible_pb.cc DEPS ${cpp_wrapper} ${naive_wrapper} fbs_io)
+    lite_cc_library(tensor_io SRCS tensor_io.cc DEPS model_base_io scope)
 endif()
 
 lite_cc_library(model_parser SRCS model_parser.cc DEPS
@@ -30,6 +33,7 @@ lite_cc_library(model_parser SRCS model_parser.cc DEPS
     compatible_pb
     memory
     paddle_api
+    tensor_io
     CUDA_DEPS target_wrapper_cuda)
 lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc DEPS compatible_pb)
 
