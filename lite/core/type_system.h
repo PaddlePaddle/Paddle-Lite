@@ -25,6 +25,7 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+#include "lite/core/op_version/kernel_version.h"
 #include "lite/core/tensor.h"
 #include "lite/core/version.h"
 #include "lite/utils/all.h"
@@ -317,8 +318,34 @@ class ParamTypeRegistry {
                                              Place{target, precision, layout});
       return *this;
     }
+    ///////////////////////////////////////////////////////////////////////
+    // Funtion name: BindPaddleOpVersion
+    // Author: DannyIsFunny
+    // Description: Bind a kernel registry to a paddle op version, this
+    //              fuction is not applicable on tiny_publish mode.
+    ///////////////////////////////////////////////////////////////////////
+    NewInstance& BindPaddleOpVersion(const std::string& op_type,
+                                     uint32_t version_id) {
+#ifndef LITE_ON_TINY_PUBLISH
+      ParamTypeRegistry::Global().BindPaddleOpVersion(
+          op_type, version_id, kernel_type_, Place{target, precision, layout});
+#endif
+      return *this;
+    }
 
-    bool Finalize() { return true; }
+    bool Finalize() {
+#ifndef LITE_ON_TINY_PUBLISH
+      // Dafault op_version will be binded to kernel registry if
+      // `BindPaddleOpVersion` has not been applied.
+      // Default op version of registered kernel is {kernel_type_, 0}
+      if (ParamTypeRegistry::Global().GetVersion(
+              kernel_type_, Place{target, precision, layout}) == -1) {
+        ParamTypeRegistry::Global().BindPaddleOpVersion(
+            kernel_type_, 0, kernel_type_, Place{target, precision, layout});
+      }
+#endif
+      return true;
+    }
 
    private:
     std::string kernel_type_;
@@ -349,6 +376,55 @@ class ParamTypeRegistry {
     }
     return -1;
   }
+
+#ifndef LITE_ON_TINY_PUBLISH
+  ///////////////////////////////////////////////////////////////////////
+  // Funtion name: BindPaddleOpVersion
+  // Author: DannyIsFunny
+  // Description: Bind a kernel registry to a paddle op version, this
+  //              fuction is not applicable on tiny_publish mode.
+  ///////////////////////////////////////////////////////////////////////
+  void BindPaddleOpVersion(const std::string& op_type,
+                           uint32_t version,
+                           const std::string& kernel_type,
+                           const Place& place) {
+    KernelIdTy key{kernel_type, place, IO(), std::string()};
+    // Kernel registry can not bind to a op's vesion more than once.
+    if (kernel_versions_.count(key) &&
+        kernel_versions_[key].HasOpVersion(op_type)) {
+      if (kernel_versions_[key].GetOpVersion(op_type) != version) {
+        LOG(FATAL) << "Error: lite kernel (" << kernel_type
+                   << ") has been binded to a paddle op (" << op_type
+                   << ")'s version more than once, "
+                   << "it's binded to version("
+                   << kernel_versions_[key].GetOpVersion(op_type)
+                   << ") before, but now rebinded to another version ("
+                   << version << ").\n";
+      } else {
+        return;
+      }
+    }
+    // Bind current kernel to op(op_type) 's version.
+    kernel_versions_[key].AddOpVersion(op_type, version);
+    CHECK(kernel_versions_.count(key)) << "Error: failed to bind lite kernel ("
+                                       << kernel_type << ") to op version of ("
+                                       << op_type << ").\n";
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  // Funtion name: GetKernelVersion
+  // Author: DannyIsFunny
+  // Description: Get kernel's version according to kernel type and place.
+  ///////////////////////////////////////////////////////////////////////
+  const KernelVersion& GetKernelVersion(const std::string& kernel_type,
+                                        const Place& place) {
+    KernelIdTy key{kernel_type, place, IO(), std::string()};
+    if (kernel_versions_.count(key)) {
+      return kernel_versions_[key];
+    }
+    return kernel_versions_[key];
+  }
+#endif
 
   const ParamType* RetrieveInArgument(const Place& place,
                                       const std::string& op_type,
@@ -407,6 +483,7 @@ class ParamTypeRegistry {
 
  private:
   std::map<key_t, ParamType, ParamTypeRegistry::KeyCmp> types_;
+  std::map<key_t, KernelVersion, ParamTypeRegistry::KeyCmp> kernel_versions_;
   std::map<key_t, int64_t, ParamTypeRegistry::KeyCmp> versions_;
 };
 

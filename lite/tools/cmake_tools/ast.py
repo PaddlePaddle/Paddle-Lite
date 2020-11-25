@@ -312,7 +312,7 @@ class RegisterLiteKernelParser(SyntaxParser):
             self.eat_point()
             self.eat_spaces()
             self.eat_word()
-            assert self.token in ('BindInput', 'BindOutput', 'SetVersion', 'Finalize')
+            assert self.token in ('BindInput', 'BindOutput', 'SetVersion', 'BindPaddleOpVersion', 'Finalize')
             io = IO()
 
             if self.token == 'BindInput':
@@ -325,6 +325,16 @@ class RegisterLiteKernelParser(SyntaxParser):
                 self.eat_left_parentheses()
                 self.eat_str()
                 self.version = self.token
+                self.eat_right_parentheses()
+                self.eat_spaces()
+            # skip `BindPaddleOpVersion` command during parsing kernel registry 
+            elif self.token == 'BindPaddleOpVersion':
+                # eg BindPaddleOpVersion("fill_constant", 1)
+                self.eat_left_parentheses()
+                self.eat_str()
+                self.eat_comma()
+                self.eat_spaces()
+                self.eat_word()
                 self.eat_right_parentheses()
                 self.eat_spaces()
             else:
