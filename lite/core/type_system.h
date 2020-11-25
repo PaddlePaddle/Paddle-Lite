@@ -335,7 +335,7 @@ class ParamTypeRegistry {
 
     bool Finalize() {
 #ifndef LITE_ON_TINY_PUBLISH
-      // Dafault op_version will be binded to kernel registry if
+      // Dafault op_version will be bound to kernel registry if
       // `BindPaddleOpVersion` has not been applied.
       // Default op version of registered kernel is {kernel_type_, 0}
       if (ParamTypeRegistry::Global().GetVersion(
@@ -394,11 +394,11 @@ class ParamTypeRegistry {
         kernel_versions_[key].HasOpVersion(op_type)) {
       if (kernel_versions_[key].GetOpVersion(op_type) != version) {
         LOG(FATAL) << "Error: lite kernel (" << kernel_type
-                   << ") has been binded to a paddle op (" << op_type
+                   << ") has been bound to a paddle op (" << op_type
                    << ")'s version more than once, "
-                   << "it's binded to version("
+                   << "it's bound to version("
                    << kernel_versions_[key].GetOpVersion(op_type)
-                   << ") before, but now rebinded to another version ("
+                   << ") before, but now rebound to another version ("
                    << version << ").\n";
       } else {
         return;

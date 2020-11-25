@@ -50,7 +50,7 @@ class KernelVersion {
   const std::map<std::string, uint32_t>& OpVersions() const {
     return op_versions_;
   }
-  // Judge if an op_version has been binded to this kernel.
+  // Judge if an op_version has been bound to this kernel.
   bool HasOpVersion(const std::string& op_name) {
     return op_versions_.count(op_name);
   }
@@ -60,7 +60,7 @@ class KernelVersion {
     if (HasOpVersion(op_name)) {
       return op_versions_[op_name];
     } else {
-      LOG(FATAL) << "Error: This kernel has not been binded to Paddle op ("
+      LOG(FATAL) << "Error: This kernel has not been bound to Paddle op ("
                  << op_name << ") 's version.\n";
       return 0;
     }
