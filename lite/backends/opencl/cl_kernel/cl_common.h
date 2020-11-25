@@ -28,8 +28,13 @@ limitations under the License. */
 #ifdef CL_DTYPE_float
 #define CL_DTYPE float
 #define CL_DTYPE_CHAR f
+#ifdef CL_DTYPE_FLOAT_FORCE
+#define CL_COMPUTE_DTYPE float
+#define CL_COMPUTE_DTYPE_CHAR f
+#else
 #define CL_COMPUTE_DTYPE half
 #define CL_COMPUTE_DTYPE_CHAR h
+#endif
 #endif
 
 #ifdef CL_DTYPE_half
@@ -69,6 +74,17 @@ __constant sampler_t SAMPLER =
   read_image##type_char(img, sampler, pos)
 #define READ_IMG_TYPE(type_char, img, sampler, pos) \
   _READ_IMG_TYPE(type_char, img, sampler, pos)
+
+/////////////////////////////////
+// select
+/////////////////////////////////
+#ifdef CL_DTYPE_float
+#define SELECT(a, b, mask) select(a, b, (uint4)((mask) << 31))
+#endif
+
+#ifdef CL_DTYPE_half
+#define SELECT(a, b, mask) select(a, b, (ushort4)((mask) << 15))
+#endif
 
 /////////////////////////////////
 // activation / activation_type4

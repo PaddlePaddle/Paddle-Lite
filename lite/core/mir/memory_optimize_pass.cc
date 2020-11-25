@@ -39,6 +39,25 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
     return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
   };
 
+  auto has_x86_opencl = [&]() -> bool {
+    bool has_x86{false};
+    bool has_opencl{false};
+    for (auto& op_node : graph->StmtTopologicalOrder()) {
+      if (!op_node->IsStmt()) continue;
+      TargetType op_target_type = op_node->AsStmt().place().target;
+      if (has_opencl && has_x86) {
+        return true;
+      }
+      if (op_target_type == TARGET(kOpenCL)) {
+        has_opencl = true;
+      }
+      if (op_target_type == TARGET(kX86)) {
+        has_x86 = true;
+      }
+    }
+    return has_x86 && has_opencl;
+  };
+
   // The all of input and output variables of the Ops will not be reused.
   std::set<std::string> invalid_op_nodes = {"while",
                                             "conditional_block",
@@ -67,6 +86,11 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       // else if // you can add more targets
     }
   };
+
+  if (has_x86_opencl()) {
+    LOG(INFO) << "skip x86 opencl target for reuse memory pass";
+    return;
+  }
 
   VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
   insert_invalid_op_nodes_for_specific_target(invalid_op_nodes,

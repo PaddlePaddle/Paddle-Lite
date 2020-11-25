@@ -212,6 +212,7 @@ class KernelBase {
 #endif
 #ifdef LITE_WITH_OPENCL
   cl::Event event_;
+  bool fp16_support_{paddle::lite::CLRuntime::Global()->support_half()};
 #endif
 };
 
