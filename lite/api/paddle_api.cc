@@ -381,19 +381,25 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 }
 
 template <class T>
-void CxxConfig::set_inputs(const int idx,
-                           const shape_t &shape,
-                           const lod_t &lod,
-                           const T fill_value,
-                           const void *data) {
-  while (input_tensors_.size() < idx + 1) {
+void CxxConfig::set_prefered_inputs_for_warmup(const int group_id,
+                                               const int tensor_id,
+                                               const shape_t &shape,
+                                               const lod_t &lod,
+                                               const T fill_value,
+                                               const void *data) {
+  if (prefered_inputs_.count(tensor_id) == 0) {
+    prefered_inputs_[group_id] = std::vector<std::shared_ptr<void>>{};
+  }
+  auto &input_tensors = prefered_inputs_[group_id];
+  while (input_tensors.size() < tensor_id + 1) {
     std::shared_ptr<void> input_tensor(
         static_cast<void *>(new lite::Tensor),
         [](void *x) { delete static_cast<lite::Tensor *>(x); });
-    input_tensors_.emplace_back(input_tensor);
+    input_tensors.emplace_back(input_tensor);
   }
 
-  auto input_tensor = static_cast<lite::Tensor *>(input_tensors_[idx].get());
+  auto input_tensor =
+      static_cast<lite::Tensor *>(input_tensors[tensor_id].get());
   input_tensor->Resize(shape);
   input_tensor->set_lod(lod);
   auto input_data = input_tensor->mutable_data<T>();
@@ -408,11 +414,13 @@ void CxxConfig::set_inputs(const int idx,
   }
 }
 
-template void CxxConfig::set_inputs<float>(const int idx,
-                                           const shape_t &shape,
-                                           const lod_t &lod,
-                                           const float fill_value,
-                                           const void *data);
+template void CxxConfig::set_prefered_inputs_for_warmup<float>(
+    const int group_id,
+    const int tensor_id,
+    const shape_t &shape,
+    const lod_t &lod,
+    const float fill_value,
+    const void *data);
 
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory

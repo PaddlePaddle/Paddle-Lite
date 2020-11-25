@@ -128,12 +128,18 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
           << real_num_threads;
 #endif
 
-  auto input_tensors = config.input_tensors();
-  if (!input_tensors.empty()) {
+  auto prefered_inputs = config.prefered_inputs();
+  for (auto &prefered_input : prefered_inputs) {
+    auto &input_tensors = prefered_input.second;
+    if (input_tensors.empty()) continue;
     for (size_t i = 0; i < input_tensors.size(); i++) {
       auto input_tensor = static_cast<lite::Tensor *>(input_tensors[i].get());
-      auto in_tensor = GetInput(i);
       auto shape = input_tensor->dims().Vectorize();
+      CHECK(!shape.empty())
+          << "tensor is not set, with group_id: " << prefered_input.first
+          << ", tensor_id: " << i;
+
+      auto in_tensor = GetInput(i);
       in_tensor->Resize(shape);
       in_tensor->SetLoD(input_tensor->lod());
       int64_t size = std::accumulate(

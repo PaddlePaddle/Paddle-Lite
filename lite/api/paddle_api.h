@@ -19,6 +19,7 @@
 
 #ifndef PADDLE_LITE_API_H_  // NOLINT
 #define PADDLE_LITE_API_H_
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -199,7 +200,7 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<std::string> passes_internal_{};
   bool quant_model_{false};  // Enable post_quant_dynamic in opt
   QuantType quant_type_{QuantType::QUANT_INT16};
-  std::vector<std::shared_ptr<void>> input_tensors_;
+  std::map<int, std::vector<std::shared_ptr<void>>> prefered_inputs_;
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
@@ -293,14 +294,19 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_xpu_dev_per_thread(int dev_no = 0);
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
 
+  // set input tensor for warmup.
+  // It is optional. If you set prefered_inputs, model wil run immediately when
+  // predictor is created
   template <class T>
-  void set_inputs(const int idx,
-                  const shape_t& shape,
-                  const lod_t& lod = {},
-                  const T fill_value = 0,
-                  const void* data = nullptr);
-  const std::vector<std::shared_ptr<void>>& input_tensors() const {
-    return input_tensors_;
+  void set_prefered_inputs_for_warmup(const int group_id,
+                                      const int tensor_id,
+                                      const shape_t& shape,
+                                      const lod_t& lod = {},
+                                      const T fill_value = 0,
+                                      const void* data = nullptr);
+  const std::map<int, std::vector<std::shared_ptr<void>>>& prefered_inputs()
+      const {
+    return prefered_inputs_;
   }
 
   void set_quant_model(bool quant_model) { quant_model_ = quant_model; }
