@@ -53,6 +53,10 @@ shift
 goto round
 
 :main
+if "%WITH_PYTHON%"=="ON" (
+    set BUILD_EXTRA=ON
+)
+
 cd "%workspace%"
 
 echo "------------------------------------------------------------------------------------------------------|"
