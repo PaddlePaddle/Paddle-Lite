@@ -17,6 +17,7 @@
 #include <random>
 
 #include "lite/backends/opencl/cl_image_converter.h"
+#include "lite/backends/opencl/cl_utility.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
