@@ -144,7 +144,7 @@ class LITE_API ConfigBase {
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
   int device_id_{0};
-  int x86_math_library_math_threads_ = 1;
+  int x86_math_num_threads_ = 1;
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);

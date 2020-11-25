@@ -68,7 +68,7 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
 #endif
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
-  int num_threads = config.x86_math_library_num_threads();
+  int num_threads = config.x86_math_num_threads();
   int real_num_threads = num_threads > 1 ? num_threads : 1;
 #ifdef LITE_WITH_STATIC_MKL
   MKL_Set_Num_Threads(real_num_threads);
