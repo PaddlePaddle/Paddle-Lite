@@ -104,6 +104,7 @@ void LoDTensorDeserializer::LoadWithForwardReader(lite::Tensor* tensor,
   }
 }
 
+#ifndef LITE_ON_TINY_PUBLISH
 void LoDTensorSerializer::SaveWithForwardWriter(const lite::Tensor& tensor,
                                                 ByteWriter* writer,
                                                 uint32_t version) {
@@ -133,6 +134,7 @@ void LoDTensorSerializer::SaveWithForwardWriter(const lite::Tensor& tensor,
       LOG(FATAL) << "The version of tensor " << version << " is not supported.";
   }
 }
+#endif  // LITE_ON_TINY_PUBLISH
 
 }  // namespace model_parser
 }  // namespace lite
