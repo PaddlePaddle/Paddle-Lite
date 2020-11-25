@@ -15,6 +15,7 @@ limitations under the License. */
 #include "lite/backends/opencl/cl_wrapper.h"
 #if defined(_MSC_VER)
 #include "lite/backends/x86/port.h"
+#define RTLD_LAZY 0x00001
 #else
 #include <dlfcn.h>
 #endif  // _MSC_VER
@@ -71,7 +72,7 @@ bool CLWrapper::InitHandle() {
   };
   std::string target_lib = "Unknown";
   for (auto path : paths) {
-    handle_ = dlopen(path.c_str(), 0x00001 /* RTLD_LAZY */);
+    handle_ = dlopen(path.c_str(), RTLD_LAZY);
     if (handle_ != nullptr) {
       target_lib = path;
       break;
