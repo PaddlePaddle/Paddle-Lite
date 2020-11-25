@@ -291,10 +291,10 @@ void ConfigBase::set_threads(int threads) {
 }
 
 #ifdef LITE_WITH_X86
-void set_x86_math_library_num_threads(int threads) {
+void ConfigBase::set_x86_math_library_num_threads(int threads) {
   x86_math_library_math_threads_ = threads;
 }
-int x86_math_library_num_threads() const {
+int ConfigBase::x86_math_library_num_threads() const {
   return x86_math_library_math_threads_;
 }
 #endif
