@@ -20,6 +20,7 @@
 namespace paddle {
 namespace lite {
 
+template <class T>
 class RangeComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -27,33 +28,31 @@ class RangeComputeTester : public arena::TestCase {
   std::string end = "End";
   std::string step = "Step";
   std::string out = "Out";
-  int st_, ed_, sp_;
+  T st_, ed_, sp_;
 
  public:
-  RangeComputeTester(const Place& place,
-                     const std::string& alias,
-                     float st,
-                     float ed,
-                     float sp)
+  RangeComputeTester(
+      const Place& place, const std::string& alias, T st, T ed, T sp)
       : TestCase(place, alias), st_(st), ed_(ed), sp_(sp) {}
 
   void RunBaseline(Scope* scope) override {
     auto* output = scope->NewTensor(out);
     CHECK(output);
-    int64_t size;
-    auto* st = scope->FindMutableTensor(start);
-    auto* ed = scope->FindMutableTensor(end);
-    auto* sp = scope->FindMutableTensor(step);
-    float st_val = st->data<float>()[0];
-    float ed_val = ed->data<float>()[0];
-    float sp_val = sp->data<float>()[0];
-    // size = (std::abs(ed_val - st_val) + std::abs(sp_val) - 1) /
-    // std::abs(sp_val);
-    size = std::ceil(std::abs((ed_val - st_val) / sp_val));
-    output->Resize(DDim(std::vector<int64_t>({static_cast<int>(size)})));
-    auto* out_data = output->mutable_data<float>();
 
-    float val = st_;
+    auto* st = scope->FindTensor(start);
+    auto* ed = scope->FindTensor(end);
+    auto* sp = scope->FindTensor(step);
+    T st_val = st->template data<T>()[0];
+    T ed_val = ed->template data<T>()[0];
+    T sp_val = sp->template data<T>()[0];
+    int64_t size = std::is_integral<T>::value
+                       ? ((std::abs(ed_val - st_val) + std::abs(sp_val) - 1) /
+                          std::abs(sp_val))
+                       : std::ceil(std::abs((ed_val - st_val) / sp_val));
+    output->Resize(DDim(std::vector<int64_t>({static_cast<int>(size)})));
+    auto* out_data = output->template mutable_data<T>();
+
+    T val = st_;
     for (int i = 0; i < size; i++) {
       out_data[i] = val;
       val += sp_;
@@ -69,9 +68,9 @@ class RangeComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> st(1);
-    std::vector<float> ed(1);
-    std::vector<float> sp(1);
+    std::vector<T> st(1);
+    std::vector<T> ed(1);
+    std::vector<T> sp(1);
 
     st[0] = st_;
     ed[0] = ed_;
@@ -84,26 +83,33 @@ class RangeComputeTester : public arena::TestCase {
   }
 };
 
-void test_range(Place place) {
+template <class T>
+void test_range(Place place, float abs_error = 1e-5) {
+  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+
   std::unique_ptr<arena::TestCase> tester1(
-      new RangeComputeTester(place, "def", 1, 10, 1));
-  arena::Arena arena(std::move(tester1), place, 2e-5);
+      new RangeComputeTester<T>(place, "def", 1, 10, 1));
+  arena::Arena arena(std::move(tester1), place, abs_error);
   arena.TestPrecision();
 
   std::unique_ptr<arena::TestCase> tester2(
-      new RangeComputeTester(place, "def", 10, 1, -2));
-  arena::Arena arena2(std::move(tester2), place, 2e-5);
+      new RangeComputeTester<T>(place, "def", 10, 1, -2));
+  arena::Arena arena2(std::move(tester2), place, abs_error);
   arena2.TestPrecision();
 }
 
 TEST(Range, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_range(place);
-#endif
+
+  test_range<float>(place);
+  test_range<int>(place);
 }
 
 }  // namespace lite
