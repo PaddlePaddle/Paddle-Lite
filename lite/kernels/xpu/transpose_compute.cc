@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/softmax_compute.h"
+#include "lite/kernels/xpu/transpose_compute.h"
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
@@ -22,20 +22,24 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void SoftmaxCompute::Run() {
+void TransposeCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
+  auto x = param.x;
+  auto& axis = param.axis;
+  int ndims = axis.size();
+  const auto x_dims = x->dims();
+  std::vector<int> x_shape_host(ndims, 0);
 
-  std::vector<int> xdims;
-  for (auto i = 0; i < param.x->dims().size(); i++) {
-    xdims.push_back(param.x->dims().data()[i]);
+  for (int i = 0; i < ndims; ++i) {
+    x_shape_host[i] = x_dims[i];
   }
-  int axis = param.axis < 0 ? param.axis + xdims.size() : param.axis;
-  int r = xdnn::softmax(ctx.GetRawContext(),
-                        param.x->data<float>(),
-                        param.output->mutable_data<float>(TARGET(kXPU)),
-                        xdims,
-                        axis);
+  int r =
+      xdnn::transpose<float>(ctx.GetRawContext(),
+                             x->data<float>(),
+                             param.output->mutable_data<float>(TARGET(kXPU)),
+                             x_shape_host,
+                             axis);
   CHECK_EQ(r, 0);
 }
 
@@ -44,12 +48,22 @@ void SoftmaxCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(softmax,
+REGISTER_LITE_KERNEL(transpose,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::SoftmaxCompute,
+                     paddle::lite::kernels::xpu::TransposeCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+REGISTER_LITE_KERNEL(transpose2,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::TransposeCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
