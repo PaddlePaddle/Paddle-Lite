@@ -69,7 +69,7 @@ class ElementwiseAddImageCompute
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
 
   std::string kernel_func_name_{"elementwise_add"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
   cl::Kernel kernel_;
