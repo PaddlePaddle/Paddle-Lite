@@ -47,9 +47,9 @@ void slice(const Dtype* input,
       real_ends[axes[i]] = end;
     }
   }
-  int LEN = static_cast<int>(in_dims.size());
-  std::vector<int> dst_step(LEN, 1);
-  std::vector<int> src_step(LEN, 1);
+  int len = static_cast<int>(in_dims.size());
+  std::vector<int> dst_step(len, 1);
+  std::vector<int> src_step(len, 1);
   int out_num = out_dims[in_dims.size() - 1];
   for (int i = in_dims.size() - 2; i >= 0; i--) {
     dst_step[i] = out_dims[i + 1] * dst_step[i + 1];
