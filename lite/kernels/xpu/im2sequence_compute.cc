@@ -22,13 +22,6 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-inline int Im2SeqOutputSize(
-    int input_size, int filter_size, int padding_0, int padding_1, int stride) {
-  const int output_size =
-      (input_size + padding_0 + padding_1 - filter_size) / stride + 1;
-  return output_size;
-}
-
 void Im2SequenceCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -40,14 +33,6 @@ void Im2SequenceCompute::Run() {
   int width = x_dims[3];
   int kernel_h = param.kernels[0];
   int kernel_w = param.kernels[1];
-  int stride_h = param.strides[0];
-  int stride_w = param.strides[1];
-  int pad_h = param.paddings[0];
-  int pad_w = param.paddings[1];
-
-  int output_height =
-      Im2SeqOutputSize(height, kernel_h, pad_h, pad_h, stride_h);
-  int output_width = Im2SeqOutputSize(width, kernel_w, pad_w, pad_w, stride_w);
 
   std::vector<uint64_t> im_offset;
   im_offset.push_back(0);
@@ -81,16 +66,17 @@ void Im2SequenceCompute::Run() {
                           false);
 
   CHECK_EQ(r, 0);
+  int output_imsize = param.Out->numel() / channel / (kernel_h * kernel_w);
   r = xdnn::transpose<float>(
       ctx.GetRawContext(),
       y_ofc,
       param.Out->mutable_data<float>(TARGET(kXPU)),
-      {batch, output_height * output_width, kernel_h * kernel_w, channel},
+      {batch, output_imsize, kernel_h * kernel_w, channel},
       {0, 1, 3, 2});
   CHECK_EQ(r, 0);
 
   for (int im_id = 0; im_id < batch; im_id++) {
-    im_offset.push_back(uint64_t((im_id + 1) * output_height * output_width));
+    im_offset.push_back(uint64_t((im_id + 1) * output_imsize));
   }
   auto lod = param.Out->mutable_lod();
   lod->resize(1);

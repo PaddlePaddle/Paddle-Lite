@@ -24,26 +24,21 @@ namespace xpu {
 void DropoutCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-
-  if (param.is_test) {
-    float scale = 1.0f;
-    if (param.dropout_implementation == "upscale_in_train") {
-      scale = 1.0f;
-    } else {
-      scale = 1.0f - param.dropout_prob;
-    }
-    int r =
-        xdnn::scale(ctx.GetRawContext(), /* context */
-                    param.x->numel(),
-                    scale,
-                    0.0f,
-                    0,
-                    param.x->data<float>(),                           /* src */
-                    param.output->mutable_data<float>(TARGET(kXPU))); /* dst */
-    CHECK_EQ(r, 0);
+  float scale = 1.0f;
+  if (param.dropout_implementation == "upscale_in_train") {
+    scale = 1.0f;
   } else {
-    CHECK(false);
+    scale = 1.0f - param.dropout_prob;
   }
+  int r =
+      xdnn::scale(ctx.GetRawContext(), /* context */
+                  param.x->numel(),
+                  scale,
+                  0.0f,
+                  0,
+                  param.x->data<float>(),                           /* src */
+                  param.output->mutable_data<float>(TARGET(kXPU))); /* dst */
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu

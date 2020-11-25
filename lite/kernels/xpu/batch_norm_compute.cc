@@ -28,7 +28,7 @@ void BatchNormCompute::Run() {
   float epsilon = param.epsilon;
   auto& x_dims = param.x->dims();
   CHECK_LE(x_dims.size(), 4);
-  vector<int> x_shape(4, 1);
+  std::vector<int> x_shape(4, 1);
   for (int i = 0; i < x_dims.size(); i++) {
     x_shape[i] = x_dims[i];
   }

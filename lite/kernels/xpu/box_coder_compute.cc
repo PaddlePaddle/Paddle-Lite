@@ -78,6 +78,8 @@ void BoxCoderCompute::Run() {
                                    axis,
                                    output);
     CHECK_EQ(r, 0);
+  } else {
+    LOG(FATAL) << "box_coder don't support this code_type: " << code_type;
   }
 }
 
