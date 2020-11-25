@@ -34,6 +34,9 @@ CLWrapper::CLWrapper() {
 bool CLWrapper::InitHandle() {
   const std::vector<std::string> paths = {
     "libOpenCL.so",
+#if defined(__MACOSX) || defined(__APPLE__)
+    "/System/Library/Frameworks/OpenCL.framework/OpenCL",
+#endif
 #if defined(__aarch64__)
     // Qualcomm Adreno with Android
     "/system/vendor/lib64/libOpenCL.so",

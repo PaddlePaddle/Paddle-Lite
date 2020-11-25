@@ -69,13 +69,16 @@ class CLRuntime {
  public:
   static CLRuntime* Global();
 
+  bool support_half() {
+    return static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
+  }
+
   bool OpenCLAvaliableForDevice() {
     // note(ysh329): entered this func means:
     //  1. opencl_lib_found must be true
     //  2. dlsym_success must be true
 
-    bool support_fp16 =
-        static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
+    bool support_fp16 = support_half();
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "support_fp16:" << support_fp16;
 #endif

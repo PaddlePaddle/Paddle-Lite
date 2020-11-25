@@ -20,9 +20,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/model_parser/base/io.h"
 #include "lite/model_parser/base/param_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
-#include "lite/model_parser/flatbuffers/memory.h"
 #include "lite/model_parser/flatbuffers/param_generated.h"
 #include "lite/model_parser/flatbuffers/traits.h"
 
@@ -74,11 +74,11 @@ class ParamDescView : public ParamDescReadAPI {
 class CombinedParamsDescView : public CombinedParamsDescReadAPI {
  public:
   CombinedParamsDescView() = default;
-  explicit CombinedParamsDescView(Buffer&& buf) {
-    Init(std::forward<Buffer>(buf));
+  explicit CombinedParamsDescView(model_parser::Buffer&& buf) {
+    Init(std::forward<model_parser::Buffer>(buf));
   }
 
-  void Init(Buffer&& buf) {
+  void Init(model_parser::Buffer&& buf) {
     CHECK(buf.data());
     buf_ = std::move(buf);
     InitParams();
@@ -104,7 +104,7 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
 
  private:
   std::vector<ParamDescView> params_;
-  Buffer buf_;
+  model_parser::Buffer buf_;
   proto::CombinedParamsDesc const* desc_;
 };
 
@@ -188,9 +188,9 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
     return params_[params_.size() - 1].get();
   }
 
-  Buffer data() {
+  model_parser::Buffer data() {
     SyncBuffer();
-    Buffer cache(buf_.size());
+    model_parser::Buffer cache(buf_.size());
     std::memcpy(cache.data(), buf_.data(), buf_.size());
     return cache;
   }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/time.h>
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
