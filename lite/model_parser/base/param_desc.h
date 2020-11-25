@@ -21,28 +21,42 @@
 namespace paddle {
 namespace lite {
 
-class ParamDescReadAPI {
+class TensorInfoReadAPI {
  public:
-  virtual std::string Name() const = 0;
   virtual std::vector<int64_t> Dim() const = 0;
   virtual VarDataType GetDataType() const = 0;
-  virtual const void *GetData() const = 0;
-  virtual size_t byte_size() const = 0;
 
-  virtual ~ParamDescReadAPI() = default;
+  virtual ~TensorInfoReadAPI() = default;
 };
 
-class ParamDescWriteAPI {
+class TensorInfoWriteAPI {
  public:
-  virtual void SetName(const std::string &name) {
-    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
-  }
   virtual void SetDim(const std::vector<int64_t> &dim) {
     LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   }
   virtual void SetDataType(VarDataType data_type) {
     LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   }
+  virtual void Sync() { LITE_MODEL_INTERFACE_NOT_IMPLEMENTED; }
+
+  virtual ~TensorInfoWriteAPI() = default;
+};
+
+class ParamDescReadAPI : public TensorInfoReadAPI {
+ public:
+  virtual std::string Name() const = 0;
+  virtual const void *GetData() const = 0;
+  virtual size_t byte_size() const = 0;
+
+  virtual ~ParamDescReadAPI() = default;
+};
+
+class ParamDescWriteAPI : public TensorInfoWriteAPI {
+ public:
+  virtual void SetName(const std::string &name) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
+
   virtual void SetData(const void *data, size_t byte_size) {
     LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   }

@@ -15,6 +15,7 @@
 #pragma once
 #include <set>
 #include <string>
+#include "lite/utils/cp_logging.h"
 
 // Generic helper definitions for shared library support
 #if defined _WIN32 || defined __CYGWIN__
@@ -132,8 +133,12 @@ static size_t PrecisionTypeLength(PrecisionType type) {
       return 8;
     case PrecisionType::kFP16:
       return 2;
+    case PrecisionType::kInt16:
+      return 2;
     default:
-      return 4;
+      LOG(FATAL) << "Unable to get the length of precision type: "
+                 << static_cast<int>(type);
+      return -1;
   }
 }
 
