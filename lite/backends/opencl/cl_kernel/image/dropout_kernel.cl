@@ -23,21 +23,17 @@ __kernel void dropout(__read_only image2d_t input_image,
                        const int out_w = get_global_id(1);
                        const int out_nh = get_global_id(2);
 
-                       int2 output_pos;
-                       output_pos.x = out_c * out_W + out_w;
-                       output_pos.y = out_nh;
+                       int2 output_pos = {out_c * out_W + out_w, out_nh};
 
                        const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
                                                  CLK_ADDRESS_CLAMP      |
                                                  CLK_FILTER_NEAREST;
-                       half4 input;
-                       half4 output;
 
-                       input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler,output_pos);
-                       half4 dropout = (half4)(1 - dropoutPro);
-                       output =  dropout * input;
+                       CL_DTYPE4 input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, output_pos);
+                       CL_DTYPE4 dropout = (CL_DTYPE4)(1 - dropoutPro);
+                       CL_DTYPE4 output =  dropout * input;
 
-                       write_imageh(output_image, output_pos, output);
+                       WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
 }
 
 
