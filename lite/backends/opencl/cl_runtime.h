@@ -70,7 +70,8 @@ class CLRuntime {
   static CLRuntime* Global();
 
   bool support_half() {
-    return static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
+    return false;
+    // return static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
   }
 
   bool OpenCLAvaliableForDevice() {
@@ -82,7 +83,7 @@ class CLRuntime {
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "support_fp16:" << support_fp16;
 #endif
-    if (support_fp16 == false) return false;
+    // if (support_fp16 == false) return false;
 
     is_device_avaliable_for_opencl_ = support_fp16;
 #ifdef LITE_WITH_LOG

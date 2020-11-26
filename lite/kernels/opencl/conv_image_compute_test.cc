@@ -254,7 +254,7 @@ TEST(conv2d, compute_image2d_1x1) {
                   lite::DDim{std::vector<int64_t>({oc, ic, ksize, ksize})};
               const DDim& out_dim =
                   lite::DDim{std::vector<int64_t>({batch_size, oc, ih, iw})};
-              // element wise bias
+              // channel wise bias
               const DDim& bias_dim = lite::DDim{std::vector<int64_t>({oc})};
 
               param.x->Resize(input_dim);

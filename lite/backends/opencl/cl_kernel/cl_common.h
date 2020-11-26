@@ -16,7 +16,7 @@ limitations under the License. */
 /////////////////////////////////
 // fp16 enabled, MAX_VALUE, MIN_VALUE
 /////////////////////////////////
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+// #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
 #define MAX_VALUE FLT_MAX
 #define MIN_VALUE -FLT_MAX

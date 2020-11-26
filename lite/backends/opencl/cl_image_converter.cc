@@ -200,7 +200,7 @@ void CLImageConverterFolder::NCHWToImage(float *tensor,
           image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
               Float2Half(tensor[h * tdim[1] + w]);
         } else {
-          image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
+          image_fp32[(h * width + w / 4) * 4 + (w % 4)] =
               tensor[h * tdim[1] + w];
         }
       }
