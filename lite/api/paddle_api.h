@@ -299,8 +299,8 @@ class LITE_API CxxConfig : public ConfigBase {
   // It is optional. If you set prefered_inputs, model wil run immediately when
   // predictor is created
   template <class T>
-  void set_preferred_inputs_for_warmup(const int group_id,
-                                       const int tensor_id,
+  void set_preferred_inputs_for_warmup(const int group_idx,
+                                       const int tensor_idx,
                                        const shape_t& shape,
                                        const lod_t& lod = {},
                                        const T fill_value = 0,

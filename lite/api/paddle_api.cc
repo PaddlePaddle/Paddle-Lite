@@ -381,18 +381,18 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 }
 
 template <class T>
-void CxxConfig::set_preferred_inputs_for_warmup(const int group_id,
-                                                const int tensor_id,
+void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
+                                                const int tensor_idx,
                                                 const shape_t &shape,
                                                 const lod_t &lod,
                                                 const T fill_value,
                                                 const void *data) {
-  if (preferred_inputs_for_warmup_.count(tensor_id) == 0) {
-    preferred_inputs_for_warmup_[group_id] =
+  if (preferred_inputs_for_warmup_.count(tensor_idx) == 0) {
+    preferred_inputs_for_warmup_[group_idx] =
         std::vector<std::shared_ptr<void>>{};
   }
-  auto &input_tensors = preferred_inputs_for_warmup_[group_id];
-  while (input_tensors.size() < tensor_id + 1) {
+  auto &input_tensors = preferred_inputs_for_warmup_[group_idx];
+  while (input_tensors.size() < tensor_idx + 1) {
     std::shared_ptr<void> input_tensor(
         static_cast<void *>(new lite::Tensor),
         [](void *x) { delete static_cast<lite::Tensor *>(x); });
@@ -400,7 +400,7 @@ void CxxConfig::set_preferred_inputs_for_warmup(const int group_id,
   }
 
   auto input_tensor =
-      static_cast<lite::Tensor *>(input_tensors[tensor_id].get());
+      static_cast<lite::Tensor *>(input_tensors[tensor_idx].get());
   input_tensor->Resize(shape);
   input_tensor->set_lod(lod);
   auto input_data = input_tensor->mutable_data<T>();
@@ -417,8 +417,8 @@ void CxxConfig::set_preferred_inputs_for_warmup(const int group_id,
 
 #define _SetPreferredInputsForWarmup(dtype)                        \
   template void CxxConfig::set_preferred_inputs_for_warmup<dtype>( \
-      const int group_id,                                          \
-      const int tensor_id,                                         \
+      const int group_idx,                                         \
+      const int tensor_idx,                                        \
       const shape_t &shape,                                        \
       const lod_t &lod,                                            \
       const dtype fill_value,                                      \
