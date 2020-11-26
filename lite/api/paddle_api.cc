@@ -381,16 +381,17 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 }
 
 template <class T>
-void CxxConfig::set_prefered_inputs_for_warmup(const int group_id,
-                                               const int tensor_id,
-                                               const shape_t &shape,
-                                               const lod_t &lod,
-                                               const T fill_value,
-                                               const void *data) {
-  if (prefered_inputs_.count(tensor_id) == 0) {
-    prefered_inputs_[group_id] = std::vector<std::shared_ptr<void>>{};
+void CxxConfig::set_preferred_inputs_for_warmup(const int group_id,
+                                                const int tensor_id,
+                                                const shape_t &shape,
+                                                const lod_t &lod,
+                                                const T fill_value,
+                                                const void *data) {
+  if (preferred_inputs_for_warmup_.count(tensor_id) == 0) {
+    preferred_inputs_for_warmup_[group_id] =
+        std::vector<std::shared_ptr<void>>{};
   }
-  auto &input_tensors = prefered_inputs_[group_id];
+  auto &input_tensors = preferred_inputs_for_warmup_[group_id];
   while (input_tensors.size() < tensor_id + 1) {
     std::shared_ptr<void> input_tensor(
         static_cast<void *>(new lite::Tensor),
@@ -414,18 +415,27 @@ void CxxConfig::set_prefered_inputs_for_warmup(const int group_id,
   }
 }
 
-template void CxxConfig::set_prefered_inputs_for_warmup<float>(
-    const int group_id,
-    const int tensor_id,
-    const shape_t &shape,
-    const lod_t &lod,
-    const float fill_value,
-    const void *data);
+#define _SetPreferredInputsForWarmup(dtype)                        \
+  template void CxxConfig::set_preferred_inputs_for_warmup<dtype>( \
+      const int group_id,                                          \
+      const int tensor_id,                                         \
+      const shape_t &shape,                                        \
+      const lod_t &lod,                                            \
+      const dtype fill_value,                                      \
+      const void *data);
 
-// set model data in combined format, `set_model_from_file` refers to loading
-// model from file, set_model_from_buffer refers to loading model from memory
-// buffer
-void MobileConfig::set_model_from_file(const std::string &x) {
+_SetPreferredInputsForWarmup(float);
+_SetPreferredInputsForWarmup(double);
+_SetPreferredInputsForWarmup(int32_t);
+_SetPreferredInputsForWarmup(int64_t)
+#undef _SetPreferredInputsForWarmup
+
+    // set model data in combined format, `set_model_from_file` refers to
+    // loading
+    // model from file, set_model_from_buffer refers to loading model from
+    // memory
+    // buffer
+    void MobileConfig::set_model_from_file(const std::string &x) {
   lite_model_file_ = x;
 }
 void MobileConfig::set_model_from_buffer(const std::string &x) {

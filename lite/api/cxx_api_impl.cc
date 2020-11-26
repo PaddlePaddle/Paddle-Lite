@@ -128,15 +128,15 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
           << real_num_threads;
 #endif
 
-  auto prefered_inputs = config.prefered_inputs();
-  for (auto &prefered_input : prefered_inputs) {
-    auto &input_tensors = prefered_input.second;
+  auto preferred_inputs = config.preferred_inputs_for_warmup();
+  for (auto &preferred_input : preferred_inputs) {
+    auto &input_tensors = preferred_input.second;
     if (input_tensors.empty()) continue;
     for (size_t i = 0; i < input_tensors.size(); i++) {
       auto input_tensor = static_cast<lite::Tensor *>(input_tensors[i].get());
       auto shape = input_tensor->dims().Vectorize();
       CHECK(!shape.empty())
-          << "tensor is not set, with group_id: " << prefered_input.first
+          << "tensor is not set, with group_id: " << preferred_input.first
           << ", tensor_id: " << i;
 
       auto in_tensor = GetInput(i);
@@ -145,13 +145,29 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       int64_t size = std::accumulate(
           shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
       switch (input_tensor->precision()) {
-        case lite_api::PrecisionType::kFloat: {
-          auto in_data = in_tensor->mutable_data<float>();
-          auto tmp_data = input_tensor->data<float>();
-          memcpy(in_data, tmp_data, sizeof(float) * size);
-        } break;
+        case lite_api::PrecisionType::kFloat:
+          memcpy(in_tensor->mutable_data<float>(),
+                 input_tensor->data<float>(),
+                 sizeof(float) * size);
+          break;
+        case lite_api::PrecisionType::kFP64:
+          memcpy(in_tensor->mutable_data<double>(),
+                 input_tensor->data<double>(),
+                 sizeof(double) * size);
+          break;
+        case lite_api::PrecisionType::kInt32:
+          memcpy(in_tensor->mutable_data<int32_t>(),
+                 input_tensor->data<int32_t>(),
+                 sizeof(int32_t) * size);
+          break;
+        case lite_api::PrecisionType::kInt64:
+          memcpy(in_tensor->mutable_data<int64_t>(),
+                 input_tensor->data<int64_t>(),
+                 sizeof(int64_t) * size);
+          break;
         default:
-          LOG(FATAL) << "unsupport";
+          LOG(FATAL) << "unsupport data type: "
+                     << lite_api::PrecisionToStr(input_tensor->precision());
       }
     }
     Run();

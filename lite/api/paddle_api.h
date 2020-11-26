@@ -200,7 +200,8 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<std::string> passes_internal_{};
   bool quant_model_{false};  // Enable post_quant_dynamic in opt
   QuantType quant_type_{QuantType::QUANT_INT16};
-  std::map<int, std::vector<std::shared_ptr<void>>> prefered_inputs_;
+  std::map<int, std::vector<std::shared_ptr<void>>>
+      preferred_inputs_for_warmup_;
 #ifdef LITE_WITH_X86
   int x86_math_library_math_threads_ = 1;
 #endif
@@ -298,15 +299,15 @@ class LITE_API CxxConfig : public ConfigBase {
   // It is optional. If you set prefered_inputs, model wil run immediately when
   // predictor is created
   template <class T>
-  void set_prefered_inputs_for_warmup(const int group_id,
-                                      const int tensor_id,
-                                      const shape_t& shape,
-                                      const lod_t& lod = {},
-                                      const T fill_value = 0,
-                                      const void* data = nullptr);
-  const std::map<int, std::vector<std::shared_ptr<void>>>& prefered_inputs()
-      const {
-    return prefered_inputs_;
+  void set_preferred_inputs_for_warmup(const int group_id,
+                                       const int tensor_id,
+                                       const shape_t& shape,
+                                       const lod_t& lod = {},
+                                       const T fill_value = 0,
+                                       const void* data = nullptr);
+  const std::map<int, std::vector<std::shared_ptr<void>>>&
+  preferred_inputs_for_warmup() const {
+    return preferred_inputs_for_warmup_;
   }
 
   void set_quant_model(bool quant_model) { quant_model_ = quant_model; }
