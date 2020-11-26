@@ -200,7 +200,7 @@ void CLImageConverterFolder::NCHWToImage(float *tensor,
           image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
               Float2Half(tensor[h * tdim[1] + w]);
         } else {
-          image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
+          image_fp32[(h * width + w / 4) * 4 + (w % 4)] =
               tensor[h * tdim[1] + w];
         }
       }
@@ -394,8 +394,11 @@ void CLImageConverterDWBlock::NCHWToImage(float *tensor,
             i2 += 4;
             p++;
           } else {
-            fp16_support_ ? image_fp16[i2] = Float2Half(0.f) : image_fp32[i2] =
-                                                                   0.f;
+            if (fp16_support_) {
+              image_fp16[i2] = Float2Half(0.f);
+            } else {
+              image_fp32[i2] = 0.f;
+            }
             i2 += 4;
           }
         }
