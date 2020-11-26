@@ -170,6 +170,9 @@ class LITE_API ConfigBase {
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
   int get_device_id() const { return device_id_; }
+  // set x86_math_num_threads
+  void set_x86_math_num_threads(int threads);
+  int x86_math_num_threads() const;
 };
 
 class LITE_API CxxModelBuffer {
