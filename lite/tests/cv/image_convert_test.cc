@@ -1348,6 +1348,7 @@ TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
                     continue;
                   }
                 }
+
                 test_flip({FLAGS_cluster},
                           {1, 2, 4},
                           w,
