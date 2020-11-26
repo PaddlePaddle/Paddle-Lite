@@ -22,6 +22,11 @@
 #include "lite/api/paddle_use_ops.h"
 #endif
 
+#if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
+    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
+#include "lite/backends/x86/mklml.h"
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -60,6 +65,19 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
       config.get_device_id());
   Context<TargetType::kHuaweiAscendNPU>::SetSubgraphModelCacheDir(
       config.subgraph_model_cache_dir());
+#endif
+#if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
+    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
+  int num_threads = config.x86_math_num_threads();
+  int real_num_threads = num_threads > 1 ? num_threads : 1;
+#ifdef LITE_WITH_STATIC_MKL
+  MKL_Set_Num_Threads(real_num_threads);
+#else
+  x86::MKL_Set_Num_Threads(real_num_threads);
+#endif
+  VLOG(3) << "set_x86_math_library_math_threads() is set successfully and the "
+             "number of threads is:"
+          << real_num_threads;
 #endif
 }
 
