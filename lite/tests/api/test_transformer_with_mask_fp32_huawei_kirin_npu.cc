@@ -187,12 +187,13 @@ void CheckOutputData(
   }
 }
 
-TEST(TransformerWithMask, test_transformer_with_mask_fp32_arm) {
+TEST(TransformerWithMask, test_transformer_with_mask_fp32_huawei_kirin_npu) {
   // Save the optimized model by using full api with CxxConfig
   lite_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(FLAGS_model_dir);
   cxx_config.set_valid_places(
-      {lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+      {lite_api::Place{TARGET(kNPU), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
        lite_api::Place{TARGET(kARM), PRECISION(kInt64)}});
   auto predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir + ".nb",
