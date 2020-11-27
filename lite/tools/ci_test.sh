@@ -318,7 +318,7 @@ function build_and_test_on_remote_device() {
                     local is_skip=0
                     for unit_test_skip_name in ${unit_test_skip_names[@]}; do
                         if [[ "$unit_test_skip_name" == "$test_name" ]]; then
-                            echo "skip " $test_name
+                            echo "skip $test_name"
                             is_skip=1
                             break
                         fi
@@ -327,8 +327,8 @@ function build_and_test_on_remote_device() {
                         continue
                     fi
                     # Extract the arguments from ctest command line
-                    test_cmds=$(ctest -V -N -R ${test_name})
-                    reg_expr=".*Test command:.*\/${test_name} \(.*\) Test #[0-9]*: ${test_name}.*"
+                    test_cmds=$(ctest -V -N -R ^$test_name$)
+                    reg_expr=".*Test command:.*\/$test_name \(.*\) Test #[0-9]*: $test_name.*"
                     test_args=$(echo $test_cmds | sed -n "/$reg_expr/p")
                     if [[ -n "$test_args" ]]; then
                         # Matched, extract and remove the quotes
@@ -809,7 +809,7 @@ function baidu_xpu_build_and_test() {
         local is_skip=0
         for unit_test_skip_name in ${unit_test_skip_names[@]}; do
             if [[ "$unit_test_skip_name" == "$test_name" ]]; then
-                echo "skip " $test_name
+                echo "skip $test_name"
                 is_skip=1
                 break
             fi
@@ -817,7 +817,7 @@ function baidu_xpu_build_and_test() {
         if [[ $is_skip -ne 0 ]]; then
             continue
         fi
-        ctest -R $test_name -V
+        ctest -V -R ^$test_name$
     done
     cd - >/dev/null
 }
