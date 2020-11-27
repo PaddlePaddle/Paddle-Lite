@@ -387,7 +387,7 @@ void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
                                                 const lod_t &lod,
                                                 const T fill_value,
                                                 const void *data) {
-  if (preferred_inputs_for_warmup_.count(tensor_idx) == 0) {
+  if (preferred_inputs_for_warmup_.count(group_idx) == 0) {
     preferred_inputs_for_warmup_[group_idx] =
         std::vector<std::shared_ptr<void>>{};
   }
