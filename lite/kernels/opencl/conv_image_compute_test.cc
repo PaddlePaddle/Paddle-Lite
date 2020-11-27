@@ -36,6 +36,9 @@ namespace lite {
 #define TEST_CONV_IMAGE_7x7
 
 #define LEAKY_RELU_ALPHA (0.1)
+
+bool fp16_support_{paddle::lite::CLRuntime::Global()->support_half()};
+
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
                        Dtype2* dout,
@@ -329,25 +332,31 @@ TEST(conv2d, compute_image2d_1x1) {
 
               paddle::lite::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
-              std::vector<half_t> x_image_v(
-                  input_image_width * input_image_height * 4);  // 4 : RGBA
-              std::vector<half_t> filter_image_v(
-                  filter_image_width * filter_image_height * 4);  // 4 :RGBA
-              std::vector<half_t> bias_image_v(
-                  bias_image_width * bias_image_height * 4);  // 4 : RGBA
-              std::vector<half_t> out_image_v(
-                  out_image_width * out_image_height * 4);  // 4 : RGBA
+
+              auto x_image = std::unique_ptr<Tensor>(new Tensor);
+              x_image->Resize({1, input_image_width, input_image_height, 4});
+              auto* x_image_data = MUTABLE_DATA_CPU(x_image);
+              auto filter_image = std::unique_ptr<Tensor>(new Tensor);
+              filter_image->Resize(
+                  {1, filter_image_width, filter_image_height, 4});
+              auto* filter_image_data = MUTABLE_DATA_CPU(filter_image);
+              auto bias_image = std::unique_ptr<Tensor>(new Tensor);
+              bias_image->Resize({1, bias_image_width, bias_image_height, 4});
+              auto* bias_image_data = MUTABLE_DATA_CPU(bias_image);
+              auto out_image = std::unique_ptr<Tensor>(new Tensor);
+              out_image->Resize({1, out_image_width, out_image_height, 4});
+              auto* out_image_data = MUTABLE_DATA_CPU(out_image);
 
               default_convertor.NCHWToImage(
-                  input_v.data(), x_image_v.data(), input_dim);
+                  input_v.data(), x_image_data, input_dim);
 
               SHADOW_LOG << "set mapped filter  ...";
               paddle::lite::CLImageConverterNWBlock nw_convertor;
               nw_convertor.NCHWToImage(
-                  filter_v.data(), filter_image_v.data(), filter_dim);
+                  filter_v.data(), filter_image_data, filter_dim);
 
-              auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
-                  input_image_width, input_image_height, x_image_v.data());
+              MUTABLE_DATA_GPU(
+                  &input, input_image_width, input_image_height, x_image_data);
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
@@ -356,34 +365,25 @@ TEST(conv2d, compute_image2d_1x1) {
                 SHADOW_LOG << "(" << i << ")" << input_v[i];
               }
               SHADOW_LOG << " lite输入 input_image2d ..... ";
-              for (int i = 0; i < x_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << Half2Float(x_image_v[i]);
+              for (int i = 0; i < x_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(reinterpret_cast<half_t*>(x_image_data) + i))
+                    : *(reinterpret_cast<float*>(x_image_data) + i);
               }
               SHADOW_LOG << "卷积核 : ----  ";
               for (int i = 0; i < filter_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << filter_v[i];
               }
 
-              SHADOW_LOG << "卷积核1: ----  ";
-              const float* filter_p = filter.data<float>();
-              for (int i = 0; i < filter_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << *filter_p;
-                filter_p++;
-              }
-              SHADOW_LOG << "卷积核2:  ----  ";
-              const float* filter_p2 = filter.mutable_data<float>();
-              for (int i = 0; i < filter_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << *filter_p2;
-                filter_p2++;
-              }
-
               SHADOW_LOG << "卷积核 image : ----  ";
-              for (int i = 0; i < filter_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << Half2Float(filter_image_v[i]);
+              for (int i = 0; i < filter_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(filter_image->data<half_t>() + i))
+                    : *(filter_image->data<float>() + i);
               }
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
-                  bias_v[i] = static_cast<int>(gen(engine));
+                  bias_v[i] = static_cast<float>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
@@ -401,13 +401,13 @@ TEST(conv2d, compute_image2d_1x1) {
               SHADOW_LOG << "kernel launch ...";
               kernel->Launch();
               SHADOW_LOG << "mutable output ...";
-              auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
-                  out_image_width, out_image_height);
+              auto* output_image2d = MUTABLE_DATA_GPU(
+                  &output, out_image_width, out_image_height, nullptr);
 
               CLRuntime::Global()->command_queue().finish();
 
-              TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                          output.data<half_t, cl::Image2D>(),
+              TargetWrapperCL::ImgcpySync(out_image_data,
+                                          GET_DATA_GPU(&output),
                                           out_image_width,
                                           out_image_height,
                                           cl_image2d_row_pitch,
@@ -417,13 +417,15 @@ TEST(conv2d, compute_image2d_1x1) {
               DDim out_image_shape =
                   default_convertor.InitImageDimInfoWith(output.dims());
 
-              default_convertor.ImageToNCHW(out_image_v.data(),
+              default_convertor.ImageToNCHW(out_image_data,
                                             output_v.data(),
                                             out_image_shape,
                                             output.dims());
               SHADOW_LOG << " lite输出 out_image_v ..... ";
-              for (int i = 0; i < out_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << Half2Float(out_image_v[i]);
+              for (int i = 0; i < out_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(out_image->data<half_t>() + i))
+                    : *(out_image->data<float>() + i);
               }
               SHADOW_LOG << " lite输出 output_v ..... ";
               for (int i = 0; i < output_v.size(); i++) {
@@ -473,8 +475,8 @@ TEST(conv2d, compute_image2d_1x1) {
                 EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                              abs_diff > FP16_ABS_DIFF);
                 if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
-                  LOG(FATAL) << "error idx:" << i << "output_v[" << i
-                             << "]:" << output_v[i] << " "
+                  LOG(FATAL) << "error idx:" << i << "\toutput_v[" << i
+                             << "]:" << output_v[i] << "\t"
                                                        "out_ref_data["
                              << i << "]:" << out_ref_data[i];
                 }
@@ -691,46 +693,56 @@ const int stride = 2;
 
               paddle::lite::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
-              std::vector<half_t> x_image_v(input_image_width *
-                                            input_image_height * 4);  // 4 :RGBA
-              std::vector<half_t> filter_image_v(
-                  filter_image_width * filter_image_height * 4);  // 4 : RGBA
-              std::vector<half_t> bias_image_v(
-                  bias_image_width * bias_image_height * 4);  // 4 : RGBA
-              std::vector<half_t> out_image_v(out_image_width *
-                                              out_image_height * 4);  // 4 :RGBA
+
+              auto x_image = std::unique_ptr<Tensor>(new Tensor);
+              x_image->Resize({1, input_image_width, input_image_height, 4});
+              auto* x_image_data = MUTABLE_DATA_CPU(x_image);
+              auto filter_image = std::unique_ptr<Tensor>(new Tensor);
+              filter_image->Resize(
+                  {1, filter_image_width, filter_image_height, 4});
+              auto* filter_image_data = MUTABLE_DATA_CPU(filter_image);
+              auto bias_image = std::unique_ptr<Tensor>(new Tensor);
+              bias_image->Resize({1, bias_image_width, bias_image_height, 4});
+              auto* bias_image_data = MUTABLE_DATA_CPU(bias_image);
+              auto out_image = std::unique_ptr<Tensor>(new Tensor);
+              out_image->Resize({1, out_image_width, out_image_height, 4});
+              auto* out_image_data = MUTABLE_DATA_CPU(out_image);
 
               default_convertor.NCHWToImage(
-                  input_v.data(), x_image_v.data(), input_dim);
+                  input_v.data(), x_image_data, input_dim);
               SHADOW_LOG << "输入: ----  ";
               for (int i = 0; i < input_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << input_v[i];
               }
               SHADOW_LOG << "输入image : ----  ";
-              for (int i = 0; i < x_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << x_image_v[i];
+              for (int i = 0; i < x_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(x_image->data<half_t>() + i))
+                    : *(x_image->data<float>() + i);
               }
               SHADOW_LOG << "set mapped filter  ...";
               CLImageConverterFolder folder_convertor;
 
               folder_convertor.NCHWToImage(
-                  filter_v.data(), filter_image_v.data(), filter_dim);
+                  filter_v.data(), filter_image_data, filter_dim);
               SHADOW_LOG << "卷积核: ----  ";
               for (int i = 0; i < filter_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << filter_v[i];
               }
               SHADOW_LOG << "卷积核image: ----  ";
-              for (int i = 0; i < filter_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << filter_image_v[i];
+              for (int i = 0; i < filter_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(filter_image->data<half_t>() + i))
+                    : *(filter_image->data<float>() + i);
               }
-              auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
-                  input_image_width, input_image_height, x_image_v.data());
+              MUTABLE_DATA_GPU(
+                  &input, input_image_width, input_image_height, x_image_data);
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
-                  bias_v[i] = static_cast<int>(gen(engine));
+                  bias_v[i] = static_cast<float>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
@@ -748,12 +760,12 @@ const int stride = 2;
               SHADOW_LOG << "kernel launch ...";
               kernel->Launch();
               SHADOW_LOG << "mutable output ...";
-              auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
-                  out_image_width, out_image_height);
+              auto* output_image2d = MUTABLE_DATA_GPU(
+                  &output, out_image_width, out_image_height, nullptr);
 
               CLRuntime::Global()->command_queue().finish();
-              TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                          output.data<half_t, cl::Image2D>(),
+              TargetWrapperCL::ImgcpySync(out_image_data,
+                                          GET_DATA_GPU(&output),
                                           out_image_width,
                                           out_image_height,
                                           cl_image2d_row_pitch,
@@ -763,7 +775,7 @@ const int stride = 2;
               DDim out_image_shape =
                   default_convertor.InitImageDimInfoWith(output.dims());
 
-              default_convertor.ImageToNCHW(out_image_v.data(),
+              default_convertor.ImageToNCHW(out_image_data,
                                             output_v.data(),
                                             out_image_shape,
                                             output.dims());
@@ -774,8 +786,10 @@ const int stride = 2;
               }
 
               SHADOW_LOG << "输出image: ----  ";
-              for (int i = 0; i < out_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << out_image_v[i];
+              for (int i = 0; i < out_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(out_image->data<half_t>() + i))
+                    : *(out_image->data<float>() + i);
               }
               SHADOW_LOG << "mutable_data out_ref_data: ";
 
@@ -830,8 +844,8 @@ const int stride = 2;
                 EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                              abs_diff > FP16_ABS_DIFF);
                 if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
-                  LOG(FATAL) << "error idx:" << i << "output_v[" << i
-                             << "]:" << output_v[i] << " "
+                  LOG(FATAL) << "error idx:" << i << "\toutput_v[" << i
+                             << "]:" << output_v[i] << "\t"
                                                        "out_ref_data["
                              << i << "]:" << out_ref_data[i];
                 }
@@ -1028,46 +1042,56 @@ TEST(conv2d, compute_image2d_5x5) {
 
               paddle::lite::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
-              std::vector<half_t> x_image_v(input_image_width *
-                                            input_image_height * 4);  // 4 :RGBA
-              std::vector<half_t> filter_image_v(
-                  filter_image_width * filter_image_height * 4);  // 4 : RGBA
-              std::vector<half_t> bias_image_v(
-                  bias_image_width * bias_image_height * 4);  // 4 : RGBA
-              std::vector<half_t> out_image_v(out_image_width *
-                                              out_image_height * 4);  // 4 :RGBA
+
+              auto x_image = std::unique_ptr<Tensor>(new Tensor);
+              x_image->Resize({1, input_image_width, input_image_height, 4});
+              auto* x_image_data = MUTABLE_DATA_CPU(x_image);
+              auto filter_image = std::unique_ptr<Tensor>(new Tensor);
+              filter_image->Resize(
+                  {1, filter_image_width, filter_image_height, 4});
+              auto* filter_image_data = MUTABLE_DATA_CPU(filter_image);
+              auto bias_image = std::unique_ptr<Tensor>(new Tensor);
+              bias_image->Resize({1, bias_image_width, bias_image_height, 4});
+              auto* bias_image_data = MUTABLE_DATA_CPU(bias_image);
+              auto out_image = std::unique_ptr<Tensor>(new Tensor);
+              out_image->Resize({1, out_image_width, out_image_height, 4});
+              auto* out_image_data = MUTABLE_DATA_CPU(out_image);
 
               default_convertor.NCHWToImage(
-                  input_v.data(), x_image_v.data(), input_dim);
+                  input_v.data(), x_image_data, input_dim);
               SHADOW_LOG << "输入: ----  ";
               for (int i = 0; i < input_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << input_v[i];
               }
               SHADOW_LOG << "输入image : ----  ";
-              for (int i = 0; i < x_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << x_image_v[i];
+              for (int i = 0; i < x_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(x_image->data<half_t>() + i))
+                    : *(x_image->data<float>() + i);
               }
               SHADOW_LOG << "set mapped filter  ...";
               CLImageConverterFolder folder_convertor;
 
               folder_convertor.NCHWToImage(
-                  filter_v.data(), filter_image_v.data(), filter_dim);
+                  filter_v.data(), filter_image_data, filter_dim);
               SHADOW_LOG << "卷积核: ----  ";
               for (int i = 0; i < filter_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << filter_v[i];
               }
               SHADOW_LOG << "卷积核image: ----  ";
-              for (int i = 0; i < filter_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << filter_image_v[i];
+              for (int i = 0; i < filter_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(filter_image->data<half_t>() + i))
+                    : *(filter_image->data<float>() + i);
               }
-              auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
-                  input_image_width, input_image_height, x_image_v.data());
+              MUTABLE_DATA_GPU(
+                  &input, input_image_width, input_image_height, x_image_data);
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
-                  bias_v[i] = static_cast<int>(gen(engine));
+                  bias_v[i] = static_cast<float>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
@@ -1085,13 +1109,13 @@ TEST(conv2d, compute_image2d_5x5) {
               SHADOW_LOG << "kernel launch ...";
               kernel->Launch();
               SHADOW_LOG << "mutable output ...";
-              auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
-                  out_image_width, out_image_height);
+              auto* output_image2d = MUTABLE_DATA_GPU(
+                  &output, out_image_width, out_image_height, nullptr);
 
               CLRuntime::Global()->command_queue().finish();
 
-              TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                          output.data<half_t, cl::Image2D>(),
+              TargetWrapperCL::ImgcpySync(out_image_data,
+                                          GET_DATA_GPU(&output),
                                           out_image_width,
                                           out_image_height,
                                           cl_image2d_row_pitch,
@@ -1101,7 +1125,7 @@ TEST(conv2d, compute_image2d_5x5) {
               DDim out_image_shape =
                   default_convertor.InitImageDimInfoWith(output.dims());
 
-              default_convertor.ImageToNCHW(out_image_v.data(),
+              default_convertor.ImageToNCHW(out_image_data,
                                             output_v.data(),
                                             out_image_shape,
                                             output.dims());
@@ -1112,8 +1136,10 @@ TEST(conv2d, compute_image2d_5x5) {
               }
 
               SHADOW_LOG << "输出image: ----  ";
-              for (int i = 0; i < out_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << out_image_v[i];
+              for (int i = 0; i < out_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(out_image->data<half_t>() + i))
+                    : *(out_image->data<float>() + i);
               }
               SHADOW_LOG << "mutable_data out_ref_data: ";
 
@@ -1158,8 +1184,8 @@ TEST(conv2d, compute_image2d_5x5) {
                 EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                              abs_diff > FP16_ABS_DIFF);
                 if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
-                  LOG(FATAL) << "error idx:" << i << "output_v[" << i
-                             << "]:" << output_v[i] << " "
+                  LOG(FATAL) << "error idx:" << i << "\toutput_v[" << i
+                             << "]:" << output_v[i] << "\t"
                                                        "out_ref_data["
                              << i << "]:" << out_ref_data[i];
                 }
@@ -1362,47 +1388,57 @@ TEST(conv2d, compute_image2d_7x7) {
 
               paddle::lite::CLImageConverterDefault default_convertor;
               SHADOW_LOG << "set mapped input  ...";
-              std::vector<half_t> x_image_v(
-                  input_image_width * input_image_height * 4);  // 4 : RGBA
-              std::vector<half_t> filter_image_v(
-                  filter_image_width * filter_image_height * 4);  // 4 : RGBA
-              std::vector<half_t> bias_image_v(
-                  bias_image_width * bias_image_height * 4);  // 4 : RGBA
-              std::vector<half_t> out_image_v(
-                  out_image_width * out_image_height * 4);  // 4 : RGBA
+
+              auto x_image = std::unique_ptr<Tensor>(new Tensor);
+              x_image->Resize({1, input_image_width, input_image_height, 4});
+              auto* x_image_data = MUTABLE_DATA_CPU(x_image);
+              auto filter_image = std::unique_ptr<Tensor>(new Tensor);
+              filter_image->Resize(
+                  {1, filter_image_width, filter_image_height, 4});
+              auto* filter_image_data = MUTABLE_DATA_CPU(filter_image);
+              auto bias_image = std::unique_ptr<Tensor>(new Tensor);
+              bias_image->Resize({1, bias_image_width, bias_image_height, 4});
+              auto* bias_image_data = MUTABLE_DATA_CPU(bias_image);
+              auto out_image = std::unique_ptr<Tensor>(new Tensor);
+              out_image->Resize({1, out_image_width, out_image_height, 4});
+              auto* out_image_data = MUTABLE_DATA_CPU(out_image);
 
               default_convertor.NCHWToImage(
-                  input_v.data(), x_image_v.data(), input_dim);
+                  input_v.data(), x_image_data, input_dim);
               SHADOW_LOG << "输入: ----  ";
               for (int i = 0; i < input_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << input_v[i];
               }
               SHADOW_LOG << "输入image : ----  ";
-              for (int i = 0; i < x_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << Half2Float(x_image_v[i]);
+              for (int i = 0; i < x_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(x_image->data<half_t>() + i))
+                    : *(x_image->data<float>() + i);
               }
               SHADOW_LOG << "set mapped filter  ...";
               CLImageConverterFolder folder_convertor;
 
               folder_convertor.NCHWToImage(
-                  filter_v.data(), filter_image_v.data(), filter_dim);
+                  filter_v.data(), filter_image_data, filter_dim);
               SHADOW_LOG << "卷积核: ----  ";
               for (int i = 0; i < filter_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << filter_v[i];
               }
               SHADOW_LOG << "卷积核image: ----  ";
-              for (int i = 0; i < filter_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << Half2Float(filter_image_v[i]);
+              for (int i = 0; i < filter_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(filter_image->data<half_t>() + i))
+                    : *(filter_image->data<float>() + i);
               }
-              auto* input_image2d = input.mutable_data<half_t, cl::Image2D>(
-                  input_image_width, input_image_height, x_image_v.data());
+              MUTABLE_DATA_GPU(
+                  &input, input_image_width, input_image_height, x_image_data);
 
               // assign filter as target arm
               filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                              filter_dim);
               if (bias_flag) {
                 for (int i = 0; i < bias_dim.production(); ++i) {
-                  bias_v[i] = static_cast<int>(gen(engine));
+                  bias_v[i] = static_cast<float>(gen(engine));
                 }
                 bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(),
                                                              bias_dim);
@@ -1420,13 +1456,13 @@ TEST(conv2d, compute_image2d_7x7) {
               SHADOW_LOG << "kernel launch ...";
               kernel->Launch();
               SHADOW_LOG << "mutable output ...";
-              auto* output_image2d = output.mutable_data<half_t, cl::Image2D>(
-                  out_image_width, out_image_height);
+              auto* output_image2d = MUTABLE_DATA_GPU(
+                  &output, out_image_width, out_image_height, nullptr);
 
               CLRuntime::Global()->command_queue().finish();
 
-              TargetWrapperCL::ImgcpySync(out_image_v.data(),
-                                          output.data<half_t, cl::Image2D>(),
+              TargetWrapperCL::ImgcpySync(out_image_data,
+                                          GET_DATA_GPU(&output),
                                           out_image_width,
                                           out_image_height,
                                           cl_image2d_row_pitch,
@@ -1436,7 +1472,7 @@ TEST(conv2d, compute_image2d_7x7) {
               DDim out_image_shape =
                   default_convertor.InitImageDimInfoWith(output.dims());
 
-              default_convertor.ImageToNCHW(out_image_v.data(),
+              default_convertor.ImageToNCHW(out_image_data,
                                             output_v.data(),
                                             out_image_shape,
                                             output.dims());
@@ -1447,8 +1483,10 @@ TEST(conv2d, compute_image2d_7x7) {
               }
 
               SHADOW_LOG << "输出image: ----  ";
-              for (int i = 0; i < out_image_v.size(); i++) {
-                SHADOW_LOG << "(" << i << ")" << Half2Float(out_image_v[i]);
+              for (int i = 0; i < out_image->numel(); i++) {
+                SHADOW_LOG << "(" << i << ")" << fp16_support_
+                    ? Half2Float(*(out_image->data<half_t>() + i))
+                    : *(out_image->data<float>() + i);
               }
               SHADOW_LOG << "mutable_data out_ref_data: ";
 
@@ -1493,8 +1531,8 @@ TEST(conv2d, compute_image2d_7x7) {
                 EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                              abs_diff > FP16_ABS_DIFF);
                 if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
-                  LOG(FATAL) << "error idx:" << i << "output_v[" << i
-                             << "]:" << output_v[i] << " "
+                  LOG(FATAL) << "error idx:" << i << "\toutput_v[" << i
+                             << "]:" << output_v[i] << "\t"
                                                        "out_ref_data["
                              << i << "]:" << out_ref_data[i];
                 }
