@@ -207,7 +207,8 @@ void SaveModelPb(const std::string &model_dir,
       auto *var = exec_scope.FindVar(item.name());
       const auto &tensor = var->Get<lite::Tensor>();
       if (tensor.target() == TARGET(kCUDA)) {
-        LOG(FATAL);
+        LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
+                      "please copy it to the Host Tensor temporarily.";
       }
       saver.SaveWithForwardWriter(tensor, &file);
     }
