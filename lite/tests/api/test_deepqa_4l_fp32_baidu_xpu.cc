@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ DEFINE_int32(iteration, 9, "iteration times to run");
 namespace paddle {
 namespace lite {
 
-TEST(Ernie, test_ernie_fp32_baidu_xpu) {
+TEST(deepqa_4l, test_deepqa_4l_fp32_baidu_xpu) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
@@ -39,7 +39,7 @@ TEST(Ernie, test_ernie_fp32_baidu_xpu) {
   config.set_xpu_workspace_l3_size_per_thread();
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
-  std::string input_data_file = FLAGS_data_dir + std::string("/bert_in.txt");
+  std::string input_data_file = FLAGS_data_dir + std::string("/input_data.txt");
   std::vector<std::vector<int64_t>> input0;
   std::vector<std::vector<int64_t>> input1;
   std::vector<std::vector<int64_t>> input2;
@@ -74,8 +74,8 @@ TEST(Ernie, test_ernie_fp32_baidu_xpu) {
     auto output_shape = output_tensor->shape();
     auto output_data = output_tensor->data<float>();
     ASSERT_EQ(output_shape.size(), 2UL);
-    ASSERT_EQ(output_shape[0], 1);
-    ASSERT_EQ(output_shape[1], 1);
+    ASSERT_EQ(output_shape[0], input_shapes[i][0]);
+    ASSERT_EQ(output_shape[1], 2);
 
     int output_size = output_shape[0] * output_shape[1];
     out_rets[i].resize(output_size);
@@ -88,7 +88,7 @@ TEST(Ernie, test_ernie_fp32_baidu_xpu) {
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 
-  std::string ref_out_file = FLAGS_data_dir + std::string("/ernie_out.txt");
+  std::string ref_out_file = FLAGS_data_dir + std::string("/output_data.txt");
   float out_accuracy = CalErnieOutAccuracy(out_rets, ref_out_file);
   ASSERT_GT(out_accuracy, 0.95f);
 }

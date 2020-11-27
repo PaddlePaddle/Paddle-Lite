@@ -43,17 +43,17 @@ TEST(Bert, test_bert_fp32_baidu_xpu) {
   std::vector<std::vector<int64_t>> input0;
   std::vector<std::vector<int64_t>> input1;
   std::vector<std::vector<int64_t>> input2;
-  std::vector<std::vector<int64_t>> input3;
+  std::vector<std::vector<float>> input3;
   std::vector<std::vector<int64_t>> input_shapes;
   ReadRawData(
       input_data_file, &input0, &input1, &input2, &input3, &input_shapes);
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
     std::vector<int64_t> shape = {1, 64, 1};
-    std::vector<int64_t> fill_value(64, 0);
-    for (int j = 0; j < 4; j++) {
-      FillTensor(predictor, j, shape, fill_value);
-    }
+    FillTensor(predictor, 0, shape, std::vector<int64_t>(64, 0));
+    FillTensor(predictor, 1, shape, std::vector<int64_t>(64, 0));
+    FillTensor(predictor, 2, shape, std::vector<int64_t>(64, 0));
+    FillTensor(predictor, 3, shape, std::vector<float>(64, 0));
     predictor->Run();
   }
 

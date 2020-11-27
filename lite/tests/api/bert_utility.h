@@ -26,12 +26,11 @@
 namespace paddle {
 namespace lite {
 
-template <class T = int64_t>
 void ReadRawData(const std::string& input_data_dir,
-                 std::vector<std::vector<T>>* input0,
-                 std::vector<std::vector<T>>* input1,
-                 std::vector<std::vector<T>>* input2,
-                 std::vector<std::vector<T>>* input3,
+                 std::vector<std::vector<int64_t>>* input0,
+                 std::vector<std::vector<int64_t>>* input1,
+                 std::vector<std::vector<int64_t>>* input2,
+                 std::vector<std::vector<float>>* input3,
                  std::vector<std::vector<int64_t>>* input_shapes) {
   auto lines = ReadLines(input_data_dir);
   for (auto line : lines) {
@@ -40,17 +39,17 @@ void ReadRawData(const std::string& input_data_dir,
         Split<int64_t>(Split(shape_and_data[0], ":")[0], " ");
     input_shapes->emplace_back(input_shape);
 
-    std::vector<T> input0_data =
-        Split<T>(Split(shape_and_data[0], ":")[1], " ");
+    std::vector<int64_t> input0_data =
+        Split<int64_t>(Split(shape_and_data[0], ":")[1], " ");
     input0->emplace_back(input0_data);
-    std::vector<T> input1_data =
-        Split<T>(Split(shape_and_data[1], ":")[1], " ");
+    std::vector<int64_t> input1_data =
+        Split<int64_t>(Split(shape_and_data[1], ":")[1], " ");
     input1->emplace_back(input1_data);
-    std::vector<T> input2_data =
-        Split<T>(Split(shape_and_data[2], ":")[1], " ");
+    std::vector<int64_t> input2_data =
+        Split<int64_t>(Split(shape_and_data[2], ":")[1], " ");
     input2->emplace_back(input2_data);
-    std::vector<T> input3_data =
-        Split<T>(Split(shape_and_data[3], ":")[1], " ");
+    std::vector<float> input3_data =
+        Split<float>(Split(shape_and_data[3], ":")[1], " ");
     input3->emplace_back(input3_data);
   }
 }
@@ -130,19 +129,24 @@ float CalBertOutAccuracy(const std::vector<std::vector<float>>& out,
 }
 
 float CalErnieOutAccuracy(const std::vector<std::vector<float>>& out,
-                          const std::string& out_file) {
+                          const std::string& out_file,
+                          float abs_error = 0.01) {
   auto lines = ReadLines(out_file);
   std::vector<std::vector<float>> ref_out;
   for (auto line : lines) {
     ref_out.emplace_back(Split<float>(line, " "));
   }
 
-  int right_num = 0;
+  size_t right_num = 0;
+  size_t all_num = 0;
   for (size_t i = 0; i < out.size(); i++) {
-    right_num += (std::fabs(out[i][0] - ref_out[i][0]) < 0.01f);
+    all_num += out[i].size();
+    for (size_t j = 0; j < out[i].size(); j++) {
+      right_num += (std::fabs(out[i][j] - ref_out[i][j]) < abs_error);
+    }
   }
 
-  return static_cast<float>(right_num) / static_cast<float>(out.size());
+  return static_cast<float>(right_num) / static_cast<float>(all_num);
 }
 
 float CalMmdnnOutAccuracy(const std::vector<float>& out,
