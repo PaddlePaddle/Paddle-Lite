@@ -62,8 +62,6 @@ if(LITE_WITH_NPU)
     lite_cc_test_with_model_and_data(test_mobilenet_v3_large_x1_0_fp32_huawei_kirin_npu MODEL mobilenet_v3_large_x1_0 DATA ILSVRC2012_small)
     lite_cc_test_with_model_and_data(test_resnet50_fp32_huawei_kirin_npu MODEL resnet50 DATA ILSVRC2012_small)
     lite_cc_test_with_model_and_data(test_squeezenet_fp32_huawei_kirin_npu MODEL squeezenet DATA ILSVRC2012_small)
-    # Build IRGraph failed when the scale node in front of layer_norm is removed, enable the test after it is fixed by Huawei
-    # lite_cc_test_with_model_and_data(test_transformer_with_mask_fp32_huawei_kirin_npu MODEL transformer_with_mask_fp32)
 endif()
 
 if(LITE_WITH_XPU AND NOT LITE_WITH_XTCL)
