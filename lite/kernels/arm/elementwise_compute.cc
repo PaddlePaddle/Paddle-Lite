@@ -486,7 +486,6 @@ REGISTER_LITE_KERNEL(
 
 using elementwise_div_fp32_t =
     paddle::lite::kernels::arm::ElementwiseDivCompute<float, PRECISION(kFloat)>;
-
 REGISTER_LITE_KERNEL(
     elementwise_div, kARM, kFloat, kNCHW, elementwise_div_fp32_t, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
