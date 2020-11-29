@@ -29,7 +29,7 @@ class ExpandComputeTester : public arena::TestCase {
   std::string x_ = "X";
   std::string out_ = "Out";
   std::string expandtimes_ = "ExpandTimes";
-  std::string expand_times_tensor_ = "expand_times_tensor";
+  std::vector<std::string> expand_times_tensor_ = {};
   std::vector<int> expand_times_;
   DDim dims_;
 
@@ -38,7 +38,15 @@ class ExpandComputeTester : public arena::TestCase {
                       const std::string& alias,
                       const std::vector<int>& expand_times,
                       DDim dims)
-      : TestCase(place, alias), expand_times_(expand_times), dims_(dims) {}
+      : TestCase(place, alias), expand_times_(expand_times), dims_(dims) {
+    if (has_expand_times_tensor) {
+      std::string test_expand_times_tensor = "test_expand_times_tensor";
+      for (size_t i = 0; i < expand_times.size(); ++i) {
+        expand_times_tensor_.push_back(test_expand_times_tensor);
+        test_expand_times_tensor += "_next";
+      }
+    }
+  }
 
   void RunBaseline(Scope* scope) override {
     const auto* input = scope->FindTensor(x_);
@@ -99,15 +107,10 @@ class ExpandComputeTester : public arena::TestCase {
                       expand_times_.data());
     }
     if (has_expand_times_tensor) {
-      std::vector<DDim> expand_times_tensor_dims(expand_times_.size(),
-                                                 DDim{{1}});
-      std::vector<std::vector<int>> expand_times_tensor_data;
       for (size_t i = 0; i < expand_times_.size(); i++) {
-        expand_times_tensor_data.push_back({expand_times_[i]});
+        SetCommonTensor(
+            expand_times_tensor_[i], DDim{{1}}, expand_times_.data() + i);
       }
-      SetCommonTensorList(expand_times_tensor_,
-                          expand_times_tensor_dims,
-                          expand_times_tensor_data);
     }
   }
 };
