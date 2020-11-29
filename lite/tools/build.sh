@@ -386,11 +386,15 @@ function make_x86 {
     export CXX=g++ # Huawei Ascend NPU need g++
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
-
+  
   if [ ${WITH_OPENCL} == "ON" ]; then
     BUILD_EXTRA=ON
     build_directory=$BUILD_DIR/build.lite.x86.opencl
     prepare_opencl_source_code $root_dir $build_directory
+  fi
+
+  if [ ${BUILD_PYTHON} == "ON" ]; then
+    BUILD_EXTRA=ON
   fi
 
   if [ -d $build_directory ]
