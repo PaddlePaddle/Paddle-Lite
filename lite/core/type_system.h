@@ -338,8 +338,10 @@ class ParamTypeRegistry {
       // Dafault op_version will be bound to kernel registry if
       // `BindPaddleOpVersion` has not been applied.
       // Default op version of registered kernel is {kernel_type_, 0}
-      if (ParamTypeRegistry::Global().GetVersion(
-              kernel_type_, Place{target, precision, layout}) == -1) {
+      if (ParamTypeRegistry::Global()
+              .GetKernelVersion(kernel_type_, Place{target, precision, layout})
+              .OpVersions()
+              .empty()) {
         ParamTypeRegistry::Global().BindPaddleOpVersion(
             kernel_type_, 0, kernel_type_, Place{target, precision, layout});
       }

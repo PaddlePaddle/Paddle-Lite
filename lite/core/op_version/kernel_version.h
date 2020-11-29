@@ -21,7 +21,7 @@
 #pragma once
 #include <map>
 #include <string>
-#include "lite/utils/logging.h"
+#include "lite/utils/cp_logging.h"
 namespace paddle {
 namespace lite {
 
