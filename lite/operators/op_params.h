@@ -1437,7 +1437,7 @@ struct UnsqueezeParam : ParamBase {
 struct ExpandParam : ParamBase {
   const lite::Tensor* X{nullptr};
   const lite::Tensor* ExpandTimes{nullptr};
-  const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
+  std::vector<const lite::Tensor*> expand_times_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
 };
