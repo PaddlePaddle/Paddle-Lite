@@ -23,25 +23,42 @@ namespace operators {
 bool UniformRandomOpLite::CheckShape() const { return true; }
 
 bool UniformRandomOpLite::InferShapeImpl() const {
-  if (param_.X) {
-    if (param_.X->precision() == PrecisionType::kInt64) {
-      auto* new_data = param_.X->data<int64_t>();
-      std::vector<int64_t> new_shape(new_data, new_data + param_.X->numel());
-      param_.Out->Resize(new_shape);
-    } else if (param_.X->precision() == PrecisionType::kInt32) {
-      std::vector<int64_t> new_shape;
-      auto* new_data = param_.X->data<int32_t>();
-      for (int i = 0; i < param_.X->numel(); ++i) {
-        new_shape.push_back(static_cast<int64_t>(*(new_data + i)));
+  std::vector<int64_t> out_shape;
+  auto* shape_tensor = param_.shape_tensor;
+  auto& shape_tensor_list = param_.shape_tensor_list;
+  if (shape_tensor) {
+    if (shape_tensor->precision() == PrecisionType::kInt64) {
+      auto* shape_tensor_data = shape_tensor->data<int64_t>();
+      for (int i = 0; i < shape_tensor->numel(); i++) {
+        out_shape.push_back(shape_tensor_data[i]);
       }
-      param_.Out->Resize(new_shape);
+    } else if (shape_tensor->precision() == PrecisionType::kInt32) {
+      auto* shape_tensor_data = shape_tensor->data<int32_t>();
+      for (int i = 0; i < shape_tensor->numel(); i++) {
+        out_shape.push_back(shape_tensor_data[i]);
+      }
     } else {
       LOG(ERROR) << "The dtype of shape tensor must be int32 or int64.";
     }
+  } else if (!shape_tensor_list.empty()) {
+    for (size_t i = 0; i < shape_tensor_list.size(); i++) {
+      auto* shape_tensor = shape_tensor_list[i];
+      if (shape_tensor->precision() == PrecisionType::kInt64) {
+        out_shape.push_back(shape_tensor->data<int64_t>()[0]);
+      } else if (shape_tensor->precision() == PrecisionType::kInt32) {
+        out_shape.push_back(shape_tensor->data<int32_t>()[0]);
+      } else {
+        LOG(ERROR) << "The dtype of shape tensor must be int32 or int64.";
+      }
+    }
+  } else if (!param_.shape.empty()) {
+    out_shape = param_.shape;
   } else {
-    auto new_shape = param_.shape;
-    param_.Out->Resize(new_shape);
+    LOG(FATAL) << "no valid out_shape. Must set one of shape_tensor, or "
+                  "shape_tensor_list, or shape.";
   }
+
+  param_.Out->Resize(out_shape);
   return true;
 }
 
@@ -52,9 +69,18 @@ bool UniformRandomOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   param_.max = opdesc.GetAttr<float>("max");
   param_.seed = opdesc.GetAttr<int>("seed");
   param_.dtype = opdesc.GetAttr<int>("dtype");
-  if (opdesc.HasInput("ShapeTensor")) {
-    auto X = opdesc.Input("ShapeTensor").front();
-    param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
+  param_.shape_tensor = nullptr;
+  if (opdesc.HasInput("ShapeTensor") && !opdesc.Input("ShapeTensor").empty()) {
+    auto shape_tensor_name = opdesc.Input("ShapeTensor").front();
+    param_.shape_tensor = GetMutableVar<lite::Tensor>(scope, shape_tensor_name);
+  }
+  param_.shape_tensor_list.clear();  // Avoid errors caused by repeated calls
+  if (opdesc.HasInput("ShapeTensorList") &&
+      !opdesc.Input("ShapeTensorList").empty()) {
+    for (auto shape_tensor_name : opdesc.Input("ShapeTensorList")) {
+      param_.shape_tensor_list.push_back(
+          GetMutableVar<lite::Tensor>(scope, shape_tensor_name));
+    }
   }
   param_.Out = GetMutableVar<Tensor>(scope, opdesc.Output("Out").front());
   return true;
