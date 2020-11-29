@@ -45,7 +45,7 @@ int32_t OpVersionMap::GetOpVersionByName(const std::string& name) const {
 void OpVersionMap::SetOpVersionMap(
     const std::map<std::string, int32_t>& op_version_map) {
   op_version_map_->Clear();
-  for (auto iter = op_version_map.begin(); iter != op_version_map.begin();
+  for (auto iter = op_version_map.begin(); iter != op_version_map.end();
        iter++) {
     AddOpVersion(iter->first, iter->second);
   }
