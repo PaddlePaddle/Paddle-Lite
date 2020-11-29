@@ -51,6 +51,17 @@ class ProgramDescView : public ProgramDescAPI {
     }
   }
 
+  /////////////////////////////////////////////////////////////////
+  // Name: OpVersionMap
+  // Description: a map that strores paddle ops version
+  // note: flatbuffer doesn't contain op_version_map, because
+  //       op_version_map is not useful in inference period.
+  /////////////////////////////////////////////////////////////////
+  bool HasOpVersionMap() const override { return false; }
+
+  template <typename T>
+  T* GetOpVersionMap();
+
   size_t BlocksSize() const override { return blocks_.size(); }
 
   template <typename T>

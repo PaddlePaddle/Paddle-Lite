@@ -32,6 +32,13 @@ BlockDescView const* ProgramDescView::GetBlock<BlockDescView>(
   return &blocks_[idx];
 }
 
+template <>
+proto::OpVersionMap* ProgramDescView::GetOpVersionMap<proto::OpVersionMap>() {
+  // op_version_map is not implemented on naive_buffer as
+  // it's not useful in inference period.
+  return nullptr;
+}
+
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 template <>
 proto::BlockDescT* ProgramDesc::GetBlock<proto::BlockDescT>(int32_t idx) {
