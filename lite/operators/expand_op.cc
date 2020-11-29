@@ -44,8 +44,16 @@ bool ExpandOpLite::CheckShape() const {
 
 bool ExpandOpLite::InferShapeImpl() const {
   DDim out_dims(param_.X->dims());
-  for (size_t i = 0; i < param_.expand_times.size(); ++i) {
-    out_dims[i] *= param_.expand_times[i];
+  if (param_.expand_times.size()) {
+    for (size_t i = 0; i < param_.expand_times.size(); ++i) {
+      out_dims[i] *= param_.expand_times[i];
+    }
+  } else {
+    for (size_t i = 0; i < param_.ExpandTimes->numel(); ++i) {
+      auto ExpandTimes_value =
+          static_cast<const int32_t*>(param_.ExpandTimes->data<int32_t>());
+      out_dims[i] *= (ExpandTimes_value[i]);
+    }
   }
   param_.Out->Resize(out_dims);
   return true;
@@ -56,15 +64,15 @@ bool ExpandOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto Out_name = opdesc.Output("Out").front();
   param_.X = GetVar<lite::Tensor>(scope, X_name);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
-
-  if (opdesc.HasInput("ExpandTimes")) {
-    param_.ExpandTimes = scope->FindTensor("ExpandTimes");
-  }
   if (opdesc.HasInput("expand_times_tensor")) {
     param_.expand_times_tensor = scope->FindTensorList("expand_times_tensor");
   }
 
   param_.expand_times = opdesc.GetAttr<std::vector<int>>("expand_times");
+  if (opdesc.HasInput("ExpandTimes")) {
+    auto ExpandTimes_name = opdesc.Input("ExpandTimes").front();
+    param_.ExpandTimes = GetMutableVar<lite::Tensor>(scope, ExpandTimes_name);
+  }
   return true;
 }
 
