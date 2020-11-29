@@ -22,7 +22,7 @@ namespace kernels {
 namespace host {
 
 class ShuffleChannelCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::ShuffleChannelParam;
 

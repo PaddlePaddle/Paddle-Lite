@@ -64,5 +64,26 @@ const char* opencl_error_to_str(cl_int error);
   context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(    \
       kernel, gws_offset, gws, lws, event_wait_list, &event)
 
+// mutable_data
+#define MUTABLE_DATA_GPU(tensor_instance_p, img_w, img_h, ptr)     \
+  (fp16_support_)                                                  \
+      ? (tensor_instance_p)                                        \
+            ->mutable_data<half_t, cl::Image2D>(img_w, img_h, ptr) \
+      : (tensor_instance_p)                                        \
+            ->mutable_data<float, cl::Image2D>(img_w, img_h, ptr)
+
+#define DATA_GPU(tensor_instance_p)                                          \
+  (fp16_support_) ? (tensor_instance_p)->mutable_data<half_t, cl::Image2D>() \
+                  : (tensor_instance_p)->mutable_data<float, cl::Image2D>()
+
+#define GET_DATA_GPU(tensor_instance_p)                              \
+  (fp16_support_) ? (tensor_instance_p)->data<half_t, cl::Image2D>() \
+                  : (tensor_instance_p)->data<float, cl::Image2D>()
+
+#define MUTABLE_DATA_CPU(tensor_instance_p)                             \
+  (fp16_support_)                                                       \
+      ? static_cast<void*>((tensor_instance_p)->mutable_data<half_t>()) \
+      : static_cast<void*>((tensor_instance_p)->mutable_data<float>())
+
 }  // namespace lite
 }  // namespace paddle

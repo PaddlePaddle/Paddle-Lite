@@ -207,7 +207,8 @@ void SaveModelPb(const std::string &model_dir,
       auto *var = exec_scope.FindVar(item.name());
       const auto &tensor = var->Get<lite::Tensor>();
       if (tensor.target() == TARGET(kCUDA)) {
-        LOG(FATAL);
+        LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
+                      "please copy it to the Host Tensor temporarily.";
       }
       saver.SaveWithForwardWriter(tensor, &file);
     }
@@ -436,8 +437,8 @@ void SaveModelNaive(const std::string &model_file,
   /* 3. Save combined params to params.fbs */
   fbs::CombinedParamsDesc params_prog;
   fbs::SetCombinedParamsWithScope(exec_scope, unique_var_names, &params_prog);
-  AppendToFile(
-      prog_path, (params_prog.data()).data(), (params_prog.data()).size());
+  auto data_cache = params_prog.data();
+  AppendToFile(prog_path, data_cache.data(), data_cache.size());
 
   LOG(INFO) << "Save naive buffer model in '" << prog_path << " successfully";
 }

@@ -77,9 +77,9 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
-    auto* x_img = scale_param_->x->data<half_t, cl::Image2D>();
-    auto* out_img = scale_param_->output->mutable_data<half_t, cl::Image2D>(
-        out_img_shape_[0], out_img_shape_[1]);
+    auto* x_img = DATA_GPU(scale_param_->x);
+    auto* out_img = MUTABLE_DATA_GPU(
+        scale_param_->output, out_img_shape_[0], out_img_shape_[1], nullptr);
     const float scale = scale_param_->scale;
     const float bias = scale_param_->bias;
 
@@ -117,7 +117,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
  private:
   std::string kernel_func_name_{"scale"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
   param_t* scale_param_{nullptr};
