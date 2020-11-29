@@ -33,17 +33,13 @@ namespace lite {
 
 class KernelVersion {
  public:
-  // Construtor funtions
-  KernelVersion() = default;
-  KernelVersion(KernelVersion&&) = default;
-  KernelVersion& operator=(KernelVersion&&) = default;
   // Fill op_versions into kernel_version
   void AddOpVersion(const std::string& name, uint32_t op_version) {
     if (!op_versions_.count(name)) {
       op_versions_[name] = op_version;
     } else {
       LOG(FATAL) << "Error: binding kernel to the version of op(" << name
-                 << ") more than once is not allowed.\n";
+                 << ") more than once is not allowed.";
     }
   }
   // Return the content of kernel_version: list(op_version)
@@ -61,7 +57,7 @@ class KernelVersion {
       return op_versions_[op_name];
     } else {
       LOG(FATAL) << "Error: This kernel has not been bound to Paddle op ("
-                 << op_name << ") 's version.\n";
+                 << op_name << ") 's version.";
       return 0;
     }
   }

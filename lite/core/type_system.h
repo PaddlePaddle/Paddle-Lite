@@ -401,7 +401,7 @@ class ParamTypeRegistry {
                    << "it's bound to version("
                    << kernel_versions_[key].GetOpVersion(op_type)
                    << ") before, but now rebound to another version ("
-                   << version << ").\n";
+                   << version << ").";
       } else {
         return;
       }
@@ -410,7 +410,7 @@ class ParamTypeRegistry {
     kernel_versions_[key].AddOpVersion(op_type, version);
     CHECK(kernel_versions_.count(key)) << "Error: failed to bind lite kernel ("
                                        << kernel_type << ") to op version of ("
-                                       << op_type << ").\n";
+                                       << op_type << ").";
   }
 
   ///////////////////////////////////////////////////////////////////////
