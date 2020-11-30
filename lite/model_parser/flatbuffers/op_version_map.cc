@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include "lite/model_parser/base/block_desc.h"
-#include "lite/model_parser/base/op_desc.h"
-#include "lite/model_parser/base/op_version_map.h"
-#include "lite/model_parser/base/param_desc.h"
-#include "lite/model_parser/base/program_desc.h"
-#include "lite/model_parser/base/proto_desc.h"
-#include "lite/model_parser/base/traits.h"
-#include "lite/model_parser/base/var_desc.h"
-#include "lite/utils/all.h"
+#include "lite/model_parser/flatbuffers/op_version_map.h"

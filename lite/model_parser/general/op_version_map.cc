@@ -12,14 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include "lite/model_parser/base/block_desc.h"
-#include "lite/model_parser/base/op_desc.h"
-#include "lite/model_parser/base/op_version_map.h"
-#include "lite/model_parser/base/param_desc.h"
-#include "lite/model_parser/base/program_desc.h"
-#include "lite/model_parser/base/proto_desc.h"
-#include "lite/model_parser/base/traits.h"
-#include "lite/model_parser/base/var_desc.h"
-#include "lite/utils/all.h"
+#include "lite/model_parser/general/op_version_map.h"
