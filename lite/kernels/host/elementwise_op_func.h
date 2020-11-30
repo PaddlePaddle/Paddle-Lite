@@ -492,13 +492,25 @@ void fix_x_y_dims(const Tensor *X,
     }
   } else {
     if (X->dims().size() != Out->dims().size()) {
-      LOG(FATAL) << "X and OUT dim size mismatch";
-    }
-    for (int i = 0; i < out_dim_size; ++i) {
-      x_dims[i] = X->dims()[i];
-    }
-    for (int i = axis; i < out_dim_size; ++i) {
-      y_dims[i + axis] = Y->dims()[i];
+      if (Y->dims().size() != Out->dims().size()) {
+        LOG(FATAL) << "X/Y and OUT dim size mismatch";
+      } else {
+        LOG(INFO) << "Arguments broke API reference, for X.dims().size() is "
+                     "smaller and axis is set";
+        for (int i = 0; i < out_dim_size; ++i) {
+          y_dims[i] = Y->dims()[i];
+        }
+        for (int i = 0; i < X->dims().size(); ++i) {
+          x_dims[i + axis] = X->dims()[i];
+        }
+      }
+    } else {
+      for (int i = 0; i < out_dim_size; ++i) {
+        x_dims[i] = X->dims()[i];
+      }
+      for (int i = 0; i < Y->dims().size(); ++i) {
+        y_dims[i + axis] = Y->dims()[i];
+      }
     }
   }
 }

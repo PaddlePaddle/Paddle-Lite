@@ -151,10 +151,6 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
   auto& param = kernel->template Param<OpParamType>();
   auto x = param.X;
   auto y = param.Y;
-  if (opd_swap_able == OprandSwapable::YES &&
-      x->dims().size() < y->dims().size()) {
-    std::swap(x, y);
-  }
 
   auto* x_data = x->template data<T>();
   auto* y_data = y->template data<T>();
