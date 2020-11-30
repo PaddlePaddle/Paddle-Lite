@@ -19,6 +19,8 @@
 #include <vector>
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
+#include "lite/utils/replace_stl/stream.h"
+
 #ifdef LITE_WITH_OPENCL
 #include "lite/backends/opencl/cl_include.h"
 #endif

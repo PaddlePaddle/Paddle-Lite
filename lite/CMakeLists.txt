@@ -516,3 +516,16 @@ if (LITE_WITH_BM)
     add_dependencies(publish_inference_bm_cxx_demos paddle_full_api_shared)
     add_dependencies(publish_inference publish_inference_bm_cxx_demos)
 endif()
+if (LITE_WITH_MLU)
+    add_custom_target(publish_inference_mlu_cxx_demos ${TARGET}
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mlu_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/lib"
+        COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/include"
+        COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/api/libpaddle_full_api_shared.so" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/lib"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_place.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/include"
+        COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/api/paddle_api.h" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mlu_demo/include"
+    )
+    add_dependencies(publish_inference_mlu_cxx_demos paddle_full_api_shared)
+    add_dependencies(publish_inference publish_inference_mlu_cxx_demos)
+endif()

@@ -271,7 +271,7 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
     BroadcastType broadcast_type) {
   // arg checking
   if (broadcast_type == BroadcastType::UNKNOWN) {
-    LOG(INFO) << "No broadcast type input";
+    VLOG(4) << "No broadcast type input";
     broadcast_type = get_broadcast_type(x_dims, y_dims, dim_size);
   }
   if (broadcast_type == BroadcastType::UNKNOWN ||
@@ -281,7 +281,7 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
   }
   if (broadcast_type == BroadcastType::SAME_DIM) {
     broadcast_type = BroadcastType::BOTH_CONTINUOUS;
-    LOG(INFO) << "Same dim detected";
+    VLOG(4) << "Same dim detected";
     // SAME_DIM should not be treated as broadcast. For SAME_DIM is a special
     // case of BOTH_CONTINUOUS, we could still process it.
   }
@@ -492,13 +492,25 @@ void fix_x_y_dims(const Tensor *X,
     }
   } else {
     if (X->dims().size() != Out->dims().size()) {
-      LOG(FATAL) << "X and OUT dim size mismatch";
-    }
-    for (int i = 0; i < out_dim_size; ++i) {
-      x_dims[i] = X->dims()[i];
-    }
-    for (int i = axis; i < out_dim_size; ++i) {
-      y_dims[i + axis] = Y->dims()[i];
+      if (Y->dims().size() != Out->dims().size()) {
+        LOG(FATAL) << "X/Y and OUT dim size mismatch";
+      } else {
+        VLOG(4) << "Arguments broke API reference, for X.dims().size() is "
+                   "smaller and axis is set";
+        for (int i = 0; i < out_dim_size; ++i) {
+          y_dims[i] = Y->dims()[i];
+        }
+        for (int i = 0; i < X->dims().size(); ++i) {
+          x_dims[i + axis] = X->dims()[i];
+        }
+      }
+    } else {
+      for (int i = 0; i < out_dim_size; ++i) {
+        x_dims[i] = X->dims()[i];
+      }
+      for (int i = 0; i < Y->dims().size(); ++i) {
+        y_dims[i + axis] = Y->dims()[i];
+      }
     }
   }
 }
