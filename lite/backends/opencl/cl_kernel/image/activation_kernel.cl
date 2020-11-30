@@ -16,7 +16,6 @@ limitations under the License. */
 
 __kernel void relu(__read_only image2d_t input,
                    __write_only image2d_t output,
-                   __read_only image2d_t output2,
                    __private const float threshold,
                    __private const float scale) {
   const int x = get_global_id(0);  // image_width
