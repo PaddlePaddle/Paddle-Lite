@@ -1977,6 +1977,14 @@ struct OneHotParam : ParamBase {
   bool allow_out_of_range;
 };
 
+struct TrigonometricParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+};
+
+using SinParam = TrigonometricParam;
+using CosParam = TrigonometricParam;
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
