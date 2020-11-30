@@ -54,13 +54,13 @@ inline bool is_fast_broadcast(const DDim& x_dims,
     axis = x_dims.size() - y_dims.size();
   }
   if (axis < 0) {
-    LOG(INFO) << "Fast broadcast chk fail, for x_dims smaller.";
+    VLOG(4) << "Fast broadcast chk fail, for x_dims smaller.";
     return false;
   }
   DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
   axis = (y_dim_trim.size() == 0) ? x_dims.size() : axis;
   if (x_dims.size() == y_dim_trim.size()) {
-    LOG(INFO)
+    VLOG(4)
         << "Fast broadcast chk fail, for y's shape not really contained in x";
     return false;
   }
@@ -72,7 +72,7 @@ inline bool is_fast_broadcast(const DDim& x_dims,
   }
   for (int i = 0; i < y_dim_trim.size(); ++i) {
     if (x_dims[i + axis] != y_dim_trim[i]) {
-      LOG(WARNING) << "Fast broadcast chk fail, for dimension mismatch.";
+      VLOG(4) << "Fast broadcast chk fail, for dimension mismatch.";
       return false;
     }
     (*n) *= y_dim_trim[i];
@@ -151,10 +151,6 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
   auto& param = kernel->template Param<OpParamType>();
   auto x = param.X;
   auto y = param.Y;
-  if (opd_swap_able == OprandSwapable::YES &&
-      x->dims().size() < y->dims().size()) {
-    std::swap(x, y);
-  }
 
   auto* x_data = x->template data<T>();
   auto* y_data = y->template data<T>();
