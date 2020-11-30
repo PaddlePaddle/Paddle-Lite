@@ -1,8 +1,11 @@
 if (NOT LITE_WITH_PROFILE)
   return()
 endif()
-
-lite_cc_library(basic_profiler SRCS basic_profiler.cc DEPS gflags)
+if (LITE_WITH_XCODE)
+  lite_cc_library(basic_profiler SRCS basic_profiler.cc DEPS)
+else()
+  lite_cc_library(basic_profiler SRCS basic_profiler.cc DEPS gflags)
+endif()
 lite_cc_test(test_basic_profiler SRCS basic_profiler_test.cc DEPS basic_profiler)
  
 lite_cc_library(lite_profiler SRCS profiler.cc DEPS context)

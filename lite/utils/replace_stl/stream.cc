@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include "lite/utils/string.h"
 
-#ifdef LITE_ON_TINY_PUBLISH
+#if defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_XCODE)
 
 namespace paddle {
 namespace lite {
