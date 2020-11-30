@@ -248,6 +248,29 @@ class SoftsignCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~SoftsignCompute() = default;
 };
 
+// sigmoid(x) = 1 / (1 + exp(-x))
+template <typename T>
+struct SigmoidFunctor : public BaseActivationFunctor<T> {
+  template <typename Device, typename X, typename Out>
+  void operator()(Device d, X x, Out out) const {
+    out.device(d) = (static_cast<T>(1) + (-x).exp()).inverse();
+  }
+};
+
+template <typename T>
+class SigmoidCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = this->Param<param_t>();
+    param.Out->template mutable_data<T>();
+    Activate<SigmoidFunctor<T>>(param.X, param.Out);
+  }
+
+  virtual ~SigmoidCompute() = default;
+};
+
 // relu6(x) = min(max(0, x), 6)
 template <typename T>
 struct Relu6Functor {
