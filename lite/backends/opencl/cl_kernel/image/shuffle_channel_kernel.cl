@@ -23,12 +23,11 @@ __kernel void shuffle_channel(__read_only  image2d_t input,
     const int w_idx      = get_global_id(0);
     const int c4_idx     = get_global_id(1);
     const int nh_idx     = get_global_id(2);
-    const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                              CLK_ADDRESS_CLAMP |
-                              CLK_FILTER_NEAREST;
+
     int2 output_pos;
     output_pos.x = c4_idx * out_W + w_idx;
     output_pos.y = nh_idx;
+
     CL_DTYPE4 output_data;
     for(int i = 0; i < 4; i++){
         int outc_idx = (c4_idx << 2) + i;
@@ -41,7 +40,7 @@ __kernel void shuffle_channel(__read_only  image2d_t input,
         input_pos.x = inc4_idx * out_W + w_idx;
         input_pos.y = nh_idx;
         CL_DTYPE4 input_data;
-        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
         CL_DTYPE value;
         int sub_idx = inc_idx % 4;
         if (sub_idx == 0) {

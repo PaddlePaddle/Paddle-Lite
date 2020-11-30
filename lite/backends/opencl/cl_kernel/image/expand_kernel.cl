@@ -37,10 +37,8 @@ __kernel void expend_c1(__private const int OUT_C,
 
   int2 output_pos = (int2)(out_c * OUT_W + out_w, out_nh);
   int2 input_pos = (int2)(in_w, in_nh);
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
   in.y = 0;
   in.z = 0;
   in.w = 0;
@@ -85,10 +83,10 @@ __kernel void expend_c2(__private const int OUT_C,
   int2 output_pos = (int2)(out_c * OUT_W + out_w, out_nh);
   int2 input_pos = (int2)(in_w, in_nh);
 
-  const sampler_t sampler =
+  const SAMPLER_t SAMPLER =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
   in.z = 0;
   in.w = 0;
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, in);
@@ -131,10 +129,7 @@ __kernel void expend_c3(__private const int OUT_C,
   int2 output_pos = (int2)(out_c * OUT_W + out_w, out_nh);
   int2 input_pos = (int2)(in_w, in_nh);
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
   in.w = 0;
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, in);
 }
@@ -176,10 +171,7 @@ __kernel void expend_c4(__private const int OUT_C,
   int2 output_pos = (int2)(out_c * OUT_W + out_w, out_nh);
   int2 input_pos = (int2)(in_w, in_nh);
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, in);
 }
 
@@ -221,9 +213,6 @@ __kernel void expend_cn(__private const int OUT_C,
   int2 output_pos = (int2)(out_c * OUT_W + out_w, out_nh);
   int2 input_pos = (int2)(in_c * IN_W + in_w, in_nh);
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, in);
 }

@@ -38,9 +38,6 @@ __kernel void conv2d_1x1_opt(
   int2 output_pos2 = (int2)(outpos_main + out_w2, out_nh);
   int2 output_pos3 = (int2)(outpos_main + out_w3, out_nh);
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   int2 stride_xy = (int2)(stride, stride);
 
   int2 ouput_pos_in_one_block0 = (int2)(out_w0, out_nh);
@@ -61,12 +58,12 @@ __kernel void conv2d_1x1_opt(
 
 #ifdef BIASE_CH
   CL_DTYPE4 output0 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, (int2)(out_c, 0));
+      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
   CL_DTYPE4 output1 = output0;
   CL_DTYPE4 output2 = output0;
   CL_DTYPE4 output3 = output0;
 #elif defined(BIASE_ELE)
-  CL_DTYPE4 output0 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, output_pos0);
+  CL_DTYPE4 output0 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, output_pos0);
   CL_DTYPE4 output1 = output0;
   CL_DTYPE4 output2 = output0;
   CL_DTYPE4 output3 = output0;
@@ -85,16 +82,16 @@ __kernel void conv2d_1x1_opt(
     int2 pos_in = (int2)(i * input_width + in_pos_in_one_block0.x,
                          in_pos_in_one_block0.y);
     CL_DTYPE4 input0 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, pos_in);
 
     CL_DTYPE4 weight0 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 0));
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(out_c, i * 4 + 0));
     CL_DTYPE4 weight1 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 1));
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(out_c, i * 4 + 1));
     CL_DTYPE4 weight2 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 2));
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(out_c, i * 4 + 2));
     CL_DTYPE4 weight3 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 3));
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(out_c, i * 4 + 3));
 
     if ((max_w_bound - pos_in.x - 1) < input_width &&
         (max_w_bound - pos_in.x - 1) >= 0) {
@@ -131,7 +128,7 @@ __kernel void conv2d_1x1_opt(
     pos_in = (int2)(i * input_width + in_pos_in_one_block1.x,
                     in_pos_in_one_block1.y);
     CL_DTYPE4 input1 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, pos_in);
 
     if (abs(max_w_bound - pos_in.x) < input_width) {
       if (burndary_index == 0) {
@@ -167,7 +164,7 @@ __kernel void conv2d_1x1_opt(
     pos_in = (int2)(i * input_width + in_pos_in_one_block2.x,
                     in_pos_in_one_block2.y);
     CL_DTYPE4 input2 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, pos_in);
 
     if (abs(max_w_bound - pos_in.x) < input_width) {
       if (burndary_index == 0) {
@@ -203,7 +200,7 @@ __kernel void conv2d_1x1_opt(
     pos_in = (int2)(i * input_width + in_pos_in_one_block3.x,
                     in_pos_in_one_block3.y);
     CL_DTYPE4 input3 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, pos_in);
 
     if (abs(max_w_bound - pos_in.x) < input_width) {
       if (burndary_index == 0) {
@@ -238,20 +235,20 @@ __kernel void conv2d_1x1_opt(
 
 #ifdef BATCH_NORM
   output0 = output0 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 
   output1 = output1 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 
   output2 = output2 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 
   output3 = output3 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
   output0 = activation_type4(output0);
@@ -313,9 +310,6 @@ __kernel void conv2d_1x1_simple(
   int2 output_pos2 = (int2)(outpos_main + out_w2, out_nh);
   int2 output_pos3 = (int2)(outpos_main + out_w3, out_nh);
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   int2 stride_xy = (int2)(stride, stride);
 
   int2 ouput_pos_in_one_block0 = (int2)(out_w0, out_nh);
@@ -336,12 +330,12 @@ __kernel void conv2d_1x1_simple(
 
 #ifdef BIASE_CH
   CL_DTYPE4 output0 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, (int2)(out_c, 0));
+      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
   CL_DTYPE4 output1 = output0;
   CL_DTYPE4 output2 = output0;
   CL_DTYPE4 output3 = output0;
 #elif defined(BIASE_ELE)
-  CL_DTYPE4 output0 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, output_pos0);
+  CL_DTYPE4 output0 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, output_pos0);
   CL_DTYPE4 output1 = output0;
   CL_DTYPE4 output2 = output0;
   CL_DTYPE4 output3 = output0;
@@ -358,16 +352,16 @@ __kernel void conv2d_1x1_simple(
     int2 pos_in = (int2)(i * input_width + in_pos_in_one_block0.x,
                          in_pos_in_one_block0.y);
     CL_DTYPE4 input0 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, pos_in);
 
     CL_DTYPE4 weight0 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 0));
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(out_c, i * 4 + 0));
     CL_DTYPE4 weight1 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 1));
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(out_c, i * 4 + 1));
     CL_DTYPE4 weight2 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 2));
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(out_c, i * 4 + 2));
     CL_DTYPE4 weight3 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, (int2)(out_c, i * 4 + 3));
+        READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(out_c, i * 4 + 3));
 
     output0 = mad(input0.x, weight0, output0);
     output0 = mad(input0.y, weight1, output0);
@@ -377,7 +371,7 @@ __kernel void conv2d_1x1_simple(
     pos_in = (int2)(i * input_width + in_pos_in_one_block1.x,
                     in_pos_in_one_block1.y);
     CL_DTYPE4 input1 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, pos_in);
     output1 = mad(input1.x, weight0, output1);
     output1 = mad(input1.y, weight1, output1);
     output1 = mad(input1.z, weight2, output1);
@@ -386,7 +380,7 @@ __kernel void conv2d_1x1_simple(
     pos_in = (int2)(i * input_width + in_pos_in_one_block2.x,
                     in_pos_in_one_block2.y);
     CL_DTYPE4 input2 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, pos_in);
     output2 = mad(input2.x, weight0, output2);
     output2 = mad(input2.y, weight1, output2);
     output2 = mad(input2.z, weight2, output2);
@@ -395,7 +389,7 @@ __kernel void conv2d_1x1_simple(
     pos_in = (int2)(i * input_width + in_pos_in_one_block3.x,
                     in_pos_in_one_block3.y);
     CL_DTYPE4 input3 =
-        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, pos_in);
+        READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, pos_in);
     output3 = mad(input3.x, weight0, output3);
     output3 = mad(input3.y, weight1, output3);
     output3 = mad(input3.z, weight2, output3);
@@ -404,20 +398,20 @@ __kernel void conv2d_1x1_simple(
 
 #ifdef BATCH_NORM
   output0 = output0 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 
   output1 = output1 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 
   output2 = output2 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 
   output3 = output3 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
   output0 = activation_type4(output0);

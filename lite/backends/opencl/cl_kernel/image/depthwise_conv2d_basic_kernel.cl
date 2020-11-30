@@ -41,19 +41,19 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
   const int out_nh = get_global_id(2);
 
   int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
   const int batch_index = out_nh / output_height;
   const int out_nh_in_one_batch = out_nh % output_height;
+
   int2 stride_xy = (int2)(stride, stride);
   int2 ouput_pos_in_one_block = (int2)(out_w, out_nh_in_one_batch);
   int2 in_pos_in_one_block =
       ouput_pos_in_one_block * stride_xy + (int2)(offset, offset);
 #ifdef BIASE_CH
   CL_DTYPE4 output =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, (int2)(out_c, 0));
+      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
 #elif defined(BIASE_ELE)
-  CL_DTYPE4 output = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, output_pos);
+  CL_DTYPE4 output = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, output_pos);
 #else
   CL_DTYPE4 output = 0.0f;
 #endif
@@ -74,7 +74,7 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
       CL_DTYPE4 in = SELECT(
           READ_IMG_TYPE(CL_DTYPE_CHAR,
                         input,
-                        sampler,
+                        SAMPLER,
                         (int2)(input_x_base + x_off, input_y_base + y_off)),
           (CL_DTYPE4)(0.0f),
           ((in_pos_in_one_block.x + x_off < 0 ||
@@ -83,14 +83,14 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
                      in_pos_in_one_block.y + y_off >= input_height)
                     ));
       CL_DTYPE4 f = READ_IMG_TYPE(
-          CL_DTYPE_CHAR, filter, sampler, (int2)(filter_x + fx, filter_y + fy));
+          CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_x + fx, filter_y + fy));
       output += in * f;
     }
   }
 #ifdef BATCH_NORM
   output = output * READ_IMG_TYPE(
-                        CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-           READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                        CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+           READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
   output = activation_type4(output);
