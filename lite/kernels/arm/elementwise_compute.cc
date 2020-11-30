@@ -72,7 +72,7 @@ inline bool is_fast_broadcast(const DDim& x_dims,
   }
   for (int i = 0; i < y_dim_trim.size(); ++i) {
     if (x_dims[i + axis] != y_dim_trim[i]) {
-      LOG(WARNING) << "Fast broadcast chk fail, for dimension mismatch.";
+      VLOG(4) << "Fast broadcast chk fail, for dimension mismatch.";
       return false;
     }
     (*n) *= y_dim_trim[i];
