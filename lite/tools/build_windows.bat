@@ -11,8 +11,7 @@ set WITH_PROFILE=OFF
 set WITH_TESTING=OFF
 set BUILD_FOR_CI=OFF
 set BUILD_PLATFORM=x64
-set BUILD_X64_PLATFORM=ON
-set MSCV_STATIC_CRT=ON
+set MSVC_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
@@ -35,7 +34,6 @@ if /I "%1"=="with_extra" (
     set OPTMODEL_DIR="%2"
 ) else if /I  "%1"=="build_x86" (
     set BUILD_PLATFORM=Win32
-    set BUILD_X64_PLATFORM=OFF
 ) else if /I  "%1"=="with_dynamic_crt" (
     set MSVC_STATIC_CRT=OFF
 ) else if /I  "%1"=="with_static_mkl" (
@@ -55,6 +53,10 @@ shift
 goto round
 
 :main
+if "%WITH_PYTHON%"=="ON" (
+    set BUILD_EXTRA=ON
+)
+
 cd "%workspace%"
 
 echo "------------------------------------------------------------------------------------------------------|"
@@ -65,7 +67,7 @@ echo "|  LITE_WITH_PROFILE=%WITH_PROFILE%                                       
 echo "|  WITH_TESTING=%WITH_TESTING%                                                                        |"
 echo "|  WITH_STRIP=%WITH_STRIP%                                                                            |"
 echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                                                        |"
-echo "|  BUILD_X64_PLATFORM=%BUILD_X64_PLATFORM%                                                            |"
+echo "|  BUILD_PLATFORM=%BUILD_PLATFORM%                                                                    |"
 echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                                                  |"
 echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
 echo "------------------------------------------------------------------------------------------------------|"
@@ -107,7 +109,6 @@ copy "%root_dir%\lite\tools\debug\analysis_tool.py" "%DEBUG_TOOL_PATH_PREFIX%\"
 cd "%build_directory%"
 
     cmake %root_dir%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
-            -DBUILD_X64_PLATFORM=%BUILD_X64_PLATFORM% ^
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
@@ -132,12 +133,12 @@ if "%BUILD_FOR_CI%"=="ON" (
     call:test_server
     cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     msbuild /m:4 /p:Configuration=Release lite\api\opt.vcxproj
-) else if "%BUILD_X64_PLATFORM%"=="ON" (
+) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
-    msbuild /maxcpucount:8 /p:Configuration=Release /p:Platform=x64 lite\publish_inference.vcxproj 
+    msbuild /maxcpucount:4 /p:Configuration=Release lite\publish_inference.vcxproj 
 ) else (
     call "%vcvarsall_dir%" x86
-    msbuild /maxcpucount:8 /p:Configuration=Release lite\publish_inference.vcxproj 
+    msbuild /maxcpucount:4 /p:Configuration=Release lite\publish_inference.vcxproj 
 )
 goto:eof
 

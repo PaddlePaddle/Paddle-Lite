@@ -29,6 +29,15 @@ class ReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~ReluCompute() = default;
 };
 
+class Relu6Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~Relu6Compute() = default;
+};
+
 class TanhCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
@@ -103,11 +112,38 @@ class PowCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 
 class SignCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ActivationParam;
+  using param_t = operators::SignParam;
 
   virtual void Run();
 
   virtual ~SignCompute() = default;
+};
+
+class HardSwishCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~HardSwishCompute() = default;
+};
+
+class HardSigmoidCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~HardSigmoidCompute() = default;
+};
+
+class LeakyReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~LeakyReluCompute() = default;
 };
 
 }  // namespace xpu

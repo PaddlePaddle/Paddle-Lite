@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/softmax_compute.h"
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -25,17 +26,16 @@ void SoftmaxCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  auto& x_dims = param.x->dims();
-  int axis = CanonicalAxis(param.axis, x_dims.size());
-  int rows = SizeToAxis(axis, x_dims);
-  int cols = SizeFromAxis(axis, x_dims);
-
-  int r = xdnn::softmax2d_forward(
-      ctx.GetRawContext(),                             /* context */
-      param.x->data<float>(),                          /* x */
-      param.output->mutable_data<float>(TARGET(kXPU)), /* y */
-      rows,                                            /* rows */
-      cols /* cols */);
+  std::vector<int> xdims;
+  for (auto i = 0; i < param.x->dims().size(); i++) {
+    xdims.push_back(param.x->dims().data()[i]);
+  }
+  int axis = param.axis < 0 ? param.axis + xdims.size() : param.axis;
+  int r = xdnn::softmax(ctx.GetRawContext(),
+                        param.x->data<float>(),
+                        param.output->mutable_data<float>(TARGET(kXPU)),
+                        xdims,
+                        axis);
   CHECK_EQ(r, 0);
 }
 

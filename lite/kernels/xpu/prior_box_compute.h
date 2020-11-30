@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,22 +13,36 @@
 // limitations under the License.
 
 #pragma once
+
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class StackCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class PriorBoxCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  void Run() override;
+  using param_t = operators::PriorBoxParam;
 
-  virtual ~StackCompute() = default;
+  void PrepareForRun() override;
+
+  virtual void Run();
+
+  virtual ~PriorBoxCompute() = default;
+
+ private:
+  XPUScratchPadGuard xpu_aspect_ratios_guard_;
+  XPUScratchPadGuard xpu_min_sizes_guard_;
+  XPUScratchPadGuard xpu_max_sizes_guard_;
+  XPUScratchPadGuard variance_xpu_guard_;
+  int prior_num;
+  int ar_num;
+  int min_size_num;
+  int max_size_num;
 };
 
-} /* namespace arm */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace xpu
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

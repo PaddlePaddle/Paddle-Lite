@@ -113,8 +113,6 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
 // Memory buffer manager.
 class Buffer {
  public:
-  Buffer() = default;
-  Buffer(TargetType target, size_t size) : space_(size), target_(target) {}
   Buffer(void* data, TargetType target, size_t size)
       : space_(size), data_(data), own_data_(false), target_(target) {}
 
@@ -145,7 +143,8 @@ class Buffer {
                         const size_t img_h_req,
                         void* host_ptr = nullptr) {
     if (target != target_ || cl_image2d_width_ < img_w_req ||
-        cl_image2d_height_ < img_h_req || host_ptr != nullptr) {
+        cl_image2d_height_ < img_h_req || host_ptr != nullptr ||
+        data_ == nullptr) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       cl_image2d_width_ = std::max(cl_image2d_width_, img_w_req);
       cl_image2d_height_ = std::max(cl_image2d_height_, img_h_req);
@@ -181,6 +180,10 @@ class Buffer {
   }
 
   ~Buffer() { Free(); }
+
+  Buffer() = default;
+  Buffer(const Buffer&) = delete;
+  Buffer(Buffer&&) = default;
 
  private:
   // memory it actually malloced.

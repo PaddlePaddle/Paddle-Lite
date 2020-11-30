@@ -31,6 +31,7 @@
 #include "lite/backends/arm/math/concat.h"
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
+#include "lite/backends/arm/math/conv_transpose_depthwise.h"
 #include "lite/backends/arm/math/decode_bboxes.h"
 #include "lite/backends/arm/math/dropout.h"
 #include "lite/backends/arm/math/elementwise.h"
@@ -68,7 +69,6 @@
 #include "lite/backends/arm/math/softmax.h"
 #include "lite/backends/arm/math/split.h"
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
-#include "lite/backends/arm/math/stack.h"
 #include "lite/backends/arm/math/topk.h"
 #include "lite/backends/arm/math/yolo_box.h"
 

@@ -58,21 +58,17 @@ class CLContext {
 
   cl::Kernel &GetKernel(const std::string &name);
 
-  cl::NDRange DefaultWorkSize(const CLImage &image);
+  cl::NDRange DefaultGlobalWorkSize(const CLImage &image);
 
-  cl::NDRange LocalWorkSize(cl::NDRange global_work_size, size_t max_work_size);
+  cl::NDRange DefaultLocalWorkSize(cl::NDRange global_work_size,
+                                   size_t max_work_size,
+                                   int divitor = 2,
+                                   bool tune_reverse = false,
+                                   size_t user_defined_max_work_size = 0);
 
-  cl::NDRange LocalWorkSizeTune(cl::NDRange global_work_size,
-                                size_t max_work_size,
-                                int divitor = 2);
-
-  cl::NDRange LocalWorkSizeTuneReverse(cl::NDRange global_work_size,
-                                       size_t max_work_size,
-                                       int divitor = 2);
-
+  std::vector<cl::NDRange> GenerateLocalWorkSizes(cl::NDRange global_work_size,
+                                                  size_t max_work_size);
   bool IsArmMali();
-  //  cl::NDRange LocalWorkSizeConv1x1(cl::NDRange global_work_size,
-  //                                   size_t max_work_size);
 
  private:
   std::map<std::string, std::unique_ptr<cl::Program>> programs_;

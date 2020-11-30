@@ -44,6 +44,7 @@ class Conv2DTransposeCompute
 
  protected:
   int workspace_size_{0};
+  bool depthwise_{false};
 };
 
 }  // namespace arm

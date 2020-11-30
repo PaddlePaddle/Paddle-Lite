@@ -30,7 +30,7 @@ using paddle::lite::profile::Timer;
 typedef paddle::lite::operators::ActivationParam ActivationParam;
 
 DEFINE_int32(power_mode,
-             3,
+             0,
              "power mode: "
              "0 for POWER_HIGH;"
              "1 for POWER_LOW;"
@@ -49,8 +49,10 @@ DEFINE_int32(K, 512, "gemm: K");
 DEFINE_bool(traA, false, "gemm: A transpose");
 DEFINE_bool(traB, false, "gemm: B transpose");
 
-DEFINE_bool(flag_relu, false, "do relu");
-DEFINE_bool(flag_bias, false, "with bias");
+DEFINE_int32(relu_type,
+             0,
+             "relu type, 0: no relu; 1: relu; 2: relu6; 3: leaky_relu;");
+DEFINE_bool(flag_bias, true, "with bias");
 
 bool test_gemm_int8(bool tra,
                     bool trb,
@@ -58,7 +60,7 @@ bool test_gemm_int8(bool tra,
                     int n,
                     int k,
                     bool has_bias,
-                    bool has_relu,
+                    int relu_type,
                     int cls,
                     int ths) {
   Tensor ta;
@@ -95,20 +97,36 @@ bool test_gemm_int8(bool tra,
   std::vector<float> scale_merge_fp32(static_cast<size_t>(m));
   std::vector<float> scale_merge_int8(static_cast<size_t>(m));
   ActivationParam act_param;
-  act_param.has_active = has_relu;
-  if (has_relu) {
-    act_param.active_type = (paddle::lite_api::ActivationType)1;
+  bool has_relu = false;
+  switch (relu_type) {
+    case 0:
+      has_relu = false;
+      act_param.has_active = has_relu;
+      break;
+    case 1:
+      has_relu = true;
+
+    case 2:
+    case 3:
+      act_param.has_active = has_relu;
+      act_param.active_type = (paddle::lite_api::ActivationType)relu_type;
+      break;
+    default:
+      has_relu = true;
+      act_param.has_active = has_relu;
+      act_param.active_type = (paddle::lite_api::ActivationType)1;
   }
+
   for (int j = 0; j < m; ++j) {
     scale_merge_fp32[j] = scale_a[j] * scale_b[0];
     scale_merge_int8[j] = scale_merge_fp32[j] / scale_c[0];
   }
 
-  VLOG(4) << "gemm_int8 M: " << m << ", N: " << n << ", K: " << k
-          << ", transA: " << (tra ? "true" : "false")
-          << ", transB: " << (trb ? "true" : "false")
-          << ", relu: " << (has_relu ? "true" : "false")
-          << ", bias: " << (has_bias ? "true" : "false");
+  LOG(INFO) << "gemm_int8 M: " << m << ", N: " << n << ", K: " << k
+            << ", transA: " << (tra ? "true" : "false")
+            << ", transB: " << (trb ? "true" : "false")
+            << ", relu_type: " << relu_type
+            << ", bias: " << (has_bias ? "true" : "false");
 #ifdef LITE_WITH_ARM
   int lda = tra ? m : k;
   int ldb = trb ? k : n;
@@ -177,8 +195,12 @@ bool test_gemm_int8(bool tra,
   int round_up_a = ((hblock + m - 1) / hblock) * hblock;
   int round_up_k = 4 * ((k + 3) / 4);
   tpackedA.Resize({round_up_a * round_up_k});
+  auto prepack_data = tpackedA.data<int8_t>();
+
   paddle::lite::arm::math::prepackA_int8(
       tpackedA.mutable_data<int8_t>(), da, lda, 0, m, 0, k, tra, &ctx);
+  prepack_data = tpackedA.data<int8_t>();
+
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
     paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
@@ -325,14 +347,13 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
 #ifdef LITE_WITH_ARM
     paddle::lite::DeviceInfo::Init();
 #endif
-    LOG(INFO) << "run basic sgemm test";
-    for (auto& m : {1, 3, 8, 32, 397}) {
+    for (auto& m : {1, 3, 8, 32, 33, 34, 35, 38, 41, 397}) {
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
-        for (auto& k : {1, 3, 8, 59, 234}) {
+        for (auto& k : {1, 3, 8, 59, 60, 61, 62, 66, 67, 71}) {
           for (auto& tra : {false, true}) {
             for (auto& trb : {false, true}) {
               for (auto& has_bias : {false, true}) {
-                for (auto& has_relu : {false, true}) {
+                for (auto& relu_type : {0, 1}) {
                   for (auto& th : {1, 2, 4}) {
                     auto flag = test_gemm_int8(tra,
                                                trb,
@@ -340,21 +361,22 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
                                                n,
                                                k,
                                                has_bias,
-                                               has_relu,
+                                               relu_type,
                                                FLAGS_power_mode,
                                                th);
                     if (flag) {
-                      VLOG(4) << "test m = " << m << ", n=" << n << ", k=" << k
-                              << ", bias: " << (has_bias ? "true" : "false")
-                              << ", relu: " << (has_relu ? "true" : "false")
-                              << ", trans A: " << (tra ? "true" : "false")
-                              << ", trans B: " << (trb ? "true" : "false")
-                              << " passed\n";
+                      LOG(INFO) << "test m = " << m << ", n=" << n
+                                << ", k=" << k
+                                << ", bias: " << (has_bias ? "true" : "false")
+                                << ", relu: " << relu_type
+                                << ", trans A: " << (tra ? "true" : "false")
+                                << ", trans B: " << (trb ? "true" : "false")
+                                << " passed\n";
                     } else {
                       LOG(FATAL) << "test m = " << m << ", n=" << n
                                  << ", k=" << k
                                  << ", bias: " << (has_bias ? "true" : "false")
-                                 << ", relu: " << (has_relu ? "true" : "false")
+                                 << ", relu: " << relu_type
                                  << ", trans A: " << (tra ? "true" : "false")
                                  << ", trans B: " << (trb ? "true" : "false")
                                  << " failed\n";
@@ -380,17 +402,17 @@ TEST(TestGemmInt8Custom, gemm_prepacked_int8_custom) {
                              FLAGS_N,
                              FLAGS_K,
                              FLAGS_flag_bias,
-                             FLAGS_flag_relu,
+                             FLAGS_relu_type,
                              FLAGS_power_mode,
                              FLAGS_threads);
   if (!flag) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
                << ", k=" << FLAGS_K << ", trans A: " << FLAGS_traA
                << ", trans B: " << FLAGS_traB << ", bias: " << FLAGS_flag_bias
-               << ", relu: " << FLAGS_flag_relu << " failed!!";
+               << ", relu: " << FLAGS_relu_type << " failed!!";
   }
   LOG(INFO) << "test m = " << FLAGS_M << ", n=" << FLAGS_N << ", k=" << FLAGS_K
             << ", trans A: " << FLAGS_traA << ", trans B: " << FLAGS_traB
-            << ", bias: " << FLAGS_flag_bias << ", relu: " << FLAGS_flag_relu
+            << ", bias: " << FLAGS_flag_bias << ", relu: " << FLAGS_relu_type
             << " passed!!";
 }

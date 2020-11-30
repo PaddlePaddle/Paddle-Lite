@@ -15,6 +15,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "lite/model_parser/base/io.h"
 #include "lite/model_parser/flatbuffers/program_desc.h"
 
 namespace paddle {
@@ -22,7 +23,7 @@ namespace lite {
 namespace fbs {
 namespace test {
 #ifdef LITE_WITH_FLATBUFFERS_DESC
-inline std::vector<char> GenerateProgramCache() {
+inline lite::model_parser::Buffer GenerateProgramCache() {
   /* --------- Set Program --------- */
   ProgramDesc program;
   program.SetVersion(1000600);

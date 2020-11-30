@@ -22,13 +22,23 @@ namespace operators {
 bool ExpandOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  int expand_size = param_.expand_times.size();
+
   int x_dims_size = param_.X->dims().size();
+  CHECK_LE(x_dims_size, 6u)
+      << "The rank of Input(X) must not be greater than 6.";
+
+  int expand_size = 0;
+  if (param_.ExpandTimes != nullptr) {
+    expand_size = param_.ExpandTimes->numel();
+  } else if (param_.expand_times_tensor != nullptr) {
+    expand_size = param_.expand_times_tensor->size();
+  } else {
+    expand_size = param_.expand_times.size();
+  }
   CHECK_EQ(expand_size, x_dims_size)
       << "The number of expand_times size must be qual to the rank of "
          "Input(X).";
-  CHECK_LE(param_.X->dims().size(), 6u)
-      << "The rank of Input(X) must not be greater than 6.";
+
   return true;
 }
 
@@ -46,6 +56,14 @@ bool ExpandOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto Out_name = opdesc.Output("Out").front();
   param_.X = GetVar<lite::Tensor>(scope, X_name);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
+
+  if (opdesc.HasInput("ExpandTimes")) {
+    param_.ExpandTimes = scope->FindTensor("ExpandTimes");
+  }
+  if (opdesc.HasInput("expand_times_tensor")) {
+    param_.expand_times_tensor = scope->FindTensorList("expand_times_tensor");
+  }
+
   param_.expand_times = opdesc.GetAttr<std::vector<int>>("expand_times");
   return true;
 }

@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/model_parser/base/io.h"
 #include "lite/model_parser/base/param_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 #include "lite/model_parser/flatbuffers/param_generated.h"
@@ -73,18 +74,11 @@ class ParamDescView : public ParamDescReadAPI {
 class CombinedParamsDescView : public CombinedParamsDescReadAPI {
  public:
   CombinedParamsDescView() = default;
-  explicit CombinedParamsDescView(const std::vector<char>& buf) { Init(buf); }
-  explicit CombinedParamsDescView(std::vector<char>&& buf) {
-    Init(std::forward<std::vector<char>>(buf));
+  explicit CombinedParamsDescView(model_parser::Buffer&& buf) {
+    Init(std::forward<model_parser::Buffer>(buf));
   }
 
-  void Init(const std::vector<char>& buf) {
-    CHECK(buf.data());
-    buf_ = buf;
-    InitParams();
-  }
-
-  void Init(std::vector<char>&& buf) {
+  void Init(model_parser::Buffer&& buf) {
     CHECK(buf.data());
     buf_ = std::move(buf);
     InitParams();
@@ -110,7 +104,7 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
 
  private:
   std::vector<ParamDescView> params_;
-  std::vector<char> buf_;
+  model_parser::Buffer buf_;
   proto::CombinedParamsDesc const* desc_;
 };
 
@@ -175,7 +169,7 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
  public:
   CombinedParamsDesc() = default;
 
-  explicit CombinedParamsDesc(const std::vector<char>& buf) {
+  explicit CombinedParamsDesc(const Buffer& buf) {
     const auto* raw_buf = proto::GetCombinedParamsDesc(buf.data());
     raw_buf->UnPackTo(&desc_);
     SyncParams();
@@ -194,10 +188,9 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
     return params_[params_.size() - 1].get();
   }
 
-  std::vector<char> data() {
+  model_parser::Buffer data() {
     SyncBuffer();
-    std::vector<char> cache;
-    cache.resize(buf_.size());
+    model_parser::Buffer cache(buf_.size());
     std::memcpy(cache.data(), buf_.data(), buf_.size());
     return cache;
   }

@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/stack_compute.h"
+#include "lite/kernels/host/stack_compute.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-REGISTER_LITE_KERNEL(stack,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::StackCompute<float>,
-                     def)
+using stack_float =
+    paddle::lite::kernels::host::StackCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kX86, kFloat, kNCHW, stack_float, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

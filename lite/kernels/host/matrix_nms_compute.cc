@@ -47,10 +47,10 @@ static T JaccardOverlap(const T* box1, const T* box2, const bool normalized) {
       box2[3] < box1[1]) {
     return static_cast<T>(0.);
   } else {
-    const T inter_xmin = std::max(box1[0], box2[0]);
-    const T inter_ymin = std::max(box1[1], box2[1]);
-    const T inter_xmax = std::min(box1[2], box2[2]);
-    const T inter_ymax = std::min(box1[3], box2[3]);
+    const T inter_xmin = (std::max)(box1[0], box2[0]);
+    const T inter_ymin = (std::max)(box1[1], box2[1]);
+    const T inter_xmax = (std::min)(box1[2], box2[2]);
+    const T inter_ymax = (std::min)(box1[3], box2[3]);
     T norm = normalized ? static_cast<T>(0.) : static_cast<T>(1.);
     T inter_w = inter_xmax - inter_xmin + norm;
     T inter_h = inter_ymax - inter_ymin + norm;
@@ -133,7 +133,7 @@ void NMSMatrix(const Tensor& bbox,
       auto idx_b = perm[j];
       auto iou = JaccardOverlap<T>(
           bbox_ptr + idx_a * box_size, bbox_ptr + idx_b * box_size, normalized);
-      max_iou = std::max(max_iou, iou);
+      max_iou = (std::max)(max_iou, iou);
       iou_matrix[i * (i - 1) / 2 + j] = iou;
     }
     iou_max[i] = max_iou;
@@ -151,7 +151,7 @@ void NMSMatrix(const Tensor& bbox,
       auto max_iou = iou_max[j];
       auto iou = iou_matrix[i * (i - 1) / 2 + j];
       auto decay = decay_fn(iou, max_iou, sigma);
-      min_decay = std::min(min_decay, decay);
+      min_decay = (std::min)(min_decay, decay);
     }
     auto ds = min_decay * score_ptr[perm[i]];
     if (ds <= post_threshold) continue;
