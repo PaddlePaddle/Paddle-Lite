@@ -52,11 +52,11 @@ TEST(Ernie, test_ernie_fp32_baidu_xpu) {
   config.set_preferred_inputs_for_warmup<int64_t>(0, 0, {1, 64, 1});
   config.set_preferred_inputs_for_warmup<int64_t>(0, 1, {1, 64, 1});
   config.set_preferred_inputs_for_warmup<int64_t>(0, 2, {1, 64, 1});
-  config.set_preferred_inputs_for_warmup<int64_t>(0, 3, {1, 64, 1});
+  config.set_preferred_inputs_for_warmup<float>(0, 3, {1, 64, 1});
   config.set_preferred_inputs_for_warmup<int64_t>(2, 0, {1, 128, 1});
   config.set_preferred_inputs_for_warmup<int64_t>(2, 1, {1, 128, 1});
   config.set_preferred_inputs_for_warmup<int64_t>(2, 2, {1, 128, 1});
-  config.set_preferred_inputs_for_warmup<int64_t>(2, 3, {1, 128, 1});
+  config.set_preferred_inputs_for_warmup<float>(2, 3, {1, 128, 1});
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string input_data_file = FLAGS_data_dir + std::string("/bert_in.txt");
