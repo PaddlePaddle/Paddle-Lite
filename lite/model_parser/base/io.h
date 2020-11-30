@@ -145,8 +145,8 @@ class StringBufferReader : public ByteReader {
  public:
   explicit StringBufferReader(std::string&& buffer)
       : str_(std::forward<std::string>(buffer)),
-        buf_(buffer.c_str()),
-        length_(buffer.size()) {
+        buf_(str_.c_str()),
+        length_(str_.size()) {
     CHECK(buf_);
   }
   ~StringBufferReader() = default;

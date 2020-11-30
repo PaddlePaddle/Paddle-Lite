@@ -290,6 +290,13 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+#ifdef LITE_WITH_X86
+void ConfigBase::set_x86_math_num_threads(int threads) {
+  x86_math_num_threads_ = threads;
+}
+int ConfigBase::x86_math_num_threads() const { return x86_math_num_threads_; }
+#endif
+
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
                                size_t program_buffer_size,
                                const char *params_buffer,

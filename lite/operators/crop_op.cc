@@ -35,6 +35,10 @@ bool CropOpLite::InferShapeImpl() const {
     }
   } else {
     shape = std::vector<int64_t>(param_.shape.begin(), param_.shape.end());
+    if (shape[0] == -1) {
+      auto x_dims = param_.X->dims();
+      shape[0] = x_dims[0];
+    }
   }
   param_.Out->Resize(shape);
   return true;

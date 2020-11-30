@@ -98,7 +98,7 @@ class SoftmaxComputeTest : public arena::TestCase {
 
 TEST(Softmax, precision) {
   LOG(INFO) << "test softmax op";
-  float abs_error = 2e-5;
+  float abs_error = 4e-5;
   Place place;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
