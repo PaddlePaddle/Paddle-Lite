@@ -14,12 +14,13 @@
 
 #pragma once
 
-#include <sys/time.h>
 #include <map>
 #include <string>
 #include <vector>
 #if defined(_MSC_VER)
 #include "lite/backends/x86/port.h"
+#else
+#include <sys/time.h>
 #endif
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
