@@ -54,13 +54,13 @@ inline bool is_fast_broadcast(const DDim& x_dims,
     axis = x_dims.size() - y_dims.size();
   }
   if (axis < 0) {
-    LOG(INFO) << "Fast broadcast chk fail, for x_dims smaller.";
+    VLOG(4) << "Fast broadcast chk fail, for x_dims smaller.";
     return false;
   }
   DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
   axis = (y_dim_trim.size() == 0) ? x_dims.size() : axis;
   if (x_dims.size() == y_dim_trim.size()) {
-    LOG(INFO)
+    VLOG(4)
         << "Fast broadcast chk fail, for y's shape not really contained in x";
     return false;
   }
