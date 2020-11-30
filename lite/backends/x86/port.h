@@ -49,10 +49,8 @@ static void *dlsym(void *handle, const char *symbol_name) {
   FARPROC found_symbol;
   found_symbol = GetProcAddress((HMODULE)handle, symbol_name);
 
-#ifdef LITE_WITH_OPENCL
   if (found_symbol == NULL) {
     throw std::runtime_error(std::string(symbol_name) + " not found.");
-#endif
   }
   return reinterpret_cast<void *>(found_symbol);
 }
@@ -60,7 +58,7 @@ static void *dlsym(void *handle, const char *symbol_name) {
 static void *dlopen(const char *filename, int flag) {
   std::string file_name(filename);
   HMODULE hModule = LoadLibrary(file_name.c_str());
-#ifdef LITE_WITH_OPENCL
+#ifndef LITE_WITH_OPENCL
   if (!hModule) {
     throw std::runtime_error(file_name + " not found.");
   }
