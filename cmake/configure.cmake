@@ -191,6 +191,10 @@ if (LITE_WITH_PROFILE)
     add_definitions("-DLITE_WITH_PROFILE")
 endif()
 
+if (LITE_WITH_XCODE)
+    add_definitions("-DLITE_WITH_XCODE")
+endif()
+
 if (LITE_WITH_PRECISION_PROFILE)
     add_definitions("-DLITE_WITH_PRECISION_PROFILE")
 endif()
