@@ -66,6 +66,36 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+
+    auto& out_dims = instance_norm_param_->out->dims();
+    int batch = out_dims[0];
+    int channel = out_dims[1];
+    int cgroup = (channel + 3) / 4;
+    int cround = cgroup * 4;
+
+    std::vector<half_t> scale_img(cround * batch);
+    std::vector<half_t> bias_img(cround * batch);
+    const float* scale_data = instance_norm_param_->scale->data<float>();
+    const float* bias_data = instance_norm_param_->bias->data<float>();
+
+    for (int i = 0; i < channel; ++i) {
+      scale_img[i] = Float2Half(scale_data[i]);
+      bias_img[i] = Float2Half(bias_data[i]);
+    }
+
+    for (int i = 1; i < batch; ++i) {
+      memcpy(scale_img.data() + i * cround,
+             scale_img.data(),
+             cround * sizeof(half_t));
+      memcpy(bias_img.data() + i * cround,
+             bias_img.data(),
+             cround * sizeof(half_t));
+    }
+    DDim scale_img_size{{ cgroup, batch }};
+    scale_image_.mutable_data<half_t, cl::Image2D>(
+        scale_img_size[0], scale_img_size[1], scale_img.data());
+    bias_image_.mutable_data<half_t, cl::Image2D>(
+        scale_img_size[0], scale_img_size[1], bias_img.data());
   }
 
   void ReInitWhenNeeded() override {
@@ -124,6 +154,8 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     auto* x_img = x->data<half_t, cl::Image2D>();
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
+    auto* scale_img = scale_image_.data<half_t, cl::Image2D>();
+    auto* bias_img = bias_image_.data<half_t, cl::Image2D>();
 
     cl_int status = kernel_.setArg(0, out_w);
     CL_CHECK_FATAL(status);
@@ -140,6 +172,10 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     status = kernel_.setArg(6, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel_.setArg(7, *out_img);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(8, *scale_img);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(9, *bias_img);
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(

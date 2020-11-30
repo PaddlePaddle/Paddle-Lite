@@ -291,6 +291,13 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+#ifdef LITE_WITH_X86
+void ConfigBase::set_x86_math_num_threads(int threads) {
+  x86_math_num_threads_ = threads;
+}
+int ConfigBase::x86_math_num_threads() const { return x86_math_num_threads_; }
+#endif
+
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
                                size_t program_buffer_size,
                                const char *params_buffer,
@@ -427,15 +434,13 @@ void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
 _SetPreferredInputsForWarmup(float);
 _SetPreferredInputsForWarmup(double);
 _SetPreferredInputsForWarmup(int32_t);
-_SetPreferredInputsForWarmup(int64_t)
+_SetPreferredInputsForWarmup(int64_t);
 #undef _SetPreferredInputsForWarmup
 
-    // set model data in combined format, `set_model_from_file` refers to
-    // loading
-    // model from file, set_model_from_buffer refers to loading model from
-    // memory
-    // buffer
-    void MobileConfig::set_model_from_file(const std::string &x) {
+// set model data in combined format, `set_model_from_file` refers to loading
+// model from file, set_model_from_buffer refers to loading model from memory
+// buffer
+void MobileConfig::set_model_from_file(const std::string &x) {
   lite_model_file_ = x;
 }
 void MobileConfig::set_model_from_buffer(const std::string &x) {

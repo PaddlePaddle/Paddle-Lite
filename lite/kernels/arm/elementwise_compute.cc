@@ -15,6 +15,7 @@
 #include "lite/kernels/arm/elementwise_compute.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "lite/backends/arm/math/funcs.h"
@@ -148,12 +149,19 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
   // the `kernel-> template Param<>()` requires to use true type from now
   // so `kernel->template Param<operators::ElementwiseParam>()` will not work
   auto& param = kernel->template Param<OpParamType>();
-  auto* x_data = param.X->template data<T>();
-  auto* y_data = param.Y->template data<T>();
+  auto x = param.X;
+  auto y = param.Y;
+  if (opd_swap_able == OprandSwapable::YES &&
+      x->dims().size() < y->dims().size()) {
+    std::swap(x, y);
+  }
+
+  auto* x_data = x->template data<T>();
+  auto* y_data = y->template data<T>();
   auto* out_data = param.Out->template mutable_data<T>();
   int axis = param.axis;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
+  auto x_dims = x->dims();
+  auto y_dims = y->dims();
   int pre, n, post;
   if (elementwise_fn && x_dims == y_dims) {
     elementwise_fn(x_data, y_data, out_data, x_dims.production());
@@ -165,8 +173,8 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
              is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     fast_bcast_fn(y_data, x_data, out_data, pre, n, post);
   } else if (elementwise_fn) {
-    auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
-        param.X, param.Y, param.Out, axis);
+    auto batch_arg =
+        lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
     common_elmentwise_op_arm<T, int64_t>(batch_arg, op, elementwise_fn);
   }
   if (!elementwise_fn && !fast_bcast_fn) {
