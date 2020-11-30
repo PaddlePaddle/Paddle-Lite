@@ -325,7 +325,7 @@ class ParamTypeRegistry {
     //              fuction is not applicable on tiny_publish mode.
     ///////////////////////////////////////////////////////////////////////
     NewInstance& BindPaddleOpVersion(const std::string& op_type,
-                                     uint32_t version_id) {
+                                     int32_t version_id) {
 #ifndef LITE_ON_TINY_PUBLISH
       ParamTypeRegistry::Global().BindPaddleOpVersion(
           op_type, version_id, kernel_type_, Place{target, precision, layout});
@@ -387,7 +387,7 @@ class ParamTypeRegistry {
   //              fuction is not applicable on tiny_publish mode.
   ///////////////////////////////////////////////////////////////////////
   void BindPaddleOpVersion(const std::string& op_type,
-                           uint32_t version,
+                           int32_t version,
                            const std::string& kernel_type,
                            const Place& place) {
     KernelIdTy key{kernel_type, place, IO(), std::string()};

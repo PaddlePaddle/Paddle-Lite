@@ -34,7 +34,7 @@ namespace lite {
 class KernelVersion {
  public:
   // Fill op_versions into kernel_version
-  void AddOpVersion(const std::string& name, uint32_t op_version) {
+  void AddOpVersion(const std::string& name, int32_t op_version) {
     if (!op_versions_.count(name)) {
       op_versions_[name] = op_version;
     } else {
@@ -43,7 +43,7 @@ class KernelVersion {
     }
   }
   // Return the content of kernel_version: list(op_version)
-  const std::map<std::string, uint32_t>& OpVersions() const {
+  const std::map<std::string, int32_t>& OpVersions() const {
     return op_versions_;
   }
   // Judge if an op_version has been bound to this kernel.
@@ -52,20 +52,20 @@ class KernelVersion {
   }
 
   // Get a inner op_version according to op_name.
-  uint32_t GetOpVersion(const std::string& op_name) {
+  int32_t GetOpVersion(const std::string& op_name) {
     if (HasOpVersion(op_name)) {
       return op_versions_[op_name];
     } else {
       LOG(FATAL) << "Error: This kernel has not been bound to Paddle op ("
                  << op_name << ") 's version.";
-      return 0;
+      return -1;
     }
   }
 
  private:
   // Paddle OpVersion: Version of Paddle operator
   //              (op_name + version_id)
-  std::map<std::string, uint32_t> op_versions_;
+  std::map<std::string, int32_t> op_versions_;
 };
 
 }  // namespace lite
