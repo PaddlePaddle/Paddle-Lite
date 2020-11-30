@@ -146,6 +146,15 @@ class LeakyReluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~LeakyReluCompute() = default;
 };
 
+class SoftsignCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~SoftsignCompute() = default;
+};
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
