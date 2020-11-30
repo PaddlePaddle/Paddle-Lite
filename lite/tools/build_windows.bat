@@ -1,4 +1,4 @@
-@echo on
+@echo off
 setlocal
 setlocal enabledelayedexpansion
 
@@ -94,9 +94,7 @@ set root_dir=%workspace%
 set build_directory=%BUILD_DIR%\build.lite.x86
 if "%WITH_OPENCL%"=="ON" (
     set "build_directory=%build_directory%.opencl"
-    echo "before opencl --------------------"
     call:prepare_opencl_source_code
-    echo "after opencl --------------------"
 )
 set GEN_CODE_PATH_PREFIX=%build_directory%\lite\gen_code
 set DEBUG_TOOL_PATH_PREFIX=%build_directory%\lite\tools\debug
@@ -149,12 +147,12 @@ if "%BUILD_FOR_CI%"=="ON" (
     call:test_server
     cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     msbuild /m:%cores% /p:Configuration=Release lite\api\opt.vcxproj
-) else if "%BUILD_X64_PLATFORM%"=="ON" (
+) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
     if "%WITH_OPENCL%"=="ON" (
-        msbuild /maxcpucount:%cores% /p:Configuration=Release /p:Platform=x64 lite\opencl_clhpp.vcxproj 
+        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj 
     )
-    msbuild /maxcpucount:%cores% /p:Configuration=Release /p:Platform=x64 lite\publish_inference.vcxproj 
+    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj 
 ) else (
     call "%vcvarsall_dir%" x86
     if "%WITH_OPENCL%"=="ON" (
