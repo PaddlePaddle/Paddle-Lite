@@ -59,7 +59,9 @@ class ProgramDesc : public ProgramDescAPI {
   // Name: OpVersionMap
   // Description: a map that strores paddle ops version
   /////////////////////////////////////////////////////////////////
-  bool HasOpVersionMap() const override { return false; }
+  bool HasOpVersionMap() const override {
+    return !(op_version_map_.GetOpVersionMap().empty());
+  }
 
   template <typename T>
   T* GetOpVersionMap();

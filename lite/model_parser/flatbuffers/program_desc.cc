@@ -36,6 +36,7 @@ template <>
 proto::OpVersionMap* ProgramDescView::GetOpVersionMap<proto::OpVersionMap>() {
   // op_version_map is not implemented on naive_buffer as
   // it's not useful in inference period.
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   return nullptr;
 }
 
@@ -58,6 +59,7 @@ template <>
 proto::OpVersionMap* ProgramDesc::GetOpVersionMap<proto::OpVersionMap>() {
   // op_version_map is not implemented on naive_buffer as
   // it's not useful in inference period.
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   return nullptr;
 }
 
