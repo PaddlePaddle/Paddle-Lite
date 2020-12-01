@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -20,29 +21,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>
-class Reshape2Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class ReshapeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ReshapeParam;
 
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    auto x = param.x;
-    auto output = param.output;
-    auto xshape = param.xshape;
-    auto x_dims = x->dims();
-    auto x_dims_data = x_dims.Vectorize();
-    auto out_dims = output->dims();
-    output->ShareDataWith(*x);
-    output->Resize(out_dims);
-    auto* xshape_data = xshape->mutable_data<int64_t>(TARGET(kXPU));
-    TargetWrapperXPU::MemcpySync(xshape_data,
-                                 x_dims_data.data(),
-                                 x_dims.size() * sizeof(int64_t),
-                                 IoDirection::HtoD);
-  }
+  virtual void Run();
 
-  virtual ~Reshape2Compute() = default;
+  virtual ~ReshapeCompute() = default;
 };
 
 }  // namespace xpu
