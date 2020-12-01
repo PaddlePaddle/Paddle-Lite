@@ -281,14 +281,14 @@ inline __always_inline void write_gemv_int8_out(const int32_t* __restrict__ in,
       case lite_api::ActivationType::kRelu:
         for (int i = 0; i < kSize; ++i) {
           int32_t tmp = in[i];
-          tmp = tmp * scale[i] + bias[i] * static_cast<int>(has_bias);
+          tmp = tmp * scale[i] + (has_bias ? (bias[i]) : 0);
           out_buf[i] = tmp > 0 ? tmp : 0;
         }
         break;
       case lite_api::ActivationType::kRelu6: {
         for (int i = 0; i < kSize; ++i) {
           int32_t tmp = in[i];
-          tmp = tmp * scale[i] + bias[i] * static_cast<int>(has_bias);
+          tmp = tmp * scale[i] + (has_bias ? (bias[i]) : 0);
           tmp = tmp > 0 ? tmp : 0;
           out_buf[i] = tmp > six ? six : tmp;
         }
@@ -297,7 +297,7 @@ inline __always_inline void write_gemv_int8_out(const int32_t* __restrict__ in,
       case lite_api::ActivationType::kLeakyRelu: {
         for (int i = 0; i < kSize; ++i) {
           int32_t tmp = in[i];
-          tmp = tmp * scale[i] + bias[i] * static_cast<int>(has_bias);
+          tmp = tmp * scale[i] + (has_bias ? (bias[i]) : 0);
           out_buf[i] = tmp > 0 ? tmp : (tmp * alpha);
         }
         break;
@@ -308,7 +308,7 @@ inline __always_inline void write_gemv_int8_out(const int32_t* __restrict__ in,
 
   } else {
     for (int i = 0; i < kSize; ++i) {
-      out_buf[i] = in[i] * scale[i] + bias[i] * static_cast<int>(has_bias);
+      out_buf[i] = in[i] * scale[i] + (has_bias ? (bias[i]) : 0);
     }
   }
 
