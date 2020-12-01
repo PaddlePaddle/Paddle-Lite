@@ -94,10 +94,14 @@ class CLRuntime {
 
   void set_auto_tune(size_t enable_tune) {
     auto_tune_ = enable_tune;
+    VLOG(0) << "auto_tune_:" << auto_tune_;
     command_queue_ = CreateCommandQueue(context());
   }
 
-  bool auto_tune() { return auto_tune_; }
+  size_t auto_tune() {
+    VLOG(0) << "auto_tune_:" << auto_tune_;
+    return auto_tune_;
+  }
 
   bool Init();
 

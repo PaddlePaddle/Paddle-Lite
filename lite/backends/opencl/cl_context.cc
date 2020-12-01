@@ -10,6 +10,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_context.h"
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <utility>
@@ -73,7 +75,7 @@ void CLContext::AddKernel(const std::string &kernel_name,
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- end create kernel --- ";
 #endif
-  kernels_.emplace_back(std::move(kernel));
+  kernels_.push_back(std::move(kernel));
   STL::stringstream kernel_key;
   kernel_key << kernel_name << options << time_stamp;
   kernel_offset_[kernel_key.str()] = kernels_.size() - 1;
@@ -142,11 +144,100 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
       static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
 
   std::vector<cl::NDRange> lwss{tmp_lws};
+  VLOG(0) << "generate_lws_type:" << generate_lws_type;
   // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
   if (generate_lws_type == 0) {
     // 0 - None: nothing to do
-  } else if (generate_lws_type == 1 || generate_lws_type == 2 ||
-             generate_lws_type == 3) {
+  } else if (generate_lws_type == 1) {
+    // 1 - Rapid: fast general
+    auto GetiggestDividerWithPriority = [](const size_t num,
+                                           const int max_divider) -> size_t {
+      if (num % 8 == 0 && 8 <= max_divider) {
+        return 8;
+      }
+      if (num % 4 == 0 && 4 <= max_divider) {
+        return 4;
+      }
+      if (num % 2 == 0 && 2 <= max_divider) {
+        return 2;
+      }
+      for (int i = max_divider; i != 0; i--) {
+        if (num % i == 0) {
+          return i;
+        }
+      }
+      return 1;
+    };
+
+    auto DivideRoundUp = [](const size_t n, const size_t divisor) -> size_t {
+      const size_t div = static_cast<size_t>(divisor);
+      const size_t q = n / div;
+      return n % div == 0 ? q : q + 1;
+    };
+
+    size_t lws_z = GetiggestDividerWithPriority(global_work_size[2], 8);
+    size_t lws_xy = max_work_size / lws_z;
+    size_t lws_x = std::min(DivideRoundUp(global_work_size[0], 2), lws_xy);
+    size_t lws_y = std::min(lws_xy / lws_x, global_work_size[1]);
+  } else if (generate_lws_type == 2) {
+    // fast conv
+    auto GetBiggestDivider = [](const size_t num,
+                                const size_t max_divider) -> size_t {
+      for (size_t i = max_divider; i > 0; i--) {
+        if (num % i == 0) return i;
+      }
+      return 1;
+    };
+
+    int max_lws_z =
+        CLRuntime::Global()->GetDeviceInfo()["CL_DEVICE_MAX_WORK_ITEM_SIZES_2"];
+    max_lws_z = std::min(max_lws_z, 16);
+    size_t lws_z = GetBiggestDivider(global_work_size[2], max_lws_z);
+    size_t lws_xy = std::min(256, static_cast<int>(max_work_size)) / lws_z;
+    size_t lws_x = std::min(global_work_size[0], lws_xy);
+    size_t lws_y = std::min(lws_xy / lws_x, global_work_size[1]);
+    if (lws_y == global_work_size[1] && global_work_size[1] % 2 == 0) {
+      lws_y = global_work_size[1] / 2;
+    }
+    lwss.push_back(cl::NDRange{lws_x, lws_y, lws_z});
+  } else if (generate_lws_type == 3) {
+    // exhaustive
+    auto GenerateFactors = [](const size_t num) -> std::vector<size_t> {
+      const int max_factor = static_cast<int>(std::sqrt(num));
+      std::vector<size_t> factors;
+      for (size_t i = 1; i <= max_factor; ++i) {
+        const size_t d = num / i;
+        if (i * d == num) {
+          factors.push_back(i);
+          if (d != i) {
+            factors.push_back(d);
+          }
+        }
+      }
+      return factors;
+    };
+    auto dev_info = CLRuntime::Global()->GetDeviceInfo();
+    std::vector<size_t> max_wg_x_y_z{
+        dev_info["CL_DEVICE_MAX_WORK_ITEM_SIZES_0"],
+        dev_info["CL_DEVICE_MAX_WORK_ITEM_SIZES_1"],
+        dev_info["CL_DEVICE_MAX_WORK_ITEM_SIZES_2"]};
+    std::vector<size_t> wg_xs = GenerateFactors(global_work_size[0]);
+    std::vector<size_t> wg_ys = GenerateFactors(global_work_size[1]);
+    std::vector<size_t> wg_zs = GenerateFactors(global_work_size[2]);
+    for (auto x : wg_xs) {
+      if (x > max_wg_x_y_z[0]) continue;
+      for (auto y : wg_ys) {
+        if (y > max_wg_x_y_z[1]) continue;
+        for (auto z : wg_zs) {
+          if (z > max_wg_x_y_z[2]) continue;
+          const size_t cur_wg_xyz = x * y * z;
+          if (/*min_wg_xyz=*/32 > cur_wg_xyz || max_work_size < cur_wg_xyz)
+            continue;
+          lwss.push_back({x, y, z});
+        }
+      }
+    }
+  } else if (generate_lws_type == 4) {
     for (auto tune_reverse : {true, false}) {
       for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
         tmp_lws = DefaultLocalWorkSize(
@@ -156,14 +247,13 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
           // skip tuned lws
           continue;
         }
-        lwss.emplace_back(tmp_lws);
+        lwss.push_back(tmp_lws);
       }
     }
   } else {
     // todo
     LOG(FATAL) << "Unsupported opencl tune type:" << generate_lws_type;
   }
-
   return lwss;
 }
 
