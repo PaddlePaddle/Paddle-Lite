@@ -404,7 +404,7 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
 
     neon_st(dout_ptr, dinx0);
     dout_ptr += k_neont_element_num;
-    neon_st(dout_ptr + 4, dinx1);
+    neon_st(dout_ptr, dinx1);
     dout_ptr += k_neont_element_num;
 
     remain -= k_batch_element_num / 2;
