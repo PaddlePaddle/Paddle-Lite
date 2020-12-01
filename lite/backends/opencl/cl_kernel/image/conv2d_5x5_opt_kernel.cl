@@ -274,9 +274,6 @@ __kernel void conv2d_5x5_multi_batch(__private const int item_ch,
                                      __private const int in_h,
                                      __private const int out_w,
                                      __private const int out_h) {
-
-  const SAMPLER_t SAMPLER =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
   // filter
   const int filter_w = 5;
   const int filter_h = 5;
