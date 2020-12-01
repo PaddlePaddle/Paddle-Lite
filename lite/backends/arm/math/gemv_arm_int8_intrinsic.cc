@@ -266,6 +266,60 @@ inline __always_inline void neon_write_gemv_int8_out(
   }
 }
 
+template <int kSize, bool has_bias, bool has_active>
+inline __always_inline void write_gemv_int8_out(const int32_t* __restrict__ in,
+                                                signed char* __restrict__ out,
+                                                const float* __restrict__ scale,
+                                                const float* __restrict__ bias,
+                                                lite_api::ActivationType act,
+                                                float six,
+                                                float alpha) {
+  int32_t out_buf[kSize];
+
+  if (has_active) {
+    switch (act) {
+      case lite_api::ActivationType::kRelu:
+        for (int i = 0; i < kSize; ++i) {
+          int32_t tmp = in[i];
+          tmp = tmp * scale[i] + bias[i] * static_cast<int>(has_bias);
+          out_buf[i] = tmp > 0 ? tmp : 0;
+        }
+        break;
+      case lite_api::ActivationType::kRelu6: {
+        for (int i = 0; i < kSize; ++i) {
+          int32_t tmp = in[i];
+          tmp = tmp * scale[i] + bias[i] * static_cast<int>(has_bias);
+          tmp = tmp > 0 ? tmp : 0;
+          out_buf[i] = tmp > six ? six : tmp;
+        }
+        break;
+      }
+      case lite_api::ActivationType::kLeakyRelu: {
+        for (int i = 0; i < kSize; ++i) {
+          int32_t tmp = in[i];
+          tmp = tmp * scale[i] + bias[i] * static_cast<int>(has_bias);
+          out_buf[i] = tmp > 0 ? tmp : (tmp * alpha);
+        }
+        break;
+      }
+      default:
+        LOG(FATAL) << "act not supported";
+    }
+
+  } else {
+    for (int i = 0; i < kSize; ++i) {
+      out_buf[i] = in[i] * scale[i] + bias[i] * static_cast<int>(has_bias);
+    }
+  }
+
+  for (int i = 0; i < kSize; ++i) {
+    int tmp = out_buf[i];
+    tmp = tmp > 127 ? 127 : tmp;
+    tmp = tmp < -127 ? -127 : tmp;
+    out[i] = tmp;
+  }
+}
+
 template <int i>
 inline __always_inline void loop_mul_add(const int8x16_t& col0,
                                          const int8x16_t* tile_row,
@@ -600,7 +654,7 @@ bool gemv_int8_oth_intrinsic(const int8_t* __restrict__ A,
                                        1);
     row_idx += 2;
   }
-  //! deal with remains
+
   if (row_idx != M) {
     dtype* __restrict__ out_ptr = ptr_y + row_idx;
     const float* __restrict__ scale_ptr = scale + row_idx;
@@ -630,8 +684,23 @@ bool gemv_int8_oth_intrinsic(const int8_t* __restrict__ A,
       ans += tile_b_data[i] * row_A_data[i];
     }
 
-    write_gemv_out(
-        &ans, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
+    if (is_bias) {
+      if (flag_act) {
+        write_gemv_int8_out<1, true, true>(
+            &ans, out_ptr, scale_ptr, bias_ptr, act, six, alpha);
+      } else {
+        write_gemv_int8_out<1, true, false>(
+            &ans, out_ptr, scale_ptr, bias_ptr, act, six, alpha);
+      }
+    } else {
+      if (flag_act) {
+        write_gemv_int8_out<1, false, true>(
+            &ans, out_ptr, scale_ptr, bias_ptr, act, six, alpha);
+      } else {
+        write_gemv_int8_out<1, false, false>(
+            &ans, out_ptr, scale_ptr, bias_ptr, act, six, alpha);
+      }
+    }
   }
   return true;
 }
