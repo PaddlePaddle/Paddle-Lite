@@ -303,24 +303,35 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
   constexpr bool has_active = static_cast<bool>(Config::naive_active);
   constexpr bool neon_active_defined = static_cast<bool>(Config::neon_active);
 
-  int cnt = num >> 4;
-  int remain = num % 16;
+  constexpr int k_neont_element_num = sizeof(NeonT) / sizeof(T);
+  constexpr int k_neon_t_num_per_loop = 4;
+  constexpr int k_batch_element_num =
+      k_neon_t_num_per_loop * k_neont_element_num;
+  int cnt = num / k_batch_element_num;
+  int remain = num % k_batch_element_num;
+
+  auto dinx_ptr = dinx;
+  auto diny_ptr = diny;
+  auto dout_ptr = dout;
 
   for (int i = 0; i < cnt; ++i) {
-    int offset = i << 4;
-    auto dinx_ptr = dinx + offset;
-    auto diny_ptr = diny + offset;
-    auto dout_ptr = dout + offset;
-
     NeonT dinx0 = neon_ld(dinx_ptr);
-    NeonT dinx1 = neon_ld(dinx_ptr + 4);
-    NeonT dinx2 = neon_ld(dinx_ptr + 8);
-    NeonT dinx3 = neon_ld(dinx_ptr + 12);
+    dinx_ptr += k_neont_element_num;
+    NeonT dinx1 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
+    NeonT dinx2 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
+    NeonT dinx3 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
 
     NeonT diny0 = neon_ld(diny_ptr);
-    NeonT diny1 = neon_ld(diny_ptr + 4);
-    NeonT diny2 = neon_ld(diny_ptr + 8);
-    NeonT diny3 = neon_ld(diny_ptr + 12);
+    diny_ptr += k_neont_element_num;
+    NeonT diny1 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
+    NeonT diny2 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
+    NeonT diny3 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
 
     dinx0 = neon_op(dinx0, diny0);
     dinx1 = neon_op(dinx1, diny1);
@@ -333,7 +344,7 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
       dinx2 = neon_active(dinx2);
       dinx3 = neon_active(dinx3);
     } else if (has_active) {
-      for (int k = 0; k < 4; ++k) {
+      for (int k = 0; k < k_neont_element_num; ++k) {
         dinx0[k] = naive_active(dinx0[k]);
         dinx1[k] = naive_active(dinx1[k]);
         dinx2[k] = naive_active(dinx2[k]);
@@ -342,21 +353,25 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
     }
 
     neon_st(dout_ptr, dinx0);
-    neon_st(dout_ptr + 4, dinx1);
-    neon_st(dout_ptr + 8, dinx2);
-    neon_st(dout_ptr + 12, dinx3);
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, dinx1);
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, dinx2);
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, dinx3);
+    dout_ptr += k_neont_element_num;
   }
 
-  int offset = cnt << 4;
-  auto dinx_ptr = dinx + offset;
-  auto diny_ptr = diny + offset;
-  auto dout_ptr = dout + offset;
-  if (remain >= 8) {
+  if (remain >= k_batch_element_num / 2) {
     NeonT dinx0 = neon_ld(dinx_ptr);
-    NeonT dinx1 = neon_ld(dinx_ptr + 4);
+    dinx_ptr += k_neont_element_num;
+    NeonT dinx1 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
 
     NeonT diny0 = neon_ld(diny_ptr);
-    NeonT diny1 = neon_ld(diny_ptr + 4);
+    diny_ptr += k_neont_element_num;
+    NeonT diny1 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
 
     dinx0 = neon_op(dinx0, diny0);
     dinx1 = neon_op(dinx1, diny1);
@@ -365,39 +380,38 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
       dinx0 = neon_active(dinx0);
       dinx1 = neon_active(dinx1);
     } else if (has_active) {
-      for (int k = 0; k < 4; ++k) {
+      for (int k = 0; k < k_neont_element_num; ++k) {
         dinx0[k] = naive_active(dinx0[k]);
         dinx1[k] = naive_active(dinx1[k]);
       }
     }
 
     neon_st(dout_ptr, dinx0);
+    dout_ptr += k_neont_element_num;
     neon_st(dout_ptr + 4, dinx1);
+    dout_ptr += k_neont_element_num;
 
-    dinx_ptr += 8;
-    diny_ptr += 8;
-    dout_ptr += 8;
-    remain -= 8;
+    remain -= k_batch_element_num / 2;
   }
-  if (remain >= 4) {
+  if (remain >= k_batch_element_num / 4) {
     NeonT dinx0 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
 
     NeonT diny0 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
 
     dinx0 = neon_op(dinx0, diny0);
 
     if (has_active && neon_active_defined) {
       dinx0 = neon_active(dinx0);
     } else if (has_active) {
-      for (int k = 0; k < 4; ++k) {
+      for (int k = 0; k < k_neont_element_num; ++k) {
         dinx0[k] = naive_active(dinx0[k]);
       }
     }
     neon_st(dout_ptr, dinx0);
-    dinx_ptr += 4;
-    diny_ptr += 4;
-    dout_ptr += 4;
-    remain -= 4;
+    dout_ptr += k_neont_element_num;
+    remain -= k_batch_element_num / 4;
   }
   if (remain > 0) {
     T tmp = 0;
