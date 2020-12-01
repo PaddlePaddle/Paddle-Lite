@@ -607,11 +607,10 @@ bool gemv_int8_oth_intrinsic(const int8_t* __restrict__ A,
   constexpr int TILE_A_WIDTH = 16;
   constexpr int TILE_A_HEIGHT = 4;
 
-  // y = matmul(A,x)
-  //  if (transA) {
-  //    LOG(ERROR) << "ERROR: sgemv, transA is not supported now";
-  //    return false;
-  //  }
+  if (transA) {
+    LOG(ERROR) << "ERROR: sgemv, transA is not supported now";
+    return false;
+  }
   using dtype = int8_t;
   dtype* __restrict__ ptr_y = y;
   const int8_t* __restrict__ ptr_x = x;
