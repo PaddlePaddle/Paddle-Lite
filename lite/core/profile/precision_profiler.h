@@ -77,10 +77,9 @@ inline std::string generate_valid_tensor_name(const std::string& name) {
 }
 
 template <typename dtype>
-static bool write_tensorfile(
-    const Tensor* tensor,
-    const std::string& tensor_name,
-    const std::string prefix_path = "/storage/emulated/0/") {
+static bool write_tensorfile(const Tensor* tensor,
+                             const std::string& tensor_name,
+                             const std::string prefix_path) {
   std::string new_tensor_name = generate_valid_tensor_name(tensor_name);
   if (tensor_name.find('/') != std::string::npos) {
     LOG(ERROR) << "--> tensor name is abnormal with '\\':" << tensor_name
@@ -304,6 +303,7 @@ class PrecisionProfiler {
       }
 #ifdef LITE_WITH_OPENCL
     } else if (target_type == TARGET(kOpenCL)) {
+      bool use_fp16 = paddle::lite::CLRuntime::Global()->support_half();
       CLRuntime::Global()->command_queue().finish();
       switch (layout_type) {
         case DATALAYOUT(kImageDefault): {
@@ -313,19 +313,26 @@ class PrecisionProfiler {
           size_t im_h = image_shape[1];
           VLOG(1) << "image shape(W,H) of " << name << ": " << im_w << " "
                   << im_h;
-          std::vector<uint16_t> in_data_v(im_w * im_h * 4);
+          auto* in_data_v =
+              use_fp16
+                  ? static_cast<void*>(
+                        calloc(im_w * im_h * 4, sizeof(uint16_t)))
+                  : static_cast<void*>(calloc(im_w * im_h * 4, sizeof(float)));
+
           std::vector<float> real_out_v(in->numel());
           const size_t cl_image2d_row_pitch{0};
           const size_t cl_image2d_slice_pitch{0};
-          TargetWrapperCL::ImgcpySync(in_data_v.data(),
-                                      in->data<uint16_t, cl::Image2D>(),
+          TargetWrapperCL::ImgcpySync(in_data_v,
+                                      use_fp16
+                                          ? in->data<uint16_t, cl::Image2D>()
+                                          : in->data<float, cl::Image2D>(),
                                       im_w,
                                       im_h,
                                       cl_image2d_row_pitch,
                                       cl_image2d_slice_pitch,
                                       IoDirection::DtoH);
           default_convertor.ImageToNCHW(
-              in_data_v.data(), real_out_v.data(), image_shape, in->dims());
+              in_data_v, real_out_v.data(), image_shape, in->dims());
           CHECK(real_out_v.size() == in->numel());
           *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
           *std_dev = compute_standard_deviation<float>(
@@ -570,8 +577,12 @@ class PrecisionProfiler {
   }
 
  private:
+#ifdef LITE_WITH_ANDROID
   std::string log_dir_{"/storage/emulated/0/PaddleLite_" + get_date_str() +
                        "/"};
+#else
+  std::string log_dir_{"/tmp/PaddleLite_" + get_date_str() + "/"};
+#endif
   std::string summary_log_dir_{log_dir_ + "precision_summary.log"};
   std::map<std::string, size_t> out_tensor_names_map;
   bool write_result_to_file_{false};

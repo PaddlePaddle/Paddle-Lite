@@ -39,10 +39,7 @@ __kernel void nearest_interp(__read_only image2d_t input,
   input_pos.x = c * in_dims_w + w / scale_w;
   input_pos.y = out_n * in_dims_h + out_h / scale_h;
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
-  CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(input_pos.x, input_pos.y));
+  CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(input_pos.x, input_pos.y));
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(output_pos.x , output_pos.y), input_data);
 }

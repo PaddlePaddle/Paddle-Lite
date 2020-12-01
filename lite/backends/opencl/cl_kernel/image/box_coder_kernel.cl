@@ -37,9 +37,6 @@ __kernel void decode_center_size(__read_only image2d_t prior_box_image,
                         const int target_box_c = out_c;
                         const int target_box_h = out_h;
 
-                        const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                                                 CLK_ADDRESS_CLAMP      |
-                                                 CLK_FILTER_NEAREST;
                         int2  prior_box_pos;
                         int2  prior_box_var_pos;
                         int2  target_box_pos;
@@ -61,31 +58,31 @@ __kernel void decode_center_size(__read_only image2d_t prior_box_image,
                         CL_DTYPE4 prior_box_var_input[4];
                         CL_DTYPE4 target_box_input[4];
 
-                        prior_box_input[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_image, sampler,
+                        prior_box_input[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_image, SAMPLER,
                                             (int2)(prior_box_pos.x + 0, prior_box_pos.y));
-                        prior_box_input[1] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_image, sampler,
+                        prior_box_input[1] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_image, SAMPLER,
                                             (int2)(prior_box_pos.x + 1, prior_box_pos.y));
-                        prior_box_input[2] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_image, sampler,
+                        prior_box_input[2] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_image, SAMPLER,
                                             (int2)(prior_box_pos.x + 2, prior_box_pos.y));
-                        prior_box_input[3] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_image, sampler,
+                        prior_box_input[3] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_image, SAMPLER,
                                             (int2)(prior_box_pos.x + 3, prior_box_pos.y));
 
-                        prior_box_var_input[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_var_image, sampler,
+                        prior_box_var_input[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_var_image, SAMPLER,
                                                 (int2)(prior_box_var_pos.x + 0, prior_box_var_pos.y));
-                        prior_box_var_input[1] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_var_image, sampler,
+                        prior_box_var_input[1] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_var_image, SAMPLER,
                                                 (int2)(prior_box_var_pos.x + 1, prior_box_var_pos.y));
-                        prior_box_var_input[2] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_var_image, sampler,
+                        prior_box_var_input[2] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_var_image, SAMPLER,
                                                 (int2)(prior_box_var_pos.x + 2, prior_box_var_pos.y));
-                        prior_box_var_input[3] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_var_image, sampler, 
+                        prior_box_var_input[3] = READ_IMG_TYPE(CL_DTYPE_CHAR, prior_box_var_image, SAMPLER, 
                                                 (int2)(prior_box_var_pos.x + 3, prior_box_var_pos.y));
 
-                        target_box_input[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, target_box_image, sampler,
+                        target_box_input[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, target_box_image, SAMPLER,
                                             (int2)(target_box_pos.x + 0,target_box_pos.y));
-                        target_box_input[1] = READ_IMG_TYPE(CL_DTYPE_CHAR, target_box_image, sampler,
+                        target_box_input[1] = READ_IMG_TYPE(CL_DTYPE_CHAR, target_box_image, SAMPLER,
                                             (int2)(target_box_pos.x + 1, target_box_pos.y));
-                        target_box_input[2] = READ_IMG_TYPE(CL_DTYPE_CHAR, target_box_image, sampler,
+                        target_box_input[2] = READ_IMG_TYPE(CL_DTYPE_CHAR, target_box_image, SAMPLER,
                                             (int2)(target_box_pos.x + 2, target_box_pos.y));
-                        target_box_input[3] = READ_IMG_TYPE(CL_DTYPE_CHAR, target_box_image, sampler,
+                        target_box_input[3] = READ_IMG_TYPE(CL_DTYPE_CHAR, target_box_image, SAMPLER,
                                             (int2)(target_box_pos.x + 3, target_box_pos.y));
 
                         CL_DTYPE prior_box_width = prior_box_input[2].x - prior_box_input[0].x;
