@@ -183,8 +183,8 @@ adb shell "export LD_LIBRARY_PATH=/data/local/tmp/opencl/; \
 # 在/data/local/tmp目录下创建OpenCL文件目录
 adb shell mkdir -p /data/local/tmp/opencl
 
-# 将mobilenet_v1的fluid格式模型文件推送到/data/local/tmp/opencl目录下
-adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/ /data/local/tmp/opencl/
+# 将mobilenet_v1的fluid格式模型文件推送到/data/local/tmp/opencl/mobilenet_v1目录下
+adb push build.lite.android.armv8.gcc.opencl/third_party/install/mobilenet_v1/ /data/local/tmp/opencl/mobilenet_v1
 
 # 将OpenCL单元测试程序test_mobilenetv1，推送到/data/local/tmp/opencl目录下
 adb push build.lite.android.armv8.gcc.opencl/lite/api/test_mobilenetv1 /data/local/tmp/opencl

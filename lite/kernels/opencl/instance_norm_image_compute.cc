@@ -45,13 +45,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
 #if 1  // onnx/pytorch version
   void PrepareForRun() override {
     instance_norm_param_ = param_.get_mutable<param_t>();
-    auto out = instance_norm_param_->out;
-    auto out_dims = out->dims();
-    const int out_n = out_dims[0];
-    const int out_c = out_dims[1];
-    const int out_h = out_dims[2];
-    const int out_w = out_dims[3];
-    const int c_group = (out_dims[1] + 3) / 4;
+    auto out_h = instance_norm_param_->out->dims()[2];
 
     // TODO(ysh329): add instance_norm + relu pass
     // std::string build_options_ += "-DRELU";
@@ -59,59 +53,100 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
       build_options_ += " -DLOCAL_MEM_128";
     } else if (out_h == 64) {
       build_options_ += " -DLOCAL_MEM_64";
-    } else if (out_h > 256) {
-      LOG(FATAL) << "Unsupported input height:" << out_h << " of instance norm";
     }
 
     auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/instance_norm_kernel.cl",
                                     build_options_,
                                     time_stamp_);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+
+    auto& out_dims = instance_norm_param_->out->dims();
+    int batch = out_dims[0];
+    int channel = out_dims[1];
+    int cgroup = (channel + 3) / 4;
+    int cround = cgroup * 4;
+
+    std::vector<half_t> scale_img(cround * batch);
+    std::vector<half_t> bias_img(cround * batch);
+    const float* scale_data = instance_norm_param_->scale->data<float>();
+    const float* bias_data = instance_norm_param_->bias->data<float>();
+
+    for (int i = 0; i < channel; ++i) {
+      scale_img[i] = Float2Half(scale_data[i]);
+      bias_img[i] = Float2Half(bias_data[i]);
+    }
+
+    for (int i = 1; i < batch; ++i) {
+      memcpy(scale_img.data() + i * cround,
+             scale_img.data(),
+             cround * sizeof(half_t));
+      memcpy(bias_img.data() + i * cround,
+             bias_img.data(),
+             cround * sizeof(half_t));
+    }
+    DDim scale_img_size{{ cgroup, batch }};
+    scale_image_.mutable_data<half_t, cl::Image2D>(
+        scale_img_size[0], scale_img_size[1], scale_img.data());
+    bias_image_.mutable_data<half_t, cl::Image2D>(
+        scale_img_size[0], scale_img_size[1], bias_img.data());
+  }
+
+  void ReInitWhenNeeded() override {
+    instance_norm_param_ = param_.get_mutable<param_t>();
+    auto x_dims = instance_norm_param_->x->dims();
+
+    if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
+        first_epoch_for_reinit_) {
+      last_x_dims_ = x_dims;
+      first_epoch_for_reinit_ = false;
+
+      // compute global/local work size
+      auto device_info = CLRuntime::Global()->GetDeviceInfo();
+      int max_work_item_size1 = device_info["CL_DEVICE_MAX_WORK_ITEM_SIZES_1"];
+      int lws0 = 1;
+      int lws1 = std::min(max_work_item_size1,
+                          std::min(256, static_cast<int>(x_dims[3])));
+      int lws2 = 1;
+      gws_ = cl::NDRange{
+          static_cast<cl::size_type>(x_dims[0] * ((x_dims[1] + 3) / 4)),
+          static_cast<cl::size_type>(lws1),
+          static_cast<cl::size_type>(lws2)};
+      lws_ = cl::NDRange{static_cast<cl::size_type>(lws0),
+                         static_cast<cl::size_type>(lws1),
+                         static_cast<cl::size_type>(lws2)};
+    }
   }
 
   void Run() override {
     auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
 
     auto* x = instance_norm_param_->x;
     auto* out = instance_norm_param_->out;
-    auto x_dims = x->dims();
-    auto out_dims = out->dims();
+    auto& out_dims = out->dims();
 
-    const int out_n = out_dims[0];
     const int out_c_group = (out_dims[1] + 3) / 4;
     const int out_h = out_dims[2];
     const int out_w = out_dims[3];
 
     float epsilon = instance_norm_param_->epsilon;
-    auto device_info = CLRuntime::Global()->GetDeviceInfo();
-    int max_work_item_size1 = device_info["CL_DEVICE_MAX_WORK_ITEM_SIZES_1"];
-    int lws0 = 1;
-    int lws1 =
-        std::min(static_cast<int>(max_work_item_size1), std::min(256, out_w));
-    int lws2 = 1;
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(out_n * out_c_group),
-                    static_cast<cl::size_type>(lws1),
-                    static_cast<cl::size_type>(lws2)};
-    auto local_work_size = cl::NDRange{static_cast<cl::size_type>(lws0),
-                                       static_cast<cl::size_type>(lws1),
-                                       static_cast<cl::size_type>(lws2)};
 
 #ifdef LITE_WITH_LOG
-    VLOG(4) << "global_work_size:" << static_cast<int>(global_work_size[0])
-            << " " << static_cast<int>(global_work_size[1]) << " "
-            << static_cast<int>(global_work_size[2]);
-    VLOG(4) << "local_work_size:" << static_cast<int>(local_work_size[0]) << " "
-            << static_cast<int>(local_work_size[1]) << " "
-            << static_cast<int>(local_work_size[2]);
+    VLOG(4) << "global_work_size:" << static_cast<int>(gws_[0]) << " "
+            << static_cast<int>(gws_[1]) << " " << static_cast<int>(gws_[2]);
+    VLOG(4) << "local_work_size:" << static_cast<int>(lws_[0]) << " "
+            << static_cast<int>(lws_[1]) << " " << static_cast<int>(lws_[2]);
     VLOG(4) << "out_w:" << out_w;
     VLOG(4) << "out_h:" << out_h;
     VLOG(4) << "out_c_group:" << out_c_group;
-    VLOG(4) << "lws1:" << lws1;
-    VLOG(4) << "lws2:" << lws2;
+    VLOG(4) << "lws1:" << lws_[1];
+    VLOG(4) << "lws2:" << lws_[2];
     VLOG(4) << "epsilon:" << epsilon;
 #endif
 
@@ -119,35 +154,32 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     auto* x_img = x->data<half_t, cl::Image2D>();
     auto* out_img = out->mutable_data<half_t, cl::Image2D>(
         out_image_shape["width"], out_image_shape["height"]);
+    auto* scale_img = scale_image_.data<half_t, cl::Image2D>();
+    auto* bias_img = bias_image_.data<half_t, cl::Image2D>();
 
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+    cl_int status = kernel_.setArg(0, out_w);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(1, out_h);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(2, out_c_group);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(3, lws_[1]);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(4, lws_[2]);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(5, epsilon);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(6, *x_img);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(7, *out_img);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(8, *scale_img);
+    CL_CHECK_FATAL(status);
+    status = kernel_.setArg(9, *bias_img);
+    CL_CHECK_FATAL(status);
 
-    cl_int status = kernel.setArg(0, out_w);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, out_h);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, out_c_group);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, lws1);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, lws2);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, epsilon);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(6, *x_img);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(7, *out_img);
-    CL_CHECK_FATAL(status);
-
-    status = EnqueueNDRangeKernel(context,
-                                  kernel,
-                                  cl::NullRange,
-                                  global_work_size,
-                                  local_work_size,
-                                  nullptr,
-                                  event_);
+    status = EnqueueNDRangeKernel(
+        context, kernel_, cl::NullRange, gws_, lws_, nullptr, event_);
     CL_CHECK_FATAL(status);
   }
 
@@ -283,9 +315,13 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
 
  protected:
   param_t* instance_norm_param_{nullptr};
+  bool first_epoch_for_reinit_{true};
+  DDim last_x_dims_;
   std::string kernel_func_name_{"instance_norm_onnx"};
   std::string build_options_{"-DCL_DTYPE_half"};
   std::string time_stamp_{GetTimeStamp()};
+  cl::Kernel kernel_;
+  cl::NDRange gws_, lws_;
 
   Tensor scale_image_;
   Tensor bias_image_;

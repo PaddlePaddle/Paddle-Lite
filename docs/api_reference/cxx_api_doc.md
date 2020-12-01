@@ -227,7 +227,7 @@ predictor = create_paddle_predictor(config)
 返回类型：`int`
 
 
-### `set_x86_math_library_num_threads(threads)`
+### `set_x86_math_num_threads(threads)`
 
 设置CPU Math库线程数，CPU核心数支持情况下可加速预测。默认为1，并且仅在x86下有效。
 
@@ -240,7 +240,7 @@ predictor = create_paddle_predictor(config)
 返回类型：`None`
 
 
-### `x86_math_library_num_threads()`
+### `x86_math_num_threads()`
 
 返回CPU Math库线程数，CPU核心数支持情况下可加速预测。仅在x86下有效。
 
@@ -364,7 +364,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 
 
-### `model_from_memory()`
+### `is_model_from_memory()`
 
 是否从内存中加载模型，当使用`set_model_buffer`接口时返回`true`
 

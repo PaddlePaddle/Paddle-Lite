@@ -56,6 +56,7 @@ void MulCompute::Run() {
                            false,
                            m_,
                            k_,
+                           0.f,
                            false,
                            nullptr,
                            false,

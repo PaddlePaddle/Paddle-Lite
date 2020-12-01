@@ -55,38 +55,20 @@ void sgemm_prepacked_8x12(bool is_transB,
                           const operators::ActivationParam act_param,
                           ARMContext *ctx);
 
-void prepackA_4x8(float *out,
-                  const float *in,
-                  float alpha,
-                  int ldin,
-                  int m0,
-                  int mmax,
-                  int k0,
-                  int kmax);
-
-void prepackA_trans_4x8(float *out,
-                        const float *in,
-                        float alpha,
-                        int ldin,
-                        int m0,
-                        int mmax,
-                        int k0,
-                        int kmax);
-
-void sgemm_prepacked_4x8(bool is_transB,
-                         int M,
-                         int N,
-                         int K,
-                         const float *A_packed,
-                         const float *B,
-                         int ldb,
-                         float beta,
-                         float *C,
-                         int ldc,
-                         const float *bias,
-                         bool has_bias,
-                         const operators::ActivationParam act_param,
-                         ARMContext *ctx);
+void sgemm_prepacked_8x12_a53(bool is_transB,
+                              int M,
+                              int N,
+                              int K,
+                              const float *A_packed,
+                              const float *B,
+                              int ldb,
+                              float beta,
+                              float *C,
+                              int ldc,
+                              const float *bias,
+                              bool has_bias,
+                              const operators::ActivationParam act_param,
+                              ARMContext *ctx);
 
 void pack_m4(float *out,
              const float *in,
@@ -121,7 +103,6 @@ void sgemm_prepacked_4x4(bool is_transB,
                          const operators::ActivationParam act_param,
                          ARMContext *ctx);
 #else
-// for kA72
 void prepackA_6x8(float *out,
                   const float *in,
                   float alpha,
@@ -139,42 +120,9 @@ void prepackA_trans_6x8(float *out,
                         int mmax,
                         int k0,
                         int kmax);
-// for kA73
-void prepackA_4x8(float *out,
-                  const float *in,
-                  float alpha,
-                  int ldin,
-                  int m0,
-                  int mmax,
-                  int k0,
-                  int kmax);
 
-void prepackA_trans_4x8(float *out,
-                        const float *in,
-                        float alpha,
-                        int ldin,
-                        int m0,
-                        int mmax,
-                        int k0,
-                        int kmax);
-
-// for kA72, 6x8
+// v7: for kA72, 6x8
 void sgemm_prepacked_6x8(bool is_transB,
-                         int M,
-                         int N,
-                         int K,
-                         const float *A_packed,
-                         const float *B,
-                         int ldb,
-                         float beta,
-                         float *C,
-                         int ldc,
-                         const float *bias,
-                         bool has_bias,
-                         const operators::ActivationParam act_param,
-                         ARMContext *ctx);
-// for kA73, 4x8
-void sgemm_prepacked_4x8(bool is_transB,
                          int M,
                          int N,
                          int K,
@@ -203,6 +151,40 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
                              int is_relu,
                              ARMContext *ctx);
 #endif  // __aarch64__
+
+void prepackA_4x8(float *out,
+                  const float *in,
+                  float alpha,
+                  int ldin,
+                  int m0,
+                  int mmax,
+                  int k0,
+                  int kmax);
+
+void prepackA_trans_4x8(float *out,
+                        const float *in,
+                        float alpha,
+                        int ldin,
+                        int m0,
+                        int mmax,
+                        int k0,
+                        int kmax);
+
+// v7: for kA73, 4x8; M <= 4
+void sgemm_prepacked_4x8(bool is_transB,
+                         int M,
+                         int N,
+                         int K,
+                         const float *A_packed,
+                         const float *B,
+                         int ldb,
+                         float beta,
+                         float *C,
+                         int ldc,
+                         const float *bias,
+                         bool has_bias,
+                         const operators::ActivationParam act_param,
+                         ARMContext *ctx);
 
 /**
  * \brief input data is not transpose
@@ -258,7 +240,20 @@ void prepackA(TensorLite *tout,
               int group,
               bool is_trans,
               ARMContext *ctx) {
-  int hblock = get_hblock(ctx);
+  int hblock = 4;
+#ifdef __aarch64__
+  if (m <= 4) {
+    hblock = 4;
+  } else {
+    hblock = 8;
+  }
+#else
+  if (ctx->arch() == kA73 || m <= 4) {
+    hblock = 4;
+  } else {
+    hblock = 6;
+  }
+#endif
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
   if (tout->numel() < group_size_round_up * group) {
@@ -316,6 +311,21 @@ void sgemm_prepack(bool is_transB,
                         has_bias,
                         act_param,
                         ctx);
+  } else if (ctx->arch() == kA53) {
+    sgemm_prepacked_8x12_a53(is_transB,
+                             M,
+                             N,
+                             K,
+                             A_packed,
+                             B,
+                             ldb,
+                             beta,
+                             C,
+                             ldc,
+                             bias,
+                             has_bias,
+                             act_param,
+                             ctx);
   } else {
     sgemm_prepacked_8x12(is_transB,
                          M,
@@ -355,7 +365,7 @@ void sgemm_prepack(bool is_transB,
         (has_act == false) ||
         (has_act == true && act_type == lite_api::ActivationType::kRelu);
     bool has_beta = fabsf(beta) > 1e-8f ? true : false;
-    bool a53_sgemm = act_flag && !has_beta && ctx->has_a53_valid();
+    bool a53_sgemm = act_flag && !has_beta;
     if (a53_sgemm) {
       sgemm_prepacked_6x8_a53(is_transB,
                               M,
@@ -805,6 +815,7 @@ void prepackA_4x8(float *outptr,
     }
   }
 }
+
 void pack_m4(float *dout,
              const float *inptr,
              float alpha,
@@ -1226,7 +1237,7 @@ void prepackA_trans_4x8(float *outptr,
     for (; i < x_len - 3; i += 4) {
       float *ptr_out = outptr_row_col;
       asm volatile(
-          "cmp %[has_alpha], #0\n"
+          "cmp %w[has_alpha], #0\n"
           "ld1 {v0.4s}, [%[ptr0]], #16\n"
           "beq  0f\n"
           "1: \n"
@@ -1968,6 +1979,7 @@ void loadb(
 
   uint32_t *outptr_row = outptr;
   int stride_out = 12 * y_len;
+  int cnt_y = 4 * (y_len / 4);
 
   uint32x4_t vzero = vdupq_n_u32(0);
   uint32x4_t vmask1 =
@@ -2091,7 +2103,7 @@ void loadb(
   }
 
 #pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  for (int y = cnt_y; y < y_len; ++y) {
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * 12;
 
@@ -2366,6 +2378,7 @@ void loadb_trans(
     }
   }
 }
+
 void loadb_eight(
     float *out, const float *in, int ldin, int k0, int kmax, int n0, int nmax) {
   auto outptr = reinterpret_cast<uint32_t *>(out);
@@ -2378,6 +2391,7 @@ void loadb_eight(
 
   uint32_t *outptr_row = outptr;
   int stride_out = 8 * y_len;
+  int cnt_y = 4 * (y_len / 4);
 
   uint32x4_t vzero = vdupq_n_u32(0);
   uint32x4_t vmask1 =
@@ -2454,7 +2468,7 @@ void loadb_eight(
     }
   }
 #pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  for (int y = cnt_y; y < y_len; ++y) {
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * 8;
     int i = 0;
@@ -2981,6 +2995,9 @@ void sgemm_prepacked_8x12(bool is_transB,
 
   bool flag_p_remain = false;
   int remain = 0;
+  if (tail_pre == 0) {
+    tail_pre = KBLOCK;
+  }
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
 
@@ -3729,6 +3746,946 @@ void sgemm_prepacked_8x12(bool is_transB,
   }
 }
 
+void sgemm_prepacked_8x12_a53(bool is_transB,
+                              int M,
+                              int N,
+                              int K,
+                              const float *A_packed,
+                              const float *B,
+                              int ldb,
+                              float beta,
+                              float *C,
+                              int ldc,
+                              const float *bias,
+                              bool has_bias,
+                              const operators::ActivationParam act_param,
+                              ARMContext *ctx) {
+  size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
+  auto workspace = ctx->workspace_data<float>();
+  int threads = ctx->threads();
+
+  auto act_type = act_param.active_type;
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
+  //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
+  int x_block = (l2_cache - (MBLOCK * K)) / (sizeof(float) * (K + MBLOCK));
+  x_block /= NBLOCK;
+  x_block *= NBLOCK;
+  int x_num = (N + (x_block - 1)) / x_block;
+  x_block = (N + x_num - 1) / x_num;
+  x_block = (x_block + NBLOCK - 1) / NBLOCK;
+  x_block *= NBLOCK;
+  x_block = x_block < NBLOCK ? NBLOCK : x_block;
+
+  // unroll 2 loop
+  int tail_pre = (K & (KBLOCK - 1));
+  int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
+
+  bool flag_p_remain = false;
+  int remain = 0;
+  if (tail_pre == 0) {
+    tail_pre = KBLOCK;
+  }
+
+  int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+
+  //! apanel is pre_compute outside gemm
+  for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
+    unsigned int xmax = x0 + x_block;
+    if (xmax > N) {
+      xmax = N;
+    }
+    int bblocks = (xmax - x0 + NBLOCK - 1) / NBLOCK;
+    remain = xmax - x0 - (bblocks - 1) * NBLOCK;
+    if (remain > 0) {
+      flag_p_remain = true;
+    }
+    //! load bpanel
+    float *b_pannel = workspace;
+    if (is_transB) {
+      loadb_trans(b_pannel, B, ldb, 0, K, x0, xmax);
+    } else {
+      loadb(b_pannel, B, ldb, 0, K, x0, xmax);
+    }
+#pragma omp parallel for num_threads(threads)
+    for (unsigned int y = 0; y < M; y += MBLOCK) {
+      unsigned int ymax = y + MBLOCK;
+      if (ymax > M) {
+        ymax = M;
+      }
+
+      float bias_local[8] = {0};
+      if (has_bias) {
+        bias_local[0] = bias[y];
+        bias_local[1] = bias[y + 1];
+        bias_local[2] = bias[y + 2];
+        bias_local[3] = bias[y + 3];
+        bias_local[4] = bias[y + 4];
+        bias_local[5] = bias[y + 5];
+        bias_local[6] = bias[y + 6];
+        bias_local[7] = bias[y + 7];
+      }
+
+      float cout0[NBLOCK];
+      float cout1[NBLOCK];
+      float cout2[NBLOCK];
+      float cout3[NBLOCK];
+      float cout4[NBLOCK];
+      float cout5[NBLOCK];
+      float cout6[NBLOCK];
+      float cout7[NBLOCK];
+
+      float *c_ptr0 = C + y * ldc + x0;
+      float *c_ptr1 = c_ptr0 + ldc;
+      float *c_ptr2 = c_ptr1 + ldc;
+      float *c_ptr3 = c_ptr2 + ldc;
+      float *c_ptr4 = c_ptr3 + ldc;
+      float *c_ptr5 = c_ptr4 + ldc;
+      float *c_ptr6 = c_ptr5 + ldc;
+      float *c_ptr7 = c_ptr6 + ldc;
+
+      float *pout0 = c_ptr0;
+      float *pout1 = c_ptr1;
+      float *pout2 = c_ptr2;
+      float *pout3 = c_ptr3;
+      float *pout4 = c_ptr4;
+      float *pout5 = c_ptr5;
+      float *pout6 = c_ptr6;
+      float *pout7 = c_ptr7;
+
+      const float *a_ptr_l = A_packed + y * K;
+      const float *b_ptr = b_pannel;
+      for (int xb = 0; xb < bblocks; xb++) {
+        if ((y + 7) >= ymax) {
+          switch ((y + 7) - ymax) {
+            case 6:
+              c_ptr1 = cout1;
+            case 5:
+              c_ptr2 = cout2;
+            case 4:
+              c_ptr3 = cout3;
+            case 3:
+              c_ptr4 = cout4;
+            case 2:
+              c_ptr5 = cout5;
+            case 1:
+              c_ptr6 = cout6;
+            case 0:
+              c_ptr7 = cout7;
+            default:
+              break;
+          }
+        }
+        if (flag_p_remain && (xb == bblocks - 1)) {
+          pout0 = c_ptr0;
+          pout1 = c_ptr1;
+          pout2 = c_ptr2;
+          pout3 = c_ptr3;
+          pout4 = c_ptr4;
+          pout5 = c_ptr5;
+          pout6 = c_ptr6;
+          pout7 = c_ptr7;
+
+          c_ptr0 = cout0;
+          c_ptr1 = cout1;
+          c_ptr2 = cout2;
+          c_ptr3 = cout3;
+          c_ptr4 = cout4;
+          c_ptr5 = cout5;
+          c_ptr6 = cout6;
+          c_ptr7 = cout7;
+          if (has_beta) {
+            for (int i = 0; i < remain; ++i) {
+              cout0[i] = pout0[i];
+              cout1[i] = pout1[i];
+              cout2[i] = pout2[i];
+              cout3[i] = pout3[i];
+              cout4[i] = pout4[i];
+              cout5[i] = pout5[i];
+              cout6[i] = pout6[i];
+              cout7[i] = pout7[i];
+            }
+          }
+        }
+        const float *a_ptr = a_ptr_l;
+        int tail = tail_pre;
+        int k = k_pre;
+        // clang-format off
+        asm volatile(
+            "ldr q2, [%[bias_ptr]]\n"
+            "prfm   pldl1keep, [%[a_ptr]]\n"
+            "prfm   pldl1keep, [%[b_ptr]]\n"
+            "dup	v8.4s,  v2.s[0]\n"
+            "ldr q0, [%[a_ptr]]\n"
+            "dup	v9.4s,  v2.s[0]\n"
+            "ldr q4, [%[b_ptr]]\n"
+            "dup	v10.4s, v2.s[0]\n"
+            "ldr q3, [%[bias_ptr], #0x10]\n"
+            "dup	v11.4s, v2.s[1]\n"
+            "prfm   pldl1keep, [%[a_ptr], #64]\n"
+            "dup	v12.4s, v2.s[1]\n"
+            "prfm   pldl1keep, [%[b_ptr], #64]\n"
+            "dup	v13.4s, v2.s[1]\n"
+            "prfm   pldl1keep, [%[a_ptr], #128]\n"
+            "dup	v14.4s, v2.s[2]\n"
+            "prfm   pldl1keep, [%[b_ptr], #128]\n"
+            "dup	v15.4s, v2.s[2]\n"
+            "ldr q1, [%[a_ptr], #16]\n"
+            "dup	v16.4s, v2.s[2]\n"
+            "ldr q5, [%[b_ptr], #16]\n"
+            "dup	v17.4s, v2.s[3]\n"
+            "prfm   pldl1keep, [%[b_ptr], #192]\n"
+            "dup	v18.4s, v2.s[3]\n"
+            "prfm   pldl1keep, [%[b_ptr], #256]\n"
+            "dup	v19.4s, v2.s[3]\n"
+            "prfm   pldl1keep, [%[a_ptr], #192]\n"
+            "dup	v20.4s, v3.s[0]\n"
+            "prfm   pldl1keep, [%[b_ptr], #320]\n"
+            "dup	v21.4s, v3.s[0]\n"
+            "prfm   pldl1keep, [%[a_ptr], #256]\n"
+            "dup	v22.4s, v3.s[0]\n"
+            "prfm   pldl1keep, [%[b_ptr], #384]\n"
+            "dup	v23.4s, v3.s[1]\n"
+            "dup	v24.4s, v3.s[1]\n"
+            "dup	v25.4s, v3.s[1]\n"
+            "dup	v26.4s, v3.s[2]\n"
+            "cmp %w[has_beta], #1\n"
+            "dup	v27.4s, v3.s[2]\n"
+            "dup	v28.4s, v3.s[2]\n"
+            "dup	v29.4s, v3.s[3]\n" 
+            "dup	v30.4s, v3.s[3]\n"
+            "dup	v31.4s, v3.s[3]\n"
+            "blt 0f\n"
+            // process beta
+            "dup    v7.4s, %w[beta]\n"                    // beta to vector
+            "ld1    {v0.4s, v1.4s, v2.4s}, [%[c_ptr0]]\n" // load output r0
+            "ld1    {v3.4s, v4.4s, v5.4s}, [%[c_ptr1]]\n" // load output r1
+            "fmla   v8.4s, v0.4s, v7.4s\n"  // cr00 += beta * c_r00
+            "fmla   v9.4s, v1.4s, v7.4s\n"  // cr01 += beta * c_r01
+            "fmla   v10.4s, v2.4s, v7.4s\n" // cr02 += beta * c_r02
+            "ld1    {v0.4s, v1.4s, v2.4s}, [%[c_ptr2]]\n" // load output r2
+            "fmla   v11.4s, v3.4s, v7.4s\n" // cr10 += beta * c_r10
+            "fmla   v12.4s, v4.4s, v7.4s\n" // cr11 += beta * c_r11
+            "fmla   v13.4s, v5.4s, v7.4s\n" // cr12 += beta * c_r12
+            "ld1    {v3.4s, v4.4s, v5.4s}, [%[c_ptr3]]\n" // load output r3
+            "fmla   v14.4s, v0.4s, v7.4s\n" // cr20 += beta * c_r20
+            "fmla   v15.4s, v1.4s, v7.4s\n" // cr21 += beta * c_r21
+            "fmla   v16.4s, v2.4s, v7.4s\n" // cr22 += beta * c_r22
+            "ld1    {v0.4s, v1.4s, v2.4s}, [%[c_ptr4]]\n" // load output r4
+            "fmla   v17.4s, v3.4s, v7.4s\n" // cr30 += beta * c_r30
+            "fmla   v18.4s, v4.4s, v7.4s\n" // cr31 += beta * c_r31
+            "fmla   v19.4s, v5.4s, v7.4s\n" // cr32 += beta * c_r32
+            "ld1    {v3.4s, v4.4s, v5.4s}, [%[c_ptr5]]\n" // load output r5
+            "fmla   v20.4s, v0.4s, v7.4s\n" // cr40 += beta * c_r40
+            "fmla   v21.4s, v1.4s, v7.4s\n" // cr41 += beta * c_r41
+            "fmla   v22.4s, v2.4s, v7.4s\n" // cr42 += beta * c_r42
+            "ld1    {v0.4s, v1.4s, v2.4s}, [%[c_ptr6]]\n" // load output r6
+            "fmla   v23.4s, v3.4s, v7.4s\n" // cr50 += beta * c_r50
+            "fmla   v24.4s, v4.4s, v7.4s\n" // cr51 += beta * c_r51
+            "fmla   v25.4s, v5.4s, v7.4s\n" // cr52 += beta * c_r52
+            "ld1    {v3.4s, v4.4s, v5.4s}, [%[c_ptr7]]\n" // load output r7
+            "fmla   v26.4s, v0.4s, v7.4s\n"  // cr60 += beta * c_r60
+            "fmla   v27.4s, v1.4s, v7.4s\n"  // cr61 += beta * c_r61
+            "ldr q0, [%[a_ptr]]\n"
+            "fmla   v28.4s, v2.4s, v7.4s\n"  // cr62 += beta * c_r62
+            "ldr q1, [%[a_ptr], #16]\n"
+            "fmla   v29.4s, v3.4s, v7.4s\n"  // cr70 += beta * c_r70
+            "fmla   v30.4s, v4.4s, v7.4s\n"  // cr71 += beta * c_r71
+            "fmla   v31.4s, v5.4s, v7.4s\n"  // cr72 += beta * c_r72
+            "ldp	q4, q5, [%[b_ptr]]\n"
+            "0: \n"
+            "cbz	%w[k], 2f\n"               // check loop count > 0
+            // main loop
+            // unrool 0
+            "1:\n"
+            "ldr d6, [%[b_ptr], #0x20]\n"
+            "nop\n"
+            "fmla 	v8.4s ,  v4.4s,  v0.s[0]\n" // out0 = b0 * a00[0], b0 =q4
+            "ldr x20, [%[b_ptr], #0x28]\n"
+            "fmla  	v11.4s ,  v4.4s,  v0.s[1]\n" // out1 = b0 * a00[1], b0 =q4
+            "ldr d2, [%[a_ptr], #0x20]\n"
+            "ins v6.d[1], x20\n"
+            "fmla	v14.4s,  v4.4s,  v0.s[2]\n"   // out2 = b0 * a00[2], b0 =q4
+            "ldr x20, [%[a_ptr], #0x28]\n"
+            "fmla	v17.4s,  v4.4s,  v0.s[3]\n"   // out3 = b0 * a00[3], b0 =q4
+            "fmla 	v20.4s,  v4.4s,  v1.s[0]\n" // out4 = b0 * a01[0], b0 =q4
+            "ldr d3, [%[a_ptr], #0x30]\n"
+            "ins v2.d[1], x20\n"
+            "fmla	v23.4s,  v4.4s,  v1.s[1]\n"   // out5 = b0 * a01[1], b0 =q4
+            "ldr x20, [%[a_ptr], #0x38]\n"
+            "fmla	v26.4s,  v4.4s,  v1.s[2]\n"   // out6 = b0 * a01[2], b0 =q4
+            "fmla	v29.4s,  v4.4s,  v1.s[3]\n"   // out7 = b0 * a01[3], b0 =q4
+            "ldr d7, [%[b_ptr], #0x30]\n"
+            "ins v3.d[1], x20\n"
+
+            "fmla	v9.4s,  v5.4s,  v0.s[0]\n"  // out8 = b1 * a00[0], b1 =q5
+            "ldr x20, [%[b_ptr], #0x38]\n"
+            "fmla	v12.4s,  v5.4s,  v0.s[1]\n" // out9 = b1 * a00[1], b1 =q5
+            "fmla	v15.4s,  v5.4s,  v0.s[2]\n" // out10 = b1 * a00[2], b1 =q5
+            "ldr d4, [%[b_ptr], #0x40]\n"
+            "ins v7.d[1], x20\n"
+            "fmla	v18.4s,  v5.4s,  v0.s[3]\n" // out11 = b1 * a00[3], b1 =q5
+            "ldr x20, [%[b_ptr], #0x48]\n"
+            "fmla	v21.4s,  v5.4s,  v1.s[0]\n" // out12 = b1 * a01[0], b1 =q5
+            "fmla	v24.4s,  v5.4s,  v1.s[1]\n" // out13 = b1 * a01[1], b1 =q5
+            "ins v4.d[1], x20\n"
+            "fmla	v27.4s,  v5.4s,  v1.s[2]\n" // out14 = b1 * a01[2], b1 =q5
+            "fmla	v30.4s,  v5.4s,  v1.s[3]\n" // out15 = b1 * a01[3], b1 =q5
+            
+            "ldr d5, [%[b_ptr], #0x50]\n"
+            "fmla	v10.4s,  v6.4s,  v0.s[0]\n" // out16 = b2 * a00[0], b2 =q6
+            "fmla	v13.4s,  v6.4s,  v0.s[1]\n" // out17 = b2 * a00[1], b2 =q6
+            "ldr x20, [%[b_ptr], #0x58]\n"
+            "fmla	v16.4s,  v6.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q6
+            "fmla	v19.4s,  v6.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q6
+            "nop\n"
+            "ins v5.d[1], x20\n"
+          
+            "fmla	v22.4s,  v6.4s,  v1.s[0]\n" // out20 = b2 * a00[0], b2 =q6
+            "fmla	v25.4s,  v6.4s,  v1.s[1]\n" // out21 = b2 * a00[1], b2 =q6
+            "fmla	v28.4s,  v6.4s,  v1.s[2]\n" // out22 = b2 * a00[2], b2 =q6
+            "nop\n"
+            "fmla	v31.4s,  v6.4s,  v1.s[3]\n" // out23 = b2 * a00[3], b2 =q6
+
+            // unrool 1
+            "ldr d6, [%[b_ptr], #0x60]\n"
+            "nop\n"
+            "fmla 	v8.4s ,  v7.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q7
+            "ldr x20, [%[b_ptr], #0x68]\n"
+            "fmla	v11.4s ,  v7.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q7
+            "fmla	v14.4s,  v7.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q7
+            "ldr d0, [%[a_ptr], #0x40]\n"
+            "ins v6.d[1], x20\n"
+            "fmla	v17.4s,  v7.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q7
+            "ldr x20, [%[a_ptr], #0x48]\n"
+            "fmla 	v20.4s,  v7.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q7
+            "fmla   v23.4s,  v7.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 = q7
+            "ldr d1, [%[a_ptr], #0x50]\n"
+            "ins v0.d[1], x20\n"
+            "fmla	v26.4s,  v7.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q7
+            "ldr x20, [%[a_ptr], #0x58]\n"
+            "fmla	v29.4s,  v7.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q7
+
+            "fmla	v9.4s,  v4.4s,  v2.s[0]\n"  // out8 = b0 * a10[0], b1 =q4
+            "ldr d7, [%[b_ptr], #0x70]\n"
+            "ins v1.d[1], x20\n"
+            "fmla	v12.4s,  v4.4s,  v2.s[1]\n" // out9 = b0 * a10[1], b1 =q4
+            "ldr x20, [%[b_ptr], #0x78]\n"
+            "fmla	v15.4s,  v4.4s,  v2.s[2]\n" // out10 = b1 * a10[2], b1 =q4
+            "fmla	v18.4s,  v4.4s,  v2.s[3]\n" // out11 = b1 * a10[3], b1 =q4
+            "nop\n"
+            "ins v7.d[1], x20\n"
+            "fmla	v21.4s,  v4.4s,  v3.s[0]\n" // out12 = b1 * a10[0], b1 =q4
+            "fmla	v24.4s,  v4.4s,  v3.s[1]\n" // out13 = b1 * a10[1], b1 =q4
+            "fmla	v27.4s,  v4.4s,  v3.s[2]\n" // out14 = b1 * a10[2], b1 =q4
+            "nop\n""nop\n"
+            "fmla	v30.4s,  v4.4s,  v3.s[3]\n" // out15 = b1 * a10[3], b1 =q4
+
+            "fmla	v10.4s,  v5.4s,  v2.s[0]\n" // out16 = b2 * a10[0], b2 =q5
+            "fmla	v13.4s,  v5.4s,  v2.s[1]\n" // out17 = b2 * a10[0], b2 =q5
+            "ldr d4, [%[b_ptr], #0x80]\n"
+            "nop\n"
+            "fmla	v16.4s,  v5.4s,  v2.s[2]\n" // out18 = b2 * a10[0], b2 =q5
+            "ldr x20, [%[b_ptr], #0x88]\n"
+            "fmla	v19.4s,  v5.4s,  v2.s[3]\n" // out19 = b2 * a10[0], b2 =q5
+            "fmla	v22.4s,  v5.4s,  v3.s[0]\n" // out20 = b2 * a10[0], b2 =q5
+            "ldr d2, [%[a_ptr], #0x60]\n"
+            "ins v4.d[1], x20\n"
+            "fmla	v25.4s,  v5.4s,  v3.s[1]\n" // out21 = b2 * a10[0], b2 =q5
+            "ldr x20, [%[a_ptr], #0x68]\n"
+            "fmla	v28.4s,  v5.4s,  v3.s[2]\n" // out22 = b2 * a10[0], b2 =q5
+            "fmla	v31.4s,  v5.4s,  v3.s[3]\n" // out23 = b2 * a10[0], b2 =q5
+            "ldr d5, [%[b_ptr], #0x90]\n"
+            "ins v2.d[1], x20\n"
+            // unrool 2
+            "fmla 	v8.4s ,  v6.4s,  v0.s[0]\n" // out0 = b0 * a00[0], b0 =q6
+            "ldr x20, [%[b_ptr], #0x98]\n"
+            "fmla  	v11.4s ,  v6.4s,  v0.s[1]\n" // out1 = b0 * a00[1], b0 =q6
+            "fmla	v14.4s,  v6.4s,  v0.s[2]\n"    // out2 = b0 * a00[2], b0 =q6
+            "ldr d3, [%[a_ptr], #0x70]\n"
+            "ins v5.d[1], x20\n"
+            "fmla	v17.4s,  v6.4s,  v0.s[3]\n"    // out3 = b0 * a00[3], b0 =q6
+            "ldr x20, [%[a_ptr], #0x78]\n"
+            "fmla 	v20.4s,  v6.4s,  v1.s[0]\n"  // out4 = b0 * a01[0], b0 =q6
+            "fmla	v23.4s,  v6.4s,  v1.s[1]\n"    // out5 = b0 * a01[1], b0 =q6
+            "prfm   pldl1keep, [%[a_ptr], #320]\n"
+            "ins v3.d[1], x20\n"
+            "fmla	v26.4s,  v6.4s,  v1.s[2]\n"    // out6 = b0 * a01[2], b0 =q6
+            "fmla	v29.4s,  v6.4s,  v1.s[3]\n"    // out7 = b0 * a01[3], b0 =q6
+
+            "ldr d6, [%[b_ptr], #0xa0]\n"
+            "nop\n"
+            "fmla	v9.4s,  v7.4s,  v0.s[0]\n"     // out8 = b1 * a00[0], b1 =q7
+            "ldr x20, [%[b_ptr], #0xa8]\n"
+            "fmla	v12.4s,  v7.4s,  v0.s[1]\n"    // out9 = b1 * a00[1], b1 =q7
+            "fmla	v15.4s,  v7.4s,  v0.s[2]\n" // out10 = b1 * a00[2], b1 =q7
+            "nop\n"
+            "prfm   pldl1keep, [%[b_ptr], #448]\n"
+            "ins v6.d[1], x20\n"
+            "fmla	v18.4s,  v7.4s,  v0.s[3]\n" // out11 = b1 * a00[3], b1 =q7
+            "fmla	v21.4s,  v7.4s,  v1.s[0]\n" // out12 = b1 * a01[0], b1 =q7
+            "fmla	v24.4s,  v7.4s,  v1.s[1]\n" // out13 = b1 * a01[1], b1 =q7
+            "nop\n""nop\n"
+            "fmla	v27.4s,  v7.4s,  v1.s[2]\n" // out14 = b1 * a01[2], b1 =q7
+            "fmla	v30.4s,  v7.4s,  v1.s[3]\n" // out15 = b1 * a01[3], b1 =q7
+
+            "fmla	v10.4s,  v4.4s,  v0.s[0]\n" // out16 = b2 * a00[0], b2 =q4
+            "ldr d7, [%[b_ptr], #0xb0]\n"
+            "nop\n"
+            "fmla	v13.4s,  v4.4s,  v0.s[1]\n" // out17 = b2 * a00[1], b2 =q4
+            "ldr x20, [%[b_ptr], #0xb8]\n"
+            "fmla	v16.4s,  v4.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q4
+            "fmla	v19.4s,  v4.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q4
+            "ldr d0,  [%[a_ptr], #0x80]\n"
+            "ins v7.d[1], x20\n"
+            "fmla	v22.4s,  v4.4s,  v1.s[0]\n" // out20 = b2 * a00[0], b2 =q4
+            "ldr x20,  [%[a_ptr], #0x88]\n"
+            "fmla	v25.4s,  v4.4s,  v1.s[1]\n" // out21 = b2 * a00[1], b2 =q4
+            "fmla	v28.4s,  v4.4s,  v1.s[2]\n" // out22 = b2 * a00[2], b2 =q4
+            "prfm   pldl1keep, [%[b_ptr], #512]\n"
+            "ins v0.d[1], x20\n"
+            "fmla	v31.4s,  v4.4s,  v1.s[3]\n" // out23 = b2 * a00[3], b2 =q4
+            // unrool 3
+            "ldr d4, [%[b_ptr], #0xc0]\n"
+            "nop\n"
+            "fmla 	v8.4s ,  v5.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q5
+            "ldr x20, [%[b_ptr], #0xc8]\n"
+            "fmla	v11.4s ,  v5.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q5
+            "fmla	v14.4s,  v5.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q5
+            "ldr d1, [%[a_ptr], #0x90]\n"
+            "ins v4.d[1], x20\n"
+            "fmla	v17.4s,  v5.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q5
+            "ldr x20, [%[a_ptr], #0x98]\n"
+            "fmla 	v20.4s,  v5.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q5
+            "fmla   v23.4s,  v5.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 =q5
+            "nop\n"
+            "ins v1.d[1], x20\n"
+            "fmla	v26.4s,  v5.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q5
+            "fmla	v29.4s,  v5.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q5
+            
+            "fmla	v9.4s,  v6.4s,  v2.s[0]\n"    // out8 = b0 * a10[0], b1 =q6
+            "nop\n""nop\n"
+            "fmla	v12.4s,  v6.4s,  v2.s[1]\n"   // out9 = b0 * a10[1], b1 =q6
+            "fmla	v15.4s,  v6.4s,  v2.s[2]\n" // out10 = b1 * a10[2], b1 =q6
+            "fmla	v18.4s,  v6.4s,  v2.s[3]\n" // out11 = b1 * a10[3], b1 =q6
+
+            "ldr d5, [%[b_ptr], #0xd0]\n"
+            "nop\n"
+            "fmla	v21.4s,  v6.4s,  v3.s[0]\n" // out12 = b1 * a10[0], b1 =q6
+            "ldr x20, [%[b_ptr], #0xd8]\n"
+            "fmla	v24.4s,  v6.4s,  v3.s[1]\n" // out13 = b1 * a10[1], b1 =q6
+            "fmla	v27.4s,  v6.4s,  v3.s[2]\n" // out14 = b1 * a10[2], b1 =q6
+            "add %[a_ptr], %[a_ptr], #0x80\n"
+            "fmla	v30.4s,  v6.4s,  v3.s[3]\n" // out15 = b1 * a10[3], b1 =q6
+            "add %[b_ptr], %[b_ptr], #0xc0\n"
+            "fmla	v10.4s,  v7.4s,  v2.s[0]\n" // out16 = b2 * a10[0], b2 =q7
+            "nop\n"
+            "ins v5.d[1], x20\n"
+            "fmla	v13.4s,  v7.4s,  v2.s[1]\n" // out17 = b2 * a10[0], b2 =q7
+            "fmla	v16.4s,  v7.4s,  v2.s[2]\n" // out18 = b2 * a10[0], b2 =q7
+            "fmla	v19.4s,  v7.4s,  v2.s[3]\n" // out19 = b2 * a10[0], b2 =q7
+            "nop\n"
+            "fmla	v22.4s,  v7.4s,  v3.s[0]\n" // out20 = b2 * a10[0], b2 =q7
+            "subs	%w[k], %w[k], #1\n"         // loop count - 1
+            "fmla	v25.4s,  v7.4s,  v3.s[1]\n" // out21 = b2 * a10[0], b2 =q7
+            "fmla	v28.4s,  v7.4s,  v3.s[2]\n" // out22 = b2 * a10[0], b2 =q7
+            "nop\n"
+            "fmla	v31.4s,  v7.4s,  v3.s[3]\n" // out23 = b2 * a10[0], b2 =q7
+            "bne	1b\n"
+            "2:\n"                            // process tail
+            "subs		%w[tail], %w[tail], #1\n" // tail--
+            "beq		3f\n"                     //jump to tail = 1
+            // final unrool 0
+            // unrool 0, tail > 1
+            "ldr d6, [%[b_ptr], #0x20]\n"
+            "fmla 	v8.4s ,  v4.4s,  v0.s[0]\n"  // out0 = b0 * a00[0], b0 =q4
+            "fmla  	v11.4s ,  v4.4s,  v0.s[1]\n" // out1 = b0 * a00[1], b0 =q4
+            "ldr x20, [%[b_ptr], #0x28]\n"
+            "fmla	v14.4s,  v4.4s,  v0.s[2]\n"    // out2 = b0 * a00[2], b0 =q4
+            "fmla	v17.4s,  v4.4s,  v0.s[3]\n"    // out3 = b0 * a00[3], b0 =q4
+            "ldr d2, [%[a_ptr], #0x20]\n"
+            "ins v6.d[1], x20\n"
+            "fmla 	v20.4s,  v4.4s,  v1.s[0]\n"  // out4 = b0 * a01[0], b0 =q4
+            "ldr x20, [%[a_ptr], #0x28]\n"
+            "fmla	v23.4s,  v4.4s,  v1.s[1]\n"    // out5 = b0 * a01[1], b0 =q4
+            "fmla	v26.4s,  v4.4s,  v1.s[2]\n"    // out6 = b0 * a01[2], b0 =q4
+            "ldr d7, [%[b_ptr], #0x30]\n"
+            "ins v2.d[1], x20\n"
+            "fmla	v29.4s,  v4.4s,  v1.s[3]\n"    // out7 = b0 * a01[3], b0 =q4
+            "subs	%w[tail], %w[tail], #1\n"      // tail--
+            "fmla	v9.4s,  v5.4s,  v0.s[0]\n"     // out8 = b1 * a00[0], b1 =q5
+            "ldr x20, [%[b_ptr], #0x38]\n"
+            "fmla	v12.4s,  v5.4s,  v0.s[1]\n"    // out9 = b1 * a00[1], b1 =q5
+            "fmla	v15.4s,  v5.4s,  v0.s[2]\n" // out10 = b1 * a00[2], b1 =q5
+            "ldr d3, [%[a_ptr], #0x30]\n"
+            "ins v7.d[1], x20\n"
+            "fmla	v18.4s,  v5.4s,  v0.s[3]\n" // out11 = b1 * a00[3], b1 =q5
+            "ldr x20, [%[a_ptr], #0x38]\n"
+            "fmla	v21.4s,  v5.4s,  v1.s[0]\n" // out12 = b1 * a01[0], b1 =q5
+            "fmla	v24.4s,  v5.4s,  v1.s[1]\n" // out13 = b1 * a01[1], b1 =q5
+            "ldr d4, [%[b_ptr], #0x40]\n"
+            "ins v3.d[1], x20\n"
+            "fmla	v27.4s,  v5.4s,  v1.s[2]\n" // out14 = b1 * a01[2], b1 =q5
+            "ldr x20, [%[b_ptr], #0x48]\n"
+            "fmla	v30.4s,  v5.4s,  v1.s[3]\n" // out15 = b1 * a01[3], b1 =q5
+            "fmla	v10.4s,  v6.4s,  v0.s[0]\n" // out16 = b2 * a00[0], b2 =q6
+            "ldr d5, [%[b_ptr], #0x50]\n"
+            "ins v4.d[1], x20\n"
+            "fmla	v13.4s,  v6.4s,  v0.s[1]\n" // out17 = b2 * a00[1], b2 =q6
+            "ldr x20, [%[b_ptr], #0x58]\n"
+            "fmla	v16.4s,  v6.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q6
+            "fmla	v19.4s,  v6.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q6
+            "nop\n"
+            "ins v5.d[1], x20\n"
+            "fmla	v22.4s,  v6.4s,  v1.s[0]\n" // out20 = b2 * a00[0], b2 =q6
+            "fmla	v25.4s,  v6.4s,  v1.s[1]\n" // out21 = b2 * a00[1], b2 =q6
+            "fmla	v28.4s,  v6.4s,  v1.s[2]\n" // out22 = b2 * a00[2], b2 =q6
+            "fmla	v31.4s,  v6.4s,  v1.s[3]\n" // out23 = b2 * a00[3], b2 =q6
+            "beq		4f\n"                     //jump to tail = 2
+            // unrool 1, tail > 2
+            "ldr d0, [%[a_ptr], #0x40]\n"
+            "nop\n"
+            "fmla 	v8.4s ,  v7.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q7
+            "ldr x20, [%[a_ptr], #0x48]\n"
+            "fmla	v11.4s ,  v7.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q7
+            "fmla	v14.4s,  v7.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q7
+            "ldr d1, [%[a_ptr], #0x50]\n"
+            "ins v0.d[1], x20\n"
+            "fmla	v17.4s,  v7.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q7
+            "ldr x20, [%[a_ptr], #0x58]\n"
+            "fmla 	v20.4s,  v7.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q7
+            "fmla   v23.4s,  v7.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 =q7
+            "ldr d6, [%[b_ptr], #0x60]\n"
+            "ins v1.d[1], x20\n"
+            "fmla	v26.4s,  v7.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q7
+            "ldr x20, [%[b_ptr], #0x68]\n"
+            "fmla	v29.4s,  v7.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q7
+            "fmla	v9.4s,  v4.4s,  v2.s[0]\n"    // out8 = b0 * a10[0], b1 =q4
+            "ldr d7, [%[b_ptr], #0x70]\n"
+            "ins v6.d[1], x20\n"
+            "fmla	v12.4s,  v4.4s,  v2.s[1]\n"   // out9 = b0 * a10[1], b1 =q4
+            "ldr x20, [%[b_ptr], #0x78]\n"
+            "fmla	v15.4s,  v4.4s,  v2.s[2]\n"   // out10 = b1 * a10[2], b1 =q4
+            "fmla	v18.4s,  v4.4s,  v2.s[3]\n"   // out11 = b1 * a10[3], b1 =q4
+            "nop\n"
+            "ins v7.d[1], x20\n"
+            "fmla	v21.4s,  v4.4s,  v3.s[0]\n"   // out12 = b1 * a10[0], b1 =q4
+            "fmla	v24.4s,  v4.4s,  v3.s[1]\n"   // out13 = b1 * a10[1], b1 =q4
+            "fmla	v27.4s,  v4.4s,  v3.s[2]\n"   // out14 = b1 * a10[2], b1 =q4
+            "nop\n"
+            "fmla	v30.4s,  v4.4s,  v3.s[3]\n"   // out15 = b1 * a10[3], b1 =q4
+            "subs	%w[tail], %w[tail], #1\n"     // tail--
+            "fmla	v10.4s,  v5.4s,  v2.s[0]\n"   // out16 = b2 * a10[0], b2 =q5
+            "fmla	v13.4s,  v5.4s,  v2.s[1]\n"   // out17 = b2 * a10[0], b2 =q5
+            "fmla	v16.4s,  v5.4s,  v2.s[2]\n"   // out18 = b2 * a10[0], b2 =q5
+            "nop\n""nop\n"
+            "fmla	v19.4s,  v5.4s,  v2.s[3]\n"   // out19 = b2 * a10[0], b2 =q5
+            "fmla	v22.4s,  v5.4s,  v3.s[0]\n"   // out20 = b2 * a10[0], b2 =q5
+            "fmla	v25.4s,  v5.4s,  v3.s[1]\n"   // out21 = b2 * a10[0], b2 =q5
+            "nop\n"
+            "fmla	v28.4s,  v5.4s,  v3.s[2]\n"   // out22 = b2 * a10[0], b2 =q5
+            "fmla	v31.4s,  v5.4s,  v3.s[3]\n"   // out23 = b2 * a10[0], b2 =q5
+            "beq		5f\n"                       //jump to tail = 3
+            // unrool 2, tail = 4
+            "ldr d4, [%[b_ptr], #0x80]\n"
+            "nop\n"
+            "fmla 	v8.4s ,  v6.4s,  v0.s[0]\n"  // out0 = b0 * a00[0], b0 =q6
+            "ldr x20, [%[b_ptr], #0x88]\n"
+            "fmla  	v11.4s ,  v6.4s,  v0.s[1]\n" // out1 = b0 * a00[1], b0 =q6
+            "fmla	v14.4s,  v6.4s,  v0.s[2]\n"    // out2 = b0 * a00[2], b0 =q6
+            "ldr d2, [%[a_ptr], #0x60]\n"
+            "ins v4.d[1], x20\n"
+            "fmla	v17.4s,  v6.4s,  v0.s[3]\n"    // out3 = b0 * a00[3], b0 =q6
+            "ldr x20, [%[a_ptr], #0x68]\n"
+            "fmla 	v20.4s,  v6.4s,  v1.s[0]\n"  // out4 = b0 * a01[0], b0 =q6
+            "fmla	v23.4s,  v6.4s,  v1.s[1]\n"    // out5 = b0 * a01[1], b0 =q6
+            "ldr d5, [%[b_ptr], #0x90]\n"
+            "ins v2.d[1], x20\n"
+            "fmla	v26.4s,  v6.4s,  v1.s[2]\n"    // out6 = b0 * a01[2], b0 =q6
+            "ldr x20, [%[b_ptr], #0x98]\n"
+            "fmla	v29.4s,  v6.4s,  v1.s[3]\n"    // out7 = b0 * a01[3], b0 =q6
+            "fmla	v9.4s,  v7.4s,  v0.s[0]\n"     // out8 = b1 * a00[0], b1 =q7
+            "ldr d3, [%[a_ptr], #0x70]\n"
+            "ins v5.d[1], x20\n"
+            "fmla	v12.4s,  v7.4s,  v0.s[1]\n"    // out9 = b1 * a00[1], b1 =q7
+            "ldr x20, [%[a_ptr], #0x78]\n"
+            "fmla	v15.4s,  v7.4s,  v0.s[2]\n" // out10 = b1 * a00[2], b1 =q7
+            "fmla	v18.4s,  v7.4s,  v0.s[3]\n" // out11 = b1 * a00[3], b1 =q7
+            "ldr d6, [%[b_ptr], #0xa0]\n"
+            "ins v3.d[1], x20\n"
+            "fmla	v21.4s,  v7.4s,  v1.s[0]\n" // out12 = b1 * a01[0], b1 =q7
+            "ldr x20, [%[b_ptr], #0xa8]\n"
+            "fmla	v24.4s,  v7.4s,  v1.s[1]\n" // out13 = b1 * a01[1], b1 =q7
+            "fmla	v27.4s,  v7.4s,  v1.s[2]\n" // out14 = b1 * a01[2], b1 =q7
+            "ins v6.d[1], x20\n"
+            "add %[a_ptr], %[a_ptr], #0x80\n"
+            "fmla	v30.4s,  v7.4s,  v1.s[3]\n" // out15 = b1 * a01[3], b1 =q7
+            "ldr d7, [%[b_ptr], #0xb0]\n"
+            "fmla	v10.4s,  v4.4s,  v0.s[0]\n" // out16 = b2 * a00[0], b2 =q4
+            "fmla	v13.4s,  v4.4s,  v0.s[1]\n" // out17 = b2 * a00[1], b2 =q4
+            "ldr x20, [%[b_ptr], #0xb8]\n"
+            "fmla	v16.4s,  v4.4s,  v0.s[2]\n" // out18 = b2 * a00[2], b2 =q4
+            "fmla	v19.4s,  v4.4s,  v0.s[3]\n" // out19 = b2 * a00[3], b2 =q4
+            "ins v7.d[1], x20\n"
+            "add %[b_ptr], %[b_ptr], #0xc0\n"
+            "fmla	v22.4s,  v4.4s,  v1.s[0]\n" // out20 = b2 * a00[0], b2 =q4
+            "fmla	v25.4s,  v4.4s,  v1.s[1]\n" // out21 = b2 * a00[1], b2 =q4
+            "fmla	v28.4s,  v4.4s,  v1.s[2]\n" // out22 = b2 * a00[2], b2 =q4
+            "fmla	v31.4s,  v4.4s,  v1.s[3]\n" // out23 = b2 * a00[3], b2 =q4
+            // unrool 3, tail = 4
+            "fmla 	v8.4s ,  v5.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q5
+            "fmla	v11.4s ,  v5.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q5
+            "fmla	v14.4s,  v5.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q5
+            "fmla	v17.4s,  v5.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q5
+            "fmla 	v20.4s,  v5.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q5
+            "fmla   v23.4s,  v5.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 =q5
+            "fmla	v26.4s,  v5.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q5
+            "fmla	v29.4s,  v5.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q5
+            "fmla	v9.4s,  v6.4s,  v2.s[0]\n"    // out8 = b0 * a10[0], b1 =q6
+            "fmla	v12.4s,  v6.4s,  v2.s[1]\n"   // out9 = b1 * a10[1], b1 =q6
+            "fmla	v15.4s,  v6.4s,  v2.s[2]\n"   // out10 = b1 * a10[2], b1 =q6
+            "fmla	v18.4s,  v6.4s,  v2.s[3]\n"   // out11 = b1 * a10[3], b1 =q6
+            "fmla	v21.4s,  v6.4s,  v3.s[0]\n"   // out12 = b1 * a10[0], b1 =q6
+            "fmla	v24.4s,  v6.4s,  v3.s[1]\n"   // out13 = b1 * a10[1], b1 =q6
+            "fmla	v27.4s,  v6.4s,  v3.s[2]\n"   // out14 = b1 * a10[2], b1 =q6
+            "fmla	v30.4s,  v6.4s,  v3.s[3]\n"   // out15 = b1 * a10[3], b1 =q6
+            "fmla	v10.4s,  v7.4s,  v2.s[0]\n"   // out16 = b2 * a10[0], b2 =q7
+            "fmla	v13.4s,  v7.4s,  v2.s[1]\n"   // out17 = b2 * a10[0], b2 =q7
+            "fmla	v16.4s,  v7.4s,  v2.s[2]\n"   // out18 = b2 * a10[0], b2 =q7
+            "fmla	v19.4s,  v7.4s,  v2.s[3]\n"   // out19 = b2 * a10[0], b2 =q7
+            "fmla	v22.4s,  v7.4s,  v3.s[0]\n"   // out20 = b2 * a10[0], b2 =q7
+            "fmla	v25.4s,  v7.4s,  v3.s[1]\n"   // out21 = b2 * a10[0], b2 =q7
+            "fmla	v28.4s,  v7.4s,  v3.s[2]\n"   // out22 = b2 * a10[0], b2 =q7
+            "fmla	v31.4s,  v7.4s,  v3.s[3]\n"   // out23 = b2 * a10[0], b2 =q7
+            "b		11f\n"
+            // tails==1 final tail
+            "3: \n"                            // tail=1
+            "ldr	d6, [%[b_ptr], #0x20]\n"       // load b2 to q6
+            "fmla v8.4s ,  v4.4s,  v0.s[0]\n"  // out0 = b0 * a10[0], b0 =q5
+            "fmla	v11.4s ,  v4.4s,  v0.s[1]\n" // out1 = b0 * a10[1], b0 =q5
+            "ldr x20, [%[b_ptr], #0x28]\n"
+            "fmla	v14.4s,  v4.4s,  v0.s[2]\n"  // out2 = b0 * a10[2], b0 =q5
+            "fmla	v17.4s,  v4.4s,  v0.s[3]\n"  // out3 = b0 * a10[3], b0 =q5
+            "add %[a_ptr], %[a_ptr], #0x20\n"
+            "ins v6.d[1], x20\n"
+            "fmla v20.4s,  v4.4s,  v1.s[0]\n"  // out4 = b0 * a11[0], b0 =q5
+            "fmla v23.4s,  v4.4s,  v1.s[1]\n"  // out5 = b0 * a11[1], b0 = q5
+            "add %[b_ptr], %[b_ptr], #0x30\n"
+            "fmla	v26.4s,  v4.4s,  v1.s[2]\n"  // out6 = b0 * a11[2], b0 =q5
+            "fmla	v29.4s,  v4.4s,  v1.s[3]\n"  // out7 = b0 * a11[3], b0 =q5
+            "fmla	v9.4s,  v5.4s,  v0.s[0]\n"   // out8 = b0 * a10[0], b1 =q6
+            "fmla	v12.4s,  v5.4s,  v0.s[1]\n"  // out9 = b1 * a10[1], b1 =q6
+            "fmla	v15.4s,  v5.4s,  v0.s[2]\n"  // out10 = b1 * a10[2], b1 =q6
+            "fmla	v18.4s,  v5.4s,  v0.s[3]\n"  // out11 = b1 * a10[3], b1 =q6
+            "fmla	v21.4s,  v5.4s,  v1.s[0]\n"  // out12 = b1 * a10[0], b1 =q6
+            "fmla	v24.4s,  v5.4s,  v1.s[1]\n"  // out13 = b1 * a10[1], b1 =q6
+            "fmla	v27.4s,  v5.4s,  v1.s[2]\n"  // out14 = b1 * a10[2], b1 =q6
+            "fmla	v30.4s,  v5.4s,  v1.s[3]\n"  // out15 = b1 * a10[3], b1 =q6
+            "fmla	v10.4s,  v6.4s,  v0.s[0]\n"  // out16 = b2 * a10[0], b2 =q7
+            "fmla	v13.4s,  v6.4s,  v0.s[1]\n"  // out17 = b2 * a10[0], b2 =q7
+            "fmla	v16.4s,  v6.4s,  v0.s[2]\n"  // out18 = b2 * a10[0], b2 =q7
+            "fmla	v19.4s,  v6.4s,  v0.s[3]\n"  // out19 = b2 * a10[0], b2 =q7
+            "fmla	v22.4s,  v6.4s,  v1.s[0]\n"  // out20 = b2 * a10[0], b2 =q7
+            "fmla	v25.4s,  v6.4s,  v1.s[1]\n"  // out21 = b2 * a10[0], b2 =q7
+            "fmla	v28.4s,  v6.4s,  v1.s[2]\n"  // out22 = b2 * a10[0], b2 =q7
+            "fmla	v31.4s,  v6.4s,  v1.s[3]\n"  // out23 = b2 * a10[0], b2 =q7
+            "b		11f\n"
+            // tails==2 final tail
+            "4:\n"                              // tail = 2
+            "add %[a_ptr], %[a_ptr], #0x40\n"
+            "fmla 	v8.4s ,  v7.4s,  v2.s[0]\n" // out0 = b0 * a10[0], b0 =q5
+            "fmla	v11.4s ,  v7.4s,  v2.s[1]\n"  // out1 = b0 * a10[1], b0 =q5
+            "add %[b_ptr], %[b_ptr], #0x60\n"
+            "fmla	v14.4s,  v7.4s,  v2.s[2]\n"   // out2 = b0 * a10[2], b0 =q5
+            "fmla	v17.4s,  v7.4s,  v2.s[3]\n"   // out3 = b0 * a10[3], b0 =q5
+            "fmla 	v20.4s,  v7.4s,  v3.s[0]\n" // out4 = b0 * a11[0], b0 =q5
+            "fmla   v23.4s,  v7.4s,  v3.s[1]\n" // out5 = b0 * a11[1], b0 = q5
+            "fmla	v26.4s,  v7.4s,  v3.s[2]\n"   // out6 = b0 * a11[2], b0 =q5
+            "fmla	v29.4s,  v7.4s,  v3.s[3]\n"   // out7 = b0 * a11[3], b0 =q5
+            "fmla	v9.4s,  v4.4s,  v2.s[0]\n"    // out8 = b0 * a10[0], b1 =q6
+            "fmla	v12.4s,  v4.4s,  v2.s[1]\n"   // out9 = b1 * a10[1], b1 =q6
+            "fmla	v15.4s,  v4.4s,  v2.s[2]\n"   // out10 = b1 * a10[2], b1 =q6
+            "fmla	v18.4s,  v4.4s,  v2.s[3]\n"   // out11 = b1 * a10[3], b1 =q6
+            "fmla	v21.4s,  v4.4s,  v3.s[0]\n"   // out12 = b1 * a10[0], b1 =q6
+            "fmla	v24.4s,  v4.4s,  v3.s[1]\n"   // out13 = b1 * a10[1], b1 =q6
+            "fmla	v27.4s,  v4.4s,  v3.s[2]\n"   // out14 = b1 * a10[2], b1 =q6
+            "fmla	v30.4s,  v4.4s,  v3.s[3]\n"   // out15 = b1 * a10[3], b1 =q6
+            "fmla	v10.4s,  v5.4s,  v2.s[0]\n"   // out16 = b2 * a10[0], b2 =q7
+            "fmla	v13.4s,  v5.4s,  v2.s[1]\n"   // out17 = b2 * a10[0], b2 =q7
+            "fmla	v16.4s,  v5.4s,  v2.s[2]\n"   // out18 = b2 * a10[0], b2 =q7
+            "fmla	v19.4s,  v5.4s,  v2.s[3]\n"   // out19 = b2 * a10[0], b2 =q7
+            "fmla	v22.4s,  v5.4s,  v3.s[0]\n"   // out20 = b2 * a10[0], b2 =q7
+            "fmla	v25.4s,  v5.4s,  v3.s[1]\n"   // out21 = b2 * a10[0], b2 =q7
+            "fmla	v28.4s,  v5.4s,  v3.s[2]\n"   // out22 = b2 * a10[0], b2 =q7
+            "fmla	v31.4s,  v5.4s,  v3.s[3]\n"   // out23 = b2 * a10[0], b2 =q7
+            "b		11f\n"
+            // tails==3 final tail
+            "5:\n"                              // tail = 3
+            "ldr	d4, [%[b_ptr], #0x80]\n"        // load b2, b0 to q4
+            "nop\n"
+            "fmla 	v8.4s ,  v6.4s,  v0.s[0]\n" // out0 = b0 * a10[0], b0 =q5
+            "fmla	v11.4s ,  v6.4s,  v0.s[1]\n"  // out1 = b0 * a10[1], b0 =q5
+            "ldr x20, [%[b_ptr], #0x88]\n"
+            "fmla	v14.4s,  v6.4s,  v0.s[2]\n"   // out2 = b0 * a10[2], b0 =q5
+            "fmla	v17.4s,  v6.4s,  v0.s[3]\n"   // out3 = b0 * a10[3], b0 =q5
+            "add %[a_ptr], %[a_ptr], #0x60\n"
+            "ins v4.d[1], x20\n"
+            "fmla 	v20.4s,  v6.4s,  v1.s[0]\n" // out4 = b0 * a11[0], b0 =q5
+            "fmla   v23.4s,  v6.4s,  v1.s[1]\n" // out5 = b0 * a11[1], b0 = q5
+            "add %[b_ptr], %[b_ptr], #0x90\n"
+            "fmla	v26.4s,  v6.4s,  v1.s[2]\n"   // out6 = b0 * a11[2], b0 =q5
+            "fmla	v29.4s,  v6.4s,  v1.s[3]\n"   // out7 = b0 * a11[3], b0 =q5
+            "fmla	v9.4s,  v7.4s,  v0.s[0]\n"    // out8 = b0 * a10[0], b1 =q6
+            "fmla	v12.4s,  v7.4s,  v0.s[1]\n"   // out9 = b1 * a10[1], b1 =q6
+            "fmla	v15.4s,  v7.4s,  v0.s[2]\n"   // out10 = b1 * a10[2], b1 =q6
+            "fmla	v18.4s,  v7.4s,  v0.s[3]\n"   // out11 = b1 * a10[3], b1 =q6
+            "fmla	v21.4s,  v7.4s,  v1.s[0]\n"   // out12 = b1 * a10[0], b1 =q6
+            "fmla	v24.4s,  v7.4s,  v1.s[1]\n"   // out13 = b1 * a10[1], b1 =q6
+            "fmla	v27.4s,  v7.4s,  v1.s[2]\n"   // out14 = b1 * a10[2], b1 =q6
+            "fmla	v30.4s,  v7.4s,  v1.s[3]\n"   // out15 = b1 * a10[3], b1 =q6
+            "fmla	v10.4s,  v4.4s,  v0.s[0]\n"   // out16 = b2 * a10[0], b2 =q7
+            "fmla	v13.4s,  v4.4s,  v0.s[1]\n"   // out17 = b2 * a10[0], b2 =q7
+            "fmla	v16.4s,  v4.4s,  v0.s[2]\n"   // out18 = b2 * a10[0], b2 =q7
+            "fmla	v19.4s,  v4.4s,  v0.s[3]\n"   // out19 = b2 * a10[0], b2 =q7
+            "fmla	v22.4s,  v4.4s,  v1.s[0]\n"   // out20 = b2 * a10[0], b2 =q7
+            "fmla	v25.4s,  v4.4s,  v1.s[1]\n"   // out21 = b2 * a10[0], b2 =q7
+            "fmla	v28.4s,  v4.4s,  v1.s[2]\n"   // out22 = b2 * a10[0], b2 =q7
+            "fmla	v31.4s,  v4.4s,  v1.s[3]\n"   // out23 = b2 * a10[0], b2 =q7
+
+            "11:                           \n"   // check activation
+            "cmp    %w[flag_act],   #1     \n"   // check if has relu
+            "bne    12f                    \n"   // jump if no relu
+            "movi   v0.4s,  #0             \n"   // for relu
+            "fmax   v8.4s,  v8.4s,  v0.4s  \n"   // relu
+            "fmax   v9.4s,  v9.4s,  v0.4s  \n"   // relu
+            "fmax   v10.4s, v10.4s, v0.4s  \n"   // relu
+            "fmax   v11.4s, v11.4s, v0.4s  \n"   // relu
+            "fmax   v12.4s, v12.4s, v0.4s  \n"   // relu
+            "fmax   v13.4s, v13.4s, v0.4s  \n"   // relu
+            "fmax   v14.4s, v14.4s, v0.4s  \n"   // relu
+            "fmax   v15.4s, v15.4s, v0.4s  \n"   // relu
+            "fmax   v16.4s, v16.4s, v0.4s  \n"   // relu
+            "fmax   v17.4s, v17.4s, v0.4s  \n"   // relu
+            "fmax   v18.4s, v18.4s, v0.4s  \n"   // relu
+            "fmax   v19.4s, v19.4s, v0.4s  \n"   // relu
+            "fmax   v20.4s, v20.4s, v0.4s  \n"   // relu
+            "fmax   v21.4s, v21.4s, v0.4s  \n"   // relu
+            "fmax   v22.4s, v22.4s, v0.4s  \n"   // relu
+            "fmax   v23.4s, v23.4s, v0.4s  \n"   // relu
+            "fmax   v24.4s, v24.4s, v0.4s  \n"   // relu
+            "fmax   v25.4s, v25.4s, v0.4s  \n"   // relu
+            "fmax   v26.4s, v26.4s, v0.4s  \n"   // relu
+            "fmax   v27.4s, v27.4s, v0.4s  \n"   // relu
+            "fmax   v28.4s, v28.4s, v0.4s  \n"   // relu
+            "fmax   v29.4s, v29.4s, v0.4s  \n"   // relu
+            "fmax   v30.4s, v30.4s, v0.4s  \n"   // relu
+            "fmax   v31.4s, v31.4s, v0.4s  \n"   // relu
+            "b      20f                    \n"   // relu end
+            //! no act
+            "12:                           \n"   // no relu
+            "cmp   %w[flag_act],  #0       \n"   // check no act
+            "beq   20f                     \n"   // no act end
+            //! relu6
+            "cmp    %w[flag_act],  #2      \n"    // check if has relu6
+            "bne    13f                    \n"    // jump if no relu6
+            "movi   v0.4s, #0              \n"    // for relu6
+            "ld1    {v1.4s}, [%[alpha]]    \n"    // relu6 alpha
+            "fmax   v8.4s,  v8.4s,  v0.4s  \n"    // relu6
+            "fmax   v9.4s,  v9.4s,  v0.4s  \n"    // relu6
+            "fmax   v10.4s, v10.4s, v0.4s  \n"    // relu6
+            "fmax   v11.4s, v11.4s, v0.4s  \n"    // relu6
+            "fmax   v12.4s, v12.4s, v0.4s  \n"    // relu6
+            "fmax   v13.4s, v13.4s, v0.4s  \n"    // relu6
+            "fmax   v14.4s, v14.4s, v0.4s  \n"    // relu6
+            "fmax   v15.4s, v15.4s, v0.4s  \n"    // relu6
+            "fmax   v16.4s, v16.4s, v0.4s  \n"    // relu6
+            "fmax   v17.4s, v17.4s, v0.4s  \n"    // relu6
+            "fmax   v18.4s, v18.4s, v0.4s  \n"    // relu6
+            "fmax   v19.4s, v19.4s, v0.4s  \n"    // relu6
+            "fmax   v20.4s, v20.4s, v0.4s  \n"    // relu6
+            "fmax   v21.4s, v21.4s, v0.4s  \n"    // relu6
+            "fmax   v22.4s, v22.4s, v0.4s  \n"    // relu6
+            "fmax   v23.4s, v23.4s, v0.4s  \n"    // relu6
+            "fmax   v24.4s, v24.4s, v0.4s  \n"    // relu6
+            "fmax   v25.4s, v25.4s, v0.4s  \n"    // relu6
+            "fmax   v26.4s, v26.4s, v0.4s  \n"    // relu6
+            "fmax   v27.4s, v27.4s, v0.4s  \n"    // relu6
+            "fmax   v28.4s, v28.4s, v0.4s  \n"    // relu6
+            "fmax   v29.4s, v29.4s, v0.4s  \n"    // relu6
+            "fmax   v30.4s, v30.4s, v0.4s  \n"    // relu6
+            "fmax   v31.4s, v31.4s, v0.4s  \n"    // relu6
+            "fmin   v8.4s,  v8.4s,  v1.4s  \n"    // relu6
+            "fmin   v9.4s,  v9.4s,  v1.4s  \n"    // relu6
+            "fmin   v10.4s, v10.4s, v1.4s  \n"    // relu6
+            "fmin   v11.4s, v11.4s, v1.4s  \n"    // relu6
+            "fmin   v12.4s, v12.4s, v1.4s  \n"    // relu6
+            "fmin   v13.4s, v13.4s, v1.4s  \n"    // relu6
+            "fmin   v14.4s, v14.4s, v1.4s  \n"    // relu6
+            "fmin   v15.4s, v15.4s, v1.4s  \n"    // relu6
+            "fmin   v16.4s, v16.4s, v1.4s  \n"    // relu6
+            "fmin   v17.4s, v17.4s, v1.4s  \n"    // relu6
+            "fmin   v18.4s, v18.4s, v1.4s  \n"    // relu6
+            "fmin   v19.4s, v19.4s, v1.4s  \n"    // relu6
+            "fmin   v20.4s, v20.4s, v1.4s  \n"    // relu6
+            "fmin   v21.4s, v21.4s, v1.4s  \n"    // relu6
+            "fmin   v22.4s, v22.4s, v1.4s  \n"    // relu6
+            "fmin   v23.4s, v23.4s, v1.4s  \n"    // relu6
+            "fmin   v24.4s, v24.4s, v1.4s  \n"    // relu6
+            "fmin   v25.4s, v25.4s, v1.4s  \n"    // relu6
+            "fmin   v26.4s, v26.4s, v1.4s  \n"    // relu6
+            "fmin   v27.4s, v27.4s, v1.4s  \n"    // relu6
+            "fmin   v28.4s, v28.4s, v1.4s  \n"    // relu6
+            "fmin   v29.4s, v29.4s, v1.4s  \n"    // relu6
+            "fmin   v30.4s, v30.4s, v1.4s  \n"    // relu6
+            "fmin   v31.4s, v31.4s, v1.4s  \n"    // relu6
+            "b      20f                    \n"    // relu6 end
+            //! leakey relu
+            "13:                                \n" // otherwise is leakey relu
+            "movi   v0.4s,    #0                \n" // for leakey relu
+            "ld1    {v1.4s},  [%[alpha]]        \n" // leakey relu alpha
+            "fcmge  v2.4s,    v8.4s,    v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v8.4s,    v1.4s   \n" // vmulq_f32
+            "fcmge  v4.4s,    v9.4s,    v0.4s   \n" // vcgeq_f32
+            "fmul   v5.4s,    v9.4s,    v1.4s   \n" // vmulq_f32
+            "fcmge  v6.4s,    v10.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v7.4s,    v10.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v8.16b,   v3.16b,   v2.16b  \n" // choose
+            "bif    v9.16b,   v5.16b,   v4.16b  \n" // choose
+            "bif    v10.16b,  v7.16b,   v6.16b  \n" // choose
+            "fcmge  v2.4s,    v11.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v11.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v11.16b,  v3.16b,   v2.16b  \n" // choose
+            "fcmge  v2.4s,    v12.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v12.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v4.4s,    v13.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v5.4s,    v13.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v6.4s,    v14.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v7.4s,    v14.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v12.16b,  v3.16b,   v2.16b  \n" // choose
+            "bif    v13.16b,  v5.16b,   v4.16b  \n" // choose
+            "bif    v14.16b,  v7.16b,   v6.16b  \n" // choose
+            "fcmge  v2.4s,    v15.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v15.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v15.16b,  v3.16b,   v2.16b  \n" // choose
+            "fcmge  v2.4s,    v16.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v16.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v4.4s,    v17.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v5.4s,    v17.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v6.4s,    v18.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v7.4s,    v18.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v16.16b,  v3.16b,   v2.16b  \n" // choose
+            "bif    v17.16b,  v5.16b,   v4.16b  \n" // choose
+            "bif    v18.16b,  v7.16b,   v6.16b  \n" // choose
+            "fcmge  v2.4s,    v19.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v19.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v19.16b,  v3.16b,   v2.16b  \n" // choose
+            "fcmge  v2.4s,    v20.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v20.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v4.4s,    v21.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v5.4s,    v21.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v6.4s,    v22.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v7.4s,    v22.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v20.16b,  v3.16b,   v2.16b  \n" // choose
+            "bif    v21.16b,  v5.16b,   v4.16b  \n" // choose
+            "bif    v22.16b,  v7.16b,   v6.16b  \n" // choose
+            "fcmge  v2.4s,    v23.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v23.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v23.16b,  v3.16b,   v2.16b  \n" // choose
+            "fcmge  v2.4s,    v24.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v24.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v4.4s,    v25.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v5.4s,    v25.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v6.4s,    v26.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v7.4s,    v26.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v24.16b,  v3.16b,   v2.16b  \n" // choose
+            "bif    v25.16b,  v5.16b,   v4.16b  \n" // choose
+            "bif    v26.16b,  v7.16b,   v6.16b  \n" // choose
+            "fcmge  v2.4s,    v27.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v27.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v27.16b,  v3.16b,   v2.16b  \n" // choose
+            "fcmge  v2.4s,    v28.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v28.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v4.4s,    v29.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v5.4s,    v29.4s,   v1.4s   \n" // vmulq_f32
+            "fcmge  v6.4s,    v30.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v7.4s,    v30.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v28.16b,  v3.16b,   v2.16b  \n" // choose
+            "bif    v29.16b,  v5.16b,   v4.16b  \n" // choose
+            "bif    v30.16b,  v7.16b,   v6.16b  \n" // choose
+            "fcmge  v2.4s,    v31.4s,   v0.4s   \n" // vcgeq_f32
+            "fmul   v3.4s,    v31.4s,   v1.4s   \n" // vmulq_f32
+            "bif    v31.16b,  v3.16b,   v2.16b  \n" // choose
+            "20:                                \n" // act end
+
+            "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   // store r0
+            "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" // store r1
+            "st1 {v14.4s, v15.4s, v16.4s},[%[c_ptr2]], #48\n" // store r2
+            "st1 {v17.4s, v18.4s, v19.4s},[%[c_ptr3]], #48\n" // store r3
+            "st1 {v20.4s, v21.4s, v22.4s},[%[c_ptr4]], #48\n" // store r4
+            "st1 {v23.4s, v24.4s, v25.4s},[%[c_ptr5]], #48\n" // store r5
+            "st1 {v26.4s, v27.4s, v28.4s},[%[c_ptr6]], #48\n" // store r6
+            "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" // store r7
+
+            : [a_ptr] "+r"(a_ptr),
+              [b_ptr] "+r"(b_ptr),
+              [k] "+r"(k),
+              [tail] "+r"(tail),
+              [c_ptr0] "+r"(c_ptr0),
+              [c_ptr1] "+r"(c_ptr1),
+              [c_ptr2] "+r"(c_ptr2),
+              [c_ptr3] "+r"(c_ptr3),
+              [c_ptr4] "+r"(c_ptr4),
+              [c_ptr5] "+r"(c_ptr5),
+              [c_ptr6] "+r"(c_ptr6),
+              [c_ptr7] "+r"(c_ptr7)
+            : [bias_ptr] "r"(bias_local),
+              [has_beta] "r"(has_beta),
+              [beta] "r"(beta),
+              [alpha] "r"(alpha),
+              [flag_act] "r"(flag_act)
+            : "cc","memory", "x20",
+              "v0","v1","v2","v3","v4","v5","v6","v7",
+              "v8","v9","v10","v11","v12","v13",
+              "v14","v15","v16","v17","v18","v19",
+              "v20","v21","v22","v23","v24","v25",
+              "v26","v27","v28","v29","v30","v31");
+        // clang-format on
+        if (flag_p_remain && (xb == bblocks - 1)) {
+          for (int i = 0; i < remain; ++i) {
+            *pout0++ = cout0[i];
+            *pout1++ = cout1[i];
+            *pout2++ = cout2[i];
+            *pout3++ = cout3[i];
+            *pout4++ = cout4[i];
+            *pout5++ = cout5[i];
+            *pout6++ = cout6[i];
+            *pout7++ = cout7[i];
+          }
+        }
+      }
+    }
+  }
+}
+
 void sgemm_prepacked_4x8(bool is_transB,
                          int M,
                          int N,
@@ -3930,7 +4887,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "ldp  q4, q5, [%[b_ptr]], #32\n"        // load b0~b3 to q4, q5
             // Unroll 1
             "fmla v8.4s, v6.4s, v1.s[0]\n"          // out0 += b0 * a0[0]
-            "prfm   pldl1keep, [%[b_ptr], #192]\n"
+            "prfm   pldl1keep, [%[b_ptr], #64]\n"
             "fmla v10.4s, v6.4s, v1.s[1]\n"         // out1 += b0 * a0[1]
             "fmla v12.4s, v6.4s, v1.s[2]\n"         // out1 += b0 * a0[2]
             "fmla v14.4s, v6.4s, v1.s[3]\n"         // out1 += b0 * a0[3]
@@ -3952,7 +4909,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "ldp  q4, q5, [%[b_ptr]], #32\n"        // load b0~b3 to q4, q5
             // Unroll 3
             "fmla v8.4s, v6.4s, v3.s[0]\n"          // out0 += b0 * a0[0]
-            "prfm   pldl1keep, [%[a_ptr], #128]\n"
+            "prfm   pldl1keep, [%[a_ptr], #64]\n"
             "fmla v10.4s, v6.4s, v3.s[1]\n"         // out1 += b0 * a0[1]
             "fmla v12.4s, v6.4s, v3.s[2]\n"         // out1 += b0 * a0[2]
             "fmla v14.4s, v6.4s, v3.s[3]\n"         // out1 += b0 * a0[3]
@@ -3982,7 +4939,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "fmla v8.4s, v6.4s, v1.s[0]\n"          // out0 += b0 * a0[0]
             "ldp  q2, q3, [%[a_ptr]], #32\n"        // load next 2xa0~a3
             "fmla v10.4s, v6.4s, v1.s[1]\n"         // out1 += b0 * a0[1]
-            "subs %w[tail], %w[tail], #1\n"         // tail--*/
+            "subs %w[tail], %w[tail], #1\n"         // tail--
             "fmla v12.4s, v6.4s, v1.s[2]\n"         // out1 += b0 * a0[2]
             "fmla v14.4s, v6.4s, v1.s[3]\n"         // out1 += b0 * a0[3]
             "fmla v9.4s, v7.4s, v1.s[0]\n"          // out4 += b1 * a0[0]
@@ -4555,12 +5512,12 @@ void sgemm_prepacked_6x8(bool is_transB,
     tail_pre = KBLOCK;
   }
 
-  //! merge tail_pre and flag_act
-  tail_pre = (tail_pre << 2 | flag_act);
   bool flag_p_remain = false;
   int remain = 0;
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  //! merge tail_pre and flag_act
+  tail_pre = (tail_pre << 2 | flag_act);
 
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
@@ -5194,7 +6151,16 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
         // clang-format off
         asm volatile(
             // sgemm 6x8 for a53
-            "vld1.32  {d2-d3},  [%[bias_ptr]]   \n"   /* load bias0-3 to d2,d3 */
+            "vld1.32  {d2-d4},  [%[bias_ptr]]   \n"   /* load bias0-5 to d2-d4 */
+            "pld [%[a_ptr]]                         @ preload a\n"
+            "vdup.i32   q12,d4[0]                   @ out40=0\n"
+            "pld [%[b_ptr]]                         @ preload b\n"
+            "vdup.i32   q13,d4[0]                   @ out41=0\n"
+            "pld [%[a_ptr], #64]                    @ preload a\n"
+            "vdup.i32   q14,d4[1]                   @ out50=0\n"
+            "pld [%[b_ptr], #64]                    @ preload b\n"
+            "vdup.i32   q15,d4[1]                   @ out51=0\n"
+            "pld [%[a_ptr], #128]                   @ preload a\n"
             "vdup.i32 q4, d2[0]                 \n"   /*  set out00 to bias0   */
             "vld1.32	{d0-d1},  [%[a_ptr] :64]  \n"   /* load a00-a30 to d0,d1 */
             "vdup.i32	q5, d2[0]                 \n"   /*  set out01 to bias0   */
@@ -5204,20 +6170,13 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
             "vdup.i32	q7, d2[1]                 \n"   /*  set out11 to bias1   */
             "ldr  r1, [%[a_ptr], #0x14]         \n"   /*    load a50 to r1     */
             "vdup.i32	q8, d3[0]                 \n"   /*  set out20 to bias2   */
-            "vldr d6, [%[bias_ptr], #0x10]      \n"   /*  load bias 4,5 to d6  */
-            "pld [%[a_ptr], #0x40]              \n"   /*    pre load apanel    */
-            "vdup.i32	q9, d3[0]                 \n"   /*  set out21 to bias2   */
-            "pld [%[b_ptr], #0x40]              \n"   /*    pre load bpanel    */
-            "vdup.i32	q10, d3[1]                \n"   /*  set out30 to bias3   */
             "pld [%[a_ptr], #0x80]              \n"   /*    pre load apanel    */
-            "vdup.i32	q11, d3[1]                \n"   /*  set out31 to bias3   */
+            "vdup.i32	q9, d3[0]                 \n"   /*  set out21 to bias2   */
             "pld [%[b_ptr], #0x80]              \n"   /*    pre load bpanel    */
-            "vdup.i32	q12, d6[0]                \n"   /*  set out40 to bias4   */
-            "vdup.i32	q13, d6[0]                \n"   /*  set out41 to bias4   */
-            "pld [%[a_ptr], #0xC0]              \n"   /*    pre load apanel    */
-            "vdup.i32	q14, d6[1]                \n"   /*  set out50 to bias5   */
-            "pld [%[b_ptr], #0XC0]              \n"   /*    pre load bpanel    */
-            "vdup.i32	q15, d6[1]                \n"   /*  set out51 to bias5   */
+            "vdup.i32	q10, d3[1]                \n"   /*  set out30 to bias3   */
+            "pld [%[a_ptr], #0xc0]              \n"   /*    pre load apanel    */
+            "vdup.i32	q11, d3[1]                \n"   /*  set out31 to bias3   */
+            "pld [%[b_ptr], #0xc0]              \n"   /*    pre load bpanel    */
             "cmp  %[k], #0                      \n"   /*      check k loop     */
             "beq  6f                            \n"   /*   k==0, branch to 6   */
             "1:\n"

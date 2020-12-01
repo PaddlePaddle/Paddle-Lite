@@ -58,6 +58,13 @@ DEFINE_string(
     "naive_buffer",
     "store type of the output optimized model. protobuf/naive_buffer");
 DEFINE_bool(display_kernels, false, "Display kernel information");
+DEFINE_bool(quant_model,
+            false,
+            "Use post_quant_dynamic method to quantize the model weights.");
+DEFINE_string(quant_type,
+              "QUANT_INT16",
+              "Set the quant_type for post_quant_dynamic, "
+              "and it should be QUANT_INT8 or QUANT_INT16 for now.");
 DEFINE_bool(record_tailoring_info,
             false,
             "Record kernels and operators information of the optimized model "
@@ -67,7 +74,7 @@ DEFINE_string(optimize_out, "", "path of the output optimized model");
 DEFINE_string(valid_targets,
               "arm",
               "The targets this model optimized for, should be one of (arm, "
-              "opencl, x86), splitted by space");
+              "opencl, x86, x86_opencl), splitted by space");
 DEFINE_bool(print_supported_ops,
             false,
             "Print supported operators on the inputed target");
@@ -110,6 +117,17 @@ std::vector<Place> ParserValidPlaces() {
     } else if (target_repr == "x86") {
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
+    } else if (target_repr == "x86_opencl") {
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places.emplace_back(TARGET(kNPU));
     } else if (target_repr == "huawei_ascend_npu") {
@@ -150,7 +168,9 @@ void RunOptimize(const std::string& model_dir,
                  const std::string& optimize_out,
                  const std::string& optimize_out_type,
                  const std::vector<Place>& valid_places,
-                 bool record_tailoring_info) {
+                 bool record_tailoring_info,
+                 bool quant_model,
+                 const std::string& quant_type) {
   if (!model_file.empty() && !param_file.empty()) {
     LOG(WARNING)
         << "Load combined-param model. Option model_dir will be ignored";
@@ -161,6 +181,14 @@ void RunOptimize(const std::string& model_dir,
   config.set_model_file(model_file);
   config.set_param_file(param_file);
   config.set_valid_places(valid_places);
+  config.set_quant_model(quant_model);
+  if (quant_type == "QUANT_INT8") {
+    config.set_quant_type(QuantType::QUANT_INT8);
+  } else if (quant_type == "QUANT_INT16") {
+    config.set_quant_type(QuantType::QUANT_INT16);
+  } else {
+    LOG(FATAL) << "Unsupported quant type: " << quant_type;
+  }
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   LiteModelType model_type;
@@ -274,19 +302,25 @@ void PrintHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "`--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "ascend_npu|"
       "imagination_nna)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
+      "  Arguments of mode quantization in opt:\n"
+      "        `--quant_model=(true|false)`\n"
+      "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "ascend_npu|"
       "imagination_nna)"
       "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "ascend_npu|"
       "imagination_nna)"
       "`"
       "  Display operators in the input model\n";
@@ -297,6 +331,13 @@ void PrintHelpInfo() {
 
 // Parse Input command
 void ParseInputCommand() {
+  if (FLAGS_quant_model) {
+    if (FLAGS_quant_type != "QUANT_INT8" && FLAGS_quant_type != "QUANT_INT16") {
+      LOG(FATAL)
+          << "quant_type should be `QUANT_INT8` or `QUANT_INT16` for now.";
+    }
+  }
+
   if (FLAGS_print_all_ops) {
     std::cout << "All OPs supported by Paddle-Lite: " << supported_ops.size()
               << " ops in total." << std::endl;
@@ -350,8 +391,7 @@ void CheckIfModelSupported() {
     prog_path = FLAGS_model_file;
   }
   lite::cpp::ProgramDesc cpp_prog;
-  framework::proto::ProgramDesc pb_proto_prog =
-      *lite::LoadProgram(prog_path, false);
+  framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);
   // Transform to cpp::ProgramDesc
   lite::TransformProgramDescAnyToCpp(pb_prog, &cpp_prog);
@@ -418,7 +458,9 @@ void Main() {
                 FLAGS_optimize_out,
                 FLAGS_optimize_out_type,
                 valid_places,
-                FLAGS_record_tailoring_info);
+                FLAGS_record_tailoring_info,
+                FLAGS_quant_model,
+                FLAGS_quant_type);
     return;
   }
 
@@ -457,7 +499,9 @@ void Main() {
                 output_model_dir,
                 FLAGS_optimize_out_type,
                 valid_places,
-                FLAGS_record_tailoring_info);
+                FLAGS_record_tailoring_info,
+                FLAGS_quant_model,
+                FLAGS_quant_type);
     LOG(INFO) << "Optimize done. ";
   }
 

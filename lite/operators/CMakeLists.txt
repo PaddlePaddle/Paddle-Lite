@@ -49,6 +49,7 @@ add_operator(fusion_elementwise_activation_ops basic SRCS fusion_elementwise_act
 add_operator(io_copy_once_op basic SRCS io_copy_once_op.cc DEPS io_copy_op ${op_DEPS})
 add_operator(dropout_op basic SRCS dropout_op.cc DEPS ${op_DEPS})
 add_operator(layout_op basic SRCS layout_op.cc DEPS ${op_DEPS})
+add_operator(layout_once_op basic SRCS layout_once_op.cc DEPS ${op_DEPS})
 add_operator(instance_norm_op basic SRCS instance_norm_op.cc DEPS ${op_DEPS})
 add_operator(subgraph_op basic SRCS subgraph_op.cc DEPS ${op_DEPS})
 add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
@@ -59,6 +60,7 @@ add_operator(sign_op extra SRCS sign_op.cc DEPS ${op_DEPS})
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
 add_operator(crop_op extra SRCS crop_op.cc DEPS ${op_DEPS})
+add_operator(crop_tensor_op extra SRCS crop_tensor_op.cc DEPS ${op_DEPS})
 add_operator(assign_op extra SRCS assign_op.cc DEPS ${op_DEPS})
 add_operator(group_norm_op extra SRCS group_norm_op.cc DEPS ${op_DEPS})
 add_operator(norm_op extra SRCS norm_op.cc DEPS ${op_DEPS})
@@ -72,7 +74,6 @@ add_operator(uniform_random_op extra SRCS uniform_random_op.cc DEPS ${op_DEPS})
 add_operator(axpy_op extra SRCS axpy_op.cc DEPS ${op_DEPS})
 add_operator(gru_unit_op extra SRCS gru_unit_op.cc DEPS ${op_DEPS})
 add_operator(gru_op extra SRCS gru_op.cc DEPS ${op_DEPS})
-add_operator(layout_once_op extra SRCS layout_once_op.cc DEPS ${op_DEPS})
 add_operator(density_prior_box_op basic SRCS density_prior_box_op.cc DEPS ${op_DEPS})
 add_operator(calib_once_op extra SRCS calib_once_op.cc DEPS ${op_DEPS})
 add_operator(reduce_max_op_lite extra SRCS reduce_max_op.cc DEPS ${op_DEPS})
@@ -122,6 +123,8 @@ add_operator(clip_op extra SRCS clip_op.cc DEPS ${op_DEPS})
 add_operator(print_op extra SRCS print_op.cc DEPS ${op_DEPS})
 add_operator(scatter extra SRCS scatter_op.cc DEPS ${op_DEPS})
 add_operator(matrix_nms_op_lite extra SRCS matrix_nms_op.cc DEPS ${op_DEPS})
+add_operator(sin_op extra SRCS sin_op.cc DEPS ${op_DEPS})
+add_operator(cos_op extra SRCS cos_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
@@ -184,7 +187,9 @@ add_operator(__xpu__conv2d_op extra SRCS __xpu__conv2d_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__sfa_head_op extra SRCS __xpu__sfa_head_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
-    lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS one_hot_op memory scope ${op_deps} one_hot_compute_host)
+    if(NOT LITE_WITH_ARM)
+        lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS one_hot_op memory scope ${op_deps} one_hot_compute_host)
+    endif()
     lite_cc_test(test_fc_op SRCS fc_op_test.cc
                 DEPS fc_op memory
                 X86_DEPS fc_compute_x86

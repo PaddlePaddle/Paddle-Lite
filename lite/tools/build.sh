@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set +ex
 
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
@@ -9,7 +9,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
 
 # global variables
@@ -22,8 +22,12 @@ OPTMODEL_DIR=""
 BUILD_TAILOR=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
+WITH_MKL=ON
+WITH_OPENCL=OFF
+WITH_STATIC_MKL=OFF
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
+WITH_LTO=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -232,6 +236,7 @@ function make_full_publish_so {
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_LTO=${WITH_LTO} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -273,7 +278,8 @@ function make_all_tests {
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       -DWITH_TESTING=ON \
-      -DLITE_WITH_PROFILE=OFF \
+      -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_LTO=${WITH_LTO} \
       -DLITE_WITH_PRECISION_PROFILE=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
@@ -351,6 +357,7 @@ function make_cuda {
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=OFF  \
             -DLITE_WITH_PROFILE=OFF \
+            -DLITE_WITH_LTO=${WITH_LTO} \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DWITH_TESTING=OFF \
@@ -379,6 +386,16 @@ function make_x86 {
     export CXX=g++ # Huawei Ascend NPU need g++
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
+  
+  if [ ${WITH_OPENCL} == "ON" ]; then
+    BUILD_EXTRA=ON
+    build_directory=$BUILD_DIR/build.lite.x86.opencl
+    prepare_opencl_source_code $root_dir $build_directory
+  fi
+
+  if [ ${BUILD_PYTHON} == "ON" ]; then
+    BUILD_EXTRA=ON
+  fi
 
   if [ -d $build_directory ]
   then
@@ -389,13 +406,15 @@ function make_x86 {
 
   prepare_workspace $root_dir $build_directory
 
-  cmake $root_dir  -DWITH_MKL=ON       \
+  cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
+            -DWITH_STATIC_MKL=${WITH_STATIC_MKL}  \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
             -DLITE_WITH_PROFILE=OFF \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DWITH_GPU=OFF \
             -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
@@ -405,6 +424,7 @@ function make_x86 {
             -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_LTO=${WITH_LTO} \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -413,6 +433,10 @@ function make_x86 {
             -DCMAKE_BUILD_TYPE=Release \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
+
+  if [ ${WITH_OPENCL} == "ON" ]; then
+    make opencl_clhpp -j$NUM_PROC
+  fi
   make publish_inference -j$NUM_PROC
   cd -
 }
@@ -521,6 +545,14 @@ function main {
                 WITH_LOG="${i#*=}"
                 shift
                 ;;
+            --with_mkl=*)
+                WITH_MKL="${i#*=}"
+                shift
+                ;;
+            --with_static_mkl=*)
+                WITH_STATIC_MKL="${i#*=}"
+                shift
+                ;;
             --with_exception=*)
                 WITH_EXCEPTION="${i#*=}"
                 if [[ $WITH_EXCEPTION == "ON" && $ARM_OS=="android" && $ARM_ABI == "armv7" && $ARM_LANG != "clang" ]]; then
@@ -534,6 +566,14 @@ function main {
                 ;;
             --with_profile=*)
                 WITH_PROFILE="${i#*=}"
+                shift
+                ;;
+            --with_lto=*)
+                WITH_LTO="${i#*=}"
+                shift
+                ;;
+            --build_opencl=*)
+                WITH_OPENCL="${i#*=}"
                 shift
                 ;;
             --build_npu=*)

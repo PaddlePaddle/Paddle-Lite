@@ -17,15 +17,16 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "lite/model_parser/base/io.h"
 #include "lite/model_parser/flatbuffers/traits.h"
 
 namespace paddle {
 namespace lite {
 namespace fbs {
 
-std::vector<char> LoadFile(const std::string& path,
-                           const size_t& offset,
-                           const size_t& size) {
+model_parser::Buffer LoadFile(const std::string& path,
+                              size_t offset,
+                              size_t size) {
   // open file in readonly mode
   FILE* file = fopen(path.c_str(), "rb");
   CHECK(file) << "Unable to open file: " << path;
@@ -37,13 +38,13 @@ std::vector<char> LoadFile(const std::string& path,
   }
   fseek(file, offset, SEEK_SET);
   // read data of `length` into buf
-  std::vector<char> buf(length);
+  model_parser::Buffer buf(length);
   CHECK_EQ(fread(buf.data(), 1, length, file), length);
   fclose(file);
   return buf;
 }
 
-void SaveFile(const std::string& path, const std::vector<char>& cache) {
+void SaveFile(const std::string& path, const model_parser::Buffer& cache) {
   FILE* file = fopen(path.c_str(), "wb");
   CHECK(file);
   CHECK(fwrite(cache.data(), sizeof(char), cache.size(), file) == cache.size());
@@ -61,11 +62,13 @@ void SetParamWithTensor(const std::string& name,
 }
 
 void SetTensorWithParam(lite::Tensor* tensor, const ParamDescReadAPI& param) {
+  CHECK(tensor);
   tensor->Resize(param.Dim());
   tensor->set_precision(lite::ConvertPrecisionType(param.GetDataType()));
-  std::memcpy(tensor->mutable_data(param.byte_size()),
-              param.GetData(),
-              param.byte_size());
+  auto* dst = tensor->mutable_data(param.byte_size());
+  CHECK(dst);
+  CHECK(param.GetData());
+  std::memcpy(dst, param.GetData(), param.byte_size());
 }
 
 void SetCombinedParamsWithScope(const lite::Scope& scope,
@@ -82,9 +85,12 @@ void SetScopeWithCombinedParams(lite::Scope* scope,
                                 const CombinedParamsDescReadAPI& params) {
   CHECK(scope);
   for (size_t i = 0; i < params.GetParamsSize(); ++i) {
-    const auto& param = *params.GetParamDesc(i);
-    auto* tensor = scope->Var(param.Name())->GetMutable<lite::Tensor>();
-    SetTensorWithParam(tensor, param);
+    const auto* param = params.GetParamDesc(i);
+    CHECK(param);
+    auto* tensor = scope->Var(param->Name())->GetMutable<lite::Tensor>();
+    CHECK(tensor);
+    SetTensorWithParam(tensor, *param);
+    tensor->set_persistable(true);
   }
 }
 

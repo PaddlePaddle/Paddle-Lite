@@ -76,7 +76,11 @@ void Softmax(const T* x, T* y, int n, int bs, int remain) {
       for (int j = 0; j < remain; ++j) {
         compute_strideasum(&y[j], &scalar, n, remain);
         scalar = static_cast<T>(1) / scalar;
+#ifdef PADDLE_WITH_MKLML
         compute_stridescal(&scalar, &y[j], &y[j], n, remain);
+#else
+        compute_stridescal(&scalar, &y[j], &y[j], n - j, remain);
+#endif
       }
     }
     x += n;

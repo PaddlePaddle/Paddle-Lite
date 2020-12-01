@@ -26,10 +26,10 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-std::vector<char> LoadFile(const std::string& path,
-                           const size_t& offset = 0,
-                           const size_t& size = 0);
-void SaveFile(const std::string& path, const std::vector<char>& cache);
+model_parser::Buffer LoadFile(const std::string& path,
+                              size_t offset = 0,
+                              size_t size = 0);
+void SaveFile(const std::string& path, const Buffer& cache);
 
 void SetScopeWithCombinedParams(lite::Scope* scope,
                                 const CombinedParamsDescReadAPI& params);

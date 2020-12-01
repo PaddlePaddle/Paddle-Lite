@@ -191,6 +191,10 @@ if (LITE_WITH_PROFILE)
     add_definitions("-DLITE_WITH_PROFILE")
 endif()
 
+if (LITE_WITH_XCODE)
+    add_definitions("-DLITE_WITH_XCODE")
+endif()
+
 if (LITE_WITH_PRECISION_PROFILE)
     add_definitions("-DLITE_WITH_PRECISION_PROFILE")
 endif()
@@ -218,6 +222,10 @@ endif()
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
   add_definitions("-DLITE_ON_MODEL_OPTIMIZE_TOOL")
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
+
+if (LITE_BUILD_EXTRA)
+  add_definitions("-DLITE_BUILD_EXTRA")
+endif(LITE_BUILD_EXTRA)
 
 if (LITE_WITH_PYTHON)
   add_definitions("-DLITE_WITH_PYTHON")

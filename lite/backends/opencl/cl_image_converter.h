@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include "lite/backends/opencl/cl_half.h"
+#include "lite/backends/opencl/cl_runtime.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -25,21 +26,23 @@ class CLImageConverterBase {
   virtual ~CLImageConverterBase() {}
 
   virtual void NCHWToImage(float *nchw,
-                           half_t *image,
+                           void *image,
                            const DDim &tensor_dim) = 0;
 
-  virtual void ImageToNCHW(half_t *image,
+  virtual void ImageToNCHW(void *image,
                            float *nchw,
                            const DDim &image_dim,
                            const DDim &tensor_dim) = 0;
   virtual DDim InitImageDimInfoWith(const DDim &tensor_dim) = 0;
+
+  bool fp16_support_{paddle::lite::CLRuntime::Global()->support_half()};
 };
 
 class CLImageConverterDefault : public CLImageConverterBase {
  public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
-  void NCHWToImage(float *nchw, half_t *image, const DDim &tensor_dim) override;
-  void ImageToNCHW(half_t *image,
+  void NCHWToImage(float *nchw, void *image, const DDim &tensor_dim) override;
+  void ImageToNCHW(void *image,
                    float *tensor,
                    const DDim &image_dim,
                    const DDim &tensor_dim) override;
@@ -48,10 +51,8 @@ class CLImageConverterDefault : public CLImageConverterBase {
 class CLImageConverterFolder : public CLImageConverterBase {
  public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
-  void NCHWToImage(float *tensor,
-                   half_t *image,
-                   const DDim &tensor_dim) override;
-  void ImageToNCHW(half_t *image,
+  void NCHWToImage(float *tensor, void *image, const DDim &tensor_dim) override;
+  void ImageToNCHW(void *image,
                    float *tensor,
                    const DDim &image_dim,
                    const DDim &tensor_dim) override;
@@ -77,10 +78,8 @@ class CLImageConverterFolder : public CLImageConverterBase {
 class CLImageConverterNormal : public CLImageConverterBase {
  public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
-  void NCHWToImage(float *tensor,
-                   half_t *image,
-                   const DDim &tensor_dim) override;
-  void ImageToNCHW(half_t *image,
+  void NCHWToImage(float *tensor, void *image, const DDim &tensor_dim) override;
+  void ImageToNCHW(void *image,
                    float *tensor,
                    const DDim &image_dim,
                    const DDim &tensor_dim) override;
@@ -106,10 +105,8 @@ class CLImageConverterNormal : public CLImageConverterBase {
 class CLImageConverterNWBlock : public CLImageConverterBase {
  public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
-  void NCHWToImage(float *tensor,
-                   half_t *image,
-                   const DDim &tensor_dim) override;
-  void ImageToNCHW(half_t *image,
+  void NCHWToImage(float *tensor, void *image, const DDim &tensor_dim) override;
+  void ImageToNCHW(void *image,
                    float *tensor,
                    const DDim &image_dim,
                    const DDim &tensor_dim) override;
@@ -117,10 +114,8 @@ class CLImageConverterNWBlock : public CLImageConverterBase {
 class CLImageConverterDWBlock : public CLImageConverterBase {
  public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
-  void NCHWToImage(float *tensor,
-                   half_t *image,
-                   const DDim &tensor_dim) override;
-  void ImageToNCHW(half_t *image,
+  void NCHWToImage(float *tensor, void *image, const DDim &tensor_dim) override;
+  void ImageToNCHW(void *image,
                    float *tensor,
                    const DDim &image_dim,
                    const DDim &tensor_dim) override;
@@ -129,10 +124,8 @@ class CLImageConverterDWBlock : public CLImageConverterBase {
 class CLImageConverterWinoTransWeight : public CLImageConverterBase {
  public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
-  void NCHWToImage(float *tensor,
-                   half_t *image,
-                   const DDim &tensor_dim) override;
-  void ImageToNCHW(half_t *image,
+  void NCHWToImage(float *tensor, void *image, const DDim &tensor_dim) override;
+  void ImageToNCHW(void *image,
                    float *tensor,
                    const DDim &image_dim,
                    const DDim &tensor_dim) override;

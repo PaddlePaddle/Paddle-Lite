@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <sys/time.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -40,12 +41,13 @@ static std::map<std::string, size_t> InitImageDimInfoWith(
   size_t height = H * N;
   return std::map<std::string, size_t>({{"width", width}, {"height", height}});
 }
+
 inline static int maptofactor(int i, int factor) {
   return (i + factor - 1) / factor;
 }
 
-static std::vector<size_t> DefaultWorkSize(const DDim& image_dim,
-                                           const DDim& image_shape) {
+static std::vector<size_t> DefaultGlobalWorkSize(const DDim& image_dim,
+                                                 const DDim& image_shape) {
   // n c h w
   //  auto image_dim = image.dims();
   if (image_dim.size() == 4) {

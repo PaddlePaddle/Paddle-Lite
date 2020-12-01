@@ -30,6 +30,7 @@ void set_tensor(paddle::lite::Tensor* tensor,
   auto production =
       std::accumulate(begin(dims), end(dims), 1, std::multiplies<int64_t>());
   tensor->Resize(dims);
+  tensor->set_persistable(true);
   std::vector<T> data;
   data.resize(production);
   for (int i = 0; i < production; ++i) {

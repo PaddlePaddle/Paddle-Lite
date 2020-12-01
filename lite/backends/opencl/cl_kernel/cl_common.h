@@ -28,8 +28,13 @@ limitations under the License. */
 #ifdef CL_DTYPE_float
 #define CL_DTYPE float
 #define CL_DTYPE_CHAR f
+#ifdef CL_DTYPE_FLOAT_FORCE
+#define CL_COMPUTE_DTYPE float
+#define CL_COMPUTE_DTYPE_CHAR f
+#else
 #define CL_COMPUTE_DTYPE half
 #define CL_COMPUTE_DTYPE_CHAR h
+#endif
 #endif
 
 #ifdef CL_DTYPE_half
@@ -54,6 +59,9 @@ limitations under the License. */
 #define _CONVERT_TYPE_TO(value, type) convert_##type(value)
 #define CONVERT_TYPE_TO(value, type) _CONVERT_TYPE_TO(value, type)
 
+__constant sampler_t SAMPLER =
+    CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
 /////////////////////////////////
 // WRITE_IMG_TYPE / READ_IMG_TYPE
 /////////////////////////////////
@@ -66,6 +74,18 @@ limitations under the License. */
   read_image##type_char(img, sampler, pos)
 #define READ_IMG_TYPE(type_char, img, sampler, pos) \
   _READ_IMG_TYPE(type_char, img, sampler, pos)
+
+/////////////////////////////////
+// select macro
+// NOTE: a, b must both are vector type
+/////////////////////////////////
+#ifdef CL_DTYPE_float
+#define SELECT(a, b, mask) select(a, b, (uint4)((mask) << 31))
+#endif
+
+#ifdef CL_DTYPE_half
+#define SELECT(a, b, mask) select(a, b, (ushort4)((mask) << 15))
+#endif
 
 /////////////////////////////////
 // activation / activation_type4
@@ -90,8 +110,7 @@ inline CL_DTYPE activation(CL_DTYPE in
 #endif
 
 #ifdef LEAKY_RELU
-  output =
-      select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in, (CL_DTYPE)in, (ushort)(in >= 0));
+  output = select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, in >= (CL_DTYPE)0);
 #endif
   return output;
 }
@@ -104,7 +123,7 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
                                   ) {
   CL_DTYPE4 output = in;
 #ifdef PRELU
-  output = select(prelu_alpha * in, in, in >= (CL_DTYPE4)0.0);
+  output = select(prelu_alpha * in, in, isgreaterequal(in, (CL_DTYPE4)0));
 #endif
 
 #ifdef RELU
@@ -117,14 +136,14 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 #endif
 
 #ifdef LEAKY_RELU
-  // note: `(ushort4)(in >= 0)` causes error: invalid conversion
-  // between ext-vector type 'ushort4' and 'short
-  // __attribute__((ext_vector_type(4)))'
-  // thus, using `(ushort4)(in.x >= 0, in.y >= 0, in.z >= 0, in.w >= 0)`
-  // instead.
-  output = select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in,
-                  (CL_DTYPE4)in,
-                  (ushort4)(in.x >= 0, in.y >= 0, in.z >= 0, in.w >= 0));
+  output = select(
+      (CL_DTYPE4)(LEAKY_RELU_ALPHA)*in, in, isgreaterequal(in, (CL_DTYPE4)0));
+// same as bellow:
+// output = select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in,
+//                 in,
+//                 (ushort4)((in.x >= 0) << 15, (in.y >= 0) << 15, (in.z >= 0)
+//                 << 15, (in.w >= 0) << 15));
 #endif
+
   return output;
 }

@@ -462,7 +462,7 @@ void Softmax(const T* x, T* y, int n, int bs = 1, int remain = 1) {
       for (int j = 0; j < remain; j++) {
         StrideASum(&y[j], &scalar, n, remain);
         scalar = static_cast<T>(1) / scalar;
-        StrideScal(&scalar, &y[j], &y[j], n, remain);
+        StrideScal(&scalar, &y[j], &y[j], n - j, remain);
       }
     }
     x += n;

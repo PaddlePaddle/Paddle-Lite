@@ -191,7 +191,7 @@
 | sequence_reverse | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | sequence_reverse_embedding | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | sequence_softmax | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
-| sequence_unpad | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
+| sequence_unpad |  Y　|  | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | shape | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | sign | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | softsign | 　 | Y | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |

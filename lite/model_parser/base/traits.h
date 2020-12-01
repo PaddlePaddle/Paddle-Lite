@@ -116,6 +116,7 @@ inline lite_api::PrecisionType ConvertPrecisionType(VarDataType type) {
 
 struct Standard {};
 struct Flatbuffers {};
+struct Protobuf {};
 
 template <typename T, typename U>
 class VectorView;

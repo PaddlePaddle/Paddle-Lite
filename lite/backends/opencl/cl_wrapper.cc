@@ -34,6 +34,9 @@ CLWrapper::CLWrapper() {
 bool CLWrapper::InitHandle() {
   const std::vector<std::string> paths = {
     "libOpenCL.so",
+#if defined(__MACOSX) || defined(__APPLE__)
+    "/System/Library/Frameworks/OpenCL.framework/OpenCL",
+#endif
 #if defined(__aarch64__)
     // Qualcomm Adreno with Android
     "/system/vendor/lib64/libOpenCL.so",
@@ -108,9 +111,9 @@ bool CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clEnqueueMapBuffer);
   PADDLE_DLSYM(clEnqueueMapImage);
   PADDLE_DLSYM(clCreateCommandQueue);
-  // note(ysh329): consider compatibility for cl_driver_version 1.10
-  // using clCreateCommandQueue instead.
-  // PADDLE_DLSYM(clCreateCommandQueueWithProperties);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+  PADDLE_DLSYM(clCreateCommandQueueWithProperties);
+#endif
   PADDLE_DLSYM(clGetCommandQueueInfo);
   PADDLE_DLSYM(clReleaseCommandQueue);
   PADDLE_DLSYM(clCreateProgramWithBinary);
@@ -124,14 +127,16 @@ bool CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clRetainKernel);
   PADDLE_DLSYM(clCreateBuffer);
   PADDLE_DLSYM(clCreateImage2D);
-  PADDLE_DLSYM(clCreateImage);
   PADDLE_DLSYM(clCreateUserEvent);
   PADDLE_DLSYM(clCreateProgramWithSource);
   PADDLE_DLSYM(clReleaseKernel);
   PADDLE_DLSYM(clGetDeviceInfo);
   PADDLE_DLSYM(clGetDeviceIDs);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
   PADDLE_DLSYM(clRetainDevice);
   PADDLE_DLSYM(clReleaseDevice);
+  PADDLE_DLSYM(clCreateImage);
+#endif
   PADDLE_DLSYM(clRetainEvent);
   PADDLE_DLSYM(clGetKernelWorkGroupInfo);
   PADDLE_DLSYM(clGetEventInfo);
@@ -445,7 +450,7 @@ clGetCommandQueueInfo(cl_command_queue command_queue,
                       cl_command_queue_info param_name,
                       size_t param_value_size,
                       void *param_value,
-                      size_t *param_value_size_ret) {
+                      size_t *param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
   return paddle::lite::CLWrapper::Global()->clGetCommandQueueInfo()(
       command_queue,
       param_name,
@@ -454,20 +459,19 @@ clGetCommandQueueInfo(cl_command_queue command_queue,
       param_value_size_ret);
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
 CL_API_ENTRY cl_command_queue CL_API_CALL clCreateCommandQueueWithProperties(
     cl_context context,
     cl_device_id device,
     const cl_queue_properties *properties,
     cl_int *errcode_ret) CL_API_SUFFIX__VERSION_2_0 {
-  // note(ysh329): consider compatibility for cl_driver_version 1.10
-  // using clCreateCommandQueue instead.
-  // return paddle::lite::CLWrapper::Global()
-  //     ->clCreateCommandQueueWithProperties()(
-  //         context, device, properties, errcode_ret);
-  //
-  return paddle::lite::CLWrapper::Global()->clCreateCommandQueue()(
-      context, device, 0, errcode_ret);
+  return paddle::lite::CLWrapper::Global()
+      ->clCreateCommandQueueWithProperties()(
+          context, device, properties, errcode_ret);
 }
+
+#endif
 
 CL_API_ENTRY cl_int CL_API_CALL clReleaseCommandQueue(
     cl_command_queue command_queue) CL_API_SUFFIX__VERSION_1_0 {
@@ -575,6 +579,8 @@ clCreateImage2D(cl_context context,
                                                               errcode_ret);
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+
 CL_API_ENTRY cl_mem CL_API_CALL
 clCreateImage(cl_context context,
               cl_mem_flags flags,
@@ -585,6 +591,8 @@ clCreateImage(cl_context context,
   return paddle::lite::CLWrapper::Global()->clCreateImage()(
       context, flags, image_format, image_desc, host_ptr, errcode_ret);
 }
+
+#endif
 
 CL_API_ENTRY cl_event CL_API_CALL clCreateUserEvent(
     cl_context context, cl_int *errcode_ret) CL_API_SUFFIX__VERSION_1_1 {
@@ -627,6 +635,8 @@ CL_API_ENTRY cl_int CL_API_CALL clGetDeviceIDs(cl_platform_id platform,
       platform, device_type, num_entries, devices, num_devices);
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+
 CL_API_ENTRY cl_int CL_API_CALL clRetainDevice(cl_device_id device)
     CL_API_SUFFIX__VERSION_1_2 {
   return paddle::lite::CLWrapper::Global()->clRetainDevice()(device);
@@ -636,6 +646,8 @@ CL_API_ENTRY cl_int CL_API_CALL clReleaseDevice(cl_device_id device)
     CL_API_SUFFIX__VERSION_1_2 {
   return paddle::lite::CLWrapper::Global()->clReleaseDevice()(device);
 }
+
+#endif
 
 CL_API_ENTRY cl_int CL_API_CALL clRetainEvent(cl_event event)
     CL_API_SUFFIX__VERSION_1_0 {

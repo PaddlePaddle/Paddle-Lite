@@ -81,6 +81,7 @@ void MulGradCompute::Run() {
                              false,
                              k_,  // M
                              n_,  // N
+                             0.f,
                              false,
                              nullptr,
                              false,
@@ -117,6 +118,7 @@ void MulGradCompute::Run() {
                              true,
                              k_,  // M
                              m_,  // N
+                             0.f,
                              false,
                              nullptr,
                              false,

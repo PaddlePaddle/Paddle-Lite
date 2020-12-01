@@ -72,7 +72,8 @@ enum class PrecisionType : int {
   kInt64 = 7,
   kInt16 = 8,
   kUInt8 = 9,
-  NUM = 10,  // number of fields.
+  kFP64 = 10,
+  NUM = 11,  // number of fields.
 };
 enum class DataLayoutType : int {
   kUnk = 0,
@@ -119,6 +120,8 @@ static size_t PrecisionTypeLength(PrecisionType type) {
   switch (type) {
     case PrecisionType::kFloat:
       return 4;
+    case PrecisionType::kFP64:
+      return 8;
     case PrecisionType::kUInt8:
       return 1;
     case PrecisionType::kInt8:
@@ -129,10 +132,17 @@ static size_t PrecisionTypeLength(PrecisionType type) {
       return 8;
     case PrecisionType::kFP16:
       return 2;
+    case PrecisionType::kInt16:
+      return 2;
     default:
-      return 4;
+      return 0;
   }
 }
+
+enum class QuantType : int {
+  QUANT_INT8,
+  QUANT_INT16,
+};
 
 template <typename T>
 struct PrecisionTypeTrait {
@@ -145,6 +155,7 @@ struct PrecisionTypeTrait {
 #define _ForEachPrecisionType(callback)                   \
   _ForEachPrecisionTypeHelper(callback, bool, kBool);     \
   _ForEachPrecisionTypeHelper(callback, float, kFloat);   \
+  _ForEachPrecisionTypeHelper(callback, double, kFP64);   \
   _ForEachPrecisionTypeHelper(callback, uint8_t, kUInt8); \
   _ForEachPrecisionTypeHelper(callback, int8_t, kInt8);   \
   _ForEachPrecisionTypeHelper(callback, int16_t, kInt16); \

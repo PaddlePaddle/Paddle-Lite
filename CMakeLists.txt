@@ -38,12 +38,17 @@ if(WIN32)
     set(CMAKE_STATIC_LIBRARY_PREFIX lib)
     add_definitions("/DGOOGLE_GLOG_DLL_DECL=")
 
-    if (MSVC_STATIC_CRT)
+    if(MSVC_STATIC_CRT)
       set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MTd")
       set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} /bigobj /MT")
       set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /bigobj /MTd")
       set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} /bigobj /MT")
-    endif()
+    else(MSVC_STATIC_CRT)
+      set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MDd")
+      set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} /bigobj /MD")
+      set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /bigobj /MDd")
+      set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} /bigobj /MD")
+    endif(MSVC_STATIC_CRT)
 
     add_compile_options(/wd4068 /wd4129 /wd4244 /wd4267 /wd4297 /wd4530 /wd4577 /wd4819 /wd4838)
     add_compile_options(/MP)
@@ -52,7 +57,6 @@ if(WIN32)
     set(CMAKE_STATIC_LINKER_FLAGS  "${CMAKE_STATIC_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
-
 endif()
 
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
@@ -98,6 +102,7 @@ lite_option(LITE_WITH_EXCEPTION "Enable throwing the exception when error occurs
 lite_option(LITE_WITH_NVTX      "Enable nvtx or not, please enable LITE_WITH_CUDA first." OFF)
 lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
+lite_option(LITE_WITH_BENCHMARK_TEST "Build benchmark test cases" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA    "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 lite_option(LITE_BUILD_TAILOR   "Enable tailoring library according to model" OFF)
@@ -106,6 +111,7 @@ lite_option(LITE_WITH_CV        "Enable build cv image in lite" OFF)
 lite_option(LITE_WITH_STATIC_CUDA "Statically link cuda libraries." OFF)
 lite_option(CUDA_WITH_FP16      "Compile with cuda half support" OFF)
 lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
+lite_option(LITE_WITH_XCODE     "when debug in xcode, its ON." OFF)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
@@ -172,6 +178,12 @@ endif()
 
 include(external/flatbuffers)
 
+# for opencl
+if (LITE_WITH_OPENCL)
+    include(external/opencl-headers)
+    include(external/opencl-clhpp)
+endif()
+
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
@@ -190,12 +202,6 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
         include(external/gtest)     # download, build, install gtest
         include(ccache)             # set ccache for compilation
         include(external/protobuf)  # download, build, install protobuf
-    endif()
-
-    # for opencl
-    if (LITE_WITH_OPENCL)
-        include(external/opencl-headers)
-        include(external/opencl-clhpp)
     endif()
 
     include(generic)            # simplify cmake module

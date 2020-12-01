@@ -191,3 +191,11 @@ REGISTER_LITE_KERNEL(
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(
+    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, pc)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("W", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .Finalize();

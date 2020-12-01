@@ -47,12 +47,23 @@ void Conv2DTransposeCompute::PrepareForRun() {
   workspace_size_ = group * m * n * sizeof(float);
 
   auto& ctx = this->ctx_->template As<ARMContext>();
-  lite::Tensor tmp_weights;
-  lite::arm::math::prepackA(
-      &tmp_weights, *(param.filter), 1.f, m, k, group, true, &ctx);
-  param.filter->Resize(tmp_weights.dims());
-  param.filter->CopyDataFrom(tmp_weights);
-  param.filter->Resize(w_dims);
+  auto dilations = *param.dilations;
+  bool ks_equal = (param.strides[0] == param.strides[1]) && (kw == kh);
+  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
+  depthwise_ =
+      (param.groups == chin && chin == chout && ks_equal && no_dilation);
+  bool depth_wise_s1 =
+      depthwise_ && (param.strides[0] == 1 && param.strides[1] == 1);
+  bool depth_wise_s2 =
+      depthwise_ && (param.strides[0] == 2 && param.strides[1] == 2);
+  if (!depth_wise_s1 && !depth_wise_s2) {
+    lite::Tensor tmp_weights;
+    lite::arm::math::prepackA(
+        &tmp_weights, *(param.filter), 1.f, m, k, group, true, &ctx);
+    param.filter->Resize(tmp_weights.dims());
+    param.filter->CopyDataFrom(tmp_weights);
+    param.filter->Resize(w_dims);
+  }
   is_first_epoch_ = false;
 }
 
@@ -104,52 +115,90 @@ void Conv2DTransposeCompute::Run() {
   auto weights = param.filter->data<float>();
   auto act_param = param.activation_param;
   bool has_act = act_param.has_active;
+  bool depthwise_s1 =
+      depthwise_ && (param.strides[0] == 1 && param.strides[1] == 1);
+  bool depthwise_s2 =
+      depthwise_ && (param.strides[0] == 2 && param.strides[1] == 2);
   for (int i = 0; i < num; i++) {
     const float* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
-    float* col_data = static_cast<float*>(ctx.workspace_data<float>()) +
-                      ctx.llc_size() / sizeof(float);
-    if (flag_1x1s1p1) {
-      col_data = dout_batch;
-    }
-    for (int g = 0; g < group; g++) {
-      const float* din_group = din_batch + g * group_size_in;
-      const float* weights_group = weights + g * group_size_weights;
-      float* coldata_group = col_data + g * group_size_coldata;
-      if (flag_bias) {
-        act_param.has_active = false;
+    if (depthwise_s1) {
+      lite::arm::math::conv_transpose_depthwise_s1<float>(din_batch,
+                                                          weights,
+                                                          chout,
+                                                          hout,
+                                                          wout,
+                                                          kh,
+                                                          kw,
+                                                          paddings[0],
+                                                          paddings[1],
+                                                          paddings[2],
+                                                          paddings[3],
+                                                          dilations[0],
+                                                          dilations[1],
+                                                          dout_batch,
+                                                          &ctx);
+    } else if (depthwise_s2) {
+      lite::arm::math::conv_transpose_depthwise_s2<float>(din_batch,
+                                                          weights,
+                                                          chout,
+                                                          hout,
+                                                          wout,
+                                                          kh,
+                                                          kw,
+                                                          paddings[0],
+                                                          paddings[1],
+                                                          paddings[2],
+                                                          paddings[3],
+                                                          dilations[0],
+                                                          dilations[1],
+                                                          dout_batch,
+                                                          &ctx);
+    } else {
+      float* col_data = static_cast<float*>(ctx.workspace_data<float>()) +
+                        ctx.llc_size() / sizeof(float);
+      if (flag_1x1s1p1) {
+        col_data = dout_batch;
       }
-      lite::arm::math::sgemm_prepack(false,
-                                     m,
-                                     n,
-                                     k,
-                                     weights_group,
-                                     din_group,
-                                     n,
-                                     0.f,
-                                     coldata_group,
-                                     n,
-                                     nullptr,
-                                     false,
-                                     act_param,
-                                     &ctx);
-    }
-    if (!flag_1x1s1p1) {
-      lite::arm::math::col2im<float>(col_data,
-                                     chout,
-                                     hout,
-                                     wout,
-                                     kh,
-                                     kw,
-                                     paddings[0],
-                                     paddings[1],
-                                     paddings[2],
-                                     paddings[3],
-                                     param.strides[0],
-                                     param.strides[1],
-                                     dilations[0],
-                                     dilations[1],
-                                     dout_batch);
+      for (int g = 0; g < group; g++) {
+        const float* din_group = din_batch + g * group_size_in;
+        const float* weights_group = weights + g * group_size_weights;
+        float* coldata_group = col_data + g * group_size_coldata;
+        if (flag_bias) {
+          act_param.has_active = false;
+        }
+        lite::arm::math::sgemm_prepack(false,
+                                       m,
+                                       n,
+                                       k,
+                                       weights_group,
+                                       din_group,
+                                       n,
+                                       0.f,
+                                       coldata_group,
+                                       n,
+                                       nullptr,
+                                       false,
+                                       act_param,
+                                       &ctx);
+      }
+      if (!flag_1x1s1p1) {
+        lite::arm::math::col2im<float>(col_data,
+                                       chout,
+                                       hout,
+                                       wout,
+                                       kh,
+                                       kw,
+                                       paddings[0],
+                                       paddings[1],
+                                       paddings[2],
+                                       paddings[3],
+                                       param.strides[0],
+                                       param.strides[1],
+                                       dilations[0],
+                                       dilations[1],
+                                       dout_batch);
+      }
     }
     if (flag_bias) {
       act_param.has_active = has_act;
