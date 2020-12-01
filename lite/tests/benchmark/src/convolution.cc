@@ -128,7 +128,7 @@ void bench_conv(const benchmark::State& state_in, const char* net) {
     conv_compute.Launch();
   }
 
-  state.counters["FLOPS"] = benchmark::Counter(
+  state.counters["OPS"] = benchmark::Counter(
       uint64_t(state.iterations()) * 2 * batch_size * output_height *
           output_width * groups * group_input_channels * group_output_channels *
           kernel_height * kernel_width,
