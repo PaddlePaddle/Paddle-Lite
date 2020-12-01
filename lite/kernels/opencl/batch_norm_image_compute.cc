@@ -11,21 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#include <vector>
-#include "lite/backends/opencl/cl_half.h"
-#include "lite/backends/opencl/cl_include.h"
+#include <cmath>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/replace_stl/stream.h"
-#include "lite/utils/string.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
-#include <cmath>
-#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -77,8 +69,10 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
     }
 
     DDim scale_img_size{{cgroup, 1}};
-    scale_image_.mutable_data<half_t, cl::Image2D>(
-        scale_img_size[0], scale_img_size[1], scale_img.data());
+    MUTABLE_DATA_GPU(
+        &scale_image_, scale_img_size[0], scale_img_size[1], scale_img.data());
+    MUTABLE_DATA_GPU(
+        &bias_image_, scale_img_size[0], scale_img_size[1], bias_img.data());
     bias_image_.mutable_data<half_t, cl::Image2D>(
         scale_img_size[0], scale_img_size[1], bias_img.data());
   }
@@ -91,7 +85,7 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
       first_epoch_for_reinit_ = false;
 
       // compute image shape
-      paddle::lite::CLImageConverterDefault default_convertor;
+      CLImageConverterDefault default_convertor;
       out_img_shape_ =
           default_convertor.InitImageDimInfoWith(batch_norm_param_->y->dims());
 
@@ -110,8 +104,8 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto* x_img = DATA_GPU(batch_norm_param_->x);
     auto* out_img = MUTABLE_DATA_GPU(
         batch_norm_param_->y, out_img_shape_[0], out_img_shape_[1], nullptr);
-    auto* scale_img = scale_image_.data<half_t, cl::Image2D>();
-    auto* bias_img = bias_image_.data<half_t, cl::Image2D>();
+    auto* scale_img = DATA_GPU(&scale_image_);
+    auto* bias_img = DATA_GPU(&bias_image_);
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
