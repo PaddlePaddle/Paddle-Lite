@@ -88,4 +88,4 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 1. Python预测库编译参考[编译Linux](../source_compile/compile_linux)，建议在开发版上编译。
 2. [Paddle-Lite Python API](../api_reference/python_api_doc)。
-3. 代码参考，[Python完整示例](python_demo)
+3. 代码参考，[Python完整示例](../quick_start/python_demo)

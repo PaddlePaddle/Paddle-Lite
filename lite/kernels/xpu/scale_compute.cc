@@ -35,6 +35,9 @@ void ScaleCompute::Run() {
                       param.x->data<float>(), /* x */
                       param.output->mutable_data<float>(TARGET(kXPU)) /* y */);
   CHECK_EQ(r, 0);
+  if (!param.x->lod().empty()) {
+    param.output->set_lod(param.x->lod());
+  }
 }
 
 }  // namespace xpu
