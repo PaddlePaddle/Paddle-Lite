@@ -41,7 +41,7 @@ bool CLWrapper::InitHandle() {
 #if defined(__MACOSX) || defined(__APPLE__)
     "libOpenCL.so",
     "/System/Library/Frameworks/OpenCL.framework/OpenCL",
-#elif defined(_ANDROID__)
+#elif defined(__ANDROID__)
     "libOpenCL.so",
     "libGLES_mali.so",
     "libmali.so",
@@ -59,7 +59,7 @@ bool CLWrapper::InitHandle() {
     // Arm Mali with Android
     "/system/vendor/lib/egl/libGLES_mali.so",
     "/system/lib/egl/libGLES_mali.so",
-#endif  // __aarch64
+#endif  // __aarch64__
 #elif defined(__linux__)
     "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
     "/usr/lib/arm-linux-gnueabihf/libOpenCL.so",
