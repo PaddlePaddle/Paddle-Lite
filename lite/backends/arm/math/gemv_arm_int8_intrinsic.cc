@@ -410,6 +410,9 @@ void major_loop(int N,
     int8x16_t col0;
     int8x16_t tile_row[TILE_A_HEIGHT];
     int32x4_t q[TILE_A_HEIGHT];
+    for (int i = 0; i < TILE_A_HEIGHT; ++i) {
+      q[i] = vmovq_n_s32(0);
+    }
     if (const_tile_j_Max != 0) {
       col0 = vld1q_s8(tile_b_data);
       tile_b_data += TILE_A_WIDTH;
@@ -417,7 +420,6 @@ void major_loop(int N,
       for (int i = 0; i < TILE_A_HEIGHT; ++i) {
         tile_row[i] = vld1q_s8(tile_A_row_data[i]);
         tile_A_row_data[i] += TILE_A_WIDTH;
-        q[i] = int32x4_t{0};
       }
       if (const_tile_j_Max == -1) {
         for (int tile_j = 0; tile_j < (dynamic_tile_j_Max - 1); ++tile_j) {
