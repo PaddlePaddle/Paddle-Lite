@@ -16,6 +16,8 @@
 
 #include <arm_neon.h>
 
+#include <cmath>
+
 #include "lite/core/context.h"
 
 namespace paddle {
@@ -38,23 +40,25 @@ struct neon_process_output_int8_x2 {
     constexpr int i = loop_num - 1;
     float32x2_t vscale0 = vld1_f32(scale + 2 * i);
     float32x2_t vin0 = vcvt_f32_s32(in[i]);
-
+    float32x2_t tmp;
     if (has_bias) {
       float32x2_t vbias0 = vld1_f32(bias + 2 * i);
       if (has_active_fn) {
-        out_buf[i] = vcvt_s32_f32(
-            active_fn(vmla_f32(vbias0, vin0, vscale0), active_args));
+        tmp = active_fn(vmla_f32(vbias0, vin0, vscale0), active_args);
       } else {
-        out_buf[i] = vcvt_s32_f32(vmla_f32(vbias0, vin0, vscale0));
+        tmp = vmla_f32(vbias0, vin0, vscale0);
       }
     } else {
       if (has_active_fn) {
-        out_buf[i] =
-            vcvt_s32_f32(active_fn(vmul_f32(vin0, vscale0), active_args));
+        tmp = active_fn(vmul_f32(vin0, vscale0), active_args);
       } else {
-        out_buf[i] = vcvt_s32_f32(vmul_f32(vin0, vscale0));
+        tmp = vmul_f32(vin0, vscale0);
       }
     }
+
+    float32x2_t round_bias = vbsl_f32(
+        vcgt_f32(tmp, vmov_n_f32(0)), vmov_n_f32(0.5), vmov_n_f32(-0.5));
+    out_buf[i] = vcvt_s32_f32(tmp + round_bias);
 
     out_buf[i] = vmax_s32(out_buf[i], vmov_n_s32(-127));
     out_buf[i] = vmin_s32(out_buf[i], vmov_n_s32(127));
@@ -158,22 +162,24 @@ struct neon_process_output_int8 {
     float32x4_t vscale0 = vld1q_f32(scale + 4 * i);
     float32x4_t vin0 = vcvtq_f32_s32(in[i]);
 
+    float32x4_t tmp;
     if (has_bias) {
       float32x4_t vbias0 = vld1q_f32(bias + 4 * i);
       if (has_active_fn) {
-        out_buf[i] = vcvtq_s32_f32(
-            active_fn(vmlaq_f32(vbias0, vin0, vscale0), active_args));
+        tmp = active_fn(vmlaq_f32(vbias0, vin0, vscale0), active_args);
       } else {
-        out_buf[i] = vcvtq_s32_f32(vmlaq_f32(vbias0, vin0, vscale0));
+        tmp = vmlaq_f32(vbias0, vin0, vscale0);
       }
     } else {
       if (has_active_fn) {
-        out_buf[i] =
-            vcvtq_s32_f32(active_fn(vmulq_f32(vin0, vscale0), active_args));
+        tmp = active_fn(vmulq_f32(vin0, vscale0), active_args);
       } else {
-        out_buf[i] = vcvtq_s32_f32(vmulq_f32(vin0, vscale0));
+        tmp = vmulq_f32(vin0, vscale0);
       }
     }
+    float32x4_t round_bias = vbslq_f32(
+        vcgtq_f32(tmp, vmovq_n_f32(0)), vmovq_n_f32(0.5), vmovq_n_f32(-0.5));
+    out_buf[i] = vcvtq_s32_f32(tmp + round_bias);
 
     out_buf[i] = vmaxq_s32(out_buf[i], vmovq_n_s32(-127));
     out_buf[i] = vminq_s32(out_buf[i], vmovq_n_s32(127));
@@ -276,25 +282,25 @@ inline void write_gemv_int8_out(const int32_t* __restrict__ in,
     switch (act) {
       case lite_api::ActivationType::kRelu:
         for (int i = 0; i < kSize; ++i) {
-          int32_t tmp = in[i];
+          float tmp = in[i];
           tmp = tmp * scale[i] + (has_bias ? (bias[i]) : 0);
-          out_buf[i] = tmp > 0 ? tmp : 0;
+          out_buf[i] = roundf(tmp > 0 ? tmp : 0);
         }
         break;
       case lite_api::ActivationType::kRelu6: {
         for (int i = 0; i < kSize; ++i) {
-          int32_t tmp = in[i];
+          float tmp = in[i];
           tmp = tmp * scale[i] + (has_bias ? (bias[i]) : 0);
           tmp = tmp > 0 ? tmp : 0;
-          out_buf[i] = tmp > six ? six : tmp;
+          out_buf[i] = roundf(tmp > six ? six : tmp);
         }
         break;
       }
       case lite_api::ActivationType::kLeakyRelu: {
         for (int i = 0; i < kSize; ++i) {
-          int32_t tmp = in[i];
+          float tmp = in[i];
           tmp = tmp * scale[i] + (has_bias ? (bias[i]) : 0);
-          out_buf[i] = tmp > 0 ? tmp : (tmp * alpha);
+          out_buf[i] = roundf(tmp > 0 ? tmp : (tmp * alpha));
         }
         break;
       }
@@ -304,7 +310,8 @@ inline void write_gemv_int8_out(const int32_t* __restrict__ in,
 
   } else {
     for (int i = 0; i < kSize; ++i) {
-      out_buf[i] = in[i] * scale[i] + (has_bias ? (bias[i]) : 0);
+      float tmp = in[i] * scale[i] + (has_bias ? (bias[i]) : 0);
+      out_buf[i] = roundf(tmp);
     }
   }
 
@@ -657,7 +664,7 @@ bool gemv_int8_oth_intrinsic(const int8_t* __restrict__ A,
     const int8_t* __restrict__ row_A_data = ptr_A + (N * row_idx);
     const float* __restrict__ bias_ptr = is_bias ? bias + row_idx : nullptr;
 
-    int32x4_t q{0};
+    int32x4_t q = vmovq_n_s32(0);
 
     for (int tile_j = 0; tile_j < tile_j_Max; ++tile_j) {
       int8x16_t col0 = vld1q_s8(tile_b_data);
