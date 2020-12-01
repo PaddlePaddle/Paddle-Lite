@@ -13,7 +13,10 @@
 // limitations under the License.
 
 #include "lite/backends/arm/math/gemv_arm_int8.h"
+
 #include <arm_neon.h>
+
+#include "lite/backends/arm/math/gemv_arm_int8_intrinsic.h"
 #include "lite/backends/arm/math/saturate.h"
 
 namespace paddle {
@@ -751,7 +754,7 @@ bool gemv_int8<int8_t>(const int8_t* A,
         A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
   }
 #else
-  return gemv_int8_oth<int8_t>(
+  return gemv_int8_oth_intrinsic(
       A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
 #endif
 }
