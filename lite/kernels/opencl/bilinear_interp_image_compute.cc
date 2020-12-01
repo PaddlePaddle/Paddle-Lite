@@ -91,10 +91,9 @@ class BilinearInterpImageCompute
 #endif
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
-    auto* x_img = x->data<half_t, cl::Image2D>();
-
-    auto* out_img = out->mutable_data<half_t, cl::Image2D>(
-        out_image_shape["width"], out_image_shape["height"]);
+    auto* x_img = GET_DATA_GPU(x);
+    auto* out_img = MUTABLE_DATA_GPU(
+        out, out_image_shape["width"], out_image_shape["height"], nullptr);
 
 #ifdef LITE_WITH_LOG
     // VLOG(4) << "x_image: " << x_img;
@@ -163,7 +162,7 @@ class BilinearInterpImageCompute
  protected:
   param_t* bilinear_interp_param_{nullptr};
   std::string kernel_func_name_{"bilinear_interp"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

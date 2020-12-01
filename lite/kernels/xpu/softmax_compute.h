@@ -21,29 +21,6 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-static inline int CanonicalAxis(const int axis, const int rank) {
-  if (axis < 0) {
-    return axis + rank;
-  }
-  return axis;
-}
-
-static inline int SizeToAxis(const int axis, lite::DDim dims) {
-  int size = 1;
-  for (int i = 0; i < axis; i++) {
-    size *= dims[i];
-  }
-  return size;
-}
-
-static inline int SizeFromAxis(const int axis, lite::DDim dims) {
-  int size = 1;
-  for (size_t i = axis; i < dims.size(); i++) {
-    size *= dims[i];
-  }
-  return size;
-}
-
 class SoftmaxCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::SoftmaxParam;

@@ -40,9 +40,6 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
 
   if (out_c >= global_size_dim0 || out_w >= global_size_dim1 ||
@@ -64,9 +61,9 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
 
 #ifdef BIASE_CH
   CL_DTYPE4 output =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, (int2)(out_c, 0));
+      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
 #elif defined(BIASE_ELE)
-  CL_DTYPE4 output = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, output_pos);
+  CL_DTYPE4 output = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, output_pos);
 #else
   CL_DTYPE4 output = (CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f);
 #endif
@@ -84,7 +81,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         input0 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
-                          sampler,
+                          SAMPLER,
                           (int2)(pos_in.x - dilation, pos_in.y - dilation)),
             zero_dtype4,
             (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
@@ -95,7 +92,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         input1 =
             select(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
-                                 sampler,
+                                 SAMPLER,
                                  (int2)(pos_in.x, pos_in.y - dilation)),
                    zero_dtype4,
                    (ushort4)((in_pos_in_one_block.x < 0 ||
@@ -106,7 +103,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         input2 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
-                          sampler,
+                          SAMPLER,
                           (int2)(pos_in.x + dilation, pos_in.y - dilation)),
             zero_dtype4,
             (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
@@ -118,7 +115,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         input3 =
             select(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
-                                 sampler,
+                                 SAMPLER,
                                  (int2)(pos_in.x - dilation, pos_in.y)),
                    zero_dtype4,
                    (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
@@ -130,7 +127,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         input4 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
-                          sampler,
+                          SAMPLER,
                           (int2)(pos_in.x, pos_in.y)),
             zero_dtype4,
             (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 ||
@@ -140,7 +137,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         input5 =
             select(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
-                                 sampler,
+                                 SAMPLER,
                                  (int2)(pos_in.x + dilation, pos_in.y)),
                    zero_dtype4,
                    (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
@@ -151,7 +148,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         input6 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
-                          sampler,
+                          SAMPLER,
                           (int2)(pos_in.x - dilation, pos_in.y + dilation)),
             zero_dtype4,
             (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
@@ -162,7 +159,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         input7 =
             select(READ_IMG_TYPE(CL_DTYPE_CHAR,
                                  input_image,
-                                 sampler,
+                                 SAMPLER,
                                  (int2)(pos_in.x, pos_in.y + dilation)),
                    zero_dtype4,
                    (ushort4)((in_pos_in_one_block.x < 0 ||
@@ -173,7 +170,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
         input8 = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
-                          sampler,
+                          SAMPLER,
                           (int2)(pos_in.x + dilation, pos_in.y + dilation)),
             zero_dtype4,
             (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
@@ -188,7 +185,7 @@ __kernel void conv2d_3x3(__private const int global_size_dim0,
           pos_of_weight.x = (filter_tensor_c_idx / 4) * 3 + j % 3;
           pos_of_weight.y = out_c * 4 * 3 + i * 3 + j / 3;
           CL_DTYPE4 weight =
-              READ_IMG_TYPE(CL_DTYPE_CHAR, filter, sampler, pos_of_weight);
+              READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, pos_of_weight);
 
           int filter_tensor_c_idx_offset = filter_tensor_c_idx % 4;
           CL_DTYPE f_value = 0;

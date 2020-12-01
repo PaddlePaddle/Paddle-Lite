@@ -111,6 +111,7 @@ lite_option(LITE_WITH_CV        "Enable build cv image in lite" OFF)
 lite_option(LITE_WITH_STATIC_CUDA "Statically link cuda libraries." OFF)
 lite_option(CUDA_WITH_FP16      "Compile with cuda half support" OFF)
 lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
+lite_option(LITE_WITH_XCODE     "when debug in xcode, its ON." OFF)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
@@ -177,6 +178,12 @@ endif()
 
 include(external/flatbuffers)
 
+# for opencl
+if (LITE_WITH_OPENCL)
+    include(external/opencl-headers)
+    include(external/opencl-clhpp)
+endif()
+
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
@@ -195,12 +202,6 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
         include(external/gtest)     # download, build, install gtest
         include(ccache)             # set ccache for compilation
         include(external/protobuf)  # download, build, install protobuf
-    endif()
-
-    # for opencl
-    if (LITE_WITH_OPENCL)
-        include(external/opencl-headers)
-        include(external/opencl-clhpp)
     endif()
 
     include(generic)            # simplify cmake module

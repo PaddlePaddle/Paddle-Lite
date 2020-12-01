@@ -53,6 +53,10 @@ shift
 goto round
 
 :main
+if "%WITH_PYTHON%"=="ON" (
+    set BUILD_EXTRA=ON
+)
+
 cd "%workspace%"
 
 echo "------------------------------------------------------------------------------------------------------|"
@@ -129,9 +133,9 @@ if "%BUILD_FOR_CI%"=="ON" (
     call:test_server
     cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
     msbuild /m:4 /p:Configuration=Release lite\api\opt.vcxproj
-) else if "%BUILD_X64_PLATFORM%"=="ON" (
+) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
-    msbuild /maxcpucount:4 /p:Configuration=Release /p:Platform=x64 lite\publish_inference.vcxproj 
+    msbuild /maxcpucount:4 /p:Configuration=Release lite\publish_inference.vcxproj 
 ) else (
     call "%vcvarsall_dir%" x86
     msbuild /maxcpucount:4 /p:Configuration=Release lite\publish_inference.vcxproj 

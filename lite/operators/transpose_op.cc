@@ -84,7 +84,7 @@ bool Transpose2Op::CheckShape() const {
   size_t axis_size = axis.size();
   // "The input tensor's rank(%d) should be equal to the axis's size(%d)",
   // x_rank, axis_size
-  CHECK_OR_FALSE(x_rank == axis_size);
+  CHECK_EQ(x_rank, axis_size);
 
   std::vector<int> count(axis_size, 0);
   for (size_t i = 0; i < axis_size; i++) {

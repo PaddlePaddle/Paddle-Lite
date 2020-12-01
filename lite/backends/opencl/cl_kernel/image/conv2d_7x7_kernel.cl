@@ -47,18 +47,15 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
   ouput_pos_in_one_block.x = out_w;
   ouput_pos_in_one_block.y = out_nh_in_one_batch;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   int2 in_pos_in_one_block;
   in_pos_in_one_block.x = ouput_pos_in_one_block.x * stride + offset;
   in_pos_in_one_block.y = ouput_pos_in_one_block.y * stride + offset;
 
 #ifdef BIASE_CH
   CL_DTYPE4 output =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, (int2)(out_c, 0));
+      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
 #elif defined(BIASE_ELE)
-  CL_DTYPE4 output = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, output_pos);
+  CL_DTYPE4 output = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, output_pos);
 #else
   CL_DTYPE4 output = 0.0f;
 #endif
@@ -77,7 +74,7 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
         input = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
-                          sampler,
+                          SAMPLER,
                           (int2)(pos_in.x + (j - 3) * dilation,
                                  pos_in.y + (k - 3) * dilation)),
             (CL_DTYPE4)(0.0f),
@@ -104,13 +101,13 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
         filter_pos3.y = filter_n3 * 7 + filter_h;
 
         filter[0] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, sampler, filter_pos0);
+            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, SAMPLER, filter_pos0);
         filter[1] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, sampler, filter_pos1);
+            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, SAMPLER, filter_pos1);
         filter[2] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, sampler, filter_pos2);
+            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, SAMPLER, filter_pos2);
         filter[3] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, sampler, filter_pos3);
+            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, SAMPLER, filter_pos3);
 
         output.x += dot(input, filter[0]);
         output.y += dot(input, filter[1]);
@@ -122,8 +119,8 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
 
 #ifdef BATCH_NORM
   output = output * READ_IMG_TYPE(
-                        CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-           READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                        CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+           READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
   output = activation_type4(output);

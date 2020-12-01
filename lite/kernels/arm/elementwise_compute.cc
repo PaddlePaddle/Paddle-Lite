@@ -15,6 +15,7 @@
 #include "lite/kernels/arm/elementwise_compute.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "lite/backends/arm/math/funcs.h"
@@ -53,13 +54,13 @@ inline bool is_fast_broadcast(const DDim& x_dims,
     axis = x_dims.size() - y_dims.size();
   }
   if (axis < 0) {
-    LOG(INFO) << "Fast broadcast chk fail, for x_dims smaller.";
+    VLOG(4) << "Fast broadcast chk fail, for x_dims smaller.";
     return false;
   }
   DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
   axis = (y_dim_trim.size() == 0) ? x_dims.size() : axis;
   if (x_dims.size() == y_dim_trim.size()) {
-    LOG(INFO)
+    VLOG(4)
         << "Fast broadcast chk fail, for y's shape not really contained in x";
     return false;
   }
@@ -71,7 +72,7 @@ inline bool is_fast_broadcast(const DDim& x_dims,
   }
   for (int i = 0; i < y_dim_trim.size(); ++i) {
     if (x_dims[i + axis] != y_dim_trim[i]) {
-      LOG(WARNING) << "Fast broadcast chk fail, for dimension mismatch.";
+      VLOG(4) << "Fast broadcast chk fail, for dimension mismatch.";
       return false;
     }
     (*n) *= y_dim_trim[i];
@@ -148,12 +149,15 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
   // the `kernel-> template Param<>()` requires to use true type from now
   // so `kernel->template Param<operators::ElementwiseParam>()` will not work
   auto& param = kernel->template Param<OpParamType>();
-  auto* x_data = param.X->template data<T>();
-  auto* y_data = param.Y->template data<T>();
+  auto x = param.X;
+  auto y = param.Y;
+
+  auto* x_data = x->template data<T>();
+  auto* y_data = y->template data<T>();
   auto* out_data = param.Out->template mutable_data<T>();
   int axis = param.axis;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
+  auto x_dims = x->dims();
+  auto y_dims = y->dims();
   int pre, n, post;
   if (elementwise_fn && x_dims == y_dims) {
     elementwise_fn(x_data, y_data, out_data, x_dims.production());
@@ -165,8 +169,8 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
              is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     fast_bcast_fn(y_data, x_data, out_data, pre, n, post);
   } else if (elementwise_fn) {
-    auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
-        param.X, param.Y, param.Out, axis);
+    auto batch_arg =
+        lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
     common_elmentwise_op_arm<T, int64_t>(batch_arg, op, elementwise_fn);
   }
   if (!elementwise_fn && !fast_bcast_fn) {

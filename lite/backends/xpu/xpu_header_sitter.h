@@ -17,6 +17,9 @@
 #pragma GCC system_header
 #include <xpu/api.h>
 #include <xpu/golden.h>
+#include <xpu/refactor/fusion.h>
+#include <xpu/refactor/math.h>
+#include <xpu/refactor/nn.h>
 #include <xpu/runtime.h>
 
 #if defined(LITE_WITH_XTCL)
