@@ -333,21 +333,7 @@ class ParamTypeRegistry {
       return *this;
     }
 
-    bool Finalize() {
-#ifndef LITE_ON_TINY_PUBLISH
-      // Dafault op_version will be bound to kernel registry if
-      // `BindPaddleOpVersion` has not been applied.
-      // Default op version of registered kernel is {kernel_type_, 0}
-      if (ParamTypeRegistry::Global()
-              .GetKernelVersion(kernel_type_, Place{target, precision, layout})
-              .OpVersions()
-              .empty()) {
-        ParamTypeRegistry::Global().BindPaddleOpVersion(
-            kernel_type_, 0, kernel_type_, Place{target, precision, layout});
-      }
-#endif
-      return true;
-    }
+    bool Finalize() { return true; }
 
    private:
     std::string kernel_type_;
