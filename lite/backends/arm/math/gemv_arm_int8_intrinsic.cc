@@ -486,7 +486,7 @@ void major_loop(int N,
           &out[0], out_ptr, scale_ptr, bias_ptr, act, six, alpha);
     }
 
-    const int HEIGHT_4x = TILE_A_HEIGHT / 4 * 4;
+    constexpr int HEIGHT_4x = TILE_A_HEIGHT / 4 * 4;
     if (HEIGHT_4x != TILE_A_HEIGHT) {
       neon_write_gemv_int8_out<1, has_bias, has_active>(
           &ans[TILE_A_HEIGHT / 2 - 1],
