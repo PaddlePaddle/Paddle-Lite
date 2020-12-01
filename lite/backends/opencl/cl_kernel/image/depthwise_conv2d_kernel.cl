@@ -73,117 +73,117 @@ __kernel void depth_conv2d_3x3(
 
   CL_DTYPE4 inputs[9];
 
-  inputs[0] = select(
+  inputs[0] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x - dilation,
                            pos_in_input_block.y + in_pos_in_one_block.y - dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
+      ((in_pos_in_one_block.x - dilation < 0 ||
                  in_pos_in_one_block.y - dilation < 0 ||
                  in_pos_in_one_block.x - dilation >= input_width ||
                  in_pos_in_one_block.y - dilation >= input_height)
-                << 15));
+                ));
 
-  inputs[1] = select(
+  inputs[1] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x,
                            pos_in_input_block.y + in_pos_in_one_block.y - dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y - dilation < 0 ||
+      ((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y - dilation < 0 ||
                  in_pos_in_one_block.x >= input_width ||
                  in_pos_in_one_block.y - dilation >= input_height)
-                << 15));
+                ));
 
-  inputs[2] = select(
+  inputs[2] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x + dilation,
                            pos_in_input_block.y + in_pos_in_one_block.y - dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
+      ((in_pos_in_one_block.x + dilation < 0 ||
                  in_pos_in_one_block.y - dilation < 0 ||
                  in_pos_in_one_block.x + dilation >= input_width ||
                  in_pos_in_one_block.y - dilation >= input_height)
-                << 15));
+                ));
 
-  inputs[3] = select(
+  inputs[3] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x - dilation,
                            pos_in_input_block.y + in_pos_in_one_block.y)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x - dilation < 0 || in_pos_in_one_block.y < 0 ||
+      ((in_pos_in_one_block.x - dilation < 0 || in_pos_in_one_block.y < 0 ||
                  in_pos_in_one_block.x - dilation >= input_width ||
                  in_pos_in_one_block.y >= input_height)
-                << 15));
+                ));
 
-  inputs[4] = select(
+  inputs[4] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x,
                            pos_in_input_block.y + in_pos_in_one_block.y)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 ||
+      ((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 ||
                  in_pos_in_one_block.x >= input_width ||
                  in_pos_in_one_block.y >= input_height)
-                << 15));
+                ));
 
-  inputs[5] = select(
+  inputs[5] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x + dilation,
                            pos_in_input_block.y + in_pos_in_one_block.y)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x + dilation < 0 || in_pos_in_one_block.y < 0 ||
+      ((in_pos_in_one_block.x + dilation < 0 || in_pos_in_one_block.y < 0 ||
                  in_pos_in_one_block.x + dilation >= input_width ||
                  in_pos_in_one_block.y >= input_height)
-                << 15));
+                ));
 
-  inputs[6] = select(
+  inputs[6] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x - dilation,
                            pos_in_input_block.y + in_pos_in_one_block.y + dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x - dilation < 0 ||
+      ((in_pos_in_one_block.x - dilation < 0 ||
                  in_pos_in_one_block.y + dilation < 0 ||
                  in_pos_in_one_block.x - dilation >= input_width ||
                  in_pos_in_one_block.y + dilation >= input_height)
-                << 15));
+                ));
 
-  inputs[7] = select(
+  inputs[7] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x,
                            pos_in_input_block.y + in_pos_in_one_block.y + dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y + dilation < 0 ||
+      ((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y + dilation < 0 ||
                  in_pos_in_one_block.x >= input_width ||
                  in_pos_in_one_block.y + dilation >= input_height)
-                << 15));
+                ));
 
-  inputs[8] = select(
+  inputs[8] = SELECT(
       READ_IMG_TYPE(CL_DTYPE_CHAR,
                     input,
                     sampler,
                     (int2)(pos_in_input_block.x + in_pos_in_one_block.x + dilation,
                            pos_in_input_block.y + in_pos_in_one_block.y + dilation)),
       (CL_DTYPE4)(0.0f),
-      (ushort4)((in_pos_in_one_block.x + dilation < 0 ||
+      ((in_pos_in_one_block.x + dilation < 0 ||
                  in_pos_in_one_block.y + dilation < 0 ||
                  in_pos_in_one_block.x + dilation >= input_width ||
                  in_pos_in_one_block.y + dilation >= input_height)
-                << 15));
+                ));
 
   CL_DTYPE4 filters[9];
   filters[0] =

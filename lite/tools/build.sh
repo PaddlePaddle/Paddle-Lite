@@ -23,6 +23,7 @@ BUILD_TAILOR=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
 WITH_MKL=ON
+WITH_OPENCL=OFF
 WITH_STATIC_MKL=OFF
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
@@ -385,6 +386,16 @@ function make_x86 {
     export CXX=g++ # Huawei Ascend NPU need g++
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
+  
+  if [ ${WITH_OPENCL} == "ON" ]; then
+    BUILD_EXTRA=ON
+    build_directory=$BUILD_DIR/build.lite.x86.opencl
+    prepare_opencl_source_code $root_dir $build_directory
+  fi
+
+  if [ ${BUILD_PYTHON} == "ON" ]; then
+    BUILD_EXTRA=ON
+  fi
 
   if [ -d $build_directory ]
   then
@@ -403,6 +414,7 @@ function make_x86 {
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DWITH_GPU=OFF \
             -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
@@ -421,6 +433,10 @@ function make_x86 {
             -DCMAKE_BUILD_TYPE=Release \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
+
+  if [ ${WITH_OPENCL} == "ON" ]; then
+    make opencl_clhpp -j$NUM_PROC
+  fi
   make publish_inference -j$NUM_PROC
   cd -
 }
@@ -554,6 +570,10 @@ function main {
                 ;;
             --with_lto=*)
                 WITH_LTO="${i#*=}"
+                shift
+                ;;
+            --build_opencl=*)
+                WITH_OPENCL="${i#*=}"
                 shift
                 ;;
             --build_npu=*)

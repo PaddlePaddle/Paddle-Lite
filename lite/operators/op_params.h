@@ -762,7 +762,8 @@ struct SGDParam : ParamBase {
 
 /// ----------------------- uniform_random operators ----------------------
 struct UniformRandomParam : ParamBase {
-  const lite::Tensor* X{nullptr};
+  const lite::Tensor* shape_tensor{nullptr};
+  std::vector<lite::Tensor*> shape_tensor_list{};
   std::vector<int64_t> shape{};
   float min{-1.0f};
   float max{1.0f};
@@ -787,8 +788,22 @@ struct Pad2dParam : ParamBase {
 
 /// ----------------------- Crop operators ----------------------
 struct CropParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Y{nullptr};
+  const lite::Tensor* Offsets{nullptr};
+  lite::Tensor* Out{nullptr};
+  std::vector<int> offsets;
+  std::vector<int> shape;
+};
+
+/// ----------------------- CropTensor operators ----------------------
+struct CropTensorParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Shape{nullptr};
+  const lite::Tensor* Offsets{nullptr};
+  const std::vector<lite::Tensor>* ShapeTensor{nullptr};
+  const std::vector<lite::Tensor>* OffsetsTensor{nullptr};
+  lite::Tensor* Out{nullptr};
   std::vector<int> offsets;
   std::vector<int> shape;
 };
@@ -1410,8 +1425,10 @@ struct UnsqueezeParam : ParamBase {
 
 /// ----------------------- expand operators ----------------------
 struct ExpandParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* ExpandTimes{nullptr};
+  const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
+  lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
 };
 
@@ -1977,15 +1994,13 @@ struct OneHotParam : ParamBase {
   bool allow_out_of_range;
 };
 
-struct SinParam : ParamBase {
+struct TrigonometricParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
 };
 
-struct CosParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* Out{};
-};
+using SinParam = TrigonometricParam;
+using CosParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
   lite::Tensor* x{};

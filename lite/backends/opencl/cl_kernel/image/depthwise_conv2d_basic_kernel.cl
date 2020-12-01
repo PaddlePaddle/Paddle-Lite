@@ -71,17 +71,17 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
     for (int fx = 0; fx < filter_width; ++fx) {
       int x_off = fx - align.x;
       int y_off = fy - align.y;
-      CL_DTYPE4 in = select(
+      CL_DTYPE4 in = SELECT(
           READ_IMG_TYPE(CL_DTYPE_CHAR,
                         input,
                         sampler,
                         (int2)(input_x_base + x_off, input_y_base + y_off)),
           (CL_DTYPE4)(0.0f),
-          (ushort4)((in_pos_in_one_block.x + x_off < 0 ||
+          ((in_pos_in_one_block.x + x_off < 0 ||
                      in_pos_in_one_block.y + y_off < 0 ||
                      in_pos_in_one_block.x + x_off >= input_width ||
                      in_pos_in_one_block.y + y_off >= input_height)
-                    << 15));
+                    ));
       CL_DTYPE4 f = READ_IMG_TYPE(
           CL_DTYPE_CHAR, filter, sampler, (int2)(filter_x + fx, filter_y + fy));
       output += in * f;

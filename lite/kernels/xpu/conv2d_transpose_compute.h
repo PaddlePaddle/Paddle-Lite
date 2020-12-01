@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,37 +13,27 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include <vector>
+
+#include <memory>
+#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
-#include "lite/operators/crop_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class CropCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType FilterPtype>
+class Conv2dTransposeCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
  public:
-  using param_t = operators::CropParam;
+  using param_t = operators::ConvParam;
 
   void Run() override;
-  virtual ~CropCompute() = default;
-  void crop_fun(const lite::Tensor* input, lite::Tensor* output);
 
- private:
-  std::vector<int> offsets_;
-  std::vector<int> shape_;
-
-  int c_off;
-  int h_off;
-  int w_off;
-  int c_end;
-  int h_end;
-  int w_end;
+  virtual ~Conv2dTransposeCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

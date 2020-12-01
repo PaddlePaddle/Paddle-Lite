@@ -17,6 +17,13 @@
 #include <iostream>
 #include "paddle_api.h"   // NOLINT
 #include "test_helper.h"  // NOLINT
+/////////////////////////////////////////////////////////////////////////
+// If this demo is linked to static library:libpaddle_api_full_bundled.a
+// , you should include `paddle_use_ops.h` and `paddle_use_kernels.h` to
+// avoid linking errors such as `unsupport ops or kernels`.
+/////////////////////////////////////////////////////////////////////////
+// #include "paddle_use_kernels.h"  // NOLINT
+// #include "paddle_use_ops.h"      // NOLINT
 
 DEFINE_string(model_dir,
               "",

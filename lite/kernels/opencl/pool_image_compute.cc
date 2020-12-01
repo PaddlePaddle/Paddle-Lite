@@ -113,17 +113,16 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
-    auto* x_img = param.x->data<half_t, cl::Image2D>();
-    //    VLOG(4) << "x_image" << x_img;
-
+    auto* x_img = DATA_GPU(param.x);
     auto out_image_shape = InitImageDimInfoWith(out_dims);
 #ifdef LITE_WITH_LOG
     VLOG(4) << "out_image_shape = " << out_image_shape["width"] << " "
             << out_image_shape["height"];
 #endif
-    auto* out_img = param.output->mutable_data<half_t, cl::Image2D>(
-        out_image_shape["width"], out_image_shape["height"]);
-    //    VLOG(4) << "out_image" << out_img;
+    auto* out_img = MUTABLE_DATA_GPU(param.output,
+                                     out_image_shape["width"],
+                                     out_image_shape["height"],
+                                     nullptr);
 
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
@@ -176,7 +175,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
  private:
   std::string kernel_func_name_{"pool_"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

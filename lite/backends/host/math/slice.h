@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,20 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #pragma once
 
-#include <cstddef>
+#include <cstdint>
 #include <vector>
-#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
 
-void stack(std::vector<lite::Tensor*> x, lite::Tensor* out, int axis);
+template <typename Dtype>
+void slice(const Dtype* input,
+           const std::vector<int64_t>& in_dims,
+           const std::vector<int>& axes,
+           const std::vector<int>& starts,
+           const std::vector<int>& ends,
+           Dtype* out);
 
-} /* namespace math */
-} /* namespace arm */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace math
+}  // namespace host
+}  // namespace lite
+}  // namespace paddle

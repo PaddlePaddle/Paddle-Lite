@@ -15,6 +15,7 @@
 #include "lite/kernels/opencl/elementwise_add_image_compute.h"
 #include <memory>
 #include "lite/backends/opencl/cl_include.h"
+#include "lite/backends/opencl/cl_utility.h"
 #include "lite/core/op_registry.h"
 #include "lite/utils/replace_stl/stream.h"
 
@@ -99,10 +100,10 @@ void ElementwiseAddImageCompute::Run() {
   auto x_dims = x->dims();
   auto y_dims = y->dims();
 
-  auto* x_img = x->data<half_t, cl::Image2D>();
-  auto* y_img = y->data<half_t, cl::Image2D>();
-  auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape_[0],
-                                                         out_img_shape_[1]);
+  auto* x_img = GET_DATA_GPU(x);
+  auto* y_img = GET_DATA_GPU(y);
+  auto* out_img =
+      MUTABLE_DATA_GPU(out, out_img_shape_[0], out_img_shape_[1], nullptr);
 
 #ifdef LITE_WITH_LOG
   VLOG(4) << "x->target():" << TargetToStr(x->target());

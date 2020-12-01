@@ -97,6 +97,8 @@ else()
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
     endif()
+      add_library(paddle_light_api_static STATIC "")
+      target_sources(paddle_light_api_static PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
 endif()
 
 if (WITH_TESTING)

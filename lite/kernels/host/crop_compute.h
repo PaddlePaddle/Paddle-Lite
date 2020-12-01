@@ -12,4 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/flatbuffers/memory.h"
+#pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+template <class T, PrecisionType PType>
+class CropCompute : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
+ public:
+  using param_t = operators::CropParam;
+
+  void Run() override;
+
+  virtual ~CropCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

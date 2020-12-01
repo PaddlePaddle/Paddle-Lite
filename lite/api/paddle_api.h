@@ -144,6 +144,7 @@ class LITE_API ConfigBase {
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
   int device_id_{0};
+  int x86_math_num_threads_ = 1;
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -169,6 +170,9 @@ class LITE_API ConfigBase {
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
   int get_device_id() const { return device_id_; }
+  // set x86_math_num_threads
+  void set_x86_math_num_threads(int threads);
+  int x86_math_num_threads() const;
 };
 
 class LITE_API CxxModelBuffer {
@@ -199,9 +203,6 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<std::string> passes_internal_{};
   bool quant_model_{false};  // Enable post_quant_dynamic in opt
   QuantType quant_type_{QuantType::QUANT_INT16};
-#ifdef LITE_WITH_X86
-  int x86_math_library_math_threads_ = 1;
-#endif
 #ifdef LITE_WITH_CUDA
   bool multi_stream_{false};
 #endif
@@ -247,14 +248,6 @@ class LITE_API CxxConfig : public ConfigBase {
   // abandoned in v3.0.
   bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
 
-#ifdef LITE_WITH_X86
-  void set_x86_math_library_num_threads(int threads) {
-    x86_math_library_math_threads_ = threads;
-  }
-  int x86_math_library_num_threads() const {
-    return x86_math_library_math_threads_;
-  }
-#endif
 #ifdef LITE_WITH_CUDA
   void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
   bool multi_stream() const { return multi_stream_; }
