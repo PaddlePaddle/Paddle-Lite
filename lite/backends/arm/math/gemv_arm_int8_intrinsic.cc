@@ -27,11 +27,11 @@ template <bool has_bias,
           float32x2_t active_fn(float32x2_t, const void*),
           int loop_num>
 struct neon_process_output_int8_x2 {
-  static inline __always_inline void run(const int32x2_t* in,
-                                         const float* __restrict__ scale,
-                                         const float* __restrict__ bias,
-                                         const void* __restrict__ active_args,
-                                         int32x2_t* out_buf) {
+  static inline void run(const int32x2_t* in,
+                         const float* __restrict__ scale,
+                         const float* __restrict__ bias,
+                         const void* __restrict__ active_args,
+                         int32x2_t* out_buf) {
     neon_process_output_int8_x2<has_bias, active_fn, loop_num - 1>::run(
         in, scale, bias, active_args, out_buf);
     constexpr bool has_active_fn = static_cast<bool>(active_fn);
@@ -63,25 +63,24 @@ struct neon_process_output_int8_x2 {
 
 template <bool has_bias, float32x2_t active_fn(float32x2_t, const void*)>
 struct neon_process_output_int8_x2<has_bias, active_fn, 0> {
-  static inline __always_inline void run(const int32x2_t* in,
-                                         const float* __restrict__ scale,
-                                         const float* __restrict__ bias,
-                                         const void* __restrict__ active_args,
-                                         int32x2_t* out_buf) {
+  static inline void run(const int32x2_t* in,
+                         const float* __restrict__ scale,
+                         const float* __restrict__ bias,
+                         const void* __restrict__ active_args,
+                         int32x2_t* out_buf) {
     return;
   }
 };
 
-static inline __always_inline float32x2_t neon_relu(float32x2_t in,
-                                                    const void* unused) {
+static inline float32x2_t neon_relu(float32x2_t in, const void* unused) {
   return vmax_f32(in, vmov_n_f32(0));
 }
 
 struct relu6_params_x2 {
   float32x2_t six;
 };
-static inline __always_inline float32x2_t
-neon_relu6(float32x2_t in, const void* active_params) {
+static inline float32x2_t neon_relu6(float32x2_t in,
+                                     const void* active_params) {
   return vmin_f32(vmax_f32(in, vmov_n_f32(0)),
                   static_cast<const relu6_params_x2*>(active_params)->six);
 }
@@ -89,8 +88,8 @@ neon_relu6(float32x2_t in, const void* active_params) {
 struct leaky_relu_params_x2 {
   float32x2_t slope;
 };
-static inline __always_inline float32x2_t
-neon_leaky_relu(float32x2_t in, const void* active_params) {
+static inline float32x2_t neon_leaky_relu(float32x2_t in,
+                                          const void* active_params) {
   float32x2_t vacc0123 = vmul_f32(
       in, static_cast<const leaky_relu_params_x2*>(active_params)->slope);
   const uint32x2_t vmask = vclt_s32(vreinterpret_s32_f32(in), vmov_n_s32(0));
@@ -98,14 +97,13 @@ neon_leaky_relu(float32x2_t in, const void* active_params) {
 }
 
 template <int kSize, bool has_bias, bool has_active>
-inline __always_inline void neon_write_gemv_int8_out(
-    const int32x2_t* __restrict__ in,
-    signed char* __restrict__ out,
-    const float* __restrict__ scale,
-    const float* __restrict__ bias,
-    lite_api::ActivationType act,
-    float six,
-    float alpha) {
+inline void neon_write_gemv_int8_out(const int32x2_t* __restrict__ in,
+                                     signed char* __restrict__ out,
+                                     const float* __restrict__ scale,
+                                     const float* __restrict__ bias,
+                                     lite_api::ActivationType act,
+                                     float six,
+                                     float alpha) {
   int32x2_t out_buf[kSize];
 
   if (has_active) {
@@ -148,11 +146,11 @@ template <bool has_bias,
           float32x4_t active_fn(float32x4_t, const void*),
           int loop_num>
 struct neon_process_output_int8 {
-  static inline __always_inline void run(const int32x4_t* in,
-                                         const float* __restrict__ scale,
-                                         const float* __restrict__ bias,
-                                         const void* __restrict__ active_args,
-                                         int32x4_t* out_buf) {
+  static inline void run(const int32x4_t* in,
+                         const float* __restrict__ scale,
+                         const float* __restrict__ bias,
+                         const void* __restrict__ active_args,
+                         int32x4_t* out_buf) {
     neon_process_output_int8<has_bias, active_fn, loop_num - 1>::run(
         in, scale, bias, active_args, out_buf);
     constexpr bool has_active_fn = static_cast<bool>(active_fn);
@@ -184,25 +182,24 @@ struct neon_process_output_int8 {
 
 template <bool has_bias, float32x4_t active_fn(float32x4_t, const void*)>
 struct neon_process_output_int8<has_bias, active_fn, 0> {
-  static inline __always_inline void run(const int32x4_t* in,
-                                         const float* __restrict__ scale,
-                                         const float* __restrict__ bias,
-                                         const void* __restrict__ active_args,
-                                         int32x4_t* out_buf) {
+  static inline void run(const int32x4_t* in,
+                         const float* __restrict__ scale,
+                         const float* __restrict__ bias,
+                         const void* __restrict__ active_args,
+                         int32x4_t* out_buf) {
     return;
   }
 };
 
-static inline __always_inline float32x4_t neon_relu(float32x4_t in,
-                                                    const void* unused) {
+static inline float32x4_t neon_relu(float32x4_t in, const void* unused) {
   return vmaxq_f32(in, vmovq_n_f32(0));
 }
 
 struct relu6_params {
   float32x4_t six;
 };
-static inline __always_inline float32x4_t
-neon_relu6(float32x4_t in, const void* active_params) {
+static inline float32x4_t neon_relu6(float32x4_t in,
+                                     const void* active_params) {
   return vminq_f32(vmaxq_f32(in, vmovq_n_f32(0)),
                    static_cast<const relu6_params*>(active_params)->six);
 }
@@ -210,8 +207,8 @@ neon_relu6(float32x4_t in, const void* active_params) {
 struct leaky_relu_params {
   float32x4_t slope;
 };
-static inline __always_inline float32x4_t
-neon_leaky_relu(float32x4_t in, const void* active_params) {
+static inline float32x4_t neon_leaky_relu(float32x4_t in,
+                                          const void* active_params) {
   float32x4_t vacc0123 = vmulq_f32(
       in, static_cast<const leaky_relu_params*>(active_params)->slope);
   const uint32x4_t vmask = vcltq_s32(vreinterpretq_s32_f32(in), vmovq_n_s32(0));
@@ -219,14 +216,13 @@ neon_leaky_relu(float32x4_t in, const void* active_params) {
 }
 
 template <int kSize, bool has_bias, bool has_active>
-inline __always_inline void neon_write_gemv_int8_out(
-    const int32x4_t* __restrict__ in,
-    signed char* __restrict__ out,
-    const float* __restrict__ scale,
-    const float* __restrict__ bias,
-    lite_api::ActivationType act,
-    float six,
-    float alpha) {
+inline void neon_write_gemv_int8_out(const int32x4_t* __restrict__ in,
+                                     signed char* __restrict__ out,
+                                     const float* __restrict__ scale,
+                                     const float* __restrict__ bias,
+                                     lite_api::ActivationType act,
+                                     float six,
+                                     float alpha) {
   int32x4_t out_buf[kSize];
 
   if (has_active) {
@@ -267,13 +263,13 @@ inline __always_inline void neon_write_gemv_int8_out(
 }
 
 template <int kSize, bool has_bias, bool has_active>
-inline __always_inline void write_gemv_int8_out(const int32_t* __restrict__ in,
-                                                signed char* __restrict__ out,
-                                                const float* __restrict__ scale,
-                                                const float* __restrict__ bias,
-                                                lite_api::ActivationType act,
-                                                float six,
-                                                float alpha) {
+inline void write_gemv_int8_out(const int32_t* __restrict__ in,
+                                signed char* __restrict__ out,
+                                const float* __restrict__ scale,
+                                const float* __restrict__ bias,
+                                lite_api::ActivationType act,
+                                float six,
+                                float alpha) {
   int32_t out_buf[kSize];
 
   if (has_active) {
@@ -321,9 +317,9 @@ inline __always_inline void write_gemv_int8_out(const int32_t* __restrict__ in,
 }
 
 template <int i>
-inline __always_inline void loop_mul_add(const int8x16_t& col0,
-                                         const int8x16_t* tile_row,
-                                         int32x4_t* q) {
+inline void loop_mul_add(const int8x16_t& col0,
+                         const int8x16_t* tile_row,
+                         int32x4_t* q) {
   loop_mul_add<i - 1>(col0, tile_row, q);
   int16x8_t mul_lo = vmull_s8(vget_low_s8(col0), vget_low_s8(tile_row[i - 1]));
   int16x8_t mul_hi =
@@ -332,19 +328,18 @@ inline __always_inline void loop_mul_add(const int8x16_t& col0,
 }
 
 template <>
-inline __always_inline void loop_mul_add<0>(const int8x16_t& col0,
-                                            const int8x16_t* tile_row,
-                                            int32x4_t* q) {
+inline void loop_mul_add<0>(const int8x16_t& col0,
+                            const int8x16_t* tile_row,
+                            int32x4_t* q) {
   return;
 }
 
 template <int TILE_A_WIDTH, int i>
 struct loop_mul_add_load {
-  static inline __always_inline void run(
-      const int8_t* __restrict__ tile_A_row_data[],
-      const int8x16_t& col0,
-      int8x16_t* tile_row,
-      int32x4_t* q) {
+  static inline void run(const int8_t* __restrict__ tile_A_row_data[],
+                         const int8x16_t& col0,
+                         int8x16_t* tile_row,
+                         int32x4_t* q) {
     loop_mul_add_load<TILE_A_WIDTH, i - 1>::run(
         tile_A_row_data, col0, tile_row, q);
     int16x8_t mul_lo =
@@ -359,11 +354,10 @@ struct loop_mul_add_load {
 
 template <int TILE_A_WIDTH>
 struct loop_mul_add_load<TILE_A_WIDTH, 0> {
-  static inline __always_inline void run(
-      const int8_t* __restrict__ tile_A_row_data[],
-      const int8x16_t& col0,
-      int8x16_t* tile_row,
-      int32x4_t* q) {
+  static inline void run(const int8_t* __restrict__ tile_A_row_data[],
+                         const int8x16_t& col0,
+                         int8x16_t* tile_row,
+                         int32x4_t* q) {
     return;
   }
 };
@@ -501,18 +495,18 @@ void major_loop(int N,
 }
 
 template <int TILE_A_WIDTH, int TILE_A_HEIGHT, bool HAS_BIAS, bool HAS_ACTIVE>
-inline __always_inline void hard_switch(int N,
-                                        const float* __restrict__ scale,
-                                        const float* __restrict__ bias,
-                                        const lite_api::ActivationType& act,
-                                        float six,
-                                        float alpha,
-                                        signed char* __restrict__ ptr_y,
-                                        const int8_t* __restrict__ ptr_x,
-                                        const int8_t* __restrict__ ptr_A,
-                                        const int tile_j_Max,
-                                        const int row_remain,
-                                        int tile_i_Max) {
+inline void hard_switch(int N,
+                        const float* __restrict__ scale,
+                        const float* __restrict__ bias,
+                        const lite_api::ActivationType& act,
+                        float six,
+                        float alpha,
+                        signed char* __restrict__ ptr_y,
+                        const int8_t* __restrict__ ptr_x,
+                        const int8_t* __restrict__ ptr_A,
+                        const int tile_j_Max,
+                        const int row_remain,
+                        int tile_i_Max) {
 #define INPUT_ARGS                                                  \
   N, scale, bias, act, six, alpha, ptr_y, ptr_x, ptr_A, tile_j_Max, \
       row_remain, tile_i_Max
@@ -550,21 +544,20 @@ inline __always_inline void hard_switch(int N,
 }
 
 template <int TILE_A_WIDTH, int TILE_A_HEIGHT>
-inline __always_inline void select_major_loop(
-    int N,
-    const float* __restrict__ scale,
-    bool is_bias,
-    const float* __restrict__ bias,
-    bool is_act,
-    const lite_api::ActivationType& act,
-    float six,
-    float alpha,
-    signed char* __restrict__ ptr_y,
-    const int8_t* __restrict__ ptr_x,
-    const int8_t* __restrict__ ptr_A,
-    const int tile_j_Max,
-    const int row_remain,
-    int tile_i_Max) {
+inline void select_major_loop(int N,
+                              const float* __restrict__ scale,
+                              bool is_bias,
+                              const float* __restrict__ bias,
+                              bool is_act,
+                              const lite_api::ActivationType& act,
+                              float six,
+                              float alpha,
+                              signed char* __restrict__ ptr_y,
+                              const int8_t* __restrict__ ptr_x,
+                              const int8_t* __restrict__ ptr_A,
+                              const int tile_j_Max,
+                              const int row_remain,
+                              int tile_i_Max) {
 #define INPUT_ARGS                                                  \
   N, scale, bias, act, six, alpha, ptr_y, ptr_x, ptr_A, tile_j_Max, \
       row_remain, tile_i_Max
