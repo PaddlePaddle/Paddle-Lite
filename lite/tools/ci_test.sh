@@ -22,6 +22,8 @@ ARCH_LIST="armv8,armv7"
 TOOLCHAIN_LIST="gcc,clang"
 # The list of unit tests which are ignored, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
 UNIT_TEST_SKIP_LIST="test_cxx_api,test_mobilenetv1_int8"
+# The Logging level of GLOG for unit tests
+UNIT_TEST_LOG_LEVEL=5
 # Remote device type(0: adb, 1: ssh) for real android and armlinux devices
 REMOTE_DEVICE_TYPE=0
 # The list of the device names for the real android devices, use commas to separate them, such as "2GX0119401000796,0123456789ABCDEF,5aba5d0ace0b89f6"
@@ -265,7 +267,7 @@ function run_unit_test_on_remote_device() {
     fi
 
     # Run the model on the remote device
-    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
+    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
 }
 
 function build_and_test_on_remote_device() {
@@ -316,7 +318,7 @@ function build_and_test_on_remote_device() {
                     local is_skip=0
                     for unit_test_skip_name in ${unit_test_skip_names[@]}; do
                         if [[ "$unit_test_skip_name" == "$test_name" ]]; then
-                            echo "skip " $test_name
+                            echo "skip $test_name"
                             is_skip=1
                             break
                         fi
@@ -325,8 +327,8 @@ function build_and_test_on_remote_device() {
                         continue
                     fi
                     # Extract the arguments from ctest command line
-                    test_cmds=$(ctest -V -N -R ${test_name})
-                    reg_expr=".*Test command:.*\/${test_name} \(.*\) Test #[0-9]*: ${test_name}.*"
+                    test_cmds=$(ctest -V -N -R ^$test_name$)
+                    reg_expr=".*Test command:.*\/$test_name \(.*\) Test #[0-9]*: $test_name.*"
                     test_args=$(echo $test_cmds | sed -n "/$reg_expr/p")
                     if [[ -n "$test_args" ]]; then
                         # Matched, extract and remove the quotes
@@ -771,6 +773,55 @@ function imagination_nna_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST imagination_nna_build_target imagination_nna_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./imagination_nna_sdk)"
 }
 
+function baidu_xpu_build_and_test() {
+    local with_xtcl=$1
+    if [[ -z "$with_xtcl" ]]; then
+        with_xtcl=OFF
+    fi
+    local unit_test_skip_list=$2
+    local sdk_root_dir="$(readlink -f ./output)"
+
+    # Build all of unittests and model tests
+    mkdir -p ./build
+    cd ./build
+    prepare_workspace
+    cmake .. \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+        -DWITH_PYTHON=OFF \
+        -DWITH_TESTING=ON \
+        -DLITE_WITH_ARM=OFF \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_XPU=ON \
+        -DLITE_WITH_XTCL=$with_xtcl\
+        -DXPU_SDK_ROOT="$sdk_root_dir"
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+    # Run all of unittests and model tests
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    export GLOG_v=$UNIT_TEST_LOG_LEVEL
+    local unit_test_skip_names=(${unit_test_skip_list//,/ })
+    for test_name in $(cat $TESTS_FILE); do
+        local is_skip=0
+        for unit_test_skip_name in ${unit_test_skip_names[@]}; do
+            if [[ "$unit_test_skip_name" == "$test_name" ]]; then
+                echo "skip $test_name"
+                is_skip=1
+                break
+            fi
+        done
+        if [[ $is_skip -ne 0 ]]; then
+            continue
+        fi
+        ctest -V -R ^$test_name$
+    done
+    cd - >/dev/null
+}
+
 function main() {
     # Parse command line.
     for i in "$@"; do
@@ -789,6 +840,10 @@ function main() {
             ;;
         --unit_test_skip_list=*)
             UNIT_TEST_SKIP_LIST="${i#*=}"
+            shift
+            ;;
+       --unit_test_log_level=*)
+            UNIT_TEST_LOG_LEVEL="${i#*=}"
             shift
             ;;
         --remote_device_type=*)
@@ -825,6 +880,14 @@ function main() {
             ;;
         imagination_nna_build_and_test)
             imagination_nna_build_and_test
+            shift
+            ;;
+        baidu_xpu_disable_xtcl_build_and_test)
+            baidu_xpu_build_and_test OFF $UNIT_TEST_SKIP_LIST
+            shift
+            ;;
+        baidu_xpu_enable_xtcl_build_and_test)
+            baidu_xpu_build_and_test ON $UNIT_TEST_SKIP_LIST
             shift
             ;;
         *)
