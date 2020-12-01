@@ -79,10 +79,13 @@ inline void neon_elementwise_range_to_one(const typename Config::T* dinx,
   auto dout_ptr = dout;
   for (int i = 0; i < cnt; ++i) {
     NeonT din0 = neon_ld(dinx_ptr);
-    NeonT din1 = neon_ld(dinx_ptr + k_neont_element_num);
-    NeonT din2 = neon_ld(dinx_ptr + 2 * k_neont_element_num);
-    NeonT din3 = neon_ld(dinx_ptr + 3 * k_neont_element_num);
-    dinx_ptr += k_batch_element_num;
+    dinx_ptr += k_neont_element_num;
+    NeonT din1 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
+    NeonT din2 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
+    NeonT din3 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
 
     din0 = neon_op(din0, rb);
     din1 = neon_op(din1, rb);
@@ -104,15 +107,20 @@ inline void neon_elementwise_range_to_one(const typename Config::T* dinx,
     }
 
     neon_st(dout_ptr, din0);
-    neon_st(dout_ptr + k_neont_element_num, din1);
-    neon_st(dout_ptr + 2 * k_neont_element_num, din2);
-    neon_st(dout_ptr + 3 * k_neont_element_num, din3);
-    dout_ptr += k_batch_element_num;
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, din1);
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, din2);
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, din3);
+    dout_ptr += k_neont_element_num;
   }
 
   if (remain >= k_batch_element_num / 2) {
     NeonT din0 = neon_ld(dinx_ptr);
-    NeonT din1 = neon_ld(dinx_ptr + k_neont_element_num);
+    dinx_ptr += k_neont_element_num;
+    NeonT din1 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
 
     din0 = neon_op(din0, rb);
     din1 = neon_op(din1, rb);
@@ -128,14 +136,15 @@ inline void neon_elementwise_range_to_one(const typename Config::T* dinx,
     }
 
     neon_st(dout_ptr, din0);
-    neon_st(dout_ptr + k_neont_element_num, din1);
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, din1);
+    dout_ptr += k_neont_element_num;
 
-    dinx_ptr += k_batch_element_num / 2;
-    dout_ptr += k_batch_element_num / 2;
     remain -= k_batch_element_num / 2;
   }
   if (remain >= k_batch_element_num / 4) {
     NeonT din0 = neon_ld(dinx_ptr);
+    dinx_ptr += k_neont_element_num;
 
     din0 = neon_op(din0, rb);
 
@@ -147,8 +156,7 @@ inline void neon_elementwise_range_to_one(const typename Config::T* dinx,
       }
     }
     neon_st(dout_ptr, din0);
-    dinx_ptr += k_batch_element_num / 4;
-    dout_ptr += k_batch_element_num / 4;
+    dout_ptr += k_neont_element_num;
     remain -= k_batch_element_num / 4;
   }
   if (remain > 0) {
@@ -199,10 +207,13 @@ inline void neon_elementwise_one_to_range(const typename Config::T* dinx,
 
   for (int i = 0; i < cnt; ++i) {
     NeonT din0 = neon_ld(diny_ptr);
-    NeonT din1 = neon_ld(diny_ptr + k_neont_element_num);
-    NeonT din2 = neon_ld(diny_ptr + 2 * k_neont_element_num);
-    NeonT din3 = neon_ld(diny_ptr + 3 * k_neont_element_num);
-    diny_ptr += k_batch_element_num;
+    diny_ptr += k_neont_element_num;
+    NeonT din1 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
+    NeonT din2 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
+    NeonT din3 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
 
     din0 = neon_op(rb, din0);
     din1 = neon_op(rb, din1);
@@ -224,14 +235,19 @@ inline void neon_elementwise_one_to_range(const typename Config::T* dinx,
     }
 
     neon_st(dout_ptr, din0);
-    neon_st(dout_ptr + k_neont_element_num, din1);
-    neon_st(dout_ptr + 2 * k_neont_element_num, din2);
-    neon_st(dout_ptr + 3 * k_neont_element_num, din3);
-    dout_ptr += k_batch_element_num;
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, din1);
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, din2);
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, din3);
+    dout_ptr += k_neont_element_num;
   }
   if (remain >= k_batch_element_num / 2) {
     NeonT din0 = neon_ld(diny_ptr);
-    NeonT din1 = neon_ld(diny_ptr + k_neont_element_num);
+    diny_ptr += k_neont_element_num;
+    NeonT din1 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
 
     din0 = neon_op(rb, din0);
     din1 = neon_op(rb, din1);
@@ -247,14 +263,15 @@ inline void neon_elementwise_one_to_range(const typename Config::T* dinx,
     }
 
     neon_st(dout_ptr, din0);
-    neon_st(dout_ptr + k_neont_element_num, din1);
+    dout_ptr += k_neont_element_num;
+    neon_st(dout_ptr, din1);
+    dout_ptr += k_neont_element_num;
 
-    diny_ptr += k_batch_element_num / 2;
-    dout_ptr += k_batch_element_num / 2;
     remain -= k_batch_element_num / 2;
   }
   if (remain >= k_batch_element_num / 4) {
     NeonT din0 = neon_ld(diny_ptr);
+    diny_ptr += k_neont_element_num;
 
     din0 = neon_op(rb, din0);
 
@@ -266,7 +283,6 @@ inline void neon_elementwise_one_to_range(const typename Config::T* dinx,
       }
     }
     neon_st(dout_ptr, din0);
-    diny_ptr += k_neont_element_num;
     dout_ptr += k_neont_element_num;
     remain -= k_neont_element_num;
   }
