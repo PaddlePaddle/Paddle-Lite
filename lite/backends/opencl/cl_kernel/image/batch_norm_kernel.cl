@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,11 +24,9 @@ __kernel void batch_norm(__read_only image2d_t input,
   const int y = get_global_id(1); // image_height
   const int c_idx = x / width;
 
-  const sampler_t sampler = SAMPLER;
-
-  CL_DTYPE4 in     = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
-  CL_DTYPE4 scale_ = READ_IMG_TYPE(CL_DTYPE_CHAR, scale, sampler, (int2)(c_idx, 0));
-  CL_DTYPE4 bias_  = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, (int2)(c_idx, 0));
+  CL_DTYPE4 in     = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+  CL_DTYPE4 scale_ = READ_IMG_TYPE(CL_DTYPE_CHAR, scale, SAMPLER, (int2)(c_idx, 0));
+  CL_DTYPE4 bias_  = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(c_idx, 0));
   in = mad(in, scale_, bias_);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
