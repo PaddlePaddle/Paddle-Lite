@@ -1,3 +1,17 @@
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. */
+
 #include <cl_common.h>
 
 __kernel void conv2d_5x5(__private const int global_size_dim0,
@@ -47,18 +61,15 @@ __kernel void conv2d_5x5(__private const int global_size_dim0,
   ouput_pos_in_one_block.x = out_w;
   ouput_pos_in_one_block.y = out_nh_in_one_batch;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   int2 in_pos_in_one_block;
   in_pos_in_one_block.x = ouput_pos_in_one_block.x * stride + offset;
   in_pos_in_one_block.y = ouput_pos_in_one_block.y * stride + offset;
 
 #ifdef BIASE_CH
   CL_DTYPE4 output =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, (int2)(out_c, 0));
+      READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
 #elif defined(BIASE_ELE)
-  CL_DTYPE4 output = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, output_pos);
+  CL_DTYPE4 output = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, output_pos);
 #else
   CL_DTYPE4 output = 0.0f;
 #endif
@@ -77,7 +88,7 @@ __kernel void conv2d_5x5(__private const int global_size_dim0,
         input = select(
             READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_image,
-                          sampler,
+                          SAMPLER,
                           (int2)(pos_in.x + (j - 2) * dilation,
                                  pos_in.y + (k - 2) * dilation)),
             (CL_DTYPE4)(0.0f),
@@ -104,13 +115,13 @@ __kernel void conv2d_5x5(__private const int global_size_dim0,
         filter_pos3.y = filter_n3 * 5 + filter_h;
 
         filter[0] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, sampler, filter_pos0);
+            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, SAMPLER, filter_pos0);
         filter[1] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, sampler, filter_pos1);
+            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, SAMPLER, filter_pos1);
         filter[2] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, sampler, filter_pos2);
+            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, SAMPLER, filter_pos2);
         filter[3] =
-            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, sampler, filter_pos3);
+            READ_IMG_TYPE(CL_DTYPE_CHAR, filter_image, SAMPLER, filter_pos3);
 
         output.x += dot(input, filter[0]);
         output.y += dot(input, filter[1]);
@@ -157,11 +168,11 @@ __kernel void conv2d_5x5(__private const int global_size_dim0,
 #ifdef BATCH_NORM
         output =
             output * READ_IMG_TYPE(
-                         CL_DTYPE_CHAR, new_scale, sampler, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, sampler, (int2)(out_c, 0));
+                         CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
+            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
         output = activation_type4(output);
 
         WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
-      }
+}
