@@ -187,7 +187,7 @@ void CheckOutputData(
   }
 }
 
-TEST(TransformerWithMask, test_transformer_with_mask_fp32) {
+TEST(TransformerWithMask, test_transformer_with_mask_fp32_arm) {
   // Save the optimized model by using full api with CxxConfig
   lite_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(FLAGS_model_dir);

@@ -18,7 +18,7 @@
  * of each kernel.
  */
 #pragma once
-#include <gflags/gflags.h>
+
 #include <time.h>
 #include <algorithm>
 #include <chrono>  // NOLINT
@@ -31,7 +31,9 @@
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
-
+#ifndef LITE_WITH_XCODE
+#include <gflags/gflags.h>
+#endif
 namespace paddle {
 namespace lite {
 namespace profile {
