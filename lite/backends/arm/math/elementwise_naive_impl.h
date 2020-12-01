@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <cmath>
+
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -59,6 +61,11 @@ static inline T __attribute__((__always_inline__)) naive_max(T l, T r) {
 template <typename T>
 static inline T __attribute__((__always_inline__)) naive_mod(T l, T r) {
   return l % r;
+}
+
+template <typename T>
+static inline T __attribute__((__always_inline__)) naive_pow(T l, T r) {
+  return std::pow(l, r);
 }
 
 template <typename T, T naive_op(T, T)>
