@@ -73,6 +73,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       gemm_s8.cc
       sgemv.cc
       gemv_arm_int8.cc
+      gemv_arm_int8_intrinsic.cc
       conv3x3s1_direct_fp32.cc
       conv3x3s2_direct_fp32.cc
       conv3x3s1p01_depthwise_fp32_relu.cc
