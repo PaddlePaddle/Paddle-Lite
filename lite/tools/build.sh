@@ -408,6 +408,7 @@ function make_x86 {
 
   cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
             -DWITH_STATIC_MKL=${WITH_STATIC_MKL}  \
+            -DWITH_TESTING=OFF \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
             -DLITE_WITH_PROFILE=OFF \
@@ -416,7 +417,6 @@ function make_x86 {
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DWITH_GPU=OFF \
-            -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \

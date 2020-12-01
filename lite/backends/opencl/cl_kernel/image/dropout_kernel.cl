@@ -25,11 +25,7 @@ __kernel void dropout(__read_only image2d_t input_image,
 
                        int2 output_pos = {out_c * out_W + out_w, out_nh};
 
-                       const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                                                 CLK_ADDRESS_CLAMP      |
-                                                 CLK_FILTER_NEAREST;
-
-                       CL_DTYPE4 input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, output_pos);
+                       CL_DTYPE4 input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, output_pos);
                        CL_DTYPE4 dropout = (CL_DTYPE4)(1 - dropoutPro);
                        CL_DTYPE4 output =  dropout * input;
 

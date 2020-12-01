@@ -32,9 +32,6 @@ __kernel void pool_max(__read_only image2d_t input,
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   int start_h = out_h * stride_h - pad_top;
   int end_h = min(start_h + ksize_h, in_height);
   start_h = max(start_h, 0);
@@ -49,7 +46,7 @@ __kernel void pool_max(__read_only image2d_t input,
   for (int y = start_h; y < end_h; ++y) {
     for (int x = start_w; x < end_w; ++x) {
       CL_DTYPE4 tmp = READ_IMG_TYPE(
-          CL_DTYPE_CHAR, input, sampler, (int2)(pos_in_x + x, pos_in_y + y));
+          CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
       max_value = max(max_value, tmp);
     }
   }
@@ -76,9 +73,6 @@ __kernel void pool_avg(__read_only image2d_t input,
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   int start_h = max(out_h * stride_h - pad_top, 0);
   int end_h = min(start_h + ksize_h, in_height);
 
@@ -92,7 +86,7 @@ __kernel void pool_avg(__read_only image2d_t input,
   for (int y = start_h; y < end_h; ++y) {
     for (int x = start_w; x < end_w; ++x) {
       sum += READ_IMG_TYPE(
-          CL_DTYPE_CHAR, input, sampler, (int2)(pos_in_x + x, pos_in_y + y));
+          CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
     }
   }
   CL_DTYPE4 avg = sum / (ksize_h * ksize_w);
@@ -119,8 +113,6 @@ __kernel void pool_avg_global(__read_only image2d_t input,
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
   // do not use dtype4 here
   // skip issue for half 2048
   float4 sum = (float4)(0.0f);
@@ -130,7 +122,7 @@ __kernel void pool_avg_global(__read_only image2d_t input,
   for (int y = 0; y < in_height; ++y) {
     for (int x = 0; x < in_width; ++x) {
       CL_DTYPE4 tmp = READ_IMG_TYPE(
-          CL_DTYPE_CHAR, input, sampler, (int2)(pos_in_x + x, pos_in_y + y));
+          CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
 
       sum.x = convert_float(tmp.x) + sum.x;
       sum.y = convert_float(tmp.y) + sum.y;
@@ -191,9 +183,6 @@ __kernel void pool_max_global(__read_only image2d_t input,
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   CL_DTYPE4 max_value = (CL_DTYPE4)(MIN_VALUE);
   const int pos_in_x = out_c * in_width;
   const int pos_in_y = out_n * in_height;
@@ -202,7 +191,7 @@ __kernel void pool_max_global(__read_only image2d_t input,
       max_value = max(max_value,
                       READ_IMG_TYPE(CL_DTYPE_CHAR,
                                     input,
-                                    sampler,
+                                    SAMPLER,
                                     (int2)(pos_in_x + x, pos_in_y + y)));
     }
   }

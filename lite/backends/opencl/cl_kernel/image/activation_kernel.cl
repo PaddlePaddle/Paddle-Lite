@@ -20,8 +20,10 @@ __kernel void relu(__read_only image2d_t input,
                    __private const float scale) {
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
+  
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   in = max((CL_DTYPE4)(0.0f), in);
+
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 

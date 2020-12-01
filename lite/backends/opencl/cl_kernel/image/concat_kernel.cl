@@ -24,10 +24,6 @@ __kernel void concatByCWith2Inputs(
   const int out_w = get_global_id(1);   // [0, output_tensor_w)
   const int out_nh = get_global_id(2);  // [0, output_tensor_n * output_tensor_h)
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-        CLK_ADDRESS_CLAMP |
-        CLK_FILTER_NEAREST;
-
   int2 output_pos;
   output_pos.x = out_c * output_tensor_w + out_w;
   output_pos.y = out_nh;
@@ -45,13 +41,13 @@ __kernel void concatByCWith2Inputs(
       int2 input_pos;
       input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0_image, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0_image, SAMPLER, input_pos);
     } else {
       c_in = c - input0_tensor_c;
       int2 input_pos;
       input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1_image, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1_image, SAMPLER, input_pos);
     }
     int value_offset = c_in % 4;
     float value;
@@ -92,10 +88,6 @@ __kernel void concatByCWith3Inputs(
   const int out_w = get_global_id(1);   // [0, output_tensor_w)
   const int out_nh = get_global_id(2);  // [0, output_tensor_n * output_tensor_h)
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-        CLK_ADDRESS_CLAMP |
-        CLK_FILTER_NEAREST;
-
   int2 output_pos;
   output_pos.x = out_c * output_tensor_w + out_w;
   output_pos.y = out_nh;
@@ -113,19 +105,19 @@ __kernel void concatByCWith3Inputs(
       int2 input_pos;
       input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0_image, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0_image, SAMPLER, input_pos);
     } else if (c < input0_tensor_c + input1_tensor_c) {
       c_in = c - input0_tensor_c;
       int2 input_pos;
       input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1_image, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1_image, SAMPLER, input_pos);
     } else {
       c_in = c - input0_tensor_c - input1_tensor_c;
       int2 input_pos;
       input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input2_image, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input2_image, SAMPLER, input_pos);
     }
     int value_offset = c_in % 4;
     float value;
@@ -168,10 +160,6 @@ __kernel void concatByCWith4Inputs(
   const int out_w = get_global_id(1);   // [0, output_tensor_w)
   const int out_nh = get_global_id(2);  // [0, output_tensor_n * output_tensor_h)
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-        CLK_ADDRESS_CLAMP |
-        CLK_FILTER_NEAREST;
-
   int2 output_pos;
   output_pos.x = out_c * output_tensor_w + out_w;
   output_pos.y = out_nh;
@@ -189,25 +177,25 @@ __kernel void concatByCWith4Inputs(
       int2 input_pos;
       input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0_image, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0_image, SAMPLER, input_pos);
     } else if (c < input0_tensor_c + input1_tensor_c) {
       c_in = c - input0_tensor_c;
       int2 input_pos;
       input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1_image, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1_image, SAMPLER, input_pos);
     } else if (c < input0_tensor_c + input1_tensor_c + input2_tensor_c) {
       c_in = c - input0_tensor_c - input1_tensor_c;
       int2 input_pos;
       input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input2_image, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input2_image, SAMPLER, input_pos);
     }else if (c < input0_tensor_c + input1_tensor_c + input2_tensor_c + input3_tensor_c){
       c_in = c - input0_tensor_c - input1_tensor_c - input2_tensor_c;
       int2 input_pos;
       input_pos.x = (c_in / 4) * output_tensor_w + out_w;
       input_pos.y = out_nh;
-      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input3_image, sampler, input_pos);
+      input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input3_image, SAMPLER, input_pos);
     }
     int value_offset = c_in % 4;
     float value;
@@ -248,11 +236,8 @@ __kernel void concatByH(__read_only image2d_t input_image,
   input_pos.x = in_c * out_W + in_w;
   input_pos.y = in_nh;
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-        CLK_ADDRESS_CLAMP |
-        CLK_FILTER_NEAREST;
   CL_DTYPE4 input;
-  input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler,input_pos);
+  input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER,input_pos);
 
   int2 output_pos;
   output_pos.x = input_pos.x;
@@ -278,11 +263,8 @@ __kernel void concatByW(__read_only image2d_t input_image,
   input_pos.x = in_c * in_W + in_w;
   input_pos.y = in_nh;
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-        CLK_ADDRESS_CLAMP |
-        CLK_FILTER_NEAREST;
   CL_DTYPE4 input;
-  input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler,input_pos);
+  input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER,input_pos);
 
   int2 output_pos;
   output_pos.x = input_pos.x + pre_Width + out_Width * in_c;
@@ -299,9 +281,6 @@ __kernel void concat2(__read_only image2d_t input0,
   const int out_c = get_global_id(1); // image_width cxw/4
   const int out_nh = get_global_id(2); // image_height nxh
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
   if (flag == 1){ // by channel
     int c_in = out_c;
     int2 output_pos;
@@ -320,13 +299,13 @@ __kernel void concat2(__read_only image2d_t input0,
         int2 input_pos;
         input_pos.x = (c_in / 4) * out_W + out_w;
         input_pos.y = out_nh;
-        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, input_pos);
+        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, input_pos);
       } else {
         c_in = c - C_0;
         int2 input_pos;
         input_pos.x = (c_in / 4) * out_W + out_w;
         input_pos.y = out_nh;
-        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, sampler, input_pos);
+        input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, SAMPLER, input_pos);
       }
       int value_offset = c_in % 4;
       CL_DTYPE value;
@@ -357,10 +336,10 @@ __kernel void concat2(__read_only image2d_t input0,
     CL_DTYPE4 input;
     if (h < C_0){
       input_pos.y = out_nh;
-      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, input_pos);
+      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, input_pos);
     }else{
       input_pos.y = (h - C_0) * width;
-      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, sampler, input_pos);
+      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, SAMPLER, input_pos);
     }
     int2 output_pos;
     output_pos.x = out_c * out_W + out_w;
@@ -372,10 +351,10 @@ __kernel void concat2(__read_only image2d_t input0,
     CL_DTYPE4 input;
     if (out_w < C_0){
       input_pos.x = out_c * out_W + out_w;
-      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, sampler, input_pos);
+      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, input_pos);
     }else{
       input_pos.x = out_c * out_W + (out_w - C_0);
-      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, sampler, input_pos);
+      input = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, SAMPLER, input_pos);
     }
     int2 output_pos;
     output_pos.x = out_c * out_W + out_w;
