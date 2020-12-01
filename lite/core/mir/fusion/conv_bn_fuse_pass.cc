@@ -38,8 +38,8 @@ void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     return false;
   };
 
-  LOG(INFO) << "has_target(TARGET(kX86)):" << has_target(TARGET(kX86));
-  LOG(INFO) << "has_target(TARGET(kOpenCL)):" << has_target(TARGET(kOpenCL));
+  VLOG(3) << "has_target(TARGET(kX86)):" << has_target(TARGET(kX86));
+  VLOG(3) << "has_target(TARGET(kOpenCL)):" << has_target(TARGET(kOpenCL));
   if (has_target(TARGET(kX86))) {
     if (has_target(TARGET(kOpenCL))) {
       VLOG(3) << "kX86 and kOpenCL continue to execute...";
