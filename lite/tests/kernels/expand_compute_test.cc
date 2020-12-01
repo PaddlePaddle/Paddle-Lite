@@ -53,8 +53,8 @@ class ExpandComputeTester : public arena::TestCase {
       out_shape[i] *= expand_times_[i];
     }
     out->Resize(out_shape);
-    T* out_data = out->mutable_data<T>();
-    const T* input_data = input->data<T>();
+    T* out_data = out->template mutable_data<T>();
+    const T* input_data = input->template data<T>();
     std::vector<int> in_stride(in_shape.size(), 1),
         out_stride(out_shape.size(), 1);
     for (int i = in_shape.size() - 2; i >= 0; --i) {
