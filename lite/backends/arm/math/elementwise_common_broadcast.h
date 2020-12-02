@@ -27,6 +27,7 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
+
 /**
  *
  * @tparam Config Config is a struct that stores parameters to run this
@@ -49,267 +50,17 @@ namespace math {
  * };
  * ```
  */
-template <class Config>
-inline void neon_elementwise_range_to_one(const typename Config::T* dinx,
-                                          const typename Config::T* diny,
-                                          typename Config::T* dout,
-                                          int num) {
+template <class Config, bool IS_X_SINGLE, bool IS_Y_SINGLE>
+inline void do_neon_elementwise(const typename Config::T* dinx,
+                                const typename Config::T* diny,
+                                typename Config::T* dout,
+                                int num) {
+  static_assert((IS_X_SINGLE && IS_Y_SINGLE) != true,
+                "X and Y could not be both single");
+
   using T = typename Config::T;
   using NeonT = typename Config::NeonT;
-  constexpr auto neon_ld = Config::neon_ld;
-  constexpr auto neon_st = Config::neon_st;
-  constexpr auto neon_op = Config::neon_op;
-  constexpr auto neon_active = Config::neon_active;
   constexpr auto neon_dup = Config::neon_dup;
-  constexpr auto naive_op = Config::naive_op;
-  constexpr auto naive_active = Config::naive_active;
-  constexpr bool has_active = static_cast<bool>(Config::naive_active);
-  constexpr bool neon_active_defined = static_cast<bool>(Config::neon_active);
-
-  const T diny_data = *diny;
-  constexpr int k_neont_element_num = sizeof(NeonT) / sizeof(T);
-  constexpr int k_neon_t_num_per_loop = 4;
-  constexpr int k_batch_element_num =
-      k_neon_t_num_per_loop * k_neont_element_num;
-  int cnt = num / k_batch_element_num;
-  int remain = num % k_batch_element_num;
-  NeonT rb = neon_dup(diny_data);
-
-  auto dinx_ptr = dinx;
-  auto dout_ptr = dout;
-  for (int i = 0; i < cnt; ++i) {
-    NeonT din0 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-    NeonT din1 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-    NeonT din2 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-    NeonT din3 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-
-    din0 = neon_op(din0, rb);
-    din1 = neon_op(din1, rb);
-    din2 = neon_op(din2, rb);
-    din3 = neon_op(din3, rb);
-
-    if (has_active && neon_active_defined) {
-      din0 = neon_active(din0);
-      din1 = neon_active(din1);
-      din2 = neon_active(din2);
-      din3 = neon_active(din3);
-    } else if (has_active) {
-      for (int k = 0; k < k_neont_element_num; ++k) {
-        din0[k] = naive_active(din0[k]);
-        din1[k] = naive_active(din1[k]);
-        din2[k] = naive_active(din2[k]);
-        din3[k] = naive_active(din3[k]);
-      }
-    }
-
-    neon_st(dout_ptr, din0);
-    dout_ptr += k_neont_element_num;
-    neon_st(dout_ptr, din1);
-    dout_ptr += k_neont_element_num;
-    neon_st(dout_ptr, din2);
-    dout_ptr += k_neont_element_num;
-    neon_st(dout_ptr, din3);
-    dout_ptr += k_neont_element_num;
-  }
-
-  if (remain >= k_batch_element_num / 2) {
-    NeonT din0 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-    NeonT din1 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-
-    din0 = neon_op(din0, rb);
-    din1 = neon_op(din1, rb);
-
-    if (has_active && neon_active_defined) {
-      din0 = neon_active(din0);
-      din1 = neon_active(din1);
-    } else if (has_active) {
-      for (int k = 0; k < k_neont_element_num; ++k) {
-        din0[k] = naive_active(din0[k]);
-        din1[k] = naive_active(din1[k]);
-      }
-    }
-
-    neon_st(dout_ptr, din0);
-    dout_ptr += k_neont_element_num;
-    neon_st(dout_ptr, din1);
-    dout_ptr += k_neont_element_num;
-
-    remain -= k_batch_element_num / 2;
-  }
-  if (remain >= k_batch_element_num / 4) {
-    NeonT din0 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-
-    din0 = neon_op(din0, rb);
-
-    if (has_active && neon_active_defined) {
-      din0 = neon_active(din0);
-    } else if (has_active) {
-      for (int k = 0; k < k_neont_element_num; ++k) {
-        din0[k] = naive_active(din0[k]);
-      }
-    }
-    neon_st(dout_ptr, din0);
-    dout_ptr += k_neont_element_num;
-    remain -= k_batch_element_num / 4;
-  }
-  if (remain > 0) {
-    T tmp = 0;
-    for (int p = 0; p < remain; p++) {
-      tmp = naive_op(*dinx_ptr, diny_data);
-      if (has_active) {
-        tmp = naive_active(tmp);
-      }
-      *dout_ptr = tmp;
-      dout_ptr++;
-      dinx_ptr++;
-    }
-  }
-}
-
-/**
- * see neon_elementwise_range_to_one to get how to use Config
- */
-template <class Config>
-inline void neon_elementwise_one_to_range(const typename Config::T* dinx,
-                                          const typename Config::T* diny,
-                                          typename Config::T* dout,
-                                          int num) {
-  using T = typename Config::T;
-  using NeonT = typename Config::NeonT;
-  constexpr auto neon_ld = Config::neon_ld;
-  constexpr auto neon_st = Config::neon_st;
-  constexpr auto neon_op = Config::neon_op;
-  constexpr auto neon_active = Config::neon_active;
-  constexpr auto neon_dup = Config::neon_dup;
-  constexpr auto naive_op = Config::naive_op;
-  constexpr auto naive_active = Config::naive_active;
-  constexpr bool has_active = static_cast<bool>(Config::naive_active);
-  constexpr bool neon_active_defined = static_cast<bool>(Config::neon_active);
-
-  const T dinx_data = *dinx;
-  constexpr int k_neont_element_num = sizeof(NeonT) / sizeof(T);
-  constexpr int k_neon_t_num_per_loop = 4;
-  constexpr int k_batch_element_num =
-      k_neon_t_num_per_loop * k_neont_element_num;
-  int cnt = num / k_batch_element_num;
-  int remain = num % k_batch_element_num;
-  NeonT rb = neon_dup(dinx_data);
-
-  auto diny_ptr = diny;
-  auto dout_ptr = dout;
-
-  for (int i = 0; i < cnt; ++i) {
-    NeonT din0 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-    NeonT din1 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-    NeonT din2 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-    NeonT din3 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-
-    din0 = neon_op(rb, din0);
-    din1 = neon_op(rb, din1);
-    din2 = neon_op(rb, din2);
-    din3 = neon_op(rb, din3);
-
-    if (has_active && neon_active_defined) {
-      din0 = neon_active(din0);
-      din1 = neon_active(din1);
-      din2 = neon_active(din2);
-      din3 = neon_active(din3);
-    } else if (has_active) {
-      for (int k = 0; k < k_neont_element_num; ++k) {
-        din0[k] = naive_active(din0[k]);
-        din1[k] = naive_active(din1[k]);
-        din2[k] = naive_active(din2[k]);
-        din3[k] = naive_active(din3[k]);
-      }
-    }
-
-    neon_st(dout_ptr, din0);
-    dout_ptr += k_neont_element_num;
-    neon_st(dout_ptr, din1);
-    dout_ptr += k_neont_element_num;
-    neon_st(dout_ptr, din2);
-    dout_ptr += k_neont_element_num;
-    neon_st(dout_ptr, din3);
-    dout_ptr += k_neont_element_num;
-  }
-  if (remain >= k_batch_element_num / 2) {
-    NeonT din0 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-    NeonT din1 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-
-    din0 = neon_op(rb, din0);
-    din1 = neon_op(rb, din1);
-
-    if (has_active && neon_active_defined) {
-      din0 = neon_active(din0);
-      din1 = neon_active(din1);
-    } else if (has_active) {
-      for (int k = 0; k < k_neont_element_num; ++k) {
-        din0[k] = naive_active(din0[k]);
-        din1[k] = naive_active(din1[k]);
-      }
-    }
-
-    neon_st(dout_ptr, din0);
-    dout_ptr += k_neont_element_num;
-    neon_st(dout_ptr, din1);
-    dout_ptr += k_neont_element_num;
-
-    remain -= k_batch_element_num / 2;
-  }
-  if (remain >= k_batch_element_num / 4) {
-    NeonT din0 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-
-    din0 = neon_op(rb, din0);
-
-    if (has_active && neon_active_defined) {
-      din0 = neon_active(din0);
-    } else if (has_active) {
-      for (int k = 0; k < k_neont_element_num; ++k) {
-        din0[k] = naive_active(din0[k]);
-      }
-    }
-    neon_st(dout_ptr, din0);
-    dout_ptr += k_neont_element_num;
-    remain -= k_neont_element_num;
-  }
-  if (remain > 0) {
-    T tmp = 0;
-    for (int p = 0; p < remain; p++) {
-      tmp = naive_op(dinx_data, *diny_ptr);
-      if (has_active) {
-        tmp = naive_active(tmp);
-      }
-      *dout_ptr = tmp;
-      dout_ptr++;
-      diny_ptr++;
-    }
-  }
-}
-
-/**
- * see neon_elementwise_range_to_one to get how to use Config
- */
-template <class Config, bool IS_X_SINGLE = false, bool IS_Y_SINGLE = false>
-inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
-                                            const typename Config::T* diny,
-                                            typename Config::T* dout,
-                                            int num) {
-  using T = typename Config::T;
-  using NeonT = typename Config::NeonT;
   constexpr auto neon_ld = Config::neon_ld;
   constexpr auto neon_st = Config::neon_st;
   constexpr auto neon_op = Config::neon_op;
@@ -387,8 +138,6 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
       dinx2 = neon_op(dinx2, diny2);
       dinx3 = neon_op(dinx3, diny3);
     }
-    static_assert((IS_X_SINGLE && IS_Y_SINGLE) != true,
-                  "X and Y could not be both single");
 
     if (has_active && neon_active_defined) {
       dinx0 = neon_active(dinx0);
@@ -444,8 +193,6 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
       dinx0 = neon_op(dinx0, diny0);
       dinx1 = neon_op(dinx1, diny1);
     }
-    static_assert((IS_X_SINGLE && IS_Y_SINGLE) != true,
-                  "X and Y could not be both single");
 
     if (has_active && neon_active_defined) {
       dinx0 = neon_active(dinx0);
@@ -484,8 +231,7 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
     if (!IS_X_SINGLE && !IS_Y_SINGLE) {
       dinx0 = neon_op(dinx0, diny0);
     }
-    static_assert((IS_X_SINGLE && IS_Y_SINGLE) != true,
-                  "X and Y could not be both single");
+
     if (has_active && neon_active_defined) {
       dinx0 = neon_active(dinx0);
     } else if (has_active) {
@@ -510,6 +256,30 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
       diny_ptr++;
     }
   }
+}
+
+template <class Config>
+inline void neon_elementwise_one_to_range(const typename Config::T* dinx,
+                                          const typename Config::T* diny,
+                                          typename Config::T* dout,
+                                          int num) {
+  do_neon_elementwise<Config, true, false>(dinx, diny, dout, num);
+}
+
+template <class Config>
+inline void neon_elementwise_range_to_one(const typename Config::T* dinx,
+                                          const typename Config::T* diny,
+                                          typename Config::T* dout,
+                                          int num) {
+  do_neon_elementwise<Config, false, true>(dinx, diny, dout, num);
+}
+
+template <class Config>
+inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
+                                            const typename Config::T* diny,
+                                            typename Config::T* dout,
+                                            int num) {
+  do_neon_elementwise<Config, false, false>(dinx, diny, dout, num);
 }
 }  // namespace math
 }  // namespace arm
