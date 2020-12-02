@@ -142,6 +142,7 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
       static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
 
   std::vector<cl::NDRange> lwss{tmp_lws};
+  VLOG(1) << "generate_lws_type:" << generate_lws_type;
   // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
   if (generate_lws_type == 0) {
     // 0 - None: nothing to do
@@ -149,6 +150,19 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
              generate_lws_type == 3) {
     for (auto tune_reverse : {true, false}) {
       for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
+        tmp_lws = DefaultLocalWorkSize(
+            global_work_size, max_work_size, divisor, tune_reverse);
+        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
+            last_lws[2] == tmp_lws[2]) {
+          // skip tuned lws
+          continue;
+        }
+        lwss.emplace_back(tmp_lws);
+      }
+    }
+  } else if (generate_lws_type == 2) {
+    for (auto tune_reverse : {true, false}) {
+      for (size_t divisor = 1; divisor < /*max_divisor=*/7; divisor++) {
         tmp_lws = DefaultLocalWorkSize(
             global_work_size, max_work_size, divisor, tune_reverse);
         if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
