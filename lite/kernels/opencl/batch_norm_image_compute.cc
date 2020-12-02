@@ -101,7 +101,7 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
-    auto* x_img = DATA_GPU(batch_norm_param_->x);
+    auto* x_img = GET_DATA_GPU(batch_norm_param_->x);
     auto* out_img = MUTABLE_DATA_GPU(
         batch_norm_param_->y, out_img_shape_[0], out_img_shape_[1], nullptr);
     auto* scale_img = DATA_GPU(&scale_image_);
