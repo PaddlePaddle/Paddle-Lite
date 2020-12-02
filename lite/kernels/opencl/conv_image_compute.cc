@@ -364,21 +364,28 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   std::stringstream kernel_key;
   kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
   kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+
+#ifdef LITE_WITH_LOG
   VLOG(4) << "kernel_key: " << kernel_key.str();
   VLOG(4) << "kernel ready ... " << kernel_key.str();
+#endif
+
+  auto tuned_map_key = GenerateTunedKey();
+  cl::NDRange lws_in_map = cl::NullRange;
+  if (context.cl_context()->HasTunedLocalWorkSizeMap(tuned_map_key,
+                                                     lws_in_map)) {
+    local_work_size_ = lws_in_map;
+    return;
+  }
 
   size_t max_work_group_size = 0;
   kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                    CL_KERNEL_WORK_GROUP_SIZE,
                                    &max_work_group_size);
-  VLOG(4) << "max_work_group_size: " << max_work_group_size;
   std::vector<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
       global_work_size_, max_work_group_size);
   CHECK(lwss.size() > 0) << "Possible local work sizes should bigger than zero";
   local_work_size_ = lwss[0];
-  VLOG(1) << "local_work_size:" << static_cast<int>(local_work_size_[0]) << ","
-          << static_cast<int>(local_work_size_[1]) << ","
-          << static_cast<int>(local_work_size_[2]) << ",";
   if (max_work_group_size <= 0 || !use_lws_ ||
       CLRuntime::Global()->auto_tune() <= 0) {
     if (!use_lws_) {
@@ -403,8 +410,21 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     }
   }
   local_work_size_ = min_lws;
-  VLOG(3) << "selected local_work_size_ : " << local_work_size_[0] << " "
-          << local_work_size_[1] << " " << local_work_size_[2];
+  context.cl_context()->SetTunedLocalWorkSizeMap(tuned_map_key,
+                                                 local_work_size_);
+}
+
+std::string ConvImageCompute::GenerateTunedKey() {
+  std::stringstream key;
+  key << kernel_func_names_[0] << ",x:" << input_tensor_n_ << "x"
+      << input_tensor_c_ << "x" << input_tensor_h_ << "x" << input_tensor_w_
+      << ",w:" << filter_tensor_n_ << "x" << filter_tensor_c_ << "x"
+      << filter_tensor_h_ << "x" << filter_tensor_w_ << ",b:" << bias_image_h_
+      << "x" << bias_image_w_ << ",pad:" << pad_up_ << pad_down_ << pad_left_
+      << pad_right_ << ",dil:" << dilation_h_ << dilation_w_
+      << ",s:" << stride_h_ << stride_w_ << ",g:" << groups_
+      << ",act:" << static_cast<int>(conv_param_->activation_param.active_type);
+  return key.str();
 }
 
 void ConvImageCompute::ReInitWhenNeeded() {
