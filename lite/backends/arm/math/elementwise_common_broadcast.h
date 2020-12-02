@@ -252,8 +252,12 @@ inline void do_neon_elementwise(const typename Config::T* dinx,
       }
       *dout_ptr = tmp;
       dout_ptr++;
-      dinx_ptr++;
-      diny_ptr++;
+      if (!IS_X_SINGLE) {
+        dinx_ptr++;
+      }
+      if (!IS_Y_SINGLE) {
+        diny_ptr++;
+      }
     }
   }
 }
