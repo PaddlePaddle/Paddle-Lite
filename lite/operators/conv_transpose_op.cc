@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/conv_transpose_op.h"
+#include <algorithm>
 #include <memory>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
@@ -75,6 +76,28 @@ bool ConvTransposeOpLite::InferShapeImpl() const {
                                                    paddings[i * 2],
                                                    paddings[i * 2 + 1],
                                                    param_.strides[i]));
+  }
+  if (!param_.output_padding.empty()) {
+    CHECK_EQ(param_.output_padding.size(), param_.strides.size())
+            << "the size of output_padding and the size of stride should be "
+               "same, "
+            << "but output_padding's size is "
+            << param_.output_padding.size() < < < <
+        ", stride's size is " << param_.strides.size();
+    for (int i = 0; i < param_.output_padding.size(); i++) {
+      CHECK_GE(param_.output_padding[i], 0)
+          << "the output_padding should be great than 0, "
+          << "but output_padding is " << output_padding[i];
+      CHECK_LT(param_.output_padding[i],
+               std::max(param_.strides[i], dilations[i])) < < < <
+          "the output_padding should be less than max(strides, dilations), "
+              << "but output_padding is " << output_padding[i]
+              << ", strides is " << strides[i] << ", dilations is "
+              << dilations[i];
+    }
+    for (int i = 0; i < param_.output_padding.size(); i++) {
+      output_shape[i] += param_.output_padding[i];
+    }
   }
   if (!param_.output_size.empty()) {
     for (size_t i = 0; i < param_.output_size.size(); ++i) {
@@ -163,6 +186,9 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   }
   if (op_desc.HasAttr("output_size")) {
     param_.output_size = op_desc.GetAttr<std::vector<int>>("output_size");
+  }
+  if (op_desc.HasAttr("output_padding")) {
+    param_.output_padding = op_desc.GetAttr<std::vector<int>>("output_padding");
   }
   return true;
 }
