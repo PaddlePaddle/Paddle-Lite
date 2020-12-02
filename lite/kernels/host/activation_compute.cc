@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/host/activation_compute.h"
-
+#include <cmath>
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -96,7 +96,7 @@ void SigmoidCompute::Run() {
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
-    output_data[i] = 1 / (1 + expf(-x_data[i]));
+    output_data[i] = 1 / (1 + std::expf(-x_data[i]));
   }
 }
 
@@ -107,8 +107,8 @@ void TanhCompute::Run() {
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
-    output_data[i] = (expf(x_data[i]) - expf(-x_data[i])) /
-                     (expf(x_data[i]) + expf(-x_data[i]));
+    output_data[i] = (std::expf(x_data[i]) - std::expf(-x_data[i])) /
+                     (std::expf(x_data[i]) + std::expf(-x_data[i]));
   }
 }
 
@@ -120,7 +120,7 @@ void SwishCompute::Run() {
   auto beta = param.Swish_beta;
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
-    output_data[i] = x_data[i] / (1 + expf(-x_data[i] * beta));
+    output_data[i] = x_data[i] / (1 + std::expf(-x_data[i] * beta));
   }
 }
 
@@ -144,7 +144,7 @@ void LogCompute::Run() {
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
-    output_data[i] = logf(x_data[i]);
+    output_data[i] = std::logf(x_data[i]);
   }
 }
 
@@ -155,7 +155,7 @@ void ExpCompute::Run() {
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
-    output_data[i] = expf(x_data[i]);
+    output_data[i] = std::expf(x_data[i]);
   }
 }
 
@@ -166,7 +166,7 @@ void FloorCompute::Run() {
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
-    output_data[i] = floorf(x_data[i]);
+    output_data[i] = std::floorf(x_data[i]);
   }
 }
 
@@ -193,7 +193,7 @@ void RsqrtCompute::Run() {
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
-    output_data[i] = 1.0 / sqrtf(x_data[i]);
+    output_data[i] = 1.0 / std::sqrtf(x_data[i]);
   }
 }
 
@@ -265,7 +265,7 @@ void EluCompute::Run() {
   auto output_data = param.Out->mutable_data<float>();
   float alpha = param.Elu_alpha;
   for (int i = 0; i < x_dims.production(); i++) {
-    float beta = alpha * (expf(x_data[i]) - 1);
+    float beta = alpha * (std::expf(x_data[i]) - 1);
     float max = x_data[i] >= 0.f ? x_data[i] : 0.f;
     float min = beta <= 0.f ? beta : 0.f;
     output_data[i] = max + min;
