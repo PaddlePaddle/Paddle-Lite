@@ -36,6 +36,16 @@ BlockDesc* ProgramDesc::AddBlock<BlockDesc>() {
   return &blocks_.back();
 }
 
+template <>
+OpVersionMap* ProgramDesc::GetOpVersionMap<OpVersionMap>() {
+  return &op_version_map_;
+}
+
+void ProgramDesc::SetOpVersionMap(
+    std::map<std::string, int32_t> op_version_map) {
+  op_version_map_.SetOpVersionMap(op_version_map);
+}
+
 }  // namespace general
 }  // namespace lite
 }  // namespace paddle

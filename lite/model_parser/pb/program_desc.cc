@@ -31,6 +31,12 @@ ProgramDesc::AddBlock<framework::proto::BlockDesc>() {
   return desc_->add_blocks();
 }
 
+template <>
+framework::proto::OpVersionMap*
+ProgramDesc::GetOpVersionMap<framework::proto::OpVersionMap>() {
+  return desc_->mutable_op_version_map();
+}
+
 }  // namespace pb
 }  // namespace lite
 }  // namespace paddle
