@@ -37,7 +37,11 @@ class OpVersionMap : public OpVersionMapAPI {
     return op_version_map_;
   }
   int32_t GetOpVersionByName(const std::string& name) const override {
-    return op_version_map_.at(name);
+    if (op_version_map_.count(name) != 0) {
+      return op_version_map_.at(name);
+    } else {
+      return -1;
+    }
   }
 
   void SetOpVersionMap(

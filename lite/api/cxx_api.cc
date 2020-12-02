@@ -352,6 +352,9 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   optimizer_.Run(std::move(program), inner_places, factor, passes);
   exec_scope_ = optimizer_.exec_scope();
   PrepareFeedFetch();
+  // Verify if the ops version of current runtime program is
+  // the same with that in models.
+  CheckPaddleOpVersions(program_desc);
 }
 
 void Predictor::GenRuntimeProgram() {
@@ -388,6 +391,57 @@ lite::Tensor *Predictor::GetInputByName(const std::string &name) {
   }
 }
 
+/////////////////////////////////////////////////////////////////////////
+// Name: CheckPaddleOpVersions
+// Author: DannyIsFunny (github)
+// Usage: Compare op versions between inputed fluid model and current
+//        kernels registry in opt tool.
+// Eg. inputed model: Mobilenet_v1, op `conv2d` with version 2.
+//     opt tool: op version of kernel `conv2d` should be no less than 2.
+/////////////////////////////////////////////////////////////////////////
+void Predictor::CheckPaddleOpVersions(
+    const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
+  // step1. get all the kernels from current programdesc
+  auto block_size = program_desc->BlocksSize();
+  for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
+    const auto &insts = program_->instructions(block_idx);
+    for (auto &inst : insts) {
+      // 1.1 each kernel from inputed fluid model.
+      const auto &op = inst.op()->op_info();
+      std::string op_name = op->Type();
+      if (program_desc->HasOpVersionMap()) {
+        auto *kernel = inst.kernel();
+        // Step2. Compared op versions of inputed model and kernel registry.
+        // 2.1 Get op_version_map from inputed fluid model.
+        auto *model_op_version =
+            program_desc->GetOpVersionMap<general::OpVersionMap>();
+        // 2.1 Get op_version versions from kernel registry.
+        auto kernel_versions =
+            ParamTypeRegistry::Global()
+                .GetKernelVersion(kernel->key_with_alias(), kernel->place())
+                .OpVersions();
+        for (auto iter = kernel_versions.begin(); iter != kernel_versions.end();
+             iter++) {
+          int32_t model_op_version_index =
+              model_op_version->GetOpVersionByName(iter->first);
+          // Step3. Compared op version between inputed model and kernel
+          // registry.
+          if ((model_op_version_index > iter->second) &&
+              (model_op_version_index != -1)) {
+            LOG(FATAL) << "Error: incompatible paddle op version. Kernel ("
+                       << kernel->name() << ") requires that op_version("
+                       << iter->first << ")==" << iter->second
+                       << ". However, the op_version(" << iter->first
+                       << ") in this models is " << model_op_version_index
+                       << ". It's suggested to use PaddlePaddle and "
+                          "Paddle-Lite of the same op_version("
+                       << iter->first << ").";
+          }
+        }
+      }
+    }
+  }
+}
 // #ifdef LITE_WITH_TRAIN
 // void Predictor::FeedVars(const std::vector<framework::Tensor> &tensors) {
 //   auto var = scope_->FindVar("feed");
