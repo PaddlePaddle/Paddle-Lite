@@ -32,6 +32,14 @@ BlockDescView const* ProgramDescView::GetBlock<BlockDescView>(
   return &blocks_[idx];
 }
 
+template <>
+proto::OpVersionMap* ProgramDescView::GetOpVersionMap<proto::OpVersionMap>() {
+  // op_version_map is not implemented on naive_buffer as
+  // it's not useful in inference period.
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  return nullptr;
+}
+
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 template <>
 proto::BlockDescT* ProgramDesc::GetBlock<proto::BlockDescT>(int32_t idx) {
@@ -46,6 +54,15 @@ proto::BlockDescT* ProgramDesc::AddBlock<proto::BlockDescT>() {
   SyncBlocks();
   return blocks_.back()->raw_desc();
 }
+
+template <>
+proto::OpVersionMap* ProgramDesc::GetOpVersionMap<proto::OpVersionMap>() {
+  // op_version_map is not implemented on naive_buffer as
+  // it's not useful in inference period.
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  return nullptr;
+}
+
 #endif  // LITE_WITH_FLATBUFFERS_DESC
 
 }  // namespace fbs

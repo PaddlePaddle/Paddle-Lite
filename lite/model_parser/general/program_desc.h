@@ -13,9 +13,12 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
+#include <string>
 #include <vector>
 #include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/general/block_desc.h"
+#include "lite/model_parser/general/op_version_map.h"
 
 namespace paddle {
 namespace lite {
@@ -52,6 +55,19 @@ class ProgramDesc : public ProgramDescAPI {
   template <typename T>
   T* AddBlock();
 
+  /////////////////////////////////////////////////////////////////
+  // Name: OpVersionMap
+  // Description: a map that strores paddle ops version
+  /////////////////////////////////////////////////////////////////
+  bool HasOpVersionMap() const override {
+    return !(op_version_map_.GetOpVersionMap().empty());
+  }
+
+  template <typename T>
+  T* GetOpVersionMap();
+
+  void SetOpVersionMap(std::map<std::string, int32_t> op_version_map);
+
   // Just return default versoin
   // TODO(sangoly): refine this
   bool HasVersion() const override { return true; }
@@ -62,6 +78,7 @@ class ProgramDesc : public ProgramDescAPI {
 
  private:
   int64_t version_;
+  OpVersionMap op_version_map_;
   std::vector<BlockDesc> blocks_;
 };
 
