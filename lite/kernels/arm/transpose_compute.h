@@ -29,6 +29,7 @@ class TransposeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   using param_t = operators::TransposeParam;
   void PrepareForRun() override;
   void Run() override;
+  void ReInitWhenNeeded() override;
 
   virtual ~TransposeCompute() = default;
 
@@ -38,6 +39,7 @@ class TransposeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   int _trans_num;
   int _trans_w;
   int _trans_h;
+  DDim last_shape_;
   std::vector<int> _new_steps;
   std::vector<int> _old_steps;
 };
