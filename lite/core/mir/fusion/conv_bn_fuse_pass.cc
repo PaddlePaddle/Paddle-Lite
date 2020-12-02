@@ -44,7 +44,7 @@ void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (has_target(TARGET(kOpenCL))) {
       VLOG(3) << "kX86 and kOpenCL continue to execute...";
     } else {
-      LOG(INFO) << "  - Skip lite_conv_elementwise_fuse_pass because the "
+      LOG(INFO) << "  - Skip lite_conv_bn_fuse_pass because the "
                    "target or kernel has target kX86 but does not have "
                    "kOpenCL.";
       return;
