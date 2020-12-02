@@ -83,10 +83,7 @@ IF NOT EXIST "%vcvarsall_dir%" (
   goto set_vcvarsall_dir
 )
 
-set python_path=C:\Python35\python.exe
-IF NOT EXIST "%python_path%" (
-    goto set_python_path
-)
+call:set_python_path
 
 call:prepare_thirdparty
 
@@ -221,19 +218,30 @@ IF NOT EXIST "%vcvarsall_dir%" (
 goto:eof
 
 :set_python_path
-SET /P python_path="Please input the path of python.exe, such as C:\Python35\python.exe, C:\Python35\python3.exe  ======>"
-set tmp_var=%python_path%
+set python_path=C:\Python35\python.exe
+IF NOT EXIST "%python_path%" (
+    goto input_python_path
+)
+SET /P answer="We checked that %python_path% exists. Using this python path[yes/no]? Type yes will use the python path, while type no will let you input your prefer python path :"
+set tmp_var=%answer%
 call:remove_space
-set python_path=%tmp_var%
-if "%python_path%"=="" (
-    set python_path=python.exe
+if "%tmp_var%"=="yes" (
+    goto:eof
 ) else (
-    IF NOT EXIST "%python_path%" (
-        echo "------------%python_path% not exist---------------"
+:input_python_path
+    SET /P python_path="Please input the path of python.exe, such as C:\Python35\python.exe, C:\Python35\python3.exe  ======>"
+    set tmp_var=%python_path%
+    call:remove_space
+    set python_path=%tmp_var%
+    if "%python_path%"=="" (
+        set python_path=python.exe
+    ) else (
+        IF NOT EXIST "%python_path%" (
+            echo "------------%python_path% not exist---------------"
+        )
     )
 )
 goto:eof
-
 
 :remove_space
 :remove_left_space
