@@ -21,11 +21,9 @@ __kernel void relu(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   in = max((CL_DTYPE4)(0.0f), in);
+
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
@@ -36,10 +34,7 @@ __kernel void relu6(__read_only image2d_t input,
   const int x = get_global_id(0);
   const int y = get_global_id(1);
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   in = max((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
   in = min((CL_DTYPE4)(threshold, threshold, threshold, threshold), in);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
@@ -52,10 +47,7 @@ __kernel void sigmoid(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   CL_DTYPE4 out;
 
   out.x = (CL_DTYPE)(1.0f / (1.0f + pow(2.71828182f, -1.0f * (float)(in.x))));
@@ -73,10 +65,7 @@ __kernel void hard_sigmoid(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   CL_DTYPE4 out = clamp(in * (CL_DTYPE4)(scale) + (CL_DTYPE4)(value_offset), (CL_DTYPE4)(0.0), (CL_DTYPE4)(1.0));
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
@@ -89,10 +78,7 @@ __kernel void leaky_relu(__read_only image2d_t input,
   const int x = get_global_id(0);
   const int y = get_global_id(1);
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   CL_DTYPE4 s_val = CONVERT_TYPE_TO(scale, CL_DTYPE) * in;
   if (in.x < 0.0f) {
     in.x = s_val.x;
@@ -116,10 +102,7 @@ __kernel void tanh_act(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   CL_DTYPE4 out = (exp(in) - exp(-in)) / (exp(in) + exp(-in));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
@@ -131,10 +114,7 @@ __kernel void exp_act(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   CL_DTYPE4 out = exp(in);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
@@ -146,10 +126,7 @@ __kernel void swish(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   CL_DTYPE4 out = in / (1 + exp(-(CL_DTYPE)scale * in));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }

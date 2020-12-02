@@ -14,6 +14,7 @@
 
 #include "lite/api/paddle_api.h"
 
+#include <functional>
 #include <utility>
 
 #include "lite/core/context.h"
@@ -290,6 +291,13 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+#ifdef LITE_WITH_X86
+void ConfigBase::set_x86_math_num_threads(int threads) {
+  x86_math_num_threads_ = threads;
+}
+int ConfigBase::x86_math_num_threads() const { return x86_math_num_threads_; }
+#endif
+
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
                                size_t program_buffer_size,
                                const char *params_buffer,
@@ -378,6 +386,56 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
+
+template <class T>
+void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
+                                                const int tensor_idx,
+                                                const shape_t &shape,
+                                                const lod_t &lod,
+                                                const T fill_value,
+                                                const void *data) {
+  if (preferred_inputs_for_warmup_.count(group_idx) == 0) {
+    preferred_inputs_for_warmup_[group_idx] =
+        std::vector<std::shared_ptr<void>>{};
+  }
+  auto &input_tensors = preferred_inputs_for_warmup_[group_idx];
+  while (input_tensors.size() < tensor_idx + 1) {
+    std::shared_ptr<void> input_tensor(
+        static_cast<void *>(new lite::Tensor),
+        [](void *x) { delete static_cast<lite::Tensor *>(x); });
+    input_tensors.emplace_back(input_tensor);
+  }
+
+  auto input_tensor =
+      static_cast<lite::Tensor *>(input_tensors[tensor_idx].get());
+  input_tensor->Resize(shape);
+  input_tensor->set_lod(lod);
+  auto input_data = input_tensor->mutable_data<T>();
+  int64_t size = std::accumulate(
+      shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
+  if (data != nullptr) {
+    memcpy(input_data, data, sizeof(T) * size);
+  } else {
+    for (int64_t i = 0; i < size; i++) {
+      input_data[i] = fill_value;
+    }
+  }
+}
+
+#define _SetPreferredInputsForWarmup(dtype)                        \
+  template void CxxConfig::set_preferred_inputs_for_warmup<dtype>( \
+      const int group_idx,                                         \
+      const int tensor_idx,                                        \
+      const shape_t &shape,                                        \
+      const lod_t &lod,                                            \
+      const dtype fill_value,                                      \
+      const void *data);
+
+_SetPreferredInputsForWarmup(float);
+_SetPreferredInputsForWarmup(double);
+_SetPreferredInputsForWarmup(int32_t);
+_SetPreferredInputsForWarmup(int64_t);
+#undef _SetPreferredInputsForWarmup
 
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory

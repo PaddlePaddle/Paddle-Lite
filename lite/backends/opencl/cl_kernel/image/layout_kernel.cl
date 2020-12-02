@@ -108,12 +108,9 @@ __kernel void image2d_to_buffer(__read_only image2d_t input,
   const int in_n = in_nh / in_height;
   const int in_h = in_nh % in_height;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   const int pos_x = mad24(in_c, in_width, in_w);
   CL_COMPUTE_DTYPE4 in = READ_IMG_TYPE(
-      CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh));
+      CL_COMPUTE_DTYPE_CHAR, input, SAMPLER, (int2)(pos_x, in_nh));
 
 #ifdef DEBUG
   if (in_w > 2045) {
@@ -207,10 +204,7 @@ __kernel void image2d_to_buffer_2d(__private const int in_height,
   const int in_w = get_global_id(1);
   const int in_h = get_global_id(2);
 
-  const sampler_t sampler =
-    CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(in_w, in_h));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_w, in_h));
 
   const int index = (in_h * in_width + in_w) * 4;
   out[index] = CONVERT_TYPE_TO(CL_DTYPE, in.x);
@@ -285,13 +279,10 @@ __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
   const int in_n = in_nh / in_height;
   const int in_h = in_nh % in_height;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   const int pos_x = mad24(in_c, in_width, in_w);
   CL_COMPUTE_DTYPE4 in =
       READ_IMG_TYPE(
-          CL_COMPUTE_DTYPE_CHAR, input, sampler, (int2)(pos_x, in_nh)) *
+          CL_COMPUTE_DTYPE_CHAR, input, SAMPLER, (int2)(pos_x, in_nh)) *
       255;
 
 #ifdef DEBUG

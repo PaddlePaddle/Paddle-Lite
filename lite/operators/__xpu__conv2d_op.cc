@@ -109,10 +109,20 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       scope->FindVar(op_desc.Input("Filter").front())->GetMutable<Tensor>();
   param_.FilterMax =
       scope->FindVar(op_desc.Input("FilterMax").front())->GetMutable<Tensor>();
-  auto bias = scope->FindVar(op_desc.Input("Bias").front());
-  if (bias != nullptr) {
-    param_.Bias = bias->GetMutable<Tensor>();
-  }
+  param_.Output =
+      scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
+  param_.OutputMax =
+      scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
+
+  param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
+  std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+  auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+  param_.dilations = std::make_shared<std::vector<int>>(dilations);
+  param_.groups = op_desc.GetAttr<int>("groups");
+  param_.act_type = op_desc.GetAttr<int>("act_type");
+  param_.act_param = op_desc.GetAttr<float>("act_param");
+  param_.filter_dims = op_desc.GetAttr<std::vector<int>>("filter_dims");
+
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Branch") !=
@@ -126,25 +136,16 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       }
     }
   }
-
-  param_.Output =
-      scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
-  param_.OutputMax =
-      scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
-
-  param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-  std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
-  auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
-  param_.dilations = std::make_shared<std::vector<int>>(dilations);
-  param_.groups = op_desc.GetAttr<int>("groups");
-  if (op_desc.HasAttr("act_type")) {
-    param_.act_type = op_desc.GetAttr<std::string>("act_type");
-  }
-
-  if (op_desc.HasAttr("filter_type")) {
-    param_.filter_type = op_desc.GetAttr<std::string>("filter_type");
-  } else {
-    param_.filter_type = "int16";
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=
+      input_arg_names.end()) {
+    auto arguments = op_desc.Input("Bias");
+    if (arguments.size() > 0) {
+      auto arg_var = scope->FindVar(arguments.front());
+      if (arg_var != nullptr) {
+        param_.Bias =
+            const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
+      }
+    }
   }
 
   if (op_desc.HasAttr("has_input_max") &&

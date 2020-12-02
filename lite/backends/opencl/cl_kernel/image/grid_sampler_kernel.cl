@@ -20,8 +20,7 @@ __kernel void grid_sampler(__read_only image2d_t input,
   const int out_nh = get_global_id(2) * 4;
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
   int2 coords1, coords2, outpoints;
   coords1.x = out_h / 4 * 2;
   coords1.y = out_n * out_width + out_w;
@@ -30,8 +29,8 @@ __kernel void grid_sampler(__read_only image2d_t input,
   outpoints.x = out_c * out_width + out_w;
   outpoints.x = out_n * out_height + out_h;
   
-  CL_DTYPE4 g1 = READ_IMG_TYPE(CL_DTYPE_CHAR, grid, sampler, coords1);
-  CL_DTYPE4 g2 = READ_IMG_TYPE(CL_DTYPE_CHAR, grid, sampler, coords2);
+  CL_DTYPE4 g1 = READ_IMG_TYPE(CL_DTYPE_CHAR, grid, SAMPLER, coords1);
+  CL_DTYPE4 g2 = READ_IMG_TYPE(CL_DTYPE_CHAR, grid, SAMPLER, coords2);
   
   // x
   float x = (g1.x + 1) * (out_width - 1) * 0.5;
@@ -46,10 +45,10 @@ __kernel void grid_sampler(__read_only image2d_t input,
   float ys = y - y0;
   float ye = y0 + 1 - y;
 
-  CL_DTYPE4 input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p, y_p));
-  CL_DTYPE4 input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p + 1, y_p));
-  CL_DTYPE4 input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p, y_p + 1));
-  CL_DTYPE4 input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p + 1, y_p + 1));
+  CL_DTYPE4 input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p));
+  CL_DTYPE4 input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p + 1, y_p));
+  CL_DTYPE4 input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p + 1));
+  CL_DTYPE4 input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p + 1, y_p + 1));
   
   if (x0 < 0 || x0 > out_width - 1 || y0 < 0 || y0 > out_height - 1){
       input0 = (CL_DTYPE4)(0.0);
@@ -82,10 +81,10 @@ __kernel void grid_sampler(__read_only image2d_t input,
   ys = y - y0;
   ye = y0 + 1 - y;
 
-  input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p, y_p));
-  input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p + 1, y_p));
-  input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p, y_p + 1));
-  input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p + 1, y_p + 1));
+  input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p));
+  input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p + 1, y_p));
+  input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p + 1));
+  input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p + 1, y_p + 1));
 
   if (x0 < 0 || x0 > out_width - 1 || y0 < 0 || y0 > out_height - 1){
       input0 = (CL_DTYPE4)(0.0);
@@ -119,10 +118,10 @@ __kernel void grid_sampler(__read_only image2d_t input,
   ys = y - y0;
   ye = y0 + 1 - y;
 
-  input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p, y_p));
-  input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p + 1, y_p));
-  input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p, y_p + 1));
-  input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p + 1, y_p + 1));
+  input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p));
+  input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p + 1, y_p));
+  input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p + 1));
+  input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p + 1, y_p + 1));
   
   if (x0 < 0 || x0 > out_width - 1 || y0 < 0 || y0 > out_height - 1){
       input0 = (CL_DTYPE4)(0.0);
@@ -155,10 +154,10 @@ __kernel void grid_sampler(__read_only image2d_t input,
   ys = y - y0;
   ye = y0 + 1 - y;
 
-  input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p, y_p));
-  input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p + 1, y_p));
-  input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p, y_p + 1));
-  input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x_p + 1, y_p + 1));
+  input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p));
+  input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p + 1, y_p));
+  input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p, y_p + 1));
+  input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_p + 1, y_p + 1));
   
   if (x0 < 0 || x0 > out_width - 1 || y0 < 0 || y0 > out_height - 1){
       input0 = (CL_DTYPE4)(0.0);
