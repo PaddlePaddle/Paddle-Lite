@@ -303,7 +303,7 @@ inline void neon_elementwise_one_to_range(const typename Config::T* dinx,
 /**
  * see neon_elementwise_range_to_one to get how to use Config
  */
-template <class Config>
+template <class Config, bool IS_X_SINGLE = false, bool IS_Y_SINGLE = false>
 inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
                                             const typename Config::T* diny,
                                             typename Config::T* dout,
@@ -330,29 +330,65 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
   auto diny_ptr = diny;
   auto dout_ptr = dout;
 
+  NeonT rbx;
+  if (IS_X_SINGLE) {
+    rbx = neon_dup(*dinx);
+  }
+  NeonT rby;
+  if (IS_Y_SINGLE) {
+    rby = neon_dup(*diny);
+  }
+
   for (int i = 0; i < cnt; ++i) {
-    NeonT dinx0 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-    NeonT dinx1 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-    NeonT dinx2 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-    NeonT dinx3 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
+    NeonT dinx0;
+    NeonT dinx1;
+    NeonT dinx2;
+    NeonT dinx3;
+    NeonT diny0;
+    NeonT diny1;
+    NeonT diny2;
+    NeonT diny3;
+    if (!IS_X_SINGLE) {
+      dinx0 = neon_ld(dinx_ptr);
+      dinx_ptr += k_neont_element_num;
+      dinx1 = neon_ld(dinx_ptr);
+      dinx_ptr += k_neont_element_num;
+      dinx2 = neon_ld(dinx_ptr);
+      dinx_ptr += k_neont_element_num;
+      dinx3 = neon_ld(dinx_ptr);
+      dinx_ptr += k_neont_element_num;
+    }
 
-    NeonT diny0 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-    NeonT diny1 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-    NeonT diny2 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-    NeonT diny3 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-
-    dinx0 = neon_op(dinx0, diny0);
-    dinx1 = neon_op(dinx1, diny1);
-    dinx2 = neon_op(dinx2, diny2);
-    dinx3 = neon_op(dinx3, diny3);
+    if (!IS_Y_SINGLE) {
+      diny0 = neon_ld(diny_ptr);
+      diny_ptr += k_neont_element_num;
+      diny1 = neon_ld(diny_ptr);
+      diny_ptr += k_neont_element_num;
+      diny2 = neon_ld(diny_ptr);
+      diny_ptr += k_neont_element_num;
+      diny3 = neon_ld(diny_ptr);
+      diny_ptr += k_neont_element_num;
+    }
+    if (IS_X_SINGLE && !IS_Y_SINGLE) {
+      dinx0 = neon_op(rbx, diny0);
+      dinx1 = neon_op(rbx, diny1);
+      dinx2 = neon_op(rbx, diny2);
+      dinx3 = neon_op(rbx, diny3);
+    }
+    if (!IS_X_SINGLE && IS_Y_SINGLE) {
+      dinx0 = neon_op(dinx0, rby);
+      dinx1 = neon_op(dinx1, rby);
+      dinx2 = neon_op(dinx2, rby);
+      dinx3 = neon_op(dinx3, rby);
+    }
+    if (!IS_X_SINGLE && !IS_Y_SINGLE) {
+      dinx0 = neon_op(dinx0, diny0);
+      dinx1 = neon_op(dinx1, diny1);
+      dinx2 = neon_op(dinx2, diny2);
+      dinx3 = neon_op(dinx3, diny3);
+    }
+    static_assert((IS_X_SINGLE && IS_Y_SINGLE) != true,
+                  "X and Y could not be both single");
 
     if (has_active && neon_active_defined) {
       dinx0 = neon_active(dinx0);
@@ -379,18 +415,37 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
   }
 
   if (remain >= k_batch_element_num / 2) {
-    NeonT dinx0 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-    NeonT dinx1 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
+    NeonT dinx0;
+    NeonT dinx1;
+    NeonT diny0;
+    NeonT diny1;
+    if (!IS_X_SINGLE) {
+      dinx0 = neon_ld(dinx_ptr);
+      dinx_ptr += k_neont_element_num;
+      dinx1 = neon_ld(dinx_ptr);
+      dinx_ptr += k_neont_element_num;
+    }
 
-    NeonT diny0 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-    NeonT diny1 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-
-    dinx0 = neon_op(dinx0, diny0);
-    dinx1 = neon_op(dinx1, diny1);
+    if (!IS_Y_SINGLE) {
+      diny0 = neon_ld(diny_ptr);
+      diny_ptr += k_neont_element_num;
+      diny1 = neon_ld(diny_ptr);
+      diny_ptr += k_neont_element_num;
+    }
+    if (IS_X_SINGLE && !IS_Y_SINGLE) {
+      dinx0 = neon_op(rbx, diny0);
+      dinx1 = neon_op(rbx, diny1);
+    }
+    if (!IS_X_SINGLE && IS_Y_SINGLE) {
+      dinx0 = neon_op(dinx0, rby);
+      dinx1 = neon_op(dinx1, rby);
+    }
+    if (!IS_X_SINGLE && !IS_Y_SINGLE) {
+      dinx0 = neon_op(dinx0, diny0);
+      dinx1 = neon_op(dinx1, diny1);
+    }
+    static_assert((IS_X_SINGLE && IS_Y_SINGLE) != true,
+                  "X and Y could not be both single");
 
     if (has_active && neon_active_defined) {
       dinx0 = neon_active(dinx0);
@@ -410,14 +465,27 @@ inline void neon_elementwise_range_to_range(const typename Config::T* dinx,
     remain -= k_batch_element_num / 2;
   }
   if (remain >= k_batch_element_num / 4) {
-    NeonT dinx0 = neon_ld(dinx_ptr);
-    dinx_ptr += k_neont_element_num;
-
-    NeonT diny0 = neon_ld(diny_ptr);
-    diny_ptr += k_neont_element_num;
-
-    dinx0 = neon_op(dinx0, diny0);
-
+    NeonT dinx0;
+    NeonT diny0;
+    if (!IS_X_SINGLE) {
+      dinx0 = neon_ld(dinx_ptr);
+      dinx_ptr += k_neont_element_num;
+    }
+    if (!IS_Y_SINGLE) {
+      diny0 = neon_ld(diny_ptr);
+      diny_ptr += k_neont_element_num;
+    }
+    if (IS_X_SINGLE && !IS_Y_SINGLE) {
+      dinx0 = neon_op(rbx, diny0);
+    }
+    if (!IS_X_SINGLE && IS_Y_SINGLE) {
+      dinx0 = neon_op(dinx0, rby);
+    }
+    if (!IS_X_SINGLE && !IS_Y_SINGLE) {
+      dinx0 = neon_op(dinx0, diny0);
+    }
+    static_assert((IS_X_SINGLE && IS_Y_SINGLE) != true,
+                  "X and Y could not be both single");
     if (has_active && neon_active_defined) {
       dinx0 = neon_active(dinx0);
     } else if (has_active) {
