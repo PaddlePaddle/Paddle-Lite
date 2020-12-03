@@ -38,6 +38,8 @@ DEFINE_int32(dstw, 540, "output width");
 DEFINE_int32(angle, 90, "rotate angel");
 DEFINE_int32(flip_num, 0, "flip x");
 DEFINE_int32(layout, 1, "layout nchw");
+DEFINE_string(in_txt, "", "input text");
+DEFINE_string(out_txt, "", "output text");
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
@@ -176,8 +178,25 @@ void test_img(const std::vector<int>& cluster_id,
         size = srch * srcw;
       }
       uint8_t* src = new uint8_t[size];
-      fill_tensor_host_rand(src, size);
+      bool flag_in = true;
+      bool flag_out = true;
 
+      if (FLAGS_in_txt == "") {
+        flag_in = false;
+      }
+      if (FLAGS_out_txt == "") {
+        flag_out = false;
+      }
+      printf("flag_in: %d, flag_out: %d \n", flag_in, flag_out);
+      if (flag_in) {
+        FILE* fp_r = fopen(FLAGS_in_txt.c_str(), "r");
+        for (int i = 0; i < size; i++) {
+          fscanf(fp_r, "%u\n", &src[i]);
+        }
+        fclose(fp_r);
+      } else {
+        fill_tensor_host_rand(src, size);
+      }
       int out_size = srch * srcw;
       int resize = dstw * dsth;
       if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
@@ -361,7 +380,14 @@ void test_img(const std::vector<int>& cluster_id,
       LOG(INFO) << "image trans total avg time : " << t1.LapTimes().Avg()
                 << ", min time: " << t1.LapTimes().Min()
                 << ", max time: " << t1.LapTimes().Max();
-
+      if (flag_out) {
+        FILE* fp1 = fopen(FLAGS_out_txt.c_str(), "w");
+        const float* ptr = tensor.data<float>();
+        for (int i = 0; i < tensor.numel(); i++) {
+          fprintf(fp1, "%f\n", ptr[i]);
+        }
+        fclose(fp1);
+      }
       double max_ratio = 0;
       double max_diff = 0;
       const double eps = 1e-6f;
