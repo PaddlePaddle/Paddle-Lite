@@ -3,6 +3,6 @@ lite_cc_library(op_desc SRCS op_desc.cc DEPS framework_proto)
 lite_cc_library(block_desc SRCS block_desc.cc DEPS framework_proto)
 lite_cc_library(program_desc SRCS program_desc.cc DEPS framework_proto)
 lite_cc_library(param_desc SRCS param_desc.cc DEPS framework_proto model_base_io)
+lite_cc_library(op_version_map SRCS op_version_map.cc DEPS framework_proto)
 lite_cc_library(pb_utils SRCS utils.cc DEPS framework_proto)
-
-set(pb_wrapper pb_utils param_desc var_desc op_desc block_desc program_desc PARENT_SCOPE) 
+set(pb_wrapper pb_utils param_desc var_desc op_desc block_desc op_version_map program_desc PARENT_SCOPE)

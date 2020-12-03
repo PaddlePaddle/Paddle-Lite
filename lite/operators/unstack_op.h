@@ -13,20 +13,33 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
 
-#include "lite/core/framework.pb.h"
-#include "lite/model_parser/base/traits.h"
-#include "lite/utils/logging.h"
 namespace paddle {
 namespace lite {
-namespace pb {
+namespace operators {
 
-lite::VarDataType ConvertVarType(
-    ::paddle::framework::proto::VarType_Type pb_type);
+class UnstackOp : public OpLite {
+ public:
+  UnstackOp() {}
 
-::paddle::framework::proto::VarType_Type ConvertVarType(
-    lite::VarDataType var_type);
+  explicit UnstackOp(const std::string &op_type) : OpLite(op_type) {}
 
-}  // namespace pb
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "unstack"; }
+
+ private:
+  mutable UnstackParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

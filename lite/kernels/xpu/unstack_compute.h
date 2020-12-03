@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,31 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/pb/program_desc.h"
+#pragma once
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace pb {
+namespace kernels {
+namespace xpu {
 
-template <>
-framework::proto::BlockDesc* ProgramDesc::GetBlock<framework::proto::BlockDesc>(
-    int32_t idx) {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return desc_->mutable_blocks(idx);
-}
+class UnstackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::UnstackParam;
 
-template <>
-framework::proto::BlockDesc*
-ProgramDesc::AddBlock<framework::proto::BlockDesc>() {
-  return desc_->add_blocks();
-}
+  virtual void Run();
 
-template <>
-framework::proto::OpVersionMap*
-ProgramDesc::GetOpVersionMap<framework::proto::OpVersionMap>() {
-  return desc_->mutable_op_version_map();
-}
+  virtual ~UnstackCompute() = default;
+};
 
-}  // namespace pb
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
