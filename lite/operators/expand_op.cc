@@ -30,8 +30,8 @@ bool ExpandOpLite::CheckShape() const {
   int expand_size = 0;
   if (param_.ExpandTimes != nullptr) {
     expand_size = param_.ExpandTimes->numel();
-  } else if (param_.expand_times_tensor != nullptr) {
-    expand_size = param_.expand_times_tensor->size();
+  } else if (!param_.expand_times_tensor.empty()) {
+    expand_size = param_.expand_times_tensor.size();
   } else {
     expand_size = param_.expand_times.size();
   }
@@ -44,8 +44,22 @@ bool ExpandOpLite::CheckShape() const {
 
 bool ExpandOpLite::InferShapeImpl() const {
   DDim out_dims(param_.X->dims());
-  for (size_t i = 0; i < param_.expand_times.size(); ++i) {
-    out_dims[i] *= param_.expand_times[i];
+  if ((param_.ExpandTimes != nullptr) && (param_.ExpandTimes->numel())) {
+    auto ExpandTimes_value = param_.ExpandTimes->data<int32_t>();
+    for (size_t i = 0; i < param_.ExpandTimes->numel(); ++i) {
+      out_dims[i] *= (ExpandTimes_value[i]);
+    }
+  } else if (param_.expand_times_tensor.size()) {
+    for (size_t i = 0; i < param_.expand_times_tensor.size(); ++i) {
+      auto ExpandTimes_value = param_.expand_times_tensor[i]->data<int32_t>();
+      for (size_t j = 0; j < param_.expand_times_tensor[i]->numel(); ++j) {
+        out_dims[i + j] *= (ExpandTimes_value[j]);
+      }
+    }
+  } else {
+    for (size_t i = 0; i < param_.expand_times.size(); ++i) {
+      out_dims[i] *= param_.expand_times[i];
+    }
   }
   param_.Out->Resize(out_dims);
   return true;
@@ -57,14 +71,21 @@ bool ExpandOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.X = GetVar<lite::Tensor>(scope, X_name);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
 
-  if (opdesc.HasInput("ExpandTimes")) {
-    param_.ExpandTimes = scope->FindTensor("ExpandTimes");
+  if (opdesc.HasInput("ExpandTimes") && !opdesc.Input("ExpandTimes").empty()) {
+    auto ExpandTimes_name = opdesc.Input("ExpandTimes").front();
+    param_.ExpandTimes = GetMutableVar<lite::Tensor>(scope, ExpandTimes_name);
   }
-  if (opdesc.HasInput("expand_times_tensor")) {
-    param_.expand_times_tensor = scope->FindTensorList("expand_times_tensor");
+
+  if (opdesc.HasInput("expand_times_tensor") &&
+      !opdesc.Input("expand_times_tensor").empty()) {
+    for (auto expand_times_tensor_name : opdesc.Input("expand_times_tensor")) {
+      param_.expand_times_tensor.push_back(
+          GetMutableVar<lite::Tensor>(scope, expand_times_tensor_name));
+    }
   }
 
   param_.expand_times = opdesc.GetAttr<std::vector<int>>("expand_times");
+
   return true;
 }
 

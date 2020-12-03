@@ -31,7 +31,7 @@ TEST(Step_rnn, test_step_rnn_lite_x86) {
   lite_api::CxxConfig config;
   config.set_model_dir(model_dir);
 #ifdef LITE_WITH_X86
-  config.set_x86_math_library_num_threads(1);
+  config.set_x86_math_num_threads(1);
 #endif
   config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kInt64)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},

@@ -32,10 +32,10 @@ void ExpandCompute<T, PType>::Run() {
     for (int64_t i = 0; i < param.ExpandTimes->numel(); i++) {
       expand_times.push_back(expand_times_data[i]);
     }
-  } else if (param.expand_times_tensor != nullptr) {
-    for (size_t i = 0; i < param.expand_times_tensor->size(); i++) {
+  } else if (!param.expand_times_tensor.empty()) {
+    for (size_t i = 0; i < param.expand_times_tensor.size(); i++) {
       expand_times.push_back(
-          param.expand_times_tensor->at(i).template data<int>()[0]);
+          param.expand_times_tensor.at(i)->template data<int>()[0]);
     }
   } else {
     expand_times = param.expand_times;
