@@ -282,7 +282,7 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
   int k_roundup = ROUNDUP(k, KBLOCK_INT8);
   int m_roundup = ROUNDUP(m, hblock);
   int weights_size_per_group = m * k;
-  if (n > 1 && m > 1) {
+  if (n > 1) {
     weights_size_per_group = ((m_roundup * k_roundup + 15) / 16) * 16;
   }
   bool flag_relu = param.fuse_relu;
@@ -529,7 +529,7 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
   int k_roundup = ROUNDUP(k, KBLOCK_INT8);
   int m_roundup = ROUNDUP(m, hblock);
   int weights_size_per_group = m * k;
-  if (n > 1 && m > 1) {
+  if (n > 1) {
     weights_size_per_group = ((m_roundup * k_roundup + 15) / 16) * 16;
   }
 
