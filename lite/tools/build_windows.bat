@@ -222,7 +222,7 @@ set python_path=C:\Python35\python.exe
 IF NOT EXIST "%python_path%" (
     goto input_python_path
 )
-SET /P answer="We checked that %python_path% exists. Using this python path[yes/no]? Type yes will use the python path, while type no will let you input your prefer python path :"
+SET /P answer="We checked that %python_path% exists. Using this python path[yes/no]? Type yes will use the python path, while type no will let you input your prefer python path:"
 set tmp_var=%answer%
 call:remove_space
 if "%tmp_var%"=="yes" (
