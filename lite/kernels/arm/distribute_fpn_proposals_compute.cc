@@ -45,6 +45,17 @@ static inline T BBoxArea(const T* box, bool normalized) {
   }
 }
 
+inline std::vector<size_t> GetLodFromRoisNum(const Tensor* rois_num) {
+  std::vector<size_t> rois_lod;
+  auto* rois_num_data = rois_num->data<int>();
+
+  rois_lod.push_back(static_cast<size_t>(0));
+  for (int i = 0; i < rois_num->numel(); ++i) {
+    rois_lod.push_back(rois_lod.back() + static_cast<size_t>(rois_num_data[i]));
+  }
+  return rois_lod;
+}
+
 void DistributeFpnProposalsCompute::Run() {
   auto& param = Param<operators::DistributeFpnProposalsParam>();
   const lite::Tensor* fpn_rois = param.fpn_rois;
@@ -56,9 +67,15 @@ void DistributeFpnProposalsCompute::Run() {
   int refer_scale = param.refer_scale;
   int num_level = max_level - min_level + 1;
 
-  CHECK_EQ(fpn_rois->lod().size(), 1);
-  auto fpn_rois_lod = fpn_rois->lod().back();
-  int fpn_rois_num = fpn_rois_lod[fpn_rois_lod.size() - 1];
+  std::vector<size_t> fpn_rois_lod;
+  int fpn_rois_num;
+  if (param.rois_num) {
+    fpn_rois_lod = GetLodFromRoisNum(param.rois_num);
+  } else {
+    fpn_rois_lod = fpn_rois->lod().back();
+  }
+  fpn_rois_num = fpn_rois_lod[fpn_rois_lod.size() - 1];
+
   std::vector<int> target_level;
   // record the number of rois in each level
   std::vector<int> num_rois_level(num_level, 0);
@@ -125,6 +142,16 @@ void DistributeFpnProposalsCompute::Run() {
   for (int i = 0; i < fpn_rois_num; ++i) {
     restore_index_data[restore_index_inter[i]] = i;
   }
+  if (param.multi_rois_num.size() > 0) {
+    int batch_size = fpn_rois_lod.size() - 1;
+    for (int i = 0; i < num_level; ++i) {
+      int* rois_num_data = param.multi_rois_num[i]->mutable_data<int>();
+      for (int j = 0; j < batch_size; ++j) {
+        rois_num_data[j] = static_cast<int>(multi_fpn_rois_lod0[i][j + 1] -
+                                            multi_fpn_rois_lod0[i][j]);
+      }
+    }
+  }
   // merge lod information into LoDTensor
   for (int i = 0; i < num_level; ++i) {
     lite::LoD lod;
@@ -146,6 +173,8 @@ REGISTER_LITE_KERNEL(distribute_fpn_proposals,
                      paddle::lite::kernels::arm::DistributeFpnProposalsCompute,
                      def)
     .BindInput("FpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("RoisNum", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("MultiFpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("RestoreIndex", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

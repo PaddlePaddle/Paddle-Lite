@@ -37,6 +37,9 @@ bool DistributeFpnProposalsOpLite::InferShapeImpl() const {
   for (int i = 0; i < num_out_rois; i++) {
     param_.multi_fpn_rois[i]->Resize({-1, 4});
   }
+  for (int i = 0; i < num_out_rois; i++) {
+    param_.multi_rois_num[i]->Resize({-1});
+  }
   param_.restore_index->Resize({-1, 1});
   return true;
 }
@@ -46,11 +49,25 @@ bool DistributeFpnProposalsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   auto fpn_rois = op_desc.Input("FpnRois").front();
   param_.fpn_rois = scope->FindVar(fpn_rois)->GetMutable<lite::Tensor>();
 
+  if (op_desc.HasInput("RoisNum")) {
+    auto var = scope->FindVar(op_desc.Input("RoisNum").front());
+    if (var != nullptr) {
+      param_.rois_num = var->GetMutable<lite::Tensor>();
+    }
+  }
+
   auto multi_fpn_rois = op_desc.Output("MultiFpnRois");
   for (const auto &name : multi_fpn_rois) {
     param_.multi_fpn_rois.push_back(
         scope->FindVar(name)->GetMutable<lite::Tensor>());
   }
+
+  auto multi_rois_num = op_desc.Output("MultiLevelRoIsNum");
+  for (const auto &name : multi_rois_num) {
+    param_.multi_rois_num.push_back(
+        scope->FindVar(name)->GetMutable<lite::Tensor>());
+  }
+
   auto restore_index = op_desc.Output("RestoreIndex").front();
   param_.restore_index =
       scope->FindVar(restore_index)->GetMutable<lite::Tensor>();
