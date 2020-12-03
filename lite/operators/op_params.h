@@ -222,6 +222,15 @@ struct StackParam : ParamBase {
   int axis{0};
 };
 
+// For Unstack Op
+struct UnstackParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  std::vector<lite::Tensor*> Out{};
+
+  int axis{0};
+  int num{1};
+};
+
 // For Power Op
 struct PowerParam : ParamBase {
   const lite::Tensor* X{};
