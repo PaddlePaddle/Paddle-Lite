@@ -18,7 +18,11 @@ include(lite_utils)
 
 set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(CMAKE_CXX_STANDARD 11)
+if(LITE_WITH_XTCL)
+    set(CMAKE_CXX_STANDARD 14)
+else()
+    set(CMAKE_CXX_STANDARD 11)
+endif()
 
 include(system)
 include(cross_compiling/preproject)
