@@ -365,15 +365,10 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
   kernel_ = context.cl_context()->GetKernel(kernel_key.str());
 
-#ifdef LITE_WITH_LOG
-  VLOG(4) << "kernel_key: " << kernel_key.str();
-  VLOG(4) << "kernel ready ... " << kernel_key.str();
-#endif
-
   auto tuned_map_key = GenerateTunedKey();
   cl::NDRange lws_in_map = cl::NullRange;
   if (context.cl_context()->HasTunedLocalWorkSizeMap(tuned_map_key,
-                                                     lws_in_map)) {
+                                                     &lws_in_map)) {
     local_work_size_ = lws_in_map;
     return;
   }

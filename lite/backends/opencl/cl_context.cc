@@ -146,10 +146,10 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
   // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
   if (generate_lws_type == 0) {
     // 0 - None: nothing to do
-  } else if (generate_lws_type == 1 || generate_lws_type == 2 ||
-             generate_lws_type == 3) {
+  } else if (generate_lws_type == 1) {
+    // 1 - Rapid
     for (auto tune_reverse : {true, false}) {
-      for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
+      for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor += 2) {
         tmp_lws = DefaultLocalWorkSize(
             global_work_size, max_work_size, divisor, tune_reverse);
         if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
@@ -160,9 +160,11 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
         lwss.emplace_back(tmp_lws);
       }
     }
-  } else if (generate_lws_type == 2) {
-    for (auto tune_reverse : {true, /*false*/}) {
-      for (size_t divisor = 1; divisor < /*max_divisor=*/7; divisor++) {
+  } else if (generate_lws_type == 2 || generate_lws_type == 3) {
+    // 2 - Normal
+    // 3 - Exhaustive
+    for (auto tune_reverse : {true, false}) {
+      for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
         tmp_lws = DefaultLocalWorkSize(
             global_work_size, max_work_size, divisor, tune_reverse);
         if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
@@ -247,10 +249,11 @@ void CLContext::SetTunedLocalWorkSizeMap(const std::string &key,
   auto it = tuned_lwss_map_.find(key);
   if (it != tuned_lwss_map_.end()) {
     auto lws_old = it->second;
-    LOG(FATAL) << "===================================> found lws_old with "
-                  "same key <======================================";
-    << "\n lws_old:" << lws_old[0] << "," << lws_old[1] << "," << lws_old[2];
-    << "\n lws_new:" << lws[0] << "," << lws[1] << "," << lws[2];
+    LOG(FATAL) << "===> found lws_old with same key, please add more detailed "
+                  "info to key <==="
+               << "\n lws_old:" << lws_old[0] << "," << lws_old[1] << ","
+               << lws_old[2] << "\n lws_new:" << lws[0] << "," << lws[1] << ","
+               << lws[2];
   }
   tuned_lwss_map_.insert(std::pair<std::string, cl::NDRange>(key, lws));
 }
