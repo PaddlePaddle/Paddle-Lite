@@ -59,6 +59,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void PrintConvInfo();
   void SetGlobalWorkSize();
   void SetLocalWorkSize(size_t repeats = 4);
+  std::string GenerateTunedKey();
   void Conv2d1x1opt();
   void Conv2d3x3();
   void Conv2d3x3opt();
