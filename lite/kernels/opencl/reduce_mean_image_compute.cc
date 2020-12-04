@@ -100,14 +100,9 @@ class ReduceMeanComputeImage2D : public KernelLite<TARGET(kOpenCL),
       auto& out_dims = reduce_mean_param_->Out->dims();
 
       // padding out_dims to 4-dims
-      out_nchw_ = out_dims.Vectorize();
-      if (!(reduce_mean_param_->keep_dim)) {
-        for (auto k = 0; k < axis_.size(); ++k) {
-          out_nchw_.insert(out_nchw_.cbegin() + axis_[k], 1);
-        }
-      }
-      while (out_nchw_.size() < 4) {
-        out_nchw_.insert(out_nchw_.cbegin(), 1);
+      out_nchw_ = in_nchw_;
+      for (auto k = 0; k < axis_.size(); k++) {
+        out_nchw_[axis_[k]] = 1;
       }
 
       int hb = out_nchw_[0] * out_nchw_[2];
