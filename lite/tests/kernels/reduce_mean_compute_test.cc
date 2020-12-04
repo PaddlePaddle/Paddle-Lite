@@ -313,7 +313,7 @@ class ReduceMeanComputeTester : public arena::TestCase {
   }
 };
 
-void test_reduce_mean(Place place) {
+void test_reduce_mean(Place place, float abs_err) {
   std::vector<std::vector<int>> reduce_dim{
       {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
   for (auto n : {1, 3}) {
@@ -348,7 +348,7 @@ void test_reduce_mean(Place place) {
                 std::unique_ptr<arena::TestCase> tester(
                     new ReduceMeanComputeTester(
                         place, "def", dim, keep_dim, x_dims));
-                arena::Arena arena(std::move(tester), place, 2e-5);
+                arena::Arena arena(std::move(tester), place, abs_err);
                 arena.TestPrecision();
               }
             }
@@ -360,14 +360,19 @@ void test_reduce_mean(Place place) {
 }
 
 TEST(ReduceMean, precision) {
+  Place place;
+  float abs_err = 2e-5;
 #ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
-  test_reduce_mean(place);
+  place = Place(TARGET(kX86));
 #endif
 #ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_reduce_mean(place);
+  place = Place(TARGET(kARM));
 #endif
+#ifdef LITE_WITH_OPENCL
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_err = 2e-2;  // opencl fp16 torlerance
+#endif
+  test_reduce_mean(place, abs_err);
 }
 
 }  // namespace lite
