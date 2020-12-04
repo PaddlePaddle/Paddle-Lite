@@ -24,7 +24,9 @@ const int MALLOC_ALIGN = 64;
 void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
   char* p = static_cast<char*>(malloc(offset + size));
-  CHECK(p);
+  CHECK(p) << "Error occurred in TargetWrapper::Malloc period: no enough for "
+              "mallocing "
+           << size << " bytes.";
   void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) &
                                     (~(MALLOC_ALIGN - 1)));
   static_cast<void**>(r)[-1] = p;
@@ -39,6 +41,13 @@ void TargetWrapper<TARGET(kHost)>::MemcpySync(void* dst,
                                               const void* src,
                                               size_t size,
                                               IoDirection dir) {
+  CHECK(dst) << "Error: the destination of MemcpySync can not be nullptr.";
+  CHECK(*(static_cast<char*>(dst) + size))
+      << "MemcpySync Error: not enough space for destnation.";
+  CHECK(src) << "Error: the source of MemcpySync can not be nullptr.";
+  CHECK(*(static_cast<const char*>(src) + size)) << "Error: size of MemcpySync "
+                                                    "can not be greater than "
+                                                    "the size of source.";
   memcpy(dst, src, size);
 }
 
