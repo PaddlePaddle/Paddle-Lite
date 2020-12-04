@@ -45,13 +45,14 @@ static inline T BBoxArea(const T* box, bool normalized) {
   }
 }
 
-inline std::vector<size_t> GetLodFromRoisNum(const Tensor* rois_num) {
-  std::vector<size_t> rois_lod;
+inline std::vector<uint64_t> GetLodFromRoisNum(const Tensor* rois_num) {
+  std::vector<uint64_t> rois_lod;
   auto* rois_num_data = rois_num->data<int>();
 
-  rois_lod.push_back(static_cast<size_t>(0));
+  rois_lod.push_back(static_cast<uint64_t>(0));
   for (int i = 0; i < rois_num->numel(); ++i) {
-    rois_lod.push_back(rois_lod.back() + static_cast<size_t>(rois_num_data[i]));
+    rois_lod.push_back(rois_lod.back() +
+                       static_cast<uint64_t>(rois_num_data[i]));
   }
   return rois_lod;
 }
@@ -67,7 +68,7 @@ void DistributeFpnProposalsCompute::Run() {
   int refer_scale = param.refer_scale;
   int num_level = max_level - min_level + 1;
 
-  std::vector<size_t> fpn_rois_lod;
+  std::vector<uint64_t> fpn_rois_lod;
   int fpn_rois_num;
   if (param.rois_num) {
     fpn_rois_lod = GetLodFromRoisNum(param.rois_num);
