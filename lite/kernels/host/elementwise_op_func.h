@@ -126,7 +126,7 @@ BroadcastType get_broadcast_type(DimValue_t *x_dims,
   int pos = dim_size - 1;
   while (pos >= 0 && x_dims[pos] == y_dims[pos] && x_dims[pos] == 1) {
     if (z_dims[pos] != 1) {
-      LOG(FATAL) << "Neither X and Y is continuous";
+      LOG(FATAL) << "Unsupported broadcast type detected.";
       // Note: This is the 4th type of broadcast, It is not implemented to
       // reduce code complexity
       // e.g.
