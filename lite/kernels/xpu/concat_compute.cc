@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/concat_compute.h"
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -29,45 +30,22 @@ void ConcatCompute::Run() {
   auto out = param.output;
   int64_t axis = param.axis;
 
-  int n = ins.size();
-  int h = 1;
-  int w_except_axis = 1;
-  CHECK(n <= 8) << "XPU only surpport at most 8 tensors for now";
-  for (int i = 0; i < axis; ++i) {
-    h *= (ins[0]->dims())[i];
-  }
-  for (int i = axis + 1; i < ins[0]->dims().size(); ++i) {
-    w_except_axis *= (ins[0]->dims())[i];
-  }
-  CHECK(axis >= 0) << "concat: axis shoud >= 0!";
-  CHECK(axis < ins[0]->dims().size()) << "concat: axis shoud < ins[0]->dims()!";
-  for (int i = 0; i < n; ++i) {
-    int hh = 1;
-    int ww = 1;
-    for (int j = 0; j < axis; ++j) {
-      hh *= (ins[i]->dims())[j];
+  std::vector<const float*> x_list;
+  std::vector<std::vector<int>> xdims_list;
+  for (int i = 0; i < ins.size(); i++) {
+    xdims_list.push_back(std::vector<int>());
+    for (int j = 0; j < ins[i]->dims().size(); j++) {
+      xdims_list[i].push_back(ins[i]->dims()[j]);
     }
-    for (int j = axis + 1; j < ins[i]->dims().size(); ++j) {
-      ww *= (ins[i]->dims())[j];
-    }
-    CHECK(hh == h) << "concat: h should be eual!";
-    CHECK(ww == w_except_axis) << "concat: w should be eual except for axis!";
+    x_list.push_back(ins[i]->data<float>());
   }
 
-  int in_w_host[n];      // NOLINT
-  const float* ptrs[n];  // NOLINT
+  int r = xdnn::concat<float>(ctx.GetRawContext(),
+                              x_list,
+                              out->mutable_data<float>(TARGET(kXPU)),
+                              xdims_list,
+                              axis);
 
-  for (int i = 0; i < n; ++i) {
-    ptrs[i] = ins[i]->data<float>();
-    in_w_host[i] = w_except_axis * (ins[i]->dims())[axis];
-  }
-
-  int r = xdnn::concat<float>(ctx.GetRawContext(), /* ctx */
-                              h,                   /* height */
-                              in_w_host,           /* width_x */
-                              n,                   /* n */
-                              ptrs,                /* lm_ptrs */
-                              out->mutable_data<float>(TARGET(kXPU)) /*y*/);
   CHECK_EQ(r, 0);
 }
 
