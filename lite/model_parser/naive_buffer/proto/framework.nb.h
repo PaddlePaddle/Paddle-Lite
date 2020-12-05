@@ -173,6 +173,11 @@ class BlockDesc : public StructBuilder {
   }
 };
 
+class OpVersionMap : public StructBuilder {
+  // op_version_map is not implemented on naive_buffer as
+  // it's not useful in inference period.
+};
+
 class ProgramDesc : public StructBuilder {
  public:
   explicit ProgramDesc(BinaryTable* table) : StructBuilder(table) {

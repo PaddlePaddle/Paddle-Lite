@@ -49,6 +49,7 @@ else()
   add_kernel(lrn_compute_xpu XPU extra SRCS lrn_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(topk_compute_xpu XPU extra SRCS topk_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(im2sequence_compute_xpu XPU extra SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(unstack_compute_xpu XPU extra SRCS unstack_compute.cc DEPS ${lite_kernel_deps})
 
   # extra(fused kernel)
   add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc DEPS ${lite_kernel_deps})

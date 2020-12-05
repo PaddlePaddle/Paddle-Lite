@@ -14,9 +14,10 @@
 
 #pragma once
 
+#include <map>
+#include <string>
 #include "lite/model_parser/base/traits.h"
 #include "lite/utils/cp_logging.h"
-
 namespace paddle {
 namespace lite {
 
@@ -25,6 +26,11 @@ class ProgramDescReadAPI {
   virtual size_t BlocksSize() const = 0;
   virtual bool HasVersion() const = 0;
   virtual int64_t Version() const = 0;
+
+  virtual bool HasOpVersionMap() const = 0;
+
+  template <typename T>
+  T* GetOpVersionMap();
 
   template <typename T>
   T* GetBlock(int32_t idx);
@@ -38,7 +44,12 @@ class ProgramDescReadAPI {
 class ProgramDescWriteAPI {
  public:
   virtual void ClearBlocks() { LITE_MODEL_INTERFACE_NOT_IMPLEMENTED; }
+
   virtual void SetVersion(int64_t version) {
+    LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+  }
+
+  void SetOpVersionMap(std::map<std::string, int32_t> op_version_map) {
     LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
   }
 

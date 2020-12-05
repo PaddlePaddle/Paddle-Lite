@@ -144,21 +144,19 @@ table BlockDesc {
   forward_block_idx:int = -1;
 }
 
-table CompatibleInfo {
-  version:string (required);
-  type:paddle.lite.fbs.proto.CompatibleInfo_.Type;
+table OpVersion {
+  version:int;
 }
 
-table OpCompatibleMap {
-  pair:[paddle.lite.fbs.proto.OpCompatibleMap_.OpCompatiblePair];
-  default_required_version:string;
+table OpVersionMap {
+  pair:[paddle.lite.fbs.proto.OpVersionMap_.OpVersionPair];
 }
 
-namespace paddle.lite.fbs.proto.OpCompatibleMap_;
+namespace paddle.lite.fbs.proto.OpVersionMap_;
 
-table OpCompatiblePair {
+table OpVersionPair {
   op_name:string (required, key);
-  compatible_info:paddle.lite.fbs.proto.CompatibleInfo (required);
+  op_version:paddle.lite.fbs.proto.OpVersion (required);
 }
 
 namespace paddle.lite.fbs.proto;
@@ -166,7 +164,7 @@ namespace paddle.lite.fbs.proto;
 table ProgramDesc {
   blocks:[paddle.lite.fbs.proto.BlockDesc];
   version:paddle.lite.fbs.proto.Version;
-  op_compatible_map:paddle.lite.fbs.proto.OpCompatibleMap;
+  op_version_map:paddle.lite.fbs.proto.OpVersionMap;
 }
 
 root_type paddle.lite.fbs.proto.ProgramDesc;
