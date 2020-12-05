@@ -18,8 +18,10 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "HiAiModelManagerService.h"  // NOLINT
-#include "hiai_ir_build.h"            // NOLINT
+#include "HiAiModelManagerService.h"
+#ifdef LITE_SUBGRAPH_ONLINE_MODE
+#include "hiai_ir_build.h"  // NOLINT
+#endif
 
 namespace paddle {
 namespace lite {
@@ -38,25 +40,28 @@ class Device {
   int model_type() { return model_type_; }
   int device_type() { return device_type_; }
 
-  // Load the HiAI om model from buffer, rebuild the model if it's incompatible
-  // with the current device, then create a HiAI model manager client(from HiAI
-  // Server) to run inference
-  std::shared_ptr<hiai::AiModelMngerClient> Load(
-      const std::string& model_name,
-      std::vector<char>* model_buffer,
-      bool* model_comp);
-  // Build the HiAI IR graph to om model, return HiAI model manager client to
-  // load om model and run inference.
-  bool Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
-             std::vector<ge::Operator>& output_nodes,  // NOLINT
-             std::vector<char>* model_buffer);
-
  private:
   int freq_level_{3};
   int framework_type_{0};
   int model_type_{0};
   int device_type_{0};
 };
+
+// Load the HiAI om model from buffer, rebuild the model if it's incompatible
+// with the current device, and create a HiAI model manager client from the HiAI
+// Server for inference.
+std::shared_ptr<hiai::AiModelMngerClient> LoadOMModel(
+    const std::string& model_name,
+    std::vector<char>* model_buffer,
+    bool* model_comp);
+
+// Build the HiAI IR graph to om model, return a HiAI model manager client to
+// load om model for inference.
+#ifdef LITE_SUBGRAPH_ONLINE_MODE
+bool BuildIRModel(std::vector<ge::Operator>& input_nodes,   // NOLINT
+                  std::vector<ge::Operator>& output_nodes,  // NOLINT
+                  std::vector<char>* model_buffer);
+#endif
 
 }  // namespace npu
 }  // namespace lite

@@ -19,7 +19,7 @@ namespace paddle {
 namespace lite {
 namespace npu {
 
-std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
+std::shared_ptr<hiai::AiModelMngerClient> LoadOMModel(
     const std::string& model_name,
     std::vector<char>* model_buffer,
     bool* model_comp) {
@@ -38,7 +38,11 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
   }
   // Check model compatibility
   auto model_desc = std::make_shared<hiai::AiModelDescription>(
-      model_name, freq_level(), framework_type(), model_type(), device_type());
+      model_name,
+      Device::Global().freq_level(),
+      Device::Global().framework_type(),
+      Device::Global().model_type(),
+      Device::Global().device_type());
   model_desc->SetModelBuffer(
       reinterpret_cast<const void*>(model_buffer->data()),
       model_buffer->size());
@@ -63,7 +67,7 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
       std::vector<hiai::MemBuffer*> org_model_buffers;
       org_model_buffers.push_back(org_model_buffer);
       hiai::MemBuffer* new_model_buffer = model_builder->OutputMemBufferCreate(
-          framework_type(), org_model_buffers);
+          Device::Global().framework_type(), org_model_buffers);
       // VLOG(3) << "[NPU] new model buffer memeory size is " <<
       // new_model_buffer->GetMemBufferSize();
       if (new_model_buffer) {
@@ -105,9 +109,10 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
   return model_client;
 }
 
-bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
-                   std::vector<ge::Operator>& output_nodes,  // NOLINT
-                   std::vector<char>* model_buffer) {
+#ifdef LITE_SUBGRAPH_ONLINE_MODE
+bool BuildIRModel(std::vector<ge::Operator>& input_nodes,   // NOLINT
+                  std::vector<ge::Operator>& output_nodes,  // NOLINT
+                  std::vector<char>* model_buffer) {
   // Convert the HiAI IR graph to the HiAI om model
   ge::Graph ir_graph("graph");
   ir_graph.SetInputs(input_nodes).SetOutputs(output_nodes);
@@ -134,6 +139,7 @@ bool Device::Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
   VLOG(3) << "[NPU] Build model done.";
   return true;
 }
+#endif
 
 }  // namespace npu
 }  // namespace lite
