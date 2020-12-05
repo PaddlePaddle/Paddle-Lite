@@ -299,7 +299,7 @@ void ConvImageCompute::PrepareForRun() {
       std::string leaky_relu_alpha_str =
           std::to_string(conv_param_->activation_param.Leaky_relu_alpha);
       build_options_single +=
-          " -DLEAKY_RELU -DLEAKY_RELU_ALPHA=" + leaky_relu_alpha_str;
+          " -DLEAKY_RELU -DLEAKY_RELU_ALPHA=" + leaky_relu_alpha_str + "f";
     } else {
       LOG(FATAL) << "Unsupported activation type:"
                  << static_cast<int>(conv_param_->activation_param.active_type);
