@@ -29,6 +29,7 @@ std::shared_ptr<hiai::AiModelMngerClient> Device::Load(
     LOG(WARNING) << "[NPU] Init hiai model client failed!";
     return nullptr;
   }
+
   // Check HiAI DDK version
   const char* ddk_version = model_client->GetVersion();
   if (ddk_version) {
