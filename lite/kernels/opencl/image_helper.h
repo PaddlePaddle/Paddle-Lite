@@ -66,9 +66,7 @@ static std::vector<size_t> DefaultGlobalWorkSize(const DDim& image_dim,
   } else if (image_dim.size() == 2) {
     auto h = image_dim[0];
     auto w = image_dim[1];
-    return {1,
-            static_cast<unsigned int>(image_shape[0]),
-            static_cast<unsigned int>(image_shape[1])};
+    return {1, static_cast<unsigned int>(h), static_cast<unsigned int>(w)};
   } else if (image_dim.size() == 1) {
     return {1, static_cast<unsigned int>(image_shape[0]), 1};
   } else if (image_dim.size() == 3) {

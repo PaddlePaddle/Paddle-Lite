@@ -112,15 +112,15 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
     auto x_dims = expand_param_->X->dims();
 
-    int in_n = x_dims[0];
-    int in_c = x_dims[1];
+    //  int in_n = x_dims[0];
+    //  int in_c = x_dims[1];
     int in_h = x_dims[2];
     int in_w = x_dims[3];
 
     auto out_dims = expand_param_->Out->dims();
 
-    int out_n = out_dims[0];
-    int out_c = out_dims[1];
+    //  int out_n = out_dims[0];
+    //  int out_c = out_dims[1];
     int out_h = out_dims[2];
     int out_w = out_dims[3];
 

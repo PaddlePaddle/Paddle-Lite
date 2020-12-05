@@ -94,7 +94,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     auto* x = grid_param_->x;
-    auto* grid = grid_param_->grid;
+    // auto* grid = grid_param_->grid;
     auto* out = grid_param_->out;
 
     auto out_dims = out->dims();
