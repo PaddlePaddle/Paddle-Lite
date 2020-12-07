@@ -59,7 +59,7 @@ inline bool is_fast_broadcast(const DDim& x_dims,
   }
   DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
   axis = (y_dim_trim.size() == 0) ? x_dims.size() : axis;
-  if (x_dims.size() != (y_dim_trim.size() + axis)) {
+  if (x_dims.size() < (y_dim_trim.size() + axis)) {
     VLOG(4) << "Fast broadcast chk fail, for y's shape size doesnt follow the "
                "axis rule";
     return false;
