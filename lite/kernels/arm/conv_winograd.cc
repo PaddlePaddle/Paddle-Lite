@@ -320,13 +320,21 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
       ws *= 0.25f;
     }
   } else {
-    wino_iw = 6;
-    if (last_function_ == 1) {
+    // wino_iw = 6;
+    // if (last_function_ == 1) {
+    //   return;
+    // }
+    // last_function_ = 1;
+    // for (auto& ws : w_scale_) {
+    //   ws /= 576;
+    // }
+    wino_iw = 4;
+    if (last_function_ == 0) {
       return;
     }
-    last_function_ = 1;
+    last_function_ = 0;
     for (auto& ws : w_scale_) {
-      ws /= 576;
+      ws *= 0.25f;
     }
   }
   last_function_ = -1;
@@ -347,7 +355,13 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
           trans_tmp_ptr);
       break;
     case 6:
-      lite::arm::math::weight_trans_c8_6x6_int8(
+      // lite::arm::math::weight_trans_c8_6x6_int8(
+      //     weights_data_,
+      //     param.filter->template data<int8_t>(),
+      //     ic,
+      //     oc,
+      //     trans_tmp_ptr);
+      lite::arm::math::weight_trans_c8_4x4_int8(
           weights_data_,
           param.filter->template data<int8_t>(),
           ic,
@@ -355,7 +369,13 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
           trans_tmp_ptr);
       break;
     default:
-      lite::arm::math::weight_trans_c8_6x6_int8(
+      // lite::arm::math::weight_trans_c8_6x6_int8(
+      //     weights_data_,
+      //     param.filter->template data<int8_t>(),
+      //     ic,
+      //     oc,
+      //     trans_tmp_ptr);
+      lite::arm::math::weight_trans_c8_4x4_int8(
           weights_data_,
           param.filter->template data<int8_t>(),
           ic,
@@ -395,7 +415,21 @@ void WinogradConv<PRECISION(kInt8), OutType>::Run() {
   if (OutType == PRECISION(kInt8)) {
     auto* o_data = param.output->template mutable_data<int8_t>();
     if (wino_iw == 6) {
-      lite::arm::math::conv_compute_4x4_3x3_int8<int8_t>(i_data,
+      // lite::arm::math::conv_compute_4x4_3x3_int8<int8_t>(i_data,
+      //                                                    o_data,
+      //                                                    bs,
+      //                                                    oc,
+      //                                                    oh,
+      //                                                    ow,
+      //                                                    ic,
+      //                                                    ih,
+      //                                                    iw,
+      //                                                    w_data,
+      //                                                    b_data,
+      //                                                    w_scale_.data(),
+      //                                                    param,
+      //                                                    &ctx);
+      lite::arm::math::conv_compute_2x2_3x3_int8<int8_t>(i_data,
                                                          o_data,
                                                          bs,
                                                          oc,
@@ -410,7 +444,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::Run() {
                                                          param,
                                                          &ctx);
 #ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_compute_4x4_3x3_int8_int8";
+      kernel_func_name_ = "conv_compute_2x2_3x3_int8_int8";
 #endif
     } else {
       lite::arm::math::conv_compute_2x2_3x3_int8<int8_t>(i_data,
@@ -434,7 +468,21 @@ void WinogradConv<PRECISION(kInt8), OutType>::Run() {
   } else {
     auto* o_data = param.output->template mutable_data<float>();
     if (wino_iw == 6) {
-      lite::arm::math::conv_compute_4x4_3x3_int8<float>(i_data,
+      // lite::arm::math::conv_compute_4x4_3x3_int8<float>(i_data,
+      //                                                   o_data,
+      //                                                   bs,
+      //                                                   oc,
+      //                                                   oh,
+      //                                                   ow,
+      //                                                   ic,
+      //                                                   ih,
+      //                                                   iw,
+      //                                                   w_data,
+      //                                                   b_data,
+      //                                                   w_scale_.data(),
+      //                                                   param,
+      //                                                   &ctx);
+      lite::arm::math::conv_compute_2x2_3x3_int8<float>(i_data,
                                                         o_data,
                                                         bs,
                                                         oc,
@@ -449,7 +497,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::Run() {
                                                         param,
                                                         &ctx);
 #ifdef LITE_WITH_PROFILE
-      kernel_func_name_ = "conv_compute_4x4_3x3_int8_float";
+      kernel_func_name_ = "conv_compute_2x2_3x3_int8_float";
 #endif
     } else {
       lite::arm::math::conv_compute_2x2_3x3_int8<float>(i_data,
