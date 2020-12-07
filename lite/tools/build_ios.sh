@@ -82,7 +82,7 @@ function make_ios {
             -DARM_TARGET_OS=$os
 
     make publish_inference -j$NUM_PROC
-    cd -
+    cd $workspace
 }
 
 
