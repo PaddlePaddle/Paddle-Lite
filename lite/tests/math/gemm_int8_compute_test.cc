@@ -122,11 +122,11 @@ bool test_gemm_int8(bool tra,
     scale_merge_int8[j] = scale_merge_fp32[j] / scale_c[0];
   }
 
-  LOG(INFO) << "gemm_int8 M: " << m << ", N: " << n << ", K: " << k
-            << ", transA: " << (tra ? "true" : "false")
-            << ", transB: " << (trb ? "true" : "false")
-            << ", relu_type: " << relu_type
-            << ", bias: " << (has_bias ? "true" : "false");
+  VLOG(4) << "gemm_int8 M: " << m << ", N: " << n << ", K: " << k
+          << ", transA: " << (tra ? "true" : "false")
+          << ", transB: " << (trb ? "true" : "false")
+          << ", relu_type: " << relu_type
+          << ", bias: " << (has_bias ? "true" : "false");
 #ifdef LITE_WITH_ARM
   int lda = tra ? m : k;
   int ldb = trb ? k : n;
@@ -365,13 +365,12 @@ TEST(TestLiteGemmInt8, gemm_prepacked_int8) {
                                                FLAGS_power_mode,
                                                th);
                     if (flag) {
-                      LOG(INFO) << "test m = " << m << ", n=" << n
-                                << ", k=" << k
-                                << ", bias: " << (has_bias ? "true" : "false")
-                                << ", relu: " << relu_type
-                                << ", trans A: " << (tra ? "true" : "false")
-                                << ", trans B: " << (trb ? "true" : "false")
-                                << " passed\n";
+                      VLOG(4) << "test m = " << m << ", n=" << n << ", k=" << k
+                              << ", bias: " << (has_bias ? "true" : "false")
+                              << ", relu: " << relu_type
+                              << ", trans A: " << (tra ? "true" : "false")
+                              << ", trans B: " << (trb ? "true" : "false")
+                              << " passed\n";
                     } else {
                       LOG(FATAL) << "test m = " << m << ", n=" << n
                                  << ", k=" << k
