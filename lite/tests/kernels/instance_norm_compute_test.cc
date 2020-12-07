@@ -33,18 +33,27 @@ class InstanceNormComputeTest : public arena::TestCase {
 
   DDim dims_{{4, 5, 19, 19}};
   float epsilon_ = 1e-5f;
+  bool has_scale_bias_ = true;
 
  public:
   InstanceNormComputeTest(const Place& place,
                           const std::string& alias,
                           DDim dims,
-                          float epsilon)
-      : TestCase(place, alias), dims_(dims), epsilon_(epsilon) {}
+                          float epsilon,
+                          bool has_scale_bias)
+      : TestCase(place, alias),
+        dims_(dims),
+        epsilon_(epsilon),
+        has_scale_bias_(has_scale_bias) {}
 
   void RunBaseline(Scope* scope) override {
-    auto x = scope->FindTensor(x_);
-    auto scale = scope->FindTensor(scale_);
-    auto bias = scope->FindTensor(bias_);
+    const Tensor* x = scope->FindTensor(x_);
+    const float* x_data = x->data<float>();
+    const float* scale_data =
+        has_scale_bias_ ? scope->FindTensor(scale_)->data<float>() : nullptr;
+    const float* bias_data =
+        has_scale_bias_ ? scope->FindTensor(bias_)->data<float>() : nullptr;
+
     auto y = scope->NewTensor(y_);
     auto saved_mean = scope->NewTensor(saved_mean_);
     auto saved_variance = scope->NewTensor(saved_variance_);
@@ -56,9 +65,6 @@ class InstanceNormComputeTest : public arena::TestCase {
     saved_mean->Resize(saved_dim);
     saved_variance->Resize(saved_dim);
 
-    auto x_data = x->data<float>();
-    auto scale_data = scale->data<float>();
-    auto bias_data = bias->data<float>();
     auto y_data = y->mutable_data<float>();
     auto saved_mean_data = saved_mean->mutable_data<float>();
     auto saved_variance_data = saved_variance->mutable_data<float>();
@@ -90,8 +96,8 @@ class InstanceNormComputeTest : public arena::TestCase {
     for (int i = 0; i < n * c; ++i) {
       const float* x_ptr = x_data + i * spatial_size;
       float* y_ptr = y_data + i * spatial_size;
-      float scale_val = scale_data[i % c];
-      float bias_val = bias_data[i % c];
+      float scale_val = scale_data == nullptr ? 1 : scale_data[i % c];
+      float bias_val = bias_data == nullptr ? 0 : bias_data[i % c];
       for (int j = 0; j < spatial_size; ++j) {
         y_ptr[j] = scale_val * (x_ptr[j] - saved_mean_data[i]) *
                        saved_variance_data[i] +
@@ -103,8 +109,10 @@ class InstanceNormComputeTest : public arena::TestCase {
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("instance_norm");
     op_desc->SetInput("X", {x_});
-    op_desc->SetInput("Bias", {bias_});
-    op_desc->SetInput("Scale", {scale_});
+    if (has_scale_bias_) {
+      op_desc->SetInput("Bias", {bias_});
+      op_desc->SetInput("Scale", {scale_});
+    }
     op_desc->SetOutput("Y", {y_});
     op_desc->SetOutput("SavedMean", {saved_mean_});
     op_desc->SetOutput("SavedVariance", {saved_variance_});
@@ -114,16 +122,17 @@ class InstanceNormComputeTest : public arena::TestCase {
   void PrepareData() override {
     std::vector<float> x(dims_.production());
     fill_data_rand(x.data(), -1.f, 1.f, dims_.production());
-
-    DDim scale_bias_dims{{dims_[1]}};
-    std::vector<float> scale(scale_bias_dims.production());
-    fill_data_rand(scale.data(), -1.f, 1.f, scale_bias_dims.production());
-    std::vector<float> bias(scale_bias_dims.production());
-    fill_data_rand(bias.data(), -1.f, 1.f, scale_bias_dims.production());
-
     SetCommonTensor(x_, dims_, x.data());
-    SetCommonTensor(scale_, scale_bias_dims, scale.data(), {}, true);
-    SetCommonTensor(bias_, scale_bias_dims, bias.data(), {}, true);
+
+    if (has_scale_bias_) {
+      DDim scale_bias_dims{{dims_[1]}};
+      std::vector<float> scale(scale_bias_dims.production());
+      fill_data_rand(scale.data(), -1.f, 1.f, scale_bias_dims.production());
+      std::vector<float> bias(scale_bias_dims.production());
+      fill_data_rand(bias.data(), -1.f, 1.f, scale_bias_dims.production());
+      SetCommonTensor(scale_, scale_bias_dims, scale.data(), {}, true);
+      SetCommonTensor(bias_, scale_bias_dims, bias.data(), {}, true);
+    }
   }
 };
 
@@ -133,22 +142,25 @@ void TestInstanceNorm(Place place,
   for (auto& n : {1, 3, 16}) {
     for (auto& c : {1, 4, 16}) {
       for (auto& h : {1, 16, 33, 56}) {
-        for (auto& w : {1, 17, 34, 55}) {
-          DDim dim_in({n, c, h, w});
-          float epsilon = 1e-5f;
-          std::unique_ptr<arena::TestCase> tester(
-              new InstanceNormComputeTest(place, "def", dim_in, epsilon));
+        for (auto& w : {1, 5, 34, 55}) {
+          for (auto& has_scale_bias : {true, false}) {
+            DDim dim_in({n, c, h, w});
+            float epsilon = 1e-5f;
+            std::unique_ptr<arena::TestCase> tester(new InstanceNormComputeTest(
+                place, "def", dim_in, epsilon, has_scale_bias));
 #ifdef LITE_WITH_ARM
-          if (place == TARGET(kARM)) {
-            auto& ctx = tester->context()->As<ARMContext>();
-            ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 4);
-          }
+            if (place == TARGET(kARM)) {
+              auto& ctx = tester->context()->As<ARMContext>();
+              ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 4);
+            }
 #endif
-          arena::Arena arena(std::move(tester), place, abs_error);
-          if (!arena.TestPrecision(ignored_outs)) {
-            LOG(ERROR) << "run n: " << n << ", c: " << c << ", h: " << h
-                       << ", w: " << w;
-            return;
+            arena::Arena arena(std::move(tester), place, abs_error);
+            if (!arena.TestPrecision(ignored_outs)) {
+              LOG(ERROR) << "run n: " << n << ", c: " << c << ", h: " << h
+                         << ", w: " << w
+                         << ", has_scale_bias:" << has_scale_bias;
+              return;
+            }
           }
         }
       }
