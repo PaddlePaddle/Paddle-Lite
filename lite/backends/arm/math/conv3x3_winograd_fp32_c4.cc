@@ -1350,9 +1350,8 @@ void output_trans_c4_post_4x6(const float* src,
     dest2 = vaddq_f32(dest2, bias);
     dest3 = vaddq_f32(dest3, bias);
   }
-  s
 
-      vst1q_f32(dest, dest0);
+  vst1q_f32(dest, dest0);
   vst1q_f32(dest + dest_stride, dest1);
   vst1q_f32(dest + dest_stride * 2, dest2);
   vst1q_f32(dest + dest_stride * 3, dest3);
