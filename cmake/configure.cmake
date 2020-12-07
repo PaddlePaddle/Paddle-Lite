@@ -158,6 +158,10 @@ if (LITE_WITH_XPU)
     endif()
 endif()
 
+if (LITE_SUBGRAPH_ONLINE_MODE)
+    add_definitions("-DLITE_SUBGRAPH_ONLINE_MODE")
+endif()
+
 if (LITE_WITH_OPENCL)
     add_definitions("-DLITE_WITH_OPENCL")
 endif()

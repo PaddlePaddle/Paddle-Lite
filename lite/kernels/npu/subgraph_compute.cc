@@ -18,12 +18,13 @@
 #include <algorithm>
 #include <functional>
 #include <utility>
-#include "hiai_ir_build.h"  // NOLINT
 #include "lite/backends/npu/device.h"
 #include "lite/core/op_registry.h"
+#ifdef LITE_SUBGRAPH_ONLINE_MODE
 #include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/paddle_use_bridges.h"
 #include "lite/kernels/npu/bridges/utility.h"
+#endif
 #include "lite/utils/io.h"
 #include "lite/utils/md5.h"
 
@@ -77,7 +78,7 @@ bool DeviceProgram::LoadFromCacheFile(
   }
   bool model_comp = false;
   model_client_ =
-      lite::npu::Device::Global().Load(model_name_, &model_buffer, &model_comp);
+      lite::npu::LoadOMModel(model_name_, &model_buffer, &model_comp);
   if (!model_client_) {
     LOG(WARNING) << "[NPU] Load model failed!";
     return false;
@@ -121,6 +122,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     const std::vector<std::vector<int64_t>>& origin_idims,
     const std::vector<Tensor*>& origin_otensors,
     const std::string& model_cache_dir) {
+#ifdef LITE_SUBGRAPH_ONLINE_MODE
   // Generate the model name if not initialized
   if (model_name_.empty()) {
     model_name_ = GenerateModelName(input_names, output_names, origin_idims);
@@ -164,23 +166,21 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   }
   // Build the HiAI IR graph to the HiAI om model
   std::vector<char> model_buffer;
-  if (!lite::npu::Device::Global().Build(
-          device_inodes, device_onodes, &model_buffer)) {
+  if (!lite::npu::BuildIRModel(device_inodes, device_onodes, &model_buffer)) {
     LOG(WARNING) << "[NPU] Build model failed!";
     return false;
   }
   // Load the HiAI om model and create a HiAI model manager client(from HiAI
-  // Service) to run inference.
+  // Service) for inference.
   bool model_comp = true;
   model_client_ =
-      lite::npu::Device::Global().Load(model_name_, &model_buffer, &model_comp);
+      lite::npu::LoadOMModel(model_name_, &model_buffer, &model_comp);
   if (!model_client_) {
     LOG(WARNING) << "[NPU] Load model failed!";
     return false;
   }
   // Do not check model compatibility because it assume that the cached om model
   // is always compatible with the current device
-  // Update the precison and dimensions of the origin output tensors
   // Update the precison and dimensions of the origin output tensors
   CHECK_EQ(origin_otensors.size(), output_names.size());
   origin_otypes_.resize(output_names.size());
@@ -216,6 +216,11 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     }
   }
   return true;
+#else
+  CHECK(false) << "[NPU] Building OM model from IRGraph is disabled, set "
+                  "'subgraph_online_mode=ON' and rebuild again.";
+  return false;
+#endif
 }
 
 bool DeviceProgram::ShareBufferWithOriginTensors(

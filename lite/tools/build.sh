@@ -36,6 +36,7 @@ RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 LITE_WITH_ARM_LANG=OFF
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
+SUBGRAPH_ONLINE_MODE=ON
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -154,6 +155,7 @@ function make_tiny_publish_so {
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
+      -DLITE_SUBGRAPH_ONLINE_MODE=$SUBGRAPH_ONLINE_MODE \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -251,6 +253,7 @@ function make_full_publish_so {
       -DLITE_WITH_TRAIN=$BUILD_TRAIN \
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
+      -DLITE_SUBGRAPH_ONLINE_MODE=$SUBGRAPH_ONLINE_MODE \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -289,6 +292,7 @@ function make_all_tests {
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
+      -DLITE_SUBGRAPH_ONLINE_MODE=$SUBGRAPH_ONLINE_MODE \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -437,6 +441,7 @@ function print_usage {
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
     echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
+    echo -e "--subgraph_online_mode: (OFF|ON, default: ON); controls whether to convert Paddle Ops to target IR(such as HiAI IR) and build model online."
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
@@ -501,7 +506,7 @@ function main {
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
-		;;
+                ;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 shift
@@ -575,6 +580,10 @@ function main {
                 ;;
             --ios_deployment_target=*)
                 IOS_DEPLOYMENT_TARGET="${i#*=}"
+                shift
+                ;;
+            --subgraph_online_mode=*)
+                SUBGRAPH_ONLINE_MODE="${i#*=}"
                 shift
                 ;;
             tiny_publish)

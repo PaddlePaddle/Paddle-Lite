@@ -29,6 +29,8 @@ HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://
 WITH_OPENCL=OFF
 # options of adding training ops
 WITH_TRAIN=OFF
+# controls whether to convert Paddle Ops to target IR(such as HiAI IR) and build model online
+SUBGRAPH_ONLINE_MODE=ON
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -154,6 +156,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DLITE_SUBGRAPH_ONLINE_MODE=$SUBGRAPH_ONLINE_MODE \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -204,6 +207,7 @@ function make_full_publish_so {
       -DLITE_WITH_CV=$WITH_CV \
       -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
       -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DLITE_SUBGRAPH_ONLINE_MODE=$SUBGRAPH_ONLINE_MODE \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -256,6 +260,7 @@ function print_usage {
     echo -e "|     --huawei_kirin_npu_sdk_root: (path to huawei HiAi DDK file) required when compiling npu library                                  |"
     echo -e "|             you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/                                   |"
     echo -e "|  detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html                      |"
+    echo -e "|     --subgraph_online_mode: (OFF|ON); controls whether to convert Paddle Ops to target IR(such as HiAI IR) and build model online    |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of opencl library compiling:(armv8, gcc, c++_static)                                                                      |"
     echo -e "|     ./lite/tools/build_android.sh --with_opencl=ON                                                                                   |"
@@ -348,6 +353,11 @@ function main {
                 ;;
             --huawei_kirin_npu_sdk_root=*)
                 HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # converting Paddle Ops to target IR(such as HiAI IR) and build model online
+            --subgraph_online_mode=*)
+                SUBGRAPH_ONLINE_MODE="${i#*=}"
                 shift
                 ;;
             # compiling result contains both light_api and cxx_api lib.
