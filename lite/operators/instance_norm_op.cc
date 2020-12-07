@@ -28,7 +28,7 @@ bool InstanceNormOp::CheckShape() const {
   CHECK_OR_FALSE(param_.out);
   CHECK_OR_FALSE(param_.saved_mean);
   CHECK_OR_FALSE(param_.saved_variance);
-  
+
   auto x_dims = param_.x->dims();
   CHECK(x_dims.size() >= 2 && x_dims.size() <= 5)
       << "Input X must have 2 to 5 dimensions.";
@@ -36,13 +36,13 @@ bool InstanceNormOp::CheckShape() const {
     auto scale_dims = param_.scale->dims();
     CHECK_EQ(scale_dims.size(), 1UL) << "Input Scale must have 1 dimensions.";
     CHECK_EQ(scale_dims[0], x_dims[1]) << "ShapeError: the shape of scale must "
-      << "equal to the channel of input.";
+                                       << "equal to the channel of input.";
   }
   if (param_.bias != nullptr) {
     auto bias_dims = param_.bias->dims();
     CHECK_EQ(bias_dims.size(), 1UL) << "Input Bias must have 1 dimensions.";
     CHECK_EQ(bias_dims[0], x_dims[1]) << "ShapeError: the shape of bias must "
-      << "equal to the channel of input.";
+                                      << "equal to the channel of input.";
   }
   return true;
 }

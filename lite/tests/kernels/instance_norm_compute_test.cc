@@ -41,16 +41,18 @@ class InstanceNormComputeTest : public arena::TestCase {
                           DDim dims,
                           float epsilon,
                           bool has_scale_bias)
-      : TestCase(place, alias), dims_(dims), epsilon_(epsilon),
+      : TestCase(place, alias),
+        dims_(dims),
+        epsilon_(epsilon),
         has_scale_bias_(has_scale_bias) {}
 
   void RunBaseline(Scope* scope) override {
     const Tensor* x = scope->FindTensor(x_);
-    const float*  x_data = x->data<float>();
-    const float* scale_data = has_scale_bias_ ? 
-      scope->FindTensor(scale_)->data<float>() : nullptr;
-    const float*  bias_data = has_scale_bias_ ?
-      scope->FindTensor(bias_)->data<float>() : nullptr;
+    const float* x_data = x->data<float>();
+    const float* scale_data =
+        has_scale_bias_ ? scope->FindTensor(scale_)->data<float>() : nullptr;
+    const float* bias_data =
+        has_scale_bias_ ? scope->FindTensor(bias_)->data<float>() : nullptr;
 
     auto y = scope->NewTensor(y_);
     auto saved_mean = scope->NewTensor(saved_mean_);
@@ -144,8 +146,8 @@ void TestInstanceNorm(Place place,
           for (auto& has_scale_bias : {true, false}) {
             DDim dim_in({n, c, h, w});
             float epsilon = 1e-5f;
-            std::unique_ptr<arena::TestCase> tester(
-                new InstanceNormComputeTest(place, "def", dim_in, epsilon, has_scale_bias));
+            std::unique_ptr<arena::TestCase> tester(new InstanceNormComputeTest(
+                place, "def", dim_in, epsilon, has_scale_bias));
 #ifdef LITE_WITH_ARM
             if (place == TARGET(kARM)) {
               auto& ctx = tester->context()->As<ARMContext>();
@@ -155,7 +157,8 @@ void TestInstanceNorm(Place place,
             arena::Arena arena(std::move(tester), place, abs_error);
             if (!arena.TestPrecision(ignored_outs)) {
               LOG(ERROR) << "run n: " << n << ", c: " << c << ", h: " << h
-                         << ", w: " << w << ", has_scale_bias:" << has_scale_bias;
+                         << ", w: " << w
+                         << ", has_scale_bias:" << has_scale_bias;
               return;
             }
           }
