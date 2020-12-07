@@ -41,14 +41,11 @@ void TargetWrapper<TARGET(kHost)>::MemcpySync(void* dst,
                                               const void* src,
                                               size_t size,
                                               IoDirection dir) {
-  CHECK(dst) << "Error: the destination of MemcpySync can not be nullptr.";
-  CHECK(static_cast<char*>(dst) + size)
-      << "MemcpySync Error: not enough space for destnation.";
-  CHECK(src) << "Error: the source of MemcpySync can not be nullptr.";
-  CHECK(static_cast<const char*>(src) + size) << "Error: size of MemcpySync "
-                                                 "can not be greater than "
-                                                 "the size of source.";
-  memcpy(dst, src, size);
+  if (size > 0) {
+    CHECK(dst) << "Error: the destination of MemcpySync can not be nullptr.";
+    CHECK(src) << "Error: the source of MemcpySync can not be nullptr.";
+    memcpy(dst, src, size);
+  }
 }
 
 }  // namespace lite
