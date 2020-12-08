@@ -247,8 +247,9 @@ void ElementwiseAddCompute<T, PType>::Run() {
       operators::ElementwiseParam,
       T,
       OprandSwapable::YES,
-      arm_math::MergeConfig<arm_math::AddConfig<T>,
-                            arm_math::NoActiveConfig<T>>>(
+      arm_math::MergeConfig<
+          arm_math::AddConfig<T>,
+          arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, T>>>(
       this,
       lite::arm::math::elementwise_add_broadcast<T>,
       lite::arm::math::elementwise_add<T>,

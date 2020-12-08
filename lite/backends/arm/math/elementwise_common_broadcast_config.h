@@ -82,14 +82,20 @@ struct BasicConfig<float> {
   constexpr static auto neon_st = vst1q_f32;
 };
 
+enum class ActiveType { NO_ACTIVE, RELU };
+
+template <ActiveType, class DataType>
+struct ActiveConfig {};
+
 template <class DataType>
-struct NoActiveConfig {
+struct ActiveConfig<ActiveType::NO_ACTIVE, DataType> {
   constexpr static DataType (*naive_active)(DataType) = nullptr;
   constexpr static typename BasicConfig<DataType>::NeonT (*neon_active)(
       const typename BasicConfig<DataType>::NeonT&) = nullptr;
 };
 
-struct F32ReluConfig {
+template <>
+struct ActiveConfig<ActiveType::RELU, float> {
   constexpr static float (*naive_active)(float) = naive_relu<float>;
   constexpr static float32x4_t (*neon_active)(const float32x4_t&) =
       neon_relu_float;
