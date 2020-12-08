@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/model_parser/tensor_io.h"
+#include "lite/model_parser/pb/tensor_io.h"
 
 namespace paddle {
 namespace lite {
@@ -61,6 +61,8 @@ const void* get_allocation(const lite::Tensor& tensor) {
 }
 
 }  // namespace tensor
+
+namespace pb {
 
 void LoDTensorDeserializer::LoadWithForwardReader(lite::Tensor* tensor,
                                                   ByteReader* reader) {
@@ -136,6 +138,7 @@ void LoDTensorSerializer::SaveWithForwardWriter(const lite::Tensor& tensor,
 }
 #endif  // LITE_ON_TINY_PUBLISH
 
+}  // namespace pb
 }  // namespace model_parser
 }  // namespace lite
 }  // namespace paddle

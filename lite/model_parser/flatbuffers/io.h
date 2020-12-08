@@ -14,11 +14,12 @@
 
 #pragma once
 
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 #include "lite/core/scope.h"
-#include "lite/core/tensor.h"
+#include "lite/core/variable.h"
 #include "lite/model_parser/flatbuffers/param_desc.h"
 #include "lite/model_parser/flatbuffers/program_desc.h"
 
@@ -26,17 +27,51 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-model_parser::Buffer LoadFile(const std::string& path,
-                              size_t offset = 0,
-                              size_t size = 0);
-void SaveFile(const std::string& path, const Buffer& cache);
+void SetParamWithTensor(const std::string& name,
+                        const lite::Tensor& tensor,
+                        ParamDescWriteAPI* prog);
 
+void SetTensorWithParam(lite::Tensor* tensor, const ParamDescReadAPI& param);
+
+class ParamSerializer {
+ public:
+  explicit ParamSerializer(model_parser::ByteWriter* writer, size_t version = 0)
+      : writer_(writer), version_(version), buf_(new model_parser::Buffer) {
+    CHECK(writer_) << "The pointer of writer is nullptr";
+    WriteHeader();
+  }
+  void SaveWithForwardWriter(const lite::Scope& scope,
+                             const std::set<std::string>& params_name);
+
+ private:
+  void WriteHeader();
+  model_parser::ByteWriter* writer_{nullptr};
+  size_t version_{0};
+  std::unique_ptr<model_parser::Buffer> buf_;
+};
+
+class ParamDeserializer {
+ public:
+  explicit ParamDeserializer(model_parser::ByteReader* reader)
+      : reader_(reader), buf_(new model_parser::Buffer) {
+    CHECK(reader_) << "The pointer of reader is nullptr";
+    ReadHeader();
+  }
+  void LoadWithForwardReader(lite::Scope* scope);
+
+ private:
+  void ReadHeader();
+  model_parser::ByteReader* reader_{nullptr};
+  std::unique_ptr<model_parser::Buffer> buf_;
+};
+
+namespace deprecated {
 void SetScopeWithCombinedParams(lite::Scope* scope,
                                 const CombinedParamsDescReadAPI& params);
-
 void SetCombinedParamsWithScope(const lite::Scope& scope,
                                 const std::set<std::string>& params_name,
                                 CombinedParamsDescWriteAPI* params);
+}  // namespace deprecated
 
 }  // namespace fbs
 }  // namespace lite

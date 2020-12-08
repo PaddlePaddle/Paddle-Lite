@@ -49,16 +49,7 @@ void* get_allocation(lite::Tensor* tensor);
 const void* get_allocation(const lite::Tensor& tensor);
 }  // namespace tensor
 
-class MetaInfo {};
-
-class MetaInfoDeserializer {
- public:
-  void LoadWithForwardReader(ByteReader* reader) const {
-    int64_t size = reader->ReadForward<int64_t>();
-    CHECK_EQ(size, 0);
-  }
-};
-
+namespace pb {
 class LoDTensorDeserializer {
  public:
   LoDTensorDeserializer() : buf_(new Buffer) {}
@@ -82,6 +73,7 @@ class LoDTensorSerializer {
 };
 #endif  // LITE_ON_TINY_PUBLISH
 
+}  // namespace pb
 }  // namespace model_parser
 }  // namespace lite
 }  // namespace paddle

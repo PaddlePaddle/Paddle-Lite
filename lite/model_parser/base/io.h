@@ -19,9 +19,26 @@
 #include <utility>
 #include "lite/core/memory.h"
 
+// Suppress Undefined Behavior Sanitizer (recoverable only). Usage:
+// - LITE_SUPRESS_UBSAN("undefined")
+// - LITE_SUPRESS_UBSAN("signed-integer-overflow")
+#if defined(__clang__) && \
+    (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 7))
+#define LITE_SUPRESS_UBSAN(type) __attribute__((no_sanitize(type)))
+#elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 409)
+#define LITE_SUPRESS_UBSAN(type) __attribute__((no_sanitize_undefined))
+#else
+#define LITE_SUPRESS_UBSAN(type)
+#endif
+
 namespace paddle {
 namespace lite {
 namespace model_parser {
+
+inline void* memcpy(void* dest, const void* src, std::size_t count) {
+  TargetCopy(TargetType::kHost, dest, src, count);
+  return dest;
+}
 
 // A simple inline package of core::Buffer.
 class Buffer {
@@ -98,6 +115,13 @@ class ByteWriter {
     WriteForward(&elem, sizeof(T));
   }
 
+  template <typename T, int N>
+  void WriteForward(const T (&array)[N]) const {
+    WriteForward(&array[0], sizeof(T) * N);
+  }
+
+  virtual size_t Align(size_t bytes_size) const = 0;
+
   virtual ~ByteWriter() = default;
 
  private:
@@ -135,10 +159,22 @@ class BinaryFileWriter : public ByteWriter {
     }
   }
   void WriteForward(const void* src, size_t size) const override;
+  size_t Align(size_t scalar_size) const override {
+    const size_t padding_bytes = PaddingBytes(cur_, scalar_size);
+    for (size_t i = 0; i < padding_bytes; ++i) {
+      ByteWriter::WriteForward<uint8_t>(0U);
+    }
+    return padding_bytes;
+  }
 
  private:
   FILE* file_{};
   mutable size_t cur_{0};
+
+  LITE_SUPRESS_UBSAN("unsigned-integer-overflow")
+  size_t PaddingBytes(size_t buf_size, size_t scalar_size) const {
+    return ((~buf_size) + 1) & (scalar_size - 1);
+  }
 };
 
 class StringBufferReader : public ByteReader {

@@ -26,7 +26,7 @@
 #include "lite/core/version.h"
 #include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/flatbuffers/io.h"
-#include "lite/model_parser/tensor_io.h"
+#include "lite/model_parser/pb/tensor_io.h"
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
@@ -39,9 +39,35 @@
 
 namespace paddle {
 namespace lite {
+namespace model_parser {
+Buffer LoadFile(const std::string &path, size_t offset, size_t size) {
+  // open file in readonly mode
+  FILE *file = fopen(path.c_str(), "rb");
+  CHECK(file) << "Unable to open file: " << path;
+  // move fstream pointer backward for offset
+  uint64_t length = size;
+  if (size == 0) {
+    fseek(file, 0L, SEEK_END);
+    length = ftell(file) - offset;
+  }
+  fseek(file, offset, SEEK_SET);
+  // read data of `length` into buf
+  Buffer buf(length);
+  CHECK_EQ(fread(buf.data(), 1, length, file), length);
+  fclose(file);
+  return buf;
+}
+
+void SaveFile(const std::string &path, const Buffer &cache) {
+  FILE *file = fopen(path.c_str(), "wb");
+  CHECK(file);
+  CHECK(fwrite(cache.data(), sizeof(char), cache.size(), file) == cache.size());
+  fclose(file);
+}
+}  // namespace model_parser
 
 #ifndef LITE_ON_TINY_PUBLISH
-void LoadLoDTensor(model_parser::LoDTensorDeserializer *loader,
+void LoadLoDTensor(model_parser::pb::LoDTensorDeserializer *loader,
                    model_parser::ByteReader *reader,
                    Variable *var) {
   auto *tensor = var->GetMutable<lite::Tensor>();
@@ -67,7 +93,7 @@ std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
 // Load directly to CPU, and latter transfer to other devices.
 void LoadParam(const std::string &path, Variable *out) {
   model_parser::BinaryFileReader reader(path);
-  model_parser::LoDTensorDeserializer loader;
+  model_parser::pb::LoDTensorDeserializer loader;
   LoadLoDTensor(&loader, &reader, out);
 }
 
@@ -104,7 +130,7 @@ void LoadCombinedParamsPb(const std::string &path,
   } else {
     reader.reset(new model_parser::BinaryFileReader(path));
   }
-  model_parser::LoDTensorDeserializer loader;
+  model_parser::pb::LoDTensorDeserializer loader;
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = scope->Var(paramlist[i]);
     LoadLoDTensor(&loader, reader.get(), var);
@@ -155,7 +181,7 @@ void LoadModelPb(const std::string &model_dir,
       VLOG(4) << "reading weight " << var.name();
 
       model_parser::BinaryFileReader reader(file_path);
-      model_parser::LoDTensorDeserializer loader;
+      model_parser::pb::LoDTensorDeserializer loader;
 
       switch (var.type().type()) {
         case framework::proto::VarType_Type_LOD_TENSOR:
@@ -203,7 +229,7 @@ void SaveModelPb(const std::string &model_dir,
       const std::string path = model_dir + "/" + item.name();
 
       model_parser::BinaryFileWriter file(path);
-      model_parser::LoDTensorSerializer saver;
+      model_parser::pb::LoDTensorSerializer saver;
       auto *var = exec_scope.FindVar(item.name());
       const auto &tensor = var->Get<lite::Tensor>();
       if (tensor.target() == TARGET(kCUDA)) {
@@ -233,7 +259,7 @@ void SaveCombinedParamsPb(const std::string &path,
 
   // Save vars
   model_parser::BinaryFileWriter file(path);
-  model_parser::LoDTensorSerializer saver;
+  model_parser::pb::LoDTensorSerializer saver;
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = exec_scope.FindVar(paramlist[i]);
     const auto &tensor = var->Get<lite::Tensor>();
@@ -402,6 +428,7 @@ void AppendToFile(const std::string &filename,
 void SaveModelNaive(const std::string &model_file,
                     const Scope &exec_scope,
                     const cpp::ProgramDesc &cpp_prog) {
+  model_parser::Buffer buffer;
   /* 1. Save model to model.fbs */
   const std::string prog_path = model_file + ".nb";
   // Save meta_version(uint16) into file
@@ -416,10 +443,11 @@ void SaveModelNaive(const std::string &model_file,
 
   fbs::ProgramDesc fbs_prog;
   TransformProgramDescCppToAny(cpp_prog, &fbs_prog);
-  uint64_t topology_size = (fbs_prog.data()).size();
+  fbs_prog.CopyDataToBuffer(&buffer);
+  uint64_t topology_size = buffer.size();
   AppendToFile(prog_path, &topology_size, sizeof(uint64_t));
   /* 1. Save model to model.fbs */
-  AppendToFile(prog_path, (fbs_prog.data()).data(), topology_size);
+  AppendToFile(prog_path, buffer.data(), topology_size);
   VLOG(4) << "save topology_size:" << topology_size;
 
   /* 2. Get param names from cpp::ProgramDesc */
@@ -436,9 +464,10 @@ void SaveModelNaive(const std::string &model_file,
 
   /* 3. Save combined params to params.fbs */
   fbs::CombinedParamsDesc params_prog;
-  fbs::SetCombinedParamsWithScope(exec_scope, unique_var_names, &params_prog);
-  auto data_cache = params_prog.data();
-  AppendToFile(prog_path, data_cache.data(), data_cache.size());
+  fbs::deprecated::SetCombinedParamsWithScope(
+      exec_scope, unique_var_names, &params_prog);
+  params_prog.CopyDataToBuffer(&buffer);
+  AppendToFile(prog_path, buffer.data(), buffer.size());
 
   LOG(INFO) << "Save naive buffer model in '" << prog_path << " successfully";
 }
@@ -636,7 +665,7 @@ void ReadModelDataFromFile(T *data,
                            uint64_t *offset,
                            const uint64_t &size) {
   model_parser::Buffer prog_data =
-      lite::fbs::LoadFile(prog_path, *offset, size);
+      lite::model_parser::LoadFile(prog_path, *offset, size);
   memcpy(data, prog_data.data(), size);
   *offset = *offset + size;
 }
@@ -790,14 +819,14 @@ void LoadModelFbsFromFile(const std::string &filename,
   LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
                 "the model cannot be loaded.";
 #else
-  fbs::ProgramDesc program(fbs::LoadFile(filename, offset, topo_size));
+  fbs::ProgramDesc program(model_parser::LoadFile(filename, offset, topo_size));
   TransformProgramDescAnyToCpp(program, cpp_prog);
 #endif
   offset = offset + topo_size;
 
   /* 2. Load scope from params.fbs */
-  fbs::CombinedParamsDescView params(fbs::LoadFile(filename, offset));
-  fbs::SetScopeWithCombinedParams(scope, params);
+  fbs::CombinedParamsDescView params(model_parser::LoadFile(filename, offset));
+  fbs::deprecated::SetScopeWithCombinedParams(scope, params);
 
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
@@ -923,7 +952,7 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
          model_buffer.length() - offset);
 
   fbs::CombinedParamsDescView params(std::move(params_data));
-  fbs::SetScopeWithCombinedParams(scope, params);
+  fbs::deprecated::SetScopeWithCombinedParams(scope, params);
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
