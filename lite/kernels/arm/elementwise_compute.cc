@@ -100,14 +100,22 @@ using BinaryOpFn = lite::kernels::host::BinaryOpFn<T>;
 enum class OprandSwapable { NO, YES };
 
 template <class Elem_t, class DimValue_t, class NeonConfig>
-void common_elmentwise_op_arm(
-    const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
-        batch_arg,
-    BinaryOpFn<Elem_t> op) {
-  int batch_num = batch_arg.BatchNum();
-  auto bcast_type = batch_arg.BcastType();
-  int range_length = batch_arg.ElemNumPerBatch();
-  if (std::is_same<NeonConfig, arm_math::NullNeonConfig>::value) {
+struct CommonElementWiseOpArm {
+  static void Run(
+      const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
+          batch_arg,
+      BinaryOpFn<Elem_t> op) {}
+};
+
+template <class Elem_t, class DimValue_t>
+struct CommonElementWiseOpArm<Elem_t, DimValue_t, arm_math::NullNeonConfig> {
+  static void Run(
+      const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
+          batch_arg,
+      BinaryOpFn<Elem_t> op) {
+    int batch_num = batch_arg.BatchNum();
+    auto bcast_type = batch_arg.BcastType();
+    int range_length = batch_arg.ElemNumPerBatch();
     switch (bcast_type) {
       case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
         for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
@@ -144,8 +152,7 @@ void common_elmentwise_op_arm(
       }
     }
   }
-}
-
+};
 template <class OpParamType,
           class T,
           OprandSwapable opd_swap_able,
@@ -183,7 +190,7 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
     // kinds of "elementwise op", not only "broadcast"
     auto batch_arg =
         lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
-    common_elmentwise_op_arm<T, int64_t, NeonConfig>(batch_arg, op);
+    CommonElementWiseOpArm<T, int64_t, NeonConfig>::Run(batch_arg, op);
   }
   if (!elementwise_fn && !fast_bcast_fn) {
     LOG(FATAL) << "unsupported elementwise_compute called";
