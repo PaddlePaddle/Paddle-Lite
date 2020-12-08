@@ -104,7 +104,43 @@ struct CommonElementWiseOpArm {
   static void Run(
       const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
           batch_arg,
-      BinaryOpFn<Elem_t> op) {}
+      BinaryOpFn<Elem_t> op) {
+    int batch_num = batch_arg.BatchNum();
+    auto bcast_type = batch_arg.BcastType();
+    int range_length = batch_arg.ElemNumPerBatch();
+    switch (bcast_type) {
+      case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          arm_math::neon_elementwise_range_to_one<NeonConfig>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length);
+        }
+        break;
+      }
+      case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          arm_math::neon_elementwise_one_to_range<NeonConfig>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length);
+        }
+        break;
+      }
+      case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          arm_math::neon_elementwise_range_to_range<NeonConfig>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length);
+        }
+        break;
+      }
+    }
+  }
 };
 
 template <class Elem_t, class DimValue_t>
@@ -201,7 +237,8 @@ template <typename T, PrecisionType PType>
 void ElementwiseAddCompute<T, PType>::Run() {
   elementwise_compute_template<operators::ElementwiseParam,
                                T,
-                               OprandSwapable::YES>(
+                               OprandSwapable::YES,
+                               arm_math::AddConfig<T>>(
       this,
       lite::arm::math::elementwise_add_broadcast<T>,
       lite::arm::math::elementwise_add<T>,
