@@ -150,7 +150,10 @@ template <typename T>
 void Tensor::CopyToCpu(T *data) const {
   const T *src_data = tensor(raw_tensor_)->data<T>();
   int64_t num = tensor(raw_tensor_)->numel();
-  CHECK(num > 0) << "You should call Resize interface first";
+  if (num == 0) {
+    LOG(WARNING) << "Tensor does not hold data.";
+    return;
+  }
   auto type = tensor(raw_tensor_)->target();
   if (type == TargetType::kHost || type == TargetType::kARM) {
     lite::TargetWrapperHost::MemcpySync(

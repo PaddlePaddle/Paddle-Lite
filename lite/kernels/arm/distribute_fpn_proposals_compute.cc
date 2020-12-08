@@ -178,4 +178,5 @@ REGISTER_LITE_KERNEL(distribute_fpn_proposals,
     .BindOutput("MultiFpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("RestoreIndex", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("distribute_fpn_proposals", 1)
     .Finalize();
