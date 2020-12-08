@@ -21,7 +21,7 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
+/*
 template <>
 void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   auto& param = this->template Param<param_t>();
@@ -198,6 +198,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {
   }
   last_shape_ = x_dims;
 }
+*/
 
 template <>
 void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
