@@ -180,4 +180,5 @@ REGISTER_LITE_KERNEL(collect_fpn_proposals,
     .BindInput("RoisNum", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("FpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("collect_fpn_proposals", 1)
     .Finalize();

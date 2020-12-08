@@ -258,6 +258,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("leaky_relu", 1)
     .Finalize();
 REGISTER_LITE_KERNEL(relu_clipped,
                      kARM,
