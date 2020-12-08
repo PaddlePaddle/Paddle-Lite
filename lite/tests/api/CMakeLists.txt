@@ -44,6 +44,13 @@ function(lite_cc_test_with_model_and_data TARGET)
 endfunction()
 
 if(LITE_WITH_ARM)
+    lite_cc_test_with_model_and_data(test_inception_v4_fp32_arm MODEL inception_v4 DATA ILSVRC2012_small)
+    lite_cc_test_with_model_and_data(test_mobilenet_v1_fp32_arm MODEL mobilenet_v1 DATA ILSVRC2012_small)
+    lite_cc_test_with_model_and_data(test_mobilenet_v2_fp32_arm MODEL mobilenet_v2_relu DATA ILSVRC2012_small)
+    lite_cc_test_with_model_and_data(test_mobilenet_v3_small_x1_0_fp32_arm MODEL mobilenet_v3_small_x1_0 DATA ILSVRC2012_small)
+    lite_cc_test_with_model_and_data(test_mobilenet_v3_large_x1_0_fp32_arm MODEL mobilenet_v3_large_x1_0 DATA ILSVRC2012_small)
+    lite_cc_test_with_model_and_data(test_resnet50_fp32_arm MODEL resnet50 DATA ILSVRC2012_small)
+    lite_cc_test_with_model_and_data(test_squeezenet_fp32_arm MODEL squeezenet DATA ILSVRC2012_small)
     lite_cc_test_with_model_and_data(test_transformer_with_mask_fp32_arm MODEL transformer_with_mask_fp32)
 endif()
 
