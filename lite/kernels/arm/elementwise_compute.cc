@@ -246,13 +246,11 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
   } else if (elementwise_fn) {
     // todo: GenBatchElementWiseArg and common_elmentwise_op_arm can handle any
     //   kinds of "elementwise op", not only "broadcast". You could refactor the
-    //   code
-    //   to use only common_elmentwise_op_arm if necessary
+    //   code to use only common_elmentwise_op_arm if necessary
     auto batch_arg =
         lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
     // if NeonConfig is NullNeonConfig, a specialization that uses naive cpu
-    // code
-    // will be called
+    // code will be called
     CommonElementWiseOpArm<T, int64_t, NeonConfig>::Run(batch_arg, op);
   }
   if (!elementwise_fn && !fast_bcast_fn) {
@@ -262,13 +260,14 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
 
 template <typename T, PrecisionType PType>
 void ElementwiseAddCompute<T, PType>::Run() {
-  elementwise_compute_template<
-      operators::ElementwiseParam,
-      T,
-      OprandSwapable::YES,
-      arm_math::MergeConfig<
-          arm_math::AddConfig<T>,
-          arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, T>>>(
+  using NeonConfig = arm_math::MergeConfig<
+      arm_math::AddConfig<T>,
+      arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, T>>;
+
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::YES,
+                               NeonConfig>(
       this,
       lite::arm::math::elementwise_add_broadcast<T>,
       lite::arm::math::elementwise_add<T>,
