@@ -91,17 +91,25 @@ struct F32ReluConfig {
       neon_relu_float;
 };
 
-struct I32AddConfig : public BasicConfig<int32_t> {
+template <class T>
+struct AddConfig {};
+
+template <>
+struct AddConfig<int32_t> : public BasicConfig<int32_t> {
   constexpr static auto naive_op = naive_add<int32_t>;
   constexpr static auto neon_op = vaddq_s32;
 };
-
-struct F32AddConfig : public BasicConfig<float> {
+template <>
+struct AddConfig<float> : public BasicConfig<float> {
   constexpr static auto naive_op = naive_add<float>;
   constexpr static auto neon_op = vaddq_f32;
 };
 
-struct I32SubConfig : public BasicConfig<int32_t> {
+template <class T>
+struct SubConfig {};
+
+template <>
+struct SubConfig<int32_t> : public BasicConfig<int32_t> {
   constexpr static auto naive_op = naive_sub<int32_t>;
   constexpr static auto neon_op = vsubq_s32;
 };

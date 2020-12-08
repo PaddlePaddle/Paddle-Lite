@@ -31,7 +31,7 @@ void elementwise_add<int32_t>(const int32_t* dinx,
                               int32_t* dout,
                               int num) {
   neon_elementwise_range_to_range<
-      MergeConfig<I32AddConfig, NoActiveConfig<int32_t>>>(
+      MergeConfig<AddConfig<int32_t>, NoActiveConfig<int32_t>>>(
       dinx, diny, dout, num);
 }
 
@@ -209,7 +209,7 @@ void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
       auto* dout_ptr = dout + offset;
 
       neon_elementwise_range_to_one<
-          MergeConfig<I32AddConfig, NoActiveConfig<int32_t>>>(
+          MergeConfig<AddConfig<int32_t>, NoActiveConfig<int32_t>>>(
           dinx_ptr, diny_ptr, dout_ptr, num);
     }
   }
@@ -433,7 +433,7 @@ void elementwise_sub<int32_t>(const int32_t* dinx,
                               int32_t* dout,
                               int num) {
   neon_elementwise_range_to_range<
-      MergeConfig<I32SubConfig, NoActiveConfig<int32_t>>>(
+      MergeConfig<SubConfig<int32_t>, NoActiveConfig<int32_t>>>(
       dinx, diny, dout, num);
 }
 
@@ -553,7 +553,7 @@ void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
       auto* dout_ptr = dout + offset;
 
       neon_elementwise_range_to_one<
-          MergeConfig<I32SubConfig, NoActiveConfig<int32_t>>>(
+          MergeConfig<SubConfig<int32_t>, NoActiveConfig<int32_t>>>(
           dinx_ptr, diny_ptr, dout_ptr, num);
     }
   }
