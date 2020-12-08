@@ -45,6 +45,7 @@ REGISTER_LITE_KERNEL(leaky_relu,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindPaddleOpVersion("leaky_relu", 1)
     .Finalize();
 
 // float
