@@ -204,6 +204,7 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
@@ -211,6 +212,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Int8, int8_out)
@@ -220,6 +222,7 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Int8, int8_out)
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Fp32, fp32_out)
@@ -229,6 +232,7 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kInt8, kNCHW, ConvInt8_Fp32, fp32_out)
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -239,6 +243,7 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -249,4 +254,5 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
