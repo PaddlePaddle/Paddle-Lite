@@ -204,8 +204,7 @@ void decode_bbox_center_no_variance_kernel(const int batch_num,
     for (int i = cnt * 4; i < num_priors; i++) {
       int idx = i * 4;
       int var_idx = idx;
-      int prior_idx = n * 4;
-      int prio = idx;
+      int prior_idx = i * 4;
       if (axis == 1) {
         var_idx = n * 4;
         prior_idx = n * 4;
