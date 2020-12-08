@@ -81,6 +81,7 @@ REGISTER_LITE_KERNEL(gather,
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindPaddleOpVersion("gather", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(gather,
@@ -93,4 +94,5 @@ REGISTER_LITE_KERNEL(gather,
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindPaddleOpVersion("gather", 1)
     .Finalize();
