@@ -139,6 +139,10 @@ struct CommonElementWiseOpArm {
         }
         break;
       }
+      default: {
+        LOG(FATAL) << "Un supported bcast type";
+        break;
+      }
     }
   }
 };
@@ -184,6 +188,10 @@ struct CommonElementWiseOpArm<Elem_t, DimValue_t, arm_math::NullNeonConfig> {
               range_length,
               op);
         }
+        break;
+      }
+      default: {
+        LOG(FATAL) << "Un supported bcast type";
         break;
       }
     }
@@ -235,10 +243,12 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
 
 template <typename T, PrecisionType PType>
 void ElementwiseAddCompute<T, PType>::Run() {
-  elementwise_compute_template<operators::ElementwiseParam,
-                               T,
-                               OprandSwapable::YES,
-                               arm_math::AddConfig<T>>(
+  elementwise_compute_template<
+      operators::ElementwiseParam,
+      T,
+      OprandSwapable::YES,
+      arm_math::MergeConfig<arm_math::AddConfig<T>,
+                            arm_math::NoActiveConfig<T>>>(
       this,
       lite::arm::math::elementwise_add_broadcast<T>,
       lite::arm::math::elementwise_add<T>,

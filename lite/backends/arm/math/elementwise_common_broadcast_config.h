@@ -24,15 +24,19 @@
 #define __ai static inline __attribute__((__always_inline__, __nodebug__))
 
 __ai int32x4_t vld1q_s32_wrap(const int32_t* p0) { return vld1q_s32(p0); }
+#undef vld1q_s32
 #define vld1q_s32 vld1q_s32_wrap
 
 __ai void vst1q_s32_wrap(int32_t* a, int32x4_t b) { return vst1q_s32(a, b); }
+#undef vst1q_s32
 #define vst1q_s32 vst1q_s32_wrap
 
 __ai float32x4_t vld1q_f32_wrap(const float* p0) { return vld1q_f32(p0); }
+#undef vld1q_f32
 #define vld1q_f32 vld1q_f32_wrap
 
 __ai void vst1q_f32_wrap(float* a, float32x4_t b) { return vst1q_f32(a, b); }
+#undef vst1q_f32
 #define vst1q_f32 vst1q_f32_wrap
 
 #undef __ai
