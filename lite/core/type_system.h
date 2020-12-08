@@ -407,9 +407,6 @@ class ParamTypeRegistry {
   const KernelVersion& GetKernelVersion(const std::string& kernel_type,
                                         const Place& place) {
     KernelIdTy key{kernel_type, place, IO(), std::string()};
-    if (kernel_versions_.count(key)) {
-      return kernel_versions_[key];
-    }
     return kernel_versions_[key];
   }
 #endif

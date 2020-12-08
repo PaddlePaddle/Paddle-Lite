@@ -20,7 +20,7 @@ namespace pb {
 
 std::map<std::string, int32_t> OpVersionMap::GetOpVersionMap() const {
   std::map<std::string, int32_t> op_version_map;
-  for (int i = 0; i < op_version_map_->pair_size(); i++) {
+  for (size_t i = 0; i < op_version_map_->pair_size(); i++) {
     auto& op_version_pair = op_version_map_->pair(i);
     const std::string& op_name = op_version_pair.op_name();
     int32_t op_version_id = op_version_pair.op_version().version();
@@ -30,7 +30,7 @@ std::map<std::string, int32_t> OpVersionMap::GetOpVersionMap() const {
 }
 
 int32_t OpVersionMap::GetOpVersionByName(const std::string& name) const {
-  for (int i = 0; i < op_version_map_->pair_size(); i++) {
+  for (size_t i = 0; i < op_version_map_->pair_size(); i++) {
     auto& op_version_pair = op_version_map_->pair(i);
     const std::string& op_name = op_version_pair.op_name();
     if (op_name == name) {
