@@ -252,7 +252,7 @@ struct BatchElementWiseArg {
   /**
    * Convert to a static offset, which could be used later
    */
-  StaticBatchElementWiseArg ToStaticOffset();
+  StaticBatchElementWiseArg ToStaticArg();
 
  private:
   const Elem_t *x_data_ = nullptr;
@@ -413,7 +413,7 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
 }
 template <class Elem_t, class DimValue_t>
 StaticBatchElementWiseArg
-BatchElementWiseArg<Elem_t, DimValue_t>::ToStaticOffset() {
+BatchElementWiseArg<Elem_t, DimValue_t>::ToStaticArg() {
   std::vector<BatchElementWiseArgMemPointer<void>> offset(BatchNum());
   for (int i = 0; i < BatchNum(); ++i) {
     offset[i].x_data = XAtBatch(i);

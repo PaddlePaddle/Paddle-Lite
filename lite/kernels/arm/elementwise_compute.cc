@@ -102,6 +102,10 @@ enum class OprandSwapable { NO, YES };
 template <class Elem_t, class DimValue_t, class NeonConfig>
 struct CommonElementWiseOpArm {
   static void Run(
+      // todo: if necessary, generate
+      //  lite::kernels::host::StaticBatchElementWiseArg by
+      //  batch_arg->ToStaticArg() before kernel launch, it will help to reduce
+      //  runtime overhead.
       const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
           batch_arg,
       BinaryOpFn<Elem_t> op) {
@@ -150,6 +154,10 @@ struct CommonElementWiseOpArm {
 template <class Elem_t, class DimValue_t>
 struct CommonElementWiseOpArm<Elem_t, DimValue_t, arm_math::NullNeonConfig> {
   static void Run(
+      // todo: if necessary, generate
+      //  lite::kernels::host::StaticBatchElementWiseArg by
+      //  batch_arg->ToStaticArg() before kernel launch, it will help to reduce
+      //  runtime overhead.
       const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
           batch_arg,
       BinaryOpFn<Elem_t> op) {
@@ -197,6 +205,13 @@ struct CommonElementWiseOpArm<Elem_t, DimValue_t, arm_math::NullNeonConfig> {
     }
   }
 };
+
+// todo: All calling to elementwise_compute_template may add  a template arg
+//  "NeonConfig"
+//  to get better performance. However,it may increase the binary size
+//  significantly. So,
+//  do it only if it is necessary.
+//  see ElementwiseAddCompute<T, PType>::Run() to get an example.
 template <class OpParamType,
           class T,
           OprandSwapable opd_swap_able,
@@ -230,10 +245,15 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
              is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     fast_bcast_fn(y_data, x_data, out_data, pre, n, post);
   } else if (elementwise_fn) {
-    // Note: GenBatchElementWiseArg and common_elmentwise_op_arm can handle any
-    // kinds of "elementwise op", not only "broadcast"
+    // todo: GenBatchElementWiseArg and common_elmentwise_op_arm can handle any
+    //   kinds of "elementwise op", not only "broadcast". You could refactor the
+    //   code
+    //   to use only common_elmentwise_op_arm if necessary
     auto batch_arg =
         lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
+    // if NeonConfig is NullNeonConfig, a specialization that uses naive cpu
+    // code
+    // will be called
     CommonElementWiseOpArm<T, int64_t, NeonConfig>::Run(batch_arg, op);
   }
   if (!elementwise_fn && !fast_bcast_fn) {
