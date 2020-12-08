@@ -31,6 +31,7 @@ class AffineGridCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~AffineGridCompute() = default;
   float* vh;
   float* vw;
+  float* hw3;
 };
 
 }  // namespace arm
