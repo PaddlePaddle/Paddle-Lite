@@ -1695,6 +1695,8 @@ struct LstmParam : ParamBase {
   std::string gate_activation;
   std::string cell_activation;
   std::string candidate_activation;
+  // for int8
+  WITH_INT8_CONFIG
 };
 
 struct CrfDecodingParam : ParamBase {

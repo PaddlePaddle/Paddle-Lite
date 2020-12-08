@@ -139,5 +139,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       clip.cc
       pixel_shuffle.cc
       scatter.cc
+      quantize.cc
       DEPS ${lite_kernel_deps} context tensor)
 endif()
