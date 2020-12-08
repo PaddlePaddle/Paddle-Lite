@@ -13,27 +13,24 @@
 // limitations under the License.
 
 #pragma once
-
-#include <string>
-#include "lite/core/tensor.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
-void decode_bboxes(const int batch_num,
-                   const int axis,
-                   const float* loc_data,
-                   const float* prior_data,
-                   const float* variance_data,
-                   const bool var_len4,
-                   const std::string code_type,
-                   const bool normalized,
-                   const int num_priors,
-                   float* bbox_data);
+class BoxCoderCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::BoxCoderParam;
 
-}  // namespace math
-}  // namespace arm
+  void Run() override;
+
+  virtual ~BoxCoderCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
