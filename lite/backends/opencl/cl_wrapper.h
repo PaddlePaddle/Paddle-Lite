@@ -45,7 +45,9 @@ class CLWrapper final {
                                         cl_uint,
                                         const cl_device_id *,
                                         const char *,
-                                        void (*pfn_notify)(cl_program, void *),
+                                        void(CL_CALLBACK *)(  // NOLINT
+                                            cl_program,
+                                            void *),
                                         void *);
   using clEnqueueNDRangeKernelType = cl_int (*)(cl_command_queue,
                                                 cl_kernel,

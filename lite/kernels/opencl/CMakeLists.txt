@@ -40,6 +40,7 @@ add_kernel(pixel_shuffle_opencl_image OPENCL basic SRCS pixel_shuffle_image_comp
 add_kernel(expand_opencl_image OPENCL basic SRCS expand_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(shuffle_channel_opencl_image OPENCL basic SRCS shuffle_channel_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(trigonometric_opencl_image OPENCL basic SRCS trigonometric_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(reduce_mean_opencl_image OPENCL basic SRCS reduce_mean_image_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 
