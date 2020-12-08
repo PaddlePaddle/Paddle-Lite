@@ -103,8 +103,7 @@ template <class Elem_t, class DimValue_t, class NeonConfig>
 void common_elmentwise_op_arm(
     const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
         batch_arg,
-    BinaryOpFn<Elem_t> op,
-    ElementWiseFn<Elem_t> elementwise_fn) {
+    BinaryOpFn<Elem_t> op) {
   int batch_num = batch_arg.BatchNum();
   auto bcast_type = batch_arg.BcastType();
   int range_length = batch_arg.ElemNumPerBatch();
@@ -134,10 +133,12 @@ void common_elmentwise_op_arm(
       }
       case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
         for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-          elementwise_fn(batch_arg.XAtBatch(batch_id),
-                         batch_arg.YAtBatch(batch_id),
-                         batch_arg.ZAtBatch(batch_id),
-                         range_length);
+          lite::kernels::host::element_wise_range_to_range<Elem_t>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length,
+              op);
         }
         break;
       }
@@ -178,10 +179,11 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
              is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     fast_bcast_fn(y_data, x_data, out_data, pre, n, post);
   } else if (elementwise_fn) {
+    // Note: GenBatchElementWiseArg and common_elmentwise_op_arm can handle any
+    // kinds of "elementwise op", not only "broadcast"
     auto batch_arg =
         lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
-    common_elmentwise_op_arm<T, int64_t, NeonConfig>(
-        batch_arg, op, elementwise_fn);
+    common_elmentwise_op_arm<T, int64_t, NeonConfig>(batch_arg, op);
   }
   if (!elementwise_fn && !fast_bcast_fn) {
     LOG(FATAL) << "unsupported elementwise_compute called";
