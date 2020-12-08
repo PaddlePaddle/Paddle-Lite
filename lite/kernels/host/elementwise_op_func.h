@@ -145,44 +145,39 @@ struct BatchElementWiseArgMemPointer {
   Elem_t *z_data = nullptr;
 };
 
-struct ElementWiseArgOffset {
-  const int64_t x_offset = 0;
-  const int64_t y_offset = 0;
-  const int64_t z_offset = 0;
-};
-
 struct StaticBatchElementWiseArg {
-  StaticBatchElementWiseArg(int64_t elem_num_per_batch,
-                            int64_t batch_num,
-                            BroadcastType bcast_type,
-                            std::vector<ElementWiseArgOffset> cached_offset)
+  StaticBatchElementWiseArg(
+      int64_t elem_num_per_batch,
+      int64_t batch_num,
+      BroadcastType bcast_type,
+      std::vector<BatchElementWiseArgMemPointer<void>> cached_offset)
       : elem_num_per_batch_(elem_num_per_batch),
         batch_num_(batch_num),
         bcast_type_(bcast_type),
-        cached_offset(cached_offset) {}
+        cached_ptr_v(cached_offset) {}
   BroadcastType BcastType() const { return bcast_type_; }
   int64_t ElemNumPerBatch() const { return batch_num_; }
   int64_t BatchNum() const { return elem_num_per_batch_; }
 
-  ElementWiseArgOffset AllAtBatch(int64_t batch_id) {
-    return cached_offset[batch_id];
+  BatchElementWiseArgMemPointer<void> AllAtBatch(int64_t batch_id) {
+    return cached_ptr_v[batch_id];
   }
 
-  int32_t XAtBatch(int64_t batch_id) const {
-    return cached_offset[batch_id].x_offset;
+  const void *XAtBatch(int64_t batch_id) const {
+    return cached_ptr_v[batch_id].x_data;
   }
-  int32_t YAtBatch(int64_t batch_id) const {
-    return cached_offset[batch_id].y_offset;
+  const void *YAtBatch(int64_t batch_id) const {
+    return cached_ptr_v[batch_id].y_data;
   }
-  int32_t ZAtBatch(int64_t batch_id) const {
-    return cached_offset[batch_id].z_offset;
+  void *ZAtBatch(int64_t batch_id) const {
+    return cached_ptr_v[batch_id].z_data;
   }
 
  private:
   int64_t elem_num_per_batch_;
   int64_t batch_num_;
   BroadcastType bcast_type_;
-  std::vector<ElementWiseArgOffset> cached_offset;
+  std::vector<BatchElementWiseArgMemPointer<void>> cached_ptr_v;
 };
 
 template <class Elem_t, class DimValue_t>
@@ -419,11 +414,11 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
 template <class Elem_t, class DimValue_t>
 StaticBatchElementWiseArg
 BatchElementWiseArg<Elem_t, DimValue_t>::ToStaticOffset() {
-  std::vector<ElementWiseArgOffset> offset(BatchNum());
+  std::vector<BatchElementWiseArgMemPointer<void>> offset(BatchNum());
   for (int i = 0; i < BatchNum(); ++i) {
-    offset[i].x_offset = XAtBatch(i) - x_data_;
-    offset[i].y_offset = YAtBatch(i) - y_data_;
-    offset[i].z_offset = ZAtBatch(i) - z_data_;
+    offset[i].x_data = XAtBatch(i);
+    offset[i].y_data = YAtBatch(i);
+    offset[i].z_data = ZAtBatch(i);
   }
   StaticBatchElementWiseArg ret(
       ElemNumPerBatch(), BatchNum(), BcastType(), offset);
