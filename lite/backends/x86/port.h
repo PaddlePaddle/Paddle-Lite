@@ -58,9 +58,11 @@ static void *dlsym(void *handle, const char *symbol_name) {
 static void *dlopen(const char *filename, int flag) {
   std::string file_name(filename);
   HMODULE hModule = LoadLibrary(file_name.c_str());
+#ifndef LITE_WITH_OPENCL
   if (!hModule) {
     throw std::runtime_error(file_name + " not found.");
   }
+#endif
   return reinterpret_cast<void *>(hModule);
 }
 

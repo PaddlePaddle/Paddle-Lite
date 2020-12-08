@@ -125,6 +125,7 @@ add_operator(scatter extra SRCS scatter_op.cc DEPS ${op_DEPS})
 add_operator(matrix_nms_op_lite extra SRCS matrix_nms_op.cc DEPS ${op_DEPS})
 add_operator(sin_op extra SRCS sin_op.cc DEPS ${op_DEPS})
 add_operator(cos_op extra SRCS cos_op.cc DEPS ${op_DEPS})
+add_operator(unstack_op extra SRCS unstack_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})

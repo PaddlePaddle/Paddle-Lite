@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <map>
+#include <string>
 #include <vector>
 #include "lite/core/framework.pb.h"
 #include "lite/model_parser/base/apis.h"
@@ -49,6 +51,17 @@ class ProgramDesc : public ProgramDescAPI {
 
   template <typename T>
   T *AddBlock();
+
+  /////////////////////////////////////////////////////////////////
+  // Name: OpVersionMap
+  // Description: a map that strores paddle ops version
+  /////////////////////////////////////////////////////////////////
+  bool HasOpVersionMap() const override { return desc_->has_op_version_map(); }
+
+  template <typename T>
+  T *GetOpVersionMap();
+
+  void SetOpVersionMap(std::map<std::string, int32_t> op_version_map) {}
 
   bool HasVersion() const override { return desc_->has_version(); }
 
