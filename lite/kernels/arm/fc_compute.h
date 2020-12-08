@@ -24,6 +24,9 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+template <PrecisionType PType>
+void fc_trans_weights(const Tensor& tin, Tensor* tout);
+
 template <PrecisionType PType, PrecisionType OutType>
 class FcCompute : public KernelLite<TARGET(kARM), PType> {
  public:

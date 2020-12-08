@@ -36,9 +36,6 @@ void naive_transpose(const Dtype* din, Dtype* dout, int m, int n) {
   }
 }
 
-template <PrecisionType PType>
-void fc_trans_weights(const Tensor& tin, Tensor* tout);
-
 template <>
 void fc_trans_weights<PRECISION(kFloat)>(const Tensor& tin, Tensor* tout) {
   CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
