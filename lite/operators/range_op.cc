@@ -41,6 +41,9 @@ void GetSize(T start, T end, T step, int64_t* size) {
               : std::ceil(std::abs((end - start) / step));
 }
 
+#if defined(_MSC_VER) && !defined(_WIN64)
+#pragma optimize("", off)
+#endif
 bool RangeOpLite::InferShapeImpl() const {
   int64_t size = 0;
   switch (param_.Start->precision()) {
@@ -64,6 +67,9 @@ bool RangeOpLite::InferShapeImpl() const {
   param_.Out->Resize(std::vector<int64_t>({size}));
   return true;
 }
+#if defined(_MSC_VER) && !defined(_WIN64)
+#pragma optimize("", on)
+#endif
 
 bool RangeOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto start = opdesc.Input("Start").front();
