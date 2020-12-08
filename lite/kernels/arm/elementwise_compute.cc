@@ -99,9 +99,7 @@ using BinaryOpFn = lite::kernels::host::BinaryOpFn<T>;
 
 enum class OprandSwapable { NO, YES };
 
-template <class Elem_t,
-          class DimValue_t,
-          class NeonConfig = arm_math::NullNeonConfig>
+template <class Elem_t, class DimValue_t, class NeonConfig>
 void common_elmentwise_op_arm(
     const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
         batch_arg,
@@ -147,7 +145,10 @@ void common_elmentwise_op_arm(
   }
 }
 
-template <class OpParamType, class T, OprandSwapable opd_swap_able>
+template <class OpParamType,
+          class T,
+          OprandSwapable opd_swap_able,
+          class NeonConfig = arm_math::NullNeonConfig>
 void elementwise_compute_template(paddle::lite::KernelBase* kernel,
                                   FastBCastFn<T> fast_bcast_fn,
                                   ElementWiseFn<T> elementwise_fn,
@@ -179,7 +180,8 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
   } else if (elementwise_fn) {
     auto batch_arg =
         lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
-    common_elmentwise_op_arm<T, int64_t>(batch_arg, op, elementwise_fn);
+    common_elmentwise_op_arm<T, int64_t, NeonConfig>(
+        batch_arg, op, elementwise_fn);
   }
   if (!elementwise_fn && !fast_bcast_fn) {
     LOG(FATAL) << "unsupported elementwise_compute called";
