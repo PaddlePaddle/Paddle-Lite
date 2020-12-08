@@ -49,6 +49,8 @@ neon_relu_float(const float32x4_t& a) {
   return vmaxq_f32(a, zero);
 }
 
+struct NullNeonConfig {};
+
 template <class Config1, class Config2>
 struct MergeConfig : public Config1, public Config2 {};
 

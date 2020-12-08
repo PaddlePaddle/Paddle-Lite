@@ -18,6 +18,8 @@
 #include <utility>
 #include <vector>
 
+#include "lite/backends/arm/math/elementwise_common_broadcast.h"
+#include "lite/backends/arm/math/elementwise_common_broadcast_config.h"
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/kernels/host/elementwise_op_func.h"
 
@@ -25,6 +27,8 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+
+namespace arm_math = paddle::lite::arm::math;
 
 inline DDim trim_trailing_singular_dims(const DDim& dims) {
   // Remove trailing dimensions of size 1 for y
@@ -95,7 +99,9 @@ using BinaryOpFn = lite::kernels::host::BinaryOpFn<T>;
 
 enum class OprandSwapable { NO, YES };
 
-template <class Elem_t, class DimValue_t>
+template <class Elem_t,
+          class DimValue_t,
+          class NeonConfig = arm_math::NullNeonConfig>
 void common_elmentwise_op_arm(
     const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
         batch_arg,
@@ -104,37 +110,39 @@ void common_elmentwise_op_arm(
   int batch_num = batch_arg.BatchNum();
   auto bcast_type = batch_arg.BcastType();
   int range_length = batch_arg.ElemNumPerBatch();
-  switch (bcast_type) {
-    case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
-      for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-        lite::kernels::host::element_wise_range_to_one<Elem_t>(
-            batch_arg.XAtBatch(batch_id),
-            batch_arg.YAtBatch(batch_id),
-            batch_arg.ZAtBatch(batch_id),
-            range_length,
-            op);
+  if (std::is_same<NeonConfig, arm_math::NullNeonConfig>::value) {
+    switch (bcast_type) {
+      case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          lite::kernels::host::element_wise_range_to_one<Elem_t>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length,
+              op);
+        }
+        break;
       }
-      break;
-    }
-    case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
-      for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-        lite::kernels::host::element_wise_one_to_range<Elem_t>(
-            batch_arg.XAtBatch(batch_id),
-            batch_arg.YAtBatch(batch_id),
-            batch_arg.ZAtBatch(batch_id),
-            range_length,
-            op);
+      case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          lite::kernels::host::element_wise_one_to_range<Elem_t>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length,
+              op);
+        }
+        break;
       }
-      break;
-    }
-    case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
-      for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-        elementwise_fn(batch_arg.XAtBatch(batch_id),
-                       batch_arg.YAtBatch(batch_id),
-                       batch_arg.ZAtBatch(batch_id),
-                       range_length);
+      case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          elementwise_fn(batch_arg.XAtBatch(batch_id),
+                         batch_arg.YAtBatch(batch_id),
+                         batch_arg.ZAtBatch(batch_id),
+                         range_length);
+        }
+        break;
       }
-      break;
     }
   }
 }
