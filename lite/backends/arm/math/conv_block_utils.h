@@ -1627,7 +1627,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [doutc2r0] "+r"(doutc2_ptr),
                     [doutc3r0] "+r"(doutc3_ptr),
                     [cnt] "+r"(cnt_col),
-                    [ptr_din] "+r"(din_hei_ptr)
+                    [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
@@ -1708,7 +1708,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [doutc2r0] "+r"(doutc2_ptr),
                     [doutc3r0] "+r"(doutc3_ptr),
                     [cnt] "+r"(cnt_col),
-                    [ptr_din] "+r"(din_hei_ptr)
+                    [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
                     [six] "w"(six),
                     [tmp0] "r"(tmp0),
@@ -1791,7 +1791,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [doutc2r0] "+r"(doutc2_ptr),
                     [doutc3r0] "+r"(doutc3_ptr),
                     [cnt] "+r"(cnt_col),
-                    [ptr_din] "+r"(din_hei_ptr)
+                    [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
                     [scale] "w"(scale),
                     [tmp0] "r"(tmp0),
@@ -1894,7 +1894,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [doutc2r0] "+r"(doutc2_ptr),
                     [doutc3r0] "+r"(doutc3_ptr),
                     [cnt] "+r"(cnt_col),
-                    [ptr_din] "+r"(din_hei_ptr)
+                    [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
