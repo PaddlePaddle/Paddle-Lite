@@ -123,17 +123,18 @@ void LoadModelNaive(const std::string& model_dir,
 void LoadModelNaiveV0FromFile(const std::string& filename,
                               Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
+void LoadModelNaiveV0FromMemory(const std::string& model_buffer,
+                                Scope* scope,
+                                cpp::ProgramDesc* cpp_prog);
 void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               const std::string& param_buffer,
                               lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
-void LoadModelNaiveV0FromMemory(const std::string& model_buffer,
-                                Scope* scope,
-                                cpp::ProgramDesc* cpp_prog);
 #endif  // LITE_ON_TINY_PUBLISH
 void LoadModelFbsFromFile(const std::string& filename,
                           Scope* scope,
-                          cpp::ProgramDesc* cpp_prog);
+                          cpp::ProgramDesc* cpp_prog,
+                          uint16_t meta_version);
 
 void LoadModelNaiveFromFile(const std::string& filename,
                             lite::Scope* scope,
@@ -142,8 +143,9 @@ void LoadModelNaiveFromFile(const std::string& filename,
 void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
-void LoadModelNaiveV1FromMemory(const std::string& model_buffer,
-                                Scope* scope,
-                                cpp::ProgramDesc* cpp_prog);
+void LoadModelFbsFromMemory(const std::string& model_buffer,
+                            Scope* scope,
+                            cpp::ProgramDesc* cpp_prog,
+                            uint16_t meta_version);
 }  // namespace lite
 }  // namespace paddle

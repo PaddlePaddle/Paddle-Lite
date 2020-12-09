@@ -715,7 +715,10 @@ void LoadModelNaiveFromFile(const std::string &filename,
 #endif
       break;
     case 1:
-      LoadModelFbsFromFile(filename, scope, cpp_prog);
+      LoadModelFbsFromFile(filename, scope, cpp_prog, 1);
+      break;
+    case 2:
+      LoadModelFbsFromFile(filename, scope, cpp_prog, 2);
       break;
     default:
       LOG(FATAL) << "The model format cannot be recognized. Please make sure "
@@ -784,7 +787,8 @@ void LoadModelNaiveV0FromFile(const std::string &filename,
 #endif  // LITE_ON_TINY_PUBLISH
 void LoadModelFbsFromFile(const std::string &filename,
                           Scope *scope,
-                          cpp::ProgramDesc *cpp_prog) {
+                          cpp::ProgramDesc *cpp_prog,
+                          uint16_t meta_version) {
   CHECK(cpp_prog);
   CHECK(scope);
   CHECK_EQ(cpp_prog->BlocksSize(), 0);
@@ -814,7 +818,7 @@ void LoadModelFbsFromFile(const std::string &filename,
       &topo_size, filename, &offset, sizeof(uint64_t));
 
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
-  cpp_prog->Init(fbs::LoadFile(filename, offset, topo_size));
+  cpp_prog->Init(model_parser::LoadFile(filename, offset, topo_size));
 #elif LITE_ON_TINY_PUBLISH
   LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
                 "the model cannot be loaded.";
@@ -825,9 +829,17 @@ void LoadModelFbsFromFile(const std::string &filename,
   offset = offset + topo_size;
 
   /* 2. Load scope from params.fbs */
-  fbs::CombinedParamsDescView params(model_parser::LoadFile(filename, offset));
-  fbs::deprecated::SetScopeWithCombinedParams(scope, params);
-
+  if (meta_version == 1) {
+    /* load scope from param.fbs with meta_version=1 */
+    fbs::CombinedParamsDescView params(
+        model_parser::LoadFile(filename, offset));
+    fbs::deprecated::SetScopeWithCombinedParams(scope, params);
+  } else {
+    /* load scope from param.fbs with meta_version=2 */
+    model_parser::BinaryFileReader reader(filename, offset);
+    fbs::ParamDeserializer deserializer(&reader);
+    deserializer.LoadWithForwardReader(scope);
+  }
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 
@@ -865,7 +877,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 #endif
       break;
     case 1:
-      LoadModelNaiveV1FromMemory(model_buffer, scope, cpp_prog);
+      LoadModelFbsFromMemory(model_buffer, scope, cpp_prog, meta_version);
       break;
     default:
       LOG(FATAL) << "The model format cannot be recognized. Please make sure "
@@ -913,27 +925,28 @@ void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
 ///////////////////////////////////////////////////////////////////
 // Meta_version=1
 ///////////////////////////////////////////////////////////////////
-void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
-                                Scope *scope,
-                                cpp::ProgramDesc *cpp_prog) {
+void LoadModelFbsFromMemory(const std::string &model_buffer,
+                            Scope *scope,
+                            cpp::ProgramDesc *cpp_prog,
+                            uint16_t meta_version) {
   // Offset
-  uint64_t offset = sizeof(uint16_t);
+  uint16_t meta_version_tmp;
+  model_parser::StringBufferReader reader(model_buffer.data());
+  reader.ReadForward(&meta_version_tmp, sizeof(uint16_t));
 
   // (2)get opt version
   char opt_version[16];
   const uint64_t paddle_version_length = 16 * sizeof(char);
-  ReadModelDataFromBuffer<char>(
-      opt_version, model_buffer, &offset, paddle_version_length);
+  reader.ReadForward(opt_version, paddle_version_length);
   VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
 
   // (3)get prog_size and prog_data
   uint64_t prog_size;
-  ReadModelDataFromBuffer<uint64_t>(
-      &prog_size, model_buffer, &offset, sizeof(uint64_t));
+  reader.ReadForward(&prog_size, sizeof(uint64_t));
   VLOG(4) << "prog_size:" << prog_size;
 
   model_parser::Buffer prog_data(prog_size);
-  memcpy(prog_data.data(), model_buffer.c_str() + offset, prog_size);
+  reader.ReadForward(prog_data.data(), prog_size);
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   cpp_prog->Init(std::move(prog_data));
 #elif LITE_ON_TINY_PUBLISH
@@ -943,17 +956,18 @@ void LoadModelNaiveV1FromMemory(const std::string &model_buffer,
   fbs::ProgramDesc program(prog_data);
   TransformProgramDescAnyToCpp(program, cpp_prog);
 #endif
-  offset = offset + prog_size;
-  VLOG(4) << "param_size:" << model_buffer.length() - offset;
+  if (meta_version == 1) {
+    size_t params_size = reader.length() - sizeof(uint16_t) -
+                         paddle_version_length - sizeof(uint64_t) - prog_size;
+    model_parser::Buffer params_data(params_size);
+    reader.ReadForward(params_data.data(), params_size);
 
-  model_parser::Buffer params_data(model_buffer.length() - offset);
-  memcpy(params_data.data(),
-         model_buffer.c_str() + offset,
-         model_buffer.length() - offset);
-
-  fbs::CombinedParamsDescView params(std::move(params_data));
-  fbs::deprecated::SetScopeWithCombinedParams(scope, params);
-
+    fbs::CombinedParamsDescView params(std::move(params_data));
+    fbs::deprecated::SetScopeWithCombinedParams(scope, params);
+  } else {
+    fbs::ParamDeserializer deserializer(&reader);
+    deserializer.LoadWithForwardReader(scope);
+  }
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
 
