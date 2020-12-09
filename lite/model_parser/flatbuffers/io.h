@@ -33,6 +33,7 @@ void SetParamWithTensor(const std::string& name,
 
 void SetTensorWithParam(lite::Tensor* tensor, const ParamDescReadAPI& param);
 
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 class ParamSerializer {
  public:
   explicit ParamSerializer(model_parser::ByteWriter* writer, size_t version = 0)
@@ -49,6 +50,7 @@ class ParamSerializer {
   size_t version_{0};
   std::unique_ptr<model_parser::Buffer> buf_;
 };
+#endif
 
 class ParamDeserializer {
  public:

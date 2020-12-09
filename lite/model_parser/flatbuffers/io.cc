@@ -68,7 +68,7 @@ void SetTensorWithParam(lite::Tensor* tensor, const ParamDescReadAPI& param) {
   std::memcpy(dst, param.GetData(), param.byte_size());
   tensor->set_persistable(true);
 }
-
+#ifdef LITE_WITH_FLATBUFFERS_DESC
 void ParamSerializer::SaveWithForwardWriter(
     const lite::Scope& scope, const std::set<std::string>& params_name) {
   constexpr uint32_t header_offset = sizeof(uint32_t);
@@ -114,7 +114,7 @@ void ParamSerializer::WriteHeader() {
   // 2. size of meta information (reserved)
   writer_->WriteForward<uint32_t>(0U);
 }
-
+#endif
 void ParamDeserializer::LoadWithForwardReader(lite::Scope* scope) {
   CHECK(scope) << "The pointer of scope is nullptr";
   uint32_t header_size = reader_->ReadForward<uint32_t>();
