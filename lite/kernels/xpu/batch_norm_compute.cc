@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/batch_norm_compute.h"
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -24,23 +25,27 @@ namespace xpu {
 void BatchNormCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-
   float epsilon = param.epsilon;
   auto& x_dims = param.x->dims();
+  CHECK_LE(x_dims.size(), 4);
+  std::vector<int> x_shape(4, 1);
+  for (int i = 0; i < x_dims.size(); i++) {
+    x_shape[i] = x_dims[i];
+  }
 
-  int r = xdnn::batch_norm_infer_forward(
-      ctx.GetRawContext(),                        /* context */
-      epsilon,                                    /* epsilon */
-      x_dims[0],                                  /* img_n */
-      x_dims[1],                                  /* img_c */
-      x_dims[2],                                  /* img_h */
-      x_dims[3],                                  /* img_w */
-      param.x->data<float>(),                     /* img_gm */
-      param.y->mutable_data<float>(TARGET(kXPU)), /* out_gm */
-      param.scale->data<float>(),                 /* scale_gm */
-      param.bias->data<float>(),                  /* bias_gm */
-      param.mean->data<float>(),                  /* mean_gm */
-      param.variance->data<float>() /* var__gm */);
+  int r =
+      xdnn::batch_norm_infer_forward(ctx.GetRawContext(),
+                                     epsilon,
+                                     x_shape[0],
+                                     x_shape[1],
+                                     x_shape[2],
+                                     x_shape[3],
+                                     param.x->data<float>(),
+                                     param.y->mutable_data<float>(TARGET(kXPU)),
+                                     param.scale->data<float>(),
+                                     param.bias->data<float>(),
+                                     param.mean->data<float>(),
+                                     param.variance->data<float>());
   CHECK_EQ(r, 0);
 }
 
