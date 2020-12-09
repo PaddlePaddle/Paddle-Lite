@@ -101,21 +101,21 @@ void TestCase::PrepareInputsForInstruction() {
         CHECK(!base_tensor->dims().empty())
             << "The dims of input tensor is empty yet";
 #ifdef LITE_WITH_OPENCL
-        input_cpu_tensor.Resize(base_tensor->dims());
+        input_cpu_tensor_.Resize(base_tensor->dims());
         base_tensor->raw_data();
         base_tensor->memory_size();
-        input_cpu_tensor.raw_data();
-        float* input_cpu_data = input_cpu_tensor.mutable_data<float>();
+        input_cpu_tensor_.raw_data();
+        float* input_cpu_data = input_cpu_tensor_.mutable_data<float>();
         memcpy(input_cpu_data,
                base_tensor->raw_data(),
                base_tensor->numel() * sizeof(float));
         const DDim& input_image_dims =
-            converter.InitImageDimInfoWith(base_tensor->dims());
-        input_image_cpu_tensor.Resize(
+            converter_.InitImageDimInfoWith(base_tensor->dims());
+        input_image_cpu_tensor_.Resize(
             {1, input_image_dims[0], input_image_dims[1], 4});
-        uint16_t* input_image_cpu_data =
-            input_image_cpu_tensor.mutable_data<uint16_t>();
-        converter.NCHWToImage(
+        half_t* input_image_cpu_data =
+            input_image_cpu_tensor_.mutable_data<half_t>();
+        converter_.NCHWToImage(
             input_cpu_data, input_image_cpu_data, base_tensor->dims());
         inst_tensor->mutable_data<half_t, cl::Image2D>(
             input_image_dims[0], input_image_dims[1], input_image_cpu_data);
@@ -183,25 +183,31 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
 #ifdef LITE_WITH_OPENCL
     case TARGET(kOpenCL): {
       CLRuntime::Global()->command_queue().finish();
-      const DDim& out_image_shape =
-          converter.InitImageDimInfoWith(inst_tensor->dims());
-      auto out_image_width = out_image_shape[0];
-      auto out_image_height = out_image_shape[1];
-      half_t* out_image_data = new half_t[out_image_shape.production() * 4];
       auto* out_image = inst_tensor->data<half_t, cl::Image2D>();
-      TargetWrapperCL::ImgcpySync(out_image_data,
+      // We use `getImageInfo` rather than `converter_.InitImageDimInfoWith` to
+      // get the real shape of OpenCL image object because
+      // `converter_.InitImageDimInfoWith` will top pad tensor's dim to 4-dims
+      // if tensor's dim is less than 4 then its return value is not equal to
+      // the real shape of image object(such as reduce op).
+      DDim out_image_shape({1, 1});
+      static_cast<const cl::Image2D*>(out_image)->getImageInfo(
+          CL_IMAGE_WIDTH, &out_image_shape[0]);
+      static_cast<const cl::Image2D*>(out_image)->getImageInfo(
+          CL_IMAGE_HEIGHT, &out_image_shape[1]);
+      std::unique_ptr<half_t> out_image_data(
+          new half_t(out_image_shape.production() * 4));
+      TargetWrapperCL::ImgcpySync(out_image_data.get(),
                                   out_image,
-                                  out_image_width,
-                                  out_image_height,
+                                  out_image_shape[0],
+                                  out_image_shape[1],
                                   0,
                                   0,
                                   IoDirection::DtoH);
 
-      float* out_data = new float[out_image_shape.production() * 4];
-      converter.ImageToNCHW(out_image_data,
-                            inst_host_tensor.mutable_data<float>(),
-                            out_image_shape,
-                            inst_tensor->dims());
+      converter_.ImageToNCHW(out_image_data.get(),
+                             inst_host_tensor.mutable_data<float>(),
+                             out_image_shape,
+                             inst_tensor->dims());
       inst_data = inst_host_tensor.data<T>();
       break;
     }

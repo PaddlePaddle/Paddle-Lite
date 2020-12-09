@@ -97,7 +97,7 @@ class CLRuntime {
     command_queue_ = CreateCommandQueue(context());
   }
 
-  bool auto_tune() { return auto_tune_; }
+  size_t auto_tune() { return auto_tune_; }
 
   bool Init();
 

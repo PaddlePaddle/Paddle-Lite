@@ -337,4 +337,5 @@ REGISTER_LITE_KERNEL(matrix_nms,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Index",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindPaddleOpVersion("matrix_nms", 1)
     .Finalize();

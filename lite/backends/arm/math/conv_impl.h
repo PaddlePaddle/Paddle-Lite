@@ -438,6 +438,52 @@ void im2col(const Dtype* data_im,
             int dilation_w,
             Dtype* data_col);
 
+template <typename Dtype>
+void im2col_common(const Dtype* data_im,
+                   int channels,
+                   int height,
+                   int width,
+                   int kernel_h,
+                   int kernel_w,
+                   int pad_top,
+                   int pad_bottom,
+                   int pad_left,
+                   int pad_right,
+                   int stride_h,
+                   int stride_w,
+                   int dilation_h,
+                   int dilation_w,
+                   Dtype* data_col);
+
+template <typename Dtype>
+void im2col_s1(const Dtype* data_im,
+               int channels,
+               int height,
+               int width,
+               int kernel_h,
+               int kernel_w,
+               int pad_top,
+               int pad_bottom,
+               int pad_left,
+               int pad_right,
+               int dilation_h,
+               int dilation_w,
+               Dtype* data_col);
+
+template <typename Dtype>
+void im2col_s2(const Dtype* data_im,
+               int channels,
+               int height,
+               int width,
+               int kernel_h,
+               int kernel_w,
+               int pad_top,
+               int pad_bottom,
+               int pad_left,
+               int pad_right,
+               int dilation_h,
+               int dilation_w,
+               Dtype* data_col);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
