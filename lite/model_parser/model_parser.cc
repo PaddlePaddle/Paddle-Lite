@@ -877,7 +877,10 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 #endif
       break;
     case 1:
-      LoadModelFbsFromMemory(model_buffer, scope, cpp_prog, meta_version);
+      LoadModelFbsFromMemory(model_buffer, scope, cpp_prog, 1);
+      break;
+    case 2:
+      LoadModelFbsFromMemory(model_buffer, scope, cpp_prog, 2);
       break;
     default:
       LOG(FATAL) << "The model format cannot be recognized. Please make sure "
