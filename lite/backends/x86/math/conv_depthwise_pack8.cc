@@ -57,9 +57,6 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
 
   const int filter_channel_step = kernel_h * kernel_w * 8;
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       __m256 _bias0 = bias ? _mm256_loadu_ps(bias->data<float>() + ic * 8)
@@ -425,9 +422,6 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
 
   const int tailstep = (input_width - 2 * output_width + input_width) * 8;
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       __m256 _bias0 = bias ? _mm256_loadu_ps(bias->data<float>() + ic * 8)
@@ -683,9 +677,6 @@ void conv_depthwise_m256(lite::Tensor* input,
     }
   }
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       const float* input_ptr =

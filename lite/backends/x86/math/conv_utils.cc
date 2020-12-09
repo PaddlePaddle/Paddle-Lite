@@ -86,9 +86,6 @@ void pack8_m256(lite::Tensor* input,
   output->Resize({batch_size, channel_num, input_height, input_width, 8});
   float* output_data = output->mutable_data<float>();
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       const float* input_ptr = input_data + bs * batch_step + ic * pack_step;
@@ -183,9 +180,6 @@ void pack4_m128(lite::Tensor* input,
   output->Resize({batch_size, channel_num, input_height, input_width, 4});
   float* output_data = output->mutable_data<float>();
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       const float* input_ptr = input_data + bs * batch_step + ic * pack_step;
@@ -248,9 +242,6 @@ void unpack8_m256(lite::Tensor* input, lite::Tensor* output) {
   output->Resize({batch_size, channel_num * 8, input_height, input_width});
   float* output_data = output->mutable_data<float>();
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       const float* r0 = input_data + bs * batch_step + ic * pack_step;
@@ -334,9 +325,6 @@ void unpack4_m128(lite::Tensor* input, lite::Tensor* output) {
   output->Resize({batch_size, channel_num * 4, input_height, input_width});
   float* output_data = output->mutable_data<float>();
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       const float* r0 = input_data + bs * batch_step + ic * pack_step;
@@ -418,9 +406,6 @@ void padding8_m256(lite::Tensor* input,
 
   __m256 pad_val = _mm256_set1_ps(0.f);
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       // fill top
@@ -487,9 +472,6 @@ void padding4_m128(lite::Tensor* input,
 
   __m128 pad_val = _mm_set1_ps(0.f);
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       // fill top
@@ -553,9 +535,6 @@ void padding1_float(lite::Tensor* input,
   int top_size = top * out_width;
   int bottom_size = bottom * out_width;
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < input_channel; ++ic) {
       // fill top
@@ -619,9 +598,6 @@ void bias_add_broadcast(const float* dinx,
                         int batch,
                         int channels,
                         int num) {
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int i = 0; i < batch; ++i) {
     for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
@@ -643,9 +619,6 @@ void bias_add_relu_broadcast(const float* dinx,
                              int batch,
                              int channels,
                              int num) {
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int i = 0; i < batch; ++i) {
     for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
@@ -667,9 +640,6 @@ void bias_add_relu6_broadcast(const float* dinx,
                               int batch,
                               int channels,
                               int num) {
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int i = 0; i < batch; ++i) {
     for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;

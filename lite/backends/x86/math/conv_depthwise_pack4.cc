@@ -74,9 +74,6 @@ void conv_depthwise_m128(lite::Tensor* input,
     }
   }
 
-  // #ifdef PADDLE_WITH_MKLML
-  // #pragma omp parallel for collapse(2)
-  // #endif
   for (int bs = 0; bs < batch_size; ++bs) {
     for (int ic = 0; ic < channel_num; ++ic) {
       const float* input_ptr =
