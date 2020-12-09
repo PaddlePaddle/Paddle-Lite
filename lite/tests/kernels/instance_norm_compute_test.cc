@@ -170,7 +170,7 @@ void TestInstanceNorm(Place place,
 
 TEST(InstanceNorm, precision) {
   Place place;
-  float abs_error = 6e-5;
+  float abs_error = 1e-3;
   std::vector<std::string> ignored_outs = {};
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
