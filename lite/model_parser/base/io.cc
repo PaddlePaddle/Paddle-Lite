@@ -25,6 +25,9 @@ void Buffer::CopyDataFrom(const Buffer& other) {
 }
 
 void Buffer::ResetLazy(size_t size) {
+  if (size == 0) {
+    size = 1;
+  }
   CHECK(raw_);
   raw_->ResetLazy(TargetType::kHost, size);
   size_ = size;

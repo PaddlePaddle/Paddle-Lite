@@ -36,8 +36,9 @@ void SetTensorWithParam(lite::Tensor* tensor, const ParamDescReadAPI& param);
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 class ParamSerializer {
  public:
-  explicit ParamSerializer(model_parser::ByteWriter* writer, size_t version = 0)
-      : writer_(writer), version_(version), buf_(new model_parser::Buffer) {
+  explicit ParamSerializer(model_parser::ByteWriter* writer,
+                           uint16_t version = 0)
+      : writer_(writer), version_{version}, buf_(new model_parser::Buffer) {
     CHECK(writer_) << "The pointer of writer is nullptr";
     WriteHeader();
   }
@@ -47,7 +48,7 @@ class ParamSerializer {
  private:
   void WriteHeader();
   model_parser::ByteWriter* writer_{nullptr};
-  size_t version_{0};
+  uint16_t version_{0};
   std::unique_ptr<model_parser::Buffer> buf_;
 };
 #endif
@@ -62,6 +63,10 @@ class ParamDeserializer {
   void LoadWithForwardReader(lite::Scope* scope);
 
  private:
+  void ReadBytesToBuffer(size_t size) {
+    buf_->ResetLazy(size);
+    reader_->ReadForward(buf_->data(), size);
+  }
   void ReadHeader();
   model_parser::ByteReader* reader_{nullptr};
   std::unique_ptr<model_parser::Buffer> buf_;
