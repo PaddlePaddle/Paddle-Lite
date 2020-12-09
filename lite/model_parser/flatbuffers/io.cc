@@ -71,8 +71,7 @@ void SetTensorWithParam(lite::Tensor* tensor, const ParamDescReadAPI& param) {
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 void ParamSerializer::SaveWithForwardWriter(
     const lite::Scope& scope, const std::set<std::string>& params_name) {
-  constexpr uint32_t header_offset = sizeof(uint32_t);
-  const uint32_t params_size = params_name.size();
+  const uint16_t params_size = params_name.size();
   // meta_information
   uint32_t max_tensor_size = 0;
   for (const auto& name : params_name) {
@@ -83,21 +82,21 @@ void ParamSerializer::SaveWithForwardWriter(
       max_tensor_size = tensor_size;
     }
   }
-  constexpr uint32_t header_size =
-      sizeof(header_offset) + sizeof(params_size) + sizeof(max_tensor_size);
+  constexpr uint16_t header_size =
+      sizeof(params_size) + sizeof(max_tensor_size);
   CHECK_LT(max_tensor_size, std::numeric_limits<uint32_t>::max())
       << "The size of param is out of range.";
-  uint32_t header[4] = {
-      header_size, header_offset, params_size, max_tensor_size};
-  writer_->WriteForward<uint32_t, 4>(header);
+
+  writer_->WriteForward<uint16_t>(header_size);
+  writer_->WriteForward<uint16_t>(params_size);
+  writer_->WriteForward<uint32_t>(max_tensor_size);
+
   for (const auto& name : params_name) {
     fbs::ParamDesc param;
     auto& tensor = scope.FindVar(name)->Get<lite::Tensor>();
     SetParamWithTensor(name, tensor, &param);
     param.CopyDataToBuffer(buf_.get());
-    // 1. size of meta information (reserved)
-    writer_->WriteForward<uint32_t>(0U);
-    // 2. size of param desc
+
     const size_t param_bytes = buf_->size();
     CHECK(param_bytes) << "The bytes size of param can not be zero";
     constexpr uint32_t offset = sizeof(uint32_t);
@@ -110,32 +109,28 @@ void ParamSerializer::SaveWithForwardWriter(
 
 void ParamSerializer::WriteHeader() {
   // 1. version id
-  writer_->WriteForward<uint32_t>(version_);
+  writer_->WriteForward<uint16_t>(version_);
   // 2. size of meta information (reserved)
-  writer_->WriteForward<uint32_t>(0U);
+  writer_->WriteForward<uint16_t>(0U);
 }
 #endif
 
 void ParamDeserializer::LoadWithForwardReader(lite::Scope* scope) {
   CHECK(scope) << "The pointer of scope is nullptr";
-  uint32_t header_size = reader_->ReadForward<uint32_t>();
-  buf_->ResetLazy(header_size);
-  uint32_t offset = reader_->ReadForward<uint32_t>();
-  reader_->ReadForward(buf_->data(), header_size - sizeof(offset));
-  offset = offset - sizeof(offset);
-  char const* data = static_cast<char const*>(buf_->data()) + offset;
-  uint32_t params_size = (reinterpret_cast<uint32_t const*>(data))[0];
-  uint32_t max_tensor_size = (reinterpret_cast<uint32_t const*>(data))[1];
+  uint16_t header_size = reader_->ReadForward<uint16_t>();
+  ReadBytesToBuffer(header_size);
+  char const* data = static_cast<char const*>(buf_->data());
+  uint16_t params_size = *reinterpret_cast<uint16_t const*>(data);
+  uint32_t max_tensor_size =
+      *reinterpret_cast<uint32_t const*>(data + sizeof(uint16_t));
+
   buf_->ResetLazy(max_tensor_size);
   for (size_t i = 0; i < params_size; ++i) {
-    uint32_t meta_size = reader_->ReadForward<uint32_t>();
-    buf_->ResetLazy(meta_size);
-    reader_->ReadForward(buf_->data(), meta_size);
     uint32_t total_size = reader_->ReadForward<uint32_t>();
     uint32_t offset = reader_->ReadForward<uint32_t>();
-    uint32_t param_size = total_size - offset;
-    buf_->ResetLazy(param_size);
-    reader_->ReadForward(buf_->data(), param_size);
+    uint32_t param_bytes = total_size - offset;
+    ReadBytesToBuffer(offset - sizeof(offset));
+    ReadBytesToBuffer(param_bytes);
     fbs::ParamDescView param(buf_.get());
     SetTensorWithParam(scope->Var(param.Name())->GetMutable<lite::Tensor>(),
                        param);
@@ -144,13 +139,12 @@ void ParamDeserializer::LoadWithForwardReader(lite::Scope* scope) {
 
 void ParamDeserializer::ReadHeader() {
   // 1. version id
-  uint32_t version = reader_->ReadForward<uint32_t>();
+  uint16_t version = reader_->ReadForward<uint16_t>();
   CHECK_EQ(version, 0U)
       << "File format error: The version of params must be zero.";
   // 2. meta version
-  uint32_t meta_size = reader_->ReadForward<uint32_t>();
-  CHECK_EQ(meta_size, 0U)
-      << "File format error: The size of meta information must be zero.";
+  uint16_t meta_size = reader_->ReadForward<uint16_t>();
+  ReadBytesToBuffer(meta_size);
 }
 
 }  // namespace fbs

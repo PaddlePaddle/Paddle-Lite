@@ -56,18 +56,9 @@ class Buffer {
     return *this;
   }
 
-  const void* data() const {
-    CHECK(raw_);
-    return raw_->data();
-  }
-  void* data() {
-    CHECK(raw_);
-    return raw_->data();
-  }
-  size_t capacity() const {
-    CHECK(raw_);
-    return raw_->space();
-  }
+  const void* data() const { return raw_->data(); }
+  void* data() { return raw_->data(); }
+  size_t capacity() const { return raw_->space(); }
   size_t size() const { return size_; }
   void ResetLazy(size_t size);
 
