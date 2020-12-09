@@ -113,6 +113,8 @@ class OpLite : public Registry {
     return kernel_.get();
   }
 
+  const operators::ParamBase *GetParam() const { return op_param_; }
+
   // Attach input variable from scope by op_desc and input name
   void AttachInput(const cpp::OpDesc &op_desc,
                    lite::Scope *scope,
