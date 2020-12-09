@@ -45,9 +45,10 @@ void gemm_s8(bool is_transA,
               bias,
               act_param.has_active,
               act_param.active_type,
-              act,
+              ctx,
               act_param.Relu_clipped_coef,
               act_param.Leaky_relu_alpha);
+
     return;
   }
   if (M == 1) {
@@ -70,7 +71,7 @@ void gemm_s8(bool is_transA,
               bias,
               act_param.has_active,
               act_param.active_type,
-              act,
+              ctx,
               act_param.Relu_clipped_coef,
               act_param.Leaky_relu_alpha);
     return;

@@ -83,7 +83,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
       workspace_size_ = k * n * sizeof(float);
     }
     if (!flag_trans_weights_ && n > 1 && m > 1) {
-      lite::arm::math::trans_gemm_weights<pType>(
+      lite::arm::math::trans_gemm_weights<Ptype>(
           *(param.filter), weights_, param.groups, &ctx);
       flag_trans_weights_ = true;
     } else if (n == 1 || m == 1) {

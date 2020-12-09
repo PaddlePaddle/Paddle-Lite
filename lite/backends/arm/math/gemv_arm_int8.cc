@@ -649,8 +649,8 @@ inline void write_gemv_out(const int* in,
             "vmov.f32 q11, #0.5\n"
             "vmax.f32 q5, q5, %q[vzero]\n"
             "vmax.f32 q8, q8, %q[vzero]\n"
-            "vsub.f32 q5, q5, q10\n"
-            "vsub.f32 q8, q8, q11\n"
+            "vadd.f32 q5, q5, q10\n"
+            "vadd.f32 q8, q8, q11\n"
             // fp32 -> int32
             "vcvt.s32.f32  q7, q5\n"
             "vcvt.s32.f32  q9, q8\n"
