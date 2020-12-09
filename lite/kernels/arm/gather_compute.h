@@ -23,7 +23,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename IndexType>
+template <typename IndexType, typename AxisType>
 class GatherCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   void Run() override;

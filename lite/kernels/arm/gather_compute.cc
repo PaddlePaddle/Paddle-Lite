@@ -40,29 +40,92 @@ void GatherFunc(const operators::GatherParam& param) {
   }
 }
 
-template <typename IndexType>
-void GatherCompute<IndexType>::Run() {
-  auto& param = this->template Param<operators::GatherParam>();
+template <typename IndexType, typename AxisType, typename DataType>
+void GatherV2Func(const operators::GatherParam& param) {
+  auto* axis_data = param.Axis->data<AxisType>();
+  auto* index_data = param.Index->data<IndexType>();
+  auto* input_data = param.X->data<DataType>();
+  auto* out_data = param.Out->mutable_data<DataType>();
 
-  switch (param.X->precision()) {
-    case PRECISION(kFloat):
-      GatherFunc<IndexType, float>(param);
-      break;
-    case PRECISION(kInt8):
-      GatherFunc<IndexType, int8_t>(param);
-      break;
-    case PRECISION(kInt16):
-      GatherFunc<IndexType, int16_t>(param);
-      break;
-    case PRECISION(kInt32):
-      GatherFunc<IndexType, int32_t>(param);
-      break;
-    case PRECISION(kInt64):
-      GatherFunc<IndexType, int64_t>(param);
-      break;
-    default:
-      LOG(FATAL) << "Gather does not implement for the "
-                 << "input type:" << static_cast<int>(param.X->precision());
+  int index_size = param.Index->numel();
+  int input_size = param.X->numel();
+  auto input_dim = param.X->dims();
+  int axis_index = axis_data[0];
+  int inner_dim_size = 1;
+  int outer_dim_size = 1;
+  int input_index_dim_size = input_dim[axis_index];
+  for (int i = 0; i < index_size; i++) {
+    CHECK_LT(index_data[i], input_index_dim_size)
+        << "The element of Index must be less than the size of"
+        << "dim size of axis dim";
+  }
+  for (int i = 0; i < axis_index; i++) {
+    inner_dim_size *= input_dim[i];
+  }
+  for (int i = axis_index + 1; i < input_dim.size(); i++) {
+    outer_dim_size *= input_dim[i];
+  }
+
+  int out_index = 0;
+  for (int i = 0; i < inner_dim_size; i++) {
+    for (int j = 0; j < index_size; j++) {
+      for (int k = 0; k < outer_dim_size; k++) {
+        int index = k + index_data[j] * outer_dim_size +
+                    (i * input_size / inner_dim_size);
+        out_data[out_index] = input_data[index];
+        out_index++;
+      }
+    }
+  }
+}
+
+template <typename IndexType, typename AxisType>
+void GatherCompute<IndexType, AxisType>::Run() {
+  auto& param = this->template Param<operators::GatherParam>();
+  if (param.Axis != nullptr) {
+    switch (param.X->precision()) {
+      case PRECISION(kFloat):
+        GatherV2Func<IndexType, AxisType, float>(param);
+        break;
+      case PRECISION(kInt8):
+        GatherV2Func<IndexType, AxisType, int8_t>(param);
+        break;
+      case PRECISION(kInt16):
+        GatherV2Func<IndexType, AxisType, int16_t>(param);
+        break;
+      case PRECISION(kInt32):
+        GatherV2Func<IndexType, AxisType, int32_t>(param);
+        break;
+      case PRECISION(kInt64):
+        GatherV2Func<IndexType, AxisType, int64_t>(param);
+        break;
+      default:
+        LOG(FATAL) << "Gather does not implement for the "
+                   << "input type:" << static_cast<int>(param.X->precision());
+    }
+    return;
+  } else {
+    switch (param.X->precision()) {
+      case PRECISION(kFloat):
+        GatherFunc<IndexType, float>(param);
+        break;
+      case PRECISION(kInt8):
+        GatherFunc<IndexType, int8_t>(param);
+        break;
+      case PRECISION(kInt16):
+        GatherFunc<IndexType, int16_t>(param);
+        break;
+      case PRECISION(kInt32):
+        GatherFunc<IndexType, int32_t>(param);
+        break;
+      case PRECISION(kInt64):
+        GatherFunc<IndexType, int64_t>(param);
+        break;
+      default:
+        LOG(FATAL) << "Gather does not implement for the "
+                   << "input type:" << static_cast<int>(param.X->precision());
+    }
+    return;
   }
 }
 
@@ -70,29 +133,45 @@ void GatherCompute<IndexType>::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+typedef paddle::lite::kernels::arm::GatherCompute<int32_t, int32_t>
+    GatherInt32Int32;
+typedef paddle::lite::kernels::arm::GatherCompute<int64_t, int64_t>
+    GatherInt64Int64;
+typedef paddle::lite::kernels::arm::GatherCompute<int64_t, int32_t>
+    GatherInt64Int32;
+typedef paddle::lite::kernels::arm::GatherCompute<int32_t, int64_t>
+    GatherInt32Int64;
 
-REGISTER_LITE_KERNEL(gather,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::GatherCompute<int32_t>,
-                     int32)
+REGISTER_LITE_KERNEL(gather, kARM, kFloat, kNCHW, GatherInt32Int32, int32int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Axis", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindPaddleOpVersion("gather", 1)
     .Finalize();
 
-REGISTER_LITE_KERNEL(gather,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::GatherCompute<int64_t>,
-                     int64)
+REGISTER_LITE_KERNEL(gather, kARM, kFloat, kNCHW, GatherInt64Int64, int64int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Axis", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindPaddleOpVersion("gather", 1)
+    .Finalize();
+REGISTER_LITE_KERNEL(gather, kARM, kFloat, kNCHW, GatherInt64Int32, int64int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Axis", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindPaddleOpVersion("gather", 1)
+    .Finalize();
+REGISTER_LITE_KERNEL(gather, kARM, kFloat, kNCHW, GatherInt32Int64, int32int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Axis", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindPaddleOpVersion("gather", 1)
     .Finalize();

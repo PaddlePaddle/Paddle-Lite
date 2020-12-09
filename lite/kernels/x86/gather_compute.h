@@ -65,6 +65,45 @@ void CPUGather(const lite::Tensor* src,
   }
 }
 
+template <typename DataType, typename IndexType>
+void CPUGatherV2(const operators::GatherParam& param) {
+  auto* axis_data = param.Axis->data<IndexType>();
+  auto* index_data = param.Index->data<IndexType>();
+  auto* input_data = param.X->data<DataType>();
+  auto* out_data = param.Out->mutable_data<DataType>();
+
+  int index_size = param.Index->numel();
+  int input_size = param.X->numel();
+  auto input_dim = param.X->dims();
+  int axis_index = axis_data[0];
+  int inner_dim_size = 1;
+  int outer_dim_size = 1;
+  int input_index_dim_size = input_dim[axis_index];
+  for (int i = 0; i < index_size; i++) {
+    CHECK_LT(index_data[i], input_index_dim_size)
+        << "The element of Index must be less than the size of"
+        << "dim size of axis dim";
+  }
+  for (int i = 0; i < axis_index; i++) {
+    inner_dim_size *= input_dim[i];
+  }
+  for (int i = axis_index + 1; i < input_dim.size(); i++) {
+    outer_dim_size *= input_dim[i];
+  }
+
+  int out_index = 0;
+  for (int i = 0; i < inner_dim_size; i++) {
+    for (int j = 0; j < index_size; j++) {
+      for (int k = 0; k < outer_dim_size; k++) {
+        int index = k + index_data[j] * outer_dim_size +
+                    (i * input_size / inner_dim_size);
+        out_data[out_index] = input_data[index];
+        out_index++;
+      }
+    }
+  }
+}
+
 template <typename T, typename IndexT>
 class GatherCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
@@ -72,22 +111,26 @@ class GatherCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
+    if (param.Axis != nullptr) {
+      CPUGatherV2<T, IndexT>(param);
+      return;
+    } else {
+      auto x = param.X;
+      auto index = param.Index;
+      auto out = param.Out;
 
-    auto x = param.X;
-    auto index = param.Index;
-    auto out = param.Out;
-
-    out->template mutable_data<T>();
-    if (x->dims().production() == 0) return;
-    /*
-     * Since there's no type defined for lite::Tensor in Paddle-Lite, then
-     * convert the Index's value to float which must be int32_t or int64_t and
-     * this supposes to cause no precision difference during inference just for
-     * now.
-     * Alternatively, if define the Tensor's type during registering, may cause
-     * a redefinition error.
-     */
-    CPUGather<T, IndexT>(x, index, out);
+      out->template mutable_data<T>();
+      if (x->dims().production() == 0) return;
+      /*
+      * Since there's no type defined for lite::Tensor in Paddle-Lite, then
+      * convert the Index's value to float which must be int32_t or int64_t and
+      * this supposes to cause no precision difference during inference just for
+      * now.
+      * Alternatively, if define the Tensor's type during registering, may cause
+      * a redefinition error.
+      */
+      CPUGather<T, IndexT>(x, index, out);
+    }
   }
 
   virtual ~GatherCompute() = default;
