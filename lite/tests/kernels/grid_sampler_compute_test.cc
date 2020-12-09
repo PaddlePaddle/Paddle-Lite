@@ -270,8 +270,7 @@ void test_grid_sampler(Place place) {
                   return;
                 }
                 // if you want to test this op performance, uncomment the
-                // following
-                // line
+                // following line
                 // arena.TestPerformance();
               }
             }

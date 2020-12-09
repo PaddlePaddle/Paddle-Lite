@@ -27,7 +27,6 @@ void GridSamplerCompute::PrepareForRun() {}
 
 void GridSamplerCompute::Run() {
   auto& param = this->Param<param_t>();
-
   bool align_corners = param.align_corners;
   std::string padding_mode = param.padding_mode;
   std::string mode = param.mode;
