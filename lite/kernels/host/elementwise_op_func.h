@@ -110,6 +110,7 @@ enum class BroadcastType {
 template <class DimValue_t>
 BroadcastType get_broadcast_type(DimValue_t *x_dims,
                                  DimValue_t *y_dims,
+                                 DimValue_t *z_dims,
                                  int dim_size) {
   if (memcmp(x_dims, y_dims, sizeof(DimValue_t) * dim_size) == 0) {
     return BroadcastType::SAME_DIM;
@@ -124,6 +125,14 @@ BroadcastType get_broadcast_type(DimValue_t *x_dims,
 
   int pos = dim_size - 1;
   while (pos >= 0 && x_dims[pos] == y_dims[pos] && x_dims[pos] == 1) {
+    if (z_dims[pos] != 1) {
+      LOG(FATAL) << "Unsupported broadcast type detected.";
+      // Note: This is the 4th type of broadcast, It is not implemented to
+      // reduce code complexity
+      // e.g.
+      // X.shape=[10,1],Y.shape=[10,1],Z.shape=[10,5] will match this pattern
+      return BroadcastType::DIM_NOT_MATCH;
+    }
     --pos;
   }
   if (x_dims[pos] == y_dims[pos]) {
@@ -272,7 +281,7 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
   // arg checking
   if (broadcast_type == BroadcastType::UNKNOWN) {
     VLOG(4) << "No broadcast type input";
-    broadcast_type = get_broadcast_type(x_dims, y_dims, dim_size);
+    broadcast_type = get_broadcast_type(x_dims, y_dims, z_dims, dim_size);
   }
   if (broadcast_type == BroadcastType::UNKNOWN ||
       broadcast_type == BroadcastType::DIM_NOT_MATCH) {

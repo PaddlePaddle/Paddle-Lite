@@ -146,6 +146,7 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d,
@@ -164,4 +165,5 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                 {LiteType::GetTensorTy(TARGET(kFPGA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNHWC))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
