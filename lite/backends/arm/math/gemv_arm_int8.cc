@@ -649,6 +649,7 @@ inline void write_gemv_out(const int* in,
             "vmov.f32 q11, #0.5\n"
             "vmax.f32 q5, q5, %q[vzero]\n"
             "vmax.f32 q8, q8, %q[vzero]\n"
+            // data >= -127
             "vadd.f32 q5, q5, q10\n"
             "vadd.f32 q8, q8, q11\n"
             // fp32 -> int32
@@ -691,10 +692,8 @@ inline void write_gemv_out(const int* in,
               [scale_ptr] "+r"(scale),
               [bias_ptr] "+r"(bias_ptr),
               [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [vmax] "w"(vmax)
+            :
+            [cnt_4] "r"(cnt_4), [cnt_remain] "r"(cnt_remain), [vzero] "w"(vzero)
             : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
 #endif
         in -= 4;
@@ -704,7 +703,7 @@ inline void write_gemv_out(const int* in,
           float tmp = *(bias_ptr++) + *(in++) * *(scale)++;
           tmp = tmp > 0.f ? tmp : 0.f;
           out[0] = saturate_cast<signed char>(roundf(tmp));
-          out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
+          // out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
           out++;
         }
         break;
@@ -813,13 +812,9 @@ inline void write_gemv_out(const int* in,
             "subs %[cnt], #1\n"
             "vmin.f32 q5, q5, %q[vsix]\n"
             "vmin.f32 q8, q8, %q[vsix]\n"
+            // data >= -127
             "vadd.f32 q5, q5, q10\n"
             "vadd.f32 q8, q8, q11\n"
-            // // data >= -127
-            // "vcge.f32 q7, q5, %q[vmax]\n"
-            // "vcge.f32 q9, q8, %q[vmax]\n"
-            // "vbif q5, %q[vmax], q7\n"
-            // "vbif q8, %q[vmax], q9\n"
             // fp32 -> int32
             "vcvt.s32.f32  q7, q5\n"
             "vcvt.s32.f32  q9, q8\n"
@@ -845,10 +840,8 @@ inline void write_gemv_out(const int* in,
             "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
             "vmax.f32 q5, q5, %q[vzero]\n"
             "vmin.f32 q5, q5, %q[vsix]\n"
-            "vadd.f32 q5, q5, q10\n"
             // data >= -127
-            // "vcge.f32 q7, q5, %q[vmax]\n"
-            // "vbif q5, %q[vmax], q7\n"
+            "vadd.f32 q5, q5, q10\n"
             // fp32 -> int32
             "vcvt.s32.f32  q7, q5\n"
             // int32 -> int16
@@ -866,8 +859,7 @@ inline void write_gemv_out(const int* in,
             : [cnt_4] "r"(cnt_4),
               [cnt_remain] "r"(cnt_remain),
               [vzero] "w"(vzero),
-              [vsix] "w"(vsix),
-              [vmax] "w"(vmax)
+              [vsix] "w"(vsix)
             : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
 #endif
         in -= 4;
@@ -877,7 +869,7 @@ inline void write_gemv_out(const int* in,
           float tmp = *(bias_ptr++) + *(in++) * *(scale)++;
           tmp = tmp > 0.f ? (tmp < six ? tmp : six) : 0.f;
           out[0] = saturate_cast<signed char>(roundf(tmp));
-          out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
+          // out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
           out++;
         }
         break;
@@ -1314,9 +1306,9 @@ bool gemv_int8_trans_oth(const int8_t* A,
         "ldr q10, [%[in_ptr1]], #0x10\n"
         "ldr q11, [%[in_ptr2]], #0x10\n"
         "ldr q12, [%[in_ptr3]], #0x10\n"
+        "sxtl  v0.8h, v8.8b\n"
         "blt 2f\n"
         "1: \n"
-        "sxtl  v0.8h, v8.8b\n"
         "ldr q13, [%[out_ptr]]\n"
         "sxtl  v1.8h, v9.8b\n"
         "sxtl2 v2.8h, v9.16b\n"
@@ -1426,8 +1418,12 @@ bool gemv_int8_trans_oth(const int8_t* A,
           "v18",
           "v19",
           "v20");
+    in_ptr0 -= 16;
+    in_ptr1 -= 16;
+    in_ptr2 -= 16;
+    in_ptr3 -= 16;
     for (int j = 0; j < out_remain; j++) {
-      *out_ptr = *in_ptr0++ * wei_ptr[0];
+      *out_ptr += *in_ptr0++ * wei_ptr[0];
       *out_ptr += *in_ptr1++ * wei_ptr[1];
       *out_ptr += *in_ptr2++ * wei_ptr[2];
       *out_ptr += *in_ptr3++ * wei_ptr[3];
@@ -1459,10 +1455,10 @@ bool gemv_int8_trans_oth(const int8_t* A,
         "ldr q9, [%[in_ptr0]], #0x10\n"
         "ldr q10, [%[in_ptr1]], #0x10\n"
         "ldr q11, [%[in_ptr2]], #0x10\n"
+        "sxtl  v0.8h, v8.8b\n"
         "ldr q12, [%[in_ptr3]], #0x10\n"
         "blt 2f\n"
         "1: \n"
-        "sxtl  v0.8h, v8.8b\n"
         "ldr q13, [%[out_ptr]]\n"
         "sxtl  v1.8h, v9.8b\n"
         "sxtl2 v2.8h, v9.16b\n"
@@ -1532,8 +1528,12 @@ bool gemv_int8_trans_oth(const int8_t* A,
           "v14",
           "v15",
           "v16");
+    in_ptr0 -= 16;
+    in_ptr1 -= 16;
+    in_ptr2 -= 16;
+    in_ptr3 -= 16;
     for (int j = 0; j < out_remain; j++) {
-      *out_ptr = *in_ptr0++ * wei_ptr[0];
+      *out_ptr += *in_ptr0++ * wei_ptr[0];
       *out_ptr += *in_ptr1++ * wei_ptr[1];
       *out_ptr += *in_ptr2++ * wei_ptr[2];
       *out_ptr += *in_ptr3++ * wei_ptr[3];
@@ -1556,9 +1556,9 @@ bool gemv_int8_trans_oth(const int8_t* A,
         "ldr q9, [%[in_ptr0]], #0x10\n"
         "ldr q13, [%[out_ptr]]\n"
         "ldr q14, [%[out_ptr], #0x10]\n"
+        "sxtl  v0.8h, v8.8b\n"
         "blt 2f\n"
         "1: \n"
-        "sxtl  v0.8h, v8.8b\n"
         "sxtl  v1.8h, v9.8b\n"
         "sxtl2 v2.8h, v9.16b\n"
         "ldr q15, [%[out_ptr], #0x20]\n"
@@ -1600,8 +1600,9 @@ bool gemv_int8_trans_oth(const int8_t* A,
           "v14",
           "v15",
           "v16");
+    in_ptr -= 16;
     for (int j = 0; j < out_remain; j++) {
-      *out_ptr = *in_ptr++ * wei_ptr[0];
+      *out_ptr += *in_ptr++ * wei_ptr[0];
       out_ptr++;
     }
     data_in += M;
@@ -1633,9 +1634,9 @@ bool gemv_int8_trans_oth(const int8_t* A,
         "vld1.8 {d12-d13}, [%[in_ptr1]]!\n"
         "vld1.8 {d14-d15}, [%[in_ptr2]]!\n"
         "vld1.8 {d16-d17}, [%[in_ptr3]]!\n"
+        "vmovl.s8 q0, d8\n"
         "blt 2f\n"
         "1: \n"
-        "vmovl.s8 q0, d8\n"
         "vld1.32 {d24-d25}, [%[out_ptr]]\n"
         "vmovl.s8 q1, d10\n"
         "vldr d26, [%[out_ptr], #0x10]\n"
@@ -1645,32 +1646,36 @@ bool gemv_int8_trans_oth(const int8_t* A,
         "vldr d28, [%[out_ptr], #0x20]\n"
         "vmovl.s8 q4, d13\n"
         "vldr d29, [%[out_ptr], #0x28]\n"
-        "vmovl.s8 q5, d14\n"
+        "vmovl.s8 q9, d14\n"
         "vldr d30, [%[out_ptr], #0x30]\n"
-        "vmovl.s8 q6, d15\n"
+        "vmovl.s8 q10, d15\n"
         "vldr d31, [%[out_ptr], #0x38]\n"
         // r0
         "vmlal.s16 q12, d2, d0[0]\n"
         "vmlal.s16 q13, d3, d0[0]\n"
-        "vmovl.s8 q7, d16\n"
+        "vmovl.s8 q5, d16\n"
         "vmlal.s16 q14, d4, d0[0]\n"
         "vmlal.s16 q15, d5, d0[0]\n"
-        "vmovl.s8 q1, d17\n"
+        "vmovl.s8 q6, d17\n"
         // r1
         "vmlal.s16 q12, d6, d0[1]\n"
         "vmlal.s16 q13, d7, d0[1]\n"
+        "vld1.8 {d14-d15}, [%[in_ptr2]]!\n"
         "vmlal.s16 q14, d8, d0[1]\n"
         "vmlal.s16 q15, d9, d0[1]\n"
         // r2
-        "vmlal.s16 q12, d10, d1[0]\n"
-        "vmlal.s16 q13, d11, d1[0]\n"
-        "vmlal.s16 q14, d12, d1[0]\n"
-        "vmlal.s16 q15, d13, d1[0]\n"
+        "vmlal.s16 q12, d18, d1[0]\n"
+        "vmlal.s16 q13, d19, d1[0]\n"
+        "vld1.8 {d16-d17}, [%[in_ptr3]]!\n"
+        "vmlal.s16 q14, d20, d1[0]\n"
+        "vmlal.s16 q15, d21, d1[0]\n"
         // r3
-        "vmlal.s16 q12, d14, d1[1]\n"
-        "vmlal.s16 q13, d15, d1[1]\n"
-        "vmlal.s16 q14, d2, d1[1]\n"
-        "vmlal.s16 q15, d3, d1[1]\n"
+        "vmlal.s16 q12, d10, d1[1]\n"
+        "vmlal.s16 q13, d11, d1[1]\n"
+        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
+        "vmlal.s16 q14, d12, d1[1]\n"
+        "vmlal.s16 q15, d13, d1[1]\n"
+        "vld1.8 {d12-d13}, [%[in_ptr1]]!\n"
 
         "subs %[cnt], #1\n"
         "vst1.32 {d24-d25}, [%[out_ptr]]!\n"
@@ -1697,12 +1702,19 @@ bool gemv_int8_trans_oth(const int8_t* A,
           "q6",
           "q7",
           "q8",
+          "q9",
+          "q10",
+          "q11",
           "q12",
           "q13",
           "q14",
           "q15");
+    in_ptr0 -= 16;
+    in_ptr1 -= 16;
+    in_ptr2 -= 16;
+    in_ptr3 -= 16;
     for (int j = 0; j < out_remain; j++) {
-      *out_ptr = *in_ptr0++ * wei_ptr[0];
+      *out_ptr += *in_ptr0++ * wei_ptr[0];
       *out_ptr += *in_ptr1++ * wei_ptr[1];
       *out_ptr += *in_ptr2++ * wei_ptr[2];
       *out_ptr += *in_ptr3++ * wei_ptr[3];
@@ -1725,9 +1737,9 @@ bool gemv_int8_trans_oth(const int8_t* A,
         "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
         "vld1.32 {d24-d25}, [%[out_ptr]]\n"
         "vldr d26, [%[out_ptr], #0x10]\n"
+        "vmovl.s8 q0, d8\n"
         "blt 2f\n"
         "1: \n"
-        "vmovl.s8 q0, d8\n"
         "vldr d27, [%[out_ptr], #0x18]\n"
         "vmovl.s8 q1, d10\n"
         "vldr d28, [%[out_ptr], #0x20]\n"
@@ -1768,8 +1780,9 @@ bool gemv_int8_trans_oth(const int8_t* A,
           "q13",
           "q14",
           "q15");
+    in_ptr -= 16;
     for (int j = 0; j < out_remain; j++) {
-      *out_ptr = *in_ptr++ * wei_ptr[0];
+      *out_ptr += *in_ptr++ * wei_ptr[0];
       out_ptr++;
     }
     data_in += M;
@@ -1778,6 +1791,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
 #endif
   // write output
   write_gemv_out(zero_ptr, y, scale, bias_ptr, M, flag_act, act, six, alpha);
+  return true;
 }
 
 template <typename dtype>
@@ -1806,7 +1820,6 @@ bool gemv_int8_oth(const int8_t* A,
   int tail = N & 15;
   int outbuf[M];  // NOLINT
   memset(outbuf, 0.f, sizeof(int) * M);
-  int* ptr_out = outbuf;
   float zerobuf[M];  // NOLINT
   memset(zerobuf, 0, sizeof(float) * M);
   const float* bias_ptr = is_bias ? bias : zerobuf;
@@ -1816,6 +1829,7 @@ bool gemv_int8_oth(const int8_t* A,
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
     int out_idx = j * 8;
+    int* ptr_out = outbuf + out_idx;
     const int8_t* ptr_in = data_in;
     const int8_t* ptr_w0 = weights_ptr + (N * out_idx);
     const int8_t* ptr_w1 = ptr_w0 + N;
@@ -1948,12 +1962,12 @@ bool gemv_int8_oth(const int8_t* A,
       ptr_out[6] += ptr_in[i] * ptr_w6[i];
       ptr_out[7] += ptr_in[i] * ptr_w7[i];
     }
-    ptr_out += 8;
   }
 
 //! deal with remains
 #pragma omp parallel for
   for (int j = out_cnt * 8; j < M; j++) {
+    int* ptr_out = outbuf + j;
     const int8_t* ptr_in = data_in;
     const int8_t* ptr_w0 = weights_ptr + (N * j);
     int cnt_loop = cnt;
@@ -1987,13 +2001,13 @@ bool gemv_int8_oth(const int8_t* A,
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
-    ptr_out++;
   }
 #else  //  __aarch64__
   int out_cnt = M >> 2;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
     int out_idx = j * 4;
+    int* ptr_out = outbuf + out_idx;
     const int8_t* ptr_in = data_in;
     const int8_t* ptr_w0 = weights_ptr + (N * out_idx);
     const int8_t* ptr_w1 = ptr_w0 + N;
@@ -2077,11 +2091,11 @@ bool gemv_int8_oth(const int8_t* A,
       ptr_out[2] += ptr_in[i] * ptr_w2[i];
       ptr_out[3] += ptr_in[i] * ptr_w3[i];
     }
-    ptr_out += 4;
   }
 //! deal with remains
 #pragma omp parallel for
   for (int j = out_cnt * 4; j < M; j++) {
+    int* ptr_out = outbuf + j;
     const int8_t* ptr_in = data_in;
     const int8_t* ptr_w0 = weights_ptr + (N * j);
     int cnt_loop = cnt;
@@ -2114,7 +2128,6 @@ bool gemv_int8_oth(const int8_t* A,
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
-    ptr_out++;
   }
 #endif  //  __aarch64__
   write_gemv_out(
