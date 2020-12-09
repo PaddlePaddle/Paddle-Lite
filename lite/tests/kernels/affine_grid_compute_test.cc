@@ -102,7 +102,6 @@ class AffineGridComputeTester : public arena::TestCase {
       hw3[i * 3] = vw[i % W];
     }
     const float* bias = nullptr;
-    float* tmp = dout;
     for (int i = 0; i < N; i++) {
       basic_gemm(false,
                  true,
