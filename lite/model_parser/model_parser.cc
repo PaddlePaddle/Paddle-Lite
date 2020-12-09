@@ -814,7 +814,7 @@ void LoadModelFbsFromFile(const std::string &filename,
       &topo_size, filename, &offset, sizeof(uint64_t));
 
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
-  cpp_prog->Init(fbs::LoadFile(filename, offset, topo_size));
+  cpp_prog->Init(model_parser::LoadFile(filename, offset, topo_size));
 #elif LITE_ON_TINY_PUBLISH
   LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
                 "the model cannot be loaded.";
