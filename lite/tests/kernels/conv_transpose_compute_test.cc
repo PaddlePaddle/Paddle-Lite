@@ -374,6 +374,7 @@ TEST(Conv_transpose, precision) {
   TestConvTransposeDilations(place, abs_error);
   TestConvTransposePaddingAlgorithm(place, abs_error);
   TestConvTransposeOutputSize(place, abs_error);
+  TestConvTransposeOutputPadding(place, abs_error);
   TestConvTransposeBiasRelu(place, abs_error);
 }
 
