@@ -5,6 +5,7 @@ include(CheckCXXSourceRuns)
 include(CheckCXXSourceCompiles)
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(FMA_FLAG "-mfma")
     set(MMX_FLAG "-mmmx")
     set(SSE2_FLAG "-msse2")
     set(SSE3_FLAG "-msse3")
@@ -20,6 +21,20 @@ elseif(MSVC)
 endif()
 
 set(CMAKE_REQUIRED_FLAGS_RETAINED ${CMAKE_REQUIRED_FLAGS})
+
+# Check FMA
+set(CMAKE_REQUIRED_FLAGS ${FMA_FLAG})
+set(MMX_FOUND_EXITCODE 1 CACHE STRING "Result from TRY_RUN" FORCE)
+CHECK_CXX_SOURCE_RUNS("
+#include <immintrin.h>
+int main()
+{
+    __m256 _a = _mm256_set1_ps(1.f);
+    __m256 _b = _mm256_set1_ps(2.f);
+    __m256 _c = _mm256_set1_ps(3.f);
+    __m256 _res = _mm256_fmadd_ps(_a, _b, _c);
+    return 0;
+}" FMA_FOUND)
 
 # Check  MMX
 set(CMAKE_REQUIRED_FLAGS ${MMX_FLAG})

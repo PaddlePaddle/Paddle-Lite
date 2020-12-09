@@ -13,6 +13,52 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/conv_compute.h"
+#include <utility>
+#include "lite/kernels/x86/conv_depthwise.h"
+
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace x86 {
+
+template <>
+void Conv2dCompute<float>::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+
+  const int input_channel = param.x->dims()[1];
+  const int output_channel = param.filter->dims()[0];
+  const int groups = param.groups;
+
+  const int kernel_h = param.filter->dims()[2];
+  const int kernel_w = param.filter->dims()[3];
+
+  const int stride_h = param.strides[0];
+  const int stride_w = param.strides[1];
+
+  if (input_channel == groups && output_channel == groups &&
+      (groups & 3) == 0) {
+    if (kernel_h == 3 && kernel_w == 3 && stride_h == 1 && stride_w == 1) {
+      impl_ = new DepthwiseConv<float>;
+      VLOG(3) << "invoking conv_depthwise_3x3s1";
+    } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
+               stride_w == 2) {
+      impl_ = new DepthwiseConv<float>;
+      VLOG(3) << "invoking conv_depthwise_3x3s2";
+    }
+  }
+
+  if (impl_) {
+    impl_->SetContext(std::move(this->ctx_));
+    impl_->SetParam(param);
+    impl_->PrepareForRun();
+    is_first_epoch_ = false;
+  }
+}
+
+}  // namespace x86
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 REGISTER_LITE_KERNEL(conv2d,
                      kX86,
