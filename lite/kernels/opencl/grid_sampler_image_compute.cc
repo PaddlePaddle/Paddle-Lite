@@ -66,7 +66,6 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
       LOG(FATAL) << "Unsupported grid samper with align_corners:"
                  << align_corners << ", padding_mode:" << padding_mode
                  << ", mode:" << mode;
-      exit(0);
     }
     auto x_dims = grid_param_->x->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
