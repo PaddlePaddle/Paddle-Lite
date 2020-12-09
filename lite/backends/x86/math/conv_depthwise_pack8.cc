@@ -646,8 +646,8 @@ void conv_depthwise_m256(lite::Tensor* input,
 
   // output [bs, oc/8, oh, ow, 8]
   CHECK_EQ(output->dims().size(), 5UL);
-  const int output_height = output->dims()[2];  // 2
-  const int output_width = output->dims()[3];   // 2
+  const int output_height = output->dims()[2];
+  const int output_width = output->dims()[3];
   float* output_data = output->mutable_data<float>();
 
   const int input_group_step = input_width * 8;
@@ -687,9 +687,7 @@ void conv_depthwise_m256(lite::Tensor* input,
           __m256 _sum = _mm256_set1_ps(0.f);
 
           if (bias) {
-            _sum = _mm256_loadu_ps(
-                (bias->data<float>()) +
-                ic * 8);  // {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8}
+            _sum = _mm256_loadu_ps((bias->data<float>()) + ic * 8);
           }
 
           const float* start_ptr = input_ptr + i * input_group_step + j * 8;

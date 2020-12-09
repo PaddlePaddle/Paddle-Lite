@@ -100,8 +100,8 @@ void pack8_m256(lite::Tensor* input,
       const float* r7 = (input_ptr + kernel_size * 7);
 
 #if __AVX__
-      int loop_num = kernel_size >> 3;  // loop_num = ih * iw / 8
-      int remain = kernel_size & 7;     // remain = ih * iw % 8
+      int loop_num = kernel_size >> 3;
+      int remain = kernel_size & 7;
 #else
       int remain = kernel_size;
 #endif
@@ -190,10 +190,10 @@ void pack4_m128(lite::Tensor* input,
       const float* r3 = (input_ptr + kernel_size * 3);
 
 #if __AVX__
-      int loop_num = kernel_size >> 2;  // loop_num = ih * iw / 4 = 2
-      int remain = kernel_size & 3;     // remain = ih * iw % 4 = 1
+      int loop_num = kernel_size >> 2;
+      int remain = kernel_size & 3;
 #else
-      int remain = kernel_size;  // 0
+      int remain = kernel_size;
 #endif
 
 #if __AVX__
@@ -257,8 +257,8 @@ void unpack8_m256(lite::Tensor* input, lite::Tensor* output) {
       float* outptr7 = (output_ptr + kernel_size * 7);
 
 #if __AVX__
-      int loop_num = kernel_size >> 3;  // loop_num = ih * iw / 8
-      int remain = kernel_size & 7;     // remain = ih * iw % 8
+      int loop_num = kernel_size >> 3;
+      int remain = kernel_size & 7;
 #else
       int remain = kernel_size;
 #endif
@@ -339,7 +339,7 @@ void unpack4_m128(lite::Tensor* input, lite::Tensor* output) {
       int loop_num = kernel_size >> 2;
       int remain = kernel_size & 3;
 #else
-      int remain = kernel_size;  // 0
+      int remain = kernel_size;
 #endif
 
 #if __AVX__
