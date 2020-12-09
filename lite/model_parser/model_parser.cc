@@ -61,7 +61,8 @@ Buffer LoadFile(const std::string &path, size_t offset, size_t size) {
 void SaveFile(const std::string &path, const Buffer &cache) {
   FILE *file = fopen(path.c_str(), "wb");
   CHECK(file);
-  CHECK(fwrite(cache.data(), sizeof(char), cache.size(), file) == cache.size());
+  CHECK_EQ(fwrite(cache.data(), sizeof(char), cache.size(), file), cache.size())
+      << "Write " << cache.size() << " bytes to file failed.";
   fclose(file);
 }
 }  // namespace model_parser
@@ -74,7 +75,7 @@ void LoadLoDTensor(model_parser::pb::LoDTensorDeserializer *loader,
   CHECK(tensor) << "Can not get allocation of the tensor.";
   CHECK(loader) << "The input argument loader is nullptr.";
   CHECK(var) << "The input argument var is nullptr.";
-  loader->LoadWithForwardReader(tensor, reader);
+  loader->ForwardRead(tensor, reader);
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
@@ -83,7 +84,7 @@ std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
       new framework::proto::ProgramDesc);
   if (model_buffer.is_empty()) {
     model_parser::BinaryFileReader file(path);
-    main_program->ParseFromString(file.ReadForwardToString(file.length()));
+    main_program->ParseFromString(file.ReadToString(file.length()));
   } else {
     main_program->ParseFromString(model_buffer.get_program());
   }
@@ -236,7 +237,7 @@ void SaveModelPb(const std::string &model_dir,
         LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
                       "please copy it to the Host Tensor temporarily.";
       }
-      saver.SaveWithForwardWriter(tensor, &file);
+      saver.ForwardWrite(tensor, &file);
     }
   }
   VLOG(4) << "Save protobuf model in '" << model_dir << "'' successfully";
@@ -267,7 +268,7 @@ void SaveCombinedParamsPb(const std::string &path,
       LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
                     "please copy it to the Host Tensor temporarily.";
     }
-    saver.SaveWithForwardWriter(tensor, &file);
+    saver.ForwardWrite(tensor, &file);
   }
 }
 

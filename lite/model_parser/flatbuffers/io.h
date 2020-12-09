@@ -27,11 +27,11 @@ namespace paddle {
 namespace lite {
 namespace fbs {
 
-void SetParamWithTensor(const std::string& name,
-                        const lite::Tensor& tensor,
-                        ParamDescWriteAPI* prog);
+void FillParam(const std::string& name,
+               const lite::Tensor& tensor,
+               ParamDescWriteAPI* prog);
 
-void SetTensorWithParam(lite::Tensor* tensor, const ParamDescReadAPI& param);
+void FillTensor(lite::Tensor* tensor, const ParamDescReadAPI& param);
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 class ParamSerializer {
@@ -39,11 +39,12 @@ class ParamSerializer {
   explicit ParamSerializer(model_parser::ByteWriter* writer,
                            uint16_t version = 0)
       : writer_(writer), version_{version}, buf_(new model_parser::Buffer) {
-    CHECK(writer_) << "The pointer of writer is nullptr";
+    CHECK(writer_)
+        << "A valid writer should be passed in the ctor of param serializer.";
     WriteHeader();
   }
-  void SaveWithForwardWriter(const lite::Scope& scope,
-                             const std::set<std::string>& params_name);
+  void ForwardWrite(const lite::Scope& scope,
+                    const std::set<std::string>& param_names);
 
  private:
   void WriteHeader();
@@ -57,15 +58,16 @@ class ParamDeserializer {
  public:
   explicit ParamDeserializer(model_parser::ByteReader* reader)
       : reader_(reader), buf_(new model_parser::Buffer) {
-    CHECK(reader_) << "The pointer of reader is nullptr";
+    CHECK(reader_)
+        << "A valid reader should be passed in the ctor of param deserializer.";
     ReadHeader();
   }
-  void LoadWithForwardReader(lite::Scope* scope);
+  void ForwardRead(lite::Scope* scope);
 
  private:
   void ReadBytesToBuffer(size_t size) {
     buf_->ResetLazy(size);
-    reader_->ReadForward(buf_->data(), size);
+    reader_->Read(buf_->data(), size);
   }
   void ReadHeader();
   model_parser::ByteReader* reader_{nullptr};
@@ -76,7 +78,7 @@ namespace deprecated {
 void SetScopeWithCombinedParams(lite::Scope* scope,
                                 const CombinedParamsDescReadAPI& params);
 void SetCombinedParamsWithScope(const lite::Scope& scope,
-                                const std::set<std::string>& params_name,
+                                const std::set<std::string>& param_names,
                                 CombinedParamsDescWriteAPI* params);
 }  // namespace deprecated
 
