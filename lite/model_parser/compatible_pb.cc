@@ -19,10 +19,13 @@
 #include "lite/model_parser/flatbuffers/program_desc.h"
 #include "lite/model_parser/naive_buffer/block_desc.h"
 #include "lite/model_parser/naive_buffer/op_desc.h"
+#include "lite/model_parser/naive_buffer/op_version_map.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
+
 #include "lite/model_parser/pb/block_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
+#include "lite/model_parser/pb/op_version_map.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
 #endif
@@ -306,6 +309,11 @@ void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
       cpp_desc->SetVersion(desc.Version());                                   \
     }                                                                         \
                                                                               \
+    if (desc.HasOpVersionMap()) {                                             \
+      NT::OpVersionMap any_op_version_map(                                    \
+          desc.GetOpVersionMap<PNT::proto::OpVersionMap>());                  \
+      cpp_desc->SetOpVersionMap(any_op_version_map.GetOpVersionMap());        \
+    }                                                                         \
     cpp_desc->ClearBlocks();                                                  \
     for (size_t i = 0; i < desc.BlocksSize(); ++i) {                          \
       NT::BlockDesc any_block_desc(desc.GetBlock<PNT::proto::BlockT>(i));     \

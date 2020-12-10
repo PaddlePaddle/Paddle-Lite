@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#else
 #include <sys/time.h>
+#endif
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"

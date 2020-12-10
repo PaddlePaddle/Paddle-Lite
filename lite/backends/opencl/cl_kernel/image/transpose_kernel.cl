@@ -59,14 +59,12 @@ __kernel void transpose_4d(__read_only image2d_t input_image,
   input_pos3.x = in_W * in_c + in_w;
   input_pos3.y = in_n * in_h3;
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   CL_DTYPE4 input0;
   CL_DTYPE4 input1;
   CL_DTYPE4 input2;
   CL_DTYPE4 input3;
   CL_DTYPE4 output;
-  input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, input_pos0);
+  input0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, input_pos0);
 
   if (out_w % 4 == 0) {
     output.x = input0.x;
@@ -78,7 +76,7 @@ __kernel void transpose_4d(__read_only image2d_t input_image,
     output.x = input0.w;
   }
   if (out_C - out_c * 4 >= 2) {
-    input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, input_pos1);
+    input1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, input_pos1);
     if(out_w % 4 == 0) {
       output.y = input1.x;
     } else if(out_w % 4 == 1) {
@@ -93,7 +91,7 @@ __kernel void transpose_4d(__read_only image2d_t input_image,
   }
 
   if (out_C - out_c * 4 >= 3) {
-    input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, input_pos2);
+    input2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, input_pos2);
     if (out_w % 4 == 0){
       output.z = input2.x;
     } else if (out_w % 4 == 1) {
@@ -108,7 +106,7 @@ __kernel void transpose_4d(__read_only image2d_t input_image,
   }
 
   if (out_C - out_c * 4 >= 4) {
-    input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, input_pos3);
+    input3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, input_pos3);
     if (out_w % 4 == 0) {
       output.w = input3.x;
     } else if (out_w % 4 == 1) {
@@ -149,11 +147,9 @@ __kernel void transpose(__read_only image2d_t input_image,
   output_pos.x = out_c * out_W + out_w;
   output_pos.y = out_n * out_h;
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   CL_DTYPE4 input;
   CL_DTYPE4 output;
-  input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, input_pos);
+  input = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, input_pos);
 
   output = input;
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, input);

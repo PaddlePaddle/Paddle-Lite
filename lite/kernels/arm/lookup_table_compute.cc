@@ -83,4 +83,5 @@ REGISTER_LITE_KERNEL(lookup_table_v2,
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("lookup_table_v2", 1)
     .Finalize();

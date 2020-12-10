@@ -79,6 +79,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
     }
     last_function_ = 2;
   }
+  last_function_ = -1;
 
   //! update trans weights impl
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
@@ -226,12 +227,51 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
   int threads = ctx.threads();
 
   auto x_dims = param.x->dims();
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-
   if (last_shape_ == x_dims) {
     return;
   }
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+  w_scale_ = param.weight_scale;
+  if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
+    LOG(FATAL) << "weights scale size must equal to filter size";
+    return;
+  }
+  if (w_scale_.size() == 1) {
+    for (int i = 0; i < param.filter->dims()[0] - 1; ++i) {
+      w_scale_.push_back(w_scale_[0]);
+    }
+  }
+  float input_scale = param.input_scale;
+  for (auto& ws : w_scale_) {
+    ws *= input_scale;
+  }
+  if (param.bias) {
+    bias_.Resize(param.bias->dims());
+    auto ptr = bias_.mutable_data<float>();
+    auto ptr_in = param.bias->template data<float>();
+    for (int i = 0; i < bias_.numel(); ++i) {
+      ptr[i] = ptr_in[i];
+    }
+  }
+  if (OutType == PRECISION(kInt8)) {
+    float output_scale = param.output_scale;
+    if (param.activation_param.active_type ==
+        lite_api::ActivationType::kRelu6) {
+      param.activation_param.Relu_clipped_coef =
+          param.activation_param.Relu_clipped_coef / output_scale;
+    }
+    for (auto& ws : w_scale_) {
+      ws /= output_scale;
+    }
+    if (param.bias) {
+      auto ptr = bias_.mutable_data<float>();
+      for (int i = 0; i < bias_.numel(); ++i) {
+        ptr[i] /= output_scale;
+      }
+    }
+  }
+
   last_shape_ = x_dims;
   //! update workspace size
   int ic = x_dims[1];
@@ -289,6 +329,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
       ws /= 576;
     }
   }
+  last_function_ = -1;
 
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
   void* trans_tmp_ptr = malloc(sizeof(int32_t) * wino_iw * wino_iw * oc * ic);
@@ -326,46 +367,6 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
 
 template <PrecisionType OutType>
 void WinogradConv<PRECISION(kInt8), OutType>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-  w_scale_ = param.weight_scale;
-  if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
-    LOG(FATAL) << "weights scale size must equal to filter size";
-    return;
-  }
-  if (w_scale_.size() == 1) {
-    for (int i = 0; i < param.filter->dims()[0] - 1; ++i) {
-      w_scale_.push_back(w_scale_[0]);
-    }
-  }
-  float input_scale = param.input_scale;
-  for (auto& ws : w_scale_) {
-    ws *= input_scale;
-  }
-  if (param.bias) {
-    bias_.Resize(param.bias->dims());
-    auto ptr = bias_.mutable_data<float>();
-    auto ptr_in = param.bias->template data<float>();
-    for (int i = 0; i < bias_.numel(); ++i) {
-      ptr[i] = ptr_in[i];
-    }
-  }
-  if (OutType == PRECISION(kInt8)) {
-    float output_scale = param.output_scale;
-    if (param.activation_param.active_type ==
-        lite_api::ActivationType::kRelu6) {
-      param.activation_param.Relu_clipped_coef =
-          param.activation_param.Relu_clipped_coef / output_scale;
-    }
-    for (auto& ws : w_scale_) {
-      ws /= output_scale;
-    }
-    if (param.bias) {
-      auto ptr = bias_.mutable_data<float>();
-      for (int i = 0; i < bias_.numel(); ++i) {
-        ptr[i] /= output_scale;
-      }
-    }
-  }
   ReInitWhenNeeded();
 }
 

@@ -24,6 +24,7 @@ REGISTER_LITE_KERNEL(conv2d,
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d,
@@ -36,4 +37,5 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();

@@ -33,8 +33,6 @@ __kernel void instance_norm_onnx(__private const int in_width,
   const int local_id = w * local_work_size_y + h;
   const int local_total_size = local_work_size_x * local_work_size_y;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 #ifdef LOCAL_MEM_128
   __local float4 shared_mem[128];
 #elif defined(LOCAL_MEM_64)
@@ -42,12 +40,13 @@ __kernel void instance_norm_onnx(__private const int in_width,
 #else
   __local float4 shared_mem[256];
 #endif
+
   int xOffset = c * in_width;
   int yOffset = n * in_height;
   float4 sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      sum += read_imagef(input, sampler, (int2)(xOffset + xIndex, yOffset + yIndex));
+      sum += read_imagef(input, SAMPLER, (int2)(xOffset + xIndex, yOffset + yIndex));
     }
   }
   shared_mem[local_id] = sum;
@@ -82,7 +81,7 @@ __kernel void instance_norm_onnx(__private const int in_width,
   sum = 0.0f;
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
-      float4 temp = read_imagef(input, sampler, (int2)(xOffset + xIndex, yOffset + yIndex)) - mean_val;
+      float4 temp = read_imagef(input, SAMPLER, (int2)(xOffset + xIndex, yOffset + yIndex)) - mean_val;
       sum += temp * temp;
     }
   }
@@ -121,7 +120,7 @@ __kernel void instance_norm_onnx(__private const int in_width,
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
     for (int yIndex = h; yIndex < in_height; yIndex += local_work_size_y) {
       int2 intout_pos = (int2)(xOffset + xIndex, yOffset + yIndex);
-      float4 in_val = read_imagef(input, sampler, intout_pos);
+      float4 in_val = read_imagef(input, SAMPLER, intout_pos);
       half4 out_val = convert_half4((in_val - mean_val) * vscale + vbias);
 #ifdef RELU
       out_val = activation(out_val);
@@ -142,24 +141,25 @@ __kernel void instance_norm_paddle(__read_only image2d_t input,
                                    const int in_w){
     __local CL_DTYPE4 saved_mean[1024];
     __local CL_DTYPE4 saved_variance[1024];
+
     const int lid = get_local_id(0);
     const int lsize = get_local_size(0);
     const int gidx = get_group_id(0);
     const int gidy = get_group_id(1);
     const int spatial_size = in_h * in_w;
-    const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
+
     CL_DTYPE4 mean = (CL_DTYPE4)(0.f, 0.f, 0.f, 0.f);
     CL_DTYPE4 variance = (CL_DTYPE4)(0.f, 0.f, 0.f, 0.f);
     CL_DTYPE4 vepsilon = (CL_DTYPE4)(epsilon, epsilon, epsilon, epsilon);
+
     const int x_offset = gidx * in_w;
     const int y_offset = gidy * in_h;
+
     int2 coor;
     for (int i = lid; i < spatial_size; i += lsize) {
         coor.x = i % in_w + x_offset;
         coor.y = i / in_w + y_offset;
-        CL_DTYPE4 pixel = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, coor);
+        CL_DTYPE4 pixel = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coor);
         mean += pixel;
         variance += pixel * pixel;
     }
@@ -184,13 +184,13 @@ __kernel void instance_norm_paddle(__read_only image2d_t input,
     //! do instance norm
     coor.x = gidx;
     coor.y = gidy;
-    CL_DTYPE4 vscale = READ_IMG_TYPE(CL_DTYPE_CHAR, scale, sampler, coor);
+    CL_DTYPE4 vscale = READ_IMG_TYPE(CL_DTYPE_CHAR, scale, SAMPLER, coor);
     vscale *= variance;
-    CL_DTYPE4 vbias = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, sampler, coor);
+    CL_DTYPE4 vbias = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coor);
     for (int i = lid; i < spatial_size; i += lsize) {
         coor.x = i % in_w + x_offset;
         coor.y = i / in_w + y_offset;
-        CL_DTYPE4 pixel = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, coor);
+        CL_DTYPE4 pixel = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coor);
         pixel = (pixel - mean) * vscale + vbias;
         WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, coor, pixel);
     }

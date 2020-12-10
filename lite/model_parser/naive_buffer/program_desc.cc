@@ -33,6 +33,13 @@ proto::BlockDesc* ProgramDesc::AddBlock<proto::BlockDesc>() {
   return GetMutableBlockListBuilder()->New();
 }
 
+template <>
+proto::OpVersionMap* ProgramDesc::GetOpVersionMap<proto::OpVersionMap>() {
+  // op_version_map is not implemented on naive_buffer as
+  // it's not useful in inference period.
+  return nullptr;
+}
+
 int64_t ProgramDesc::Version() const {
   return desc_->GetField<Int64Builder>("version").data();
 }

@@ -58,8 +58,8 @@ void CLImageConverterDefault::NCHWToImage(float *nchw,
   size_t width = in_image_dim[0];
   size_t w_block = width / W;
 
-  float *image_fp32 = reinterpret_cast<float *>(image);
-  half_t *image_fp16 = reinterpret_cast<half_t *>(image);
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
 
   float *p = nchw;
   size_t i0 = 0;
@@ -106,8 +106,8 @@ void CLImageConverterDefault::ImageToNCHW(void *image,
 
   size_t width = image_dim[0];
   float *p = tensor;
-  float *image_fp32 = reinterpret_cast<float *>(image);
-  half_t *image_fp16 = reinterpret_cast<half_t *>(image);
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
 
   size_t i0 = 0;
   for (size_t n = 0; n < N; n++) {
@@ -191,8 +191,8 @@ void CLImageConverterFolder::NCHWToImage(float *tensor,
 
     DDim image_dim = InitImageDimInfoWith(tensor_dim);
     size_t width = image_dim[0];
-    float *image_fp32 = reinterpret_cast<float *>(image);
-    half_t *image_fp16 = reinterpret_cast<half_t *>(image);
+    float *image_fp32 = static_cast<float *>(image);
+    half_t *image_fp16 = static_cast<half_t *>(image);
 
     for (size_t h = 0; h < tdim[0]; h++) {
       for (size_t w = 0; w < tdim[1]; w++) {
@@ -200,7 +200,7 @@ void CLImageConverterFolder::NCHWToImage(float *tensor,
           image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
               Float2Half(tensor[h * tdim[1] + w]);
         } else {
-          image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
+          image_fp32[(h * width + w / 4) * 4 + (w % 4)] =
               tensor[h * tdim[1] + w];
         }
       }
@@ -228,8 +228,8 @@ void CLImageConverterFolder::ImageToNCHW(void *image,
     }
 
     float *p = tensor;
-    float *image_fp32 = reinterpret_cast<float *>(image);
-    half_t *image_fp16 = reinterpret_cast<half_t *>(image);
+    float *image_fp32 = static_cast<float *>(image);
+    half_t *image_fp16 = static_cast<half_t *>(image);
 
     for (size_t h = 0; h < H; h++) {
       for (size_t w = 0; w < W; w++) {
@@ -269,8 +269,8 @@ void CLImageConverterNWBlock::NCHWToImage(float *tensor,
   size_t width = image_dim[0];
   size_t height = image_dim[1];
   size_t block = image_dim[0] / tensor_dim[3];
-  float *image_fp32 = reinterpret_cast<float *>(image);
-  half_t *image_fp16 = reinterpret_cast<half_t *>(image);
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
 
   for (size_t n = 0; n < block * 4; n++) {
     for (size_t c = 0; c < C; c++) {
@@ -314,8 +314,8 @@ void CLImageConverterNWBlock::ImageToNCHW(void *image,
   size_t W = tensor_dim[3];
   size_t width = image_dim[0];
   size_t height = image_dim[1];
-  float *image_fp32 = reinterpret_cast<float *>(image);
-  half_t *image_fp16 = reinterpret_cast<half_t *>(image);
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
 
   for (size_t n = 0; n < N; n++) {
     for (size_t c = 0; c < C; c++) {
@@ -373,8 +373,8 @@ void CLImageConverterDWBlock::NCHWToImage(float *tensor,
   size_t w_block = width / W;
 
   float *p = tensor;
-  float *image_fp32 = reinterpret_cast<float *>(image);
-  half_t *image_fp16 = reinterpret_cast<half_t *>(image);
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
 
   size_t i0 = 0;
   for (size_t n = 0; n < N; n++) {
@@ -394,8 +394,11 @@ void CLImageConverterDWBlock::NCHWToImage(float *tensor,
             i2 += 4;
             p++;
           } else {
-            fp16_support_ ? image_fp16[i2] = Float2Half(0.f) : image_fp32[i2] =
-                                                                   0.f;
+            if (fp16_support_) {
+              image_fp16[i2] = Float2Half(0.f);
+            } else {
+              image_fp32[i2] = 0.f;
+            }
             i2 += 4;
           }
         }
@@ -417,8 +420,8 @@ void CLImageConverterDWBlock::ImageToNCHW(void *image,
   size_t H = tensor_dim[2];
   size_t W = tensor_dim[3];
   size_t width = image_dim[0];
-  float *image_fp32 = reinterpret_cast<float *>(image);
-  half_t *image_fp16 = reinterpret_cast<half_t *>(image);
+  float *image_fp32 = static_cast<float *>(image);
+  half_t *image_fp16 = static_cast<half_t *>(image);
 
   size_t i0 = 0;
   for (size_t n = 0; n < N; n++) {

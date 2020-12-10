@@ -20,10 +20,7 @@ __kernel void trigonometric_sin(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   in.x = native_sin(in.x);
   in.y = native_sin(in.y);
   in.z = native_sin(in.z);
@@ -36,10 +33,7 @@ __kernel void trigonometric_cos(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   in.x = native_cos(in.x);
   in.y = native_cos(in.y);
   in.z = native_cos(in.z);
@@ -52,10 +46,7 @@ __kernel void trigonometric_tan(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   in.x = native_tan(in.x);
   in.y = native_tan(in.y);
   in.z = native_tan(in.z);
@@ -68,10 +59,7 @@ __kernel void trigonometric_atan(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   in.x = atan(in.x);
   in.y = atan(in.y);
   in.z = atan(in.z);
@@ -84,10 +72,7 @@ __kernel void trigonometric_asin(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   in.x = asin(in.x);
   in.y = asin(in.y);
   in.z = asin(in.z);
@@ -100,10 +85,7 @@ __kernel void trigonometric_acos(__read_only image2d_t input,
   const int x = get_global_id(0);  // image_width
   const int y = get_global_id(1);  // image_height
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, (int2)(x, y));
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   in.x = acos(in.x);
   in.y = acos(in.y);
   in.z = acos(in.z);

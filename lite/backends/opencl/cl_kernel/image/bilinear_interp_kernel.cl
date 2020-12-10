@@ -59,39 +59,34 @@ __kernel void bilinear_interp(__read_only image2d_t input,
     CL_DTYPE wight1_w = 1.0 - wight0_w;
     CL_DTYPE wight1_h = 1.0 - wight0_h;
 
-    const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
-
     // get left up pixel data
     int2 left_up;
     left_up.x = c * in_dims_w + floor_w;
     left_up.y = out_n * in_dims_h + ceil_h;
-    CL_DTYPE4 left_up_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, left_up);
+    CL_DTYPE4 left_up_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, left_up);
 
 
     // get left down pixel data
     int2 left_down;
     left_down.x = c * in_dims_w + floor_w;
     left_down.y = out_n * in_dims_h + floor_h;
-    CL_DTYPE4 left_down_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, left_down);
+    CL_DTYPE4 left_down_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, left_down);
 
     // get right up pixel data
     int2 right_up;
     right_up.x = c * in_dims_w + ceil_w;
     right_up.y = out_n * in_dims_h + ceil_h;
-    CL_DTYPE4 right_up_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, right_up);
+    CL_DTYPE4 right_up_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, right_up);
 
     // get right down pixel's data
     int2 right_down;
     right_down.x = c * in_dims_w + ceil_w;
     right_down.y = out_n * in_dims_h + floor_h;
-    CL_DTYPE4 right_down_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, right_down);
+    CL_DTYPE4 right_down_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, right_down);
 
     // calculate output data
     CL_DTYPE4 out = (left_down_data * wight1_w + right_down_data * wight0_w) * wight1_h
             + (left_up_data * wight1_w + right_up_data * wight0_w) * wight0_h;
-
 
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos, out);
 }
