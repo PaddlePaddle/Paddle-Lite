@@ -76,6 +76,7 @@ static std::vector<size_t> DefaultGlobalWorkSize(const DDim& image_dim,
     return {(c + 3) / 4, w, h};
   }
   LOG(FATAL) << " not support this dim, need imp ";
+  return {};
 }
 
 static const std::string GetTimeStamp() {
