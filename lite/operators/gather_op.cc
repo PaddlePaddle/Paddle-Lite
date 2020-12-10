@@ -29,8 +29,16 @@ bool GatherOp::CheckShape() const {
 bool GatherOp::InferShapeImpl() const {
   if (param_.Axis != nullptr) {
     int axis_index = 0;
-    auto *axis_data = param_.Axis->data<int64_t>();
-    axis_index = axis_data[0];
+    if (param_.Axis->precision() == PRECISION(kInt32)) {
+      auto *axis_data = param_.Axis->data<int32_t>();
+      axis_index = axis_data[0];
+    } else if (param_.Axis->precision() == PRECISION(kInt64)) {
+      auto *axis_data = param_.Axis->data<int64_t>();
+      axis_index = axis_data[0];
+    } else {
+      LOG(FATAL) << "Axis unsupport data type: "
+                 << lite_api::PrecisionToStr(param_.Axis->precision());
+    }
     int axis_size = param_.Axis->numel();
     int index_size = param_.Index->numel();
     auto input_dim = param_.X->dims();
