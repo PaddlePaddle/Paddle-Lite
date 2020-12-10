@@ -1017,6 +1017,9 @@ struct LookupTableParam : ParamBase {
   const lite::Tensor* Ids{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
+  bool is_test{true};
+  std::string entry_config{""};  // used in distributed training
+  std::string entry{"none"};
 };
 
 struct LookupTableDequantParam : ParamBase {
@@ -1637,13 +1640,17 @@ struct ConditionalBlockParam : ParamBase {
 struct CollectFpnProposalsParam : ParamBase {
   std::vector<lite::Tensor*> multi_level_rois{};
   std::vector<lite::Tensor*> multi_level_scores{};
+  std::vector<lite::Tensor*> multi_rois_num{};
+  lite::Tensor* rois_num{};
   lite::Tensor* fpn_rois{};
   int post_nms_topN{};
 };
 
 struct DistributeFpnProposalsParam : ParamBase {
   const lite::Tensor* fpn_rois{};
+  const lite::Tensor* rois_num{};
   std::vector<lite::Tensor*> multi_fpn_rois{};
+  std::vector<lite::Tensor*> multi_rois_num{};
   lite::Tensor* restore_index{};
   int min_level{};
   int max_level{};
@@ -1679,7 +1686,11 @@ struct GridSamplerParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* out{};
   lite::Tensor* grid{};
+  bool align_corners{true};
+  std::string padding_mode{"zeros"};
+  std::string mode{"bilinear"};
 };
+
 struct LstmParam : ParamBase {
   lite::Tensor* Input{};
   lite::Tensor* Weight{};
