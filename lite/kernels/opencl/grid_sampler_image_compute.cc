@@ -58,6 +58,15 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void ReInitWhenNeeded() override {
     grid_param_ = param_.get_mutable<param_t>();
+    bool align_corners = grid_param_->align_corners;
+    std::string padding_mode = grid_param_->padding_mode;
+    std::string mode = grid_param_->mode;
+    if (align_corners != true || padding_mode != "zeros" ||
+        mode != "bilinear") {
+      LOG(FATAL) << "Unsupported grid samper with align_corners:"
+                 << align_corners << ", padding_mode:" << padding_mode
+                 << ", mode:" << mode;
+    }
     auto x_dims = grid_param_->x->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
