@@ -28,11 +28,10 @@ class GridSamplerComputeTest : public arena::TestCase {
   std::string output_ = "y";
   std::string grid_ = "grid";
 
+  DDim dims_{{4, 5, 19, 19}};
   bool align_corners_ = true;
   std::string mode_ = "bilinear";
   std::string padding_mode_ = "zeros";
-
-  DDim dims_{{4, 5, 19, 19}};
 
  public:
   GridSamplerComputeTest(const Place& place,
