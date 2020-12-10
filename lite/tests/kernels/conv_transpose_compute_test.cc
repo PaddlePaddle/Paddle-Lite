@@ -359,6 +359,10 @@ TEST(Conv_transpose, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 5e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+  TestConvTransposeOutputPadding(place, abs_error);
+  return;
 #else
   return;
 #endif
