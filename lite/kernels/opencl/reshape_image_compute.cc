@@ -58,26 +58,27 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-
-    // input
     const Tensor* const x = param.x;
+
     const auto x_dims = x->dims();
     const std::map<std::string, size_t>& input_image_shape =
         InitImageDimInfoWith(x_dims);
-    // const int64_t& input_image_width = input_image_shape.at("width");
-    // const int64_t& input_image_height = input_image_shape.at("height");
+
+    const int64_t& input_image_width = input_image_shape.at("width");
+    const int64_t& input_image_height = input_image_shape.at("height");
+
     const cl::Image2D* const x_image = x->data<half_t, cl::Image2D>();
 
-    // output
+    const std::vector<int>& shape_vct = param.shape_vct;
     Tensor* const output = param.output;
     const DDimLite& out_dims = output->dims();
+    VLOG(4) << "out_dims= " << out_dims;
+
     const std::map<std::string, size_t>& out_image_shape =
         InitImageDimInfoWith(out_dims);
     cl::Image2D* const out_image = output->mutable_data<half_t, cl::Image2D>(
         out_image_shape.at("width"), out_image_shape.at("height"));
-
 #ifdef LITE_WITH_LOG
-    VLOG(4) << "out_dims= " << out_dims;
     VLOG(4) << "out_dims=   " << out_dims;
 #endif
     const std::vector<size_t>& default_work_size = DefaultGlobalWorkSize(
