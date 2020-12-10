@@ -31,6 +31,9 @@ else()
   add_kernel(transpose_compute_xpu XPU basic SRCS transpose_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(density_prior_box_compute XPU basic SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(prior_box_compute_xpu XPU basic SRCS prior_box_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(interpolate_compute_xpu XPU basic SRCS interpolate_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(box_coder_compute XPU basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(split_compute_xpu XPU basic SRCS split_compute.cc DEPS ${lite_kernel_deps})
 
   # extra
   add_kernel(lookup_table_compute_xpu XPU extra SRCS lookup_table_compute.cc DEPS ${lite_kernel_deps})
@@ -45,6 +48,7 @@ else()
   add_kernel(sequence_unpad_compute_xpu XPU extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps})  
   add_kernel(lrn_compute_xpu XPU extra SRCS lrn_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(topk_compute_xpu XPU extra SRCS topk_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(im2sequence_compute_xpu XPU extra SRCS im2sequence_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(unstack_compute_xpu XPU extra SRCS unstack_compute.cc DEPS ${lite_kernel_deps})
 
   # extra(fused kernel)

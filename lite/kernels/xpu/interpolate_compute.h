@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,44 +13,31 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include <vector>
 #include "lite/core/kernel.h"
-#include "lite/operators/transpose_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-// Transpose
-class TransposeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class BilinearInterpCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::TransposeParam;
-  void PrepareForRun() override;
+  using param_t = operators::InterpolateParam;
   void Run() override;
-  void ReInitWhenNeeded() override;
-
-  virtual ~TransposeCompute() = default;
-
- private:
-  bool need_trans = false;
-  bool trans_mat = false;
-  int _trans_num;
-  int _trans_w;
-  int _trans_h;
-  DDim last_shape_;
-  std::vector<int> _new_steps;
-  std::vector<int> _old_steps;
+  virtual ~BilinearInterpCompute() = default;
 };
 
-// Transpose2
-class Transpose2Compute : public TransposeCompute {
+class NearestInterpCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  virtual ~Transpose2Compute() = default;
+  using param_t = operators::InterpolateParam;
+  void Run() override;
+
+  virtual ~NearestInterpCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
