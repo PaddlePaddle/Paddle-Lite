@@ -337,7 +337,7 @@ static bool prepack_input_nxw(const dtype* din,
       for (int w = ws; w < w0; ++w) {
         *(out_array[j]++) = 0.f;
       }
-      memcpy(out_array[j], in_array, valid_w_byte);
+      lite::TargetWrapperHost::MemcpySync(out_array[j], in_array, valid_w_byte);
       out_array[j] += valid_w;
       for (int w = w1; w < we; ++w) {
         *(out_array[j]++) = 0.f;
@@ -4073,7 +4073,7 @@ static bool write_to_output_numc(const dtype* din,
       const dtype* din_ptr = din + h * size_c_in;
       for (int i = 0; i < ch_n; i++) {
         dtype* dout_ptr = out_array[i] + h * width;
-        memcpy(dout_ptr, din_ptr, valid_w_byte);
+        lite::TargetWrapperHost::MemcpySync(dout_ptr, din_ptr, valid_w_byte);
         din_ptr += size_w;
       }
     }

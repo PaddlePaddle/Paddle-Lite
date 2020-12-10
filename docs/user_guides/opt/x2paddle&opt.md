@@ -36,7 +36,7 @@ Arguments about x2paddle:
    --framework=onnx --model=onnx_model.onnx
 
 Arguments about opt:
-    --valid_targets=(arm|opencl|x86|npu); valid targets on Paddle-Lite.
+    --valid_targets=(arm|opencl|x86|x86_opencl|npu); valid targets on Paddle-Lite.
     --fluid_save_dir='path to outputed model after x2paddle'
     --optimize_out='path to outputed Paddle-Lite model'
 ----------------------------------------

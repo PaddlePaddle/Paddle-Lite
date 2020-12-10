@@ -132,11 +132,16 @@ std::vector<int> get_stride(const paddle::lite::DDimLite& dims) {
   return data_stride;
 }
 
-void TransposeCompute::PrepareForRun() {
+void TransposeCompute::ReInitWhenNeeded() {
   auto& param = Param<operators::TransposeParam>();
   auto* input = param.x;
   auto* output = param.output;
 
+  auto x_dims = param.x->dims();
+  if (last_shape_ == x_dims) {
+    return;
+  }
+  last_shape_ = x_dims;
   int _num_axes = input->dims().size();
   CHECK(_num_axes == param.axis.size())
       << "axis size is not match to input dims";
@@ -181,7 +186,7 @@ void TransposeCompute::PrepareForRun() {
     _old_steps = get_stride(input->dims());
   }
 }
-
+void TransposeCompute::PrepareForRun() { ReInitWhenNeeded(); }
 template <typename Dtype>
 void TransposeCompute_(const std::vector<int>& axis,
                        const lite::Tensor* input,
@@ -242,7 +247,6 @@ void TransposeCompute::Run() {
   auto* input = param.x;
   auto* output = param.output;
   const std::vector<int> axis = param.axis;
-
   //! only copy the data
   if (!need_trans) {
     output->CopyDataFrom(*input);
