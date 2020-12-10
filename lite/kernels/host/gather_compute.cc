@@ -132,14 +132,6 @@ void GatherCompute<IndexType, AxisType>::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-typedef paddle::lite::kernels::host::GatherCompute<int32_t, int32_t>
-    GatherInt32Int32;
-typedef paddle::lite::kernels::host::GatherCompute<int64_t, int64_t>
-    GatherInt64Int64;
-typedef paddle::lite::kernels::host::GatherCompute<int64_t, int32_t>
-    GatherInt64Int32;
-typedef paddle::lite::kernels::host::GatherCompute<int32_t, int64_t>
-    GatherInt32Int64;
 
 REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt32Int32, int32int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})

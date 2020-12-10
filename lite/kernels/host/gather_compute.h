@@ -16,14 +16,6 @@
 #include <stdint.h>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-typedef paddle::lite::kernels::host::GatherCompute<int32_t, int32_t>
-    GatherInt32Int32;
-typedef paddle::lite::kernels::host::GatherCompute<int64_t, int64_t>
-    GatherInt64Int64;
-typedef paddle::lite::kernels::host::GatherCompute<int64_t, int32_t>
-    GatherInt64Int32;
-typedef paddle::lite::kernels::host::GatherCompute<int32_t, int64_t>
-    GatherInt32Int64;
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -41,3 +33,12 @@ class GatherCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+typedef paddle::lite::kernels::host::GatherCompute<int32_t, int32_t>
+    GatherInt32Int32;
+typedef paddle::lite::kernels::host::GatherCompute<int64_t, int64_t>
+    GatherInt64Int64;
+typedef paddle::lite::kernels::host::GatherCompute<int64_t, int32_t>
+    GatherInt64Int32;
+typedef paddle::lite::kernels::host::GatherCompute<int32_t, int64_t>
+    GatherInt32Int64;
