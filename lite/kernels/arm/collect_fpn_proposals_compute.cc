@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/collect_fpn_proposals_compute.h"
+#include <numeric>
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
@@ -65,12 +66,22 @@ void CollectFpnProposalsCompute::Run() {
 
   size_t num_fpn_level = multi_layer_rois.size();
   std::vector<int> integral_of_all_rois(num_fpn_level + 1, 0);
+  int num_size = param.multi_rois_num.size();
   for (size_t i = 0; i < num_fpn_level; ++i) {
-    auto cur_rois_lod = multi_layer_rois[i]->lod().back();
-    integral_of_all_rois[i + 1] = static_cast<int>(
-        integral_of_all_rois[i] + cur_rois_lod[cur_rois_lod.size() - 1]);
+    int all_rois = 0;
+    if (num_size == 0) {
+      auto cur_rois_lod = multi_layer_rois[i]->lod().back();
+      all_rois = cur_rois_lod[cur_rois_lod.size() - 1];
+    } else {
+      const int* cur_rois_num = param.multi_rois_num[i]->data<int>();
+      all_rois = std::accumulate(
+          cur_rois_num, cur_rois_num + param.multi_rois_num[i]->numel(), 0);
+    }
+    integral_of_all_rois[i + 1] = integral_of_all_rois[i] + all_rois;
   }
-
+  const int batch_size = (num_size == 0)
+                             ? multi_layer_rois[0]->lod().back().size() - 1
+                             : param.multi_rois_num[0]->numel();
   std::vector<ScoreWithID> scores_of_all_rois(
       integral_of_all_rois[num_fpn_level], ScoreWithID());
   for (int i = 0; i < num_fpn_level; ++i) {
@@ -78,9 +89,19 @@ void CollectFpnProposalsCompute::Run() {
     int cur_level_num = integral_of_all_rois[i + 1] - integral_of_all_rois[i];
     auto cur_scores_lod = multi_layer_scores[i]->lod().back();
     int cur_batch_id = 0;
+    int pre_num = 0;
     for (int j = 0; j < cur_level_num; ++j) {
-      if (j >= cur_scores_lod[cur_batch_id + 1]) {
-        cur_batch_id++;
+      if (num_size == 0) {
+        auto cur_scores_lod = multi_layer_scores[i]->lod().back();
+        if (static_cast<size_t>(j) >= cur_scores_lod[cur_batch_id + 1]) {
+          cur_batch_id++;
+        }
+      } else {
+        const int* rois_num_data = param.multi_rois_num[i]->data<int>();
+        if (j >= pre_num + rois_num_data[cur_batch_id]) {
+          pre_num += rois_num_data[cur_batch_id];
+          cur_batch_id++;
+        }
       }
       int cur_index = j + integral_of_all_rois[i];
       scores_of_all_rois[cur_index].score = cur_level_scores[j];
@@ -111,6 +132,9 @@ void CollectFpnProposalsCompute::Run() {
   auto fpn_rois_data = fpn_rois->mutable_data<float>();
   std::vector<uint64_t> lod0(1, 0);
   int cur_batch_id = 0;
+  std::vector<int64_t> num_per_batch;
+  int pre_idx = 0;
+  int cur_num = 0;
   for (int i = 0; i < post_nms_topN; ++i) {
     int cur_fpn_level = scores_of_all_rois[i].level;
     int cur_level_index = scores_of_all_rois[i].index;
@@ -121,6 +145,16 @@ void CollectFpnProposalsCompute::Run() {
     if (scores_of_all_rois[i].batch_id != cur_batch_id) {
       cur_batch_id = scores_of_all_rois[i].batch_id;
       lod0.emplace_back(i);
+      cur_num = i - pre_idx;
+      pre_idx = i;
+      num_per_batch.emplace_back(cur_num);
+    }
+  }
+  num_per_batch.emplace_back(post_nms_topN - pre_idx);
+  if (param.rois_num) {
+    int* rois_num_data = param.rois_num->mutable_data<int>();
+    for (int i = 0; i < batch_size; i++) {
+      rois_num_data[i] = num_per_batch[i];
     }
   }
   lod0.emplace_back(post_nms_topN);
@@ -143,6 +177,8 @@ REGISTER_LITE_KERNEL(collect_fpn_proposals,
                      def)
     .BindInput("MultiLevelRois", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("MultiLevelScores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("RoisNum", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("FpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindPaddleOpVersion("collect_fpn_proposals", 1)
     .Finalize();
