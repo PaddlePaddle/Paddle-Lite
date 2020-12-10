@@ -23,6 +23,7 @@ namespace x86 {
 
 template <>
 void Conv2dCompute<float>::PrepareForRun() {
+#ifdef LITE_WITH_AVX2
   auto& param = this->Param<param_t>();
 
   const int input_channel = param.x->dims()[1];
@@ -53,6 +54,7 @@ void Conv2dCompute<float>::PrepareForRun() {
     impl_->PrepareForRun();
     is_first_epoch_ = false;
   }
+#endif
 }
 
 }  // namespace x86
