@@ -55,7 +55,7 @@ class GatherComputeTest : public arena::TestCase {
           (index_dims.size() == 2 && index_dims[1] == 1));
     CHECK_EQ(index_dims.size(), 1);
     if (axis_dims_.production() == 1) {
-      auto* axis_data = axis->data<R>();
+      auto* axis_data = axis->data<A>();
       auto* index_data = index->data<R>();
       auto* input_data = x->data<T>();
 
@@ -137,9 +137,9 @@ class GatherComputeTest : public arena::TestCase {
     std::vector<R> index(index_dims_.production());
     fill_data_rand<R>(
         index.data(), 0, x_dims_[0] - 1, index_dims_.production());
-    std::vector<R> axis(axis_dims_.production());
+    std::vector<A> axis(axis_dims_.production());
     if (axis_dims_.production() == 1) {
-      fill_data_rand<R>(
+      fill_data_rand<A>(
           axis.data(), 0, x_dims_.size() - 1, axis_dims_.production());
     }
     SetCommonTensor(x_, x_dims_, x.data());
@@ -187,7 +187,9 @@ TEST(Gather, precision) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
       for (auto axis_dims : std::vector<std::vector<int64_t>>{{1}, {0}}) {
 #if defined(LITE_WITH_XPU) || defined(LITE_WITH_NPU)
-// TestGather<float, int>(x_dims, index_dims, place, abs_error, "def");
+        axis_dims = {{0}};
+        TestGather<float, int_32, int_32>(
+            x_dims, index_dims, axis_dims, place, abs_error, "def");
 #else
         TestGather<float, int64_t, int64_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "int64int64");
