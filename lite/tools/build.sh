@@ -24,7 +24,7 @@ BUILD_CV=OFF
 WITH_LOG=ON
 WITH_MKL=ON
 WITH_STATIC_MKL=OFF
-WITH_AXV2=OFF
+WITH_AXV=ON
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
 BUILD_NPU=OFF
@@ -398,7 +398,7 @@ function make_x86 {
 
   cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
             -DWITH_STATIC_MKL=${WITH_STATIC_MKL}  \
-            -DWITH_AXV2=${WITH_AXV2} \
+            -DWITH_AXV=${WITH_AXV} \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
             -DLITE_WITH_PROFILE=OFF \
@@ -538,8 +538,8 @@ function main {
                 WITH_STATIC_MKL="${i#*=}"
                 shift
                 ;;
-            --with_avx2=*)
-                WITH_AXV2="${i#*=}"
+            --with_avx=*)
+                WITH_AXV="${i#*=}"
                 shift
                 ;;
             --with_exception=*)
