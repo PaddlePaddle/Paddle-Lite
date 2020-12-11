@@ -1474,8 +1474,8 @@ inline bool write_to_output_c2_fp32(const float* din,
 
 #define NCHWC4_TRANS_FP32_RSTORE                         \
   "str    q16, [%[tmp0]] \n" /* store c0r0*/             \
-  "str    q17, [%[tmp1]] \n" /* store c2r0*/             \
-  "str    q18, [%[tmp2]] \n" /* store c1r0*/             \
+  "str    q17, [%[tmp2]] \n" /* store c2r0*/             \
+  "str    q18, [%[tmp1]] \n" /* store c1r0*/             \
   "str    q19, [%[tmp3]] \n" /* store c3r0*/             \
   "3: \n"
 #else
@@ -1804,6 +1804,10 @@ inline bool write_to_output_c4_fp32(const float* din,
                     "v1",
                     "v2",
                     "v3",
+                    "v4",
+                    "v5",
+                    "v6",
+                    "v7",
                     "v8",
                     "v9",
                     "v10",
@@ -1811,7 +1815,8 @@ inline bool write_to_output_c4_fp32(const float* din,
                     "v16",
                     "v17",
                     "v18",
-                    "v19");
+                    "v19",
+                    "v20");
 #else
       asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_LEAKY_RELU NCHWC4_TRANS_FP32_STORE
                  NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_LEAKY_RELU NCHWC4_TRANS_FP32_RSTORE
