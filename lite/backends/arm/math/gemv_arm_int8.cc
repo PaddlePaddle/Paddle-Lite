@@ -2151,8 +2151,9 @@ bool gemv_int8_sdot(const int8_t* A,
                     float six,
                     float alpha) {
   if (transA) {
-    LOG(ERROR) << "ERROR: sgemv, transA is not supported now";
-    return false;
+    gemv_int8_trans_oth(
+        A, x, y, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
+    return true;
   }
   dtype* data_out = y;
   const int8_t* data_in = x;
@@ -2160,12 +2161,15 @@ bool gemv_int8_sdot(const int8_t* A,
   int cnt = N >> 4;
   int tail = N & 15;
   int size_m = (M >> 3) << 3;
+  int outbuf[M];  // NOLINT
+  memset(outbuf, 0.f, sizeof(int) * M);
+  float zerobuf[M];  // NOLINT
+  memset(zerobuf, 0, sizeof(float) * M);
+  const float* bias_ptr = is_bias ? bias : zerobuf;
 #pragma omp parallel for
   for (int j = 0; j < M - 7; j += 8) {
-    dtype* out_ptr = data_out + j;
+    int* ptr_out = outbuf + j;
     const float* scale_ptr = scale + j;
-    auto bias_ptr = is_bias ? bias + j : nullptr;
-    int ptr_out[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     const int8_t* ptr_in = data_in;
     const int8_t* ptr_w0 = weights_ptr + (N * j);
     const int8_t* ptr_w1 = ptr_w0 + N;
@@ -2287,20 +2291,16 @@ bool gemv_int8_sdot(const int8_t* A,
       ptr_out[6] += ptr_in[i] * ptr_w6[i];
       ptr_out[7] += ptr_in[i] * ptr_w7[i];
     }
-    write_gemv_out(
-        ptr_out, out_ptr, scale_ptr, bias_ptr, 8, flag_act, act, six, alpha);
   }
 //! deal with remains
 #pragma omp parallel for
   for (int j = size_m; j < M; j++) {
     // int *ptr_out = data_out + j;
-    dtype* out_ptr = data_out + j;
     const float* scale_ptr = scale + j;
-    int ptr_out[1] = {0};
+    int* ptr_out = outbuf + j;
     const int8_t* ptr_in = data_in;
     const int8_t* ptr_w0 = weights_ptr + (N * j);
     int cnt_loop = cnt;
-    auto bias_ptr = is_bias ? bias + j : nullptr;
     asm volatile(
         "prfm  pldl1keep, [%[in]]               \n" /* preload din */
         "prfm  pldl1keep, [%[w0]]       \n"         /* preload w0 */
@@ -2328,9 +2328,9 @@ bool gemv_int8_sdot(const int8_t* A,
     for (int i = 0; i < tail; ++i) {
       ptr_out[0] += ptr_in[i] * ptr_w0[i];
     }
-    write_gemv_out(
-        ptr_out, out_ptr, scale_ptr, bias_ptr, 1, flag_act, act, six, alpha);
   }
+  write_gemv_out(
+      outbuf, data_out, scale, bias_ptr, M, flag_act, act, six, alpha);
   return true;
 }
 #endif  // __aarch64__ && sdot
