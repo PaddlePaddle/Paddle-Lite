@@ -187,7 +187,7 @@ TEST(Gather, precision) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
       for (auto axis_dims : std::vector<std::vector<int64_t>>{{1}, {0}}) {
 #if defined(LITE_WITH_XPU) || defined(LITE_WITH_NPU)
-        TestGather<float, int>(x_dims, index_dims, place, abs_error, "def");
+// TestGather<float, int>(x_dims, index_dims, place, abs_error, "def");
 #else
         TestGather<float, int64_t, int64_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "int64int64");
