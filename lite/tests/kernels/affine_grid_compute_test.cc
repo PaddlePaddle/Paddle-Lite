@@ -43,6 +43,7 @@ class AffineGridComputeTester : public arena::TestCase {
         output_shape_(output_shape),
         out_shape_data_(out_shape_data) {
     align_corners_ = align_corners;
+    x_dims_[0] = out_shape_data[0];
   }
 
   void RunBaseline(Scope* scope) override {
@@ -63,8 +64,11 @@ class AffineGridComputeTester : public arena::TestCase {
     out->Resize(std::vector<int64_t>({N, H, W, 2}));
     auto dout = out->mutable_data<float>();
 
-    float* vh = reinterpret_cast<float*>(malloc(sizeof(float) * H));
-    float* vw = reinterpret_cast<float*>(malloc(sizeof(float) * W));
+    std::vector<float> vvh(H);
+    float* vh = vvh.data();
+    std::vector<float> vvw(W);
+    float* vw = vvw.data();
+
     int out_size = H * W * 3;
     float scale = 2 / (static_cast<float>(H) - 1);
     float start = -1.0f;
@@ -85,8 +89,8 @@ class AffineGridComputeTester : public arena::TestCase {
     for (int i = 0; i < W; i++) {
       vw[i] = start + i * scale;
     }
-
-    float* hw3 = reinterpret_cast<float*>(malloc(sizeof(float) * out_size));
+    std::vector<float> vhw3(out_size);
+    float* hw3 = vhw3.data();
 
     for (int i = 0; i < out_size; i += 3) {
       hw3[i] = 1;
@@ -101,6 +105,9 @@ class AffineGridComputeTester : public arena::TestCase {
       hw3[i * 3] = vw[i % W];
     }
     const float* bias = nullptr;
+    for (int i = 0; i < out->dims().production(); i++) {
+      dout[i] = 0;
+    }
     for (int i = 0; i < N; i++) {
       basic_gemm(false,
                  true,
@@ -145,7 +152,7 @@ TEST(AffineGrid, precision) {
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
-  for (int n : {1, 2}) {
+  for (int n : {1, 5}) {
     for (int c : {1, 3}) {
       for (int h : {3, 10}) {
         for (int w : {3, 10}) {

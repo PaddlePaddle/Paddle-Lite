@@ -14,6 +14,7 @@
 
 #pragma once
 #include <algorithm>
+#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -32,6 +33,7 @@ class AffineGridCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   float* vh;
   float* vw;
   float* hw3;
+  std::vector<float> vhw3;
 };
 
 }  // namespace arm

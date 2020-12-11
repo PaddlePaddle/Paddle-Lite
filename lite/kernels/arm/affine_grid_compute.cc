@@ -45,10 +45,13 @@ void AffineGridCompute::PrepareForRun() {
     W = param.output_shape[3];
   }
   bool align_corners = param.align_corners;
-  vh = reinterpret_cast<float*>(malloc(sizeof(float) * H));
-  vw = reinterpret_cast<float*>(malloc(sizeof(float) * W));
+  std::vector<float> vvh(H);
+  vh = vvh.data();
+  std::vector<float> vvw(W);
+  vw = vvw.data();
   int out_size = H * W * 3;
-  hw3 = reinterpret_cast<float*>(malloc(sizeof(float) * out_size));
+  vhw3.resize(out_size);
+  hw3 = vhw3.data();
   float scale = 2 / (static_cast<float>(H) - 1);
   float start = -1.0f;
   if (!align_corners) {
