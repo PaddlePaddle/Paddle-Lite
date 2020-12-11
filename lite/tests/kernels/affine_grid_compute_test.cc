@@ -42,7 +42,6 @@ class AffineGridComputeTester : public arena::TestCase {
       : TestCase(place, alias),
         output_shape_(output_shape),
         out_shape_data_(out_shape_data) {
-    x_dims_[0] = out_shape_data[0];
     align_corners_ = align_corners;
   }
 
