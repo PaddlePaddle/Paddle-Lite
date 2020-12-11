@@ -146,8 +146,8 @@ TEST(AffineGrid, precision) {
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
 
-  for (int n : {1, 4}) {
-    for (int c : {1, 4}) {
+  for (int n : {1, 2}) {
+    for (int c : {1, 3}) {
       for (int h : {3, 10}) {
         for (int w : {3, 10}) {
           for (bool align_corners : {false, true}) {
