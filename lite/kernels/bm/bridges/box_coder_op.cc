@@ -78,8 +78,10 @@ int BoxCoderConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   bm_param.op_type = USER_PADDLE_BOX_CODER;
   bm_param.u.box_coder_param.axis = axis;
   CHECK_LE(variance_len, 20);
-  memset(bm_param.u.box_coder_param.variance, 0, 20 * sizeof(float));
-  memcpy(bm_param.u.box_coder_param.variance,
+  memset(reinterpret_cast<void*>(bm_param.u.box_coder_param.variance),
+         0,
+         20 * sizeof(float));
+  memcpy(reinterpret_cast<void*>(bm_param.u.box_coder_param.variance),
          &variance[0],
          variance_len * sizeof(float));
   bm_param.u.box_coder_param.variance_len = variance_len;
