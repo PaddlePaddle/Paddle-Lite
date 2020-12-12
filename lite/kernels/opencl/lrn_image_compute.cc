@@ -162,7 +162,7 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
   float k_{1.};
   std::string norm_region_{"AcrossChannels"};
   std::string kernel_func_name_{"lrn"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 
