@@ -1057,6 +1057,7 @@ REGISTER_LITE_KERNEL(conv2d,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d,
@@ -1075,6 +1076,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 
 // kHost(PC)
@@ -1094,6 +1096,7 @@ REGISTER_LITE_KERNEL(conv2d,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d,
@@ -1112,5 +1115,6 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 #define LITE_WITH_LOG

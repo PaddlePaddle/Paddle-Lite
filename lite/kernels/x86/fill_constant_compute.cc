@@ -92,4 +92,5 @@ REGISTER_LITE_KERNEL(fill_constant,
     .BindInput("ShapeTensorList",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindPaddleOpVersion("fill_constant", 1)
     .Finalize();

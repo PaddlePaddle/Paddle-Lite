@@ -77,6 +77,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      fp32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindPaddleOpVersion("arg_max", 1)
     .Finalize();
 
 #ifdef LITE_BUILD_EXTRA
@@ -89,6 +90,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindPaddleOpVersion("arg_max", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(arg_max,
@@ -99,6 +101,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindPaddleOpVersion("arg_max", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(arg_max,
@@ -109,6 +112,7 @@ REGISTER_LITE_KERNEL(arg_max,
                      int16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindPaddleOpVersion("arg_max", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(arg_max,
@@ -119,5 +123,6 @@ REGISTER_LITE_KERNEL(arg_max,
                      uint8)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kUInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    .BindPaddleOpVersion("arg_max", 1)
     .Finalize();
 #endif  // LITE_BUILD_EXTRA

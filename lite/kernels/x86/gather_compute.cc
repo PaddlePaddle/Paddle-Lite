@@ -22,6 +22,7 @@ REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt32, def)
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindPaddleOpVersion("gather", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt64, int64_in)
@@ -29,4 +30,5 @@ REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt64, int64_in)
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindPaddleOpVersion("gather", 1)
     .Finalize();
