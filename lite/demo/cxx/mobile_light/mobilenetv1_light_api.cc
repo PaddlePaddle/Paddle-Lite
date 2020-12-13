@@ -26,7 +26,7 @@
 // avoid linking errors such as `unsupport ops or kernels`.
 /////////////////////////////////////////////////////////////////////////
 // #include "paddle_use_kernels.h"  // NOLINT
-//#include "paddle_use_ops.h"      // NOLINT
+// #include "paddle_use_ops.h"      // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
