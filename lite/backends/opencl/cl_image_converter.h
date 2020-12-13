@@ -35,7 +35,7 @@ class CLImageConverterBase {
                            const DDim &tensor_dim) = 0;
   virtual DDim InitImageDimInfoWith(const DDim &tensor_dim) = 0;
 
-  bool fp16_support_{paddle::lite::CLRuntime::Global()->support_half()};
+  bool fp16_support_{paddle::lite::CLRuntime::Global()->get_precision() == 2};
 };
 
 class CLImageConverterDefault : public CLImageConverterBase {

@@ -26,7 +26,7 @@
 // avoid linking errors such as `unsupport ops or kernels`.
 /////////////////////////////////////////////////////////////////////////
 // #include "paddle_use_kernels.h"  // NOLINT
-// #include "paddle_use_ops.h"      // NOLINT
+//#include "paddle_use_ops.h"      // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
@@ -137,16 +137,28 @@ void RunModel(std::string model_dir,
   //    lib](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/demo_guides/opencl.md);
   //  second, [convert and use opencl nb
   //    model](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/user_guides/opt/opt_bin.md).
-  //
+
+  bool is_opencl_backend_valid =
+      ::IsOpenCLBackendValid(/*check_fp16_valid = false*/);
+  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
+            << std::endl;
   /*  Uncomment code below to enable OpenCL
-  bool is_opencl_backend_valid = ::IsOpenCLBackendValid();
-  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid <<
-  std::endl;
   if (is_opencl_backend_valid) {
     // give opencl nb model dir
     config.set_model_from_file(model_dir);
-    // opencl tune option: 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
-    config.set_opencl_tune(0);
+
+    // opencl tune option
+    // CL_TUNE_NONE: 0
+    // CL_TUNE_RAPID: 1
+    // CL_TUNE_NORMAL: 2
+    // CL_TUNE_EXHAUSTIVE: 3
+    config.set_opencl_tune(CL_TUNE_NONE);
+
+    // opencl precision option
+    // CL_PRECISION_AUTO: 0, first fp16 if valid, default
+    // CL_PRECISION_FP32: 1, force fp32
+    // CL_PRECISION_FP16: 2, force fp16
+    config.set_opencl_precision(CL_PRECISION_FP16);
   } else {
     std::cout << "Unsupport opencl nb model." << std::endl;
     exit(1);

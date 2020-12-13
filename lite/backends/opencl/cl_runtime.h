@@ -73,22 +73,14 @@ class CLRuntime {
     return static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
   }
 
-  bool OpenCLAvaliableForDevice() {
+  bool OpenCLAvaliableForDevice(bool check_fp16_valid = false) {
     // note(ysh329): entered this func means:
     //  1. opencl_lib_found must be true
     //  2. dlsym_success must be true
 
     bool support_fp16 = support_half();
-#ifdef LITE_WITH_LOG
-    LOG(INFO) << "support_fp16:" << support_fp16;
-#endif
-    if (support_fp16 == false) return false;
-
-    is_device_avaliable_for_opencl_ = support_fp16;
-#ifdef LITE_WITH_LOG
-    LOG(INFO) << "is_device_avaliable_for_opencl_:"
-              << is_device_avaliable_for_opencl_;
-#endif
+    is_device_avaliable_for_opencl_ =
+        check_fp16_valid ? support_fp16 : is_device_avaliable_for_opencl_;
     return is_device_avaliable_for_opencl_;
   }
 
@@ -98,6 +90,22 @@ class CLRuntime {
   }
 
   size_t auto_tune() { return auto_tune_; }
+
+  void set_precision(size_t p = 0) {
+    // CL_PRECISION_AUTO: 0
+    // CL_PRECISION_FP32: 1
+    // CL_PRECISION_FP16: 2
+    if ((0 == p || 2 == p) && support_half()) {
+      precision_ = 2;
+    } else if (0 == p || 1 == p) {
+      precision_ = 1;
+    } else {
+      LOG(FATAL) << "unsupported precision for opencl:"
+                 << static_cast<size_t>(p);
+    }
+  }
+
+  size_t get_precision() { return precision_; }
 
   bool Init();
 
@@ -204,13 +212,15 @@ class CLRuntime {
 
   cl_int status_{CL_SUCCESS};
 
-  bool is_device_avaliable_for_opencl_{false};
+  bool is_device_avaliable_for_opencl_{true};
 
   bool is_cl_runtime_initialized_{false};
 
   bool is_platform_device_init_success_{false};
 
   size_t auto_tune_{0};  // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
+
+  size_t precision_{0};  // 0 - AUTO, 1 - fp32, 2 - fp16
 };
 
 }  // namespace lite

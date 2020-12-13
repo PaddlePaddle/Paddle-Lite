@@ -303,7 +303,7 @@ class PrecisionProfiler {
       }
 #ifdef LITE_WITH_OPENCL
     } else if (target_type == TARGET(kOpenCL)) {
-      bool use_fp16 = paddle::lite::CLRuntime::Global()->support_half();
+      bool use_fp16 = paddle::lite::CLRuntime::Global()->get_precision() == 2;
       CLRuntime::Global()->command_queue().finish();
       switch (layout_type) {
         case DATALAYOUT(kImageDefault): {

@@ -149,6 +149,20 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
   } else if (generate_lws_type == 1) {
     // 1 - Rapid
     for (auto tune_reverse : {true, false}) {
+      for (size_t divisor = 1; divisor < /*max_divisor=*/17; divisor *= 2) {
+        tmp_lws = DefaultLocalWorkSize(
+            global_work_size, max_work_size, divisor, tune_reverse);
+        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
+            last_lws[2] == tmp_lws[2]) {
+          // skip tuned lws
+          continue;
+        }
+        lwss.emplace_back(tmp_lws);
+      }
+    }
+  } else if (generate_lws_type == 2) {
+    // 2 - Normal
+    for (auto tune_reverse : {true, false}) {
       for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor += 2) {
         tmp_lws = DefaultLocalWorkSize(
             global_work_size, max_work_size, divisor, tune_reverse);
@@ -160,8 +174,7 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
         lwss.emplace_back(tmp_lws);
       }
     }
-  } else if (generate_lws_type == 2 || generate_lws_type == 3) {
-    // 2 - Normal
+  } else if (generate_lws_type == 3) {
     // 3 - Exhaustive
     for (auto tune_reverse : {true, false}) {
       for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
@@ -176,7 +189,6 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
       }
     }
   } else {
-    // todo
     LOG(FATAL) << "Unsupported opencl tune type:" << generate_lws_type;
   }
 
