@@ -652,7 +652,7 @@ TEST(Activation_gelu, precision) {
   }
 }
 
-TEST(activation_hard_swish, precision) {
+TEST(Activation_hard_swish, precision) {
   Place place;
   float abs_error = 2e-5;
 

@@ -105,7 +105,7 @@ __kernel void prelu_channel(__read_only image2d_t input,
   const int c_idx = x / width;
   CL_DTYPE4 in      = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   CL_DTYPE4 v_alpha = READ_IMG_TYPE(CL_DTYPE_CHAR, alpha, SAMPLER, (int2)(c_idx, 0));
-  in = select(in, in * v_alpha, in < 0.0f);
+  in = select(in, in * v_alpha, in < ((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f)));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
@@ -121,7 +121,7 @@ __kernel void prelu_element(__read_only image2d_t input,
 
   CL_DTYPE4 in      = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
   CL_DTYPE4 v_alpha = READ_IMG_TYPE(CL_DTYPE_CHAR, alpha, SAMPLER, (int2)(x, h_idx));
-  in = select(in, in * v_alpha, in < 0.0f);
+  in = select(in, in * v_alpha, in < ((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f)));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
 
