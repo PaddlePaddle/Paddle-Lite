@@ -15,6 +15,7 @@
 #include "lite/kernels/arm/conv_transpose_compute.h"
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -284,7 +285,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
   auto& ctx = this->ctx_->template As<ARMContext>();
   lite::Tensor tmp_weights;
   lite::arm::math::prepackA_int8(
-      &tmp_weights, *(param.filter), 1.f, m, k, group, true, &ctx);
+      &tmp_weights, *(param.filter), m, k, group, true, &ctx);
   param.filter->Resize(tmp_weights.dims());
   param.filter->CopyDataFrom(tmp_weights);
   param.filter->Resize(w_dims);
@@ -328,12 +329,12 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
   int n = hin * win;
   int k = chin / group;
 
-  workspace_size_ = group * m * n * sizeof(i);
+  workspace_size_ = group * m * n * sizeof(int);
 
   auto& ctx = this->ctx_->template As<ARMContext>();
   lite::Tensor tmp_weights;
   lite::arm::math::prepackA_int8(
-      &tmp_weights, *(param.filter), 1.f, m, k, group, true, &ctx);
+      &tmp_weights, *(param.filter), m, k, group, true, &ctx);
   param.filter->Resize(tmp_weights.dims());
   param.filter->CopyDataFrom(tmp_weights);
   param.filter->Resize(w_dims);
@@ -354,15 +355,15 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
     ws *= input_scale;
   }
   //!  update bias
-  if (param.bias) {
-    bias_.Resize(param.bias->dims());
-    auto ptr = bias_.mutable_data<float>();
-    auto ptr_in = param.bias->data<float>();
-    for (int i = 0; i < bias_.numel(); ++i) {
-      ptr[i] = ptr_in[i] / param.output_scale;
-    }
-    flag_trans_bias_ = true;
-  }
+  // if (param.bias) {
+  //   bias_.Resize(param.bias->dims());
+  //   auto ptr = bias_.mutable_data<float>();
+  //   auto ptr_in = param.bias->data<float>();
+  //   for (int i = 0; i < bias_.numel(); ++i) {
+  //     ptr[i] = ptr_in[i] / param.output_scale;
+  //   }
+  //   flag_trans_bias_ = true;
+  // }
   //! update relu6 parameter
   param.activation_param.Relu_clipped_coef =
       param.activation_param.Relu_clipped_coef / param.output_scale;
@@ -570,8 +571,9 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   for (int i = 0; i < num; i++) {
     const int8_t* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
-    float* col_data = static_cast<float*>(ctx.workspace_data<float>()) +
-                      ctx.llc_size() / sizeof(float);
+    int32_t* dout_batch_int32 = dout + i * chout * hout * wout;
+    int32_t* col_data = static_cast<int32_t*>(ctx.workspace_data<int32_t>()) +
+                        ctx.llc_size() / sizeof(int32_t);
     if (flag_1x1s1p1) {
       col_data = dout_batch;
     }
@@ -579,7 +581,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       const int8_t* din_group = din_batch + g * group_size_in;
       const int8_t* weights_group = weights + g * group_size_weights;
       const float* scale_group = w_scale_.data() + g * m;
-      float* coldata_group = col_data + g * group_size_coldata;
+      int32_t* coldata_group = col_data + g * group_size_coldata;
       if (flag_bias) {
         act_param.has_active = false;
       }
@@ -597,27 +599,32 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                          &ctx);
     }
     if (!flag_1x1s1p1) {
-      lite::arm::math::col2im<float>(col_data,
-                                     chout,
-                                     hout,
-                                     wout,
-                                     kh,
-                                     kw,
-                                     paddings[0],
-                                     paddings[1],
-                                     paddings[2],
-                                     paddings[3],
-                                     param.strides[0],
-                                     param.strides[1],
-                                     dilations[0],
-                                     dilations[1],
-                                     dout_batch);
+      lite::arm::math::col2im<int>(col_data,
+                                   chout,
+                                   hout,
+                                   wout,
+                                   kh,
+                                   kw,
+                                   paddings[0],
+                                   paddings[1],
+                                   paddings[2],
+                                   paddings[3],
+                                   param.strides[0],
+                                   param.strides[1],
+                                   dilations[0],
+                                   dilations[1],
+                                   dout_batch_int32);
     }
-    if (flag_bias) {
-      act_param.has_active = has_act;
-      lite::arm::math::fill_bias_act<float>(
-          dout_batch, bias, chout, wout * hout, flag_bias, &act_param);
-    }
+    act_param.has_active = has_act;
+    // int32 -> fp32 int32*scale + bias
+    lite::arm::math::fill_bias_act_calib<float>(dout_batch,
+                                                dout_batch_int32,
+                                                bias,
+                                                w_scale_.data(),
+                                                chout,
+                                                wout * hout,
+                                                flag_bias,
+                                                &act_param);
   }
 }
 template <>
@@ -675,8 +682,9 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   for (int i = 0; i < num; i++) {
     const int8_t* din_batch = din + i * chin * hin * win;
     int8_t* dout_batch = dout + i * chout * hout * wout;
-    int8_t* col_data = static_cast<int8_t*>(ctx.workspace_data<int8_t>()) +
-                       ctx.llc_size() / sizeof(int8_t);
+    int32_t* dout_batch_int32 = dout + i * chout * hout * wout;
+    int32_t* col_data = static_cast<int32_t*>(ctx.workspace_data<int32_t>()) +
+                        ctx.llc_size() / sizeof(int32_t);
     if (flag_1x1s1p1) {
       col_data = dout_batch;
     }
@@ -684,7 +692,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
       const int8_t* din_group = din_batch + g * group_size_in;
       const int8_t* weights_group = weights + g * group_size_weights;
       const float* scale_group = w_scale_.data() + g * m;
-      int8_t* coldata_group = col_data + g * group_size_coldata;
+      int32_t* coldata_group = col_data + g * group_size_coldata;
       if (flag_bias) {
         act_param.has_active = false;
       }
@@ -702,27 +710,32 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                          &ctx);
     }
     if (!flag_1x1s1p1) {
-      lite::arm::math::col2im<int8_t>(col_data,
-                                      chout,
-                                      hout,
-                                      wout,
-                                      kh,
-                                      kw,
-                                      paddings[0],
-                                      paddings[1],
-                                      paddings[2],
-                                      paddings[3],
-                                      param.strides[0],
-                                      param.strides[1],
-                                      dilations[0],
-                                      dilations[1],
-                                      dout_batch);
+      lite::arm::math::col2im<int>(col_data,
+                                   chout,
+                                   hout,
+                                   wout,
+                                   kh,
+                                   kw,
+                                   paddings[0],
+                                   paddings[1],
+                                   paddings[2],
+                                   paddings[3],
+                                   param.strides[0],
+                                   param.strides[1],
+                                   dilations[0],
+                                   dilations[1],
+                                   dout_batch_int32);
     }
-    if (flag_bias) {
-      act_param.has_active = has_act;
-      lite::arm::math::fill_bias_act<int8_t>(
-          dout_batch, bias, chout, wout * hout, flag_bias, &act_param);
-    }
+    // int32 -> int8 int32*scale + bias
+    act_param.has_active = has_act;
+    lite::arm::math::fill_bias_act_calib<int8_t>(dout_batch,
+                                                 dout_batch_int32,
+                                                 bias,
+                                                 w_scale_.data(),
+                                                 chout,
+                                                 wout * hout,
+                                                 flag_bias,
+                                                 &act_param);
   }
 }
 }  // namespace arm
