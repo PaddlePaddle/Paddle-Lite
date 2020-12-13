@@ -1017,6 +1017,9 @@ struct LookupTableParam : ParamBase {
   const lite::Tensor* Ids{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
+  bool is_test{true};
+  std::string entry_config{""};  // used in distributed training
+  std::string entry{"none"};
 };
 
 struct LookupTableDequantParam : ParamBase {
@@ -1352,6 +1355,7 @@ struct AffineGridParam : ParamBase {
   std::vector<int> output_shape;
   const lite::Tensor* OutputShape;
   lite::Tensor* Out{};
+  bool align_corners{true};
 };
 
 struct AnchorGeneratorParam : ParamBase {
@@ -1683,7 +1687,11 @@ struct GridSamplerParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* out{};
   lite::Tensor* grid{};
+  bool align_corners{true};
+  std::string padding_mode{"zeros"};
+  std::string mode{"bilinear"};
 };
+
 struct LstmParam : ParamBase {
   lite::Tensor* Input{};
   lite::Tensor* Weight{};
