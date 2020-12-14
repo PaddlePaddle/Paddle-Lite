@@ -123,10 +123,9 @@ class ActivationComputeImageDefault
   }
 
   void Run() override {
-    auto* x_img = act_param_->X->data<half_t, cl::Image2D>();
-    auto* out_img = act_param_->Out->mutable_data<half_t, cl::Image2D>(
-        out_img_shape_[0], out_img_shape_[1]);
-
+    auto* x_img = GET_DATA_GPU(act_param_->X);
+    auto* out_img = MUTABLE_DATA_GPU(
+        act_param_->Out, out_img_shape_[0], out_img_shape_[1], nullptr);
     auto kernel = kernel_;
     cl_int status;
     status = kernel.setArg(0, *x_img);
@@ -156,7 +155,6 @@ class ActivationComputeImageDefault
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-
     status = EnqueueNDRangeKernel(context,
                                   kernel,
                                   cl::NullRange,
@@ -189,7 +187,7 @@ class ActivationComputeImageDefault
   bool first_epoch_for_reinit_{true};
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 }  // namespace opencl

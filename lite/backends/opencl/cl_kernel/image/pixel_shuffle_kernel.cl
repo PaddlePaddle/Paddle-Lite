@@ -30,9 +30,6 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
   int out_h = out_nh % out_H;
   int out_n = out_nh / out_H;
 
-  const sampler_t sampler =
-      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
   int in_h = out_h / upscale_factor;
   int in_w = out_w / upscale_factor;
   int in_nh = out_n * in_H + in_h;
@@ -48,7 +45,7 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
          (out_h % upscale_factor) * upscale_factor + (out_w % upscale_factor);
   in_pos.x = (in_c / 4) * in_W + in_w;
   in_pos.y = in_nh;
-  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, in_pos);
+  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, in_pos);
   if (in_c % 4 == 0) {
     res.x = in.x;
   } else if (in_c % 4 == 1) {
@@ -64,7 +61,7 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
          (out_h % upscale_factor) * upscale_factor + (out_w % upscale_factor);
   in_pos.x = (in_c / 4) * in_W + in_w;
   in_pos.y = in_nh;
-  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, in_pos);
+  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, in_pos);
   if (in_c % 4 == 0) {
     res.y = in.x;
   } else if (in_c % 4 == 1) {
@@ -80,7 +77,7 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
          (out_h % upscale_factor) * upscale_factor + (out_w % upscale_factor);
   in_pos.x = (in_c / 4) * in_W + in_w;
   in_pos.y = in_nh;
-  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, in_pos);
+  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, in_pos);
   if (in_c % 4 == 0) {
     res.z = in.x;
   } else if (in_c % 4 == 1) {
@@ -96,7 +93,7 @@ __kernel void pixel_shuffle(__read_only image2d_t input_image,
          (out_h % upscale_factor) * upscale_factor + (out_w % upscale_factor);
   in_pos.x = (in_c / 4) * in_W + in_w;
   in_pos.y = in_nh;
-  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, sampler, in_pos);
+  in = READ_IMG_TYPE(CL_DTYPE_CHAR, input_image, SAMPLER, in_pos);
   if (in_c % 4 == 0) {
     res.w = in.x;
   } else if (in_c % 4 == 1) {

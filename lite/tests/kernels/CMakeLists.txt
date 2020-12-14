@@ -12,9 +12,10 @@ set(test_kernel_deps
     ${apu_kernels}
     ${imagination_nna_kernels}
     ${bm_kernels}
+    ${opencl_kernels}
 )
 
-if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WITH_X86 OR LITE_WITH_ARM))
+if((NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WITH_X86 OR LITE_WITH_ARM))
     lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_conv_transpose_compute SRCS conv_transpose_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_scale_compute SRCS scale_compute_test.cc DEPS ${test_kernel_deps})
@@ -54,6 +55,8 @@ if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LIT
     lite_cc_test(test_kernel_pool_compute SRCS pool_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_constant_compute SRCS fill_constant_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_fill_constant_batch_size_like_compute SRCS fill_constant_batch_size_like_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_crop_tensor_compute SRCS crop_tensor_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_crop_compute SRCS crop_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_elementwise_common_broadcast SRCS elementwise_common_broadcast_test.cc DEPS ${test_kernel_deps})
 
 if(LITE_BUILD_EXTRA)
@@ -69,8 +72,10 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_reduce_sum_compute SRCS reduce_sum_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_reduce_prod_compute SRCS reduce_prod_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_stack_compute SRCS stack_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_unstack_compute SRCS unstack_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_range_compute SRCS range_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_affine_channel_compute SRCS affine_channel_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_affine_grid_compute SRCS affine_grid_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_anchor_generator_compute SRCS anchor_generator_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_matrix_nms_compute SRCS matrix_nms_compute_test.cc DEPS ${test_kernel_deps})
 
@@ -106,7 +111,6 @@ endif()
     lite_cc_test(test_kernel_interp_compute SRCS interp_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_shape_compute SRCS shape_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_is_empty_compute SRCS is_empty_compute_test.cc DEPS ${test_kernel_deps})
-    lite_cc_test(test_kernel_crop_compute SRCS crop_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_sequence_expand_compute SRCS sequence_expand_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_squeeze_compute SRCS squeeze_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_slice_compute SRCS slice_compute_test.cc DEPS ${test_kernel_deps})

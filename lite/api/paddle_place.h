@@ -132,8 +132,10 @@ static size_t PrecisionTypeLength(PrecisionType type) {
       return 8;
     case PrecisionType::kFP16:
       return 2;
+    case PrecisionType::kInt16:
+      return 2;
     default:
-      return 4;
+      return 0;
   }
 }
 

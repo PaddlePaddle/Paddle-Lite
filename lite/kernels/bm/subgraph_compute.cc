@@ -62,6 +62,19 @@ bool SubgraphEngine::BuildDeviceProgram() {
   }
   std::string net_name = "bmnet_f32bmodel";
   auto unique_net_name = lite::subgraph::bm::UniqueName(net_name);
+#if (defined BM_SAVE_UMODEL)
+  unique_net_name = unique_net_name + "_bmnetx_f32umodel";
+  _bmcompiler_save_umodel(graph.GetCompilerHandle(),
+                          const_cast<char*>(unique_net_name.c_str()));
+  finish_bmcompiler(graph.GetCompilerHandle());
+  exit(1);
+#endif
+#if (defined BM_SAVE_BMODEL)
+  __bmcompile_opt(
+      graph.GetCompilerHandle(), const_cast<char*>(unique_net_name.c_str()), 2);
+  finish_bmcompiler(graph.GetCompilerHandle());
+  exit(1);
+#endif
 #ifndef BM_DYNAMIC_COMPILE
   __bmcompile_opt(
       graph.GetCompilerHandle(), const_cast<char*>(unique_net_name.c_str()), 1);
@@ -82,8 +95,11 @@ bool SubgraphEngine::BuildDeviceProgram() {
     for (size_t i = 0; i < device_outputs_.size(); i++) {
       bmrt_free_device(bmrt_hd_, device_outputs_[i].device_mem);
     }
+    bmrt_hd_ = nullptr;
   }
-  bmrt_hd_ = bmrt_create(bm_hd_);
+  if (bmrt_hd_ == nullptr) {
+    bmrt_hd_ = bmrt_create(bm_hd_);
+  }
   if (false == bmrt_load_bmodel_data(bmrt_hd_, bmodel_data, data_size)) {
     free(bmodel_data);
     return false;

@@ -15,8 +15,11 @@
 #include "lite/kernels/arm/elementwise_compute.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "lite/backends/arm/math/elementwise_common_broadcast.h"
+#include "lite/backends/arm/math/elementwise_common_broadcast_config.h"
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/kernels/host/elementwise_op_func.h"
 
@@ -24,6 +27,8 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+
+namespace arm_math = paddle::lite::arm::math;
 
 inline DDim trim_trailing_singular_dims(const DDim& dims) {
   // Remove trailing dimensions of size 1 for y
@@ -53,14 +58,14 @@ inline bool is_fast_broadcast(const DDim& x_dims,
     axis = x_dims.size() - y_dims.size();
   }
   if (axis < 0) {
-    LOG(INFO) << "Fast broadcast chk fail, for x_dims smaller.";
+    VLOG(4) << "Fast broadcast chk fail, for x_dims smaller.";
     return false;
   }
   DDim y_dim_trim = trim_trailing_singular_dims(y_dims);
   axis = (y_dim_trim.size() == 0) ? x_dims.size() : axis;
-  if (x_dims.size() == y_dim_trim.size()) {
-    LOG(INFO)
-        << "Fast broadcast chk fail, for y's shape not really contained in x";
+  if (x_dims.size() < (y_dim_trim.size() + axis)) {
+    VLOG(4) << "Fast broadcast chk fail, for y's shape size doesnt follow the "
+               "axis rule";
     return false;
   }
   *pre = 1;
@@ -71,7 +76,7 @@ inline bool is_fast_broadcast(const DDim& x_dims,
   }
   for (int i = 0; i < y_dim_trim.size(); ++i) {
     if (x_dims[i + axis] != y_dim_trim[i]) {
-      LOG(WARNING) << "Fast broadcast chk fail, for dimension mismatch.";
+      VLOG(4) << "Fast broadcast chk fail, for dimension mismatch.";
       return false;
     }
     (*n) *= y_dim_trim[i];
@@ -94,62 +99,140 @@ using BinaryOpFn = lite::kernels::host::BinaryOpFn<T>;
 
 enum class OprandSwapable { NO, YES };
 
-template <class Elem_t, class DimValue_t>
-void common_elmentwise_op_arm(
-    const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
-        batch_arg,
-    BinaryOpFn<Elem_t> op,
-    ElementWiseFn<Elem_t> elementwise_fn) {
-  int batch_num = batch_arg.BatchNum();
-  auto bcast_type = batch_arg.BcastType();
-  int range_length = batch_arg.ElemNumPerBatch();
-  switch (bcast_type) {
-    case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
-      for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-        lite::kernels::host::element_wise_range_to_one<Elem_t>(
-            batch_arg.XAtBatch(batch_id),
-            batch_arg.YAtBatch(batch_id),
-            batch_arg.ZAtBatch(batch_id),
-            range_length,
-            op);
+template <class Elem_t, class DimValue_t, class NeonConfig>
+struct CommonElementWiseOpArm {
+  static void Run(
+      // todo: if necessary, generate
+      //  lite::kernels::host::StaticBatchElementWiseArg by
+      //  batch_arg->ToStaticArg() before kernel launch, it will help to reduce
+      //  runtime overhead.
+      const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
+          batch_arg,
+      BinaryOpFn<Elem_t> op) {
+    int batch_num = batch_arg.BatchNum();
+    auto bcast_type = batch_arg.BcastType();
+    int range_length = batch_arg.ElemNumPerBatch();
+    switch (bcast_type) {
+      case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          arm_math::neon_elementwise_range_to_one<NeonConfig>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length);
+        }
+        break;
       }
-      break;
-    }
-    case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
-      for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-        lite::kernels::host::element_wise_one_to_range<Elem_t>(
-            batch_arg.XAtBatch(batch_id),
-            batch_arg.YAtBatch(batch_id),
-            batch_arg.ZAtBatch(batch_id),
-            range_length,
-            op);
+      case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          arm_math::neon_elementwise_one_to_range<NeonConfig>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length);
+        }
+        break;
       }
-      break;
-    }
-    case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
-      for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-        elementwise_fn(batch_arg.XAtBatch(batch_id),
-                       batch_arg.YAtBatch(batch_id),
-                       batch_arg.ZAtBatch(batch_id),
-                       range_length);
+      case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          arm_math::neon_elementwise_range_to_range<NeonConfig>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length);
+        }
+        break;
       }
-      break;
+      default: {
+        LOG(FATAL) << "Un supported bcast type";
+        break;
+      }
     }
   }
-}
+};
 
-template <class T, OprandSwapable opd_swap_able>
+template <class Elem_t, class DimValue_t>
+struct CommonElementWiseOpArm<Elem_t, DimValue_t, arm_math::NullNeonConfig> {
+  static void Run(
+      // todo: if necessary, generate
+      //  lite::kernels::host::StaticBatchElementWiseArg by
+      //  batch_arg->ToStaticArg() before kernel launch, it will help to reduce
+      //  runtime overhead.
+      const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
+          batch_arg,
+      BinaryOpFn<Elem_t> op) {
+    int batch_num = batch_arg.BatchNum();
+    auto bcast_type = batch_arg.BcastType();
+    int range_length = batch_arg.ElemNumPerBatch();
+    switch (bcast_type) {
+      case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          lite::kernels::host::element_wise_range_to_one<Elem_t>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length,
+              op);
+        }
+        break;
+      }
+      case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          lite::kernels::host::element_wise_one_to_range<Elem_t>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length,
+              op);
+        }
+        break;
+      }
+      case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          lite::kernels::host::element_wise_range_to_range<Elem_t>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length,
+              op);
+        }
+        break;
+      }
+      default: {
+        LOG(FATAL) << "Un supported bcast type";
+        break;
+      }
+    }
+  }
+};
+
+// Note: All calling to elementwise_compute_template may set a template arg
+//  "NeonConfig" to get better performance than the "NullNeonConfig".
+//  However,it may increase the binary size significantly. So,
+//  do it only if it is necessary.
+//  see ElementwiseAddCompute<T, PType>::Run() to get an example.
+template <class OpParamType,
+          class T,
+          OprandSwapable opd_swap_able,
+          class NeonConfig>
 void elementwise_compute_template(paddle::lite::KernelBase* kernel,
                                   FastBCastFn<T> fast_bcast_fn,
                                   ElementWiseFn<T> elementwise_fn,
                                   BinaryOpFn<T> op) {
-  auto& param = kernel->template Param<operators::ElementwiseParam>();
-  auto* x_data = param.X->template data<T>();
-  auto* y_data = param.Y->template data<T>();
+  // Note:
+  // Though this function will only access datas in operators::ElementwiseParam
+  // the `kernel-> template Param<>()` requires to use true type from now
+  // so `kernel->template Param<operators::ElementwiseParam>()` will not work
+  auto& param = kernel->template Param<OpParamType>();
+  auto x = param.X;
+  auto y = param.Y;
+
+  auto* x_data = x->template data<T>();
+  auto* y_data = y->template data<T>();
   auto* out_data = param.Out->template mutable_data<T>();
   int axis = param.axis;
-  auto x_dims = param.X->dims();
-  auto y_dims = param.Y->dims();
+  auto x_dims = x->dims();
+  auto y_dims = y->dims();
   int pre, n, post;
   if (elementwise_fn && x_dims == y_dims) {
     elementwise_fn(x_data, y_data, out_data, x_dims.production());
@@ -161,9 +244,14 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
              is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     fast_bcast_fn(y_data, x_data, out_data, pre, n, post);
   } else if (elementwise_fn) {
-    auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
-        param.X, param.Y, param.Out, axis);
-    common_elmentwise_op_arm<T, int64_t>(batch_arg, op, elementwise_fn);
+    // todo: GenBatchElementWiseArg and common_elmentwise_op_arm can handle any
+    //   kinds of "elementwise op", not only "broadcast". You could refactor the
+    //   code to use only common_elmentwise_op_arm if necessary
+    auto batch_arg =
+        lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
+    // if NeonConfig is NullNeonConfig, a specialization that uses naive cpu
+    // code will be called
+    CommonElementWiseOpArm<T, int64_t, NeonConfig>::Run(batch_arg, op);
   }
   if (!elementwise_fn && !fast_bcast_fn) {
     LOG(FATAL) << "unsupported elementwise_compute called";
@@ -172,7 +260,14 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
 
 template <typename T, PrecisionType PType>
 void ElementwiseAddCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::YES>(
+  using NeonConfig = arm_math::MergeConfig<
+      arm_math::AddConfig<T>,
+      arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, T>>;
+
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::YES,
+                               NeonConfig>(
       this,
       lite::arm::math::elementwise_add_broadcast<T>,
       lite::arm::math::elementwise_add<T>,
@@ -184,7 +279,10 @@ void ElementwiseAddActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::YES>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_add_relu_broadcast<float>,
         lite::arm::math::elementwise_add_relu<float>,
@@ -196,7 +294,10 @@ void ElementwiseAddActivationCompute::Run() {
 
   if (param.act_type == "tanh") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::YES>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
         this,
         nullptr,
         lite::arm::math::elementwise_add_tanh<float>,
@@ -212,7 +313,10 @@ void ElementwiseAddActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseSubCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::NO>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::NO,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_sub_broadcast<T>,
       lite::arm::math::elementwise_sub<T>,
@@ -224,7 +328,10 @@ void ElementwiseSubActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::NO>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::NO,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_sub_relu_broadcast<float>,
         lite::arm::math::elementwise_sub_relu<float>,
@@ -240,7 +347,10 @@ void ElementwiseSubActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseMulCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::YES>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_mul_broadcast<T>,
       lite::arm::math::elementwise_mul<T>,
@@ -254,7 +364,10 @@ void ElementwiseMulActivationCompute<T, PType>::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<T, OprandSwapable::YES>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 T,
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_mul_relu_broadcast<T>,
         lite::arm::math::elementwise_mul_relu<T>,
@@ -269,7 +382,10 @@ void ElementwiseMulActivationCompute<T, PType>::Run() {
 }
 
 void ElementwiseMaxCompute::Run() {
-  elementwise_compute_template<float, OprandSwapable::YES>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               float,
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_max_broadcast<float>,
       lite::arm::math::elementwise_max<float>,
@@ -281,7 +397,10 @@ void ElementwiseMaxActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::YES>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_max_relu_broadcast<float>,
         lite::arm::math::elementwise_max_relu<float>,
@@ -297,7 +416,10 @@ void ElementwiseMaxActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseDivCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::NO>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::NO,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_div_broadcast<T>,
       lite::arm::math::elementwise_div<T>,
@@ -309,7 +431,10 @@ void ElementwiseDivActivationCompute::Run() {
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
-    elementwise_compute_template<float, OprandSwapable::NO>(
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::NO,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_div_relu_broadcast<float>,
         lite::arm::math::elementwise_div_relu<float>,
@@ -325,7 +450,10 @@ void ElementwiseDivActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseModCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::NO>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::NO,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_mod_broadcast<T>,
       lite::arm::math::elementwise_mod<T>,
@@ -334,7 +462,10 @@ void ElementwiseModCompute<T, PType>::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwisePowCompute<T, PType>::Run() {
-  elementwise_compute_template<T, OprandSwapable::YES>(
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_pow_broadcast<T>,
       lite::arm::math::elementwise_pow<T>,

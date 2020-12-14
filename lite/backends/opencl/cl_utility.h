@@ -32,6 +32,19 @@ const char* opencl_error_to_str(cl_int error);
         __FILE__,                                                    \
         __LINE__);                                                   \
   }
+
+// CL_CHECK_FATAL, not hurt performance , must check
+#define CL_CHECK_FATAL_SOLID(err_code__)                             \
+  if (err_code__ != CL_SUCCESS) {                                    \
+    LOG(FATAL) << string_format(                                     \
+        "OpenCL error with code %s happened in file %s at line %d. " \
+        "Exiting.\n",                                                \
+        opencl_error_to_str(err_code__),                             \
+        __FILE__,                                                    \
+        __LINE__);                                                   \
+  }
+
+// CL_CHECK_FATAL, hurt performance ,will shutdown check when relase
 #ifdef LITE_WITH_LOG
 #define CL_CHECK_FATAL(err_code__)                                   \
   if (err_code__ != CL_SUCCESS) {                                    \
@@ -46,17 +59,31 @@ const char* opencl_error_to_str(cl_int error);
 #define CL_CHECK_FATAL(err_code__)
 #endif
 
-#ifdef LITE_WITH_PROFILE
 #define EnqueueNDRangeKernel(                                      \
     context, kernel, gws_offset, gws, lws, event_wait_list, event) \
   context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(    \
       kernel, gws_offset, gws, lws, event_wait_list, &event)
-#else
-#define EnqueueNDRangeKernel(                                      \
-    context, kernel, gws_offset, gws, lws, event_wait_list, event) \
-  context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(    \
-      kernel, gws_offset, gws, lws, event_wait_list, nullptr)
-#endif
+
+// mutable_data
+#define MUTABLE_DATA_GPU(tensor_instance_p, img_w, img_h, ptr)     \
+  (fp16_support_)                                                  \
+      ? (tensor_instance_p)                                        \
+            ->mutable_data<half_t, cl::Image2D>(img_w, img_h, ptr) \
+      : (tensor_instance_p)                                        \
+            ->mutable_data<float, cl::Image2D>(img_w, img_h, ptr)
+
+#define DATA_GPU(tensor_instance_p)                                          \
+  (fp16_support_) ? (tensor_instance_p)->mutable_data<half_t, cl::Image2D>() \
+                  : (tensor_instance_p)->mutable_data<float, cl::Image2D>()
+
+#define GET_DATA_GPU(tensor_instance_p)                              \
+  (fp16_support_) ? (tensor_instance_p)->data<half_t, cl::Image2D>() \
+                  : (tensor_instance_p)->data<float, cl::Image2D>()
+
+#define MUTABLE_DATA_CPU(tensor_instance_p)                             \
+  (fp16_support_)                                                       \
+      ? static_cast<void*>((tensor_instance_p)->mutable_data<half_t>()) \
+      : static_cast<void*>((tensor_instance_p)->mutable_data<float>())
 
 }  // namespace lite
 }  // namespace paddle

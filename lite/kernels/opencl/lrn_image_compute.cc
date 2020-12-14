@@ -101,11 +101,11 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
     int arg_idx = 0;
     int out_channel = out_dims[1];
     int out_width = out_dims[3];
-    auto default_work_size =
-        DefaultWorkSize(out_dims,
-                        DDim(std::vector<DDim::value_type>{
-                            static_cast<int64_t>(out_image_shape["width"]),
-                            static_cast<int64_t>(out_image_shape["height"])}));
+    auto default_work_size = DefaultGlobalWorkSize(
+        out_dims,
+        DDim(std::vector<DDim::value_type>{
+            static_cast<int64_t>(out_image_shape["width"]),
+            static_cast<int64_t>(out_image_shape["height"])}));
 #ifdef LITE_WITH_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[3];
@@ -157,12 +157,12 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
  protected:
   param_t* lrn_param_{nullptr};
   int n_{5};
-  float alpha_{1e-4};
+  float alpha_{1e-4f};
   float beta_{0.75};
   float k_{1.};
   std::string norm_region_{"AcrossChannels"};
   std::string kernel_func_name_{"lrn"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

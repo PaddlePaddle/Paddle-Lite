@@ -115,11 +115,11 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
       // compute global work size
       auto x_img_shape = InitImageDimInfoWith(x_dims);
-      const auto& default_work_size =
-          DefaultWorkSize(x_dims,
-                          DDim(std::vector<DDim::value_type>{
-                              static_cast<int64_t>(x_img_shape["width"]),
-                              static_cast<int64_t>(x_img_shape["height"])}));
+      const auto& default_work_size = DefaultGlobalWorkSize(
+          x_dims,
+          DDim(std::vector<DDim::value_type>{
+              static_cast<int64_t>(x_img_shape["width"]),
+              static_cast<int64_t>(x_img_shape["height"])}));
       gws_ = cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                          static_cast<cl::size_type>(default_work_size[1]),
                          static_cast<cl::size_type>(default_work_size[2])};
@@ -194,7 +194,7 @@ class SplitComputeImage2D : public KernelLite<TARGET(kOpenCL),
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   std::string kernel_func_name_{};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
   cl::Kernel kernel_;
   cl::NDRange gws_;

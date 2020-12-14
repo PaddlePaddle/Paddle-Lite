@@ -41,7 +41,9 @@
 #include <windows.h>
 #include <winsock.h>
 #include <numeric>  // std::accumulate in msvc
-#ifndef S_ISDIR     // windows port for sys/stat.h
+#undef min
+#undef max
+#ifndef S_ISDIR  // windows port for sys/stat.h
 #define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif  // S_ISDIR
 
@@ -58,9 +60,11 @@ static void *dlsym(void *handle, const char *symbol_name) {
 static void *dlopen(const char *filename, int flag) {
   std::string file_name(filename);
   HMODULE hModule = LoadLibrary(file_name.c_str());
+#ifndef LITE_WITH_OPENCL
   if (!hModule) {
     throw std::runtime_error(file_name + " not found.");
   }
+#endif
   return reinterpret_cast<void *>(hModule);
 }
 

@@ -63,7 +63,6 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   int in_dtype = op_info->GetAttr<int>("in_dtype");
   int out_dtype = op_info->GetAttr<int>("out_dtype");
-
   if (in_dtype == out_dtype) {
     add_identity_layer(graph->GetCompilerHandle(),
                        static_cast<const char*>(x_var_name.c_str()),
@@ -72,11 +71,19 @@ int CastConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                        static_cast<const char*>(output_var_name.c_str()));
   } else {
     int out_bm_dtype = 0;
+    int in_bm_dtype = 0;
     CHECK_EQ(CvtDtype(out_dtype, &out_bm_dtype), true);
-    add_shape_cast_layer(graph->GetCompilerHandle(),
-                         static_cast<const char*>(x_var_name.c_str()),
-                         static_cast<const char*>(output_var_name.c_str()),
-                         out_bm_dtype);
+    CHECK_EQ(CvtDtype(in_dtype, &in_bm_dtype), true);
+    if (out_bm_dtype == DTYPE_FP32) {
+      in_bm_dtype = out_bm_dtype;
+    }
+    add_dtype_convert_layer(graph->GetCompilerHandle(),
+                            const_cast<const int*>(&i_x_shape_data[0]),
+                            x_dims.size(),
+                            static_cast<const char*>(x_var_name.c_str()),
+                            static_cast<const char*>(output_var_name.c_str()),
+                            in_bm_dtype,
+                            out_bm_dtype);
   }
 
   graph->AddNode(output_var_name);

@@ -85,7 +85,7 @@ class TransposeComputeFloatImage
 #ifdef LITE_WITH_LOG
     VLOG(4) << "out_dims=   " << out_dims;
 #endif
-    const std::vector<size_t>& default_work_size = DefaultWorkSize(
+    const std::vector<size_t>& default_work_size = DefaultGlobalWorkSize(
         out_dims,
         DDim(std::vector<DDim::value_type>{
             static_cast<int64_t>(out_image_shape.at("width")),
@@ -161,7 +161,7 @@ class TransposeComputeFloatImage
 
  private:
   std::string kernel_func_name_{"transpose"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

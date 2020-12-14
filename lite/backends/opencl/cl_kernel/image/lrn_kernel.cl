@@ -27,10 +27,6 @@ __kernel void lrn(__read_only image2d_t input,
   const int out_nh = get_global_id(2);
 
   const int out_c0 = out_c * 4;
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
-
   const int out_c1 = out_c0 + 1;
   const int out_c2 = out_c0 + 2;
   const int out_c3 = out_c0 + 3;
@@ -49,7 +45,7 @@ __kernel void lrn(__read_only image2d_t input,
       int2 input_pos;
       input_pos.x = input_c0 * out_C + out_w;
       input_pos.y = out_nh;
-      CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+      CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
       int num = i % 4;
       switch (num){
         case 0:
@@ -73,7 +69,7 @@ __kernel void lrn(__read_only image2d_t input,
       int2 input_pos;
       input_pos.x = input_c0 * out_C + out_w;
       input_pos.y = out_nh;
-      CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+      CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
       int num = i % 4;
       switch (num){
         case 0:
@@ -97,7 +93,7 @@ __kernel void lrn(__read_only image2d_t input,
       int2 input_pos;
       input_pos.x = input_c0 * out_C + out_w;
       input_pos.y = out_nh;
-      CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+      CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
       int num = i % 4;
       switch (num){
         case 0:
@@ -121,7 +117,7 @@ __kernel void lrn(__read_only image2d_t input,
       int2 input_pos;
       input_pos.x = input_c0 * out_C + out_w;
       input_pos.y = out_nh;
-      CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, input_pos);
+      CL_DTYPE4 input_data = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, input_pos);
       int num = i % 4;
       switch (num){
         case 0:
@@ -141,7 +137,7 @@ __kernel void lrn(__read_only image2d_t input,
   int2 out_pos;
   out_pos.x = out_c * out_W + out_w;
   out_pos.y = out_nh;
-  CL_DTYPE4 input = READ_IMG_TYPE(CL_DTYPE_CHAR, input, sampler, out_pos);
+  CL_DTYPE4 input = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, out_pos);
 
   float4 out_val;
   out_val.x = input.x / (pow(k + alpha * (square0), beta));

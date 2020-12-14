@@ -19,6 +19,27 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
+static std::vector<int64_t> GetOutputShape(const DDim in_dims,
+                                           int start_axis,
+                                           int stop_axis) {
+  int64_t outer = 1;
+  std::vector<int64_t> out_shape;
+  size_t in_dims_size = in_dims.size();
+  out_shape.reserve(in_dims_size - stop_axis + start_axis);
+
+  for (int i = 0; i < start_axis; ++i) {
+    out_shape.push_back(in_dims[i]);
+  }
+  for (int i = start_axis; i <= stop_axis; i++) {
+    outer *= in_dims[i];
+  }
+  out_shape.push_back(outer);
+  for (size_t i = stop_axis + 1; i < in_dims_size; i++) {
+    out_shape.push_back(in_dims[i]);
+  }
+  return out_shape;
+}
+
 bool FlattenOp::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.output);
@@ -91,9 +112,58 @@ bool Flatten2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   return true;
 }
 
+bool FlattenContiguousRangeOp::AttachImpl(const cpp::OpDesc &opdesc,
+                                          lite::Scope *scope) {
+  auto x_var = scope->FindVar(opdesc.Input("X").front());
+  param_.x = x_var->GetMutable<lite::Tensor>();
+  auto out_var = scope->FindVar(opdesc.Output("Out").front());
+  param_.out = out_var->GetMutable<lite::Tensor>();
+  auto xshape_var = scope->FindVar(opdesc.Output("XShape").front());
+  param_.xshape = xshape_var->GetMutable<lite::Tensor>();
+  param_.start_axis = opdesc.GetAttr<int>("start_axis");
+  param_.stop_axis = opdesc.GetAttr<int>("stop_axis");
+  return true;
+}
+
+bool FlattenContiguousRangeOp::CheckShape() const {
+  CHECK_OR_FALSE(param_.x);
+  CHECK_OR_FALSE(param_.out);
+  CHECK_OR_FALSE(param_.xshape);
+  return true;
+}
+
+bool FlattenContiguousRangeOp::InferShapeImpl() const {
+  int start_axis = param_.start_axis;
+  int stop_axis = param_.stop_axis;
+  auto in_dims = param_.x->dims();
+  int in_dims_size = in_dims.size();
+  if (start_axis < 0) start_axis += in_dims_size;
+  if (stop_axis < 0) stop_axis += in_dims_size;
+  CHECK_OR_FALSE(start_axis <= stop_axis);
+
+  std::vector<int64_t> out_shape =
+      GetOutputShape(in_dims, start_axis, stop_axis);
+  param_.out->Resize(DDim(out_shape));
+  if (in_dims[0] == out_shape[0]) {
+    param_.out->set_lod(param_.x->lod());
+  }
+
+  std::vector<int64_t> xshape_dims(in_dims.size() + 1);
+  xshape_dims[0] = 0;
+  for (int i = 0; i < in_dims.size(); ++i) {
+    xshape_dims[i + 1] = in_dims[i];
+  }
+  param_.xshape->Resize(DDim(xshape_dims));
+  param_.xshape->set_lod(param_.x->lod());
+
+  return true;
+}
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_OP(flatten, paddle::lite::operators::FlattenOp);
 REGISTER_LITE_OP(flatten2, paddle::lite::operators::Flatten2Op);
+REGISTER_LITE_OP(flatten_contiguous_range,
+                 paddle::lite::operators::FlattenContiguousRangeOp);

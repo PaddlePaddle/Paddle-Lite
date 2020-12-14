@@ -15,7 +15,11 @@
 #include <iostream>
 #include <vector>
 #include "paddle_api.h"  // NOLINT
-
+/////////////////////////////////////////////////////////////////////////
+// If this demo is linked to static library:libpaddle_api_full_bundled.a
+// , you should include `paddle_use_ops.h` and `paddle_use_kernels.h` to
+// avoid linking errors such as `unsupport ops or kernels`.
+/////////////////////////////////////////////////////////////////////////
 #ifdef _WIN32
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
@@ -29,12 +33,24 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
+// Enable `DEMO_WITH_OPENCL` macro below, if user need use gpu(opencl)
+// #define DEMO_WITH_OPENCL
 void RunModel(std::string model_dir) {
   // 1. Create CxxConfig
   CxxConfig config;
   config.set_model_dir(model_dir);
+#ifdef DEMO_WITH_OPENCL
+  config.set_valid_places(
+      {Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+       Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+       Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+       Place{TARGET(kX86), PRECISION(kFloat)},
+       Place{TARGET(kHost), PRECISION(kFloat)}});
+#else
   config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
                            Place{TARGET(kHost), PRECISION(kFloat)}});
+#endif
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<CxxConfig>(config);

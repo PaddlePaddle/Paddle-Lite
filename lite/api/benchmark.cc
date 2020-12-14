@@ -16,8 +16,6 @@
 #if !defined(_WIN32)
 #include <sys/time.h>
 #else
-#define NOMINMAX  // msvc max/min macro conflict with std::min/max
-#include <windows.h>
 #include "lite/backends/x86/port.h"
 #endif
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
@@ -90,9 +88,9 @@ void OutputOptModel(const std::string& save_optimized_model_dir) {
     config.set_param_file(FLAGS_model_dir + "/" + FLAGS_param_filename);
   }
   std::vector<Place> vaild_places = {
-      Place{TARGET(kARM), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kInt32)},
       Place{TARGET(kARM), PRECISION(kInt64)},
+      Place{TARGET(kARM), PRECISION(kFloat)},
   };
   config.set_valid_places(vaild_places);
   auto predictor = lite_api::CreatePaddlePredictor(config);

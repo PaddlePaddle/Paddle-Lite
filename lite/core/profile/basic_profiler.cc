@@ -15,7 +15,11 @@
 #include "lite/core/profile/basic_profiler.h"
 #include <map>
 #include <string>
-
+#ifdef LITE_WITH_XCODE
+const char* FLAGS_time_profile_file = "time_profile.txt";
+const char* FLAGS_time_profile_summary_file = "time_profile_summary.txt";
+const char* FLAGS_time_profile_unit = "ms";
+#else
 DEFINE_string(time_profile_file,
               "time_profile.txt",
               "Lite time profile information dump file");
@@ -27,7 +31,7 @@ DEFINE_string(time_profile_summary_file,
 DEFINE_string(time_profile_unit,
               "ms",
               "Unit of time in profile infomation, ms or us");
-
+#endif
 namespace paddle {
 namespace lite {
 namespace profile {

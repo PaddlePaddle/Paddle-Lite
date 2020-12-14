@@ -47,7 +47,7 @@ REGISTER_LITE_KERNEL(read_from_array,
                                           PRECISION(kAny),
                                           DATALAYOUT(kAny))})
     .BindInput("I",
-               {LiteType::GetTensorTy(TARGET(kARM),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt64),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",

@@ -385,6 +385,7 @@ class Context<TargetType::kOpenCL> {
 
   void InitOnce() {
     if (CLRuntime::Global()->IsInitSuccess() == false) {
+      // gpu is not support , can use cpu instead . do not fatal..
       LOG(ERROR) << "OpenCL runtime init failed";
     }
     cl_context_ = std::make_shared<CLContext>();

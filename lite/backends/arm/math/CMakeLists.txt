@@ -12,9 +12,16 @@ find_package(PythonInterp REQUIRED)
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${script_dir}/convert_arm_sdot_to_machine_code.py
         "--input_file=${CMAKE_CURRENT_SOURCE_DIR}/dotprod/__gemm_sdot_meta__.h"
         "--output_file=${CMAKE_CURRENT_SOURCE_DIR}/dotprod/gemm_sdot.h"
-        RESULT_VARIABLE gen_code_ret)
-if (NOT ${gen_code_ret} STREQUAL "0")
-  message(FATAL_ERROR "generating dotprod code quit with error: ${gen_code_ret}")
+        RESULT_VARIABLE gen_code_ret_v8)
+if (NOT ${gen_code_ret_v8} STREQUAL "0")
+  message(FATAL_ERROR "generating dotprod code quit with error: ${gen_code_ret_v8}")
+endif ()
+execute_process(COMMAND ${PYTHON_EXECUTABLE} ${script_dir}/convert_arm_vsdot_to_machine_code.py
+        "--input_file=${CMAKE_CURRENT_SOURCE_DIR}/dotprod/__gemm_vsdot_meta__.h"
+        "--output_file=${CMAKE_CURRENT_SOURCE_DIR}/dotprod/gemm_vsdot.h"
+        RESULT_VARIABLE gen_code_ret_v7)
+if (NOT ${gen_code_ret_v7} STREQUAL "0")
+  message(FATAL_ERROR "generating dotprod code quit with error: ${gen_code_ret_v7}")
 endif ()
 
 set(HAS_ARM_MATH_LIB_DIR OFF)
@@ -107,6 +114,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       axpy.cc
       fill_bias_relu.cc
       col_im_transform.cc
+      conv_transpose_depthwise.cc
       im2sequence.cc
       prior_box.cc
       sequence_softmax.cc
@@ -122,7 +130,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       sequence_expand.cc
       slice.cc
       reduce_mean.cc
-      stack.cc
       affine_channel.cc
       anchor_generator.cc
       split_merge_lod_tenosr.cc
