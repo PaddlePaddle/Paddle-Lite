@@ -433,7 +433,7 @@ void SaveModelNaive(const std::string &model_file,
   /* 1. Save model to model.fbs */
   const std::string prog_path = model_file + ".nb";
   // Save meta_version(uint16) into file
-  uint16_t meta_version = 1;
+  uint16_t meta_version = 2;
   WriteToFile(prog_path, &meta_version, sizeof(uint16_t));
 
   // Save lite_version(char[16]) into file
