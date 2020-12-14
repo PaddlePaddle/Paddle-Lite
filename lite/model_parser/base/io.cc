@@ -25,15 +25,18 @@ void Buffer::CopyDataFrom(const Buffer& other) {
 }
 
 void Buffer::ResetLazy(size_t size) {
+  if (size == 0) {
+    size = 1;
+  }
   CHECK(raw_);
   raw_->ResetLazy(TargetType::kHost, size);
   size_ = size;
 }
 
-std::string ByteReader::ReadForwardToString(size_t size) const {
+std::string ByteReader::ReadToString(size_t size) const {
   std::string tmp;
   tmp.resize(size);
-  ReadForward(&tmp[0], size);
+  Read(&tmp[0], size);
   tmp.shrink_to_fit();
   return tmp;
 }
@@ -46,21 +49,21 @@ BinaryFileReader::BinaryFileReader(const std::string& path, size_t offset) {
   fseek(file_, offset, SEEK_SET);
 }
 
-void BinaryFileReader::ReadForward(void* dst, size_t size) const {
+void BinaryFileReader::Read(void* dst, size_t size) const {
   CHECK(dst);
   CHECK_EQ(fread(dst, 1, size, file_), size) << "Failed to read " << size
                                              << " bytes.";
   cur_ += size;
 }
 
-void BinaryFileWriter::WriteForward(const void* src, size_t size) const {
+void BinaryFileWriter::Write(const void* src, size_t size) const {
   CHECK(src);
   CHECK_EQ(fwrite(src, 1, size, file_), size) << "Failed to read " << size
                                               << "bytes.";
   cur_ += size;
 }
 
-void StringBufferReader::ReadForward(void* dst, size_t size) const {
+void StringBufferReader::Read(void* dst, size_t size) const {
   CHECK(dst);
   lite::TargetCopy(TargetType::kHost, dst, buf_ + cur_, size);
   cur_ += size;
