@@ -54,7 +54,9 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     } else if (out_h == 64) {
       build_options_ += " -DLOCAL_MEM_64";
     }
-
+    if (instance_norm_param_->activation_type == "relu") {
+      kernel_func_name_ = "instance_norm_onnx_relu";
+    }
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     context.cl_context()->AddKernel(kernel_func_name_,

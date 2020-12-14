@@ -1669,6 +1669,9 @@ struct InstanceNormParam : ParamBase {
   lite::Tensor* saved_mean{};
   lite::Tensor* saved_variance{};
   float epsilon;
+  bool fuse_relu{false};
+  std::string activation_type{""};
+  float alpha{6.};
 };
 /// --------------------- group_norm operators --------------------
 struct GroupNormParam : ParamBase {

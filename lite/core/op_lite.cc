@@ -261,6 +261,21 @@ bool OpInfo::HasOutputScale(const std::string &name, bool is_scale_name) const {
   return res;
 }
 
+bool OpInfo::HasOutputInstanceNorm(const std::string &name,
+                                   bool is_instance_norm_name) const {
+  bool res = false;
+  if (is_instance_norm_name) {
+    res = HasAttr(name);
+  } else {
+    std::string argname;
+    int index;
+    if (GetOutputArgname(name, &argname) && GetOutputIndex(name, &index)) {
+      res = HasAttr(argname + to_string(index) + "_instance_norm");
+    }
+  }
+  return res;
+}
+
 void OpInfo::SetInputScale(const std::string &name,
                            const std::vector<float> &scale_value,
                            bool is_scale_name) {
@@ -297,6 +312,26 @@ void OpInfo::SetOutputScale(const std::string &name,
   SetAttr<std::vector<float>>(scale_name, scale_value);
 }
 
+void OpInfo::SetOutputInstanceNorm(
+    const std::string &name,
+    const std::vector<float> &instance_norm_value,
+    bool is_instance_norm_name) {
+  std::string instance_norm_name;
+  if (is_instance_norm_name) {
+    instance_norm_name = name;
+  } else {
+    std::string argname;
+    int index;
+    CHECK(GetOutputArgname(name, &argname));
+    CHECK(GetOutputIndex(name, &index));
+    CHECK(instance_norm_value.size() > 0) << "Error in SetOutputInstanceNorm: "
+                                             "the instance_noms should not be "
+                                             "empty";
+    instance_norm_name = argname + to_string(index) + "_instance_norm";
+  }
+  SetAttr<std::vector<float>>(instance_norm_name, instance_norm_value);
+}
+
 std::vector<float> OpInfo::GetInputScale(const std::string &name,
                                          bool is_scale_name) const {
   std::string scale_name;
@@ -325,6 +360,21 @@ std::vector<float> OpInfo::GetOutputScale(const std::string &name,
     scale_name = argname + to_string(index) + "_scale";
   }
   return GetAttr<std::vector<float>>(scale_name);
+}
+
+std::vector<float> OpInfo::GetOutputInstanceNorm(
+    const std::string &name, bool is_instance_norm_name) const {
+  std::string instance_norm_name;
+  if (is_instance_norm_name) {
+    instance_norm_name = name;
+  } else {
+    std::string argname;
+    int index;
+    CHECK(GetOutputArgname(name, &argname));
+    CHECK(GetOutputIndex(name, &index));
+    instance_norm_name = argname + to_string(index) + "_instance_norm";
+  }
+  return GetAttr<std::vector<float>>(instance_norm_name);
 }
 
 }  // namespace lite
