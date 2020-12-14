@@ -200,7 +200,7 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                 "ldr  d0, [%[r1]], #4\n" /* load r1 */
                 "ldr  d1, [%[r2]], #4\n" /* load r2 */
                 "sxtl  v2.8h,  v0.8b\n"  /* r1, cvt to int16 */
-                "sxtl  v3.8h,  v1.8b\n"  /* r2, cvt to int16 */
+                "sxtl2  v3.8h,  v0.16b\n"  /* r2, cvt to int16 */
                 "1:\n"
                 /* inr1 -> outr0, outr1 */
                 "ldp    q20, q21,   [%[ptr_out1]]\n"
