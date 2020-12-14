@@ -41,6 +41,10 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
+    scale_param_ = param_.get_mutable<param_t>();
+    if (scale_param_->activation_type == "relu6") {
+      kernel_func_name_ = "scale_relu6";
+    }
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/scale_kernel.cl",
                                     build_options_,
@@ -81,7 +85,11 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto* out_img = MUTABLE_DATA_GPU(
         scale_param_->output, out_img_shape_[0], out_img_shape_[1], nullptr);
     const float scale = scale_param_->scale;
-    const float bias = scale_param_->bias;
+    float bias = scale_param_->bias;
+    if (!scale_param_->bias_after_scale) {
+      bias *= scale;
+    }
+    const float alpha = scale_param_->alpha;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -95,6 +103,8 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(2, scale);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(3, bias);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(4, alpha);
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,
@@ -140,7 +150,22 @@ REGISTER_LITE_KERNEL(scale,
                      kFP16,
                      kImageDefault,
                      paddle::lite::kernels::opencl::ScaleComputeImage2D,
-                     image2d)
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+REGISTER_LITE_KERNEL(scale_relu6,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::ScaleComputeImage2D,
+                     def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
