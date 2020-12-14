@@ -935,7 +935,7 @@ void LoadModelFbsFromMemory(const std::string &model_buffer,
                             uint16_t meta_version) {
   // Offset
   uint16_t meta_version_tmp;
-  model_parser::StringBufferReader reader(model_buffer.data());
+  model_parser::StringBufferReader reader(model_buffer);
   reader.Read(&meta_version_tmp, sizeof(uint16_t));
 
   // (2)get opt version
