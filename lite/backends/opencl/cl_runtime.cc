@@ -93,6 +93,7 @@ bool CLRuntime::Init() {
     LOG(INFO) << "set is_cl_runtime_initialized_ = true";
 #endif
   }
+  set_precision();
   return is_cl_runtime_initialized_;
 }
 
