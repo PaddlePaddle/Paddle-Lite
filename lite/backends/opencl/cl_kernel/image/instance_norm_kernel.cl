@@ -113,8 +113,8 @@ __kernel void instance_norm_onnx(__private const int in_width,
   const float4 sigma = sqrt(shared_mem[0] + (float4)(epsilon));
 
   float4 s = 1 / sigma;
-  float4 vscale = read_imagef(scale, sampler, (int2)(c, n*in_c_group));
-  float4 vbias  = read_imagef(bias, sampler, (int2)(c, n*in_c_group));
+  float4 vscale = read_imagef(scale, SAMPLER, (int2)(c, n*in_c_group));
+  float4 vbias  = read_imagef(bias, SAMPLER, (int2)(c, n*in_c_group));
   vscale *= s;
 
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
@@ -228,8 +228,8 @@ __kernel void instance_norm_onnx_relu(__private const int in_width,
   const float4 sigma = sqrt(shared_mem[0] + (float4)(epsilon));
 
   float4 s = 1 / sigma;
-  float4 vscale = read_imagef(scale, sampler, (int2)(c, n*in_c_group));
-  float4 vbias  = read_imagef(bias, sampler, (int2)(c, n*in_c_group));
+  float4 vscale = read_imagef(scale, SAMPLER, (int2)(c, n*in_c_group));
+  float4 vbias  = read_imagef(bias, SAMPLER, (int2)(c, n*in_c_group));
   vscale *= s;
 
   for (int xIndex = w; xIndex < in_width; xIndex += local_work_size_x) {
