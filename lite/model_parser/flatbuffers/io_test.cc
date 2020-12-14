@@ -120,7 +120,7 @@ TEST(CombinedParamsDesc, Scope) {
     model_parser::Buffer buf{model_parser::LoadFile(path)};
     std::string str{static_cast<const char*>(buf.data()), buf.size()};
 
-    model_parser::StringBufferReader reader(std::move(str));
+    model_parser::StringBufferReader reader(str);
     fbs::ParamDeserializer deserializer(&reader);
     deserializer.ForwardRead(&scope_3);
     check_params(scope_3);

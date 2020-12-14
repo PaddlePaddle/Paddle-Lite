@@ -126,8 +126,8 @@ void LoadCombinedParamsPb(const std::string &path,
 
   std::unique_ptr<model_parser::ByteReader> reader;
   if (!model_buffer.is_empty()) {
-    reader.reset(new model_parser::StringBufferReader(
-        const_cast<std::string &&>(model_buffer.get_params())));
+    reader.reset(
+        new model_parser::StringBufferReader(model_buffer.get_params()));
   } else {
     reader.reset(new model_parser::BinaryFileReader(path));
   }
