@@ -40,7 +40,7 @@ bool AffineGridOpLite::InferShapeImpl() const {
   int N = param_.X->dims()[0];
   int H, W;
   if (param_.output_shape.size() == 0) {
-    const auto out_shape = param_.OutputShape->dims();
+    const auto out_shape = param_.OutputShape->data<int>();
     H = out_shape[2];
     W = out_shape[3];
 
@@ -56,10 +56,15 @@ bool AffineGridOpLite::InferShapeImpl() const {
 bool AffineGridOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                   lite::Scope *scope) {
   auto x = op_desc.Input("Theta").front();
+  auto out_shape = op_desc.Input("OutputShape").front();
   auto output = op_desc.Output("Output").front();
 
   param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
+  param_.OutputShape = scope->FindVar(out_shape)->GetMutable<lite::Tensor>();
   param_.output_shape = op_desc.GetAttr<std::vector<int>>("output_shape");
+  if (op_desc.HasAttr("align_corners")) {
+    param_.align_corners = op_desc.GetAttr<bool>("align_corners");
+  }
 
   param_.Out = scope->FindVar(output)->GetMutable<lite::Tensor>();
 
