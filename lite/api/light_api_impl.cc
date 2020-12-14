@@ -75,7 +75,7 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
 #else
   x86::MKL_Set_Num_Threads(real_num_threads);
 #endif
-  VLOG(3) << "set_x86_math_library_math_threads() is set successfully and the "
+  VLOG(3) << "x86_math_num_threads() is set successfully and the "
              "number of threads is:"
           << real_num_threads;
 #endif
