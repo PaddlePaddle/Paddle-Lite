@@ -81,15 +81,14 @@ void gemm_s8(bool is_transA,
 
   int hblock = get_hblock_int8(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
-  auto packed_A = static_cast<int8_t*>(
-      TargetMalloc(TargetType::kARM, m_roundup * K * sizeof(int8_t)));
-
+  ctx->ExtendWorkspace(m_roundup * K * sizeof(int8_t));
+  auto packed_A = static_cast<int8_t*>(ctx->workspace_data<int8_t>()) +
+                  ctx->llc_size() / sizeof(int8_t);
   int lda = is_transA ? M : K;
   prepackA_int8(packed_A, A, lda, 0, M, 0, K, is_transA, ctx);
 
   gemm_prepack_int8(
       packed_A, B, bias, C, M, N, K, is_bias, is_transB, scale, act_param, ctx);
-  TargetFree(TargetType::kARM, packed_A);
 }
 
 template void gemm_s8<float>(bool is_transA,
