@@ -432,23 +432,26 @@ void SaveModelNaive(const std::string &model_file,
   model_parser::Buffer buffer;
   /* 1. Save model to model.fbs */
   const std::string prog_path = model_file + ".nb";
+  model_parser::BinaryFileWriter writer{prog_path};
+
   // Save meta_version(uint16) into file
   uint16_t meta_version = 2;
-  WriteToFile(prog_path, &meta_version, sizeof(uint16_t));
+  writer.Write(&meta_version, sizeof(uint16_t));
 
   // Save lite_version(char[16]) into file
   const int paddle_version_length = 16 * sizeof(char);
   std::string paddle_version = version();
-  AppendToFile(prog_path, paddle_version.c_str(), paddle_version_length);
+  writer.Write(paddle_version.c_str(), paddle_version_length);
   VLOG(4) << "paddle_version:" << paddle_version;
 
+  /* 1. Get topolygy description from cpp::ProgramDesc */
   fbs::ProgramDesc fbs_prog;
   TransformProgramDescCppToAny(cpp_prog, &fbs_prog);
   fbs_prog.CopyDataToBuffer(&buffer);
   uint64_t topology_size = buffer.size();
-  AppendToFile(prog_path, &topology_size, sizeof(uint64_t));
-  /* 1. Save model to model.fbs */
-  AppendToFile(prog_path, buffer.data(), topology_size);
+  // Save topolygy description into naive model
+  writer.Write(&topology_size, sizeof(uint64_t));
+  writer.Write(buffer.data(), topology_size);
   VLOG(4) << "save topology_size:" << topology_size;
 
   /* 2. Get param names from cpp::ProgramDesc */
@@ -462,15 +465,10 @@ void SaveModelNaive(const std::string &model_file,
       continue;
     unique_var_names.emplace(var.Name());
   }
-
-  /* 3. Save combined params to params.fbs */
-  fbs::CombinedParamsDesc params_prog;
-  fbs::deprecated::SetCombinedParamsWithScope(
-      exec_scope, unique_var_names, &params_prog);
-  params_prog.CopyDataToBuffer(&buffer);
-  AppendToFile(prog_path, buffer.data(), buffer.size());
-
-  LOG(INFO) << "Save naive buffer model in '" << prog_path << " successfully";
+  fbs::ParamSerializer serializer{&writer};
+  // Save params into naive model
+  serializer.ForwardWrite(exec_scope, unique_var_names);
+  LOG(INFO) << "Save naive buffer model in " << prog_path << " successfully";
 }
 
 template <typename T>
@@ -817,7 +815,7 @@ void LoadModelFbsFromFile(const std::string &filename,
   uint64_t topo_size;
   ReadModelDataFromFile<uint64_t>(
       &topo_size, filename, &offset, sizeof(uint64_t));
-
+  VLOG(4) << "topo_size: " << topo_size;
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   cpp_prog->Init(model_parser::LoadFile(filename, offset, topo_size));
 #elif LITE_ON_TINY_PUBLISH
@@ -830,16 +828,24 @@ void LoadModelFbsFromFile(const std::string &filename,
   offset = offset + topo_size;
 
   /* 2. Load scope from params.fbs */
-  if (meta_version == 1) {
-   /* load scope from param.fbs with meta_version=1 */
-    fbs::CombinedParamsDescView params(
-        model_parser::LoadFile(filename, offset));
-    fbs::deprecated::SetScopeWithCombinedParams(scope, params);
-  } else {
-    /* load scope from param.fbs with meta_version=2 */
-    model_parser::BinaryFileReader reader(filename, offset);
-    fbs::ParamDeserializer deserializer(&reader);
-    deserializer.ForwardRead(scope);
+  switch (meta_version) {
+    case 1: {
+      /* load scope from param.fbs with meta_version=1 */
+      fbs::CombinedParamsDescView params(
+          model_parser::LoadFile(filename, offset));
+      fbs::deprecated::SetScopeWithCombinedParams(scope, params);
+      break;
+    }
+    case 2: {
+      /* load scope from param.fbs with meta_version=2 */
+      model_parser::BinaryFileReader reader(filename, offset);
+      fbs::ParamDeserializer deserializer(&reader);
+      deserializer.ForwardRead(scope);
+      break;
+    }
+    default:
+      LOG(FATAL) << "Unspported model meta_version " << meta_version;
+      break;
   }
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
@@ -960,17 +966,24 @@ void LoadModelFbsFromMemory(const std::string &model_buffer,
   fbs::ProgramDesc program(prog_data);
   TransformProgramDescAnyToCpp(program, cpp_prog);
 #endif
-  if (meta_version == 1) {
-    size_t params_size = reader.length() - sizeof(uint16_t) -
-                         paddle_version_length - sizeof(uint64_t) - prog_size;
-    model_parser::Buffer params_data(params_size);
-    reader.Read(params_data.data(), params_size);
-
-    fbs::CombinedParamsDescView params(std::move(params_data));
-    fbs::deprecated::SetScopeWithCombinedParams(scope, params);
-  } else {
-    fbs::ParamDeserializer deserializer(&reader);
-    deserializer.ForwardRead(scope);
+  switch (meta_version) {
+    case 1: {
+      size_t params_size = reader.length() - sizeof(uint16_t) -
+                           paddle_version_length - sizeof(uint64_t) - prog_size;
+      model_parser::Buffer params_data(params_size);
+      reader.Read(params_data.data(), params_size);
+      fbs::CombinedParamsDescView params(std::move(params_data));
+      fbs::deprecated::SetScopeWithCombinedParams(scope, params);
+      break;
+    }
+    case 2: {
+      fbs::ParamDeserializer deserializer(&reader);
+      deserializer.ForwardRead(scope);
+      break;
+    }
+    default:
+      LOG(FATAL) << "Unspported model meta_version " << meta_version;
+      break;
   }
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
