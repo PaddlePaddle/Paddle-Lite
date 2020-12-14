@@ -33,6 +33,7 @@ if [ ${os_name} == "Darwin" ]; then
 fi
 
 function prepare_thirdparty {
+    cd $workspace
     if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
         rm -rf $workspace/third-party
 
@@ -43,6 +44,7 @@ function prepare_thirdparty {
     else
         git submodule update --init --recursive
     fi
+    cd -
 }
 
 function prepare_opencl_source_code {
@@ -215,7 +217,7 @@ function build_opencl {
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON 
+        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON -DWITH_AXV=ON
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
