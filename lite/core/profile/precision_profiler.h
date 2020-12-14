@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/core/program.h"
 #include "lite/utils/io.h"
 #ifdef LITE_WITH_X86
@@ -303,7 +304,8 @@ class PrecisionProfiler {
       }
 #ifdef LITE_WITH_OPENCL
     } else if (target_type == TARGET(kOpenCL)) {
-      bool use_fp16 = paddle::lite::CLRuntime::Global()->get_precision() == 2;
+      bool use_fp16 = paddle::lite::CLRuntime::Global()->get_precision() ==
+                      lite_api::CL_PRECISION_FP16;
       CLRuntime::Global()->command_queue().finish();
       switch (layout_type) {
         case DATALAYOUT(kImageDefault): {

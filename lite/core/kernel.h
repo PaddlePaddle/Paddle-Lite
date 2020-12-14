@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
@@ -212,7 +213,8 @@ class KernelBase {
 #endif
 #ifdef LITE_WITH_OPENCL
   cl::Event event_;
-  bool fp16_support_{paddle::lite::CLRuntime::Global()->get_precision() == 2};
+  bool fp16_support_{paddle::lite::CLRuntime::Global()->get_precision() ==
+                     lite_api::CL_PRECISION_FP16};
 #endif
 };
 

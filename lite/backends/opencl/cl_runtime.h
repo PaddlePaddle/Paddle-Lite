@@ -16,6 +16,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_utility.h"
 #include "lite/backends/opencl/cl_wrapper.h"
@@ -84,28 +85,32 @@ class CLRuntime {
     return is_device_avaliable_for_opencl_;
   }
 
-  void set_auto_tune(size_t enable_tune) {
-    auto_tune_ = enable_tune;
+  void set_auto_tune(lite_api::CLTuneMode tune_mode) {
+    auto_tune_ = tune_mode;
     command_queue_ = CreateCommandQueue(context());
   }
 
-  size_t auto_tune() { return auto_tune_; }
+  lite_api::CLTuneMode auto_tune() { return auto_tune_; }
 
-  void set_precision(size_t p = 0) {
+  void set_precision(
+      lite_api::CLPrecisionType p = lite_api::CL_PRECISION_AUTO) {
     // CL_PRECISION_AUTO: 0
     // CL_PRECISION_FP32: 1
     // CL_PRECISION_FP16: 2
-    if ((0 == p || 2 == p) && support_half()) {
-      precision_ = 2;
-    } else if (0 == p || 1 == p) {
-      precision_ = 1;
+    if ((lite_api::CL_PRECISION_AUTO == p ||
+         lite_api::CL_PRECISION_FP16 == p) &&
+        support_half()) {
+      precision_ = lite_api::CL_PRECISION_FP16;
+    } else if (lite_api::CL_PRECISION_AUTO == p ||
+               lite_api::CL_PRECISION_FP32 == p) {
+      precision_ = lite_api::CL_PRECISION_FP32;
     } else {
       LOG(FATAL) << "unsupported precision for opencl:"
                  << static_cast<size_t>(p);
     }
   }
 
-  size_t get_precision() { return precision_; }
+  lite_api::CLPrecisionType get_precision() { return precision_; }
 
   bool Init();
 
@@ -218,9 +223,13 @@ class CLRuntime {
 
   bool is_platform_device_init_success_{false};
 
-  size_t auto_tune_{0};  // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
+  lite_api::CLTuneMode auto_tune_{lite_api::CL_TUNE_NONE};  // 0 - None, 1 -
+                                                            // Rapid, 2 -
+                                                            // Normal, 3 -
+                                                            // Exhaustive
 
-  size_t precision_{0};  // 0 - AUTO, 1 - fp32, 2 - fp16
+  lite_api::CLPrecisionType precision_{
+      lite_api::CL_PRECISION_AUTO};  // 0 - AUTO, 1 - fp32, 2 - fp16
 };
 
 }  // namespace lite
