@@ -195,6 +195,14 @@ class LITE_API Predictor {
       bool record_info = false);
   void SaveOpKernelInfo(const std::string& model_dir);
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Name: CheckPaddleOpVersions
+  // Usage: Verify if the ops version of current runtime program is
+  //        the same with that in models.
+  /////////////////////////////////////////////////////////////////////////////
+  void CheckPaddleOpVersions(
+      const std::shared_ptr<cpp::ProgramDesc>& program_desc);
+
   // #ifdef LITE_WITH_TRAIN
   //   void Run(const std::vector<framework::Tensor>& tensors) {
   //     FeedVars(tensors);
