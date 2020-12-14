@@ -69,6 +69,7 @@ void LoDTensorDeserializer::ForwardRead(lite::Tensor* tensor,
   CHECK(tensor) << "The input tensor is nullptr.";
   CHECK(reader) << "The input reader is nullptr.";
   CHECK(!reader->ReachEnd()) << "Nothing to read.";
+  uint32_t version = reader->Read<uint32_t>();
   switch (version) {
     case 0: {
 #ifndef LITE_ON_TINY_PUBLISH
