@@ -64,27 +64,26 @@ const void* get_allocation(const lite::Tensor& tensor) {
 
 namespace pb {
 
-void LoDTensorDeserializer::LoadWithForwardReader(lite::Tensor* tensor,
-                                                  ByteReader* reader) {
+void LoDTensorDeserializer::ForwardRead(lite::Tensor* tensor,
+                                        ByteReader* reader) {
   CHECK(tensor) << "The input tensor is nullptr.";
   CHECK(reader) << "The input reader is nullptr.";
   CHECK(!reader->ReachEnd()) << "Nothing to read.";
-  uint32_t version = reader->ReadForward<uint32_t>();
   switch (version) {
     case 0: {
 #ifndef LITE_ON_TINY_PUBLISH
       // Load the lod-tensor.
-      uint64_t lod_level = reader->ReadForward<uint64_t>();
+      uint64_t lod_level = reader->Read<uint64_t>();
       std::vector<std::vector<uint64_t>> lod(lod_level);
       for (uint64_t i = 0; i < lod_level; ++i) {
-        uint64_t size = reader->ReadForward<uint64_t>();
+        uint64_t size = reader->Read<uint64_t>();
         uint64_t elem_size = size / sizeof(uint64_t);
         lod[i].resize(elem_size);
-        reader->ReadForward(lod[i].data(), size);
+        reader->Read(lod[i].data(), size);
       }
       tensor::set_lod(tensor, lod);
       // Load the raw tensor.
-      uint32_t inner_version = reader->ReadForward<uint32_t>();
+      uint32_t inner_version = reader->Read<uint32_t>();
       CHECK_EQ(inner_version, 0L)
           << "Tensor inner version should be 0, but get " << inner_version;
       lite::pb::TensorInfoReader tensor_reader(reader, buf_.get());
@@ -94,7 +93,7 @@ void LoDTensorDeserializer::LoadWithForwardReader(lite::Tensor* tensor,
           lite::ConvertPrecisionType(tensor_reader.GetDataType()));
       void* data = tensor::get_allocation(tensor);
       size_t size = tensor::get_bytes_size(*tensor);
-      reader->ReadForward(data, size);
+      reader->Read(data, size);
 #else
       LOG(FATAL) << "Tiny-publish mode is not supported to read the 0 "
                     "version model.";
@@ -107,29 +106,29 @@ void LoDTensorDeserializer::LoadWithForwardReader(lite::Tensor* tensor,
 }
 
 #ifndef LITE_ON_TINY_PUBLISH
-void LoDTensorSerializer::SaveWithForwardWriter(const lite::Tensor& tensor,
-                                                ByteWriter* writer,
-                                                uint32_t version) {
+void LoDTensorSerializer::ForwardWrite(const lite::Tensor& tensor,
+                                       ByteWriter* writer,
+                                       uint32_t version) {
   CHECK(writer) << "The input writer is nullptr.";
   CHECK(tensor.target() == TARGET(kHost))
       << "Only host tensor is supported to be serialized.";
   switch (version) {
     case 0: {
       // Save the lod-vector.
-      writer->WriteForward<uint32_t>(version);
+      writer->Write<uint32_t>(version);
       const auto& lod = tensor::get_lod(tensor);
-      writer->WriteForward<uint64_t>(lod.size());
+      writer->Write<uint64_t>(lod.size());
       for (const auto& each : lod) {
         const uint64_t size = each.size() * sizeof(each.front());
-        writer->WriteForward<uint64_t>(size);
-        writer->WriteForward(each.data(), size);
+        writer->Write<uint64_t>(size);
+        writer->Write(each.data(), size);
       }
       // Save the raw tensor.
-      writer->WriteForward<uint32_t>(version);
+      writer->Write<uint32_t>(version);
       lite::pb::TensorInfoWriter tensor_writer(writer, buf_.get());
       tensor::set_allocation(tensor, &tensor_writer);
-      writer->WriteForward(tensor::get_allocation(tensor),
-                           tensor::get_bytes_size(tensor));
+      writer->Write(tensor::get_allocation(tensor),
+                    tensor::get_bytes_size(tensor));
       break;
     }
     default:

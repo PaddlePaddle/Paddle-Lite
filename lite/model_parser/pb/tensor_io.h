@@ -54,7 +54,7 @@ class LoDTensorDeserializer {
  public:
   LoDTensorDeserializer() : buf_(new Buffer) {}
 
-  void LoadWithForwardReader(lite::Tensor* tensor, ByteReader* reader);
+  void ForwardRead(lite::Tensor* tensor, ByteReader* reader);
 
  private:
   std::unique_ptr<Buffer> buf_;
@@ -64,9 +64,9 @@ class LoDTensorDeserializer {
 class LoDTensorSerializer {
  public:
   LoDTensorSerializer() : buf_(new Buffer) {}
-  void SaveWithForwardWriter(const lite::Tensor& tensor,
-                             ByteWriter* writer,
-                             uint32_t version = 0);
+  void ForwardWrite(const lite::Tensor& tensor,
+                    ByteWriter* writer,
+                    uint32_t version = 0);
 
  private:
   std::unique_ptr<Buffer> buf_;

@@ -61,7 +61,8 @@ Buffer LoadFile(const std::string &path, size_t offset, size_t size) {
 void SaveFile(const std::string &path, const Buffer &cache) {
   FILE *file = fopen(path.c_str(), "wb");
   CHECK(file);
-  CHECK(fwrite(cache.data(), sizeof(char), cache.size(), file) == cache.size());
+  CHECK_EQ(fwrite(cache.data(), sizeof(char), cache.size(), file), cache.size())
+      << "Write " << cache.size() << " bytes to file failed.";
   fclose(file);
 }
 }  // namespace model_parser
@@ -74,7 +75,7 @@ void LoadLoDTensor(model_parser::pb::LoDTensorDeserializer *loader,
   CHECK(tensor) << "Can not get allocation of the tensor.";
   CHECK(loader) << "The input argument loader is nullptr.";
   CHECK(var) << "The input argument var is nullptr.";
-  loader->LoadWithForwardReader(tensor, reader);
+  loader->ForwardRead(tensor, reader);
 }
 
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
@@ -83,7 +84,7 @@ std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
       new framework::proto::ProgramDesc);
   if (model_buffer.is_empty()) {
     model_parser::BinaryFileReader file(path);
-    main_program->ParseFromString(file.ReadForwardToString(file.length()));
+    main_program->ParseFromString(file.ReadToString(file.length()));
   } else {
     main_program->ParseFromString(model_buffer.get_program());
   }
@@ -236,7 +237,7 @@ void SaveModelPb(const std::string &model_dir,
         LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
                       "please copy it to the Host Tensor temporarily.";
       }
-      saver.SaveWithForwardWriter(tensor, &file);
+      saver.ForwardWrite(tensor, &file);
     }
   }
   VLOG(4) << "Save protobuf model in '" << model_dir << "'' successfully";
@@ -267,7 +268,7 @@ void SaveCombinedParamsPb(const std::string &path,
       LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
                     "please copy it to the Host Tensor temporarily.";
     }
-    saver.SaveWithForwardWriter(tensor, &file);
+    saver.ForwardWrite(tensor, &file);
   }
 }
 
@@ -829,17 +830,9 @@ void LoadModelFbsFromFile(const std::string &filename,
   offset = offset + topo_size;
 
   /* 2. Load scope from params.fbs */
-  if (meta_version == 1) {
-    /* load scope from param.fbs with meta_version=1 */
-    fbs::CombinedParamsDescView params(
-        model_parser::LoadFile(filename, offset));
-    fbs::deprecated::SetScopeWithCombinedParams(scope, params);
-  } else {
-    /* load scope from param.fbs with meta_version=2 */
-    model_parser::BinaryFileReader reader(filename, offset);
-    fbs::ParamDeserializer deserializer(&reader);
-    deserializer.LoadWithForwardReader(scope);
-  }
+  fbs::CombinedParamsDescView params(model_parser::LoadFile(filename, offset));
+  fbs::deprecated::SetScopeWithCombinedParams(scope, params);
+
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 
@@ -959,18 +952,17 @@ void LoadModelFbsFromMemory(const std::string &model_buffer,
   fbs::ProgramDesc program(prog_data);
   TransformProgramDescAnyToCpp(program, cpp_prog);
 #endif
-  if (meta_version == 1) {
-    size_t params_size = reader.length() - sizeof(uint16_t) -
-                         paddle_version_length - sizeof(uint64_t) - prog_size;
-    model_parser::Buffer params_data(params_size);
-    reader.ReadForward(params_data.data(), params_size);
+  offset = offset + prog_size;
+  VLOG(4) << "param_size:" << model_buffer.length() - offset;
 
-    fbs::CombinedParamsDescView params(std::move(params_data));
-    fbs::deprecated::SetScopeWithCombinedParams(scope, params);
-  } else {
-    fbs::ParamDeserializer deserializer(&reader);
-    deserializer.LoadWithForwardReader(scope);
-  }
+  model_parser::Buffer params_data(model_buffer.length() - offset);
+  memcpy(params_data.data(),
+         model_buffer.c_str() + offset,
+         model_buffer.length() - offset);
+
+  fbs::CombinedParamsDescView params(std::move(params_data));
+  fbs::deprecated::SetScopeWithCombinedParams(scope, params);
+
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
 

@@ -13,17 +13,17 @@
 // limitations under the License.
 
 #include <bmcompiler_if.h>
+#include <bmcompiler_if_lite.h>
 #include <bmcompiler_op_code.h>
 #include "lite/core/subgraph_bridge_registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
-#include "lite/kernels/bm/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
 namespace bm {
 
-int SwishConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int Im2SequenceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
@@ -48,31 +48,21 @@ int SwishConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (size_t i = 0; i < output_dims.size(); i++) {
     i_output_shape_data[i] = output_dims[i];
   }
-  auto unique_sigmoid_name =
-      lite::subgraph::bm::UniqueName(op_type + "_sigmoid");
-  auto beta = op_info->GetAttr<float>("beta");
-  CHECK_EQ(beta, 1.f);
-  add_active_layer(graph->GetCompilerHandle(),
+  auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
+  auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  auto kernels = op_info->GetAttr<std::vector<int>>("kernels");
+
+  int out_cols = x_dims[1] * kernels[0] * kernels[1];
+  add_unfold_layer(graph->GetCompilerHandle(),
                    const_cast<const int*>(&i_x_shape_data[0]),
                    x_dims.size(),
                    static_cast<const char*>(x_var_name.c_str()),
                    const_cast<const int*>(&i_output_shape_data[0]),
                    output_dims.size(),
-                   static_cast<const char*>(unique_sigmoid_name.c_str()),
-                   ACTIVE_SIGMOID);
-
-  add_batch_matmul_layer(graph->GetCompilerHandle(),
-                         static_cast<const char*>(x_var_name.c_str()),
-                         const_cast<const int*>(&i_x_shape_data[0]),
-                         x_dims.size(),
-                         0,
-                         nullptr,
-                         static_cast<const char*>(unique_sigmoid_name.c_str()),
-                         const_cast<const int*>(&i_output_shape_data[0]),
-                         output_dims.size(),
-                         0,
-                         nullptr,
-                         static_cast<const char*>(output_var_name.c_str()));
+                   static_cast<const char*>(output_var_name.c_str()),
+                   1,
+                   out_cols,
+                   strides[0]);
   graph->AddNode(output_var_name);
   return SUCCESS;
 }
@@ -82,6 +72,6 @@ int SwishConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(swish,
+REGISTER_SUBGRAPH_BRIDGE(im2sequence,
                          kBM,
-                         paddle::lite::subgraph::bm::SwishConverter);
+                         paddle::lite::subgraph::bm::Im2SequenceConverter);

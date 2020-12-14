@@ -19,9 +19,10 @@
 #include <utility>
 #include "lite/core/memory.h"
 
-// Suppress Undefined Behavior Sanitizer (recoverable only). Usage:
-// - LITE_SUPRESS_UBSAN("undefined")
-// - LITE_SUPRESS_UBSAN("signed-integer-overflow")
+// Use the no_sanitize attribute on a function or a global variable declaration
+// to specify that a particular instrumentation or set of instrumentations
+// should
+// not be applied.
 #if defined(__clang__) && \
     (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 7))
 #define LITE_SUPRESS_UBSAN(type) __attribute__((no_sanitize(type)))
@@ -73,17 +74,17 @@ class Buffer {
 class ByteReader {
  public:
   ByteReader() = default;
-  virtual void ReadForward(void* dst, size_t size) const = 0;
-  virtual std::string ReadForwardToString(size_t size) const;
+  virtual void Read(void* dst, size_t size) const = 0;
+  virtual std::string ReadToString(size_t size) const;
   virtual size_t length() const = 0;
   virtual bool ReachEnd() const = 0;
 
   template <typename T,
             typename = typename std::enable_if<
                 std::is_trivially_copyable<T>::value>::type>
-  T ReadForward() const {
+  T Read() const {
     T tmp;
-    ReadForward(&tmp, sizeof(T));
+    Read(&tmp, sizeof(T));
     return tmp;
   }
 
@@ -97,18 +98,18 @@ class ByteReader {
 class ByteWriter {
  public:
   ByteWriter() = default;
-  virtual void WriteForward(const void* src, size_t size) const = 0;
+  virtual void Write(const void* src, size_t size) const = 0;
 
   template <typename T,
             typename = typename std::enable_if<
                 std::is_trivially_copyable<T>::value>::type>
-  void WriteForward(T elem) const {
-    WriteForward(&elem, sizeof(T));
+  void Write(T elem) const {
+    Write(&elem, sizeof(T));
   }
 
   template <typename T, int N>
-  void WriteForward(const T (&array)[N]) const {
-    WriteForward(&array[0], sizeof(T) * N);
+  void Write(const T (&array)[N]) const {
+    Write(&array[0], sizeof(T) * N);
   }
 
   virtual size_t Align(size_t bytes_size) const = 0;
@@ -128,7 +129,7 @@ class BinaryFileReader : public ByteReader {
       fclose(file_);
     }
   }
-  void ReadForward(void* dst, size_t size) const override;
+  void Read(void* dst, size_t size) const override;
   bool ReachEnd() const override { return cur_ >= length_; }
   size_t length() const override { return length_; }
 
@@ -149,11 +150,14 @@ class BinaryFileWriter : public ByteWriter {
       fclose(file_);
     }
   }
-  void WriteForward(const void* src, size_t size) const override;
+  void Write(const void* src, size_t size) const override;
+
+  // Fill a number of zero characters to align the number
+  // of written bytes to a certain position.
   size_t Align(size_t scalar_size) const override {
     const size_t padding_bytes = PaddingBytes(cur_, scalar_size);
     for (size_t i = 0; i < padding_bytes; ++i) {
-      ByteWriter::WriteForward<uint8_t>(0U);
+      ByteWriter::Write<uint8_t>(0U);
     }
     return padding_bytes;
   }
@@ -162,6 +166,7 @@ class BinaryFileWriter : public ByteWriter {
   FILE* file_{};
   mutable size_t cur_{0};
 
+  // Calculate the minimum number of bytes required to be aligned.
   LITE_SUPRESS_UBSAN("unsigned-integer-overflow")
   size_t PaddingBytes(size_t buf_size, size_t scalar_size) const {
     return ((~buf_size) + 1) & (scalar_size - 1);
@@ -177,7 +182,7 @@ class StringBufferReader : public ByteReader {
     CHECK(buf_);
   }
   ~StringBufferReader() = default;
-  void ReadForward(void* dst, size_t size) const override;
+  void Read(void* dst, size_t size) const override;
   bool ReachEnd() const override { return cur_ >= length_; }
   size_t length() const override { return length_; }
 
