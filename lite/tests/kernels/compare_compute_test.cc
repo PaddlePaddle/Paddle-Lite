@@ -229,7 +229,6 @@ TEST(Compare_OP_ARM, precision) {
   }
 
   TestCompare<float>(place, abs_error, "equal", {2, 3, 4}, {3, 4}, 1);
-  TestCompare<float>(place, abs_error, "equal", {2, 3, 4, 5}, {3, 4}, 1);
   TestCompare<float>(place, abs_error, "equal", {2, 3, 4}, {4}, 2);
   TestCompare<float>(place, abs_error, "equal", {2, 3, 4, 5}, {5}, 3);
 
