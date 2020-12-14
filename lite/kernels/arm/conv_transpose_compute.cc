@@ -376,13 +376,14 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 
   auto din = param.x->data<int8_t>();
   auto dout = param.output->mutable_data<float>();
+  auto dout_int32 = param.output->mutable_data<int32_t>();
   auto weights = param.filter->data<int8_t>();
   auto act_param = param.activation_param;
   bool has_act = act_param.has_active;
   for (int i = 0; i < num; i++) {
     const int8_t* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
-    int32_t* dout_batch_int32 = dout + i * chout * hout * wout;
+    int32_t* dout_batch_int32 = dout_int32 + i * chout * hout * wout;
     int32_t* col_data = static_cast<int32_t*>(ctx.workspace_data<int32_t>()) +
                         ctx.llc_size() / sizeof(int32_t);
     if (flag_1x1s1p1) {
@@ -497,7 +498,6 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   for (int i = 0; i < num; i++) {
     const int8_t* din_batch = din + i * chin * hin * win;
     int8_t* dout_batch = dout + i * chout * hout * wout;
-    int32_t* dout_batch_int32 = dout + i * chout * hout * wout;
     int32_t* col_data = workspace_ptr;
     int32_t* dout_batch_int32 = workspace_ptr + offset;
     if (flag_1x1s1p1) {

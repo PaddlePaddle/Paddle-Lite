@@ -145,10 +145,10 @@ void fill_bias_relu<int>(int* tensor,
   "dup    v2.4s, %[vbias].s[0]\n"                                           \
   "dup    v3.4s, %[vbias].s[0]\n"                                           \
   /* mul scale */                                                           \
-  "fmla v0.4s, v4.4s, %[vscale_val]\n"                                      \
-  "fmla v1.4s, v5.4s, %[vscale_val]\n"                                      \
-  "fmla v2.4s, v6.4s, %[vscale_val]\n"                                      \
-  "fmla v3.4s, v7.4s, %[vscale_val]\n"
+  "fmla v0.4s, v4.4s, %[vscale_val].4s\n"                                   \
+  "fmla v1.4s, v5.4s, %[vscale_val].4s\n"                                   \
+  "fmla v2.4s, v6.4s, %[vscale_val].4s\n"                                   \
+  "fmla v3.4s, v7.4s, %[vscale_val].4s\n"
 
 #define FILL_RELU                                         \
   "fmax v0.4s, v0.4s, %[vzero].4s   \n" /* vmaxq_f32() */ \
@@ -264,12 +264,12 @@ void fill_bias_relu<int>(int* tensor,
   "vmul.f32 q10, q4, %q[vscale]  @ vmulq_f32 \n" \
   "vcge.f32 q11, q5, %q[vzero]   @ vcgeq_u32 \n" \
   "vmul.f32 q12, q5, %q[vscale]  @ vmulq_f32 \n" \
-  "vcge.f32 q13, q6, %q[vzero]   @ vcgeq_u32 \n" \
-  "vmul.f32 q14, q6, %q[vscale]  @ vmulq_f32 \n" \
   "vbif q3, q8, q7               @ choose \n"    \
+  "vcge.f32 q13, q6, %q[vzero]   @ vcgeq_u32 \n" \
+  "vmul.f32 q7, q6, %q[vscale]  @ vmulq_f32 \n" \
   "vbif q4, q10, q9              @ choose \n"    \
   "vbif q5, q12, q11             @ choose \n"    \
-  "vbif q6, q14, q13             @ choose \n"
+  "vbif q6, q7, q13             @ choose \n"
 #define FILL_STORE                                          \
   "subs %[cnt], #1                                \n"       \
   "vst1.32 {d6-d7}, [%[dout_ptr]]!       @ vst1q_f32()  \n" \
@@ -524,8 +524,8 @@ void fill_bias_act_calib<float>(float* dout,
     switch (act_param->active_type) {
       case lite_api::ActivationType::kRelu:
         for (int j = 0; j < channel; j++) {
-          float bias_data = flag_bias ? bias[j] : 0.f;
-          int32_t* src = din + j * channel_size;
+          const float bias_data = flag_bias ? bias[j] : 0.f;
+          const int32_t* src = din + j * channel_size;
           float* dst = dout + j * channel_size;
           float32x4_t vscale_val = vdupq_n_f32(scale[j]);
           float32x4_t vbias = vdupq_n_f32(bias_data);
@@ -577,8 +577,8 @@ void fill_bias_act_calib<float>(float* dout,
         break;
       case lite_api::ActivationType::kRelu6:
         for (int j = 0; j < channel; j++) {
-          float bias_data = flag_bias ? bias[j] : 0.f;
-          int32_t* src = din + j * channel_size;
+          const float bias_data = flag_bias ? bias[j] : 0.f;
+          const int32_t* src = din + j * channel_size;
           float* dst = dout + j * channel_size;
           float32x4_t vscale_val = vdupq_n_f32(scale[j]);
           float32x4_t vbias = vdupq_n_f32(bias_data);
@@ -590,7 +590,8 @@ void fill_bias_act_calib<float>(float* dout,
                 : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                 : [vzero] "w"(vzero),
                   [vbias] "w"(vbias),
-                  [vsix] "w"(vsix)[vscale_val] "w"(vscale_val)
+                  [vsix] "w"(vsix),
+                  [vscale_val] "w"(vscale_val)
                 : "memory",
                   "cc",
                   "v0",
@@ -607,7 +608,8 @@ void fill_bias_act_calib<float>(float* dout,
                 : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                 : [vzero] "w"(vzero),
                   [vbias] "w"(vbias),
-                  [vsix] "w"(vsix)[vscale_val] "w"(vscale_val)
+                  [vsix] "w"(vsix),
+                  [vscale_val] "w"(vscale_val)
                 : "memory",
                   "cc",
                   "q3",
@@ -633,8 +635,8 @@ void fill_bias_act_calib<float>(float* dout,
         break;
       case lite_api::ActivationType::kLeakyRelu:
         for (int j = 0; j < channel; j++) {
-          float bias_data = flag_bias ? bias[j] : 0.f;
-          int32_t* src = din + j * channel_size;
+          const float bias_data = flag_bias ? bias[j] : 0.f;
+          const int32_t* src = din + j * channel_size;
           float* dst = dout + j * channel_size;
           float32x4_t vscale_val = vdupq_n_f32(scale[j]);
           float32x4_t vbias = vdupq_n_f32(bias_data);
@@ -646,7 +648,8 @@ void fill_bias_act_calib<float>(float* dout,
                 : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                 : [vzero] "w"(vzero),
                   [vbias] "w"(vbias),
-                  [vscale] "w"(vscale)[vscale_val] "w"(vscale_val)
+                  [vscale] "w"(vscale),
+                  [vscale_val] "w"(vscale_val)
                 : "memory",
                   "cc",
                   "v0",
@@ -667,7 +670,8 @@ void fill_bias_act_calib<float>(float* dout,
                 : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                 : [vzero] "w"(vzero),
                   [vbias] "w"(vbias),
-                  [vscale] "w"(vscale)[vscale_val] "w"(vscale_val)
+                  [vscale] "w"(vscale),
+                  [vscale_val] "w"(vscale_val)
                 : "memory",
                   "cc",
                   "q3",
@@ -699,10 +703,10 @@ void fill_bias_act_calib<float>(float* dout,
     }
   } else {
     for (int j = 0; j < channel; ++j) {
-      float bias_data = flag_bias ? bias[j] : 0.f;
+      const float bias_data = flag_bias ? bias[j] : 0.f;
       float32x4_t vscale_val = vdupq_n_f32(scale[j]);
       float32x4_t vbias = vdupq_n_f32(bias_data);
-      int32_t* src = din + j * channel_size;
+      const int32_t* src = din + j * channel_size;
       float* dst = dout + j * channel_size;
       int cnt = cnt_num;
       if (cnt > 0) {
@@ -721,7 +725,7 @@ void fill_bias_act_calib<float>(float* dout,
 #endif
       }
       for (int i = 0; i < remain; i++) {
-        *(dst++) = *(src++) * *(scale[j]) + bias_data;
+        *(dst++) = *(src++) * scale[j] + bias_data;
       }
     }
   }
@@ -740,22 +744,17 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
   float32x4_t vzero = vdupq_n_f32(0.f);
   float32x4_t vmax = vdupq_n_f32(-127.f);
   if (act_param != nullptr && act_param->has_active) {
-#ifdef __aarch64__
     float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
-    float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
-#else
-    if (act_param->active_type == lite_api::ActivationType::kRelu6) {
-      float32x4_t vsix = vdupq_n_f32(act_param->Relu_clipped_coef);
-    } else if (act_param->active_type == lite_api::ActivationType::kLeakyRelu) {
-      float32x4_t vscale = vdupq_n_f32(act_param->Leaky_relu_alpha);
+    if (act_param->active_type == lite_api::ActivationType::kLeakyRelu) {
+      vsix = vdupq_n_f32(act_param->Leaky_relu_alpha);
     }
-#endif
+
     switch (act_param->active_type) {
       case lite_api::ActivationType::kRelu:
         for (int j = 0; j < channel; j++) {
-          float bias_data = flag_bias ? bias[j] : 0.f;
-          int32_t* src = din + j * channel_size;
-          float* dst = dout + j * channel_size;
+          const float bias_data = flag_bias ? bias[j] : 0.f;
+          const int32_t* src = din + j * channel_size;
+          int8_t* dst = dout + j * channel_size;
           float32x4_t vscale_val = vdupq_n_f32(scale[j]);
           float32x4_t vbias = vdupq_n_f32(bias_data);
           int cnt = cnt_num;
@@ -802,16 +801,17 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
           for (int i = 0; i < remain; i++) {
             float tmp = (*src * scale[j] + bias_data);
             tmp = tmp >= 0.f ? tmp : 0.f;
-            dst[0] = saturate_cast<signed char>(roundf(tmp)) src++;
+            dst[0] = saturate_cast<signed char>(roundf(tmp));
+            src++;
             dst++;
           }
         }
         break;
       case lite_api::ActivationType::kRelu6:
         for (int j = 0; j < channel; j++) {
-          float bias_data = flag_bias ? bias[j] : 0.f;
-          int32_t* src = din + j * channel_size;
-          float* dst = dout + j * channel_size;
+          const float bias_data = flag_bias ? bias[j] : 0.f;
+          const int32_t* src = din + j * channel_size;
+          int8_t* dst = dout + j * channel_size;
           float32x4_t vscale_val = vdupq_n_f32(scale[j]);
           float32x4_t vbias = vdupq_n_f32(bias_data);
           int cnt = cnt_num;
@@ -822,7 +822,8 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
                 : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                 : [vzero] "w"(vzero),
                   [vbias] "w"(vbias),
-                  [vsix] "w"(vsix)[vscale_val] "w"(vscale_val)
+                  [vsix] "w"(vsix),
+                  [vscale_val] "w"(vscale_val)
                 : "memory",
                   "cc",
                   "v0",
@@ -839,7 +840,8 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
                 : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                 : [vzero] "w"(vzero),
                   [vbias] "w"(vbias),
-                  [vsix] "w"(vsix)[vscale_val] "w"(vscale_val)
+                  [vsix] "w"(vsix),
+                  [vscale_val] "w"(vscale_val)
                 : "memory",
                   "cc",
                   "q3",
@@ -869,9 +871,9 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
         break;
       case lite_api::ActivationType::kLeakyRelu:
         for (int j = 0; j < channel; j++) {
-          float bias_data = flag_bias ? bias[j] : 0.f;
-          int32_t* src = din + j * channel_size;
-          float* dst = dout + j * channel_size;
+          const float bias_data = flag_bias ? bias[j] : 0.f;
+          const int32_t* src = din + j * channel_size;
+          int8_t* dst = dout + j * channel_size;
           float32x4_t vscale_val = vdupq_n_f32(scale[j]);
           float32x4_t vbias = vdupq_n_f32(bias_data);
           int cnt = cnt_num;
@@ -882,7 +884,8 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
                 : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                 : [vzero] "w"(vzero),
                   [vbias] "w"(vbias),
-                  [vscale] "w"(vscale)[vscale_val] "w"(vscale_val),
+                  [vscale] "w"(vsix),
+                  [vscale_val] "w"(vscale_val),
                   [vmax] "w"(vmax)
                 : "memory",
                   "cc",
@@ -904,7 +907,8 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
                 : [din_ptr] "+r"(src), [dout_ptr] "+r"(dst), [cnt] "+r"(cnt)
                 : [vzero] "w"(vzero),
                   [vbias] "w"(vbias),
-                  [vscale] "w"(vscale)[vscale_val] "w"(vscale_val),
+                  [vscale] "w"(vsix),
+                  [vscale_val] "w"(vscale_val),
                   [vmax] "w"(vmax)
                 : "memory",
                   "cc",
@@ -918,15 +922,14 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
                   "q10",
                   "q11",
                   "q12",
-                  "q13",
-                  "q14");
+                  "q13");
 #endif
           }
           for (int i = 0; i < remain; i++) {
             float tmp = (*src * scale[j] + bias_data);
             tmp = tmp >= 0.f ? tmp : tmp * act_param->Leaky_relu_alpha;
             dst[0] = saturate_cast<signed char>(roundf(tmp));
-            dst[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
+            dst[0] = dst[0] < -127 ? -127 : dst[0];  // -127 - 127
             src++;
             dst++;
           }
@@ -939,11 +942,11 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
     }
   } else {
     for (int j = 0; j < channel; ++j) {
-      float bias_data = flag_bias ? bias[j] : 0.f;
+      const float bias_data = flag_bias ? bias[j] : 0.f;
       float32x4_t vscale_val = vdupq_n_f32(scale[j]);
       float32x4_t vbias = vdupq_n_f32(bias_data);
-      int32_t* src = din + j * channel_size;
-      float* dst = dout + j * channel_size;
+      const int32_t* src = din + j * channel_size;
+      int8_t* dst = dout + j * channel_size;
       int cnt = cnt_num;
       if (cnt > 0) {
 #ifdef __aarch64__
@@ -976,9 +979,9 @@ void fill_bias_act_calib<int8_t>(int8_t* dout,
 #endif
       }
       for (int i = 0; i < remain; i++) {
-        float tmp = *(src++) * *(scale[j]) + bias_data;
+        float tmp = *(src++) * scale[j] + bias_data;
         dst[0] = saturate_cast<signed char>(roundf(tmp));
-        dst[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
+        dst[0] = dst[0] < -127 ? -127 : dst[0];  // -127 - 127
         dst++;
       }
     }
