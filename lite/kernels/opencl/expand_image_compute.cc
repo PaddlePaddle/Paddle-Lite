@@ -195,7 +195,7 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
 #endif
  private:
   std::string kernel_func_name_{};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
   param_t* expand_param_{nullptr};

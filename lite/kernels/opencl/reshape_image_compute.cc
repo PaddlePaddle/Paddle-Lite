@@ -180,7 +180,7 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
 
  private:
   std::string kernel_func_name_{"reshape"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 
