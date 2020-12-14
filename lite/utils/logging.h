@@ -29,6 +29,8 @@
 #else
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
+#undef min
+#undef max
 extern struct timeval;
 static int gettimeofday(struct timeval* tp, void* tzp) {
   time_t clock;
