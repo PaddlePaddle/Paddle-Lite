@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/model_parser/model_parser.h"
 
 namespace paddle {
 namespace lite {
@@ -104,12 +105,25 @@ TEST(CombinedParamsDesc, Scope) {
   check_params(scope_1);
 
   /* --------- Stream scope ---------- */
-  Scope scope_2;
   {
+    Scope scope_2;
+    LOG(INFO) << "Load params from file...";
     model_parser::BinaryFileReader reader(path);
     fbs::ParamDeserializer deserializer(&reader);
     deserializer.ForwardRead(&scope_2);
     check_params(scope_2);
+  }
+
+  {
+    Scope scope_3;
+    LOG(INFO) << "Load params from string buffer...";
+    model_parser::Buffer buf{model_parser::LoadFile(path)};
+    std::string str{static_cast<const char*>(buf.data()), buf.size()};
+
+    model_parser::StringBufferReader reader(std::move(str));
+    fbs::ParamDeserializer deserializer(&reader);
+    deserializer.ForwardRead(&scope_3);
+    check_params(scope_3);
   }
 }
 #endif  // LITE_WITH_FLATBUFFERS_DESC
