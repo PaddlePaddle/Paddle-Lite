@@ -26,10 +26,15 @@
 #include "lite/api/paddle_api.h"
 #include "lite/core/scope.h"
 #include "lite/core/variable.h"
+#include "lite/model_parser/base/io.h"
 #include "lite/model_parser/compatible_pb.h"
 
 namespace paddle {
 namespace lite {
+namespace model_parser {
+Buffer LoadFile(const std::string& path, size_t offset = 0, size_t size = 0);
+void SaveFile(const std::string& path, const Buffer& cache);
+}  // namespace model_parser
 
 #ifndef LITE_ON_TINY_PUBLISH
 // Read a __model__ file.
