@@ -13,6 +13,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <utility>
+#include "lite/api/paddle_place.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
 #include "lite/utils/cp_logging.h"
@@ -144,10 +145,24 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
   std::vector<cl::NDRange> lwss{tmp_lws};
   VLOG(1) << "generate_lws_type:" << generate_lws_type;
   // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
-  if (generate_lws_type == 0) {
+  if (generate_lws_type == lite_api::CL_TUNE_NONE) {
     // 0 - None: nothing to do
-  } else if (generate_lws_type == 1) {
+  } else if (generate_lws_type == lite_api::CL_TUNE_RAPID) {
     // 1 - Rapid
+    for (auto tune_reverse : {true, false}) {
+      for (size_t divisor = 1; divisor < /*max_divisor=*/17; divisor *= 2) {
+        tmp_lws = DefaultLocalWorkSize(
+            global_work_size, max_work_size, divisor, tune_reverse);
+        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
+            last_lws[2] == tmp_lws[2]) {
+          // skip tuned lws
+          continue;
+        }
+        lwss.emplace_back(tmp_lws);
+      }
+    }
+  } else if (generate_lws_type == lite_api::CL_TUNE_NORMAL) {
+    // 2 - Normal
     for (auto tune_reverse : {true, false}) {
       for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor += 2) {
         tmp_lws = DefaultLocalWorkSize(
@@ -160,8 +175,7 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
         lwss.emplace_back(tmp_lws);
       }
     }
-  } else if (generate_lws_type == 2 || generate_lws_type == 3) {
-    // 2 - Normal
+  } else if (generate_lws_type == lite_api::CL_TUNE_EXHAUSTIVE) {
     // 3 - Exhaustive
     for (auto tune_reverse : {true, false}) {
       for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
@@ -176,7 +190,6 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
       }
     }
   } else {
-    // todo
     LOG(FATAL) << "Unsupported opencl tune type:" << generate_lws_type;
   }
 
