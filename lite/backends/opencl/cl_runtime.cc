@@ -93,6 +93,7 @@ bool CLRuntime::Init() {
     LOG(INFO) << "set is_cl_runtime_initialized_ = true";
 #endif
   }
+  set_precision();
   return is_cl_runtime_initialized_;
 }
 
@@ -148,13 +149,16 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   /* -I +CLRuntime::Global()->cl_path() + "/cl_kernel"*/
   std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
   if (build_option.find("CL_DTYPE_") == std::string::npos) {
-    if (support_half()) {
+    if (lite_api::CL_PRECISION_FP16 == get_precision()) {
       build_option += " -DCL_DTYPE_half ";
     } else {
       build_option += " -DCL_DTYPE_float -DCL_DTYPE_FLOAT_FORCE ";
     }
   }
+#ifdef LITE_WITH_LOG
+  VLOG(4) << "precision_:" << precision_;
   VLOG(4) << "OpenCL build_option: " << build_option;
+#endif
   status_ = program->build({*device_}, build_option.c_str());
   CL_CHECK_ERROR(status_);
 

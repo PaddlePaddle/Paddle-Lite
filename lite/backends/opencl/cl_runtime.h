@@ -16,6 +16,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_utility.h"
 #include "lite/backends/opencl/cl_wrapper.h"
@@ -73,31 +74,43 @@ class CLRuntime {
     return static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
   }
 
-  bool OpenCLAvaliableForDevice() {
+  bool OpenCLAvaliableForDevice(bool check_fp16_valid = false) {
     // note(ysh329): entered this func means:
     //  1. opencl_lib_found must be true
     //  2. dlsym_success must be true
 
     bool support_fp16 = support_half();
-#ifdef LITE_WITH_LOG
-    LOG(INFO) << "support_fp16:" << support_fp16;
-#endif
-    if (support_fp16 == false) return false;
-
-    is_device_avaliable_for_opencl_ = support_fp16;
-#ifdef LITE_WITH_LOG
-    LOG(INFO) << "is_device_avaliable_for_opencl_:"
-              << is_device_avaliable_for_opencl_;
-#endif
+    is_device_avaliable_for_opencl_ =
+        check_fp16_valid ? support_fp16 : is_device_avaliable_for_opencl_;
     return is_device_avaliable_for_opencl_;
   }
 
-  void set_auto_tune(size_t enable_tune) {
-    auto_tune_ = enable_tune;
+  void set_auto_tune(lite_api::CLTuneMode tune_mode) {
+    auto_tune_ = tune_mode;
     command_queue_ = CreateCommandQueue(context());
   }
 
-  size_t auto_tune() { return auto_tune_; }
+  lite_api::CLTuneMode auto_tune() { return auto_tune_; }
+
+  void set_precision(
+      lite_api::CLPrecisionType p = lite_api::CL_PRECISION_AUTO) {
+    // CL_PRECISION_AUTO: 0
+    // CL_PRECISION_FP32: 1
+    // CL_PRECISION_FP16: 2
+    if ((lite_api::CL_PRECISION_AUTO == p ||
+         lite_api::CL_PRECISION_FP16 == p) &&
+        support_half()) {
+      precision_ = lite_api::CL_PRECISION_FP16;
+    } else if (lite_api::CL_PRECISION_AUTO == p ||
+               lite_api::CL_PRECISION_FP32 == p) {
+      precision_ = lite_api::CL_PRECISION_FP32;
+    } else {
+      LOG(FATAL) << "unsupported precision for opencl:"
+                 << static_cast<size_t>(p);
+    }
+  }
+
+  lite_api::CLPrecisionType get_precision() { return precision_; }
 
   bool Init();
 
@@ -204,13 +217,19 @@ class CLRuntime {
 
   cl_int status_{CL_SUCCESS};
 
-  bool is_device_avaliable_for_opencl_{false};
+  bool is_device_avaliable_for_opencl_{true};
 
   bool is_cl_runtime_initialized_{false};
 
   bool is_platform_device_init_success_{false};
 
-  size_t auto_tune_{0};  // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
+  lite_api::CLTuneMode auto_tune_{lite_api::CL_TUNE_NONE};  // 0 - None, 1 -
+                                                            // Rapid, 2 -
+                                                            // Normal, 3 -
+                                                            // Exhaustive
+
+  lite_api::CLPrecisionType precision_{
+      lite_api::CL_PRECISION_AUTO};  // 0 - AUTO, 1 - fp32, 2 - fp16
 };
 
 }  // namespace lite
