@@ -175,10 +175,8 @@ class BinaryFileWriter : public ByteWriter {
 
 class StringBufferReader : public ByteReader {
  public:
-  explicit StringBufferReader(std::string&& buffer)
-      : str_(std::forward<std::string>(buffer)),
-        buf_(str_.c_str()),
-        length_(str_.size()) {
+  explicit StringBufferReader(const std::string& buffer)
+      : str_(buffer), buf_(str_.c_str()), length_(str_.size()) {
     CHECK(buf_);
   }
   ~StringBufferReader() = default;
@@ -187,7 +185,7 @@ class StringBufferReader : public ByteReader {
   size_t length() const override { return length_; }
 
  private:
-  std::string str_;
+  const std::string& str_;
   const char* buf_;
   size_t length_;
   mutable size_t cur_{0};
