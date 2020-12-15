@@ -772,7 +772,7 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader *reader,
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   lite::model_parser::Buffer buf(topo_size);
   reader->Read(buf.data(), topo_size);
-  cpp_prog->Init(buf);
+  cpp_prog->Init(std::move(buf));
 #elif LITE_ON_TINY_PUBLISH
   LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
                 "the model cannot be loaded.";
