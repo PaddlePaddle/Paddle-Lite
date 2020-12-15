@@ -74,8 +74,10 @@ int YoloBoxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   bm_param.u.yolo_box_param.class_num = class_num;
   bm_param.u.yolo_box_param.downsample_ratio = downsample_ratio;
   bm_param.u.yolo_box_param.conf_thresh = conf_thresh;
-  memset(bm_param.u.yolo_box_param.anchors, 0, 100 * sizeof(int));
-  memcpy(bm_param.u.yolo_box_param.anchors,
+  memset(reinterpret_cast<void*>(bm_param.u.yolo_box_param.anchors),
+         0,
+         100 * sizeof(int));
+  memcpy(reinterpret_cast<void*>(bm_param.u.yolo_box_param.anchors),
          &anchors[0],
          anchors.size() * sizeof(int));
   bm_param.u.yolo_box_param.anchors_size = anchors.size();

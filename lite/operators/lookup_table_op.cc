@@ -60,6 +60,15 @@ bool LookupTableOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   param_.Out = scope->FindMutableTensor(out);
 
   param_.padding_idx = op_desc.GetAttr<int64_t>("padding_idx");
+  if (op_desc.HasAttr("is_test")) {
+    param_.is_test = op_desc.GetAttr<bool>("is_test");
+  }
+  if (op_desc.HasAttr("entry_config")) {
+    param_.entry_config = op_desc.GetAttr<std::string>("entry_config");
+  }
+  if (op_desc.HasAttr("entry")) {
+    param_.entry = op_desc.GetAttr<std::string>("entry");
+  }
 
   return true;
 }

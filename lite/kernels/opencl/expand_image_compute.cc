@@ -111,16 +111,10 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto expand_times = expand_param_->expand_times;
 
     auto x_dims = expand_param_->X->dims();
-
-    int in_n = x_dims[0];
-    int in_c = x_dims[1];
     int in_h = x_dims[2];
     int in_w = x_dims[3];
 
     auto out_dims = expand_param_->Out->dims();
-
-    int out_n = out_dims[0];
-    int out_c = out_dims[1];
     int out_h = out_dims[2];
     int out_w = out_dims[3];
 
@@ -195,7 +189,7 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
 #endif
  private:
   std::string kernel_func_name_{};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
   param_t* expand_param_{nullptr};
