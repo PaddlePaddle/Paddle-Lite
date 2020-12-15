@@ -97,8 +97,6 @@ class ReduceMeanComputeImage2D : public KernelLite<TARGET(kOpenCL),
       first_epoch_for_reinit_ = false;
 
       // compute global work size
-      auto& out_dims = reduce_mean_param_->Out->dims();
-
       // padding out_dims to 4-dims
       out_nchw_ = in_nchw_;
       for (auto k = 0; k < axis_.size(); k++) {
@@ -114,21 +112,18 @@ class ReduceMeanComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+
     const auto* x_img = GET_DATA_GPU(reduce_mean_param_->X);
     auto out_image_shape = InitImageDimInfoWith(DDim(out_nchw_));
     auto* out_img = MUTABLE_DATA_GPU(reduce_mean_param_->Out,
                                      out_image_shape["width"],
                                      out_image_shape["height"],
                                      nullptr);
-
     int c4_n = in_nchw_[1] / 4;
     int c4_r = in_nchw_[1] % 4;
     int cw4 = in_nchw_[3] * c4_n;
-    int hb = out_image_shape["width"];
-    int cw = out_image_shape["height"];
-
-    auto& context = ctx_->As<OpenCLContext>();
-    CHECK(context.cl_context() != nullptr);
 
     int axis_n = 0;
     int axis_nhwc[] = {0, 0, 0, 0};
