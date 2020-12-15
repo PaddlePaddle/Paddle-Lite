@@ -627,7 +627,6 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
 #endif  // LITE_ON_TINY_PUBLISH
-        //////////////////////////////////////////////////////////////////////
 
 /*
  * Binary structure of naive_buffer model: model.nb
