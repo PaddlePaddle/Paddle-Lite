@@ -77,6 +77,7 @@ class ByteReader {
   virtual void Read(void* dst, size_t size) const = 0;
   virtual std::string ReadToString(size_t size) const;
   virtual size_t length() const = 0;
+  virtual size_t current() const = 0;
   virtual bool ReachEnd() const = 0;
 
   template <typename T,
@@ -132,6 +133,7 @@ class BinaryFileReader : public ByteReader {
   void Read(void* dst, size_t size) const override;
   bool ReachEnd() const override { return cur_ >= length_; }
   size_t length() const override { return length_; }
+  size_t current() const override { return cur_; }
 
  private:
   FILE* file_{};
@@ -183,6 +185,7 @@ class StringBufferReader : public ByteReader {
   void Read(void* dst, size_t size) const override;
   bool ReachEnd() const override { return cur_ >= length_; }
   size_t length() const override { return length_; }
+  size_t current() const override { return cur_; }
 
  private:
   const std::string& str_;

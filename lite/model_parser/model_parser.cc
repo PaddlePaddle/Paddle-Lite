@@ -39,34 +39,6 @@
 
 namespace paddle {
 namespace lite {
-namespace model_parser {
-Buffer LoadFile(const std::string &path, size_t offset, size_t size) {
-  // open file in readonly mode
-  FILE *file = fopen(path.c_str(), "rb");
-  CHECK(file) << "Unable to open file: " << path;
-  // move fstream pointer backward for offset
-  uint64_t length = size;
-  if (size == 0) {
-    fseek(file, 0L, SEEK_END);
-    length = ftell(file) - offset;
-  }
-  fseek(file, offset, SEEK_SET);
-  // read data of `length` into buf
-  Buffer buf(length);
-  CHECK_EQ(fread(buf.data(), 1, length, file), length);
-  fclose(file);
-  return buf;
-}
-
-void SaveFile(const std::string &path, const Buffer &cache) {
-  FILE *file = fopen(path.c_str(), "wb");
-  CHECK(file);
-  CHECK_EQ(fwrite(cache.data(), sizeof(char), cache.size(), file), cache.size())
-      << "Write " << cache.size() << " bytes to file failed.";
-  fclose(file);
-}
-}  // namespace model_parser
-
 #ifndef LITE_ON_TINY_PUBLISH
 void LoadLoDTensor(model_parser::pb::LoDTensorDeserializer *loader,
                    model_parser::ByteReader *reader,
@@ -655,19 +627,8 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
 #endif  // LITE_ON_TINY_PUBLISH
-//////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////
 
-// usage: LoadModelNaiveFromFile is used for loading model from file.
-template <typename T>
-void ReadModelDataFromFile(T *data,
-                           const std::string &prog_path,
-                           uint64_t *offset,
-                           const uint64_t &size) {
-  model_parser::Buffer prog_data =
-      lite::model_parser::LoadFile(prog_path, *offset, size);
-  memcpy(data, prog_data.data(), size);
-  *offset = *offset + size;
-}
 /*
  * Binary structure of naive_buffer model: model.nb
  * ----------------------------------------------------------
@@ -695,12 +656,11 @@ void LoadModelNaiveFromFile(const std::string &filename,
   const std::string prog_path = filename;
 
   // Offset
-  uint64_t offset = 0;
+  model_parser::BinaryFileReader reader(filename, 0);
 
   // (1)get meta version
   uint16_t meta_version;
-  ReadModelDataFromFile<uint16_t>(
-      &meta_version, prog_path, &offset, sizeof(uint16_t));
+  reader.Read(&meta_version, sizeof(uint16_t));
   VLOG(4) << "Meta_version:" << meta_version;
 
   switch (meta_version) {
@@ -736,19 +696,17 @@ void LoadModelNaiveV0FromFile(const std::string &filename,
   const std::string prog_path = filename;
 
   // Offset
-  uint64_t offset = 0;
+  model_parser::BinaryFileReader reader(filename, 0);
 
   // (1)get meta version
   uint16_t meta_version;
-  ReadModelDataFromFile<uint16_t>(
-      &meta_version, prog_path, &offset, sizeof(uint16_t));
+  reader.Read(&meta_version, sizeof(uint16_t));
   VLOG(4) << "Meta_version:" << meta_version;
 
   // (2)get opt version
   char opt_version[16];
   const uint64_t opt_version_length = 16 * sizeof(char);
-  ReadModelDataFromFile<char>(
-      opt_version, prog_path, &offset, opt_version_length);
+  reader.Read(opt_version, opt_version_length);
   VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
 
   // check version, opt's version should be consistent with current Paddle-Lite
@@ -765,13 +723,11 @@ void LoadModelNaiveV0FromFile(const std::string &filename,
 
   // (3)get topo_size
   uint64_t topo_size;
-  ReadModelDataFromFile<uint64_t>(
-      &topo_size, prog_path, &offset, sizeof(uint64_t));
+  reader.Read(&topo_size, sizeof(uint64_t));
 
   // (4)get topo data
   naive_buffer::BinaryTable topo_table;
-  topo_table.LoadFromFile(prog_path, offset, topo_size);
-  offset = offset + topo_size;
+  topo_table.LoadFromFile(prog_path, reader.current(), topo_size);
   // transform topo_data into cpp::ProgramDesc
   naive_buffer::proto::ProgramDesc nb_proto_prog(&topo_table);
   nb_proto_prog.Load();
@@ -779,7 +735,8 @@ void LoadModelNaiveV0FromFile(const std::string &filename,
   TransformProgramDescAnyToCpp(nb_prog, cpp_prog);
 
   // (5)Load Params
-  LoadCombinedParamsNaive(prog_path, offset, scope, *cpp_prog, false);
+  LoadCombinedParamsNaive(
+      prog_path, reader.current() + topo_size, scope, *cpp_prog, false);
 
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
@@ -791,14 +748,13 @@ void LoadModelFbsFromFile(const std::string &filename,
   CHECK(cpp_prog);
   CHECK(scope);
   CHECK_EQ(cpp_prog->BlocksSize(), 0);
-  // Offset
-  uint64_t offset = sizeof(uint16_t);
+  // meta_version
+  model_parser::BinaryFileReader reader(filename, sizeof(uint16_t));
 
   // get opt version
   char opt_version[16];
   const uint64_t opt_version_length = 16 * sizeof(char);
-  ReadModelDataFromFile<char>(
-      opt_version, filename, &offset, opt_version_length);
+  reader.Read(opt_version, opt_version_length);
   VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
   // check version, opt's version should be consistent with current Paddle-Lite
   // version.
@@ -813,32 +769,35 @@ void LoadModelFbsFromFile(const std::string &filename,
   }
   // (3)get topo_size
   uint64_t topo_size;
-  ReadModelDataFromFile<uint64_t>(
-      &topo_size, filename, &offset, sizeof(uint64_t));
+  reader.Read(&topo_size, sizeof(uint64_t));
   VLOG(4) << "topo_size: " << topo_size;
+
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
-  cpp_prog->Init(model_parser::LoadFile(filename, offset, topo_size));
+  lite::model_parser::Buffer buf(topo_size);
+  reader.Read(buf.data(), topo_size);
+  cpp_prog->Init(buf);
 #elif LITE_ON_TINY_PUBLISH
   LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
                 "the model cannot be loaded.";
 #else
-  fbs::ProgramDesc program(model_parser::LoadFile(filename, offset, topo_size));
+  lite::model_parser::Buffer buf(topo_size);
+  reader.Read(buf.data(), topo_size);
+  fbs::ProgramDesc program(buf);
   TransformProgramDescAnyToCpp(program, cpp_prog);
 #endif
-  offset = offset + topo_size;
 
   /* 2. Load scope from params.fbs */
   switch (meta_version) {
     case 1: {
       /* load scope from param.fbs with meta_version=1 */
-      fbs::CombinedParamsDescView params(
-          model_parser::LoadFile(filename, offset));
+      lite::model_parser::Buffer buf(reader.length() - reader.current());
+      reader.Read(buf.data(), reader.length() - reader.current());
+      fbs::CombinedParamsDescView params(std::move(buf));
       fbs::deprecated::SetScopeWithCombinedParams(scope, params);
       break;
     }
     case 2: {
       /* load scope from param.fbs with meta_version=2 */
-      model_parser::BinaryFileReader reader(filename, offset);
       fbs::ParamDeserializer deserializer(&reader);
       deserializer.ForwardRead(scope);
       break;
@@ -850,16 +809,6 @@ void LoadModelFbsFromFile(const std::string &filename,
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 
-// usage: LoadModelNaiveFromMemory is used for loading naive model from memory
-template <typename T>
-void ReadModelDataFromBuffer(T *data,
-                             const std::string &model_buffer,
-                             uint64_t *offset,
-                             const uint64_t &size) {
-  memcpy(data, model_buffer.c_str() + *offset, size);
-  *offset = *offset + size;
-}
-
 void LoadModelNaiveFromMemory(const std::string &model_buffer,
                               Scope *scope,
                               cpp::ProgramDesc *cpp_prog) {
@@ -867,12 +816,12 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
   CHECK(scope);
   cpp_prog->ClearBlocks();
 
-  uint64_t offset = 0;
   // (1)get meta version
   uint16_t meta_version;
-  ReadModelDataFromBuffer<uint16_t>(
-      &meta_version, model_buffer, &offset, sizeof(uint16_t));
+  model_parser::StringBufferReader reader(model_buffer);
+  reader.Read(&meta_version, sizeof(uint16_t));
   VLOG(4) << "Meta_version:" << meta_version;
+
   switch (meta_version) {
     case 0:
 #ifndef LITE_ON_TINY_PUBLISH
@@ -900,22 +849,21 @@ void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
                                 Scope *scope,
                                 cpp::ProgramDesc *cpp_prog) {
   // Offset
-  uint64_t offset = sizeof(uint16_t);
+  uint16_t meta_version_tmp;
+  model_parser::StringBufferReader reader(model_buffer);
+  reader.Read(&meta_version_tmp, sizeof(uint16_t));
 
   // (2)get opt version
   char opt_version[16];
   const uint64_t paddle_version_length = 16 * sizeof(char);
-  ReadModelDataFromBuffer<char>(
-      opt_version, model_buffer, &offset, paddle_version_length);
+  reader.Read(opt_version, paddle_version_length);
   VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
 
   // (3)get topo_size and topo_data
   uint64_t topo_size;
-  ReadModelDataFromBuffer<uint64_t>(
-      &topo_size, model_buffer, &offset, sizeof(uint64_t));
+  reader.Read(&topo_size, sizeof(uint64_t));
   naive_buffer::BinaryTable table;
-  table.LoadFromMemory(model_buffer.c_str() + offset, topo_size);
-  offset = offset + topo_size;
+  table.LoadFromMemory(model_buffer.c_str() + reader.current(), topo_size);
 
   naive_buffer::proto::ProgramDesc nb_proto_prog(&table);
   nb_proto_prog.Load();
@@ -927,7 +875,8 @@ void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
   // Load Params
   // NOTE: Only main block be used now.
   // only combined Params are supported in Loading Model from memory
-  LoadCombinedParamsNaive(model_buffer, offset, scope, *cpp_prog, true);
+  LoadCombinedParamsNaive(
+      model_buffer, reader.current() + topo_size, scope, *cpp_prog, true);
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
