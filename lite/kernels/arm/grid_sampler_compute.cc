@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/grid_sampler_compute.h"
+#include <string>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
@@ -26,6 +27,9 @@ void GridSamplerCompute::PrepareForRun() {}
 
 void GridSamplerCompute::Run() {
   auto& param = this->Param<param_t>();
+  bool align_corners = param.align_corners;
+  std::string padding_mode = param.padding_mode;
+  std::string mode = param.mode;
   auto n = param.x->dims()[0];
   auto c = param.x->dims()[1];
   auto h = param.x->dims()[2];
@@ -42,20 +46,89 @@ void GridSamplerCompute::Run() {
   float* dis_p = reinterpret_cast<float*>(coor_p) + coor_size * 4;
   uint32_t* bound_p = reinterpret_cast<uint32_t*>(dis_p) + coor_size * 4;
 
+  // nearest
+  lite::Tensor grid_new_x_t, grid_new_y_t;
+  grid_new_x_t.Resize(param.grid->dims());
+  grid_new_y_t.Resize(param.grid->dims());
+  float* grid_new_xp = grid_new_x_t.mutable_data<float>();
+  float* grid_new_x = grid_new_xp;
+  float* grid_nx = grid_new_x;
+  float* grid_new_yp = grid_new_y_t.mutable_data<float>();
+  float* grid_new_y = grid_new_yp;
+  float* grid_ny = grid_new_y;
+
   float x_max = static_cast<float>(w - 1);
   float y_max = static_cast<float>(h - 1);
   float32x4_t vxmax = vdupq_n_f32(x_max);
   float32x4_t vymax = vdupq_n_f32(y_max);
   float32x4_t vone = vdupq_n_f32(1.f);
+  float32x4_t vhalf = vdupq_n_f32(0.5f);
   float32x4_t vzero = vdupq_n_f32(0.f);
+
+  auto inbound = [](int x, int y, float x_max, float y_max) {
+    if (x < 0 || x > x_max || y < 0 || y > y_max) {
+      return false;
+    }
+    return true;
+  };
 
   // compute coor, dis, bound
   int i = coor_size;
+#if 0
   for (; i > 3; i -= 4) {
     float32x4x2_t xy = vld2q_f32(grid);
-    float32x4_t grid_x = vmulq_n_f32(vaddq_f32(xy.val[0], vone), 0.5 * x_max);
-    float32x4_t grid_y = vmulq_n_f32(vaddq_f32(xy.val[1], vone), 0.5 * y_max);
+    // align corners
+    float32x4_t grid_x = align_corners ?
+        vmulq_n_f32(vaddq_f32(xy.val[0], vone), 0.5 * x_max) :
+        vmulq_n_f32(vaddq_f32(xy.val[0], vone), 0.5 * w) - vhalf;
+    float32x4_t grid_y = align_corners ?
+        vmulq_n_f32(vaddq_f32(xy.val[1], vone), 0.5 * y_max) :
+        vmulq_n_f32(vaddq_f32(xy.val[1], vone), 0.5 * h) - vhalf;
     grid += 8;
+
+    // clip
+    if (padding_mode == "zeros") {
+      // nothing to do
+    } else if (padding_mode == "border") {
+      grid_x = vmaxq_f32(vminq_f32(grid_x, vzero), vxmax);
+      grid_y = vmaxq_f32(vminq_f32(grid_y, vzero), vymax);
+    } else if (padding_mode == "reflection") {
+      if (align_corners) {
+        // x
+        float32x4_t v2x = vdupq_n_f32(x_max * 2);
+        float32x4_t vgrid_x_abs = vabsq_f32(v2x);
+        float32x4_t vextra_x = vgrid_x_abs -
+                    vcvtq_s32_f32(vgrid_x_abs / v2x) * v2x;
+        grid_x = vminq_f32(vextra_x, v2x - vextra_x);
+        // y
+        float32x4_t v2y = vdupq_n_f32(y_max * 2);
+        float32x4_t vgrid_y_abs = vabsq_f32(v2y);
+        float32x4_t vextra_y = vgrid_y_abs -
+                    vcvtq_s32_f32(vgrid_y_abs / v2y) * v2y;
+        grid_y = vminq_f32(vextra_y, v2y - vextra_y);
+      } else {
+        // x
+        float32x4_t v2x = vdupq_n_f32((x_max + 1.f) * 2);
+        float32x4_t vgrid_x_abs = vabsq_f32(v2x + vhalf);
+        float32x4_t vextra_x = vgrid_x_abs -
+                    vcvtq_s32_f32(vgrid_x_abs / v2x) * v2x;
+        grid_x = vminq_f32(vextra_x, v2x - vextra_x) - vhalf;
+        grid_x = vminq_f32(vmaxq_f32(grid_x, vzero), vxmax);
+        // y
+        float32x4_t v2y = vdupq_n_f32((y_max + 1.f) * 2);
+        float32x4_t vgrid_y_abs = vabsq_f32(v2y + vhalf);
+        float32x4_t vextra_y = vgrid_y_abs -
+                    vcvtq_s32_f32(vgrid_y_abs / v2y) * v2y;
+        grid_y = vminq_f32(vextra_y, v2y - vextra_y) - vhalf;
+        grid_y = vminq_f32(vmaxq_f32(grid_y, vzero), vymax);
+      }
+    }
+    if (mode == "nearest") {
+    vst1q_f32(grid_new_x, grid_x);
+    vst1q_f32(grid_new_y, grid_y);
+    grid_new_x += 4;
+    grid_new_y += 4;
+    }
 
     // compute xw, we, yn, ys
     int32x4x4_t vcoor;
@@ -96,13 +169,66 @@ void GridSamplerCompute::Run() {
     vst4q_u32(bound_p, vbound);
     bound_p += 16;
   }
-
+#endif
   for (; i > 0; i--) {
     float x = grid[0];
     float y = grid[1];
-    float grid_x = (x + 1) * 0.5 * x_max;
-    float grid_y = (y + 1) * 0.5 * y_max;
+    float grid_x = align_corners ? (x + 1) * 0.5 * x_max
+                                 : (x + 1) * 0.5 * (x_max + 1) - 0.5;
+    float grid_y = align_corners ? (y + 1) * 0.5 * y_max
+                                 : (y + 1) * 0.5 * (y_max + 1) - 0.5;
     grid += 2;
+
+    // clip
+    if (padding_mode == "zeros") {
+      // nothing to do
+    } else if (padding_mode == "border") {
+      grid_x = fmin(fmax(grid_x, 0), x_max);
+      grid_y = fmin(fmax(grid_y, 0), y_max);
+    } else if (padding_mode == "reflection") {
+      if (align_corners) {
+        // x
+        float double_range_x = x_max * 2;
+        float grid_x_abs = abs(grid_x);
+        float extra_x =
+            grid_x_abs -
+            static_cast<int>(grid_x_abs / double_range_x) * double_range_x;
+        grid_x = fmin(extra_x, double_range_x - extra_x);
+        // y
+        float double_range_y = y_max * 2;
+        float grid_y_abs = abs(grid_y);
+        float extra_y =
+            grid_y_abs -
+            static_cast<int>(grid_y_abs / double_range_y) * double_range_y;
+        grid_y = fmin(extra_y, double_range_y - extra_y);
+      } else {
+        // x
+        float double_range_x = (x_max + 1) * 2;
+        float grid_x_abs = abs(grid_x + 0.5);
+        float extra_x =
+            grid_x_abs -
+            static_cast<int>(grid_x_abs / double_range_x) * double_range_x;
+        grid_x = fmin(extra_x, double_range_x - extra_x) - 0.5;
+        grid_x = fmin(fmax(grid_x, 0), x_max);
+        // y
+        float double_range_y = (y_max + 1) * 2;
+        float grid_y_abs = abs(grid_y + 0.5);
+        float extra_y =
+            grid_y_abs -
+            static_cast<int>(grid_y_abs / double_range_y) * double_range_y;
+        grid_y = fmin(extra_y, double_range_y - extra_y) - 0.5;
+        grid_y = fmin(fmax(grid_y, 0), y_max);
+      }
+    } else {
+      LOG(FATAL) << "Unsupported padding mode: " << padding_mode;
+    }
+
+    if (mode == "nearest") {
+      *grid_new_x = round(grid_x);
+      *grid_new_y = round(grid_y);
+      grid_new_x++;
+      grid_new_y++;
+    }
 
     // compute xw, xe, yn, ys
     int32_t xw = static_cast<int32_t>(floor(grid_x));
@@ -135,53 +261,79 @@ void GridSamplerCompute::Run() {
     *bound_p++ = ((logic_xe || logic_ys) ? 0 : 0xffffffff);
   }
 
-  size_t cube_size = c * h * w;
-  size_t spatial_size = h * w;
-  // compute output
-  for (int i = 0; i < n; ++i) {
-    const float* in_n = in + i * cube_size;
-    float* out_n = out + i * cube_size;
-    int32_t* coor_n = ctx.workspace_data<int>() + i * spatial_size * 4;
-    float* dis_n = reinterpret_cast<float*>(coor_n) + coor_size * 4;
-    uint32_t* bound_n = reinterpret_cast<uint32_t*>(dis_n) + coor_size * 4;
+  if (mode == "bilinear") {
+    size_t cube_size = c * h * w;
+    size_t spatial_size = h * w;
+    // compute output
+    for (int i = 0; i < n; ++i) {
+      const float* in_n = in + i * cube_size;
+      float* out_n = out + i * cube_size;
+      int32_t* coor_n = ctx.workspace_data<int>() + i * spatial_size * 4;
+      float* dis_n = reinterpret_cast<float*>(coor_n) + coor_size * 4;
+      uint32_t* bound_n = reinterpret_cast<uint32_t*>(dis_n) + coor_size * 4;
 #pragma omp parallel for
-    for (int j = 0; j < c; ++j) {
-      int32_t* coor_ptr = coor_n;
-      float* dis_ptr = dis_n;
-      uint32_t* bound_ptr = bound_n;
-      const float* in_c = in_n + j * spatial_size;
-      float* out_c = out_n + j * spatial_size;
-      for (int k = 0; k < spatial_size; k++) {
-        int32x4_t vcoor = vld1q_s32(coor_ptr);
-        float32x4_t vdis = vld1q_f32(dis_ptr);
-        int32_t xw = vgetq_lane_s32(vcoor, 0);
-        int32_t xe = vgetq_lane_s32(vcoor, 1);
-        int32_t yn = vgetq_lane_s32(vcoor, 2);
-        int32_t ys = vgetq_lane_s32(vcoor, 3);
+      for (int j = 0; j < c; ++j) {
+        int32_t* coor_ptr = coor_n;
+        float* dis_ptr = dis_n;
+        uint32_t* bound_ptr = bound_n;
+        const float* in_c = in_n + j * spatial_size;
+        float* out_c = out_n + j * spatial_size;
+        for (int k = 0; k < spatial_size; k++) {
+          int32x4_t vcoor = vld1q_s32(coor_ptr);
+          float32x4_t vdis = vld1q_f32(dis_ptr);
+          int32_t xw = vgetq_lane_s32(vcoor, 0);
+          int32_t xe = vgetq_lane_s32(vcoor, 1);
+          int32_t yn = vgetq_lane_s32(vcoor, 2);
+          int32_t ys = vgetq_lane_s32(vcoor, 3);
 
-        uint32x4_t vbound = vld1q_u32(bound_ptr);
-        float dw = vgetq_lane_f32(vdis, 0);
-        float de = vgetq_lane_f32(vdis, 1);
-        float dn = vgetq_lane_f32(vdis, 2);
-        float ds = vgetq_lane_f32(vdis, 3);
+          uint32x4_t vbound = vld1q_u32(bound_ptr);
+          float dw = vgetq_lane_f32(vdis, 0);
+          float de = vgetq_lane_f32(vdis, 1);
+          float dn = vgetq_lane_f32(vdis, 2);
+          float ds = vgetq_lane_f32(vdis, 3);
 
-        uint32_t wnbound = vgetq_lane_u32(vbound, 0);
-        uint32_t enbound = vgetq_lane_u32(vbound, 1);
-        uint32_t wsbound = vgetq_lane_u32(vbound, 2);
-        uint32_t esbound = vgetq_lane_u32(vbound, 3);
+          uint32_t wnbound = vgetq_lane_u32(vbound, 0);
+          uint32_t enbound = vgetq_lane_u32(vbound, 1);
+          uint32_t wsbound = vgetq_lane_u32(vbound, 2);
+          uint32_t esbound = vgetq_lane_u32(vbound, 3);
 
-        float in_wn = wnbound ? in_c[yn * w + xw] : 0.f;
-        float in_en = enbound ? in_c[yn * w + xe] : 0.f;
-        float in_ws = wsbound ? in_c[ys * w + xw] : 0.f;
-        float in_es = esbound ? in_c[ys * w + xe] : 0.f;
+          float in_wn = wnbound ? in_c[yn * w + xw] : 0.f;
+          float in_en = enbound ? in_c[yn * w + xe] : 0.f;
+          float in_ws = wsbound ? in_c[ys * w + xw] : 0.f;
+          float in_es = esbound ? in_c[ys * w + xe] : 0.f;
 
-        coor_ptr += 4;
-        dis_ptr += 4;
-        bound_ptr += 4;
-        *out_c++ =
-            ds * (in_wn * de + in_en * dw) + dn * (in_ws * de + in_es * dw);
+          coor_ptr += 4;
+          dis_ptr += 4;
+          bound_ptr += 4;
+          *out_c++ =
+              ds * (in_wn * de + in_en * dw) + dn * (in_ws * de + in_es * dw);
+        }
       }
     }
+  } else if (mode == "nearest") {
+    auto out_h = param.grid->dims()[1];
+    auto out_w = param.grid->dims()[2];
+    for (int nn = 0; nn < n; nn++) {
+      const float* grid_nx_nn = grid_nx + nn * out_w * out_h;
+      const float* grid_ny_nn = grid_ny + nn * out_w * out_h;
+      for (int k = 0; k < out_h; k++) {
+        for (int l = 0; l < out_w; l++) {
+          const float* nx = grid_nx_nn + k * out_w + l;
+          const float* ny = grid_ny_nn + k * out_w + l;
+          if (inbound(*nx, *ny, w - 1, h - 1)) {
+            for (int j = 0; j < c; ++j) {
+              int in_ind_w = round(*nx);
+              int in_ind_h = round(*ny);
+              int ind_base = nn * c * out_h * out_w + j * out_h * out_w;
+              out[ind_base + k * out_w + l] =
+                  in[ind_base + in_ind_h * out_w + in_ind_w];
+            }
+          }
+        }
+      }
+    }
+  } else {
+    LOG(FATAL) << "Unsupported mode " << mode;
   }
 }
 
