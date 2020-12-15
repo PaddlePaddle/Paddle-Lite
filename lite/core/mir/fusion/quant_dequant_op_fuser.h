@@ -104,6 +104,27 @@ class DeleteQuantDequantOpFuser : public FuseBase {
   std::string quant_dequant_op_type_{};
 };
 
+/* DynamicQuantOpFuser is applied for LSTM for now.
+ * This fuser collects the weight scale and convert the weight from fp32
+ * to int8.
+*/
+
+class DynamicQuantOpFuser : public FuseBase {
+ public:
+  explicit DynamicQuantOpFuser(const std::string& op_type,
+                               const std::string& input_argname) {
+    op_type_ = op_type;
+    input_argname_ = input_argname;
+  }
+
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  std::string op_type_{};
+  std::string input_argname_{};
+};
+
 }  // namespace fusion
 }  // namespace mir
 }  // namespace lite

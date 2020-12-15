@@ -12,25 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/backends/arm/math/quantize.h"
 #include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <cmath>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
 
-template <PrecisionType Ptype>
-class LstmCompute : public KernelLite<TARGET(kARM), Ptype> {
- public:
-  void Run() override;
+void QuantizeActvation(const float* input,
+                       int8_t* output,
+                       float* scale,
+                       int size,
+                       int bit_length) {
+  auto abs_compare_func = [](float a, float b) {
+    return (std::abs(a) < std::abs(b));
+  };
 
-  virtual ~LstmCompute() = default;
-};
+  float abs_max_value =
+      std::abs(*std::max_element(input, input + size, abs_compare_func));
+  float scale_value = abs_max_value / ((1 << (bit_length - 1)) - 1);
 
+  auto quant_func = [scale_value](float x) {
+    return static_cast<int8_t>(std::round(x / scale_value));
+  };
+
+  std::transform(input, input + size, output, quant_func);
+  *scale = scale_value;
+}
+
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
