@@ -54,6 +54,19 @@ bool GridSamplerOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       scope->FindVar(op_desc.Input("Grid").front())->GetMutable<Tensor>();
   param_.out =
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
+  param_.align_corners =
+      scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
+
+  if (op_desc.HasAttr("align_corners")) {
+    param_.align_corners = op_desc.GetAttr<bool>("align_corners");
+  }
+  if (op_desc.HasAttr("padding_mode")) {
+    param_.padding_mode = op_desc.GetAttr<std::string>("padding_mode");
+  }
+  if (op_desc.HasAttr("mode")) {
+    param_.mode = op_desc.GetAttr<std::string>("mode");
+  }
+
   return true;
 }
 
