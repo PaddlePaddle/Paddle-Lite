@@ -53,6 +53,10 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     fusion::DeleteQuantDequantOpFuser dqd_fuser(op_type);
     dqd_fuser(graph.get());
   }
+
+  // process dynamic quant op
+  fusion::DynamicQuantOpFuser lstm_dq_fuser("lstm", "Weight");
+  lstm_dq_fuser(graph.get());
 }
 
 }  // namespace mir

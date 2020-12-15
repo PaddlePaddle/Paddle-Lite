@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
+#include <cmath>
 #include <memory>
 #include <set>
 #include <vector>
@@ -383,6 +384,59 @@ void DeleteQuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
 cpp::OpDesc DeleteQuantDequantOpFuser::GenOpDesc(const key2nodes_t& matched) {
   cpp::OpDesc op_desc;
   return op_desc;
+}
+
+void DynamicQuantOpFuser::BuildPattern() {
+  auto* weight_node =
+      VarNode("weight_node")->assert_is_op_input(op_type_, input_argname_);
+  // op_node should have "quantization_type" attribute
+  auto* op_node =
+      OpNode("op_node", op_type_)
+          ->assert_is_op(op_type_)
+          ->assert_op_attr_satisfied<std::string>(
+              "quantization_type", [](const std::string& x) { return true; });
+  op_node->LinksFrom({weight_node});
+}
+
+void DynamicQuantOpFuser::InsertNewNode(SSAGraph* graph,
+                                        const key2nodes_t& matched) {
+  auto* op_node = matched.at("op_node");
+  auto* weight_node = matched.at("weight_node");
+
+  auto* scope = op_node->stmt()->op()->scope();
+  std::string weight_name = weight_node->arg()->name;
+  auto weight_tensor = scope->FindVar(weight_name)->GetMutable<lite::Tensor>();
+  auto weight_dims = weight_tensor->dims();
+  CHECK(weight_dims.size() == 2) << "The rank of weight should be 2.";
+  VLOG(2) << "Quantizes lstm's weight:" << weight_name;
+
+  // process weight scale
+  auto op_info = *op_node->stmt()->mutable_op_info();
+  auto bit_length = op_info.GetAttr<int>("bit_length");
+  auto weight_threshold =
+      op_info.GetAttr<float>(input_argname_ + "0_threshold");
+  float weight_scale = weight_threshold / ((1 << (bit_length - 1)) - 1);
+  std::vector<float> weight_scale_vct(weight_dims[1], weight_scale);
+
+  op_info.SetAttr("enable_int8", true);
+  op_info.SetAttr("bit_length", bit_length);
+  op_info.SetInputScale(weight_name, weight_scale_vct);
+  op_node->stmt()->ResetOp(op_info, graph->valid_places());
+
+  // convert the weight from float to int8
+  Tensor temp_tensor;
+  temp_tensor.CopyDataFrom(*weight_tensor);
+  weight_tensor->clear();
+
+  auto* temp_data = temp_tensor.data<float>();
+  auto* weight_data = weight_tensor->mutable_data<int8_t>();
+  int64_t weight_num = weight_tensor->data_size();
+  for (size_t i = 0; i < weight_num; i++) {
+    weight_data[i] =
+        static_cast<int8_t>(std::round(temp_data[i] / weight_scale));
+  }
+  weight_tensor->set_persistable(true);
+  weight_tensor->set_precision(PRECISION(kInt8));
 }
 
 }  // namespace fusion
