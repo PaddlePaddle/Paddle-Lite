@@ -66,6 +66,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat),
     param.filter->CopyDataFrom(tmp_weights);
     param.filter->Resize(w_dims);
   }
+  is_first_epoch_ = false;
 }
 template <>
 void Conv2DTransposeCompute<PRECISION(kInt8),
@@ -90,7 +91,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
   int n = hin * win;
   int k = chin / group;
 
-  workspace_size_ = group * m * n * sizeof(int32_t);
+  workspace_size_ = 2 * group * m * n * sizeof(int32_t);
 
   auto& ctx = this->ctx_->template As<ARMContext>();
   lite::Tensor tmp_weights;
@@ -153,7 +154,8 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
   w_scale_ = param.weight_scale;
   auto cout = w_dims[1] * group;
   if (w_scale_.size() != 1 && w_scale_.size() != cout) {
-    LOG(FATAL) << "weights scale size must equal to filter size";
+    LOG(FATAL) << "weights scale size must equal to filter size, scales size: "
+               << w_scale_.size() << ", cout: " << cout;
     return;
   }
   if (w_scale_.size() == 1) {
@@ -162,8 +164,9 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
     }
   }
   float input_scale = param.input_scale;
+  float output_scale = param.output_scale;
   for (auto& ws : w_scale_) {
-    ws *= input_scale;
+    ws = ws * input_scale / output_scale;
   }
   //!  update bias
   if (param.bias) {
@@ -376,14 +379,17 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 
   auto din = param.x->data<int8_t>();
   auto dout = param.output->mutable_data<float>();
-  auto dout_int32 = param.output->mutable_data<int32_t>();
   auto weights = param.filter->data<int8_t>();
   auto act_param = param.activation_param;
   bool has_act = act_param.has_active;
+  int32_t* workspace_ptr =
+      static_cast<int32_t*>(ctx.workspace_data<int32_t>()) +
+      ctx.llc_size() / sizeof(int32_t);
+  int offset = group * m * n;
   for (int i = 0; i < num; i++) {
     const int8_t* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
-    int32_t* dout_batch_int32 = dout_int32 + i * chout * hout * wout;
+    int32_t* dout_batch_int32 = workspace_ptr + offset;
     int32_t* col_data = static_cast<int32_t*>(ctx.workspace_data<int32_t>()) +
                         ctx.llc_size() / sizeof(int32_t);
     if (flag_1x1s1p1) {
