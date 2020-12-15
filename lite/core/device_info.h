@@ -106,7 +106,13 @@ class DeviceInfo {
     return size > 0 ? size : 512 * 1024;
   }
 
-  bool has_dot() const { return dot_[active_ids_[0]]; }
+  inline bool has_dot() const {
+#ifdef WITH_ARM_DOTPROD
+    return dot_[active_ids_[0]];
+#else
+    return false;
+#endif
+  }
   bool has_fp16() const { return fp16_[active_ids_[0]]; }
 
   template <typename T>
