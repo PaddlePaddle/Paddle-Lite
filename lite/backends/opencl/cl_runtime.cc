@@ -232,8 +232,13 @@ bool CLRuntime::InitializeDevice() {
   // for is_opencl_valid_api .  do not exit here...
   CL_CHECK_ERROR(status_);
   if (all_devices.empty()) {
-    LOG(ERROR) << "No available OpenCL GPU device found!";
-    return false;
+    LOG(ERROR)
+        << "No available OpenCL GPU device found!, Try CPU Device instead!";
+    status_ = platform_->getDevices(CL_DEVICE_TYPE_CPU, &all_devices);
+    CL_CHECK_ERROR(status_);
+    if (all_devices.empty()) {
+      return false;
+    }
   }
   device_ = std::make_shared<cl::Device>();
   *device_ = all_devices[0];

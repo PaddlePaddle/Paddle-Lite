@@ -71,8 +71,6 @@ class TransposeComputeFloatImage
     const auto x_dims = x->dims();
     const std::map<std::string, size_t>& input_image_shape =
         InitImageDimInfoWith(x_dims);
-    const int64_t& input_image_width = input_image_shape.at("width");
-    const int64_t& input_image_height = input_image_shape.at("height");
     const cl::Image2D* const x_image = x->data<half_t, cl::Image2D>();
 
     Tensor* const output = param.output;
