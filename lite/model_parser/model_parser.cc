@@ -673,10 +673,10 @@ void LoadModelNaiveFromFile(const std::string &filename,
 #endif
       break;
     case 1:
-      LoadModelFbsFromFile(reader, scope, cpp_prog, 1);
+      LoadModelFbsFromFile(&reader, scope, cpp_prog, 1);
       break;
     case 2:
-      LoadModelFbsFromFile(reader, scope, cpp_prog, 2);
+      LoadModelFbsFromFile(&reader, scope, cpp_prog, 2);
       break;
     default:
       LOG(FATAL) << "The model format cannot be recognized. Please make sure "
@@ -740,7 +740,7 @@ void LoadModelNaiveV0FromFile(const std::string &filename,
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 #endif  // LITE_ON_TINY_PUBLISH
-void LoadModelFbsFromFile(model_parser::BinaryFileReader& reader,
+void LoadModelFbsFromFile(model_parser::BinaryFileReader *reader,
                           Scope *scope,
                           cpp::ProgramDesc *cpp_prog,
                           uint16_t meta_version) {
@@ -751,7 +751,7 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader& reader,
   // get opt version
   char opt_version[16];
   const uint64_t opt_version_length = 16 * sizeof(char);
-  reader.Read(opt_version, opt_version_length);
+  reader->Read(opt_version, opt_version_length);
   VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
   // check version, opt's version should be consistent with current Paddle-Lite
   // version.
@@ -766,19 +766,19 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader& reader,
   }
   // (3)get topo_size
   uint64_t topo_size;
-  reader.Read(&topo_size, sizeof(uint64_t));
+  reader->Read(&topo_size, sizeof(uint64_t));
   VLOG(4) << "topo_size: " << topo_size;
 
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   lite::model_parser::Buffer buf(topo_size);
-  reader.Read(buf.data(), topo_size);
+  reader->Read(buf.data(), topo_size);
   cpp_prog->Init(buf);
 #elif LITE_ON_TINY_PUBLISH
   LOG(FATAL) << "Since no data structure of Flatbuffers has been constructed, "
                 "the model cannot be loaded.";
 #else
   lite::model_parser::Buffer buf(topo_size);
-  reader.Read(buf.data(), topo_size);
+  reader->Read(buf.data(), topo_size);
   fbs::ProgramDesc program(buf);
   TransformProgramDescAnyToCpp(program, cpp_prog);
 #endif
@@ -787,15 +787,15 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader& reader,
   switch (meta_version) {
     case 1: {
       /* load scope from param.fbs with meta_version=1 */
-      lite::model_parser::Buffer buf(reader.length() - reader.current());
-      reader.Read(buf.data(), reader.length() - reader.current());
+      lite::model_parser::Buffer buf(reader->length() - reader->current());
+      reader->Read(buf.data(), reader->length() - reader->current());
       fbs::CombinedParamsDescView params(std::move(buf));
       fbs::deprecated::SetScopeWithCombinedParams(scope, params);
       break;
     }
     case 2: {
       /* load scope from param.fbs with meta_version=2 */
-      fbs::ParamDeserializer deserializer(&reader);
+      fbs::ParamDeserializer deserializer(reader);
       deserializer.ForwardRead(scope);
       break;
     }
@@ -829,10 +829,10 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 #endif
       break;
     case 1:
-      LoadModelFbsFromMemory(model_buffer, scope, cpp_prog, 1);
+      LoadModelFbsFromMemory(&reader, scope, cpp_prog, 1);
       break;
     case 2:
-      LoadModelFbsFromMemory(model_buffer, scope, cpp_prog, 2);
+      LoadModelFbsFromMemory(&reader, scope, cpp_prog, 2);
       break;
     default:
       LOG(FATAL) << "The model format cannot be recognized. Please make sure "
@@ -878,30 +878,25 @@ void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
 }
 #endif
 ///////////////////////////////////////////////////////////////////
-// Meta_version=1
+// Meta_version=1,2
 ///////////////////////////////////////////////////////////////////
-void LoadModelFbsFromMemory(const std::string &model_buffer,
+void LoadModelFbsFromMemory(model_parser::StringBufferReader *reader,
                             Scope *scope,
                             cpp::ProgramDesc *cpp_prog,
                             uint16_t meta_version) {
-  // Offset
-  uint16_t meta_version_tmp;
-  model_parser::StringBufferReader reader(model_buffer);
-  reader.Read(&meta_version_tmp, sizeof(uint16_t));
-
-  // (2)get opt version
+  // (1)get opt version
   char opt_version[16];
   const uint64_t paddle_version_length = 16 * sizeof(char);
-  reader.Read(opt_version, paddle_version_length);
+  reader->Read(opt_version, paddle_version_length);
   VLOG(4) << "Opt_version:" << static_cast<const char *>(opt_version);
 
-  // (3)get prog_size and prog_data
+  // (2)get prog_size and prog_data
   uint64_t prog_size;
-  reader.Read(&prog_size, sizeof(uint64_t));
+  reader->Read(&prog_size, sizeof(uint64_t));
   VLOG(4) << "prog_size:" << prog_size;
 
   model_parser::Buffer prog_data(prog_size);
-  reader.Read(prog_data.data(), prog_size);
+  reader->Read(prog_data.data(), prog_size);
 #ifdef LITE_ON_FLATBUFFERS_DESC_VIEW
   cpp_prog->Init(std::move(prog_data));
 #elif LITE_ON_TINY_PUBLISH
@@ -913,16 +908,16 @@ void LoadModelFbsFromMemory(const std::string &model_buffer,
 #endif
   switch (meta_version) {
     case 1: {
-      size_t params_size = reader.length() - sizeof(uint16_t) -
+      size_t params_size = reader->length() - sizeof(uint16_t) -
                            paddle_version_length - sizeof(uint64_t) - prog_size;
       model_parser::Buffer params_data(params_size);
-      reader.Read(params_data.data(), params_size);
+      reader->Read(params_data.data(), params_size);
       fbs::CombinedParamsDescView params(std::move(params_data));
       fbs::deprecated::SetScopeWithCombinedParams(scope, params);
       break;
     }
     case 2: {
-      fbs::ParamDeserializer deserializer(&reader);
+      fbs::ParamDeserializer deserializer(reader);
       deserializer.ForwardRead(scope);
       break;
     }
