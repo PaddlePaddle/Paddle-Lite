@@ -98,6 +98,18 @@ bool LstmOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.candidate_activation =
       opdesc.GetAttr<std::string>("candidate_activation");
 
+  // For int8
+  const OpInfo *op_info = dynamic_cast<const OpInfo *>(&opdesc);
+  if (op_info != nullptr && op_info->HasAttr("enable_int8") &&
+      op_info->GetAttr<bool>("enable_int8")) {
+    param_.enable_int8 = true;
+    param_.bit_length = opdesc.GetAttr<int>("bit_length");
+    std::string weight_scale_name = "Weight0_scale";
+    if (op_info->HasInputScale(weight_scale_name, true)) {
+      param_.weight_scale = op_info->GetInputScale(weight_scale_name, true);
+    }
+  }
+
   return true;
 }
 
