@@ -104,13 +104,15 @@ void decode_bbox_center_variance_kernel(const int batch_num,
   }
 }
 
-void decode_bbox_center_no_variance_kernel(const int batch_num,
-                                           const float* loc_data,
-                                           const float* prior_data,
-                                           const float* variance,
-                                           const int num_priors,
-                                           const bool normalized,
-                                           float* bbox_data) {
+void decode_bbox_center_kernel(const int batch_num,
+                               const int axis,
+                               const float* loc_data,
+                               const float* prior_data,
+                               const float* variance,
+                               const bool var_len4,
+                               const int num_priors,
+                               const bool normalized,
+                               float* bbox_data) {
   int cnt = num_priors / 4;
   //! vprior 0: xmin, 1: ymin, 2: xmax, 3: ymax
   //! vloc   0: xmin, 1: ymin, 2: xmax, 3: ymax
@@ -119,7 +121,6 @@ void decode_bbox_center_no_variance_kernel(const int batch_num,
   float norm_value = (normalized == false);
   float32x4_t vnormalized = vdupq_n_f32(norm_value);
   int len_batch = num_priors * 4;
-
   for (int n = 0; n < batch_num; ++n) {
     const float* ptr_loc_batch = loc_data + n * len_batch;
     float* ptr_bbox_batch = bbox_data + n * len_batch;
@@ -127,15 +128,43 @@ void decode_bbox_center_no_variance_kernel(const int batch_num,
 #pragma omp parallel for
     for (int i = 0; i < cnt; ++i) {
       int idx = i * 16;
+      int var_idx = idx, prior_idx = idx;
+      if (axis == 1) {
+        var_idx = n * 16;
+        prior_idx = n * 4;
+      }
+      if (var_len4) {
+        var_idx = 0;
+      }
 
       const float* ptr_loc = ptr_loc_batch + idx;
-      const float* ptr_prior = prior_data + idx;
-      const float* ptr_var = variance + idx;
+      const float* ptr_prior = prior_data + prior_idx;
+      const float* ptr_var = variance + var_idx;
+
       float* ptr_bbox = ptr_bbox_batch + idx;
 
-      float32x4x4_t vprior = vld4q_f32(ptr_prior);
+      float32x4x4_t vprior;
+      if (axis == 0) {
+        vprior = vld4q_f32(ptr_prior);
+      } else if (axis == 1) {
+        float32x4_t prior0 = vdupq_n_f32(ptr_prior[0]);
+        float32x4_t prior1 = vdupq_n_f32(ptr_prior[1]);
+        float32x4_t prior2 = vdupq_n_f32(ptr_prior[2]);
+        float32x4_t prior3 = vdupq_n_f32(ptr_prior[3]);
+        vprior = {prior0, prior1, prior2, prior3};
+      }
+
       float32x4x4_t vloc = vld4q_f32(ptr_loc);
-      float32x4x4_t vvar = vld4q_f32(ptr_var);
+      float32x4x4_t vvar;
+      if (var_len4) {
+        float32x4_t v0 = vdupq_n_f32(ptr_var[0]);
+        float32x4_t v1 = vdupq_n_f32(ptr_var[1]);
+        float32x4_t v2 = vdupq_n_f32(ptr_var[2]);
+        float32x4_t v3 = vdupq_n_f32(ptr_var[3]);
+        vvar = {v0, v1, v2, v3};
+      } else {
+        vvar = vld4q_f32(ptr_var);
+      }
       float32x4_t vprior_width1 = vsubq_f32(vprior.val[2], vprior.val[0]);
       float32x4_t vprior_height1 = vsubq_f32(vprior.val[3], vprior.val[1]);
       float32x4_t vprior_width = vaddq_f32(vprior_width1, vnormalized);
@@ -173,10 +202,18 @@ void decode_bbox_center_no_variance_kernel(const int batch_num,
 #pragma omp parallel for
     for (int i = cnt * 4; i < num_priors; i++) {
       int idx = i * 4;
-      float p_xmin = prior_data[idx];
-      float p_ymin = prior_data[idx + 1];
-      float p_xmax = prior_data[idx + 2];
-      float p_ymax = prior_data[idx + 3];
+      int var_idx = idx, prior_idx = idx;
+      if (axis == 1) {
+        var_idx = prior_idx = n * 4;
+      }
+      if (var_len4) {
+        var_idx = 0;
+      }
+
+      float p_xmin = prior_data[prior_idx];
+      float p_ymin = prior_data[prior_idx + 1];
+      float p_xmax = prior_data[prior_idx + 2];
+      float p_ymax = prior_data[prior_idx + 3];
       float prior_width = p_xmax - p_xmin + norm_value;
       float prior_height = p_ymax - p_ymin + norm_value;
       float prior_center_x = p_xmin + prior_width / 2.f;
@@ -190,11 +227,13 @@ void decode_bbox_center_no_variance_kernel(const int batch_num,
       //! variance is encoded in target, we simply need to retore the offset
       //! predictions.
       float decode_bbox_center_x =
-          variance[idx] * xmin * prior_width + prior_center_x;
+          variance[var_idx] * xmin * prior_width + prior_center_x;
       float decode_bbox_center_y =
-          variance[idx + 1] * ymin * prior_height + prior_center_y;
-      float decode_bbox_width = expf(variance[idx + 2] * xmax) * prior_width;
-      float decode_bbox_height = expf(variance[idx + 3] * ymax) * prior_height;
+          variance[var_idx + 1] * ymin * prior_height + prior_center_y;
+      float decode_bbox_width =
+          expf(variance[var_idx + 2] * xmax) * prior_width;
+      float decode_bbox_height =
+          expf(variance[var_idx + 3] * ymax) * prior_height;
 
       ptr_bbox_batch[idx] = decode_bbox_center_x - decode_bbox_width / 2.f;
       ptr_bbox_batch[idx + 1] = decode_bbox_center_y - decode_bbox_height / 2.f;
@@ -207,25 +246,29 @@ void decode_bbox_center_no_variance_kernel(const int batch_num,
 }
 
 void decode_bboxes(const int batch_num,
+                   const int axis,
                    const float* loc_data,
                    const float* prior_data,
                    const float* variance_data,
+                   const bool var_len4,
                    const std::string code_type,
                    const bool normalized,
                    const int num_priors,
                    float* bbox_data) {
-  if (code_type == "encode_center_size") {
+  if (code_type == "decode_center_size") {
+    decode_bbox_center_kernel(batch_num,
+                              axis,
+                              loc_data,
+                              prior_data,
+                              variance_data,
+                              var_len4,
+                              num_priors,
+                              normalized,
+                              bbox_data);
+  } else if (code_type == "encode_center_size") {
     decode_bbox_center_variance_kernel(
         batch_num, loc_data, prior_data, variance_data, num_priors, bbox_data);
 
-  } else if (code_type == "decode_center_size") {
-    decode_bbox_center_no_variance_kernel(batch_num,
-                                          loc_data,
-                                          prior_data,
-                                          variance_data,
-                                          num_priors,
-                                          normalized,
-                                          bbox_data);
   } else {
     LOG(FATAL) << "box_coder don't support this code_type: " << code_type;
   }
