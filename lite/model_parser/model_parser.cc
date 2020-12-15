@@ -673,16 +673,17 @@ void LoadModelNaiveFromFile(const std::string &filename,
 #endif
       break;
     case 1:
-      LoadModelFbsFromFile(filename, scope, cpp_prog, 1);
+      LoadModelFbsFromFile(reader, scope, cpp_prog, 1);
       break;
     case 2:
-      LoadModelFbsFromFile(filename, scope, cpp_prog, 2);
+      LoadModelFbsFromFile(reader, scope, cpp_prog, 2);
       break;
     default:
       LOG(FATAL) << "The model format cannot be recognized. Please make sure "
                     "you use the correct interface and model file.";
       break;
   }
+  VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 #ifndef LITE_ON_TINY_PUBLISH
 void LoadModelNaiveV0FromFile(const std::string &filename,
@@ -736,19 +737,16 @@ void LoadModelNaiveV0FromFile(const std::string &filename,
   // (5)Load Params
   LoadCombinedParamsNaive(
       prog_path, reader.current() + topo_size, scope, *cpp_prog, false);
-
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 #endif  // LITE_ON_TINY_PUBLISH
-void LoadModelFbsFromFile(const std::string &filename,
+void LoadModelFbsFromFile(model_parser::BinaryFileReader& reader,
                           Scope *scope,
                           cpp::ProgramDesc *cpp_prog,
                           uint16_t meta_version) {
   CHECK(cpp_prog);
   CHECK(scope);
   CHECK_EQ(cpp_prog->BlocksSize(), 0);
-  // meta_version
-  model_parser::BinaryFileReader reader(filename, sizeof(uint16_t));
 
   // get opt version
   char opt_version[16];
@@ -805,7 +803,6 @@ void LoadModelFbsFromFile(const std::string &filename,
       LOG(FATAL) << "Unspported model meta_version " << meta_version;
       break;
   }
-  VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 
 void LoadModelNaiveFromMemory(const std::string &model_buffer,

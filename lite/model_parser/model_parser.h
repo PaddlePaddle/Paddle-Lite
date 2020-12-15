@@ -126,7 +126,7 @@ void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
 #endif  // LITE_ON_TINY_PUBLISH
-void LoadModelFbsFromFile(const std::string& filename,
+void LoadModelFbsFromFile(model_parser::BinaryFileReader& reader,
                           Scope* scope,
                           cpp::ProgramDesc* cpp_prog,
                           uint16_t meta_version);
