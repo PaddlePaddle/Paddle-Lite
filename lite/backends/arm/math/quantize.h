@@ -13,24 +13,17 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <cstdint>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
 
-template <PrecisionType Ptype>
-class LstmCompute : public KernelLite<TARGET(kARM), Ptype> {
- public:
-  void Run() override;
-
-  virtual ~LstmCompute() = default;
-};
-
+void QuantizeActvation(
+    const float* input, int8_t* output, float* scale, int size, int bit_length);
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
