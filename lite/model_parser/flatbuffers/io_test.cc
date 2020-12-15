@@ -117,7 +117,10 @@ TEST(CombinedParamsDesc, Scope) {
   {
     Scope scope_3;
     LOG(INFO) << "Load params from string buffer...";
-    model_parser::Buffer buf{model_parser::LoadFile(path)};
+    model_parser::BinaryFileReader file_reader(path);
+    model_parser::Buffer buf(file_reader.length());
+    file_reader.Read(buf.data(), file_reader.length());
+
     std::string str{static_cast<const char*>(buf.data()), buf.size()};
 
     model_parser::StringBufferReader reader(str);
