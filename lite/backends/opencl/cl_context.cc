@@ -189,7 +189,6 @@ cl::NDRange CLContext::DefaultLocalWorkSize(
     int divisor /*=2*/,
     bool tune_reverse /*=false*/,
     size_t user_defined_max_work_size /*=0*/) {
-  int preferred_lws = 0;
   int gws0 = global_work_size[0];
   int gws1 = global_work_size[1];
   int gws2 = global_work_size[2];
