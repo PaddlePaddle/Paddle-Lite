@@ -43,7 +43,7 @@ enum class L3CacheSetMethod {
 };
 
 // return true if current device supports OpenCL model
-LITE_API bool IsOpenCLBackendValid();
+LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = false);
 
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
@@ -140,8 +140,9 @@ class LITE_API ConfigBase {
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
-  // gpu
-  size_t enable_opencl_tune_{0};
+  // gpu opencl
+  CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
+  CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
   int device_id_{0};
@@ -159,8 +160,9 @@ class LITE_API ConfigBase {
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
   // set GPU opencl tune
-  void set_opencl_tune(size_t enable_tune);
-  size_t opencl_tune() const { return enable_opencl_tune_; }
+  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE);
+  // set GPU opencl precision
+  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
   // set subgraph_model_dir
   void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
     subgraph_model_cache_dir_ = subgraph_model_cache_dir;
