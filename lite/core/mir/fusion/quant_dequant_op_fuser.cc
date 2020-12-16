@@ -388,6 +388,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (auto* quantized_node : output_var_node->outlinks) {
     auto op_info = *quantized_node->stmt()->op_info();
     op_info.UpdateAllInputs(output_var_name, input_var_name);
+    op_info.SetAttr<int>("bit_length", bit_length);
 
     if (input_var_is_weight) {
       // the quant axis of conv2d and depthwise_conv2d is 0
