@@ -49,21 +49,12 @@ void* get_allocation(lite::Tensor* tensor);
 const void* get_allocation(const lite::Tensor& tensor);
 }  // namespace tensor
 
-class MetaInfo {};
-
-class MetaInfoDeserializer {
- public:
-  void LoadWithForwardReader(ByteReader* reader) const {
-    int64_t size = reader->ReadForward<int64_t>();
-    CHECK_EQ(size, 0);
-  }
-};
-
+namespace pb {
 class LoDTensorDeserializer {
  public:
   LoDTensorDeserializer() : buf_(new Buffer) {}
 
-  void LoadWithForwardReader(lite::Tensor* tensor, ByteReader* reader);
+  void ForwardRead(lite::Tensor* tensor, ByteReader* reader);
 
  private:
   std::unique_ptr<Buffer> buf_;
@@ -73,15 +64,16 @@ class LoDTensorDeserializer {
 class LoDTensorSerializer {
  public:
   LoDTensorSerializer() : buf_(new Buffer) {}
-  void SaveWithForwardWriter(const lite::Tensor& tensor,
-                             ByteWriter* writer,
-                             uint32_t version = 0);
+  void ForwardWrite(const lite::Tensor& tensor,
+                    ByteWriter* writer,
+                    uint32_t version = 0);
 
  private:
   std::unique_ptr<Buffer> buf_;
 };
 #endif  // LITE_ON_TINY_PUBLISH
 
+}  // namespace pb
 }  // namespace model_parser
 }  // namespace lite
 }  // namespace paddle

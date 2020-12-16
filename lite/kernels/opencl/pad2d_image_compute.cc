@@ -171,7 +171,7 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
  protected:
   param_t* pad2d_param_{nullptr};
   std::string kernel_func_name_{};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

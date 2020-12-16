@@ -24,15 +24,19 @@
 #define __ai static inline __attribute__((__always_inline__, __nodebug__))
 
 __ai int32x4_t vld1q_s32_wrap(const int32_t* p0) { return vld1q_s32(p0); }
+#undef vld1q_s32
 #define vld1q_s32 vld1q_s32_wrap
 
 __ai void vst1q_s32_wrap(int32_t* a, int32x4_t b) { return vst1q_s32(a, b); }
+#undef vst1q_s32
 #define vst1q_s32 vst1q_s32_wrap
 
 __ai float32x4_t vld1q_f32_wrap(const float* p0) { return vld1q_f32(p0); }
+#undef vld1q_f32
 #define vld1q_f32 vld1q_f32_wrap
 
 __ai void vst1q_f32_wrap(float* a, float32x4_t b) { return vst1q_f32(a, b); }
+#undef vst1q_f32
 #define vst1q_f32 vst1q_f32_wrap
 
 #undef __ai
@@ -48,6 +52,8 @@ neon_relu_float(const float32x4_t& a) {
   constexpr float32x4_t zero = {0, 0, 0, 0};
   return vmaxq_f32(a, zero);
 }
+
+struct NullNeonConfig {};
 
 template <class Config1, class Config2>
 struct MergeConfig : public Config1, public Config2 {};
@@ -76,30 +82,44 @@ struct BasicConfig<float> {
   constexpr static auto neon_st = vst1q_f32;
 };
 
+enum class ActiveType { NO_ACTIVE, RELU };
+
+template <ActiveType, class DataType>
+struct ActiveConfig {};
+
 template <class DataType>
-struct NoActiveConfig {
+struct ActiveConfig<ActiveType::NO_ACTIVE, DataType> {
   constexpr static DataType (*naive_active)(DataType) = nullptr;
   constexpr static typename BasicConfig<DataType>::NeonT (*neon_active)(
       const typename BasicConfig<DataType>::NeonT&) = nullptr;
 };
 
-struct F32ReluConfig {
+template <>
+struct ActiveConfig<ActiveType::RELU, float> {
   constexpr static float (*naive_active)(float) = naive_relu<float>;
   constexpr static float32x4_t (*neon_active)(const float32x4_t&) =
       neon_relu_float;
 };
 
-struct I32AddConfig : public BasicConfig<int32_t> {
+template <class T>
+struct AddConfig {};
+
+template <>
+struct AddConfig<int32_t> : public BasicConfig<int32_t> {
   constexpr static auto naive_op = naive_add<int32_t>;
   constexpr static auto neon_op = vaddq_s32;
 };
-
-struct F32AddConfig : public BasicConfig<float> {
+template <>
+struct AddConfig<float> : public BasicConfig<float> {
   constexpr static auto naive_op = naive_add<float>;
   constexpr static auto neon_op = vaddq_f32;
 };
 
-struct I32SubConfig : public BasicConfig<int32_t> {
+template <class T>
+struct SubConfig {};
+
+template <>
+struct SubConfig<int32_t> : public BasicConfig<int32_t> {
   constexpr static auto naive_op = naive_sub<int32_t>;
   constexpr static auto neon_op = vsubq_s32;
 };
