@@ -749,6 +749,9 @@ void test_rotate(const std::vector<int>& cluster_id,
         CHECK_EQ(rst, true) << "compute result error";
       }
       LOG(INFO) << "image rotate end";
+      delete[] src;
+      delete[] basic_dst;
+      delete[] lite_dst;
     }
   }
 }
@@ -837,8 +840,8 @@ void test_flip(const std::vector<int>& cluster_id,
       } else if (srcFormat == ImageFormat::GRAY) {
         size = srch * srcw;
       }
-      uint8_t* src = new uint8_t[size];
-      fill_tensor_host_rand(src, size);
+      uint8_t* src = new uint8_t[2 * size];
+      fill_tensor_host_rand(src, 2 * size);
 
       int out_size = srch * srcw;
       if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
@@ -852,8 +855,8 @@ void test_flip(const std::vector<int>& cluster_id,
       } else if (dstFormat == ImageFormat::GRAY) {
         out_size = srch * srcw;
       }
-      uint8_t* basic_dst = new uint8_t[out_size];
-      uint8_t* lite_dst = new uint8_t[out_size];
+      uint8_t* basic_dst = new uint8_t[2 * out_size];
+      uint8_t* lite_dst = new uint8_t[2 * out_size];
       if (FLAGS_check_result) {
         image_flip_basic(
             src, basic_dst, (ImageFormat)dstFormat, srcw, srch, flip);
@@ -916,6 +919,9 @@ void test_flip(const std::vector<int>& cluster_id,
         CHECK_EQ(rst, true) << "compute result error";
       }
       LOG(INFO) << "image flip end";
+      delete[] src;
+      delete[] basic_dst;
+      delete[] lite_dst;
     }
   }
 }
@@ -1088,6 +1094,9 @@ void test_resize(const std::vector<int>& cluster_id,
         CHECK_EQ(rst, true) << "compute result error";
       }
       LOG(INFO) << "image Resize end";
+      delete[] src;
+      delete[] basic_dst;
+      delete[] lite_dst;
     }
   }
 }
@@ -1267,6 +1276,9 @@ void test_convert(const std::vector<int>& cluster_id,
         CHECK_EQ(rst, true) << "compute result error";
       }
       LOG(INFO) << "image convert end";
+      delete[] src;
+      delete[] basic_dst;
+      delete[] lite_dst;
     }
   }
 }
