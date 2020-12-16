@@ -46,7 +46,7 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/PaddleLite-android-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[PaddleLite-android-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/PaddleLite-android-demo_v2_8_0.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-android-demo
