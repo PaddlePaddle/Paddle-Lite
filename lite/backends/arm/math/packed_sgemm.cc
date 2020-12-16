@@ -311,7 +311,7 @@ void sgemm_prepack(bool is_transB,
                         has_bias,
                         act_param,
                         ctx);
-  } else if (ctx->arch() == kA53) {
+  } else if (ctx->arch() == kA53 || ctx->arch() == kA35) {
     sgemm_prepacked_8x12_a53(is_transB,
                              M,
                              N,
@@ -358,7 +358,7 @@ void sgemm_prepack(bool is_transB,
                         has_bias,
                         act_param,
                         ctx);
-  } else if (ctx->arch() == kA53) {
+  } else if (ctx->arch() == kA53 || ctx->arch() == kA35) {
     auto act_type = act_param.active_type;
     bool has_act = act_param.has_active;
     bool act_flag =
