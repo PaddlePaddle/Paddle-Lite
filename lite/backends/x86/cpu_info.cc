@@ -26,6 +26,8 @@
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <windows.h>
+#undef min
+#undef max
 #else
 #include <unistd.h>
 #endif  // _WIN32
