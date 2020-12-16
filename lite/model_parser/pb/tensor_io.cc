@@ -72,6 +72,7 @@ void LoDTensorDeserializer::ForwardRead(lite::Tensor* tensor,
   uint32_t version = reader->Read<uint32_t>();
   switch (version) {
     case 0: {
+#ifndef LITE_ON_TINY_PUBLISH
       // Load the lod-tensor.
       uint64_t lod_level = reader->Read<uint64_t>();
       std::vector<std::vector<uint64_t>> lod(lod_level);
