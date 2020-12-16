@@ -34,34 +34,42 @@ void AffineGridCompute::PrepareForRun() {
   const float* din = x->data<float>();
   lite::Tensor* out = param.Out;
   float* dout = param.Out->mutable_data<float>();
-  int N = x->dims()[0];
-  int H = param.output_shape[2];
-  int W = param.output_shape[3];
-
-  vh = reinterpret_cast<float*>(malloc(sizeof(float) * H));
-  vw = reinterpret_cast<float*>(malloc(sizeof(float) * W));
+  int H = out->dims()[1];
+  int W = out->dims()[2];
+  if (param.output_shape.size() == 0) {
+    const auto out_shape = param.OutputShape->data<int>();
+    H = out_shape[2];
+    W = out_shape[3];
+  } else {
+    H = param.output_shape[2];
+    W = param.output_shape[3];
+  }
+  bool align_corners = param.align_corners;
+  std::vector<float> vvh(H);
+  vh = vvh.data();
+  std::vector<float> vvw(W);
+  vw = vvw.data();
   int out_size = H * W * 3;
+  vhw3.resize(out_size);
+  hw3 = vhw3.data();
   float scale = 2 / (static_cast<float>(H) - 1);
+  float start = -1.0f;
+  if (!align_corners) {
+    scale = 2 / static_cast<float>(H);
+    start *= (static_cast<float>(H) - 1) / static_cast<float>(H);
+  }
   for (int i = 0; i < H; i++) {
-    vh[i] = -1 + scale * i;
+    vh[i] = start + scale * i;
   }
   scale = 2 / (static_cast<float>(W) - 1);
-  for (int i = 0; i < W; i++) {
-    vw[i] = -1 + i * scale;
+  start = -1.0f;
+  if (!align_corners) {
+    scale = 2 / static_cast<float>(W);
+    start *= (static_cast<float>(W) - 1) / static_cast<float>(W);
   }
-  return;
-}
-void AffineGridCompute::Run() {
-  auto& param = Param<operators::AffineGridParam>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
-
-  const lite::Tensor* x = param.X;
-  int N = x->dims()[0];
-
-  int H = param.output_shape[2];
-  int W = param.output_shape[3];
-  int out_size = H * W * 3;
-  float* hw3 = ctx.workspace_data<float>() + ctx.llc_size() / sizeof(float);
+  for (int i = 0; i < W; i++) {
+    vw[i] = start + i * scale;
+  }
 
   for (int i = 0; i < out_size; i += 3) {
     hw3[i] = 1;
@@ -75,10 +83,19 @@ void AffineGridCompute::Run() {
   for (int i = 0; i < H * W; i++) {
     hw3[i * 3] = vw[i % W];
   }
+  return;
+}
+void AffineGridCompute::Run() {
+  auto& param = Param<operators::AffineGridParam>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
 
+  const lite::Tensor* x = param.X;
+  lite::Tensor* out = param.Out;
+  int N = x->dims()[0];
+  int H = out->dims()[1];
+  int W = out->dims()[2];
   const float* din = x->data<float>();
   float* dout = param.Out->mutable_data<float>();
-  float* tmp = dout;
   operators::ActivationParam act_param;
   act_param.has_active = false;
   for (int i = 0; i < N; i++) {
@@ -119,5 +136,6 @@ REGISTER_LITE_KERNEL(affine_grid,
                      paddle::lite::kernels::arm::AffineGridCompute,
                      def)
     .BindInput("Theta", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("OutputShape", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
