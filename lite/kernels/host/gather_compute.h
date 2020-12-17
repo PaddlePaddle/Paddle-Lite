@@ -13,30 +13,32 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include <vector>
+#include <stdint.h>
 #include "lite/core/kernel.h"
-
+#include "lite/core/op_registry.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class AffineGridCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename IndexType, typename AxisType>
+class GatherCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::AffineGridParam;
-  void PrepareForRun() override;
-
   void Run() override;
 
-  virtual ~AffineGridCompute() = default;
-  float* vh;
-  float* vw;
-  float* hw3;
-  std::vector<float> vhw3;
+  ~GatherCompute() {}
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+typedef paddle::lite::kernels::host::GatherCompute<int32_t, int32_t>
+    GatherInt32Int32;
+typedef paddle::lite::kernels::host::GatherCompute<int64_t, int64_t>
+    GatherInt64Int64;
+typedef paddle::lite::kernels::host::GatherCompute<int64_t, int32_t>
+    GatherInt64Int32;
+typedef paddle::lite::kernels::host::GatherCompute<int32_t, int64_t>
+    GatherInt32Int64;
