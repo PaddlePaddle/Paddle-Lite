@@ -20,17 +20,17 @@ if(NOT XPU_SDK_ROOT)
     INCLUDE(ExternalProject)
 
     if(LITE_WITH_X86)
-        SET(XPU_URL "https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-centos6.3-x86_64-gcc8.2.0-latest.tar.gz")
+        set(XPU_URL "https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-centos6.3-x86_64-gcc8.2.0-latest.tar.gz")
     elseif(LITE_WITH_ARM)
-        SET(XPU_URL "https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-ubuntu18.04.4-cross_compiling-aarch64-gcc5.4-latest.tar.gz")
+        set(XPU_URL "https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-ubuntu18.04.4-cross_compiling-aarch64-gcc5.4-latest.tar.gz")
     else()
         message(FATAL_ERROR "xpu doesn't supported the host device")
     endif()
 
-    SET(XPU_SOURCE_DIR "${THIRD_PARTY_PATH}/xpu")
+    set(XPU_SOURCE_DIR "${THIRD_PARTY_PATH}/xpu")
 
     ExternalProject_Add(
-        extern_xpu
+        extern_xpu_sdk
         ${EXTERNAL_PROJECT_LOG_ARGS}
         DOWNLOAD_DIR          ${XPU_SOURCE_DIR}
         DOWNLOAD_COMMAND      wget --no-check-certificate -c -q -O xpu_toolchain.tar.gz ${XPU_URL} && tar xf xpu_toolchain.tar.gz
@@ -45,50 +45,47 @@ endif()
 
 message(STATUS "XPU_SDK_ROOT: ${XPU_SDK_ROOT}")
 
-SET(XPU_XTDK_INCLUDE_DIR    "${XPU_SDK_ROOT}/XTDK/include" CACHE PATH "xpu xtdk include directory" FORCE)
-SET(XPUAPI_LIB              "${XPU_SDK_ROOT}/XTDK/shlib/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
-SET(XPURT_LIB               "${XPU_SDK_ROOT}/XTDK/runtime/shlib/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
+set(XPU_XTDK_INCLUDE_DIR    "${XPU_SDK_ROOT}/XTDK/include" CACHE PATH "xpu xtdk include directory" FORCE)
+set(XPUAPI_LIB              "${XPU_SDK_ROOT}/XTDK/shlib/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
+set(XPURT_LIB               "${XPU_SDK_ROOT}/XTDK/runtime/shlib/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
 
 INCLUDE_DIRECTORIES(${XPU_XTDK_INCLUDE_DIR})
 
-add_library(xpu_src INTERFACE)
-add_dependencies(xpu_src extern_xpu)
-
 ADD_LIBRARY(xpuapi SHARED IMPORTED GLOBAL)
 SET_PROPERTY(TARGET xpuapi PROPERTY IMPORTED_LOCATION ${XPUAPI_LIB})
-ADD_DEPENDENCIES(xpuapi extern_xpu)
+ADD_DEPENDENCIES(xpuapi extern_xpu_sdk)
 
 ADD_LIBRARY(xpurt SHARED IMPORTED GLOBAL)
 SET_PROPERTY(TARGET xpurt PROPERTY IMPORTED_LOCATION ${XPURT_LIB})
-ADD_DEPENDENCIES(xpurt extern_xpu)
+ADD_DEPENDENCIES(xpurt extern_xpu_sdk)
 
 set(xpu_runtime_libs xpuapi xpurt CACHE INTERNAL "xpu runtime libs")
 set(xpu_builder_libs xpuapi xpurt CACHE INTERNAL "xpu builder libs")
 
 if(LITE_WITH_XTCL)
-    SET(XPU_XTCL_INCLUDE_DIR  "${XPU_SDK_ROOT}/XTCL/include" CACHE PATH "xpu xtcl include directory" FORCE)
-    SET(XTCL_LIB              "${XPU_SDK_ROOT}/XTCL/lib/libxtcl.a" CACHE FILEPATH "libxtcl.a" FORCE)
-    SET(TVM_LIB               "${XPU_SDK_ROOT}/XTCL/shlib/libtvm.so" CACHE FILEPATH "libtvm.so" FORCE)
-    SET(LLVM_8_LIB            "${XPU_SDK_ROOT}/XTCL/shlib/libLLVM-8.so" CACHE FILEPATH "libLLVM-8.so" FORCE)
-    SET(XPUJITC_LIB           "${XPU_SDK_ROOT}/XTCL/shlib/libxpujitc.so" CACHE FILEPATH "libxpujitc.so" FORCE)
+    set(XPU_XTCL_INCLUDE_DIR  "${XPU_SDK_ROOT}/XTCL/include" CACHE PATH "xpu xtcl include directory" FORCE)
+    set(XTCL_LIB              "${XPU_SDK_ROOT}/XTCL/lib/libxtcl.a" CACHE FILEPATH "libxtcl.a" FORCE)
+    set(TVM_LIB               "${XPU_SDK_ROOT}/XTCL/shlib/libtvm.so" CACHE FILEPATH "libtvm.so" FORCE)
+    set(LLVM_8_LIB            "${XPU_SDK_ROOT}/XTCL/shlib/libLLVM-8.so" CACHE FILEPATH "libLLVM-8.so" FORCE)
+    set(XPUJITC_LIB           "${XPU_SDK_ROOT}/XTCL/shlib/libxpujitc.so" CACHE FILEPATH "libxpujitc.so" FORCE)
 
     INCLUDE_DIRECTORIES(${XPU_XTCL_INCLUDE_DIR})
 
     ADD_LIBRARY(xtcl SHARED IMPORTED GLOBAL)
     SET_PROPERTY(TARGET xtcl PROPERTY IMPORTED_LOCATION ${XTCL_LIB})
-    ADD_DEPENDENCIES(xtcl extern_xpu)
+    ADD_DEPENDENCIES(xtcl extern_xpu_sdk)
 
     ADD_LIBRARY(tvm SHARED IMPORTED GLOBAL)
     SET_PROPERTY(TARGET tvm PROPERTY IMPORTED_LOCATION ${TVM_LIB})
-    ADD_DEPENDENCIES(tvm extern_xpu)
+    ADD_DEPENDENCIES(tvm extern_xpu_sdk)
 
     ADD_LIBRARY(llvm_8 SHARED IMPORTED GLOBAL)
     SET_PROPERTY(TARGET llvm_8 PROPERTY IMPORTED_LOCATION ${LLVM_8_LIB})
-    ADD_DEPENDENCIES(llvm_8 extern_xpu)
+    ADD_DEPENDENCIES(llvm_8 extern_xpu_sdk)
 
     ADD_LIBRARY(xpujitc SHARED IMPORTED GLOBAL)
     SET_PROPERTY(TARGET xpujitc PROPERTY IMPORTED_LOCATION ${XPUJITC_LIB})
-    ADD_DEPENDENCIES(xpujitc extern_xpu)
+    ADD_DEPENDENCIES(xpujitc extern_xpu_sdk)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1")
 
