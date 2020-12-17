@@ -14,6 +14,7 @@ set BUILD_PLATFORM=x64
 set MSVC_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
 set WITH_OPENCL=OFF
+set WITH_AVX=ON
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
 set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
@@ -42,6 +43,8 @@ if /I "%1"=="with_extra" (
     set WITH_STATIC_MKL=ON
 ) else if /I  "%1"=="with_opencl" (
     set WITH_OPENCL=ON
+) else if /I  "%1"=="without_avx" (
+    set WITH_AVX=OFF
 ) else if /I  "%1"=="build_for_ci" (
     set BUILD_FOR_CI=ON
     set WITH_TESTING=ON
@@ -75,6 +78,7 @@ echo "|  BUILD_PLATFORM=%BUILD_PLATFORM%                                        
 echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                                                  |"
 echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
 echo "|  WITH_OPENCL=%WITH_OPENCL%                                                                          |"
+echo "|  WITH_AVX=%WITH_AVX%                                                                              |"
 echo "------------------------------------------------------------------------------------------------------|"
 
 
@@ -123,6 +127,7 @@ cd "%build_directory%"
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
+            -DWITH_AVX=%WITH_AVX% ^
             -DLITE_WITH_X86=ON  ^
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DWITH_LITE=ON ^
@@ -276,6 +281,7 @@ echo "|      build_x86: Enable building for Windows x86 platform. Default is x64
 echo "|      with_dynamic_crt: Enable building for MSVC Dynamic Runtime. Default is Static.                 |"
 echo "|      with_static_mkl: Enable Static linking Intel(R) MKL. Default is Dynamic.                       |"
 echo "|      with_opencl: Enable OpenCL for GPU accelerator. Default OFF.                                   |"
+echo "|      without_avx: Enable AVX or SSE for X86 kernels. Default is ON.                                 |"
 echo "|  for example:                                                                                       |"   
 echo "|      build_windows.bat with_log with_profile with_python with_extra                                 |"
 echo "|      build_windows.bat build_x86 with_strip D:\Paddle-Lite\opt_model_dir                            |"
