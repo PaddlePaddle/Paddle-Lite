@@ -46,13 +46,18 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   // process quant_dequant_node
+  // TODO(pjc): support channelwise_quantize_dequantize op
   std::vector<std::string> quant_dequant_op_types = {
       "fake_quantize_dequantize_abs_max",
       "fake_quantize_dequantize_moving_average_abs_max"};
   for (auto& op_type : quant_dequant_op_types) {
-    fusion::DeleteQuantDequantOpFuser dqd_fuser(op_type);
+    fusion::QuantDequantOpFuser dqd_fuser(op_type);
     dqd_fuser(graph.get());
   }
+
+  // process dynamic quant op
+  fusion::DynamicQuantOpFuser lstm_dq_fuser("lstm", "Weight");
+  lstm_dq_fuser(graph.get());
 }
 
 }  // namespace mir

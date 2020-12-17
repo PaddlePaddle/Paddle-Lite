@@ -23,9 +23,11 @@ namespace arm {
 namespace math {
 
 void decode_bboxes(const int batch_num,
+                   const int axis,
                    const float* loc_data,
                    const float* prior_data,
                    const float* variance_data,
+                   const bool var_len4,
                    const std::string code_type,
                    const bool normalized,
                    const int num_priors,
