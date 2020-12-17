@@ -159,14 +159,9 @@ RuntimeProgram::RuntimeProgram(
     int block_idx)
     : exec_scope_(exec_scope) {
 #ifdef LITE_WITH_OPENCL
-#ifdef LITE_WITH_ANDROID
   bool opencl_valid = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
                       paddle::lite::CLWrapper::Global()->DlsymSuccess() &&
                       CLRuntime::Global()->OpenCLAvaliableForDevice();
-#else
-  bool opencl_valid = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
-                      paddle::lite::CLWrapper::Global()->DlsymSuccess();
-#endif  // LITE_WITH_ANDROID
   using OpenCLContext = Context<TargetType::kOpenCL>;
   std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
   if (opencl_valid) {
