@@ -1355,6 +1355,7 @@ struct AffineGridParam : ParamBase {
   std::vector<int> output_shape;
   const lite::Tensor* OutputShape;
   lite::Tensor* Out{};
+  bool align_corners{true};
 };
 
 struct AnchorGeneratorParam : ParamBase {
@@ -1480,6 +1481,7 @@ struct MatMulParam : ParamBase {
 struct GatherParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Index{};
+  const lite::Tensor* Axis{nullptr};
   lite::Tensor* Out{};
 };
 
@@ -1706,6 +1708,8 @@ struct LstmParam : ParamBase {
   std::string gate_activation;
   std::string cell_activation;
   std::string candidate_activation;
+  // for int8
+  WITH_INT8_CONFIG
 };
 
 struct CrfDecodingParam : ParamBase {

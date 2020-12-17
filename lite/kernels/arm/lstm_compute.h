@@ -22,8 +22,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename T>
-class LstmCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype>
+class LstmCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   void Run() override;
 

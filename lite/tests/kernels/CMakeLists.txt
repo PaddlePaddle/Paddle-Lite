@@ -75,6 +75,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_unstack_compute SRCS unstack_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_range_compute SRCS range_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_affine_channel_compute SRCS affine_channel_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_affine_grid_compute SRCS affine_grid_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_anchor_generator_compute SRCS anchor_generator_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_matrix_nms_compute SRCS matrix_nms_compute_test.cc DEPS ${test_kernel_deps})
 

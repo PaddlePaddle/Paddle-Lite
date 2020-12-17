@@ -103,7 +103,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     auto* x = grid_param_->x;
-    auto* grid = grid_param_->grid;
+    //  auto* grid = grid_param_->grid;
     auto* out = grid_param_->out;
 
     auto out_dims = out->dims();
@@ -172,7 +172,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::Kernel kernel_;
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

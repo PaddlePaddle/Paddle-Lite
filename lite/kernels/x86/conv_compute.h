@@ -17,12 +17,12 @@
 #include <string>
 #include <vector>
 #include "lite/backends/x86/math/blas.h"
+#include "lite/backends/x86/math/conv_utils.h"
 #include "lite/backends/x86/math/im2col.h"
 #include "lite/backends/x86/math/vol2col.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "lite/fluid/eigen.h"
 #include "lite/operators/conv_op.h"
 
 namespace paddle {
@@ -47,8 +47,19 @@ inline bool IsExpand(const std::vector<int64_t>& filter_dim,
 template <typename T>
 class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ConvParam;
-  void Run() override {
+  virtual void PrepareForRun();
+
+  virtual void ReInitWhenNeeded() {
+    if (impl_) {
+      impl_->ReInitWhenNeeded();
+    }
+  }
+
+  virtual void Run() {
+    if (impl_) {
+      return impl_->Run();
+    }
+    // To-do(qili93): remove below lines of code after all kernels implemented
     auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::ConvParam>();
     lite::Tensor filter = *param.filter;
@@ -145,9 +156,61 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                     T(0.0));
       }
     }
+
+    // for bias
+    if (param.bias) {
+      const int output_channel = static_cast<int>(param.output->dims()[1]);
+      const int output_number =
+          param.output->dims().production() /
+          (param.output->dims()[0] * param.output->dims()[1]);
+      auto* bias_data = param.bias->template data<T>();
+      auto* out_data = param.output->template mutable_data<T>();
+      auto act_param = param.activation_param;
+      if (act_param.has_active) {
+        if (act_param.active_type == lite_api::ActivationType::kRelu) {
+          lite::x86::math::bias_add_relu_broadcast(out_data,
+                                                   bias_data,
+                                                   out_data,
+                                                   batch_size,
+                                                   output_channel,
+                                                   output_number);
+        } else if (act_param.active_type == lite_api::ActivationType::kRelu6) {
+          lite::x86::math::bias_add_relu6_broadcast(out_data,
+                                                    bias_data,
+                                                    out_data,
+                                                    batch_size,
+                                                    output_channel,
+                                                    output_number);
+        } else {
+          LOG(FATAL) << "[X86] unsupported Activation type";
+        }
+      } else {
+        lite::x86::math::bias_add_broadcast(out_data,
+                                            bias_data,
+                                            out_data,
+                                            batch_size,
+                                            output_channel,
+                                            output_number);
+      }
+    }
   }
 
-  virtual ~Conv2dCompute() = default;
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    impl_->SetProfileRuntimeKernelInfo(ch);
+  }
+#endif
+
+  ~Conv2dCompute() {
+    if (impl_ != nullptr) {
+      delete impl_;
+    }
+  }
+
+ private:
+  using param_t = operators::ConvParam;
+  KernelLite<TARGET(kX86), PRECISION(kFloat)>* impl_{nullptr};
 };
 
 }  // namespace x86

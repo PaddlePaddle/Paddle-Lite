@@ -115,9 +115,10 @@ void prepackA_int8(void* out,
                    int kmax,
                    bool is_trans,
                    ARMContext* ctx) {
-#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
-  if (is_trans) {
-    if (ctx->has_dot()) {
+#ifdef __aarch64__
+  if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+    if (is_trans) {
       prepackA_m8k4_trans_int8(static_cast<int8_t*>(out),
                                static_cast<const int8_t*>(in),
                                ldin,
@@ -126,16 +127,6 @@ void prepackA_int8(void* out,
                                k0,
                                kmax);
     } else {
-      prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
-                                 static_cast<const int8_t*>(in),
-                                 ldin,
-                                 m0,
-                                 mmax,
-                                 k0,
-                                 kmax);
-    }
-  } else {
-    if (ctx->has_dot()) {
       prepackA_m8k4_int8(static_cast<int8_t*>(out),
                          static_cast<const int8_t*>(in),
                          ldin,
@@ -143,6 +134,17 @@ void prepackA_int8(void* out,
                          mmax,
                          k0,
                          kmax);
+    }
+#endif
+  } else {
+    if (is_trans) {
+      prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
+                                 static_cast<const int8_t*>(in),
+                                 ldin,
+                                 m0,
+                                 mmax,
+                                 k0,
+                                 kmax);
     } else {
       prepackA_m4k2x2_int8(static_cast<int8_t*>(out),
                            static_cast<const int8_t*>(in),
@@ -153,9 +155,11 @@ void prepackA_int8(void* out,
                            kmax);
     }
   }
+
 #else
-  if (is_trans) {
-    if (ctx->has_dot()) {
+  if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+    if (is_trans) {
       prepackA_m6k4_trans_int8(static_cast<int8_t*>(out),
                                static_cast<const int8_t*>(in),
                                ldin,
@@ -164,16 +168,6 @@ void prepackA_int8(void* out,
                                k0,
                                kmax);
     } else {
-      prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
-                                 static_cast<const int8_t*>(in),
-                                 ldin,
-                                 m0,
-                                 mmax,
-                                 k0,
-                                 kmax);
-    }
-  } else {
-    if (ctx->has_dot()) {
       prepackA_m6k4_int8(static_cast<int8_t*>(out),
                          static_cast<const int8_t*>(in),
                          ldin,
@@ -181,6 +175,17 @@ void prepackA_int8(void* out,
                          mmax,
                          k0,
                          kmax);
+    }
+#endif
+  } else {
+    if (is_trans) {
+      prepackA_m4k2x2_trans_int8(static_cast<int8_t*>(out),
+                                 static_cast<const int8_t*>(in),
+                                 ldin,
+                                 m0,
+                                 mmax,
+                                 k0,
+                                 kmax);
     } else {
       prepackA_m4k2x2_int8(static_cast<int8_t*>(out),
                            static_cast<const int8_t*>(in),
@@ -191,6 +196,7 @@ void prepackA_int8(void* out,
                            kmax);
     }
   }
+
 #endif
 }
 
@@ -3836,7 +3842,8 @@ void packb_trans_int8(int8_t* out,
   }
 }
 
-#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+#ifdef WITH_ARM_DOTPROD
+#ifdef __aarch64__
 
 template <typename Dtype>
 void gemm_prepack_sdot_int8(const int8_t* A_packed,
@@ -5257,7 +5264,7 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
     }
   }
 }
-
+#endif
 #endif  // dotprod  //NOLINT
 
 template <>
@@ -5295,8 +5302,9 @@ void gemm_prepack_int8(const int8_t* A_packed,
       alpha[3] = local_alpha;
     }
   }
-#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+#ifdef __aarch64__
   if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
     gemm_prepack_sdot_int8<float32_t>(A_packed,
                                       B,
                                       bias,
@@ -5310,6 +5318,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                       scale,
                                       alpha,
                                       ctx);
+#endif
   } else {
     gemm_prepack_oth_int8<float32_t>(A_packed,
                                      B,
@@ -5327,6 +5336,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
   }
 #else
   if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
     gemm_prepack_vsdot_int8<float32_t>(A_packed,
                                        B,
                                        bias,
@@ -5340,6 +5350,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                        scale,
                                        alpha,
                                        ctx);
+#endif
   } else {
     gemm_prepack_oth_int8<float32_t>(A_packed,
                                      B,
@@ -5393,8 +5404,9 @@ void gemm_prepack_int8(const int8_t* A_packed,
       alpha[3] = local_alpha;
     }
   }
-#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+#ifdef __aarch64__
   if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
     gemm_prepack_sdot_int8<int8_t>(A_packed,
                                    B,
                                    bias,
@@ -5408,6 +5420,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                    scale,
                                    alpha,
                                    ctx);
+#endif
   } else {
     gemm_prepack_oth_int8<int8_t>(A_packed,
                                   B,
@@ -5425,6 +5438,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
   }
 #else
   if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
     gemm_prepack_vsdot_int8<int8_t>(A_packed,
                                     B,
                                     bias,
@@ -5438,6 +5452,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                     scale,
                                     alpha,
                                     ctx);
+#endif
   } else {
     gemm_prepack_oth_int8<int8_t>(A_packed,
                                   B,
