@@ -74,7 +74,9 @@ inline lite::model_parser::Buffer GenerateProgramCache() {
   op_b1.SetAttr<bool>("Attr1", true);
 
   /* --------- Cache Program ---------- */
-  return program.data();
+  model_parser::Buffer buffer;
+  program.CopyDataToBuffer(&buffer);
+  return buffer;
 }
 
 inline void CheckProgramCache(ProgramDesc* program) {

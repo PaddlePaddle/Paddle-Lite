@@ -915,6 +915,7 @@ void conv_compute_2x2_3x3(const float* input,
     }  // for block_count
   }    // for num
 }  // conv_compute
+
 void conv_compute_2x2_3x3_small(const float* input,
                                 float* output,
                                 int num,
@@ -1171,6 +1172,17 @@ void conv_compute_2x2_3x3_small(const float* input,
     }  // for block_count
   }    // for num
 }  // conv_compute
+
+/*
+AT = [
+    1   1   1   1   1   1     1     0
+    0   1   -1  2   -2  1/2   -1/2  0
+    0   1   1   4   4   1/4   1/4   0
+    0   1   -1  8   -8  1/8   -1/8  0
+    0   1   1   16  16  1/16  1/16  0
+    0   1   -1  32  -32 1/32  -1/32 0
+]
+*/
 void output_trans_c4_6x8(const float* src,
                          int src_stride,
                          float* dest,
@@ -1263,16 +1275,6 @@ void output_trans_c4_post_6x8(const float* src,
     dest5 = vaddq_f32(dest5, bias);
   }
 
-  if (has_relu) {
-    float32x4_t zeros = vdupq_n_f32(0);
-    dest0 = vmaxq_f32(dest0, zeros);
-    dest1 = vmaxq_f32(dest1, zeros);
-    dest2 = vmaxq_f32(dest2, zeros);
-    dest3 = vmaxq_f32(dest3, zeros);
-    dest4 = vmaxq_f32(dest4, zeros);
-    dest5 = vmaxq_f32(dest5, zeros);
-  }
-
   vst1q_f32(dest, dest0);
   vst1q_f32(dest + dest_stride, dest1);
   vst1q_f32(dest + dest_stride * 2, dest2);
@@ -1281,6 +1283,14 @@ void output_trans_c4_post_6x8(const float* src,
   vst1q_f32(dest + dest_stride * 5, dest5);
 }
 
+/*
+AT = [
+    1   1   1   1   1   0
+    0   1   -1  2   -2  0
+    0   1   1   4   4   0
+    0   1   -1  8   -8  0
+]
+*/
 void output_trans_c4_4x6(const float* src,
                          int src_stride,
                          float* dest,
@@ -1341,20 +1351,24 @@ void output_trans_c4_post_4x6(const float* src,
     dest3 = vaddq_f32(dest3, bias);
   }
 
-  if (has_relu) {
-    float32x4_t zeros = vdupq_n_f32(0);
-    dest0 = vmaxq_f32(dest0, zeros);
-    dest1 = vmaxq_f32(dest1, zeros);
-    dest2 = vmaxq_f32(dest2, zeros);
-    dest3 = vmaxq_f32(dest3, zeros);
-  }
-
   vst1q_f32(dest, dest0);
   vst1q_f32(dest + dest_stride, dest1);
   vst1q_f32(dest + dest_stride * 2, dest2);
   vst1q_f32(dest + dest_stride * 3, dest3);
 }
 
+/*
+BT = [
+   1    0     -21/4   0     -21/4     0     -1  0
+   0    1     1     -17/4   -17/4     1     1   0
+   0    -1    1     17/4    -17/4     -1    1   0
+   0    1/2   1/4   -5/2    -5/4      2     1   0
+   0    -1/2  1/4   5/2     -5/4      -2    1   0
+   0    2     4   -5/2      -5        1/2   1   0
+   0    -2    4     5/2     -5        -1/2  1   0
+   0    -1    0     21/4    0         -21/4 0   1
+]
+*/
 void input_trans_c4_8x8(const float* src,
                         int src_stride,
                         float* dest,
@@ -1587,14 +1601,6 @@ void output_trans_c4_post_2x4(const float* src,
     dest10 = vaddq_f32(dest10, bias);
     dest01 = vaddq_f32(dest01, bias);
     dest11 = vaddq_f32(dest11, bias);
-  }
-
-  if (has_relu) {
-    float32x4_t zeros = vdupq_n_f32(0);
-    dest00 = vmaxq_f32(dest00, zeros);
-    dest10 = vmaxq_f32(dest10, zeros);
-    dest01 = vmaxq_f32(dest01, zeros);
-    dest11 = vmaxq_f32(dest11, zeros);
   }
 
   vst1q_f32(dest, dest00);

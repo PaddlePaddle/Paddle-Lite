@@ -120,7 +120,7 @@ class TrigonometricComputeImage2D
 #endif
 
  private:
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
   param_t* trigonometric_param_{nullptr};
