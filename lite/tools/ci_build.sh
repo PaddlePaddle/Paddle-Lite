@@ -1141,7 +1141,6 @@ function test_arm_model {
     local test_name=$1
     local device=$2
     local model_dir=$3
-    local data_dir=$4   # not necessary
 
     if [[ "${test_name}x" == "x" ]]; then
         echo "test_name can not be empty"
@@ -1164,14 +1163,7 @@ function test_arm_model {
     adb -s ${device} push ${testpath} ${adb_work_dir}
     adb -s ${device} shell chmod +x "${adb_work_dir}/${test_name}"
     local adb_model_path="${adb_work_dir}/`basename ${model_dir}`"
-    if [ $data_dir ]
-    then
-        adb -s ${device} push ${data_dir} ${adb_work_dir}
-        local adb_data_path="${adb_work_dir}/`basename ${data_dir}`"
-        adb -s ${device} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path --data_dir=$adb_data_path"
-    else
-        adb -s ${device} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
-    fi
+    adb -s ${device} shell "${adb_work_dir}/${test_name} --model_dir=$adb_model_path"
 }
 
 # function _test_model_optimize_tool {
@@ -1521,7 +1513,6 @@ function build_test_arm_subtask_model {
 
     local test_name=$1
     local model_name=$2
-    local data_name=$3  # not necessary
 
     cur_dir=$(pwd)
     build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
@@ -1533,12 +1524,7 @@ function build_test_arm_subtask_model {
     adb -s $device_armv8 shell 'rm -rf /data/local/tmp/*'
 
     # just test the model on armv8
-    if [ $data_name ]
-    then
-        test_arm_model $test_name $device_armv8 "./third_party/install/$model_name" "./third_party/install/$data_name"
-    else
-        test_arm_model $test_name $device_armv8 "./third_party/install/$model_name"
-    fi
+    test_arm_model $test_name $device_armv8 "./third_party/install/$model_name"
 
     if [ $USE_ADB_EMULATOR == "ON" ]; then
         adb devices | grep emulator | cut -f1 | while read line; do adb -s $line emu kill; done
@@ -1807,7 +1793,6 @@ function main {
                 build_test_arm_subtask_model test_inceptionv4 inception_v4_simple
                 build_test_arm_subtask_model test_fast_rcnn fast_rcnn_fluid184
                 build_test_arm_subtask_model test_transformer_with_mask_fp32_arm transformer_with_mask_fp32
-                build_test_arm_subtask_model test_mobilenet_v1_int8_dygraph_arm mobilenetv1_int8_dygraph_for_arm ILSVRC2012_small  
                 shift
                 ;;
             build_test_arm_subtask_armlinux)
