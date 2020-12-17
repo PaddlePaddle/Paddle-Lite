@@ -3787,7 +3787,8 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
     }
   }
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block = (l2_cache - (MBLOCK * K)) / (sizeof(float) * (K + MBLOCK));
+  int x_block = (l2_cache * 9 / 10 - (MBLOCK * K * sizeof(float))) /
+                (sizeof(float) * (K + MBLOCK));
   x_block /= NBLOCK;
   x_block *= NBLOCK;
   int x_num = (N + (x_block - 1)) / x_block;
@@ -6034,8 +6035,8 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
   auto* workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block =
-      (l2_cache - (MBLOCK_OTH * K)) / (sizeof(float) * (K + MBLOCK_OTH));
+  int x_block = (l2_cache * 9 / 10 - (MBLOCK_OTH * K * sizeof(float))) /
+                (sizeof(float) * (K + MBLOCK_OTH));
   x_block /= NBLOCK;
   x_block *= NBLOCK;
   int x_num = (N + (x_block - 1)) / x_block;
