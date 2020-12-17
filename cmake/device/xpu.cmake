@@ -16,30 +16,30 @@ if(NOT LITE_WITH_XPU)
     return()
 endif()
 
-INCLUDE(ExternalProject)
-
-if(LITE_WITH_X86)
-    SET(XPU_URL "https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-centos6.3-x86_64-gcc8.2.0-latest.tar.gz")
-elseif(LITE_WITH_ARM)
-    SET(XPU_URL "https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-ubuntu18.04.4-cross_compiling-aarch64-gcc5.4-latest.tar.gz")
-else()
-    message(FATAL_ERROR "xpu doesn't supported the host device")
-endif()
-
-SET(XPU_SOURCE_DIR "${THIRD_PARTY_PATH}/xpu")
-
-ExternalProject_Add(
-    extern_xpu
-    ${EXTERNAL_PROJECT_LOG_ARGS}
-    DOWNLOAD_DIR          ${XPU_SOURCE_DIR}
-    DOWNLOAD_COMMAND      wget --no-check-certificate -c -q -O xpu_toolchain.tar.gz ${XPU_URL} && tar xf xpu_toolchain.tar.gz
-    CONFIGURE_COMMAND     ""
-    BUILD_COMMAND         ""
-    UPDATE_COMMAND        ""
-    INSTALL_COMMAND       ""
-)
-
 if(NOT XPU_SDK_ROOT)
+    INCLUDE(ExternalProject)
+
+    if(LITE_WITH_X86)
+        SET(XPU_URL "https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-centos6.3-x86_64-gcc8.2.0-latest.tar.gz")
+    elseif(LITE_WITH_ARM)
+        SET(XPU_URL "https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-ubuntu18.04.4-cross_compiling-aarch64-gcc5.4-latest.tar.gz")
+    else()
+        message(FATAL_ERROR "xpu doesn't supported the host device")
+    endif()
+
+    SET(XPU_SOURCE_DIR "${THIRD_PARTY_PATH}/xpu")
+
+    ExternalProject_Add(
+        extern_xpu
+        ${EXTERNAL_PROJECT_LOG_ARGS}
+        DOWNLOAD_DIR          ${XPU_SOURCE_DIR}
+        DOWNLOAD_COMMAND      wget --no-check-certificate -c -q -O xpu_toolchain.tar.gz ${XPU_URL} && tar xf xpu_toolchain.tar.gz
+        CONFIGURE_COMMAND     ""
+        BUILD_COMMAND         ""
+        UPDATE_COMMAND        ""
+        INSTALL_COMMAND       ""
+    )
+
     set(XPU_SDK_ROOT ${XPU_SOURCE_DIR}/xpu_toolchain)
 endif()
 
