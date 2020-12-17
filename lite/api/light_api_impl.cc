@@ -32,11 +32,11 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
         new LightPredictor(config.model_dir(),
                            config.model_buffer(),
                            config.param_buffer(),
-                           config.model_from_memory(),
+                           config.is_model_from_memory(),
                            lite_api::LiteModelType::kNaiveBuffer));
   } else {
     raw_predictor_.reset(new LightPredictor(config.lite_model_file(),
-                                            config.model_from_memory()));
+                                            config.is_model_from_memory()));
   }
   mode_ = config.power_mode();
   threads_ = config.threads();

@@ -2,7 +2,7 @@ if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_PYTHON) AND (NOT LITE_W
     return()
 endif()
 
-set(fpga_deps fpga_target_wrapper kernel_fpga)
+set(fpga_deps fpga_target_wrapper kernel_fpga fbs_headers)
 
 
 # add_kernel(activation_compute_fpga FPGA basic SRCS activation_compute.cc DEPS ${fpga_deps})

@@ -15,7 +15,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "lite/model_parser/flatbuffers/memory.h"
+#include "lite/model_parser/base/io.h"
 #include "lite/model_parser/flatbuffers/program_desc.h"
 
 namespace paddle {
@@ -23,7 +23,7 @@ namespace lite {
 namespace fbs {
 namespace test {
 #ifdef LITE_WITH_FLATBUFFERS_DESC
-inline lite::fbs::Buffer GenerateProgramCache() {
+inline lite::model_parser::Buffer GenerateProgramCache() {
   /* --------- Set Program --------- */
   ProgramDesc program;
   program.SetVersion(1000600);
@@ -74,7 +74,9 @@ inline lite::fbs::Buffer GenerateProgramCache() {
   op_b1.SetAttr<bool>("Attr1", true);
 
   /* --------- Cache Program ---------- */
-  return program.data();
+  model_parser::Buffer buffer;
+  program.CopyDataToBuffer(&buffer);
+  return buffer;
 }
 
 inline void CheckProgramCache(ProgramDesc* program) {
