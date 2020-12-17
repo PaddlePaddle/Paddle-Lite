@@ -318,7 +318,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   std::string kernel_func_name_{"instance_norm_onnx"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
   cl::Kernel kernel_;
   cl::NDRange gws_, lws_;

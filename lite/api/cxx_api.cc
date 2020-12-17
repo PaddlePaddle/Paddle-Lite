@@ -31,6 +31,39 @@ std::vector<std::string> GetAllOps() {
   return OpLiteFactory::Global().GetAllOps();
 }
 
+bool IsQuantizedMode(const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
+  const std::vector<std::string> quant_dequant_op = {
+      "fake_quantize_abs_max",
+      "fake_quantize_range_abs_max",
+      "fake_quantize_moving_average_abs_max",
+      "fake_quantize_dequantize_moving_average_abs_max",
+      "fake_dequantize_max_abs",
+      "fake_channel_wise_dequantize_max_abs"};
+  const std::vector<std::string> dynamic_quant_op = {"lstm"};
+  bool is_quantized_model = false;
+  for (size_t i = 0; i < program_desc->BlocksSize() && !is_quantized_model;
+       ++i) {
+    auto *block_desc = program_desc->GetBlock<cpp::BlockDesc>(i);
+    for (size_t j = 0; j < block_desc->OpsSize() && !is_quantized_model; ++j) {
+      auto *op_desc = block_desc->GetOp<cpp::OpDesc>(j);
+      std::string op_type = op_desc->Type();
+      if (std::find(quant_dequant_op.begin(),
+                    quant_dequant_op.end(),
+                    op_type) != quant_dequant_op.end()) {
+        is_quantized_model = true;
+      }
+      if (std::find(dynamic_quant_op.begin(),
+                    dynamic_quant_op.end(),
+                    op_type) != dynamic_quant_op.end()) {
+        if (op_desc->HasAttr("quantization_type")) {
+          is_quantized_model = true;
+        }
+      }
+    }
+  }
+  return is_quantized_model;
+}
+
 void Predictor::SaveModel(const std::string &dir,
                           lite_api::LiteModelType model_type,
                           bool record_info) {
@@ -313,30 +346,7 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
         Place(TARGET(kHost), valid_place.precision, valid_place.layout));
   }
 
-  // Analysis whether the modle is quantized.
-  // For quantized model, add place(arm, int8) to inner_places
-  const std::vector<std::string> quant_dequant_op = {
-      "fake_quantize_abs_max",
-      "fake_quantize_range_abs_max",
-      "fake_quantize_moving_average_abs_max",
-      "fake_quantize_dequantize_moving_average_abs_max",
-      "fake_dequantize_max_abs",
-      "fake_channel_wise_dequantize_max_abs"};
-  bool is_quantized_model = false;
-  for (size_t i = 0; i < program_desc_->BlocksSize() && !is_quantized_model;
-       ++i) {
-    auto *block_desc = program_desc_->GetBlock<cpp::BlockDesc>(i);
-    for (size_t j = 0; j < block_desc->OpsSize() && !is_quantized_model; ++j) {
-      auto *op_desc = block_desc->GetOp<cpp::OpDesc>(j);
-      std::string op_type = op_desc->Type();
-      if (std::find(quant_dequant_op.begin(),
-                    quant_dequant_op.end(),
-                    op_type) != quant_dequant_op.end()) {
-        is_quantized_model = true;
-      }
-    }
-  }
-  if (is_quantized_model) {
+  if (IsQuantizedMode(program_desc_)) {
     inner_places.insert(inner_places.begin(),
                         Place{TARGET(kARM), PRECISION(kInt8)});
   }
