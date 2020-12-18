@@ -75,6 +75,9 @@ class ActivationOp : public OpLite {
       case lite_api::ActivationType::kHardSwish:
         ch->macs = param_.X->numel() * 5.0;
         break;
+      case lite_api::ActivationType::kHardSigmoid:
+        ch->macs = param_.X->numel() * 4.0;
+        break;
       case lite_api::ActivationType::kReciprocal:
         ch->macs = param_.X->numel();
         break;
