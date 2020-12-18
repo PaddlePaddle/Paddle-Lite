@@ -124,6 +124,9 @@ set(COMMON_FLAGS
     -Wextra
     -Wnon-virtual-dtor
     -Wdelete-non-virtual-dtor
+    -Wno-unused-but-set-variable  # Warnings in not-ensured type
+    -Wno-unknown-pragmas  # Warnings in opencl cl gen_code
+    -Wno-strict-aliasing  # Warnings in cl_half
     -Wno-unused-parameter
     -Wno-unused-function
     -Wno-error=literal-suffix
