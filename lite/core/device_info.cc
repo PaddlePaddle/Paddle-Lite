@@ -161,6 +161,9 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
         case 0xd03:
           arch_type = kA53;
           break;
+        case 0xd04:
+          arch_type = kA35;
+          break;
         case 0xd05:
           arch_type = kA55;
           break;

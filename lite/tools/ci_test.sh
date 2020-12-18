@@ -851,10 +851,6 @@ function main() {
             TOOLCHAIN_LIST="${i#*=}"
             shift
             ;;
-        --unit_test_skip_list=*)
-            UNIT_TEST_CHECK_LIST="${i#*=}"
-            shift
-            ;;
         --unit_test_check_list=*)
             UNIT_TEST_CHECK_LIST="${i#*=}"
             shift

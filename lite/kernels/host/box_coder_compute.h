@@ -13,32 +13,24 @@
 // limitations under the License.
 
 #pragma once
-
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include "lite/operators/op_params.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
-inline float GetScale(float threshold, int bit_length) {
-  return threshold / ((1 << (bit_length - 1)) - 1);
-}
+class BoxCoderCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::BoxCoderParam;
 
-float FindAbsMax(const float* input, int size);
+  void Run() override;
 
-template <typename T>
-void QuantizeTensor(const float* input, T* output, int size, float scale) {
-  auto quant_func = [scale](float x) {
-    return static_cast<T>(std::round(x / scale));
-  };
-  std::transform(input, input + size, output, quant_func);
-}
+  virtual ~BoxCoderCompute() = default;
+};
 
-}  // namespace math
-}  // namespace arm
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
