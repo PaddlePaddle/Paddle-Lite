@@ -417,18 +417,25 @@ TEST(Activation_relu_clipped, precision) {
 }
 
 TEST(Activation_prelu, precision) {
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-
+  LOG(INFO) << "test prelu op";
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 2, 4}}) {
     for (auto mode : {"all", "channel", "element"}) {
       std::unique_ptr<arena::TestCase> tester(new ActivationComputeTester(
           place, "def", 0.01, 6, mode, 0., 1.0, DDim(dims), "prelu", PRELU));
-      arena::Arena arena(std::move(tester), place, 2e-5);
+      arena::Arena arena(std::move(tester), place, abs_error);
       arena.TestPrecision();
     }
   }
-#endif
 }
 
 TEST(Activation_sigmoid, precision) {
@@ -645,11 +652,14 @@ TEST(Activation_gelu, precision) {
   }
 }
 
-TEST(activation_hard_swish, precision) {
+TEST(Activation_hard_swish, precision) {
   Place place;
   float abs_error = 2e-5;
 
-#if defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
   return;
