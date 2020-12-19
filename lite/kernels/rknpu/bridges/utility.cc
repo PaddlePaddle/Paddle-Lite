@@ -27,53 +27,92 @@ namespace lite {
 namespace subgraph {
 namespace rknpu {
 
-rk::nn::PrecisionType ToRknpuPrecisionType(PrecisionType precision) {
-  rk::nn::PrecisionType t = rk::nn::PrecisionType::UNKNOWN;
-
-  switch (precision) {
+rk::nn::PrecisionType ToRknpuPrecisionType(PrecisionType itype) {
+  rk::nn::PrecisionType otype = rk::nn::PrecisionType::UNKNOWN;
+  switch (itype) {
     case PrecisionType::kFloat:
-      t = rk::nn::PrecisionType::FLOAT32;
+      otype = rk::nn::PrecisionType::FLOAT32;
       break;
     case PrecisionType::kFP16:
-      t = rk::nn::PrecisionType::FLOAT16;
+      otype = rk::nn::PrecisionType::FLOAT16;
       break;
     case PrecisionType::kInt16:
-      t = rk::nn::PrecisionType::INT16;
+      otype = rk::nn::PrecisionType::INT16;
       break;
     case PrecisionType::kInt32:
-      t = rk::nn::PrecisionType::INT32;
+      otype = rk::nn::PrecisionType::INT32;
       break;
     case PrecisionType::kInt64:
-      t = rk::nn::PrecisionType::INT64;
+      otype = rk::nn::PrecisionType::INT64;
       break;
     case PrecisionType::kInt8:
-      t = rk::nn::PrecisionType::INT8;
+      otype = rk::nn::PrecisionType::INT8;
       break;
     case PrecisionType::kBool:
-      t = rk::nn::PrecisionType::BOOL8;
+      otype = rk::nn::PrecisionType::BOOL8;
       break;
     default:
+      LOG(FATAL) << "[Rockchip NPU] Can not convert precision type("
+                 << PrecisionToStr(itype) << ") from Lite to Rockchip NPU";
       break;
   }
-
-  return t;
+  return otype;
 }
 
-rk::nn::DataLayoutType ToRknpuDataLayoutType(DataLayoutType layout) {
-  rk::nn::DataLayoutType t = rk::nn::DataLayoutType::UNKNOWN;
-
-  switch (layout) {
+rk::nn::DataLayoutType ToRknpuDataLayoutType(DataLayoutType itype) {
+  rk::nn::DataLayoutType otype = rk::nn::DataLayoutType::UNKNOWN;
+  switch (itype) {
     case DataLayoutType::kNCHW:
-      t = rk::nn::DataLayoutType::NCHW;
+      otype = rk::nn::DataLayoutType::NCHW;
       break;
     case DataLayoutType::kNHWC:
-      t = rk::nn::DataLayoutType::NHWC;
+      otype = rk::nn::DataLayoutType::NHWC;
       break;
     default:
+      LOG(FATAL) << "[Rockchip NPU] Can not convert data layout type("
+                 << DataLayoutToStr(itype) << ") from Lite to Rockchip NPU";
       break;
   }
+  return otype;
+}
 
-  return t;
+std::shared_ptr<rk::nn::Tensor> ToRknpuTensor(rk::nn::Graph* graph,
+                                              const std::string& name,
+                                              const std::vector<int64_t>& shape,
+                                              const std::vector<float>& scales,
+                                              void* data,
+                                              PrecisionType precision,
+                                              DataLayoutType layout) {
+  auto attr = std::make_shared<rk::nn::TensorAttr>();
+  attr->precision = ToRknpuPrecisionType(precision);
+  attr->layout = ToRknpuDataLayoutType(layout);
+  attr->role =
+      data == nullptr ? rk::nn::TensorRole::VAR : rk::nn::TensorRole::CONST;
+  CHECK(!name.empty()) << "[Rockchip NPU] The name of RKNPU tensor is empty!";
+  attr->name = name;
+  switch (precision) {
+    case PrecisionType::kInt8:
+      attr->qntBits = 8;
+      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
+      attr->qntParamSymmetric.scale = scales;
+      break;
+    case PrecisionType::kInt32:
+      attr->qntBits = 32;
+      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
+      attr->qntParamSymmetric.scale = scales;
+      break;
+    default:
+      LOG(FATAL) << "[Rockchip NPU] Can not convert precision type("
+                 << PrecisionToStr(precision) << ") from Lite to Rockchip NPU";
+      break;
+  }
+  std::transform(
+      shape.cbegin(), shape.cend(), attr->dims.begin(), [](int64_t dim) {
+        return static_cast<int32_t>(dim);
+      });
+  auto tensor = graph->CreateTensor(attr, data);
+  CHECK(tensor != nullptr);
+  return tensor;
 }
 
 bool HasInputArg(const OpInfo* op_info,

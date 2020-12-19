@@ -25,15 +25,11 @@ std::unique_ptr<rk::nn::Exection> Device::Build(
     std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes,  // NOLINT
     std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes  // NOLINT
     ) {
-  VLOG(3) << "[RKNPU] Build model";
-
   rk_graph->SetInputsOutputs(input_nodes, output_nodes);
-
   std::unique_ptr<rk::nn::Exection> exector =
       std::unique_ptr<rk::nn::Exection>(new rk::nn::Exection(rk_graph));
-
   exector->Build();
-
+  VLOG(3) << "[Rockchip NPU] Load model done.";
   return exector;
 }
 
