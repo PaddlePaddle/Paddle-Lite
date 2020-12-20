@@ -273,7 +273,8 @@ void ConfigBase::set_opencl_tune(CLTuneMode tune_mode) {
     paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_);
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "opencl_tune_mode:"
-              << paddle::lite::CLRuntime::Global()->auto_tune();
+              << static_cast<size_t>(
+                     paddle::lite::CLRuntime::Global()->auto_tune());
 #endif
   }
 #endif
@@ -285,9 +286,9 @@ void ConfigBase::set_opencl_precision(CLPrecisionType p) {
     opencl_precision_ = p;
     paddle::lite::CLRuntime::Global()->set_precision(p);
 #ifdef LITE_WITH_LOG
-    LOG(INFO) << "set opencl precision:" << static_cast<size_t>(p);
     LOG(INFO) << "get opencl precision:"
-              << paddle::lite::CLRuntime::Global()->get_precision();
+              << static_cast<size_t>(
+                     paddle::lite::CLRuntime::Global()->get_precision());
 #endif
   }
 #endif
