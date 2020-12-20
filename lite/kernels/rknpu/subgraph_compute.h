@@ -65,7 +65,8 @@ class DeviceProgram {
   std::vector<PrecisionType> origin_otypes_;
   std::vector<rk::nn::InputInfo> device_itensors_{};
   std::vector<rk::nn::OutputInfo> device_otensors_{};
-  std::unique_ptr<rk::nn::Exection> model_execution_{nullptr};
+  std::shared_ptr<rk::nn::Graph> graph_{nullptr};
+  std::unique_ptr<rk::nn::Exection> execution_{nullptr};
 };
 
 class SubgraphEngine : public subgraph::SubgraphEngineBase {

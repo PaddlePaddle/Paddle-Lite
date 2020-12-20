@@ -28,9 +28,19 @@ namespace lite {
 namespace subgraph {
 namespace rknpu {
 
-rk::nn::PrecisionType ToRknpuPrecisionType(PrecisionType itype);
-rk::nn::DataLayoutType ToRknpuDataLayoutType(DataLayoutType itype);
-std::shared_ptr<rk::nn::Tensor> ToRknpuTensor(
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname);
+
+rk::nn::PrecisionType CvtPrecisionType(PrecisionType itype);
+
+rk::nn::DataLayoutType CvtDataLayoutType(DataLayoutType itype);
+
+std::vector<uint32_t> CvtShape(const std::vector<int64_t>& in_shape);
+
+std::vector<uint32_t> CvtShape(const DDim& in_dims);
+
+std::shared_ptr<rk::nn::Tensor> CvtTensor(
     rk::nn::Graph* graph,
     const std::string& name,
     const std::vector<int64_t>& shape,
@@ -38,9 +48,7 @@ std::shared_ptr<rk::nn::Tensor> ToRknpuTensor(
     void* data = nullptr,
     PrecisionType precision = PRECISION(kInt8),
     DataLayoutType layout = DATALAYOUT(kNCHW));
-bool HasInputArg(const OpInfo* op_info,
-                 const Scope* scope,
-                 const std::string& argname);
+
 }  // namespace rknpu
 }  // namespace subgraph
 }  // namespace lite

@@ -27,7 +27,25 @@ namespace lite {
 namespace subgraph {
 namespace rknpu {
 
-rk::nn::PrecisionType ToRknpuPrecisionType(PrecisionType itype) {
+bool HasInputArg(const OpInfo* op_info,
+                 const Scope* scope,
+                 const std::string& argname) {
+  auto iarg_names = op_info->input_argnames();
+  if (std::find(iarg_names.begin(), iarg_names.end(), argname) !=
+      iarg_names.end()) {
+    auto inputs = op_info->Input(argname);
+    if (inputs.empty()) {
+      return false;
+    }
+    auto var_name = inputs.front();
+    auto var = scope->FindVar(var_name);
+    return var != nullptr;
+  } else {
+    return false;
+  }
+}
+
+rk::nn::PrecisionType CvtPrecisionType(PrecisionType itype) {
   rk::nn::PrecisionType otype = rk::nn::PrecisionType::UNKNOWN;
   switch (itype) {
     case PrecisionType::kFloat:
@@ -59,7 +77,7 @@ rk::nn::PrecisionType ToRknpuPrecisionType(PrecisionType itype) {
   return otype;
 }
 
-rk::nn::DataLayoutType ToRknpuDataLayoutType(DataLayoutType itype) {
+rk::nn::DataLayoutType CvtDataLayoutType(DataLayoutType itype) {
   rk::nn::DataLayoutType otype = rk::nn::DataLayoutType::UNKNOWN;
   switch (itype) {
     case DataLayoutType::kNCHW:
@@ -76,20 +94,33 @@ rk::nn::DataLayoutType ToRknpuDataLayoutType(DataLayoutType itype) {
   return otype;
 }
 
-std::shared_ptr<rk::nn::Tensor> ToRknpuTensor(rk::nn::Graph* graph,
-                                              const std::string& name,
-                                              const std::vector<int64_t>& shape,
-                                              const std::vector<float>& scales,
-                                              void* data,
-                                              PrecisionType precision,
-                                              DataLayoutType layout) {
-  auto attr = std::make_shared<rk::nn::TensorAttr>();
-  attr->precision = ToRknpuPrecisionType(precision);
-  attr->layout = ToRknpuDataLayoutType(layout);
-  attr->role =
-      data == nullptr ? rk::nn::TensorRole::VAR : rk::nn::TensorRole::CONST;
+std::vector<uint32_t> CvtShape(const std::vector<int64_t>& in_shape) {
+  std::vector<uint32_t> out_shape;
+  for (size_t i = 0; i < in_shape.size(); i++) {
+    out_shape.push_back(static_cast<uint32_t>(in_shape[i]));
+  }
+  return out_shape;
+}
+
+std::vector<uint32_t> CvtShape(const DDim& in_dims) {
+  return CvtShape(in_dims.Vectorize());
+}
+
+std::shared_ptr<rk::nn::Tensor> CvtTensor(rk::nn::Graph* graph,
+                                          const std::string& name,
+                                          const std::vector<int64_t>& shape,
+                                          const std::vector<float>& scales,
+                                          void* data,
+                                          PrecisionType precision,
+                                          DataLayoutType layout) {
   CHECK(!name.empty()) << "[Rockchip NPU] The name of RKNPU tensor is empty!";
+  auto attr = std::make_shared<rk::nn::TensorAttr>();
   attr->name = name;
+  attr->role =
+      data == nullptr ? rk::nn::TensorRole::DATA : rk::nn::TensorRole::CONST;
+  attr->dims = CvtShape(shape);
+  attr->precision = CvtPrecisionType(precision);
+  attr->layout = CvtDataLayoutType(layout);
   switch (precision) {
     case PrecisionType::kInt8:
       attr->qntBits = 8;
@@ -106,32 +137,11 @@ std::shared_ptr<rk::nn::Tensor> ToRknpuTensor(rk::nn::Graph* graph,
                  << PrecisionToStr(precision) << ") from Lite to Rockchip NPU";
       break;
   }
-  std::transform(
-      shape.cbegin(), shape.cend(), attr->dims.begin(), [](int64_t dim) {
-        return static_cast<int32_t>(dim);
-      });
   auto tensor = graph->CreateTensor(attr, data);
   CHECK(tensor != nullptr);
   return tensor;
 }
 
-bool HasInputArg(const OpInfo* op_info,
-                 const Scope* scope,
-                 const std::string& argname) {
-  auto iarg_names = op_info->input_argnames();
-  if (std::find(iarg_names.begin(), iarg_names.end(), argname) !=
-      iarg_names.end()) {
-    auto inputs = op_info->Input(argname);
-    if (inputs.empty()) {
-      return false;
-    }
-    auto var_name = inputs.front();
-    auto var = scope->FindVar(var_name);
-    return var != nullptr;
-  } else {
-    return false;
-  }
-}
 }  // namespace rknpu
 }  // namespace subgraph
 }  // namespace lite

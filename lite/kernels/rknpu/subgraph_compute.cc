@@ -54,8 +54,7 @@ std::string DeviceProgram::GenerateModelName(
 
 // Deserialize the generated model, the precisions and dimensions of the origin
 // output tensors of the subgraph op from the cached configuration file and
-// .rknn
-// file
+// binary RK IR graph file
 bool DeviceProgram::LoadFromCacheFile(
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
@@ -67,7 +66,6 @@ bool DeviceProgram::LoadFromCacheFile(
   if (model_name_.empty()) {
     model_name_ = GenerateModelName(input_names, output_names, origin_idims);
   }
-  rk::nn::Graph graph;
   // Deserialize the preicisions, shapes and scales of the origin input/output
   // tensors from the cached configuration file
   auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
@@ -82,7 +80,9 @@ bool DeviceProgram::LoadFromCacheFile(
   std::vector<std::shared_ptr<rk::nn::Tensor>> device_inodes;
   auto inputs_outputs = Split<std::string>(str, "\n");
   CHECK_EQ(inputs_outputs.size(), 2);  // inputs and outputs
-  // Restore the input RKNPU IR nodes
+  // Create a new RK IR graph to restore from the cached binary file
+  graph_ = std::make_shared<rk::nn::Graph>();
+  // Restore the input RK IR nodes
   auto input_options = Split<std::string>(inputs_outputs[0], ";");
   CHECK_EQ(input_options.size(), input_names.size());
   for (int i = 0; i < input_names.size(); i++) {
@@ -90,14 +90,14 @@ bool DeviceProgram::LoadFromCacheFile(
     CHECK_EQ(items.size(), 1);  // only scales
     const auto& scales = Split<float>(items[0], ",");
     device_inodes.push_back(
-        subgraph::rknpu::ToRknpuTensor(&graph,
-                                       input_names[i],
-                                       origin_itensors[i]->dims().Vectorize(),
-                                       scales,
-                                       nullptr,
-                                       origin_itensors[i]->precision()));
+        subgraph::rknpu::CvtTensor(graph_.get(),
+                                   input_names[i],
+                                   origin_itensors[i]->dims().Vectorize(),
+                                   scales,
+                                   nullptr,
+                                   origin_itensors[i]->precision()));
   }
-  // Restore the output RKNPU IR node
+  // Restore the output RK IR nodes
   std::vector<std::shared_ptr<rk::nn::Tensor>> device_onodes;
   auto output_options = Split<std::string>(inputs_outputs[1], ";");
   CHECK_EQ(output_options.size(), output_names.size());
@@ -109,26 +109,26 @@ bool DeviceProgram::LoadFromCacheFile(
     origin_otypes_[i] = static_cast<PrecisionType>(std::stoi(items[0]));
     origin_odims_[i] = Split<int64_t>(items[1], ",");
     const auto& scales = Split<float>(items[2], ",");
-    device_onodes.push_back(subgraph::rknpu::ToRknpuTensor(&graph,
-                                                           output_names[i],
-                                                           origin_odims_[i],
-                                                           scales,
-                                                           nullptr,
-                                                           origin_otypes_[i]));
+    device_onodes.push_back(subgraph::rknpu::CvtTensor(graph_.get(),
+                                                       output_names[i],
+                                                       origin_odims_[i],
+                                                       scales,
+                                                       nullptr,
+                                                       origin_otypes_[i]));
   }
-  // Load from the cached model file
-  auto model_path = model_cache_dir + "/" + model_name_ + ".rknn";
+  // Load from the cached binary RK graph file
+  auto model_path = model_cache_dir + "/" + model_name_ + ".dat";
   VLOG(3) << "[Rockchip NPU] Load model from " << model_path;
-  if (graph.LoadCache(model_path, device_inodes, device_onodes) !=
+  if (graph_->LoadCache(model_path, device_inodes, device_onodes) !=
       rk::nn::RK_SUCCESS) {
     LOG(WARNING) << "[Rockchip NPU] Load cached binary graph from "
                  << model_path << " failed!";
     return false;
   }
-  // Create the RKNPU model and set the input and output nodes
-  model_execution_ = lite::rknpu::Device::Global().Build(
-      model_name_, &graph, device_inodes, device_onodes);
-  if (model_execution_ == nullptr) {
+  // Create the RK execution for inference, and set the input and output nodes
+  execution_ = lite::rknpu::Device::Global().Build(
+      model_name_, graph_.get(), device_inodes, device_onodes);
+  if (execution_ == nullptr) {
     LOG(WARNING) << "[Rockchip NPU] Build model failed!";
     return false;
   }
@@ -147,10 +147,25 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   if (model_name_.empty()) {
     model_name_ = GenerateModelName(input_names, output_names, origin_idims);
   }
-  // Convert all of ops and their input vars and weights and added into the NPU
-  // RKNPU IR graph
+  // Create a new RK IR graph
+  graph_ = std::make_shared<rk::nn::Graph>();
+  if (!model_cache_dir.empty()) {
+    // Enable caching the compiled RK IR graph to a binary file when the first
+    // run
+    auto model_path = model_cache_dir + "/" + model_name_ + ".dat";
+    if (graph_->EnableCreateCache(model_path) == rk::nn::RK_SUCCESS) {
+      VLOG(3) << "[Rockchip NPU] The compiled RK IR graph will be saved to "
+              << model_path << " when the first run";
+    } else {
+      LOG(WARNING)
+          << "[Rockchip NPU] Failed to cache the compiled RK IR graph to "
+          << model_path;
+    }
+  }
+  // Convert all of Paddle operators and variables to the RK IR nodes, and add
+  // them into the RK IR graph
   int status = 0;
-  subgraph::rknpu::Graph graph;
+  subgraph::rknpu::Graph graph(graph_.get());
   const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   CHECK(origin_program)
       << "[Rockchip NPU] The origin program is not initialized!";
@@ -173,7 +188,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
       return false;
     }
   }
-  // Collect the input and output nodes in the RKNPU IR graph
+  // Collect the input and output nodes from the RK IR graph
   std::vector<std::shared_ptr<rk::nn::Tensor>> device_inodes;
   for (size_t i = 0; i < input_names.size(); i++) {
     CHECK(graph.Has(input_names[i]));
@@ -185,10 +200,10 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     CHECK(graph.Has(output_names[i]));
     device_onodes.push_back(graph.Get(output_names[i])->data());
   }
-  // Create the RKNPU model and set the input and output nodes
-  model_execution_ = lite::rknpu::Device::Global().Build(
-      model_name_, graph.GetHandle(), device_inodes, device_onodes);
-  if (model_execution_ == nullptr) {
+  // Create the RK execution for inference, and set the input and output nodes
+  execution_ = lite::rknpu::Device::Global().Build(
+      model_name_, graph_.get(), device_inodes, device_onodes);
+  if (execution_ == nullptr) {
     LOG(WARNING) << "[Rockchip NPU] Build model failed!";
     return false;
   }
@@ -201,17 +216,9 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     origin_odims_[i] = origin_otensors[i]->dims().Vectorize();
   }
   if (!model_cache_dir.empty()) {
-    // Save the generated model to file, used for the model caching or the
-    // offline model generation
-    auto model_path = model_cache_dir + "/" + model_name_ + ".rknn";
-    VLOG(3) << "[Rockchip NPU] Save model to " << model_path;
-    if (graph.GetHandle()->EnableCreateCache(model_path) !=
-        rk::nn::RK_SUCCESS) {
-      LOG(WARNING) << "[Rockchip NPU] Enable caching the compiled model to "
-                   << model_path << " when first run failed.";
-    }
     // Serialize the precisions, shapes and scales of the origin input/output
-    // tensors into the configuration file
+    // tensors
+    // into the configuration file
     std::ostringstream os;
     for (int i = 0; i < input_names.size(); i++) {
       const auto& scales =
@@ -252,7 +259,7 @@ bool DeviceProgram::PrepareInputsOutputs(
     const std::vector<std::string>& output_names,
     std::vector<Tensor*>* origin_itensors,
     std::vector<Tensor*>* origin_otensors) {
-  CHECK(!model_name_.empty() && model_execution_);
+  CHECK(!model_name_.empty() && graph_ && execution_);
   // Check the dimensions of the device tensors and the origin tensors
   CHECK_EQ(origin_itensors->size(), input_names.size());
   CHECK_EQ(origin_otensors->size(), output_names.size());
@@ -265,11 +272,11 @@ bool DeviceProgram::PrepareInputsOutputs(
             << " dims:" << origin_itensors->at(i)->dims().repr() << " ";
     device_itensors_[i].index = i;
     device_itensors_[i].buf =
-        const_cast<void*>(origin_itensors->at(i)->raw_data());
+        reinterpret_cast<void*>(origin_itensors->at(i)->raw_data());
     device_itensors_[i].size = origin_itensors->at(i)->memory_size();
     device_itensors_[i].pass_through = false;
-    device_itensors_[i].type = subgraph::rknpu::ToRknpuPrecisionType(
-        origin_itensors->at(i)->precision());
+    device_itensors_[i].type =
+        subgraph::rknpu::CvtPrecisionType(origin_itensors->at(i)->precision());
     device_itensors_[i].layout = rk::nn::DataLayoutType::NCHW;
   }
   for (size_t i = 0; i < output_names.size(); i++) {
@@ -291,15 +298,18 @@ bool DeviceProgram::PrepareInputsOutputs(
     }
     device_otensors_[i].index = i;
     device_otensors_[i].buf =
-        const_cast<void*>(origin_otensors->at(i)->raw_data());
+        reinterpret_cast<void*>(origin_otensors->at(i)->raw_data());
     device_otensors_[i].size = origin_otensors->at(i)->memory_size();
     device_otensors_[i].want_float = false;
+    device_otensors_[i].type =
+        subgraph::rknpu::CvtPrecisionType(origin_otensors->at(i)->precision());
+    device_otensors_[i].layout = rk::nn::DataLayoutType::NCHW;
   }
   return true;
 }
 
 bool DeviceProgram::StartExecution() {
-  CHECK(!model_name_.empty() && model_execution_);
+  CHECK(!model_name_.empty() && graph_ && execution_);
   auto GetCurrentUS = []() -> double {
     struct timeval time;
     gettimeofday(&time, NULL);
@@ -307,9 +317,9 @@ bool DeviceProgram::StartExecution() {
   };
   int istamp;
   auto start_time = GetCurrentUS();
-  CHECK_EQ(model_execution_->SetInputs(device_itensors_), rk::nn::RK_SUCCESS);
-  CHECK_EQ(model_execution_->Run(), rk::nn::RK_SUCCESS);
-  CHECK_EQ(model_execution_->GetOutputs(device_otensors_), rk::nn::RK_SUCCESS);
+  CHECK_EQ(execution_->SetInputs(device_itensors_), rk::nn::RK_SUCCESS);
+  CHECK_EQ(execution_->Run(), rk::nn::RK_SUCCESS);
+  CHECK_EQ(execution_->GetOutputs(device_otensors_), rk::nn::RK_SUCCESS);
   VLOG(3) << "[Rockchip NPU] Process cost " << GetCurrentUS() - start_time
           << " us";
   return true;
@@ -353,26 +363,25 @@ bool SubgraphEngine::BuildDeviceProgram() {
         return false;
       }
     }
-    if (device_program->model_execution_ == nullptr) {
+    if (!device_program->graph_ || !device_program->execution_) {
       return false;
     }
     device_programs_[origin_idims_] = device_program;
   }
   auto device_program = device_programs_[origin_idims_];
-  CHECK(device_program && device_program->model_execution_);
+  CHECK(device_program && device_program->graph_ && device_program->execution_);
   return device_program->PrepareInputsOutputs(
       input_names_, output_names_, &origin_itensors_, &origin_otensors_);
 }
 
 bool SubgraphEngine::LaunchDeviceProgram() {
   // Roll back to launch the origin program if the device program can't be
-  // found or the model client isn't initialized.
-  if (device_programs_.count(origin_idims_) == 0 ||
-      device_programs_[origin_idims_]->model_execution_ == nullptr) {
+  // found or graph/execution isn't initialized.
+  if (!device_programs_.count(origin_idims_)) {
     return LaunchOriginProgram();
   }
   auto device_program = device_programs_[origin_idims_];
-  if (!device_program->model_execution_) {
+  if (!device_program->graph_ || !device_program->execution_) {
     return LaunchOriginProgram();
   }
   return device_program->StartExecution();
