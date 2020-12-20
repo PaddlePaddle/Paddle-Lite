@@ -156,7 +156,7 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
     }
   }
 #ifdef LITE_WITH_LOG
-  VLOG(4) << "precision_:" << precision_;
+  VLOG(4) << "precision_:" << static_cast<size_t>(precision_);
   VLOG(4) << "OpenCL build_option: " << build_option;
 #endif
   status_ = program->build({*device_}, build_option.c_str());
