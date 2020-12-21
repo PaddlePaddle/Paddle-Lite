@@ -19,6 +19,7 @@
 
 #ifndef PADDLE_LITE_API_H_  // NOLINT
 #define PADDLE_LITE_API_H_
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -201,6 +202,8 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string param_file_;
   std::shared_ptr<CxxModelBuffer> model_buffer_{nullptr};
   std::vector<std::string> passes_internal_{};
+  std::map<int, std::vector<std::shared_ptr<void>>>
+      preferred_inputs_for_warmup_;
 #ifdef LITE_WITH_CUDA
   bool multi_stream_{false};
 #endif
@@ -282,6 +285,21 @@ class LITE_API CxxConfig : public ConfigBase {
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
+
+  // set input tensor for warmup.
+  // It is optional. If you set prefered_inputs, model wil run immediately when
+  // predictor is created
+  template <class T>
+  void set_preferred_inputs_for_warmup(const int group_idx,
+                                       const int tensor_idx,
+                                       const shape_t& shape,
+                                       const lod_t& lod = {},
+                                       const T fill_value = 0,
+                                       const void* data = nullptr);
+  const std::map<int, std::vector<std::shared_ptr<void>>>&
+  preferred_inputs_for_warmup() const {
+    return preferred_inputs_for_warmup_;
+  }
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip
