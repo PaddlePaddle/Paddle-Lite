@@ -801,6 +801,17 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "str    q2, [%[c_ptr2]], #16\n" /*  write r2 */                  \
   "str    q3, [%[c_ptr3]], #16\n" /*  write r3 */
 
+
+#define GEMM_INT8_INT32_OUT               \
+  /* store result */                      \
+  "stp    q16, q17,   [%[c_ptr0]], #32\n" \
+  "stp    q18, q19,   [%[c_ptr0]], #32\n" \
+  "stp    q20, q21,   [%[c_ptr1]], #32\n" \
+  "stp    q22, q23,   [%[c_ptr1]], #32\n" \
+  "stp    q24, q25,   [%[c_ptr2]], #32\n" \
+  "stp    q26, q27,   [%[c_ptr2]], #32\n" \
+  "stp    q28, q29,   [%[c_ptr3]], #32\n" \
+  "stp    q30, q31,   [%[c_ptr3]], #32\n"
 // clang-format on
 
 template <>
@@ -854,6 +865,44 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   // clang-format off
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [b_ptr] "+r"(b_ptr),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [k] "+r"(k)
+               : [is_relu] "r"(is_relu),
+                 [alpha] "r"(alpha),
+                 [bias] "r"(bias),
+                 [rem] "r"(rem),
+                 [scale] "r"(scale),
+                 [vmax] "r"(vmax)
+               : "v0","v1","v2","v3","v4","v5","v6","v7",
+                 "v8","v9","v10","v11","v12",
+                 "v13","v14","v15","v16","v17",
+                 "v18","v19","v20","v21","v22",
+                 "v23","v24","v25","v26","v27",
+                 "v28","v29","v30","v31","cc", "memory");
+  // clang-format on
+}
+
+template <>
+inline void gemm_int8_kernel(const int8_t* a_ptr,
+                             const int8_t*& b_ptr,  // NOLINT
+                             const float* bias,
+                             int32_t*& c_ptr0,  // NOLINT
+                             int32_t*& c_ptr1,  // NOLINT
+                             int32_t*& c_ptr2,  // NOLINT
+                             int32_t*& c_ptr3,  // NOLINT
+                             const float32_t* scale,
+                             const float32_t* alpha,
+                             int is_relu,
+                             int k,
+                             int rem) {
+  // clang-format off
+  float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
+  asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
                  [c_ptr0] "+r"(c_ptr0),
@@ -1649,6 +1698,15 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "str s14,[%[c_ptr6]], #4\n"     /* store r6 */                \
   "str s15,[%[c_ptr7]], #4\n"     /* store r7 */
 
+#define GEMM_SDOT_INT32_OUT                                        \
+  "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   /* store r0 */ \
+  "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" /* store r1 */ \
+  "st1 {v14.4s, v15.4s, v16.4s},[%[c_ptr2]], #48\n" /* store r2 */ \
+  "st1 {v17.4s, v18.4s, v19.4s},[%[c_ptr3]], #48\n" /* store r3 */ \
+  "st1 {v20.4s, v21.4s, v22.4s},[%[c_ptr4]], #48\n" /* store r4 */ \
+  "st1 {v23.4s, v24.4s, v25.4s},[%[c_ptr5]], #48\n" /* store r5 */ \
+  "st1 {v26.4s, v27.4s, v28.4s},[%[c_ptr6]], #48\n" /* store r6 */ \
+  "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" /* store r7 */
 // clang-format on
 
 template <>
@@ -1712,6 +1770,47 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   // clang-format off
   float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT8_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [b_ptr] "+r"(b_ptr),
+                 [k] "+r"(k),
+                 [tail] "+r"(tail),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [c_ptr4] "+r"(c_ptr4),
+                 [c_ptr5] "+r"(c_ptr5),
+                 [c_ptr6] "+r"(c_ptr6),
+                 [c_ptr7] "+r"(c_ptr7)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), [vmax] "r"(vmax),
+                 [alpha] "r"(alpha)
+               : "cc","memory","v0","v1","v2","v3",
+                 "v4","v5","v6","v7","v8","v9","v10",
+                 "v11","v12","v13","v14","v15","v16","v17",
+                 "v18","v19","v20","v21","v22","v23","v24",
+                 "v25","v26","v27","v28","v29","v30","v31");
+  // clang-format on
+}
+template <>
+inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
+                                  const int8_t*& b_ptr,  // NOLINT
+                                  const float* bias,
+                                  int32_t*& c_ptr0,  // NOLINT
+                                  int32_t*& c_ptr1,  // NOLINT
+                                  int32_t*& c_ptr2,  // NOLINT
+                                  int32_t*& c_ptr3,  // NOLINT
+                                  int32_t*& c_ptr4,  // NOLINT
+                                  int32_t*& c_ptr5,  // NOLINT
+                                  int32_t*& c_ptr6,  // NOLINT
+                                  int32_t*& c_ptr7,  // NOLINT
+                                  const float32_t* scale,
+                                  const float32_t* alpha,
+                                  int is_relu,
+                                  int k,
+                                  int tail) {
+  // clang-format off
+  float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
+  asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
                  [k] "+r"(k),
@@ -2019,7 +2118,19 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   GEMM_DOT_RELU6             \
   GEMM_DOT_LEAKY_RELU        \
   GEMM_DOT_ST_INT8
-
+#define GEMM_DOT_INT32_OUT        \
+  "vst1.32 {q4}, [%[c_ptr0]]! \n" \
+  "vst1.32 {q6}, [%[c_ptr1]]! \n" \
+  "vst1.32 {q5}, [%[c_ptr0]]! \n" \
+  "vst1.32 {q7}, [%[c_ptr1]]! \n" \
+  "vst1.32 {q8}, [%[c_ptr2]]! \n" \
+  "vst1.32 {q9}, [%[c_ptr2]]! \n" \
+  "vst1.32 {q10},[%[c_ptr3]]! \n" \
+  "vst1.32 {q11},[%[c_ptr3]]! \n" \
+  "vst1.32 {q12},[%[c_ptr4]]! \n" \
+  "vst1.32 {q13},[%[c_ptr4]]! \n" \
+  "vst1.32 {q14},[%[c_ptr5]]! \n" \
+  "vst1.32 {q15},[%[c_ptr5]]! \n"
 template <typename Dtype>
 inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                                  const int8_t*& b_ptr,  // NOLINT
@@ -2089,6 +2200,43 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
 
   // clang-format off
   asm volatile(GEMM_DOT_INT8_KERNEL   GEMM_DOT_INT8_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [b_ptr] "+r"(b_ptr),
+                 [k] "+r"(k),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [c_ptr4] "+r"(c_ptr4),
+                 [c_ptr5] "+r"(c_ptr5)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), 
+                 [alpha] "r"(new_ptr)
+               : "q0","q1","q2",
+                 "q3","q4","q5","q6","q7","q8","q9","q10",
+                 "q11","q12","q13","q14","q15","cc","memory");
+
+  // clang-format on
+}
+template <>
+inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
+                                 const int8_t*& b_ptr,  // NOLINT
+                                 const float* bias,
+                                 int32_t*& c_ptr0,  // NOLINT
+                                 int32_t*& c_ptr1,  // NOLINT
+                                 int32_t*& c_ptr2,  // NOLINT
+                                 int32_t*& c_ptr3,  // NOLINT
+                                 int32_t*& c_ptr4,  // NOLINT
+                                 int32_t*& c_ptr5,  // NOLINT
+                                 const float32_t* scale,
+                                 const float32_t* alpha,
+                                 int is_relu,
+                                 int k,
+                                 int tail) {
+  float new_ptr[8] = {
+      alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
+
+  // clang-format off
+  asm volatile(GEMM_DOT_INT8_KERNEL   GEMM_DOT_INT32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
                  [k] "+r"(k),
@@ -2485,6 +2633,12 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "vst1.32    {d10}, [%[c_ptr2]]!\n" /* write r2*/     \
   "vst1.32    {d11}, [%[c_ptr3]]!\n" /* write r3*/
 
+#define GEMM_INT8_INT32_OUT                            \
+  "vst1.32    {d16-d19},  [%[c_ptr0]]!\n" /* write r0, float32x4 x2 */ \
+  "vst1.32    {d0-d3},    [%[c_ptr1]]!\n" /* write r1, float32x4 x2 */ \
+  "vst1.32    {d4-d7},    [%[c_ptr2]]!\n" /* write r2, float32x4 x2 */ \
+  "vst1.32    {d8-d11},   [%[c_ptr3]]!\n" /* write r3, float32x4 x2 */
+
 // clang-format on
 
 template <>
@@ -2550,6 +2704,56 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
       alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
   // clang-format off
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [b_ptr] "+r"(b_ptr),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [k] "+r"(k)
+               : [is_relu] "r"(is_relu),
+                 [alpha] "r"(new_ptr),
+                 [bias] "r"(bias),
+                 [rem] "r"(rem),
+                 [scale] "r"(scale)
+               : "q0",
+                 "q1",
+                 "q2",
+                 "q3",
+                 "q4",
+                 "q5",
+                 "q6",
+                 "q7",
+                 "q8",
+                 "q9",
+                 "q10",
+                 "q11",
+                 "q12",
+                 "q13",
+                 "q14",
+                 "q15",
+                 "cc",
+                 "memory");
+  // clang-format on
+}
+
+template <>
+inline void gemm_int8_kernel(const int8_t* a_ptr,
+                             const int8_t*& b_ptr,  // NOLINT
+                             const float* bias,
+                             int32_t*& c_ptr0,  // NOLINT
+                             int32_t*& c_ptr1,  // NOLINT
+                             int32_t*& c_ptr2,  // NOLINT
+                             int32_t*& c_ptr3,  // NOLINT
+                             const float32_t* scale,
+                             const float32_t* alpha,
+                             int is_relu,
+                             int k,
+                             int rem) {
+  float new_ptr[8] = {
+      alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
+  // clang-format off
+  asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
                  [c_ptr0] "+r"(c_ptr0),
@@ -5467,6 +5671,104 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                   scale,
                                   alpha,
                                   ctx);
+  }
+#endif
+}
+
+template <>
+void gemm_prepack_int8(const int8_t* A_packed,
+                       const int8_t* B,
+                       const float* bias,
+                       int32_t* C,
+                       int M,
+                       int N,
+                       int K,
+                       bool is_bias,
+                       bool is_transB,
+                       const float* scale,
+                       const operators::ActivationParam act_param,
+                       ARMContext* ctx) {
+  auto act_type = act_param.active_type;
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+  if (ctx->has_dot()) {
+    gemm_prepack_sdot_int8<int32_t>(A_packed,
+                                    B,
+                                    bias,
+                                    C,
+                                    M,
+                                    N,
+                                    K,
+                                    is_bias,
+                                    flag_act,
+                                    is_transB,
+                                    scale,
+                                    alpha,
+                                    ctx);
+  } else {
+    gemm_prepack_oth_int8<int32_t>(A_packed,
+                                   B,
+                                   bias,
+                                   C,
+                                   M,
+                                   N,
+                                   K,
+                                   is_bias,
+                                   flag_act,
+                                   is_transB,
+                                   scale,
+                                   alpha,
+                                   ctx);
+  }
+#else
+  if (ctx->has_dot()) {
+    gemm_prepack_vsdot_int8<int32_t>(A_packed,
+                                     B,
+                                     bias,
+                                     C,
+                                     M,
+                                     N,
+                                     K,
+                                     is_bias,
+                                     flag_act,
+                                     is_transB,
+                                     scale,
+                                     alpha,
+                                     ctx);
+  } else {
+    gemm_prepack_oth_int8<int32_t>(A_packed,
+                                   B,
+                                   bias,
+                                   C,
+                                   M,
+                                   N,
+                                   K,
+                                   is_bias,
+                                   flag_act,
+                                   is_transB,
+                                   scale,
+                                   alpha,
+                                   ctx);
   }
 #endif
 }
