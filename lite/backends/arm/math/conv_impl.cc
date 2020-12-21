@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/conv_impl.h"
 #include <arm_neon.h>
+#include <algorithm>
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include "lite/backends/arm/math/gemv_arm_int8.h"
@@ -101,21 +102,21 @@ inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
  * @param data_col
  */
 template <typename Dtype>
-void im2col(const Dtype* data_im,
-            int channels,
-            int height,
-            int width,
-            int kernel_h,
-            int kernel_w,
-            int pad_top,
-            int pad_bottom,
-            int pad_left,
-            int pad_right,
-            int stride_h,
-            int stride_w,
-            int dilation_h,
-            int dilation_w,
-            Dtype* data_col) {
+void im2col_common(const Dtype* data_im,
+                   int channels,
+                   int height,
+                   int width,
+                   int kernel_h,
+                   int kernel_w,
+                   int pad_top,
+                   int pad_bottom,
+                   int pad_left,
+                   int pad_right,
+                   int stride_h,
+                   int stride_w,
+                   int dilation_h,
+                   int dilation_w,
+                   Dtype* data_col) {
   const int output_h =
       (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) /
           stride_h +
@@ -149,6 +150,420 @@ void im2col(const Dtype* data_im,
         }
       }
     }
+  }
+}
+
+template <>
+void im2col_s1<float>(const float* data_im,
+                      int channels,
+                      int height,
+                      int width,
+                      int kernel_h,
+                      int kernel_w,
+                      int pad_top,
+                      int pad_bottom,
+                      int pad_left,
+                      int pad_right,
+                      int dilation_h,
+                      int dilation_w,
+                      float* data_col) {
+  const int output_h =
+      (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) + 1;
+  const int output_w =
+      (width + pad_left + pad_right - (dilation_w * (kernel_w - 1) + 1)) + 1;
+  const int in_channel_size = height * width;
+  const int out_channel_size = output_h * output_w;
+  const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
+  memset(data_col, 0, output_plane_size * channels * sizeof(float));
+#pragma omp parallel for
+  for (int c = 0; c < channels; c++) {
+    int data_im_z = c * in_channel_size;
+    int data_col_z1 = c * output_plane_size;
+    for (int ky = 0, h_offset = 0; ky < kernel_h;
+         ky++, h_offset += dilation_h) {
+      int data_col_z2 = ky * out_channel_size * kernel_w;
+      for (int kx = 0, w_offset = 0; kx < kernel_w;
+           kx++, w_offset += dilation_w) {
+        int data_col_z3 = kx * out_channel_size;
+        int data_col_z = data_col_z1 + data_col_z2 + data_col_z3;
+        int oh_begin = std::max(((pad_top - h_offset)), 0);
+        int oh_end = std::min(((height + pad_bottom - h_offset)), output_h);
+        oh_end = std::max(oh_begin, oh_end);
+        int ow_begin = std::max(((pad_left - w_offset)), 0);
+        int ow_end = std::min(((width + pad_right - w_offset)), output_w);
+        ow_end = std::max(ow_begin, ow_end);
+        int ih = oh_begin - pad_top + h_offset;
+        for (int oh = oh_begin; oh < oh_end; ++oh, ++ih) {
+          int iw = ow_begin - pad_left + w_offset;
+          int ow = ow_begin;
+          int data_im_offset = data_im_z + ih * width;
+          int data_col_offset = data_col_z + oh * output_w;
+          const float* data_im_ptr = data_im + data_im_offset;
+          float* data_col_ptr = data_col + data_col_offset;
+          for (; ow + 3 < ow_end; ow += 4, iw += 4) {
+            float32x4_t tmp = vld1q_f32(data_im_ptr + iw);
+            vst1q_f32(data_col_ptr + ow, tmp);
+          }
+          for (; ow < ow_end; ++ow, ++iw) {
+            data_col[data_col_offset + ow] = data_im[data_im_offset + iw];
+          }
+        }
+      }
+    }
+  }
+}
+
+template <>
+void im2col_s1<int8_t>(const int8_t* data_im,
+                       int channels,
+                       int height,
+                       int width,
+                       int kernel_h,
+                       int kernel_w,
+                       int pad_top,
+                       int pad_bottom,
+                       int pad_left,
+                       int pad_right,
+                       int dilation_h,
+                       int dilation_w,
+                       int8_t* data_col) {
+  const int output_h =
+      (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) + 1;
+  const int output_w =
+      (width + pad_left + pad_right - (dilation_w * (kernel_w - 1) + 1)) + 1;
+  const int in_channel_size = height * width;
+  const int out_channel_size = output_h * output_w;
+  const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
+  memset(data_col, 0, output_plane_size * channels * sizeof(int8_t));
+#pragma omp parallel for
+  for (int c = 0; c < channels; c++) {
+    int data_im_z = c * in_channel_size;
+    int data_col_z1 = c * output_plane_size;
+    for (int ky = 0, h_offset = 0; ky < kernel_h;
+         ky++, h_offset += dilation_h) {
+      int data_col_z2 = ky * out_channel_size * kernel_w;
+      for (int kx = 0, w_offset = 0; kx < kernel_w;
+           kx++, w_offset += dilation_w) {
+        int data_col_z3 = kx * out_channel_size;
+        int data_col_z = data_col_z1 + data_col_z2 + data_col_z3;
+        int oh_begin = std::max(((pad_top - h_offset)), 0);
+        int oh_end = std::min(((height + pad_bottom - h_offset)), output_h);
+        oh_end = std::max(oh_begin, oh_end);
+        int ow_begin = std::max(((pad_left - w_offset)), 0);
+        int ow_end = std::min(((width + pad_right - w_offset)), output_w);
+        ow_end = std::max(ow_begin, ow_end);
+        int ih = oh_begin - pad_top + h_offset;
+        for (int oh = oh_begin; oh < oh_end; ++oh, ++ih) {
+          int iw = ow_begin - pad_left + w_offset;
+          int ow = ow_begin;
+          int data_im_offset = data_im_z + ih * width;
+          int data_col_offset = data_col_z + oh * output_w;
+          const int8_t* data_im_ptr = data_im + data_im_offset;
+          int8_t* data_col_ptr = data_col + data_col_offset;
+          for (; ow + 15 < ow_end; ow += 16, iw += 16) {
+            int8x16_t tmp = vld1q_s8(data_im_ptr + iw);
+            vst1q_s8(data_col_ptr + ow, tmp);
+          }
+          for (; ow + 7 < ow_end; ow += 8, iw += 8) {
+            int8x8_t tmp = vld1_s8(data_im_ptr + iw);
+            vst1_s8(data_col_ptr + ow, tmp);
+          }
+          for (; ow < ow_end; ++ow, ++iw) {
+            data_col[data_col_offset + ow] = data_im[data_im_offset + iw];
+          }
+        }
+      }
+    }
+  }
+}
+
+template <>
+void im2col_s2<float>(const float* data_im,
+                      int channels,
+                      int height,
+                      int width,
+                      int kernel_h,
+                      int kernel_w,
+                      int pad_top,
+                      int pad_bottom,
+                      int pad_left,
+                      int pad_right,
+                      int dilation_h,
+                      int dilation_w,
+                      float* data_col) {
+  const int output_h =
+      (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) / 2 +
+      1;
+  const int output_w =
+      (width + pad_left + pad_right - (dilation_w * (kernel_w - 1) + 1)) / 2 +
+      1;
+  const int in_channel_size = height * width;
+  const int out_channel_size = output_h * output_w;
+  const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
+  memset(data_col, 0, output_plane_size * channels * sizeof(float));
+#pragma omp parallel for
+  for (int c = 0; c < channels; c++) {
+    int data_im_z = c * in_channel_size;
+    int data_col_z1 = c * output_plane_size;
+    for (int ky = 0, h_offset = 0; ky < kernel_h;
+         ky++, h_offset += dilation_h) {
+      int data_col_z2 = ky * output_h * output_w * kernel_w;
+      for (int kx = 0, w_offset = 0; kx < kernel_w;
+           kx++, w_offset += dilation_w) {
+        int data_col_z3 = kx * output_h * output_w;
+        int data_col_z = data_col_z1 + data_col_z2 + data_col_z3;
+        int oh_begin = std::max(((pad_top - h_offset + 1) / 2), 0);
+        int oh_end =
+            std::min(((height + pad_bottom - h_offset + 1) / 2), output_h);
+        oh_end = std::max(oh_begin, oh_end);
+        int ow_begin = std::max(((pad_left - w_offset + 1) / 2), 0);
+        int ow_end =
+            std::min(((width + pad_right - w_offset + 1) / 2), output_w);
+        ow_end = std::max(ow_begin, ow_end);
+        int ih = oh_begin * 2 - pad_top + h_offset;
+        for (int oh = oh_begin; oh < oh_end; ++oh, ih += 2) {
+          int iw = ow_begin * 2 - pad_left + w_offset;
+          int ow = ow_begin;
+          int data_im_offset = data_im_z + ih * width;
+          int data_col_offset = data_col_z + oh * output_w;
+          const float* data_im_ptr = data_im + data_im_offset;
+          float* data_col_ptr = data_col + data_col_offset;
+          for (; ow + 3 < ow_end; ow += 4, iw += 8) {
+            float32x4x2_t tmp = vld2q_f32(data_im_ptr + iw);
+            vst1q_f32(data_col_ptr + ow, tmp.val[0]);
+          }
+          for (; ow < ow_end; ++ow, iw += 2) {
+            data_col[data_col_offset + ow] = data_im[data_im_offset + iw];
+          }
+        }
+      }
+    }
+  }
+}
+
+template <>
+void im2col_s2<int8_t>(const int8_t* data_im,
+                       int channels,
+                       int height,
+                       int width,
+                       int kernel_h,
+                       int kernel_w,
+                       int pad_top,
+                       int pad_bottom,
+                       int pad_left,
+                       int pad_right,
+                       int dilation_h,
+                       int dilation_w,
+                       int8_t* data_col) {
+  const int output_h =
+      (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) / 2 +
+      1;
+  const int output_w =
+      (width + pad_left + pad_right - (dilation_w * (kernel_w - 1) + 1)) / 2 +
+      1;
+  const int in_channel_size = height * width;
+  const int out_channel_size = output_h * output_w;
+  const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
+  memset(data_col, 0, output_plane_size * channels * sizeof(int8_t));
+#pragma omp parallel for
+  for (int c = 0; c < channels; c++) {
+    int data_im_z = c * in_channel_size;
+    int data_col_z1 = c * output_plane_size;
+    for (int ky = 0, h_offset = 0; ky < kernel_h;
+         ky++, h_offset += dilation_h) {
+      int data_col_z2 = ky * output_h * output_w * kernel_w;
+      for (int kx = 0, w_offset = 0; kx < kernel_w;
+           kx++, w_offset += dilation_w) {
+        int data_col_z3 = kx * output_h * output_w;
+        int data_col_z = data_col_z1 + data_col_z2 + data_col_z3;
+        int oh_begin = std::max(((pad_top - h_offset + 1) / 2), 0);
+        int oh_end =
+            std::min(((height + pad_bottom - h_offset + 1) / 2), output_h);
+        oh_end = std::max(oh_begin, oh_end);
+        int ow_begin = std::max(((pad_left - w_offset + 1) / 2), 0);
+        int ow_end =
+            std::min(((width + pad_right - w_offset + 1) / 2), output_w);
+        ow_end = std::max(ow_begin, ow_end);
+        int ih = oh_begin * 2 - pad_top + h_offset;
+        for (int oh = oh_begin; oh < oh_end; ++oh, ih += 2) {
+          int iw = ow_begin * 2 - pad_left + w_offset;
+          int ow = ow_begin;
+          int data_im_offset = data_im_z + ih * width;
+          int data_col_offset = data_col_z + oh * output_w;
+          const int8_t* data_im_ptr = data_im + data_im_offset;
+          int8_t* data_col_ptr = data_col + data_col_offset;
+          for (; ow + 15 < ow_end; ow += 16, iw += 32) {
+            int8x16x2_t tmp = vld2q_s8(data_im_ptr + iw);
+            vst1q_s8(data_col_ptr + ow, tmp.val[0]);
+          }
+          for (; ow + 7 < ow_end; ow += 8, iw += 16) {
+            int8x8x2_t tmp = vld2_s8(data_im_ptr + iw);
+            vst1_s8(data_col_ptr + ow, tmp.val[0]);
+          }
+          for (; ow < ow_end; ++ow, iw += 2) {
+            data_col[data_col_offset + ow] = data_im[data_im_offset + iw];
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * \brief normal im2col function for gemm conv
+ * @param data_im
+ * @param channels
+ * @param height
+ * @param width
+ * @param kernel_size
+ * @param pad
+ * @param stride
+ * @param data_col
+ */
+template <>
+void im2col<float>(const float* data_im,
+                   int channels,
+                   int height,
+                   int width,
+                   int kernel_h,
+                   int kernel_w,
+                   int pad_top,
+                   int pad_bottom,
+                   int pad_left,
+                   int pad_right,
+                   int stride_h,
+                   int stride_w,
+                   int dilation_h,
+                   int dilation_w,
+                   float* data_col) {
+  bool pads_equal = ((pad_top == pad_bottom) && (pad_left == pad_right));
+  bool pads_all_equal = (pads_equal && pad_top == pad_left);
+  bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);
+  bool no_dilation = (dilation_h == 1) && (dilation_w == 1);
+  bool kspd = pads_all_equal && ks_equal && no_dilation;
+  if (kspd && stride_h == 1) {
+    im2col_s1<float>(data_im,
+                     channels,
+                     height,
+                     width,
+                     kernel_h,
+                     kernel_w,
+                     pad_top,
+                     pad_bottom,
+                     pad_left,
+                     pad_right,
+                     dilation_h,
+                     dilation_w,
+                     data_col);
+  } else if (kspd && stride_h == 2) {
+    im2col_s2<float>(data_im,
+                     channels,
+                     height,
+                     width,
+                     kernel_h,
+                     kernel_w,
+                     pad_top,
+                     pad_bottom,
+                     pad_left,
+                     pad_right,
+                     dilation_h,
+                     dilation_w,
+                     data_col);
+  } else {
+    im2col_common<float>(data_im,
+                         channels,
+                         height,
+                         width,
+                         kernel_h,
+                         kernel_w,
+                         pad_top,
+                         pad_bottom,
+                         pad_left,
+                         pad_right,
+                         stride_h,
+                         stride_w,
+                         dilation_h,
+                         dilation_w,
+                         data_col);
+  }
+}
+
+/**
+ * \brief normal im2col function for gemm conv
+ * @param data_im
+ * @param channels
+ * @param height
+ * @param width
+ * @param kernel_size
+ * @param pad
+ * @param stride
+ * @param data_col
+ */
+template <>
+void im2col<int8_t>(const int8_t* data_im,
+                    int channels,
+                    int height,
+                    int width,
+                    int kernel_h,
+                    int kernel_w,
+                    int pad_top,
+                    int pad_bottom,
+                    int pad_left,
+                    int pad_right,
+                    int stride_h,
+                    int stride_w,
+                    int dilation_h,
+                    int dilation_w,
+                    int8_t* data_col) {
+  bool pads_equal = ((pad_top == pad_bottom) && (pad_left == pad_right));
+  bool pads_all_equal = (pads_equal && pad_top == pad_left);
+  bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);
+  bool no_dilation = (dilation_h == 1) && (dilation_w == 1);
+  bool kspd = pads_all_equal && ks_equal && no_dilation;
+  if (kspd && stride_h == 1) {
+    im2col_s1<int8_t>(data_im,
+                      channels,
+                      height,
+                      width,
+                      kernel_h,
+                      kernel_w,
+                      pad_top,
+                      pad_bottom,
+                      pad_left,
+                      pad_right,
+                      dilation_h,
+                      dilation_w,
+                      data_col);
+  } else if (kspd && stride_h == 2) {
+    im2col_s2<int8_t>(data_im,
+                      channels,
+                      height,
+                      width,
+                      kernel_h,
+                      kernel_w,
+                      pad_top,
+                      pad_bottom,
+                      pad_left,
+                      pad_right,
+                      dilation_h,
+                      dilation_w,
+                      data_col);
+  } else {
+    im2col_common<int8_t>(data_im,
+                          channels,
+                          height,
+                          width,
+                          kernel_h,
+                          kernel_w,
+                          pad_top,
+                          pad_bottom,
+                          pad_left,
+                          pad_right,
+                          stride_h,
+                          stride_w,
+                          dilation_h,
+                          dilation_w,
+                          data_col);
   }
 }
 
@@ -312,6 +727,29 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   ctx,
                   act_param.Relu_clipped_coef,
                   act_param.Leaky_relu_alpha);
+      } else if (m == 1) {
+        float bias_ptr[n];   // NOLINT
+        float scale_ptr[n];  // NOLINT
+        if (flag_bias) {
+          for (int i = 0; i < n; i++) {
+            bias_ptr[i] = bias_group[0];
+          }
+        }
+        memset(scale_ptr, scale_group[0], sizeof(float) * n);
+        gemv_int8(din_group,
+                  weights_group,
+                  dout_group,
+                  true,
+                  n,
+                  k,
+                  scale_ptr,
+                  flag_bias,
+                  bias_ptr,
+                  act_param.has_active,
+                  act_param.active_type,
+                  ctx,
+                  act_param.Relu_clipped_coef,
+                  act_param.Leaky_relu_alpha);
       } else {
         gemm_prepack_int8(weights_group,
                           din_group,
@@ -413,23 +851,21 @@ void conv_im2col_gemm(const float* i_data,
       const float* weights_group = weights + g * weights_size_per_group;
       const float* bias_group = bias + g * m;
       float* dB = tmp_work_space;
-
-      im2col(din_group,
-             chin_per_group,
-             ih,
-             win,
-             kernel_h,
-             kernel_w,
-             paddings[0],
-             paddings[1],
-             paddings[2],
-             paddings[3],
-             param.strides[0],
-             param.strides[1],
-             dilations[0],
-             dilations[1],
-             dB);
-
+      im2col<float>(din_group,
+                    chin_per_group,
+                    ih,
+                    win,
+                    kernel_h,
+                    kernel_w,
+                    paddings[0],
+                    paddings[1],
+                    paddings[2],
+                    paddings[3],
+                    param.strides[0],
+                    param.strides[1],
+                    dilations[0],
+                    dilations[1],
+                    dB);
       if (n == 1) {
         sgemv(weights_group,
               dB,
@@ -548,22 +984,21 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
       const float* bias_group = bias + g * m;
       int8_t* dB = tmp_work_space;
       const float* scale_group = scale + g * m;
-
-      im2col(din_group,
-             chin_per_group,
-             ih,
-             win,
-             kernel_h,
-             kernel_w,
-             pad_h,
-             paddings[1],
-             pad_w,
-             paddings[3],
-             stride_h,
-             stride_w,
-             dila_h,
-             dila_w,
-             dB);
+      im2col<int8_t>(din_group,
+                     chin_per_group,
+                     ih,
+                     win,
+                     kernel_h,
+                     kernel_w,
+                     pad_h,
+                     paddings[1],
+                     pad_w,
+                     paddings[3],
+                     stride_h,
+                     stride_w,
+                     dila_h,
+                     dila_w,
+                     dB);
       if (n == 1) {
         gemv_int8(weights_group,
                   dB,
@@ -574,6 +1009,29 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   scale_group,
                   flag_bias,
                   bias_group,
+                  act_param.has_active,
+                  act_param.active_type,
+                  ctx,
+                  act_param.Relu_clipped_coef,
+                  act_param.Leaky_relu_alpha);
+      } else if (m == 1) {
+        float bias_ptr[n];   // NOLINT
+        float scale_ptr[n];  // NOLINT
+        if (flag_bias) {
+          for (int i = 0; i < n; i++) {
+            bias_ptr[i] = bias_group[0];
+          }
+        }
+        memset(scale_ptr, scale_group[0], sizeof(float) * n);
+        gemv_int8(din_group,
+                  weights_group,
+                  dout_group,
+                  true,
+                  n,
+                  k,
+                  scale_ptr,
+                  flag_bias,
+                  bias_ptr,
                   act_param.has_active,
                   act_param.active_type,
                   ctx,
@@ -626,22 +1084,6 @@ template void conv_im2col_gemm_int8<float>(const int8_t* i_data,
                                            const operators::ConvParam& param,
                                            ARMContext* ctx,
                                            const float* scale);
-
-template void im2col<float>(const float* data_im,
-                            int channels,
-                            int height,
-                            int width,
-                            int kernel_h,
-                            int kernel_w,
-                            int pad_top,
-                            int pad_bottom,
-                            int pad_left,
-                            int pad_right,
-                            int stride_h,
-                            int stride_w,
-                            int dilation_h,
-                            int dilation_w,
-                            float* data_col);
 
 void conv_depthwise_3x3_fp32(const void* din,
                              void* dout,

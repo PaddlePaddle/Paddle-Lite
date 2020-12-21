@@ -59,4 +59,5 @@ REGISTER_LITE_KERNEL(
     .BindInput("Min", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Max", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("clip", 1)
     .Finalize();

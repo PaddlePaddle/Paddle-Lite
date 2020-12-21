@@ -155,7 +155,7 @@ class PixelShuffleComputeImage2D
 #endif
  private:
   std::string kernel_func_name_{"pixel_shuffle"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
   param_t* pixel_shuffle_param_{nullptr};

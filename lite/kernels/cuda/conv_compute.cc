@@ -130,6 +130,7 @@ REGISTER_LITE_KERNEL(conv2d, kCUDA, kFloat, kNCHW, ConvFp32, def)
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNCHW))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(conv2d, kCUDA, kFP16, kNCHW, ConvFp16, def)
@@ -146,6 +147,7 @@ REGISTER_LITE_KERNEL(conv2d, kCUDA, kFP16, kNCHW, ConvFp16, def)
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNCHW))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d, kCUDA, kFloat, kNCHW, ConvFp32, def)
@@ -163,6 +165,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d, kCUDA, kFloat, kNCHW, ConvFp32, def)
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNCHW))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d, kCUDA, kFP16, kNCHW, ConvFp16, def)
@@ -179,6 +182,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d, kCUDA, kFP16, kNCHW, ConvFp16, def)
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kNCHW))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -202,6 +206,7 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kFloat),
                                        DATALAYOUT(kNHWC))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(
@@ -225,4 +230,5 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kCUDA),
                                        PRECISION(kInt8),
                                        DATALAYOUT(kNHWC))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();

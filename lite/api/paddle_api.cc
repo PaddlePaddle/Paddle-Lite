@@ -40,7 +40,7 @@
 namespace paddle {
 namespace lite_api {
 
-bool IsOpenCLBackendValid() {
+bool IsOpenCLBackendValid(bool check_fp16_valid) {
   bool opencl_valid = false;
 
 #ifdef LITE_WITH_OPENCL
@@ -55,12 +55,12 @@ bool IsOpenCLBackendValid() {
   LOG(INFO) << "dlsym_success:" << dlsym_success;
 #endif
   if (dlsym_success == false) return false;
-
-  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
-#endif
+  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice(
+      check_fp16_valid);
 
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "opencl_valid:" << opencl_valid;
+#endif
 #endif
   return opencl_valid;
 }
@@ -150,7 +150,10 @@ template <typename T>
 void Tensor::CopyToCpu(T *data) const {
   const T *src_data = tensor(raw_tensor_)->data<T>();
   int64_t num = tensor(raw_tensor_)->numel();
-  CHECK(num > 0) << "You should call Resize interface first";
+  if (num == 0) {
+    LOG(WARNING) << "Tensor does not hold data.";
+    return;
+  }
   auto type = tensor(raw_tensor_)->target();
   if (type == TargetType::kHost || type == TargetType::kARM) {
     lite::TargetWrapperHost::MemcpySync(
@@ -263,13 +266,29 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #endif
 }
 
-void ConfigBase::set_opencl_tune(size_t enable_tune) {
+void ConfigBase::set_opencl_tune(CLTuneMode tune_mode) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
-    enable_opencl_tune_ = enable_tune;
-    paddle::lite::CLRuntime::Global()->set_auto_tune(enable_opencl_tune_);
+    opencl_tune_mode_ = tune_mode;
+    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_);
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "opencl_tune_mode:"
+              << static_cast<size_t>(
+                     paddle::lite::CLRuntime::Global()->auto_tune());
+#endif
+  }
+#endif
+}
+
+void ConfigBase::set_opencl_precision(CLPrecisionType p) {
 #ifdef LITE_WITH_OPENCL
-    LOG(INFO) << "auto_tune:" << paddle::lite::CLRuntime::Global()->auto_tune();
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    opencl_precision_ = p;
+    paddle::lite::CLRuntime::Global()->set_precision(p);
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "get opencl precision:"
+              << static_cast<size_t>(
+                     paddle::lite::CLRuntime::Global()->get_precision());
 #endif
   }
 #endif

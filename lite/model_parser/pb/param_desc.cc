@@ -22,9 +22,9 @@ TensorInfoReader::TensorInfoReader(model_parser::ByteReader* reader,
                                    model_parser::Buffer* buffer) {
   CHECK(reader);
   CHECK(buffer);
-  int32_t size = reader->ReadForward<int32_t>();
+  int32_t size = reader->Read<int32_t>();
   buffer->ResetLazy(size);
-  reader->ReadForward(buffer->data(), size);
+  reader->Read(buffer->data(), size);
   CHECK(desc_.ParseFromArray(buffer->data(), size))
       << "Cannot parse tensor desc";
 }
@@ -35,10 +35,10 @@ void TensorInfoWriter::Sync() {
   pb_dims->Resize(dim_.size(), 0);
   std::copy(dim_.begin(), dim_.end(), pb_dims->begin());
   int32_t desc_size = desc_.ByteSizeLong();
-  writer_->WriteForward<int32_t>(desc_size);
+  writer_->Write<int32_t>(desc_size);
   buffer_->ResetLazy(desc_.ByteSizeLong());
   desc_.SerializeToArray(buffer_->data(), buffer_->size());
-  writer_->WriteForward(buffer_->data(), buffer_->size());
+  writer_->Write(buffer_->data(), buffer_->size());
 }
 
 }  // namespace pb

@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <map>
+#include <string>
 #include <vector>
 #include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
@@ -47,6 +49,20 @@ class ProgramDesc : public ProgramDescAPI {
 
   template <typename T>
   T *AddBlock();
+
+  /////////////////////////////////////////////////////////////////
+  // Name: OpVersionMap
+  // Description: a map that strores paddle ops version
+  /////////////////////////////////////////////////////////////////
+
+  // note: naive_buffer doesn't contain op_version_map, because
+  //       op_version_map is not useful in inference period.
+  bool HasOpVersionMap() const override { return false; }
+
+  template <typename T>
+  T *GetOpVersionMap();
+
+  void SetOpVersionMap(std::map<std::string, int32_t> op_version_map) {}
 
   bool HasVersion() const override { return true; }
 

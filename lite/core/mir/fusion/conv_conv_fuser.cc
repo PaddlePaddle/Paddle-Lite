@@ -145,14 +145,16 @@ void ConvConvFuser::BuildPattern() {
               continue;
             }
             // computation: ic0 x (oc1-oc0) < oc0 x oc1
-            VLOG(5) << "a: " << (ch_in_0 * (ch_out_1 - ch_out_0)) << " <= "
-                    << "b: " << (ch_out_0 * ch_out_1);
+            auto mula = (ch_in_0 * (ch_out_1 - ch_out_0));
+            auto mulb = (ch_out_0 * ch_out_1);
+            VLOG(5) << "a: " << mula << " <= "
+                    << "b: " << mulb;
 
-            if (ch_in_0 * (ch_out_1 - ch_out_0) > ch_out_0 * ch_out_1) {
+            if (mula <= 0 || mula > mulb) {
               VLOG(5) << "it dose not meet the requirment of conv+conv fusion "
                       << "computation "
-                      << "a: " << (ch_in_0 * (ch_out_1 - ch_out_0)) << " <= "
-                      << "b: " << (ch_out_0 * ch_out_1);
+                      << "a: " << mula << " <= "
+                      << "b: " << mulb;
               continue;
             }
             // create pattern

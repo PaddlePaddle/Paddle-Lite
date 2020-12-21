@@ -110,7 +110,16 @@ inline CL_DTYPE activation(CL_DTYPE in
 #endif
 
 #ifdef LEAKY_RELU
-  output = select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, in >= (CL_DTYPE)0);
+#ifdef CL_DTYPE_float
+  output = select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in,
+                  in,
+                  (int)(isgreaterequal(in, 0)));  // NOLINT
+#endif
+
+#ifdef CL_DTYPE_half
+  output = select(
+      (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (ushort)(isgreaterequal(in, 0)));
+#endif
 #endif
   return output;
 }

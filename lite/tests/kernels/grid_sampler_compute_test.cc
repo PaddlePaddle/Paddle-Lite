@@ -29,12 +29,22 @@ class GridSamplerComputeTest : public arena::TestCase {
   std::string grid_ = "grid";
 
   DDim dims_{{4, 5, 19, 19}};
+  bool align_corners_ = true;
+  std::string mode_ = "bilinear";
+  std::string padding_mode_ = "zeros";
 
  public:
   GridSamplerComputeTest(const Place& place,
                          const std::string& alias,
-                         DDim dims)
-      : TestCase(place, alias), dims_(dims) {}
+                         DDim dims,
+                         bool align_corners = true,
+                         const std::string& mode = "bilinear",
+                         const std::string& padding_mode = "zeros")
+      : TestCase(place, alias),
+        dims_(dims),
+        align_corners_(align_corners),
+        mode_(mode),
+        padding_mode_(padding_mode) {}
 
   void RunBaseline(Scope* scope) override {
     auto x = scope->FindTensor(input_);
@@ -42,6 +52,12 @@ class GridSamplerComputeTest : public arena::TestCase {
     auto out = scope->NewTensor(output_);
     CHECK(out);
     out->Resize(dims_);
+
+    lite::Tensor new_grid_x, new_grid_y;
+    new_grid_x.Resize(grid->dims());
+    new_grid_y.Resize(grid->dims());
+    float* new_grid_data_x = new_grid_x.mutable_data<float>();
+    float* new_grid_data_y = new_grid_y.mutable_data<float>();
 
     const float* x_data = x->data<float>();
     const float* grid_data = grid->data<float>();
@@ -64,14 +80,63 @@ class GridSamplerComputeTest : public arena::TestCase {
       const float* x_n = x_data + n * channel * height * width;
       float* out_n = out_data + n * channel * height * width;
       const float* grid_n = grid_data + n * height * width * 2;
+      float* new_grid_data_xn = new_grid_data_x + n * height * width;
+      float* new_grid_data_yn = new_grid_data_y + n * height * width;
       for (int c = 0; c < channel; ++c) {
         const float* x_c = x_n + c * spatial_size;
         float* out_c = out_n + c * spatial_size;
         for (int s = 0; s < spatial_size; ++s) {
           float x = grid_n[s * 2];
           float y = grid_n[s * 2 + 1];
-          float xwf = (x + 1.f) * 0.5 * (width - 1);
-          float ynf = (y + 1.f) * 0.5 * (height - 1);
+          float xwf = align_corners_ ? (x + 1.f) * 0.5 * (width - 1)
+                                     : (x + 1.f) * 0.5 * width - 0.5;
+          float ynf = align_corners_ ? (y + 1.f) * 0.5 * (height - 1)
+                                     : (y + 1.f) * 0.5 * height - 0.5;
+
+          // clip
+          if (padding_mode_ == "zeros") {
+            // nothing to do
+          } else if (padding_mode_ == "border") {
+            xwf = fmin(fmax(xwf, 0), width - 1);
+            ynf = fmin(fmax(ynf, 0), height - 1);
+          } else if (padding_mode_ == "reflection") {
+            if (align_corners_) {
+              // x
+              float double_range_x = (width - 1) * 2;
+              float grid_x_abs = abs(xwf);
+              float extra_x = grid_x_abs -
+                              static_cast<int>(grid_x_abs / double_range_x) *
+                                  double_range_x;
+              xwf = fmin(extra_x, double_range_x - extra_x);
+              // y
+              float double_range_y = (height - 1) * 2;
+              float grid_y_abs = abs(ynf);
+              float extra_y = grid_y_abs -
+                              static_cast<int>(grid_y_abs / double_range_y) *
+                                  double_range_y;
+              ynf = fmin(extra_y, double_range_y - extra_y);
+            } else {
+              // x
+              float double_range_x = (width - 1 + 1) * 2;
+              float grid_x_abs = abs(xwf + 0.5);
+              float extra_x = grid_x_abs -
+                              static_cast<int>(grid_x_abs / double_range_x) *
+                                  double_range_x;
+              xwf = fmin(extra_x, double_range_x - extra_x) - 0.5;
+              xwf = fmin(fmax(xwf, 0), width - 1);
+              // y
+              float double_range_y = (height - 1 + 1) * 2;
+              float grid_y_abs = abs(ynf + 0.5);
+              float extra_y = grid_y_abs -
+                              static_cast<int>(grid_y_abs / double_range_y) *
+                                  double_range_y;
+              ynf = fmin(extra_y, double_range_y - extra_y) - 0.5;
+              ynf = fmin(fmax(ynf, 0), height - 1);
+            }
+          } else {
+            LOG(FATAL) << "unsupported padding_mode:" << padding_mode_;
+          }
+
           int xw = floor(xwf);
           int xe = xw + 1;
           int yn = floor(ynf);
@@ -107,9 +172,45 @@ class GridSamplerComputeTest : public arena::TestCase {
                          ? x_c[ys * width + xe]
                          : 0.f;
 
-          out_c[s] = wn * de * ds + en * dw * ds + ws * de * dn + es * dw * dn;
+          if (mode_ == "bilinear") {
+            out_c[s] =
+                wn * de * ds + en * dw * ds + ws * de * dn + es * dw * dn;
+          } else if (mode_ == "nearest") {
+            new_grid_data_xn[s] = round(xwf);
+            new_grid_data_yn[s] = round(ynf);
+          } else {
+            LOG(FATAL) << "unsupported mode " << mode_;
+          }
         }
       }
+    }
+
+    if (mode_ == "bilinear") {
+      // nothing to do
+    } else if (mode_ == "nearest") {
+      auto out_h = grid->dims()[1];
+      auto out_w = grid->dims()[2];
+      for (int n = 0; n < num; n++) {
+        const float* new_grid_data_xn = new_grid_data_x + n * height * width;
+        const float* new_grid_data_yn = new_grid_data_y + n * height * width;
+        for (int k = 0; k < out_h; k++) {
+          for (int l = 0; l < out_w; l++) {
+            const float* x = new_grid_data_xn + k * out_w + l;
+            const float* y = new_grid_data_yn + k * out_w + l;
+            if (inbound(*x, *y, width - 1, height - 1)) {
+              for (int j = 0; j < channel; j++) {
+                int in_ind_h = round(*y);
+                int in_ind_w = round(*x);
+                int ind_base = n * channel * out_h * out_w + j * out_h * out_w;
+                out_data[ind_base + k * out_w + l] =
+                    x_data[ind_base + in_ind_h * width + in_ind_w];
+              }
+            }
+          }
+        }
+      }
+    } else {
+      LOG(FATAL) << "unsupported mode " << mode_;
     }
   }
 
@@ -118,6 +219,10 @@ class GridSamplerComputeTest : public arena::TestCase {
     op_desc->SetInput("X", {input_});
     op_desc->SetInput("Grid", {grid_});
     op_desc->SetOutput("Output", {output_});
+
+    op_desc->SetAttr("mode", mode_);
+    op_desc->SetAttr("padding_mode", padding_mode_);
+    op_desc->SetAttr("align_corners", align_corners_);
   }
 
   void PrepareData() override {
@@ -134,27 +239,41 @@ class GridSamplerComputeTest : public arena::TestCase {
 };
 
 void test_grid_sampler(Place place) {
-  for (auto& n : {1, 13}) {
-    for (auto& c : {1, 3, 8}) {
-      for (auto& h : {1, 3, 8, 64}) {
-        for (auto& w : {2, 4, 9, 63}) {
-          DDim dim_in({n, c, h, w});
-          std::unique_ptr<arena::TestCase> tester(
-              new GridSamplerComputeTest(place, "def", dim_in));
+  for (const bool align_corners : {true, false}) {
+    for (const std::string& mode : {"bilinear", "nearest"}) {
+      for (const std::string& padding_mode :
+           {"zeros", "border", "reflection"}) {
+        for (auto& n : {1, 13}) {
+          for (auto& c : {1, 3, 8}) {
+            for (auto& h : {1, 3, 8, 64}) {
+              for (auto& w : {2, 4, 9, 63}) {
+                DDim dim_in({n, c, h, w});
+                std::unique_ptr<arena::TestCase> tester(
+                    new GridSamplerComputeTest(place,
+                                               "def",
+                                               dim_in,
+                                               align_corners,
+                                               mode,
+                                               padding_mode));
 #ifdef LITE_WITH_ARM
-          auto& ctx = tester->context()->As<ARMContext>();
-          ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
+                auto& ctx = tester->context()->As<ARMContext>();
+                ctx.SetRunMode(lite_api::LITE_POWER_HIGH, 1);
 #endif
-          arena::Arena arena(std::move(tester), place, 6e-5);
-          LOG(INFO) << "run n: " << n << ", c: " << c << ", h: " << h
-                    << ", w: " << w;
-          if (!arena.TestPrecision()) {
-            LOG(ERROR) << "No Pass!!";
-            return;
+                arena::Arena arena(std::move(tester), place, 6e-5);
+                LOG(INFO) << "run n: " << n << ", c: " << c << ", h: " << h
+                          << ", w: " << w << ", align_corners:" << align_corners
+                          << ", mode:" << mode
+                          << ", padding_mode:" << padding_mode;
+                if (!arena.TestPrecision()) {
+                  LOG(ERROR) << "No Pass!!";
+                  return;
+                }
+                // if you want to test this op performance, uncomment the
+                // following line
+                // arena.TestPerformance();
+              }
+            }
           }
-          // if you want to test this op performance, uncomment the following
-          // line
-          // arena.TestPerformance();
         }
       }
     }

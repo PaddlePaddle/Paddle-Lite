@@ -157,12 +157,12 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
  protected:
   param_t* lrn_param_{nullptr};
   int n_{5};
-  float alpha_{1e-4};
+  float alpha_{1e-4f};
   float beta_{0.75};
   float k_{1.};
   std::string norm_region_{"AcrossChannels"};
   std::string kernel_func_name_{"lrn"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

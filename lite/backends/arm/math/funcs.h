@@ -52,6 +52,7 @@
 #include "lite/backends/arm/math/pooling.h"
 #include "lite/backends/arm/math/power.h"
 #include "lite/backends/arm/math/prior_box.h"
+#include "lite/backends/arm/math/quantize.h"
 #include "lite/backends/arm/math/reduce_max.h"
 #include "lite/backends/arm/math/reduce_mean.h"
 #include "lite/backends/arm/math/reduce_prod.h"

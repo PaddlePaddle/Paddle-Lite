@@ -14,13 +14,16 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 #include "lite/model_parser/base/io.h"
 #include "lite/model_parser/base/program_desc.h"
 #include "lite/model_parser/flatbuffers/block_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "lite/model_parser/flatbuffers/op_version_map.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
@@ -47,6 +50,17 @@ class ProgramDescView : public ProgramDescAPI {
       blocks_[idx] = BlockDescView(desc_->blocks()->Get(idx));
     }
   }
+
+  /////////////////////////////////////////////////////////////////
+  // Name: OpVersionMap
+  // Description: a map that strores paddle ops version
+  // note: flatbuffer doesn't contain op_version_map, because
+  //       op_version_map is not useful in inference period.
+  /////////////////////////////////////////////////////////////////
+  bool HasOpVersionMap() const override { return false; }
+
+  template <typename T>
+  T* GetOpVersionMap();
 
   size_t BlocksSize() const override { return blocks_.size(); }
 
@@ -113,6 +127,19 @@ class ProgramDesc : public ProgramDescAPI {
   template <typename T>
   T* AddBlock();
 
+  /////////////////////////////////////////////////////////////////
+  // Name: OpVersionMap
+  // Description: a map that strores paddle ops version
+  // note: flatbuffer doesn't contain op_version_map, because
+  //       op_version_map is not useful in inference period.
+  /////////////////////////////////////////////////////////////////
+  bool HasOpVersionMap() const override { return false; }
+
+  template <typename T>
+  T* GetOpVersionMap();
+
+  void SetOpVersionMap(std::map<std::string, int32_t> op_version_map) {}
+
   bool HasVersion() const override { return desc_.version.get(); }
 
   int64_t Version() const override {
@@ -129,12 +156,14 @@ class ProgramDesc : public ProgramDescAPI {
     desc_.version->version = version_in;
   }
 
-  model_parser::Buffer data() {
+  void CopyDataToBuffer(model_parser::Buffer* buffer) {
+    CHECK(buffer);
     SyncBuffer();
-    model_parser::Buffer cache(buf_.size());
-    std::memcpy(cache.data(), buf_.data(), buf_.size());
-    return cache;
+    buffer->ResetLazy(buf_.size());
+    model_parser::memcpy(buffer->data(), buf_.data(), buf_.size());
   }
+
+  size_t GetBufferMinAlignment() { return fbb_.GetBufferMinAlignment(); }
 
  private:
   void SyncBlocks() {
