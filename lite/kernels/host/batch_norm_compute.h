@@ -11,46 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #pragma once
-#include <string>
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
+#include <random>
 #include "lite/core/kernel.h"
-#include "lite/operators/conv_transpose_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
-template <PrecisionType Ptype, PrecisionType Otype>
-class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
- public:
-  using param_t = operators::ConvParam;
+namespace host {
 
-  void PrepareForRun() override;
+class BatchNormCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::BatchNormParam;
 
   void Run() override;
 
-  ~Conv2DTransposeCompute() = default;
-
-#ifdef LITE_WITH_PROFILE
-  virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
-  }
-  std::string kernel_func_name_{"NotImplForConvTranspose"};
-#endif
-
- protected:
-  int workspace_size_{0};
-  bool depthwise_{false};
-  bool flag_trans_bias_{false};
-  std::vector<float> w_scale_;
-  Tensor bias_;
+  virtual ~BatchNormCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
