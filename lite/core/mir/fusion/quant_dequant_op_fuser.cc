@@ -175,6 +175,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   auto quantized_weight_var_name = quantized_op_weight->arg()->name;
   auto quantized_weight_t =
       scope->FindVar(quantized_weight_var_name)->GetMutable<lite::Tensor>();
+
   std::vector<float> weight_scale;
   int weight_scale_size = 0;
   if (quantized_op_type_ == "conv2d" ||
@@ -182,7 +183,8 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
       quantized_op_type_ == "conv2d_transpose") {
     op_desc.SetInput("Input", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
-    // Conv weight shape: Cout * Cin * kh * hw, the weight_scale_size should
+    // Conv weight shape: Cout * Cin/group * kh * hw, the weight_scale_size
+    // should
     // be Cout.
     weight_scale_size = quantized_weight_t->dims()[0];
   } else if (quantized_op_type_ == "mul" || quantized_op_type_ == "matmul") {
