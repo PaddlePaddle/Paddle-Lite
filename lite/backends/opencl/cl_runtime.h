@@ -120,10 +120,15 @@ class CLRuntime {
 
   cl::Device& device();
 
+  std::map<std::string, std::unique_ptr<cl::Program>>& program_map();
+
   cl::CommandQueue& command_queue();
 
   std::unique_ptr<cl::Program> CreateProgram(const cl::Context& context,
                                              std::string file_name);
+
+  cl::Program& GetProgram(const std::string& file_name,
+                          const std::string& options);
 
   std::unique_ptr<cl::UserEvent> CreateEvent(const cl::Context& context);
 
@@ -230,6 +235,8 @@ class CLRuntime {
 
   lite_api::CLPrecisionType precision_{
       lite_api::CL_PRECISION_AUTO};  // 0 - AUTO, 1 - fp32, 2 - fp16
+
+  std::map<std::string, std::unique_ptr<cl::Program>> programs_;
 };
 
 }  // namespace lite

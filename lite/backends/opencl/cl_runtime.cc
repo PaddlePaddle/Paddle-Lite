@@ -116,6 +116,13 @@ cl::Device& CLRuntime::device() {
   return *device_;
 }
 
+std::map<std::string, std::unique_ptr<cl::Program>>& CLRuntime::program_map() {
+  if (programs_.empty()) {
+    LOG(FATAL) << "program_map is empty!";
+  }
+  return programs_;
+}
+
 cl::CommandQueue& CLRuntime::command_queue() {
   if (command_queue_ == nullptr) {
     LOG(FATAL) << "command_queue_ create failed. ";
@@ -135,6 +142,33 @@ std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
   VLOG(4) << "Program source size: " << content.size();
   CL_CHECK_FATAL_SOLID(status_);
   return std::move(prog);
+}
+
+cl::Program& CLRuntime::GetProgram(const std::string& file_name,
+                                   const std::string& options) {
+  STL::stringstream program_key_ss;
+  program_key_ss << file_name << options;
+  std::string program_key = program_key_ss.str();
+  auto it = programs_.find(program_key);
+  if (it != programs_.end()) {
+#ifdef LITE_WITH_LOG
+    VLOG(3) << " --- program -> " << program_key << " has been built --- ";
+#endif
+    return *(it->second);
+  }
+
+  auto program = CreateProgram(*context_, file_name);
+#ifdef LITE_WITH_LOG
+  VLOG(3) << " --- begin build program -> " << program_key << " --- ";
+#endif
+  BuildProgram(program.get(), options);
+#ifdef LITE_WITH_LOG
+  VLOG(3) << " --- end build program -> " << program_key << " --- ";
+#endif
+
+  programs_[program_key] = std::move(program);
+
+  return *(programs_[program_key]);
 }
 
 std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
