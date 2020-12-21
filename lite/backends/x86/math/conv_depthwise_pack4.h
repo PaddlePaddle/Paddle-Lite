@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,24 +13,26 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace x86 {
+namespace math {
 
-template <PrecisionType Ptype>
-class LstmCompute : public KernelLite<TARGET(kARM), Ptype> {
- public:
-  void Run() override;
+void conv_depthwise_m128(lite::Tensor* input,
+                         lite::Tensor* output,
+                         lite::Tensor* filter,
+                         lite::Tensor* bias,
+                         const int stride_h,
+                         const int stride_w,
+                         const int dilation_h,
+                         const int dilation_w,
+                         const bool has_act,
+                         const lite_api::ActivationType act_type);
 
-  virtual ~LstmCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace math
+}  // namespace x86
 }  // namespace lite
 }  // namespace paddle
