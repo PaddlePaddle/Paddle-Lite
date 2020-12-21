@@ -12,19 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vector>
-#include "lite/backends/opencl/cl_half.h"
-#include "lite/backends/opencl/cl_include.h"
-#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/replace_stl/stream.h"
-#include "lite/utils/string.h"
-#ifdef LITE_WITH_PROFILE
-#include "lite/core/profile/profiler.h"
-#endif
-#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -49,7 +38,6 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     if (axis < 0) {
       axis_ = 3;
     }
-    LOG(INFO) << "axis_" << axis_;
     if (axis_ == 3) {
       kernel_func_name_ = "softmax_width";
     } else if (axis_ == 2) {
@@ -172,7 +160,7 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
  private:
   std::string kernel_func_name_{"softmax_width"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
   param_t* softmax_param_{nullptr};
