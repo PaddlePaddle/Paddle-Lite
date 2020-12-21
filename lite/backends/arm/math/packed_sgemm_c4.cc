@@ -152,7 +152,7 @@ void sgemm_prepack_c4_common(int M,
   const int lda = k_round * 4;
   float bias_buf[m_round];  // NOLINT
   if (has_bias) {
-    memcpy(bias_buf, bias, M * sizeof(float));
+    lite::TargetWrapperHost::MemcpySync(bias_buf, bias, M * sizeof(float));
     memset(bias_buf + M, 0, (m_round - M) * sizeof(float));
   } else {
     memset(bias_buf, 0, m_round * sizeof(float));
@@ -713,7 +713,7 @@ void sgemm_prepack_c4_small(int M,
   const int kcnt = k_round >> 2;
   float bias_buf[m_round];  // NOLINT
   if (has_bias) {
-    memcpy(bias_buf, bias, M * sizeof(float));
+    lite::TargetWrapperHost::MemcpySync(bias_buf, bias, M * sizeof(float));
     memset(bias_buf + M, 0, (m_round - M) * sizeof(float));
   } else {
     memset(bias_buf, 0, m_round * sizeof(float));

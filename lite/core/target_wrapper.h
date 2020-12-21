@@ -118,7 +118,7 @@ class TargetWrapper<TARGET(kHost)> {
   static void MemcpySync(void* dst,
                          const void* src,
                          size_t size,
-                         IoDirection dir);
+                         IoDirection dir = lite::IoDirection::HtoH);
   static void MemcpyAsync(void* dst,
                           const void* src,
                           size_t size,
