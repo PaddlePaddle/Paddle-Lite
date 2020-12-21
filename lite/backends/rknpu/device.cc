@@ -29,7 +29,7 @@ std::unique_ptr<rk::nn::Exection> Device::Build(
   std::unique_ptr<rk::nn::Exection> execution =
       std::unique_ptr<rk::nn::Exection>(new rk::nn::Exection(graph));
   execution->Build();
-  VLOG(3) << "[Rockchip NPU] Load model done.";
+  VLOG(3) << "[Rockchip NPU] Build model done.";
   return execution;
 }
 
