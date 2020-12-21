@@ -44,6 +44,8 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
     scale_param_ = param_.get_mutable<param_t>();
     if (scale_param_->activation_type == "relu6") {
       kernel_func_name_ = "scale_relu6";
+    } else {
+      LOG(FATAL) << "opencl only support fuse scale and relu6!";
     }
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/scale_kernel.cl",
@@ -146,21 +148,6 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(scale,
-                     kOpenCL,
-                     kFP16,
-                     kImageDefault,
-                     paddle::lite::kernels::opencl::ScaleComputeImage2D,
-                     def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kImageDefault))})
-    .Finalize();
-REGISTER_LITE_KERNEL(scale_relu6,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
