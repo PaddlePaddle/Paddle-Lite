@@ -100,7 +100,7 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
   param.filter->set_precision(PRECISION(kFloat));
   if (flag_bias) {
     param.bias = new Tensor;
-    param.bias->Resize({weight_dim[0]});
+    param.bias->Resize({weight_dim[1] * group});
     param.bias->set_precision(PRECISION(kFloat));
   }
   param.strides = strides;
@@ -133,7 +133,9 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::Conv2DTransposeCompute conv_t;
+      paddle::lite::kernels::arm::Conv2DTransposeCompute<PRECISION(kFloat),
+                                                         PRECISION(kFloat)>
+          conv_t;
       std::unique_ptr<paddle::lite::KernelContext> ctx1(
           new paddle::lite::KernelContext);
       auto& ctx = ctx1->As<paddle::lite::ARMContext>();
