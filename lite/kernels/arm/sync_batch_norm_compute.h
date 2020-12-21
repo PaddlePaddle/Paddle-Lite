@@ -15,13 +15,13 @@
 #pragma once
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
 
-class SyncBatchNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class SyncBatchNormCompute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::BatchNormParam;
 

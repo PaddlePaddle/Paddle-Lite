@@ -16,7 +16,6 @@
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-
 namespace paddle {
 namespace lite {
 namespace kernels {

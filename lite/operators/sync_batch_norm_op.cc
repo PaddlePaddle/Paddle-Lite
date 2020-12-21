@@ -72,7 +72,8 @@ bool SyncBatchNormOp::InferShapeImpl() const {
   return true;
 }
 
-bool SyncBatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool SyncBatchNormOp::AttachImpl(const cpp::OpDesc &op_desc,
+                                 lite::Scope *scope) {
   AttachParam(&param_);
   param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.bias =
