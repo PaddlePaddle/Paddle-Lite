@@ -1,4 +1,4 @@
-lite/kernels/host/CMakeLists.txtset(op_DEPS tensor op op_params scope memory)
+set(op_DEPS tensor op op_params scope memory)
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
 
