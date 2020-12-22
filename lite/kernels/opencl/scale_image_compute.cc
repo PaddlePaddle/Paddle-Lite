@@ -42,10 +42,13 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
   void PrepareForRun() override {
     auto& context = ctx_->As<OpenCLContext>();
     scale_param_ = param_.get_mutable<param_t>();
-    if (scale_param_->activation_type == "relu6") {
+    if (scale_param_->activation_type == "") {
+      kernel_func_name_ = "scale";
+    } else if (scale_param_->activation_type == "relu6") {
       kernel_func_name_ = "scale_relu6";
     } else {
-      LOG(FATAL) << "opencl only support fuse scale and relu6!";
+      LOG(FATAL) << "Unsupported activation type: "
+                 << ActivationTypeToStr(scale_param_->activation_type);
     }
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/scale_kernel.cl",
@@ -83,7 +86,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
-    auto* x_img = DATA_GPU(scale_param_->x);
+    auto* x_img = GET_DATA_GPU(scale_param_->x);
     auto* out_img = MUTABLE_DATA_GPU(
         scale_param_->output, out_img_shape_[0], out_img_shape_[1], nullptr);
     const float scale = scale_param_->scale;
