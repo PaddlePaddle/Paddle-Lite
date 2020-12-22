@@ -58,6 +58,15 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void ReInitWhenNeeded() override {
     grid_param_ = param_.get_mutable<param_t>();
+    bool align_corners = grid_param_->align_corners;
+    std::string padding_mode = grid_param_->padding_mode;
+    std::string mode = grid_param_->mode;
+    if (align_corners != true || padding_mode != "zeros" ||
+        mode != "bilinear") {
+      LOG(FATAL) << "Unsupported grid samper with align_corners:"
+                 << align_corners << ", padding_mode:" << padding_mode
+                 << ", mode:" << mode;
+    }
     auto x_dims = grid_param_->x->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
@@ -94,7 +103,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     auto* x = grid_param_->x;
-    auto* grid = grid_param_->grid;
+    //  auto* grid = grid_param_->grid;
     auto* out = grid_param_->out;
 
     auto out_dims = out->dims();
@@ -163,7 +172,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::Kernel kernel_;
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

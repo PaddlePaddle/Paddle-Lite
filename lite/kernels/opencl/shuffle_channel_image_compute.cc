@@ -112,7 +112,7 @@ class ShuffleChannelComputeImage2D
 
  private:
   std::string kernel_func_name_{"shuffle_channel"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

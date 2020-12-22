@@ -237,6 +237,10 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       depthwise_ && (param.strides[0] == 1 && param.strides[1] == 1);
   bool depthwise_s2 =
       depthwise_ && (param.strides[0] == 2 && param.strides[1] == 2);
+  bool bias_act = flag_bias || has_act;
+  const float* bias_ptr =
+      flag_bias ? static_cast<const float*>(param.bias->data<float>())
+                : nullptr;
   for (int i = 0; i < num; i++) {
     const float* din_batch = din + i * chin * hin * win;
     float* dout_batch = dout + i * chout * hout * wout;
@@ -256,6 +260,10 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                           dilations[1],
                                                           dout_batch,
                                                           &ctx);
+      if (bias_act) {
+        lite::arm::math::fill_bias_act<float>(
+            dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
+      }
     } else if (depthwise_s2) {
       lite::arm::math::conv_transpose_depthwise_s2<float>(din_batch,
                                                           weights,
@@ -272,6 +280,10 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                           dilations[1],
                                                           dout_batch,
                                                           &ctx);
+      if (bias_act) {
+        lite::arm::math::fill_bias_act<float>(
+            dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
+      }
     } else {
       float* col_data = static_cast<float*>(ctx.workspace_data<float>()) +
                         ctx.llc_size() / sizeof(float);
@@ -317,16 +329,16 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                        dilations[1],
                                        dout_batch);
       }
-    }
-    if (flag_bias) {
-      act_param.has_active = has_act;
-      lite::arm::math::fill_bias_act<float>(
-          dout_batch,
-          static_cast<const float*>(param.bias->data<float>()),
-          chout,
-          wout * hout,
-          flag_bias,
-          &act_param);
+      if (flag_bias) {
+        act_param.has_active = has_act;
+        lite::arm::math::fill_bias_act<float>(
+            dout_batch,
+            static_cast<const float*>(param.bias->data<float>()),
+            chout,
+            wout * hout,
+            flag_bias,
+            &act_param);
+      }
     }
   }
 }
@@ -559,6 +571,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                                  &act_param);
   }
 }
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

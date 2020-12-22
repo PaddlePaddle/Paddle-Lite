@@ -95,7 +95,7 @@ bool ConvTransposeOpLite::InferShapeImpl() const {
           << dilations[i];
     }
     for (int i = 0; i < param_.output_padding.size(); i++) {
-      output_shape[i] += param_.output_padding[i];
+      output_shape[i + 2] += param_.output_padding[i];
     }
   }
   if (!param_.output_size.empty()) {

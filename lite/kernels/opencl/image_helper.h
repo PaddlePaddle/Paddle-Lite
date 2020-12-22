@@ -50,34 +50,33 @@ inline static int maptofactor(int i, int factor) {
   return (i + factor - 1) / factor;
 }
 
-static std::vector<size_t> DefaultGlobalWorkSize(const DDim& image_dim,
+static std::vector<size_t> DefaultGlobalWorkSize(const DDim& tensor_dim,
                                                  const DDim& image_shape) {
-  // n c h w
-  //  auto image_dim = image.dims();
-  if (image_dim.size() == 4) {
-    auto n = image_dim[0];
-    auto h = image_dim[2];
-    auto w = image_dim[3];
+  if (tensor_dim.size() == 4) {
+    auto n = tensor_dim[0];
+    auto h = tensor_dim[2];
+    auto w = tensor_dim[3];
     auto image_width = image_shape[0];
-    size_t work_size_0 = image_width / w;
-    size_t work_size_1 = w;
-    size_t work_size_2 = n * h;
-    return {work_size_0, work_size_1, work_size_2};
-  } else if (image_dim.size() == 2) {
-    auto h = image_dim[0];
-    auto w = image_dim[1];
+    size_t ws0 = image_width / w;
+    size_t ws1 = w;
+    size_t ws2 = n * h;
+    return {ws0, ws1, ws2};
+  } else if (tensor_dim.size() == 2) {
     return {1,
             static_cast<unsigned int>(image_shape[0]),
             static_cast<unsigned int>(image_shape[1])};
-  } else if (image_dim.size() == 1) {
+  } else if (tensor_dim.size() == 1) {
     return {1, static_cast<unsigned int>(image_shape[0]), 1};
-  } else if (image_dim.size() == 3) {
-    size_t c = image_dim[0];
-    size_t h = image_dim[1];
-    size_t w = image_dim[2];
+  } else if (tensor_dim.size() == 3) {
+    size_t c = tensor_dim[0];
+    size_t h = tensor_dim[1];
+    size_t w = tensor_dim[2];
     return {(c + 3) / 4, w, h};
   }
-  LOG(FATAL) << " not support this dim, need imp ";
+  LOG(FATAL) << "Unsupport DefaultGlobalWorkSize with tensor_dim.size():"
+             << tensor_dim.size()
+             << ", image_shape.size():" << image_shape.size();
+  return {};
 }
 
 static const std::string GetTimeStamp() {

@@ -26,11 +26,11 @@
 #include "lite/api/paddle_api.h"
 #include "lite/core/scope.h"
 #include "lite/core/variable.h"
+#include "lite/model_parser/base/io.h"
 #include "lite/model_parser/compatible_pb.h"
 
 namespace paddle {
 namespace lite {
-
 #ifndef LITE_ON_TINY_PUBLISH
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
@@ -118,17 +118,18 @@ void LoadModelNaive(const std::string& model_dir,
 void LoadModelNaiveV0FromFile(const std::string& filename,
                               Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
+void LoadModelNaiveV0FromMemory(const std::string& model_buffer,
+                                Scope* scope,
+                                cpp::ProgramDesc* cpp_prog);
 void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               const std::string& param_buffer,
                               lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
-void LoadModelNaiveV0FromMemory(const std::string& model_buffer,
-                                Scope* scope,
-                                cpp::ProgramDesc* cpp_prog);
 #endif  // LITE_ON_TINY_PUBLISH
-void LoadModelFbsFromFile(const std::string& filename,
+void LoadModelFbsFromFile(model_parser::BinaryFileReader* reader,
                           Scope* scope,
-                          cpp::ProgramDesc* cpp_prog);
+                          cpp::ProgramDesc* cpp_prog,
+                          uint16_t meta_version);
 
 void LoadModelNaiveFromFile(const std::string& filename,
                             lite::Scope* scope,
@@ -137,8 +138,9 @@ void LoadModelNaiveFromFile(const std::string& filename,
 void LoadModelNaiveFromMemory(const std::string& model_buffer,
                               lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
-void LoadModelNaiveV1FromMemory(const std::string& model_buffer,
-                                Scope* scope,
-                                cpp::ProgramDesc* cpp_prog);
+void LoadModelFbsFromMemory(model_parser::StringBufferReader* reader,
+                            Scope* scope,
+                            cpp::ProgramDesc* cpp_prog,
+                            uint16_t meta_version);
 }  // namespace lite
 }  // namespace paddle

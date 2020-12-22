@@ -304,7 +304,7 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
                         tmp_output_thread_size_byte + tmp_trans_size_byte +
                         tmp_remain_trans_size_byte + tmp_trans_out_size_byte +
                         tmp_remain_trans_out_size_byte;
-  workspace_size_ = (temp_size + new_input_size);
+  workspace_size_ = (temp_size + new_input_size) * 2;
 
   //! update trans weights impl
   // choose_small_ = ow * oh / (tile_block * threads) < 36 ? true : false;

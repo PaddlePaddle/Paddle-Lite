@@ -34,7 +34,7 @@ int64_t ShapeProduction(const shape_t& shape) {
 }
 
 // Enable `DEMO_WITH_OPENCL` macro below, if user need use gpu(opencl)
-#define DEMO_WITH_OPENCL
+// #define DEMO_WITH_OPENCL
 void RunModel(std::string model_dir) {
   // 1. Create CxxConfig
   CxxConfig config;

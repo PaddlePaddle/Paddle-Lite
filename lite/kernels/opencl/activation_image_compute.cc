@@ -42,7 +42,7 @@ class ActivationComputeImageDefault
 
   void PrepareForRun() override {
     act_param_ = param_.get_mutable<param_t>();
-    int act_type = static_cast<int>(act_param_->active_type);
+    act_type = static_cast<int>(act_param_->active_type);
 #ifdef LITE_WITH_LOG
     VLOG(1) << "ActivationTypeToStr(act_param_->active_type):"
             << ActivationTypeToStr(act_param_->active_type);
@@ -54,6 +54,45 @@ class ActivationComputeImageDefault
       case 2:
         kernel_func_name_ = "relu6";
         threshold_ = act_param_->Relu_clipped_coef;
+        break;
+      case 3:
+        mode = act_param_->Prelu_mode;
+        if (mode == "all") {
+          kernel_func_name_ = "leaky_relu";
+          const float* alpha_data = act_param_->Prelu_alpha->data<float>();
+          scale_ = alpha_data[0];
+        } else if (mode == "channel") {
+          kernel_func_name_ = "prelu_channel";
+          auto& out_dims = act_param_->Out->dims();
+          int channel = out_dims[1];
+          width = out_dims[3];
+          int cgroup = (channel + 3) / 4;
+          int cround = cgroup * 4;
+          std::vector<half_t> alpha_img(cround * 1);
+          const float* alpha_data = act_param_->Prelu_alpha->data<float>();
+          for (int i = 0; i < channel; ++i) {
+            alpha_img[i] = Float2Half(alpha_data[i]);
+          }
+          DDim alpha_img_size{{cgroup, 1}};
+          alpha_image_.mutable_data<half_t, cl::Image2D>(
+              alpha_img_size[0], alpha_img_size[1], alpha_img.data());
+        } else {
+          kernel_func_name_ = "prelu_element";
+          auto& in_dim = act_param_->X->dims();
+          height = in_dim[2];
+          DDim in_dims{{1, in_dim[1], in_dim[2], in_dim[3]}};
+          scale_ = act_param_->Leaky_relu_alpha;
+
+          paddle::lite::CLImageConverterDefault default_convertor;
+          auto* alpha_data = act_param_->Prelu_alpha->data<float>();
+          DDim image_shape = default_convertor.InitImageDimInfoWith(in_dims);
+          std::vector<half_t> alpha_image_data(image_shape.production() *
+                                               4);  // 4 : RGBA
+          default_convertor.NCHWToImage(
+              const_cast<float*>(alpha_data), alpha_image_data.data(), in_dims);
+          alpha_image_.mutable_data<half_t, cl::Image2D>(
+              image_shape[0], image_shape[1], alpha_image_data.data());
+        }
         break;
       case 4:
         kernel_func_name_ = "leaky_relu";
@@ -71,6 +110,12 @@ class ActivationComputeImageDefault
         break;
       case 8:
         kernel_func_name_ = "exp_act";
+        break;
+      case 10:
+        kernel_func_name_ = "hard_swish";
+        scale_ = act_param_->hard_swish_scale;
+        threshold_ = act_param_->hard_swish_threshold;
+        offset_ = act_param_->hard_swish_offset;
         break;
       case 14:
         kernel_func_name_ = "hard_sigmoid";
@@ -136,6 +181,26 @@ class ActivationComputeImageDefault
     CL_CHECK_FATAL(status);
     status = kernel.setArg(3, scale_);
     CL_CHECK_FATAL(status);
+    if (act_type == 10) {
+      status = kernel.setArg(4, offset_);
+      CL_CHECK_FATAL(status);
+    }
+    if (act_type == 3) {
+      if (mode == "channel") {
+        auto* alpha_img_in = alpha_image_.data<half_t, cl::Image2D>();
+        status = kernel.setArg(4, width);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(5, *alpha_img_in);
+        CL_CHECK_FATAL(status);
+      } else if (mode == "element") {
+        auto* alpha_img_in = alpha_image_.data<half_t, cl::Image2D>();
+        status = kernel.setArg(4, height);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(5, *alpha_img_in);
+        CL_CHECK_FATAL(status);
+      } else {
+      }
+    }
 
 #ifdef LITE_WITH_LOG
     const auto& x_dims = act_param_->X->dims();
@@ -183,12 +248,18 @@ class ActivationComputeImageDefault
   std::string kernel_func_name_{};
   float threshold_{6.f};
   float scale_{1.f};
+  float offset_{3.f};
   cl::Kernel kernel_;
   bool first_epoch_for_reinit_{true};
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
+  std::string mode{"channel"};
+  int act_type{0};
+  int width{0};
+  int height{0};
+  Tensor alpha_image_;
 };
 }  // namespace opencl
 }  // namespace kernels
@@ -332,6 +403,44 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// Hard Swish
+REGISTER_LITE_KERNEL(
+    hard_swish,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// Prelu
+REGISTER_LITE_KERNEL(
+    prelu,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("mode", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

@@ -134,16 +134,6 @@ class IoCopykOpenCLToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
-
-#ifdef LITE_WITH_LOG
-    VLOG(2) << "copy size " << mem_size;
-    VLOG(2) << "param.x->dims().size():" << param.x->dims().size();
-    VLOG(2) << "param.x->dims():" << param.x->dims();
-    VLOG(2) << "param.y->dims().size():" << param.y->dims().size();
-    VLOG(2) << "param.y->dims():" << param.y->dims();
-    VLOG(2) << "param.process_type:" << param.process_type;
-#endif
-
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     const cl::Buffer* x_ptr;
     if (param.process_type == 1) {
@@ -152,10 +142,14 @@ class IoCopykOpenCLToHostCompute
       x_ptr = param.x->data<float, cl::Buffer>();
     }
 
-    auto& context = ctx_->As<OpenCLContext>();
-
 #ifdef LITE_WITH_LOG
-    VLOG(2) << "--- Find the sync event for the target cl tensor. ---";
+    VLOG(4) << "copy size " << mem_size;
+    VLOG(4) << "param.x->dims().size():" << param.x->dims().size();
+    VLOG(4) << "param.x->dims():" << param.x->dims();
+    VLOG(4) << "param.y->dims().size():" << param.y->dims().size();
+    VLOG(4) << "param.y->dims():" << param.y->dims();
+    VLOG(4) << "param.process_type:" << param.process_type;
+    VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
 #endif
 
     d2h_duration_ = CopyToHostSync(data, param.x->raw_data(), mem_size);
