@@ -720,11 +720,50 @@ void act_hard_swish<float>(const float* din,
                            float scale,
                            float offset,
                            int threads) {
+  int nums_per_thread = size / threads;
+  int remain = size - nums_per_thread * threads;
+  int neon_loop_cnt_dim4 = nums_per_thread >> 2;
+  int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
+
   const float* ptr_in = din;
   float* ptr_out = dout;
-  for (int i = 0; i < size; ++i) {
+  float scale_r = 1. / scale;
+  float32x4_t scale_v, offset_v, threshold_v, zero;
+  offset_v = vdupq_n_f32(offset);
+  scale_v = vdupq_n_f32(scale_r);
+  zero = vdupq_n_f32(0.);
+  threshold_v = vdupq_n_f32(threshold);
+
+#pragma omp parallel for
+  for (int i = 0; i < threads; i++) {
+    const float* ptr_in_thread = ptr_in + i * nums_per_thread;
+    float* ptr_out_thread = ptr_out + i * nums_per_thread;
+    for (int j = 0; j < neon_loop_cnt_dim4; j++) {
+      float32x4_t in = vld1q_f32(ptr_in_thread);
+      float32x4_t in_add_offset = vaddq_f32(in, offset_v);
+      float32x4_t tmp1 = vmaxq_f32(zero, in_add_offset);
+      float32x4_t tmp2 = vminq_f32(threshold_v, tmp1);
+      float32x4_t tmp3 = vmulq_f32(scale_v, in);
+      float32x4_t tmp4 = vmulq_f32(tmp2, tmp3);
+      vst1q_f32(ptr_out_thread, tmp4);
+      ptr_in_thread += 4;
+      ptr_out_thread += 4;
+    }
+
+    for (int j = 0; j < neon_loop_remain_dim4; j++) {
+      ptr_out_thread[0] =
+          std::min(std::max(0.f, ptr_in_thread[0] + offset), threshold) *
+          ptr_in_thread[0] * scale_r;
+      ptr_in_thread++;
+      ptr_out_thread++;
+    }
+  }
+
+  ptr_out = dout + threads * nums_per_thread;
+  ptr_in = din + threads * nums_per_thread;
+  for (int i = 0; i < remain; i++) {
     ptr_out[0] = std::min(std::max(0.f, ptr_in[0] + offset), threshold) *
-                 ptr_in[0] / scale;
+                 ptr_in[0] * scale_r;
     ptr_in++;
     ptr_out++;
   }
