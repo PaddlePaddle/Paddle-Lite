@@ -12,19 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <vector>
-#include "lite/backends/opencl/cl_half.h"
-#include "lite/backends/opencl/cl_include.h"
-#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/replace_stl/stream.h"
-#include "lite/utils/string.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
-#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -48,7 +40,7 @@ class ScaleComputeImage2D : public KernelLite<TARGET(kOpenCL),
       kernel_func_name_ = "scale_relu6";
     } else {
       LOG(FATAL) << "Unsupported activation type: "
-                 << ActivationTypeToStr(scale_param_->activation_type);
+                 << scale_param_->activation_type;
     }
     context.cl_context()->AddKernel(kernel_func_name_,
                                     "image/scale_kernel.cl",
