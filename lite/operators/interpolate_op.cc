@@ -139,3 +139,4 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 
 REGISTER_LITE_OP(nearest_interp, paddle::lite::operators::InterpolateOp);
 REGISTER_LITE_OP(bilinear_interp, paddle::lite::operators::InterpolateOp);
+REGISTER_LITE_OP(bilinear_interp_v2, paddle::lite::operators::InterpolateOp);
