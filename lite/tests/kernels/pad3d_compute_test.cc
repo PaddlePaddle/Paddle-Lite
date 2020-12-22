@@ -274,12 +274,11 @@ void TestPad3d(const Place& place, float abs_error = 2e-5) {
               for (std::string pad_mode :
                    {"constant", "reflect", "replicate", "circular"}) {
                 for (float pad_value : {0.f, 1.0f}) {
-                  LOG(INFO) << "pad3d pad_mode: " << pad_mode
-                            << ", pad_val: " << pad_value
-                            << ", padding: " << paddings[0] << ", "
-                            << paddings[1] << ", " << paddings[2] << ", "
-                            << paddings[3] << paddings[4] << ", "
-                            << paddings[5];
+                  VLOG(4) << "pad3d pad_mode: " << pad_mode
+                          << ", pad_val: " << pad_value
+                          << ", padding: " << paddings[0] << ", " << paddings[1]
+                          << ", " << paddings[2] << ", " << paddings[3]
+                          << paddings[4] << ", " << paddings[5];
                   std::unique_ptr<arena::TestCase> tester(
                       new Pad3dComputeTester(place,
                                              "def",

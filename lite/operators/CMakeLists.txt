@@ -1,4 +1,4 @@
-set(op_DEPS tensor op op_params scope memory)
+lite/kernels/host/CMakeLists.txtset(op_DEPS tensor op op_params scope memory)
 
 lite_cc_library(op_params SRCS op_params.cc DEPS tensor any)
 
@@ -27,6 +27,7 @@ add_operator(argmax_op basic SRCS argmax_op.cc DEPS ${op_DEPS})
 add_operator(prior_box_op basic SRCS prior_box_op.cc DEPS ${op_DEPS})
 add_operator(concat_op basic SRCS concat_op.cc DEPS ${op_DEPS})
 add_operator(pad2d_op basic SRCS pad2d_op.cc DEPS ${op_DEPS})
+add_operator(pad3d_op basic SRCS pad3d_op.cc DEPS ${op_DEPS})
 add_operator(calib_op basic SRCS calib_op.cc DEPS ${op_DEPS})
 add_operator(split_op basic SRCS split_op.cc DEPS ${op_DEPS})
 add_operator(transpose_op basic SRCS transpose_op.cc DEPS ${op_DEPS})

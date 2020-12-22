@@ -16,7 +16,6 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
-#include "lite/backends/host/math/funcs.h"
 
 namespace paddle {
 namespace lite {
