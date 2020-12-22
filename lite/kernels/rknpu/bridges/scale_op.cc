@@ -69,23 +69,6 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  // scale
-  auto* scale_tensor = scope->NewTensor(x_name + "/scale");
-
-  scale_tensor->Resize({1});
-  scale_tensor->set_precision(PrecisionType::kFloat);
-  auto* scale_data = scale_tensor->mutable_data<float>();
-  scale_data[0] = scale;
-  auto scale_node = graph->Add(
-      x_name + "/scale", *scale_tensor, scale_tensor->precision(), layout);
-
-  auto* bias_tensor = scope->NewTensor(x_name + "/bias");
-  bias_tensor->set_precision(PrecisionType::kFloat);
-  auto* bias_data = bias_tensor->mutable_data<float>();
-  bias_data[0] = bias;
-  auto bias_node = graph->Add(
-      x_name + "/bias", *bias_tensor, scale_tensor->precision(), layout);
-
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
@@ -104,7 +87,6 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Scale node
   QuantizationInfo output_qnt;
-
   output_qnt.enable_int8 = enable_int8;
 
   if (enable_int8) {
@@ -119,8 +101,6 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;
 
   inputs.push_back(x_node->data());
-  inputs.push_back(scale_node->data());
-  inputs.push_back(bias_node->data());
   outputs.push_back(output_node->data());
 
   rk::nn::ScaleAttr attrs;

@@ -13,13 +13,13 @@
 // limitations under the License.
 
 #include "lite/core/subgraph_bridge_registry.h"
-#include "lite/kernels/npu/bridges/graph.h"
-#include "lite/kernels/npu/bridges/utility.h"
+#include "lite/kernels/rknpu/bridges/graph.h"
+#include "lite/kernels/rknpu/bridges/utility.h"
 
 namespace paddle {
 namespace lite {
 namespace subgraph {
-namespace npu {
+namespace rknpu {
 
 int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
@@ -28,26 +28,59 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
   auto scope = op->scope();
-  VLOG(3) << "[NPU] Converting " + op_type + "...";
+  VLOG(3) << "[RKNPU] Converting " + op_type + "...";
 
-  // Get input and output vars and op attributes
+  // Get input, output and op attributes
   auto x_name = op_info->Input("X").front();
+  auto x_type = kernel->GetInputDeclType("X");
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-  CHECK_EQ(x_dims.size(), 4L);
   auto batch_size = x_dims[0];
   auto channel_size = x_dims[1];
   auto spatial_size = x_dims[2] * x_dims[3];
   DDim scale_bias_dims({1, channel_size, 1, 1});
-  auto y_name = op_info->Output("Y").front();
+  auto x_rank = x_dims.size();
+  auto input_scale_name = "X0_scale";
+  auto out_name = op_info->Output("Out").front();
+  auto output = scope->FindMutableTensor(out_name);
+  auto out_type = kernel->GetOutputDeclType("Out");
+  auto out_scale_name = "Out0_scale";
   float epsilon = op_info->GetAttr<float>("epsilon");
+
+  // for quantization
+  bool enable_int8 = false;
+  float input_scale = 1.0;
+  float output_scale = 1.0;
+  int bit_length = 8;
+  DataLayoutType layout = DATALAYOUT(kNCHW);
+  PrecisionType precision = PRECISION(kFloat);
+
+  if (op_info->HasAttr("enable_int8")) {
+    enable_int8 = op_info->GetAttr<bool>("enable_int8");
+    CHECK(op_info->HasInputScale(input_scale_name, true));
+    input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+    bit_length = op_info->GetAttr<int>("bit_length");
+    CHECK(op_info->HasOutputScale(out_scale_name, true));
+    output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
+    if (enable_int8) {
+      precision = PRECISION(kInt8);
+    }
+  }
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    x_node = graph->Add(x_name, *x);
+    QuantizationInfo qnt;
+    qnt.enable_int8 = enable_int8;
+
+    if (enable_int8) {
+      qnt.quant_bits = bit_length;
+      qnt.scale.push_back(input_scale);
+      x->mutable_data<int8_t>();
+    }
+    x_node = graph->Add(x_name, *x, precision, x_type->layout(), qnt);
   }
 
   // Bias node
@@ -57,34 +90,11 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto bias = scope->FindMutableTensor(bias_name);
     auto bias_dims = bias->dims();
     CHECK_EQ(channel_size, bias_dims.production());
-    if (spatial_size <= 1) {
-      // Bug exists in HiAI DDK when h=1 and w=1
-      auto bias_data = bias->mutable_data<float>();
-      Tensor y;
-      y.Resize(x_dims);
-      y.set_persistable(true);
-      auto y_data = y.mutable_data<float>();
-      for (int i = 0; i < batch_size; i++) {
-        std::memcpy(y_data, bias_data, sizeof(float) * channel_size);
-        y_data += channel_size;
-      }
-      graph->Add(y_name, y);
-      return SUCCESS;
-    } else {
-      if (!bias->persistable()) {
-        LOG(WARNING) << "[NPU] Only supporting persistable bias tensor.";
-        return FAILED;
-      }
-      bias_node = graph->Add(bias_name, *bias, scale_bias_dims);
-    }
+
+    // todo
+    bias_node = graph->Add(bias_name, *bias, precision, x_type->layout());
   } else {
-    if (spatial_size <= 1) {
-      // Bug exists in HiAI DDK when h=1 and w=1
-      graph->Add(y_name, 0.0f, x_dims);
-      return SUCCESS;
-    } else {
-      bias_node = graph->Add(y_name + "/bias", 0.0f, scale_bias_dims);
-    }
+    // todo
   }
 
   // Scale node
@@ -95,30 +105,48 @@ int InstanceNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto scale_dims = scale->dims();
     CHECK_EQ(channel_size, scale_dims.production());
     if (!scale->persistable()) {
-      LOG(WARNING) << "[NPU] Only supporting persistable scale tensor.";
+      LOG(WARNING) << "[RKNPU] Only supporting persistable scale tensor.";
       return FAILED;
     }
-    scale_node = graph->Add(scale_name, *scale, scale_bias_dims);
+
+    // todo
+    scale_node = graph->Add(scale_name, *scale, precision, x_type->layout());
   } else {
-    scale_node = graph->Add(y_name + "/scale", 1.0f, scale_bias_dims);
+    // todo
   }
 
   // InstanceNorm node
-  auto instance_norm_node = graph->Add<ge::op::InstanceNorm>(y_name);
-  auto instance_norm_op = instance_norm_node->data<ge::op::InstanceNorm>();
-  instance_norm_op->set_input_x(*x_node->data());
-  instance_norm_op->set_input_scale(*scale_node->data());
-  instance_norm_op->set_input_bias(*bias_node->data());
-  instance_norm_op->set_attr_reduction_indices(ge::AttrValue::LIST_INT({2}));
-  instance_norm_op->set_attr_epsilon(epsilon);
+  QuantizationInfo output_qnt;
+  output_qnt.enable_int8 = enable_int8;
+
+  if (enable_int8) {
+    output_qnt.quant_bits = bit_length;
+    output_qnt.scale.push_back(output_scale);
+    output->mutable_data<int8_t>();
+  }
+  auto output_node =
+      graph->Add(out_name, *output, precision, out_type->layout(), output_qnt);
+
+  std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;
+  std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;
+
+  inputs.push_back(x_node->data());
+  outputs.push_back(output_node->data());
+
+  rk::nn::InstanceNormAttr attrs;
+  attrs.eps = epsilon;
+
+  auto rGraph = graph->GetHandle();
+  rGraph->AddOperator(
+      rk::nn::OperatorType::INSTANCE_NORM, inputs, outputs, &attrs);
   return SUCCESS;
 }
 
-}  // namespace npu
+}  // namespace rknpu
 }  // namespace subgraph
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(instance_norm,
-                         kNPU,
-                         paddle::lite::subgraph::npu::InstanceNormConverter);
+                         kRKNPU,
+                         paddle::lite::subgraph::rknpu::InstanceNormConverter);
