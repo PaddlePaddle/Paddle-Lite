@@ -147,8 +147,8 @@ class Buffer {
     if (target != target_ || cl_image2d_width_ < img_w_req ||
         cl_image2d_height_ < img_h_req || host_ptr != nullptr) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
-      cl_image2d_width_ = std::max(cl_image2d_width_, img_w_req);
-      cl_image2d_height_ = std::max(cl_image2d_height_, img_h_req);
+      cl_image2d_width_ = (std::max)(cl_image2d_width_, img_w_req);
+      cl_image2d_height_ = (std::max)(cl_image2d_height_, img_h_req);
       Free();
       data_ = TargetWrapperCL::MallocImage<T>(
           cl_image2d_width_, cl_image2d_height_, host_ptr);
