@@ -299,7 +299,7 @@ void TestPad3d(const Place& place, float abs_error = 2e-5) {
   }
 }
 
-TEST(Scale, precision) {
+TEST(pad3d, precision) {
   Place place;
   float abs_error = 2e-5;
 #ifdef LITE_WITH_ARM
