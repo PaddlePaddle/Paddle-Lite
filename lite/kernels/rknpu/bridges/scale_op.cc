@@ -21,34 +21,33 @@ namespace lite {
 namespace subgraph {
 namespace rknpu {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
-  auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
-  auto x_dims = x->dims();
-  auto x_scale_name = "X0_scale";
-  auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
-  auto output_dims = output->dims();
-  auto out_scale_name = "Out0_scale";
-  const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
-  const int64_t* output_shape_data =
-      const_cast<const int64_t*>(&output_dims.data()[0]);
-  std::vector<int32_t> i_x_shape_data(x_dims.size());
-  std::vector<int32_t> i_output_shape_data(output_dims.size());
-
+  auto scope = op->scope();
   VLOG(3) << "[RKNPU] Converting " + op_type + "...";
 
+  // Get input, output and op attributes
+  auto x_name = op_info->Input("X").front();
   auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
-
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto x_rank = x_dims.size();
+  auto input_scale_name = "X0_scale";
+  auto out_name = op_info->Output("Out").front();
+  auto output = scope->FindMutableTensor(out_name);
   auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
+  auto out_scale_name = "Out0_scale";
+
+  float scale = op_info->GetAttr<float>("scale");
+  float bias = op_info->GetAttr<float>("bias");
+  bool bias_after_scale = op_info->GetAttr<bool>("bias_after_scale");
+  if (!bias_after_scale) {
+    bias *= scale;
+  }
 
   // for quantization
   bool enable_int8 = false;
@@ -56,32 +55,41 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   float output_scale = 1.0;
   int bit_length = 8;
   DataLayoutType layout = DATALAYOUT(kNCHW);
-  PrecisionType precision = x->precision();
+  PrecisionType precision = PRECISION(kFloat);
 
   if (op_info->HasAttr("enable_int8")) {
     enable_int8 = op_info->GetAttr<bool>("enable_int8");
+    CHECK(op_info->HasInputScale(input_scale_name, true));
+    input_scale = op_info->GetInputScale(input_scale_name, true)[0];
     bit_length = op_info->GetAttr<int>("bit_length");
-
+    CHECK(op_info->HasOutputScale(out_scale_name, true));
+    output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
     if (enable_int8) {
-      CHECK(op_info->HasInputScale(x_scale_name, true));
-      input_scale = op_info->GetInputScale(x_scale_name, true)[0];
-      CHECK(op_info->HasOutputScale(out_scale_name, true));
-      output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
       precision = PRECISION(kInt8);
     }
   }
 
-  for (size_t i = 0; i < x_dims.size(); i++) {
-    i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
-  }
-  for (size_t i = 0; i < output_dims.size(); i++) {
-    i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
-  }
+  // scale
+  auto* scale_tensor = scope->NewTensor(x_name + "/scale");
+
+  scale_tensor->Resize({1});
+  scale_tensor->set_precision(PrecisionType::kFloat);
+  auto* scale_data = scale_tensor->mutable_data<float>();
+  scale_data[0] = scale;
+  auto scale_node = graph->Add(
+      x_name + "/scale", *scale_tensor, scale_tensor->precision(), layout);
+
+  auto* bias_tensor = scope->NewTensor(x_name + "/bias");
+  bias_tensor->set_precision(PrecisionType::kFloat);
+  auto* bias_data = bias_tensor->mutable_data<float>();
+  bias_data[0] = bias;
+  auto bias_node = graph->Add(
+      x_name + "/bias", *bias_tensor, scale_tensor->precision(), layout);
 
   // X node
   std::shared_ptr<Node> x_node = nullptr;
-  if (graph->Has(x_var_name)) {
-    x_node = graph->Get(x_var_name);
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
     QuantizationInfo qnt;
     qnt.enable_int8 = enable_int8;
@@ -91,10 +99,10 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       qnt.scale.push_back(input_scale);
       x->mutable_data<int8_t>();
     }
-
-    x_node = graph->Add(x_var_name, *x, precision, x_type->layout(), qnt);
+    x_node = graph->Add(x_name, *x, precision, x_type->layout(), qnt);
   }
 
+  // Scale node
   QuantizationInfo output_qnt;
 
   output_qnt.enable_int8 = enable_int8;
@@ -104,27 +112,24 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_qnt.scale.push_back(output_scale);
     output->mutable_data<int8_t>();
   }
+  auto output_node =
+      graph->Add(out_name, *output, precision, out_type->layout(), output_qnt);
 
-  auto output_node = graph->Add(
-      output_var_name, *output, precision, out_type->layout(), output_qnt);
-
-  auto rGraph = graph->GetHandle();
   std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;
   std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;
 
   inputs.push_back(x_node->data());
+  inputs.push_back(scale_node->data());
+  inputs.push_back(bias_node->data());
   outputs.push_back(output_node->data());
 
-  if (op_type == "relu") {
-    rGraph->AddOperator(rk::nn::OperatorType::RELU, inputs, outputs, nullptr);
-  } else if (op_type == "tanh") {
-    rGraph->AddOperator(rk::nn::OperatorType::TANH, inputs, outputs, nullptr);
-  } else {
-    LOG(WARNING) << "[RKNPU] Unsupported activation type " << op_type;
-    return FAILED;
-  }
+  rk::nn::ScaleAttr attrs;
+  attrs.scale = scale;
+  attrs.bias = bias;
 
-  return SUCCESS;
+  auto rGraph = graph->GetHandle();
+  rGraph->AddOperator(rk::nn::OperatorType::SCALE, inputs, outputs, &attrs);
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
 }  // namespace rknpu
@@ -132,9 +137,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu,
+REGISTER_SUBGRAPH_BRIDGE(scale,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(tanh,
-                         kRKNPU,
-                         paddle::lite::subgraph::rknpu::ActConverter);
+                         paddle::lite::subgraph::rknpu::ScaleConverter);

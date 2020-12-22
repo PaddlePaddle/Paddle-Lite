@@ -15,7 +15,8 @@ lite_cc_library(subgraph_bridge_fc_op_rknpu SRCS fc_op.cc DEPS ${rknpu_subgraph_
 lite_cc_library(subgraph_bridge_batch_norm_op_rknpu SRCS batch_norm_op.cc DEPS ${rknpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_concat_op_rknpu SRCS concat_op.cc DEPS ${rknpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_elementwise_ops_rknpu SRCS elementwise_ops.cc DEPS ${rknpu_subgraph_bridge_deps})
-
+lite_cc_library(subgraph_bridge_scale_ops_rknpu SRCS scale_op.cc DEPS ${rknpu_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_flatten_ops_rknpu SRCS flatten_op.cc DEPS ${rknpu_subgraph_bridge_deps})
 
 set(rknpu_subgraph_bridges
         subgraph_bridge_registry
@@ -29,6 +30,8 @@ set(rknpu_subgraph_bridges
         subgraph_bridge_batch_norm_op_rknpu
         subgraph_bridge_concat_op_rknpu
         subgraph_bridge_elementwise_ops_rknpu
+        subgraph_bridge_scale_ops_rknpu
+        subgraph_bridge_flatten_ops_rknpu
         CACHE INTERNAL "rknpu_subgraph_bridges")
 
 message(STATUS "+++++ rknpu_subgraph_bridges: ${rknpu_subgraph_bridges}")
