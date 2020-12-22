@@ -106,6 +106,7 @@ if(LITE_BUILD_EXTRA)
 
 endif()
     lite_cc_test(test_kernel_pad2d_compute SRCS  pad2d_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_pad3d_compute SRCS  pad3d_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_prior_box_compute SRCS  prior_box_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_negative_compute SRCS negative_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_interp_compute SRCS interp_compute_test.cc DEPS ${test_kernel_deps})

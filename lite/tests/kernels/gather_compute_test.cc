@@ -55,9 +55,9 @@ class GatherComputeTest : public arena::TestCase {
           (index_dims.size() == 2 && index_dims[1] == 1));
     CHECK_EQ(index_dims.size(), 1);
     if (axis_dims_.production() == 1) {
-      auto* axis_data = axis->data<A>();
-      auto* index_data = index->data<R>();
-      auto* input_data = x->data<T>();
+      auto* axis_data = axis->template data<A>();
+      auto* index_data = index->template data<R>();
+      auto* input_data = x->template data<T>();
 
       int index_size = index->numel();
       int input_size = x->numel();
@@ -78,7 +78,7 @@ class GatherComputeTest : public arena::TestCase {
       auto out = scope->NewTensor(out_);
       CHECK(out);
       out->Resize(out_dim_vec);
-      auto* out_data = out->mutable_data<T>();
+      auto* out_data = out->template mutable_data<T>();
 
       int out_index = 0;
       for (int i = 0; i < inner_dim_size; i++) {
