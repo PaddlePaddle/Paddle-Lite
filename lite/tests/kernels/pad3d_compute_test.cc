@@ -124,7 +124,7 @@ class Pad3dComputeTester : public arena::TestCase {
                       (in_x >= 0 && in_x < in_w) &&
                               (in_y >= 0 && in_y < in_h) &&
                               (in_z >= 0 && in_z < in_d)
-                          ? din_batch[in_d * in_size + in_y * in_w + in_x]
+                          ? din_batch[in_z * in_size + in_y * in_w + in_x]
                           : pad_value;
                   break;
                 case 1:
@@ -138,21 +138,21 @@ class Pad3dComputeTester : public arena::TestCase {
                   in_x = std::max(in_x, -in_x);
                   in_x = std::min(in_x, 2 * in_w - in_x - 2);
                   dout_batch[z * out_size + y * w + x] =
-                      din_batch[in_d * in_size + in_y * in_w + in_x];
+                      din_batch[in_z * in_size + in_y * in_w + in_x];
                   break;
                 case 2:
                   in_z = std::min(in_d - 1, std::max(z - pad_front, 0));
                   in_y = std::min(in_h - 1, std::max(y - pad_top, 0));
                   in_x = std::min(in_w - 1, std::max(x - pad_left, 0));
                   dout_batch[z * out_size + y * w + x] =
-                      din_batch[in_d * in_size + in_y * in_w + in_x];
+                      din_batch[in_z * in_size + in_y * in_w + in_x];
                   break;
                 case 3:
                   in_z = ((z - pad_front) % in_d + in_d) % in_d;
                   in_y = ((y - pad_top) % in_h + in_h) % in_h;
                   in_x = ((x - pad_left) % in_w + in_w) % in_w;
                   dout_batch[z * out_size + y * w + x] =
-                      din_batch[in_d * in_size + in_y * in_w + in_x];
+                      din_batch[in_z * in_size + in_y * in_w + in_x];
                   break;
                 default:
                   LOG(ERROR) << "ERROR: unknown pad mode:" << pad_mode;
@@ -180,7 +180,7 @@ class Pad3dComputeTester : public arena::TestCase {
                   in_z = z - pad_front;
                   in_y = y - pad_top;
                   in_x = x - pad_left;
-                  in_index = (in_d * in_size + in_y * in_w + in_x) * c;
+                  in_index = (in_z * in_size + in_y * in_w + in_x) * c;
                   out_index = (z * out_size + y * w + x) * c;
                   if ((in_x >= 0 && in_x < in_w) &&
                       (in_y >= 0 && in_y < in_h) &&
@@ -204,7 +204,7 @@ class Pad3dComputeTester : public arena::TestCase {
                   in_y = std::min(in_y, 2 * in_h - in_y - 2);
                   in_x = std::max(in_x, -in_x);
                   in_x = std::min(in_x, 2 * in_w - in_x - 2);
-                  in_index = (in_d * in_size + in_y * in_w + in_x) * c;
+                  in_index = (in_z * in_size + in_y * in_w + in_x) * c;
                   out_index = (z * out_size + y * w + x) * c;
                   for (int j = 0; j < c; j++) {
                     dout_batch[out_index + j] = din_batch[in_index + j];
@@ -214,7 +214,7 @@ class Pad3dComputeTester : public arena::TestCase {
                   in_z = std::min(in_d - 1, std::max(z - pad_front, 0));
                   in_y = std::min(in_h - 1, std::max(y - pad_top, 0));
                   in_x = std::min(in_w - 1, std::max(x - pad_left, 0));
-                  in_index = (in_d * in_size + in_y * in_w + in_x) * c;
+                  in_index = (in_z * in_size + in_y * in_w + in_x) * c;
                   out_index = (z * out_size + y * w + x) * c;
                   for (int j = 0; j < c; j++) {
                     dout_batch[out_index + j] = din_batch[in_index + j];
@@ -224,7 +224,7 @@ class Pad3dComputeTester : public arena::TestCase {
                   in_z = ((z - pad_front) % in_d + in_d) % in_d;
                   in_y = ((y - pad_top) % in_h + in_h) % in_h;
                   in_x = ((x - pad_left) % in_w + in_w) % in_w;
-                  in_index = (in_d * in_size + in_y * in_w + in_x) * c;
+                  in_index = (in_z * in_size + in_y * in_w + in_x) * c;
                   out_index = (z * out_size + y * w + x) * c;
                   for (int j = 0; j < c; j++) {
                     dout_batch[out_index + j] = din_batch[in_index + j];
@@ -245,7 +245,7 @@ class Pad3dComputeTester : public arena::TestCase {
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
     op_desc->SetAttr("mode", mode_);
-    op_desc->SetAttr("pad_value", pad_value_);
+    op_desc->SetAttr("value", pad_value_);
     op_desc->SetAttr("paddings", paddings_);
     op_desc->SetAttr("data_format", data_format_);
   }
@@ -259,6 +259,7 @@ class Pad3dComputeTester : public arena::TestCase {
 
 void TestPad3d(const Place& place, float abs_error = 2e-5) {
   std::string data_format = "NCDHW";
+  const float pad_value = 0.f;
   for (int pad_top : {0, 1}) {
     for (int pad_bottom : {0, 1}) {
       for (int pad_left : {0, 1}) {
@@ -273,22 +274,15 @@ void TestPad3d(const Place& place, float abs_error = 2e-5) {
                                         pad_back};
               for (std::string pad_mode :
                    {"constant", "reflect", "replicate", "circular"}) {
-                for (float pad_value : {0.f, 1.0f}) {
-                  VLOG(4) << "pad3d pad_mode: " << pad_mode
-                          << ", pad_val: " << pad_value
-                          << ", padding: " << paddings[0] << ", " << paddings[1]
-                          << ", " << paddings[2] << ", " << paddings[3]
-                          << paddings[4] << ", " << paddings[5];
-                  std::unique_ptr<arena::TestCase> tester(
-                      new Pad3dComputeTester(place,
-                                             "def",
-                                             pad_mode,
-                                             paddings,
-                                             pad_value,
-                                             data_format));
-                  arena::Arena arena(std::move(tester), place, abs_error);
-                  arena.TestPrecision();
-                }
+                VLOG(4) << "pad3d pad_mode: " << pad_mode
+                        << ", pad_val: " << pad_value
+                        << ", padding: " << paddings[0] << ", " << paddings[1]
+                        << ", " << paddings[2] << ", " << paddings[3] << ", "
+                        << paddings[4] << ", " << paddings[5];
+                std::unique_ptr<arena::TestCase> tester(new Pad3dComputeTester(
+                    place, "def", pad_mode, paddings, pad_value, data_format));
+                arena::Arena arena(std::move(tester), place, abs_error);
+                arena.TestPrecision();
               }
             }
           }

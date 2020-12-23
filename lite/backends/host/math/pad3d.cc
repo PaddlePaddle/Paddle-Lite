@@ -58,18 +58,16 @@ void pad_ncdhw_constant(const float* din,
             memset(dout_num, pad_value, sizeof(float) * out_w);
             dout_num += out_w;
           } else {
-            for (int w = -pad_left; w < in_w + pad_right; w++) {
-              if (w < 0) {
-                memset(dout_num, pad_value, sizeof(float) * pad_left);
-                dout_num += pad_left;
-              } else if (w >= in_w) {
-                memset(dout_num, pad_value, sizeof(float) * pad_right);
-                dout_num += pad_right;
-              } else {
-                memcpy(dout_num, din_num, sizeof(float) * in_w);
-                dout_num += in_w;
-                din_num += in_w;
-              }
+            if (pad_left) {
+              memset(dout_num, pad_value, sizeof(float) * pad_left);
+              dout_num += pad_left;
+            }
+            memcpy(dout_num, din_num, sizeof(float) * in_w);
+            dout_num += in_w;
+            din_num += in_w;
+            if (pad_right) {
+              memset(dout_num, pad_value, sizeof(float) * pad_right);
+              dout_num += pad_right;
             }
           }
         }
@@ -117,18 +115,16 @@ void pad_ndhwc_constant(const float* din,
             memset(dout_num, pad_value, sizeof(float) * out_wc);
             dout_num += out_wc;
           } else {
-            for (int w = -pad_left; w < in_w + pad_right; w++) {
-              if (w < 0) {
-                memset(dout_num, pad_value, sizeof(float) * pad_leftc);
-                dout_num += pad_leftc;
-              } else if (w >= in_w) {
-                memset(dout_num, pad_value, sizeof(float) * pad_rightc);
-                dout_num += pad_rightc;
-              } else {
-                memcpy(dout_num, din_num, sizeof(float) * in_wc);
-                dout_num += in_wc;
-                din_num += in_wc;
-              }
+            if (pad_left) {
+              memset(dout_num, pad_value, sizeof(float) * pad_leftc);
+              dout_num += pad_leftc;
+            }
+            memcpy(dout_num, din_num, sizeof(float) * in_wc);
+            dout_num += in_wc;
+            din_num += in_wc;
+            if (pad_right) {
+              memset(dout_num, pad_value, sizeof(float) * pad_rightc);
+              dout_num += pad_rightc;
             }
           }
         }
@@ -341,9 +337,9 @@ void pad_ncdhw_circular(const float* din,
     for (int od = 0; od < out_d; od++) {
       for (int oh = 0; oh < out_h; oh++) {
         for (int ow = 0; ow < out_w; ow++) {
-          int in_depth = ((out_d - pad_front) % in_d + in_d) % in_d;
-          int in_height = ((out_h - pad_top) % in_h + in_h) % in_h;
-          int in_width = ((out_w - pad_left) % in_w + in_w) % in_w;
+          int in_depth = ((od - pad_front) % in_d + in_d) % in_d;
+          int in_height = ((oh - pad_top) % in_h + in_h) % in_h;
+          int in_width = ((ow - pad_left) % in_w + in_w) % in_w;
           dout_num[od * size_out_hw + oh * out_w + ow] =
               din_num[in_depth * size_in_hw + in_height * in_w + in_width];
         }
@@ -381,9 +377,9 @@ void pad_ndhwc_circular(const float* din,
     for (int od = 0; od < out_d; od++) {
       for (int oh = 0; oh < out_h; oh++) {
         for (int ow = 0; ow < out_w; ow++) {
-          int in_depth = ((out_d - pad_front) % in_d + in_d) % in_d;
-          int in_height = ((out_h - pad_top) % in_h + in_h) % in_h;
-          int in_width = ((out_w - pad_left) % in_w + in_w) % in_w;
+          int in_depth = ((od - pad_front) % in_d + in_d) % in_d;
+          int in_height = ((oh - pad_top) % in_h + in_h) % in_h;
+          int in_width = ((ow - pad_left) % in_w + in_w) % in_w;
           int out_idx = od * size_out_hw + oh * out_wc + ow * c;
           int in_idx = in_depth * size_in_hw + in_height * in_wc + in_width * c;
           for (int j = 0; j < c; j++) {
