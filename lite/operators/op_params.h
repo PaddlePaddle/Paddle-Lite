@@ -2036,6 +2036,11 @@ struct FlattenContiguousRangeParam : ParamBase {
   int stop_axis;
 };
 
+struct LoDArrayLengthParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
