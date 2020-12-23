@@ -190,7 +190,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetInput("Input", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
 
-    auto* conv_op = matched.at("quantized_op")->stmt()->op_info();
+    auto* conv_op_desc = matched.at("quantized_op")->stmt()->op_info();
     auto groups = conv_op_desc->GetAttr<int>("groups");
     // Conv weight shape: Cin * Cout/group * kh * hw, the weight_scale_size
     // should
