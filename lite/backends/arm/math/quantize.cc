@@ -12,25 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/backends/arm/math/quantize.h"
 #include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <cmath>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
 
-template <PrecisionType Ptype>
-class LstmCompute : public KernelLite<TARGET(kARM), Ptype> {
- public:
-  void Run() override;
+float FindAbsMax(const float* input, int size) {
+  auto abs_compare_func = [](float a, float b) {
+    return (std::abs(a) < std::abs(b));
+  };
+  float abs_max_value =
+      std::abs(*std::max_element(input, input + size, abs_compare_func));
+  return abs_max_value;
+}
 
-  virtual ~LstmCompute() = default;
-};
-
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

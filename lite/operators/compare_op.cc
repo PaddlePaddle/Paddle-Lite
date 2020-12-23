@@ -13,11 +13,56 @@
 // limitations under the License.
 
 #include "lite/operators/compare_op.h"
+#include <algorithm>
+#include <cmath>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
+
+static void GetBroadcastDimsArrays(const DDim &x_dims,
+                                   const DDim &y_dims,
+                                   int64_t *x_dims_array,
+                                   int64_t *y_dims_array,
+                                   int64_t *out_dims_array,
+                                   int max_dim,
+                                   int axis) {
+  auto copy_data = [](const DDim &dims, int start, int end, int64_t *dest) {
+    for (int i = start; i < end; i++) {
+      dest[i] = dims[i];
+    }
+  };
+
+  CHECK_GE(axis, 0);
+  CHECK_LT(axis, max_dim);
+  if (x_dims.size() > y_dims.size()) {
+    std::fill(y_dims_array, y_dims_array + axis, 1);
+    if (axis + y_dims.size() < max_dim) {
+      std::fill(y_dims_array + axis + y_dims.size(), y_dims_array + max_dim, 1);
+    }
+    copy_data(x_dims, 0, x_dims.size(), x_dims_array);
+    copy_data(y_dims, 0, y_dims.size(), y_dims_array + axis);
+  } else {
+    std::fill(x_dims_array, x_dims_array + axis, 1);
+    if (axis + x_dims.size() < max_dim) {
+      std::fill(x_dims_array + axis + x_dims.size(), x_dims_array + max_dim, 1);
+    }
+    copy_data(x_dims, 0, x_dims.size(), x_dims_array + axis);
+    copy_data(y_dims, 0, y_dims.size(), y_dims_array);
+  }
+
+  for (int i = 0; i < max_dim; i++) {
+    CHECK(x_dims_array[i] == y_dims_array[i] || x_dims_array[i] <= 1 ||
+          y_dims_array[i] <= 1);
+    if ((x_dims_array[i] > 1 || y_dims_array[i] > 1) ||
+        (x_dims_array[i] == 1 && y_dims_array[i] == 1)) {
+      out_dims_array[i] = (std::max)(x_dims_array[i], y_dims_array[i]);
+    } else {
+      out_dims_array[i] = -1;
+    }
+  }
+}
 
 bool CompareOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
@@ -28,16 +73,26 @@ bool CompareOp::CheckShape() const {
 
 bool CompareOp::InferShapeImpl() const {
   CHECK_OR_FALSE(param_.Out);
-  // TODO(Superjomn) Enable data sharing.
-  auto input_dims = param_.X->dims();
-  std::vector<int64_t> new_dims;
-  if (input_dims.size() == 2 && input_dims[1] == 1) {
-    new_dims.push_back(input_dims[0]);
-    param_.Out->Resize(new_dims);
+  auto dim_x = param_.X->dims();
+  auto dim_y = param_.Y->dims();
+  if (dim_x == dim_y) {
+    param_.Out->Resize(dim_x);
   } else {
-    param_.Out->Resize(input_dims);
+    int max_dim = (std::max)(dim_x.size(), dim_y.size());
+    int axis = std::abs(static_cast<int>(dim_x.size() - dim_y.size()));
+    std::vector<int64_t> x_dims_array(max_dim);
+    std::vector<int64_t> y_dims_array(max_dim);
+    std::vector<int64_t> out_dims_array(max_dim);
+    GetBroadcastDimsArrays(dim_x,
+                           dim_y,
+                           x_dims_array.data(),
+                           y_dims_array.data(),
+                           out_dims_array.data(),
+                           max_dim,
+                           axis);
+    param_.Out->Resize(out_dims_array);
   }
-  // param_.Out->Resize(input_dims);
+  param_.Out->set_lod(param_.X->lod());
   return true;
 }
 

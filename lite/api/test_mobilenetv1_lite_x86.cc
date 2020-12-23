@@ -72,12 +72,18 @@ TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
   ASSERT_EQ(out->shape()[0], 1);
   ASSERT_EQ(out->shape()[1], 1000);
 
+#ifdef LITE_WITH_AVX
+  const float abs_error = 1e-2;
+#else
+  const float abs_error = 1e-6;
+#endif
+
   int step = 50;
   for (size_t i = 0; i < results.size(); ++i) {
     for (size_t j = 0; j < results[i].size(); ++j) {
       EXPECT_NEAR(out->data<float>()[j * step + (out->shape()[1] * i)],
                   results[i][j],
-                  1e-6);
+                  abs_error);
     }
   }
 }
