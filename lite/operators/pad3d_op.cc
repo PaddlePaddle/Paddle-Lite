@@ -59,7 +59,7 @@ bool Pad3dOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   if (op_desc.HasAttr("Paddings") && op_desc.GetAttr<bool>("Paddings")) {
     auto Paddings =
         scope->FindVar(op_desc.Input("Paddings").front())->GetMutable<Tensor>();
-    auto ptr = Paddings->data<int>();
+
     if (Paddings->dims().size() != 1) {
       printf("Paddings size must be one: %d \n",
              static_cast<int>(Paddings->dims().size()));
