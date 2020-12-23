@@ -5743,8 +5743,10 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                    ctx);
   }
 #else
-  if (ctx->has_dot()) {
+  if (0 && ctx->has_dot()) {
 #ifdef WITH_ARM_DOTPROD
+    // ios build error : no template named 'gemm_prepack_vsdot_int8'
+    // android is ok
     gemm_prepack_vsdot_int8<int32_t>(A_packed,
                                      B,
                                      bias,
