@@ -410,26 +410,10 @@ void SaveModelNaive(const std::string &model_file,
   uint16_t meta_version = 1;
   // You can modify meta_version by register environment variable
   // 'PADDLELITE_OPT_META_VERSION'
-  const char *PADDLELITE_OPT_META_VERSION =
-      std::getenv("PADDLELITE_OPT_META_VERSION");
-  int PADDLELITE_OPT_META_VERSION_int =
-      (PADDLELITE_OPT_META_VERSION && atoi(PADDLELITE_OPT_META_VERSION) > 0)
-          ? atoi(PADDLELITE_OPT_META_VERSION)
-          : 0;
-  switch (PADDLELITE_OPT_META_VERSION_int) {
-    case 0:
-      break;
-    case 1:
-      break;
-    case 2: {
-      meta_version = 2;
-      break;
-    }
-    default: {
-      LOG(FATAL) << "Error: Unsupported opt meta_version, "
-                    "PADDLELITE_OPT_META_VERSION should be set as 1 or 2.";
-      break;
-    }
+  const char *PADDLE_LITE_EXPERIMENTAL_MODEL =
+      std::getenv("PADDLE_LITE_EXPERIMENTAL_MODEL");
+  if (PADDLE_LITE_EXPERIMENTAL_MODEL != nullptr) {
+    meta_version = 2;
   }
   // Save meta_version(uint16) into file
   writer.Write(&meta_version, sizeof(uint16_t));
@@ -481,7 +465,7 @@ void SaveModelNaive(const std::string &model_file,
     }
     default: {
       LOG(FATAL) << "Error: Unsupported opt meta_version, "
-                    "PADDLELITE_OPT_META_VERSION should be set as 1 or 2.";
+                    "meta_version should be set as 1 or 2.";
       break;
     }
   }
