@@ -123,7 +123,7 @@ void Pad3dCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    pad3d, kHost, kFloat, kAny, paddle::lite::kernels::host::Pad3dCompute, def)
+    pad3d, kHost, kFloat, kNCHW, paddle::lite::kernels::host::Pad3dCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

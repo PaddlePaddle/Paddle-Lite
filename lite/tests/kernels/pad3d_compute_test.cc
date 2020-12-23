@@ -46,7 +46,6 @@ class Pad3dComputeTester : public arena::TestCase {
         data_format_(data_format) {}
 
   void RunBaseline(Scope* scope) override {
-    LOG(INFO) << "into runbase";
     auto* out = scope->NewTensor(out_);
     CHECK(out);
     int out_d = dims_[2] + paddings_[4] + paddings_[5];
@@ -63,7 +62,6 @@ class Pad3dComputeTester : public arena::TestCase {
     auto* out_data = out->mutable_data<float>();
     auto* x = scope->FindTensor(x_);
     const auto* x_data = x->data<float>();
-    LOG(INFO) << "get nums";
 
     auto output_dims = out->dims();
     int n = output_dims[0];
