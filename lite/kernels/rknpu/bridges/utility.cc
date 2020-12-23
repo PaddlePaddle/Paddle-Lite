@@ -117,7 +117,7 @@ std::shared_ptr<rk::nn::Tensor> CvtTensor(rk::nn::Graph* graph,
   auto attr = std::make_shared<rk::nn::TensorAttr>();
   attr->name = name;
   attr->role =
-      data == nullptr ? rk::nn::TensorRole::DATA : rk::nn::TensorRole::CONST;
+      data == nullptr ? rk::nn::TensorRole::VAR : rk::nn::TensorRole::CONST;
   attr->dims = CvtShape(shape);
   attr->precision = CvtPrecisionType(precision);
   attr->layout = CvtDataLayoutType(layout);
