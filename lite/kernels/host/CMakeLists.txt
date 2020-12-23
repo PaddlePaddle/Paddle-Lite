@@ -1,4 +1,3 @@
-lite/backends/host/math/pad3d.cc
 message(STATUS "compile with lite host kernels")
 
 # basic kernels
