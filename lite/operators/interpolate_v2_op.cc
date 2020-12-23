@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/interpolate_op.h"
+#include "lite/operators/interpolate_v2_op.h"
 #include <string>
 #include <vector>
 #include "lite/core/op_lite.h"
@@ -23,7 +23,7 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool InterpolateOp::CheckShape() const {
+bool InterpolateV2Op::CheckShape() const {
   auto* X = param_.X;
   auto* OutSize = param_.OutSize;
   CHECK_OR_FALSE(X);
@@ -34,7 +34,7 @@ bool InterpolateOp::CheckShape() const {
   return true;
 }
 
-bool InterpolateOp::InferShapeImpl() const {
+bool InterpolateV2Op::InferShapeImpl() const {
   auto X = param_.X;
 
   int n = X->dims()[0];
@@ -64,17 +64,26 @@ bool InterpolateOp::InferShapeImpl() const {
     out_h = param_.out_h;
     out_w = param_.out_w;
   } else {
-    float scale = -1.f;
+    float scale_w = -1.f;
+    float scale_h = -1.f;
     if (Scale) {
       auto Scale_dims = Scale->dims();
       CHECK_EQ(Scale_dims.size(), 1) << "Scale's dimension size must be 1.";
-      scale = Scale->data<float>()[0];
+      out_h = -1;
+      out_w = -1;
     } else {
-      scale = param_.scale;
+      if (param_.scale_v.size() > 0) {
+        scale_h = param_.scale_v[0];
+        scale_w = param_.scale_v[1];
+        CHECK_GT(scale_h, 0) << "scale_h must be greaten 0.";
+        CHECK_GT(scale_w, 0) << "scale_w must be greaten 0.";
+        out_h = static_cast<int>(h * scale_h);
+        out_w = static_cast<int>(w * scale_w);
+      } else {
+        out_h = param_.out_h;
+        out_w = param_.out_w;
+      }
     }
-    CHECK(scale > 0) << "scale must large than 0.";
-    out_h = static_cast<int>(h * scale);
-    out_w = static_cast<int>(w * scale);
   }
 
   auto out_lod = param_.Out->mutable_lod();
@@ -84,7 +93,8 @@ bool InterpolateOp::InferShapeImpl() const {
   return true;
 }
 
-bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
+bool InterpolateV2Op::AttachImpl(const cpp::OpDesc& op_desc,
+                                 lite::Scope* scope) {
   auto X = op_desc.Input("X").front();
   if (op_desc.HasInput("OutSize")) {
     auto out_size_var_names = op_desc.Input("OutSize");
@@ -117,7 +127,11 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
   param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
   if (op_desc.HasAttr("scale")) {
-    param_.scale = op_desc.GetAttr<float>("scale");
+    auto vs = op_desc.GetAttr<std::vector<float>>("scale");
+    if (vs.size() > 0) {
+      param_.scale_v = vs;
+      param_.scale = vs[0];
+    }
   }
   if (op_desc.HasAttr("out_w")) {
     param_.out_w = op_desc.GetAttr<int>("out_w");
@@ -137,5 +151,4 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
 } /* namespace lite */
 } /* namespace paddle */
 
-REGISTER_LITE_OP(nearest_interp, paddle::lite::operators::InterpolateOp);
-REGISTER_LITE_OP(bilinear_interp, paddle::lite::operators::InterpolateOp);
+REGISTER_LITE_OP(bilinear_interp_v2, paddle::lite::operators::InterpolateV2Op);
