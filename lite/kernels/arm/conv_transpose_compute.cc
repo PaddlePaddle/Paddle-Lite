@@ -571,6 +571,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                                  &act_param);
   }
 }
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
