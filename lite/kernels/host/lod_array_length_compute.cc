@@ -22,8 +22,9 @@ namespace host {
 void LoDArrayLengthCompute::Run() {
   auto& param = this->Param<operators::LoDArrayLengthParam>();
   lite::Tensor* input = param.x;
-  lite::Tensor* output = param.out; 
-  param.out->mutable_data<int64_t>()[0] = static_cast<int64_t>(input->data_size());
+  lite::Tensor* output = param.out;
+  param.out->mutable_data<int64_t>()[0] =
+      static_cast<int64_t>(input->data_size());
 #ifdef LITE_WITH_PROFILE
   this->kernel_func_name_ = "lod_array_length_func";
 #endif
@@ -40,10 +41,7 @@ REGISTER_LITE_KERNEL(lod_array_length,
                      kAny,
                      paddle::lite::kernels::host::LoDArrayLengthCompute,
                      def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kInt64))})
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/lod_array_length_op.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -32,7 +33,7 @@ bool LoDArrayLengthOp::InferShapeImpl() const {
 }
 bool LoDArrayLengthOp::Run() { return OpLite::Run(); }
 bool LoDArrayLengthOp::AttachImpl(const cpp::OpDesc &opdesc,
-                          paddle::lite::Scope *scope) {
+                                  paddle::lite::Scope *scope) {
   auto x = opdesc.Input("X").front();
   auto out = opdesc.Output("Out").front();
   param_.x = GetMutableTensor(scope, x);
