@@ -30,8 +30,8 @@ class LoDArrayLengthComputeTester : public arena::TestCase {
 
  public:
   LoDArrayLengthComputeTester(const Place& place,
-                       const std::string& alias,
-                       DDim x_dims)
+                              const std::string& alias,
+                              DDim x_dims)
       : TestCase(place, alias), x_dims_(x_dims) {}
 
   void RunBaseline(Scope* scope) override {
@@ -57,8 +57,8 @@ class LoDArrayLengthComputeTester : public arena::TestCase {
 };
 
 void LoDArrayLengthTestHelper(Place place,
-                       float abs_error,
-                       std::vector<int64_t> x_dims) {
+                              float abs_error,
+                              std::vector<int64_t> x_dims) {
   std::unique_ptr<arena::TestCase> tester(
       new LoDArrayLengthComputeTester(place, "def", DDim(x_dims)));
   arena::Arena arena(std::move(tester), place, abs_error);

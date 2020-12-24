@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class LoDArrayLengthCompute : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+class LoDArrayLengthCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::LoDArrayLengthParam;
   void Run() override;
