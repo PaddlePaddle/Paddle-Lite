@@ -20,7 +20,7 @@ add_kernel(conv_compute_x86 X86 basic SRCS conv_compute.cc DEPS ${lite_kernel_de
 # lite_cc_library(dropout_compute_x86 SRCS dropout_compute.cc DEPS ${lite_kernel_deps} )
 # lite_cc_library(conv_compute_x86 SRCS conv_compute.cc DEPS ${lite_kernel_deps} blas im2col vol2col)
 add_kernel(pool_compute_x86 X86 basic SRCS pool_compute.cc DEPS ${lite_kernel_deps} pooling)
-add_kernel(stack_compute_x86 X86 basic SRCS stack_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(stack_compute_x86 X86 basic SRCS stack_compute.cc DEPS ${lite_kernel_deps} stack_compute_host)
 add_kernel(dropout_compute_x86 X86 basic SRCS dropout_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(transpose_compute_x86 X86 basic SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_function)
 add_kernel(layer_norm_compute_x86 X86 basic SRCS layer_norm_compute.cc DEPS ${lite_kernel_deps} jit_kernel_helper)

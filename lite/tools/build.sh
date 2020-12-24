@@ -1,5 +1,5 @@
 #!/bin/bash
-set +ex
+set -e
 
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
@@ -599,7 +599,7 @@ function main {
                 shift
                 ;;
             --xpu_sdk_root=*)
-                XPU_SDK_ROOT="${i#*=}"
+                XPU_SDK_ROOT=$(readlink -f ${i#*=})
                 shift
                 ;;
             --python_executable=*)
