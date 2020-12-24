@@ -51,9 +51,13 @@ class Buffer {
 
   void CopyDataFrom(const Buffer& other);
 
-  Buffer(Buffer&& other) { raw_ = other.Release(); }
+  Buffer(Buffer&& other) {
+    raw_ = other.Release();
+    size_ = other.size();
+  }
   Buffer& operator=(Buffer&& other) {
     raw_ = other.Release();
+    size_ = other.size();
     return *this;
   }
 
