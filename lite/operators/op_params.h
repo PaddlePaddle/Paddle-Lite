@@ -2106,23 +2106,18 @@ struct FlattenContiguousRangeParam : ParamBase {
   int stop_axis;
 };
 
-struct RnnParam : ParamBase {
-  lite::Tensor* Input;
-  std::vector<lite::Tensor*> PreState;
-  std::vector<lite::Tensor*> WeightList;
-  lite::Tensor* SequenceLength;
-  lite::Tensor* DropoutState;
-  lite::Tensor* Reserve;
-  lite::Tensor* Out;
-  std::vector<lite::Tensor*> State;
-  float dropout_prob{0.0};
-  bool is_bidirec{false};
-  int input_size{10};
-  int hidden_size{100};
-  int num_layers{1};
-  std::string mode{"LSTM"};
-  bool is_test{false};
-  int seed{0};
+struct SelectInputParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  int Mask{0};
+};
+
+struct TensorArrayToTensorParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  lite::Tensor* OutIndex{};
+  int axis{0};
+  bool use_stack{false};
 };
 
 }  // namespace operators
