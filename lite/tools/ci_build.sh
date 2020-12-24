@@ -6,6 +6,7 @@ TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 CUDNN_ROOT="/usr/local/cudnn"
 LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
+NUM_PROC=4
 
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
