@@ -52,7 +52,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     for (size_t i = 0; i < inputs.size() - 1; i++) {
       bool tmp = inputs[i]->dims()[ch_axis] != inputs[i + 1]->dims()[ch_axis];
       is_concat_by_ch = is_concat_by_ch && tmp;
-      !is_concat_by_ch & break;
+      if (!is_concat_by_ch) break;
     }
 
     if (inputs.size() == 2) {
