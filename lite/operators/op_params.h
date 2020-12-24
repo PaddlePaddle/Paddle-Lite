@@ -1738,6 +1738,29 @@ struct XPUResNet50Param : ParamBase {
   lite::Tensor* output{};
 };
 
+struct XPUSoftmaxTopkParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* output{};
+  lite::Tensor* indices{};
+  int axis{-1};
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+  int K{1};
+};
+
 struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* input{};
   std::vector<lite::Tensor*> fc_weight;
