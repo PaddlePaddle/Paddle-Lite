@@ -46,11 +46,20 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto inputs = concat_param_->x;
     auto output_tensor_dims = concat_param_->output->dims();
 
+    // concat by channel
+    bool is_concat_by_ch{axis_ == 1};
+    const size_t ch_axis = 1;
+    for (size_t i = 0; i < inputs.size() - 1; i++) {
+      bool tmp = inputs[i]->dims()[ch_axis] != inputs[i + 1]->dims()[ch_axis];
+      is_concat_by_ch = is_concat_by_ch && tmp;
+      !is_concat_by_ch & break;
+    }
+
     if (inputs.size() == 2) {
       kernel_func_name_ = "concat2";
-    } else if (inputs.size() == 3) {
+    } else if (inputs.size() == 3 && is_concat_by_ch) {
       kernel_func_name_ = "concatByCWith3Inputs";
-    } else if (inputs.size() == 4) {
+    } else if (inputs.size() == 4 && is_concat_by_ch) {
       kernel_func_name_ = "concatByCWith4Inputs";
     } else {
       // note: do layout transform between image and buffer,
