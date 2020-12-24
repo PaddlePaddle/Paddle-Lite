@@ -29,8 +29,7 @@ class XPUSoftmaxTopkFuser : public FuseBase {
     auto* input =
         VarNode("input")->assert_is_op_input("softmax", "X")->AsInput();
     auto* softmax = OpNode("softmax", "softmax")
-                        ->assert_op_attr_satisfied<int>(
-                            "axis", [](const int& attr) { return attr == -1; })
+                        ->assert_op_attr<int>("axis", -1)
                         ->AsIntermediate();
     auto* softmax_out = VarNode("softmax_out")
                             ->assert_is_op_output("softmax", "Out")

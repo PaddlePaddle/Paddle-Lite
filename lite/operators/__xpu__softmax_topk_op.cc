@@ -46,12 +46,9 @@ bool XPUSoftmaxTopkOp::InferShapeImpl() const {
 bool XPUSoftmaxTopkOp::AttachImpl(const cpp::OpDesc &opdesc,
                                   lite::Scope *scope) {
   AttachParam(&param_);
-  param_.x = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
-  param_.output =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
-  param_.indices = scope->FindVar(opdesc.Output("Indices").front())
-                       ->GetMutable<lite::Tensor>();
+  param_.x = scope->FindTensor(opdesc.Input("X").front());
+  param_.output = scope->FindMutableTensor(opdesc.Output("Out").front());
+  param_.indices = scope->FindMutableTensor(opdesc.Output("Indices").front());
   param_.K = opdesc.GetAttr<int>("k");
   if (opdesc.HasAttr("axis")) {
     param_.axis = opdesc.GetAttr<int>("axis");
@@ -61,7 +58,8 @@ bool XPUSoftmaxTopkOp::AttachImpl(const cpp::OpDesc &opdesc,
   CHECK(param_.x);
   CHECK(param_.output);
   CHECK(param_.indices);
-  CHECK_GE(param_.K, 1) << "XPUSoftmaxTopk param is not valid";
+  CHECK_GE(param_.K, 1) << "XPUSoftmaxTopk param K is " << param_.K
+                        << " which is not valid";
   return true;
 }
 
