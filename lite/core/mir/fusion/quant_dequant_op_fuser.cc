@@ -179,14 +179,23 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   std::vector<float> weight_scale;
   int weight_scale_size = 0;
   if (quantized_op_type_ == "conv2d" ||
-      quantized_op_type_ == "depthwise_conv2d" ||
-      quantized_op_type_ == "conv2d_transpose") {
+      quantized_op_type_ == "depthwise_conv2d") {
     op_desc.SetInput("Input", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
     // Conv weight shape: Cout * Cin/group * kh * hw, the weight_scale_size
     // should
     // be Cout.
     weight_scale_size = quantized_weight_t->dims()[0];
+  } else if (quantized_op_type_ == "conv2d_transpose") {
+    op_desc.SetInput("Input", {quantized_op_input->arg()->name});
+    op_desc.SetOutput("Output", {dequant_op_out->arg()->name});
+
+    auto* conv_op_desc = matched.at("quantized_op")->stmt()->op_info();
+    auto groups = conv_op_desc->GetAttr<int>("groups");
+    // Conv weight shape: Cin * Cout/group * kh * hw, the weight_scale_size
+    // should
+    // be Cout.
+    weight_scale_size = quantized_weight_t->dims()[1] * groups;
   } else if (quantized_op_type_ == "mul" || quantized_op_type_ == "matmul") {
     op_desc.SetInput("X", {quantized_op_input->arg()->name});
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});

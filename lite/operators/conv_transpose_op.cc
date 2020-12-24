@@ -88,7 +88,7 @@ bool ConvTransposeOpLite::InferShapeImpl() const {
           << "the output_padding should be great than 0, "
           << "but output_padding is " << param_.output_padding[i];
       CHECK_LT(param_.output_padding[i],
-               std::max(param_.strides[i], dilations[i]))
+               (std::max)(param_.strides[i], dilations[i]))
           << "the output_padding should be less than max(strides, dilations), "
           << "but output_padding is " << param_.output_padding[i]
           << ", strides is " << param_.strides[i] << ", dilations is "
