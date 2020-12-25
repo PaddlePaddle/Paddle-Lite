@@ -9,16 +9,11 @@
 基于Paddle Lite实现的安卓、iOS、和ARMLinux上的项目[https://github.com/PaddlePaddle/Paddle-Lite-Demo
 ](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
 
-
 2、 PaddleSlim与Paddle Lite、Paddle Inference对于量化的支持是怎么样的？
 答：
 开发者可以通过PaddleSlim获得量化模型。Paddle Lite和Paddle Inferece对int8的量化支持是最为完备，因此推荐飞桨的开发者在实际使用中，使用int8量化。
 另外，Paddle Inference还支持fp16的混合精度推理。
 
-（内部知晓材料）
-PaddleSlim支持int1,2,4,8,16的量化。
-Paddle Lite支持int8模型的推理，支持int16模型的加载（推理的时候仍然是fp32，因此不会加速）
-Paddle Inference支持int8模型（即通过PaddleSlim得到的int8量化模型）的推理，同时Paddle Inference也支持fp16的混合精度推理。
 
 ### 编译相关
 
@@ -44,7 +39,7 @@ Paddle Inference支持int8模型（即通过PaddleSlim得到的int8量化模型�
 答：这两类模型都是paddle保存出来的可用于预测的模型，区别在于模型的参数文件给出的形式。
 combined model包含两个文件，一个是模型结构的__model__文件，和表示模型参数的params文件。
 uncombined model除了模型结构的__model__文件以外，还包含若干的模型参数文件, 如下图所示。
-![图片](https://agroup-bos-bj.cdn.bcebos.com/bj-44b7f49f46d2ffc966af4f10f8da2496eeb1b9c8)
+![图片](https://paddlelite-data.bj.bcebos.com/doc_images%2Fseperated_model.png)
 
 3、如果出现找不到 `__model__`文件、version不匹配、加载模型时`segmentation_fault`等问题，怎么办？
 
@@ -53,11 +48,13 @@ uncombined model除了模型结构的__model__文件以外，还包含若干的�
 4、查看某个版本是否支持当前模型的方法。
 
 答：以yolov3为例，使用OPT工具查看下是否支持，参考命令如下：
+
 ```
 ./lite/api/opt --print_model_ops=true --model_file=$MODEL_FILE --param_file=$PARAM_FILE \
 
                --valid_targets=arm
 ```
+
 
 5、在转换opt的时候报错，需要怎么排查？
 
