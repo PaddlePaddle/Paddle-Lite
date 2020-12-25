@@ -74,3 +74,4 @@ USE_MIR_PASS(__xpu__conv2d_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_link_previous_out_max_pass);
 USE_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass);
 USE_MIR_PASS(__xpu__sfa_head_moment_fuse_pass);
+USE_MIR_PASS(__xpu__softmax_topk_fuse_pass);
