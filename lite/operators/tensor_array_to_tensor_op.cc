@@ -31,9 +31,6 @@ bool TensorArrayToTensorOpLite::InferShapeImpl() const {
   const size_t n = inputs.size();
   int axis = param_.axis;
   bool use_stack = param_.use_stack;
-  auto index_dim = param_.OutIndex->dims();
-  index_dim[0] = n;
-  param_.OutIndex->Resize(index_dim);
   if (use_stack) {
     auto input_dims = inputs[0]->dims();
     int rank = input_dims.size();
@@ -61,7 +58,6 @@ bool TensorArrayToTensorOpLite::InferShapeImpl() const {
     auto out_lod = param_.Out->mutable_lod();
     *out_lod = param_.X[0]->lod();
   }
-
   return true;
 }
 
