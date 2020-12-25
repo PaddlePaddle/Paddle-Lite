@@ -51,6 +51,8 @@ void gemm_s8(bool is_transA,
 
     return;
   }
+  // TODO(chenjiao): fix the error of gemv_int8
+  /*
   if (M == 1) {
     float bias_ptr[N];   // NOLINT
     float scale_ptr[N];  // NOLINT
@@ -76,6 +78,7 @@ void gemm_s8(bool is_transA,
               act_param.Leaky_relu_alpha);
     return;
   }
+  */
 
   int hblock = get_hblock_int8(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
