@@ -1738,6 +1738,14 @@ struct XPUResNet50Param : ParamBase {
   lite::Tensor* output{};
 };
 
+struct XPUSoftmaxTopkParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* output{};
+  lite::Tensor* indices{};
+  int axis{-1};
+  int K{1};
+};
+
 struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* input{};
   std::vector<lite::Tensor*> fc_weight;
