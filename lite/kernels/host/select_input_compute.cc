@@ -21,12 +21,7 @@ namespace host {
 
 void SelectInputCompute::Run() {
   auto& param = this->Param<param_t>();
-  // param.Out = param.X[param.Mask];
-  float* out = param.Out->mutable_data<float>();
-  float* in = param.X[param.Mask]->mutable_data<float>();
-  for (int i = 0; i < param.X[param.Mask]->data_size(); i++) {
-    out[i] = in[i];
-  }
+  param.Out->ShareDataWith(*param.X[param.Mask]);
 }
 
 }  // namespace host
