@@ -93,6 +93,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_sequence_expand_as_compute SRCS sequence_expand_as_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_sin_compute SRCS sin_compute_test.cc DEPS arena_framework ${test_kernel_deps})
     lite_cc_test(test_kernel_cos_compute SRCS cos_compute_test.cc DEPS arena_framework ${test_kernel_deps})
+    lite_cc_test(test_kernel_pad3d_compute SRCS  pad3d_compute_test.cc DEPS ${test_kernel_deps})
     
     # for training kernel
     if (LITE_WITH_TRAIN)
@@ -106,7 +107,6 @@ if(LITE_BUILD_EXTRA)
 
 endif()
     lite_cc_test(test_kernel_pad2d_compute SRCS  pad2d_compute_test.cc DEPS ${test_kernel_deps})
-    lite_cc_test(test_kernel_pad3d_compute SRCS  pad3d_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_prior_box_compute SRCS  prior_box_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_negative_compute SRCS negative_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_interp_compute SRCS interp_compute_test.cc DEPS ${test_kernel_deps})
