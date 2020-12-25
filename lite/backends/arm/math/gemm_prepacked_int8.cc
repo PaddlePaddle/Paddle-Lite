@@ -5710,8 +5710,9 @@ void gemm_prepack_int8(const int8_t* A_packed,
       alpha[3] = local_alpha;
     }
   }
-#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+#ifdef __aarch64__
   if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
     gemm_prepack_sdot_int8<int32_t>(A_packed,
                                     B,
                                     bias,
@@ -5725,6 +5726,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                     scale,
                                     alpha,
                                     ctx);
+#endif
   } else {
     gemm_prepack_oth_int8<int32_t>(A_packed,
                                    B,
@@ -5741,7 +5743,10 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                    ctx);
   }
 #else
-  if (ctx->has_dot()) {
+  if (0 && ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+    // ios build error : no template named 'gemm_prepack_vsdot_int8'
+    // android is ok
     gemm_prepack_vsdot_int8<int32_t>(A_packed,
                                      B,
                                      bias,
@@ -5755,6 +5760,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                                      scale,
                                      alpha,
                                      ctx);
+#endif
   } else {
     gemm_prepack_oth_int8<int32_t>(A_packed,
                                    B,

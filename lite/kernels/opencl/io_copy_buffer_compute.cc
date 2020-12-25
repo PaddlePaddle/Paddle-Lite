@@ -171,8 +171,9 @@ REGISTER_LITE_KERNEL(io_copy,
                      kAny,
                      paddle::lite::kernels::opencl::IoCopyHostToOpenCLCompute,
                      host_to_device)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
@@ -181,8 +182,9 @@ REGISTER_LITE_KERNEL(io_copy,
                      kAny,
                      paddle::lite::kernels::opencl::IoCopykOpenCLToHostCompute,
                      device_to_host)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -191,8 +193,9 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kAny,
                      paddle::lite::kernels::opencl::IoCopyHostToOpenCLCompute,
                      host_to_device)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kOpenCL))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy_once,
@@ -201,8 +204,9 @@ REGISTER_LITE_KERNEL(io_copy_once,
                      kAny,
                      paddle::lite::kernels::opencl::IoCopykOpenCLToHostCompute,
                      device_to_host)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
 
 #define LITE_WITH_LOG
