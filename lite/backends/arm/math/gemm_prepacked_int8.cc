@@ -5527,6 +5527,25 @@ void gemm_prepack_int8(const int8_t* A_packed,
 #endif
 }
 
+#define GEMM_PREPACK_INT8(dtype)                  \
+  template void gemm_prepack_int8<dtype>(         \
+      const int8_t* A_packed,                     \
+      const int8_t* B,                            \
+      const float* bias,                          \
+      dtype* C,                                   \
+      int M,                                      \
+      int N,                                      \
+      int K,                                      \
+      bool is_bias,                               \
+      bool is_transB,                             \
+      const float* scale,                         \
+      const operators::ActivationParam act_param, \
+      ARMContext* ctx);
+GEMM_PREPACK_INT8(int8_t);
+GEMM_PREPACK_INT8(float_t);
+GEMM_PREPACK_INT8(int32_t);
+#undef GEMM_PREPACK_INT8
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
