@@ -74,4 +74,4 @@ void Adaptive1x1Pool2dConvertGlobalPass::Apply(
 
 REGISTER_MIR_PASS(adaptive_1x1_pool2d_convert_global_pass,
                   paddle::lite::mir::Adaptive1x1Pool2dConvertGlobalPass)
-    .BindTargets({TARGET(kOpenCL)});
+    .BindTargets({TARGET(kOpenCL), TARGET(kARM)});
