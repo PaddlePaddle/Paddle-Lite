@@ -28,6 +28,11 @@ void Adaptive1x1Pool2dConvertGlobalPass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   auto check_adaptive_1x1 = [](Node* p) -> bool {
     auto op_desc = p->stmt()->mutable_op_info();
+    if (!op_desc->HasAttr("adaptive")) {
+      VLOG(1) << "skip. Pool has no attribute named adaptive.";
+      return false;
+    }
+
     auto ksize = op_desc->GetAttr<std::vector<int>>("ksize");
     auto ksize_one = ksize[0] == ksize[1] && ksize[0] == 1;
     auto global_pooling = op_desc->GetAttr<bool>("global_pooling");
