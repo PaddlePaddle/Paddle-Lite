@@ -1,4 +1,4 @@
-lite_cc_test(test_kernel_pad3d_compute SRCS  pad3d_compute_test.cc DEPS ${test_kernel_deps})message(STATUS "compile with lite host kernels")
+message(STATUS "compile with lite host kernels")
 
 # basic kernels
 add_kernel(feed_compute_host Host basic SRCS feed_compute.cc DEPS ${lite_kernel_deps})
