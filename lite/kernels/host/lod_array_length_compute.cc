@@ -22,7 +22,6 @@ namespace host {
 void LoDArrayLengthCompute::Run() {
   auto& param = this->Param<operators::LoDArrayLengthParam>();
   lite::Tensor* input = param.x;
-  lite::Tensor* output = param.out;
   param.out->mutable_data<int64_t>()[0] =
       static_cast<int64_t>(input->data_size());
 #ifdef LITE_WITH_PROFILE
