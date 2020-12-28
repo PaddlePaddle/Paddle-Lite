@@ -333,10 +333,9 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       std::shared_ptr<lite::Tensor> buf_to_img_output_t(new lite::Tensor);
       buf_to_img_output_t->Resize(concat_param_->output->dims());
 
-      std::shared_ptr<operators::LayoutParam> buf_to_img_param(
-          new operators::LayoutParam);
-      buf_to_img_param->x = concat_mul_buf_output_t.get();
-      buf_to_img_param->y = concat_param_->output;
+      operators::LayoutParam buf_to_img_param;
+      buf_to_img_param.x = concat_mul_buf_output_t.get();
+      buf_to_img_param.y = concat_param_->output;
       buf_to_img_kernel->SetParam(buf_to_img_param);
 
       std::unique_ptr<KernelContext> buf_to_img_context(new KernelContext);
