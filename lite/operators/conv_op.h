@@ -131,7 +131,7 @@ class ConvOpLite : public OpLite {
             op_desc.GetAttr<float>("hard_swish_offset");
       } else {
         CHECK(false) << "The fused conv only supports fuse with relu, leaky "
-                        "relu, hard_swish, while the given activation_type is "
+                        "relu, hard_swish, while the given activation type is "
                      << act_type;
       }
     }
