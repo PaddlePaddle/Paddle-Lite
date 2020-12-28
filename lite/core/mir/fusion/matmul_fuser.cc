@@ -33,7 +33,6 @@ void MatmulFuser::BuildPattern() {
   matmul_inputs >> *matmul >> *matmul_out;
 
   // Some op specialities.
-  //  matmul_out->AsIntermediate();
   matmul->AsIntermediate();
 }
 
@@ -53,7 +52,6 @@ void MatmulFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 }
 
 cpp::OpDesc MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
-  LOG(INFO) << "MatmulFuser::GenOpDesc";
   auto op_desc = *matched.at("matmul")->stmt()->op_info();
   auto* scope = matched.at("matmul")->stmt()->op()->scope();
 
@@ -81,7 +79,6 @@ cpp::OpDesc MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
     op_desc.SetAttr<int>("y_num_col_dims", 1);
     op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
   }
-  LOG(INFO) << "MatmulFuser::GenOpDesc done";
   return op_desc;
 }
 
