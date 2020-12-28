@@ -32,7 +32,18 @@ namespace fbs {
 
 class ParamDescView : public ParamDescReadAPI {
  public:
-  explicit ParamDescView(proto::ParamDesc const* desc) : desc_(desc) {
+  explicit ParamDescView(model_parser::Buffer* buf) {
+    CHECK(buf) << "The pointer in buf can not be nullptr";
+    flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf->data()),
+                                   buf->size());
+    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::ParamDesc>(nullptr))
+        << "Param verification failed.";
+    desc_ =
+        flatbuffers::GetRoot<paddle::lite::fbs::proto::ParamDesc>(buf->data());
+    Init();
+  }
+  explicit ParamDescView(proto::ParamDesc const* desc) : desc_(desc) { Init(); }
+  void Init() {
     CHECK(desc_);
     CHECK(desc_->variable_type() ==
           proto::ParamDesc_::VariableDesc_LoDTensorDesc);
@@ -85,6 +96,11 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
   }
 
   void InitParams() {
+    flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf_.data()),
+                                   buf_.size());
+    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::CombinedParamsDesc>(
+        nullptr))
+        << "CombinedParamsDesc verification failed.";
     desc_ = proto::GetCombinedParamsDesc(buf_.data());
     CHECK(desc_);
     CHECK(desc_->params());
@@ -148,10 +164,27 @@ class ParamDesc : public ParamDescAPI {
 
   void SetData(const void* data, size_t byte_size) {
     lod_tensor_->data.resize(byte_size);
-    std::memcpy(lod_tensor_->data.data(), data, byte_size);
+    model_parser::memcpy(lod_tensor_->data.data(), data, byte_size);
   }
 
   const proto::ParamDescT* raw_desc() const { return desc_; }
+
+  void CopyDataToBuffer(model_parser::Buffer* buffer) {
+    CHECK(buffer);
+    SyncBuffer();
+    buffer->ResetLazy(buf_.size());
+    model_parser::memcpy(buffer->data(), buf_.data(), buf_.size());
+  }
+
+  void SyncBuffer() {
+    fbb_.Reset();
+    flatbuffers::Offset<proto::ParamDesc> desc =
+        proto::ParamDesc::Pack(fbb_, desc_);
+    fbb_.Finish(desc);
+    buf_ = fbb_.Release();
+  }
+
+  size_t GetBufferMinAlignment() { return fbb_.GetBufferMinAlignment(); }
 
   ~ParamDesc() {
     if (owned_) {
@@ -163,6 +196,8 @@ class ParamDesc : public ParamDescAPI {
   bool owned_{false};
   proto::ParamDescT* desc_{nullptr};
   proto::ParamDesc_::LoDTensorDescT* lod_tensor_{nullptr};
+  flatbuffers::DetachedBuffer buf_;
+  flatbuffers::FlatBufferBuilder fbb_;
 };
 
 class CombinedParamsDesc : public CombinedParamsDescAPI {
@@ -188,12 +223,14 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
     return params_[params_.size() - 1].get();
   }
 
-  model_parser::Buffer data() {
+  void CopyDataToBuffer(model_parser::Buffer* buffer) {
+    CHECK(buffer);
     SyncBuffer();
-    model_parser::Buffer cache(buf_.size());
-    std::memcpy(cache.data(), buf_.data(), buf_.size());
-    return cache;
+    buffer->ResetLazy(buf_.size());
+    model_parser::memcpy(buffer->data(), buf_.data(), buf_.size());
   }
+
+  size_t GetBufferMinAlignment() { return fbb_.GetBufferMinAlignment(); }
 
  private:
   void SyncParams() {

@@ -44,6 +44,10 @@ class ProgramDescView : public ProgramDescAPI {
   }
 
   void InitProgramDesc() {
+    flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf_.data()),
+                                   buf_.size());
+    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::ProgramDesc>(nullptr))
+        << "Program verification failed.";
     desc_ = proto::GetProgramDesc(buf_.data());
     blocks_.resize(desc_->blocks()->size());
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {
@@ -156,12 +160,14 @@ class ProgramDesc : public ProgramDescAPI {
     desc_.version->version = version_in;
   }
 
-  model_parser::Buffer data() {
+  void CopyDataToBuffer(model_parser::Buffer* buffer) {
+    CHECK(buffer);
     SyncBuffer();
-    model_parser::Buffer cache(buf_.size());
-    std::memcpy(cache.data(), buf_.data(), buf_.size());
-    return cache;
+    buffer->ResetLazy(buf_.size());
+    model_parser::memcpy(buffer->data(), buf_.data(), buf_.size());
   }
+
+  size_t GetBufferMinAlignment() { return fbb_.GetBufferMinAlignment(); }
 
  private:
   void SyncBlocks() {
