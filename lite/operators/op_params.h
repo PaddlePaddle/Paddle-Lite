@@ -2087,8 +2087,8 @@ struct LoDArrayLengthParam : ParamBase {
 
 struct SelectInputParam : ParamBase {
   std::vector<lite::Tensor*> X{};
+  lite::Tensor* Mask{};
   lite::Tensor* Out{};
-  int Mask{0};
 };
 
 struct TensorArrayToTensorParam : ParamBase {
@@ -2097,6 +2097,25 @@ struct TensorArrayToTensorParam : ParamBase {
   lite::Tensor* OutIndex{};
   int axis{0};
   bool use_stack{false};
+};
+
+struct RnnParam : ParamBase {
+  lite::Tensor* Input;
+  lite::Tensor* PreState;
+  std::vector<lite::Tensor*> WeightList;
+  lite::Tensor* SequenceLength;
+  lite::Tensor* DropoutState;
+  lite::Tensor* Reserve;
+  lite::Tensor* Out;
+  lite::Tensor* State;
+  float dropout_prob{0.0};
+  bool is_bidirec{false};
+  int input_size{10};
+  int hidden_size{100};
+  int num_layers{1};
+  std::string mode{"LSTM"};
+  bool is_test{false};
+  int seed{0};
 };
 
 }  // namespace operators

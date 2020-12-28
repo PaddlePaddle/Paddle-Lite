@@ -23,16 +23,17 @@ namespace operators {
 bool SelectInputOpLite::CheckShape() const {
   CHECK_GE_OR_FALSE(param_.X.size(), 1UL);
   CHECK_OR_FALSE(param_.Out);
-  CHECK_OR_FALSE(param_.Mask >= 0UL && param_.Mask < param_.X.size());
   return true;
 }
 
 bool SelectInputOpLite::InferShapeImpl() const {
   const std::vector<Tensor *> &inputs = param_.X;
+  Tensor *&mask = param_.Mask;
   const size_t n = inputs.size();
   CHECK_GT_OR_FALSE(n, 0);
 
   int Mask = 0;
+  Mask = *mask->data<int>();
   const auto &output_dims = inputs[Mask]->dims();
   // Set output dims
   param_.Out->Resize(output_dims);
@@ -43,6 +44,7 @@ bool SelectInputOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                    lite::Scope *scope) {
   AttachParam(&param_);
   auto inputs = op_desc.Input("X");
+  auto mask = op_desc.Input("Mask").front();
   auto out = op_desc.Output("Out").front();
 
   param_.X.clear();
@@ -51,7 +53,7 @@ bool SelectInputOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   }
   CHECK(scope->FindVar(out));
   param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
-  param_.Mask = op_desc.GetAttr<int>("Mask");
+  param_.Mask = scope->FindVar(mask)->GetMutable<lite::Tensor>();
 
   return true;
 }
