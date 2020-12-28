@@ -28,13 +28,16 @@ void ConvBNFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<bool> conv_has_bias_cases{true, false};
   std::vector<std::string> conv_type_cases{
       "conv2d", "depthwise_conv2d", "conv2d_transpose"};
+  std::vector<std::string> bn_type_cases{"batch_norm", "sync_batch_norm"};
   // start fuse using params
   for (auto conv_has_bias : conv_has_bias_cases) {
     for (auto conv_type : conv_type_cases) {
-      VLOG(4) << "conv_has_bias:" << conv_has_bias
-              << " conv_type:" << conv_type;
-      fusion::ConvBNFuser fuser(conv_type, conv_has_bias);
-      fuser(graph.get());
+      for (auto bn_type : bn_type_cases) {
+        VLOG(4) << "conv_has_bias:" << conv_has_bias
+                << " conv_type:" << conv_type;
+        fusion::ConvBNFuser fuser(conv_type, bn_type, conv_has_bias);
+        fuser(graph.get());
+      }
     }
   }
 }

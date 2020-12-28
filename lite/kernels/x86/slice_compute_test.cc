@@ -45,9 +45,9 @@ static void slice_ref(const float* input,
     if (dim_value > 0) {
       int start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
       int end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
-      start = std::max(start, 0);
-      end = std::max(end, 0);
-      end = std::min(end, dim_value);
+      start = (std::max)(start, 0);
+      end = (std::max)(end, 0);
+      end = (std::min)(end, dim_value);
       out_dims[axes[i]] = end - start;
       real_starts[axes[i]] = start;
       real_ends[axes[i]] = end;

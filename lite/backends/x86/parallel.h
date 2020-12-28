@@ -42,7 +42,7 @@ static inline int64_t GetMaxThreads() {
   // Do not support nested omp parallem.
   num_threads = omp_in_parallel() ? 1 : omp_get_max_threads();
 #endif
-  return std::max<int>(num_threads, 1L);
+  return (std::max<int>)(num_threads, 1L);
 }
 
 using ThreadHandler =
