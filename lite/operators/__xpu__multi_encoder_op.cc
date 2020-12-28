@@ -21,7 +21,7 @@ namespace lite {
 namespace operators {
 
 bool XPUMultiEncoderOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.input->dims().size() == 3);
+  CHECK_EQ(param_.input->dims().size(), 3UL);
   return true;
 }
 

@@ -58,29 +58,23 @@ class XPUMultiEncoderSliceLinkFuser : public FuseBase {
     auto* encoder_instruct = matched.at("xpu_encoder")->stmt();
     auto encoder_op_desc = *encoder_instruct->mutable_op_info();
     auto encoder_op = encoder_instruct->op();
-
     auto* slice_instruct = matched.at("slice")->stmt();
     auto slice_op_desc = *slice_instruct->op_info();
-    auto slice_op = slice_instruct->op();
-
     std::string slice_out_name = matched.at("slice_out")->arg()->name;
-    auto* slice_out_node = graph->RetrieveArgument(slice_out_name);
 
-    if (slice_out_node != nullptr) {
-      encoder_op_desc.SetOutput("Output", {slice_out_name});
-      auto slice_axes = slice_op_desc.GetAttr<std::vector<int>>("axes");
-      encoder_op_desc.SetAttr("slice_axes", slice_axes);
-      if (slice_op_desc.HasAttr("starts")) {
-        auto slice_starts = slice_op_desc.GetAttr<std::vector<int>>("starts");
-        encoder_op_desc.SetAttr("slice_starts", slice_starts);
-      }
-      if (slice_op_desc.HasAttr("ends")) {
-        auto slice_ends = slice_op_desc.GetAttr<std::vector<int>>("ends");
-        encoder_op_desc.SetAttr("slice_ends", slice_ends);
-      }
-      encoder_instruct->ResetOp(encoder_op_desc, encoder_op->valid_places());
-      DirectedLink(matched.at("xpu_encoder"), matched.at("slice_out"));
+    encoder_op_desc.SetOutput("Output", {slice_out_name});
+    auto slice_axes = slice_op_desc.GetAttr<std::vector<int>>("axes");
+    encoder_op_desc.SetAttr("slice_axes", slice_axes);
+    if (slice_op_desc.HasAttr("starts")) {
+      auto slice_starts = slice_op_desc.GetAttr<std::vector<int>>("starts");
+      encoder_op_desc.SetAttr("slice_starts", slice_starts);
     }
+    if (slice_op_desc.HasAttr("ends")) {
+      auto slice_ends = slice_op_desc.GetAttr<std::vector<int>>("ends");
+      encoder_op_desc.SetAttr("slice_ends", slice_ends);
+    }
+    encoder_instruct->ResetOp(encoder_op_desc, encoder_op->valid_places());
+    DirectedLink(matched.at("xpu_encoder"), matched.at("slice_out"));
   }
 };
 
