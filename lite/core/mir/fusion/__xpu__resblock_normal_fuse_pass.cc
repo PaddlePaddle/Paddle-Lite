@@ -95,11 +95,9 @@ class XPUResBlockNormalFuser : public FuseBase {
                                 ->assert_is_op_input("__xpu__conv2d", "Bias")
                                 ->assert_is_persistable_var()
                                 ->AsIntermediate();
-    auto* left_conv1 =
-        OpNode("left_conv1", "__xpu__conv2d")
-            ->assert_op_attr_satisfied<bool>(
-                "has_branch", [](const bool& attr) { return attr == false; })
-            ->AsIntermediate();
+    auto* left_conv1 = OpNode("left_conv1", "__xpu__conv2d")
+                           ->assert_op_attr<bool>("has_branch", false)
+                           ->AsIntermediate();
     auto* left_conv1_out = VarNode("left_conv1_out")
                                ->assert_is_op_output("__xpu__conv2d", "Output")
                                ->assert_is_op_input("__xpu__conv2d", "Input")
@@ -128,11 +126,9 @@ class XPUResBlockNormalFuser : public FuseBase {
                             ->assert_is_op_input("__xpu__conv2d", "Bias")
                             ->assert_is_persistable_var()
                             ->AsIntermediate();
-      left_conv2 =
-          OpNode("left_conv2", "__xpu__conv2d")
-              ->assert_op_attr_satisfied<bool>(
-                  "has_branch", [](const bool& attr) { return attr == false; })
-              ->AsIntermediate();
+      left_conv2 = OpNode("left_conv2", "__xpu__conv2d")
+                       ->assert_op_attr<bool>("has_branch", false)
+                       ->AsIntermediate();
       left_conv2_out = VarNode("left_conv2_out")
                            ->assert_is_op_output("__xpu__conv2d", "Output")
                            ->assert_is_op_input("__xpu__conv2d", "Input")
@@ -156,11 +152,9 @@ class XPUResBlockNormalFuser : public FuseBase {
                                 ->assert_is_op_input("__xpu__conv2d", "Bias")
                                 ->assert_is_persistable_var()
                                 ->AsIntermediate();
-    auto* left_conv3 =
-        OpNode("left_conv3", "__xpu__conv2d")
-            ->assert_op_attr_satisfied<bool>(
-                "has_branch", [](const bool& attr) { return attr == true; })
-            ->AsIntermediate();
+    auto* left_conv3 = OpNode("left_conv3", "__xpu__conv2d")
+                           ->assert_op_attr<bool>("has_branch", true)
+                           ->AsIntermediate();
     auto* left_conv3_out = VarNode("left_conv3_out")
                                ->assert_is_op_output("__xpu__conv2d", "Output")
                                ->AsOutput();
@@ -213,7 +207,7 @@ class XPUResBlockNormalFuser : public FuseBase {
                              matched.at("left_conv2_weight_max")->arg()->name);
     }
 
-    auto op_desc = *matched.at("left_conv1")->stmt()->op_info();
+    cpp::OpDesc op_desc;
     auto left_conv1 = matched.at("left_conv1")->stmt()->op();
     auto* scope = left_conv1->scope();
 
@@ -226,11 +220,6 @@ class XPUResBlockNormalFuser : public FuseBase {
     op_desc.SetOutput("OutputMax",
                       {matched.at("left_conv3_out_max")->arg()->name});
 
-    static const int PX = 0;
-    static const int P1 = 1;
-    static const int P2 = 2;
-    static const int PNONE = 9;
-    static const int PY = 10;
     std::vector<int> op_type;
     std::vector<int> place_x;
     std::vector<int> place_y;
@@ -238,15 +227,15 @@ class XPUResBlockNormalFuser : public FuseBase {
     std::vector<int> block_lod;
     if (has_mid_conv_) {
       op_type = {0, 0, 0};
-      place_x = {PX, P1, P2};
-      place_y = {PNONE, PNONE, PX};
-      place_z = {P1, P2, PY};
+      place_x = {0, 1, 2};
+      place_y = {9, 9, 0};
+      place_z = {1, 2, 10};
       block_lod = {3};
     } else {
       op_type = {0, 0};
-      place_x = {PX, P1};
-      place_y = {PNONE, PX};
-      place_z = {P1, PY};
+      place_x = {0, 1};
+      place_y = {9, 0};
+      place_z = {1, 10};
       block_lod = {2};
     }
     std::vector<int> filter_dims;
@@ -292,12 +281,10 @@ class XPUResBlockNormalFuser : public FuseBase {
           int copy_pad = *(cur_paddings.begin() + 2 * i);
           cur_paddings.insert(cur_paddings.begin() + 2 * i + 1, copy_pad);
         }
-      } else {
-        if (cur_paddings.size() != 4) {
-          LOG(FATAL)
-              << "Paddings size should be the same or twice as the input size.";
-        }
       }
+      CHECK_EQ(cur_paddings.size(), 4UL)
+          << "Paddings size should be 2 or 4, But received paddings size: "
+          << cur_paddings.size();
       conv_paddings.insert(
           conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
       conv_dilations.insert(

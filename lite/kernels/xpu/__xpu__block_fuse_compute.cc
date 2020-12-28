@@ -155,7 +155,7 @@ void XPUBlockFuseCompute<T, PType>::PrepareForRun() {
           op_count += 1;
           break;
         }
-        default: { break; }
+        default: { LOG(FATAL) << "Unsupport layer type" << op_type[op_count]; }
       }
     }
     xpu_fusion_block.push_back(cur_block);

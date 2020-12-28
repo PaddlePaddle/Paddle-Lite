@@ -75,7 +75,6 @@ void Pool2DCompute::Run() {
     }
   } else {
     if (param.pooling_type == "avg") {
-      bool count_include_pad = param.exclusive ? false : true;
       int r = xdnn::avg_pool2d<float>(
           ctx.GetRawContext(),
           param.x->data<float>(),
@@ -87,7 +86,7 @@ void Pool2DCompute::Run() {
           param.ksize,
           param.strides,
           paddings,
-          count_include_pad,
+          !param.exclusive,
           true);
       CHECK_EQ(r, 0);
     } else {

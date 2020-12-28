@@ -1747,13 +1747,13 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int K{1};
 };
 struct XPUBlockFuseParam : ParamBase {
-  lite::Tensor* input{};
+  const lite::Tensor* input{};
+  const lite::Tensor* filter;
+  const lite::Tensor* max_filter;
+  const lite::Tensor* bias;
+  const lite::Tensor* input_max{};
   lite::Tensor* output{};
   lite::Tensor* output_max{};
-  lite::Tensor* filter;
-  lite::Tensor* max_filter;
-  lite::Tensor* bias;
-  lite::Tensor* input_max{};
   std::vector<int> op_type;
   std::vector<int> place_x;
   std::vector<int> place_y;
