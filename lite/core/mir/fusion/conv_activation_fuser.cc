@@ -85,6 +85,13 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
   } else if (act_type_ == "leaky_relu") {
     float alpha = act_op_desc.GetAttr<float>("alpha");
     op_desc.SetAttr("leaky_relu_alpha", alpha);
+  } else if (act_type_ == "hard_swish") {
+    float threshold = act_op_desc.GetAttr<float>("threshold");
+    float scale = act_op_desc.GetAttr<float>("scale");
+    float offset = act_op_desc.GetAttr<float>("offset");
+    op_desc.SetAttr("hard_swish_threshold", threshold);
+    op_desc.SetAttr("hard_swish_scale", scale);
+    op_desc.SetAttr("hard_swish_offset", offset);
   }
   return op_desc;
 }
