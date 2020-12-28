@@ -5471,11 +5471,11 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
 #endif
 #endif  // dotprod  //NOLINT
 
-template <>
+template <typename dtype>
 void gemm_prepack_int8(const int8_t* A_packed,
                        const int8_t* B,
                        const float* bias,
-                       float32_t* C,
+                       dtype* C,
                        int M,
                        int N,
                        int K,
@@ -5506,278 +5506,45 @@ void gemm_prepack_int8(const int8_t* A_packed,
       alpha[3] = local_alpha;
     }
   }
+#define IN_PARAMS \
+  A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx
 #ifdef __aarch64__
   if (ctx->has_dot()) {
 #ifdef WITH_ARM_DOTPROD
-    gemm_prepack_sdot_int8<float32_t>(A_packed,
-                                      B,
-                                      bias,
-                                      C,
-                                      M,
-                                      N,
-                                      K,
-                                      is_bias,
-                                      flag_act,
-                                      is_transB,
-                                      scale,
-                                      alpha,
-                                      ctx);
+    gemm_prepack_sdot_int8<dtype>(IN_PARAMS);
 #endif
   } else {
-    gemm_prepack_oth_int8<float32_t>(A_packed,
-                                     B,
-                                     bias,
-                                     C,
-                                     M,
-                                     N,
-                                     K,
-                                     is_bias,
-                                     flag_act,
-                                     is_transB,
-                                     scale,
-                                     alpha,
-                                     ctx);
+    gemm_prepack_oth_int8<dtype>(IN_PARAMS);
   }
 #else
   if (ctx->has_dot()) {
 #ifdef WITH_ARM_DOTPROD
-    gemm_prepack_vsdot_int8<float32_t>(A_packed,
-                                       B,
-                                       bias,
-                                       C,
-                                       M,
-                                       N,
-                                       K,
-                                       is_bias,
-                                       flag_act,
-                                       is_transB,
-                                       scale,
-                                       alpha,
-                                       ctx);
+    gemm_prepack_vsdot_int8<dtype>(IN_PARAMS);
 #endif
   } else {
-    gemm_prepack_oth_int8<float32_t>(A_packed,
-                                     B,
-                                     bias,
-                                     C,
-                                     M,
-                                     N,
-                                     K,
-                                     is_bias,
-                                     flag_act,
-                                     is_transB,
-                                     scale,
-                                     alpha,
-                                     ctx);
+    gemm_prepack_oth_int8<dtype>(IN_PARAMS);
   }
 #endif
 }
 
-template <>
-void gemm_prepack_int8(const int8_t* A_packed,
-                       const int8_t* B,
-                       const float* bias,
-                       int8_t* C,
-                       int M,
-                       int N,
-                       int K,
-                       bool is_bias,
-                       bool is_transB,
-                       const float* scale,
-                       const operators::ActivationParam act_param,
-                       ARMContext* ctx) {
-  auto act_type = act_param.active_type;
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
-  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
-  if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
-      flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
-      flag_act = 0x02;
-      float local_alpha = act_param.Relu_clipped_coef;
-      alpha[0] = local_alpha;
-      alpha[1] = local_alpha;
-      alpha[2] = local_alpha;
-      alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
-      flag_act = 0x03;
-      float local_alpha = act_param.Leaky_relu_alpha;
-      alpha[0] = local_alpha;
-      alpha[1] = local_alpha;
-      alpha[2] = local_alpha;
-      alpha[3] = local_alpha;
-    }
-  }
-#ifdef __aarch64__
-  if (ctx->has_dot()) {
-#ifdef WITH_ARM_DOTPROD
-    gemm_prepack_sdot_int8<int8_t>(A_packed,
-                                   B,
-                                   bias,
-                                   C,
-                                   M,
-                                   N,
-                                   K,
-                                   is_bias,
-                                   flag_act,
-                                   is_transB,
-                                   scale,
-                                   alpha,
-                                   ctx);
-#endif
-  } else {
-    gemm_prepack_oth_int8<int8_t>(A_packed,
-                                  B,
-                                  bias,
-                                  C,
-                                  M,
-                                  N,
-                                  K,
-                                  is_bias,
-                                  flag_act,
-                                  is_transB,
-                                  scale,
-                                  alpha,
-                                  ctx);
-  }
-#else
-  if (ctx->has_dot()) {
-#ifdef WITH_ARM_DOTPROD
-    gemm_prepack_vsdot_int8<int8_t>(A_packed,
-                                    B,
-                                    bias,
-                                    C,
-                                    M,
-                                    N,
-                                    K,
-                                    is_bias,
-                                    flag_act,
-                                    is_transB,
-                                    scale,
-                                    alpha,
-                                    ctx);
-#endif
-  } else {
-    gemm_prepack_oth_int8<int8_t>(A_packed,
-                                  B,
-                                  bias,
-                                  C,
-                                  M,
-                                  N,
-                                  K,
-                                  is_bias,
-                                  flag_act,
-                                  is_transB,
-                                  scale,
-                                  alpha,
-                                  ctx);
-  }
-#endif
-}
-
-template <>
-void gemm_prepack_int8(const int8_t* A_packed,
-                       const int8_t* B,
-                       const float* bias,
-                       int32_t* C,
-                       int M,
-                       int N,
-                       int K,
-                       bool is_bias,
-                       bool is_transB,
-                       const float* scale,
-                       const operators::ActivationParam act_param,
-                       ARMContext* ctx) {
-  auto act_type = act_param.active_type;
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
-  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
-  if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
-      flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
-      flag_act = 0x02;
-      float local_alpha = act_param.Relu_clipped_coef;
-      alpha[0] = local_alpha;
-      alpha[1] = local_alpha;
-      alpha[2] = local_alpha;
-      alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
-      flag_act = 0x03;
-      float local_alpha = act_param.Leaky_relu_alpha;
-      alpha[0] = local_alpha;
-      alpha[1] = local_alpha;
-      alpha[2] = local_alpha;
-      alpha[3] = local_alpha;
-    }
-  }
-#ifdef __aarch64__
-  if (ctx->has_dot()) {
-#ifdef WITH_ARM_DOTPROD
-    gemm_prepack_sdot_int8<int32_t>(A_packed,
-                                    B,
-                                    bias,
-                                    C,
-                                    M,
-                                    N,
-                                    K,
-                                    is_bias,
-                                    flag_act,
-                                    is_transB,
-                                    scale,
-                                    alpha,
-                                    ctx);
-#endif
-  } else {
-    gemm_prepack_oth_int8<int32_t>(A_packed,
-                                   B,
-                                   bias,
-                                   C,
-                                   M,
-                                   N,
-                                   K,
-                                   is_bias,
-                                   flag_act,
-                                   is_transB,
-                                   scale,
-                                   alpha,
-                                   ctx);
-  }
-#else
-  if (0 && ctx->has_dot()) {
-#ifdef WITH_ARM_DOTPROD
-    // ios build error : no template named 'gemm_prepack_vsdot_int8'
-    // android is ok
-    gemm_prepack_vsdot_int8<int32_t>(A_packed,
-                                     B,
-                                     bias,
-                                     C,
-                                     M,
-                                     N,
-                                     K,
-                                     is_bias,
-                                     flag_act,
-                                     is_transB,
-                                     scale,
-                                     alpha,
-                                     ctx);
-#endif
-  } else {
-    gemm_prepack_oth_int8<int32_t>(A_packed,
-                                   B,
-                                   bias,
-                                   C,
-                                   M,
-                                   N,
-                                   K,
-                                   is_bias,
-                                   flag_act,
-                                   is_transB,
-                                   scale,
-                                   alpha,
-                                   ctx);
-  }
-#endif
-}
+#define GEMM_PREPACK_INT8(dtype)                  \
+  template void gemm_prepack_int8<dtype>(         \
+      const int8_t* A_packed,                     \
+      const int8_t* B,                            \
+      const float* bias,                          \
+      dtype* C,                                   \
+      int M,                                      \
+      int N,                                      \
+      int K,                                      \
+      bool is_bias,                               \
+      bool is_transB,                             \
+      const float* scale,                         \
+      const operators::ActivationParam act_param, \
+      ARMContext* ctx);
+GEMM_PREPACK_INT8(int8_t);
+GEMM_PREPACK_INT8(float_t);
+GEMM_PREPACK_INT8(int32_t);
+#undef GEMM_PREPACK_INT8
 
 }  // namespace math
 }  // namespace arm

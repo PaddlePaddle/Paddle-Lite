@@ -30,7 +30,10 @@ class ScaleComputeTester : public arena::TestCase {
   float scale_ = 0.;
   float bias_ = 0.;
   bool bias_after_scale_ = true;
+  bool have_relu6 = false;
   PrecisionType x_dtype_ = PRECISION(kFloat);
+  std::string act_type_ = "relu6";
+  float alpha_ = 6.0f;
 
  public:
   ScaleComputeTester(const Place& place,
@@ -39,12 +42,14 @@ class ScaleComputeTester : public arena::TestCase {
                      float scale,
                      float bias,
                      bool bias_after_scale = true,
+                     bool have_relu6 = false,
                      PrecisionType x_dtype = PRECISION(kFloat))
       : TestCase(place, alias),
         x_dims_(x_dims),
         scale_(scale),
         bias_(bias),
         bias_after_scale_(bias_after_scale),
+        have_relu6(have_relu6),
         x_dtype_(x_dtype) {}
 
   template <typename T>
@@ -63,6 +68,12 @@ class ScaleComputeTester : public arena::TestCase {
     auto out_data = out->mutable_data<T>();
     for (int i = 0; i < x_dims_.production(); i++) {
       out_data[i] = x_data[i] * scale + bias;
+    }
+    if (have_relu6) {
+      for (int i = 0; i < x_dims_.production(); i++) {
+        out_data[i] = out_data[i] > 0.f ? out_data[i] : 0.f;
+        out_data[i] = out_data[i] < 6.0f ? out_data[i] : 6.0f;
+      }
     }
   }
 
@@ -87,6 +98,10 @@ class ScaleComputeTester : public arena::TestCase {
     op_desc->SetAttr("scale", scale_);
     op_desc->SetAttr("bias", bias_);
     op_desc->SetAttr("bias_after_scale", bias_after_scale_);
+    if (have_relu6) {
+      op_desc->SetAttr("activation_type", act_type_);
+      op_desc->SetAttr("alpha", alpha_);
+    }
   }
 
   template <typename T>
@@ -115,7 +130,7 @@ void TestScaleShape(Place place, float abs_error) {
   for (auto x_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 4}, {8, 3, 5}, {12, 3}}) {
     std::unique_ptr<arena::TestCase> tester(
-        new ScaleComputeTester(place, "def", DDim(x_dims), 1.5f, 0.2f));
+        new ScaleComputeTester(place, "def", DDim(x_dims), 1.5f, 0.2f, true));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
@@ -151,9 +166,29 @@ void TestScaleDtype(Place place, float abs_error) {
       LOG(FATAL) << "fatal";
     }
     std::unique_ptr<arena::TestCase> tester(new ScaleComputeTester(
-        place, "def", DDim({2, 3, 4, 5}), 2.f, 1.f, true, x_dtype));
+        place, "def", DDim({2, 3, 4, 5}), 2.f, 1.f, true, false, x_dtype));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
+  }
+}
+
+void TestScaleRelu6(Place place, float abs_error) {
+  for (auto x_dims :
+       std::vector<std::vector<int64_t>>{{5, 2, 3, 4}, {8, 3, 5}, {12, 3}}) {
+    for (bool bias_after_scale : {true, false}) {
+      for (bool have_relu6 : {true, false}) {
+        std::unique_ptr<arena::TestCase> tester(
+            new ScaleComputeTester(place,
+                                   "def",
+                                   DDim(x_dims),
+                                   1.5f,
+                                   0.2f,
+                                   bias_after_scale,
+                                   have_relu6));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision();
+      }
+    }
   }
 }
 
@@ -163,6 +198,9 @@ TEST(Scale, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-1;  // Using fp16 in NPU
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 5e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
@@ -180,7 +218,11 @@ TEST(Scale, precision) {
   TestScaleShape(place, abs_error);
   TestScaleValue(place, abs_error);
   TestScaleOrder(place, abs_error);
-#if defined(LITE_WITH_ARM) && !defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_OPENCL)
+  TestScaleRelu6(place, abs_error);
+#endif
+#if defined(LITE_WITH_ARM) && !defined(LITE_WITH_NPU) && \
+    !defined(LITE_WITH_OPENCL)
   TestScaleDtype(place, abs_error);
 #endif
 }
