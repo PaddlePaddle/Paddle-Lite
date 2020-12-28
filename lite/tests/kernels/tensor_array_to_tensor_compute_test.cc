@@ -89,7 +89,13 @@ class TensorArrayToTensorComputeTester : public arena::TestCase {
 
     int axis = axis_;
     auto index_dim = outIndex->dims();
-    index_dim[0] = x_vct.size();
+    if (index_dim.size() == 0) {
+      std::vector<int64_t> index;
+      index.push_back(x_vct.size());
+      index_dim.ConstructFrom(index);
+    } else {
+      index_dim[0] = x_vct.size();
+    }
     outIndex->Resize(index_dim);
     auto OutIndex_data = outIndex->mutable_data<float>();
     int n = x_vct.size();
