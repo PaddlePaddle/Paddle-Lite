@@ -58,6 +58,15 @@ bool TensorArrayToTensorOpLite::InferShapeImpl() const {
     auto out_lod = param_.Out->mutable_lod();
     *out_lod = param_.X[0]->lod();
   }
+  auto index_dim = param_.OutIndex->dims();
+  if (index_dim.empty()) {
+    std::vector<int64_t> index;
+    index.push_back(n);
+    index_dim.ConstructFrom(index);
+  } else {
+    index_dim[0] = n;
+  }
+  param_.OutIndex->Resize(index_dim);
   return true;
 }
 

@@ -27,10 +27,6 @@ void TensorArrayToTensorCompute::Run() {
   auto X = param.X;
   int axis = param.axis;
   size_t n = X.size();
-
-  auto index_dim = OutIndex->dims();
-  index_dim[0] = n;
-  OutIndex->Resize(index_dim);
   auto OutIndex_data = OutIndex->mutable_data<float>();
 
   for (int i = 0; i < n; i++) {
