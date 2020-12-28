@@ -32,31 +32,29 @@ class SelectInputComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::vector<std::string> x_vct_{};
   std::string out_ = "out";
-  int mask_ = 0;
+  std::string mask_ = "mask";
 
   int x_num_ = 3;
   DDim x_dims_{{2, 3, 4, 5}};
+  DDim mask_dim{{1}};
 
  public:
-  SelectInputComputeTester(const Place& place,
-                           const std::string& alias,
-                           int mask)
-      : TestCase(place, alias) {
-    mask_ = mask;
-  }
+  SelectInputComputeTester(const Place& place, const std::string& alias)
+      : TestCase(place, alias) {}
 
   void RunBaseline(Scope* scope) override {
     std::vector<const Tensor*> x_vct;
     for (std::string& name : x_vct_) {
       x_vct.push_back(scope->FindTensor(name));
     }
-
+    const Tensor* Mask = scope->FindTensor(mask_);
     auto* out = scope->NewTensor(out_);
-    DDim output_dims = infer_shape(x_vct, mask_);
+    int Mask_ = Mask->data<int>()[0];
+    DDim output_dims = infer_shape(x_vct, Mask_);
     out->Resize(output_dims);
     auto* output_data = out->mutable_data<float>();
-    auto* in_data = x_vct[mask_]->data<float>();
-    for (int i = 0; i < x_vct[mask_]->data_size(); i++) {
+    auto* in_data = x_vct[Mask_]->data<float>();
+    for (int i = 0; i < x_vct[Mask_]->data_size(); i++) {
       output_data[i] = in_data[i];
     }
   }
@@ -64,7 +62,7 @@ class SelectInputComputeTester : public arena::TestCase {
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("select_input");
     op_desc->SetInput("X", x_vct_);
-    op_desc->SetAttr("Mask", mask_);
+    op_desc->SetInput("Mask", {mask_});
     op_desc->SetOutput("Out", {out_});
   }
 
@@ -78,6 +76,9 @@ class SelectInputComputeTester : public arena::TestCase {
       x_vct_.push_back(x_name);
       SetCommonTensor(x_name, x_dims_, x_data.data());
     }
+    std::string mask_name = "mask";
+    std::vector<int> mask_data = {0};
+    SetCommonTensor(mask_name, mask_dim, mask_data.data());
   }
 };
 
@@ -90,13 +91,10 @@ TEST(SelectInput, precision) {
 #else
   return;
 #endif
-
-  for (int mask : {0, 1, 2}) {
-    std::unique_ptr<arena::TestCase> tester(
-        new SelectInputComputeTester(place, "def", mask));
-    arena::Arena arena(std::move(tester), place, abs_error);
-    arena.TestPrecision();
-  }
+  std::unique_ptr<arena::TestCase> tester(
+      new SelectInputComputeTester(place, "def"));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
 }
 
 }  // namespace lite
