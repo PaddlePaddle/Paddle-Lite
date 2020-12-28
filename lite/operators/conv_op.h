@@ -130,9 +130,9 @@ class ConvOpLite : public OpLite {
         param_.activation_param.hard_swish_offset =
             op_desc.GetAttr<float>("hard_swish_offset");
       } else {
-        CHECK(false) << "The fused conv only supports fuse with relu, leaky "
-                        "relu, hard_swish, while the given activation type is "
-                     << act_type;
+        LOG(FATAL) << "The fused conv only supports fuse with relu, leaky "
+                      "relu, hard_swish, while the given activation type is "
+                   << act_type;
       }
     }
 
