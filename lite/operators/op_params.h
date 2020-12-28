@@ -159,6 +159,7 @@ struct InterpolateParam : ParamBase {
   lite::Tensor* Scale{};
 
   float scale{0.f};
+  std::vector<float> scale_v{};
   int out_h{-1};
   int out_w{-1};
   bool align_corners{true};
@@ -1762,6 +1763,14 @@ struct XPUResNet50Param : ParamBase {
   std::vector<lite::Tensor*> bias;
   std::vector<lite::Tensor*> max_filter;
   lite::Tensor* output{};
+};
+
+struct XPUSoftmaxTopkParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* output{};
+  lite::Tensor* indices{};
+  int axis{-1};
+  int K{1};
 };
 
 struct XPUMultiEncoderParam : ParamBase {

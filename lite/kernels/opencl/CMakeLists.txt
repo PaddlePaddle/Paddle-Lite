@@ -42,6 +42,7 @@ add_kernel(shuffle_channel_opencl_image OPENCL basic SRCS shuffle_channel_image_
 add_kernel(trigonometric_opencl_image OPENCL basic SRCS trigonometric_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(batch_norm_opencl_image OPENCL basic SRCS batch_norm_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(reduce_mean_opencl_image OPENCL basic SRCS reduce_mean_image_compute.cc DEPS ${cl_kernel_deps})
+#add_kernel(softmax_opencl_image OPENCL basic SRCS softmax_image_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 
@@ -65,9 +66,6 @@ lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_
 
 lite_cc_test(test_pool_image_opencl SRCS pool_image_compute_test.cc
              DEPS pool_opencl_image op_registry program context)
-
-lite_cc_test(test_scale_image_opencl SRCS scale_image_compute_test.cc
-             DEPS scale_opencl_image op_registry program context)
 
 lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
              DEPS reshape_opencl_image op_registry program context)

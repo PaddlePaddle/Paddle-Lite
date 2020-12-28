@@ -84,7 +84,7 @@ void ParamSerializer::ForwardWrite(const lite::Scope& scope,
   }
   constexpr uint16_t header_size =
       sizeof(params_size) + sizeof(max_tensor_size);
-  CHECK_LT(max_tensor_size, std::numeric_limits<uint32_t>::max())
+  CHECK_LT(max_tensor_size, (std::numeric_limits<uint32_t>::max)())
       << "The size of param is out of range.";
 
   writer_->Write<uint16_t>(header_size);
