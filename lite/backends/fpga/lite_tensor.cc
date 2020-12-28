@@ -67,7 +67,6 @@ std::string DDimLite::repr() const {
 }
 
 void TensorLite::ShareDataWith(const TensorLite &other) {
-  buffer_ = other.buffer_;  // TODO(chonwhite) delete buffer;
   dims_ = other.dims_;
   zynq_tensor_ = other.zynq_tensor_;
   target_ = other.target_;
@@ -97,9 +96,20 @@ void TensorLite::CopyDataFrom(const TensorLite &other) {
 }
 
 void *TensorLite::mutable_data(size_t memory_size) {
-  memory_size_ = memory_size;  // TODO(chonwhite) delete buffer;
-  buffer_->ResetLazy(target_, memory_size_);
-  return buffer_->data();
+  memory_size_ = memory_size;
+
+  std::vector<int> v_shape;
+  for (int i = 0; i < dims_.size(); i++) {
+    v_shape.push_back(dims_[i]);
+  }
+  zynqmp::LayoutType layout_type = get_layout_type(dims_);
+  zynqmp::Shape input_shape(layout_type, v_shape);
+  zynqmp::DataType data_type = get_date_type(precision_);
+
+  if (zynq_tensor_.get() == nullptr) {
+    zynq_tensor_.reset(new zynqmp::Tensor());
+  }
+  return zynq_tensor_->mutableData<void>(data_type, input_shape);
 }
 
 void *TensorLite::mutable_data(TargetType target, size_t memory_size) {

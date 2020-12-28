@@ -37,6 +37,11 @@ void FeedCompute::PrepareForRun() {
   if (in_type == zynqmp::INT32) {
     param.out->mutable_data<int32_t>();
   }
+
+  if (in_type == zynqmp::INT64) {
+    param.out->mutable_data<int64_t>();
+  }
+
   // ====================================================
   zynqmp::InputParam& feed_param = pe_.param();
   feed_param.input = x.ZynqTensor();
