@@ -459,8 +459,8 @@ class XPUResBlockReductionFuser : public FuseBase {
       if ((matched.at("pool2d")->stmt()->op_info()->HasAttr("ceil_mode")) &&
           (matched.at("pool2d")->stmt()->op_info()->GetAttr<bool>(
               "ceil_mode"))) {
-        pool_paddings[1] = pool_strides[0] - 1;
-        pool_paddings[3] = pool_strides[1] - 1;
+        pool_paddings[1] += pool_strides[0] - 1;
+        pool_paddings[3] += pool_strides[1] - 1;
       }
       conv_paddings.insert(conv_paddings.end() - 2 * 4,
                            pool_paddings.begin(),

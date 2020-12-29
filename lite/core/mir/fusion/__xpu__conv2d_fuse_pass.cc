@@ -284,12 +284,12 @@ class XPUConv2dBlock0Fuser : public FuseBase {
       if (ew_add_y_size != mean_len && ew_add_y_size == 1) {
         for (int i = 0; i < mean_len; ++i) {
           bias_on_host[i] +=
-              ew_add_y_on_host[0] - mean_on_host[i] * scale_on_host[i];
+              (ew_add_y_on_host[0] - mean_on_host[i]) * scale_on_host[i];
         }
       } else if (ew_add_y_size == mean_len) {
         for (int i = 0; i < mean_len; ++i) {
           bias_on_host[i] +=
-              ew_add_y_on_host[i] - mean_on_host[i] * scale_on_host[i];
+              (ew_add_y_on_host[i] - mean_on_host[i]) * scale_on_host[i];
         }
       } else {
         LOG(WARNING) << "Elements size of `elemwise_bias` and 'batchnorm_mean` "
