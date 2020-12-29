@@ -22,6 +22,39 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
+bool Reshape2MatmulFuser::CheckValidity(const key2nodes_t& matched) {
+  bool trigger_flag = true;
+
+  auto reshape2_op_desc = *matched.at("reshape2")->stmt()->op_info();
+  auto reshape2_input_x_name = reshape2_op_desc.Input("X").front();
+  auto* scope = matched.at("reshape2")->stmt()->op()->scope();
+  auto reshape2_in_x_shape =
+      scope->FindVar(reshape2_input_x_name)->Get<lite::Tensor>().dims();
+  size_t reshape2_in_x_rank = reshape2_in_x_shape.size();
+
+  trigger_flag = trigger_flag && reshape2_in_x_rank == 4 &&
+                 reshape2_in_x_shape[2] == 1 && reshape2_in_x_shape[3] == 1;
+
+  // Get the input scale from matmul
+  auto op_desc = *matched.at("matmul")->stmt()->op_info();
+  auto input_x_name = op_desc.Input("X").front();
+  auto input_y_name = op_desc.Input("Y").front();
+  bool transpose_X = op_desc.GetAttr<bool>("transpose_X");
+  bool transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
+  float alpha = op_desc.GetAttr<float>("alpha");
+
+  auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
+  auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
+  size_t matmul_in_x_rank = x_shape.size();
+  size_t matmul_in_y_rank = y_shape.size();
+
+  trigger_flag = trigger_flag && !transpose_X && !transpose_Y &&
+                 std::fabs(alpha - 1.0) < 1e-5 && matmul_in_x_rank == 2 &&
+                 matmul_in_y_rank == 2;
+
+  return trigger_flag;
+}
+
 void Reshape2MatmulFuser::BuildPattern() {
   // create nodes.
   auto* reshape2_in_x = VarNode("x")->assert_is_op_input("reshape2", "X");
@@ -64,45 +97,15 @@ void Reshape2MatmulFuser::InsertNewNode(SSAGraph* graph,
 }
 
 cpp::OpDesc Reshape2MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
-  bool trigger_flag = true;
-
-  auto reshape2_op_desc = *matched.at("reshape2")->stmt()->op_info();
-  auto reshape2_input_x_name = reshape2_op_desc.Input("X").front();
-  auto* scope = matched.at("reshape2")->stmt()->op()->scope();
-  auto reshape2_in_x_shape =
-      scope->FindVar(reshape2_input_x_name)->Get<lite::Tensor>().dims();
-  size_t reshape2_in_x_rank = reshape2_in_x_shape.size();
-
-  trigger_flag = trigger_flag && reshape2_in_x_rank == 4 &&
-                 reshape2_in_x_shape[2] == 1 && reshape2_in_x_shape[3] == 1;
-
-  // Get the input scale from matmul
   auto op_desc = *matched.at("matmul")->stmt()->op_info();
-  auto input_x_name = op_desc.Input("X").front();
-  auto input_y_name = op_desc.Input("Y").front();
-  bool transpose_X = op_desc.GetAttr<bool>("transpose_X");
-  bool transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
-  float alpha = op_desc.GetAttr<float>("alpha");
-
-  auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
-  auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
-  size_t matmul_in_x_rank = x_shape.size();
-  size_t matmul_in_y_rank = y_shape.size();
-
-  trigger_flag = trigger_flag && !transpose_X && !transpose_Y &&
-                 std::fabs(alpha - 1.0) < 1e-5 && matmul_in_x_rank == 2 &&
-                 matmul_in_y_rank == 2;
-
-  if (trigger_flag) {
-    op_desc.mutable_inputs()->clear();
-    op_desc.mutable_outputs()->clear();
-    op_desc.SetType("mul");
-    op_desc.SetInput("X", {matched.at("x")->arg()->name});
-    op_desc.SetInput("Y", {matched.at("y")->arg()->name});
-    op_desc.SetAttr<int>("x_num_col_dims", 1);
-    op_desc.SetAttr<int>("y_num_col_dims", 1);
-    op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
-  }
+  op_desc.mutable_inputs()->clear();
+  op_desc.mutable_outputs()->clear();
+  op_desc.SetType("mul");
+  op_desc.SetInput("X", {matched.at("x")->arg()->name});
+  op_desc.SetInput("Y", {matched.at("y")->arg()->name});
+  op_desc.SetAttr<int>("x_num_col_dims", 1);
+  op_desc.SetAttr<int>("y_num_col_dims", 1);
+  op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
 
   return op_desc;
 }

@@ -27,6 +27,7 @@ class MatmulFuser : public FuseBase {
  public:
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+  bool CheckValidity(const key2nodes_t& matched) override;
 
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;

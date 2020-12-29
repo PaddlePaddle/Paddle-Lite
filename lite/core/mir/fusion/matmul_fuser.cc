@@ -52,13 +52,12 @@ void MatmulFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   IR_NODE_LINK_TO(new_op_node, matched.at("Out"));
 }
 
-cpp::OpDesc MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
+bool MatmulFuser::CheckValidity(const key2nodes_t& matched) {
   auto op_desc = *matched.at("matmul")->stmt()->op_info();
   auto* scope = matched.at("matmul")->stmt()->op()->scope();
 
   // Get the input scale from matmul
 
-  auto input_x_name = op_desc.Input("X").front();
   auto input_y_name = op_desc.Input("Y").front();
   bool transpose_X = op_desc.GetAttr<bool>("transpose_X");
   bool transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
@@ -69,17 +68,20 @@ cpp::OpDesc MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
   size_t x_rank = x_shape.size();
   size_t y_rank = y_shape.size();
 
-  if (!transpose_X && !transpose_Y && std::fabs(alpha - 1.0) < 1e-5 &&
-      x_rank == 2 && y_rank == 2) {
-    op_desc.mutable_inputs()->clear();
-    op_desc.mutable_outputs()->clear();
-    op_desc.SetType("mul");
-    op_desc.SetInput("X", {matched.at("x")->arg()->name});
-    op_desc.SetInput("Y", {matched.at("y")->arg()->name});
-    op_desc.SetAttr<int>("x_num_col_dims", 1);
-    op_desc.SetAttr<int>("y_num_col_dims", 1);
-    op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
-  }
+  return (!transpose_X && !transpose_Y && std::fabs(alpha - 1.0) < 1e-5 &&
+          x_rank == 2 && y_rank == 2);
+}
+
+cpp::OpDesc MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
+  auto op_desc = *matched.at("matmul")->stmt()->op_info();
+  op_desc.mutable_inputs()->clear();
+  op_desc.mutable_outputs()->clear();
+  op_desc.SetType("mul");
+  op_desc.SetInput("X", {matched.at("x")->arg()->name});
+  op_desc.SetInput("Y", {matched.at("y")->arg()->name});
+  op_desc.SetAttr<int>("x_num_col_dims", 1);
+  op_desc.SetAttr<int>("y_num_col_dims", 1);
+  op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
   return op_desc;
 }
 

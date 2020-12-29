@@ -25,6 +25,7 @@ namespace fusion {
 
 class Reshape2MatmulFuser : public FuseBase {
  public:
+  bool CheckValidity(const key2nodes_t& matched) override;
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 

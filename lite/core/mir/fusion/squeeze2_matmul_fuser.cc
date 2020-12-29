@@ -47,23 +47,7 @@ void Squeeze2MatmulFuser::BuildPattern() {
   matmul_inputs >> *matmul_op >> *matmul_out;
 }
 
-void Squeeze2MatmulFuser::InsertNewNode(SSAGraph* graph,
-                                        const key2nodes_t& matched) {
-  auto op_desc = GenOpDesc(matched);
-  auto mul_op = LiteOpRegistry::Global().Create("mul");
-  auto matmul = matched.at("matmul")->stmt()->op();
-  auto* scope = matmul->scope();
-  auto& valid_places = matmul->valid_places();
-  mul_op->Attach(op_desc, scope);
-
-  auto* new_op_node = graph->GraphCreateInstructNode(mul_op, valid_places);
-
-  IR_NODE_LINK_TO(matched.at("x"), new_op_node);
-  IR_NODE_LINK_TO(matched.at("y"), new_op_node);
-  IR_NODE_LINK_TO(new_op_node, matched.at("Out"));
-}
-
-cpp::OpDesc Squeeze2MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
+bool Squeeze2MatmulFuser::CheckValidity(const key2nodes_t& matched) {
   bool trigger_flag = true;
 
   auto squeeze2_op_desc = *matched.at("squeeze2")->stmt()->op_info();
@@ -93,17 +77,37 @@ cpp::OpDesc Squeeze2MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
   trigger_flag = trigger_flag && !transpose_X && !transpose_Y &&
                  std::fabs(alpha - 1.0) < 1e-5 && matmul_in_x_rank == 2 &&
                  matmul_in_y_rank == 2;
+  return trigger_flag;
+}
 
-  if (trigger_flag) {
-    op_desc.mutable_inputs()->clear();
-    op_desc.mutable_outputs()->clear();
-    op_desc.SetType("mul");
-    op_desc.SetInput("X", {matched.at("x")->arg()->name});
-    op_desc.SetInput("Y", {matched.at("y")->arg()->name});
-    op_desc.SetAttr<int>("x_num_col_dims", 1);
-    op_desc.SetAttr<int>("y_num_col_dims", 1);
-    op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
-  }
+void Squeeze2MatmulFuser::InsertNewNode(SSAGraph* graph,
+                                        const key2nodes_t& matched) {
+  auto op_desc = GenOpDesc(matched);
+  auto mul_op = LiteOpRegistry::Global().Create("mul");
+  auto matmul = matched.at("matmul")->stmt()->op();
+  auto* scope = matmul->scope();
+  auto& valid_places = matmul->valid_places();
+  mul_op->Attach(op_desc, scope);
+
+  auto* new_op_node = graph->GraphCreateInstructNode(mul_op, valid_places);
+
+  IR_NODE_LINK_TO(matched.at("x"), new_op_node);
+  IR_NODE_LINK_TO(matched.at("y"), new_op_node);
+  IR_NODE_LINK_TO(new_op_node, matched.at("Out"));
+}
+
+cpp::OpDesc Squeeze2MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
+  // Get the input scale from matmul
+  auto op_desc = *matched.at("matmul")->stmt()->op_info();
+
+  op_desc.mutable_inputs()->clear();
+  op_desc.mutable_outputs()->clear();
+  op_desc.SetType("mul");
+  op_desc.SetInput("X", {matched.at("x")->arg()->name});
+  op_desc.SetInput("Y", {matched.at("y")->arg()->name});
+  op_desc.SetAttr<int>("x_num_col_dims", 1);
+  op_desc.SetAttr<int>("y_num_col_dims", 1);
+  op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
 
   return op_desc;
 }

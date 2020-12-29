@@ -26,6 +26,7 @@ namespace fusion {
 class Squeeze2MatmulFuser : public FuseBase {
  public:
   void BuildPattern() override;
+  bool CheckValidity(const key2nodes_t& matched) override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:

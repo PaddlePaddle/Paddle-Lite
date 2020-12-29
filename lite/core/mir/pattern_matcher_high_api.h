@@ -36,17 +36,27 @@ class FuseBase {
   size_t operator()(SSAGraph* graph) {
     BuildPattern();
     PerformPatternMatcher(graph);
-
-    for (const auto& matched : key2nodes_) {
-      InsertNewNode(graph, matched);
+    for (auto matched = key2nodes_.begin(); matched != key2nodes_.end();) {
+      if (CheckValidity(*matched)) {
+        // we will remove patterns that's not valid.
+        InsertNewNode(graph, *matched);
+        matched++;
+      } else {
+        key2nodes_.erase(matched);
+      }
     }
-
     DeleteInterNodes(graph);
     return key2nodes_.size();
   }
 
   // Build a PMPattern using PMNode.
   virtual void BuildPattern() = 0;
+
+  // Check validity of matched pattern
+  // .eg You can verify the validity according to ops'
+  // inputs/outputs/attributes,
+  //     not just ops' connection relationship.
+  virtual bool CheckValidity(const key2nodes_t& matched) { return true; }
 
   // Generate an operator desc with a matched subgraph.
   virtual cpp::OpDesc GenOpDesc(const key2nodes_t& matched) {
