@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/reshape2_matmul_fuser.h"
+#include <cmath>
 #include <memory>
 #include <vector>
-
 namespace paddle {
 namespace lite {
 namespace mir {
