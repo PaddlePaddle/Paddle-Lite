@@ -923,8 +923,6 @@ struct MulticlassNmsParam : ParamBase {
   bool normalized{true};
   const lite::Tensor* rois_num{};
   lite::Tensor* nms_rois_num{};
-  bool has_rois_num{false};
-  bool return_rois_num{false};
 };
 
 /// ----------------------- matrix_nms operators ----------------------

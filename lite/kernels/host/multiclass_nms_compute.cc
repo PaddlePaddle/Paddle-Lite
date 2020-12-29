@@ -340,7 +340,8 @@ void MulticlassNmsCompute::Run() {
   auto* index = param.index;
   auto score_dims = scores->dims();
   auto score_size = score_dims.size();
-  auto has_roissum = param.has_rois_num;
+  auto has_roissum = param.rois_num != nullptr;
+  auto return_rois_num = param.nms_rois_num != nullptr;
   auto rois_num = param.rois_num;
 
   std::vector<std::map<int, std::vector<int>>> all_indices;
@@ -437,7 +438,7 @@ void MulticlassNmsCompute::Run() {
     }
   }
 
-  if (param.return_rois_num) {
+  if (return_rois_num) {
     auto* nms_rois_num = param.nms_rois_num;
     nms_rois_num->mutable_data<int>();
     int* num_data = nms_rois_num->mutable_data<int>();
