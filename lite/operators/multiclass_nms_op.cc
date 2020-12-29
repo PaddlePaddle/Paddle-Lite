@@ -70,18 +70,21 @@ bool MulticlassNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   if (opdesc.HasAttr("normalized")) {
     param_.normalized = opdesc.GetAttr<bool>("normalized");
   }
-  std::vector<std::string> input_arg_names = opdesc.InputArgumentNames();
+  auto input_arg_names = opdesc.InputArgumentNames();
 
-  if (opdesc.HasInput("RoisNum")) {
-    param_.rois_num =
-        GetVar<lite::Tensor>(scope, opdesc.Input("RoisNum").front());
-    param_.has_rois_num = true;
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "RoisNum") !=
+      input_arg_names.end()) {
+    auto rois_num_name = opdesc.Input("RoisNum");
+    if (rois_num_name.size() > 0) {
+      param_.rois_num = GetVar<lite::Tensor>(scope, rois_num_name.front());
+    }
   }
 
-  if (opdesc.HasOutput("NmsRoisNum")) {
-    param_.return_rois_num = true;
-    param_.nms_rois_num =
-        GetMutableVar<lite::Tensor>(scope, opdesc.Output("NmsRoisNum").front());
+  if (std::find(output_arg_names.begin(),
+                output_arg_names.end(),
+                "NmsRoisNum") != output_arg_names.end()) {
+    auto nms_rois_name = opdesc.Output("NmsRoisNum").front();
+    param_.nms_rois_num = GetMutableVar<lite::Tensor>(scope, nms_rois_name);
   }
 
   return true;
