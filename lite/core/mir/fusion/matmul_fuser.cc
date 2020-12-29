@@ -57,7 +57,7 @@ bool MatmulFuser::CheckValidity(const key2nodes_t& matched) {
   auto* scope = matched.at("matmul")->stmt()->op()->scope();
 
   // Get the input scale from matmul
-
+  auto input_x_name = op_desc.Input("X").front();
   auto input_y_name = op_desc.Input("Y").front();
   bool transpose_X = op_desc.GetAttr<bool>("transpose_X");
   bool transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
