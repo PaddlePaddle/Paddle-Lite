@@ -89,7 +89,7 @@ cpp::OpDesc Reshape2MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
   size_t matmul_in_y_rank = y_shape.size();
 
   trigger_flag = trigger_flag && !transpose_X && !transpose_Y &&
-                 std::abs(alpha - 1.0) < 1e-5 && matmul_in_x_rank == 2 &&
+                 std::fabs(alpha - 1.0) < 1e-5 && matmul_in_x_rank == 2 &&
                  matmul_in_y_rank == 2;
 
   if (trigger_flag) {

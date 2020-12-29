@@ -68,7 +68,7 @@ cpp::OpDesc MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
   size_t x_rank = x_shape.size();
   size_t y_rank = y_shape.size();
 
-  if (!transpose_X && !transpose_Y && std::abs(alpha - 1.0) < 1e-5 &&
+  if (!transpose_X && !transpose_Y && std::fabs(alpha - 1.0) < 1e-5 &&
       x_rank == 2 && y_rank == 2) {
     op_desc.mutable_inputs()->clear();
     op_desc.mutable_outputs()->clear();
