@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/squeeze2_matmul_fuser.h"
+#include <cmath>
 #include <memory>
 #include <vector>
 
