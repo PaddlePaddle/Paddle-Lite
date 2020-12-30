@@ -64,9 +64,6 @@ lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_
 lite_cc_test(test_pool_image_opencl SRCS pool_image_compute_test.cc
              DEPS pool_opencl_image op_registry program context)
 
-lite_cc_test(test_scale_image_opencl SRCS scale_image_compute_test.cc
-             DEPS scale_opencl_image op_registry program context)
-
 lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
              DEPS reshape_opencl_image op_registry program context)
 
