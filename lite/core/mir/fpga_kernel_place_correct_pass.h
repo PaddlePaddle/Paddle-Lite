@@ -30,7 +30,7 @@ namespace mir {
  * Correct the place of the variables in the SSAGrpah, it will inference the
  * variables' place by the kernels outputs them.
  */
-class KernelPlaceCorrectPass : public DebugPass {
+class FPGAKernelPlaceCorrectPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
@@ -52,7 +52,9 @@ class KernelPlaceCorrectPass : public DebugPass {
     VLOG(4) << "lite_with_targets['kFPGA']:" << lite_with_targets["kFPGA"];
 
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
+    VLOG(3) << "befor for loop";
     for (auto& x : graph->StmtTopologicalOrder()) {
+      VLOG(3) << "HHHHH";
       auto& inst = x->AsStmt();
       // The IoCopyOp is a tool operator, it won't support the type inference.
       // in fpga, we has io_copy+cali+layout tool ops, so we need type inference
@@ -79,7 +81,7 @@ class KernelPlaceCorrectPass : public DebugPass {
 
       auto in = x->inlinks.front();
       if (!in) {
-        break;
+        continue;
       }
       auto out = x->outlinks.front();
       auto p = in->AsArg().type->precision();
