@@ -296,6 +296,17 @@ void ConvImageCompute::PrepareForRun() {
           std::to_string(conv_param_->activation_param.Leaky_relu_alpha);
       build_options_single +=
           " -DLEAKY_RELU -DLEAKY_RELU_ALPHA=" + leaky_relu_alpha_str + "f";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kHardSwish) {
+      std::string threshold =
+          std::to_string(conv_param_->activation_param.hard_swish_threshold);
+      std::string scale =
+          std::to_string(conv_param_->activation_param.hard_swish_scale);
+      std::string offset =
+          std::to_string(conv_param_->activation_param.hard_swish_offset);
+      build_options_single += " -DHARD_SWISH -DACT_THRESHOLD=" + threshold +
+                              "f" + " -DACT_SCALE=" + scale + "f" +
+                              " -DACT_OFFSET=" + offset + "f";
     } else {
       LOG(FATAL) << "Unsupported activation type:"
                  << static_cast<int>(conv_param_->activation_param.active_type);
