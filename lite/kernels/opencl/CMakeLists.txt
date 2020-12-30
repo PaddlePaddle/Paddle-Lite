@@ -24,7 +24,7 @@ add_kernel(reshape_opencl_image OPENCL basic SRCS reshape_image_compute.cc DEPS 
 add_kernel(transpose_opencl_image OPENCL basic SRCS transpose_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl_image OPENCL basic SRCS conv_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(layout_opencl_image OPENCL basic SRCS layout_image_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(concat_opencl_image OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_kernel_deps})
+#add_kernel(concat_opencl_image OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(split_opencl_image OPENCL basic SRCS split_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(nearest_interp_opencl_image OPENCL basic SRCS nearest_interp_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(scale_opencl_image OPENCL basic SRCS scale_image_compute.cc DEPS ${cl_kernel_deps})
@@ -70,8 +70,8 @@ lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
 lite_cc_test(test_transpose_image_opencl SRCS transpose_image_compute_test.cc
              DEPS transpose_opencl_image layout_opencl_image op_registry program context)
              
-lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
-             DEPS concat_opencl_image layout_opencl_image op_registry program context)
+#lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
+#             DEPS concat_opencl_image layout_opencl_image op_registry program context)
 
 #lite_cc_test(test_elementwise_mul_image_opencl SRCS elementwise_mul_image_compute_test.cc
 #             DEPS elementwise_mul_opencl_image op_registry program context)
