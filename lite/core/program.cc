@@ -24,10 +24,6 @@
 #include "lite/core/profile/precision_profiler.h"
 #endif
 
-#ifdef LITE_WITH_FPGA
-#include "lite/backends/fpga/monitor.hpp"
-#endif
-
 namespace paddle {
 namespace lite {
 

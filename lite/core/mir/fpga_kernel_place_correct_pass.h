@@ -52,9 +52,7 @@ class FPGAKernelPlaceCorrectPass : public ProgramPass {
     VLOG(4) << "lite_with_targets['kFPGA']:" << lite_with_targets["kFPGA"];
 
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
-    VLOG(3) << "befor for loop";
     for (auto& x : graph->StmtTopologicalOrder()) {
-      VLOG(3) << "HHHHH";
       auto& inst = x->AsStmt();
       // The IoCopyOp is a tool operator, it won't support the type inference.
       // in fpga, we has io_copy+cali+layout tool ops, so we need type inference

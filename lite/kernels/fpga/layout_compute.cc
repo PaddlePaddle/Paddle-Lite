@@ -100,10 +100,7 @@ void TransHwcToChw(Tensor* dest, const Tensor* src) {
   }
 }
 void TransChwToHwc(Tensor* dest, const Tensor* src) {
-  std::cout << "chw to hwc \n";
-  // exit(-1);
   if (src->ZynqTensor()->dataType() == zynqmp::FP32) {
-    std::cout << "chw to hwc 32\n";
     float* chw = const_cast<float*>(src->data<float>());
     float* hwc = dest->mutable_data<float>();
     int num = dest->dims()[0];
@@ -121,7 +118,6 @@ void TransChwToHwc(Tensor* dest, const Tensor* src) {
   }
 
   if (src->ZynqTensor()->dataType() == zynqmp::FP16) {
-    std::cout << "chw to hwc 16\n";
     float16* chw = const_cast<float16*>(src->data<float16>());
     float16* hwc = dest->mutable_data<float16>();
     int num = dest->dims()[0];
