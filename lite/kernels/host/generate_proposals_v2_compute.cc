@@ -415,6 +415,7 @@ void GenerateProposalsV2Compute::Run() {
   anchors->Resize(std::vector<int64_t>({anchors->numel() / 4, 4}));
   variances->Resize(std::vector<int64_t>({variances->numel() / 4, 4}));
   std::vector<int64_t> tmp_lod;
+  std::vector<int64_t> tmp_num;
 
   int64_t num_proposals = 0;
   for (int64_t i = 0; i < num; ++i) {
@@ -444,6 +445,7 @@ void GenerateProposalsV2Compute::Run() {
     num_proposals += proposals.dims()[0];
     lod0.push_back(num_proposals);
     tmp_lod.push_back(num_proposals);
+    tmp_num.push_back(proposals.dims()[0]);
   }
 
   if (param.RpnRoisLod != nullptr) {
@@ -451,6 +453,14 @@ void GenerateProposalsV2Compute::Run() {
     int64_t *lod_data = param.RpnRoisLod->mutable_data<int64_t>();
     for (int i = 0; i < num; i++) {
       lod_data[i] = tmp_lod[i];
+    }
+  }
+
+  if (param.RpnRoisNum != nullptr) {
+    param.RpnRoisLod->Resize(DDim(std::vector<DDim::value_type>({num})));
+    int64_t *num_data = param.RpnRoisNum->mutable_data<int64_t>();
+    for (int i = 0; i < num; i++) {
+      num_data[i] = tmp_num[i];
     }
   }
   rpn_rois->set_lod(lod);
