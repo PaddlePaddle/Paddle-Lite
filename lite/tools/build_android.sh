@@ -187,12 +187,12 @@ function make_tiny_publish_so {
       -DLITE_ON_TINY_PUBLISH=ON 
 
   # todo: third_party of opencl should be moved into git submodule and cmake later
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC 
-  fi
-
-  make publish_inference -j$NUM_PROC
-  cd - > /dev/null
+#  if [ "${WITH_OPENCL}" == "ON" ]; then
+#      make opencl_clhpp -j$NUM_PROC 
+#  fi
+#
+#  make publish_inference -j$NUM_PROC
+#  cd - > /dev/null
 }
 
 # 4.2 function of full_publish compiling
