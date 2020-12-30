@@ -61,10 +61,8 @@ bool RoiAlignOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 
   if (op_desc.HasInput("RoisNum") && !op_desc.Input("RoisNum").empty()) {
     auto rois_num_var_vec = op_desc.Input("RoisNum");
-    if (!rois_num_var_vec.empty()) {
-      param_.RoisNum =
-          scope->FindVar(rois_num_var_vec.front())->GetMutable<lite::Tensor>();
-    }
+    param_.RoisNum =
+        scope->FindVar(rois_num_var_vec.front())->GetMutable<lite::Tensor>();
   }
 
   param_.spatial_scale = op_desc.GetAttr<float>("spatial_scale");
