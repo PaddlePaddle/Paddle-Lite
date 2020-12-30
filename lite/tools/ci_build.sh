@@ -1,6 +1,6 @@
 #!/bin/bash
 # The git version of CI is 2.7.4. This script is not compatible with git version 1.7.1.
-# areyouok: hi  hellp
+# areyouok: hi  hellp hi
 set -ex
 
 TESTS_FILE="./lite_tests.txt"
