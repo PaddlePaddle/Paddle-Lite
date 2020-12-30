@@ -13,8 +13,10 @@ limitations under the License. */
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/core/version.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/io.h"
+// #include "lite/model_parser/flatbuffers/opencl/cache.h"
 
 namespace paddle {
 namespace lite {
@@ -162,7 +164,7 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
                    "and you have Write&Read permission. Jump to build program "
                    "from source.";
     } else {
-      // todo: deserialize
+      this->Deserialize(bin_file, programs_precompiled_binary_);
 
       // check if the binary file is illegal and valid
       auto sn_iter = programs_precompiled_binary_.find(sn_key_);
@@ -254,7 +256,10 @@ void CLRuntime::SaveProgram() {
     std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
     programs_precompiled_binary_[sn_key_] = {sn_info};
 
-// serialize programs_precompiled_binary_ to file
+    auto path_name = this->GetBinaryPathName();
+    CHECK_EQ(path_name.size(), 2);
+    std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
+    this->Serialize(bin_file, programs_precompiled_binary_);
 
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "Programs have been serialized to disk.";
@@ -262,12 +267,47 @@ void CLRuntime::SaveProgram() {
   }
 }
 
+bool CLRuntime::Serialize(
+    const std::string file_name,
+    const std::map<std::string, std::vector<std::vector<unsigned char>>>
+        map_data) {
+  /*
+    Cache cache{map_data};
+    lite::model_parser::Buffer buffer;
+    cache.CopyDataToBuffer(&buffer);
+
+    lite::model_parser::BinaryFileWriter writer{file_name};
+    writer.Write(buffer.data(), buffer.size());
+
+    return true;
+  */
+}
+
+bool CLRuntime::Deserialize(
+    const std::string file_name,
+    std::map<std::string, std::vector<std::vector<unsigned char>>> map_data) {
+  /*
+    lite::model_parser::Buffer buffer;
+
+    lite::model_parser::BinaryFileReader reader(file_name, 0);
+    uint64_t file_size;
+    reader.Read(&file_size, sizeof(uint64_t));
+    reader.Read(buffer.data(), file_size);
+
+    lite::model_parser::Buffer buffer;
+    Cache cache{buffer};
+    map_data = cache.GetBinaryMap();
+
+    return true;
+  */
+}
+
 std::string CLRuntime::GetSN(const std::string options) {
   // identifier info(Serial Number) for each binary file: lite version, model,
   // build options, platform info, device version, driver version
   STL::stringstream sn_ss;
-  std::string lite_version = "place_holder; ";  // todo
-  std::string model_name = "place_holder; ";    // todo
+  std::string lite_version = lite::version();
+  std::string model_name = "place_holder; ";  // todo
   std::string platform_info = platform_->getInfo<CL_PLATFORM_NAME>() + ", " +
                               platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";
   std::string device_version = device_->getInfo<CL_DEVICE_VERSION>() + "; ";
