@@ -57,8 +57,7 @@ void ConvImageCompute::PrepareForRun() {
   has_bias_ = (conv_param_->bias) != nullptr;
   offset_ = filter_tensor_h_ / 2 - pad_up_;
 
-  bool pad_equal = ((pad_left_ == pad_up_) && (pad_up_ == pad_left_) &&
-                    (pad_left_ == pad_right_));
+  bool pad_equal = ((pad_left_ == pad_up_) && (pad_left_ == pad_right_));
   bool stride_equal = stride_h_ == stride_w_;
   bool dilation_equal = dilation_h_ == dilation_w_;
 
@@ -81,7 +80,10 @@ void ConvImageCompute::PrepareForRun() {
   VLOG(3) << "padding :" << pad_up_ << " " << pad_down_ << " " << pad_left_
           << " " << pad_right_;
 #endif
-
+  if (filter_tensor_h_ == 3 && filter_tensor_w_ == 3 && groups_ > 1 &&
+      stride_h_ > 1) {
+    pad_equal = (pad_left_ == pad_up_);
+  }
   CHECK(pad_equal && stride_equal && dilation_equal);
   CHECK_GE(conv_param_->dilations->size(), 2);
   CHECK(dilation_h_ == dilation_w_);
