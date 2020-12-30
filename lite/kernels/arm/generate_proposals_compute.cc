@@ -454,7 +454,7 @@ void GenerateProposalsCompute::Run() {
     num_proposals += proposals.dims()[0];
     lod0.push_back(num_proposals);
     tmp_lod.push_back(num_proposals);
-    tmp_num.push_back(proposals.dims()[0])
+    tmp_num.push_back(proposals.dims()[0]);
   }
 
   if (param.RpnRoisLod != nullptr) {
