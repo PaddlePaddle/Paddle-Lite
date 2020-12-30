@@ -26,6 +26,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<std::string> act_types{"relu"};
   bool has_int8 = false;
   bool has_arm = false;
+  bool has_opencl = false;
   bool has_cuda = false;
   bool has_x86 = false;
   for (auto& place : graph->valid_places()) {
@@ -34,6 +35,9 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     }
     if (place.target == TARGET(kARM)) {
       has_arm = true;
+    }
+    if (place.target == TARGET(kOpenCL)) {
+      has_opencl = true;
     }
     if (place.target == TARGET(kCUDA)) {
       has_cuda = true;
@@ -46,6 +50,11 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (has_arm) {
     act_types.push_back("relu6");
     act_types.push_back("leaky_relu");
+  }
+  if (has_opencl) {
+    act_types.push_back("relu6");
+    act_types.push_back("leaky_relu");
+    act_types.push_back("hard_swish");
   }
   if (!has_int8 && has_cuda) {
     act_types.push_back("leaky_relu");
