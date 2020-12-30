@@ -142,10 +142,23 @@ void RunModel(std::string model_dir,
       ::IsOpenCLBackendValid(/*check_fp16_valid = false*/);
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
-  /*  Uncomment code below to enable OpenCL
+  //  Uncomment code below to enable OpenCL
+  /*
   if (is_opencl_backend_valid) {
     // give opencl nb model dir
     config.set_model_from_file(model_dir);
+
+    // Set opencl kernel binary.
+    // Large addtitional prepare time is cost due to algorithm selecting and
+  building kernel from source code.
+    // Prepare time can be reduced dramitically after building algorithm file
+  and OpenCL kernel binary on the first running.
+    // The 1st running time will be a bit longer due to the compiling time if
+  you don't call `set_opencl binary_path_name` explicitly.
+    // So call `set_opencl binary_path_name` explicitly is suggested.
+    const std::string bin_path = "/data/local/tmp/";
+    const std::string bin_name = "lite_opencl_kernel.bin";
+    config.set_opencl_binary_path_name(bin_path, bin_name);
 
     // opencl tune option
     // CL_TUNE_NONE: 0

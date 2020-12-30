@@ -280,6 +280,23 @@ void ConfigBase::set_opencl_tune(CLTuneMode tune_mode) {
 #endif
 }
 
+void ConfigBase::set_opencl_binary_path_name(const std::string &path,
+                                             const std::string &name) {
+#ifdef LITE_WITH_OPENCL
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    opencl_bin_path_ = path;
+    opencl_bin_name_ = name;
+    lite::CLRuntime::Global()->SetBinaryPathName(path, name);
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "opencl binary path and file name:"
+              << (lite::CLRuntime::Global()->GetBinaryPathName())[0] << "/"
+              << (lite::CLRuntime::Global()->GetBinaryPathName())[1];
+#endif
+  }
+
+#endif
+}
+
 void ConfigBase::set_opencl_precision(CLPrecisionType p) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {

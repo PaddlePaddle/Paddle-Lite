@@ -142,6 +142,8 @@ class LITE_API ConfigBase {
   PowerMode mode_{LITE_POWER_NO_BIND};
   // gpu opencl
   CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
+  std::string opencl_bin_path_{"/data/local/tmp"};
+  std::string opencl_bin_name_{"lite_opencl_kernel.bin"};
   CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
@@ -161,6 +163,17 @@ class LITE_API ConfigBase {
   PowerMode power_mode() const { return mode_; }
   // set GPU opencl tune
   void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE);
+  /// \brief Set path and file name of generated OpenCL compiled kernel binary.
+  ///
+  /// If you use GPU of specific soc, using OpenCL binary will speed up the
+  /// initialization.
+  ///
+  /// \param path  Path that OpenCL compiled kernel binay file stores in. Make
+  /// sure the path exist and you have Read&Write permission.
+  /// \param name  File name of OpenCL compiled kernel binay.
+  /// \return void
+  void set_opencl_binary_path_name(const std::string& path,
+                                   const std::string& name);
   // set GPU opencl precision
   void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
   // set subgraph_model_dir

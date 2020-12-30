@@ -292,6 +292,11 @@ void RuntimeProgram::Run() {
     }
 #endif
     inst.Run();
+
+#ifdef LITE_WITH_OPENCL
+    CLRuntime::Global()->SaveProgram();
+#endif
+
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
     precision_profiler_summary +=
