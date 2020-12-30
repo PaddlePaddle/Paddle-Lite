@@ -282,10 +282,6 @@ void RuntimeProgram::Run() {
   }
 #endif
 
-#ifdef LITE_WITH_FPGA
-  Monitor& monitor = Monitor::get_instance();
-#endif
-
   int idx = -1;
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
@@ -306,13 +302,6 @@ void RuntimeProgram::Run() {
     }
 #endif
 
-    // #ifdef LITE_WITH_FPGA
-    //     monitor.preRun(inst);
-    //     inst.Run();
-    //     monitor.postRun(inst);
-    // #else
-    //     inst.Run();
-    // #endif
     inst.Run();
 
 #ifdef LITE_WITH_PRECISION_PROFILE
