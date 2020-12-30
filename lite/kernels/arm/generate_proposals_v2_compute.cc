@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/generate_proposals_v2_compute.h"
+#include "lite/kernels/arm/generate_proposals_v2_compute.h"
 #include <string>
 #include <utility>
 #include <vector>
