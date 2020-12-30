@@ -36,9 +36,9 @@ rk::nn::PrecisionType CvtPrecisionType(PrecisionType itype);
 
 rk::nn::DataLayoutType CvtDataLayoutType(DataLayoutType itype);
 
-std::vector<uint32_t> CvtShape(const std::vector<int64_t>& in_shape);
+std::vector<int32_t> CvtShape(const std::vector<int64_t>& in_shape);
 
-std::vector<uint32_t> CvtShape(const DDim& in_dims);
+std::vector<int32_t> CvtShape(const DDim& in_dims);
 
 std::shared_ptr<rk::nn::Tensor> CvtTensor(
     rk::nn::Graph* graph,

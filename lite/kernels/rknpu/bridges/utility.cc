@@ -94,15 +94,15 @@ rk::nn::DataLayoutType CvtDataLayoutType(DataLayoutType itype) {
   return otype;
 }
 
-std::vector<uint32_t> CvtShape(const std::vector<int64_t>& in_shape) {
-  std::vector<uint32_t> out_shape;
+std::vector<int32_t> CvtShape(const std::vector<int64_t>& in_shape) {
+  std::vector<int32_t> out_shape;
   for (size_t i = 0; i < in_shape.size(); i++) {
-    out_shape.push_back(static_cast<uint32_t>(in_shape[i]));
+    out_shape.push_back(static_cast<int32_t>(in_shape[i]));
   }
   return out_shape;
 }
 
-std::vector<uint32_t> CvtShape(const DDim& in_dims) {
+std::vector<int32_t> CvtShape(const DDim& in_dims) {
   return CvtShape(in_dims.Vectorize());
 }
 

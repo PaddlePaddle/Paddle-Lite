@@ -80,8 +80,15 @@ bool DeviceProgram::LoadFromCacheFile(
   std::vector<std::shared_ptr<rk::nn::Tensor>> device_inodes;
   auto inputs_outputs = Split<std::string>(str, "\n");
   CHECK_EQ(inputs_outputs.size(), 2);  // inputs and outputs
-  // Create a new RK IR graph to restore from the cached binary file
+  // Create a new RK IR graph and restore from the cached binary file
   graph_ = std::make_shared<rk::nn::Graph>();
+  auto model_path = model_cache_dir + "/" + model_name_ + ".dat";
+  VLOG(3) << "[Rockchip NPU] Load model from " << model_path;
+  if (graph_->LoadCache(model_path) != rk::nn::RK_SUCCESS) {
+    LOG(WARNING) << "[Rockchip NPU] Load cached binary graph from "
+                 << model_path << " failed!";
+    return false;
+  }
   // Restore the input RK IR nodes
   auto input_options = Split<std::string>(inputs_outputs[0], ";");
   CHECK_EQ(input_options.size(), input_names.size());
@@ -115,15 +122,6 @@ bool DeviceProgram::LoadFromCacheFile(
                                                        scales,
                                                        nullptr,
                                                        origin_otypes_[i]));
-  }
-  // Load from the cached binary RK graph file
-  auto model_path = model_cache_dir + "/" + model_name_ + ".dat";
-  VLOG(3) << "[Rockchip NPU] Load model from " << model_path;
-  if (graph_->LoadCache(model_path, device_inodes, device_onodes) !=
-      rk::nn::RK_SUCCESS) {
-    LOG(WARNING) << "[Rockchip NPU] Load cached binary graph from "
-                 << model_path << " failed!";
-    return false;
   }
   // Create the RK execution for inference, and set the input and output nodes
   execution_ = lite::rknpu::Device::Global().Build(
