@@ -364,7 +364,7 @@ void MulticlassNmsCompute::Run() {
       boxes_slice = boxes->Slice<float>(i, i + 1);
       boxes_slice.Resize({score_dims[2], box_dim});
     } else {
-      std::vector<uint64_t> boxes_lod;
+      decltype(GetNmsLodFromRoisNum(rois_num)) boxes_lod;
       if (has_roissum) {
         boxes_lod = GetNmsLodFromRoisNum(rois_num);
       } else {
