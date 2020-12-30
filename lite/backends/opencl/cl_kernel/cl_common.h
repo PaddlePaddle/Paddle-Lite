@@ -123,8 +123,9 @@ inline CL_DTYPE activation(CL_DTYPE in
 #endif
 
 #ifdef HARD_SWISH
-  output = fmin(fmax(in + ACT_OFFSET, (CL_DTYPE)0), (CL_DTYPE)ACT_THRESHOLD) *
-           in / ACT_SCALE;
+  output = fmin(fmax(in + (CL_DTYPE)ACT_OFFSET, (CL_DTYPE)0),
+                (CL_DTYPE)ACT_THRESHOLD) *
+           in / (CL_DTYPE)ACT_SCALE;
 #endif
 
   return output;
@@ -163,7 +164,7 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 #ifdef HARD_SWISH
   output = fmin(fmax(in + (CL_DTYPE4)ACT_OFFSET, (CL_DTYPE4)0),
                 (CL_DTYPE4)ACT_THRESHOLD) *
-           in / ACT_SCALE;
+           in / (CL_DTYPE4)ACT_SCALE;
 #endif
 
   return output;
