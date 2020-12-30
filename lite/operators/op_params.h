@@ -1392,6 +1392,7 @@ struct GenerateProposalsParam : ParamBase {
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
   lite::Tensor* RpnRoisLod{};
+  lite::Tensor* RpnRoisNum{};
 };
 
 struct GenerateProposalsV2Param : ParamBase {
@@ -1413,6 +1414,7 @@ struct GenerateProposalsV2Param : ParamBase {
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
   lite::Tensor* RpnRoisLod{};
+  lite::Tensor* RpnRoisNum{};
 };
 
 /// ----------------------- squeeze operators ----------------------
