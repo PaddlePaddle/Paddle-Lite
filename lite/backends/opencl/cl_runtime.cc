@@ -146,7 +146,7 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
   }
 
   // 2. Check from precompiled binary
-  auto path_name = CLRuntime::Global()->GetBinaryPathName();
+  auto path_name = this->GetBinaryPathName();
   if (programs_.empty() && !(path_name.empty())) {
 #ifdef LITE_WITH_LOG
     VLOG(3) << " --- begin build program from source -> " << program_key
@@ -182,15 +182,11 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
       } else {
         // loop all programs of the binary file
         cl_int status{CL_SUCCESS};
-        const std::vector<cl::Device> device{CLRuntime::Global()->device()};
+        const std::vector<cl::Device> device{*device_};
         for (auto& ins : programs_precompiled_binary_) {
           std::string prog_key = ins.first;
           if (prog_key == sn_key_) continue;  // skip sn_key
-          cl::Program program(CLRuntime::Global()->context(),
-                              device,
-                              ins.second,
-                              NULL,
-                              &status);
+          cl::Program program(*context_, device, ins.second, NULL, &status);
           CL_CHECK_FATAL_SOLID(status);
           status = program.build(device);
           CHECK(status == CL_SUCCESS)
@@ -216,14 +212,13 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
   }
 
   // 3. Build from source
-  auto ptr = CLRuntime::Global()->CreateProgramFromSource(
-      CLRuntime::Global()->context(), file_name);
+  auto ptr = this->CreateProgramFromSource(*context_, file_name);
   auto program = ptr.get();
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- begin build program from source -> " << program_key
           << " --- ";
 #endif
-  CLRuntime::Global()->BuildProgram(program, options);
+  this->BuildProgram(program, options);
 
   // Keep built program binary
   cl_int status{CL_SUCCESS};

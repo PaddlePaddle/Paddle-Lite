@@ -129,7 +129,7 @@ class CLRuntime {
 
   cl::Device& device();
 
-  std::map<std::string, std::unique_ptr<cl::Program>>& program_map() const;
+  std::map<std::string, std::unique_ptr<cl::Program>>& program_map();
 
   cl::CommandQueue& command_queue();
 
