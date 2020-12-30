@@ -34,20 +34,7 @@ void gemm_s8(bool is_transA,
              const operators::ActivationParam act_param,
              ARMContext* ctx) {
   if (N == 1) {
-    gemv_int8(A,
-              B,
-              C,
-              false,
-              M,
-              K,
-              scale,
-              is_bias,
-              bias,
-              act_param.has_active,
-              act_param.active_type,
-              ctx,
-              act_param.Relu_clipped_coef,
-              act_param.Leaky_relu_alpha);
+    gemv_int8(A, B, C, false, M, K, scale, is_bias, bias, act_param, ctx);
 
     return;
   }
