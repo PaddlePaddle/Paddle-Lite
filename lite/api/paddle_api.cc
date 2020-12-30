@@ -293,7 +293,6 @@ void ConfigBase::set_opencl_binary_path_name(const std::string &path,
               << (lite::CLRuntime::Global()->GetBinaryPathName())[1];
 #endif
   }
-
 #endif
 }
 

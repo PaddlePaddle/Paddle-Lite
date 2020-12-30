@@ -150,11 +150,11 @@ void RunModel(std::string model_dir,
 
     // Set opencl kernel binary.
     // Large addtitional prepare time is cost due to algorithm selecting and
-  building kernel from source code.
+    // building kernel from source code.
     // Prepare time can be reduced dramitically after building algorithm file
-  and OpenCL kernel binary on the first running.
+    // and OpenCL kernel binary on the first running.
     // The 1st running time will be a bit longer due to the compiling time if
-  you don't call `set_opencl binary_path_name` explicitly.
+    // you don't call `set_opencl binary_path_name` explicitly.
     // So call `set_opencl binary_path_name` explicitly is suggested.
     const std::string bin_path = "/data/local/tmp/";
     const std::string bin_name = "lite_opencl_kernel.bin";

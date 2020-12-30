@@ -277,7 +277,9 @@ bool CLRuntime::Serialize(
     cache.CopyDataToBuffer(&buffer);
 
     lite::model_parser::BinaryFileWriter writer{file_name};
-    writer.Write(buffer.data(), buffer.size());
+    uint64_t buf_size = buffer.size();
+    writer.Write(&buf_size, sizeof(uint64_t));
+    writer.Write(buffer.data(), buf_size);
 
     return true;
   */

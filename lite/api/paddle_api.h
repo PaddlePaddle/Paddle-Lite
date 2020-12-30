@@ -142,8 +142,8 @@ class LITE_API ConfigBase {
   PowerMode mode_{LITE_POWER_NO_BIND};
   // gpu opencl
   CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
-  std::string opencl_bin_path_{"/data/local/tmp"};
-  std::string opencl_bin_name_{"lite_opencl_kernel.bin"};
+  std::string opencl_bin_path_{""};
+  std::string opencl_bin_name_{""};
   CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
