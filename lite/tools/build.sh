@@ -7,6 +7,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_CUDA=OFF \
                                -DLITE_WITH_X86=OFF \
                                -DLITE_WITH_ARM=ON \
+                               ${CMAKE_API_LEVEL_OPTIONS} \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
 readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
@@ -43,6 +44,9 @@ WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
+# android api level, which can also be set to Default
+ANDROID_API_LEVEL=21
+CMAKE_API_LEVEL_OPTIONS=""
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -101,6 +105,18 @@ function prepare_thirdparty {
     fi
 }
 
+function set_android_api_level {
+  # android api level for android version
+  if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
+      CMAKE_API_LEVEL_OPTIONS=""
+  elif [ ${ANDROID_API_LEVEL} -gt 20 ]; then
+      CMAKE_API_LEVEL_OPTIONS="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
+  else
+      echo "Error: ANDROID_API_LEVEL should be no less than 21, because Paddle-Lite doesn't support Android version that's lower than Android5.0."
+      exit 1
+  fi
+}
+
 function build_opt {
     cd $workspace
     prepare_thirdparty
@@ -133,6 +149,10 @@ function make_tiny_publish_so {
     BUILD_JAVA=OFF
   fi
   
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+  fi
+
   cmake .. \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
@@ -169,6 +189,10 @@ function make_opencl {
   #git submodule update --init --recursive
   prepare_thirdparty
 
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+  fi
+
   root_dir=$(pwd)
   build_dir=$root_dir/build.lite.${os}.${abi}.${lang}.opencl
   if [ -d $build_directory ]
@@ -183,6 +207,7 @@ function make_opencl {
   # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
   # $3: ARM_TARGET_LANG in "gcc" "clang"
   cmake .. \
+      ${CMAKE_API_LEVEL_OPTIONS} \
       -DLITE_WITH_OPENCL=ON \
       -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
@@ -225,6 +250,10 @@ function make_full_publish_so {
 
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
+  fi
+
+  if [ ${os} == "android" ]; then
+    set_android_api_level
   fi
 
   prepare_workspace $root_dir $build_directory
@@ -273,7 +302,11 @@ function make_all_tests {
     rm -rf $build_dir
   fi
   mkdir -p $build_directory
+
   cd $build_directory
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+  fi
  
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
@@ -508,6 +541,10 @@ function main {
                 ;;
             --android_stl=*)
                 ANDROID_STL="${i#*=}"
+                shift
+                ;;
+            --android_api_level=*)
+                ANDROID_API_LEVEL="${i#*=}"
                 shift
                 ;;
             --build_extra=*)
