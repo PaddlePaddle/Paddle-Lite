@@ -117,9 +117,6 @@ cl::Device& CLRuntime::device() {
 }
 
 std::map<std::string, std::unique_ptr<cl::Program>>& CLRuntime::program_map() {
-  if (programs_.empty()) {
-    LOG(FATAL) << "program_map is empty!";
-  }
   return programs_;
 }
 
