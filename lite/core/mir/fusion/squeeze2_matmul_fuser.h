@@ -23,10 +23,26 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
+/*
+ * Fuse squeeze2+matmul to mul, so the optimization can use fc_fuse_pass.
+ * The squeeze2 op must satisfy the following conditions:
+ * 1. the rank of input X is 4
+ * 2. the axis attr is [2, 3]
+ * 3. the next op is only matmul
+ *
+ * The matmul op must satisfy the following conditions:
+ * 1. the transpose_X and transpose_Y attrs are false
+ * 2. the alpha attr is 1.0
+ * 3. the rank of input X and Y is 2
+ *
+ * Notice:
+ *  the rank of input activation is obtained from var_desc,
+ *  it maybe change in runtime. Therefore, the pass considers
+ *  the above passes to reduce the impact on other models.
+ */
 class Squeeze2MatmulFuser : public FuseBase {
  public:
   void BuildPattern() override;
-  bool CheckValidity(const key2nodes_t& matched) override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:

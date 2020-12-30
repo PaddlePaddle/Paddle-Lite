@@ -23,11 +23,22 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
+/*
+ * Map matmul to mul, so the optimization can use fc_fuse_pass.
+ * The mul op must satisfy the following conditions:
+ * 1. the transpose_X and transpose_Y attrs are false
+ * 2. the alpha attr is 1.0
+ * 3. the rank of input X and Y is 2
+ *
+ * Notice:
+ *  the rank of input activation is obtained from var_desc,
+ *  it maybe change in runtime.
+ */
+
 class MatmulFuser : public FuseBase {
  public:
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
-  bool CheckValidity(const key2nodes_t& matched) override;
 
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;

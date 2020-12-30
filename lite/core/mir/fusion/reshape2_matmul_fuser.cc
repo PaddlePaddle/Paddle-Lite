@@ -22,62 +22,80 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-bool Reshape2MatmulFuser::CheckValidity(const key2nodes_t& matched) {
-  bool trigger_flag = true;
-
-  auto reshape2_op_desc = *matched.at("reshape2")->stmt()->op_info();
-  auto reshape2_input_x_name = reshape2_op_desc.Input("X").front();
-  auto* scope = matched.at("reshape2")->stmt()->op()->scope();
-  auto reshape2_in_x_shape =
-      scope->FindVar(reshape2_input_x_name)->Get<lite::Tensor>().dims();
-  size_t reshape2_in_x_rank = reshape2_in_x_shape.size();
-
-  trigger_flag = trigger_flag && reshape2_in_x_rank == 4 &&
-                 reshape2_in_x_shape[2] == 1 && reshape2_in_x_shape[3] == 1;
-
-  // Get the input scale from matmul
-  auto op_desc = *matched.at("matmul")->stmt()->op_info();
-  auto input_x_name = op_desc.Input("X").front();
-  auto input_y_name = op_desc.Input("Y").front();
-  bool transpose_X = op_desc.GetAttr<bool>("transpose_X");
-  bool transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
-  float alpha = op_desc.GetAttr<float>("alpha");
-
-  auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
-  auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
-  size_t matmul_in_x_rank = x_shape.size();
-  size_t matmul_in_y_rank = y_shape.size();
-
-  trigger_flag = trigger_flag && !transpose_X && !transpose_Y &&
-                 std::fabs(alpha - 1.0) < 1e-5 && matmul_in_x_rank == 2 &&
-                 matmul_in_y_rank == 2;
-
-  return trigger_flag;
-}
-
 void Reshape2MatmulFuser::BuildPattern() {
+  // Teller function about reshape2's inputs:
+  //    The reshape2 op must satisfy the following conditions:
+  //    1. reshape2 has one input node, which means it don't
+  //       have Shape or ShapeTensor input
+  //    2. the rank of input X is 4 and the last two dims of input X is 1
+  auto reshape2_inputs_teller = [](const Node* node) -> bool {
+    auto reshape2_op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    auto reshape2_input_x_name = reshape2_op_desc.Input("X").front();
+    auto* scope = const_cast<Node*>(node)->stmt()->op()->scope();
+    auto reshape2_in_x_shape =
+        scope->FindVar(reshape2_input_x_name)->Get<lite::Tensor>().dims();
+    size_t reshape2_in_x_rank = reshape2_in_x_shape.size();
+
+    return (reshape2_in_x_rank == 4 && reshape2_in_x_shape[2] == 1 &&
+            reshape2_in_x_shape[3] == 1);
+  };
+
   // create nodes.
   auto* reshape2_in_x = VarNode("x")->assert_is_op_input("reshape2", "X");
-  auto* reshape2_op = OpNode("reshape2", "reshape2");
+  auto* reshape2_op =
+      OpNode("reshape2", "reshape2")
+          ->assert_op_attr_satisfied<std::vector<int>>(
+              "shape",
+              [](const std::vector<int>& attr) { return attr.size() == 2; })
+          ->assert_node_satisfied(reshape2_inputs_teller);
   auto* reshape2_out = VarNode("reshape2_out");
   auto* reshape2_xshape = VarNode("reshape2_xshape");
 
-  auto* matmul_y = VarNode("y")->assert_is_op_input("matmul", "Y");
-  auto* matmul_op = OpNode("matmul", "matmul");
-  auto* matmul_out = VarNode("Out");
+  // Teller function about matmul's inputs:
+  //          the rank of input X and Y should 2
+  auto matmul_inputs_teller = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    auto input_x_name = op_desc.Input("X").front();
+    auto input_y_name = op_desc.Input("Y").front();
+    auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
 
-  // create topology.
+    auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
+    auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
+    size_t x_rank = x_shape.size();
+    size_t y_rank = y_shape.size();
+
+    return (x_rank == 2 && y_rank == 2);
+  };
+
+  // create nodes.
+  auto* matmul_y = VarNode("y")->assert_is_op_input("matmul", "Y");
+  /*
+   * The mul op must satisfy the following conditions:
+   * 1. the transpose_X and transpose_Y attrs are false
+   * 2. the alpha attr is 1.0
+   * 3. the rank of input X and Y is 2
+   */
+  auto* matmul_op =
+      OpNode("matmul", "matmul")
+          ->assert_op_attr<bool>("transpose_X", false)
+          ->assert_op_attr<bool>("transpose_Y", false)
+          ->assert_op_attr_satisfied<float>(
+              "alpha",
+              [](float attr) { return (std::fabs(attr - 1.0) < 1e-5); })
+          ->assert_node_satisfied(matmul_inputs_teller);
+  auto* matmul_out = VarNode("Out");
   std::vector<PMNode*> reshape2_inputs{reshape2_in_x};
   std::vector<PMNode*> reshape2_outputs{reshape2_out, reshape2_xshape};
   std::vector<PMNode*> matmul_inputs{reshape2_out, matmul_y};
-  reshape2_inputs >> *reshape2_op >> reshape2_outputs;
 
-  // Some op specialities.
+  // Create topology: reshape2 --> matmul
+  reshape2_inputs >> *reshape2_op >> reshape2_outputs;
+  matmul_inputs >> *matmul_op >> *matmul_out;
+
+  // reshape2_op, matmul_op and reshape2_out will be removed after this fusion.
   reshape2_out->AsIntermediate();
   reshape2_op->AsIntermediate();
   matmul_op->AsIntermediate();
-
-  matmul_inputs >> *matmul_op >> *matmul_out;
 }
 
 void Reshape2MatmulFuser::InsertNewNode(SSAGraph* graph,

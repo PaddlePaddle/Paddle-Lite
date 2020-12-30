@@ -23,61 +23,77 @@ namespace mir {
 namespace fusion {
 
 void Squeeze2MatmulFuser::BuildPattern() {
+  // Teller function about squeeze2's inputs:
+  //    The squeeze2 op must satisfy the following conditions:
+  //        1. the rank of input X is 4
+  //        2. the axis attr is [2, 3]
+  auto squeeze2_inputs_teller = [](const Node* node) -> bool {
+    auto squeeze2_op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    auto squeeze2_input_x_name = squeeze2_op_desc.Input("X").front();
+    auto* scope = const_cast<Node*>(node)->stmt()->op()->scope();
+
+    size_t squeeze2_in_x_rank = scope->FindVar(squeeze2_input_x_name)
+                                    ->Get<lite::Tensor>()
+                                    .dims()
+                                    .size();
+    std::vector<int> squeeze2_op_axes =
+        squeeze2_op_desc.GetAttr<std::vector<int>>("axes");
+
+    return (squeeze2_in_x_rank == 4 &&
+            squeeze2_op_axes == std::vector<int>{2, 3});
+  };
   // create nodes.
   auto* squeeze2_in_x = VarNode("x")->assert_is_op_input("squeeze2", "X");
-  auto* squeeze2_op = OpNode("squeeze2", "squeeze2");
+  auto* squeeze2_op = OpNode("squeeze2", "squeeze2")
+                          ->assert_node_satisfied(squeeze2_inputs_teller);
   auto* squeeze2_out = VarNode("squeeze2_out");
   auto* squeeze2_xshape = VarNode("squeeze2_xshape");
 
-  auto* matmul_y = VarNode("y")->assert_is_op_input("matmul", "Y");
-  auto* matmul_op = OpNode("matmul", "matmul");
-  auto* matmul_out = VarNode("Out");
+  // Teller function about matmul's inputs:
+  //          the rank of input X and Y should 2
+  auto matmul_inputs_teller = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    auto input_x_name = op_desc.Input("X").front();
+    auto input_y_name = op_desc.Input("Y").front();
+    auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
 
-  // create topology.
+    auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
+    auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
+    size_t x_rank = x_shape.size();
+    size_t y_rank = y_shape.size();
+
+    return (x_rank == 2 && y_rank == 2);
+  };
+
+  // create nodes
+  auto* matmul_y = VarNode("y")->assert_is_op_input("matmul", "Y");
+  /*
+   * The mul op must satisfy the following conditions:
+   * 1. the transpose_X and transpose_Y attrs are false
+   * 2. the alpha attr is 1.0
+   * 3. the rank of input X and Y is 2
+   */
+  auto* matmul_op =
+      OpNode("matmul", "matmul")
+          ->assert_op_attr<bool>("transpose_X", false)
+          ->assert_op_attr<bool>("transpose_Y", false)
+          ->assert_op_attr_satisfied<float>(
+              "alpha",
+              [](float attr) { return (std::fabs(attr - 1.0) < 1e-5); })
+          ->assert_node_satisfied(matmul_inputs_teller);
+  auto* matmul_out = VarNode("Out");
   std::vector<PMNode*> squeeze2_inputs{squeeze2_in_x};
   std::vector<PMNode*> squeeze2_outputs{squeeze2_out, squeeze2_xshape};
   std::vector<PMNode*> matmul_inputs{squeeze2_out, matmul_y};
-  squeeze2_inputs >> *squeeze2_op >> squeeze2_outputs;
 
-  // Some op specialities.
+  // Create topology: squeeze2 --> matmul
+  squeeze2_inputs >> *squeeze2_op >> squeeze2_outputs;
+  matmul_inputs >> *matmul_op >> *matmul_out;
+
+  // squeeze2_op, matmul_op and squeeze2_out will be removed after this fusion.
   squeeze2_op->AsIntermediate();
   squeeze2_out->AsIntermediate();
   matmul_op->AsIntermediate();
-
-  matmul_inputs >> *matmul_op >> *matmul_out;
-}
-
-bool Squeeze2MatmulFuser::CheckValidity(const key2nodes_t& matched) {
-  bool trigger_flag = true;
-
-  auto squeeze2_op_desc = *matched.at("squeeze2")->stmt()->op_info();
-  auto squeeze2_input_x_name = squeeze2_op_desc.Input("X").front();
-  auto* scope = matched.at("squeeze2")->stmt()->op()->scope();
-  size_t squeeze2_in_x_rank =
-      scope->FindVar(squeeze2_input_x_name)->Get<lite::Tensor>().dims().size();
-  std::vector<int> squeeze2_op_axes =
-      squeeze2_op_desc.GetAttr<std::vector<int>>("axes");
-
-  trigger_flag = trigger_flag && squeeze2_in_x_rank == 4 &&
-                 squeeze2_op_axes == std::vector<int>{2, 3};
-
-  // Get the input scale from matmul
-  auto op_desc = *matched.at("matmul")->stmt()->op_info();
-  auto input_x_name = op_desc.Input("X").front();
-  auto input_y_name = op_desc.Input("Y").front();
-  bool transpose_X = op_desc.GetAttr<bool>("transpose_X");
-  bool transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
-  float alpha = op_desc.GetAttr<float>("alpha");
-
-  auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
-  auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
-  size_t matmul_in_x_rank = x_shape.size();
-  size_t matmul_in_y_rank = y_shape.size();
-
-  trigger_flag = trigger_flag && !transpose_X && !transpose_Y &&
-                 std::fabs(alpha - 1.0) < 1e-5 && matmul_in_x_rank == 2 &&
-                 matmul_in_y_rank == 2;
-  return trigger_flag;
 }
 
 void Squeeze2MatmulFuser::InsertNewNode(SSAGraph* graph,
@@ -97,7 +113,6 @@ void Squeeze2MatmulFuser::InsertNewNode(SSAGraph* graph,
 }
 
 cpp::OpDesc Squeeze2MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
-  // Get the input scale from matmul
   auto op_desc = *matched.at("matmul")->stmt()->op_info();
 
   op_desc.mutable_inputs()->clear();

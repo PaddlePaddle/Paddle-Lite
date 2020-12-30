@@ -22,10 +22,27 @@ namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
-
+/*
+ * Fuse reshape2+matmul to mul, so the optimization can use fc_fuse_pass.
+ * The reshape2 op must satisfy the following conditions:
+ * 1. reshape2 has one input node, which means it don't
+ *    have Shape or ShapeTensor input
+ * 2. the rank of input X is 4 and the last two dims of input X is 1
+ * 3. the rank of shape attr is 2
+ * 4. the next op is only matmul
+ *
+ * The matmul op must satisfy the following conditions:
+ * 1. the transpose_X and transpose_Y attrs are false
+ * 2. the alpha attr is 1.0
+ * 3. the rank of input X and Y is 2
+ *
+ * Notice:
+ *  the shape and rank of input activation is obtained from var_desc,
+ *  they maybe change in runtime. Therefore, the pass considers
+ *  the above passes to reduce the impact on other models.
+ */
 class Reshape2MatmulFuser : public FuseBase {
  public:
-  bool CheckValidity(const key2nodes_t& matched) override;
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 

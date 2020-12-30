@@ -23,17 +23,45 @@ namespace mir {
 namespace fusion {
 
 void MatmulFuser::BuildPattern() {
+  // Teller function about matmul's inputs:
+  //          the rank of input X and Y should 2
+  auto inputs_teller = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    auto input_x_name = op_desc.Input("X").front();
+    auto input_y_name = op_desc.Input("Y").front();
+    auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+    auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
+    auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
+    size_t x_rank = x_shape.size();
+    size_t y_rank = y_shape.size();
+
+    return (x_rank == 2 && y_rank == 2);
+  };
+
   // create nodes.
   auto* x = VarNode("x")->assert_is_op_input("matmul", "X");
   auto* y = VarNode("y")->assert_is_op_input("matmul", "Y");
-  auto* matmul = OpNode("matmul", "matmul");
+  /*
+   * The mul op must satisfy the following conditions:
+   * 1. the transpose_X and transpose_Y attrs are false
+   * 2. the alpha attr is 1.0
+   * 3. the rank of input X and Y is 2
+   */
+  auto* matmul =
+      OpNode("matmul", "matmul")
+          ->assert_op_attr<bool>("transpose_X", false)
+          ->assert_op_attr<bool>("transpose_Y", false)
+          ->assert_op_attr_satisfied<float>(
+              "alpha",
+              [](float attr) { return (std::fabs(attr - 1.0) < 1e-5); })
+          ->assert_node_satisfied(inputs_teller);
   auto* matmul_out = VarNode("Out");
 
-  // create topology.
+  // create topology: x,y ---> matmul ---> mulout
   std::vector<PMNode*> matmul_inputs{x, y};
   matmul_inputs >> *matmul >> *matmul_out;
 
-  // Some op specialities.
+  // matmul node will be removed after this fusion.
   matmul->AsIntermediate();
 }
 
@@ -50,26 +78,6 @@ void MatmulFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   IR_NODE_LINK_TO(matched.at("x"), new_op_node);
   IR_NODE_LINK_TO(matched.at("y"), new_op_node);
   IR_NODE_LINK_TO(new_op_node, matched.at("Out"));
-}
-
-bool MatmulFuser::CheckValidity(const key2nodes_t& matched) {
-  auto op_desc = *matched.at("matmul")->stmt()->op_info();
-  auto* scope = matched.at("matmul")->stmt()->op()->scope();
-
-  // Get the input scale from matmul
-  auto input_x_name = op_desc.Input("X").front();
-  auto input_y_name = op_desc.Input("Y").front();
-  bool transpose_X = op_desc.GetAttr<bool>("transpose_X");
-  bool transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
-  float alpha = op_desc.GetAttr<float>("alpha");
-
-  auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
-  auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
-  size_t x_rank = x_shape.size();
-  size_t y_rank = y_shape.size();
-
-  return (!transpose_X && !transpose_Y && std::fabs(alpha - 1.0) < 1e-5 &&
-          x_rank == 2 && y_rank == 2);
 }
 
 cpp::OpDesc MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
