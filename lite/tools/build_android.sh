@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash hi
 set +x
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
