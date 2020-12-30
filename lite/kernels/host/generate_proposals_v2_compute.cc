@@ -489,4 +489,6 @@ REGISTER_LITE_KERNEL(generate_proposals_v2,
     .BindOutput("RpnRoiProbs", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("RpnRoisLod",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindOutput("RpnRoisNum",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();
