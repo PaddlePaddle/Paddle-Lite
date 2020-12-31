@@ -45,6 +45,7 @@ lite_cc_library(mir_passes
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
       elimination/remove_tf_redundant_ops_pass.cc
+      adaptive_1x1_pool2d_convert_global_pass.cc
       elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
