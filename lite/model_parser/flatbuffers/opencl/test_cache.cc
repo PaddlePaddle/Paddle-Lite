@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gflags/gflags.h>
+#include <gtest/gtest.h>
 #include "lite/model_parser/flatbuffers/opencl/cache.h"
 
 namespace paddle {
