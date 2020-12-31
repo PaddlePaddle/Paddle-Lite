@@ -22,6 +22,10 @@
 #endif
 #include <time.h>
 #include <cmath>
+#include <fstream>
+#include <string>
+#include <vector>
+#include "lite/utils/cp_logging.h"
 
 // for eval
 DEFINE_string(model_dir, "", "model dir");
@@ -72,6 +76,28 @@ double compute_standard_deviation(const T* in,
   }
   variance /= length;
   return sqrt(variance);
+}
+
+void ReadTxtFile(const std::string& file_path, float* dest, int num) {
+  CHECK(!file_path.empty());
+  CHECK(dest != nullptr);
+  std::ifstream ifs(file_path);
+  if (!ifs.is_open()) {
+    LOG(FATAL) << "open file error:" << file_path;
+  }
+  for (int i = 0; i < num; i++) {
+    ifs >> dest[i];
+  }
+  ifs.close();
+}
+
+template <typename T>
+T ShapeProduction(const std::vector<T>& shape) {
+  T num = 1;
+  for (auto i : shape) {
+    num *= i;
+  }
+  return num;
 }
 
 }  // namespace lite
