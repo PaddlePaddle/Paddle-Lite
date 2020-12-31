@@ -44,8 +44,10 @@ WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
+# min android api level
+MIN_ANDROID_API_LEVEL=16
 # android api level, which can also be set to Default
-ANDROID_API_LEVEL=21
+ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL}
 CMAKE_API_LEVEL_OPTIONS=""
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
@@ -109,10 +111,10 @@ function set_android_api_level {
   # android api level for android version
   if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
       CMAKE_API_LEVEL_OPTIONS=""
-  elif [ ${ANDROID_API_LEVEL} -gt 20 ]; then
+  elif [ ${ANDROID_API_LEVEL} -ge ${MIN_ANDROID_API_LEVEL} ]; then
       CMAKE_API_LEVEL_OPTIONS="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
   else
-      echo "Error: ANDROID_API_LEVEL should be no less than 21, because Paddle-Lite doesn't support Android version that's lower than Android5.0."
+      echo "Error: ANDROID_API_LEVEL should be no less than ${MIN_ANDROID_API_LEVEL}, because Paddle-Lite doesn't support Android version that's lower than Android4.1."
       exit 1
   fi
 }

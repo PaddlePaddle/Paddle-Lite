@@ -7,8 +7,10 @@ set +x
 ARCH=armv8
 # c++_static or c++_shared, default c++_static.
 ANDROID_STL=c++_static
+# min android api level
+MIN_ANDROID_API_LEVEL=16
 # android api level, which can also be set to Default
-ANDROID_API_LEVEL=21
+ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL}
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
 # ON or OFF, default OFF.
@@ -155,10 +157,10 @@ function make_tiny_publish_so {
   # android api level for android version
   if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
       cmake_api_level_options=""
-  elif [ ${ANDROID_API_LEVEL} -gt 20 ]; then
+  elif [ ${ANDROID_API_LEVEL} -ge ${MIN_ANDROID_API_LEVEL} ]; then
       cmake_api_level_options="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
   else
-      echo "Error: ANDROID_API_LEVEL should be no less than 21, because Paddle-Lite doesn't support Android version that's lower than Android5.0."
+      echo "Error: ANDROID_API_LEVEL should be no less than ${MIN_ANDROID_API_LEVEL}, because Paddle-Lite doesn't support Android version that's lower than Android4.1."
       exit 1
   fi
 
@@ -282,9 +284,9 @@ function print_usage {
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
-    echo -e "|     --android_api_level: (21~27); control android api level, default value 21. If this value is set as "Default",                    |"
+    echo -e "|     --android_api_level: (16~27); control android api level, default value 16. If this value is set as "Default",                    |"
     echo -e "|             the api level is 22 when arch=armv7, 23 when arch=armv8. You could set a specific android_api_level as you need:         |"
-    echo -e "|                 Android5.1: --android_api_level=22    LowerThanAndroid5.0: not supported                                             |"
+    echo -e "|                 Android5.1: --android_api_level=22    LowerThanAndroid4.1: not supported                                             |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
