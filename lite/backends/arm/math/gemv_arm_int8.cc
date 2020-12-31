@@ -144,6 +144,545 @@ inline void write_gemv_out(const int* in,
 }
 
 template <typename dtype>
+bool gemv_int8_trans_oth(const int8_t* A,
+                         const int8_t* x,
+                         dtype* y,
+                         int M,
+                         int N,
+                         const float* scale,
+                         bool is_bias,
+                         const float* bias,
+                         bool flag_act,
+                         lite_api::ActivationType act,
+                         float six,
+                         float alpha) {
+  dtype* data_out = y;
+  const int8_t* data_in = A;
+  const int8_t* weights_ptr = x;
+  int out_cnt = M >> 4;
+  int out_remain = M & 15;
+  int zero_ptr[M];  // NOLINT
+  memset(zero_ptr, 0, sizeof(int) * M);
+  float zerobuf[M];  // NOLINT
+  memset(zerobuf, 0, sizeof(float) * M);
+  const float* bias_ptr = is_bias ? bias : zerobuf;
+
+#ifdef __aarch64__
+  int cnt = N >> 3;
+  int tail = N & 7;
+  int cnt_4 = tail >> 2;
+  int tail_4 = tail & 3;
+  int stride_in = M << 3;
+#pragma omp parallel for
+  for (int i = 0; i < cnt; i++) {
+    const int8_t* in_ptr0 = data_in;
+    const int8_t* in_ptr1 = in_ptr0 + M;
+    const int8_t* in_ptr2 = in_ptr1 + M;
+    const int8_t* in_ptr3 = in_ptr2 + M;
+    const int8_t* in_ptr4 = in_ptr3 + M;
+    const int8_t* in_ptr5 = in_ptr4 + M;
+    const int8_t* in_ptr6 = in_ptr5 + M;
+    const int8_t* in_ptr7 = in_ptr6 + M;
+    const int8_t* wei_ptr = weights_ptr;
+    int32_t* out_ptr = zero_ptr;
+    int cnt_col = out_cnt;
+    asm volatile(
+        "prfm  pldl1keep, [%[wc]]        \n"
+        "prfm  pldl1keep, [%[in_ptr0]]   \n"
+        "prfm  pldl1keep, [%[in_ptr1]]   \n"
+        "prfm  pldl1keep, [%[in_ptr2]]   \n"
+        "prfm  pldl1keep, [%[in_ptr3]]   \n"
+        "prfm  pldl1keep, [%[in_ptr4]]   \n"
+        "prfm  pldl1keep, [%[in_ptr5]]   \n"
+        "prfm  pldl1keep, [%[in_ptr6]]   \n"
+        "prfm  pldl1keep, [%[in_ptr7]]   \n"
+        "cmp %w[cnt], #1\n"
+        "ldr q8, [%[wc]]\n"
+        "ldr q9, [%[in_ptr0]], #0x10\n"
+        "ldr q10, [%[in_ptr1]], #0x10\n"
+        "ldr q11, [%[in_ptr2]], #0x10\n"
+        "ldr q12, [%[in_ptr3]], #0x10\n"
+        "sxtl  v0.8h, v8.8b\n"
+        "blt 2f\n"
+        "1: \n"
+        "ldr q13, [%[out_ptr]]\n"
+        "sxtl  v1.8h, v9.8b\n"
+        "sxtl2 v2.8h, v9.16b\n"
+        "ldr q14, [%[out_ptr], #0x10]\n"
+        "sxtl  v3.8h, v10.8b\n"
+        "sxtl2 v4.8h, v10.16b\n"
+        "ldr q15, [%[out_ptr], #0x20]\n"
+        "sxtl  v5.8h, v11.8b\n"
+        "sxtl2 v6.8h, v11.16b\n"
+        "ldr q16, [%[out_ptr], #0x30]\n"
+        "ldr q9, [%[in_ptr4]], #0x10\n"
+        // r0
+        "smlal v13.4s, v1.4h, v0.h[0]\n"
+        "smlal2 v14.4s, v1.8h, v0.h[0]\n"
+        "sxtl  v7.8h, v12.8b\n"
+        "sxtl2 v8.8h, v12.16b\n"
+        "ldr q10, [%[in_ptr5]], #0x10\n"
+        "smlal v15.4s, v2.4h, v0.h[0]\n"
+        "smlal2 v16.4s, v2.8h, v0.h[0]\n"
+        "sxtl  v17.8h, v9.8b\n"
+        "sxtl2 v18.8h, v9.16b\n"
+        "ldr q11, [%[in_ptr6]], #0x10\n"
+        // r1
+        "smlal v13.4s, v3.4h, v0.h[1]\n"
+        "smlal2 v14.4s, v3.8h, v0.h[1]\n"
+        "sxtl  v19.8h, v10.8b\n"
+        "sxtl2 v20.8h, v10.16b\n"
+        "ldr q12, [%[in_ptr7]], #0x10\n"
+        "smlal v15.4s, v4.4h, v0.h[1]\n"
+        "smlal2 v16.4s, v4.8h, v0.h[1]\n"
+        "sxtl  v1.8h, v11.8b\n"
+        "sxtl2 v2.8h, v11.16b\n"
+        // r2
+        "smlal v13.4s, v5.4h, v0.h[2]\n"
+        "smlal2 v14.4s, v5.8h, v0.h[2]\n"
+        "sxtl  v3.8h, v12.8b\n"
+        "sxtl2 v4.8h, v12.16b\n"
+        "smlal v15.4s, v6.4h, v0.h[2]\n"
+        "smlal2 v16.4s, v6.8h, v0.h[2]\n"
+        // r3
+        "smlal v13.4s, v7.4h, v0.h[3]\n"
+        "smlal2 v14.4s, v7.8h, v0.h[3]\n"
+        "ldr q9, [%[in_ptr0]], #0x10\n"
+        "smlal v15.4s, v8.4h, v0.h[3]\n"
+        "smlal2 v16.4s, v8.8h, v0.h[3]\n"
+        // r4
+        "smlal v13.4s, v17.4h, v0.h[4]\n"
+        "smlal2 v14.4s, v17.8h, v0.h[4]\n"
+        "ldr q10, [%[in_ptr1]], #0x10\n"
+        "smlal v15.4s, v18.4h, v0.h[4]\n"
+        "smlal2 v16.4s, v18.8h, v0.h[4]\n"
+        // r5
+        "smlal v13.4s, v19.4h, v0.h[5]\n"
+        "smlal2 v14.4s, v19.8h, v0.h[5]\n"
+        "ldr q11, [%[in_ptr2]], #0x10\n"
+        "smlal v15.4s, v20.4h, v0.h[5]\n"
+        "smlal2 v16.4s, v20.8h, v0.h[5]\n"
+        // r6
+        "smlal v13.4s, v1.4h, v0.h[6]\n"
+        "smlal2 v14.4s, v1.8h, v0.h[6]\n"
+        "ldr q12, [%[in_ptr3]], #0x10\n"
+        "smlal v15.4s, v2.4h, v0.h[6]\n"
+        "smlal2 v16.4s, v2.8h, v0.h[6]\n"
+        // r7
+        "smlal v13.4s, v3.4h, v0.h[7]\n"
+        "smlal2 v14.4s, v3.8h, v0.h[7]\n"
+        "smlal v15.4s, v4.4h, v0.h[7]\n"
+        "smlal2 v16.4s, v4.8h, v0.h[7]\n"
+        "subs %w[cnt], %w[cnt], #1\n"
+        "str q13, [%[out_ptr]], #0x10\n"
+        "str q14, [%[out_ptr]], #0x10\n"
+        "str q15, [%[out_ptr]], #0x10\n"
+        "str q16, [%[out_ptr]], #0x10\n"
+        "bne 1b\n"
+        "2: \n"
+        : [out_ptr] "+r"(out_ptr),
+          [in_ptr0] "+r"(in_ptr0),
+          [in_ptr1] "+r"(in_ptr1),
+          [in_ptr2] "+r"(in_ptr2),
+          [in_ptr3] "+r"(in_ptr3),
+          [in_ptr4] "+r"(in_ptr4),
+          [in_ptr5] "+r"(in_ptr5),
+          [in_ptr6] "+r"(in_ptr6),
+          [in_ptr7] "+r"(in_ptr7),
+          [cnt] "+r"(cnt_col)
+        : [wc] "r"(wei_ptr)
+        : "cc",
+          "memory",
+          "v0",
+          "v1",
+          "v2",
+          "v3",
+          "v4",
+          "v5",
+          "v6",
+          "v7",
+          "v8",
+          "v9",
+          "v10",
+          "v11",
+          "v12",
+          "v13",
+          "v14",
+          "v15",
+          "v16",
+          "v17",
+          "v18",
+          "v19",
+          "v20");
+    in_ptr0 -= 16;
+    in_ptr1 -= 16;
+    in_ptr2 -= 16;
+    in_ptr3 -= 16;
+    for (int j = 0; j < out_remain; j++) {
+      *out_ptr += *in_ptr0++ * wei_ptr[0];
+      *out_ptr += *in_ptr1++ * wei_ptr[1];
+      *out_ptr += *in_ptr2++ * wei_ptr[2];
+      *out_ptr += *in_ptr3++ * wei_ptr[3];
+      *out_ptr += *in_ptr4++ * wei_ptr[4];
+      *out_ptr += *in_ptr5++ * wei_ptr[5];
+      *out_ptr += *in_ptr6++ * wei_ptr[6];
+      *out_ptr += *in_ptr7++ * wei_ptr[7];
+      out_ptr++;
+    }
+    data_in += stride_in;
+    weights_ptr += 8;
+  }
+  if (cnt_4) {
+    const int8_t* in_ptr0 = data_in;
+    const int8_t* in_ptr1 = in_ptr0 + M;
+    const int8_t* in_ptr2 = in_ptr1 + M;
+    const int8_t* in_ptr3 = in_ptr2 + M;
+    int32_t* out_ptr = zero_ptr;
+    int cnt_col = out_cnt;
+    const int8_t* wei_ptr = weights_ptr;
+    asm volatile(
+        "prfm  pldl1keep, [%[wc]]        \n"
+        "prfm  pldl1keep, [%[in_ptr0]]   \n"
+        "prfm  pldl1keep, [%[in_ptr1]]   \n"
+        "prfm  pldl1keep, [%[in_ptr2]]   \n"
+        "prfm  pldl1keep, [%[in_ptr3]]   \n"
+        "cmp %w[cnt], #1\n"
+        "ldr q8, [%[wc]]\n"
+        "ldr q9, [%[in_ptr0]], #0x10\n"
+        "ldr q10, [%[in_ptr1]], #0x10\n"
+        "ldr q11, [%[in_ptr2]], #0x10\n"
+        "sxtl  v0.8h, v8.8b\n"
+        "ldr q12, [%[in_ptr3]], #0x10\n"
+        "blt 2f\n"
+        "1: \n"
+        "ldr q13, [%[out_ptr]]\n"
+        "sxtl  v1.8h, v9.8b\n"
+        "sxtl2 v2.8h, v9.16b\n"
+        "ldr q14, [%[out_ptr], #0x10]\n"
+        "sxtl  v3.8h, v10.8b\n"
+        "sxtl2 v4.8h, v10.16b\n"
+        "ldr q15, [%[out_ptr], #0x20]\n"
+        "sxtl  v5.8h, v11.8b\n"
+        "sxtl2 v6.8h, v11.16b\n"
+        "ldr q16, [%[out_ptr], #0x30]\n"
+        // r0
+        "smlal v13.4s, v1.4h, v0.h[0]\n"
+        "smlal2 v14.4s, v1.8h, v0.h[0]\n"
+        "sxtl  v7.8h, v12.8b\n"
+        "sxtl2 v8.8h, v12.16b\n"
+        "ldr q9, [%[in_ptr0]], #0x10\n"
+        "smlal v15.4s, v2.4h, v0.h[0]\n"
+        "smlal2 v16.4s, v2.8h, v0.h[0]\n"
+        // r1
+        "smlal v13.4s, v3.4h, v0.h[1]\n"
+        "smlal2 v14.4s, v3.8h, v0.h[1]\n"
+        "ldr q10, [%[in_ptr1]], #0x10\n"
+        "smlal v15.4s, v4.4h, v0.h[1]\n"
+        "smlal2 v16.4s, v4.8h, v0.h[1]\n"
+        // r2
+        "smlal v13.4s, v5.4h, v0.h[2]\n"
+        "smlal2 v14.4s, v5.8h, v0.h[2]\n"
+        "ldr q11, [%[in_ptr2]], #0x10\n"
+        "smlal v15.4s, v6.4h, v0.h[2]\n"
+        "smlal2 v16.4s, v6.8h, v0.h[2]\n"
+        // r3
+        "smlal v13.4s, v7.4h, v0.h[3]\n"
+        "smlal2 v14.4s, v7.8h, v0.h[3]\n"
+        "ldr q12, [%[in_ptr3]], #0x10\n"
+        "smlal v15.4s, v8.4h, v0.h[3]\n"
+        "smlal2 v16.4s, v8.8h, v0.h[3]\n"
+        "subs %w[cnt], %w[cnt], #1\n"
+        "str q13, [%[out_ptr]], #0x10\n"
+        "str q14, [%[out_ptr]], #0x10\n"
+        "str q15, [%[out_ptr]], #0x10\n"
+        "str q16, [%[out_ptr]], #0x10\n"
+        "bne 1b\n"
+        "2: \n"
+        : [out_ptr] "+r"(out_ptr),
+          [in_ptr0] "+r"(in_ptr0),
+          [in_ptr1] "+r"(in_ptr1),
+          [in_ptr2] "+r"(in_ptr2),
+          [in_ptr3] "+r"(in_ptr3),
+          [cnt] "+r"(cnt_col)
+        : [wc] "r"(wei_ptr)
+        : "cc",
+          "memory",
+          "v0",
+          "v1",
+          "v2",
+          "v3",
+          "v4",
+          "v5",
+          "v6",
+          "v7",
+          "v8",
+          "v9",
+          "v10",
+          "v11",
+          "v12",
+          "v13",
+          "v14",
+          "v15",
+          "v16");
+    in_ptr0 -= 16;
+    in_ptr1 -= 16;
+    in_ptr2 -= 16;
+    in_ptr3 -= 16;
+    for (int j = 0; j < out_remain; j++) {
+      *out_ptr += *in_ptr0++ * wei_ptr[0];
+      *out_ptr += *in_ptr1++ * wei_ptr[1];
+      *out_ptr += *in_ptr2++ * wei_ptr[2];
+      *out_ptr += *in_ptr3++ * wei_ptr[3];
+      out_ptr++;
+    }
+    data_in += 4 * M;
+    weights_ptr += 4;
+  }
+  for (int i = 0; i < tail_4; i++) {
+    const int8_t* in_ptr = data_in;
+    const int8_t* wei_ptr = weights_ptr;
+    int32_t* out_ptr = zero_ptr;
+    int cnt_col = out_cnt;
+    asm volatile(
+        "prfm  pldl1keep, [%[wc]]        \n"
+        "prfm  pldl1keep, [%[out_ptr]]   \n"
+        "prfm  pldl1keep, [%[in_ptr0]]   \n"
+        "cmp %w[cnt], #1\n"
+        "ldr q8, [%[wc]]\n"
+        "ldr q9, [%[in_ptr0]], #0x10\n"
+        "ldr q13, [%[out_ptr]]\n"
+        "ldr q14, [%[out_ptr], #0x10]\n"
+        "sxtl  v0.8h, v8.8b\n"
+        "blt 2f\n"
+        "1: \n"
+        "sxtl  v1.8h, v9.8b\n"
+        "sxtl2 v2.8h, v9.16b\n"
+        "ldr q15, [%[out_ptr], #0x20]\n"
+        "ldr q16, [%[out_ptr], #0x30]\n"
+        // r0
+        "smlal v13.4s, v1.4h, v0.h[0]\n"
+        "ldr q9, [%[in_ptr0]], #0x10\n"
+        "smlal2 v14.4s, v1.8h, v0.h[0]\n"
+        "smlal v15.4s, v2.4h, v0.h[0]\n"
+        "smlal2 v16.4s, v2.8h, v0.h[0]\n"
+
+        "subs %w[cnt], %w[cnt], #1\n"
+        "str q13, [%[out_ptr]], #0x10\n"
+        "str q14, [%[out_ptr]], #0x10\n"
+        "str q15, [%[out_ptr]], #0x10\n"
+        "str q16, [%[out_ptr]], #0x10\n"
+        "ldr q13, [%[out_ptr]]\n"
+        "ldr q14, [%[out_ptr], #0x10]\n"
+        "bne 1b\n"
+        "2: \n"
+        : [out_ptr] "+r"(out_ptr), [in_ptr0] "+r"(in_ptr), [cnt] "+r"(cnt_col)
+        : [wc] "r"(wei_ptr)
+        : "cc",
+          "memory",
+          "v0",
+          "v1",
+          "v2",
+          "v3",
+          "v4",
+          "v5",
+          "v6",
+          "v7",
+          "v8",
+          "v9",
+          "v10",
+          "v11",
+          "v12",
+          "v13",
+          "v14",
+          "v15",
+          "v16");
+    in_ptr -= 16;
+    for (int j = 0; j < out_remain; j++) {
+      *out_ptr += *in_ptr++ * wei_ptr[0];
+      out_ptr++;
+    }
+    data_in += M;
+    weights_ptr++;
+  }
+#else
+  int cnt = N >> 2;
+  int tail = N & 3;
+  int stride_in = M << 2;
+#pragma omp parallel for
+  for (int i = 0; i < cnt; i++) {
+    const int8_t* in_ptr0 = data_in;
+    const int8_t* in_ptr1 = in_ptr0 + M;
+    const int8_t* in_ptr2 = in_ptr1 + M;
+    const int8_t* in_ptr3 = in_ptr2 + M;
+    const int8_t* wei_ptr = weights_ptr;
+    int32_t* out_ptr = zero_ptr;
+    int cnt_col = out_cnt;
+    asm volatile(
+        "pld [%[wc]]        \n"
+        "pld [%[in_ptr0]]   \n"
+        "pld [%[in_ptr1]]   \n"
+        "pld [%[in_ptr2]]   \n"
+        "pld [%[in_ptr3]]   \n"
+        "pld [%[out_ptr]]   \n"
+        "cmp %[cnt], #1\n"
+        "vld1.8 {d22}, [%[wc]]\n"
+        "blt 2f\n"
+        "1: \n"
+        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
+        "vmovl.s8 q0, d22\n"
+        "vld1.8 {d12-d13}, [%[in_ptr1]]!\n"
+        "vld1.32 {d24-d25}, [%[out_ptr]]\n"
+        "vld1.8 {d14-d15}, [%[in_ptr2]]!\n"
+        "vldr d26, [%[out_ptr], #0x10]\n"
+        "vld1.8 {d16-d17}, [%[in_ptr3]]!\n"
+        "vmovl.s8 q1, d10\n"
+        "vmovl.s8 q2, d11\n"
+        "vldr d27, [%[out_ptr], #0x18]\n"
+        "vmovl.s8 q3, d12\n"
+        "vmovl.s8 q4, d13\n"
+        "vldr d28, [%[out_ptr], #0x20]\n"
+        "vldr d29, [%[out_ptr], #0x28]\n"
+        "vmovl.s8 q9, d14\n"
+        "vmovl.s8 q10, d15\n"
+        "vldr d30, [%[out_ptr], #0x30]\n"
+        "vldr d31, [%[out_ptr], #0x38]\n"
+        // r0
+        "vmlal.s16 q12, d2, d0[0]\n"
+        "vmlal.s16 q13, d3, d0[0]\n"
+        "vmovl.s8 q5, d16\n"
+        "vmlal.s16 q14, d4, d0[0]\n"
+        "vmlal.s16 q15, d5, d0[0]\n"
+        "vmovl.s8 q6, d17\n"
+        // r1
+        "vmlal.s16 q12, d6, d0[1]\n"
+        "vmlal.s16 q13, d7, d0[1]\n"
+        "vmlal.s16 q14, d8, d0[1]\n"
+        "vmlal.s16 q15, d9, d0[1]\n"
+        // r2
+        "vmlal.s16 q12, d18, d0[2]\n"
+        "vmlal.s16 q13, d19, d0[2]\n"
+        "vmlal.s16 q14, d20, d0[2]\n"
+        "vmlal.s16 q15, d21, d0[2]\n"
+        // r3
+        "vmlal.s16 q12, d10, d0[3]\n"
+        "vmlal.s16 q13, d11, d0[3]\n"
+        "vmlal.s16 q14, d12, d0[3]\n"
+        "vmlal.s16 q15, d13, d0[3]\n"
+
+        "subs %[cnt], #1\n"
+        "vst1.32 {d24-d25}, [%[out_ptr]]!\n"
+        "vst1.32 {d26-d27}, [%[out_ptr]]!\n"
+        "vst1.32 {d28-d29}, [%[out_ptr]]!\n"
+        "vst1.32 {d30-d31}, [%[out_ptr]]!\n"
+        "bne 1b\n"
+        "2: \n"
+        : [out_ptr] "+r"(out_ptr),
+          [in_ptr0] "+r"(in_ptr0),
+          [in_ptr1] "+r"(in_ptr1),
+          [in_ptr2] "+r"(in_ptr2),
+          [in_ptr3] "+r"(in_ptr3),
+          [cnt] "+r"(cnt_col)
+        : [wc] "r"(wei_ptr)
+        : "cc",
+          "memory",
+          "q0",
+          "q1",
+          "q2",
+          "q3",
+          "q4",
+          "q5",
+          "q6",
+          "q7",
+          "q8",
+          "q9",
+          "q10",
+          "q11",
+          "q12",
+          "q13",
+          "q14",
+          "q15");
+    for (int j = 0; j < out_remain; j++) {
+      *out_ptr += *in_ptr0++ * wei_ptr[0];
+      *out_ptr += *in_ptr1++ * wei_ptr[1];
+      *out_ptr += *in_ptr2++ * wei_ptr[2];
+      *out_ptr += *in_ptr3++ * wei_ptr[3];
+      out_ptr++;
+    }
+    data_in += stride_in;
+    weights_ptr += 4;
+  }
+  for (int i = 0; i < tail; i++) {
+    const int8_t* in_ptr = data_in;
+    const int8_t* wei_ptr = weights_ptr;
+    int32_t* out_ptr = zero_ptr;
+    int cnt_col = out_cnt;
+    asm volatile(
+        "pld [%[wc]]        \n"
+        "pld [%[in_ptr0]]   \n"
+        "pld [%[out_ptr]]   \n"
+        "cmp %[cnt], #1\n"
+        "vld1.8 {d8}, [%[wc]]\n"
+        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
+        "vld1.32 {d24-d25}, [%[out_ptr]]\n"
+        "vldr d26, [%[out_ptr], #0x10]\n"
+        "vmovl.s8 q0, d8\n"
+        "blt 2f\n"
+        "1: \n"
+        "vldr d27, [%[out_ptr], #0x18]\n"
+        "vmovl.s8 q1, d10\n"
+        "vldr d28, [%[out_ptr], #0x20]\n"
+        "vmovl.s8 q2, d11\n"
+        "vldr d29, [%[out_ptr], #0x28]\n"
+        // r0
+        "vmlal.s16 q12, d2, d0[0]\n"
+        "vldr d30, [%[out_ptr], #0x30]\n"
+        "vldr d31, [%[out_ptr], #0x38]\n"
+        "vmlal.s16 q13, d3, d0[0]\n"
+        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
+        "vmlal.s16 q14, d4, d0[0]\n"
+        "vmlal.s16 q15, d5, d0[0]\n"
+
+        "subs %[cnt], #1\n"
+        "vst1.32 {d24-d25}, [%[out_ptr]]!\n"
+        "vst1.32 {d26-d27}, [%[out_ptr]]!\n"
+        "vst1.32 {d28-d29}, [%[out_ptr]]!\n"
+        "vst1.32 {d30-d31}, [%[out_ptr]]!\n"
+        "vld1.32 {d24-d25}, [%[out_ptr]]\n"
+        "vldr d26, [%[out_ptr], #0x10]\n"
+        "bne 1b\n"
+        "2: \n"
+        : [out_ptr] "+r"(out_ptr), [in_ptr0] "+r"(in_ptr), [cnt] "+r"(cnt_col)
+        : [wc] "r"(wei_ptr)
+        : "cc",
+          "memory",
+          "q0",
+          "q1",
+          "q2",
+          "q3",
+          "q4",
+          "q5",
+          "q6",
+          "q7",
+          "q8",
+          "q12",
+          "q13",
+          "q14",
+          "q15");
+    in_ptr -= 16;
+    for (int j = 0; j < out_remain; j++) {
+      *out_ptr += *in_ptr++ * wei_ptr[0];
+      out_ptr++;
+    }
+    data_in += M;
+    weights_ptr++;
+  }
+#endif
+  // write output
+  write_gemv_out(zero_ptr, y, scale, bias_ptr, M, flag_act, act, six, alpha);
+  return true;
+}
+
+template <typename dtype>
 bool gemv_int8_oth(const int8_t* A,
                    const int8_t* x,
                    dtype* y,
