@@ -143,8 +143,10 @@ class IoCopykOpenCLToHostCompute
     const cl::Buffer* x_ptr;
     if (param.process_type == 1) {
       x_ptr = param.x->data<uint8_t, cl::Buffer>();
+      param.y->set_precision(PRECISION(kUInt8));
     } else {
       x_ptr = param.x->data<float, cl::Buffer>();
+      param.y->set_precision(PRECISION(kFloat));
     }
 
     auto& context = ctx_->As<OpenCLContext>();
