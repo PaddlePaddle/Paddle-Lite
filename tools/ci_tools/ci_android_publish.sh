@@ -41,11 +41,9 @@ function publish_inference_lib {
     fi
     # Error message.
     echo "**************************************************************************************"
-    echo -e "*\033[1;31m Android compiling task failed on the following instruction: \033[0m"
-    echo -e "*     \033[1;34m ./lite/tools/build_android.sh --arch=$arch --toolchain=$toolchain  --with_extra=ON \033[0m"
+    echo -e "* Android compiling task failed on the following instruction:"
+    echo -e "*     ./lite/tools/build_android.sh --arch=$arch --toolchain=$toolchain  --with_extra=ON"
     echo "**************************************************************************************"
-   
-    echo "Error: Compiling Failed."
     exit 1
 }
 
