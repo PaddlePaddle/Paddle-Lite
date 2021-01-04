@@ -21,22 +21,26 @@ namespace lite {
 namespace operators {
 
 bool LoDArrayLengthOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.out);
+  CHECK(param_.x.empty());
+  CHECK(param_.out);
   return true;
 }
 bool LoDArrayLengthOp::InferShapeImpl() const {
   std::vector<int64_t> out_dims = {1};
-  param_.x->Resize(param_.x->dims());
+  for (auto x : param_.x) {
+    x->Resize(x->dims());
+  }
   param_.out->Resize(lite::DDim(out_dims));
   return true;
 }
 bool LoDArrayLengthOp::Run() { return OpLite::Run(); }
 bool LoDArrayLengthOp::AttachImpl(const cpp::OpDesc &opdesc,
                                   paddle::lite::Scope *scope) {
-  auto x = opdesc.Input("X").front();
+  auto x_name = opdesc.Input("X");
   auto out = opdesc.Output("Out").front();
-  param_.x = GetMutableTensor(scope, x);
+  for (auto var : x_name) {
+    param_.x.push_back(GetMutableTensor(scope, var));
+  }
   param_.out = GetMutableTensor(scope, out);
   return true;
 }

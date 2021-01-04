@@ -2046,7 +2046,7 @@ struct FlattenContiguousRangeParam : ParamBase {
 };
 
 struct LoDArrayLengthParam : ParamBase {
-  lite::Tensor* x{};
+  std::vector<lite::Tensor*> x{};
   lite::Tensor* out{};
 };
 
