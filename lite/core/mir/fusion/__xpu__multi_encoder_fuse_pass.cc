@@ -519,15 +519,8 @@ class XPUMultiEncoderFuser {
     op_desc.SetAttr<std::string>("precision",
                                  (fc_int31_ids_.empty() ? "int16" : "int31"));
 
-    // check q/k/v fusion
-    bool enable_qkv_fusion = false;
-    if (!fc_int31_ids_.empty()) {
-      int head_num = first_encoder_op_info->GetAttr<int>("head_num");
-      int size_per_head = first_encoder_op_info->GetAttr<int>("size_per_head");
-      if (head_num * size_per_head <= 128) {
-        enable_qkv_fusion = true;
-      }
-    }
+    // q/k/v fusion
+    bool enable_qkv_fusion = true;
     op_desc.SetAttr<bool>("enable_qkv_fusion", enable_qkv_fusion);
 
     auto* scope = multi_encoder_stmt->op()->scope();
@@ -594,9 +587,8 @@ class XPUMultiEncoderFuser {
         float max_f = paddle::lite::xpu::math::FindMaxAbs(
             weight_qkv_trans.get(), qkv_len);
         fc_weight_max[i] = max_f;
+        VLOG(3) << "QKV fused FC-" << i << ", weight_max:" << max_f;
         if (fc_int31_ids_.find(i % 6) != fc_int31_ids_.end()) {
-          VLOG(3) << "Use FC-int31 in QKV fused FC-" << i << ", " << i / 6
-                  << "-" << i % 6;
           memcpy(weight_q->mutable_data<float>(),
                  weight_qkv_trans.get(),
                  qkv_len * sizeof(float));
@@ -628,7 +620,6 @@ class XPUMultiEncoderFuser {
       // position in the encoder
       if (fc_int31_ids_.find(i % 6) != fc_int31_ids_.end()) {
         // FCs in encoder use int31
-        VLOG(3) << "Use FC-int31 in FC-" << i << ", " << i / 6 << "-" << i % 6;
         std::unique_ptr<float[]> weight_trans_fp32(new float[weight_len]);
         paddle::lite::xpu::math::Transpose(weight_on_host,
                                            weight_trans_fp32.get(),
