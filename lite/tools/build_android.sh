@@ -225,10 +225,10 @@ function make_full_publish_so {
   # android api level for android version
   if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
       cmake_api_level_options=""
-  elif [ ${ANDROID_API_LEVEL} -gt 20 ]; then
+  elif [ ${ANDROID_API_LEVEL} -gt ${MIN_ANDROID_API_LEVEL} ]; then
       cmake_api_level_options="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
   else
-      echo "Error: ANDROID_API_LEVEL should be no less than 21, because Paddle-Lite doesn't support Android version that's lower than Android5.0."
+      echo "Error: ANDROID_API_LEVEL should be no less than ${MIN_ANDROID_API_LEVEL}, because Paddle-Lite doesn't support Android version that's lower than Android4.1."
       exit 1
   fi
 
@@ -284,8 +284,7 @@ function print_usage {
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
-    echo -e "|     --android_api_level: (16~27); control android api level, default value 16. If this value is set as "Default",                    |"
-    echo -e "|             the api level is 22 when arch=armv7, 23 when arch=armv8. You could set a specific android_api_level as you need.         |"
+    echo -e "|     --android_api_level: (16~27); control android api level, default is 16. You could set a specific android_api_level as you need.  |"
     echo -e "|             Android version lower than 4.1 is not supported.                                                                         |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
