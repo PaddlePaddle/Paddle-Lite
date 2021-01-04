@@ -169,6 +169,23 @@ void conv1x1s1_gemm_int8(const int8_t* din,
                          ARMContext* ctx,
                          const float* scale);
 
+template <typename Dtype>
+void conv1x1s1_intragroup_int8(const int8_t* din,
+                         Dtype* dout,
+                         const int8_t* index,
+                         int num,
+                         int chout,
+                         int hout,
+                         int wout,
+                         int chin,
+                         int hin,
+                         int win,
+                         const int8_t* weights,
+                         const float* bias,
+                         const operators::ConvParam& param,
+                         ARMContext* ctx,
+                         const float* scale);
+
 void conv_im2col_gemm(const float* din,
                       float* dout,
                       int num,

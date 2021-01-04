@@ -798,6 +798,136 @@ template void conv1x1s1_gemm_int8<float>(const int8_t* i_data,
                                          ARMContext* ctx,
                                          const float* scale);
 
+template <typename Dtype>
+void conv1x1s1_intragroup_int8(const int8_t* i_data,
+                         Dtype* o_data,
+                         const int8_t* index,
+                         int num,
+                         int oc,
+                         int oh,
+                         int ow,
+                         int ic,
+                         int ih,
+                         int win,
+                         const int8_t* weights,
+                         const float* bias,
+                         const operators::ConvParam& param,
+                         ARMContext* ctx,
+                         const float* scale) {
+  int group = param.groups;
+  int channel_size_out = ow * oh;
+  int channel_size_in = win * ih;
+  const int m = oc / group;
+  const int n = oh * ow;
+  const int k = ic / group;
+  int hblock = get_hblock_int8(ctx);
+  int k_roundup = ROUNDUP(k, KBLOCK_INTRAGROUP_INT8);
+  int m_roundup = ROUNDUP(m, hblock);
+  int weights_size_per_group = m * k;
+  if (n > 1 && m > 1) {
+    weights_size_per_group = ((m_roundup * k_roundup + 15) / 16) * 16;
+  }
+  bool flag_relu = param.fuse_relu;
+  bool flag_bias = param.bias != nullptr;
+  auto act_param = param.activation_param;
+  //! use gemv when the output channel size = 1
+  for (int b = 0; b < num; ++b) {
+    // dC
+    for (int g = 0; g < group; ++g) {
+      Dtype* dout_group = o_data + (b * oc + g * m) * channel_size_out;
+      const int8_t* din_group = i_data + (b * ic + g * k) * channel_size_in;
+      const int8_t* weights_group = weights + g * weights_size_per_group;
+      const float* bias_group = bias + g * m;
+      const float* scale_group = scale + g * m;
+      if (n == 1) {
+        gemv_int8(weights_group,
+                  din_group,
+                  dout_group,
+                  false,
+                  m,
+                  k,
+                  scale_group,
+                  flag_bias,
+                  bias_group,
+                  act_param.has_active,
+                  act_param.active_type,
+                  ctx,
+                  act_param.Relu_clipped_coef,
+                  act_param.Leaky_relu_alpha);
+      } else if (m == 1) {
+        float bias_ptr[n];   // NOLINT
+        float scale_ptr[n];  // NOLINT
+        if (flag_bias) {
+          for (int i = 0; i < n; i++) {
+            bias_ptr[i] = bias_group[0];
+          }
+        }
+        memset(scale_ptr, scale_group[0], sizeof(float) * n);
+        gemv_int8(din_group,
+                  weights_group,
+                  dout_group,
+                  true,
+                  n,
+                  k,
+                  scale_ptr,
+                  flag_bias,
+                  bias_ptr,
+                  act_param.has_active,
+                  act_param.active_type,
+                  ctx,
+                  act_param.Relu_clipped_coef,
+                  act_param.Leaky_relu_alpha);
+      } else {
+        gemm_prepack_intragroup_int8(weights_group,
+                          din_group,
+                          bias_group,
+                          index,
+                          dout_group,
+                          m,
+                          n,
+                          k,
+                          flag_bias,
+                          false,
+                          scale_group,
+                          act_param,
+                          ctx);
+      }
+    }
+  }
+}
+
+template void conv1x1s1_intragroup_int8<int8_t>(const int8_t* i_data,
+                                          int8_t* o_data,
+                                          const int8_t* index,
+                                          int num,
+                                          int oc,
+                                          int oh,
+                                          int ow,
+                                          int ic,
+                                          int ih,
+                                          int win,
+                                          const int8_t* weights,
+                                          const float* bias,
+                                          const operators::ConvParam& param,
+                                          ARMContext* ctx,
+                                          const float* scale);
+
+template void conv1x1s1_intragroup_int8<float_t>(const int8_t* i_data,
+                                          float* o_data,
+                                          const int8_t* index,
+                                          int num,
+                                          int oc,
+                                          int oh,
+                                          int ow,
+                                          int ic,
+                                          int ih,
+                                          int win,
+                                          const int8_t* weights,
+                                          const float* bias,
+                                          const operators::ConvParam& param,
+                                          ARMContext* ctx,
+                                          const float* scale);
+
 /**
  * \brief convolution function for kernel size 3x3, stride size 2, gemm
  * implementation

@@ -20,7 +20,7 @@ import re
 def compute_sdot_vec_vec(vd, vn, vm):
     i = 0x4e809400 | int(vd) | (int(vn) << 5) | (int(vm) << 16)
     return '".word 0x{:08x}\\n"'.format(i) + \
-           ' /* sdot v{vd}.4s, v{vn}.16b, v{vm}.16b */'.format(
+           ' /* sdot v{vd}.4s, v{vn}.16b, v{vm}.16b */\\\r\n'.format(
                vd=vd, vn=vn, vm=vm)
 
 def compute_sdot_vec_elem(vd, vn, vm, idx):
@@ -30,14 +30,21 @@ def compute_sdot_vec_elem(vd, vn, vm, idx):
                vd=vd, vn=vn, vm=vm, idx=idx)
 
 def match_sdot_patten(line):
-    matched = re.search(r'sdot\s+v(.*?).4s\s*,\s*v(.*?).16b\s*,\s*v(.*?).4b\[(.*?)\].*', line, re.M|re.I)
-    if matched:
+    matched_elem = re.search(r'sdot\s+v(.*?).4s\s*,\s*v(.*?).16b\s*,\s*v(.*?).4b\[(.*?)\].*', line, re.M|re.I)
+    matched_vec = re.search(r'sdot\s+v(.*?).4s\s*,\s*v(.*?).16b\s*,\s*v(.*?).16b.*', line, re.M|re.I)
+    if matched_elem:
         # print('matched:', matched.group(1), matched.group(2), matched.group(3), matched.group(4))
-        vd = int(matched.group(1))
-        vn = int(matched.group(2))
-        vm = int(matched.group(3))
-        idx = int(matched.group(4))
+        vd = int(matched_elem.group(1))
+        vn = int(matched_elem.group(2))
+        vm = int(matched_elem.group(3))
+        idx = int(matched_elem.group(4))
         return compute_sdot_vec_elem(vd, vn, vm, idx)
+    elif matched_vec:
+        # print('matched:', matched.group(1), matched.group(2), matched.group(3), matched.group(4))
+        vd = int(matched_vec.group(1))
+        vn = int(matched_vec.group(2))
+        vm = int(matched_vec.group(3))
+        return compute_sdot_vec_vec(vd, vn, vm)
     else:
         return line
 

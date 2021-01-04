@@ -72,6 +72,16 @@ inline void trans_gemm_weights<PRECISION(kInt8)>(const Tensor& tin,
   prepackA_int8(&tout, tin, m, k, group, false, ctx);
 }
 
+inline void trans_intragroup_gemm_weights(const Tensor& tin,
+                                                 Tensor& tout,  // NOLINT
+                                                 int group,
+                                                 ARMContext* ctx) {
+  CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
+  int m = tin.dims()[0] / group;
+  int k = tin.dims().count(1, 4);
+  prepackA_intragroup_int8(&tout, tin, m, k, group, false, ctx);
+}
+
 inline void fill_packed_biasc4(float* dout, const float* bias, int size) {
   float32x4_t vb = vld1q_f32(bias);
   int cnt = size / 4;

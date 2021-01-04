@@ -24,6 +24,7 @@ namespace arm {
 namespace math {
 
 const int KBLOCK_INT8 = 4;
+const int KBLOCK_INTRAGROUP_INT8 = 16;
 #ifdef __aarch64__
 // for int7/int8 gemm
 // const int HBLOCK = 4;
@@ -33,6 +34,7 @@ const int NBLOCK_INT8_OTH = 16;
 
 const int MBLOCK_INT8_DOT = 8;
 const int NBLOCK_INT8_DOT = 12;
+const int NBLOCK_INTRAGROUP_INT8_DOT = 12;
 
 inline int get_hblock_int8(ARMContext* ctx) {
 #ifdef WITH_ARM_DOTPROD
@@ -85,10 +87,43 @@ void prepackA_int8(TensorLite* tout,
                    bool is_trans,
                    ARMContext* ctx);
 
+void prepackA_intragroup_int8(TensorLite* tout,
+                   const TensorLite& tin,
+                   int m,
+                   int k,
+                   int group,
+                   bool is_trans,
+                   ARMContext* ctx);
+
+void prepackA_intragroup_int8(void* out,
+                   const void* in,
+                   int ldin,
+                   int m0,
+                   int mmax,
+                   int k0,
+                   int kmax,
+                   bool is_trans,
+                   ARMContext* ctx);
+
 template <typename dtype>
 void gemm_prepack_int8(const int8_t* A_packed,
                        const int8_t* B,
                        const float* bias,
+                       dtype* C,
+                       int M,
+                       int N,
+                       int K,
+                       bool is_bias,
+                       bool is_transB,
+                       const float* scale,
+                       const operators::ActivationParam act_param,
+                       ARMContext* ctx);
+
+template <typename dtype>
+void gemm_prepack_intragroup_int8(const int8_t* A_packed,
+                       const int8_t* B,
+                       const float* bias,
+                       const int8_t* index,
                        dtype* C,
                        int M,
                        int N,

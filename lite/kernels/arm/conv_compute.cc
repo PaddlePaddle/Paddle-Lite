@@ -20,6 +20,7 @@
 #include "lite/kernels/arm/conv_direct.h"
 #include "lite/kernels/arm/conv_gemmlike.h"
 #include "lite/kernels/arm/conv_winograd.h"
+#include "lite/kernels/arm/conv_intragroup.h"
 
 namespace paddle {
 namespace lite {
@@ -123,7 +124,11 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
              pads_equal) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run WinogradConv Int8";
-  } else {
+  }else if (param.groups == 1 && kw == 1 && sw == 1 && no_dilation &&
+             pads_equal) {
+    impl_ = new IntragroupConv<PRECISION(kInt8), PRECISION(kFloat)>;
+    VLOG(3) << "Run IntragroupConv Int8";
+  }  else {
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run GemmLikeConvInt8";
   }
@@ -165,18 +170,23 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
       no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
-    // VLOG(3) << "Run DepthwiseConv Int8";
+    VLOG(3) << "Run DepthwiseConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
              pads_equal && !ctx.has_dot()) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
-    // VLOG(3) << "Run DirectConv Int8";
+    VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
              pads_equal) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
-    // VLOG(3) << "Run WinogradConv Int8";
-  } else {
+    VLOG(3) << "Run WinogradConv Int8";
+  } else if (param.groups == 1 && kw == 1 && sw == 1 && no_dilation &&
+             pads_equal) {
+    impl_ = new IntragroupConv<PRECISION(kInt8), PRECISION(kInt8)>;
+    VLOG(3) << "Run IntragroupConv Int8";
+  } 
+  else {
     impl_ = new GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>;
-    // VLOG(3) << "Run GemmLikeConvInt8";
+    VLOG(3) << "Run GemmLikeConvInt8";
   }
   impl_->SetContext(std::move(this->ctx_));
   impl_->SetParam(param);

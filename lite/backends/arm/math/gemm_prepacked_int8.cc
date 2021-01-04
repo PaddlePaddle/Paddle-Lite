@@ -16,6 +16,7 @@
 #include <arm_neon.h>
 #ifdef __aarch64__
 #include "lite/backends/arm/math/dotprod/gemm_sdot.h"
+#include "lite/backends/arm/math/dotprod/gemm_intragroup_sdot.h"
 #else
 #include "lite/backends/arm/math/dotprod/gemm_vsdot.h"
 #endif
@@ -67,6 +68,14 @@ void prepackA_m8k4_int8(int8_t* out,
                         int k0,
                         int kmax);
 
+void prepackA_m8k8_int8(int8_t* out,
+                        const int8_t* in,
+                        int ldin,
+                        int m0,
+                        int mmax,
+                        int k0,
+                        int kmax);
+
 void prepackA_m8k4_trans_int8(int8_t* out,
                               const int8_t* in,
                               int ldin,
@@ -76,6 +85,14 @@ void prepackA_m8k4_trans_int8(int8_t* out,
                               int kmax);
 
 void packb_sdot_int8(int8_t* out,
+                     const int8_t* in,
+                     int ldin,
+                     int k0,
+                     int kmax,
+                     int n0,
+                     int nmax);
+
+void packb_sdot_intragroup_int8(int8_t* out,
                      const int8_t* in,
                      int ldin,
                      int k0,
@@ -200,6 +217,31 @@ void prepackA_int8(void* out,
 #endif
 }
 
+void prepackA_intragroup_int8(void* out,
+                   const void* in,
+                   int ldin,
+                   int m0,
+                   int mmax,
+                   int k0,
+                   int kmax,
+                   bool is_trans,
+                   ARMContext* ctx) {
+#ifdef __aarch64__
+  if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+
+      prepackA_m8k8_int8(static_cast<int8_t*>(out),
+                         static_cast<const int8_t*>(in),
+                         ldin,
+                         m0,
+                         mmax,
+                         k0,
+                         kmax);
+#endif
+  }
+#endif
+}
+
 void prepackA_int8(TensorLite* tout,
                    const TensorLite& tin,
                    int m,
@@ -225,6 +267,36 @@ void prepackA_int8(TensorLite* tout,
     char* weights_trans_ptr =
         tout->mutable_data<char>() + g * group_size_round_up;
     prepackA_int8(
+        weights_trans_ptr, weights_group, lda, 0, m, 0, k, is_trans, ctx);
+  }
+}
+
+void prepackA_intragroup_int8(TensorLite* tout,
+                   const TensorLite& tin,
+                   int m,
+                   int k,
+                   int group,
+                   bool is_trans,
+                   ARMContext* ctx) {
+  int hblock = get_hblock_int8(ctx);
+  int m_roundup = ROUNDUP(m, hblock);
+  // round up to 128 bits
+  int kup = ROUNDUP(k, KBLOCK_INTRAGROUP_INT8);
+  int group_size_round_up = ((m_roundup * kup + 15) / 16) * 16;
+
+  if (tout->numel() < group_size_round_up * group) {
+    tout->Resize({1, 1, 1, group_size_round_up * group});
+  }
+  int lda = k;
+  if (is_trans) {
+    lda = m;
+  }
+  for (int g = 0; g < group; ++g) {
+    const char* weights_group = tin.data<char>() + g * m * k;
+    char* weights_trans_ptr =
+        tout->mutable_data<char>() + g * group_size_round_up;
+    
+    prepackA_intragroup_int8(
         weights_trans_ptr, weights_group, lda, 0, m, 0, k, is_trans, ctx);
   }
 }
@@ -943,6 +1015,24 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   int is_relu,
                                   int k,
                                   int rem);
+
+template <typename Dtype>
+inline void gemm_sdot_int8_intragroup_kernel(const int8_t* a_ptr,
+                                  const int8_t*& b_ptr,  // NOLINT
+                                  const float* bias,
+                                  const int8_t* index,
+                                  Dtype*& c_ptr0,  // NOLINT
+                                  Dtype*& c_ptr1,  // NOLINT
+                                  Dtype*& c_ptr2,  // NOLINT
+                                  Dtype*& c_ptr3,  // NOLINT
+                                  Dtype*& c_ptr4,  // NOLINT
+                                  Dtype*& c_ptr5,  // NOLINT
+                                  Dtype*& c_ptr6,  // NOLINT
+                                  Dtype*& c_ptr7,  // NOLINT
+                                  const float32_t* scale,
+                                  const float32_t* alpha,
+                                  int is_relu,
+                                  int k);
 #if 0
 // clang-format off
 #define GEMM_SDOT_INT8_KERNEL                                              \
@@ -1709,6 +1799,265 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" /* store r7 */
 // clang-format on
 
+#define GEMM_SDOT_FP32_INTRAGROUP_OUT\
+  "trn1  v0.4s, v8.4s, v11.4s   \n"                                  \
+  "trn2  v1.4s, v8.4s, v11.4s   \n"                                  \
+  "trn1  v2.4s, v14.4s, v17.4s  \n"                                  \
+  "trn2  v3.4s, v14.4s, v17.4s  \n"                                  \
+  "trn1  v8.2d, v0.2d, v2.2d    \n"                                  \
+  "trn1  v11.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v14.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v17.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v9.4s, v12.4s   \n"                                  \
+  "trn2  v1.4s, v9.4s, v12.4s   \n"                                  \
+  "trn1  v2.4s, v15.4s, v18.4s  \n"                                  \
+  "trn2  v3.4s, v15.4s, v18.4s  \n"                                  \
+  "trn1  v9.2d, v0.2d, v2.2d    \n"                                  \
+  "trn1  v12.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v15.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v18.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v10.4s, v13.4s  \n"                                  \
+  "trn2  v1.4s, v10.4s, v13.4s  \n"                                  \
+  "trn1  v2.4s, v16.4s, v19.4s  \n"                                  \
+  "trn2  v3.4s, v16.4s, v19.4s  \n"                                  \
+  "trn1  v10.2d, v0.2d, v2.2d   \n"                                  \
+  "trn1  v13.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v16.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v19.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v20.4s, v23.4s  \n"                                  \
+  "trn2  v1.4s, v20.4s, v23.4s  \n"                                  \
+  "trn1  v2.4s, v26.4s, v29.4s  \n"                                  \
+  "trn2  v3.4s, v26.4s, v29.4s  \n"                                  \
+  "trn1  v20.2d, v0.2d, v2.2d   \n"                                  \
+  "trn1  v23.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v26.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v29.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v21.4s, v24.4s  \n"                                  \
+  "trn2  v1.4s, v21.4s, v24.4s  \n"                                  \
+  "trn1  v2.4s, v27.4s, v30.4s  \n"                                  \
+  "trn2  v3.4s, v27.4s, v30.4s  \n"                                  \
+  "trn1  v21.2d, v0.2d, v2.2d   \n"                                  \
+  "trn1  v24.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v27.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v30.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v22.4s, v25.4s  \n"                                  \
+  "trn2  v1.4s, v22.4s, v25.4s  \n"                                  \
+  "trn1  v2.4s, v28.4s, v31.4s  \n"                                  \
+  "trn2  v3.4s, v28.4s, v31.4s  \n"                                  \
+  "trn1  v22.2d, v0.2d, v2.2d   \n"                                  \
+  "trn1  v25.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v28.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v31.2d, v1.2d, v3.2d   \n"                                  \
+  "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   /* store r0 */ \
+  "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" /* store r1 */ \
+  "st1 {v14.4s, v15.4s, v16.4s},[%[c_ptr2]], #48\n" /* store r2 */ \
+  "st1 {v17.4s, v18.4s, v19.4s},[%[c_ptr3]], #48\n" /* store r3 */ \
+  "st1 {v20.4s, v21.4s, v22.4s},[%[c_ptr4]], #48\n" /* store r4 */ \
+  "st1 {v23.4s, v24.4s, v25.4s},[%[c_ptr5]], #48\n" /* store r5 */ \
+  "st1 {v26.4s, v27.4s, v28.4s},[%[c_ptr6]], #48\n" /* store r6 */ \
+  "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" /* store r7 */
+// clang-format on
+
+#define GEMM_SDOT_INT8_INTRAGROUP_OUT                                \
+  "trn1  v0.4s, v8.4s, v11.4s   \n"                                  \
+  "trn2  v1.4s, v8.4s, v11.4s   \n"                                  \
+  "trn1  v2.4s, v14.4s, v17.4s  \n"                                  \
+  "trn2  v3.4s, v14.4s, v17.4s  \n"                                  \
+  "trn1  v8.2d, v0.2d, v2.2d    \n"                                  \
+  "trn1  v11.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v14.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v17.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v9.4s, v12.4s   \n"                                  \
+  "trn2  v1.4s, v9.4s, v12.4s   \n"                                  \
+  "trn1  v2.4s, v15.4s, v18.4s  \n"                                  \
+  "trn2  v3.4s, v15.4s, v18.4s  \n"                                  \
+  "trn1  v9.2d, v0.2d, v2.2d    \n"                                  \
+  "trn1  v12.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v15.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v18.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v10.4s, v13.4s  \n"                                  \
+  "trn2  v1.4s, v10.4s, v13.4s  \n"                                  \
+  "trn1  v2.4s, v16.4s, v19.4s  \n"                                  \
+  "trn2  v3.4s, v16.4s, v19.4s  \n"                                  \
+  "trn1  v10.2d, v0.2d, v2.2d   \n"                                  \
+  "trn1  v13.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v16.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v19.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v20.4s, v23.4s  \n"                                  \
+  "trn2  v1.4s, v20.4s, v23.4s  \n"                                  \
+  "trn1  v2.4s, v26.4s, v29.4s  \n"                                  \
+  "trn2  v3.4s, v26.4s, v29.4s  \n"                                  \
+  "trn1  v20.2d, v0.2d, v2.2d   \n"                                  \
+  "trn1  v23.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v26.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v29.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v21.4s, v24.4s  \n"                                  \
+  "trn2  v1.4s, v21.4s, v24.4s  \n"                                  \
+  "trn1  v2.4s, v27.4s, v30.4s  \n"                                  \
+  "trn2  v3.4s, v27.4s, v30.4s  \n"                                  \
+  "trn1  v21.2d, v0.2d, v2.2d   \n"                                  \
+  "trn1  v24.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v27.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v30.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "trn1  v0.4s, v22.4s, v25.4s  \n"                                  \
+  "trn2  v1.4s, v22.4s, v25.4s  \n"                                  \
+  "trn1  v2.4s, v28.4s, v31.4s  \n"                                  \
+  "trn2  v3.4s, v28.4s, v31.4s  \n"                                  \
+  "trn1  v22.2d, v0.2d, v2.2d   \n"                                  \
+  "trn1  v25.2d, v1.2d, v3.2d   \n"                                  \
+  "trn2  v28.2d, v0.2d, v2.2d   \n"                                  \
+  "trn2  v31.2d, v1.2d, v3.2d   \n"                                  \
+  /* space */                                                        \
+  "ld1  {v6.4s}, [%[vmax]]\n"                                      \
+  /* data >= -127 */                                               \
+  "fcmge v0.4s, v8.4s, v6.4s\n"                                   \
+  "fcmge v1.4s, v9.4s, v6.4s\n"                                   \
+  "fcmge v2.4s, v10.4s, v6.4s\n"                                   \
+  "fcmge v3.4s, v11.4s, v6.4s\n"                                   \
+  "fcmge v4.4s, v12.4s, v6.4s\n"                                   \
+  "fcmge v5.4s, v13.4s, v6.4s\n"                                   \
+  "fcmge v7.4s, v14.4s, v6.4s\n"                                   \
+  /* choose data */                                                \
+  "bif v8.16b, v6.16b, v0.16b\n"                                  \
+  "fcmge v0.4s, v15.4s, v6.4s\n"                                   \
+  "bif v9.16b, v6.16b, v1.16b\n"                                  \
+  "bif v10.16b, v6.16b, v2.16b\n"                                 \
+  "bif v11.16b, v6.16b, v3.16b\n"                                  \
+  "bif v12.16b, v6.16b, v4.16b\n"                                  \
+  "bif v13.16b, v6.16b, v5.16b\n"                                  \
+  "bif v14.16b, v6.16b, v7.16b\n"                                  \
+  "bif v15.16b, v6.16b, v0.16b \n"                                 \
+  "fcvtas v0.4s, v8.4s\n"         /*  00, cvt to int */         \
+  "fcvtas v1.4s, v9.4s\n"         /*  01, cvt to int */         \
+  "fcvtas v2.4s, v10.4s\n"        /*  02, cvt to int */         \
+  "fcvtas v3.4s, v11.4s\n"        /*  10, cvt to int */         \
+  "fcvtas v4.4s, v12.4s\n"        /*  11, cvt to int */         \
+  "fcvtas v5.4s, v13.4s\n"        /*  12, cvt to int */         \
+  "fcvtas v6.4s, v14.4s\n"        /*  20, cvt to int */         \
+  "fcvtas v7.4s, v15.4s\n"        /*  21, cvt to int */         \
+  "sqxtn  v10.4h, v0.4s\n"        /*  00, cvt int32 to int16 */ \
+  "sqxtn2 v10.8h, v1.4s\n"        /*  01, cvt int32 to int16 */ \
+  "sqxtn  v11.4h, v2.4s\n"        /*  02, cvt int32 to int16 */ \
+  "sqxtn  v12.4h, v3.4s\n"        /*  10, cvt int32 to int16 */ \
+  "sqxtn2 v12.8h, v4.4s\n"        /*  11, cvt int32 to int16 */ \
+  "sqxtn  v13.4h, v5.4s\n"        /*  12, cvt int32 to int16 */ \
+  "sqxtn  v14.4h, v6.4s\n"        /*  20, cvt int32 to int16 */ \
+  "ld1  {v6.4s}, [%[vmax]]\n"                                   \
+  "sqxtn2 v14.8h, v7.4s\n"        /*  21, cvt int32 to int16 */ \
+  /* data >= -127 */                                               \
+  "fcmge v0.4s, v16.4s, v6.4s\n"                                   \
+  "fcmge v1.4s, v17.4s, v6.4s\n"                                   \
+  "fcmge v2.4s, v18.4s, v6.4s\n"                                   \
+  "fcmge v3.4s, v19.4s, v6.4s\n"                                   \
+  "fcmge v4.4s, v20.4s, v6.4s\n"                                   \
+  "fcmge v5.4s, v21.4s, v6.4s\n"                                   \
+  "fcmge v7.4s, v22.4s, v6.4s\n"                                   \
+  "fcmge v8.4s, v23.4s, v6.4s\n"                                   \
+  "fcmge v9.4s, v24.4s, v6.4s\n"                                   \
+  /* choose data */                                                \
+  "bif v16.16b, v6.16b, v0.16b\n"                                  \
+  "fcmge v0.4s, v25.4s, v6.4s\n"                                   \
+  "bif v17.16b, v6.16b, v1.16b\n"                                  \
+  "bif v18.16b, v6.16b, v2.16b\n"                                  \
+  "bif v19.16b, v6.16b, v3.16b\n"                                  \
+  "bif v20.16b, v6.16b, v4.16b\n"                                  \
+  "bif v21.16b, v6.16b, v5.16b\n"                                  \
+  "bif v22.16b, v6.16b, v7.16b\n"                                  \
+  "bif v23.16b, v6.16b, v8.16b\n"                                  \
+  "bif v24.16b, v6.16b, v9.16b\n"                                  \
+  "bif v25.16b, v6.16b, v0.16b\n"                                  \
+  "fcvtas v0.4s, v16.4s\n"        /*  22, cvt to int */         \
+  "fcvtas v1.4s, v17.4s\n"        /*  30, cvt to int */         \
+  "fcvtas v2.4s, v18.4s\n"        /*  31, cvt to int */         \
+  "fcvtas v3.4s, v19.4s\n"        /*  32, cvt to int */         \
+  "fcvtas v4.4s, v20.4s\n"        /*  40, cvt to int */         \
+  "fcvtas v5.4s, v21.4s\n"        /*  41, cvt to int */         \
+  "fcvtas v6.4s, v22.4s\n"        /*  42, cvt to int */         \
+  "fcvtas v7.4s, v23.4s\n"        /*  50, cvt to int */         \
+  "fcvtas v8.4s, v24.4s\n"        /*  51, cvt to int */         \
+  "fcvtas v9.4s, v25.4s\n"        /*  52, cvt to int */         \
+  "sqxtn  v15.4h, v0.4s\n"        /*  22, cvt int32 to int16 */ \
+  "sqxtn  v16.4h, v1.4s\n"        /*  30, cvt int32 to int16 */ \
+  "sqxtn2 v16.8h, v2.4s\n"        /*  31, cvt int32 to int16 */ \
+  "sqxtn  v17.4h, v3.4s\n"        /*  32, cvt int32 to int16 */ \
+  "sqxtn  v18.4h, v4.4s\n"        /*  40, cvt int32 to int16 */ \
+  "sqxtn2 v18.8h, v5.4s\n"        /*  41, cvt int32 to int16 */ \
+  "sqxtn  v19.4h, v6.4s\n"        /*  42, cvt int32 to int16 */ \
+  "sqxtn  v20.4h, v7.4s\n"        /*  50, cvt int32 to int16 */ \
+  "sqxtn2 v20.8h, v8.4s\n"        /*  51, cvt int32 to int16 */ \
+  "ld1  {v6.4s}, [%[vmax]]\n"     /* v8 = -127.f     */         \
+  "sqxtn  v21.4h, v9.4s\n"        /*  52, cvt int32 to int16 */ \
+  /* data >= -127 */                                               \
+  "fcmge v0.4s, v26.4s, v6.4s\n"                                   \
+  "fcmge v1.4s, v27.4s, v6.4s\n"                                   \
+  "fcmge v2.4s, v28.4s, v6.4s\n"                                   \
+  "fcmge v3.4s, v29.4s, v6.4s\n"                                   \
+  "fcmge v4.4s, v30.4s, v6.4s\n"                                   \
+  "fcmge v5.4s, v31.4s, v6.4s\n"                                   \
+  /* choose data */                                                \
+  "bif v26.16b, v6.16b, v0.16b\n"                                  \
+  "bif v27.16b, v6.16b, v1.16b\n"                                  \
+  "bif v28.16b, v6.16b, v2.16b\n"                                  \
+  "bif v29.16b, v6.16b, v3.16b\n"                                  \
+  "bif v30.16b, v6.16b, v4.16b\n"                                  \
+  "bif v31.16b, v6.16b, v5.16b\n"                                  \
+  "fcvtas v0.4s, v26.4s\n"        /*  60, cvt to int */         \
+  "fcvtas v1.4s, v27.4s\n"        /*  61, cvt to int */         \
+  "fcvtas v2.4s, v28.4s\n"        /*  62, cvt to int */         \
+  "fcvtas v3.4s, v29.4s\n"        /*  70, cvt to int */         \
+  "fcvtas v4.4s, v30.4s\n"        /*  71, cvt to int */         \
+  "fcvtas v5.4s, v31.4s\n"        /*  72, cvt to int */         \
+  "sqxtn  v22.4h, v0.4s\n"        /*  60, cvt int32 to int16 */ \
+  "sqxtn2 v22.8h, v1.4s\n"        /*  61, cvt int32 to int16 */ \
+  "sqxtn  v23.4h, v2.4s\n"        /*  62, cvt int32 to int16 */ \
+  "sqxtn  v24.4h, v3.4s\n"        /*  70, cvt int32 to int16 */ \
+  "sqxtn2 v24.8h, v4.4s\n"        /*  71, cvt int32 to int16 */ \
+  "sqxtn  v25.4h, v5.4s\n"        /*  72, cvt int32 to int16 */ \
+  "sqxtn  v0.8b, v10.8h\n"        /*  00, cvt int16 to int8 */  \
+  "sqxtn  v1.8b, v12.8h\n"        /*  10, cvt int16 to int8 */  \
+  "sqxtn  v2.8b, v14.8h\n"        /*  20, cvt int16 to int8 */  \
+  "sqxtn  v3.8b, v16.8h\n"        /*  30, cvt int16 to int8 */  \
+  "sqxtn  v4.8b, v18.8h\n"        /*  40, cvt int16 to int8 */  \
+  "sqxtn  v5.8b, v20.8h\n"        /*  50, cvt int16 to int8 */  \
+  "sqxtn  v6.8b, v22.8h\n"        /*  60, cvt int16 to int8 */  \
+  "sqxtn  v7.8b, v24.8h\n"        /*  70, cvt int16 to int8 */  \
+  "st1 {v0.8b},[%[c_ptr0]], #8\n" /* store r0 */                \
+  "sqxtn  v8.8b, v11.8h\n"        /*  0, cvt int16 to int8 */   \
+  "st1 {v1.8b},[%[c_ptr1]], #8\n" /* store r1 */                \
+  "sqxtn  v9.8b, v13.8h\n"        /*  1, cvt int16 to int8 */   \
+  "st1 {v2.8b},[%[c_ptr2]], #8\n" /* store r2 */                \
+  "sqxtn  v10.8b, v15.8h\n"       /*  2, cvt int16 to int8 */   \
+  "st1 {v3.8b},[%[c_ptr3]], #8\n" /* store r3 */                \
+  "sqxtn  v11.8b, v17.8h\n"       /*  3, cvt int16 to int8 */   \
+  "st1 {v4.8b},[%[c_ptr4]], #8\n" /* store r4 */                \
+  "sqxtn  v12.8b, v19.8h\n"       /*  4, cvt int16 to int8 */   \
+  "st1 {v5.8b},[%[c_ptr5]], #8\n" /* store r5 */                \
+  "sqxtn  v13.8b, v21.8h\n"       /*  5, cvt int16 to int8 */   \
+  "st1 {v6.8b},[%[c_ptr6]], #8\n" /* store r6 */                \
+  "sqxtn  v14.8b, v23.8h\n"       /*  6, cvt int16 to int8 */   \
+  "st1 {v7.8b},[%[c_ptr7]], #8\n" /* store r7 */                \
+  "sqxtn  v15.8b, v25.8h\n"       /*  7, cvt int16 to int8 */   \
+  "str s8,[%[c_ptr0]], #4\n"      /* store r0 */                \
+  "str s9,[%[c_ptr1]], #4\n"      /* store r1 */                \
+  "str s10,[%[c_ptr2]], #4\n"     /* store r2 */                \
+  "str s11,[%[c_ptr3]], #4\n"     /* store r3 */                \
+  "str s12,[%[c_ptr4]], #4\n"     /* store r4 */                \
+  "str s13,[%[c_ptr5]], #4\n"     /* store r5 */                \
+  "str s14,[%[c_ptr6]], #4\n"     /* store r6 */                \
+  "str s15,[%[c_ptr7]], #4\n"     /* store r7 */
+
+// clang-format on
+
 template <>
 inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   const int8_t*& b_ptr,  // NOLINT
@@ -1815,6 +2164,91 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                  [b_ptr] "+r"(b_ptr),
                  [k] "+r"(k),
                  [tail] "+r"(tail),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [c_ptr4] "+r"(c_ptr4),
+                 [c_ptr5] "+r"(c_ptr5),
+                 [c_ptr6] "+r"(c_ptr6),
+                 [c_ptr7] "+r"(c_ptr7)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), [vmax] "r"(vmax),
+                 [alpha] "r"(alpha)
+               : "cc","memory","v0","v1","v2","v3",
+                 "v4","v5","v6","v7","v8","v9","v10",
+                 "v11","v12","v13","v14","v15","v16","v17",
+                 "v18","v19","v20","v21","v22","v23","v24",
+                 "v25","v26","v27","v28","v29","v30","v31");
+  // clang-format on
+}
+
+
+template <>
+inline void gemm_sdot_int8_intragroup_kernel(const int8_t* a_ptr,
+                                  const int8_t*& b_ptr,  // NOLINT
+                                  const float* bias,
+                                  const int8_t* index,
+                                  int8_t*& c_ptr0,  // NOLINT
+                                  int8_t*& c_ptr1,  // NOLINT
+                                  int8_t*& c_ptr2,  // NOLINT
+                                  int8_t*& c_ptr3,  // NOLINT
+                                  int8_t*& c_ptr4,  // NOLINT
+                                  int8_t*& c_ptr5,  // NOLINT
+                                  int8_t*& c_ptr6,  // NOLINT
+                                  int8_t*& c_ptr7,  // NOLINT
+                                  const float32_t* scale,
+                                  const float32_t* alpha,
+                                  int is_relu,
+                                  int k) {
+  // clang-format off
+  float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
+  asm volatile(GEMM_SDOT_INT8_INTRAGROUP_KERNEL GEMM_SDOT_INT8_INTRAGROUP_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [i_ptr] "+r"(index),
+                 [b_ptr] "+r"(b_ptr),
+                 [k] "+r"(k),
+                 [c_ptr0] "+r"(c_ptr0),
+                 [c_ptr1] "+r"(c_ptr1),
+                 [c_ptr2] "+r"(c_ptr2),
+                 [c_ptr3] "+r"(c_ptr3),
+                 [c_ptr4] "+r"(c_ptr4),
+                 [c_ptr5] "+r"(c_ptr5),
+                 [c_ptr6] "+r"(c_ptr6),
+                 [c_ptr7] "+r"(c_ptr7)
+               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), [vmax] "r"(vmax),
+                 [alpha] "r"(alpha)
+               : "cc","memory","v0","v1","v2","v3",
+                 "v4","v5","v6","v7","v8","v9","v10",
+                 "v11","v12","v13","v14","v15","v16","v17",
+                 "v18","v19","v20","v21","v22","v23","v24",
+                 "v25","v26","v27","v28","v29","v30","v31");
+  // clang-format on
+}
+
+template <>
+inline void gemm_sdot_int8_intragroup_kernel(const int8_t* a_ptr,
+                                  const int8_t*& b_ptr,  // NOLINT
+                                  const float* bias,
+                                  const int8_t* index,
+                                  float32_t*& c_ptr0,  // NOLINT
+                                  float32_t*& c_ptr1,  // NOLINT
+                                  float32_t*& c_ptr2,  // NOLINT
+                                  float32_t*& c_ptr3,  // NOLINT
+                                  float32_t*& c_ptr4,  // NOLINT
+                                  float32_t*& c_ptr5,  // NOLINT
+                                  float32_t*& c_ptr6,  // NOLINT
+                                  float32_t*& c_ptr7,  // NOLINT
+                                  const float32_t* scale,
+                                  const float32_t* alpha,
+                                  int is_relu,
+                                  int k) {
+  // clang-format off
+  float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
+  asm volatile(GEMM_SDOT_INT8_INTRAGROUP_KERNEL GEMM_SDOT_FP32_INTRAGROUP_OUT
+               : [a_ptr] "+r"(a_ptr),
+                 [i_ptr] "+r"(index),
+                 [b_ptr] "+r"(b_ptr),
+                 [k] "+r"(k),
                  [c_ptr0] "+r"(c_ptr0),
                  [c_ptr1] "+r"(c_ptr1),
                  [c_ptr2] "+r"(c_ptr2),
@@ -4240,6 +4674,196 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
   }
 }
 
+template <typename Dtype>
+void gemm_prepack_sdot_intragroup_int8(const int8_t* A_packed,
+                            const int8_t* B,
+                            const float* bias,
+                            const int8_t* index,
+                            Dtype* C,
+                            int M,
+                            int N,
+                            int K,
+                            bool is_bias,
+                            int is_relu,
+                            bool is_transB,
+                            const float* scale,
+                            const float* alpha,
+                            ARMContext* ctx) {
+  size_t llc_size = ctx->llc_size() / 4;
+  auto workspace = ctx->workspace_data<int8_t>();
+  //! MBLOCK_INT8_DOT * x (result) + MBLOCK_INT8_DOT * k/4 (A) + x * k (B) = l2
+  int x_block = (llc_size - (MBLOCK_INT8_DOT * K/4)) /
+                (sizeof(int8_t) * (K + MBLOCK_INT8_DOT));
+  x_block /= NBLOCK_INTRAGROUP_INT8_DOT;
+  x_block *= NBLOCK_INTRAGROUP_INT8_DOT;
+  int x_num = (N + (x_block - 1)) / x_block;
+  x_block = (N + x_num - 1) / x_num;
+  x_block = (x_block + NBLOCK_INTRAGROUP_INT8_DOT - 1) / NBLOCK_INTRAGROUP_INT8_DOT;
+  x_block *= NBLOCK_INTRAGROUP_INT8_DOT;
+  x_block = x_block < NBLOCK_INTRAGROUP_INT8_DOT ? NBLOCK_INTRAGROUP_INT8_DOT : x_block;
+
+  int kup = ROUNDUP(K, KBLOCK_INTRAGROUP_INT8);
+  // unroll 2 loop
+  int k_loops = kup / KBLOCK_INTRAGROUP_INT8;
+
+  bool flag_p_remain = false;
+  int remain = 0;
+  //! apanel is pre_compute outside gemm
+  for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
+    unsigned int xmax = x0 + x_block;
+    if (xmax > N) {
+      xmax = N;
+    }
+    int bblocks = (xmax - x0 + NBLOCK_INTRAGROUP_INT8_DOT - 1) / NBLOCK_INTRAGROUP_INT8_DOT; // 以NBLOCK_INT8_DOT为最小单元在N dim方向上迭代，共分bblocks个单元
+    remain = xmax - x0 - (bblocks - 1) * NBLOCK_INTRAGROUP_INT8_DOT; // 最后一个单元不满 NBLOCK_INT8_DOT个， 剩 remain个
+    if (remain > 0) {
+      flag_p_remain = true;
+    }
+    //! load bpanel
+    auto b_pannel = static_cast<int8_t*>(workspace);
+    if (!is_transB) {
+      // K * N
+      packb_sdot_intragroup_int8(b_pannel, B, N, 0, K, x0, xmax);
+    } else {
+      // N X K
+      packb_sdot_trans_int8(b_pannel, B, K, 0, K, x0, xmax);
+    }
+#pragma omp parallel for
+    for (unsigned int y = 0; y < M; y += MBLOCK_INT8_DOT) {
+      unsigned int ymax = y + MBLOCK_INT8_DOT;
+      if (ymax > M) {
+        ymax = M;
+      }
+
+      float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+      if (is_bias) {
+        bias_local[0] = bias[y];
+        bias_local[1] = bias[y + 1];
+        bias_local[2] = bias[y + 2];
+        bias_local[3] = bias[y + 3];
+        bias_local[4] = bias[y + 4];
+        bias_local[5] = bias[y + 5];
+        bias_local[6] = bias[y + 6];
+        bias_local[7] = bias[y + 7];
+      }
+      float32_t scale_local[8];
+      if (scale) {
+        scale_local[0] = scale[y];
+        scale_local[1] = scale[y + 1];
+        scale_local[2] = scale[y + 2];
+        scale_local[3] = scale[y + 3];
+        scale_local[4] = scale[y + 4];
+        scale_local[5] = scale[y + 5];
+        scale_local[6] = scale[y + 6];
+        scale_local[7] = scale[y + 7];
+      }
+
+      Dtype cout0[NBLOCK_INTRAGROUP_INT8_DOT];
+      Dtype cout1[NBLOCK_INTRAGROUP_INT8_DOT];
+      Dtype cout2[NBLOCK_INTRAGROUP_INT8_DOT];
+      Dtype cout3[NBLOCK_INTRAGROUP_INT8_DOT];
+      Dtype cout4[NBLOCK_INTRAGROUP_INT8_DOT];
+      Dtype cout5[NBLOCK_INTRAGROUP_INT8_DOT];
+      Dtype cout6[NBLOCK_INTRAGROUP_INT8_DOT];
+      Dtype cout7[NBLOCK_INTRAGROUP_INT8_DOT];
+
+      Dtype* c_ptr0 = C + y * N + x0;
+      Dtype* c_ptr1 = c_ptr0 + N;
+      Dtype* c_ptr2 = c_ptr1 + N;
+      Dtype* c_ptr3 = c_ptr2 + N;
+      Dtype* c_ptr4 = c_ptr3 + N;
+      Dtype* c_ptr5 = c_ptr4 + N;
+      Dtype* c_ptr6 = c_ptr5 + N;
+      Dtype* c_ptr7 = c_ptr6 + N;
+
+      Dtype* pout0 = c_ptr0;
+      Dtype* pout1 = c_ptr1;
+      Dtype* pout2 = c_ptr2;
+      Dtype* pout3 = c_ptr3;
+      Dtype* pout4 = c_ptr4;
+      Dtype* pout5 = c_ptr5;
+      Dtype* pout6 = c_ptr6;
+      Dtype* pout7 = c_ptr7;
+
+      // const int8_t *a_ptr_l = A_packed + y * K;
+      const int8_t* a_ptr_l = A_packed + y * kup;
+      const int8_t* b_ptr = b_pannel;
+      for (int xb = 0; xb < bblocks; xb++) {
+        if ((y + 7) >= ymax) {
+          switch ((y + 7) - ymax) {
+            case 6:
+              c_ptr1 = cout1;
+            case 5:
+              c_ptr2 = cout2;
+            case 4:
+              c_ptr3 = cout3;
+            case 3:
+              c_ptr4 = cout4;
+            case 2:
+              c_ptr5 = cout5;
+            case 1:
+              c_ptr6 = cout6;
+            case 0:
+              c_ptr7 = cout7;
+            default:
+              break;
+          }
+        }
+        if (flag_p_remain && (xb == bblocks - 1)) {
+          pout0 = c_ptr0;
+          pout1 = c_ptr1;
+          pout2 = c_ptr2;
+          pout3 = c_ptr3;
+          pout4 = c_ptr4;
+          pout5 = c_ptr5;
+          pout6 = c_ptr6;
+          pout7 = c_ptr7;
+
+          c_ptr0 = cout0;
+          c_ptr1 = cout1;
+          c_ptr2 = cout2;
+          c_ptr3 = cout3;
+          c_ptr4 = cout4;
+          c_ptr5 = cout5;
+          c_ptr6 = cout6;
+          c_ptr7 = cout7;
+        }
+        const int8_t* a_ptr = a_ptr_l;
+        int k = k_loops;
+        gemm_sdot_int8_intragroup_kernel(a_ptr,
+                                     b_ptr,
+                                     bias_local,
+                                     index,
+                                     c_ptr0,
+                                     c_ptr1,
+                                     c_ptr2,
+                                     c_ptr3,
+                                     c_ptr4,
+                                     c_ptr5,
+                                     c_ptr6,
+                                     c_ptr7,
+                                     scale_local,
+                                     alpha,
+                                     is_relu,
+                                     k);
+
+        if (flag_p_remain && (xb == bblocks - 1)) {
+          for (int i = 0; i < remain; ++i) {
+            *pout0++ = cout0[i];
+            *pout1++ = cout1[i];
+            *pout2++ = cout2[i];
+            *pout3++ = cout3[i];
+            *pout4++ = cout4[i];
+            *pout5++ = cout5[i];
+            *pout6++ = cout6[i];
+            *pout7++ = cout7[i];
+          }
+        }
+      }
+    }
+  }
+}
+
 void prepackA_m8k4_int8(int8_t* out,
                         const int8_t* in,
                         const int ldin,
@@ -4354,6 +4978,159 @@ void prepackA_m8k4_int8(int8_t* out,
             );
         }
         if (x >= 4) {
+            asm volatile(
+            "mov x1, #4 \n"
+            "ld1 {v0.8b}, [%[inptr0]], x1 \n" // v0=a0a1a2a3a4a5a6a7
+            "ld1 {v1.8b}, [%[inptr1]], x1 \n" // v1=b0b1b2b3b4b5b6b7
+            "ld1 {v2.8b}, [%[inptr2]], x1 \n" // v2=c0c1c2c3c4c5c6c7
+            "ld1 {v3.8b}, [%[inptr3]], x1 \n" // v3=d0d1d2d3d4d5d6d7
+
+            "ld1 {v4.8b}, [%[inptr4]], x1 \n" // v0=e0e1a2a3a4a5a6a7
+            "ld1 {v5.8b}, [%[inptr5]], x1 \n" // v1=f0f1b2b3b4b5b6b7
+            "ld1 {v6.8b}, [%[inptr6]], x1 \n" // v2=g0g1c2c3c4c5c6c7
+            "ld1 {v7.8b}, [%[inptr7]], x1 \n" // v3=h0h1d2d3d4d5d6d7
+
+            "trn1 v8.2s, v0.2s, v1.2s \n" // v0=a0a1a2a3b0b1b2b3
+            "trn1 v10.2s, v2.2s, v3.2s \n" // v0=c0c1c2c3d0d1d2d3
+
+            "trn1 v12.2s, v4.2s, v5.2s \n" // v0=e0e1e2e3f0f1f2f3
+            "trn1 v14.2s, v6.2s, v7.2s \n" // v0=g0g1g2g3h0h1h2h3
+
+            "st1 {v8.2s}, [%[outptr]], #8\n"
+            "st1 {v10.2s}, [%[outptr]], #8\n"
+
+            "st1 {v12.2s}, [%[outptr]], #8\n"
+            "st1 {v14.2s}, [%[outptr]], #8\n"
+
+            :[inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+            [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+            [inptr6] "+r"(inptr_row[6]), [inptr7] "+r"(inptr_row[7]),
+            [outptr] "+r"(outptr)
+            :
+            : "x1", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12",
+                    "v13", "v14", "v15", "v16", "cc", "memory"
+            );
+            x -= 4;
+        }
+    // clang-format on
+    if (x > 0) {
+      for (int i = 0; i < 8; i++) {
+        for (int j = x; j > 0; j--) {
+          *outptr++ = *inptr_row[i]++;
+        }
+        for (int j = 0; j < 4 - remain; j++) {
+          *outptr++ = 0;
+        }
+      }
+    }
+  }
+}
+
+void prepackA_m8k8_int8(int8_t* out,
+                        const int8_t* in,
+                        const int ldin,
+                        const int m0,
+                        const int mmax,
+                        const int k0,
+                        const int kmax) {
+  int x_len = (kmax - k0);
+  int8_t zerobuff[x_len];  // NOLINT
+  memset(zerobuff, 0, sizeof(int8_t) * x_len);
+
+  int8_t* dout = out;
+  const int8_t* inptr = in;
+  int kup = ROUNDUP(x_len, KBLOCK_INTRAGROUP_INT8);
+  int stride = kup * 8;
+  int remain = x_len % KBLOCK_INTRAGROUP_INT8;
+#pragma omp parallel for
+  for (int y = m0; y < mmax; y += 8) {
+    int8_t* outptr = dout + stride * (y - m0) / 8;
+    const int8_t* inptr_row[8];
+    inptr_row[0] = inptr + y * ldin + k0;
+    for (int i = 1; i < 8; i++) {
+      inptr_row[i] = inptr_row[i - 1] + ldin;
+    }
+    //! cope with row index exceed real size, set to zero buffer
+    if ((y + 7) >= mmax) {
+      switch ((y + 7) - mmax) {
+        case 6:
+          inptr_row[1] = zerobuff;
+        case 5:
+          inptr_row[2] = zerobuff;
+        case 4:
+          inptr_row[3] = zerobuff;
+        case 3:
+          inptr_row[4] = zerobuff;
+        case 2:
+          inptr_row[5] = zerobuff;
+        case 1:
+          inptr_row[6] = zerobuff;
+        case 0:
+          inptr_row[7] = zerobuff;
+        default:
+          break;
+      }
+    }
+    // clang-format off
+        asm volatile(
+        "prfm   pldl1keep, [%[ptr0]]        \n"
+        "prfm   pldl1keep, [%[ptr0], #64]   \n"
+        "prfm   pldl1keep, [%[ptr1]]        \n"
+        "prfm   pldl1keep, [%[ptr1], #64]   \n"
+        "prfm   pldl1keep, [%[ptr2]]        \n"
+        "prfm   pldl1keep, [%[ptr2], #64]   \n"
+        "prfm   pldl1keep, [%[ptr3]]        \n"
+        "prfm   pldl1keep, [%[ptr3], #64]   \n"
+        "prfm   pldl1keep, [%[ptr4]]        \n"
+        "prfm   pldl1keep, [%[ptr4], #64]   \n"
+        "prfm   pldl1keep, [%[ptr5]]        \n"
+        "prfm   pldl1keep, [%[ptr5], #64]   \n"
+        "prfm   pldl1keep, [%[ptr6]]        \n"
+        "prfm   pldl1keep, [%[ptr6], #64]   \n"
+        "prfm   pldl1keep, [%[ptr7]]        \n"
+        "prfm   pldl1keep, [%[ptr7], #64]   \n"
+        :
+        :[ptr0] "r"(inptr_row[0]),[ptr1] "r"(inptr_row[1]),[ptr2] "r"(inptr_row[2]),[ptr3] "r"(inptr_row[3]),\
+                [ptr4] "r"(inptr_row[4]),[ptr5] "r"(inptr_row[5]),[ptr6] "r"(inptr_row[6]),[ptr7] "r"(inptr_row[7])
+        :"memory"
+        );
+
+        int x = x_len;
+
+        for (; x > 7; x -= 8) {
+            asm volatile(
+            "ld1 {v0.8b}, [%[inptr0]], #8 \n" // v0=a0a1a2a3a4a5a6a7
+            "ld1 {v1.8b}, [%[inptr1]], #8 \n" // v1=b0b1b2b3b4b5b6b7
+            "ld1 {v2.8b}, [%[inptr2]], #8 \n" // v2=c0c1c2c3c4c5c6c7
+            "ld1 {v3.8b}, [%[inptr3]], #8 \n" // v3=d0d1d2d3d4d5d6d7
+
+            "ld1 {v4.8b}, [%[inptr4]], #8 \n" // v0=e0e1a2a3a4a5a6a7
+            "ld1 {v5.8b}, [%[inptr5]], #8 \n" // v1=f0f1b2b3b4b5b6b7
+            "ld1 {v6.8b}, [%[inptr6]], #8 \n" // v2=g0g1c2c3c4c5c6c7
+            "ld1 {v7.8b}, [%[inptr7]], #8 \n" // v3=h0h1d2d3d4d5d6d7
+
+            "st1 {v0.8b}, [%[outptr]], #8\n"
+            "st1 {v1.8b}, [%[outptr]], #8\n"
+            "st1 {v2.8b}, [%[outptr]], #8\n"
+            "st1 {v3.8b}, [%[outptr]], #8\n"
+
+            "st1 {v4.8b}, [%[outptr]], #8\n"
+            "st1 {v5.8b}, [%[outptr]], #8\n"
+            "st1 {v6.8b}, [%[outptr]], #8\n"
+            "st1 {v7.8b}, [%[outptr]], #8\n"
+
+            :[inptr0] "+r"(inptr_row[0]), [inptr1] "+r"(inptr_row[1]),
+            [inptr2] "+r"(inptr_row[2]), [inptr3] "+r"(inptr_row[3]),
+            [inptr4] "+r"(inptr_row[4]), [inptr5] "+r"(inptr_row[5]),
+            [inptr6] "+r"(inptr_row[6]), [inptr7] "+r"(inptr_row[7]),
+            [outptr] "+r"(outptr)
+            :
+            : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12",
+                    "v13", "v14", "v15", "v16", "cc", "memory"
+            );
+        }
+        if (x >= 4) { // this block have not be adjusted for intragroup sparsity.
             asm volatile(
             "mov x1, #4 \n"
             "ld1 {v0.8b}, [%[inptr0]], x1 \n" // v0=a0a1a2a3a4a5a6a7
@@ -4641,6 +5418,264 @@ void packb_sdot_int8(int8_t* out,
       *out0++ = *inptr3++;
     }
     for (int i = 0; i < 12 - remain; i++) {
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+    }
+  }
+}
+
+void packb_sdot_intragroup_int8(int8_t* out,
+                     const int8_t* in,
+                     const int ldin,
+                     const int k0,
+                     const int kmax,
+                     const int n0,
+                     const int nmax) {
+  int y_len = kmax - k0; // y_len = in_channel
+  int x_len = nmax - n0; // x_len = oh * ow
+  int kup = ROUNDUP(y_len, 16);  // group size in intragroup is 16
+  int8_t zerobuff[x_len];                 // NOLINT
+  memset(zerobuff, 0, sizeof(int8_t) * x_len);
+  int8_t* outptr = out;
+  const int8_t* inptr = in + k0 * ldin + n0;
+
+  int stride_out = 16 * kup; // has been adjusted
+  // int stride_y = 48;
+  int remain = x_len % 16; // has been adjusted
+
+// data B is not transposed, transpose B to k * 12
+const int8_t* inptrs[16];
+#pragma omp parallel for
+  for (int y = 0; y < y_len; y += 16) {
+    // cope with row index exceed real size, set to zero
+    inptrs[0] = inptr + y * ldin;
+    inptrs[1] = inptrs[0] + ldin;
+    inptrs[2] = inptrs[1] + ldin;
+    inptrs[3] = inptrs[2] + ldin;
+    inptrs[4] = inptrs[3] + ldin;
+    inptrs[5] = inptrs[4] + ldin;
+    inptrs[6] = inptrs[5] + ldin;
+    inptrs[7] = inptrs[6] + ldin;
+    inptrs[8] = inptrs[7] + ldin;
+    inptrs[9] = inptrs[8] + ldin;
+    inptrs[10] = inptrs[9] + ldin;
+    inptrs[11] = inptrs[10] + ldin;
+    inptrs[12] = inptrs[11] + ldin;
+    inptrs[13] = inptrs[12] + ldin;
+    inptrs[14] = inptrs[13] + ldin;
+    inptrs[15] = inptrs[14] + ldin;
+
+    // clang-format off
+        asm volatile(
+        "prfm   pldl1keep, [%[inptr0]]                \n"
+        "prfm   pldl1keep, [%[inptr0], #64]        \n"
+        "prfm   pldl1keep, [%[inptr1]]        \n"
+        "prfm   pldl1keep, [%[inptr1], #64]        \n"
+        "prfm   pldl1keep, [%[inptr2]]        \n"
+        "prfm   pldl1keep, [%[inptr2], #64]        \n"
+        "prfm   pldl1keep, [%[inptr3]]       \n"
+        "prfm   pldl1keep, [%[inptr3], #64]  \n"
+        "prfm   pldl1keep, [%[inptr4]]       \n"
+        "prfm   pldl1keep, [%[inptr4], #64]  \n"
+        "prfm   pldl1keep, [%[inptr5]]       \n"
+        "prfm   pldl1keep, [%[inptr5], #64]  \n"
+        "prfm   pldl1keep, [%[inptr6]]       \n"
+        "prfm   pldl1keep, [%[inptr6], #64]  \n"
+        "prfm   pldl1keep, [%[inptr7]]       \n"
+        "prfm   pldl1keep, [%[inptr7], #64]  \n"
+        "prfm   pldl1keep, [%[inptr8]]       \n"
+        "prfm   pldl1keep, [%[inptr8], #64]  \n"
+        "prfm   pldl1keep, [%[inptr9]]       \n"
+        "prfm   pldl1keep, [%[inptr9], #64]  \n"
+        "prfm   pldl1keep, [%[inptr10]]       \n"
+        "prfm   pldl1keep, [%[inptr10], #64]  \n"
+        "prfm   pldl1keep, [%[inptr11]]       \n"
+        "prfm   pldl1keep, [%[inptr11], #64]  \n"
+        "prfm   pldl1keep, [%[inptr12]]       \n"
+        "prfm   pldl1keep, [%[inptr12], #64]  \n"
+        "prfm   pldl1keep, [%[inptr13]]       \n"
+        "prfm   pldl1keep, [%[inptr13], #64]  \n"
+        "prfm   pldl1keep, [%[inptr14]]       \n"
+        "prfm   pldl1keep, [%[inptr14], #64]  \n"
+        "prfm   pldl1keep, [%[inptr15]]       \n"
+        "prfm   pldl1keep, [%[inptr15], #64]  \n"
+        :
+        :[inptr0] "r"(inptrs[0]), [inptr1] "r"(inptrs[1]),
+          [inptr2] "r"(inptrs[2]), [inptr3] "r"(inptrs[3]),
+          [inptr4] "r"(inptrs[4]), [inptr5] "r"(inptrs[5]),
+          [inptr6] "r"(inptrs[6]), [inptr7] "r"(inptrs[7]),
+          [inptr8] "r"(inptrs[8]), [inptr9] "r"(inptrs[9]),
+          [inptr10] "r"(inptrs[10]), [inptr11] "r"(inptrs[11]),
+          [inptr12] "r"(inptrs[12]), [inptr13] "r"(inptrs[13]),
+          [inptr14] "r"(inptrs[14]), [inptr15] "r"(inptrs[15])
+        :"memory"
+        );
+        int8_t* outptr_row = outptr + y * 16;
+        int x = 0;
+        for (; x < x_len - 15; x += 16) {
+            int8_t *out0 = outptr_row;
+            asm volatile (
+            "ld1 {v0.16b}, [%[inptr0]] \n" // v0 = a0a1a2a3a4a5a6a7a8a9a10a11a12a13a14a15
+            "ld1 {v1.16b}, [%[inptr1]] \n" // v0 = b0b1b2b3b4b5b6b7b8b9b10b11b12b13b14b15
+            "ld1 {v2.16b}, [%[inptr2]] \n" // v0 = c0c1c2c3c4c5c6c7c8c9c10c11c12c13c14c15
+            "ld1 {v3.16b}, [%[inptr3]] \n" // v0 = d0d1d2d3d4d5d6d7d8d9d10d11d12d13d14d15
+            "ld1 {v4.16b}, [%[inptr4]] \n" // v0 = e0~
+            "ld1 {v5.16b}, [%[inptr5]] \n" // v0 = f0~
+            "ld1 {v6.16b}, [%[inptr6]] \n" // v0 = g0~
+            "ld1 {v7.16b}, [%[inptr7]] \n" // v0 = h0~
+            "ld1 {v8.16b}, [%[inptr8]] \n" // v0 = i0~
+            "ld1 {v9.16b}, [%[inptr9]] \n" // v0 = j0~
+            "ld1 {v10.16b}, [%[inptr10]] \n" // v0 = k0~
+            "ld1 {v11.16b}, [%[inptr11]] \n" // v0 = l0~
+            "ld1 {v12.16b}, [%[inptr12]] \n" // v0 = m0~
+            "ld1 {v13.16b}, [%[inptr13]] \n" // v0 = n0~
+            "ld1 {v14.16b}, [%[inptr14]] \n" // v0 = o0~
+            "ld1 {v15.16b}, [%[inptr15]] \n" // v0 = p0~
+
+            "trn1 v16.16b, v0.16b, v1.16b \n" // v16 = a0b0~a14b14
+            "trn2 v17.16b, v0.16b, v1.16b \n" // v17 = a1b1~a15b15
+            "trn1 v18.16b, v2.16b, v3.16b \n" // v18 = c0d0~c14d14
+            "trn2 v19.16b, v2.16b, v3.16b \n" // v19 = c1d1~c15d15
+            "trn1 v20.16b, v4.16b, v5.16b \n" // v20 = e0f0~e14f14
+            "trn2 v21.16b, v4.16b, v5.16b \n" // v21 = e1f1~e15f15
+            "trn1 v22.16b, v6.16b, v7.16b \n" // v22 = g0h0~e14h14
+            "trn2 v23.16b, v6.16b, v7.16b \n" // v23 = g1h1~g15h15
+
+            "trn1 v0.16b, v8.16b, v9.16b \n" // v0 = i0j0~i14j14
+            "trn2 v1.16b, v8.16b, v9.16b \n" // v1 = i1j1~i15j15
+            "trn1 v2.16b, v10.16b, v11.16b \n" // v2 = k0l0~k14l14
+            "trn2 v3.16b, v10.16b, v11.16b \n" // v3 = k1l1~k15l15
+            "trn1 v4.16b, v12.16b, v13.16b \n" // v4 = m0n0~m14n14
+            "trn2 v5.16b, v12.16b, v13.16b \n" // v5 = m1n1~m15n15
+            "trn1 v6.16b, v14.16b, v15.16b \n" // v6 = o0p0~o14p14
+            "trn2 v7.16b, v14.16b, v15.16b \n" // v7 = o1p1~o15p15
+
+
+            "trn1 v8.8h, v16.8h, v18.8h \n" // v8 = a0b0c0d0 a4b4c4d4 a8b8c8d8 a12b12c12d12
+            "trn2 v9.8h, v16.8h, v18.8h \n" // v9 = a2b2c2d2 a6b6c6d6 a10bc10c10d10 a14b14c14d14
+            "trn1 v10.8h, v17.8h, v19.8h \n" // v10 = a1b1c1d1 a5b5c5d5 a9b9c9d9 a13b13c13d13
+            "trn2 v11.8h, v17.8h, v19.8h \n" // v11 = a3b3c3d3 a7b7c7d7 a11b11c11d11 a15b15c15d15
+            "trn1 v12.8h, v20.8h, v22.8h \n" // v12 = e0f0g0h0 e4f4g4h4 e8f8g8h8 e12f12g12b12
+            "trn2 v13.8h, v20.8h, v22.8h \n" // v13 = e2f2g2h2 e6f6g6h6 e10f10g10h10 e14f14g14h14
+            "trn1 v14.8h, v21.8h, v23.8h \n" // v14 = e1f1g1h1 e5f5g5h5 e9f9g9h9 e13f13g13h13
+            "trn2 v15.8h, v21.8h, v23.8h \n" // v15 = e3f3g3h3 e7f7g7h7 e11f11g11h11 e15f15g15h15
+
+            "trn1 v16.8h, v0.8h, v2.8h \n" 
+            "trn2 v17.8h, v0.8h, v2.8h \n"
+            "trn1 v18.8h, v1.8h, v3.8h \n"
+            "trn2 v19.8h, v1.8h, v3.8h \n"
+            "trn1 v20.8h, v4.8h, v6.8h \n"
+            "trn2 v21.8h, v4.8h, v6.8h \n"
+            "trn1 v22.8h, v5.8h, v7.8h \n"
+            "trn2 v23.8h, v5.8h, v7.8h \n"
+
+
+            "trn1 v0.4s, v8.4s, v12.4s \n" // v0 = a0b0c0d0e0f0g0h0 a8b8c8d8e8f8g8h8
+            "trn2 v1.4s, v8.4s, v12.4s \n" // v1 = a4b4c4d4e4f4g4h4 a12b12c12d12e12f12g12h12
+            "trn1 v2.4s, v9.4s, v13.4s \n" // v2 = a2b2c2d2e2f2g2h2 a10b10c10d10e10f10g10h10
+            "trn2 v3.4s, v9.4s, v13.4s \n" // v3 = a6b6c6d6e6f6g6h6 a14b14c14d14e14f14g14h14
+            "trn1 v4.4s, v10.4s, v14.4s \n" // v4 = a1b1c1d1e1f1g1h1 a9b9c9d9e9f9g9h9
+            "trn2 v5.4s, v10.4s, v14.4s \n" // v5 = a5b5c5d5e5f5g5h5 a13b13c13d13e13f13g13h13
+            "trn1 v6.4s, v11.4s, v15.4s \n" // v6 = a3b3c3d3e3f3g3h3 a11b11c11d11e11f11g11h11
+            "trn2 v7.4s, v11.4s, v15.4s \n" // v7 = a7b7c7d7e7f7g7h7 a15b15c15d15e15f15g15h15
+
+            "trn1 v8.4s, v16.4s, v20.4s \n" 
+            "trn2 v9.4s, v16.4s, v20.4s \n"
+            "trn1 v10.4s, v17.4s, v21.4s \n"
+            "trn2 v11.4s, v17.4s, v21.4s \n"
+            "trn1 v12.4s, v18.4s, v22.4s \n"
+            "trn2 v13.4s, v18.4s, v22.4s \n"
+            "trn1 v14.4s, v19.4s, v23.4s \n"
+            "trn2 v15.4s, v19.4s, v23.4s \n"
+
+
+            "trn1 v16.2d, v0.2d, v8.2d \n" // v16 = a0b0~o0p0
+            "trn2 v17.2d, v0.2d, v8.2d \n" // v17 = a8b8~o8p8
+            "trn1 v18.2d, v1.2d, v9.2d \n" // v18 = a4b4~o4p4
+            "trn2 v19.2d, v1.2d, v9.2d \n" // v19 = a12b12~o12p12
+            "trn1 v20.2d, v2.2d, v10.2d \n" // v20 = a2b2~o2p2
+            "trn2 v21.2d, v2.2d, v10.2d \n" // v21 = a10b10~
+            "trn1 v22.2d, v3.2d, v11.2d \n" // v22 = a6b6~
+            "trn2 v23.2d, v3.2d, v11.2d \n" // v23 = a14b14~
+
+            "trn1 v0.2d, v4.2d, v12.2d \n" // v0 = a1b1~
+            "trn2 v1.2d, v4.2d, v12.2d \n" // v1 = a9b9~
+            "trn1 v2.2d, v5.2d, v13.2d \n" // v2 = a5b5~
+            "trn2 v3.2d, v5.2d, v13.2d \n" // v3 = v13b13~
+            "trn1 v8.2d, v6.2d, v14.2d \n" // v8 = a3b3~
+            "trn2 v9.2d, v6.2d, v14.2d \n" // v9 = a11b11~
+            "trn1 v10.2d, v7.2d, v15.2d \n" // v10 = a7b7~
+            "trn2 v11.2d, v7.2d, v15.2d \n" // v11 = a15b15~
+
+
+            "st1 {v16.16b}, [%[outr]], #16\n"
+            "st1 {v0.16b}, [%[outr]], #16\n"
+            "st1 {v20.16b}, [%[outr]], #16\n"
+            "st1 {v8.16b}, [%[outr]], #16\n"
+            "st1 {v18.16b}, [%[outr]], #16\n"
+            "st1 {v2.16b}, [%[outr]], #16\n"
+            "st1 {v22.16b}, [%[outr]], #16\n"
+            "st1 {v10.16b}, [%[outr]], #16\n"
+            "st1 {v17.16b}, [%[outr]], #16\n"
+            "st1 {v1.16b}, [%[outr]], #16\n"
+            "st1 {v7.16b}, [%[outr]], #16\n"
+            "st1 {v9.16b}, [%[outr]], #16\n"
+
+            : [outr] "+r"(out0)
+            : [inptr0] "r"(inptrs[0]), [inptr1] "r"(inptrs[1]),
+              [inptr2] "r"(inptrs[2]), [inptr3] "r"(inptrs[3]),
+              [inptr4] "r"(inptrs[4]), [inptr5] "r"(inptrs[5]),
+              [inptr6] "r"(inptrs[6]), [inptr7] "r"(inptrs[7]),
+              [inptr8] "r"(inptrs[8]), [inptr9] "r"(inptrs[9]),
+              [inptr10] "r"(inptrs[10]), [inptr11] "r"(inptrs[11]),
+              [inptr12] "r"(inptrs[12]), [inptr13] "r"(inptrs[13]),
+              [inptr14] "r"(inptrs[14]), [inptr15] "r"(inptrs[15])
+            : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+              "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+              "memory"
+            );
+            for(int i=0;i<16;i++)
+            {
+              inptrs[i] = inptrs[i] + 16;
+            }
+            outptr_row += stride_out;
+        }
+    // clang-format on
+    int8_t* out0 = outptr_row;  //  outptr + stride_out + y * remain;
+    for (; x < x_len; x++) {
+      *out0++ = *inptrs[0]++;
+      *out0++ = *inptrs[1]++;
+      *out0++ = *inptrs[2]++;
+      *out0++ = *inptrs[3]++;
+      *out0++ = *inptrs[4]++;
+      *out0++ = *inptrs[5]++;
+      *out0++ = *inptrs[6]++;
+      *out0++ = *inptrs[7]++;
+      *out0++ = *inptrs[8]++;
+      *out0++ = *inptrs[9]++;
+      *out0++ = *inptrs[10]++;
+      *out0++ = *inptrs[11]++;
+      *out0++ = *inptrs[12]++;
+      *out0++ = *inptrs[13]++;
+      *out0++ = *inptrs[14]++;
+      *out0++ = *inptrs[15]++;
+    }
+    for (int i = 0; i < 16 - remain; i++) {
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
+      *out0++ = 0;
       *out0++ = 0;
       *out0++ = 0;
       *out0++ = 0;
@@ -5545,6 +6580,214 @@ GEMM_PREPACK_INT8(int8_t);
 GEMM_PREPACK_INT8(float_t);
 GEMM_PREPACK_INT8(int32_t);
 #undef GEMM_PREPACK_INT8
+
+template<>
+void gemm_prepack_intragroup_int8(const int8_t* A_packed,
+                       const int8_t* B,
+                       const float* bias,
+                       const int8_t* index,
+                       int8_t* C,
+                       int M,
+                       int N,
+                       int K,
+                       bool is_bias,
+                       bool is_transB,
+                       const float* scale,
+                       const operators::ActivationParam act_param,
+                       ARMContext* ctx) {
+  auto act_type = act_param.active_type;
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
+#ifdef __aarch64__
+  if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+    gemm_prepack_sdot_intragroup_int8<int8_t>(A_packed,
+                                   B,
+                                   bias,
+                                   index,
+                                   C,
+                                   M,
+                                   N,
+                                   K,
+                                   is_bias,
+                                   flag_act,
+                                   is_transB,
+                                   scale,
+                                   alpha,
+                                   ctx);
+#endif
+  } else {
+    gemm_prepack_oth_int8<int8_t>(A_packed,
+                                  B,
+                                  bias,
+                                  C,
+                                  M,
+                                  N,
+                                  K,
+                                  is_bias,
+                                  flag_act,
+                                  is_transB,
+                                  scale,
+                                  alpha,
+                                  ctx);
+  }
+#else
+  if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+    gemm_prepack_vsdot_int8<int8_t>(A_packed,
+                                    B,
+                                    bias,
+                                    C,
+                                    M,
+                                    N,
+                                    K,
+                                    is_bias,
+                                    flag_act,
+                                    is_transB,
+                                    scale,
+                                    alpha,
+                                    ctx);
+#endif
+  } else {
+    gemm_prepack_oth_int8<int8_t>(A_packed,
+                                  B,
+                                  bias,
+                                  C,
+                                  M,
+                                  N,
+                                  K,
+                                  is_bias,
+                                  flag_act,
+                                  is_transB,
+                                  scale,
+                                  alpha,
+                                  ctx);
+  }
+#endif
+}
+
+template<>
+void gemm_prepack_intragroup_int8(const int8_t* A_packed,
+                       const int8_t* B,
+                       const float* bias,
+                       const int8_t* index,
+                       float32_t* C,
+                       int M,
+                       int N,
+                       int K,
+                       bool is_bias,
+                       bool is_transB,
+                       const float* scale,
+                       const operators::ActivationParam act_param,
+                       ARMContext* ctx) {
+  auto act_type = act_param.active_type;
+  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    }
+  }
+#ifdef __aarch64__
+  if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+    gemm_prepack_sdot_intragroup_int8<float32_t>(A_packed,
+                                   B,
+                                   bias,
+                                   index,
+                                   C,
+                                   M,
+                                   N,
+                                   K,
+                                   is_bias,
+                                   flag_act,
+                                   is_transB,
+                                   scale,
+                                   alpha,
+                                   ctx);
+#endif
+  } else {
+    gemm_prepack_oth_int8<float32_t>(A_packed,
+                                  B,
+                                  bias,
+                                  C,
+                                  M,
+                                  N,
+                                  K,
+                                  is_bias,
+                                  flag_act,
+                                  is_transB,
+                                  scale,
+                                  alpha,
+                                  ctx);
+  }
+#else
+  if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+    gemm_prepack_vsdot_int8<float32_t>(A_packed,
+                                    B,
+                                    bias,
+                                    C,
+                                    M,
+                                    N,
+                                    K,
+                                    is_bias,
+                                    flag_act,
+                                    is_transB,
+                                    scale,
+                                    alpha,
+                                    ctx);
+#endif
+  } else {
+    gemm_prepack_oth_int8<float32_t>(A_packed,
+                                  B,
+                                  bias,
+                                  C,
+                                  M,
+                                  N,
+                                  K,
+                                  is_bias,
+                                  flag_act,
+                                  is_transB,
+                                  scale,
+                                  alpha,
+                                  ctx);
+  }
+#endif
+}
 
 }  // namespace math
 }  // namespace arm
