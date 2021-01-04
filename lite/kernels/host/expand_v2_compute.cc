@@ -109,9 +109,9 @@ REGISTER_LITE_KERNEL(expand_v2, kHost, kFloat, kAny, expand_v2_float, def)
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("expand_shapes_tensor",
-               {LiteType::GetTensorListTy(TARGET(kHost),
-                                          PRECISION(kInt32),
-                                          DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kFloat),
@@ -130,9 +130,9 @@ REGISTER_LITE_KERNEL(expand_v2, kHost, kInt32, kAny, expand_v2_int32, def)
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("expand_shapes_tensor",
-               {LiteType::GetTensorListTy(TARGET(kHost),
-                                          PRECISION(kInt32),
-                                          DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kInt32),
@@ -151,9 +151,9 @@ REGISTER_LITE_KERNEL(expand_v2, kHost, kInt64, kAny, expand_v2_int64, def)
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("expand_shapes_tensor",
-               {LiteType::GetTensorListTy(TARGET(kHost),
-                                          PRECISION(kInt32),
-                                          DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kInt64),

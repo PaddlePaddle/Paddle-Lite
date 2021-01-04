@@ -47,7 +47,7 @@ class SelectInputOpLite : public OpLite {
     }
     ch->input_shape = inputs_shape;
     ch->output_shape = ch->DimToStr(output_dims);
-    ch->remark = "Mask" + std::to_string(param_.Mask);
+    ch->remark = "Mask" + std::to_string(param_.Mask->data<int>()[0]);
     ch->macs = 0.f;  // no calc. only io operation
   }
 #endif
