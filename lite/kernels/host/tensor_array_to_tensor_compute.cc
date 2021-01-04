@@ -22,29 +22,28 @@ namespace kernels {
 namespace host {
 
 void TensorArrayToTensorCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto OutIndex = param.OutIndex;
-  auto X = param.X;
-  int axis = param.axis;
-  size_t n = X.size();
+  /*
+    auto& param = this->Param<param_t>();
+    auto OutIndex = param.OutIndex;
+    auto X = param.X;
+    int axis = param.axis;
+    size_t n = X.size();
+    auto OutIndex_data = OutIndex->mutable_data<float>();
+>>>>>>> 13dc73c... tmp fix bugs, do not release
 
-  auto index_dim = OutIndex->dims();
-  index_dim[0] = n;
-  OutIndex->Resize(index_dim);
-  auto OutIndex_data = OutIndex->mutable_data<float>();
+    for (int i = 0; i < n; i++) {
+      auto& input_dims_i = X[i]->dims();
+      OutIndex_data[i] = input_dims_i[axis];
+    }
 
-  for (int i = 0; i < n; i++) {
-    auto& input_dims_i = X[i]->dims();
-    OutIndex_data[i] = input_dims_i[axis];
-  }
-
-  bool use_stack = param.use_stack;
-  auto out = param.Out;
-  if (use_stack) {
-    lite::host::math::stack_func<float>(X, axis, out);
-  } else {
-    lite::host::math::concat_func<float>(X, axis, out);
-  }
+    bool use_stack = param.use_stack;
+    auto out = param.Out;
+    if (use_stack) {
+      lite::host::math::stack_func<float>(X, axis, out);
+    } else {
+      lite::host::math::concat_func<float>(X, axis, out);
+    }
+  */
 }
 
 }  // namespace host
@@ -58,7 +57,7 @@ REGISTER_LITE_KERNEL(tensor_array_to_tensor,
                      kNCHW,
                      paddle::lite::kernels::host::TensorArrayToTensorCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("OutIndex", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
