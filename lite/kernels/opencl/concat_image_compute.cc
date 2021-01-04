@@ -64,6 +64,17 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       for (int i = axis_ + 1; i < in_dims.size(); i++) {
         post_size_ *= in_dims[i];
       }
+      // create kernels of img2buf and buf2img
+      auto img_to_buf_kernels = KernelRegistry::Global().Create(
+          "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
+      auto buf_to_img_kernels =
+          KernelRegistry::Global().Create("layout",
+                                          TARGET(kOpenCL),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kImageDefault));
+
+      img_to_buf_kernel_ = std::move(img_to_buf_kernels.front());
+      buf_to_img_kernel_ = std::move(buf_to_img_kernels.front());
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
@@ -119,14 +130,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         }
       }
     }
-    // create kernels of img2buf and buf2img
-    auto img_to_buf_kernels = KernelRegistry::Global().Create(
-        "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW));
-    auto buf_to_img_kernels = KernelRegistry::Global().Create(
-        "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault));
-
-    img_to_buf_kernel = std::move(img_to_buf_kernels.front());
-    buf_to_img_kernel = std::move(buf_to_img_kernels.front());
   }
 
   void Run() override {
@@ -297,12 +300,12 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         outputs_vec[i].Resize(inputs_dims[i]);
         outputs_buffer_pointers[i] =
             outputs_vec[i].mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-        img_to_buf_kernel->SetParam(img_to_buf_params[i]);
+        img_to_buf_kernel_->SetParam(img_to_buf_params[i]);
 
         std::unique_ptr<KernelContext> img_to_buf_context(new KernelContext);
         context.CopySharedTo(&(img_to_buf_context->As<OpenCLContext>()));
-        img_to_buf_kernel->SetContext(std::move(img_to_buf_context));
-        img_to_buf_kernel->Launch();
+        img_to_buf_kernel_->SetContext(std::move(img_to_buf_context));
+        img_to_buf_kernel_->Launch();
       }
       // create and set param, context to kernel buf_to_img
       std::shared_ptr<lite::Tensor> concat_mul_buf_output_t(new lite::Tensor);
@@ -313,11 +316,11 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       operators::LayoutParam buf_to_img_param;
       buf_to_img_param.x = concat_mul_buf_output_t.get();
       buf_to_img_param.y = concat_param_->output;
-      buf_to_img_kernel->SetParam(buf_to_img_param);
+      buf_to_img_kernel_->SetParam(buf_to_img_param);
 
       std::unique_ptr<KernelContext> buf_to_img_context(new KernelContext);
       context.CopySharedTo(&(buf_to_img_context->As<OpenCLContext>()));
-      buf_to_img_kernel->SetContext(std::move(buf_to_img_context));
+      buf_to_img_kernel_->SetContext(std::move(buf_to_img_context));
 
       int cur_axis_start_idx = 0;
       int total = output_tensor_dims[axis_] * post_size_;
@@ -360,7 +363,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         cur_axis_start_idx += axis_dim_size;
       }
       // run kernel: buffer->image
-      buf_to_img_kernel->Launch();
+      buf_to_img_kernel_->Launch();
     }
   }
 
@@ -384,8 +387,8 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
   std::string kernel_func_name_{};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
-  std::unique_ptr<KernelBase> img_to_buf_kernel;
-  std::unique_ptr<KernelBase> buf_to_img_kernel;
+  std::unique_ptr<KernelBase> img_to_buf_kernel_;
+  std::unique_ptr<KernelBase> buf_to_img_kernel_;
 };
 
 }  // namespace opencl
