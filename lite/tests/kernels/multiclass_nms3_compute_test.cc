@@ -23,12 +23,13 @@
 namespace paddle {
 namespace lite {
 
-inline std::vector<size_t> GetNmsLodFromRoisNum(const Tensor* rois_num) {
-  std::vector<size_t> rois_lod;
+inline std::vector<uint64_t> GetNmsLodFromRoisNum(const Tensor* rois_num) {
+  std::vector<uint64_t> rois_lod;
   auto* rois_num_data = rois_num->data<int>();
   rois_lod.push_back(static_cast<size_t>(0));
   for (int i = 0; i < rois_num->numel(); ++i) {
-    rois_lod.push_back(rois_lod.back() + static_cast<size_t>(rois_num_data[i]));
+    rois_lod.push_back(rois_lod.back() +
+                       static_cast<uint64_t>(rois_num_data[i]));
   }
   return rois_lod;
 }
@@ -398,7 +399,7 @@ class MulticlassNmsComputeTester : public arena::TestCase {
         boxes_slice = boxes->Slice<float>(i, i + 1);
         boxes_slice.Resize({scores_dims_[2], box_dim});
       } else {
-        std::vector<size_t> boxes_lod;
+        std::vector<uint64_t> boxes_lod;
         if (has_roisnum) {
           boxes_lod = GetNmsLodFromRoisNum(rois_num);
         } else {
@@ -442,7 +443,7 @@ class MulticlassNmsComputeTester : public arena::TestCase {
           scores_slice.Resize({scores_dims_[1], scores_dims_[2]});
           boxes_slice.Resize({scores_dims_[2], box_dim});
         } else {
-          std::vector<size_t> boxes_lod;
+          std::vector<uint64_t> boxes_lod;
           if (has_roisnum) {
             boxes_lod = GetNmsLodFromRoisNum(rois_num);
           } else {

@@ -22,12 +22,13 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-inline std::vector<size_t> GetNmsLodFromRoisNum(const Tensor* rois_num) {
-  std::vector<size_t> rois_lod;
+inline std::vector<uint64_t> GetNmsLodFromRoisNum(const Tensor* rois_num) {
+  std::vector<uint64_t> rois_lod;
   auto* rois_num_data = rois_num->data<int>();
-  rois_lod.push_back(static_cast<size_t>(0));
+  rois_lod.push_back(static_cast<uint64_t>(0));
   for (int i = 0; i < rois_num->numel(); ++i) {
-    rois_lod.push_back(rois_lod.back() + static_cast<size_t>(rois_num_data[i]));
+    rois_lod.push_back(rois_lod.back() +
+                       static_cast<uint64_t>(rois_num_data[i]));
   }
   return rois_lod;
 }
@@ -406,7 +407,7 @@ void MulticlassNmsCompute::Run() {
           offset = i * score_dims[2];
         }
       } else {
-        decltype(GetNmsLodFromRoisNum(rois_num)) boxes_lod;
+        std::vector<uint64_t> boxes_lod;
         if (has_roissum) {
           boxes_lod = GetNmsLodFromRoisNum(rois_num);
         } else {
