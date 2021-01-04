@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
+#include "lite/backends/arm/math/gemv_arm_int8.h"
 #include "lite/core/context.h"
 
 namespace paddle {
