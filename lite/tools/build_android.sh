@@ -286,7 +286,7 @@ function print_usage {
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|     --android_api_level: (16~27); control android api level, default value 16. If this value is set as "Default",                    |"
     echo -e "|             the api level is 22 when arch=armv7, 23 when arch=armv8. You could set a specific android_api_level as you need.         |"
-    echo -e "|             Android version lower than 4.1 is not supported.                                             |"
+    echo -e "|             Android version lower than 4.1 is not supported.                                                                         |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
