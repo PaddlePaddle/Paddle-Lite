@@ -11,6 +11,9 @@ add_subdirectory(subgraph)
 lite_cc_library(mir_passes
   SRCS
       fusion/fc_fuse_pass.cc
+      fusion/matmul_fuse_pass.cc
+      fusion/reshape2_matmul_fuse_pass.cc
+      fusion/squeeze2_matmul_fuse_pass.cc
       fusion/shuffle_channel_fuse_pass.cc
       fusion/transpose_softmax_transpose_fuse_pass.cc
       fusion/interpolate_fuse_pass.cc
@@ -34,6 +37,7 @@ lite_cc_library(mir_passes
       fusion/__xpu__conv2d_link_previous_out_max_pass.cc
       fusion/__xpu__sfa_head_meanstd_fuse_pass.cc
       fusion/__xpu__sfa_head_moment_fuse_pass.cc
+      fusion/__xpu__softmax_topk_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc
@@ -41,6 +45,7 @@ lite_cc_library(mir_passes
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
       elimination/remove_tf_redundant_ops_pass.cc
+      adaptive_1x1_pool2d_convert_global_pass.cc
       elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc

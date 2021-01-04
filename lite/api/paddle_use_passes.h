@@ -26,9 +26,13 @@ USE_MIR_PASS(argument_type_display_pass);
 USE_MIR_PASS(runtime_context_assign_pass);
 USE_MIR_PASS(graph_visualize_pass);
 
+USE_MIR_PASS(adaptive_1x1_pool2d_convert_global_pass);
 USE_MIR_PASS(remove_tf_redundant_ops_pass);
 USE_MIR_PASS(lite_conv_bn_fuse_pass);
 USE_MIR_PASS(lite_conv_conv_fuse_pass);
+USE_MIR_PASS(lite_squeeze2_matmul_fuse_pass);
+USE_MIR_PASS(lite_reshape2_matmul_fuse_pass);
+USE_MIR_PASS(lite_matmul_fuse_pass);
 USE_MIR_PASS(lite_fc_fuse_pass);
 USE_MIR_PASS(lite_shuffle_channel_fuse_pass);
 USE_MIR_PASS(lite_transpose_softmax_transpose_fuse_pass);
@@ -74,3 +78,4 @@ USE_MIR_PASS(__xpu__conv2d_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_link_previous_out_max_pass);
 USE_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass);
 USE_MIR_PASS(__xpu__sfa_head_moment_fuse_pass);
+USE_MIR_PASS(__xpu__softmax_topk_fuse_pass);

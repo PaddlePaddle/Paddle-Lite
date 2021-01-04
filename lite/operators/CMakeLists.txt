@@ -23,6 +23,7 @@ add_operator(fill_constant_batch_size_like_op basic SRCS fill_constant_batch_siz
 add_operator(shuffle_channel_op basic SRCS shuffle_channel_op.cc DEPS ${op_DEPS})
 add_operator(yolo_box_op basic SRCS yolo_box_op.cc DEPS ${op_DEPS})
 add_operator(interpolate_op basic SRCS interpolate_op.cc DEPS ${op_DEPS})
+add_operator(interpolate_v2_op basic SRCS interpolate_v2_op.cc DEPS ${op_DEPS})
 add_operator(argmax_op basic SRCS argmax_op.cc DEPS ${op_DEPS})
 add_operator(prior_box_op basic SRCS prior_box_op.cc DEPS ${op_DEPS})
 add_operator(concat_op basic SRCS concat_op.cc DEPS ${op_DEPS})
@@ -129,6 +130,8 @@ add_operator(matrix_nms_op_lite extra SRCS matrix_nms_op.cc DEPS ${op_DEPS})
 add_operator(sin_op extra SRCS sin_op.cc DEPS ${op_DEPS})
 add_operator(cos_op extra SRCS cos_op.cc DEPS ${op_DEPS})
 add_operator(unstack_op extra SRCS unstack_op.cc DEPS ${op_DEPS})
+add_operator(select_input_op extra SRCS select_input_op.cc DEPS ${op_DEPS})
+add_operator(tensor_array_to_tensor_op extra SRCS tensor_array_to_tensor_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
@@ -181,6 +184,7 @@ add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc DEPS ${op_DE
 
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc DEPS ${op_DEPS})
