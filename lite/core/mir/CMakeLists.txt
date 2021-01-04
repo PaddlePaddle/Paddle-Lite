@@ -64,6 +64,7 @@ lite_cc_library(mir_passes
       mlu_postprocess_pass.cc
       weight_quantization_preprocess_pass.cc
       quantized_op_attributes_inference_pass.cc
+      restrict_quantized_op_with_same_input_output_scale_pass.cc
       post_quant_dynamic_pass.cc
   DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
