@@ -22,8 +22,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class ElementwiseAddCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ElementwiseAddCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
@@ -38,8 +38,8 @@ class ElementwiseAddActivationCompute
   virtual ~ElementwiseAddActivationCompute() = default;
 };
 
-class ElementwiseSubCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class ElementwiseSubCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   void Run() override;
 
@@ -108,6 +108,14 @@ class ElementwiseModCompute : public KernelLite<TARGET(kARM), PType> {
   void Run() override;
 
   virtual ~ElementwiseModCompute() = default;
+};
+
+template <typename T, PrecisionType PType>
+class ElementwisePowCompute : public KernelLite<TARGET(kARM), PType> {
+ public:
+  void Run() override;
+
+  virtual ~ElementwisePowCompute() = default;
 };
 
 // class ElementwiseModActivationCompute

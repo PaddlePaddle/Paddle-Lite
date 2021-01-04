@@ -14,12 +14,27 @@
 #include "lite/backends/arm/math/elementwise.h"
 #include <math.h>
 #include <algorithm>
+
+#include "lite/backends/arm/math/elementwise_common_broadcast.h"
+#include "lite/backends/arm/math/elementwise_common_broadcast_config.h"
+#include "lite/backends/arm/math/elementwise_naive_impl.h"
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
+
+template <>
+void elementwise_add<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  neon_elementwise_range_to_range<
+      MergeConfig<AddConfig<int32_t>,
+                  ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
+      dinx, diny, dout, num);
+}
 
 template <>
 void elementwise_add<float>(const float* dinx,
@@ -120,6 +135,7 @@ void elementwise_add_relu<float>(const float* dinx,
     }
   }
 }
+
 template <>
 void elementwise_add_tanh<float>(const float* dinx,
                                  const float* diny,
@@ -174,6 +190,29 @@ void elementwise_add_tanh<float>(const float* dinx,
       dout_ptr++;
       dinx_ptr++;
       diny_ptr++;
+    }
+  }
+}
+
+template <>
+void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const auto* dinx_ptr = dinx + offset;
+      const auto* diny_ptr = diny + j;
+      auto* dout_ptr = dout + offset;
+
+      neon_elementwise_range_to_one<
+          MergeConfig<AddConfig<int32_t>,
+                      ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
+          dinx_ptr, diny_ptr, dout_ptr, num);
     }
   }
 }
@@ -389,6 +428,18 @@ void elementwise_add_grad_broadcast<float>(const float* dout_grad,
     }
   }
 }
+
+template <>
+void elementwise_sub<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  neon_elementwise_range_to_range<
+      MergeConfig<SubConfig<int32_t>,
+                  ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
+      dinx, diny, dout, num);
+}
+
 template <>
 void elementwise_sub<float>(const float* dinx,
                             const float* diny,
@@ -485,6 +536,29 @@ void elementwise_sub_relu<float>(const float* dinx,
       dout_ptr++;
       dinx_ptr++;
       diny_ptr++;
+    }
+  }
+}
+
+template <>
+void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const auto* dinx_ptr = dinx + offset;
+      const auto* diny_ptr = diny + j;
+      auto* dout_ptr = dout + offset;
+
+      neon_elementwise_range_to_one<
+          MergeConfig<SubConfig<int32_t>,
+                      ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
+          dinx_ptr, diny_ptr, dout_ptr, num);
     }
   }
 }
@@ -1380,6 +1454,14 @@ void elementwise_max_relu_broadcast<float>(const float* dinx,
 }
 
 template <>
+void elementwise_div<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  naive_elementwise_op<int32_t, naive_div<int32_t>>(dinx, diny, dout, num);
+}
+
+template <>
 void elementwise_div<int64_t>(const int64_t* dinx,
                               const int64_t* diny,
                               int64_t* dout,
@@ -1442,6 +1524,17 @@ void elementwise_div<float>(const float* dinx,
       diny_ptr++;
     }
   }
+}
+
+template <>
+void elementwise_div_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+  naive_elementwise_op_broadcast<int32_t, naive_div<int32_t>>(
+      dinx, diny, dout, batch, channels, num);
 }
 
 template <>
@@ -1781,6 +1874,43 @@ template void elementwise_mod_broadcast<int64_t>(const int64_t* dinx,
                                                  int batch,
                                                  int channels,
                                                  int num);
+template <>
+void elementwise_pow<int32_t>(const int32_t* dinx,
+                              const int32_t* diny,
+                              int32_t* dout,
+                              int num) {
+  naive_elementwise_op<int32_t, naive_pow<int32_t>>(dinx, diny, dout, num);
+}
+
+template <>
+void elementwise_pow<float>(const float* dinx,
+                            const float* diny,
+                            float* dout,
+                            int num) {
+  naive_elementwise_op<float, naive_pow<float>>(dinx, diny, dout, num);
+}
+
+template <>
+void elementwise_pow_broadcast<int32_t>(const int32_t* dinx,
+                                        const int32_t* diny,
+                                        int32_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+  naive_elementwise_op_broadcast<int32_t, naive_pow<int32_t>>(
+      dinx, diny, dout, batch, channels, num);
+}
+
+template <>
+void elementwise_pow_broadcast<float>(const float* dinx,
+                                      const float* diny,
+                                      float* dout,
+                                      int batch,
+                                      int channels,
+                                      int num) {
+  naive_elementwise_op_broadcast<float, naive_pow<float>>(
+      dinx, diny, dout, batch, channels, num);
+}
 
 }  // namespace math
 }  // namespace arm
