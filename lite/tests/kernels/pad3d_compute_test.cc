@@ -292,13 +292,10 @@ void TestPad3d(const Place& place, float abs_error = 2e-5) {
 
 TEST(pad3d, precision) {
   Place place;
-  float abs_error = 2e-5;
 #ifdef LITE_WITH_ARM
   place = TARGET(kHost);
-#else
-  return
+  TestPad3d(place, 2e-5);
 #endif
-  TestPad3d(place, abs_error);
 }
 
 }  // namespace lite
