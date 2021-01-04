@@ -41,10 +41,13 @@ bool RnnOp::InferShapeImpl() const {
   DDimLite state_dims = param_.PreState->dims();
   param_.State->Resize(state_dims);
 
+<<<<<<< Updated upstream
   //  auto hidden_lod = param_.Out->mutable_lod();
   //  *hidden_lod = param_.Input->lod();
   //  auto cell_lod = param_.Cell->mutable_lod();
   //  *cell_lod = param_.Input->lod();
+=======
+>>>>>>> Stashed changes
   return true;
 }
 
