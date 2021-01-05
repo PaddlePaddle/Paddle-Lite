@@ -168,6 +168,10 @@ include_directories("${LITE_GENERATED_INCLUDE_DIR}")
 if (LITE_WITH_PYTHON)
     include(external/python)    # download, build, install python
     include(external/pybind11)    # download, build, install pybind11
+    set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} -mfma" )
+    set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} -mfma")
+    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -mfma")
+    set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} -mfma")
 endif()
 
 if(LITE_WITH_RKNPU)
