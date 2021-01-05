@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/mir/restrict_quantized_op_with_same_input_output_scale_pass.h"
+#include <cmath>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -176,7 +177,7 @@ void RestrictQuantizedOpWithSameInputOutputScalePass::Apply(
     }
     mean_scale /= in_out_scales.size();
     // Not need to adjust if the scales are all the same
-    if (fabs(max_scale - min_scale) <= 1e-5) continue;
+    if (std::fabs(max_scale - min_scale) <= 1e-5) continue;
     // Set the minimum, maximum and mean scale as the new scale according to the
     // environment variable 'QUANT_INPUT_OUTPUT_SCALE_RESTRICT_METHOD'
     float new_scale = 0.0f;
