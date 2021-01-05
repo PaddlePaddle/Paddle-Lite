@@ -83,9 +83,7 @@ tar: Ignoring unknown extended header keyword 'SCHILY.dev'
 
 1、Paddle Lite支持英伟达的Jetson硬件吗？
 
-答：对于英伟达的Jetson硬件，用户应该使用飞桨的原生推理库[paddle inference](https://paddle-inference.readthedocs.io/en/latest/#)。
-
-使用Paddle Inference有两个优势：1. Paddle Inference是PaddlePaddle的原生推理库，与NV的Jeston硬件做了深度的适配，在该硬件上支持的所有Paddle原生的模型 2. 使用Paddle inference，可以利用TRT加速推理。 因为Jetson硬件本身是arm cpu+ NV gpu的异构硬件，如果只是使用Jetson的cpu做推理的话，是可以使用Paddle Lite的，但是显然，这样会浪费该硬件的GPU能力。
+答：目前Paddle Lite只支持透过Jetson硬件上的ARM CPU做推理, 如果有使用TensorRT加速库需求的用户，我们建议使用飞桨的原生推理库[paddle inference](https://paddle-inference.readthedocs.io/en/latest/#)，如果您在使用Jeston硬件时有小于1MB的轻量推理库强需求，请反馈给我们: wangyunkai@baidu.com，我们会视情况加速TensorRT在Paddle Lite上的支持排期
 
 2、Paddle Lite如何支持低版本的安卓？比如低于安卓5.1的系统。相关issue参考：
 答：
