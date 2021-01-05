@@ -33,25 +33,23 @@ void PadConstantLikeCompute::Run() {
   auto y_dims = param.y->dims();
   float* out = param.output->mutable_data<float>(TARGET(kXPU));
 
-  TypeUnion value;
-  value.fp32 = param.pad_value;
-
-  if (x_dims.size() == 2 && x_dims[1] == y_dims[1]) {
-    int r = xdnn::memset_4_byte(ctx.GetRawContext(), /* context */
-                                reinterpret_cast<void*>(out),
-                                value.int32,
-                                param.x->numel());
+  // x and y's dims should be same except the first dim
+  if (x_dims.size() == 2 && x_dims[1] == y_dims[1] && param.pad_value <= 1e-5 &&
+      param.pad_value >= -1e-5) {
+    int r = xdnn::constant(
+        ctx.GetRawContext(), out, param.x->numel(), param.pad_value);
     CHECK_EQ(r, 0);
 
-    r = xdnn::elementwise_add(ctx.GetRawContext(),    /* context */
-                              param.y->data<float>(), /* x */
-                              out,                    /* y */
-                              out,
-                              param.y->numel());
+    r = xdnn::add<float>(ctx.GetRawContext(),
+                         param.y->data<float>(),
+                         out,
+                         out,
+                         param.y->numel());
 
     CHECK_EQ(r, 0);
   } else {
-    LOG(FATAL) << "Unsupport shape";
+    LOG(FATAL) << "xpu unsupport shape or value, x_dims " << x_dims
+               << ", param.pad_value: " << param.pad_value;
   }
 }
 

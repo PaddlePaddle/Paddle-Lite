@@ -24,13 +24,10 @@ namespace xpu {
 
 void AssignValueCompute::Run() {
   auto& param = this->Param<param_t>();
-  // auto& ctx = this->ctx_->As<XPUContext>();
   int dtype = param.dtype;
   std::vector<float> fp32_values = param.fp32_values;
   std::vector<int> int32_values = param.int32_values;
-  if (param.shape.size() <= 0) {
-    return;
-  }
+  CHECK_GT(param.shape.size(), 0UL);
   int len = 1;
   for (int i = 0; i < param.shape.size(); i++) {
     len *= param.shape[i];

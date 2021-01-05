@@ -39,7 +39,7 @@ class FillAnyLikeOp : public OpLite {
   std::string DebugString() const override { return "fill_any_like"; }
 
  private:
-  mutable FillConstantParam param_;
+  mutable FillAnyLikeParam param_;
 };
 
 }  // namespace operators

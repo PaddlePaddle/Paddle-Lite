@@ -27,9 +27,7 @@ void YoloBoxCompute::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
   auto input_dims = param.X->dims();
   std::vector<int> anchors = param.anchors;
-  if (anchors.size() > 6) {
-    LOG(FATAL) << "Unsupport anchors size: " << anchors.size();
-  }
+  CHECK_LE(anchors.size(), 6UL);
   const int n = input_dims[0];
   const int h = input_dims[2];
   const int w = input_dims[3];

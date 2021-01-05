@@ -22,47 +22,44 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-union TypeUnion {
-  float fp32;
-  int32_t int32;
-};
-
 void FillConstantCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  TypeUnion value;
   int write_size = param.out->numel();
-
-  if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
-    auto data = param.out->template mutable_data<float>(TARGET(kXPU));
-    value.fp32 = param.value;
-    int r = xdnn::memset_4_byte(ctx.GetRawContext(), /* context */
-                                reinterpret_cast<void*>(data),
-                                value.int32,
-                                write_size);
-    CHECK_EQ(r, 0);
-
-  } else if (param.dtype ==
-             static_cast<int32_t>(lite::core::FluidType::INT32)) {
-    auto data = param.out->template mutable_data<int32_t>(TARGET(kXPU));
-    value.int32 = param.value;
-    write_size = write_size * sizeof(int32_t);
-    int r = xdnn::memset_4_byte(ctx.GetRawContext(), /* context */
-                                reinterpret_cast<void*>(data),
-                                value.int32,
-                                write_size);
-    CHECK_EQ(r, 0);
-
-  } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::INT8)) {
-    auto data = param.out->template mutable_data<int8_t>(TARGET(kXPU));
-    int r = xdnn::memset(ctx.GetRawContext(), /* context */
-                         reinterpret_cast<void*>(data),
-                         param.value,
-                         write_size);
-    CHECK_EQ(r, 0);
-  } else {
-    LOG(FATAL) << "not supported dtype " << param.dtype;
+  int r = 0;
+  switch (param.dtype) {
+    case 1: {
+      auto data = param.out->mutable_data<int16_t>(TARGET(kXPU));
+      r = xdnn::constant<int16_t>(ctx.GetRawContext(),
+                                  data,
+                                  write_size,
+                                  static_cast<int16_t>(param.value));
+      break;
+    }
+    case 2: {
+      auto data = param.out->mutable_data<int32_t>(TARGET(kXPU));
+      r = xdnn::constant<int32_t>(ctx.GetRawContext(),
+                                  data,
+                                  write_size,
+                                  static_cast<int32_t>(param.value));
+      break;
+    }
+    case 5: {
+      auto data = param.out->mutable_data<float>(TARGET(kXPU));
+      r = xdnn::constant<float>(ctx.GetRawContext(),
+                                data,
+                                write_size,
+                                static_cast<float>(param.value));
+      break;
+    }
+    default: {
+      LOG(FATAL) << "Attribute dtype in fill_constant op "
+                    "must be 1[int16] or 2[int32] or 5[fp32] for xpu: "
+                 << param.dtype;
+      break;
+    }
   }
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -77,8 +74,8 @@ REGISTER_LITE_KERNEL(fill_constant,
                      paddle::lite::kernels::xpu::FillConstantCompute,
                      def)
     .BindInput("ShapeTensor",
-               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("ShapeTensorList",
-               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();

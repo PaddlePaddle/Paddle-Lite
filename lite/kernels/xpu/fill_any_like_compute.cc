@@ -25,10 +25,11 @@ namespace xpu {
 void FillAnyLikeCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  int write_size = param.in->numel();
-
-  int r = xdnn::constant<float>(ctx.GetRawContext(), /* context */
-                                param.out->mutable_data<float>(TARGET(kXPU)),
+  int write_size = param.X->numel();
+  int dtype = param.dtype;
+  CHECK((dtype == -1) || (dtype == 5));
+  int r = xdnn::constant<float>(ctx.GetRawContext(),
+                                param.Out->mutable_data<float>(TARGET(kXPU)),
                                 write_size,
                                 param.value);
   CHECK_EQ(r, 0);

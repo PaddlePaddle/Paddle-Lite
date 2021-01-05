@@ -43,9 +43,9 @@ void Conv2dCompute<PRECISION(kFloat)>::Run() {
       x_dims[1], /* input_c */
       x_dims[2], /* input_h */
       x_dims[3], /* input_w */
-      w_dims[0],
+      w_dims[0], /* num_filter */
       std::vector<int>{static_cast<int>(w_dims[2]),
-                       static_cast<int>(w_dims[3])}, /* num_filter */
+                       static_cast<int>(w_dims[3])}, /* kernel size*/
       strides,
       paddings,
       dilations,

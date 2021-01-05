@@ -20,20 +20,21 @@ namespace lite {
 namespace operators {
 
 bool FillAnyLikeOp::CheckShape() const {
-  CHECK(param_.out);
+  CHECK(param_.Out);
   return true;
 }
 
 bool FillAnyLikeOp::InferShapeImpl() const {
-  param_.out->Resize(param_.in->dims());
+  param_.Out->Resize(param_.X->dims());
   return true;
 }
 
 bool FillAnyLikeOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
-  param_.in = scope->FindVar(opdesc.Input("X").front())->GetMutable<Tensor>();
+  param_.X = scope->FindVar(opdesc.Input("X").front())->GetMutable<Tensor>();
   auto out_name = opdesc.Output("Out").front();
-  param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
+  param_.Out = GetMutableVar<lite::Tensor>(scope, out_name);
   param_.value = opdesc.GetAttr<float>("value");
+  param_.dtype = opdesc.HasAttr("dtype") ? opdesc.GetAttr<int>("dtype") : -1;
   return true;
 }
 

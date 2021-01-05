@@ -719,6 +719,13 @@ struct MeanGradParam : ParamBase {
   lite::Tensor* X_grad{};
 };
 
+struct FillAnyLikeParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  float value{0.0f};
+  int dtype{-1};
+};
+
 /// ----------------------- fill_constant operators ----------------------
 struct FillConstantParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};

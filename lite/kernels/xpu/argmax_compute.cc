@@ -34,13 +34,24 @@ void ArgmaxCompute::Run() {
   if (axis < 0) {
     axis += rank;
   }
-  int r = xdnn::argmax<float, int64_t>(ctx.GetRawContext(),
+  switch (param.dtype) {
+    // default int64_t, static_cast<int>(lite::core::FluidType::INT64) == 3
+    case -1:
+    case 3: {
+      int r =
+          xdnn::argmax<float, int64_t>(ctx.GetRawContext(),
                                        x->data<float>(),
                                        out->mutable_data<int64_t>(TARGET(kXPU)),
                                        x_dims,
                                        axis);
-
-  CHECK_EQ(r, 0);
+      CHECK_EQ(r, 0);
+      break;
+    }
+    default: {
+      LOG(FATAL) << "argmax unsupported param type for xpu: " << param.dtype;
+      break;
+    }
+  }
 }
 
 }  // namespace xpu
@@ -55,5 +66,5 @@ REGISTER_LITE_KERNEL(arg_max,
                      paddle::lite::kernels::xpu::ArgmaxCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();

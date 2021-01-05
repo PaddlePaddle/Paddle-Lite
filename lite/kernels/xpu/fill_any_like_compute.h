@@ -22,7 +22,7 @@ namespace xpu {
 
 class FillAnyLikeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::FillConstantParam;
+  using param_t = operators::FillAnyLikeParam;
 
   virtual void Run();
 

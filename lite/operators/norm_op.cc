@@ -41,6 +41,10 @@ bool NormOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   CHECK(param_.X);
   CHECK(param_.Out);
   param_.axis = opdesc.GetAttr<int>("axis");
+  if (param_.axis < 0) {
+    param_.axis += param_.X->dims().size();
+  }
+  CHECK_GE(param_.axis, 0);
   param_.epsilon = opdesc.GetAttr<float>("epsilon");
   return true;
 }
