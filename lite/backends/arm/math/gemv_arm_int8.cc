@@ -1628,26 +1628,26 @@ bool gemv_int8_trans_oth(const int8_t* A,
         "pld [%[in_ptr3]]   \n"
         "pld [%[out_ptr]]   \n"
         "cmp %[cnt], #1\n"
-        "vld1.8 {d8}, [%[wc]]\n"
-        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
-        "vld1.8 {d12-d13}, [%[in_ptr1]]!\n"
-        "vld1.8 {d14-d15}, [%[in_ptr2]]!\n"
-        "vld1.8 {d16-d17}, [%[in_ptr3]]!\n"
-        "vmovl.s8 q0, d8\n"
+        "vld1.8 {d22}, [%[wc]]\n"
         "blt 2f\n"
         "1: \n"
+        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
+        "vmovl.s8 q0, d22\n"
+        "vld1.8 {d12-d13}, [%[in_ptr1]]!\n"
         "vld1.32 {d24-d25}, [%[out_ptr]]\n"
-        "vmovl.s8 q1, d10\n"
+        "vld1.8 {d14-d15}, [%[in_ptr2]]!\n"
         "vldr d26, [%[out_ptr], #0x10]\n"
+        "vld1.8 {d16-d17}, [%[in_ptr3]]!\n"
+        "vmovl.s8 q1, d10\n"
         "vmovl.s8 q2, d11\n"
         "vldr d27, [%[out_ptr], #0x18]\n"
         "vmovl.s8 q3, d12\n"
-        "vldr d28, [%[out_ptr], #0x20]\n"
         "vmovl.s8 q4, d13\n"
+        "vldr d28, [%[out_ptr], #0x20]\n"
         "vldr d29, [%[out_ptr], #0x28]\n"
         "vmovl.s8 q9, d14\n"
-        "vldr d30, [%[out_ptr], #0x30]\n"
         "vmovl.s8 q10, d15\n"
+        "vldr d30, [%[out_ptr], #0x30]\n"
         "vldr d31, [%[out_ptr], #0x38]\n"
         // r0
         "vmlal.s16 q12, d2, d0[0]\n"
@@ -1659,22 +1659,18 @@ bool gemv_int8_trans_oth(const int8_t* A,
         // r1
         "vmlal.s16 q12, d6, d0[1]\n"
         "vmlal.s16 q13, d7, d0[1]\n"
-        "vld1.8 {d14-d15}, [%[in_ptr2]]!\n"
         "vmlal.s16 q14, d8, d0[1]\n"
         "vmlal.s16 q15, d9, d0[1]\n"
         // r2
-        "vmlal.s16 q12, d18, d1[0]\n"
-        "vmlal.s16 q13, d19, d1[0]\n"
-        "vld1.8 {d16-d17}, [%[in_ptr3]]!\n"
-        "vmlal.s16 q14, d20, d1[0]\n"
-        "vmlal.s16 q15, d21, d1[0]\n"
+        "vmlal.s16 q12, d18, d0[2]\n"
+        "vmlal.s16 q13, d19, d0[2]\n"
+        "vmlal.s16 q14, d20, d0[2]\n"
+        "vmlal.s16 q15, d21, d0[2]\n"
         // r3
-        "vmlal.s16 q12, d10, d1[1]\n"
-        "vmlal.s16 q13, d11, d1[1]\n"
-        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
-        "vmlal.s16 q14, d12, d1[1]\n"
-        "vmlal.s16 q15, d13, d1[1]\n"
-        "vld1.8 {d12-d13}, [%[in_ptr1]]!\n"
+        "vmlal.s16 q12, d10, d0[3]\n"
+        "vmlal.s16 q13, d11, d0[3]\n"
+        "vmlal.s16 q14, d12, d0[3]\n"
+        "vmlal.s16 q15, d13, d0[3]\n"
 
         "subs %[cnt], #1\n"
         "vst1.32 {d24-d25}, [%[out_ptr]]!\n"
@@ -1708,10 +1704,6 @@ bool gemv_int8_trans_oth(const int8_t* A,
           "q13",
           "q14",
           "q15");
-    in_ptr0 -= 16;
-    in_ptr1 -= 16;
-    in_ptr2 -= 16;
-    in_ptr3 -= 16;
     for (int j = 0; j < out_remain; j++) {
       *out_ptr += *in_ptr0++ * wei_ptr[0];
       *out_ptr += *in_ptr1++ * wei_ptr[1];

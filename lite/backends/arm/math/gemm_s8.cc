@@ -39,7 +39,6 @@ void gemm_s8(bool is_transA,
     return;
   }
   // TODO(chenjiao): fix the error of gemv_int8
-  /*
   if (M == 1) {
     float bias_ptr[N];   // NOLINT
     float scale_ptr[N];  // NOLINT
@@ -48,16 +47,18 @@ void gemm_s8(bool is_transA,
         bias_ptr[i] = bias[0];
       }
     }
-    memset(scale_ptr, scale[0], sizeof(float) * N);
+    for (int i = 0; i < N; i++) {
+      scale_ptr[i] = scale[0];
+    }
     gemv_int8(B,
               A,
               C,
               true,
-              M,
+              N,
               K,
-              scale,
+              scale_ptr,
               is_bias,
-              bias,
+              bias_ptr,
               act_param.has_active,
               act_param.active_type,
               ctx,
@@ -65,7 +66,6 @@ void gemm_s8(bool is_transA,
               act_param.Leaky_relu_alpha);
     return;
   }
-  */
 
   int hblock = get_hblock_int8(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
