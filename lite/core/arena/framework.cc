@@ -91,10 +91,10 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
                                       Tensor* inst_tensor,
                                       const Tensor* base_tensor) {
   auto target_type = type->target();
-  auto layout_type = type->layout();
   switch (target_type) {
     case TARGET(kOpenCL): {
 #ifdef LITE_WITH_OPENCL
+      auto layout_type = type->layout();
       if (layout_type == DATALAYOUT(kImageDefault)) {
         input_cpu_tensor_.Resize(base_tensor->dims());
         float* input_cpu_data = input_cpu_tensor_.mutable_data<float>();
