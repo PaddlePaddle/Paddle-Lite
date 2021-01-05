@@ -94,6 +94,7 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
   auto layout_type = type->layout();
   switch (target_type) {
     case TARGET(kOpenCL): {
+#ifdef LITE_WITH_OPENCL
       if (layout_type == DATALAYOUT(kImageDefault)) {
         input_cpu_tensor_.Resize(base_tensor->dims());
         float* input_cpu_data = input_cpu_tensor_.mutable_data<float>();
@@ -119,6 +120,7 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
                    base_tensor->memory_size());
       }
       break;
+#endif
     }
     default:
       TargetCopy(
