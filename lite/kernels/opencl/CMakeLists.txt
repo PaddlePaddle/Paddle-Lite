@@ -72,7 +72,7 @@ lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
 
 lite_cc_test(test_transpose_image_opencl SRCS transpose_image_compute_test.cc
              DEPS transpose_opencl_image layout_opencl_image op_registry program context)
-             
+
 lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
              DEPS concat_opencl_image layout_opencl_image op_registry program context)
 
@@ -98,18 +98,18 @@ lite_cc_test(test_grid_sampler_image_opencl SRCS grid_sampler_image_compute_test
 
 lite_cc_test(test_lrn_image_opencl SRCS lrn_image_compute_test.cc
              DEPS lrn_opencl_image op_registry program context)
-             
+
 lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_compute_test.cc
              DEPS bilinear_interp_opencl_image op_registry program context)
 lite_cc_test(test_slice_image_opencl SRCS slice_image_compute_test.cc
              DEPS slice_opencl_image op_registry program context)
-             
+
 #lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
 #             DEPS instance_norm_opencl_image op_registry program context)
 
 lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
              DEPS dropout_opencl_image op_registry program context)
-                 
+
 lite_cc_test(test_pad2d_image_opencl SRCS pad2d_image_compute_test.cc
              DEPS pad2d_opencl_image layout_opencl_image op_registry program context)
 
@@ -136,6 +136,7 @@ add_kernel(fc_opencl_buffer OPENCL basic SRCS fc_buffer_compute.cc DEPS ${cl_ker
 #           OPENCL basic SRCS fusion_elementwise_add_activation_buffer_compute.cc
 #           DEPS elementwise_add_opencl ${cl_kernel_deps})
 add_kernel(io_copy_opencl_buffer OPENCL basic SRCS io_copy_buffer_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
+add_kernel(shape_opencl_buffer OPENCL basic SRCS shape_buffer_compute.cc DEPS ${cl_kernel_deps})
 
 # extra
 # wait to add ...

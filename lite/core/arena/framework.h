@@ -58,6 +58,9 @@ class TestCase {
     PrepareInputsForInstruction();
   }
 
+  // Function only be called for OpenCL buffer kernels.
+  void SetCLImage2D(bool flag = true) { cl_use_image2d_ = flag; }
+
   /// Run the target instruction, that is run the test operator.
   void RunInstruction() { instruction_->Run(); }
 
@@ -161,8 +164,6 @@ class TestCase {
 
 #ifdef LITE_WITH_OPENCL
   CLImageConverterDefault converter_;
-  lite::Tensor input_image_cpu_tensor_;
-  lite::Tensor input_cpu_tensor_;
 #endif
 
  private:
@@ -192,6 +193,7 @@ class TestCase {
  private:
   Place place_;
   std::string alias_;
+  bool cl_use_image2d_{true};
   // The workspace for the Instruction.
   std::shared_ptr<Scope> inst_scope_;
   // The workspace for the baseline implementation.

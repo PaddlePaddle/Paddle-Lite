@@ -62,6 +62,11 @@ void TestShapeHelper(Place place,
                      std::vector<int64_t> x_dims) {
   std::unique_ptr<arena::TestCase> tester(
       new ShapeComputeTester(place, "def", DDim(x_dims)));
+  if (place.target == TARGET(kOpenCL)) {
+    // Calling `SetCLImage2D(false)` explicitly because we have opencl buffer
+    // version for `shape`.
+    tester->SetCLImage2D(false);
+  }
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
@@ -79,10 +84,12 @@ TEST(shape, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;
-#elif defined(LITE_WITH_ARM)
+#endif
+#if defined(LITE_WITH_ARM)
   place = TARGET(kHost);
-#else
-  return;
+#endif
+#if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny));
 #endif
 
   test_shape(place, abs_error);
