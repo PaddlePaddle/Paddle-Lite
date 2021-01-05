@@ -26,7 +26,6 @@ void Optimizer::SpecifyKernelPickTactic(core::KernelPickFactor factor) {
   auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
       "static_kernel_pick_pass");
   CHECK(pass);
-
   *pass->mutable_kernel_pick_factors() = factor;
 }
 
