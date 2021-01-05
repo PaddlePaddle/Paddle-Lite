@@ -1271,6 +1271,9 @@ struct IsEmptyParam : ParamBase {
 };
 
 struct ReduceParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+
   lite::Tensor* x{};
   lite::Tensor* output{};
   std::vector<int> dim{0};

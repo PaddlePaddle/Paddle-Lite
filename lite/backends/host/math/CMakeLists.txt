@@ -3,4 +3,5 @@ lite_cc_library(math_host SRCS
     slice.cc
     concat.cc
     stack.cc
+    reduce_all.cc
     DEPS context)
