@@ -27,38 +27,50 @@ bool TensorArrayToTensorOpLite::CheckShape() const {
 }
 
 bool TensorArrayToTensorOpLite::InferShapeImpl() const {
-  /*
-    const std::vector<Tensor *> &inputs = param_.X;
-    const size_t n = inputs.size();
-    int axis = param_.axis;
-    bool use_stack = param_.use_stack;
-    if (use_stack) {
-      auto input_dims = inputs[0]->dims();
-      int rank = input_dims.size();
-      if (axis < 0) axis += (rank + 1);
-      auto vec = input_dims.Vectorize();
-      vec.insert(vec.begin() + axis, inputs.size());
-      param_.Out->Resize(vec);
-    } else {
-      auto out_dims = inputs[0]->dims();
-      size_t in_zero_dims_size = out_dims.size();
-      if (out_dims[axis] < 0) {
-        out_dims[axis] = -1;
+  std::vector<Tensor *> inputs;
+  for (int i = 0; i < param_.X->size(); i++) {
+    inputs.push_back(&(*param_.X)[i]);
+  }
+  const size_t n = inputs.size();
+  int axis = param_.axis;
+  bool use_stack = param_.use_stack;
+  if (use_stack) {
+    auto input_dims = inputs[0]->dims();
+    int rank = input_dims.size();
+    if (axis < 0) axis += (rank + 1);
+    auto vec = input_dims.Vectorize();
+    vec.insert(vec.begin() + axis, inputs.size());
+    param_.Out->Resize(vec);
+  } else {
+    auto out_dims = inputs[0]->dims();
+    size_t in_zero_dims_size = out_dims.size();
+    for (size_t i = 1; i < n; i++) {
+      const auto &input_dims_i = inputs[i]->dims();
+      for (size_t j = 0; j < in_zero_dims_size; j++) {
+        if (j == static_cast<size_t>(axis)) {
+          out_dims[axis] += input_dims_i[j];
+        } else {
+          CHECK_EQ_OR_FALSE(out_dims[j], input_dims_i[j]);
+        }
       }
-      param_.Out->Resize(out_dims);
-      auto out_lod = param_.Out->mutable_lod();
-      *out_lod = param_.X[0]->lod();
     }
-    auto index_dim = param_.OutIndex->dims();
-    if (index_dim.empty()) {
-      std::vector<int64_t> index;
-      index.push_back(n);
-      index_dim.ConstructFrom(index);
-    } else {
-      index_dim[0] = n;
+    if (out_dims[axis] < 0) {
+      out_dims[axis] = -1;
     }
-    param_.OutIndex->Resize(index_dim);
-  */
+    param_.Out->Resize(out_dims);
+    auto out_lod = param_.Out->mutable_lod();
+    *out_lod = inputs[0]->lod();
+  }
+  auto index_dim = param_.OutIndex->dims();
+  if (index_dim.empty()) {
+    std::vector<int64_t> index;
+    index.push_back(n);
+    index_dim.ConstructFrom(index);
+  } else {
+    index_dim[0] = n;
+  }
+  param_.OutIndex->Resize(index_dim);
+
   return true;
 }
 
