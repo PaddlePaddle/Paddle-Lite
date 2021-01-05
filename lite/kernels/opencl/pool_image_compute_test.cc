@@ -112,7 +112,7 @@ TEST(pool2d_image2d, compute) {
   out.Resize(out_dim);
 
   std::default_random_engine engine;
-  std::uniform_real_distribution<float> dist(1, 1);
+  std::uniform_real_distribution<float> dist(-5, 5);
   std::vector<float> input_v(4 * 11 * 107 * 107);
   for (auto& i : input_v) {
     i = dist(engine);
