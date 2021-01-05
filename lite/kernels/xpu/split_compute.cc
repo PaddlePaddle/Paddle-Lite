@@ -64,8 +64,8 @@ REGISTER_LITE_KERNEL(
     split, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SplitCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("AxisTensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("SectionsTensorList",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/mul_compute.h"
+#include "lite/kernels/xpu/clip_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,43 +21,25 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void MulCompute::Run() {
+void ClipCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-
-  auto& origin_x = *param.x;
-  auto& origin_y = *param.y;
-  auto& x_dims = origin_x.dims();
-  auto& y_dims = origin_y.dims();
-  Tensor x_matrix, y_matrix;
-  if (x_dims.size() > 2) {
-    x_matrix = ReshapeToMatrix(origin_x, param.x_num_col_dims);
-  } else {
-    x_matrix = origin_x;
+  auto min_tensor = param.min_tensor;
+  auto max_tensor = param.max_tensor;
+  float min = param.min;
+  float max = param.max;
+  if (min_tensor != nullptr) {
+    min = min_tensor->data<float>()[0];
   }
-  if (y_dims.size() > 2) {
-    y_matrix = ReshapeToMatrix(origin_y, param.y_num_col_dims);
-  } else {
-    y_matrix = origin_y;
+  if (max_tensor != nullptr) {
+    max = max_tensor->data<float>()[0];
   }
-  int m = x_matrix.dims()[0];
-  int k = x_matrix.dims()[1];
-  int n = y_matrix.dims()[1];
-
-  int r = xdnn::fc<float, float, float, int16_t>(
-      ctx.GetRawContext(), /* context */
-      x_matrix.data<float>(),
-      y_matrix.data<float>(),
-      param.output->mutable_data<float>(TARGET(kXPU)),
-      m,
-      n,
-      k,
-      false,
-      false,
-      nullptr,
-      nullptr,
-      nullptr);
-
+  int r = xdnn::clip(ctx.GetRawContext(),
+                     param.x->data<float>(),
+                     param.out->mutable_data<float>(TARGET(kXPU)),
+                     param.x->numel(),
+                     min,
+                     max);
   CHECK_EQ(r, 0);
 }
 
@@ -67,8 +49,9 @@ void MulCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    mul, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::MulCompute, def)
+    clip, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::ClipCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Min", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Max", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

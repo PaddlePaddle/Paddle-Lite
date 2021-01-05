@@ -74,6 +74,7 @@ class IoCopyXPUToHostCompute
     auto mem_size = param.x->memory_size();
     VLOG(4) << "xpu to host, copy size " << mem_size;
     auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+    param.y->set_precision(param.x->precision());
     TargetWrapperXPU::MemcpySync(
         data, param.x->raw_data(), mem_size, IoDirection::DtoH);
   }

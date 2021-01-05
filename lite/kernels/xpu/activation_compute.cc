@@ -186,6 +186,17 @@ void LeakyReluCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void LogCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::log<float>(ctx.GetRawContext(),    /* context */
+                           param.X->data<float>(), /* x */
+                           param.Out->mutable_data<float>(TARGET(kXPU)), /* y */
+                           param.X->numel()); /* len */
+  CHECK_EQ(r, 0);
+}
+
 void SoftsignCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -256,6 +267,12 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     pow, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::PowCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    log, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::LogCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
