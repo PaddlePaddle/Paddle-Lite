@@ -206,15 +206,6 @@ struct MulGradParam : ParamBase {
   int y_num_col_dims{1};
 };
 
-// For ReduceMean Op
-struct ReduceMeanParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* Out{};
-
-  std::vector<int> dim;
-  bool keep_dim{false};
-};
-
 // For Stack Op
 struct StackParam : ParamBase {
   std::vector<lite::Tensor*> X;
@@ -1250,13 +1241,6 @@ struct SequenceArithmeticParam : ParamBase {
   lite::Tensor* Out{};
 };
 
-struct ReduceMaxParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
-  std::vector<int> dim{};
-  bool keep_dim{false};
-};
-
 struct LodResetParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
@@ -1271,8 +1255,8 @@ struct IsEmptyParam : ParamBase {
 };
 
 struct ReduceParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* output{};
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
   std::vector<int> dim{0};
   bool keep_dim{false};
   bool reduce_all{false};
