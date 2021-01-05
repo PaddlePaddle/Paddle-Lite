@@ -26,21 +26,19 @@ class LoDArrayLengthComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string x_ = "x";
   std::string out_ = "out";
-  DDim x_dims_;
+  DDim tar_dims_{{3, 5, 4, 4}};
 
  public:
-  LoDArrayLengthComputeTester(const Place& place,
-                              const std::string& alias,
-                              DDim x_dims)
-      : TestCase(place, alias), x_dims_(x_dims) {}
+  LoDArrayLengthComputeTester(const Place& place, const std::string& alias)
+      : TestCase(place, alias) {}
 
   void RunBaseline(Scope* scope) override {
-    const auto* x = scope->FindTensor(x_);
+    const auto* x = scope->FindVar(x_)->GetMutable<std::vector<Tensor>>();
     auto* out = scope->NewTensor(out_);
 
     out->Resize(DDim({1}));
     auto* out_data = out->mutable_data<int64_t>();
-    out_data[0] = static_cast<int64_t>(x->data_size());
+    out_data[0] = static_cast<int64_t>(x->size());
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -50,24 +48,27 @@ class LoDArrayLengthComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> din(x_dims_.production());
-    fill_data_rand(din.data(), -1.f, 1.f, x_dims_.production());
-    SetCommonTensor(x_, x_dims_, din.data());
+    constexpr int x_size_ = 10;
+    std::vector<DDim> x_dims(x_size_);
+    std::vector<std::vector<float>> x_data(x_size_);
+    for (int i = 0; i < x_size_; i++) {
+      x_dims[i] = tar_dims_;
+      x_data[i].resize(x_dims[i].production());
+      fill_data_rand(x_data[i].data(), -1.f, 1.f, x_dims[i].production());
+    }
+    SetCommonTensorList(x_, x_dims, x_data);
   }
 };
 
-void LoDArrayLengthTestHelper(Place place,
-                              float abs_error,
-                              std::vector<int64_t> x_dims) {
+void LoDArrayLengthTestHelper(Place place, float abs_error) {
   std::unique_ptr<arena::TestCase> tester(
-      new LoDArrayLengthComputeTester(place, "def", DDim(x_dims)));
+      new LoDArrayLengthComputeTester(place, "def"));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
 
 void TestLoDArrayLength(Place place, float abs_error) {
-  LoDArrayLengthTestHelper(place, abs_error, {2, 3, 4, 5});
-  LoDArrayLengthTestHelper(place, abs_error, {0});
+  LoDArrayLengthTestHelper(place, abs_error);
 }
 
 TEST(lod_array_length, precision) {
