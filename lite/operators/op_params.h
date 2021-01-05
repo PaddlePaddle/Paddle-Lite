@@ -1447,6 +1447,15 @@ struct ExpandParam : ParamBase {
   std::vector<int> expand_times{};
 };
 
+/// ----------------------- expand v2 operators ----------------------
+struct ExpandV2Param : ParamBase {
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Shape{nullptr};
+  const std::vector<lite::Tensor>* expand_shapes_tensor{nullptr};
+  lite::Tensor* Out{nullptr};
+  std::vector<int> shape{};
+};
+
 /// ----------------------- expand as operators ----------------------
 struct ExpandAsParam : ParamBase {
   const lite::Tensor* X{};
