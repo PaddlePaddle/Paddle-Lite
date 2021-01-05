@@ -17,8 +17,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "lite/model_parser/base/io.h"
-#include "lite/model_parser/flatbuffers/opencl/cache_generated.h"
+#include "lite/backends/opencl/utils/cache_generated.h"
 
 namespace paddle {
 namespace lite {
@@ -30,8 +29,8 @@ class Cache {
   explicit Cache(
       const std::map<std::string, std::vector<std::vector<int8_t>>>& map)
       : binary_map_{map} {}
-  explicit Cache(const model_parser::Buffer& buf);
-  void CopyDataToBuffer(model_parser::Buffer* buffer) const;
+  explicit Cache(const std::vector<int8_t>& buffer);
+  void CopyDataToBuffer(std::vector<int8_t>* buffer) const;
   const std::map<std::string, std::vector<std::vector<int8_t>>>& GetBinaryMap()
       const {
     return binary_map_;
