@@ -104,9 +104,10 @@ class ClipComputeTester : public arena::TestCase {
 
 TEST(Clip, precision) {
   LOG(INFO) << "test clip op";
+  Place place;
   float abs_err = 2e-5;
 #ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  place = Place(TARGET(kARM));
 #endif
 #ifdef LITE_WITH_OPENCL
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
