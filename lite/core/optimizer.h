@@ -53,9 +53,9 @@ class Optimizer {
     core::KernelPickFactor factor;
     factor.ConsiderTarget();
     factor.ConsiderPrecision();
-    factor.ConsiderDataLayout();
+    factor.ConsiderDataLayout()
 
-    Run(std::move(program), valid_places, factor, {});
+        Run(std::move(program), valid_places, factor, {});
   }
 
   void Run(Program&& program,
