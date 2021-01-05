@@ -1,5 +1,3 @@
-add_subdirectory(opencl)
-
 function(lite_fbs_library TARGET)
   set(multiValueArgs SRCS FBS_DEPS)
   cmake_parse_arguments(args "" "" "${multiValueArgs}" ${ARGN})

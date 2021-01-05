@@ -14,7 +14,8 @@
 
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
-#include "lite/model_parser/flatbuffers/opencl/cache.h"
+#include "lite/backends/opencl/utils/cache.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -26,11 +27,12 @@ TEST(OpenCLCache, cache) {
       {"a", {{1, 2}, {3, 4}}}, {"b", {{5, 6}, {7, 8}}},
   };
   Cache cache_0{map};
-  paddle::lite::model_parser::Buffer buffer;
+  std::vector<int8_t> buffer;
   cache_0.CopyDataToBuffer(&buffer);
 
   Cache cache_1{buffer};
-  CHECK(map == cache_1.GetBinaryMap());
+  CHECK(map == cache_1.GetBinaryMap())
+      << "Cache read and write are not equivalent, the test failed.";
 }
 
 }  // namespace opencl
