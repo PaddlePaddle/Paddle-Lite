@@ -27,7 +27,7 @@ void LoDArrayLengthCompute::Run() {
   this->kernel_func_name_ = "lod_array_length_func";
   this->
 #endif
-  return;
+      return;
 }
 
 }  // namespace host
@@ -40,7 +40,7 @@ REGISTER_LITE_KERNEL(lod_array_length,
                      kAny,
                      paddle::lite::kernels::host::LoDArrayLengthCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();
