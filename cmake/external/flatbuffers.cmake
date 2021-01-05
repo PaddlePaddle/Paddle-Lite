@@ -104,14 +104,14 @@ function(compile_flatbuffers_schema_to_cpp_opt TARGET SRC_FBS OPT)
 endfunction()
 
 set(FRAMEWORK_FBS_DIR "lite/model_parser/flatbuffers")
-set(FRAMEWORK_SCHEMA_PATH "${FRAMEWORK_FBS_DIR}/framework.fbs")
-set(PARAM_SCHEMA_PATH "${FRAMEWORK_FBS_DIR}/param.fbs")
-set(CL_CACHE_SCHEMA_PATH "${FRAMEWORK_FBS_DIR}/opencl/cache.fbs")
+set(FRAMEWORK_SCHEMA_PATH "lite/model_parser/flatbuffers/framework.fbs")
+set(PARAM_SCHEMA_PATH "lite/model_parser/flatbuffers/param.fbs")
+set(CL_CACHE_SCHEMA_PATH "lite/backends/opencl/utils/cache.fbs")
 compile_flatbuffers_schema_to_cpp_opt(framework_fbs_header ${FRAMEWORK_SCHEMA_PATH} "--no-includes;--gen-compare;--force-empty")
 compile_flatbuffers_schema_to_cpp_opt(param_fbs_header ${PARAM_SCHEMA_PATH} "--no-includes;--gen-compare;--force-empty")
 compile_flatbuffers_schema_to_cpp_opt(cl_cache_fbs_header ${CL_CACHE_SCHEMA_PATH} "--no-includes;--gen-compare;--force-empty")
 
-add_custom_target(fbs_headers ALL DEPENDS framework_fbs_header param_fbs_header)
+add_custom_target(fbs_headers ALL DEPENDS framework_fbs_header param_fbs_header cl_cache_fbs_header)
 
 file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/.fbs_dummy.cc CONTENT "")
 add_library(fbs_headers_dummy STATIC ${CMAKE_CURRENT_BINARY_DIR}/.fbs_dummy.cc)
