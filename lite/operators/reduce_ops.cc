@@ -66,14 +66,14 @@ bool ReduceOp::InferShapeImpl() const {
     }
     param_.Out->Resize(out_dims);
     if (dims[0] != 0) {
-      param_.Out->set_lod(param_.x->lod());
+      param_.Out->set_lod(param_.X->lod());
     }
   }
   return true;
 }
 
 bool ReduceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.x =
+  param_.X =
       scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
