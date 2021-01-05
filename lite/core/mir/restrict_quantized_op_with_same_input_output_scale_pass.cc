@@ -26,49 +26,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-// Due to some hardware limitations, we need to apply the constraints for the
-// quantized ops(such as concat) that the inputs and outputs must have the same
-// scale.
-// Get the input and output scales of the target op nodes, figure out the new
-// scale using minimun, maximum or mean scale, and update it to all related op
-// nodes.
-//
-// For example:
-//     conv2d             conv2d              conv2d
-// (out: scale_x)       (out: scale_y)    (out: scale_z)
-//       |                   |                  |
-//       |                   y                  |
-//       |                   |                  |
-//       |                   |                  |
-//       x -------------- concat ---------------z
-//       (in: scale_x,scale_y,scale_z out: scale_w)
-//                           |
-//           conv2d          |         conv2d
-//        (out:scale_m)      w     (out: scale_n)
-//              |            |           |
-//              m-------- concat --------n
-//            (in: scale_m,scale_n out: scale_v)
-//                           |
-//                           v
-//
-// After the pass is applied:
-//     conv2d             conv2d              conv2d
-// (out: new_scale)   (out: new_scale)   (out: new_scale)
-//       |                   |                  |
-//       |                   y                  |
-//       |                   |                  |
-//       |                   |                  |
-//       x -------------- concat -------------- z
-//  (in: new_scale,new_scale,new_scale out: new_scale)
-//                           |
-//           conv2d          |         conv2d
-//      (out:new_scale)      w    (out: new_scale)
-//              |            |           |
-//              m-------- concat --------n
-//         (in: new_scale,new_scale out: new_scale)
-//                           |
-//                           v
-
 // Collect the input/output scales and the touched op nodes recursively
 void CollectInputOutputScales(
     Node* op_node,
