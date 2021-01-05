@@ -215,100 +215,38 @@ class TensorLite {
   void mutable_data_internal();
 };
 
-inline zynqmp::DataType get_date_type(PrecisionType p) {
+inline zynqmp::DataType precision_to_data_type(PrecisionType p) {
   zynqmp::DataType data_type = zynqmp::FP32;
-  if (p == PrecisionType::kFloat) {
-    data_type = zynqmp::FP32;
-  }
-  if (p == PrecisionType::kFP16) {
-    data_type = zynqmp::FP16;
-  }
-  if (p == PrecisionType::kInt32) {
-    data_type = zynqmp::INT32;
-  }
-  if (p == PrecisionType::kInt16) {
-    data_type = zynqmp::INT8;
-  }
-  if (p == PrecisionType::kInt64) {
-    data_type = zynqmp::INT64;
+  switch (p) {
+    case PrecisionType::kFloat:
+      data_type = zynqmp::FP32;
+      break;
+    case PrecisionType::kFP16:
+      data_type = zynqmp::FP16;
+      break;
+    case PrecisionType::kInt32:
+      data_type = zynqmp::INT32;
+      break;
+    case PrecisionType::kInt16:
+      data_type = zynqmp::INT8;
+      break;
+    case PrecisionType::kInt64:
+      data_type = zynqmp::INT64;
+      break;
+    default:
+      data_type = zynqmp::FP32;
+      break;
   }
   return data_type;
 }
 
 template <typename T>
-zynqmp::DataType get_date_type() {
-  zynqmp::DataType data_type = zynqmp::FP32;
-  if (typeid(T) == typeid(float)) {
-    data_type = zynqmp::FP32;
-  }
-  if (typeid(T) == typeid(zynqmp::float16)) {
-    data_type = zynqmp::FP16;
-  }
-  if (typeid(T) == typeid(int)) {
-    data_type = zynqmp::INT32;
-  }
-  if (typeid(T) == typeid(int32_t)) {
-    data_type = zynqmp::INT32;
-  }
-  if (typeid(T) == typeid(int8_t)) {
-    data_type = zynqmp::INT8;
-  }
-  if (typeid(T) == typeid(int64_t)) {
-    data_type = zynqmp::INT64;
-  }
-  return data_type;
+zynqmp::DataType get_data_type() {
+  zynqmp::TypeResolver<T> resolver;
+  return resolver();
 }
 
-template <typename T>
-PrecisionType get_precistion_type() {
-  PrecisionType data_type = PrecisionType::kUnk;
-  if (typeid(T) == typeid(float)) {
-    data_type = PrecisionType::kFloat;
-  }
-  if (typeid(T) == typeid(zynqmp::float16)) {
-    data_type = PrecisionType::kFP16;
-  }
-  if (typeid(T) == typeid(int)) {
-    data_type = PrecisionType::kInt32;
-  }
-  if (typeid(T) == typeid(int32_t)) {
-    data_type = PrecisionType::kInt32;
-  }
-  if (typeid(T) == typeid(int8_t)) {
-    data_type = PrecisionType::kInt8;
-  }
-  if (typeid(T) == typeid(int64_t)) {
-    data_type = PrecisionType::kInt64;
-  }
-
-  return data_type;
-}
-
-inline zynqmp::LayoutType get_layout_type(DDimLite dims_) {
-  std::vector<int> v;
-  for (int i = 0; i < dims_.size(); i++) {
-    v.push_back(dims_[i]);
-  }
-  zynqmp::LayoutType layout_type = zynqmp::NCHW;
-  switch (v.size()) {
-    case 0:
-      layout_type = zynqmp::None;
-      break;
-    case 1:
-      layout_type = zynqmp::N;
-      break;
-    case 2:
-      layout_type = zynqmp::NC;
-      break;
-    case 3:
-      layout_type = zynqmp::NHW;
-      break;
-    case 4:
-      layout_type = zynqmp::NCHW;
-      break;
-  }
-  return layout_type;
-}
+zynqmp::LayoutType get_layout_type(DDimLite dims);
 
 template <typename T, typename R>
 R *TensorLite::mutable_data() {
@@ -318,8 +256,8 @@ R *TensorLite::mutable_data() {
   }
   zynqmp::LayoutType layout_type = get_layout_type(dims_);
   zynqmp::Shape input_shape(layout_type, v);
-  zynqmp::DataType data_type = get_date_type<T>();
-  precision_ = get_precistion_type<T>();
+  zynqmp::DataType data_type = get_data_type<T>();
+  precision_ = lite_api::PrecisionTypeTrait<T>::Type();
 
   if (zynq_tensor_.get() == nullptr) {
     zynq_tensor_.reset(new zynqmp::Tensor());

@@ -100,36 +100,32 @@ void TransHwcToChw(Tensor* dest, const Tensor* src) {
   }
 }
 void TransChwToHwc(Tensor* dest, const Tensor* src) {
+  int num = 1;
+  if (dest->dims().size() > 0) {
+    num = dest->dims()[0];
+  }
+  int channel = 1;
+  if (dest->dims().size() > 1) {
+    channel = dest->dims()[1];
+  }
+  int height = 1;
+  if (dest->dims().size() > 2) {
+    height = dest->dims()[2];
+  }
+  int width = 1;
+  if (dest->dims().size() > 3) {
+    width = dest->dims()[3];
+  }
+
   if (src->ZynqTensor()->dataType() == zynqmp::FP32) {
     float* chw = const_cast<float*>(src->data<float>());
     float* hwc = dest->mutable_data<float>();
-    int num = dest->dims()[0];
-    int channel = dest->dims()[1];
-    int height = 1;
-    if (dest->dims().size() > 2) {
-      height = dest->dims()[2];
-    }
-    int width = 1;
-    if (dest->dims().size() > 3) {
-      width = dest->dims()[3];
-    }
-
     convert_to_hwc<float>(chw, hwc, num, channel, height, width);
   }
 
   if (src->ZynqTensor()->dataType() == zynqmp::FP16) {
     float16* chw = const_cast<float16*>(src->data<float16>());
     float16* hwc = dest->mutable_data<float16>();
-    int num = dest->dims()[0];
-    int channel = dest->dims()[1];
-    int height = 1;
-    if (dest->dims().size() > 2) {
-      height = dest->dims()[2];
-    }
-    int width = 1;
-    if (dest->dims().size() > 3) {
-      width = dest->dims()[3];
-    }
     convert_to_hwc<float16>(chw, hwc, num, channel, height, width);
   }
 }

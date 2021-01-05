@@ -33,7 +33,6 @@ void chw_to_hwc(float* hwc_data,
     for (int c = 0; c < channel; c++) {
       for (int h = 0; h < height; h++) {
         for (int w = 0; w < width; w++) {
-          //
           hwc_data[n * chw + h * wc + w * channel + c] = chw_data[index];
           index++;
         }

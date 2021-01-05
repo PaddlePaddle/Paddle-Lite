@@ -29,17 +29,10 @@ limitations under the License. */
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 #include "lite/backends/fpga/KD/shape.hpp"
+#include "lite/backends/fpga/KD/types.hpp"
 
 namespace paddle {
 namespace zynqmp {
-
-enum DataType : int {
-  FP32 = 0,
-  FP16 = 1,
-  INT8 = 2,
-  INT32 = 3,
-  INT64 = 4,
-};
 
 enum DataSyncStatus : int {
   Synched = 0,
@@ -48,24 +41,6 @@ enum DataSyncStatus : int {
 };
 
 typedef uint16_t float16;
-
-inline int CellSize(DataType type) {
-  switch (type) {
-    case FP32:
-      return sizeof(float);
-    case FP16:
-      return sizeof(float16);
-    case INT32:
-      return sizeof(int32_t);
-    case INT8:
-      return sizeof(int8_t);
-    case INT64:
-      return sizeof(int64_t);
-    default:
-      return 0;
-  }
-  return 0;
-}
 
 class PlaceHolder {
  public:
@@ -279,7 +254,7 @@ class Tensor {
     args.output_layout_type = LAYOUT_HWC;
     args.image = {.address = src->data<void>(),
                   .scale_address = src->scale(),
-                  .channels = (uint32_t)count,
+                  .channels = static_cast<uint32_t>(count),
                   .width = 1,
                   .height = 1,
                   .pad_width = 0u,
