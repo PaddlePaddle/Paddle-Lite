@@ -37,6 +37,9 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_scale_name = "Out0_scale";
 
   auto axis = op_info->GetAttr<int>("axis");
+  if (axis == -1) {
+    axis = 1;
+  }
   auto num = x_names.size();
 
   // for quantization
