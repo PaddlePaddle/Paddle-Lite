@@ -53,8 +53,11 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
     int cround = cgroup * 4;
     out_w = out_dims[3];
 
-    std::vector<half_t> scale_img(cround);
-    std::vector<half_t> bias_img(cround);
+    std::vector<half_t> scale_img_fp16(cround);
+    std::vector<half_t> bias_img_fp16(cround);
+    std::vector<float> scale_img_fp32(cround);
+    std::vector<float> bias_img_fp32(cround);
+
     const float* scale_data = batch_norm_param_->scale->data<float>();
     const float* bias_data = batch_norm_param_->bias->data<float>();
     const float* mean_data = batch_norm_param_->mean->data<float>();
@@ -64,17 +67,27 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
           1.f / (std::sqrt(variance_data[c] + batch_norm_param_->epsilon));
       float new_bias = bias_data[c] - inv_scale * scale_data[c] * mean_data[c];
       float new_scale = inv_scale * scale_data[c];
-      scale_img[c] = Float2Half(new_scale);
-      bias_img[c] = Float2Half(new_bias);
+      if (fp16_support_) {
+        scale_img_fp16[c] = Float2Half(new_scale);
+        bias_img_fp16[c] = Float2Half(new_bias);
+      } else {
+        scale_img_fp32[c] = new_scale;
+        bias_img_fp32[c] = new_bias;
+      }
     }
 
     DDim scale_img_size{{cgroup, 1}};
-    MUTABLE_DATA_GPU(
-        &scale_image_, scale_img_size[0], scale_img_size[1], scale_img.data());
-    MUTABLE_DATA_GPU(
-        &bias_image_, scale_img_size[0], scale_img_size[1], bias_img.data());
-    bias_image_.mutable_data<half_t, cl::Image2D>(
-        scale_img_size[0], scale_img_size[1], bias_img.data());
+    if (fp16_support_) {
+      scale_image_.mutable_data<half_t, cl::Image2D>(
+          scale_img_size[0], scale_img_size[1], scale_img_fp16.data());
+      bias_image_.mutable_data<half_t, cl::Image2D>(
+          scale_img_size[0], scale_img_size[1], bias_img_fp16.data());
+    } else {
+      scale_image_.mutable_data<float, cl::Image2D>(
+          scale_img_size[0], scale_img_size[1], scale_img_fp32.data());
+      bias_image_.mutable_data<float, cl::Image2D>(
+          scale_img_size[0], scale_img_size[1], bias_img_fp32.data());
+    }
   }
 
   void ReInitWhenNeeded() override {
