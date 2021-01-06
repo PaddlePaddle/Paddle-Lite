@@ -21,7 +21,7 @@ namespace lite {
 namespace fbs {
 namespace opencl {
 
-Cache::Cache(const std::vector<int8_t>& buffer) {
+Cache::Cache(const std::vector<uint8_t>& buffer) {
   flatbuffers::Verifier verifier(
       reinterpret_cast<const uint8_t*>(buffer.data()), buffer.size());
   CHECK(verifier.VerifyBuffer<paddle::lite::fbs::opencl::proto::Cache>(nullptr))
@@ -29,7 +29,7 @@ Cache::Cache(const std::vector<int8_t>& buffer) {
   SyncFromFbs(proto::GetCache(buffer.data()));
 }
 
-void Cache::CopyDataToBuffer(std::vector<int8_t>* buffer) const {
+void Cache::CopyDataToBuffer(std::vector<uint8_t>* buffer) const {
   CHECK(buffer);
   flatbuffers::DetachedBuffer buf{SyncToFbs()};
   buffer->resize(buf.size());
@@ -43,10 +43,10 @@ void Cache::SyncFromFbs(const paddle::lite::fbs::opencl::proto::Cache* desc) {
   const auto* binary_map_desc = desc->binary_map();
   CHECK(binary_map_desc);
   for (const auto& pair : *binary_map_desc) {
-    std::vector<std::vector<int8_t>> binary_paths;
+    std::vector<std::vector<uint8_t>> binary_paths;
     for (const auto& value : *(pair->value())) {
       const size_t size = value->data()->size();
-      binary_paths.emplace_back(std::vector<int8_t>(size));
+      binary_paths.emplace_back(std::vector<uint8_t>(size));
       // To avoid additional dependencies, standard library components are used
       // here.
       std::memcpy(binary_paths.back().data(), value->data()->data(), size);
