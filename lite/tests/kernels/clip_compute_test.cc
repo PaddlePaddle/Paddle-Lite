@@ -108,7 +108,7 @@ TEST(Clip, precision) {
   float abs_err = 2e-5;
 #if defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
-  abs_error = 1e-2;  // Using fp16 in OPENCL
+  abs_err = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
   place = Place(TARGET(kARM));
 #else
