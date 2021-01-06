@@ -292,11 +292,6 @@ void RuntimeProgram::Run() {
     }
 #endif
     inst.Run();
-
-#ifdef LITE_WITH_OPENCL
-    CLRuntime::Global()->SaveProgram();
-#endif
-
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
     precision_profiler_summary +=
@@ -304,6 +299,9 @@ void RuntimeProgram::Run() {
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
+#ifdef LITE_WITH_OPENCL
+  CLRuntime::Global()->SaveProgram();
+#endif
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
 #endif

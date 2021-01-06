@@ -13,10 +13,10 @@ limitations under the License. */
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/backends/opencl/utils/cache.h"
 #include "lite/core/version.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/io.h"
-// #include "lite/model_parser/flatbuffers/opencl/cache.h"
 
 namespace paddle {
 namespace lite {
@@ -132,10 +132,24 @@ cl::CommandQueue& CLRuntime::command_queue() {
 
 cl::Program& CLRuntime::GetProgram(const std::string& file_name,
                                    const std::string& options) {
+  /* -I +CLRuntime::Global()->cl_path() + "/cl_kernel"*/
+  std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
+  if (build_option.find("CL_DTYPE_") == std::string::npos) {
+    if (lite_api::CL_PRECISION_FP16 == get_precision()) {
+      build_option += " -DCL_DTYPE_half ";
+    } else {
+      build_option += " -DCL_DTYPE_float -DCL_DTYPE_FLOAT_FORCE ";
+    }
+  }
+#ifdef LITE_WITH_LOG
+  VLOG(4) << "precision_:" << static_cast<size_t>(precision_);
+  VLOG(4) << "OpenCL build_option: " << build_option;
+#endif
+
   // Build flow: cache -> precompiled binary -> source
 
   STL::stringstream program_key_ss;
-  program_key_ss << file_name << options;
+  program_key_ss << file_name << build_option;
   std::string program_key = program_key_ss.str();
 
   // 1. Check from cache
@@ -150,10 +164,6 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
   // 2. Check from precompiled binary
   auto path_name = this->GetBinaryPathName();
   if (programs_.empty() && !(path_name.empty())) {
-#ifdef LITE_WITH_LOG
-    VLOG(3) << " --- begin build program from source -> " << program_key
-            << " --- ";
-#endif
     // find binary
     std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
     // check whether binary exist
@@ -164,16 +174,32 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
                    "and you have Write&Read permission. Jump to build program "
                    "from source.";
     } else {
-      this->Deserialize(bin_file, programs_precompiled_binary_);
+      bool ret = this->Deserialize(bin_file, programs_precompiled_binary_);
+      CHECK(ret) << "Deserialize failed.";
 
       // check if the binary file is illegal and valid
+      LOG(INFO) << "sn_key: " << sn_key_;
+      LOG(INFO) << "map size: " << programs_precompiled_binary_.size();
+      for (auto& ins : programs_precompiled_binary_) {
+        std::string prog_key = ins.first;
+        LOG(INFO) << "map key: " << prog_key
+                  << "\t map value size: " << ins.second[0].size();
+      }
       auto sn_iter = programs_precompiled_binary_.find(sn_key_);
       if (sn_iter == programs_precompiled_binary_.end()) {
         LOG(FATAL) << "The precompiled OpenCL binary[" << bin_file
                    << "] is illegal!";
+        // Jump to build from source
       } else if (memcmp(((sn_iter->second)[0]).data(),
-                        this->GetSN(options).data(),
-                        this->GetSN(options).length())) {
+                        this->GetSN(build_option).data(),
+                        this->GetSN(build_option).length())) {
+        LOG(INFO) << "SIZE of sn_info: " << ((sn_iter->second)[0]).size();
+        LOG(INFO) << "SIZE of GetSN: " << this->GetSN(build_option).length();
+        auto* p = ((sn_iter->second)[0]).data();
+        for (auto i = 0; i < ((sn_iter->second)[0]).size(); i++) {
+          printf("%c", (unsigned char)(*p));
+          p++;
+        }
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is invalid! Update it now...";
         if (remove(bin_file.c_str()) != 0) {
@@ -182,12 +208,16 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
         }
         // Jump to build from source
       } else {
+#ifdef LITE_WITH_LOG
+        VLOG(3) << " --- begin read all precompiled programs from binary --- ";
+#endif
         // loop all programs of the binary file
         cl_int status{CL_SUCCESS};
         const std::vector<cl::Device> device{*device_};
         for (auto& ins : programs_precompiled_binary_) {
           std::string prog_key = ins.first;
           if (prog_key == sn_key_) continue;  // skip sn_key
+          LOG(INFO) << "ins.second[0].size: " << ins.second[0].size();
           cl::Program program(*context_, device, ins.second, NULL, &status);
           CL_CHECK_FATAL_SOLID(status);
           status = program.build(device);
@@ -220,7 +250,7 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
   VLOG(3) << " --- begin build program from source -> " << program_key
           << " --- ";
 #endif
-  this->BuildProgram(program, options);
+  this->BuildProgram(program, build_option);
 
   // Keep built program binary
   cl_int status{CL_SUCCESS};
@@ -236,6 +266,9 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
   CL_CHECK_FATAL_SOLID(status);
   programs_precompiled_binary_[program_key] = binary;
 
+#ifdef LITE_WITH_LOG
+  VLOG(3) << " --- binary size: " << bin_size;
+#endif
   programs_[program_key] = std::move(ptr);
 
   return *(programs_[program_key]);
@@ -259,7 +292,8 @@ void CLRuntime::SaveProgram() {
     auto path_name = this->GetBinaryPathName();
     CHECK_EQ(path_name.size(), 2);
     std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
-    this->Serialize(bin_file, programs_precompiled_binary_);
+    bool ret = this->Serialize(bin_file, programs_precompiled_binary_);
+    CHECK(ret) << "Serialize failed.";
 
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "Programs have been serialized to disk.";
@@ -269,53 +303,50 @@ void CLRuntime::SaveProgram() {
 
 bool CLRuntime::Serialize(
     const std::string file_name,
-    const std::map<std::string, std::vector<std::vector<unsigned char>>>
-        map_data) {
-  /*
-    Cache cache{map_data};
-    lite::model_parser::Buffer buffer;
-    cache.CopyDataToBuffer(&buffer);
+    const std::map<std::string, cl::Program::Binaries>& map_data) {
+  fbs::opencl::Cache cache{map_data};
+  std::vector<uint8_t> buffer;
+  cache.CopyDataToBuffer(&buffer);
 
-    lite::model_parser::BinaryFileWriter writer{file_name};
-    uint64_t buf_size = buffer.size();
-    writer.Write(&buf_size, sizeof(uint64_t));
-    writer.Write(buffer.data(), buf_size);
+  FILE* fp = fopen(file_name.c_str(), "wb");
+  fwrite(buffer.data(), sizeof(char), buffer.size() * sizeof(uint8_t), fp);
+  fclose(fp);
+  // WriteFile<uint8_t>(file_name, buffer);
 
-    return true;
-  */
+  return true;
 }
 
 bool CLRuntime::Deserialize(
     const std::string file_name,
-    std::map<std::string, std::vector<std::vector<unsigned char>>> map_data) {
-  /*
-    lite::model_parser::Buffer buffer;
+    std::map<std::string, cl::Program::Binaries>* map_ptr) {
+  FILE* fp = fopen(file_name.c_str(), "rb");
+  fseek(fp, 0, SEEK_END);
+  size_t file_size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  std::vector<uint8_t> buffer(file_size / sizeof(uint8_t));
+  fread(buffer.data(), sizeof(char), file_size, fp);
+  fclose(fp);
+  // ReadFile<uint8_t>(file_name, &buffer);
 
-    lite::model_parser::BinaryFileReader reader(file_name, 0);
-    uint64_t file_size;
-    reader.Read(&file_size, sizeof(uint64_t));
-    reader.Read(buffer.data(), file_size);
+  fbs::opencl::Cache cache{buffer};
+  *map_ptr = cache.GetBinaryMap();
 
-    lite::model_parser::Buffer buffer;
-    Cache cache{buffer};
-    map_data = cache.GetBinaryMap();
-
-    return true;
-  */
+  return true;
 }
 
 std::string CLRuntime::GetSN(const std::string options) {
   // identifier info(Serial Number) for each binary file: lite version, model,
   // build options, platform info, device version, driver version
   STL::stringstream sn_ss;
-  std::string lite_version = lite::version();
+  std::string lite_version = lite::version() + "; ";
   std::string model_name = "place_holder; ";  // todo
   std::string platform_info = platform_->getInfo<CL_PLATFORM_NAME>() + ", " +
                               platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";
   std::string device_version = device_->getInfo<CL_DEVICE_VERSION>() + "; ";
   std::string driver_version = device_->getInfo<CL_DRIVER_VERSION>() + "; ";
-  sn_ss << lite_version << model_name << options << platform_info
-        << device_version << driver_version;
+  // sn_ss << lite_version << model_name << options << platform_info
+  //       << device_version << driver_version;
+  sn_ss << lite::version();  // for test only
   return sn_ss.str();
 }
 
@@ -342,20 +373,7 @@ std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
 }
 
 bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
-  /* -I +CLRuntime::Global()->cl_path() + "/cl_kernel"*/
-  std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
-  if (build_option.find("CL_DTYPE_") == std::string::npos) {
-    if (lite_api::CL_PRECISION_FP16 == get_precision()) {
-      build_option += " -DCL_DTYPE_half ";
-    } else {
-      build_option += " -DCL_DTYPE_float -DCL_DTYPE_FLOAT_FORCE ";
-    }
-  }
-#ifdef LITE_WITH_LOG
-  VLOG(4) << "precision_:" << static_cast<size_t>(precision_);
-  VLOG(4) << "OpenCL build_option: " << build_option;
-#endif
-  status_ = program->build({*device_}, build_option.c_str());
+  status_ = program->build({*device_}, options.c_str());
   CL_CHECK_ERROR(status_);
 
   if (status_ != CL_SUCCESS) {

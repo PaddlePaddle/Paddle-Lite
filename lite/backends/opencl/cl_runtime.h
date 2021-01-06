@@ -219,13 +219,10 @@ class CLRuntime {
 
   GpuType ParseGpuTypeFromDeviceName(std::string device_name);
 
-  bool Serialize(
-      const std::string file_name,
-      const std::map<std::string, std::vector<std::vector<unsigned char>>>
-          map_data);
-  bool Deserialize(
-      const std::string file_name,
-      std::map<std::string, std::vector<std::vector<unsigned char>>> map_data);
+  bool Serialize(const std::string file_name,
+                 const std::map<std::string, cl::Program::Binaries>& map_data);
+  bool Deserialize(const std::string file_name,
+                   std::map<std::string, cl::Program::Binaries>* map_ptr);
 
   std::map<std::string, size_t> device_info_;
 
