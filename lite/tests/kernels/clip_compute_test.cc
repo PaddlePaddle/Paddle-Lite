@@ -106,12 +106,13 @@ TEST(Clip, precision) {
   LOG(INFO) << "test clip op";
   Place place;
   float abs_err = 2e-5;
-#ifdef LITE_WITH_ARM
-  place = Place(TARGET(kARM));
-#endif
-#ifdef LITE_WITH_OPENCL
+#if defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
-  abs_err = 2e-2;  // opencl fp16 torlerance
+  abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_ARM)
+  place = Place(TARGET(kARM));
+#else
+  return;
 #endif
 
   float min = -1;
