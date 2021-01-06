@@ -1,5 +1,8 @@
-#! /bin/bash
+#!/bin/bash
+#
+# Start the CI task of examining Android inference lib compiling.
 set +x
+set -e
 
 #####################################################################################################
 # Usage: test the publish period on Android platform.
@@ -10,17 +13,25 @@ set +x
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
-# armv7 or armv8, default armv8.
+# Architecture: armv7 or armv8, default armv8.
 ARCH=(armv8 armv7)
-# gcc or clang, default gcc.
+# Toolchain: gcc or clang, default gcc.
 TOOLCHAIN=(gcc clang)
-# absolute path of Paddle-Lite source code.
+# Absolute path of Paddle-Lite source code.
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 #####################################################################################################
 
 ####################################################################################################
-# Functions of compiling test.
+# Functions of Android compiling test.
+# Globals:
+#   WORKSPACE
+# Arguments:
+#   1. architecture
+#   2. toolchain
+#   3. with extra or not
+# Returns:
+#   None
 ####################################################################################################
 function publish_inference_lib {
     local arch=$1
