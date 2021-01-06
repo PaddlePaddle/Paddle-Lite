@@ -73,11 +73,13 @@ __kernel void pool_avg(__read_only image2d_t input,
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
 
-  int start_h = max(out_h * stride_h - pad_top, 0);
+  int start_h = out_h * stride_h - pad_top;
   int end_h = min(start_h + ksize_h, in_height);
+  start_h = max(start_h, 0);
 
-  int start_w = max(out_w * stride_w - pad_left, 0);
+  int start_w = out_w * stride_w - pad_left;
   int end_w = min(start_w + ksize_w, in_width);
+  start_w = max(start_w, 0);
 
   const int pos_in_x = out_c * in_width;
   const int pos_in_y = out_n * in_height;
@@ -89,7 +91,7 @@ __kernel void pool_avg(__read_only image2d_t input,
           CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
     }
   }
-  CL_DTYPE4 avg = sum / (ksize_h * ksize_w);
+  CL_DTYPE4 avg = sum / ((end_h - start_h)*(end_w - start_w));
   const int pos_out_x = mad24(out_c, out_width, out_w);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_out_x, out_nh), avg);
 }
