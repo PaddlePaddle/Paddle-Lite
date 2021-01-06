@@ -120,7 +120,6 @@ lite_cc_test(test_split_compute_arm SRCS split_compute_test.cc DEPS split_comput
 lite_cc_test(test_concat_compute_arm SRCS concat_compute_test.cc DEPS concat_compute_arm)
 lite_cc_test(test_transpose_compute_arm SRCS transpose_compute_test.cc DEPS transpose_compute_arm COMPILE_LEVEL extra)
 lite_cc_test(test_dropout_compute_arm SRCS dropout_compute_test.cc DEPS dropout_compute_arm)
-lite_cc_test(test_unbind_compute_arm SRCS unbind_compute_test.cc DEPS unbind_compute_arm)
 if(LITE_BUILD_EXTRA)
     lite_cc_test(test_split_lod_tensor_compute_arm SRCS split_lod_tensor_compute_test.cc DEPS split_lod_tensor_compute_arm)
     lite_cc_test(test_merge_lod_tensor_compute_arm SRCS merge_lod_tensor_compute_test.cc DEPS merge_lod_tensor_compute_arm)
