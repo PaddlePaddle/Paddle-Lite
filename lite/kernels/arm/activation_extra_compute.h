@@ -76,6 +76,15 @@ class HardSigmoidCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~HardSigmoidCompute() = default;
 };
 
+class SqrtCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SqrtCompute() = default;
+};
+
 class RsqrtCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;

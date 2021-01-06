@@ -84,6 +84,16 @@ void HardSigmoidCompute::Run() {
       x_data, output_data, x_dims.production(), slope, offset, ctx.threads());
 }
 
+void SqrtCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  lite::arm::math::act_sqrt<float>(
+      x_data, output_data, x_dims.production(), ctx.threads());
+}
+
 void RsqrtCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -185,6 +195,11 @@ REGISTER_LITE_KERNEL(hard_sigmoid,
                      kNCHW,
                      paddle::lite::kernels::arm::HardSigmoidCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    sqrt, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::SqrtCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
