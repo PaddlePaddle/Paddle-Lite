@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/arm/activation_compute.h"
+#include "lite/kernels/arm/activation_extra_compute.h"
 
 namespace paddle {
 namespace lite {
