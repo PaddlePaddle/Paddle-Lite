@@ -120,12 +120,12 @@ class Optimizer {
           "__xpu__embedding_with_eltwise_add_fuse_pass",
           "__xpu__fc_fuse_pass",
           "__xpu__softmax_topk_fuse_pass",
-          "quantized_op_attributes_inference_pass",  // Only for fully
-                                                     // quantized model, infer
-                                                     // the output scale and
-                                                     // fix the attribute
-                                                     // 'enable_int8' for all
-                                                     // of the quantized ops.
+          // Only for fully quantized model, infer the output scale and fix the
+          // attribute 'enable_int8' for all of the quantized ops.
+          "quantized_op_attributes_inference_pass",
+          // Apply the constraints for the quantized ops(such as concat) that
+          // the inputs and outputs must have the same scale.
+          "restrict_quantized_op_with_same_input_output_scale_pass",
           "npu_subgraph_pass",
           "huawei_ascend_npu_subgraph_pass",
           "xpu_subgraph_pass",
