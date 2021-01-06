@@ -48,6 +48,7 @@ add_kernel(dropout_compute_arm ARM basic SRCS dropout_compute.cc DEPS ${lite_ker
 add_kernel(layout_compute_arm ARM basic SRCS layout_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(instance_norm_compute_arm ARM basic SRCS instance_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(grid_sampler_compute_arm ARM basic SRCS grid_sampler_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(unbind_compute_arm ARM basic SRCS unbind_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 ## 2.other basic kernels: basic kernels that not used in basic models
 add_kernel(negative_compute_arm ARM extra SRCS negative_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -119,6 +120,7 @@ lite_cc_test(test_split_compute_arm SRCS split_compute_test.cc DEPS split_comput
 lite_cc_test(test_concat_compute_arm SRCS concat_compute_test.cc DEPS concat_compute_arm)
 lite_cc_test(test_transpose_compute_arm SRCS transpose_compute_test.cc DEPS transpose_compute_arm COMPILE_LEVEL extra)
 lite_cc_test(test_dropout_compute_arm SRCS dropout_compute_test.cc DEPS dropout_compute_arm)
+lite_cc_test(test_unbind_compute_arm SRCS unbind_compute_test.cc DEPS unbind_compute_arm)
 if(LITE_BUILD_EXTRA)
     lite_cc_test(test_split_lod_tensor_compute_arm SRCS split_lod_tensor_compute_test.cc DEPS split_lod_tensor_compute_arm)
     lite_cc_test(test_merge_lod_tensor_compute_arm SRCS merge_lod_tensor_compute_test.cc DEPS merge_lod_tensor_compute_arm)
