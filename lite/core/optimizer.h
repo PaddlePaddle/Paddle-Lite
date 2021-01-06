@@ -120,6 +120,7 @@ class Optimizer {
           "__xpu__embedding_with_eltwise_add_fuse_pass",
           "__xpu__fc_fuse_pass",
           "__xpu__softmax_topk_fuse_pass",
+          "__xpu__multi_encoder_slice_link_fuse_pass",
           "quantized_op_attributes_inference_pass",  // Only for fully
                                                      // quantized model, infer
                                                      // the output scale and
