@@ -27,11 +27,11 @@ namespace opencl {
 class Cache {
  public:
   explicit Cache(
-      const std::map<std::string, std::vector<std::vector<int8_t>>>& map)
+      const std::map<std::string, std::vector<std::vector<uint8_t>>>& map)
       : binary_map_{map} {}
-  explicit Cache(const std::vector<int8_t>& buffer);
-  void CopyDataToBuffer(std::vector<int8_t>* buffer) const;
-  const std::map<std::string, std::vector<std::vector<int8_t>>>& GetBinaryMap()
+  explicit Cache(const std::vector<uint8_t>& buffer);
+  void CopyDataToBuffer(std::vector<uint8_t>* buffer) const;
+  const std::map<std::string, std::vector<std::vector<uint8_t>>>& GetBinaryMap()
       const {
     return binary_map_;
   }
@@ -39,7 +39,7 @@ class Cache {
  private:
   void SyncFromFbs(const paddle::lite::fbs::opencl::proto::Cache* desc);
   flatbuffers::DetachedBuffer SyncToFbs() const;
-  std::map<std::string, std::vector<std::vector<int8_t>>> binary_map_;
+  std::map<std::string, std::vector<std::vector<uint8_t>>> binary_map_;
 };
 
 }  // namespace opencl

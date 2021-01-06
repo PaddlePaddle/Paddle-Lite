@@ -23,11 +23,11 @@ namespace fbs {
 namespace opencl {
 
 TEST(OpenCLCache, cache) {
-  const std::map<std::string, std::vector<std::vector<int8_t>>> map{
+  const std::map<std::string, std::vector<std::vector<uint8_t>>> map{
       {"a", {{1, 2}, {3, 4}}}, {"b", {{5, 6}, {7, 8}}},
   };
   Cache cache_0{map};
-  std::vector<int8_t> buffer;
+  std::vector<uint8_t> buffer;
   cache_0.CopyDataToBuffer(&buffer);
 
   Cache cache_1{buffer};
