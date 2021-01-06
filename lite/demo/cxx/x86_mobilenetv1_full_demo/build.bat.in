@@ -32,7 +32,7 @@ IF NOT EXIST "!vcvarsall_dir!" (
 )
 
 :cmake
-D:
+%~d0
 cd "%build_directory%"
 
 cmake ..  -G "Visual Studio 14 2015" -A %build_platform%

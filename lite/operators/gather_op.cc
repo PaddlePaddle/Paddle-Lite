@@ -27,21 +27,58 @@ bool GatherOp::CheckShape() const {
 }
 
 bool GatherOp::InferShapeImpl() const {
-  auto index_dims = param_.Index->dims();
-  CHECK(index_dims.size() == 1 ||
-        (index_dims.size() == 2 && index_dims[1] == 1))
-      << "index dims unmatch";
-  int batch_size = index_dims[0];
-  auto out_dims = param_.X->dims();
-  out_dims[0] = batch_size;
-  param_.Out->Resize(out_dims);
-  return true;
+  if (param_.Axis != nullptr) {
+    int axis_index = 0;
+    if (param_.Axis->precision() == PRECISION(kInt32)) {
+      auto *axis_data = param_.Axis->data<int32_t>();
+      axis_index = axis_data[0];
+    } else if (param_.Axis->precision() == PRECISION(kInt64)) {
+      auto *axis_data = param_.Axis->data<int64_t>();
+      axis_index = axis_data[0];
+    } else {
+      LOG(FATAL) << "Axis unsupport data type: "
+                 << lite_api::PrecisionToStr(param_.Axis->precision());
+    }
+    int index_size = param_.Index->numel();
+    auto input_dim = param_.X->dims();
+
+    int inner_dim_size = 1;
+    int outer_dim_size = 1;
+    std::vector<int64_t> out_dim_vec;
+    for (int i = 0; i < axis_index; i++) {
+      inner_dim_size *= input_dim[i];
+      out_dim_vec.push_back(input_dim[i]);
+    }
+    out_dim_vec.push_back(index_size);
+    for (int i = axis_index + 1; i < input_dim.size(); i++) {
+      outer_dim_size *= input_dim[i];
+      out_dim_vec.push_back(input_dim[i]);
+    }
+    param_.Out->Resize(out_dim_vec);
+    return true;
+  } else {
+    auto index_dims = param_.Index->dims();
+    CHECK(index_dims.size() == 1 ||
+          (index_dims.size() == 2 && index_dims[1] == 1))
+        << "index dims unmatch";
+    int batch_size = index_dims[0];
+    auto out_dims = param_.X->dims();
+    out_dims[0] = batch_size;
+    param_.Out->Resize(out_dims);
+    return true;
+  }
 }
 
 bool GatherOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Index = scope->FindTensor(opdesc.Input("Index").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
+  if (opdesc.HasInput("Axis") && !opdesc.Input("Axis").empty()) {
+    auto axis = opdesc.Input("Axis").front();
+    param_.Axis = scope->FindTensor(axis);
+    CHECK_EQ(param_.Axis->numel(), 1) << "value Axis size must be 1, but get"
+                                      << param_.Axis->numel();
+  }
   CHECK(param_.X) << "X is null";
   CHECK(param_.Index) << "index is null";
   CHECK(param_.Out) << "out is null";

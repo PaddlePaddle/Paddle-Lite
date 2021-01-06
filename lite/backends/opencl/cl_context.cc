@@ -13,6 +13,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <utility>
+#include "lite/api/paddle_place.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
 #include "lite/utils/cp_logging.h"
@@ -142,11 +143,40 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
       static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
 
   std::vector<cl::NDRange> lwss{tmp_lws};
+  VLOG(1) << "generate_lws_type:" << generate_lws_type;
   // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
-  if (generate_lws_type == 0) {
+  if (generate_lws_type == lite_api::CL_TUNE_NONE) {
     // 0 - None: nothing to do
-  } else if (generate_lws_type == 1 || generate_lws_type == 2 ||
-             generate_lws_type == 3) {
+  } else if (generate_lws_type == lite_api::CL_TUNE_RAPID) {
+    // 1 - Rapid
+    for (auto tune_reverse : {true, false}) {
+      for (size_t divisor = 1; divisor < /*max_divisor=*/17; divisor *= 2) {
+        tmp_lws = DefaultLocalWorkSize(
+            global_work_size, max_work_size, divisor, tune_reverse);
+        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
+            last_lws[2] == tmp_lws[2]) {
+          // skip tuned lws
+          continue;
+        }
+        lwss.emplace_back(tmp_lws);
+      }
+    }
+  } else if (generate_lws_type == lite_api::CL_TUNE_NORMAL) {
+    // 2 - Normal
+    for (auto tune_reverse : {true, false}) {
+      for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor += 2) {
+        tmp_lws = DefaultLocalWorkSize(
+            global_work_size, max_work_size, divisor, tune_reverse);
+        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
+            last_lws[2] == tmp_lws[2]) {
+          // skip tuned lws
+          continue;
+        }
+        lwss.emplace_back(tmp_lws);
+      }
+    }
+  } else if (generate_lws_type == lite_api::CL_TUNE_EXHAUSTIVE) {
+    // 3 - Exhaustive
     for (auto tune_reverse : {true, false}) {
       for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
         tmp_lws = DefaultLocalWorkSize(
@@ -160,7 +190,6 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
       }
     }
   } else {
-    // todo
     LOG(FATAL) << "Unsupported opencl tune type:" << generate_lws_type;
   }
 
@@ -173,7 +202,6 @@ cl::NDRange CLContext::DefaultLocalWorkSize(
     int divisor /*=2*/,
     bool tune_reverse /*=false*/,
     size_t user_defined_max_work_size /*=0*/) {
-  int preferred_lws = 0;
   int gws0 = global_work_size[0];
   int gws1 = global_work_size[1];
   int gws2 = global_work_size[2];
@@ -215,6 +243,44 @@ cl::NDRange CLContext::DefaultLocalWorkSize(
 
 bool CLContext::IsArmMali() {
   return CLRuntime::Global()->GetGpuType() == GpuType::ARM_MALI;
+}
+
+bool CLContext::HasTunedLocalWorkSizeMap(const std::string &key,
+                                         cl::NDRange *lws) {
+  bool has = false;
+  auto it = tuned_lwss_map_.find(key);
+  if (it != tuned_lwss_map_.end()) {
+    *lws = it->second;
+    has = true;
+  }
+  return has;
+}
+
+void CLContext::SetTunedLocalWorkSizeMap(const std::string &key,
+                                         const cl::NDRange lws) {
+  auto it = tuned_lwss_map_.find(key);
+  if (it != tuned_lwss_map_.end()) {
+    auto lws_old = it->second;
+    LOG(FATAL) << "===> found lws_old with same key, please add more detailed "
+                  "info to key <==="
+               << "\n lws_old:" << lws_old[0] << "," << lws_old[1] << ","
+               << lws_old[2] << "\n lws_new:" << lws[0] << "," << lws[1] << ","
+               << lws[2];
+  }
+  tuned_lwss_map_.insert(std::pair<std::string, cl::NDRange>(key, lws));
+}
+
+std::map<std::string, cl::NDRange> CLContext::GetTunedLocalWorkSizeMap() {
+  return tuned_lwss_map_;
+}
+
+cl::NDRange CLContext::GetTunedLocalWorkSizeFromMap(const std::string &key) {
+  cl::NDRange lws = cl::NullRange;
+  auto it = tuned_lwss_map_.find(key);
+  if (it != tuned_lwss_map_.end()) {
+    lws = it->second;
+  }
+  return lws;
 }
 
 }  // namespace lite

@@ -46,7 +46,7 @@ CLRuntime::~CLRuntime() {
 
 bool CLRuntime::Init() {
 #ifdef LITE_WITH_LOG
-  VLOG(3) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
+  VLOG(6) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
 #endif
   if (is_cl_runtime_initialized_) {
     return true;
@@ -93,6 +93,7 @@ bool CLRuntime::Init() {
     LOG(INFO) << "set is_cl_runtime_initialized_ = true";
 #endif
   }
+  set_precision();
   return is_cl_runtime_initialized_;
 }
 
@@ -148,13 +149,16 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   /* -I +CLRuntime::Global()->cl_path() + "/cl_kernel"*/
   std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
   if (build_option.find("CL_DTYPE_") == std::string::npos) {
-    if (support_half()) {
+    if (lite_api::CL_PRECISION_FP16 == get_precision()) {
       build_option += " -DCL_DTYPE_half ";
     } else {
       build_option += " -DCL_DTYPE_float -DCL_DTYPE_FLOAT_FORCE ";
     }
   }
+#ifdef LITE_WITH_LOG
+  VLOG(4) << "precision_:" << static_cast<size_t>(precision_);
   VLOG(4) << "OpenCL build_option: " << build_option;
+#endif
   status_ = program->build({*device_}, build_option.c_str());
   CL_CHECK_ERROR(status_);
 
@@ -228,8 +232,13 @@ bool CLRuntime::InitializeDevice() {
   // for is_opencl_valid_api .  do not exit here...
   CL_CHECK_ERROR(status_);
   if (all_devices.empty()) {
-    LOG(ERROR) << "No available OpenCL GPU device found!";
-    return false;
+    LOG(ERROR)
+        << "No available OpenCL GPU device found!, Try CPU Device instead!";
+    status_ = platform_->getDevices(CL_DEVICE_TYPE_CPU, &all_devices);
+    CL_CHECK_ERROR(status_);
+    if (all_devices.empty()) {
+      return false;
+    }
   }
   device_ = std::make_shared<cl::Device>();
   *device_ = all_devices[0];

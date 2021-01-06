@@ -159,6 +159,7 @@ struct InterpolateParam : ParamBase {
   lite::Tensor* Scale{};
 
   float scale{0.f};
+  std::vector<float> scale_v{};
   int out_h{-1};
   int out_w{-1};
   bool align_corners{true};
@@ -220,6 +221,15 @@ struct StackParam : ParamBase {
   lite::Tensor* Out{};
 
   int axis{0};
+};
+
+// For Unstack Op
+struct UnstackParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  std::vector<lite::Tensor*> Out{};
+
+  int axis{0};
+  int num{1};
 };
 
 // For Power Op
@@ -472,6 +482,7 @@ struct ConvParam : ParamBase {
   bool var_length{false};
   // only used in conv_transpose.
   std::vector<int> output_size;
+  std::vector<int> output_padding;
   // for int8
   WITH_INT8_CONFIG
 
@@ -762,7 +773,8 @@ struct SGDParam : ParamBase {
 
 /// ----------------------- uniform_random operators ----------------------
 struct UniformRandomParam : ParamBase {
-  const lite::Tensor* X{nullptr};
+  const lite::Tensor* shape_tensor{nullptr};
+  std::vector<lite::Tensor*> shape_tensor_list{};
   std::vector<int64_t> shape{};
   float min{-1.0f};
   float max{1.0f};
@@ -1006,6 +1018,9 @@ struct LookupTableParam : ParamBase {
   const lite::Tensor* Ids{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
+  bool is_test{true};
+  std::string entry_config{""};  // used in distributed training
+  std::string entry{"none"};
 };
 
 struct LookupTableDequantParam : ParamBase {
@@ -1341,6 +1356,7 @@ struct AffineGridParam : ParamBase {
   std::vector<int> output_shape;
   const lite::Tensor* OutputShape;
   lite::Tensor* Out{};
+  bool align_corners{true};
 };
 
 struct AnchorGeneratorParam : ParamBase {
@@ -1431,6 +1447,15 @@ struct ExpandParam : ParamBase {
   std::vector<int> expand_times{};
 };
 
+/// ----------------------- expand v2 operators ----------------------
+struct ExpandV2Param : ParamBase {
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Shape{nullptr};
+  const std::vector<lite::Tensor>* expand_shapes_tensor{nullptr};
+  lite::Tensor* Out{nullptr};
+  std::vector<int> shape{};
+};
+
 /// ----------------------- expand as operators ----------------------
 struct ExpandAsParam : ParamBase {
   const lite::Tensor* X{};
@@ -1466,6 +1491,7 @@ struct MatMulParam : ParamBase {
 struct GatherParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Index{};
+  const lite::Tensor* Axis{nullptr};
   lite::Tensor* Out{};
 };
 
@@ -1626,13 +1652,17 @@ struct ConditionalBlockParam : ParamBase {
 struct CollectFpnProposalsParam : ParamBase {
   std::vector<lite::Tensor*> multi_level_rois{};
   std::vector<lite::Tensor*> multi_level_scores{};
+  std::vector<lite::Tensor*> multi_rois_num{};
+  lite::Tensor* rois_num{};
   lite::Tensor* fpn_rois{};
   int post_nms_topN{};
 };
 
 struct DistributeFpnProposalsParam : ParamBase {
   const lite::Tensor* fpn_rois{};
+  const lite::Tensor* rois_num{};
   std::vector<lite::Tensor*> multi_fpn_rois{};
+  std::vector<lite::Tensor*> multi_rois_num{};
   lite::Tensor* restore_index{};
   int min_level{};
   int max_level{};
@@ -1668,7 +1698,11 @@ struct GridSamplerParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* out{};
   lite::Tensor* grid{};
+  bool align_corners{true};
+  std::string padding_mode{"zeros"};
+  std::string mode{"bilinear"};
 };
+
 struct LstmParam : ParamBase {
   lite::Tensor* Input{};
   lite::Tensor* Weight{};
@@ -1684,6 +1718,8 @@ struct LstmParam : ParamBase {
   std::string gate_activation;
   std::string cell_activation;
   std::string candidate_activation;
+  // for int8
+  WITH_INT8_CONFIG
 };
 
 struct CrfDecodingParam : ParamBase {
@@ -1712,6 +1748,14 @@ struct XPUResNet50Param : ParamBase {
   lite::Tensor* output{};
 };
 
+struct XPUSoftmaxTopkParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* output{};
+  lite::Tensor* indices{};
+  int axis{-1};
+  int K{1};
+};
+
 struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* input{};
   std::vector<lite::Tensor*> fc_weight;
@@ -1722,6 +1766,9 @@ struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* mask{};
   lite::Tensor* output{};
 
+  std::vector<int> slice_axes{};
+  std::vector<int> slice_starts{};
+  std::vector<int> slice_ends{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -1880,19 +1927,20 @@ struct XPUMmdnnMergeAllParam : ParamBase {
 struct XPUConv2dParam : ParamBase {
   lite::Tensor* Input{nullptr};
   lite::Tensor* Filter{nullptr};
-  lite::Tensor* InputMax{nullptr};
   lite::Tensor* FilterMax{nullptr};
-  lite::Tensor* Bias{nullptr};
-  lite::Tensor* Branch{nullptr};
   lite::Tensor* Output{nullptr};
   lite::Tensor* OutputMax{nullptr};
+  lite::Tensor* InputMax{nullptr};
+  lite::Tensor* Bias{nullptr};
+  lite::Tensor* Branch{nullptr};
 
-  int groups{1};
-  std::string act_type{""};
-  std::string filter_type{""};
+  int act_type{0};
+  float act_param{0.0f};
+  std::vector<int> filter_dims;
   std::vector<int> strides;
   std::shared_ptr<std::vector<int>> paddings;
   std::shared_ptr<std::vector<int>> dilations;
+  int groups{1};
 };
 
 struct XPUSfaHeadParam : ParamBase {
@@ -2007,6 +2055,39 @@ struct FlattenContiguousRangeParam : ParamBase {
   lite::Tensor* xshape;
   int start_axis;
   int stop_axis;
+};
+
+struct SelectInputParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Mask{};
+  lite::Tensor* Out{};
+};
+
+struct TensorArrayToTensorParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  lite::Tensor* OutIndex{};
+  int axis{0};
+  bool use_stack{false};
+};
+
+struct RnnParam : ParamBase {
+  lite::Tensor* Input;
+  lite::Tensor* PreState;
+  std::vector<lite::Tensor*> WeightList;
+  lite::Tensor* SequenceLength;
+  lite::Tensor* DropoutState;
+  lite::Tensor* Reserve;
+  lite::Tensor* Out;
+  lite::Tensor* State;
+  float dropout_prob{0.0};
+  bool is_bidirec{false};
+  int input_size{10};
+  int hidden_size{100};
+  int num_layers{1};
+  std::string mode{"LSTM"};
+  bool is_test{false};
+  int seed{0};
 };
 
 }  // namespace operators

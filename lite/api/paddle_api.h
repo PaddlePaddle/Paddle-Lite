@@ -19,6 +19,7 @@
 
 #ifndef PADDLE_LITE_API_H_  // NOLINT
 #define PADDLE_LITE_API_H_
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -42,7 +43,7 @@ enum class L3CacheSetMethod {
 };
 
 // return true if current device supports OpenCL model
-LITE_API bool IsOpenCLBackendValid();
+LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = false);
 
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
@@ -139,11 +140,13 @@ class LITE_API ConfigBase {
   std::string model_dir_;
   int threads_{1};
   PowerMode mode_{LITE_POWER_NO_BIND};
-  // gpu
-  size_t enable_opencl_tune_{0};
+  // gpu opencl
+  CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
+  CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
   // to save subgraph model for npu/xpu/...
   std::string subgraph_model_cache_dir_{""};
   int device_id_{0};
+  int x86_math_num_threads_ = 1;
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -157,8 +160,9 @@ class LITE_API ConfigBase {
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
   // set GPU opencl tune
-  void set_opencl_tune(size_t enable_tune);
-  size_t opencl_tune() const { return enable_opencl_tune_; }
+  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE);
+  // set GPU opencl precision
+  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
   // set subgraph_model_dir
   void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
     subgraph_model_cache_dir_ = subgraph_model_cache_dir;
@@ -169,6 +173,9 @@ class LITE_API ConfigBase {
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
   int get_device_id() const { return device_id_; }
+  // set x86_math_num_threads
+  void set_x86_math_num_threads(int threads);
+  int x86_math_num_threads() const;
 };
 
 class LITE_API CxxModelBuffer {
@@ -199,9 +206,8 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<std::string> passes_internal_{};
   bool quant_model_{false};  // Enable post_quant_dynamic in opt
   QuantType quant_type_{QuantType::QUANT_INT16};
-#ifdef LITE_WITH_X86
-  int x86_math_library_math_threads_ = 1;
-#endif
+  std::map<int, std::vector<std::shared_ptr<void>>>
+      preferred_inputs_for_warmup_;
 #ifdef LITE_WITH_CUDA
   bool multi_stream_{false};
 #endif
@@ -247,14 +253,6 @@ class LITE_API CxxConfig : public ConfigBase {
   // abandoned in v3.0.
   bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
 
-#ifdef LITE_WITH_X86
-  void set_x86_math_library_num_threads(int threads) {
-    x86_math_library_math_threads_ = threads;
-  }
-  int x86_math_library_num_threads() const {
-    return x86_math_library_math_threads_;
-  }
-#endif
 #ifdef LITE_WITH_CUDA
   void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
   bool multi_stream() const { return multi_stream_; }
@@ -291,6 +289,21 @@ class LITE_API CxxConfig : public ConfigBase {
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
+
+  // set input tensor for warmup.
+  // It is optional. If you set prefered_inputs, model wil run immediately when
+  // predictor is created
+  template <class T>
+  void set_preferred_inputs_for_warmup(const int group_idx,
+                                       const int tensor_idx,
+                                       const shape_t& shape,
+                                       const lod_t& lod = {},
+                                       const T fill_value = 0,
+                                       const void* data = nullptr);
+  const std::map<int, std::vector<std::shared_ptr<void>>>&
+  preferred_inputs_for_warmup() const {
+    return preferred_inputs_for_warmup_;
+  }
 
   void set_quant_model(bool quant_model) { quant_model_ = quant_model; }
   bool quant_model() const { return quant_model_; }

@@ -20,8 +20,11 @@ ARCH_LIST="armv8,armv7"
 # The list of toolchains for building unit tests(gcc,clang), such as "gcc,clang"
 # for android, "gcc" for armlinx
 TOOLCHAIN_LIST="gcc,clang"
-# The list of unit tests which are ignored, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
-UNIT_TEST_SKIP_LIST="test_cxx_api,test_mobilenetv1_int8"
+# The list of unit tests to be checked, use commas to separate them, such as "test_cxx_api,test_mobilenetv1_int8"
+UNIT_TEST_CHECK_LIST="test_cxx_api,test_mobilenetv1_int8"
+UNIT_TEST_FILTER_TYPE=0 # 0: black list 1: white list
+# The Logging level of GLOG for unit tests
+UNIT_TEST_LOG_LEVEL=5
 # Remote device type(0: adb, 1: ssh) for real android and armlinux devices
 REMOTE_DEVICE_TYPE=0
 # The list of the device names for the real android devices, use commas to separate them, such as "2GX0119401000796,0123456789ABCDEF,5aba5d0ace0b89f6"
@@ -265,20 +268,21 @@ function run_unit_test_on_remote_device() {
     fi
 
     # Run the model on the remote device
-    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
+    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
 }
 
 function build_and_test_on_remote_device() {
     local os_list=$1
     local arch_list=$2
     local toolchain_list=$3
-    local unit_test_skip_list=$4
-    local build_target_func=$5
-    local prepare_device_func=$6
-    local remote_device_type=$7
-    local remote_device_list=$8
-    local remote_device_work_dir=$9
-    local extra_arguments=${10}
+    local unit_test_check_list=$4
+    local unit_test_filter_type=$5
+    local build_target_func=$6
+    local prepare_device_func=$7
+    local remote_device_type=$8
+    local remote_device_list=$9
+    local remote_device_work_dir=${10}
+    local extra_arguments=${11}
 
     # Set helper functions to access the remote devices
     local remote_device_pick=ssh_device_pick
@@ -303,7 +307,7 @@ function build_and_test_on_remote_device() {
     local oss=(${os_list//,/ })
     local archs=(${arch_list//,/ })
     local toolchains=(${toolchain_list//,/ })
-    local unit_test_skip_names=(${unit_test_skip_list//,/ })
+    local unit_test_check_items=(${unit_test_check_list//,/ })
     for os in $oss; do
         for arch in $archs; do
             for toolchain in $toolchains; do
@@ -313,20 +317,25 @@ function build_and_test_on_remote_device() {
                 $prepare_device_func $os $arch $toolchain $remote_device_name $remote_device_work_dir $remote_device_check $remote_device_run $extra_arguments
                 # Run all of unit tests and model tests
                 for test_name in $(cat $TESTS_FILE); do
-                    local is_skip=0
-                    for unit_test_skip_name in ${unit_test_skip_names[@]}; do
-                        if [[ "$unit_test_skip_name" == "$test_name" ]]; then
-                            echo "skip " $test_name
-                            is_skip=1
+                    local is_matched=0
+                    for unit_test_check_item in ${unit_test_check_items[@]}; do
+                        if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                            echo "$test_name on the checklist."
+                            is_matched=1
                             break
                         fi
                     done
-                    if [[ $is_skip -ne 0 ]]; then
+                    # black list
+                    if [[ $is_matched -eq 1 && $unit_test_filter_type -eq 0 ]]; then
+                        continue
+                    fi
+                    # white list
+                    if [[ $is_matched -eq 0 && $unit_test_filter_type -eq 1 ]]; then
                         continue
                     fi
                     # Extract the arguments from ctest command line
-                    test_cmds=$(ctest -V -N -R ${test_name})
-                    reg_expr=".*Test command:.*\/${test_name} \(.*\) Test #[0-9]*: ${test_name}.*"
+                    test_cmds=$(ctest -V -N -R ^$test_name$)
+                    reg_expr=".*Test command:.*\/$test_name \(.*\) Test #[0-9]*: $test_name.*"
                     test_args=$(echo $test_cmds | sed -n "/$reg_expr/p")
                     if [[ -n "$test_args" ]]; then
                         # Matched, extract and remove the quotes
@@ -398,7 +407,7 @@ function android_cpu_build_target() {
 }
 
 function android_cpu_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST android_cpu_build_target android_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE android_cpu_build_target android_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
 # ARMLinux (RK3399/pro, Raspberry pi etc.)
@@ -458,7 +467,7 @@ function armlinux_cpu_build_target() {
 }
 
 function armlinux_cpu_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST armlinux_cpu_build_target armlinux_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE armlinux_cpu_build_target armlinux_cpu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
 # Huawei Kirin NPU
@@ -542,7 +551,7 @@ function huawei_kirin_npu_build_target() {
 }
 
 function huawei_kirin_npu_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./hiai_ddk_lib_330)"
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./hiai_ddk_lib_330)"
 }
 
 # Rockchip NPU
@@ -618,7 +627,7 @@ function rockchip_npu_build_target() {
 }
 
 function rockchip_npu_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST rockchip_npu_build_target rockchip_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./rknpu_ddk)"
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE rockchip_npu_build_target rockchip_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./rknpu_ddk)"
 }
 
 # MediaTek APU
@@ -699,7 +708,7 @@ function mediatek_apu_build_target() {
 }
 
 function mediatek_apu_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST mediatek_apu_build_target mediatek_apu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./apu_ddk)"
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE mediatek_apu_build_target mediatek_apu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./apu_ddk)"
 }
 
 # Imagination NNA
@@ -768,7 +777,62 @@ function imagination_nna_build_target() {
 }
 
 function imagination_nna_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_SKIP_LIST imagination_nna_build_target imagination_nna_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./imagination_nna_sdk)"
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE imagination_nna_build_target imagination_nna_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./imagination_nna_sdk)"
+}
+
+function baidu_xpu_build_and_test() {
+    local with_xtcl=$1
+    if [[ -z "$with_xtcl" ]]; then
+        with_xtcl=OFF
+    fi
+    local unit_test_check_list=$2
+    local unit_test_filter_type=$3
+    local sdk_root_dir="$(readlink -f ./output)"
+
+    # Build all of unittests and model tests
+    mkdir -p ./build
+    cd ./build
+    prepare_workspace
+    cmake .. \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+        -DWITH_PYTHON=OFF \
+        -DWITH_TESTING=ON \
+        -DLITE_WITH_ARM=OFF \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DLITE_WITH_X86=ON \
+        -DWITH_MKL=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_XPU=ON \
+        -DLITE_WITH_XTCL=$with_xtcl\
+        -DXPU_SDK_ROOT="$sdk_root_dir"
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+    # Run all of unittests and model tests
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    export GLOG_v=$UNIT_TEST_LOG_LEVEL
+    local unit_test_check_items=(${unit_test_check_list//,/ })
+    for test_name in $(cat $TESTS_FILE); do
+        local is_matched=0
+        for unit_test_check_item in ${unit_test_check_items[@]}; do
+            if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                echo "$test_name on the checklist."
+                is_matched=1
+                break
+            fi
+        done
+        # black list
+        if [[ $is_matched -eq 1 && $unit_test_filter_type -eq 0 ]]; then
+            continue
+        fi
+        # white list
+        if [[ $is_matched -eq 0 && $unit_test_filter_type -eq 1 ]]; then
+            continue
+        fi
+        ctest -V -R ^$test_name$
+    done
+    cd - >/dev/null
 }
 
 function main() {
@@ -787,8 +851,16 @@ function main() {
             TOOLCHAIN_LIST="${i#*=}"
             shift
             ;;
-        --unit_test_skip_list=*)
-            UNIT_TEST_SKIP_LIST="${i#*=}"
+        --unit_test_check_list=*)
+            UNIT_TEST_CHECK_LIST="${i#*=}"
+            shift
+            ;;
+        --unit_test_filter_type=*)
+            UNIT_TEST_FILTER_TYPE="${i#*=}"
+            shift
+            ;;
+       --unit_test_log_level=*)
+            UNIT_TEST_LOG_LEVEL="${i#*=}"
             shift
             ;;
         --remote_device_type=*)
@@ -825,6 +897,14 @@ function main() {
             ;;
         imagination_nna_build_and_test)
             imagination_nna_build_and_test
+            shift
+            ;;
+        baidu_xpu_disable_xtcl_build_and_test)
+            baidu_xpu_build_and_test OFF $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE
+            shift
+            ;;
+        baidu_xpu_enable_xtcl_build_and_test)
+            baidu_xpu_build_and_test ON $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE
             shift
             ;;
         *)

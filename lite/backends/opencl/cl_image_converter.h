@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include "lite/api/paddle_place.h"
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/core/tensor.h"
@@ -35,7 +36,8 @@ class CLImageConverterBase {
                            const DDim &tensor_dim) = 0;
   virtual DDim InitImageDimInfoWith(const DDim &tensor_dim) = 0;
 
-  bool fp16_support_{paddle::lite::CLRuntime::Global()->support_half()};
+  bool fp16_support_{paddle::lite::CLRuntime::Global()->get_precision() ==
+                     lite_api::CL_PRECISION_FP16};
 };
 
 class CLImageConverterDefault : public CLImageConverterBase {
@@ -122,6 +124,16 @@ class CLImageConverterDWBlock : public CLImageConverterBase {
 };
 
 class CLImageConverterWinoTransWeight : public CLImageConverterBase {
+ public:
+  DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
+  void NCHWToImage(float *tensor, void *image, const DDim &tensor_dim) override;
+  void ImageToNCHW(void *image,
+                   float *tensor,
+                   const DDim &image_dim,
+                   const DDim &tensor_dim) override;
+};
+
+class CLImageConverterNBlock : public CLImageConverterBase {
  public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
   void NCHWToImage(float *tensor, void *image, const DDim &tensor_dim) override;

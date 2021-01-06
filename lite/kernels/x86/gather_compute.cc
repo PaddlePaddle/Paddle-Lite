@@ -14,19 +14,32 @@
 
 #include "lite/kernels/x86/gather_compute.h"
 
-typedef paddle::lite::kernels::x86::GatherCompute<float, int32_t> GatherInt32;
-typedef paddle::lite::kernels::x86::GatherCompute<float, int64_t> GatherInt64;
-
-REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt32Int32, int32int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Axis", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt64, int64_in)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt64Int64, int64int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Axis", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .Finalize();
+REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt64Int32, int64int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindInput("Axis", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .Finalize();
+REGISTER_LITE_KERNEL(gather, kX86, kFloat, kNCHW, GatherInt32Int64, int32int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindInput("Axis", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kAny))})
     .Finalize();

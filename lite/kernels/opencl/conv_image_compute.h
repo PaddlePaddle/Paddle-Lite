@@ -18,6 +18,9 @@
 #include <string>
 #include <vector>
 
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#endif
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
@@ -59,6 +62,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void PrintConvInfo();
   void SetGlobalWorkSize();
   void SetLocalWorkSize(size_t repeats = 4);
+  std::string GenerateTunedKey();
   void Conv2d1x1opt();
   void Conv2d3x3();
   void Conv2d3x3opt();
@@ -69,6 +73,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void DepthwiseConv2d3x3s1();
   void DepthwiseConv2d3x3();
   void DepthwiseConv2d();
+  void Conv2dCommon();
 
   param_t* conv_param_{nullptr};
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-set +ex
+set -e
 
 readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DWITH_MKL=OFF \
@@ -25,6 +25,7 @@ WITH_LOG=ON
 WITH_MKL=ON
 WITH_OPENCL=OFF
 WITH_STATIC_MKL=OFF
+WITH_AXV=ON
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
 WITH_LTO=OFF
@@ -408,6 +409,8 @@ function make_x86 {
 
   cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
             -DWITH_STATIC_MKL=${WITH_STATIC_MKL}  \
+            -DWITH_TESTING=OFF \
+            -DWITH_AXV=${WITH_AXV} \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
             -DLITE_WITH_PROFILE=OFF \
@@ -416,7 +419,6 @@ function make_x86 {
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DWITH_GPU=OFF \
-            -DLITE_SHUTDOWN_LOG=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
@@ -553,6 +555,10 @@ function main {
                 WITH_STATIC_MKL="${i#*=}"
                 shift
                 ;;
+            --with_avx=*)
+                WITH_AXV="${i#*=}"
+                shift
+                ;;
             --with_exception=*)
                 WITH_EXCEPTION="${i#*=}"
                 if [[ $WITH_EXCEPTION == "ON" && $ARM_OS=="android" && $ARM_ABI == "armv7" && $ARM_LANG != "clang" ]]; then
@@ -593,7 +599,7 @@ function main {
                 shift
                 ;;
             --xpu_sdk_root=*)
-                XPU_SDK_ROOT="${i#*=}"
+                XPU_SDK_ROOT=$(readlink -f ${i#*=})
                 shift
                 ;;
             --python_executable=*)

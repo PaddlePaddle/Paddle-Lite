@@ -18,11 +18,7 @@
 #include <iomanip>
 #include <sstream>
 #include "lite/backends/opencl/cl_image_converter.h"
-#include "lite/backends/opencl/cl_include.h"
-#include "lite/backends/opencl/cl_utility.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
 
 #undef LITE_WITH_LOG
 
@@ -61,8 +57,7 @@ void ConvImageCompute::PrepareForRun() {
   has_bias_ = (conv_param_->bias) != nullptr;
   offset_ = filter_tensor_h_ / 2 - pad_up_;
 
-  bool pad_equal = ((pad_left_ == pad_up_) && (pad_up_ == pad_left_) &&
-                    (pad_left_ == pad_right_));
+  bool pad_equal = ((pad_left_ == pad_up_) && (pad_left_ == pad_right_));
   bool stride_equal = stride_h_ == stride_w_;
   bool dilation_equal = dilation_h_ == dilation_w_;
 
@@ -85,14 +80,13 @@ void ConvImageCompute::PrepareForRun() {
   VLOG(3) << "padding :" << pad_up_ << " " << pad_down_ << " " << pad_left_
           << " " << pad_right_;
 #endif
-
-  CHECK(pad_equal && stride_equal && dilation_equal);
+  if (filter_tensor_h_ == 3 && filter_tensor_w_ == 3 && groups_ > 1 &&
+      stride_h_ > 1) {
+    pad_equal = (pad_left_ == pad_up_);
+  }
   CHECK_GE(conv_param_->dilations->size(), 2);
-  CHECK(dilation_h_ == dilation_w_);
   CHECK_GE(conv_param_->paddings->size(), 2);
-  CHECK(pad_left_ == pad_up_);
   CHECK_GE(conv_param_->strides.size(), 2);
-  CHECK(stride_h_ == stride_w_);
 
   /*********************************************
    * Upload filter, bias to opencl device
@@ -102,7 +96,8 @@ void ConvImageCompute::PrepareForRun() {
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
 
-  if (filter_tensor_h_ == 1 && filter_tensor_h_ == 1) {
+  if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
+    CHECK(pad_equal && stride_equal && dilation_equal);
     if (input_tensor_c_ % 4 == 0) {
       kernel_func_names_.push_back("conv2d_1x1_simple");
     } else {
@@ -127,6 +122,7 @@ void ConvImageCompute::PrepareForRun() {
   } else if (filter_tensor_c_ == 1 && input_tensor_c_ == output_tensor_c_ &&
              filter_tensor_h_ == 3 && filter_tensor_w_ == 3 && groups_ > 1) {
     // depth_conv2d_3x3s1, depth_conv2d_3x3
+    CHECK(pad_equal && stride_equal && dilation_equal);
     if (stride_h_ == 1 && dilation_h_ == 1) {
       kernel_func_names_.push_back("depth_conv2d_3x3s1");
       impl_ = &ConvImageCompute::DepthwiseConv2d3x3s1;
@@ -155,6 +151,7 @@ void ConvImageCompute::PrepareForRun() {
 #undef DEPTH_CONV_USE_SPL
              ) {
     // depth_conv2d
+    CHECK(pad_equal && stride_equal && dilation_equal);
     kernel_func_names_.push_back("depth_conv2d");
     kernel_func_paths_.push_back("image/depthwise_conv2d_basic_kernel.cl");
 
@@ -172,6 +169,7 @@ void ConvImageCompute::PrepareForRun() {
     impl_ = &ConvImageCompute::DepthwiseConv2d;
   } else if (filter_tensor_h_ == 3 && filter_tensor_w_ == 3) {
     // conv2d_3x3
+    CHECK(pad_equal && stride_equal && dilation_equal);
     if (groups_ == 1) {
       kernel_func_names_.push_back(
           input_tensor_n_ > 1 ? "conv2d_3x3_multi_batch" : "conv2d_3x3_opt");
@@ -194,6 +192,7 @@ void ConvImageCompute::PrepareForRun() {
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5) {
+    CHECK(pad_equal && stride_equal && dilation_equal);
 #define CONV_5x5_OPT
 #ifndef CONV_5x5_OPT
     // conv2d_5x5
@@ -235,6 +234,7 @@ void ConvImageCompute::PrepareForRun() {
 #endif
 #undef CONV_5x5_OPT
   } else if (filter_tensor_h_ == 7 && filter_tensor_w_ == 7) {
+    CHECK(pad_equal && stride_equal && dilation_equal);
 #define CONV_7x7_OPT
 #ifndef CONV_7x7_OPT
     // conv2d_7x7
@@ -273,6 +273,23 @@ void ConvImageCompute::PrepareForRun() {
     impl_ = &ConvImageCompute::Conv2d7x7opt;
 #endif
 #undef CONV_7x7_OPT
+  } else if (groups_ == 1) {
+    // conv2d_common
+    kernel_func_names_.push_back("conv2d_common");
+    kernel_func_paths_.push_back("image/conv2d_common_kernel.cl");
+    impl_ = &ConvImageCompute::Conv2dCommon;
+
+    CLImageConverterNBlock converter;
+    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
+    filter_image_h_ = filter_image_dims[1];
+    filter_image_w_ = filter_image_dims[0];
+    tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
+    auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+
+    converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+    MUTABLE_DATA_GPU(
+        filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
+
   } else {
     LOG(FATAL) << "conv image compute not support this condition yet! ";
   }
@@ -299,7 +316,18 @@ void ConvImageCompute::PrepareForRun() {
       std::string leaky_relu_alpha_str =
           std::to_string(conv_param_->activation_param.Leaky_relu_alpha);
       build_options_single +=
-          " -DLEAKY_RELU -DLEAKY_RELU_ALPHA=" + leaky_relu_alpha_str;
+          " -DLEAKY_RELU -DLEAKY_RELU_ALPHA=" + leaky_relu_alpha_str + "f";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kHardSwish) {
+      std::string threshold =
+          std::to_string(conv_param_->activation_param.hard_swish_threshold);
+      std::string scale =
+          std::to_string(conv_param_->activation_param.hard_swish_scale);
+      std::string offset =
+          std::to_string(conv_param_->activation_param.hard_swish_offset);
+      build_options_single += " -DHARD_SWISH -DACT_THRESHOLD=" + threshold +
+                              "f" + " -DACT_SCALE=" + scale + "f" +
+                              " -DACT_OFFSET=" + offset + "f";
     } else {
       LOG(FATAL) << "Unsupported activation type:"
                  << static_cast<int>(conv_param_->activation_param.active_type);
@@ -364,21 +392,23 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   std::stringstream kernel_key;
   kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
   kernel_ = context.cl_context()->GetKernel(kernel_key.str());
-  VLOG(4) << "kernel_key: " << kernel_key.str();
-  VLOG(4) << "kernel ready ... " << kernel_key.str();
+
+  auto tuned_map_key = GenerateTunedKey();
+  cl::NDRange lws_in_map = cl::NullRange;
+  if (context.cl_context()->HasTunedLocalWorkSizeMap(tuned_map_key,
+                                                     &lws_in_map)) {
+    local_work_size_ = lws_in_map;
+    return;
+  }
 
   size_t max_work_group_size = 0;
   kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                    CL_KERNEL_WORK_GROUP_SIZE,
                                    &max_work_group_size);
-  VLOG(4) << "max_work_group_size: " << max_work_group_size;
   std::vector<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
       global_work_size_, max_work_group_size);
   CHECK(lwss.size() > 0) << "Possible local work sizes should bigger than zero";
   local_work_size_ = lwss[0];
-  VLOG(1) << "local_work_size:" << static_cast<int>(local_work_size_[0]) << ","
-          << static_cast<int>(local_work_size_[1]) << ","
-          << static_cast<int>(local_work_size_[2]) << ",";
   if (max_work_group_size <= 0 || !use_lws_ ||
       CLRuntime::Global()->auto_tune() <= 0) {
     if (!use_lws_) {
@@ -403,8 +433,21 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     }
   }
   local_work_size_ = min_lws;
-  VLOG(3) << "selected local_work_size_ : " << local_work_size_[0] << " "
-          << local_work_size_[1] << " " << local_work_size_[2];
+  context.cl_context()->SetTunedLocalWorkSizeMap(tuned_map_key,
+                                                 local_work_size_);
+}
+
+std::string ConvImageCompute::GenerateTunedKey() {
+  std::stringstream key;
+  key << kernel_func_names_[0] << ",x:" << input_tensor_n_ << "x"
+      << input_tensor_c_ << "x" << input_tensor_h_ << "x" << input_tensor_w_
+      << ",w:" << filter_tensor_n_ << "x" << filter_tensor_c_ << "x"
+      << filter_tensor_h_ << "x" << filter_tensor_w_ << ",b:" << bias_image_h_
+      << "x" << bias_image_w_ << ",pad:" << pad_up_ << pad_down_ << pad_left_
+      << pad_right_ << ",dil:" << dilation_h_ << dilation_w_
+      << ",s:" << stride_h_ << stride_w_ << ",g:" << groups_
+      << ",act:" << static_cast<int>(conv_param_->activation_param.active_type);
+  return key.str();
 }
 
 void ConvImageCompute::ReInitWhenNeeded() {
@@ -568,6 +611,14 @@ void ConvImageCompute::SetGlobalWorkSize() {
     global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
+  } else if (kernel_func_names_[0] == "conv2d_common") {
+    c_blk_ = (output_tensor_c_ + 3) / 4;
+    w_blk_ = maptofactor(default_w_blk_, 4);
+    nh_blk_ = default_nh_blk_;
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(nh_blk_)};
+    input_c_block_ = static_cast<const int>((input_tensor_c_ + 3) / 4);
   }
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
@@ -934,6 +985,50 @@ void ConvImageCompute::DepthwiseConv2d() {
   CL_CHECK_FATAL(status_);
 }
 
+void ConvImageCompute::Conv2dCommon() {
+  use_lws_ = false;
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, filter_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, filter_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, stride_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, pad_left_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(17, pad_up_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(18, dilation_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(19, dilation_h_);
+  CL_CHECK_FATAL(status_);
+}
+
 void ConvImageCompute::Run() {
 #ifdef LITE_WITH_LOG
   PrintConvInfo();
@@ -1046,6 +1141,7 @@ REGISTER_LITE_KERNEL(conv2d,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d,
@@ -1064,6 +1160,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 
 // kHost(PC)
@@ -1083,6 +1180,7 @@ REGISTER_LITE_KERNEL(conv2d,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d,
@@ -1101,5 +1199,6 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 #define LITE_WITH_LOG

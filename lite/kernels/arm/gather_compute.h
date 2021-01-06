@@ -13,25 +13,4 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
-
-template <typename IndexType>
-class GatherCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
-
-  ~GatherCompute() {}
-};
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+#include "lite/kernels/host/gather_compute.h"

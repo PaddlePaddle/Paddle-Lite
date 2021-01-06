@@ -13,11 +13,14 @@ set BUILD_FOR_CI=OFF
 set BUILD_PLATFORM=x64
 set MSVC_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
+set WITH_OPENCL=OFF
+set WITH_AVX=ON
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
 set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
 set workspace=%source_path%
+set /a cores=%number_of_processors%-2 > null
 
 :round
 @echo off
@@ -38,6 +41,10 @@ if /I "%1"=="with_extra" (
     set MSVC_STATIC_CRT=OFF
 ) else if /I  "%1"=="with_static_mkl" (
     set WITH_STATIC_MKL=ON
+) else if /I  "%1"=="with_opencl" (
+    set WITH_OPENCL=ON
+) else if /I  "%1"=="without_avx" (
+    set WITH_AVX=OFF
 ) else if /I  "%1"=="build_for_ci" (
     set BUILD_FOR_CI=ON
     set WITH_TESTING=ON
@@ -70,6 +77,8 @@ echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                            
 echo "|  BUILD_PLATFORM=%BUILD_PLATFORM%                                                                    |"
 echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                                                  |"
 echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
+echo "|  WITH_OPENCL=%WITH_OPENCL%                                                                          |"
+echo "|  WITH_AVX=%WITH_AVX%                                                                              |"
 echo "------------------------------------------------------------------------------------------------------|"
 
 
@@ -78,10 +87,16 @@ IF NOT EXIST "%vcvarsall_dir%" (
   goto set_vcvarsall_dir
 )
 
+call:set_python_path
+
 call:prepare_thirdparty
 
 set root_dir=%workspace%
 set build_directory=%BUILD_DIR%\build.lite.x86
+if "%WITH_OPENCL%"=="ON" (
+    set "build_directory=%build_directory%.opencl"
+    call:prepare_opencl_source_code
+)
 set GEN_CODE_PATH_PREFIX=%build_directory%\lite\gen_code
 set DEBUG_TOOL_PATH_PREFIX=%build_directory%\lite\tools\debug
 set Test_FILE="%build_directory%\lite_tests.txt"
@@ -112,12 +127,13 @@ cd "%build_directory%"
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
+            -DWITH_AVX=%WITH_AVX% ^
             -DLITE_WITH_X86=ON  ^
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DWITH_LITE=ON ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
-            -DWITH_GPU=OFF ^
+            -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
             -DLITE_BUILD_EXTRA=%BUILD_EXTRA% ^
             -DLITE_WITH_PYTHON=%WITH_PYTHON% ^
             -DWITH_TESTING=%WITH_TESTING%    ^
@@ -129,33 +145,26 @@ cd "%build_directory%"
 
 if "%BUILD_FOR_CI%"=="ON" (
     call "%vcvarsall_dir%" amd64
-    msbuild /m:4 /p:Configuration=Release lite\lite_compile_deps.vcxproj
+    msbuild /m:%cores% /p:Configuration=Release lite\lite_compile_deps.vcxproj
     call:test_server
     cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
-    msbuild /m:4 /p:Configuration=Release lite\api\opt.vcxproj
+    msbuild /m:%cores% /p:Configuration=Release lite\api\opt.vcxproj
 ) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
-    msbuild /maxcpucount:4 /p:Configuration=Release lite\publish_inference.vcxproj 
+    if "%WITH_OPENCL%"=="ON" (
+        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj 
+    )
+    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj 
 ) else (
     call "%vcvarsall_dir%" x86
-    msbuild /maxcpucount:4 /p:Configuration=Release lite\publish_inference.vcxproj 
+    if "%WITH_OPENCL%"=="ON" (
+        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj 
+    )
+    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj 
 )
 goto:eof
 
 :prepare_thirdparty 
-    SET /P python_path="Please input the path of python.exe, such as C:\Python35\python.exe, C:\Python35\python3.exe   =======>"
-    set tmp_var=!python_path!
-    call:remove_space
-    set python_path=!tmp_var!   
-    if "!python_path!"=="" (
-      set python_path=python.exe
-    ) else (
-      if NOT exist "!python_path!" (
-        echo "------------!python_path! not exist------------" 
-        goto:eof
-      )  
-    )
-
     if  EXIST "%workspace%\third-party" (
         if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
             echo "The directory of third_party exists, the third-party-05b862.tar.gz not exists."            
@@ -187,6 +196,16 @@ powershell.exe (new-object System.Net.WebClient).DownloadFile('https://paddle-in
 '%workspace%\third-party-05b862.tar.gz')
 goto:eof
 
+:prepare_opencl_source_code
+    set GEN_CODE_PATH_OPENCL=%root_dir%\lite\backends\opencl
+    del /f /s /q "%GEN_CODE_PATH_OPENCL%\opencl_kernels_source.cc" >nul 2>&1
+    set OPENCL_KERNELS_PATH=%root_dir%\lite\backends\opencl\cl_kernel
+    md "%GEN_CODE_PATH_OPENCL%"
+    type nul > "%GEN_CODE_PATH_OPENCL%\opencl_kernels_source.cc"
+    !python_path! %root_dir%\lite\tools\cmake_tools/gen_opencl_code.py %OPENCL_KERNELS_PATH% %GEN_CODE_PATH_OPENCL%\opencl_kernels_source.cc
+goto:eof
+
+
 :rm_rebuild_dir
     del /f /s /q "%~1\*.*"  >nul 2>&1
     rd /s /q  "%~1" >nul 2>&1
@@ -200,6 +219,32 @@ set vcvarsall_dir=!tmp_var!
 IF NOT EXIST "%vcvarsall_dir%" (
     echo "------------%vcvarsall_dir% not exist------------"
     goto:eof
+)
+goto:eof
+
+:set_python_path
+set python_path=C:\Python35\python.exe
+IF NOT EXIST "%python_path%" (
+    goto input_python_path
+)
+SET /P answer="We checked that %python_path% exists. Using this python path[yes/no]? Type yes will use the python path, while type no will let you input your prefer python path:"
+set tmp_var=%answer%
+call:remove_space
+if "%tmp_var%"=="yes" (
+    goto:eof
+) else (
+:input_python_path
+    SET /P python_path="Please input the path of python.exe, such as C:\Python35\python.exe, C:\Python35\python3.exe  ======>"
+    set tmp_var=%python_path%
+    call:remove_space
+    set python_path=%tmp_var%
+    if "%python_path%"=="" (
+        set python_path=python.exe
+    ) else (
+        IF NOT EXIST "%python_path%" (
+            echo "------------%python_path% not exist---------------"
+        )
+    )
 )
 goto:eof
 
@@ -235,6 +280,8 @@ echo "|      with_strip: Enable tailoring library according to model. Default OF
 echo "|      build_x86: Enable building for Windows x86 platform. Default is x64.                           |"
 echo "|      with_dynamic_crt: Enable building for MSVC Dynamic Runtime. Default is Static.                 |"
 echo "|      with_static_mkl: Enable Static linking Intel(R) MKL. Default is Dynamic.                       |"
+echo "|      with_opencl: Enable OpenCL for GPU accelerator. Default OFF.                                   |"
+echo "|      without_avx: Enable AVX or SSE for X86 kernels. Default is ON.                                 |"
 echo "|  for example:                                                                                       |"   
 echo "|      build_windows.bat with_log with_profile with_python with_extra                                 |"
 echo "|      build_windows.bat build_x86 with_strip D:\Paddle-Lite\opt_model_dir                            |"

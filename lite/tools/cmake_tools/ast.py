@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Name: ast.py
+Usage: parser kernel registries from .cc source files into python struct `KernelRegistry`,
+       we will generate `all_kernel_faked.cc` by calling this module. 
+"""
 import logging
 
 class SyntaxParser(object):
@@ -166,6 +171,7 @@ class KernelRegistry:
         self.alias = ''
         self.inputs = []
         self.outputs = []
+        self.op_versions = []
 
     def __repr__(self):
         str = "Kernel({op_type}, {target}, {precision}, {data_layout}, {alias}):".format(
@@ -306,13 +312,22 @@ class RegisterLiteKernelParser(SyntaxParser):
             self.eat_right_parentheses()
             self.eat_spaces()
 
-
+        def eat_op_version(io):
+            self.eat_left_parentheses()
+            self.eat_str()
+            io.name = self.token
+            self.eat_comma()
+            self.eat_spaces()
+            self.eat_word()
+            io.version = self.token
+            self.eat_right_parentheses()
+            self.eat_spaces()
         # eat input and output
         while self.cur_pos < len(self.str):
             self.eat_point()
             self.eat_spaces()
             self.eat_word()
-            assert self.token in ('BindInput', 'BindOutput', 'SetVersion', 'Finalize')
+            assert self.token in ('BindInput', 'BindOutput', 'SetVersion', 'BindPaddleOpVersion', 'Finalize')
             io = IO()
 
             if self.token == 'BindInput':
@@ -327,6 +342,11 @@ class RegisterLiteKernelParser(SyntaxParser):
                 self.version = self.token
                 self.eat_right_parentheses()
                 self.eat_spaces()
+            # skip `BindPaddleOpVersion` command during parsing kernel registry 
+            elif self.token == 'BindPaddleOpVersion':
+                # eg BindPaddleOpVersion("fill_constant", 1)
+                eat_op_version(io)
+                k.op_versions.append(io)
             else:
                 self.eat_left_parentheses()
                 self.eat_right_parentheses()
@@ -379,6 +399,3 @@ if __name__ == '__main__':
         kernel_parser = RegisterLiteKernelParser(c)
 
         kernel_parser.parse()
-
-#        for k in kernel_parser.kernels:
-#            print k

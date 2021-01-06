@@ -1,5 +1,6 @@
 message(STATUS "compile with lite host kernels")
 
+# basic kernels
 add_kernel(feed_compute_host Host basic SRCS feed_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(fetch_compute_host Host basic SRCS fetch_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(range_compute_host Host basic SRCS range_compute.cc DEPS ${lite_kernel_deps})
@@ -13,6 +14,9 @@ add_kernel(fill_constant_compute_host Host basic SRCS fill_constant_compute.cc D
 add_kernel(fill_constant_batch_size_like_compute_host Host basic SRCS fill_constant_batch_size_like_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(deformable_conv_compute_host Host basic SRCS deformable_conv_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(stack_compute_host Host basic SRCS stack_compute.cc DEPS ${lite_kernel_deps})
+
+# extra kernels
+add_kernel(unstack_compute_host Host extra SRCS unstack_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(shape_compute_host Host extra SRCS shape_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(is_empty_compute_host Host extra SRCS is_empty_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(crf_decoding_compute_host Host extra SRCS crf_decoding_compute.cc DEPS ${lite_kernel_deps})
@@ -39,6 +43,13 @@ add_kernel(crop_tensor_compute_host Host extra SRCS crop_tensor_compute.cc DEPS 
 add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(flatten_contiguous_range_compute_host Host extra SRCS flatten_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(box_coder_compute_host Host basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(gather_compute_host Host extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(pad3d_compute_host Host extra SRCS pad3d_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(select_input_compute_host Host extra SRCS select_input_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(tensor_array_to_tensor_compute_host Host extra SRCS tensor_array_to_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(expand_v2_compute_host Host extra SRCS expand_v2_compute.cc DEPS ${lite_kernel_deps})
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)

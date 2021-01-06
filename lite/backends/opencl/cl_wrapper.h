@@ -45,7 +45,9 @@ class CLWrapper final {
                                         cl_uint,
                                         const cl_device_id *,
                                         const char *,
-                                        void (*pfn_notify)(cl_program, void *),
+                                        void(CL_CALLBACK *)(  // NOLINT
+                                            cl_program,
+                                            void *),
                                         void *);
   using clEnqueueNDRangeKernelType = cl_int (*)(cl_command_queue,
                                                 cl_kernel,
@@ -220,6 +222,9 @@ class CLWrapper final {
                                                  size_t *param_value_size_ret);
   using clGetImageInfoType =
       cl_int (*)(cl_mem, cl_image_info, size_t, void *, size_t *);
+
+  using clGetMemObjectInfoType =
+      cl_int (*)(cl_mem, cl_mem_info, size_t, void *, size_t *);
 
   using clEnqueueCopyBufferType = cl_int (*)(cl_command_queue,
                                              cl_mem,
@@ -523,6 +528,11 @@ class CLWrapper final {
     return clGetImageInfo_;
   }
 
+  clGetMemObjectInfoType clGetMemObjectInfo() {
+    CHECK(clGetMemObjectInfo_ != nullptr) << "Cannot load clGetMemObjectInfo!";
+    return clGetMemObjectInfo_;
+  }
+
   clEnqueueCopyBufferType clEnqueueCopyBuffer() {
     CHECK(clEnqueueCopyBuffer_ != nullptr)
         << "Cannot load clEnqueueCopyBuffer!";
@@ -608,6 +618,7 @@ class CLWrapper final {
   clGetEventInfoType clGetEventInfo_{nullptr};
   clGetEventProfilingInfoType clGetEventProfilingInfo_{nullptr};
   clGetImageInfoType clGetImageInfo_{nullptr};
+  clGetMemObjectInfoType clGetMemObjectInfo_{nullptr};
   clEnqueueCopyBufferType clEnqueueCopyBuffer_{nullptr};
   clEnqueueWriteImageType clEnqueueWriteImage_{nullptr};
   clEnqueueCopyImageType clEnqueueCopyImage_{nullptr};
