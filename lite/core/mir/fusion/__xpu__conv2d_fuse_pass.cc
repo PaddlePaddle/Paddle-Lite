@@ -85,6 +85,9 @@ namespace fusion {
 /*                     conv2d----in_Filter                      */
 /*                       |                                      */
 /*                       |                                      */
+/*                  elementwise_add -----conv_Bias              */
+/*                       |                                      */
+/*                       |                                      */
 /*        in_X       batch_norm ------in_Bias                   */
 /*             \         |                                      */
 /*               \       |                                      */
@@ -392,9 +395,11 @@ class XPUConv2dBlock1Fuser : public FuseBase {
  public:
   XPUConv2dBlock1Fuser() {}
   explicit XPUConv2dBlock1Fuser(const std::string& conv_type,
-                                const std::string& act_type) {
+                                const std::string& act_type,
+                                bool with_conv_bias) {
     conv_type_ = conv_type;
     act_type_ = act_type;
+    with_conv_bias_ = with_conv_bias;
   }
 
   void BuildPattern() override {
@@ -406,8 +411,25 @@ class XPUConv2dBlock1Fuser : public FuseBase {
     auto* conv = OpNode("conv", conv_type_)->AsIntermediate();
     auto* conv_out = VarNode("conv_out")
                          ->assert_is_op_output(conv_type_, "Output")
-                         ->assert_is_op_input("batch_norm", "X")
                          ->AsIntermediate();
+    PMNode* ew_bias_add = nullptr;
+    PMNode* ew_bias_add_y = nullptr;
+    PMNode* ew_bias_add_out = nullptr;
+    if (with_conv_bias_) {
+      conv_out->assert_is_op_input("elementwise_add", "X");
+      ew_bias_add_y = VarNode("ew_bias_add_y")
+                          ->assert_is_op_input("elementwise_add", "Y")
+                          ->assert_is_persistable_var()
+                          ->assert_only_one_output()
+                          ->AsIntermediate();
+      ew_bias_add = OpNode("ew_bias_add", "elementwise_add")->AsIntermediate();
+      ew_bias_add_out = VarNode("ew_bias_add_out")
+                            ->assert_is_op_output("elementwise_add", "Out")
+                            ->assert_is_op_input("batch_norm", "X")
+                            ->AsIntermediate();
+    } else {
+      conv_out->assert_is_op_input("batch_norm", "X");
+    }
     auto* bn_bias =
         VarNode("bn_bias")->assert_is_op_input("batch_norm", "Bias")->AsInput();
     auto* bn_mean = VarNode("bn_mean")
@@ -448,8 +470,14 @@ class XPUConv2dBlock1Fuser : public FuseBase {
     auto* act_out =
         VarNode("act_out")->assert_is_op_output(act_type_, "Out")->AsOutput();
 
-    *input >> *conv >> *conv_out >> *bn >> *bn_out >> *ew_add >> *ew_out >>
-        *act >> *act_out;
+    *input >> *conv >> *conv_out;
+    if (with_conv_bias_) {
+      *conv_out >> *ew_bias_add >> *ew_bias_add_out >> *bn >> *bn_out;
+      *ew_bias_add_y >> *ew_bias_add;
+    } else {
+      *conv_out >> *bn >> *bn_out;
+    }
+    *bn_out >> *ew_add >> *ew_out >> *act >> *act_out;
     *conv_filter >> *conv;
     *bn_bias >> *bn;
     *bn_mean >> *bn;
@@ -509,8 +537,33 @@ class XPUConv2dBlock1Fuser : public FuseBase {
         filter_on_host[i * filter_stride + j] *= scale_on_host[i];
       }
     }
-    for (int i = 0; i < mean_len; ++i) {
-      bias_on_host[i] += -mean_on_host[i] * scale_on_host[i];
+    if (with_conv_bias_) {
+      auto ew_bias_add_y_name = matched.at("ew_bias_add_y")->arg()->name;
+      auto* ew_add_y_t = scope->FindMutableTensor(ew_bias_add_y_name);
+      float* ew_add_y_on_host = ew_add_y_t->mutable_data<float>();
+      auto ew_add_y_size = ew_add_y_t->numel();
+      if (ew_add_y_size != mean_len && ew_add_y_size == 1) {
+        for (int i = 0; i < mean_len; ++i) {
+          bias_on_host[i] +=
+              (ew_add_y_on_host[0] - mean_on_host[i]) * scale_on_host[i];
+        }
+      } else if (ew_add_y_size == mean_len) {
+        for (int i = 0; i < mean_len; ++i) {
+          bias_on_host[i] +=
+              (ew_add_y_on_host[i] - mean_on_host[i]) * scale_on_host[i];
+        }
+      } else {
+        LOG(WARNING) << "Elements size of `elemwise_bias` and 'batchnorm_mean` "
+                        "should be the same, but get size of `elemwise_bias` "
+                        "is: "
+                     << ew_add_y_size
+                     << ", size of `batchnorm_mean` is: " << mean_len;
+        return;
+      }
+    } else {
+      for (int i = 0; i < mean_len; ++i) {
+        bias_on_host[i] += -mean_on_host[i] * scale_on_host[i];
+      }
     }
 
     float max_f =
@@ -587,6 +640,7 @@ class XPUConv2dBlock1Fuser : public FuseBase {
  private:
   std::string conv_type_;
   std::string act_type_;
+  bool with_conv_bias_;
 };
 
 class XPUConv2dBlock2Fuser : public FuseBase {
@@ -766,7 +820,7 @@ class XPUConv2dFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
-    // conv + bn + branch + act
+    // conv + (ew_add) + bn + branch + act
     for (auto conv_type : {"conv2d", "depthwise_conv2d"}) {
       for (auto act_type : {"relu",
                             "sigmoid",
@@ -775,8 +829,11 @@ class XPUConv2dFusePass : public ProgramPass {
                             "hard_swish",
                             "hard_sigmoid",
                             "relu6"}) {
-        fusion::XPUConv2dBlock1Fuser fuser(conv_type, act_type);
-        fuser(graph.get());
+        for (auto with_conv_bias : {true, false}) {
+          fusion::XPUConv2dBlock1Fuser fuser(
+              conv_type, act_type, with_conv_bias);
+          fuser(graph.get());
+        }
       }
     }
     // conv + (ew_add) + bn + act
