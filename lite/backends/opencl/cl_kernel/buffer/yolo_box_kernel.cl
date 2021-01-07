@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-#define native_sigmoid(x) (1.f / (1.f + half_exp(-x)))
+#define native_sigmoid(x) (1.f / (1.f + native_exp(-x)))
 
 #define get_entry_index(batch,     \
                         an_idx,    \
@@ -44,10 +44,10 @@ limitations under the License. */
                  img_width / x_h;                                 \
   box[1] = (k + native_sigmoid(x_data[box_idx + x_stride]) *      \
                  scale + bias) * img_height / x_h;                \
-  box[2] = half_exp(box_idx + x_stride * 2) *                   \
+  box[2] = native_exp(box_idx + x_stride * 2) *                   \
                  anchors_data[2 * anchor_idx] *                   \
                  img_width / x_size;                              \
-  box[3] = half_exp(box_idx + x_stride * 3) *                   \
+  box[3] = native_exp(box_idx + x_stride * 3) *                   \
                  anchors_data[2 * anchor_idx + 1] *               \
                  img_height / x_size;                             \
 }
@@ -97,6 +97,7 @@ void yolo_box(__global const CL_DTYPE* x_data,
               const int x_stride,
               const int x_size,
               __global const int* imgsize_data,
+              const int imgsize_num,
               __global CL_DTYPE* boxes_data,
               const int box_num,
               __global CL_DTYPE* scores_data,
@@ -108,38 +109,36 @@ void yolo_box(__global const CL_DTYPE* x_data,
               const float conf_thresh,
               const float scale,
               const float bias) {
-  const int imgsize_idx = get_global_id(0); // [0, imgsize_num = x_n)
-  const int anchor_idx = get_global_id(1);  // [0, anchors_num)
-
-  const int img_height = imgsize_data[2 * imgsize_idx];
-  const int img_width = imgsize_data[2 * imgsize_idx + 1];
+  const int k = get_global_id(0); // [0, x_h)
+  const int l = get_global_id(1);  // [0, x_w)
+  const int anchor_idx = get_global_id(2);  // [0, anchors_num)
 
   CL_DTYPE box[4];
-  for (int k = 0; k < x_h; k++) {
-    for (int l = 0; l < x_w; l++) {
-      const int obj_idx = get_entry_index(imgsize_idx, anchor_idx,
-                k * x_w + l, anchor_num, anchor_stride, x_stride, 4);
-      float conf = native_sigmoid(x_data[obj_idx]);
-      if (conf < conf_thresh) continue;
+  for (int imgsize_idx = 0; imgsize_idx < imgsize_num; imgsize_idx++) {
+    const int img_height = imgsize_data[2 * imgsize_idx];
+    const int img_width = imgsize_data[2 * imgsize_idx + 1];
+    const int obj_idx = get_entry_index(imgsize_idx, anchor_idx,
+              k * x_w + l, anchor_num, anchor_stride, x_stride, 4);
+    float conf = native_sigmoid(x_data[obj_idx]);
+    if (conf < conf_thresh) continue;
 
-      // get yolo box
-      int box_idx = get_entry_index(imgsize_idx, anchor_idx,
-                k * x_w + l, anchor_num, anchor_stride, x_stride, 0);
-      get_yolo_box(box, x_data, anchors_data, l, k, anchor_idx,
-                   x_h, x_size, box_idx, x_stride,
-                   img_height, img_width, scale, bias);
+    // get yolo box
+    int box_idx = get_entry_index(imgsize_idx, anchor_idx,
+              k * x_w + l, anchor_num, anchor_stride, x_stride, 0);
+    get_yolo_box(box, x_data, anchors_data, l, k, anchor_idx,
+                 x_h, x_size, box_idx, x_stride,
+                 img_height, img_width, scale, bias);
 
-      // get box id, label id
-      box_idx = (imgsize_idx * box_num +
-                 anchor_idx * x_stride +
-                 k * x_w + l) * 4;
-      calc_detection_box(boxes_data, box, box_idx, img_height, img_width, clip_bbox);
-      const int label_idx = get_entry_index(imgsize_idx, anchor_idx,
-                k * x_w + l, anchor_num, anchor_stride, x_stride, 5);
-      int score_idx = (imgsize_idx * box_num + anchor_idx * x_stride + k * x_w + l) * class_num;
+    // get box id, label id
+    box_idx = (imgsize_idx * box_num +
+               anchor_idx * x_stride +
+               k * x_w + l) * 4;
+    calc_detection_box(boxes_data, box, box_idx, img_height, img_width, clip_bbox);
+    const int label_idx = get_entry_index(imgsize_idx, anchor_idx,
+              k * x_w + l, anchor_num, anchor_stride, x_stride, 5);
+    int score_idx = (imgsize_idx * box_num + anchor_idx * x_stride + k * x_w + l) * class_num;
 
-      // get label score
-      calc_label_score(scores_data, x_data, label_idx, score_idx, class_num, conf, x_stride);
-    }
+    // get label score
+    calc_label_score(scores_data, x_data, label_idx, score_idx, class_num, conf, x_stride);
   }
 }

@@ -250,9 +250,9 @@ class YoloBoxComputeTester : public arena::TestCase {
 };
 
 void TestYoloBox(Place place, float abs_error) {
-  for (int class_num : {1 /*, 4*/}) {
-    for (float conf_thresh : {0.01 /*, 0.2*/}) {
-      for (int downsample_ratio : {16 /*, 32*/}) {
+  for (int class_num : {1, 4}) {
+    for (float conf_thresh : {0.01, 0.2}) {
+      for (int downsample_ratio : {16, 32}) {
         std::vector<int> anchor{10, 13, 16, 30, 33, 30};
         std::unique_ptr<arena::TestCase> tester(new YoloBoxComputeTester(
             place, "def", anchor, class_num, conf_thresh, downsample_ratio));

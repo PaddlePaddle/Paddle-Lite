@@ -63,9 +63,9 @@ class YoloBoxComputeBuffer
         DDim(std::vector<DDim::value_type>{anchors.size()});
     anchors_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     anchors_gpu_t_->Resize(anchors_dim);
-    auto anchors_gpu_data =
+    anchors_gpu_data_ =
         anchors_gpu_t_->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    TargetWrapperCL::MemcpySync(anchors_gpu_data,
+    TargetWrapperCL::MemcpySync(anchors_gpu_data_,
                                 anchors.data(),
                                 anchors_gpu_t_->memory_size(),
                                 IoDirection::HtoD);
@@ -74,9 +74,9 @@ class YoloBoxComputeBuffer
     lite::Tensor* ImgSize = yolo_box_param_->ImgSize;
     imgsize_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     imgsize_gpu_t_->Resize(ImgSize->dims());
-    auto imgsize_gpu_data =
+    imgsize_gpu_data_ =
         imgsize_gpu_t_->mutable_data<int, cl::Buffer>(TARGET(kOpenCL));
-    TargetWrapperCL::MemcpySync(imgsize_gpu_data,
+    TargetWrapperCL::MemcpySync(imgsize_gpu_data_,
                                 ImgSize->data<int>(),
                                 ImgSize->memory_size(),
                                 IoDirection::HtoD);
@@ -97,16 +97,16 @@ class YoloBoxComputeBuffer
       x_w_ = X->dims()[3];
       x_stride_ = x_h_ * x_w_;
       x_size_ = yolo_box_param_->downsample_ratio * x_h_;
+      x_data_ = X->mutable_data<float, cl::Buffer>();
 
       // Boxes: output
       lite::Tensor* Boxes = yolo_box_param_->Boxes;
-      Boxes->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      boxes_data_ = Boxes->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
       box_num_ = Boxes->dims()[1];
 
       // Scores: output
       lite::Tensor* Scores = yolo_box_param_->Scores;
-      auto scores_data =
-          Scores->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      scores_data_ = Scores->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
 #ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
@@ -125,27 +125,12 @@ class YoloBoxComputeBuffer
   }
 
   void GetGlobalWorkSize() {
-    global_work_size_ = {static_cast<cl::size_type>(x_n_),
-                         static_cast<cl::size_type>(anchor_num_),
-                         static_cast<cl::size_type>(1)};
+    global_work_size_ = {static_cast<cl::size_type>(x_h_),
+                         static_cast<cl::size_type>(x_w_),
+                         static_cast<cl::size_type>(anchor_num_)};
   }
 
   void Run() override {
-    // X: input
-    lite::Tensor* X = yolo_box_param_->X;
-    auto x_data = X->mutable_data<float, cl::Buffer>();
-    // ImgSize: input
-    auto imgsize_gpu_data = imgsize_gpu_t_->data<int, cl::Buffer>();
-    // anchors: input
-    auto anchors_gpu_data = anchors_gpu_t_->data<int, cl::Buffer>();
-
-    // Boxes: output
-    lite::Tensor* Boxes = yolo_box_param_->Boxes;
-    auto boxes_data = Boxes->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-    // Scores: output
-    lite::Tensor* Scores = yolo_box_param_->Scores;
-    auto scores_data = Scores->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "x_n_:" << x_n_;
     LOG(INFO) << "x_c_:" << x_c_;
@@ -165,7 +150,7 @@ class YoloBoxComputeBuffer
 
     auto kernel = kernel_;
     cl_int status;
-    status = kernel.setArg(0, *x_data);
+    status = kernel.setArg(0, *x_data_);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(1, x_n_);
     CL_CHECK_FATAL(status);
@@ -179,29 +164,31 @@ class YoloBoxComputeBuffer
     CL_CHECK_FATAL(status);
     status = kernel.setArg(6, x_size_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(7, *imgsize_gpu_data);
+    status = kernel.setArg(7, *imgsize_gpu_data_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(8, *boxes_data);
+    status = kernel.setArg(8, /* imgsize_num = */ x_n_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(9, box_num_);
+    status = kernel.setArg(9, *boxes_data_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(10, *scores_data);
+    status = kernel.setArg(10, box_num_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(11, *anchors_gpu_data);
+    status = kernel.setArg(11, *scores_data_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(12, anchor_num_);
+    status = kernel.setArg(12, *anchors_gpu_data_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(13, anchor_stride_);
+    status = kernel.setArg(13, anchor_num_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(14, class_num_);
+    status = kernel.setArg(14, anchor_stride_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(15, clip_bbox_);
+    status = kernel.setArg(15, class_num_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(16, conf_thresh_);
+    status = kernel.setArg(16, clip_bbox_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(17, scale_x_y_);
+    status = kernel.setArg(17, conf_thresh_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(18, bias_);
+    status = kernel.setArg(18, scale_x_y_);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(19, bias_);
     CL_CHECK_FATAL(status);
 
     auto& context = ctx_->As<OpenCLContext>();
@@ -250,6 +237,12 @@ class YoloBoxComputeBuffer
 
   int x_stride_{-1};
   int anchor_stride_{-1};
+
+  cl::Buffer* x_data_;
+  cl::Buffer* imgsize_gpu_data_;
+  cl::Buffer* boxes_data_;
+  cl::Buffer* scores_data_;
+  cl::Buffer* anchors_gpu_data_;
 
   cl::NDRange global_work_size_;
   cl::Kernel kernel_;

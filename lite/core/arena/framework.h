@@ -227,7 +227,7 @@ class Arena {
             exclude_outs.end()) {
           continue;
         }
-        VLOG(4) << "==== check precision for " << out_var_idx
+        VLOG(4) << "==== check precision for " << out_var_idx++
                 << "th(from 0) output var:" << out << " ===";
         success = success && CompareTensor(out, var);
       }
