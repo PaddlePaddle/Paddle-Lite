@@ -52,7 +52,6 @@ class ReduceSumCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<operators::ReduceParam>();
-    // auto& context = ctx_->As<X86Context>();
     bool reduce_all = param.reduce_all;
     auto* input = param.X;
     auto* Out = param.Out;
@@ -64,7 +63,6 @@ class ReduceSumCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       // Flatten and reduce 1-D tensor
       auto x = lite::fluid::EigenVector<T>::Flatten(*input);
       auto out = lite::fluid::EigenScalar<T>::From(Out);
-      // auto& place = *platform::CPUDeviceContext().eigen_device();
       auto reduce_dim = Eigen::array<int, 1>({{0}});
       SumFunctor functor;
       functor(&x, &out, reduce_dim);
@@ -91,7 +89,6 @@ class ReduceMeanCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<operators::ReduceParam>();
-    // auto& context = ctx_->As<X86Context>();
     auto* input = param.X;
     auto* Out = param.Out;
     param.Out->template mutable_data<T>();
@@ -103,7 +100,6 @@ class ReduceMeanCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       // Flatten and reduce 1-D tensor
       auto x = lite::fluid::EigenVector<T>::Flatten(*input);
       auto out = lite::fluid::EigenScalar<T>::From(Out);
-      // auto& place = *platform::CPUDeviceContext().eigen_device();
       auto reduce_dim = Eigen::array<int, 1>({{0}});
       MeanFunctor functor;
       functor(&x, &out, reduce_dim);
