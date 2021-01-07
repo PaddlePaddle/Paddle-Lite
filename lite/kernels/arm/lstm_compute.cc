@@ -135,8 +135,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
         int pre_hidden_size = M * K;
         float scale_factor = ((1 << (bit_length - 1)) - 1);
         // float threshold =
-        //     lite::arm::math::compute_max_kernel(pre_hidden_t,
-        //     pre_hidden_size);
+        //     lite::arm::math::FindAbsMax(pre_hidden_t, pre_hidden_size);
         // float pre_hidden_scale =
         // lite::arm::math::GetScale(threshold, bit_length);
         std::vector<float> pre_hidden_scale =

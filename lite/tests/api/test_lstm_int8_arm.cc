@@ -57,8 +57,33 @@ TEST(LSTM_INT8_MODEL, test_lstm_int8_arm) {
   input_tensor->Resize({batch_size, channel, height, width});
   auto* input_data = input_tensor->mutable_data<float>();
   ReadTxtFile(FLAGS_data_dir, input_data, input_size);
-
-  predictor->Run();
+  for (int i = 0; i < FLAGS_warmup; ++i) {
+    predictor->Run();
+  }
+  double cost_time = 0;
+  double min = 10000000;
+  double max = 0;
+  for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto input_tensor = predictor->GetInput(0);
+    input_tensor->Resize({batch_size, channel, height, width});
+    auto* input_data = input_tensor->mutable_data<float>();
+    ReadTxtFile(FLAGS_data_dir, input_data, input_size);
+    double start = GetCurrentUS();
+    predictor->Run();
+    double spend = GetCurrentUS() - start;
+    spend = spend / 1000.0;
+    cost_time += spend;
+    min = min > spend ? spend : min;
+    max = max < spend ? spend : max;
+    LOG(INFO) << "iter:  " << i << ", time: " << spend << " ms";
+  }
+  LOG(INFO) << "================== Speed Report ===================";
+  LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
+            << ", warmup: " << FLAGS_warmup << ", batch: " << batch_size
+            << ", iteration: " << FLAGS_repeats << ", spend "
+            << cost_time / FLAGS_repeats << " ms in average."
+            << " min: " << min << " ms,"
+            << " max: " << max << " ms.";
 
   auto out_0 = predictor->GetOutput(0);
   int64_t out_size_0 = ShapeProduction(out_0->shape());
