@@ -106,6 +106,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
   std::string cand_act = param.candidate_activation;
 
   int matrix_width = batch_gate->numel() / in_dims[0];
+  float scale_factor = ((1 << (bit_length - 1)) - 1);
   for (size_t n = 0; n < num_batch; n++) {
     int bstart = static_cast<int>(batch_starts[n]);
     int bend = static_cast<int>(batch_starts[n + 1]);
@@ -129,15 +130,11 @@ void LSTMComputeRun(const operators::LstmParam& param,
       int M = pre_h_end - pre_h_start;
       int N = matrix_width;
       int K = frame_size;
+      float beta = 0.f;
 
       if (enable_int8) {
         // quantize Ht-1
         int pre_hidden_size = M * K;
-        float scale_factor = ((1 << (bit_length - 1)) - 1);
-        // float threshold =
-        //     lite::arm::math::FindAbsMax(pre_hidden_t, pre_hidden_size);
-        // float pre_hidden_scale =
-        // lite::arm::math::GetScale(threshold, bit_length);
         std::vector<float> pre_hidden_scale =
             lite::arm::math::get_tensor_scale_n(
                 pre_hidden_t, 1, pre_hidden_size, scale_factor);
@@ -155,7 +152,6 @@ void LSTMComputeRun(const operators::LstmParam& param,
         }
 
         operators::ActivationParam act_param;
-        float beta = 0.f;
         act_param.has_active = false;
         if (M == 1 || N == 1) {
           beta = 1.f;
