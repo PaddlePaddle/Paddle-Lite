@@ -218,8 +218,9 @@ void HardSwishCompute::Run() {
   float scale = param.hard_swish_scale;
   float offset = param.hard_swish_offset;
   for (int i = 0; i < x_dims.production(); i++) {
-    output_data[i] = std::min(std::max(0.f, x_data[i] + offset), threshold) *
-                     x_data[i] / scale;
+    output_data[i] =
+        (std::min)((std::max)(0.f, x_data[i] + offset), threshold) * x_data[i] /
+        scale;
   }
 }
 
