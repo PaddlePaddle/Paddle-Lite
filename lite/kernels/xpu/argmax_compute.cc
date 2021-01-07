@@ -34,23 +34,18 @@ void ArgmaxCompute::Run() {
   if (axis < 0) {
     axis += rank;
   }
-  switch (param.dtype) {
+  if (param.dtype == -1 || param.dtype == 3) {
     // default int64_t, static_cast<int>(lite::core::FluidType::INT64) == 3
-    case -1:
-    case 3: {
-      int r =
-          xdnn::argmax<float, int64_t>(ctx.GetRawContext(),
-                                       x->data<float>(),
-                                       out->mutable_data<int64_t>(TARGET(kXPU)),
-                                       x_dims,
-                                       axis);
-      CHECK_EQ(r, 0);
-      break;
-    }
-    default: {
-      LOG(FATAL) << "argmax unsupported param type for xpu: " << param.dtype;
-      break;
-    }
+    int r =
+        xdnn::argmax<float, int64_t>(ctx.GetRawContext(),
+                                     x->data<float>(),
+                                     out->mutable_data<int64_t>(TARGET(kXPU)),
+                                     x_dims,
+                                     axis);
+    CHECK_EQ(r, 0);
+  } else {
+    // else if (param.dtype == 2) {}    xpu not support int32 now
+    LOG(FATAL) << "argmax unsupported param type for xpu: " << param.dtype;
   }
 }
 

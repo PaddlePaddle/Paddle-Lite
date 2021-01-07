@@ -20,7 +20,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class FillAnyLikeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class FillAnyLikeCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
  public:
   using param_t = operators::FillAnyLikeParam;
 

@@ -27,7 +27,7 @@ void FillAnyLikeCompute::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
   int write_size = param.X->numel();
   int dtype = param.dtype;
-  CHECK((dtype == -1) || (dtype == 5));
+  CHECK((dtype == -1) || (dtype == 5)) << "dtype: " << dtype;
   int r = xdnn::constant<float>(ctx.GetRawContext(),
                                 param.Out->mutable_data<float>(TARGET(kXPU)),
                                 write_size,
@@ -42,10 +42,10 @@ void FillAnyLikeCompute::Run() {
 
 REGISTER_LITE_KERNEL(fill_any_like,
                      kXPU,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::xpu::FillAnyLikeCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();

@@ -78,4 +78,5 @@ REGISTER_LITE_KERNEL(fill_constant,
     .BindInput("ShapeTensorList",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
+    .BindPaddleOpVersion("fill_constant", 1)
     .Finalize();

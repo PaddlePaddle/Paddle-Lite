@@ -27,6 +27,11 @@ void NormCompute::Run() {
   auto x_dims = param.X->dims();
   int axis = param.axis;
   float epsilon = param.epsilon;
+  if (axis < 0) {
+    axis += x_dims.size();
+  }
+  CHECK_GE(axis, 0) << " axis < 0: " << axis;
+  CHECK_LT(axis, x_dims.size()) << " axis >= rank: " << axis;
 
   int m = 1;
   for (int i = 0; i < axis; i++) {

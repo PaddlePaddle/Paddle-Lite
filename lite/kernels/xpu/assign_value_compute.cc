@@ -28,21 +28,17 @@ void AssignValueCompute::Run() {
   std::vector<float> fp32_values = param.fp32_values;
   std::vector<int> int32_values = param.int32_values;
   CHECK_GT(param.shape.size(), 0UL);
-  int len = 1;
-  for (int i = 0; i < param.shape.size(); i++) {
-    len *= param.shape[i];
-  }
   if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
     auto* out = param.Out->mutable_data<int>(TARGET(kXPU));
     XPU_CALL(xpu_memcpy(out,
                         int32_values.data(),
-                        sizeof(int) * len,
+                        sizeof(int) * int32_values.size(),
                         XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
     auto* out = param.Out->mutable_data<float>(TARGET(kXPU));
     XPU_CALL(xpu_memcpy(out,
                         fp32_values.data(),
-                        sizeof(float) * len,
+                        sizeof(float) * fp32_values.size(),
                         XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   } else {
     LOG(FATAL) << "Unsupported dtype for assign_value_op:" << dtype;
