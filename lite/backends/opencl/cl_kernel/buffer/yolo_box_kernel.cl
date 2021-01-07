@@ -91,7 +91,7 @@ limitations under the License. */
 __kernel
 void yolo_box(__global const CL_DTYPE* x_data,
               const int x_n,
-	      const int x_c,
+              const int x_c,
               const int x_h,
               const int x_w,
               const int x_stride,
