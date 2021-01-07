@@ -108,6 +108,7 @@ static void test_gemm_s8(const benchmark::State &state_in,
                                      z.mutable_data<CValueT>(),
                                      bias.data<float>(),
                                      has_bias,
+                                     0.f,
                                      scale.data<float>(),
                                      act_param,
                                      &ctx);

@@ -19,8 +19,6 @@
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/backends/arm/math/lstm.h"
-#include "lite/backends/arm/math/sequence2batch.h"
-#include "lite/backends/arm/math/sgemm.h"
 
 namespace paddle {
 namespace lite {
@@ -135,47 +133,70 @@ void LSTMComputeRun(const operators::LstmParam& param,
       if (enable_int8) {
         // quantize Ht-1
         int pre_hidden_size = M * K;
-        float threshold =
-            lite::arm::math::compute_max_kernel(pre_hidden_t, pre_hidden_size);
-        float pre_hidden_scale =
-            lite::arm::math::GetScale(threshold, bit_length);
+        float scale_factor = ((1 << (bit_length - 1)) - 1);
+        // float threshold =
+        //     lite::arm::math::compute_max_kernel(pre_hidden_t,
+        //     pre_hidden_size);
+        // float pre_hidden_scale =
+        // lite::arm::math::GetScale(threshold, bit_length);
+        std::vector<float> pre_hidden_scale =
+            lite::arm::math::get_tensor_scale_n(
+                pre_hidden_t, 1, pre_hidden_size, scale_factor);
         std::unique_ptr<int8_t[]> pre_hidden_int8(new int8_t[pre_hidden_size]);
         lite::arm::math::fp32_to_int8(pre_hidden_t,
                                       pre_hidden_int8.get(),
-                                      pre_hidden_scale,
+                                      pre_hidden_scale.data(),
                                       1,
                                       1,
                                       pre_hidden_size);
         // update scales
         std::vector<float> scales(M, weight_scale[0]);
         for (auto&& x : scales) {
-          x *= pre_hidden_scale;
+          x *= pre_hidden_scale[0];
         }
 
         operators::ActivationParam act_param;
+        float beta = 0.f;
         act_param.has_active = false;
+        if (M == 1 || N == 1) {
+          beta = 1.f;
+        }
 
-        // std::unique_ptr<float[]> o_data(new float[M * N]);
-        lite::arm::math::gemm_s8(false,
-                                 false,
-                                 M,
-                                 N,
-                                 K,
-                                 pre_hidden_int8.get(),
-                                 weight->data<int8_t>(),
-                                 //  o_data.get(),
-                                 gate_t,
-                                 //  nullptr,
-                                 gate_t,
-                                 //  false,
-                                 true,
-                                 scales.data(),
-                                 act_param,
-                                 ctx);
-
-        // for (int i = 0; i < M * N; i++) {
-        //   gate_t[i] += o_data[i];
-        // }
+        if (beta > 0) {
+          lite::arm::math::gemm_s8(false,
+                                   false,
+                                   M,
+                                   N,
+                                   K,
+                                   pre_hidden_int8.get(),
+                                   weight->data<int8_t>(),
+                                   gate_t,
+                                   nullptr,
+                                   false,
+                                   beta,
+                                   scales.data(),
+                                   act_param,
+                                   ctx);
+        } else {
+          std::unique_ptr<float[]> o_data(new float[M * N]);
+          lite::arm::math::gemm_s8(false,
+                                   false,
+                                   M,
+                                   N,
+                                   K,
+                                   pre_hidden_int8.get(),
+                                   weight->data<int8_t>(),
+                                   o_data.get(),
+                                   nullptr,
+                                   false,
+                                   beta,
+                                   scales.data(),
+                                   act_param,
+                                   ctx);
+          for (int i = 0; i < M * N; i++) {
+            gate_t[i] += o_data[i];
+          }
+        }
       } else {
         lite::arm::math::sgemm(false,
                                false,

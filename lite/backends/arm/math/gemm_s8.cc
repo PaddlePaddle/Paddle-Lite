@@ -30,34 +30,67 @@ void gemm_s8(bool is_transA,
              Dtype* C,
              const float* bias,
              bool is_bias,
+             const float beta,
              const float* scale,
              const operators::ActivationParam act_param,
              ARMContext* ctx) {
   if (N == 1) {
-    gemv_int8(A,
-              B,
-              C,
-              false,
-              M,
-              K,
-              scale,
-              is_bias,
-              bias,
-              act_param.has_active,
-              act_param.active_type,
-              ctx,
-              act_param.Relu_clipped_coef,
-              act_param.Leaky_relu_alpha);
-
+    if (beta) {
+      float bias_ptr[N];  // NOLINT
+      if (is_bias) {
+        for (int i = 0; i < M; i++) {
+          bias_ptr[N] = bias[i] + beta * C[i];
+        }
+      } else {
+        for (int i = 0; i < M; i++) {
+          bias_ptr[N] = beta * C[i];
+        }
+        is_bias = true;
+      }
+      gemv_int8(A,
+                B,
+                C,
+                false,
+                M,
+                K,
+                scale,
+                is_bias,
+                bias_ptr,
+                act_param.has_active,
+                act_param.active_type,
+                ctx,
+                act_param.Relu_clipped_coef,
+                act_param.Leaky_relu_alpha);
+    } else {
+      gemv_int8(A,
+                B,
+                C,
+                false,
+                M,
+                K,
+                scale,
+                is_bias,
+                bias,
+                act_param.has_active,
+                act_param.active_type,
+                ctx,
+                act_param.Relu_clipped_coef,
+                act_param.Leaky_relu_alpha);
+    }
     return;
   }
-  // TODO(chenjiao): fix the error of gemv_int8
+
   if (M == 1) {
     float bias_ptr[N];   // NOLINT
     float scale_ptr[N];  // NOLINT
     if (is_bias) {
       for (int i = 0; i < N; i++) {
         bias_ptr[i] = bias[0];
+      }
+    }
+    if (beta) {
+      for (int i = 0; i < N; i++) {
+        bias_ptr[i] += beta * C[i];
       }
     }
     for (int i = 0; i < N; i++) {
@@ -79,7 +112,9 @@ void gemm_s8(bool is_transA,
               act_param.Leaky_relu_alpha);
     return;
   }
-
+  if (beta) {
+    LOG(FATAL) << "gemm_prepack_int8 doesn't support beta parameter!";
+  }
   int hblock = get_hblock_int8(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
   ctx->ExtendWorkspace(m_roundup * K * sizeof(int8_t));
@@ -102,6 +137,7 @@ template void gemm_s8<float>(bool is_transA,
                              float* C,
                              const float* bias,
                              bool is_bias,
+                             const float beta,
                              const float* scale,
                              const operators::ActivationParam act_param,
                              ARMContext* ctx);
@@ -116,6 +152,7 @@ template void gemm_s8<int8_t>(bool is_transA,
                               int8_t* C,
                               const float* bias,
                               bool is_bias,
+                              const float beta,
                               const float* scale,
                               const operators::ActivationParam act_param,
                               ARMContext* ctx);

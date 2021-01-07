@@ -257,6 +257,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
+                             0.f,
                              scale_.data(),
                              act_param,
                              &ctx);
@@ -320,6 +321,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                              o_data,
                              nullptr,
                              false,
+                             0.f,
                              scale_.data(),
                              act_param,
                              &ctx);

@@ -59,6 +59,7 @@
 #include "lite/backends/arm/math/reduce_sum.h"
 #include "lite/backends/arm/math/scale.h"
 #include "lite/backends/arm/math/scatter.h"
+#include "lite/backends/arm/math/sequence2batch.h"
 #include "lite/backends/arm/math/sequence_expand.h"
 #include "lite/backends/arm/math/sequence_pool.h"
 #include "lite/backends/arm/math/sequence_pool_grad.h"
@@ -71,6 +72,7 @@
 #include "lite/backends/arm/math/split.h"
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
 #include "lite/backends/arm/math/topk.h"
+#include "lite/backends/arm/math/type_trans.h"
 #include "lite/backends/arm/math/yolo_box.h"
 
 namespace paddle {
