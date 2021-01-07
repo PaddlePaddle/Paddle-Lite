@@ -410,8 +410,8 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
       int scale_size = input_var_tensor->dims()[quant_axis];
       std::vector<float> scales(scale_size, scale_value);
       op_info.SetInputScale(input_var_name, scales);
-      // TODO(pjc): support conv2d_transpose and matmul
-      if (op_type == "mul" || op_type == "conv2d" ||
+      // TODO(pjc): support conv2d_transpose
+      if (op_type == "mul" || op_type == "matmul" || op_type == "conv2d" ||
           op_type == "depthwise_conv2d") {
         op_info.SetAttr("enable_int8", true);
         QuantizeTensorInPlace<int8_t>(input_var_tensor, scale_value);
