@@ -126,7 +126,9 @@ enum class ActivationType : int {
   kThresholdedRelu = 12,
   kElu = 13,
   kHardSigmoid = 14,
-  NUM = 15,
+  kSigmoid_v2 = 15,
+  kTanh_v2 = 16,
+  NUM = 17,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {

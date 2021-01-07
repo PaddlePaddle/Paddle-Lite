@@ -1706,9 +1706,9 @@ struct LstmParam : ParamBase {
   lite::Tensor* C0{nullptr};
   bool use_peepholes;
   bool is_reverse;
-  std::string gate_activation;
-  std::string cell_activation;
-  std::string candidate_activation;
+  lite_api::ActivationType gate_activation;
+  lite_api::ActivationType cell_activation;
+  lite_api::ActivationType candidate_activation;
   // for int8
   WITH_INT8_CONFIG
 };
