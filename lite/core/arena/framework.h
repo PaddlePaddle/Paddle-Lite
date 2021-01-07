@@ -72,20 +72,21 @@ class TestCase {
   template <typename T>
   bool CheckTensorPrecision(const Tensor* a_tensor,
                             const Tensor* b_tensor,
-                            float abs_error);
+                            float abs_error,
+                            const Type* type);
 
   // checkout the precision of the two tensors. b_tensor is baseline
   bool CheckPrecision(const Tensor* a_tensor,
                       const Tensor* b_tensor,
                       float abs_error,
-                      PrecisionType precision_type);
+                      const Type* out_arg_type);
 
   /// Check the precision of the output variables. It will compare the same
   /// tensor (or all tensors of the tensor_array) in two scopes, one of the
   /// instruction execution, and the other for the baseline.
   bool CheckPrecision(const std::string& var_name,
                       float abs_error,
-                      PrecisionType precision_type);
+                      const Type* out_arg_type);
 
   const cpp::OpDesc& op_desc() { return *op_desc_; }
 
@@ -225,6 +226,8 @@ class Arena {
             exclude_outs.end()) {
           continue;
         }
+        LOG(INFO) << "=================== out:" << out
+                  << " ===============================";
         success = success && CompareTensor(out, var);
       }
     }
@@ -256,10 +259,9 @@ class Arena {
   // input_name: X
   bool CompareTensor(const std::string& arg_name, const std::string& var_name) {
     // get tensor type.
-    const Type* type =
+    const Type* out_arg_type =
         tester_->instruction().kernel()->GetOutputDeclType(arg_name);
-    auto precision_type = type->precision();
-    return tester_->CheckPrecision(var_name, abs_error_, precision_type);
+    return tester_->CheckPrecision(var_name, abs_error_, out_arg_type);
   }
 
  private:

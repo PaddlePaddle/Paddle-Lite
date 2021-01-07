@@ -113,11 +113,12 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
             input_image_dims[0], input_image_dims[1], input_image_cpu_data);
       } else {
         // buffer: same as default
-        TargetCopy(target_type,
-                   inst_tensor->mutable_data(type->target(),
-                                             base_tensor->memory_size()),
-                   base_tensor->raw_data(),
-                   base_tensor->memory_size());
+        TargetWrapperCL::MemcpySync(
+            inst_tensor->mutable_data(type->target(),
+                                      base_tensor->memory_size()),
+            base_tensor->raw_data(),
+            base_tensor->memory_size(),
+            IoDirection::HtoD);
       }
       break;
 #endif
@@ -165,7 +166,8 @@ void TestCase::PrepareInputsForInstruction() {
 template <typename T>
 bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
                                     const Tensor* base_tensor,
-                                    float abs_error) {
+                                    float abs_error,
+                                    const Type* type) {
   CHECK(inst_tensor);
   CHECK(base_tensor);
 
@@ -198,33 +200,50 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
 #endif
 #ifdef LITE_WITH_OPENCL
     case TARGET(kOpenCL): {
+      LOG(INFO) << 444444444;
       CLRuntime::Global()->command_queue().finish();
-      auto* out_image = inst_tensor->data<half_t, cl::Image2D>();
-      // We use `getImageInfo` rather than `converter_.InitImageDimInfoWith` to
-      // get the real shape of OpenCL image object because
-      // `converter_.InitImageDimInfoWith` will top pad tensor's dim to 4-dims
-      // if tensor's dim is less than 4 then its return value is not equal to
-      // the real shape of image object(such as reduce op).
-      DDim out_image_shape({1, 1});
-      static_cast<const cl::Image2D*>(out_image)->getImageInfo(
-          CL_IMAGE_WIDTH, &out_image_shape[0]);
-      static_cast<const cl::Image2D*>(out_image)->getImageInfo(
-          CL_IMAGE_HEIGHT, &out_image_shape[1]);
-      std::unique_ptr<half_t> out_image_data(
-          new half_t(out_image_shape.production() * 4));
-      TargetWrapperCL::ImgcpySync(out_image_data.get(),
-                                  out_image,
-                                  out_image_shape[0],
-                                  out_image_shape[1],
-                                  0,
-                                  0,
-                                  IoDirection::DtoH);
+      // TODO(ysh329): add precision judge
+      // auto precision = type->precision();
+      auto layout = type->layout();
+      if (layout == DATALAYOUT(kImageDefault)) {
+        auto* out_image = inst_tensor->data<half_t, cl::Image2D>();
+        // We use `getImageInfo` rather than `converter_.InitImageDimInfoWith`
+        // to
+        // get the real shape of OpenCL image object because
+        // `converter_.InitImageDimInfoWith` will top pad tensor's dim to 4-dims
+        // if tensor's dim is less than 4 then its return value is not equal to
+        // the real shape of image object(such as reduce op).
+        DDim out_image_shape({1, 1});
+        static_cast<const cl::Image2D*>(out_image)->getImageInfo(
+            CL_IMAGE_WIDTH, &out_image_shape[0]);
+        static_cast<const cl::Image2D*>(out_image)->getImageInfo(
+            CL_IMAGE_HEIGHT, &out_image_shape[1]);
+        std::unique_ptr<half_t> out_image_data(
+            new half_t(out_image_shape.production() * 4));
+        TargetWrapperCL::ImgcpySync(out_image_data.get(),
+                                    out_image,
+                                    out_image_shape[0],
+                                    out_image_shape[1],
+                                    0,
+                                    0,
+                                    IoDirection::DtoH);
 
-      converter_.ImageToNCHW(out_image_data.get(),
-                             inst_host_tensor.mutable_data<float>(),
-                             out_image_shape,
-                             inst_tensor->dims());
-      inst_data = inst_host_tensor.data<T>();
+        converter_.ImageToNCHW(out_image_data.get(),
+                               inst_host_tensor.mutable_data<float>(),
+                               out_image_shape,
+                               inst_tensor->dims());
+        inst_data = inst_host_tensor.data<T>();
+      } else if (layout == DATALAYOUT(kNCHW)) {
+        // buffer
+        LOG(INFO) << 111111;
+        auto* out_buf = inst_tensor->data<float, cl::Buffer>();
+        void* inst_data_holder = inst_host_tensor.mutable_data<T>();
+        TargetWrapperCL::MemcpySync(inst_data_holder,
+                                    out_buf,
+                                    inst_tensor->memory_size(),
+                                    IoDirection::DtoH);
+        inst_data = static_cast<const T*>(inst_data_holder);
+      }
       break;
     }
 #endif
@@ -237,9 +256,15 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
 
   const T* base_data = static_cast<const T*>(base_tensor->raw_data());
 
+  LOG(INFO) << 111111;
+  LOG(INFO) << 111111;
+  LOG(INFO) << 111111;
+  LOG(INFO) << 111111;
   bool success = true;
   for (int i = 0; i < inst_tensor->dims().production(); i++) {
-    EXPECT_NEAR(inst_data[i], base_data[i], abs_error);
+    LOG(INFO) << "inst_data[" << i << "]:" << inst_data[i] << ", base_data["
+              << i << "]:" << base_data[i];
+    //    EXPECT_NEAR(inst_data[i], base_data[i], abs_error);
     if (fabsf(inst_data[i] - base_data[i]) > abs_error) {
       success = false;
     }
@@ -250,9 +275,9 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
 bool TestCase::CheckPrecision(const Tensor* inst_tensor,
                               const Tensor* base_tensor,
                               float abs_error,
-                              PrecisionType precision_type) {
-  PrecisionType precision_type_t = precision_type;
-  if (precision_type == PRECISION(kAny)) {
+                              const Type* out_arg_type) {
+  PrecisionType precision_type_t = out_arg_type->precision();
+  if (precision_type_t == PRECISION(kAny)) {
     precision_type_t = base_tensor->precision();
   }
 #ifdef LITE_WITH_OPENCL
@@ -261,7 +286,7 @@ bool TestCase::CheckPrecision(const Tensor* inst_tensor,
   CHECK(precision_type_t == base_tensor->precision())
       << "arg precision type and base tensor precision type are not matched! "
          "arg precision type is: "
-      << PrecisionToStr(precision_type) << ", base tensor precision type is: "
+      << PrecisionToStr(precision_type_t) << ", base tensor precision type is: "
       << PrecisionToStr(base_tensor->precision());
 #ifdef LITE_WITH_OPENCL
 
@@ -275,31 +300,35 @@ bool TestCase::CheckPrecision(const Tensor* inst_tensor,
 #endif
   switch (precision_type_t) {
     case PRECISION(kFloat):
-      return CheckTensorPrecision<float>(inst_tensor, base_tensor, abs_error);
+      return CheckTensorPrecision<float>(
+          inst_tensor, base_tensor, abs_error, out_arg_type);
     case PRECISION(kInt8):
-      return CheckTensorPrecision<int8_t>(inst_tensor, base_tensor, abs_error);
+      return CheckTensorPrecision<int8_t>(
+          inst_tensor, base_tensor, abs_error, out_arg_type);
     case PRECISION(kInt32):
-      return CheckTensorPrecision<int32_t>(inst_tensor, base_tensor, abs_error);
+      return CheckTensorPrecision<int32_t>(
+          inst_tensor, base_tensor, abs_error, out_arg_type);
     case PRECISION(kInt64):
-      return CheckTensorPrecision<int64_t>(inst_tensor, base_tensor, abs_error);
+      return CheckTensorPrecision<int64_t>(
+          inst_tensor, base_tensor, abs_error, out_arg_type);
     case PRECISION(kBool):
-      return CheckTensorPrecision<bool>(inst_tensor, base_tensor, abs_error);
+      return CheckTensorPrecision<bool>(
+          inst_tensor, base_tensor, abs_error, out_arg_type);
     default:
-      LOG(FATAL) << "not support type: " << PrecisionToStr(precision_type);
+      LOG(FATAL) << "not support type: " << PrecisionToStr(precision_type_t);
       return false;
   }
 }
 
 bool TestCase::CheckPrecision(const std::string& var_name,
                               float abs_error,
-                              PrecisionType precision_type) {
+                              const Type* out_arg_type) {
   bool success = true;
   if (inst_scope_->FindVar(var_name)->IsType<Tensor>()) {
     auto inst_tensor = inst_scope_->FindTensor(var_name);
     auto base_tensor = base_scope_->FindTensor(var_name);
-    success =
-        success &&
-        CheckPrecision(inst_tensor, base_tensor, abs_error, precision_type);
+    success = success &&
+              CheckPrecision(inst_tensor, base_tensor, abs_error, out_arg_type);
   } else if (inst_scope_->FindVar(var_name)->IsType<std::vector<Tensor>>()) {
     auto inst_tensor_list = inst_scope_->FindMutableTensorList(var_name);
     auto base_tensor_list = base_scope_->FindMutableTensorList(var_name);
@@ -312,7 +341,7 @@ bool TestCase::CheckPrecision(const std::string& var_name,
       }
       success =
           success &&
-          CheckPrecision(inst_tensor, base_tensor, abs_error, precision_type);
+          CheckPrecision(inst_tensor, base_tensor, abs_error, out_arg_type);
     }
   } else {
     LOG(FATAL) << "unsupported var type";
