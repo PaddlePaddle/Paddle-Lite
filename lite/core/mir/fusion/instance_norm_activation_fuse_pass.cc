@@ -37,9 +37,4 @@ void InstanceNormActivationFusePass::Apply(
 REGISTER_MIR_PASS(lite_instance_norm_activation_fuse_pass,
                   paddle::lite::mir::InstanceNormActivationFusePass)
     .BindTargets({TARGET(kOpenCL)})
-    .ExcludeTargets({TARGET(kNPU),
-                     TARGET(kXPU),
-                     TARGET(kRKNPU),
-                     TARGET(kAPU),
-                     TARGET(kHuaweiAscendNPU)})
     .BindKernel("instance_norm");

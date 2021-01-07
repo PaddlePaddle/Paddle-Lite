@@ -93,10 +93,6 @@ cpp::OpDesc InstanceNormActivationFuser::GenOpDesc(const key2nodes_t& matched) {
   }
   auto& out_name = matched.at("output")->arg()->name;
   op_desc.SetOutput("Y", {out_name});
-  if (act_op_desc->HasOutputInstanceNorm(out_name)) {
-    op_desc.SetOutputInstanceNorm(out_name,
-                                  act_op_desc->GetOutputInstanceNorm(out_name));
-  }
   return op_desc;
 }
 

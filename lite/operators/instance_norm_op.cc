@@ -76,8 +76,8 @@ bool InstanceNormOp::AttachImpl(const cpp::OpDesc& op_desc,
     } else if (act_type == "leaky_relu") {
       param_.alpha = op_desc.GetAttr<float>("alpha");
     } else {
-      CHECK(false) << "The fused instance norm only supports fuse with relu "
-                      "and leaky relu";
+      LOG(FATAL) << "unsupported Activation type: " << act_type
+                 << " fuse not support";
     }
   }
   return true;

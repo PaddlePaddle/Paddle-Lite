@@ -42,7 +42,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     return "InstanceNorm using cl::Image2D(ImageDefault/RGBA), kFP16";
   }
 
-#if 1  // onnx/pytorch version
+#if 1
   void PrepareForRun() override {
     instance_norm_param_ = param_.get_mutable<param_t>();
     auto out_h = instance_norm_param_->out->dims()[2];
@@ -55,7 +55,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
       build_options_ += " -DLOCAL_MEM_64";
     }
     if (instance_norm_param_->activation_type == "relu") {
-      kernel_func_name_ = "instance_norm_onnx_relu";
+      build_options_ += " -DRELU";
     }
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -319,7 +319,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
   param_t* instance_norm_param_{nullptr};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
-  std::string kernel_func_name_{"instance_norm_onnx"};
+  std::string kernel_func_name_{"instance_norm"};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
   cl::Kernel kernel_;

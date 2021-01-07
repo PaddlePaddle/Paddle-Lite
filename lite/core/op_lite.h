@@ -262,17 +262,12 @@ class OpInfo : public cpp::OpDesc {
   bool HasOutputScale(const std::string &name,
                       bool is_scale_name = false) const;
 
-  bool HasOutputInstanceNorm(const std::string &name,
-                             bool is_instance_norm_name = false) const;
   void SetInputScale(const std::string &input_name,
                      const std::vector<float> &scale_value,
                      bool is_scale_name = false);
   void SetOutputScale(const std::string &output_name,
                       const std::vector<float> &scale_value,
                       bool is_scale_name = false);
-  void SetOutputInstanceNorm(const std::string &output_name,
-                             const std::vector<float> &instance_norm_value,
-                             bool is_instance_norm_name = false);
 
   // For conv2d, depthwise_conv2d and mul, the scale of weight are a vector.
   // Otherwise, all input and output scales are scalar, but we save these
@@ -281,8 +276,6 @@ class OpInfo : public cpp::OpDesc {
                                    bool is_scale_name = false) const;
   std::vector<float> GetOutputScale(const std::string &name,
                                     bool is_scale_name = false) const;
-  std::vector<float> GetOutputInstanceNorm(
-      const std::string &name, bool is_instance_norm_name = false) const;
 };
 
 }  // namespace lite
