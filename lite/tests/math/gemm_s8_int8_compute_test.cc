@@ -345,7 +345,7 @@ TEST(TestLiteGemmInt8, gemm_int8) {
             for (auto& trb : {false, true}) {
               for (auto& has_bias : {false, true}) {
                 for (auto& relu_type : {0, 1}) {
-                  for (auto& th : {1, 2, 4}) {
+                  for (auto& th : {1}) {
                     auto flag = true;
                     if (m == 1 || n == 1) {
                       flag = test_gemm_int8(false,
