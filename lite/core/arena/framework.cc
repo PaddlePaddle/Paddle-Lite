@@ -94,27 +94,41 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
   switch (target_type) {
     case TARGET(kOpenCL): {
 #ifdef LITE_WITH_OPENCL
-      if (type->layout() == DATALAYOUT(kImageDefault)) {
-        lite::Tensor input_image_cpu_tensor;
-        const DDim& input_image_dims =
-            converter_.InitImageDimInfoWith(base_tensor->dims());
-        input_image_cpu_tensor.Resize(
-            {1, input_image_dims[0], input_image_dims[1], 4});
-        half_t* input_image_cpu_data =
-            input_image_cpu_tensor.mutable_data<half_t>();
-        converter_.NCHWToImage(
-            static_cast<float*>(const_cast<void*>(base_tensor->raw_data())),
-            input_image_cpu_data,
-            base_tensor->dims());
-        inst_tensor->mutable_data<half_t, cl::Image2D>(
-            input_image_dims[0], input_image_dims[1], input_image_cpu_data);
-      } else {
-        // buffer: same as default
-        TargetCopy(target_type,
-                   inst_tensor->mutable_data(type->target(),
-                                             base_tensor->memory_size()),
-                   base_tensor->raw_data(),
-                   base_tensor->memory_size());
+      switch (type->layout()) {
+        case DATALAYOUT(kImageDefault): {
+          lite::Tensor input_image_cpu_tensor;
+          const DDim& input_image_dims =
+              converter_.InitImageDimInfoWith(base_tensor->dims());
+          input_image_cpu_tensor.Resize(
+              {1, input_image_dims[0], input_image_dims[1], 4});
+          half_t* input_image_cpu_data =
+              input_image_cpu_tensor.mutable_data<half_t>();
+          converter_.NCHWToImage(
+              static_cast<float*>(const_cast<void*>(base_tensor->raw_data())),
+              input_image_cpu_data,
+              base_tensor->dims());
+          inst_tensor->mutable_data<half_t, cl::Image2D>(
+              input_image_dims[0], input_image_dims[1], input_image_cpu_data);
+          break;
+        }
+        case DATALAYOUT(kNCHW): {
+          // buffer: same as default
+          TargetCopy(target_type,
+                     inst_tensor->mutable_data(target_type,
+                                               base_tensor->memory_size()),
+                     base_tensor->raw_data(),
+                     base_tensor->memory_size());
+          break;
+        }
+        case DATALAYOUT(kAny): {
+          // no need to malloc gpu memory & H2D copy
+          break;
+        }
+        default: {
+          LOG(FATAL) << "Not supported data layout["
+                     << DataLayoutToStr(type->layout()) << "] for opencl."
+                     << TargetToStr(inst_tensor->target());
+        }
       }
       break;
 #endif
@@ -122,7 +136,7 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
     default:
       TargetCopy(
           target_type,
-          inst_tensor->mutable_data(type->target(), base_tensor->memory_size()),
+          inst_tensor->mutable_data(target_type, base_tensor->memory_size()),
           base_tensor->raw_data(),
           base_tensor->memory_size());
   }
@@ -224,11 +238,12 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
                                out_image_shape,
                                inst_tensor->dims());
       } else {
-        // buffer
-        CopySync<TARGET(kOpenCL)>(inst_host_tensor.mutable_data<T>(),
-                                  inst_tensor->raw_data(),
-                                  sizeof(T) * inst_tensor->dims().production(),
-                                  IoDirection::DtoH);
+        // kNCHW or kAny
+        TargetWrapperCL::MemcpySync(
+            inst_host_tensor.mutable_data<T>(),
+            inst_tensor->raw_data(),
+            sizeof(T) * inst_tensor->dims().production(),
+            IoDirection::DtoH);
       }
       inst_data = inst_host_tensor.data<T>();
       break;
