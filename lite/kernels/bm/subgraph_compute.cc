@@ -29,7 +29,8 @@ namespace kernels {
 namespace bm {
 
 bool SubgraphEngine::BuildDeviceProgram() {
-  int status = 0 subgraph::bm::Graph graph;
+  int status = 0;
+  subgraph::bm::Graph graph;
   const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   graph.CreateCompilerHandle();
   auto& ctx = this->ctx_->template As<BMContext>();
