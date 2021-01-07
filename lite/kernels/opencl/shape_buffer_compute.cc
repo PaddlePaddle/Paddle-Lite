@@ -52,7 +52,7 @@ class ShapeCompute
 
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
+    ch->kernel_func_name = "shape";
     ch->io_duration = h2d_duration_;
   }
 #endif
