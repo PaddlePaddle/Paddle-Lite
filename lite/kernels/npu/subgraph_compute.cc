@@ -295,7 +295,7 @@ bool DeviceProgram::ShareBufferWithOriginTensors(
     (*origin_otensors)[i]->ResetBuffer(buffer,
                                        (*device_otensors)[i]->GetSize());
   }
-  return true
+  return true;
 }
 
 bool DeviceProgram::ZeroCopyRun(
