@@ -12,36 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <map>
-#include <string>
-#include <vector>
-#include "lite/model_parser/base/io.h"
-#include "lite/model_parser/flatbuffers/opencl/cache_generated.h"
+#include <gflags/gflags.h>
+#include <gtest/gtest.h>
+#include "lite/backends/opencl/utils/cache.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
 namespace fbs {
 namespace opencl {
 
-class Cache {
- public:
-  explicit Cache(
-      const std::map<std::string, std::vector<std::vector<int8_t>>>& map)
-      : binary_map_{map} {}
-  explicit Cache(const model_parser::Buffer& buf);
-  void CopyDataToBuffer(model_parser::Buffer* buffer) const;
-  const std::map<std::string, std::vector<std::vector<int8_t>>>& GetBinaryMap()
-      const {
-    return binary_map_;
-  }
+TEST(OpenCLCache, cache) {
+  const std::map<std::string, std::vector<std::vector<uint8_t>>> map{
+      {"a", {{1, 2}, {3, 4}}}, {"b", {{5, 6}, {7, 8}}},
+  };
+  Cache cache_0{map};
+  std::vector<uint8_t> buffer;
+  cache_0.CopyDataToBuffer(&buffer);
 
- private:
-  void SyncFromFbs(const paddle::lite::fbs::opencl::proto::Cache* desc);
-  flatbuffers::DetachedBuffer SyncToFbs() const;
-  std::map<std::string, std::vector<std::vector<int8_t>>> binary_map_;
-};
+  Cache cache_1{buffer};
+  CHECK(map == cache_1.GetBinaryMap())
+      << "Cache read and write are not equivalent, the test failed.";
+}
 
 }  // namespace opencl
 }  // namespace fbs

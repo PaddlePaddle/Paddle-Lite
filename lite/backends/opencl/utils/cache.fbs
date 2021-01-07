@@ -1,7 +1,7 @@
 namespace paddle.lite.fbs.opencl.proto.Cache_;
 
 table BinaryVector {
-  data:[byte];
+  data:[ubyte];
 }
 
 table BinaryPair {

@@ -62,11 +62,6 @@ void TestShapeHelper(Place place,
                      std::vector<int64_t> x_dims) {
   std::unique_ptr<arena::TestCase> tester(
       new ShapeComputeTester(place, "def", DDim(x_dims)));
-  if (place.target == TARGET(kOpenCL)) {
-    // Calling `SetCLImage2D(false)` explicitly because we have opencl buffer
-    // version for `shape`.
-    tester->SetCLImage2D(false);
-  }
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }

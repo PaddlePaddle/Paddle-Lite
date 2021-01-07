@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gflags/gflags.h>
-#include <gtest/gtest.h>
-#include "lite/model_parser/flatbuffers/opencl/cache.h"
+#pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace fbs {
-namespace opencl {
+namespace kernels {
+namespace host {
 
-TEST(OpenCLCache, cache) {
-  const std::map<std::string, std::vector<std::vector<int8_t>>> map{
-      {"a", {{1, 2}, {3, 4}}}, {"b", {{5, 6}, {7, 8}}},
-  };
-  Cache cache_0{map};
-  paddle::lite::model_parser::Buffer buffer;
-  cache_0.CopyDataToBuffer(&buffer);
+template <typename T, PrecisionType PType>
+class ExpandV2Compute
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
+ public:
+  void Run() override;
 
-  Cache cache_1{buffer};
-  CHECK(map == cache_1.GetBinaryMap());
-}
+  virtual ~ExpandV2Compute() = default;
+};
 
-}  // namespace opencl
-}  // namespace fbs
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
