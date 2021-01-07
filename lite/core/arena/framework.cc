@@ -112,7 +112,6 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
         inst_tensor->mutable_data<half_t, cl::Image2D>(
             input_image_dims[0], input_image_dims[1], input_image_cpu_data);
       } else {
-        // buffer: same as default
         TargetWrapperCL::MemcpySync(
             inst_tensor->mutable_data(type->target(),
                                       base_tensor->memory_size()),
