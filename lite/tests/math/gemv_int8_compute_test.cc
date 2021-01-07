@@ -314,7 +314,7 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
     paddle::lite::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemm test";
-    for (auto& m : {3, 8, 32}) {  // ,397
+    for (auto& m : {3, 8, 32, 397}) {
       for (auto& n : {3, 13, 141, 512, 789}) {
         for (auto& tra : {false}) {
           for (auto& has_bias : {false, true}) {

@@ -1966,7 +1966,6 @@ inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(dtype));
 template <>
 inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(float)) {
   asm volatile(GEMV_COMPUTE_INIT GEMV_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_FP32
-
                : GEMV_ASM_PARAMS);
 }
 template <>
@@ -2144,8 +2143,6 @@ void gemv_int8_oth(const int8_t* A,
                    lite_api::ActivationType act,
                    float alpha,
                    ARMContext* ctx) {
-  const int8_t* data_in_base = x;
-  const int8_t* weights_ptr = A;
   int cnt = N >> 4;
   int tail = N & 15;
   int Nup = (N + 15) / 16 * 16;
@@ -2153,9 +2150,9 @@ void gemv_int8_oth(const int8_t* A,
   int8_t* ptr_zero = ctx->workspace_data<int8_t>();
   memset(ptr_zero, 0, Nup * 3);
   int8_t* data_in = ptr_zero + Nup;
-  memcpy(data_in, data_in_base, N);
+  lite::TargetWrapperHost::MemcpySync(data_in, x, N);
   int8_t* ptr_w = data_in + Nup;
-  memcpy(ptr_w, A + (M - 1) * N, N);
+  lite::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
 
 #ifdef __aarch64__
   int out_cnt = M >> 3;
@@ -2165,10 +2162,11 @@ void gemv_int8_oth(const int8_t* A,
   for (int j = 0; j < out_cnt; j++) {
     int out_idx = j * 8;
     dtype* out_ptr = data_out + out_idx;
+    dtype* out_p = out_ptr;
     const float* scale_ptr = scale + out_idx;
-    int ptr_out[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    dtype out_temp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     const int8_t* ptr_in = data_in;
-    const int8_t* ptr_w0 = weights_ptr + (N * out_idx);
+    const int8_t* ptr_w0 = A + (N * out_idx);
     const int8_t* ptr_w1 = ptr_w0 + N;
     const int8_t* ptr_w2 = ptr_w1 + N;
     const int8_t* ptr_w3 = ptr_w2 + N;
@@ -2193,6 +2191,7 @@ void gemv_int8_oth(const int8_t* A,
           ptr_w6 = ptr_zero;
         case 1:
           ptr_w7 = ptr_zero;
+          out_p = out_temp;
           break;
         default:
           break;
@@ -2223,7 +2222,6 @@ void gemv_int8_oth(const int8_t* A,
           break;
       }
     }
-    int cnt_loop = cnt;
     gemv_int8_asm<dtype>(ptr_in,
                          ptr_w0,
                          ptr_w1,
@@ -2238,7 +2236,12 @@ void gemv_int8_oth(const int8_t* A,
                          bias_ptr,
                          static_cast<int>(act),
                          alpha,
-                         out_ptr);
+                         out_p);
+    if (remain > 0) {
+      for (int i = 0; i < remain; i++) {
+        out_ptr[i] = out_p[i];
+      }
+    }
   }
 #else  //  __aarch64__
 
@@ -2249,10 +2252,11 @@ void gemv_int8_oth(const int8_t* A,
   for (int j = 0; j < out_cnt; j++) {
     int out_idx = j * 4;
     dtype* out_ptr = data_out + out_idx;
+    dtype* out_p = out_ptr;
     const float* scale_ptr = scale + out_idx;
-    int ptr_out[4] = {0, 0, 0, 0};
+    dtype out_temp[4] = {0, 0, 0, 0};
     const int8_t* ptr_in = data_in;
-    const int8_t* ptr_w0 = weights_ptr + (N * out_idx);
+    const int8_t* ptr_w0 = A + (N * out_idx);
     const int8_t* ptr_w1 = ptr_w0 + N;
     const int8_t* ptr_w2 = ptr_w1 + N;
     const int8_t* ptr_w3 = ptr_w2 + N;
@@ -2264,6 +2268,7 @@ void gemv_int8_oth(const int8_t* A,
           ptr_w2 = ptr_zero;
         case 1:
           ptr_w3 = ptr_zero;
+          out_p = out_temp;
           break;
         default:
           break;
@@ -2282,7 +2287,6 @@ void gemv_int8_oth(const int8_t* A,
           break;
       }
     }
-    int cnt_loop = cnt;
     auto bias_ptr = is_bias ? bias + out_idx : nullptr;
     gemv_int8_asm<dtype>(ptr_in,
                          ptr_w0,
@@ -2294,7 +2298,12 @@ void gemv_int8_oth(const int8_t* A,
                          bias_ptr,
                          static_cast<int>(act),
                          alpha,
-                         out_ptr);
+                         out_p);
+    if (remain > 0) {
+      for (int i = 0; i < remain; i++) {
+        out_ptr[i] = out_p[i];
+      }
+    }
   }
 
 #endif  //  __aarch64__
@@ -2321,16 +2330,19 @@ void gemv_int8_sdot(const int8_t* A,
   int remain = M & 7;
   if (remain > 0) out_cnt++;
   int8_t* ptr_zero = ctx->workspace_data<int8_t>();
-  memset(ptr_zero, 0, Nup);
+  memset(ptr_zero, 0, Nup * 3);
   int8_t* data_in = ptr_zero + Nup;
-  memset(data_in, 0, Nup);
-  memcpy(data_in, x, N);
+  lite::TargetWrapperHost::MemcpySync(data_in, x, N);
+  int8_t* ptr_w = data_in + Nup;
+  lite::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
 
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
     int out_idx = j * 8;
     dtype* out_ptr = data_out + out_idx;
+    dtype* out_p = out_ptr;
     const float* scale_ptr = scale + out_idx;
+    dtype out_temp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     auto bias_ptr = is_bias ? bias + out_idx : nullptr;
     const int8_t* ptr_in = data_in;
     const int8_t* ptr_w0 = A + (N * out_idx);
@@ -2341,7 +2353,6 @@ void gemv_int8_sdot(const int8_t* A,
     const int8_t* ptr_w5 = ptr_w4 + N;
     const int8_t* ptr_w6 = ptr_w5 + N;
     const int8_t* ptr_w7 = ptr_w6 + N;
-    int cnt_loop = cnt;
     if (j == out_cnt - 1 && remain) {
       switch (8 - remain) {
         case 7:
@@ -2358,6 +2369,32 @@ void gemv_int8_sdot(const int8_t* A,
           ptr_w6 = ptr_zero;
         case 1:
           ptr_w7 = ptr_zero;
+          out_p = out_temp;
+          break;
+        default:
+          break;
+      }
+      switch (8 - remain) {
+        case 7:
+          ptr_w0 = ptr_w;
+          break;
+        case 6:
+          ptr_w1 = ptr_w;
+          break;
+        case 5:
+          ptr_w2 = ptr_w;
+          break;
+        case 4:
+          ptr_w3 = ptr_w;
+          break;
+        case 3:
+          ptr_w4 = ptr_w;
+          break;
+        case 2:
+          ptr_w5 = ptr_w;
+          break;
+        case 1:
+          ptr_w6 = ptr_w;
           break;
         default:
           break;
@@ -2379,7 +2416,12 @@ void gemv_int8_sdot(const int8_t* A,
                                bias_ptr,
                                static_cast<int>(act),
                                alpha,
-                               out_ptr);
+                               out_p);
+      if (remain > 0) {
+        for (int i = 0; i < remain; i++) {
+          out_ptr[i] = out_p[i];
+        }
+      }
     }
   }
 }
