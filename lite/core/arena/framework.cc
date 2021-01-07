@@ -199,7 +199,6 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
 #endif
 #ifdef LITE_WITH_OPENCL
     case TARGET(kOpenCL): {
-      LOG(INFO) << 444444444;
       CLRuntime::Global()->command_queue().finish();
       // TODO(ysh329): add precision judge
       // auto precision = type->precision();
@@ -234,7 +233,6 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
         inst_data = inst_host_tensor.data<T>();
       } else if (layout == DATALAYOUT(kNCHW)) {
         // buffer
-        LOG(INFO) << 111111;
         auto* out_buf = inst_tensor->data<float, cl::Buffer>();
         void* inst_data_holder = inst_host_tensor.mutable_data<T>();
         TargetWrapperCL::MemcpySync(inst_data_holder,
@@ -248,22 +246,20 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
 #endif
     default:
       // Before compare, need to copy data from `target` device to host.
-      LOG(FATAL) << "Not supported";
+      LOG(FATAL) << "Not supported for target:"
+                 << TargetToStr(inst_tensor->target());
   }
 
   CHECK(inst_data);
 
   const T* base_data = static_cast<const T*>(base_tensor->raw_data());
 
-  LOG(INFO) << 111111;
-  LOG(INFO) << 111111;
-  LOG(INFO) << 111111;
-  LOG(INFO) << 111111;
   bool success = true;
   for (int i = 0; i < inst_tensor->dims().production(); i++) {
-    LOG(INFO) << "inst_data[" << i << "]:" << inst_data[i] << ", base_data["
-              << i << "]:" << base_data[i];
-    //    EXPECT_NEAR(inst_data[i], base_data[i], abs_error);
+    // note: check kernel output V.S. ref. output
+    // LOG(INFO) << "inst_data[" << i << "]:" << inst_data[i] << ", base_data["
+    //           << i << "]:" << base_data[i];
+    EXPECT_NEAR(inst_data[i], base_data[i], abs_error);
     if (fabsf(inst_data[i] - base_data[i]) > abs_error) {
       success = false;
     }

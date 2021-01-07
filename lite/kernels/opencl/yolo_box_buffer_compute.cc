@@ -75,15 +75,11 @@ class YoloBoxComputeBuffer
     imgsize_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     imgsize_gpu_t_->Resize(ImgSize->dims());
     auto imgsize_gpu_data =
-        imgsize_gpu_t_->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+        imgsize_gpu_t_->mutable_data<int, cl::Buffer>(TARGET(kOpenCL));
     TargetWrapperCL::MemcpySync(imgsize_gpu_data,
-                                ImgSize->data<float>(),
+                                ImgSize->data<int>(),
                                 ImgSize->memory_size(),
                                 IoDirection::HtoD);
-    for (size_t i = 0; i < ImgSize->numel(); ++i) {
-      LOG(INFO) << "ImgSize->data<float>()[" << i
-                << "]:" << ImgSize->data<float>()[i];
-    }
   }
 
   void ReInitWhenNeeded() override {
@@ -139,7 +135,7 @@ class YoloBoxComputeBuffer
     lite::Tensor* X = yolo_box_param_->X;
     auto x_data = X->mutable_data<float, cl::Buffer>();
     // ImgSize: input
-    auto imgsize_gpu_data = imgsize_gpu_t_->data<float, cl::Buffer>();
+    auto imgsize_gpu_data = imgsize_gpu_t_->data<int, cl::Buffer>();
     // anchors: input
     auto anchors_gpu_data = anchors_gpu_t_->data<int, cl::Buffer>();
 
@@ -207,7 +203,6 @@ class YoloBoxComputeBuffer
     CL_CHECK_FATAL(status);
     status = kernel.setArg(18, bias_);
     CL_CHECK_FATAL(status);
-    LOG(INFO) << 11111111;
 
     auto& context = ctx_->As<OpenCLContext>();
     status = EnqueueNDRangeKernel(context,
@@ -218,7 +213,6 @@ class YoloBoxComputeBuffer
                                   nullptr,
                                   event_);
     CL_CHECK_FATAL(status);
-    LOG(INFO) << 11111111;
   }
 
 #ifdef LITE_WITH_PROFILE
