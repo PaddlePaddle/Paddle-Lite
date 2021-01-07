@@ -51,7 +51,7 @@ void gemm_s8(bool is_transA,
 
     return;
   }
-  // TODO(chenjiao): fix the error of gemv_int8
+
   if (M == 1) {
     float bias_ptr[N];   // NOLINT
     float scale_ptr[N];  // NOLINT
