@@ -256,11 +256,11 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
   }
   if (OutType == PRECISION(kInt8)) {
     float output_scale = param.output_scale;
-    if (param.activation_param.active_type ==
-        lite_api::ActivationType::kRelu6) {
-      param.activation_param.Relu_clipped_coef =
-          param.activation_param.Relu_clipped_coef / output_scale;
-    }
+    param.activation_param.Relu_clipped_coef =
+        param.activation_param.Relu_clipped_coef / output_scale;
+    param.activation_param.Leaky_relu_alpha =
+        param.activation_param.Leaky_relu_alpha / output_scale;
+
     for (auto& ws : w_scale_) {
       ws /= output_scale;
     }

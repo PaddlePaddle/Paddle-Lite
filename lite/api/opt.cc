@@ -239,7 +239,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kImaginationNNA",
                                       "kAny",
                                       "kUnk"};
-  int maximum_optype_length = 0;
+  size_t maximum_optype_length = 0;
   for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
     maximum_optype_length = it->first.size() > maximum_optype_length
                                 ? it->first.size()

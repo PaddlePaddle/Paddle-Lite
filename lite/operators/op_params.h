@@ -159,6 +159,7 @@ struct InterpolateParam : ParamBase {
   lite::Tensor* Scale{};
 
   float scale{0.f};
+  std::vector<float> scale_v{};
   int out_h{-1};
   int out_w{-1};
   bool align_corners{true};
@@ -1470,6 +1471,15 @@ struct ExpandParam : ParamBase {
   std::vector<int> expand_times{};
 };
 
+/// ----------------------- expand v2 operators ----------------------
+struct ExpandV2Param : ParamBase {
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Shape{nullptr};
+  const std::vector<lite::Tensor>* expand_shapes_tensor{nullptr};
+  lite::Tensor* Out{nullptr};
+  std::vector<int> shape{};
+};
+
 /// ----------------------- expand as operators ----------------------
 struct ExpandAsParam : ParamBase {
   const lite::Tensor* X{};
@@ -1762,6 +1772,14 @@ struct XPUResNet50Param : ParamBase {
   lite::Tensor* output{};
 };
 
+struct XPUSoftmaxTopkParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* output{};
+  lite::Tensor* indices{};
+  int axis{-1};
+  int K{1};
+};
+
 struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* input{};
   std::vector<lite::Tensor*> fc_weight;
@@ -1772,6 +1790,9 @@ struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* mask{};
   lite::Tensor* output{};
 
+  std::vector<int> slice_axes{};
+  std::vector<int> slice_starts{};
+  std::vector<int> slice_ends{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -2058,6 +2079,39 @@ struct FlattenContiguousRangeParam : ParamBase {
   lite::Tensor* xshape;
   int start_axis;
   int stop_axis;
+};
+
+struct SelectInputParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Mask{};
+  lite::Tensor* Out{};
+};
+
+struct TensorArrayToTensorParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  lite::Tensor* OutIndex{};
+  int axis{0};
+  bool use_stack{false};
+};
+
+struct RnnParam : ParamBase {
+  lite::Tensor* Input;
+  lite::Tensor* PreState;
+  std::vector<lite::Tensor*> WeightList;
+  lite::Tensor* SequenceLength;
+  lite::Tensor* DropoutState;
+  lite::Tensor* Reserve;
+  lite::Tensor* Out;
+  lite::Tensor* State;
+  float dropout_prob{0.0};
+  bool is_bidirec{false};
+  int input_size{10};
+  int hidden_size{100};
+  int num_layers{1};
+  std::string mode{"LSTM"};
+  bool is_test{false};
+  int seed{0};
 };
 
 }  // namespace operators

@@ -583,9 +583,9 @@ __m128 activation4_m128(__m128 input, const lite_api::ActivationType act_type) {
 
 float activation1_float(float input, const lite_api::ActivationType act_type) {
   if (act_type == lite_api::ActivationType::kRelu) {
-    return std::max(input, 0.f);
+    return (std::max)(input, 0.f);
   } else if (act_type == lite_api::ActivationType::kRelu6) {
-    return std::max(std::max(input, 0.f), 6.0f);
+    return (std::max)((std::max)(input, 0.f), 6.0f);
   } else {
     LOG(FATAL) << "[X86] activation type not supported";
   }
