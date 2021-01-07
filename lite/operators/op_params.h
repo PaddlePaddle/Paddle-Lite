@@ -1793,6 +1793,9 @@ struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* mask{};
   lite::Tensor* output{};
 
+  std::vector<int> slice_axes{};
+  std::vector<int> slice_starts{};
+  std::vector<int> slice_ends{};
   int n_layers{};
   int head_num{};
   int size_per_head{};

@@ -49,9 +49,11 @@ add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.
 add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(box_coder_compute_host Host basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(gather_compute_host Host extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(pad3d_compute_host Host extra SRCS pad3d_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(select_input_compute_host Host extra SRCS select_input_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(tensor_array_to_tensor_compute_host Host extra SRCS tensor_array_to_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(expand_v2_compute_host Host extra SRCS expand_v2_compute.cc DEPS ${lite_kernel_deps})
+
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)
   lite_cc_test(test_pixel_shuffle_compute_host SRCS pixel_shuffle_compute.cc DEPS pixel_shuffle_compute_host)
