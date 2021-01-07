@@ -315,9 +315,9 @@ bool DeviceProgram::StartExecution() {
   };
   int istamp;
   auto start_time = GetCurrentUS();
-  CHECK_EQ(execution_->SetInputs(device_itensors_), rk::nn::RK_SUCCESS);
-  CHECK_EQ(execution_->Run(), rk::nn::RK_SUCCESS);
-  CHECK_EQ(execution_->GetOutputs(device_otensors_), rk::nn::RK_SUCCESS);
+  CHECK(execution_->SetInputs(device_itensors_) == rk::nn::RK_SUCCESS);
+  CHECK(execution_->Run() == rk::nn::RK_SUCCESS);
+  CHECK(execution_->GetOutputs(device_otensors_) == rk::nn::RK_SUCCESS);
   VLOG(3) << "[Rockchip NPU] Process cost " << GetCurrentUS() - start_time
           << " us";
   return true;
