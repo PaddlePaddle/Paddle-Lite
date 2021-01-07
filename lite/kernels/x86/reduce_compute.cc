@@ -18,7 +18,7 @@ REGISTER_LITE_KERNEL(reduce_sum,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ReduceSumCompute<float>,
+                     paddle::lite::kernels::x86::ReduceCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
@@ -28,7 +28,7 @@ REGISTER_LITE_KERNEL(reduce_mean,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::ReduceMeanCompute<float>,
+                     paddle::lite::kernels::x86::ReduceCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
