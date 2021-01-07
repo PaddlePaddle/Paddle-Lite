@@ -136,14 +136,16 @@ void LSTMComputeRun(const operators::LstmParam& param,
         // quantize Ht-1
         int pre_hidden_size = M * K;
         float threshold =
-            lite::arm::math::FindAbsMax(pre_hidden_t, pre_hidden_size);
+            lite::arm::math::compute_max_kernel(pre_hidden_t, pre_hidden_size);
         float pre_hidden_scale =
             lite::arm::math::GetScale(threshold, bit_length);
         std::unique_ptr<int8_t[]> pre_hidden_int8(new int8_t[pre_hidden_size]);
-        lite::arm::math::QuantizeTensor(pre_hidden_t,
-                                        pre_hidden_int8.get(),
-                                        pre_hidden_size,
-                                        pre_hidden_scale);
+        lite::arm::math::fp32_to_int8(pre_hidden_t,
+                                      pre_hidden_int8.get(),
+                                      pre_hidden_scale,
+                                      1,
+                                      1,
+                                      pre_hidden_size);
         // update scales
         std::vector<float> scales(M, weight_scale[0]);
         for (auto&& x : scales) {
