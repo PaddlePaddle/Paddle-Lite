@@ -369,6 +369,8 @@ void Program::PrepareWorkspace(
         return PRECISION(kInt32);
       case lite::VarDescAPI::Type::INT64:
         return PRECISION(kInt64);
+      case lite::VarDescAPI::Type::UINT8:
+        return PRECISION(kUInt8);
       default:
         LOG(WARNING) << "Unable to convert var desc type("
                      << static_cast<int>(type) << ") to precision type!";

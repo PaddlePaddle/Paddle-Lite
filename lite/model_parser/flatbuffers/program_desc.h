@@ -44,6 +44,10 @@ class ProgramDescView : public ProgramDescAPI {
   }
 
   void InitProgramDesc() {
+    flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf_.data()),
+                                   buf_.size());
+    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::ProgramDesc>(nullptr))
+        << "Program verification failed.";
     desc_ = proto::GetProgramDesc(buf_.data());
     blocks_.resize(desc_->blocks()->size());
     for (size_t idx = 0; idx < BlocksSize(); ++idx) {

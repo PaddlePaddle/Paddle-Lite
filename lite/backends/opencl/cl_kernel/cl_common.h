@@ -121,6 +121,13 @@ inline CL_DTYPE activation(CL_DTYPE in
       (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (ushort)(isgreaterequal(in, 0)));
 #endif
 #endif
+
+#ifdef HARD_SWISH
+  output = fmin(fmax(in + (CL_DTYPE)ACT_OFFSET, (CL_DTYPE)0),
+                (CL_DTYPE)ACT_THRESHOLD) *
+           in / (CL_DTYPE)ACT_SCALE;
+#endif
+
   return output;
 }
 
@@ -152,6 +159,12 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 //                 in,
 //                 (ushort4)((in.x >= 0) << 15, (in.y >= 0) << 15, (in.z >= 0)
 //                 << 15, (in.w >= 0) << 15));
+#endif
+
+#ifdef HARD_SWISH
+  output = fmin(fmax(in + (CL_DTYPE4)ACT_OFFSET, (CL_DTYPE4)0),
+                (CL_DTYPE4)ACT_THRESHOLD) *
+           in / (CL_DTYPE4)ACT_SCALE;
 #endif
 
   return output;

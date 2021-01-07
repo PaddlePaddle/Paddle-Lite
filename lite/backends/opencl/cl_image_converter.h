@@ -133,5 +133,15 @@ class CLImageConverterWinoTransWeight : public CLImageConverterBase {
                    const DDim &tensor_dim) override;
 };
 
+class CLImageConverterNBlock : public CLImageConverterBase {
+ public:
+  DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
+  void NCHWToImage(float *tensor, void *image, const DDim &tensor_dim) override;
+  void ImageToNCHW(void *image,
+                   float *tensor,
+                   const DDim &image_dim,
+                   const DDim &tensor_dim) override;
+};
+
 }  // namespace lite
 }  // namespace paddle

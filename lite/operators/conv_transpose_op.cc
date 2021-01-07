@@ -88,7 +88,7 @@ bool ConvTransposeOpLite::InferShapeImpl() const {
           << "the output_padding should be great than 0, "
           << "but output_padding is " << param_.output_padding[i];
       CHECK_LT(param_.output_padding[i],
-               std::max(param_.strides[i], dilations[i]))
+               (std::max)(param_.strides[i], dilations[i]))
           << "the output_padding should be less than max(strides, dilations), "
           << "but output_padding is " << param_.output_padding[i]
           << ", strides is " << param_.strides[i] << ", dilations is "
@@ -150,6 +150,21 @@ bool ConvTransposeOpLite::AttachImpl(const cpp::OpDesc& op_desc,
   param_.paddings = std::make_shared<std::vector<int>>(paddings);
   param_.dilations = std::make_shared<std::vector<int>>(dilations);
 
+  // For Int8
+  const OpInfo* op_info = dynamic_cast<const OpInfo*>(&op_desc);
+  if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
+    param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
+    auto input_scale_name = "Input0_scale";
+    auto filter_scale_name = "Filter0_scale";
+    auto output_scale_name = "Output0_scale";
+    if (op_info->HasInputScale(input_scale_name, true))
+      param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+    if (op_info->HasInputScale(filter_scale_name, true))
+      param_.weight_scale = op_info->GetInputScale(filter_scale_name, true);
+    if (op_info->HasOutputScale(output_scale_name, true)) {
+      param_.output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
+    }
+  }
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=

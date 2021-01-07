@@ -121,3 +121,21 @@ REGISTER_LITE_KERNEL(batch_norm,
     .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(sync_batch_norm,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::BatchNormCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Mean", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Variance", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("VarianceOut", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
