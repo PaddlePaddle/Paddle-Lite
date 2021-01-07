@@ -12,17 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/opencl/cl_half.h"
-#include "lite/backends/opencl/cl_include.h"
-#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/replace_stl/stream.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
-#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -42,12 +36,12 @@ class ActivationComputeImageDefault
 
   void PrepareForRun() override {
     act_param_ = param_.get_mutable<param_t>();
-    act_type = static_cast<int>(act_param_->active_type);
+    act_type_ = static_cast<int>(act_param_->active_type);
 #ifdef LITE_WITH_LOG
     VLOG(1) << "ActivationTypeToStr(act_param_->active_type):"
             << ActivationTypeToStr(act_param_->active_type);
 #endif
-    switch (act_type) {
+    switch (act_type_) {
       case 1:
         kernel_func_name_ = "relu";
         break;
@@ -56,42 +50,58 @@ class ActivationComputeImageDefault
         threshold_ = act_param_->Relu_clipped_coef;
         break;
       case 3:
-        mode = act_param_->Prelu_mode;
-        if (mode == "all") {
+        mode_ = act_param_->Prelu_mode;
+        if (mode_ == "all") {
           kernel_func_name_ = "leaky_relu";
           const float* alpha_data = act_param_->Prelu_alpha->data<float>();
           scale_ = alpha_data[0];
-        } else if (mode == "channel") {
+        } else if (mode_ == "channel") {
+          alpha_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+          tensor_hold_alpha_image_ = std::unique_ptr<Tensor>(new Tensor);
           kernel_func_name_ = "prelu_channel";
           auto& out_dims = act_param_->Out->dims();
-          int channel = out_dims[1];
-          width = out_dims[3];
-          int cgroup = (channel + 3) / 4;
-          int cround = cgroup * 4;
-          std::vector<half_t> alpha_img(cround * 1);
-          const float* alpha_data = act_param_->Prelu_alpha->data<float>();
-          for (int i = 0; i < channel; ++i) {
-            alpha_img[i] = Float2Half(alpha_data[i]);
-          }
-          DDim alpha_img_size{{cgroup, 1}};
-          alpha_image_.mutable_data<half_t, cl::Image2D>(
-              alpha_img_size[0], alpha_img_size[1], alpha_img.data());
+          width_ = out_dims[3];
+
+          CLImageConverterFolder alpha_converter;
+          const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
+              act_param_->Prelu_alpha->dims());
+          tensor_hold_alpha_image_->Resize(
+              {1, alpha_image_dims[0], alpha_image_dims[1], 4});
+
+          auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
+          auto* alpha_cpu_data = act_param_->Prelu_alpha->mutable_data<float>();
+          alpha_converter.NCHWToImage(alpha_cpu_data,
+                                      alpha_image_data,
+                                      act_param_->Prelu_alpha->dims());
+
+          MUTABLE_DATA_GPU(alpha_gpu_image_,
+                           alpha_image_dims[0],
+                           alpha_image_dims[1],
+                           alpha_image_data);
         } else {
+          alpha_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+          tensor_hold_alpha_image_ = std::unique_ptr<Tensor>(new Tensor);
           kernel_func_name_ = "prelu_element";
           auto& in_dim = act_param_->X->dims();
-          height = in_dim[2];
-          DDim in_dims{{1, in_dim[1], in_dim[2], in_dim[3]}};
+          height_ = in_dim[2];
           scale_ = act_param_->Leaky_relu_alpha;
 
-          paddle::lite::CLImageConverterDefault default_convertor;
-          auto* alpha_data = act_param_->Prelu_alpha->data<float>();
-          DDim image_shape = default_convertor.InitImageDimInfoWith(in_dims);
-          std::vector<half_t> alpha_image_data(image_shape.production() *
-                                               4);  // 4 : RGBA
-          default_convertor.NCHWToImage(
-              const_cast<float*>(alpha_data), alpha_image_data.data(), in_dims);
-          alpha_image_.mutable_data<half_t, cl::Image2D>(
-              image_shape[0], image_shape[1], alpha_image_data.data());
+          CLImageConverterFolder alpha_converter;
+          const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
+              act_param_->Prelu_alpha->dims());
+          tensor_hold_alpha_image_->Resize(
+              {1, alpha_image_dims[0], alpha_image_dims[1], 4});
+
+          auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
+          auto* alpha_cpu_data = act_param_->Prelu_alpha->mutable_data<float>();
+          alpha_converter.NCHWToImage(alpha_cpu_data,
+                                      alpha_image_data,
+                                      act_param_->Prelu_alpha->dims());
+
+          MUTABLE_DATA_GPU(alpha_gpu_image_,
+                           alpha_image_dims[0],
+                           alpha_image_dims[1],
+                           alpha_image_data);
         }
         break;
       case 4:
@@ -123,7 +133,7 @@ class ActivationComputeImageDefault
         threshold_ = act_param_->hard_sigmoid_offset;
         break;
       default:
-        LOG(FATAL) << "This act type:" << act_type << " doesn't support.";
+        LOG(FATAL) << "This act type:" << act_type_ << " doesn't support.";
         return;
     }
 #ifdef LITE_WITH_LOG
@@ -181,24 +191,23 @@ class ActivationComputeImageDefault
     CL_CHECK_FATAL(status);
     status = kernel.setArg(3, scale_);
     CL_CHECK_FATAL(status);
-    if (act_type == 10) {
+    if (act_type_ == 10) {
       status = kernel.setArg(4, offset_);
       CL_CHECK_FATAL(status);
     }
-    if (act_type == 3) {
-      if (mode == "channel") {
-        auto* alpha_img_in = alpha_image_.data<half_t, cl::Image2D>();
-        status = kernel.setArg(4, width);
+    if (act_type_ == 3) {
+      if (mode_ == "channel") {
+        auto* alpha_img_in = GET_DATA_GPU(alpha_gpu_image_);
+        status = kernel.setArg(4, width_);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(5, *alpha_img_in);
         CL_CHECK_FATAL(status);
-      } else if (mode == "element") {
-        auto* alpha_img_in = alpha_image_.data<half_t, cl::Image2D>();
-        status = kernel.setArg(4, height);
+      } else if (mode_ == "element") {
+        auto* alpha_img_in = GET_DATA_GPU(alpha_gpu_image_);
+        status = kernel.setArg(4, height_);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(5, *alpha_img_in);
         CL_CHECK_FATAL(status);
-      } else {
       }
     }
 
@@ -255,11 +264,12 @@ class ActivationComputeImageDefault
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
-  std::string mode{"channel"};
-  int act_type{0};
-  int width{0};
-  int height{0};
-  Tensor alpha_image_;
+  std::string mode_{"channel"};
+  int act_type_{0};
+  int width_{0};
+  int height_{0};
+  std::unique_ptr<Tensor> alpha_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> tensor_hold_alpha_image_{nullptr};
 };
 }  // namespace opencl
 }  // namespace kernels
