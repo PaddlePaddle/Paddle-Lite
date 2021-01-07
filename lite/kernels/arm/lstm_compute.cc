@@ -155,7 +155,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
         operators::ActivationParam act_param;
         act_param.has_active = false;
 
-        std::unique_ptr<float[]> o_data(new float[M * N]);
+        // std::unique_ptr<float[]> o_data(new float[M * N]);
         lite::arm::math::gemm_s8(false,
                                  false,
                                  M,
@@ -163,16 +163,19 @@ void LSTMComputeRun(const operators::LstmParam& param,
                                  K,
                                  pre_hidden_int8.get(),
                                  weight->data<int8_t>(),
-                                 o_data.get(),
-                                 nullptr,
-                                 false,
+                                 //  o_data.get(),
+                                 gate_t,
+                                 //  nullptr,
+                                 gate_t,
+                                 //  false,
+                                 true,
                                  scales.data(),
                                  act_param,
                                  ctx);
 
-        for (int i = 0; i < M * N; i++) {
-          gate_t[i] += o_data[i];
-        }
+        // for (int i = 0; i < M * N; i++) {
+        //   gate_t[i] += o_data[i];
+        // }
       } else {
         lite::arm::math::sgemm(false,
                                false,
