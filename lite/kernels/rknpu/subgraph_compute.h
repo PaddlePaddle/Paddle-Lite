@@ -50,8 +50,8 @@ class SubgraphEngine : public subgraph::SubgraphEngineBase {
   bool LaunchDeviceProgram() override;
 
   std::string model_name_;
-  std::vector<std::string> device_inames_;
-  std::vector<std::string> device_onames_;
+  std::vector<std::string> device_inames_ std::vector<std::string>
+      device_onames_;
   std::vector<std::shared_ptr<rk::nn::Tensor>> device_itensors_{};
   std::vector<std::shared_ptr<rk::nn::Tensor>> device_otensors_{};
   std::unique_ptr<rk::nn::Exection> device_program_{nullptr};
