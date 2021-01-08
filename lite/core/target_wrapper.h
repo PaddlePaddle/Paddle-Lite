@@ -39,6 +39,43 @@ using lite_api::TargetRepr;
 using lite_api::PrecisionRepr;
 using lite_api::DataLayoutRepr;
 
+namespace host {
+const int MALLOC_ALIGN = 64;
+
+// Allocate the requested memory and return a pointer to it.
+// Byte alignment and memory checking are performed.
+inline void* malloc(size_t size) {
+  size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
+  char* p = static_cast<char*>(malloc(offset + size));
+  // Memory checking
+  CHECK(p) << "Error occurred in malloc period: available space is not enough "
+              "for mallocing "
+           << size << " bytes.";
+  // Byte alignment
+  void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) &
+                                    (~(MALLOC_ALIGN - 1)));
+  static_cast<void**>(r)[-1] = p;
+  return r;
+}
+
+// Deallocate the memory.
+inline void free(void* ptr) {
+  if (ptr) {
+    free(static_cast<void**>(ptr)[-1]);
+  }
+}
+
+// Copy size characters from memory area src to memory area dst.
+// Memory checking is performed.
+inline void memcpy(void* dst, const void* src, size_t size) {
+  if (size > 0) {
+    CHECK(dst) << "Error: the destination of memcpy can not be nullptr.";
+    CHECK(src) << "Error: the source of memcpy can not be nullptr.";
+    memcpy(dst, src, size);
+  }
+}
+}  // namespace host
+
 // Memory copy directions.
 enum class IoDirection {
   HtoH = 0,  // Host to host
