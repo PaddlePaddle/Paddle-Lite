@@ -184,6 +184,7 @@ add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc DEPS ${op_DE
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__block_fuse_op extra SRCS __xpu__block_fuse_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc DEPS ${op_DEPS})
