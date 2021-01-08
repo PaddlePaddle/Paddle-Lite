@@ -32,7 +32,7 @@ inline lite_api::ActivationType GetActivationType(const std::string &type) {
   } else if (type == "identity" || type == "") {
     return lite_api::ActivationType::kIndentity;
   }
-  LOG(FATAL) << "The input type is not supported";
+  LOG(FATAL) << "The input type is not supported: " << type;
 }
 bool LstmOp::CheckShape() const {
   CHECK_OR_FALSE(param_.Input);
