@@ -38,16 +38,6 @@ if(NOT DEFINED ANDROID_NATIVE_API_LEVEL)
     endif()
 endif()
 
-if(LITE_WITH_ARM82_FP16)
-    set(CMAKE_C_FLAGS   "CMAKE_C_FLAGS"   -march=armv8.2-a+fp16)
-    set(CMAKE_CXX_FLAGS "CMAKE_CXX_FLAGS" -march=armv8.2-a+fp16)
-endif()
-
-if(LITE_WITH_ARM82_INT8)
-    set(CMAKE_C_FLAGS   "CMAKE_C_FLAGS"   -march=armv8.2-a+dotprod)
-    set(CMAKE_CXX_FLAGS "CMAKE_CXX_FLAGS" -march=armv8.2-a+dotprod)
-endif()
-
 # then check input arm abi
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv7hf")
     message(FATAL_ERROR "ANDROID does not support hardfp on v7 use armv7 instead.")

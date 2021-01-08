@@ -61,6 +61,9 @@ if(ARM_MATH_LIB_DIR AND EXISTS "${ARM_MATH_LIB_DIR}")
   endif()
 endif()
 
+if (LITE_WITH_ARM82_FP16 AND (${ANDROID_NDK_MAJOR} GREATER 17))
+  add_subdirectory(fp16)
+endif()
 
 if (NOT HAS_ARM_MATH_LIB_DIR)
   # TODO(xxx): seperate them and do not deps proto, eigen3
@@ -141,4 +144,8 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       scatter.cc
       quantize.cc
       DEPS ${lite_kernel_deps} context tensor)
+      if (LITE_WITH_ARM82_FP16 AND (${ANDROID_NDK_MAJOR} GREATER 17))
+        add_dependencies(math_arm math_arm_fp16)
+        target_link_libraries(math_arm math_arm_fp16)
+      endif()
 endif()

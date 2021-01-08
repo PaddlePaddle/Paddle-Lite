@@ -24,6 +24,17 @@ if(ANDROID)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -llog -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog -fPIC")
 
+    if(LITE_WITH_ARM82_FP16 AND (${ANDROID_NDK_MAJOR} GREATER 17))
+        add_definitions(-DENABLE_ARM_FP16)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+fp16")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.2-a+fp16")
+    endif()
+
+    if(LITE_WITH_ARM82_INT8_SDOT AND (${ANDROID_NDK_MAJOR} GREATER 17))
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+dotprod")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.2-a+dotprod")
+    endif()
+
     # Don't re-export libgcc symbols
     set(REMOVE_ATOMIC_GCC_SYMBOLS "-Wl,--exclude-libs,libatomic.a -Wl,--exclude-libs,libgcc.a")
     set(CMAKE_SHARED_LINKER_FLAGS "${REMOVE_ATOMIC_GCC_SYMBOLS} ${CMAKE_SHARED_LINKER_FLAGS}")
