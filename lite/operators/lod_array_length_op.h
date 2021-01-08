@@ -32,7 +32,7 @@ class LoDArrayLengthOp : public OpLite {
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
-    auto input_dims = param_.x->dims();
+    auto input_dims = param_.x.size();
     auto output_dims = param_.out->dims();
     ch->input_shape = ch->DimToStr(input_dims);
     ch->output_shape = ch->DimToStr(output_dims);
