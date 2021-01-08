@@ -112,16 +112,19 @@ bool test_gemv_int8(bool tra,
   memset(reinterpret_cast<char*>(dc_basic_fp32),
          0,
          tc_basic_fp32.numel() * sizeof(float));
-
+  paddle::lite::operators::ActivationParam act_param;
   paddle::lite_api::ActivationType act =
       paddle::lite_api::ActivationType::kIndentity;
   if (flag_act == 1) {
     act = paddle::lite_api::ActivationType::kRelu;
   } else if (flag_act == 2) {
     act = paddle::lite_api::ActivationType::kRelu6;
+    act_param.threshold = alpha;
   } else if (flag_act == 4) {
     act = paddle::lite_api::ActivationType::kLeakyRelu;
+    act_param.Leaky_relu_alpha = alpha;
   }
+  act_param.active_type = act;
 
   if (FLAGS_check_result) {
     Tensor ta_fp32;
@@ -149,7 +152,6 @@ bool test_gemv_int8(bool tra,
                false,
                has_bias,
                flag_act,
-               six,
                alpha);
     paddle::lite::arm::math::fp32_to_int8(dc_basic_fp32,
                                           dc_basic_int8,
@@ -176,11 +178,8 @@ bool test_gemv_int8(bool tra,
                                        scale_merge_fp32.data(),
                                        has_bias,
                                        dbias,
-                                       flag_act > 0,
-                                       act,
-                                       &ctx,
-                                       six,
-                                       alpha);
+                                       act_param,
+                                       &ctx);
   }
 
   /// int8 output compute
@@ -202,11 +201,8 @@ bool test_gemv_int8(bool tra,
                                        scale_merge_fp32.data(),
                                        has_bias,
                                        dbias,
-                                       flag_act > 0,
-                                       act,
-                                       &ctx,
-                                       six,
-                                       alpha);
+                                       act_param,
+                                       &ctx);
     t0.Stop();
   }
   LOG(INFO) << "gemv_int8_int8 output: M: " << m << ", N: " << n
@@ -219,6 +215,9 @@ bool test_gemv_int8(bool tra,
             << " GOPs";
 
   /// fp32 output compute
+  if (flag_act == 2) {
+    alpha = alpha / scale_c[0];
+  }
   t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
@@ -231,11 +230,8 @@ bool test_gemv_int8(bool tra,
                                        scale_merge_int8.data(),
                                        has_bias,
                                        dbias_int8,
-                                       flag_act > 0,
-                                       act,
-                                       &ctx,
-                                       six / scale_c[0],
-                                       alpha);
+                                       act_param,
+                                       &ctx);
     t0.Stop();
   }
   LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n
@@ -318,8 +314,8 @@ TEST(TestLiteGemvInt8, gemv_prepacked_int8) {
     paddle::lite::DeviceInfo::Init();
 #endif
     LOG(INFO) << "run basic sgemm test";
-    for (auto& m : {1, 3, 8, 32}) {  // ,397
-      for (auto& n : {1, 3, 13, 141, 512, 789}) {
+    for (auto& m : {3, 8, 32, 397}) {
+      for (auto& n : {3, 13, 141, 512, 789}) {
         for (auto& tra : {false}) {
           for (auto& has_bias : {false, true}) {
             for (auto& has_relu : {false, true}) {

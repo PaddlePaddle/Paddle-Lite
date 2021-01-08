@@ -722,11 +722,8 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   scale_group,
                   flag_bias,
                   bias_group,
-                  act_param.has_active,
-                  act_param.active_type,
-                  ctx,
-                  act_param.Relu_clipped_coef,
-                  act_param.Leaky_relu_alpha);
+                  act_param,
+                  ctx);
       } else if (m == 1) {
         float bias_ptr[n];   // NOLINT
         float scale_ptr[n];  // NOLINT
@@ -745,11 +742,8 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   scale_ptr,
                   flag_bias,
                   bias_ptr,
-                  act_param.has_active,
-                  act_param.active_type,
-                  ctx,
-                  act_param.Relu_clipped_coef,
-                  act_param.Leaky_relu_alpha);
+                  act_param,
+                  ctx);
       } else {
         gemm_prepack_int8(weights_group,
                           din_group,
@@ -1009,11 +1003,8 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   scale_group,
                   flag_bias,
                   bias_group,
-                  act_param.has_active,
-                  act_param.active_type,
-                  ctx,
-                  act_param.Relu_clipped_coef,
-                  act_param.Leaky_relu_alpha);
+                  act_param,
+                  ctx);
       } else if (m == 1) {
         float bias_ptr[n];   // NOLINT
         float scale_ptr[n];  // NOLINT
@@ -1032,11 +1023,8 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   scale_ptr,
                   flag_bias,
                   bias_ptr,
-                  act_param.has_active,
-                  act_param.active_type,
-                  ctx,
-                  act_param.Relu_clipped_coef,
-                  act_param.Leaky_relu_alpha);
+                  act_param,
+                  ctx);
       } else {
         gemm_prepack_int8(weights_group,
                           dB,
