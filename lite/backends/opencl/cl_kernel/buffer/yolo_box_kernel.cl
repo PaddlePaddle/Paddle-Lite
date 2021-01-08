@@ -14,7 +14,8 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-#define native_sigmoid(x) (1.f / (1.f + native_exp(-x)))
+// native sigmoid using native_exp
+#define nati_sigmoid(x) (1.f / (1.f + native_exp(-x)))
 
 #define get_entry_index(batch,     \
                         an_idx,    \
@@ -40,9 +41,9 @@ limitations under the License. */
                      scale,        \
                      bias)         \
 {                                  \
-  box[0] = (l + native_sigmoid(x_data[box_idx]) * scale + bias) * \
+  box[0] = (l + nati_sigmoid(x_data[box_idx]) * scale + bias) * \
                  img_width / x_h;                                 \
-  box[1] = (k + native_sigmoid(x_data[box_idx + x_stride]) *      \
+  box[1] = (k + nati_sigmoid(x_data[box_idx + x_stride]) *      \
                  scale + bias) * img_height / x_h;                \
   box[2] = native_exp(box_idx + x_stride * 2) *                   \
                  anchors_data[2 * anchor_idx] *                   \
@@ -81,7 +82,7 @@ limitations under the License. */
 {                                     \
   for (int i = 0; i < class_num; i++) {                          \
     scores_data[score_idx + i] =                                 \
-       conf * native_sigmoid(x_data[label_idx + i * x_stride]);  \
+       conf * nati_sigmoid(x_data[label_idx + i * x_stride]);  \
   }                                                              \
 }
 
@@ -119,7 +120,7 @@ void yolo_box(__global const CL_DTYPE* x_data,
     const int img_width = imgsize_data[2 * imgsize_idx + 1];
     const int obj_idx = get_entry_index(imgsize_idx, anchor_idx,
               k * x_w + l, anchor_num, anchor_stride, x_stride, 4);
-    float conf = native_sigmoid(x_data[obj_idx]);
+    float conf = nati_sigmoid(x_data[obj_idx]);
     if (conf < conf_thresh) continue;
 
     // get yolo box
