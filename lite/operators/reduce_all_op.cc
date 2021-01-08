@@ -90,8 +90,7 @@ bool ReduceAllOp::InferShapeImpl() const {
 }
 
 bool ReduceAllOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.X = const_cast<lite::Tensor *>(
-      &scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>());
+  param_.X = scope->FindVar(opdesc.Input("X").front())->Get<lite::Tensor>();
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   param_.dim = opdesc.GetAttr<std::vector<int>>("dim");
