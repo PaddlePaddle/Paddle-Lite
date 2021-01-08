@@ -26,6 +26,7 @@
 #endif
 #include "lite/backends/opencl/cl_utility.h"
 
+#undef LITE_WITH_LOG
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -108,9 +109,7 @@ class YoloBoxComputeBuffer
       lite::Tensor* Scores = yolo_box_param_->Scores;
       scores_data_ = Scores->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
-#ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-#endif
       auto& context = ctx_->As<OpenCLContext>();
       context.cl_context()->AddKernel(kernel_func_name_,
                                       "buffer/yolo_box_kernel.cl",
@@ -265,3 +264,4 @@ REGISTER_LITE_KERNEL(yolo_box,
     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .Finalize();
+#define LITE_WITH_LOG
