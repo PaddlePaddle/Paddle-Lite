@@ -14,6 +14,7 @@
 
 #pragma once
 #include <string>
+#include <vector>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
 #include "lite/operators/conv_transpose_op.h"
@@ -22,9 +23,8 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
-
-class Conv2DTransposeCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType Otype>
+class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   using param_t = operators::ConvParam;
 
@@ -45,6 +45,9 @@ class Conv2DTransposeCompute
  protected:
   int workspace_size_{0};
   bool depthwise_{false};
+  bool flag_trans_bias_{false};
+  std::vector<float> w_scale_;
+  Tensor bias_;
 };
 
 }  // namespace arm

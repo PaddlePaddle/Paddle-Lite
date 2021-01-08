@@ -6,6 +6,7 @@ TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 CUDNN_ROOT="/usr/local/cudnn"
 LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
+NUM_PROC=4
 
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
@@ -1107,7 +1108,7 @@ function test_arm_android {
     echo "test name: ${test_name}"
     adb_work_dir="/data/local/tmp"
 
-    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl" "test_lrn_image_opencl" "test_pad2d_image_opencl" "test_transformer_with_mask_fp32_arm" "test_mobilenetv1_int16" "test_mobilenetv1_opt_quant" "test_fast_rcnn" "test_inception_v4_fp32_arm" "test_mobilenet_v1_fp32_arm" "test_mobilenet_v2_fp32_arm" "test_mobilenet_v3_small_x1_0_fp32_arm" "test_mobilenet_v3_large_x1_0_fp32_arm" "test_resnet50_fp32_arm" "test_squeezenet_fp32_arm" "test_mobilenet_v1_int8_arm" "test_mobilenet_v2_int8_arm" "test_resnet50_int8_arm")
+    skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" "test_paddle_api" "test_cxx_api" "test_gen_code" "test_mobilenetv1_int8" "test_subgraph_pass" "test_grid_sampler_image_opencl" "test_lrn_image_opencl" "test_pad2d_image_opencl" "test_transformer_with_mask_fp32_arm" "test_mobilenetv1_int16" "test_mobilenetv1_opt_quant" "test_fast_rcnn" "test_inception_v4_fp32_arm" "test_mobilenet_v1_fp32_arm" "test_mobilenet_v2_fp32_arm" "test_mobilenet_v3_small_x1_0_fp32_arm" "test_mobilenet_v3_large_x1_0_fp32_arm" "test_resnet50_fp32_arm" "test_squeezenet_fp32_arm" "test_mobilenet_v1_int8_arm" "test_mobilenet_v2_int8_arm" "test_resnet50_int8_arm" "test_mobilenet_v1_int8_dygraph_arm" "test_lstm_int8_arm")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done

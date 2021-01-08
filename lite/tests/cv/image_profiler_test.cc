@@ -363,8 +363,8 @@ void test_flip(const std::vector<int>& cluster_id,
       } else if (srcFormat == ImageFormat::GRAY) {
         size = srch * srcw;
       }
-      uint8_t* src = new uint8_t[size];
-      fill_tensor_host_rand(src, size);
+      uint8_t* src = new uint8_t[2 * size];
+      fill_tensor_host_rand(src, 2 * size);
 
       int out_size = srch * srcw;
       if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
@@ -378,8 +378,8 @@ void test_flip(const std::vector<int>& cluster_id,
       } else if (dstFormat == ImageFormat::GRAY) {
         out_size = srch * srcw;
       }
-      uint8_t* basic_dst = new uint8_t[out_size];
-      uint8_t* lite_dst = new uint8_t[out_size];
+      uint8_t* basic_dst = new uint8_t[2 * out_size];
+      uint8_t* lite_dst = new uint8_t[2 * out_size];
       LOG(INFO) << "basic flip compute";
       Timer t_basic, t_lite;
       for (int i = 0; i < test_iter; i++) {

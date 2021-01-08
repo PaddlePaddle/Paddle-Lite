@@ -1,4 +1,7 @@
 lite_cc_library(math_host SRCS
     sequence_padding.cc
     slice.cc
-    DEPS ${lite_kernel_deps})
+    pad3d.cc
+    concat.cc
+    stack.cc
+    DEPS context)

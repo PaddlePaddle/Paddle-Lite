@@ -272,6 +272,7 @@ void RuntimeProgram::Run() {
                                  lite::Color::Engine);
   }
 #endif
+
   int idx = -1;
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
@@ -291,7 +292,9 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
+
     inst.Run();
+
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
     precision_profiler_summary +=
@@ -369,6 +372,8 @@ void Program::PrepareWorkspace(
         return PRECISION(kInt32);
       case lite::VarDescAPI::Type::INT64:
         return PRECISION(kInt64);
+      case lite::VarDescAPI::Type::UINT8:
+        return PRECISION(kUInt8);
       default:
         LOG(WARNING) << "Unable to convert var desc type("
                      << static_cast<int>(type) << ") to precision type!";
