@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/generate_proposals_compute.h"
+#include "lite/kernels/arm/generate_proposals_v2_compute.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -24,7 +24,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 static const double kBBoxClipDefault = std::log(1000.0 / 16.0);
 
@@ -143,35 +143,34 @@ static void BoxCoder(Tensor *all_anchors,
 }
 
 template <class T>
-static void ClipTiledBoxes(const Tensor &im_info, Tensor *boxes) {
+static void ClipTiledBoxes(const Tensor &im_shape, Tensor *boxes) {
   T *boxes_data = boxes->mutable_data<T>();
-  const T *im_info_data = im_info.data<T>();
+  const T *im_shape_data = im_shape.data<T>();
   T zero(0);
   for (int64_t i = 0; i < boxes->numel(); ++i) {
     if (i % 4 == 0) {
       boxes_data[i] =
-          std::max(std::min(boxes_data[i], im_info_data[1] - 1), zero);
+          std::max(std::min(boxes_data[i], im_shape_data[1] - 1), zero);
     } else if (i % 4 == 1) {
       boxes_data[i] =
-          std::max(std::min(boxes_data[i], im_info_data[0] - 1), zero);
+          std::max(std::min(boxes_data[i], im_shape_data[0] - 1), zero);
     } else if (i % 4 == 2) {
       boxes_data[i] =
-          std::max(std::min(boxes_data[i], im_info_data[1] - 1), zero);
+          std::max(std::min(boxes_data[i], im_shape_data[1] - 1), zero);
     } else {
       boxes_data[i] =
-          std::max(std::min(boxes_data[i], im_info_data[0] - 1), zero);
+          std::max(std::min(boxes_data[i], im_shape_data[0] - 1), zero);
     }
   }
 }
 
 template <class T>
-static void FilterBoxes(Tensor *boxes,
-                        float min_size,
-                        const Tensor &im_info,
-                        Tensor *keep) {
+static void FilterBoxesWithoutScale(Tensor *boxes,
+                                    float min_size,
+                                    const Tensor &im_shape,
+                                    Tensor *keep) {
   T *boxes_data = boxes->mutable_data<T>();
-  const T *im_info_data = im_info.data<T>();
-  T im_scale = im_info_data[2];
+  const T *im_shape_data = im_shape.data<T>();
   min_size = std::max(min_size, 1.0f);
   keep->Resize(std::vector<int64_t>({boxes->dims()[0]}));
   int *keep_data = keep->mutable_data<int>();
@@ -180,14 +179,10 @@ static void FilterBoxes(Tensor *boxes,
   for (int i = 0; i < boxes->dims()[0]; ++i) {
     T ws = boxes_data[4 * i + 2] - boxes_data[4 * i] + 1;
     T hs = boxes_data[4 * i + 3] - boxes_data[4 * i + 1] + 1;
-    T ws_origin_scale =
-        (boxes_data[4 * i + 2] - boxes_data[4 * i]) / im_scale + 1;
-    T hs_origin_scale =
-        (boxes_data[4 * i + 3] - boxes_data[4 * i + 1]) / im_scale + 1;
     T x_ctr = boxes_data[4 * i] + ws / 2;
     T y_ctr = boxes_data[4 * i + 1] + hs / 2;
-    if (ws_origin_scale >= min_size && hs_origin_scale >= min_size &&
-        x_ctr <= im_info_data[1] && y_ctr <= im_info_data[0]) {
+    if (ws >= min_size && ws >= min_size && x_ctr <= im_shape_data[1] &&
+        y_ctr <= im_shape_data[0]) {
       keep_data[keep_len++] = i;
     }
   }
@@ -299,7 +294,7 @@ static Tensor NMS(Tensor *bbox, Tensor *scores, T nms_threshold, float eta) {
 }
 
 static std::pair<Tensor, Tensor> ProposalForOneImage(
-    const Tensor &im_info_slice,
+    const Tensor &im_shape_slice,
     const Tensor &anchors,
     const Tensor &variances,          // H * W * A * 4
     const Tensor &bbox_deltas_slice,  // [A, 4]
@@ -344,10 +339,10 @@ static std::pair<Tensor, Tensor> ProposalForOneImage(
   proposals.Resize(std::vector<int64_t>({index_t.numel(), 4}));
   BoxCoder<float>(&anchor_sel, &bbox_sel, &var_sel, &proposals);
 
-  ClipTiledBoxes<float>(im_info_slice, &proposals);
+  ClipTiledBoxes<float>(im_shape_slice, &proposals);
 
   Tensor keep;
-  FilterBoxes<float>(&proposals, min_size, im_info_slice, &keep);
+  FilterBoxesWithoutScale<float>(&proposals, min_size, im_shape_slice, &keep);
   Tensor scores_filter;
   scores_filter.Resize(std::vector<int64_t>({keep.numel(), 1}));
   bbox_sel.Resize(std::vector<int64_t>({keep.numel(), 4}));
@@ -379,12 +374,11 @@ void AppendTensor(Tensor *dst, int64_t offset, const Tensor &src) {
       src.numel() * size_of_t);
 }
 
-void GenerateProposalsCompute::Run() {
-  auto &ctx = this->ctx_->template As<ARMContext>();
-  auto &param = Param<operators::GenerateProposalsParam>();
+void GenerateProposalsV2Compute::Run() {
+  auto &param = Param<operators::GenerateProposalsV2Param>();
   auto *scores = param.Scores;              // N * A * H * W
   auto *bbox_deltas = param.BboxDeltas;     // N * 4A * H * W
-  auto *im_info = param.ImInfo;             // N * 3
+  auto *im_shape = param.ImShape;           // N * 3
   auto *anchors = param.Anchors;            // H * W * A * 4
   auto *variances = param.Variances;        // H * W * A * 4
   auto *rpn_rois = param.RpnRois;           // A * 4
@@ -414,7 +408,6 @@ void GenerateProposalsCompute::Run() {
   std::vector<int> orders({0, 2, 3, 1});
   permute(*scores, &scores_swap, orders);
   permute(*bbox_deltas, &bbox_deltas_swap, orders);
-
   LoD lod;
   lod.resize(1);
   auto &lod0 = lod[0];
@@ -426,16 +419,15 @@ void GenerateProposalsCompute::Run() {
 
   int64_t num_proposals = 0;
   for (int64_t i = 0; i < num; ++i) {
-    Tensor im_info_slice = im_info->Slice<float>(i, i + 1);
+    Tensor im_shape_slice = im_shape->Slice<float>(i, i + 1);
     Tensor bbox_deltas_slice = bbox_deltas_swap.Slice<float>(i, i + 1);
     Tensor scores_slice = scores_swap.Slice<float>(i, i + 1);
 
     bbox_deltas_slice.Resize(
         std::vector<int64_t>({c_bbox * h_bbox * w_bbox / 4, 4}));
     scores_slice.Resize(std::vector<int64_t>({c_score * h_score * w_score, 1}));
-
     std::pair<Tensor, Tensor> tensor_pair =
-        ProposalForOneImage(im_info_slice,
+        ProposalForOneImage(im_shape_slice,
                             *anchors,
                             *variances,
                             bbox_deltas_slice,
@@ -447,7 +439,6 @@ void GenerateProposalsCompute::Run() {
                             eta);
     Tensor &proposals = tensor_pair.first;
     Tensor &scores = tensor_pair.second;
-
     AppendTensor(rpn_rois, 4 * num_proposals, proposals);
     AppendTensor(rpn_roi_probs, num_proposals, scores);
 
@@ -472,48 +463,32 @@ void GenerateProposalsCompute::Run() {
       num_data[i] = tmp_num[i];
     }
   }
-
   rpn_rois->set_lod(lod);
   rpn_roi_probs->set_lod(lod);
   rpn_rois->Resize({num_proposals, 4});
   rpn_roi_probs->Resize({num_proposals, 1});
-
-  /*
-  auto* rpn_roi_probs_data = rpn_roi_probs->data<float>();
-  LOG(INFO) << "rpn_roi_probs:" << rpn_roi_probs->dims();
-  for (int i = 0; i < rpn_roi_probs->numel() - 4; i = i + 4) {
-    LOG(INFO) << rpn_roi_probs_data[i] << " " << rpn_roi_probs_data[i+1]
-      << " " << rpn_roi_probs_data[i+2] << " " << rpn_roi_probs_data[i+3];
-  }
-  auto* rpn_roi_data = rpn_rois->data<float>();
-  LOG(INFO) << "rpn_roi:" << rpn_rois->dims();
-  for (int i = 0; i < rpn_rois->numel() - 4; i = i + 4) {
-    LOG(INFO) << rpn_roi_data[i] << " " << rpn_roi_data[i+1]
-      << " " << rpn_roi_data[i+2] << " " << rpn_roi_data[i+3];
-  }
-  */
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(generate_proposals,
-                     kARM,
+REGISTER_LITE_KERNEL(generate_proposals_v2,
+                     kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::GenerateProposalsCompute,
+                     paddle::lite::kernels::host::GenerateProposalsV2Compute,
                      def)
-    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("BboxDeltas", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("ImInfo", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Anchors", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Variances", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("RpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("RpnRoiProbs", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("BboxDeltas", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("ImShape", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Anchors", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Variances", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("RpnRois", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("RpnRoiProbs", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("RpnRoisLod",
-                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("RpnRoisNum",
-                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();
