@@ -15,6 +15,10 @@
 #include "lite/kernels/arm/conv_depthwise.h"
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/conv3x3s1_depthwise_fp16.h"
+#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -295,6 +299,32 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   last_shape_ = param.x->dims();
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {}
+
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto w_dims = param.filter->dims();
+  auto kw = w_dims[3];
+  auto channel = w_dims[0];
+  auto hin = param.x->dims()[2];
+  auto win = param.x->dims()[3];
+  auto paddings = *param.paddings;
+  if (kw == 3) {
+    flag_trans_weights_ = false;
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv_depthwise_3x3_fp16";
+#endif
+  } else {
+    LOG(FATAL) << "DepthwiseConv FP16 Only Support 3x3 s1!";
+  }
+}
+#endif
+
 #ifdef LITE_WITH_PROFILE
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::
@@ -445,6 +475,44 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
         w_scale_.data());
 }
 
+#ifdef ENABLE_ARM_FP16
+#ifdef LITE_WITH_PROFILE
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::
+    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  ch->kernel_func_name = kernel_func_name_;
+}
+#endif
+
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  const auto* i_data = param.x->data<float16_t>();
+  const auto* w_data = param.filter->data<float16_t>();
+  const auto* b_data = param.bias ? param.bias->data<float16_t>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float16_t>();
+  }
+  auto* o_data = param.output->mutable_data<float16_t>();
+
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+
+  lite::arm::math::fp16::conv_depthwise_3x3_fp16(
+      i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
+}
+#endif
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

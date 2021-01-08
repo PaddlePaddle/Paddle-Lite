@@ -184,6 +184,48 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   is_first_epoch_ = false;
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  auto w_dims = param.filter->dims();
+
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto paddings = *param.paddings;
+  auto dilations = *param.dilations;
+  bool pads_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+
+  int ic = w_dims[1] * param.groups;
+  int oc = w_dims[0];
+  int kh = w_dims[2];  // oihw
+  int kw = w_dims[3];
+  int ph = paddings[0];
+  int pw = paddings[2];
+  int sh = param.strides[1];
+  int sw = param.strides[0];
+  int hin = param.x->dims()[2];
+  int win = param.x->dims()[3];
+  bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);
+
+  bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
+  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
+  bool flag_dw_3x3 = (kw == 3 && kh == 3 && (sw == 1 || sw == 2));
+
+  if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
+      no_dilation && flag_dw_3x3) {
+    impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
+    // VLOG(3) << "Run DepthwiseConv FP16";
+  } else {
+    // impl_ = new GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>;
+    // VLOG(3) << "Run GemmLikeConv FP16";
+  }
+  impl_->SetContext(std::move(this->ctx_));
+  impl_->SetParam(param);
+  impl_->PrepareForRun();
+  is_first_epoch_ = false;
+}
+#endif
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -198,6 +240,28 @@ typedef paddle::lite::kernels::arm::ConvCompute<PRECISION(kInt8),
 typedef paddle::lite::kernels::arm::ConvCompute<PRECISION(kInt8),
                                                 PRECISION(kInt8)>
     ConvInt8_Int8;
+
+#ifdef ENABLE_ARM_FP16
+typedef paddle::lite::kernels::arm::ConvCompute<PRECISION(kFP16),
+                                                PRECISION(kFP16)>
+    ConvFp16_Fp16;
+
+REGISTER_LITE_KERNEL(conv2d, kARM, kFP16, kNCHW, ConvFp16_Fp16, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("conv2d", 1)
+    .Finalize();
+
+REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFP16, kNCHW, ConvFp16_Fp16, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})

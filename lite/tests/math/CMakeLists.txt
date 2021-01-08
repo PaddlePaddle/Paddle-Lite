@@ -14,6 +14,13 @@ if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_MLU) AND (LITE
         lite_cc_test(deformable_conv_compute_test SRCS deformable_conv_compute_test.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
         lite_cc_test(layout_compute_test SRCS layout_compute_test.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
     endif()
-    
+
+    if(LITE_WITH_ARM82_FP16)
+        if(${ANDROID_NDK_MAJOR})
+          if(${ANDROID_NDK_MAJOR} GREATER "17")
+            lite_cc_test(conv_fp16_compute_test SRCS conv_fp16_compute_test.cc DEPS arena_framework ${arm_kernels} ${lite_ops} ${host_kernels})
+          endif()
+        endif()
+    endif()
 
 endif()
