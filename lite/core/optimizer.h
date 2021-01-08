@@ -145,7 +145,7 @@ class Optimizer {
 
          "remove_tf_redundant_ops_pass",
          "variable_place_inference_pass",  // inference arg/var's
-
+         "__fpga_kernel_place_correct_pass",
          "mlu_postprocess_pass",
          // info(target/precision/layout/device)
          // using kernel info
