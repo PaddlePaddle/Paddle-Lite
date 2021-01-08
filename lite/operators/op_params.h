@@ -199,8 +199,7 @@ struct MulGradParam : ParamBase {
   const lite::Tensor* x{};
   const lite::Tensor* y{};
   const lite::Tensor* output_grad{};
-  lite::Tensor* x_grad{};
-  lite::Tensor* y_grad{};
+  lite::Tensor* x_grad{}; lite::Tensor* y_grad{};
 
   int x_num_col_dims{1};
   int y_num_col_dims{1};
@@ -2081,11 +2080,8 @@ struct RnnParam : ParamBase {
   std::string mode{"LSTM"};
   bool is_test{false};
   int seed{0};
-
-struct LoDArrayLengthParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* out{};
 };
+
 
 }  // namespace operators
 }  // namespace lite
