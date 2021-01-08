@@ -23,7 +23,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class SelectInputCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+class SelectInputCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::SelectInputParam;
 
@@ -39,21 +39,6 @@ class SelectInputCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
 #endif
 };
 
-class SelectInputCompute : public KernelLite<TARGET(kHost), PRECISION(kInt32)> {
- public:
-  using param_t = operators::SelectInputParam;
-
-  void Run() override;
-
-  virtual ~SelectInputCompute() = default;
-#ifdef LITE_WITH_PROFILE
-  virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
-  }
-  std::string kernel_func_name_{"NotImplForSelectInput"};
-#endif
-};
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
