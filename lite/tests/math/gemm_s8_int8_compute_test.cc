@@ -230,14 +230,14 @@ bool test_gemm_int8(bool tra,
                                              &ctx);
     t0.Stop();
   }
-  LOG(INFO) << "gemm_int8_int8 output: M: " << m << ", N: " << n << ", K: " << k
-            << ", power_mode: " << cls << ", threads: " << ths
-            << ", GOPS: " << ops * 1e-9f
-            << " GOPS, avg time: " << t0.LapTimes().Avg()
-            << " ms, min time: " << t0.LapTimes().Min()
-            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
-            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
-            << " GOPs";
+  VLOG(4) << "gemm_int8_int8 output: M: " << m << ", N: " << n << ", K: " << k
+          << ", power_mode: " << cls << ", threads: " << ths
+          << ", GOPS: " << ops * 1e-9f
+          << " GOPS, avg time: " << t0.LapTimes().Avg()
+          << " ms, min time: " << t0.LapTimes().Min()
+          << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
+          << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
+          << " GOPs";
 
   /// fp32 output compute
   t0.Reset();
@@ -258,32 +258,32 @@ bool test_gemm_int8(bool tra,
                                             &ctx);
     t0.Stop();
   }
-  LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n << ", K: " << k
-            << ", power_mode: " << cls << ", threads: " << ths
-            << ", GOPS: " << ops * 1e-9f
-            << " GOPS, avg time: " << t0.LapTimes().Avg()
-            << " ms, min time: " << t0.LapTimes().Min()
-            << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
-            << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
-            << " GOPs";
+  VLOG(4) << "gemm_int8_fp32 output: M: " << m << ", N: " << n << ", K: " << k
+          << ", power_mode: " << cls << ", threads: " << ths
+          << ", GOPS: " << ops * 1e-9f
+          << " GOPS, avg time: " << t0.LapTimes().Avg()
+          << " ms, min time: " << t0.LapTimes().Min()
+          << " ms, mean GOPs: " << ops * 1e-6f / t0.LapTimes().Avg()
+          << " GOPs, max GOPs: " << ops * 1e-6f / t0.LapTimes().Min()
+          << " GOPs";
 
   if (FLAGS_check_result) {
     double max_ratio = 0;
     double max_diff = 0;
     /// fp32 result
     tensor_cmp_host(tc_basic_fp32, tc_fp32, max_ratio, max_diff);
-    LOG(INFO) << "fp32 compare result, max diff: " << max_diff
-              << ", max ratio: " << max_ratio;
+    VLOG(4) << "fp32 compare result, max diff: " << max_diff
+            << ", max ratio: " << max_ratio;
     if (std::abs(max_ratio) > 1e-4f && std::abs(max_diff) > 5e-5f) {
       Tensor tdiff;
       tdiff.set_precision(PRECISION(kFloat));
       tdiff.Resize(tc_fp32.dims());
       tensor_diff(tc_basic_fp32, tc_fp32, tdiff);
-      LOG(INFO) << "basic result: ";
+      LOG(warning) << "basic result: ";
       print_tensor(tc_basic_fp32);
-      LOG(INFO) << "lite result: ";
+      LOG(warning) << "lite result: ";
       print_tensor(tc_fp32);
-      LOG(INFO) << "diff result: ";
+      LOG(warning) << "diff result: ";
       print_tensor(tdiff);
       return false;
     }
@@ -291,8 +291,8 @@ bool test_gemm_int8(bool tra,
     max_ratio = 0;
     max_diff = 0;
     tensor_cmp_host(tc_basic_int8, tc_int8, max_ratio, max_diff);
-    LOG(INFO) << "int8 compare result, max diff: " << max_diff
-              << ", max ratio: " << max_ratio;
+    VLOG(4) << "int8 compare result, max diff: " << max_diff
+            << ", max ratio: " << max_ratio;
     if (fabs(max_ratio) > 1e-4f) {
       Tensor tdiff;
       tdiff.Resize(tc_int8.dims());
@@ -337,7 +337,7 @@ TEST(TestLiteGemmInt8, gemm_int8) {
 #ifdef LITE_WITH_ARM
     paddle::lite::DeviceInfo::Init();
 #endif
-    LOG(INFO) << "run basic sgemm test";
+    VLOG(4) << "run basic sgemm test";
     for (auto& m : {1, 3, 8, 32, 33, 34, 35, 38, 41, 397}) {
       for (auto& n : {1, 3, 13, 141, 512, 789}) {
         for (auto& k : {1, 3, 8, 59, 60, 61, 62, 66, 67, 71}) {
@@ -369,13 +369,12 @@ TEST(TestLiteGemmInt8, gemm_int8) {
                                             th);
                     }
                     if (flag) {
-                      LOG(INFO) << "test m = " << m << ", n=" << n
-                                << ", k=" << k
-                                << ", bias: " << (has_bias ? "true" : "false")
-                                << ", relu: " << relu_type
-                                << ", trans A: " << (tra ? "true" : "false")
-                                << ", trans B: " << (trb ? "true" : "false")
-                                << " passed\n";
+                      VLOG(4) << "test m = " << m << ", n=" << n << ", k=" << k
+                              << ", bias: " << (has_bias ? "true" : "false")
+                              << ", relu: " << relu_type
+                              << ", trans A: " << (tra ? "true" : "false")
+                              << ", trans B: " << (trb ? "true" : "false")
+                              << " passed\n";
                     } else {
                       LOG(FATAL) << "test m = " << m << ", n=" << n
                                  << ", k=" << k
@@ -417,8 +416,8 @@ TEST(TestGemmInt8Custom, gemm_int8_custom) {
                << ", trans B: " << FLAGS_traB << ", bias: " << FLAGS_flag_bias
                << ", act: " << FLAGS_flag_act << " failed!!";
   }
-  LOG(INFO) << "test m = " << FLAGS_M << ", n=" << FLAGS_N << ", k=" << FLAGS_K
-            << ", trans A: " << FLAGS_traA << ", trans B: " << FLAGS_traB
-            << ", bias: " << FLAGS_flag_bias << ", act: " << FLAGS_flag_act
-            << " passed!!";
+  VLOG(4) << "test m = " << FLAGS_M << ", n=" << FLAGS_N << ", k=" << FLAGS_K
+          << ", trans A: " << FLAGS_traA << ", trans B: " << FLAGS_traB
+          << ", bias: " << FLAGS_flag_bias << ", act: " << FLAGS_flag_act
+          << " passed!!";
 }

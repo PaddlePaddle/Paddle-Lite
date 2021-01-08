@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,35 +11,31 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #pragma once
 
 #include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace x86 {
+namespace xpu {
 
-template <typename T>
-class ShapeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class XPUBlockFuseCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::ShapeParam;
+  using param_t = operators::XPUBlockFuseParam;
 
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ShapeParam>();
-    // auto& context = context_->As<X86Context>();
-    auto out_data = param.Out->template mutable_data<int32_t>();
-    auto in_dims = param.X->dims();
-    for (size_t i = 0; i < in_dims.size(); ++i) {
-      out_data[i] = in_dims[i];
-    }
-  }
+  void PrepareForRun() override;
 
-  virtual ~ShapeCompute() = default;
+  void Run() override;
+
+ private:
+  std::vector<xdnn::fusion_block<float, int16_t, int16_t, T>> xpu_fusion_block;
 };
 
-}  // namespace x86
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

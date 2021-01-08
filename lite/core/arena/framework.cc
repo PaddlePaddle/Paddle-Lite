@@ -87,24 +87,16 @@ void TestCase::CreateInstruction() {
 #endif
 }
 
-void TestCase::PrepareInputsForInstruction() {
-  for (auto& arg : op_desc().InputArgumentNames()) {
-    for (auto& var : op_desc().Input(arg)) {
-      const auto* type = instruction_->kernel()->GetInputDeclType(arg);
-      CHECK(base_scope_->FindVar(var));
-      /// Create a tensor or tensor_array in the instruction's scope,
-      /// alloc memory and then copy data there.
-      if (type->IsTensor() &&
-          !TargetCompatibleTo(*Type::GetTensorTy(TARGET(kHost)), *type)) {
-        const auto* base_tensor = base_scope_->FindTensor(var);
-        auto* inst_tensor = inst_scope_->FindMutableTensor(var);
-        CHECK(!base_tensor->dims().empty())
-            << "The dims of input tensor is empty yet";
+void TestCase::PrepareInputTargetCopy(const Type* type,
+                                      Tensor* inst_tensor,
+                                      const Tensor* base_tensor) {
+  auto target_type = type->target();
+  switch (target_type) {
+    case TARGET(kOpenCL): {
 #ifdef LITE_WITH_OPENCL
+      auto layout_type = type->layout();
+      if (layout_type == DATALAYOUT(kImageDefault)) {
         input_cpu_tensor_.Resize(base_tensor->dims());
-        base_tensor->raw_data();
-        base_tensor->memory_size();
-        input_cpu_tensor_.raw_data();
         float* input_cpu_data = input_cpu_tensor_.mutable_data<float>();
         memcpy(input_cpu_data,
                base_tensor->raw_data(),
@@ -119,13 +111,40 @@ void TestCase::PrepareInputsForInstruction() {
             input_cpu_data, input_image_cpu_data, base_tensor->dims());
         inst_tensor->mutable_data<half_t, cl::Image2D>(
             input_image_dims[0], input_image_dims[1], input_image_cpu_data);
-#else
-        TargetCopy(type->target(),
+      } else {
+        // buffer: same as default
+        TargetCopy(target_type,
                    inst_tensor->mutable_data(type->target(),
                                              base_tensor->memory_size()),
                    base_tensor->raw_data(),
                    base_tensor->memory_size());
+      }
+      break;
 #endif
+    }
+    default:
+      TargetCopy(
+          target_type,
+          inst_tensor->mutable_data(type->target(), base_tensor->memory_size()),
+          base_tensor->raw_data(),
+          base_tensor->memory_size());
+  }
+}
+
+void TestCase::PrepareInputsForInstruction() {
+  for (auto& arg : op_desc().InputArgumentNames()) {
+    for (auto& var : op_desc().Input(arg)) {
+      const auto* type = instruction_->kernel()->GetInputDeclType(arg);
+      CHECK(base_scope_->FindVar(var));
+      /// Create a tensor or tensor_array in the instruction's scope,
+      /// alloc memory and then copy data there.
+      if (type->IsTensor() &&
+          !TargetCompatibleTo(*Type::GetTensorTy(TARGET(kHost)), *type)) {
+        const Tensor* base_tensor = base_scope_->FindTensor(var);
+        auto* inst_tensor = inst_scope_->FindMutableTensor(var);
+        CHECK(!base_tensor->dims().empty())
+            << "The dims of input tensor is empty yet";
+        PrepareInputTargetCopy(type, inst_tensor, base_tensor);
       } else if (type->IsTensorList() &&
                  !TargetCompatibleTo(*Type::GetTensorListTy(TARGET(kHost)),
                                      *type)) {
@@ -135,11 +154,8 @@ void TestCase::PrepareInputsForInstruction() {
         for (size_t i = 0; i < base_tensor_list->size(); i++) {
           CHECK(!base_tensor_list->at(i).dims().empty())
               << "The dims of input tensor[" << i << "] is empty yet";
-          TargetCopy(type->target(),
-                     inst_tensor_list->at(i).mutable_data(
-                         type->target(), base_tensor_list->at(i).memory_size()),
-                     inst_tensor_list->at(i).raw_data(),
-                     inst_tensor_list->at(i).memory_size());
+          PrepareInputTargetCopy(
+              type, &(inst_tensor_list->at(i)), &base_tensor_list->at(i));
         }
       }
     }
