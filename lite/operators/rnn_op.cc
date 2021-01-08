@@ -21,8 +21,6 @@ namespace operators {
 
 bool RnnOp::CheckShape() const {
   CHECK_OR_FALSE(param_.Input);
-  //  CHECK_OR_FALSE(param_.WeightList);
-  CHECK_OR_FALSE(param_.PreState);
   return true;
 }
 
@@ -33,48 +31,49 @@ bool RnnOp::InferShapeImpl() const {
   int seq = in_dims[0];
   int hidden_size = param_.hidden_size;
   bool is_bidirec = param_.is_bidirec;
-  int num_layers = param_.num_layers;
+  // int num_layers = param_.num_layers;
   int out_hidden_size = is_bidirec ? 2 * hidden_size : hidden_size;
   DDimLite out_dims(std::vector<int64_t>{seq, batch, out_hidden_size});
   param_.Out->Resize(out_dims);
-
-  DDimLite state_dims = param_.PreState->dims();
-  param_.State->Resize(state_dims);
-
-<<<<<<< Updated upstream
-  //  auto hidden_lod = param_.Out->mutable_lod();
-  //  *hidden_lod = param_.Input->lod();
-  //  auto cell_lod = param_.Cell->mutable_lod();
-  //  *cell_lod = param_.Input->lod();
-=======
->>>>>>> Stashed changes
+  param_.State.resize(param_.PreState.size());
+  for (int i = 0; i < param_.PreState.size(); i++) {
+    DDimLite state_dims = param_.PreState[i]->dims();
+    param_.State[i]->Resize(state_dims);
+  }
   return true;
 }
 
 bool RnnOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.Input =
       scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite::Tensor>();
-  param_.PreState = scope->FindVar(opdesc.Input("PreState").front())
-                        ->GetMutable<lite::Tensor>();
+
+  auto PreState = opdesc.Input("PreState");
+  param_.PreState.clear();
+  for (auto var : PreState) {
+    param_.PreState.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+  }
   auto WeightList = opdesc.Input("WeightList");
   param_.WeightList.clear();
   for (auto var : WeightList) {
     param_.WeightList.push_back(
         scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
-  param_.SequenceLength = scope->FindVar(opdesc.Input("SequenceLength").front())
-                              ->GetMutable<lite::Tensor>();
+  //  param_.SequenceLength =
+  //  scope->FindVar(opdesc.Input("SequenceLength").front())
+  //                              ->GetMutable<lite::Tensor>();
   param_.DropoutState = scope->FindVar(opdesc.Output("DropoutState").front())
                             ->GetMutable<lite::Tensor>();
   param_.Reserve = scope->FindVar(opdesc.Output("Reserve").front())
                        ->GetMutable<lite::Tensor>();
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
-  param_.State = scope->FindVar(opdesc.Output("State").front())
-                     ->GetMutable<lite::Tensor>();
-  CHECK(param_.Input);
+  auto State = opdesc.Output("State");
+  param_.State.clear();
+  for (auto var : State) {
+    param_.State.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
+  }
+  // CHECK(param_.Input);
   // CHECK(param_.WeightList);
-  CHECK(param_.PreState);
   param_.dropout_prob = opdesc.GetAttr<float>("dropout_prob");
   param_.is_bidirec = opdesc.GetAttr<bool>("is_bidirec");
   param_.input_size = opdesc.GetAttr<int>("input_size");
