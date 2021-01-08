@@ -122,6 +122,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.act_type = op_desc.GetAttr<int>("act_type");
   param_.act_param = op_desc.GetAttr<float>("act_param");
   param_.filter_dims = op_desc.GetAttr<std::vector<int>>("filter_dims");
+  param_.has_branch = op_desc.GetAttr<bool>("has_branch");
 
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
