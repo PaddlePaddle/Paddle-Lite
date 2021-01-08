@@ -12,17 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/opencl/cl_half.h"
-#include "lite/backends/opencl/cl_include.h"
-#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/replace_stl/stream.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
-#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
@@ -42,18 +36,73 @@ class ActivationComputeImageDefault
 
   void PrepareForRun() override {
     act_param_ = param_.get_mutable<param_t>();
-    int act_type = static_cast<int>(act_param_->active_type);
+    act_type_ = static_cast<int>(act_param_->active_type);
 #ifdef LITE_WITH_LOG
     VLOG(1) << "ActivationTypeToStr(act_param_->active_type):"
             << ActivationTypeToStr(act_param_->active_type);
 #endif
-    switch (act_type) {
+    switch (act_type_) {
       case 1:
         kernel_func_name_ = "relu";
         break;
       case 2:
         kernel_func_name_ = "relu6";
         threshold_ = act_param_->Relu_clipped_coef;
+        break;
+      case 3:
+        mode_ = act_param_->Prelu_mode;
+        if (mode_ == "all") {
+          kernel_func_name_ = "leaky_relu";
+          const float* alpha_data = act_param_->Prelu_alpha->data<float>();
+          scale_ = alpha_data[0];
+        } else if (mode_ == "channel") {
+          alpha_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+          tensor_hold_alpha_image_ = std::unique_ptr<Tensor>(new Tensor);
+          kernel_func_name_ = "prelu_channel";
+          auto& out_dims = act_param_->Out->dims();
+          width_ = out_dims[3];
+
+          CLImageConverterFolder alpha_converter;
+          const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
+              act_param_->Prelu_alpha->dims());
+          tensor_hold_alpha_image_->Resize(
+              {1, alpha_image_dims[0], alpha_image_dims[1], 4});
+
+          auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
+          auto* alpha_cpu_data = act_param_->Prelu_alpha->mutable_data<float>();
+          alpha_converter.NCHWToImage(alpha_cpu_data,
+                                      alpha_image_data,
+                                      act_param_->Prelu_alpha->dims());
+
+          MUTABLE_DATA_GPU(alpha_gpu_image_,
+                           alpha_image_dims[0],
+                           alpha_image_dims[1],
+                           alpha_image_data);
+        } else {
+          alpha_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+          tensor_hold_alpha_image_ = std::unique_ptr<Tensor>(new Tensor);
+          kernel_func_name_ = "prelu_element";
+          auto& in_dim = act_param_->X->dims();
+          height_ = in_dim[2];
+          scale_ = act_param_->Leaky_relu_alpha;
+
+          CLImageConverterFolder alpha_converter;
+          const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
+              act_param_->Prelu_alpha->dims());
+          tensor_hold_alpha_image_->Resize(
+              {1, alpha_image_dims[0], alpha_image_dims[1], 4});
+
+          auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
+          auto* alpha_cpu_data = act_param_->Prelu_alpha->mutable_data<float>();
+          alpha_converter.NCHWToImage(alpha_cpu_data,
+                                      alpha_image_data,
+                                      act_param_->Prelu_alpha->dims());
+
+          MUTABLE_DATA_GPU(alpha_gpu_image_,
+                           alpha_image_dims[0],
+                           alpha_image_dims[1],
+                           alpha_image_data);
+        }
         break;
       case 4:
         kernel_func_name_ = "leaky_relu";
@@ -72,13 +121,19 @@ class ActivationComputeImageDefault
       case 8:
         kernel_func_name_ = "exp_act";
         break;
+      case 10:
+        kernel_func_name_ = "hard_swish";
+        scale_ = act_param_->hard_swish_scale;
+        threshold_ = act_param_->hard_swish_threshold;
+        offset_ = act_param_->hard_swish_offset;
+        break;
       case 14:
         kernel_func_name_ = "hard_sigmoid";
         scale_ = act_param_->hard_sigmoid_slope;
         threshold_ = act_param_->hard_sigmoid_offset;
         break;
       default:
-        LOG(FATAL) << "This act type:" << act_type << " doesn't support.";
+        LOG(FATAL) << "This act type:" << act_type_ << " doesn't support.";
         return;
     }
 #ifdef LITE_WITH_LOG
@@ -136,6 +191,25 @@ class ActivationComputeImageDefault
     CL_CHECK_FATAL(status);
     status = kernel.setArg(3, scale_);
     CL_CHECK_FATAL(status);
+    if (act_type_ == 10) {
+      status = kernel.setArg(4, offset_);
+      CL_CHECK_FATAL(status);
+    }
+    if (act_type_ == 3) {
+      if (mode_ == "channel") {
+        auto* alpha_img_in = GET_DATA_GPU(alpha_gpu_image_);
+        status = kernel.setArg(4, width_);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(5, *alpha_img_in);
+        CL_CHECK_FATAL(status);
+      } else if (mode_ == "element") {
+        auto* alpha_img_in = GET_DATA_GPU(alpha_gpu_image_);
+        status = kernel.setArg(4, height_);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(5, *alpha_img_in);
+        CL_CHECK_FATAL(status);
+      }
+    }
 
 #ifdef LITE_WITH_LOG
     const auto& x_dims = act_param_->X->dims();
@@ -183,12 +257,19 @@ class ActivationComputeImageDefault
   std::string kernel_func_name_{};
   float threshold_{6.f};
   float scale_{1.f};
+  float offset_{3.f};
   cl::Kernel kernel_;
   bool first_epoch_for_reinit_{true};
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
+  std::string mode_{"channel"};
+  int act_type_{0};
+  int width_{0};
+  int height_{0};
+  std::unique_ptr<Tensor> alpha_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> tensor_hold_alpha_image_{nullptr};
 };
 }  // namespace opencl
 }  // namespace kernels
@@ -332,6 +413,44 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// Hard Swish
+REGISTER_LITE_KERNEL(
+    hard_swish,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+// Prelu
+REGISTER_LITE_KERNEL(
+    prelu,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::ActivationComputeImageDefault,
+    def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("mode", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
