@@ -126,6 +126,8 @@ class TargetWrapper<TARGET(kHost)> {
                           const stream_t& stream) {
     MemcpySync(dst, src, size, dir);
   }
+  // std style inference
+  static void Memcpy(void* dst, const void* src, size_t size);
 };
 
 #ifdef LITE_WITH_FPGA

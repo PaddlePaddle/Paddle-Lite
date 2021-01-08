@@ -220,7 +220,8 @@ void conv_compute_6x6_3x3(const float* input,
               for (int yi = 0; yi < ey; ++yi) {
                 float* dst_yi = trans_remain_tmp_data + yi * 32;
                 const float* src_yi = src_ci + w_pad * yi * 4;
-                memcpy(dst_yi, src_yi, x_size * sizeof(float) * 4);
+                TargetWrapperHost::Memcpy(
+                    dst_yi, src_yi, x_size * sizeof(float) * 4);
               }
             }
             // trans
@@ -341,9 +342,9 @@ void conv_compute_6x6_3x3(const float* input,
             // copy to dest
             memset(trans_tmp_data, 0, 144 * sizeof(float));
             for (int i = 0; i < ey; ++i) {
-              memcpy(trans_tmp_data + i * ex * 4,
-                     trans_remain_tmp_data + i * 24,
-                     ex * sizeof(float) * 4);
+              TargetWrapperHost::Memcpy(trans_tmp_data + i * ex * 4,
+                                        trans_remain_tmp_data + i * 24,
+                                        ex * sizeof(float) * 4);
             }
             write_to_output_c4_fp32(trans_tmp_data,
                                     output_ptr,
@@ -503,7 +504,8 @@ void conv_compute_4x4_3x3(const float* input,
               for (int yi = 0; yi < ey; ++yi) {
                 float* dst_yi = trans_remain_tmp_data + yi * 24;
                 const float* src_yi = src_ci + w_pad * yi * 4;
-                memcpy(dst_yi, src_yi, x_size * sizeof(float) * 4);
+                TargetWrapperHost::Memcpy(
+                    dst_yi, src_yi, x_size * sizeof(float) * 4);
               }
             }
             // trans
@@ -625,9 +627,9 @@ void conv_compute_4x4_3x3(const float* input,
             // copy to dest
             memset(trans_tmp_data, 0, 64 * sizeof(float));
             for (int i = 0; i < ey; ++i) {
-              memcpy(trans_tmp_data + i * ex * 4,
-                     trans_remain_tmp_data + i * 16,
-                     ex * sizeof(float) * 4);
+              TargetWrapperHost::Memcpy(trans_tmp_data + i * ex * 4,
+                                        trans_remain_tmp_data + i * 16,
+                                        ex * sizeof(float) * 4);
             }
             write_to_output_c4_fp32(trans_tmp_data,
                                     output_ptr,
@@ -782,7 +784,8 @@ void conv_compute_2x2_3x3(const float* input,
               for (int yi = 0; yi < ey; ++yi) {
                 float* dst_yi = trans_remain_tmp_data + yi * 16;
                 const float* src_yi = src_ci + w_pad * yi * 4;
-                memcpy(dst_yi, src_yi, x_size * sizeof(float) * 4);
+                TargetWrapperHost::Memcpy(
+                    dst_yi, src_yi, x_size * sizeof(float) * 4);
               }
             }
 
@@ -890,9 +893,9 @@ void conv_compute_2x2_3x3(const float* input,
             // copy to dest
             memset(trans_tmp_data, 0, 16 * sizeof(float));
             for (int i = 0; i < ey; ++i) {
-              memcpy(trans_tmp_data + i * ex * 4,
-                     trans_remain_tmp_data + i * 8,
-                     ex * sizeof(float) * 4);
+              TargetWrapperHost::Memcpy(trans_tmp_data + i * ex * 4,
+                                        trans_remain_tmp_data + i * 8,
+                                        ex * sizeof(float) * 4);
             }
             write_to_output_c4_fp32(trans_tmp_data,
                                     output_ptr,
@@ -1038,7 +1041,8 @@ void conv_compute_2x2_3x3_small(const float* input,
               for (int yi = 0; yi < ey; ++yi) {
                 float* dst_yi = trans_remain_tmp_data + yi * 16;
                 const float* src_yi = src_ci + w_pad * yi * 4;
-                memcpy(dst_yi, src_yi, x_size * sizeof(float) * 4);
+                TargetWrapperHost::Memcpy(
+                    dst_yi, src_yi, x_size * sizeof(float) * 4);
               }
             }
 
@@ -1147,9 +1151,9 @@ void conv_compute_2x2_3x3_small(const float* input,
             // copy to dest
             memset(trans_tmp_data, 0, 16 * sizeof(float));
             for (int i = 0; i < ey; ++i) {
-              memcpy(trans_tmp_data + i * ex * 4,
-                     trans_remain_tmp_data + i * 8,
-                     ex * sizeof(float) * 4);
+              TargetWrapperHost::Memcpy(trans_tmp_data + i * ex * 4,
+                                        trans_remain_tmp_data + i * 8,
+                                        ex * sizeof(float) * 4);
             }
             write_to_output_c4_fp32(trans_tmp_data,
                                     output_ptr,

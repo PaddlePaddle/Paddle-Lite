@@ -21,7 +21,7 @@ namespace lite {
 
 const int MALLOC_ALIGN = 64;
 
-void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
+inline void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
   char* p = static_cast<char*>(malloc(offset + size));
   CHECK(p) << "Error occurred in TargetWrapper::Malloc period: no enough for "
@@ -32,21 +32,31 @@ void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   static_cast<void**>(r)[-1] = p;
   return r;
 }
-void TargetWrapper<TARGET(kHost)>::Free(void* ptr) {
+inline void TargetWrapper<TARGET(kHost)>::Free(void* ptr) {
   if (ptr) {
     free(static_cast<void**>(ptr)[-1]);
   }
 }
-void TargetWrapper<TARGET(kHost)>::MemcpySync(void* dst,
-                                              const void* src,
-                                              size_t size,
-                                              IoDirection dir) {
+inline void TargetWrapper<TARGET(kHost)>::MemcpySync(void* dst,
+                                                     const void* src,
+                                                     size_t size,
+                                                     IoDirection dir) {
   if (size > 0) {
     CHECK(dst) << "Error: the destination of MemcpySync can not be nullptr.";
     CHECK(src) << "Error: the source of MemcpySync can not be nullptr.";
     memcpy(dst, src, size);
   }
 }
+
+inline void TargetWrapper<TARGET(kHost)>::Memcpy(void* dst,
+                                                 const void* src,
+                                                 size_t size) {
+  if (size > 0) {
+    CHECK(dst) << "Error: the destination of MemcpySync can not be nullptr.";
+    CHECK(src) << "Error: the source of MemcpySync can not be nullptr.";
+    memcpy(dst, src, size);
+  }
+};
 
 }  // namespace lite
 }  // namespace paddle
