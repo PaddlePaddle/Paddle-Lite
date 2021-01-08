@@ -206,15 +206,6 @@ struct MulGradParam : ParamBase {
   int y_num_col_dims{1};
 };
 
-// For ReduceMean Op
-struct ReduceMeanParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* Out{};
-
-  std::vector<int> dim;
-  bool keep_dim{false};
-};
-
 // For Stack Op
 struct StackParam : ParamBase {
   std::vector<lite::Tensor*> X;
@@ -1250,13 +1241,6 @@ struct SequenceArithmeticParam : ParamBase {
   lite::Tensor* Out{};
 };
 
-struct ReduceMaxParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
-  std::vector<int> dim{};
-  bool keep_dim{false};
-};
-
 struct LodResetParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
@@ -1273,9 +1257,6 @@ struct IsEmptyParam : ParamBase {
 struct ReduceParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
-
-  lite::Tensor* x{};
-  lite::Tensor* output{};
   std::vector<int> dim{0};
   bool keep_dim{false};
   bool reduce_all{false};
@@ -1448,6 +1429,15 @@ struct ExpandParam : ParamBase {
   const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
   lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
+};
+
+/// ----------------------- expand v2 operators ----------------------
+struct ExpandV2Param : ParamBase {
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Shape{nullptr};
+  const std::vector<lite::Tensor>* expand_shapes_tensor{nullptr};
+  lite::Tensor* Out{nullptr};
+  std::vector<int> shape{};
 };
 
 /// ----------------------- expand as operators ----------------------
@@ -1749,6 +1739,27 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int axis{-1};
   int K{1};
 };
+struct XPUBlockFuseParam : ParamBase {
+  const lite::Tensor* input{};
+  const lite::Tensor* filter;
+  const lite::Tensor* max_filter;
+  const lite::Tensor* bias;
+  const lite::Tensor* input_max{};
+  lite::Tensor* output{};
+  lite::Tensor* output_max{};
+  std::vector<int> op_type;
+  std::vector<int> place_x;
+  std::vector<int> place_y;
+  std::vector<int> place_z;
+  std::vector<int> filter_dims;
+  std::vector<int> strides;
+  std::vector<int> paddings;
+  std::vector<int> dilations;
+  std::vector<int> groups;
+  std::vector<int> act_type;
+  std::vector<float> act_param;
+  std::vector<int> block_lod;
+};
 
 struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* input{};
@@ -1760,6 +1771,9 @@ struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* mask{};
   lite::Tensor* output{};
 
+  std::vector<int> slice_axes{};
+  std::vector<int> slice_starts{};
+  std::vector<int> slice_ends{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -1932,6 +1946,7 @@ struct XPUConv2dParam : ParamBase {
   std::shared_ptr<std::vector<int>> paddings;
   std::shared_ptr<std::vector<int>> dilations;
   int groups{1};
+  bool has_branch{false};
 };
 
 struct XPUSfaHeadParam : ParamBase {

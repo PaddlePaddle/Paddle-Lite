@@ -65,6 +65,7 @@ USE_MIR_PASS(weight_quantization_preprocess_pass);
 USE_MIR_PASS(post_quant_dynamic_pass);
 USE_MIR_PASS(apu_subgraph_pass);
 USE_MIR_PASS(quantized_op_attributes_inference_pass);
+USE_MIR_PASS(restrict_quantized_op_with_same_input_output_scale_pass);
 USE_MIR_PASS(control_flow_op_unused_inputs_and_outputs_eliminate_pass)
 USE_MIR_PASS(lite_scale_activation_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
@@ -75,7 +76,10 @@ USE_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass);
 USE_MIR_PASS(__xpu__fc_fuse_pass);
 USE_MIR_PASS(__xpu__mmdnn_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_fuse_pass);
+USE_MIR_PASS(__xpu__resblock_reduction_fuse_pass);
+USE_MIR_PASS(__xpu__resblock_normal_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_link_previous_out_max_pass);
 USE_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass);
 USE_MIR_PASS(__xpu__sfa_head_moment_fuse_pass);
 USE_MIR_PASS(__xpu__softmax_topk_fuse_pass);
+USE_MIR_PASS(__xpu__multi_encoder_slice_link_fuse_pass);

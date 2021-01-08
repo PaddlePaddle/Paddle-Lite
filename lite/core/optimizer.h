@@ -115,6 +115,8 @@ class Optimizer {
          "__xpu__resnet_d_fuse_pass",
          "__xpu__resnet_cbam_fuse_pass",
          "__xpu__conv2d_fuse_pass",
+         "__xpu__resblock_reduction_fuse_pass",
+         "__xpu__resblock_normal_fuse_pass",
          "__xpu__conv2d_link_previous_out_max_pass",
          "__xpu__sfa_head_meanstd_fuse_pass",
          "__xpu__sfa_head_moment_fuse_pass",
@@ -123,12 +125,13 @@ class Optimizer {
          "__xpu__embedding_with_eltwise_add_fuse_pass",
          "__xpu__fc_fuse_pass",
          "__xpu__softmax_topk_fuse_pass",
-         "quantized_op_attributes_inference_pass",  // Only for fully
-                                                    // quantized model, infer
-                                                    // the output scale and
-                                                    // fix the attribute
-                                                    // 'enable_int8' for all
-                                                    // of the quantized ops.
+         "__xpu__multi_encoder_slice_link_fuse_pass",
+         // Only for fully quantized model, infer the output scale and fix the
+         // attribute 'enable_int8' for all of the quantized ops.
+         "quantized_op_attributes_inference_pass",
+         // Apply the constraints for the quantized ops(such as concat) that the
+         // inputs and outputs must have the same scale.
+         "restrict_quantized_op_with_same_input_output_scale_pass",
          "npu_subgraph_pass",
          "huawei_ascend_npu_subgraph_pass",
          "imagination_nna_subgraph_pass",

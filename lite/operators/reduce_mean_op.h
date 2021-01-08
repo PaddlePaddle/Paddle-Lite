@@ -62,7 +62,7 @@ class ReduceMeanOp : public OpLite {
 #endif
 
  private:
-  mutable ReduceMeanParam param_;
+  mutable ReduceParam param_;
 };
 
 }  // namespace operators

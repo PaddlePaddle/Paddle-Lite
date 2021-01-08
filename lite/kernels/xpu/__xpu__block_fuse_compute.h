@@ -12,28 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gflags/gflags.h>
-#include <gtest/gtest.h>
-#include "lite/model_parser/flatbuffers/opencl/cache.h"
+#pragma once
+
+#include <vector>
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace fbs {
-namespace opencl {
+namespace kernels {
+namespace xpu {
 
-TEST(OpenCLCache, cache) {
-  const std::map<std::string, std::vector<std::vector<int8_t>>> map{
-      {"a", {{1, 2}, {3, 4}}}, {"b", {{5, 6}, {7, 8}}},
-  };
-  Cache cache_0{map};
-  paddle::lite::model_parser::Buffer buffer;
-  cache_0.CopyDataToBuffer(&buffer);
+template <typename T, PrecisionType PType>
+class XPUBlockFuseCompute : public KernelLite<TARGET(kXPU), PType> {
+ public:
+  using param_t = operators::XPUBlockFuseParam;
 
-  Cache cache_1{buffer};
-  CHECK(map == cache_1.GetBinaryMap());
-}
+  void PrepareForRun() override;
 
-}  // namespace opencl
-}  // namespace fbs
+  void Run() override;
+
+ private:
+  std::vector<xdnn::fusion_block<float, int16_t, int16_t, T>> xpu_fusion_block;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
