@@ -2076,6 +2076,10 @@ struct RnnParam : ParamBase {
   std::string mode{"LSTM"};
   bool is_test{false};
   int seed{0};
+
+struct LoDArrayLengthParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* out{};
 };
 
 }  // namespace operators
