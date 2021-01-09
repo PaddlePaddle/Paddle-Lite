@@ -38,9 +38,14 @@ class Monitor {
 
   void preRun(Instruction& inst) {  // NOLINT
     auto op = const_cast<OpLite*>(inst.op());
+    auto op_info = op->op_info();
     auto op_type = op->Type();
 
     VLOG(4) << "Running op:" << op_type << " on " << inst.kernel()->name();
+    auto in_args = op_info->input_names();
+    for (auto name : in_args) {
+      VLOG(4) << "\n in_tensor:" << name;
+    }
   }
 
   void postRun(Instruction& inst) {  // NOLINT

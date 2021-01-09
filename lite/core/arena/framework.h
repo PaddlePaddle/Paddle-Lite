@@ -218,12 +218,15 @@ class Arena {
     tester_->RunInstruction();
 
     bool success = true;
+    size_t out_var_idx = 0;
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {
         if (std::find(exclude_outs.begin(), exclude_outs.end(), var) !=
             exclude_outs.end()) {
           continue;
         }
+        VLOG(4) << "==== check precision for " << out_var_idx++
+                << "th(from 0) output var:" << out << " ===";
         success = success && CompareTensor(out, var);
       }
     }
@@ -255,7 +258,7 @@ class Arena {
   // input_name: X
   bool CompareTensor(const std::string& arg_name, const std::string& var_name) {
     // get tensor type.
-    const Type* type =
+    const Type* out_arg_type =
         tester_->instruction().kernel()->GetOutputDeclType(arg_name);
     return tester_->CheckPrecision(var_name, type, abs_error_);
   }

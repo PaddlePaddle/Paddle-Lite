@@ -261,6 +261,9 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
 
   bool success = true;
   for (int i = 0; i < inst_tensor->dims().production(); i++) {
+    // note: check kernel output V.S. ref. output
+    // LOG(INFO) << "inst_data[" << i << "]:" << inst_data[i] << ", base_data["
+    //           << i << "]:" << base_data[i];
     EXPECT_NEAR(inst_data[i], base_data[i], abs_error);
     if (fabsf(inst_data[i] - base_data[i]) > abs_error) {
       success = false;
@@ -311,8 +314,20 @@ bool TestCase::CheckPrecision(const Tensor* inst_tensor,
     case PRECISION(kBool):
       return CheckTensorPrecision<bool>(
           inst_tensor, base_tensor, type, abs_error);
+    case PRECISION(kInt8):
+      return CheckTensorPrecision<int8_t>(
+          inst_tensor, base_tensor, abs_error, out_arg_type);
+    case PRECISION(kInt32):
+      return CheckTensorPrecision<int32_t>(
+          inst_tensor, base_tensor, abs_error, out_arg_type);
+    case PRECISION(kInt64):
+      return CheckTensorPrecision<int64_t>(
+          inst_tensor, base_tensor, abs_error, out_arg_type);
+    case PRECISION(kBool):
+      return CheckTensorPrecision<bool>(
+          inst_tensor, base_tensor, abs_error, out_arg_type);
     default:
-      LOG(FATAL) << "not support type: " << PrecisionToStr(precision_type);
+      LOG(FATAL) << "not support type: " << PrecisionToStr(precision_type_t);
       return false;
   }
 }

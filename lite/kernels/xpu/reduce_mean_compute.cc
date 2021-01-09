@@ -22,7 +22,7 @@ namespace kernels {
 namespace xpu {
 
 void ReduceMeanCompute::Run() {
-  auto& param = Param<operators::ReduceMeanParam>();
+  auto& param = Param<operators::ReduceParam>();
   auto& ctx = this->ctx_->As<XPUContext>();
   const float* input = param.X->data<float>();
   auto x_dims = param.X->dims();

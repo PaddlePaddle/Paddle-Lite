@@ -272,6 +272,7 @@ void RuntimeProgram::Run() {
                                  lite::Color::Engine);
   }
 #endif
+
   int idx = -1;
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
@@ -291,7 +292,9 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
+
     inst.Run();
+
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
     precision_profiler_summary +=
