@@ -258,7 +258,7 @@ class Arena {
   // input_name: X
   bool CompareTensor(const std::string& arg_name, const std::string& var_name) {
     // get tensor type.
-    const Type* out_arg_type =
+    const Type* type =
         tester_->instruction().kernel()->GetOutputDeclType(arg_name);
     return tester_->CheckPrecision(var_name, type, abs_error_);
   }

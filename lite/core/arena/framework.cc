@@ -314,20 +314,8 @@ bool TestCase::CheckPrecision(const Tensor* inst_tensor,
     case PRECISION(kBool):
       return CheckTensorPrecision<bool>(
           inst_tensor, base_tensor, type, abs_error);
-    case PRECISION(kInt8):
-      return CheckTensorPrecision<int8_t>(
-          inst_tensor, base_tensor, abs_error, out_arg_type);
-    case PRECISION(kInt32):
-      return CheckTensorPrecision<int32_t>(
-          inst_tensor, base_tensor, abs_error, out_arg_type);
-    case PRECISION(kInt64):
-      return CheckTensorPrecision<int64_t>(
-          inst_tensor, base_tensor, abs_error, out_arg_type);
-    case PRECISION(kBool):
-      return CheckTensorPrecision<bool>(
-          inst_tensor, base_tensor, abs_error, out_arg_type);
     default:
-      LOG(FATAL) << "not support type: " << PrecisionToStr(precision_type_t);
+      LOG(FATAL) << "not support type: " << PrecisionToStr(precision_type);
       return false;
   }
 }
