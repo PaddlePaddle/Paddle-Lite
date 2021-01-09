@@ -137,6 +137,7 @@ add_kernel(fc_opencl_buffer OPENCL basic SRCS fc_buffer_compute.cc DEPS ${cl_ker
 #           OPENCL basic SRCS fusion_elementwise_add_activation_buffer_compute.cc
 #           DEPS elementwise_add_opencl ${cl_kernel_deps})
 add_kernel(io_copy_opencl_buffer OPENCL basic SRCS io_copy_buffer_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
+add_kernel(yolo_box_opencl_buffer OPENCL basic SRCS yolo_box_buffer_compute.cc DEPS ${tensor_lite} ${cl_kernel_deps})
 
 # extra
 # wait to add ...
