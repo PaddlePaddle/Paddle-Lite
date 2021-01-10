@@ -12,14 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/shape_compute.h"
-
-REGISTER_LITE_KERNEL(shape,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ShapeCompute<float>,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+#include "lite/backends/host/math/stack.h"
+#include <algorithm>
+#include <limits>
+#include <memory>

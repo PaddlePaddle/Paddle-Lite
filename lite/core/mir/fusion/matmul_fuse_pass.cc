@@ -11,35 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
+#include "lite/core/mir/fusion/matmul_fuse_pass.h"
+#include <memory>
 #include <vector>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/core/mir/fusion/matmul_fuser.h"
+#include "lite/core/mir/pass_registry.h"
+
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace x86 {
+namespace mir {
 
-template <typename T>
-class ShapeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ShapeParam;
+void MatmulFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  fusion::MatmulFuser fuser;
+  fuser(graph.get());
+}
 
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ShapeParam>();
-    // auto& context = context_->As<X86Context>();
-    auto out_data = param.Out->template mutable_data<int32_t>();
-    auto in_dims = param.X->dims();
-    for (size_t i = 0; i < in_dims.size(); ++i) {
-      out_data[i] = in_dims[i];
-    }
-  }
-
-  virtual ~ShapeCompute() = default;
-};
-
-}  // namespace x86
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_MIR_PASS(lite_matmul_fuse_pass, paddle::lite::mir::MatmulFusePass)
+    .BindTargets({TARGET(kAny)});

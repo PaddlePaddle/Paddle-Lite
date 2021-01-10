@@ -26,7 +26,8 @@ int Graph::Add(const std::string& name, std::shared_ptr<Node> node) {
   if (it != nodes_.end()) {
     // Only variable node can be shared with the same name
     if (!node->is_var() || !it->second.back()->is_var()) {
-      LOG(FATAL) << "[RKNPU] Const or data node " << name << " is redefined.";
+      LOG(FATAL) << "[Rockchip NPU] Const or data node " << name
+                 << " is redefined.";
       return -1;
     }
   } else {
@@ -47,63 +48,38 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
                                  DataLayoutType layout,
                                  const QuantizationInfo& qnt) {
   std::shared_ptr<Node> node = nullptr;
-
   if (precision == PrecisionType::kUnk) {
     precision = tensor.precision();  // todo
   }
-
   if (precision == PrecisionType::kUnk) {
     if (qnt.enable_int8 && qnt.quant_bits == 8) {
       precision = PrecisionType::kInt8;
     } else if (!qnt.enable_int8) {
       precision = PrecisionType::kFloat;
     } else {
-      LOG(ERROR) << "[rknpu]:Graph:: tensor precision unknown!";
+      LOG(ERROR) << "[Rockchip NPU] Unsupported precision type("
+                 << PrecisionToStr(precision) << ")!";
     }
   }
-
   if (precision != tensor.precision()) {
-    LOG(INFO) << "[rknpu]:Graph::Add: tensor precision mismatch!" << name << ":"
-              << PrecisionToStr(precision) << " vs "
-              << PrecisionToStr(tensor.precision());
+    LOG(WARNING) << "[Rockchip NPU] The precision type("
+                 << PrecisionToStr(tensor.precision()) << ") of tensor " << name
+                 << " is not matched with the requested one("
+                 << PrecisionToStr(precision) << ")!";
   }
-
   if (tensor.persistable()) {
     // Const node
+    VLOG(5) << "[Rockchip NPU] Add Const node " << name;
     node = std::make_shared<Node>(precision, layout, Node::Role::kConst);
     auto idx = Add(name, node);
     CHECK_EQ(idx, 1);
-    auto attr = std::make_shared<rk::nn::TensorAttr>();
-    attr->precision = ToRknpuPrecisionType(precision);
-    attr->layout = ToRknpuDataLayoutType(layout);
-    attr->role = rk::nn::TensorRole::CONST;
-    attr->name = name;
-
-    switch (precision) {
-      case PrecisionType::kInt8:
-        attr->qntBits = 8;
-        attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
-        attr->qntParamSymmetric.scale = qnt.scale;
-        break;
-      case PrecisionType::kInt32:
-        attr->qntBits = 32;
-        attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
-        attr->qntParamSymmetric.scale = qnt.scale;
-        break;
-      default:
-        break;
-    }
-
-    attr->dims.resize(shape.size());
-    for (int i = 0; i < shape.size(); i++) {
-      attr->dims[i] = shape[i];
-    }
-
-    LOG(INFO) << "[rknpu]:Graph::Add const node:" << name
-              << " precision: " << PrecisionToStr(precision)
-              << " layout: " << DataLayoutToStr(layout);
-    node->set_data(
-        rgraph_->CreateTensor(attr, const_cast<void*>(tensor.raw_data())));
+    node->set_data(CvtTensor(graph_,
+                             name,
+                             shape,
+                             qnt.scale,
+                             const_cast<void*>(tensor.raw_data()),
+                             precision,
+                             layout));
   } else {
     // Data node
     node = Add(name, shape, precision, layout, qnt);
@@ -117,49 +93,14 @@ std::shared_ptr<Node> Graph::Add(const std::string& name,
                                  PrecisionType precision,
                                  DataLayoutType layout,
                                  const QuantizationInfo& qnt) {
+  VLOG(5) << "[Rockchip NPU] Add Data/Var node " << name;
   auto node = std::make_shared<Node>(precision, layout, Node::Role::kData);
   auto idx = Add(name, node);
   CHECK_EQ(idx, 1);
-  auto attr = std::make_shared<rk::nn::TensorAttr>();
-  attr->precision = ToRknpuPrecisionType(precision);
-  attr->layout = ToRknpuDataLayoutType(layout);
-  attr->role = rk::nn::TensorRole::VAR;
-  attr->name = name;
-
-  switch (precision) {
-    case PrecisionType::kInt8:
-      attr->qntBits = 8;
-      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
-      attr->qntParamSymmetric.scale = qnt.scale;
-      break;
-    case PrecisionType::kInt32:
-      attr->qntBits = 32;
-      attr->qntType = rk::nn::QuantizationType::SYMMETRIC;
-      attr->qntParamSymmetric.scale = qnt.scale;
-      break;
-
-    default:
-      break;
-  }
-
-  attr->dims.resize(shape.size());
-  for (int i = 0; i < shape.size(); i++) {
-    attr->dims[i] = shape[i];
-  }
-
-  LOG(INFO) << "[rknpu]:Graph::Add data node:" << name
-            << " precision: " << PrecisionToStr(precision)
-            << " layout: " << DataLayoutToStr(layout);
-  node->set_data(rgraph_->CreateTensor(attr, nullptr));  // todo
+  node->set_data(
+      CvtTensor(graph_, name, shape, qnt.scale, nullptr, precision, layout));
   return node;
 }
-
-Graph::Graph() {
-  rgraph_ = new rk::nn::Graph();
-  CHECK(rgraph_ != nullptr);
-}
-
-Graph::~Graph() {}
 
 }  // namespace rknpu
 }  // namespace subgraph

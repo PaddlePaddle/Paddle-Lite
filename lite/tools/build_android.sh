@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 set +x
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
@@ -139,7 +140,7 @@ function set_android_api_level {
   if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
       cmake_api_level_options=""
   elif [ ${ANDROID_API_LEVEL} -ge ${MIN_ANDROID_API_LEVEL} ]; then
-      cmake_api_level_options="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
+      cmake_api_level_options="-DANDROID_NATIVE_API_LEVEL=${ANDROID_API_LEVEL}"
   else
       echo "Error: ANDROID_API_LEVEL should be no less than ${MIN_ANDROID_API_LEVEL} on ${ARCH}."
       exit 1

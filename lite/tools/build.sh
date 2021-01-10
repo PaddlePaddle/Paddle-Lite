@@ -118,7 +118,7 @@ function set_android_api_level {
   if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
       CMAKE_API_LEVEL_OPTIONS=""
   elif [ ${ANDROID_API_LEVEL} -ge ${MIN_ANDROID_API_LEVEL} ]; then
-      CMAKE_API_LEVEL_OPTIONS="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
+      CMAKE_API_LEVEL_OPTIONS="-DANDROID_NATIVE_API_LEVEL=${ANDROID_API_LEVEL}"
   else
       echo "Error: ANDROID_API_LEVEL should be no less than ${MIN_ANDROID_API_LEVEL} on ${ARM_ABI}."
       exit 1
