@@ -12,30 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gflags/gflags.h>
-#include <gtest/gtest.h>
-#include "lite/backends/opencl/utils/cache.h"
-#include "lite/utils/cp_logging.h"
+#pragma once
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace fbs {
-namespace opencl {
+namespace operators {
 
-TEST(OpenCLCache, cache) {
-  const std::map<std::string, std::vector<std::vector<uint8_t>>> map{
-      {"a", {{1, 2}, {3, 4}}}, {"b", {{5, 6}, {7, 8}}},
-  };
-  Cache cache_0{map};
-  std::vector<uint8_t> buffer;
-  cache_0.CopyDataToBuffer(&buffer);
+class XPUBlockFuseOp : public OpLite {
+ public:
+  XPUBlockFuseOp() {}
+  explicit XPUBlockFuseOp(const std::string &op_type) : OpLite(op_type) {}
 
-  Cache cache_1{buffer};
-  CHECK(map == cache_1.GetBinaryMap())
-      << "Cache read and write are not equivalent, the test failed.";
-}
+  bool CheckShape() const override;
 
-}  // namespace opencl
-}  // namespace fbs
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "BlockFuse Op"; }
+
+ private:
+  mutable XPUBlockFuseParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
