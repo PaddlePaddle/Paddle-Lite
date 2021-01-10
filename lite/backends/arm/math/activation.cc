@@ -702,6 +702,17 @@ void act_rsqrt<float>(const float* din, float* dout, int size, int threads) {
 }
 
 template <>
+void act_sqrt<float>(const float* din, float* dout, int size, int threads) {
+  const float* ptr_in = din;
+  float* ptr_out = dout;
+  for (int i = 0; i < size; ++i) {
+    ptr_out[0] = sqrtf(ptr_in[0]);
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
+template <>
 void act_square<float>(const float* din, float* dout, int size, int threads) {
   const float* ptr_in = din;
   float* ptr_out = dout;
