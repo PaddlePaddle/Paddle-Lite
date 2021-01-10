@@ -76,7 +76,9 @@ void test_shape(Place place, float abs_error) {
 TEST(shape, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny));
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;
 #elif defined(LITE_WITH_ARM)

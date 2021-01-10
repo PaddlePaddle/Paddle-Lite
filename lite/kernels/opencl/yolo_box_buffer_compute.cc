@@ -60,8 +60,8 @@ class YoloBoxComputeBuffer
     std::vector<int> anchors = yolo_box_param_->anchors;
     anchor_num_ = anchors.size() / 2;
     anchor_stride_ = (class_num_ + 5) * x_stride_;  // x_stride_ init should be
-    const DDim anchors_dim =
-        DDim(std::vector<DDim::value_type>{anchors.size()});
+    const DDim anchors_dim = DDim(
+        std::vector<DDim::value_type>{static_cast<int64_t>(anchors.size())});
     anchors_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     anchors_gpu_t_->Resize(anchors_dim);
     anchors_gpu_data_ =
