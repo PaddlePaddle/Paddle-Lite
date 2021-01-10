@@ -115,6 +115,8 @@ class Optimizer {
          "__xpu__resnet_d_fuse_pass",
          "__xpu__resnet_cbam_fuse_pass",
          "__xpu__conv2d_fuse_pass",
+         "__xpu__resblock_reduction_fuse_pass",
+         "__xpu__resblock_normal_fuse_pass",
          "__xpu__conv2d_link_previous_out_max_pass",
          "__xpu__sfa_head_meanstd_fuse_pass",
          "__xpu__sfa_head_moment_fuse_pass",
