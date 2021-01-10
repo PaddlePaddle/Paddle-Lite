@@ -147,7 +147,7 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
 #endif
 #ifdef LITE_WITH_OPENCL
     case TargetType::kOpenCL:
-      TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::HtoD);
+      TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::DtoD);
       break;
 #endif  // LITE_WITH_OPENCL
     default:

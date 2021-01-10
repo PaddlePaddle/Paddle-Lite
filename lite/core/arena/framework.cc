@@ -112,12 +112,13 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
           break;
         }
         case DATALAYOUT(kNCHW): {
-          // buffer: same as default
-          TargetCopy(target_type,
-                     inst_tensor->mutable_data(target_type,
-                                               base_tensor->memory_size()),
-                     base_tensor->raw_data(),
-                     base_tensor->memory_size());
+          // buffer
+          TargetWrapperCL::MemcpySync(
+              inst_tensor->mutable_data(type->target(),
+                                        base_tensor->memory_size()),
+              base_tensor->raw_data(),
+              base_tensor->memory_size(),
+              IoDirection::HtoD);
           break;
         }
         case DATALAYOUT(kAny): {
