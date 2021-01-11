@@ -20,6 +20,7 @@
 
 #include "lite/core/op_registry.h"
 #include "lite/kernels/arm/elementwise_compute.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -283,7 +284,6 @@ void do_elementwise_compute(const char* op_type_str) {
   ElementWiseComputeTemplate<T, PType> elementwise_add;
   operators::ElementwiseParam param;
   lite::Tensor x, y, output, output_ref;
-  unsigned int rand_seed = 1;
 
 #if 1
   for (auto n : {1, 3, 4}) {
@@ -335,14 +335,8 @@ void do_elementwise_compute(const char* op_type_str) {
               T* y_data = y.mutable_data<T>();
               T* output_data = output.mutable_data<T>();
               T* output_ref_data = output_ref.mutable_data<T>();
-              for (int i = 0; i < x_dim.production(); i++) {
-                x_data[i] = 1.0 * rand_r(&rand_seed) * rand_r(&rand_seed) /
-                            (rand_r(&rand_seed) + 1);
-              }
-              for (int i = 0; i < y_dim.production(); i++) {
-                y_data[i] = 1.0 * rand_r(&rand_seed) * rand_r(&rand_seed) /
-                            (rand_r(&rand_seed) + 1);
-              }
+              fill_data_rand(x_data, std::numeric_limits<T>::min()/10, std::numeric_limits<T>::max()/10, x_dim.production());
+              fill_data_rand(y_data, std::numeric_limits<T>::min()/10, std::numeric_limits<T>::max()/10, y_dim.production());
               param.X = &x;
               param.Y = &y;
               param.axis = axis;
