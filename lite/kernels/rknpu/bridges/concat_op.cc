@@ -35,10 +35,12 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_name = op_info->Output("Out").front();
   auto output = scope->FindMutableTensor(out_name);
   auto out_scale_name = "Out0_scale";
+  auto output_dims = output->dims();
+  auto output_dims_count = output_dims.size();
 
   auto axis = op_info->GetAttr<int>("axis");
   if (axis == -1) {
-    axis = 1;
+    axis = output_dims_count - 1;
   }
   auto num = x_names.size();
 
