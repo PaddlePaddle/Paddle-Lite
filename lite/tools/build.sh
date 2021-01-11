@@ -29,6 +29,8 @@ WITH_AXV=ON
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
 WITH_LTO=OFF
+BUILD_ARM82_FP16=OFF
+BUILD_ARM82_INT8_SDOT=OFF
 BUILD_NPU=OFF
 NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 BUILD_XPU=OFF
@@ -156,6 +158,8 @@ function make_tiny_publish_so {
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -253,6 +257,8 @@ function make_full_publish_so {
       -DLITE_WITH_TRAIN=$BUILD_TRAIN \
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make publish_inference -j$NUM_PROC
@@ -293,6 +299,8 @@ function make_all_tests {
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
+      -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
   make lite_compile_deps -j$NUM_PROC
@@ -576,6 +584,14 @@ function main {
                 ;;
             --with_lto=*)
                 WITH_LTO="${i#*=}"
+                shift
+                ;;
+            --build_arm82_fp16=*)
+                BUILD_ARM82_FP16="${i#*=}"
+                shift
+                ;;
+            --build_arm82_int8_sdot=*)
+                BUILD_ARM82_INT8_SDOT="${i#*=}"
                 shift
                 ;;
             --build_opencl=*)
