@@ -23,9 +23,9 @@ namespace kernels {
 namespace host {
 
 inline std::vector<int64_t> StridedSliceOutDims(
-    const std::vector<int64_t> starts,
-    const std::vector<int64_t> ends,
-    const std::vector<int64_t> strides,
+    const std::vector<int> starts,
+    const std::vector<int> ends,
+    const std::vector<int> strides,
     const std::vector<int> axes,
     const std::vector<int> infer_flags,
     const std::vector<int64_t> in_dims,
@@ -36,9 +36,9 @@ inline std::vector<int64_t> StridedSliceOutDims(
   for (int i = 0; i < in_dims.size(); i++) {
     out_dims_vector.push_back(in_dims[i]);
   }
-  int64_t stride_index;
-  int64_t start_index;
-  int64_t end_index;
+  int stride_index;
+  int start_index;
+  int end_index;
   for (size_t i = 0; i < size; i++) {
     int axes_index = axes[i];
     start_index = starts[i];
@@ -89,11 +89,11 @@ inline std::vector<int64_t> StridedSliceOutDims(
     CHECK_EQ(zero_dim_condition, false) << "The start index and end index are "
                                            "invalid for their corresponding "
                                            "stride.";
-
-    int64_t left =
-        std::max(static_cast<int64_t>(0), std::min(start_index, end_index));
-    int64_t right = std::min(axis_size, std::max(start_index, end_index));
-    int64_t step = std::abs(stride_index);
+    auto tmp = std::max(start_index, end_index);
+    int32_t left =
+        std::max(static_cast<int32_t>(0), std::min(start_index, end_index));
+    int64_t right = std::min(axis_size, static_cast<int64_t>(tmp));
+    int64_t step = std::abs(static_cast<int64_t>(stride_index));
 
     auto out_dims_index = (std::abs(right - left) + step - 1) / step;
 
@@ -102,9 +102,9 @@ inline std::vector<int64_t> StridedSliceOutDims(
   return out_dims_vector;
 }
 
-inline void StridedSliceFunctor(int64_t* starts,
-                                int64_t* ends,
-                                int64_t* strides,
+inline void StridedSliceFunctor(int* starts,
+                                int* ends,
+                                int* strides,
                                 int* axes,
                                 int* reverse_axis,
                                 std::vector<int64_t> dims,
@@ -161,38 +161,35 @@ inline void StridedSliceFunctor(int64_t* starts,
   }
 }
 
-template <size_t D, typename T>
-void strided_slice_comput(operators::StridedSliceParam param) {}
-
-inline std::vector<int32_t> get_new_data_from_tensorlist(
+inline std::vector<int> get_new_data_from_tensorlist(
     const std::vector<lite::Tensor*>& list_new_data_tensor) {
   // get tensor
-  std::vector<int32_t> vec_new_data;
+  std::vector<int> vec_new_data;
   for (size_t i = 0; i < list_new_data_tensor.size(); ++i) {
     auto tensor = list_new_data_tensor[i];
     CHECK_EQ(tensor->dims(), DDim({1})) << "shape of dim tensor should be [1]";
-    vec_new_data.push_back(static_cast<int32_t>(*tensor->data<int32_t>()));
+    vec_new_data.push_back(static_cast<int>(*tensor->data<int>()));
   }
   return vec_new_data;
 }
 
-inline std::vector<int32_t> get_new_data_from_tensor(
+inline std::vector<int> get_new_data_from_tensor(
     const lite::Tensor* new_data_tensor) {
-  std::vector<int32_t> vec_new_data;
-  auto* new_data = new_data_tensor->data<int32_t>();
+  std::vector<int> vec_new_data;
+  auto* new_data = new_data_tensor->data<int>();
   vec_new_data =
-      std::vector<int32_t>(new_data, new_data + new_data_tensor->numel());
+      std::vector<int>(new_data, new_data + new_data_tensor->numel());
   return vec_new_data;
 }
 
 template <typename T>
-stride_slice(const T* input,
-             T* out,
-             std::vector<int64_t> in_dims,
-             std::vector<int64_t> out_dims,
-             std::vector<int64_t> starts_indices,
-             std::vector<int64_t> ends_indices,
-             std::vector<int64_t> strides_indices) {
+void stride_slice(const T* input,
+                  T* out,
+                  std::vector<int64_t> in_dims,
+                  std::vector<int64_t> out_dims,
+                  std::vector<int64_t> starts_indices,
+                  std::vector<int64_t> ends_indices,
+                  std::vector<int64_t> strides_indices) {
   const int LEN = in_dims.size();
   int dst_step[LEN];
   for (int i = 0; i < in_dims.size(); ++i) {
@@ -223,10 +220,10 @@ stride_slice(const T* input,
 }
 
 template <typename T>
-reverse(const T* input,
-        T* out,
-        std::vector<int64_t> in_dims,
-        std::vector<int64_t> reverse_axis) {
+void reverse(const T* input,
+             T* out,
+             std::vector<int64_t> in_dims,
+             std::vector<bool> reverse_axis) {
   const T* in_ptr = input;
   T* out_ptr = out;
   const int LEN = in_dims.size();
@@ -258,7 +255,7 @@ reverse(const T* input,
 template <typename T, PrecisionType PType>
 void StridedSliceCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::StridedSliceParam>();
-  auto input = param.input;
+  auto input = param.Input;
   auto input_dims = input->dims();
   auto starts = param.starts;
   auto ends = param.ends;
@@ -270,24 +267,24 @@ void StridedSliceCompute<T, PType>::Run() {
   auto ends_size = ends.size();
   auto strides_size = strides.size();
 
-  if (param.StartsTensorList->size() > 0) {
+  if (param.StartsTensorList.size() > 0) {
     starts = get_new_data_from_tensorlist(param.StartsTensorList);
   } else if (param.StartsTensor) {
     starts = get_new_data_from_tensor(param.StartsTensor);
   }
-  if (param.EndsTensorList->size() > 0) {
+  if (param.EndsTensorList.size() > 0) {
     ends = get_new_data_from_tensorlist(param.EndsTensorList);
   } else if (param.EndsTensor) {
     ends = get_new_data_from_tensor(param.EndsTensor);
   }
 
-  if (param_.StridesTensorList->size() > 0) {
+  if (param.StridesTensorList.size() > 0) {
     strides = get_new_data_from_tensorlist(param.StridesTensorList);
-  } else if (param.StridesTensor->data()) {
+  } else if (param.StridesTensor) {
     strides = get_new_data_from_tensor(param.StridesTensor);
   }
 
-  std::vector<int64_t> out_dims_vector(in_dims.size(), -1);
+  std::vector<int64_t> out_dims_vector(input_dims.size(), -1);
   if (!param.tensor_input) {
     out_dims_vector = StridedSliceOutDims(starts,
                                           ends,
@@ -296,7 +293,6 @@ void StridedSliceCompute<T, PType>::Run() {
                                           infer_flags,
                                           input_dims.data(),
                                           decrease_axis,
-                                          out_dims_vector.data(),
                                           axes.size(),
                                           true);
   }
@@ -307,7 +303,7 @@ void StridedSliceCompute<T, PType>::Run() {
                       strides.data(),
                       axes.data(),
                       reverse_vector.data(),
-                      in_dims,
+                      input_dims.data(),
                       infer_flags,
                       decrease_axis,
                       starts.size());
@@ -316,7 +312,7 @@ void StridedSliceCompute<T, PType>::Run() {
   std::vector<int64_t> ends_indices;
   std::vector<int64_t> strides_indices;
   std::vector<bool> reverse_axis;
-  for (size_t axis = 0; axis < input_dims.szie(); axis++) {
+  for (size_t axis = 0; axis < input_dims.size(); axis++) {
     starts_indices.push_back(0);
     ends_indices.push_back(out_dims[axis]);
     strides_indices.push_back(1);
@@ -357,13 +353,13 @@ void StridedSliceCompute<T, PType>::Run() {
       break;
     }
   }
-  out->Resize(out_dims);
-  auto in_t = input->data<T>();
-  auto out_t = param.out->mutable_data<T>();
+  param.Out->Resize(out_dims);
+  auto* in_t = input->template data<T>();
+  auto* out_t = param.Out->template mutable_data<T>();
   if (need_reverse) {
     lite::Tensor* tmp;
-    tmp->resize(out_dims);
-    auto tmp_t = tmp->mutable_data<T>();
+    tmp->Resize(out_dims);
+    auto* tmp_t = tmp->mutable_data<T>();
     stride_slice(in_t,
                  tmp_t,
                  input_dims.data(),
@@ -383,7 +379,7 @@ void StridedSliceCompute<T, PType>::Run() {
   }
 
   if (decrease_axis.size() > 0) {
-    out->Resize(out_dims_origin);
+    param.Out->Resize(out_dims_origin);
   }
 }
 
@@ -393,49 +389,53 @@ void StridedSliceCompute<T, PType>::Run() {
 } /* namespace paddle */
 
 using slice_float =
-    paddle::lite::kernels::arm::StridedSliceCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(strided_slice, kARM, kFloat, kNCHW, slice_float, def)
+    paddle::lite::kernels::host::StridedSliceCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_float, def)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("StartsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("EndsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+               {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .Finalize();
 
 using slice_int32 =
-    paddle::lite::kernels::arm::StridedSliceCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(strided_slice, kARM, kInt32, kNCHW, slice_int32, def)
+    paddle::lite::kernels::host::StridedSliceCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(strided_slice, kHost, kInt32, kNCHW, slice_int32, def)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("StartsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("EndsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();
 
 using slice_int64 =
-    paddle::lite::kernels::arm::StridedSliceCompute<int64_t, PRECISION(kInt64)>;
-REGISTER_LITE_KERNEL(strided_slice, kARM, kInt64, kNCHW, slice_int64, def)
+    paddle::lite::kernels::host::StridedSliceCompute<int64_t,
+                                                     PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(strided_slice, kHost, kInt64, kNCHW, slice_int64, def)
     .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("StartsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("EndsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+               {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();

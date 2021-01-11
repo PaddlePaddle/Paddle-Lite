@@ -39,7 +39,7 @@ class StridedSliceOp : public OpLite {
   std::string DebugString() const override { return "strided_slice"; }
 
  private:
-  mutable StridedSliceOpParam param_;
+  mutable StridedSliceParam param_;
 };
 
 } /* namespace operators */

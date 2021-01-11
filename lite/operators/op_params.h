@@ -2096,15 +2096,15 @@ struct RnnParam : ParamBase {
   int seed{0};
 };
 
-struct StridedSliceOpParam : ParamBase {
+struct StridedSliceParam : ParamBase {
   lite::Tensor* Input{};
   lite::Tensor* Out{};
-  std::vector<int64_t> starts{};
-  std::vector<int64_t> ends{};
-  std::vector<int64_t> strides{};
-  std::vector<int>> axes{};
-  std::vector<int>> infer_flags{};
-  std::vector<int>> decrease_axis{};
+  std::vector<int> starts{};
+  std::vector<int> ends{};
+  std::vector<int> strides{};
+  std::vector<int> axes{};
+  std::vector<int> infer_flags{};
+  std::vector<int> decrease_axis{};
   std::vector<lite::Tensor*> StartsTensorList{};
   std::vector<lite::Tensor*> EndsTensorList{};
   std::vector<lite::Tensor*> StridesTensorList{};

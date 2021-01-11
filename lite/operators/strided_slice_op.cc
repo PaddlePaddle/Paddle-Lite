@@ -25,17 +25,17 @@ namespace lite {
 namespace operators {
 
 bool StridedSliceOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.input);
+  CHECK_OR_FALSE(param_.Input);
   CHECK_OR_FALSE(param_.Out);
-  auto in_dims = param_.input->dims();
+  auto in_dims = param_.Input->dims();
   CHECK_LT(in_dims.size(), 7) << "input_dims.size(): " << in_dims.size()
                               << " should be less than 7.";
   return true;
 }
 static std::vector<int64_t> StridedSliceOutDims(
-    const std::vector<int64_t> starts,
-    const std::vector<int64_t> ends,
-    const std::vector<int64_t> strides,
+    const std::vector<int> starts,
+    const std::vector<int> ends,
+    const std::vector<int> strides,
     const std::vector<int> axes,
     const std::vector<int> infer_flags,
     const DDim in_dims,
@@ -46,9 +46,9 @@ static std::vector<int64_t> StridedSliceOutDims(
   for (int i = 0; i < in_dims.size(); i++) {
     out_dims_vector.push_back(in_dims[i]);
   }
-  int64_t stride_index;
-  int64_t start_index;
-  int64_t end_index;
+  int stride_index;
+  int start_index;
+  int end_index;
   for (size_t i = 0; i < size; i++) {
     int axes_index = axes[i];
     start_index = starts[i];
@@ -113,7 +113,7 @@ static std::vector<int64_t> StridedSliceOutDims(
 }
 
 bool StridedSliceOp::InferShapeImpl() const {
-  auto input = param_.input;
+  auto input = param_.Input;
   auto input_dims = input->dims();
   auto starts = param_.starts;
   auto ends = param_.ends;
@@ -125,16 +125,16 @@ bool StridedSliceOp::InferShapeImpl() const {
   auto ends_size = ends.size();
   auto strides_size = strides.size();
 
-  if (param_.StartsTensorList->size() > 0) {
-    starts_size = param_.StartsTensorList->size();
+  if (param_.StartsTensorList.size() > 0) {
+    starts_size = param_.StartsTensorList.size();
   }
-  if (param_.EndsTensorList->size() > 0) {
-    ends_size = param_.EndsTensorList->size();
+  if (param_.EndsTensorList.size() > 0) {
+    ends_size = param_.EndsTensorList.size();
   }
-  if (param_.StridesTensorList->size() > 0) {
-    strides_size = param_.StridesTensorList->size();
+  if (param_.StridesTensorList.size() > 0) {
+    strides_size = param_.StridesTensorList.size();
   }
-  std::vector<int64_t> out_dims_vector(in_dims.size(), -1);
+  std::vector<int64_t> out_dims_vector(input_dims.size(), -1);
   if (!param_.tensor_input) {
     out_dims_vector = StridedSliceOutDims(starts,
                                           ends,
@@ -143,7 +143,6 @@ bool StridedSliceOp::InferShapeImpl() const {
                                           infer_flags,
                                           input_dims,
                                           decrease_axis,
-                                          out_dims_vector.data(),
                                           axes.size(),
                                           true);
   }
@@ -181,40 +180,50 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
       scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
   param_.Out =
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
-  auto starts_in = op_desc.GetAttr<std::vector<int>>("starts");
-  auto ends_in = op_desc.GetAttr<std::vector<int>>("ends");
-  auto strides_in = op_desc.GetAttr<std::vector<int>>("strides");
-  std::vector<int64_t> starts(starts_int.begin(), starts_int.end());
-  std::vector<int64_t> ends(ends_int.begin(), ends_int.end());
-  std::vector<int64_t> strides(strides_int.begin(), strides_int.end());
-  param_.starts = starts;
-  param_.ends = ends;
-  param_.strides = strides;
-  auto axes = op_desc.GetAttr<std::vector<int>>("axes");
-  auto infer_flags = op_desc.GetAttr<std::vector<int>>("infer_flags");
-  auto decrease_axis = op_desc.GetAttr<std::vector<int>>("decrease_axis");
-  param_.axes = axes;
-  param_.infer_flags = infer_flags;
-  param_.decrease_axis = decrease_axis;
+  if (op_desc.HasAttr("starts")) {
+    param_.starts = op_desc.GetAttr<std::vector<int>>("starts");
+  }
 
-  if (op_desc.HasInputs("StartsTensorList") &&
-      op_desc.Input("StartsTensorList").size() > 0) {
+  if (op_desc.HasAttr("ends")) {
+    param_.ends = op_desc.GetAttr<std::vector<int>>("ends");
+  }
+
+  if (op_desc.HasAttr("strides")) {
+    param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
+  }
+
+  if (op_desc.HasAttr("infer_flags")) {
+    param_.axes = op_desc.GetAttr<std::vector<int>>("axes");
+  }
+
+  if (op_desc.HasAttr("infer_flags")) {
+    param_.infer_flags = op_desc.GetAttr<std::vector<int>>("infer_flags");
+  }
+  if (op_desc.HasAttr("decrease_axis")) {
+    param_.decrease_axis = op_desc.GetAttr<std::vector<int>>("decrease_axis");
+  }
+
+  auto starts_size = param_.starts.size();
+  auto ends_size = param_.ends.size();
+  auto strides_size = param_.strides.size();
+  if (op_desc.HasInput("StartsTensorList") &&
+      !op_desc.Input("StartsTensorList").empty()) {
     auto inputs = op_desc.Input("StartsTensorList");
     for (auto var : inputs) {
       param_.StartsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
     }
   }
-  if (op_desc.HasInputs("EndsTensorList") &&
-      op_desc.Input("EndsTensorList").size() > 0) {
+  if (op_desc.HasInput("EndsTensorList") &&
+      !op_desc.Input("EndsTensorList").empty()) {
     auto inputs = op_desc.Input("EndsTensorList");
     for (auto var : inputs) {
       param_.EndsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
     }
   }
-  if (op_desc.HasInputs("StridesTensorList") &&
-      op_desc.Input("StridesTensorList").size() > 0) {
+  if (op_desc.HasInput("StridesTensorList") &&
+      !op_desc.Input("StridesTensorList").empty()) {
     auto inputs = op_desc.Input("StridesTensorList");
     for (auto var : inputs) {
       param_.StridesTensorList.push_back(
@@ -222,30 +231,30 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
     }
   }
   auto tensor_input = false;
-  if (op_desc.HasInputs("EndsTensor") || op_desc.HasInputs("StartsTensor") ||
-      op_desc.HasInputs("StridesTensor")) {
+  if (op_desc.HasInput("EndsTensor") || op_desc.HasInput("StartsTensor") ||
+      op_desc.HasInput("StridesTensor")) {
     tensor_input = true;
   }
   param_.tensor_input = tensor_input;
-  if (!op_desc.HasInputs("EndsTensor")) {
-    CHECK_EQ(axes.size(), ends_size)
-        << "axes.size(): " << axes.size()
+  if (!op_desc.HasInput("EndsTensor")) {
+    CHECK_EQ(param_.axes.size(), ends_size)
+        << "axes.size(): " << param_.axes.size()
         << " is not equal to ends_size: " << ends_size;
   } else {
     auto inputs = op_desc.Input("EndsTensor").front();
     param_.EndsTensor = scope->FindVar(inputs)->GetMutable<Tensor>();
   }
-  if (!op_desc.HasInputs("StartsTensor")) {
-    CHECK_EQ(axes.size(), starts_size)
-        << "axes.size(): " << axes.size()
+  if (!op_desc.HasInput("StartsTensor")) {
+    CHECK_EQ(param_.axes.size(), starts_size)
+        << "axes.size(): " << param_.axes.size()
         << " is not equal to starts_size: " << starts_size;
   } else {
     auto inputs = op_desc.Input("StartsTensor").front();
     param_.StartsTensor = scope->FindVar(inputs)->GetMutable<Tensor>();
   }
-  if (!op_desc.HasInputs("StridesTensor")) {
-    CHECK_EQ(axes.size(), strides_size)
-        << "axes.size(): " << axes.size()
+  if (!op_desc.HasInput("StridesTensor")) {
+    CHECK_EQ(param_.axes.size(), strides_size)
+        << "axes.size(): " << param_.axes.size()
         << " is not equal to ends_size: " << strides_size;
   } else {
     auto inputs = op_desc.Input("StridesTensor").front();
