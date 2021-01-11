@@ -20,16 +20,16 @@ namespace lite {
 namespace operators {
 
 bool ReduceOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.output);
-  auto x_dims = param_.x->dims();
+  CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.Out);
+  auto x_dims = param_.X->dims();
   auto x_rank = x_dims.size();
   CHECK_LE(x_rank, 6UL) << "Tensors with rank at most 6 are supported.";
   return true;
 }
 
 bool ReduceOp::InferShapeImpl() const {
-  const auto &x_dims = param_.x->dims();
+  const auto &x_dims = param_.X->dims();
   auto x_rank = x_dims.size();
   auto dims = param_.dim;
   for (size_t i = 0; i < dims.size(); ++i) {
@@ -44,9 +44,9 @@ bool ReduceOp::InferShapeImpl() const {
 
   if (reduce_all) {
     if (keep_dim)
-      param_.output->Resize(std::vector<int64_t>(x_rank, 1));
+      param_.Out->Resize(std::vector<int64_t>(x_rank, 1));
     else
-      param_.output->Resize(std::vector<int64_t>{1});
+      param_.Out->Resize(std::vector<int64_t>{1});
   } else {
     size_t out_rank = keep_dim ? x_rank : x_rank - dims.size();
     std::vector<DDim::value_type> out_dims(out_rank);
@@ -64,18 +64,18 @@ bool ReduceOp::InferShapeImpl() const {
         out_dims[out_index++] = x_dims[i];
       }
     }
-    param_.output->Resize(out_dims);
+    param_.Out->Resize(out_dims);
     if (dims[0] != 0) {
-      param_.output->set_lod(param_.x->lod());
+      param_.Out->set_lod(param_.X->lod());
     }
   }
   return true;
 }
 
 bool ReduceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  param_.x =
+  param_.X =
       scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
-  param_.output =
+  param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
 
   param_.dim = opdesc.GetAttr<std::vector<int>>("dim");

@@ -24,16 +24,16 @@ namespace xpu {
 void ReduceSumCompute::Run() {
   auto& param = Param<operators::ReduceParam>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  const float* input = param.x->data<float>();
-  float* output = param.output->mutable_data<float>(TARGET(kXPU));
+  const float* input = param.X->data<float>();
+  float* Out = param.Out->mutable_data<float>(TARGET(kXPU));
   bool reduce_all = param.reduce_all;
 
   if (reduce_all) {
-    int input_len = param.x->numel();
-    int r = xdnn::sum(ctx.GetRawContext(), input, output, input_len);
+    int input_len = param.X->numel();
+    int r = xdnn::sum(ctx.GetRawContext(), input, Out, input_len);
     CHECK_EQ(r, 0);
   } else {
-    auto x_dims = param.x->dims();
+    auto x_dims = param.X->dims();
     int x_rank = x_dims.size();
     auto reduce_dim = param.dim;
     auto rdim = reduce_dim.size();
@@ -46,7 +46,7 @@ void ReduceSumCompute::Run() {
     auto type = xdnn::ReduceOp::REDUCE_SUM;
     int r = xdnn::reduce(ctx.GetRawContext(),
                          input,
-                         output,
+                         Out,
                          idims.data(),
                          x_rank,
                          reduce_dim.data(),
