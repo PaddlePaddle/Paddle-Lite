@@ -592,69 +592,6 @@ float activation1_float(float input, const lite_api::ActivationType act_type) {
   return 0.f;
 }
 
-void bias_add_broadcast(const float* dinx,
-                        const float* diny,
-                        float* dout,
-                        int batch,
-                        int channels,
-                        int num) {
-  for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
-      int offset = (i * channels + j) * num;
-      const float* din_ptr = dinx + offset;
-      const float diny_data = diny[j];
-      float* dout_ptr = dout + offset;
-      for (int k = 0; k < num; ++k) {
-        *dout_ptr = *din_ptr + diny_data;
-        dout_ptr++;
-        din_ptr++;
-      }
-    }
-  }
-}
-
-void bias_add_relu_broadcast(const float* dinx,
-                             const float* diny,
-                             float* dout,
-                             int batch,
-                             int channels,
-                             int num) {
-  for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
-      int offset = (i * channels + j) * num;
-      const float* din_ptr = dinx + offset;
-      const float diny_data = diny[j];
-      float* dout_ptr = dout + offset;
-      for (int k = 0; k < num; ++k) {
-        *dout_ptr = (std::max)(0.f, *din_ptr + diny_data);
-        dout_ptr++;
-        din_ptr++;
-      }
-    }
-  }
-}
-
-void bias_add_relu6_broadcast(const float* dinx,
-                              const float* diny,
-                              float* dout,
-                              int batch,
-                              int channels,
-                              int num) {
-  for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
-      int offset = (i * channels + j) * num;
-      const float* din_ptr = dinx + offset;
-      const float diny_data = diny[j];
-      float* dout_ptr = dout + offset;
-      for (int k = 0; k < num; ++k) {
-        *dout_ptr = (std::min)(6.f, (std::max)(0.f, *din_ptr + diny_data));
-        dout_ptr++;
-        din_ptr++;
-      }
-    }
-  }
-}
-
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

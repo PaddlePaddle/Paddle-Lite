@@ -53,28 +53,6 @@ __m256 activation8_m256(__m256 input, const lite_api::ActivationType act_type);
 __m128 activation4_m128(__m128 input, const lite_api::ActivationType act_type);
 float activation1_float(float input, const lite_api::ActivationType act_type);
 
-// to-do(qili93): need to remove after avx2 complete
-void bias_add_broadcast(const float* dinx,
-                        const float* diny,
-                        float* dout,
-                        int batch,
-                        int channels,
-                        int num);
-
-void bias_add_relu_broadcast(const float* dinx,
-                             const float* diny,
-                             float* dout,
-                             int batch,
-                             int channels,
-                             int num);
-
-void bias_add_relu6_broadcast(const float* dinx,
-                              const float* diny,
-                              float* dout,
-                              int batch,
-                              int channels,
-                              int num);
-
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
