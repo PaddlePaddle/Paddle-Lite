@@ -291,6 +291,7 @@ void BindLiteTensor(py::module *m) {
   DATA_GETTER_SETTER_ONCE(int8_t, int8);
   DATA_GETTER_SETTER_ONCE(uint8_t, uint8);
   DATA_GETTER_SETTER_ONCE(int32_t, int32);
+  DATA_GETTER_SETTER_ONCE(int64_t, int64);
   DATA_GETTER_SETTER_ONCE(float, float);
 #undef DO_GETTER_ONCE
 #undef DO_SETTER_ONCE
