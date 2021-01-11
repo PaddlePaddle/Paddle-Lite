@@ -1401,28 +1401,6 @@ struct GenerateProposalsV2Param : ParamBase {
   lite::Tensor* RpnRoisNum{};
 };
 
-struct GenerateProposalsV2Param : ParamBase {
-  // inputs
-  const lite::Tensor* Scores{};
-  const lite::Tensor* BboxDeltas{};
-  const lite::Tensor* ImShape{};
-  lite::Tensor* Anchors{};
-  lite::Tensor* Variances{};
-
-  // attrs
-  int pre_nms_topN{6000};
-  int post_nms_topN{1000};
-  float nms_thresh{0.5f};
-  float min_size{0.1f};
-  float eta{1.0f};
-
-  // outputs
-  lite::Tensor* RpnRois{};
-  lite::Tensor* RpnRoiProbs{};
-  lite::Tensor* RpnRoisLod{};
-  lite::Tensor* RpnRoisNum{};
-};
-
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam : ParamBase {
   const lite::Tensor* X{};
