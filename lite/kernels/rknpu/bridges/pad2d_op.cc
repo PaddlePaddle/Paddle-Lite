@@ -104,7 +104,7 @@ int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     LOG(WARNING) << "[RKNPU] pad mode " << mode << " isn't supported in RK-NPU";
     return FAILED;
   }
-  // reference to TNN
+
   auto padding = op_info->GetAttr<std::vector<int>>("paddings");
   int pads_num = padding.size() / 2;
   for (int i = 0; i < x_rank; i++) {

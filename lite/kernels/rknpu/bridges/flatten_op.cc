@@ -51,8 +51,6 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   DataLayoutType layout = DATALAYOUT(kNCHW);
   PrecisionType precision = x->precision();
 
-  // x->set_precision(PRECISION(kInt8));
-
   VLOG(3) << "input shape is: " << x_dims.repr();
   VLOG(3) << "output shape is: " << out_dims.repr();
   VLOG(3) << "input precision is: " << PrecisionToStr(x_type->precision());
@@ -79,7 +77,6 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     QuantizationInfo qnt;
     qnt.enable_int8 = enable_int8;
-
     if (enable_int8) {
       qnt.quant_bits = bit_length;
       qnt.scale.push_back(input_scale);
@@ -90,9 +87,7 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Scale node
   QuantizationInfo output_qnt;
-
   output_qnt.enable_int8 = enable_int8;
-
   if (enable_int8) {
     output_qnt.quant_bits = bit_length;
     output_qnt.scale.push_back(output_scale);

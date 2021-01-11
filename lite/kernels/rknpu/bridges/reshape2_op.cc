@@ -99,11 +99,7 @@ int Reshape2Converter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto shape = op_info->GetAttr<std::vector<int>>("shape");
   auto origin_out_shape = lite::operators::ValidateShape(shape, x_dims);
   std::vector<int64_t> out_shape;
-  /*
-    for (int i = 0; i < 4 - origin_out_shape.size(); i++) {
-      out_shape.push_back(1);
-    }
-    */
+
   for (int i = 0; i < origin_out_shape.size(); i++) {
     out_shape.push_back(origin_out_shape[i]);
   }
