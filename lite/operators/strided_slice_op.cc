@@ -99,10 +99,10 @@ static std::vector<int64_t> StridedSliceOutDims(
     CHECK_EQ(zero_dim_condition, false) << "The start index and end index are "
                                            "invalid for their corresponding "
                                            "stride.";
-
-    int64_t left =
-        std::max(static_cast<int64_t>(0), std::min(start_index, end_index));
-    int64_t right = std::min(axis_size, std::max(start_index, end_index));
+    auto tmp = std::max(start_index, end_index);
+    int32_t left =
+        std::max(static_cast<int32_t>(0), std::min(start_index, end_index));
+    int64_t right = std::min(axis_size, static_cast<int64_t>(tmp));
     int64_t step = std::abs(stride_index);
 
     auto out_dims_index = (std::abs(right - left) + step - 1) / step;
