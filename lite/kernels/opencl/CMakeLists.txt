@@ -11,9 +11,6 @@ set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper 
 add_kernel(elementwise_add_opencl_image OPENCL basic SRCS elementwise_add_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_sub_opencl_image OPENCL basic SRCS elementwise_sub_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(elementwise_mul_opencl_image OPENCL basic SRCS elementwise_mul_image_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(fusion_elementwise_add_activation_opencl_image
-           OPENCL basic SRCS fusion_elementwise_add_activation_image_compute.cc
-           DEPS elementwise_add_opencl_image ${cl_kernel_deps})
 add_kernel(fusion_elementwise_sub_activation_opencl_image
            OPENCL basic SRCS fusion_elementwise_sub_activation_image_compute.cc
            DEPS elementwise_sub_opencl_image ${cl_kernel_deps})
@@ -90,7 +87,7 @@ lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
              DEPS expand_opencl_image op_registry program context)
 
 lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
-             DEPS elementwise_add_opencl_image fusion_elementwise_add_activation_opencl_image op_registry program context)
+             DEPS elementwise_add_opencl_image op_registry program context)
 lite_cc_test(test_elementwise_sub_image_opencl SRCS elementwise_sub_image_compute_test.cc
              DEPS elementwise_sub_opencl_image fusion_elementwise_sub_activation_opencl_image op_registry program context)
 
