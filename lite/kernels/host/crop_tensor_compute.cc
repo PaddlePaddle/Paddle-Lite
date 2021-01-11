@@ -95,8 +95,9 @@ REGISTER_LITE_KERNEL(crop_tensor, kHost, kFloat, kAny, crop_tensor_float, def)
     .Finalize();
 
 using crop_tensor_int32 =
-    paddle::lite::kernels::host::CropTensorCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(crop_tensor, kHost, kInt32, kAny, crop_tensor_int32, def)
+    paddle::lite::kernels::host::CropTensorCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    crop_tensor, kHost, kFloat, kAny, crop_tensor_int32, int32_precision)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),

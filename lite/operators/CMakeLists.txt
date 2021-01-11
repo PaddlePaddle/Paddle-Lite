@@ -136,7 +136,6 @@ add_operator(select_input_op extra SRCS select_input_op.cc DEPS ${op_DEPS})
 add_operator(tensor_array_to_tensor_op extra SRCS tensor_array_to_tensor_op.cc DEPS ${op_DEPS})
 add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 
-add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
 add_operator(lookup_table_op extra SRCS lookup_table_op.cc DEPS ${op_DEPS})
@@ -189,6 +188,7 @@ add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc DEPS ${op_DE
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__block_fuse_op extra SRCS __xpu__block_fuse_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc DEPS ${op_DEPS})
