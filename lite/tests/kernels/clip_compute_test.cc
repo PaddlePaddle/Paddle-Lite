@@ -104,8 +104,16 @@ class ClipComputeTester : public arena::TestCase {
 
 TEST(Clip, precision) {
   LOG(INFO) << "test clip op";
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
+  Place place;
+  float abs_err = 2e-5;
+#if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_err = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_ARM)
+  place = Place(TARGET(kARM));
+#else
+  return;
+#endif
 
   float min = -1;
   float max = 1;
@@ -113,17 +121,22 @@ TEST(Clip, precision) {
     for (int c : {3, 5}) {
       for (int h : {5, 6}) {
         for (int w : {6, 7}) {
+#ifdef LITE_WITH_OPENCL
+          for (bool use_minmax_tensor : {false}) {
+#else
           for (bool use_minmax_tensor : {true, false}) {
+#endif
+            LOG(INFO) << "nchw:" << n << "," << c << "," << h << "," << w
+                      << ",use_minmax:" << use_minmax_tensor;
             std::unique_ptr<arena::TestCase> tester(new ClipComputeTester(
                 place, "def", n, c, h, w, min, max, use_minmax_tensor));
-            arena::Arena arena(std::move(tester), place, 2e-5);
+            arena::Arena arena(std::move(tester), place, abs_err);
             arena.TestPrecision();
           }
         }
       }
     }
   }
-#endif
 }
 
 }  // namespace lite

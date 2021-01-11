@@ -24,10 +24,10 @@ namespace arm {
 template <typename T, PrecisionType Ptype>
 void ReduceProdCompute<T, Ptype>::Run() {
   auto& param = this->template Param<operators::ReduceParam>();
-  auto* input = param.x->template data<T>();
-  auto x_dims = param.x->dims();
+  auto* input = param.X->template data<T>();
+  auto x_dims = param.X->dims();
   int x_rank = x_dims.size();
-  auto* output = param.output->template mutable_data<T>();
+  auto* Out = param.Out->template mutable_data<T>();
   std::vector<int> dim = param.dim;
   bool keep_dim = param.keep_dim;
   bool reduce_all = param.reduce_all;
@@ -41,7 +41,7 @@ void ReduceProdCompute<T, Ptype>::Run() {
   }
 
   if (reduce_all) {
-    lite::arm::math::reduce_prod_all(input, output, x_dims.production());
+    lite::arm::math::reduce_prod_all(input, Out, x_dims.production());
   } else {
     CHECK_EQ(x_rank, 4U);
     int n_in = x_dims[0];
@@ -52,27 +52,27 @@ void ReduceProdCompute<T, Ptype>::Run() {
     if (dim.size() == 1) {
       switch (dim[0]) {
         case 0:
-          lite::arm::math::reduce_prod_n(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_prod_n(input, Out, n_in, c_in, h_in, w_in);
           break;
         case 1:
-          lite::arm::math::reduce_prod_c(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_prod_c(input, Out, n_in, c_in, h_in, w_in);
           break;
         case 2:
-          lite::arm::math::reduce_prod_h(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_prod_h(input, Out, n_in, c_in, h_in, w_in);
           break;
         case 3:
-          lite::arm::math::reduce_prod_w(input, output, n_in, c_in, h_in, w_in);
+          lite::arm::math::reduce_prod_w(input, Out, n_in, c_in, h_in, w_in);
           break;
         default:
           LOG(FATAL) << "dim[0] should be less than 4.";
       }
     } else if (dim.size() == 2) {
       if (dim[0] == 0 && dim[1] == 1) {
-        lite::arm::math::reduce_prod_nc(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_prod_nc(input, Out, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 1 && dim[1] == 2) {
-        lite::arm::math::reduce_prod_ch(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_prod_ch(input, Out, n_in, c_in, h_in, w_in);
       } else if (dim[0] == 2 && dim[1] == 3) {
-        lite::arm::math::reduce_prod_hw(input, output, n_in, c_in, h_in, w_in);
+        lite::arm::math::reduce_prod_hw(input, Out, n_in, c_in, h_in, w_in);
       } else {
         LOG(FATAL)
             << "Only support the values of the dim are 0,1 1,2 or 2,3 for now.";
