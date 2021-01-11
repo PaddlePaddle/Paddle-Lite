@@ -8,6 +8,7 @@ message(STATUS "compile with lite ARM kernels")
 
 # 1. basic kernels for basic models
 # for conv op
+
 add_kernel(ARM_KERNEL_BASIC ARM basic 
     SRCS
      # conv kernels

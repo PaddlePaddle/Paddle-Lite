@@ -15,6 +15,7 @@ add_operator(basic_ops basic
      DEPS
          ${op_DEPS})
 # 1.baisc ops used in basic models
+
 # add_operator(conv_op basic SRCS conv_op.cc DEPS ${op_DEPS})
 # add_operator(pool_op basic SRCS pool_op.cc DEPS ${op_DEPS})
 # add_operator(fc_op basic SRCS fc_op.cc DEPS ${op_DEPS})

@@ -20,7 +20,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-void KernelPlaceCorrectPass::Apply(const std::unique_ptr<SSAGraph> &graph) {
+void FPGAKernelPlaceCorrectPass::Apply(const std::unique_ptr<SSAGraph> &graph) {
   CorrectArgumentPlace(graph.get());
 }
 
@@ -28,6 +28,6 @@ void KernelPlaceCorrectPass::Apply(const std::unique_ptr<SSAGraph> &graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(kernel_place_correct_pass,
-                  paddle::lite::mir::KernelPlaceCorrectPass)
+REGISTER_MIR_PASS(__fpga_kernel_place_correct_pass,
+                  paddle::lite::mir::FPGAKernelPlaceCorrectPass)
     .BindTargets({TARGET(kFPGA)});

@@ -406,14 +406,14 @@ void SaveModelNaive(const std::string &model_file,
   const std::string prog_path = model_file + ".nb";
   model_parser::BinaryFileWriter writer{prog_path};
 
-  // Meta_version(uint16), default value is 1.
-  uint16_t meta_version = 1;
+  // Meta_version(uint16), default value is 2.
+  uint16_t meta_version = 2;
   // You can modify meta_version by register environment variable
-  // 'PADDLELITE_OPT_META_VERSION'
+  // 'PADDLE_LITE_MODEL_VERSION1'
   const char *PADDLE_LITE_EXPERIMENTAL_MODEL =
-      std::getenv("PADDLE_LITE_EXPERIMENTAL_MODEL");
+      std::getenv("PADDLE_LITE_MODEL_VERSION1");
   if (PADDLE_LITE_EXPERIMENTAL_MODEL != nullptr) {
-    meta_version = 2;
+    meta_version = 1;
   }
   // Save meta_version(uint16) into file
   writer.Write(&meta_version, sizeof(uint16_t));

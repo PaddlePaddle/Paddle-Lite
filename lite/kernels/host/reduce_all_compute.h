@@ -11,35 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
-#include <vector>
+#pragma once
+#include <stdint.h>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace x86 {
+namespace host {
 
-template <typename T>
-class ShapeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+class ReduceAllCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ShapeParam;
+  void Run() override;
 
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ShapeParam>();
-    // auto& context = context_->As<X86Context>();
-    auto out_data = param.Out->template mutable_data<int32_t>();
-    auto in_dims = param.X->dims();
-    for (size_t i = 0; i < in_dims.size(); ++i) {
-      out_data[i] = in_dims[i];
-    }
-  }
+  virtual ~ReduceAllCompute() = default;
 
-  virtual ~ShapeCompute() = default;
+ private:
 };
 
-}  // namespace x86
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

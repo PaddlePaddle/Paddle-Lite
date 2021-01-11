@@ -244,6 +244,22 @@ REGISTER_LITE_KERNEL(io_copy,
                                        DATALAYOUT(kNHWC))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(io_copy_once,
+                     kFPGA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::fpga::IoCopyHostCHWToFpgaHWCCompute,
+                     host_float_chw_to_device_fp16_hwc)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kFPGA),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kNHWC))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(io_copy,
                      kFPGA,
                      kAny,
@@ -260,12 +276,12 @@ REGISTER_LITE_KERNEL(io_copy,
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(calib,
+REGISTER_LITE_KERNEL(io_copy_once,
                      kFPGA,
                      kAny,
                      kAny,
                      paddle::lite::kernels::fpga::IoCopyFpgaToHostCHWCompute,
-                     device_to_host_chw_calib)
+                     device_to_host_chw)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kFPGA),
                                       PRECISION(kAny),
@@ -277,6 +293,22 @@ REGISTER_LITE_KERNEL(calib,
     .Finalize();
 
 REGISTER_LITE_KERNEL(io_copy,
+                     kFPGA,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::fpga::IoCopyFpgaToHostCHWCompute,
+                     device_to_host_hwc_chw)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNHWC))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(io_copy_once,
                      kFPGA,
                      kAny,
                      kAny,

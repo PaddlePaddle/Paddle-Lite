@@ -17,7 +17,10 @@
 #include <string>
 #include <vector>
 #include "lite/backends/x86/math/blas.h"
+#include "lite/backends/x86/math/conv_bias.h"
+#ifdef LITE_WITH_AVX
 #include "lite/backends/x86/math/conv_utils.h"
+#endif
 #include "lite/backends/x86/math/im2col.h"
 #include "lite/backends/x86/math/vol2col.h"
 #include "lite/core/kernel.h"

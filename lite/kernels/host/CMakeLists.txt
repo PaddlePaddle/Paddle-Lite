@@ -17,7 +17,6 @@ add_kernel(host_basic_kernel Host basic
               fill_constant_batch_size_like_compute.cc
               deformable_conv_compute.cc
               stack_compute.cc
-
            DEPS
               ${lite_kernel_deps})
 #add_kernel(feed_compute_host Host basic SRCS feed_compute.cc DEPS ${lite_kernel_deps})
