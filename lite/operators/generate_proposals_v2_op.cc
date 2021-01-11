@@ -80,6 +80,7 @@ bool GenerateProposalsV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
     param_.RpnRoisLod = scope->FindVar(op_desc.Output("RpnRoisLod").front())
                             ->GetMutable<lite::Tensor>();
   }
+
   if (op_desc.HasOutput("RpnRoisNum") &&
       !op_desc.Output("RpnRoisNum").empty()) {
     param_.RpnRoisNum = scope->FindVar(op_desc.Output("RpnRoisNum").front())
