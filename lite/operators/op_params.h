@@ -199,7 +199,8 @@ struct MulGradParam : ParamBase {
   const lite::Tensor* x{};
   const lite::Tensor* y{};
   const lite::Tensor* output_grad{};
-  lite::Tensor* x_grad{}; lite::Tensor* y_grad{};
+  lite::Tensor* x_grad{};
+  lite::Tensor* y_grad{};
 
   int x_num_col_dims{1};
   int y_num_col_dims{1};
@@ -1446,6 +1447,15 @@ struct ExpandParam : ParamBase {
   std::vector<int> expand_times{};
 };
 
+/// ----------------------- expand v2 operators ----------------------
+struct ExpandV2Param : ParamBase {
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Shape{nullptr};
+  const std::vector<lite::Tensor>* expand_shapes_tensor{nullptr};
+  lite::Tensor* Out{nullptr};
+  std::vector<int> shape{};
+};
+
 /// ----------------------- expand as operators ----------------------
 struct ExpandAsParam : ParamBase {
   const lite::Tensor* X{};
@@ -1756,6 +1766,9 @@ struct XPUMultiEncoderParam : ParamBase {
   lite::Tensor* mask{};
   lite::Tensor* output{};
 
+  std::vector<int> slice_axes{};
+  std::vector<int> slice_starts{};
+  std::vector<int> slice_ends{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -2045,7 +2058,7 @@ struct FlattenContiguousRangeParam : ParamBase {
 };
 
 struct LoDArrayLengthParam : ParamBase {
-  std::vector<lite::Tensor*> x{};
+  std::vector<lite::Tensor>* x{};
   lite::Tensor* out{};
 };
 
@@ -2081,7 +2094,6 @@ struct RnnParam : ParamBase {
   bool is_test{false};
   int seed{0};
 };
-
 
 }  // namespace operators
 }  // namespace lite
