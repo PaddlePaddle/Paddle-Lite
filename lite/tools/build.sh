@@ -48,7 +48,7 @@ IOS_DEPLOYMENT_TARGET=9.0
 MIN_ANDROID_API_LEVEL_ARMV7=16
 MIN_ANDROID_API_LEVEL_ARMV8=21
 # android api level, which can also be set to a specific number 
-ANDROID_API_LEVEL=23
+ANDROID_API_LEVEL="Default"
 CMAKE_API_LEVEL_OPTIONS=""
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
