@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -335,8 +336,14 @@ void do_elementwise_compute(const char* op_type_str) {
               T* y_data = y.mutable_data<T>();
               T* output_data = output.mutable_data<T>();
               T* output_ref_data = output_ref.mutable_data<T>();
-              fill_data_rand(x_data, std::numeric_limits<T>::min()/10, std::numeric_limits<T>::max()/10, x_dim.production());
-              fill_data_rand(y_data, std::numeric_limits<T>::min()/10, std::numeric_limits<T>::max()/10, y_dim.production());
+              fill_data_rand(x_data,
+                             std::numeric_limits<T>::min() / 10,
+                             std::numeric_limits<T>::max() / 10,
+                             x_dim.production());
+              fill_data_rand(y_data,
+                             std::numeric_limits<T>::min() / 10,
+                             std::numeric_limits<T>::max() / 10,
+                             y_dim.production());
               param.X = &x;
               param.Y = &y;
               param.axis = axis;
