@@ -732,7 +732,9 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
             bias_ptr[i] = bias_group[0];
           }
         }
-        memset(scale_ptr, scale_group[0], sizeof(float) * n);
+        for (int i = 0; i < n; i++) {
+          scale_ptr[i] = scale_group[0];
+        }
         gemv_int8(din_group,
                   weights_group,
                   dout_group,

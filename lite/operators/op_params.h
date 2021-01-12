@@ -159,6 +159,7 @@ struct InterpolateParam : ParamBase {
   lite::Tensor* Scale{};
 
   float scale{0.f};
+  std::vector<float> scale_v{};
   int out_h{-1};
   int out_w{-1};
   bool align_corners{true};
