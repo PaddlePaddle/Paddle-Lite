@@ -48,6 +48,20 @@ struct LstmMetaValue {
 };
 
 template <typename T>
+void activation(
+    const T* din, T* dout, int size, std::string act_str, int threads) {
+  if (act_str == "sigmoid") {
+    act_sigmoid(din, dout, size, threads);
+  } else if (act_str == "tanh") {
+    act_tanh(din, dout, size, threads);
+  } else if (act_str == "relu") {
+    act_relu(din, dout, size, threads);
+  } else {
+    LOG(FATAL) << "unsupport activation " << act_str;
+  }
+}
+
+template <typename T>
 void activation(const T* din,
                 T* dout,
                 int size,

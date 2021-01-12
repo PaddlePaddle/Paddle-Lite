@@ -386,20 +386,11 @@ void RnnCompute::Run() {
   Tensor* output_holder = output;
   Tensor temp, gate_value;
   bool has_allocate_mem = false;
-  /*
-  auto init_h_unbind = Unbind(*pre_state[0]);
-  auto last_h_unbind = Unbind(*state[0]);
-  std::vector<Tensor> init_c_unbind, last_c_unbind;
-  if (param.mode == "LSTM") {
-    init_c_unbind = Unbind(*pre_state[1]);
-    last_c_unbind = Unbind(*state[1]);
-  }
-  */
+
   std::vector<Tensor> init_h_unbind, init_c_unbind, last_h_unbind,
       last_c_unbind;
   std::vector<Tensor *> init_h_unbind_t, init_c_unbind_t, last_h_unbind_t,
       last_c_unbind_t;
-
   init_h_unbind.resize(4);
   init_c_unbind.resize(pre_state[1]->dims()[0]);
   last_h_unbind.resize(state[0]->dims()[0]);
