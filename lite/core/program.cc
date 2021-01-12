@@ -395,14 +395,14 @@ void Program::PrepareWorkspace(
       if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
         const auto& var_data_type =
             VarDescType2PrecisionType(var_desc->GetDataType());
-        if (var_data_type != PRECISION(kUnk)) {
-          var_type_map_[var_name] = LiteType::GetTensorTy(
-              TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
-        }
-        VLOG(4) << " - data type " << static_cast<int>(var_data_type);
-      } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
-        var_type_map_[var_name] = LiteType::GetTensorListTy(
-            TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+//        if (var_data_type != PRECISION(kUnk)) {
+//          var_type_map_[var_name] = LiteType::GetTensorTy(
+//              TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
+//        }
+//        VLOG(4) << " - data type " << static_cast<int>(var_data_type);
+//      } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
+//        var_type_map_[var_name] = LiteType::GetTensorListTy(
+//            TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
       }
 
       // Create tensors or wights from variable description.
