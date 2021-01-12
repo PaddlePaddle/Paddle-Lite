@@ -61,6 +61,33 @@ void activation(
   }
 }
 
+void activation(const T* din,
+                T* dout,
+                int size,
+                lite_api::ActivationType act_type,
+                int threads) {
+  switch (act_type) {
+    case lite_api::ActivationType::kSigmoid:
+      act_sigmoid(din, dout, size, threads);
+      break;
+    case lite_api::ActivationType::kSigmoid_v2:
+      act_sigmoid(din, dout, size, threads);
+      break;
+    case lite_api::ActivationType::kTanh:
+      act_tanh(din, dout, size, threads);
+      break;
+    case lite_api::ActivationType::kTanh_v2:
+      act_tanh(din, dout, size, threads);
+      break;
+    case lite_api::ActivationType::kRelu:
+      act_relu(din, dout, size, threads);
+      break;
+    default:
+      LOG(FATAL) << "unsupport activation type:" << static_cast<int>(act_type);
+      break;
+  }
+}
+
 void vector_dot(float* out,
                 const float* in,
                 const float* v1,
