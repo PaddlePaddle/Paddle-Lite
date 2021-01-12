@@ -291,6 +291,7 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
+    LOG(INFO) << inst.op()->DebugString();
     inst.Run();
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
