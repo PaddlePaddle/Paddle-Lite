@@ -161,7 +161,7 @@ void cell(ARMContext* ctx,
                          w_data,
                          k,
                          0.f,
-                         tmp_data,  // tmp_gate.mutable_data<float>(),
+                         tmp_data,
                          n,
                          nullptr,
                          false,
@@ -182,7 +182,7 @@ void cell(ARMContext* ctx,
   size_t frame_size = init_h->dims()[1];
   size_t batch_size = init_h->dims()[0];
   Tensor cell_pre_act;
-  if (last_c_act == nullptr) { /* is test */
+  if (last_c_act == nullptr) {
     cell_pre_act.Resize(init_h->dims());
     cell_pre_act.mutable_data<float>();
     last_c_act = &cell_pre_act;
@@ -210,19 +210,19 @@ void cell(ARMContext* ctx,
                                                    ctx->threads());
 }
 
-void runLSTMCell(ARMContext* ctx,
-                 const Tensor* input,
-                 std::vector<Tensor> vec,
-                 std::vector<Tensor> init_h,
-                 std::vector<Tensor> init_c,
-                 const Tensor* sequence_length,
-                 std::vector<Tensor>* last_h_ptr,
-                 std::vector<Tensor>* last_c_ptr,
-                 Tensor* output,
-                 int layer_idx,
-                 Tensor* gate_value,
-                 bool is_bidirect,
-                 int offset) {
+void runLSTMLayer(ARMContext* ctx,
+                  const Tensor* input,
+                  std::vector<Tensor> vec,
+                  std::vector<Tensor> init_h,
+                  std::vector<Tensor> init_c,
+                  const Tensor* sequence_length,
+                  std::vector<Tensor>* last_h_ptr,
+                  std::vector<Tensor>* last_c_ptr,
+                  Tensor* output,
+                  int layer_idx,
+                  Tensor* gate_value,
+                  bool is_bidirect,
+                  int offset) {
   bool is_reverse = false;
   if (is_bidirect) {
     layer_idx = 2 * layer_idx + offset;
@@ -269,18 +269,7 @@ void runLSTMCell(ARMContext* ctx,
   }
   bool has_sequence_length = false;
   /*
-  if (sequence_length != nullptr) {
-    has_sequence_length = true;
-  }
-  Tensor mask_matrix;
-  if (has_sequence_length) {
-    DDldim mask_dims = {time_step, input->dims()[1]};
-    mask_matrix.Resize(mask_dims);
-
-    create_mask_matrix<T>(context, sequence_length, &mask_matrix, is_reverse,
-                          &mask_min_length);
-    mask_tensor_list = Unbind(mask_matrix);
-  }
+    TODO has_sequence_length
   */
 
   int mask_min_length = time_step;
@@ -334,11 +323,10 @@ void runLSTMCell(ARMContext* ctx,
          &vec[3 + offset * 4]);
 
     if (in_mask) {
-      // this->postprocess(context, &output_tensors[i], init_h_holder,
-      //                  init_c_temp_holder, last_h_holder, last_c_holder,
-      //                  mask_tensor_list[i]);
+      /*
+        TODO in_mask
+      */
     }
-
     // prepare next step
     if (i + 1 < time_step) {
       bool next_step_mask = (reverse_flag * (i + 1)) >= mask_min_length;
@@ -472,49 +460,48 @@ void RnnCompute::Run() {
         output_vec[i].Resize({time_step, batch_size, hidden_size / 2});
         output_vec[i].mutable_data<float>();
       }
-      runLSTMCell(&ctx,
-                  input_temp_holder,
-                  parameter_lists[i],
-                  init_h_unbind,
-                  init_c_unbind,
-                  sequence_length,
-                  &last_h_unbind,
-                  &last_c_unbind,
-                  &output_vec[0],
-                  i,
-                  &gate_value,
-                  true,
-                  0);
-      runLSTMCell(&ctx,
-                  input_temp_holder,
-                  parameter_lists[i],
-                  init_h_unbind,
-                  init_c_unbind,
-                  sequence_length,
-                  &last_h_unbind,
-                  &last_c_unbind,
-                  &output_vec[1],
-                  i,
-                  &gate_value,
-                  true,
-                  1);
-
+      runLSTMLayer(&ctx,
+                   input_temp_holder,
+                   parameter_lists[i],
+                   init_h_unbind,
+                   init_c_unbind,
+                   sequence_length,
+                   &last_h_unbind,
+                   &last_c_unbind,
+                   &output_vec[0],
+                   i,
+                   &gate_value,
+                   true,
+                   0);
+      runLSTMLayer(&ctx,
+                   input_temp_holder,
+                   parameter_lists[i],
+                   init_h_unbind,
+                   init_c_unbind,
+                   sequence_length,
+                   &last_h_unbind,
+                   &last_c_unbind,
+                   &output_vec[1],
+                   i,
+                   &gate_value,
+                   true,
+                   1);
       std::vector<Tensor*> output_vec_t = {&output_vec[0], &output_vec[1]};
       lite::arm::math::concat_func<float>(output_vec_t, 2, output);
     } else {
-      runLSTMCell(&ctx,
-                  input_temp_holder,
-                  parameter_lists[i],
-                  init_h_unbind,
-                  init_c_unbind,
-                  sequence_length,
-                  &last_h_unbind,
-                  &last_c_unbind,
-                  output_holder,
-                  i,
-                  &gate_value,
-                  false,
-                  0);
+      runLSTMLayer(&ctx,
+                   input_temp_holder,
+                   parameter_lists[i],
+                   init_h_unbind,
+                   init_c_unbind,
+                   sequence_length,
+                   &last_h_unbind,
+                   &last_c_unbind,
+                   output_holder,
+                   i,
+                   &gate_value,
+                   false,
+                   0);
     }
   }
 }
