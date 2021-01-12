@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/core/program.h"
+
 #include <algorithm>
 #include <map>
 #include <set>
+
 #include "lite/model_parser/cpp_desc.h"
 #include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
@@ -291,7 +293,7 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
-    LOG(INFO) << inst.op()->DebugString();
+    LOG(INFO) << "now is op:" << inst.op()->DebugString();
     inst.Run();
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
