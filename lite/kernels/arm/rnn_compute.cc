@@ -81,7 +81,6 @@ void preprocess(ARMContext* ctx,
   gate_dim.ConstructFrom(cache_input_dim);
   cache_input->Resize(gate_dim);
   cache_input->mutable_data<float>();
-
   auto* i_data = input->data<float>();
   auto* w_data = weight.data<float>();
   auto* o_data = cache_input->mutable_data<float>();
@@ -137,19 +136,10 @@ void cell(ARMContext* ctx,
   auto i_data = input->data<float>();
   auto w_data = weight_hh->data<float>();
   auto h_data = init_h->data<float>();
-  Tensor tmp_gate, tmp_init_c, tmp_last_c_active, tmp_last_c;
+
+  Tensor tmp_gate;
   tmp_gate.Resize(input->dims());
   auto tmp_data = tmp_gate.mutable_data<float>();
-  tmp_init_c.Resize(init_c->dims());
-  auto tmp_init_c_data = tmp_init_c.mutable_data<float>();
-  for (int i = 0; i < tmp_init_c.dims()[0] * tmp_init_c.dims()[1]; i++) {
-    tmp_init_c_data[i] = init_c->data<float>()[i];
-  }
-  tmp_last_c.Resize(last_c->dims());
-  auto tmp_last_c_data = tmp_last_c.mutable_data<float>();
-  for (int i = 0; i < tmp_last_c.dims()[0] * tmp_last_c.dims()[1]; i++) {
-    tmp_last_c_data[i] = last_c->data<float>()[i];
-  }
   lite::arm::math::sgemm(false,
                          true,
                          m,
@@ -171,14 +161,21 @@ void cell(ARMContext* ctx,
     tmp_data[i] += i_data[i];
   }
 
+  Tensor tmp_init_c;
+  tmp_init_c.Resize(init_c->dims());
+  auto tmp_init_c_data = tmp_init_c.mutable_data<float>();
+  for (int i = 0; i < tmp_init_c.dims()[0] * tmp_init_c.dims()[1]; i++) {
+    tmp_init_c_data[i] = init_c->data<float>()[i];
+  }
+
   lite::arm::math::LstmMetaValue<float> lstm_value;
   lstm_value.check_ig = nullptr;
   lstm_value.check_fg = nullptr;
   lstm_value.check_og = nullptr;
-
   std::string gate_act = "sigmoid";
   std::string cell_act = "tanh";
   std::string cand_act = "tanh";
+
   size_t frame_size = init_h->dims()[1];
   size_t batch_size = init_h->dims()[0];
   Tensor cell_pre_act;
@@ -188,26 +185,20 @@ void cell(ARMContext* ctx,
     last_c_act = &cell_pre_act;
   }
 
-  tmp_last_c_active.Resize(last_c_act->dims());
-  auto tmp_last_c_active_data = tmp_last_c_active.mutable_data<float>();
-  for (int i = 0; i < tmp_last_c_active.dims()[0] * tmp_last_c_active.dims()[1];
-       i++) {
-    tmp_last_c_active_data[i] = last_c_act->data<float>()[i];
-  }
   lstm_value.prev_state_value = tmp_init_c_data;
   lstm_value.gate_value = tmp_data;
   lstm_value.output_value = output->mutable_data<float>();
   lstm_value.state_value = last_c->mutable_data<float>();
   lstm_value.state_active_value = last_c_act->mutable_data<float>();
   float cell_clip = 0.0;
-  lite::arm::math::LstmUnitFunctor<float>::compute(lstm_value,
-                                                   frame_size,
-                                                   batch_size,
-                                                   cell_clip,
-                                                   cand_act,
-                                                   gate_act,
-                                                   cell_act,
-                                                   ctx->threads());
+  lite::arm::math::RnnLstmUnitFunctor<float>::compute(lstm_value,
+                                                      frame_size,
+                                                      batch_size,
+                                                      cell_clip,
+                                                      cand_act,
+                                                      gate_act,
+                                                      cell_act,
+                                                      ctx->threads());
 }
 
 void runLSTMLayer(ARMContext* ctx,
