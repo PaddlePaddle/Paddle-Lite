@@ -22,8 +22,8 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
-const int KBLOCK_FP16 = 4;
+namespace fp16 {
+const int KBLOCK_FP16 = 2;
 #ifdef __aarch64__
 // for int7/int8 gemm
 const int MBLOCK_INT8_FP16 = 8;
@@ -33,7 +33,7 @@ const int MBLOCK_INT8_FP16 = 6;
 const int NBLOCK_INT8_FP16 = 8;
 #endif  // __aarch64__
 
-inline int get_hblock_int8(ARMContext* ctx) { return MBLOCK_INT8_FP16 }
+inline int get_hblock_fp16(ARMContext* ctx) { return MBLOCK_INT8_FP16 }
 
 void prepackA_fp16(void* out,
                    const void* in,
@@ -53,21 +53,21 @@ void prepackA_fp16(TensorLite* tout,
                    bool is_trans,
                    ARMContext* ctx);
 
-template <typename dtype>
-void gemm_prepack_fp16(const __fp16* A_packed,
-                       const __fp16* B,
-                       const __fp16* bias,
-                       dtype* C,
-                       int M,
-                       int N,
-                       int K,
-                       bool is_bias,
-                       bool is_transB,
-                       const float* scale,
-                       const operators::ActivationParam act_param,
-                       ARMContext* ctx);
-
-#define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
+void sgemm_prepack_fp16(bool is_transB,
+                        int M,
+                        int N,
+                        int K,
+                        const __fp16* A_packed,
+                        const __fp16* B,
+                        int ldb,
+                        __fp16 beta,
+                        __fp16* C,
+                        int ldc,
+                        const __fp16* bias,
+                        bool has_bias,
+                        const operators::ActivationParam act_param,
+                        Context* ctx);
+}  // namespace fp16
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
