@@ -61,6 +61,11 @@ void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
   cpp_desc->SetName(any_desc.Name());
   cpp_desc->SetType(any_desc.GetType());
   cpp_desc->SetPersistable(any_desc.Persistable());
+  if (cpp_desc->Name() == "_generated_var_19") {
+    VarDataType type = cpp_desc->GetType();
+    LOG(INFO) << " _generated_var_19 type:" << static_cast<int>(type);
+  }
+
   if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
     VarDataType type = cpp_desc->GetType();
     if (type == VarDataType::LOD_TENSOR) {
