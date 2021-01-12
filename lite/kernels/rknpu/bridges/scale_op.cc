@@ -32,14 +32,12 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Get input, output and op attributes
   auto x_name = op_info->Input("X").front();
-  auto x_type = kernel->GetInputDeclType("X");
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
   auto x_rank = x_dims.size();
   auto input_scale_name = "X0_scale";
   auto out_name = op_info->Output("Out").front();
   auto output = scope->FindMutableTensor(out_name);
-  auto out_type = kernel->GetOutputDeclType("Out");
   auto out_scale_name = "Out0_scale";
 
   float scale = op_info->GetAttr<float>("scale");
@@ -82,7 +80,7 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       qnt.scale.push_back(input_scale);
       x->mutable_data<int8_t>();
     }
-    x_node = graph->Add(x_name, *x, precision, x_type->layout(), qnt);
+    x_node = graph->Add(x_name, *x, precision, layout, qnt);
   }
 
   // Scale node
@@ -95,7 +93,7 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output->mutable_data<int8_t>();
   }
   auto output_node =
-      graph->Add(out_name, *output, precision, out_type->layout(), output_qnt);
+      graph->Add(out_name, *output, precision, layout, output_qnt);
 
   std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;
   std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;
