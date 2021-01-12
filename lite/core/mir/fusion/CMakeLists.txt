@@ -1,6 +1,15 @@
 lite_cc_library(fuse_fc
         SRCS fc_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_reshape2_matmul
+        SRCS reshape2_matmul_fuser.cc
+        DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_squeeze2_matmul
+        SRCS squeeze2_matmul_fuser.cc
+        DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_matmul
+        SRCS matmul_fuser.cc
+        DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_shuffle_channel
         SRCS shuffle_channel_fuser.cc
         DEPS pattern_matcher_high_api)
@@ -49,8 +58,14 @@ lite_cc_library(fuse_scales
 lite_cc_library(fuse_sequence_reverse_embedding
         SRCS sequence_reverse_embedding_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_instance_norm_activation
+        SRCS instance_norm_activation_fuser.cc
+        DEPS pattern_matcher_high_api)
 
 set(mir_fusers
+    fuse_reshape2_matmul
+    fuse_squeeze2_matmul
+    fuse_matmul
     fuse_fc
     fuse_shuffle_channel
     fuse_conv_elementwise
@@ -68,6 +83,7 @@ set(mir_fusers
     fuse_match_matrix_activation
     fuse_scales
     fuse_sequence_reverse_embedding
+    fuse_instance_norm_activation
     CACHE INTERNAL "fusers")
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)

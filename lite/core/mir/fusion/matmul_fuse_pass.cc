@@ -12,14 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/shape_compute.h"
+#include "lite/core/mir/fusion/matmul_fuse_pass.h"
+#include <memory>
+#include <vector>
+#include "lite/core/mir/fusion/matmul_fuser.h"
+#include "lite/core/mir/pass_registry.h"
 
-REGISTER_LITE_KERNEL(shape,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ShapeCompute<float>,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace mir {
+
+void MatmulFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  fusion::MatmulFuser fuser;
+  fuser(graph.get());
+}
+
+}  // namespace mir
+}  // namespace lite
+}  // namespace paddle
+
+REGISTER_MIR_PASS(lite_matmul_fuse_pass, paddle::lite::mir::MatmulFusePass)
+    .BindTargets({TARGET(kAny)});

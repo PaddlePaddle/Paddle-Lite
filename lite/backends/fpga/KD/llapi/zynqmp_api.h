@@ -281,6 +281,10 @@ struct FpgaResetArgs {
   uint32_t dummy;
 };
 
+struct CNNLockArgs {
+  uint32_t reserved;
+};
+
 #define IOCTL_FPGA_MAGIC (('F' + 'P' + 'G' + 'A') / 4)
 // #define IOCTL_MEMORY_MAGIC                  (('M' + 'E' + 'M' + 'Y') / 4)
 
@@ -321,7 +325,11 @@ struct FpgaResetArgs {
 
 #define IOCTL_DEVICE_INFO _IOW(IOCTL_FPGA_MAGIC, 100, struct DeviceInfoArgs)
 
-#define IOCTL_SEPARATOR_2 200
+#define IOCTL_SEPARATOR_2 110
+#define IOCTL_LOCK_TRY_LOCKING _IOW(IOCTL_FPGA_MAGIC, 111, struct CNNLockArgs)
+#define IOCTL_LOCK_UNLOCK _IOW(IOCTL_FPGA_MAGIC, 112, struct CNNLockArgs)
+
+#define IOCTL_SEPARATOR_3 200
 #define IOCTL_PREPROCESS _IOW(IOCTL_FPGA_MAGIC, 201, struct PreprocessArgs)
 
 //============================== API =============================

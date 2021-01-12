@@ -20,7 +20,6 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-
 template <typename dtype>
 inline void write_gemv_out(const int* in,
                            dtype* out,
@@ -1258,8 +1257,8 @@ bool gemv_int8_trans_oth(const int8_t* A,
                          const float* bias,
                          bool flag_act,
                          lite_api::ActivationType act,
-                         float six,
-                         float alpha) {
+                         float alpha,
+                         ARMContext* ctx) {
   dtype* data_out = y;
   const int8_t* data_in = A;
   const int8_t* weights_ptr = x;
@@ -1270,7 +1269,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
   float zerobuf[M];  // NOLINT
   memset(zerobuf, 0, sizeof(float) * M);
   const float* bias_ptr = is_bias ? bias : zerobuf;
-
+  float six = alpha;
 #ifdef __aarch64__
   int cnt = N >> 3;
   int tail = N & 7;
@@ -1629,26 +1628,26 @@ bool gemv_int8_trans_oth(const int8_t* A,
         "pld [%[in_ptr3]]   \n"
         "pld [%[out_ptr]]   \n"
         "cmp %[cnt], #1\n"
-        "vld1.8 {d8}, [%[wc]]\n"
-        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
-        "vld1.8 {d12-d13}, [%[in_ptr1]]!\n"
-        "vld1.8 {d14-d15}, [%[in_ptr2]]!\n"
-        "vld1.8 {d16-d17}, [%[in_ptr3]]!\n"
-        "vmovl.s8 q0, d8\n"
+        "vld1.8 {d22}, [%[wc]]\n"
         "blt 2f\n"
         "1: \n"
+        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
+        "vmovl.s8 q0, d22\n"
+        "vld1.8 {d12-d13}, [%[in_ptr1]]!\n"
         "vld1.32 {d24-d25}, [%[out_ptr]]\n"
-        "vmovl.s8 q1, d10\n"
+        "vld1.8 {d14-d15}, [%[in_ptr2]]!\n"
         "vldr d26, [%[out_ptr], #0x10]\n"
+        "vld1.8 {d16-d17}, [%[in_ptr3]]!\n"
+        "vmovl.s8 q1, d10\n"
         "vmovl.s8 q2, d11\n"
         "vldr d27, [%[out_ptr], #0x18]\n"
         "vmovl.s8 q3, d12\n"
-        "vldr d28, [%[out_ptr], #0x20]\n"
         "vmovl.s8 q4, d13\n"
+        "vldr d28, [%[out_ptr], #0x20]\n"
         "vldr d29, [%[out_ptr], #0x28]\n"
         "vmovl.s8 q9, d14\n"
-        "vldr d30, [%[out_ptr], #0x30]\n"
         "vmovl.s8 q10, d15\n"
+        "vldr d30, [%[out_ptr], #0x30]\n"
         "vldr d31, [%[out_ptr], #0x38]\n"
         // r0
         "vmlal.s16 q12, d2, d0[0]\n"
@@ -1660,22 +1659,18 @@ bool gemv_int8_trans_oth(const int8_t* A,
         // r1
         "vmlal.s16 q12, d6, d0[1]\n"
         "vmlal.s16 q13, d7, d0[1]\n"
-        "vld1.8 {d14-d15}, [%[in_ptr2]]!\n"
         "vmlal.s16 q14, d8, d0[1]\n"
         "vmlal.s16 q15, d9, d0[1]\n"
         // r2
-        "vmlal.s16 q12, d18, d1[0]\n"
-        "vmlal.s16 q13, d19, d1[0]\n"
-        "vld1.8 {d16-d17}, [%[in_ptr3]]!\n"
-        "vmlal.s16 q14, d20, d1[0]\n"
-        "vmlal.s16 q15, d21, d1[0]\n"
+        "vmlal.s16 q12, d18, d0[2]\n"
+        "vmlal.s16 q13, d19, d0[2]\n"
+        "vmlal.s16 q14, d20, d0[2]\n"
+        "vmlal.s16 q15, d21, d0[2]\n"
         // r3
-        "vmlal.s16 q12, d10, d1[1]\n"
-        "vmlal.s16 q13, d11, d1[1]\n"
-        "vld1.8 {d10-d11}, [%[in_ptr0]]!\n"
-        "vmlal.s16 q14, d12, d1[1]\n"
-        "vmlal.s16 q15, d13, d1[1]\n"
-        "vld1.8 {d12-d13}, [%[in_ptr1]]!\n"
+        "vmlal.s16 q12, d10, d0[3]\n"
+        "vmlal.s16 q13, d11, d0[3]\n"
+        "vmlal.s16 q14, d12, d0[3]\n"
+        "vmlal.s16 q15, d13, d0[3]\n"
 
         "subs %[cnt], #1\n"
         "vst1.32 {d24-d25}, [%[out_ptr]]!\n"
@@ -1709,10 +1704,6 @@ bool gemv_int8_trans_oth(const int8_t* A,
           "q13",
           "q14",
           "q15");
-    in_ptr0 -= 16;
-    in_ptr1 -= 16;
-    in_ptr2 -= 16;
-    in_ptr3 -= 16;
     for (int j = 0; j < out_remain; j++) {
       *out_ptr += *in_ptr0++ * wei_ptr[0];
       *out_ptr += *in_ptr1++ * wei_ptr[1];
@@ -1794,44 +1785,388 @@ bool gemv_int8_trans_oth(const int8_t* A,
   return true;
 }
 
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+// clang-format off
+#define GEMV_COMPUTE_INIT                                                 \
+    "prfm  pldl1keep, [%[in]]     \n"   /* preload din */                 \
+    "prfm  pldl1keep, [%[w0]]     \n"   /* preload w0 */                  \
+    "prfm  pldl1keep, [%[w1]]     \n"   /* preload w1 */                  \
+    "prfm  pldl1keep, [%[w2]]     \n"   /* preload w2 */                  \
+    "prfm  pldl1keep, [%[w3]]     \n"   /* preload w3 */                  \
+    "prfm  pldl1keep, [%[w4]]     \n"   /* preload w4 */                  \
+    "prfm  pldl1keep, [%[w5]]     \n"   /* preload w5 */                  \
+    "prfm  pldl1keep, [%[w6]]     \n"   /* preload w6 */                  \
+    "prfm  pldl1keep, [%[w7]]     \n"   /* preload w7 */                  \
+    "movi   v0.4s,  #0            \n"   /* set out0 to 0 */               \
+    "movi   v1.4s,  #0            \n"   /* set out1 to 0 */               \
+    "movi   v2.4s,  #0            \n"   /* set out2 to 0 */               \
+    "movi   v3.4s,  #0            \n"   /* set out3 to 0 */               \
+    "movi   v4.4s,  #0            \n"   /* set out4 to 0 */               \
+    "movi   v5.4s,  #0            \n"   /* set out5 to 0 */               \
+    "movi   v6.4s,  #0            \n"   /* set out6 to 0 */               \
+    "movi   v7.4s,  #0            \n"   /* set out7 to 0 */               \
+    /* check main loop */                                                 \
+    "cmp %w[cnt], #1              \n"   /* check whether has main loop */ \
+    "blt  2f                      \n"   /* jump to tail */                \
+    /* main loop */                                                       \
+    "1:                           \n"   /* main loop */                   \
+    "ldr    q8,     [%[in]], #16  \n"   /* load input, 16 int8 */         \
+    "ldr    q9,     [%[w0]], #16  \n"   /* load w0, 16 int8 */            \
+    "ldr    q10,    [%[w1]], #16  \n"   /* load w1, 16 int8 */            \
+    "ldr    q11,    [%[w2]], #16  \n"   /* load w2, 16 int8 */            \
+    "ldr    q12,    [%[w3]], #16  \n"   /* load w3, 16 int8 */            \
+    "ldr    q13,    [%[w4]], #16  \n"   /* load w4, 16 int8 */            \
+    "ldr    q14,    [%[w5]], #16  \n"   /* load w5, 16 int8 */            \
+    "ldr    q15,    [%[w6]], #16  \n"   /* load w6, 16 int8 */            \
+    "ldr    q16,    [%[w7]], #16  \n"   /* load w7, 16 int8 */
+
+#define GEMV_COMPUTE                                                      \
+    /* mul, lower 8 int8 * int8 = int16 */                                \
+    "smull  v18.8h, v8.8b, v9.8b  \n"   /* mul in * w0, low, 8 int8 */    \
+    "smull  v19.8h, v8.8b, v10.8b \n"   /* mul in * w1, low, 8 int8 */    \
+    "smull  v20.8h, v8.8b, v11.8b \n"   /* mul in * w2, low, 8 int8 */    \
+    "smull  v21.8h, v8.8b, v12.8b \n"   /* mul in * w3, low, 8 int8 */    \
+    "smull  v22.8h, v8.8b, v13.8b \n"   /* mul in * w4, low, 8 int8 */    \
+    "smull  v23.8h, v8.8b, v14.8b \n"   /* mul in * w5, low, 8 int8 */    \
+    "smull  v24.8h, v8.8b, v15.8b \n"   /* mul in * w6, low, 8 int8 */    \
+    "smull  v25.8h, v8.8b, v16.8b \n"   /* mul in * w7, low, 8 int8 */    \
+    /* mul, higher 8 int8 * int8 + int16 = int16 */                       \
+    "smlal2 v18.8h,v8.16b,v9.16b  \n"   /* mul in * w0, high, 8 int8 */   \
+    "smlal2 v19.8h,v8.16b,v10.16b \n"   /* mul in * w1, high, 8 int8 */   \
+    "smlal2 v20.8h,v8.16b,v11.16b \n"   /* mul in * w2, high, 8 int8 */   \
+    "smlal2 v21.8h,v8.16b,v12.16b \n"   /* mul in * w2, high, 8 int8 */   \
+    "smlal2 v22.8h,v8.16b,v13.16b \n"   /* mul in * w2, high, 8 int8 */   \
+    "smlal2 v23.8h,v8.16b,v14.16b \n"   /* mul in * w2, high, 8 int8 */   \
+    "smlal2 v24.8h,v8.16b,v15.16b \n"   /* mul in * w2, high, 8 int8 */   \
+    "smlal2 v25.8h,v8.16b,v16.16b \n"   /* mul in * w2, high, 8 int8 */   \
+    "subs %w[cnt], %w[cnt], #1    \n"   /* sub main loop count */         \
+    /* add int16 to int32 */                                              \
+    "sadalp v0.4s, v18.8h         \n"   /* pair acc, 8 int16 -> 4 int32 */\
+    "sadalp v1.4s, v19.8h         \n"   /* pair acc, 8 int16 -> 4 int32 */\
+    "sadalp v2.4s, v20.8h         \n"   /* pair acc, 8 int16 -> 4 int32 */\
+    "sadalp v3.4s, v21.8h         \n"   /* pair acc, 8 int16 -> 4 int32 */\
+    "sadalp v4.4s, v22.8h         \n"   /* pair acc, 8 int16 -> 4 int32 */\
+    "sadalp v5.4s, v23.8h         \n"   /* pair acc, 8 int16 -> 4 int32 */\
+    "sadalp v6.4s, v24.8h         \n"   /* pair acc, 8 int16 -> 4 int32 */\
+    "sadalp v7.4s, v25.8h         \n"   /* pair acc, 8 int16 -> 4 int32 */\
+    "bne 1b                       \n"   /* jump to main loop */
+
+#define GEMV_COMPUTE_ACT                                                  \
+    /* pair add to final result */                                        \
+    "2:                           \n"   /* reduce to scale */             \
+    "ldp  q17,    q18, [%[scale]] \n"   /* load scale */                  \
+    "movi   v19.4s, #0            \n"                                     \
+    "movi   v20.4s, #0            \n"                                     \
+    "cmp    %w[bias],   #0        \n"                                     \
+    "beq    9f                    \n"                                     \
+    "ldp  q19,    q20, [%[bias]]  \n"   /* load bias */                   \
+    "9:                           \n"                                     \
+    "addp v9.4s,  v2.4s, v3.4s    \n"   /* pair add to 4 int32*/          \
+    "addp v8.4s,  v0.4s, v1.4s    \n"   /* pair add to 4 int32*/          \
+    "addp v10.4s, v4.4s, v5.4s    \n"   /* pair add to 4 int32*/          \
+    "addp v11.4s, v6.4s, v7.4s    \n"   /* pair add to 4 int32*/          \
+    "addp v12.4s, v8.4s , v9.4s   \n"   /* pair add to 4 int32*/          \
+    "addp v13.4s, v10.4s, v11.4s  \n"   /* pair add to 4 int32*/          \
+    "scvtf  v21.4s, v12.4s        \n"   /* convert to fp32 */             \
+    "scvtf  v22.4s, v13.4s        \n"   /* convert to fp32 */             \
+    "fmla v19.4s, v21.4s, v17.4s  \n"   /* mul scale to get result */     \
+    "fmla v20.4s, v22.4s, v18.4s  \n"   /* mul scale to get  result */    \
+    "cmp    %w[relu],   #0        \n"                                     \
+    "beq    12f                   \n"                                     \
+    "cmp    %w[relu],    #1       \n"                                     \
+    "bne    13f                   \n"                                     \
+    "movi   v0.4s, #0             \n"                                     \
+    "fmax   v19.4s, v19.4s, v0.4s \n"                                     \
+    "fmax   v20.4s, v20.4s, v0.4s \n"                                     \
+    "b      12f                   \n"                                     \
+    "13:                          \n"                                     \
+    "cmp    %w[relu],   #2        \n"                                     \
+    "bne   14f                    \n"                                     \
+    "movi   v0.4s, #0             \n"                                     \
+    "dup    v1.4s, %w[alpha]      \n"                                     \
+    "fmax   v19.4s, v19.4s, v0.4s \n"                                     \
+    "fmax   v20.4s, v20.4s, v0.4s \n"                                     \
+    "fmin   v19.4s, v19.4s, v1.4s \n"                                     \
+    "fmin   v20.4s, v20.4s, v1.4s \n"                                     \
+    "b      12f                   \n"                                     \
+    "14:                          \n"                                     \
+    "movi   v0.4s, #0             \n"                                     \
+    "dup    v1.4s, %w[alpha]      \n"                                     \
+    "fcmge  v21.4s, v19.4s, v0.4s \n"                                     \
+    "fmul   v22.4s, v19.4s, v1.4s \n"                                     \
+    "bif    v19.16b,v22.16b,v21.16b\n"                                    \
+    "fcmge  v21.4s, v20.4s, v0.4s \n"                                     \
+    "fmul   v22.4s, v20.4s, v1.4s \n"                                     \
+    "bif    v20.16b,v22.16b,v21.16b\n"
+
+#define GEMV_ST_INT8                                                      \
+    "12:                          \n"                                     \
+    "dup    v8.4s,  %w[vmax]      \n"                                     \
+    "fcmge  v0.4s,  v19.4s, v8.4s \n"                                     \
+    "fcmge  v1.4s,  v20.4s, v8.4s \n"                                     \
+    "bif  v19.16b,  v8.16b, v0.16b\n"                                     \
+    "bif  v20.16b,  v8.16b, v1.16b\n"                                     \
+    "fcvtas v0.4s,  v19.4s        \n"                                     \
+    "fcvtas v1.4s,  v20.4s        \n"                                     \
+    "sqxtn  v19.4h, v0.4s         \n"                                     \
+    "sqxtn2 v19.8h, v1.4s         \n"                                     \
+    "sqxtn  v0.8b,  v19.8h        \n"                                     \
+    "st1  {v0.8b},  [%[out]]      \n"
+
+#define GEMV_ST_FP32                                                      \
+    "12:                          \n"                                     \
+    "stp  q19,  q20,  [%[out]]    \n"
+
+#define GEMV_ASM_PARAMS                                                   \
+    [in] "+r"(ptr_in),                                                    \
+    [w0] "+r"(ptr_w0),                                                    \
+    [w1] "+r"(ptr_w1),                                                    \
+    [w2] "+r"(ptr_w2),                                                    \
+    [w3] "+r"(ptr_w3),                                                    \
+    [w4] "+r"(ptr_w4),                                                    \
+    [w5] "+r"(ptr_w5),                                                    \
+    [w6] "+r"(ptr_w6),                                                    \
+    [w7] "+r"(ptr_w7),                                                    \
+    [cnt] "+r"(cnt),                                                      \
+    [scale] "+r"(scale_ptr),                                              \
+    [bias] "+r"(bias_ptr),                                                \
+    [relu] "+r"(act)                                                      \
+  : [out] "r"(out_ptr), [alpha] "r"(alpha)                                \
+  : "cc", "memory",                                                       \
+    "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",           \
+    "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",               \
+    "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25"
+
+#define GEMV_ASM_FUN_PARAMS(dtype)                                        \
+  const int8_t *ptr_in, const int8_t *ptr_w0,                             \
+  const int8_t *ptr_w1, const int8_t *ptr_w2,                             \
+  const int8_t *ptr_w3, const int8_t *ptr_w4,                             \
+  const int8_t *ptr_w5, const int8_t *ptr_w6,                             \
+  const int8_t *ptr_w7, int cnt,                                          \
+  const float *scale_ptr, const float *bias_ptr,                          \
+  int act, float alpha,                                                   \
+  dtype *out_ptr
+
+#define GEMV_DOT_COMPUTE                                                  \
+  ".word 0x4e899500 //sdot v0.4s, v8.16b, v9.16b  \n" /* out0~3*/         \
+  ".word 0x4e8a9501 //sdot v1.4s, v8.16b, v10.16b \n" /* out4~7*/         \
+  ".word 0x4e8b9502 //sdot v2.4s, v8.16b, v11.16b \n" /* out0~3*/         \
+  ".word 0x4e8c9503 //sdot v3.4s, v8.16b, v12.16b \n" /* out4~7*/         \
+  "subs  %w[cnt], %w[cnt], #1                     \n"                     \
+  ".word 0x4e8d9504 //sdot v4.4s, v8.16b, v13.16b \n" /* out0~3*/         \
+  ".word 0x4e8e9505 //sdot v5.4s, v8.16b, v14.16b \n" /* out4~7*/         \
+  ".word 0x4e8f9506 //sdot v6.4s, v8.16b, v15.16b \n" /* out0~3*/         \
+  ".word 0x4e909507 //sdot v7.4s, v8.16b, v16.16b \n" /* out4~7*/         \
+  "bne 1b                                         \n"
+
+// clang-format on
 template <typename dtype>
-bool gemv_int8_oth(const int8_t* A,
+inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(dtype));
+
+template <>
+inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(float)) {
+  asm volatile(GEMV_COMPUTE_INIT GEMV_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_FP32
+               : GEMV_ASM_PARAMS);
+}
+template <>
+inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(int8_t)) {
+  float vmax = -127.f;
+  asm volatile(GEMV_COMPUTE_INIT GEMV_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_INT8
+               : [vmax] "+r"(vmax), GEMV_ASM_PARAMS);
+}
+template <typename dtype>
+inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(dtype));
+
+template <>
+inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(int8_t)) {
+  float vmax = -127.f;
+  asm volatile(GEMV_COMPUTE_INIT GEMV_DOT_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_INT8
+               : [vmax] "+r"(vmax), GEMV_ASM_PARAMS);
+}
+
+template <>
+inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(float)) {
+  asm volatile(GEMV_COMPUTE_INIT GEMV_DOT_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_FP32
+               : GEMV_ASM_PARAMS);
+}
+
+#undef GEMV_COMPUTE_INIT
+#undef GEMV_DOT_COMPUTE
+#undef GEMV_COMPUTE
+#undef GEMV_COMPUTE_ACT
+#undef GEMV_ST_FP32
+#undef GEMV_ST_INT8
+#undef GEMV_ASM_PARAMS
+#undef GEMV_ASM_FUN_PARAMS
+#else
+// clang-format off
+#define GEMV_COMPUTE                    \
+  "pld [%[in]]                    \n"   \
+  "pld [%[w0]]                    \n"   \
+  "pld [%[w1]]                    \n"   \
+  "pld [%[w2]]                    \n"   \
+  "pld [%[w3]]                    \n"   \
+  "vmov.u32 q0, #0                \n"   \
+  "vmov.u32 q1, #0                \n"   \
+  "vmov.u32 q2, #0                \n"   \
+  "vmov.u32 q3, #0                \n"   \
+  "cmp %[cnt], #1                 \n"   \
+  "blt  2f                        \n"   \
+  "1:                             \n"   \
+  "vld1.8 {d8-d9},    [%[in]]!    \n"   \
+  "vld1.8 {d12-d13},  [%[w0]]!    \n"   \
+  "vld1.8 {d14-d15},  [%[w1]]!    \n"   \
+  "vld1.8 {d16-d17},  [%[w2]]!    \n"   \
+  "vld1.8 {d18-d19},  [%[w3]]!    \n"   \
+  "vmull.s8 q12, d8, d12          \n"   \
+  "vmull.s8 q13, d8, d14          \n"   \
+  "vmull.s8 q14, d8, d16          \n"   \
+  "vmull.s8 q15, d8, d18          \n"   \
+  "vmlal.s8 q12,  d9, d13         \n"   \
+  "vmlal.s8 q13,  d9, d15         \n"   \
+  "vmlal.s8 q14,  d9, d17         \n"   \
+  "vmlal.s8 q15,  d9, d19         \n"   \
+  "vpadal.s16   q0,   q12         \n"   \
+  "vpadal.s16   q1,   q13         \n"   \
+  "vpadal.s16   q2,   q14         \n"   \
+  "vpadal.s16   q3,   q15         \n"   \
+  "subs %[cnt], #1                \n"   \
+  "bne 1b                         \n"   \
+  "2:                             \n"   \
+  "vld1.8 {d20-d21}, [%[scale]]!  \n"   \
+  "vmov.f32   q11, #0.0           \n"   \
+  "cmp    %[bias],   #0           \n"   \
+  "beq    9f                      \n"   \
+  "vld1.8 {d22-d23}, [%[bias]]!   \n"   \
+  "9:                             \n"   \
+  "vpadd.s32 d8,  d0, d1          \n"   \
+  "vpadd.s32 d9,  d2, d3          \n"   \
+  "vpadd.s32 d10, d4, d5          \n"   \
+  "vpadd.s32 d11, d6, d7          \n"   \
+  "vpadd.s32 d0,  d8, d9          \n"   \
+  "vpadd.s32 d1,  d10,d11         \n"   \
+  "vcvt.f32.s32   q1, q0          \n"   \
+  "vmla.f32  q11, q1, q10         \n"   \
+  "cmp    %[relu],  #0            \n"   \
+  "beq    12f                     \n"   \
+  "cmp    %[relu],  #1            \n"   \
+  "bne    13f                     \n"   \
+  "vmov.f32    q0,  #0.0          \n"   \
+  "vmax.f32   q11,  q11,  q0      \n"   \
+  "b      12f                     \n"   \
+  "13:                            \n"   \
+  "cmp    %[relu],   #2           \n"   \
+  "bne    14f                     \n"   \
+  "vmov.f32   q0,   #0.0          \n"   \
+  "vdup.32    q1,   %[alpha]      \n"   \
+  "vmax.f32   q11,  q11,  q0      \n"   \
+  "vmin.f32   q11,  q11,  q1      \n"   \
+  "b      12f                     \n"   \
+  "14:                            \n"   \
+  "vmov.f32   q0,   #0.0          \n"   \
+  "vdup.32    q1,   %[alpha]      \n"   \
+  "vcge.f32   q2,   q11,  q0      \n"   \
+  "vmul.f32   q3,   q11,  q1      \n"   \
+  "vbif       q11,  q3,   q2      \n"
+
+#define GEMV_ST_INT8                  \
+  "12:                            \n" \
+  "vdup.32    q0,   %[vmax]       \n" \
+  "vmov.f32   q1,   #0.5          \n" \
+  "vmov.f32   q2,   #-0.5         \n" \
+  "vcgt.f32   q3,   q11,  #0      \n" \
+  "vbif.f32   q1,   q2,   q3      \n" \
+  "vadd.f32   q11,  q1,   q11     \n" \
+  "vcge.f32   q12,  q11,  q0      \n" \
+  "vbif q11,  q0,   q12           \n" \
+  "vcvt.s32.f32     q1,   q11     \n" \
+  "vqmovn.s32 d8,   q1            \n" \
+  "vqmovn.s16 d22,  q4            \n" \
+  "vmov.32    %[vmax], d22[0]     \n" \
+  "str      %[vmax], [%[out]]     \n"
+
+#define GEMV_ST_FP32                 \
+  "12:                           \n" \
+  "vst1.32 {d22-d23}, [%[out]]   \n"
+
+#define GEMV_ASM_PARAMS                                                 \
+  [in] "+r"(ptr_in), [w0] "+r"(ptr_w0),                                 \
+  [w1] "+r"(ptr_w1), [w2] "+r"(ptr_w2),                                 \
+  [w3] "+r"(ptr_w3), [cnt] "+r"(cnt),                                   \
+  [scale] "+r"(scale_ptr), [bias] "+r"(bias_ptr),                       \
+  [relu] "+r"(act), [alpha] "+r"(alpha)                                 \
+  : [out] "r"(out_ptr)                                                  \
+  : "cc", "memory",                                                     \
+    "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",                     \
+    "q8", "q9", "q12", "q13", "q14", "q15"
+
+#define GEMV_ASM_FUN_PARAMS(dtype)                                      \
+  const int8_t *ptr_in, const int8_t *ptr_w0,                           \
+  const int8_t *ptr_w1, const int8_t *ptr_w2,                           \
+  const int8_t *ptr_w3, int cnt,                                        \
+  const float *scale_ptr, const float *bias_ptr,                        \
+  int act, float alpha,                                                 \
+  dtype *out_ptr
+// clang-format on
+
+template <typename dtype>
+inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(dtype));
+
+template <>
+inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(float)) {
+  asm volatile(GEMV_COMPUTE GEMV_ST_FP32 : GEMV_ASM_PARAMS);
+}
+
+template <>
+inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(int8_t)) {
+  float vmax = -127.f;
+  asm volatile(GEMV_COMPUTE GEMV_ST_INT8 : [vmax] "+r"(vmax), GEMV_ASM_PARAMS);
+}
+#undef GEMV_COMPUTE_INIT
+#undef GEMV_COMPUTE
+#undef GEMV_ST_FP32
+#undef GEMV_ST_INT8
+#undef GEMV_ASM_PARAMS
+#undef GEMV_ASM_FUN_PARAMS
+#endif
+
+template <typename dtype>
+void gemv_int8_oth(const int8_t* A,
                    const int8_t* x,
-                   dtype* y,
-                   bool transA,
+                   dtype* data_out,
                    int M,
                    int N,
                    const float* scale,
                    bool is_bias,
                    const float* bias,
-                   bool flag_act,
+                   bool fact,
                    lite_api::ActivationType act,
-                   float six,
-                   float alpha) {
-  if (transA) {
-    gemv_int8_trans_oth(
-        A, x, y, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
-    return true;
-  }
-  dtype* data_out = y;
-  const int8_t* data_in = x;
-  const int8_t* weights_ptr = A;
+                   float alpha,
+                   ARMContext* ctx) {
   int cnt = N >> 4;
   int tail = N & 15;
-  int outbuf[M];  // NOLINT
-  memset(outbuf, 0.f, sizeof(int) * M);
-  float zerobuf[M];  // NOLINT
-  memset(zerobuf, 0, sizeof(float) * M);
-  const float* bias_ptr = is_bias ? bias : zerobuf;
+  int Nup = (N + 15) / 16 * 16;
+  cnt = Nup >> 4;
+  int8_t* ptr_zero = ctx->workspace_data<int8_t>();
+  memset(ptr_zero, 0, Nup * 3);
+  int8_t* data_in = ptr_zero + Nup;
+  lite::TargetWrapperHost::MemcpySync(data_in, x, N);
+  int8_t* ptr_w = data_in + Nup;
+  lite::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
 
 #ifdef __aarch64__
   int out_cnt = M >> 3;
+  int remain = M & 7;
+  if (remain > 0) out_cnt++;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
     int out_idx = j * 8;
-    int* ptr_out = outbuf + out_idx;
+    dtype* out_ptr = data_out + out_idx;
+    dtype* out_p = out_ptr;
+    const float* scale_ptr = scale + out_idx;
+    dtype out_temp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     const int8_t* ptr_in = data_in;
-    const int8_t* ptr_w0 = weights_ptr + (N * out_idx);
+    const int8_t* ptr_w0 = A + (N * out_idx);
     const int8_t* ptr_w1 = ptr_w0 + N;
     const int8_t* ptr_w2 = ptr_w1 + N;
     const int8_t* ptr_w3 = ptr_w2 + N;
@@ -1839,339 +2174,178 @@ bool gemv_int8_oth(const int8_t* A,
     const int8_t* ptr_w5 = ptr_w4 + N;
     const int8_t* ptr_w6 = ptr_w5 + N;
     const int8_t* ptr_w7 = ptr_w6 + N;
-    int cnt_loop = cnt;
-    asm volatile(
-        "prfm  pldl1keep, [%[in]]           \n" /* preload din */
-        "prfm  pldl1keep, [%[w0]]   \n"         /* preload w0 */
-        "prfm  pldl1keep, [%[w1]]   \n"         /* preload w1 */
-        "prfm  pldl1keep, [%[w2]]   \n"         /* preload w2 */
-        "prfm  pldl1keep, [%[w3]]   \n"         /* preload w3 */
-        "prfm  pldl1keep, [%[w4]]   \n"         /* preload w4 */
-        "prfm  pldl1keep, [%[w5]]   \n"         /* preload w5 */
-        "prfm  pldl1keep, [%[w6]]   \n"         /* preload w6 */
-        "prfm  pldl1keep, [%[w7]]   \n"         /* preload w7 */
-        "movi   v0.4s,  #0          \n"         /* set out0 to 0 */
-        "movi   v1.4s,  #0          \n"         /* set out1 to 0 */
-        "movi   v2.4s,  #0          \n"         /* set out2 to 0 */
-        "movi   v3.4s,  #0          \n"         /* set out3 to 0 */
-        "movi   v4.4s,  #0          \n"         /* set out4 to 0 */
-        "movi   v5.4s,  #0          \n"         /* set out5 to 0 */
-        "movi   v6.4s,  #0          \n"         /* set out6 to 0 */
-        "movi   v7.4s,  #0          \n"         /* set out7 to 0 */
-        /* check main loop */
-        "cmp %w[cnt], #1            \n" /* check whether has main loop */
-        "blt  2f                    \n" /* jump to tail */
-        /* main loop */
-        "1:                         \n"  /* main loop */
-        "ldr    q8,     [%[in]], #16 \n" /* load input, 16 int8 */
-        "ldr    q9,     [%[w0]], #16 \n" /* load w0, 16 int8 */
-        "ldr    q10,    [%[w1]], #16 \n" /* load w1, 16 int8 */
-        "ldr    q11,    [%[w2]], #16 \n" /* load w2, 16 int8 */
-        "ldr    q12,    [%[w3]], #16 \n" /* load w3, 16 int8 */
-        "ldr    q13,    [%[w4]], #16 \n" /* load w4, 16 int8 */
-        "ldr    q14,    [%[w5]], #16 \n" /* load w5, 16 int8 */
-        "ldr    q15,    [%[w6]], #16 \n" /* load w6, 16 int8 */
-        "ldr    q16,    [%[w7]], #16 \n" /* load w7, 16 int8 */
-        /* mul, lower 8 int8 * int8 = int16 */
-        "smull  v18.8h, v8.8b, v9.8b \n" /* mul in * w0, low, 8 int8 */
-        "smull  v19.8h, v8.8b, v10.8b\n" /* mul in * w1, low, 8 int8 */
-        "smull  v20.8h, v8.8b, v11.8b\n" /* mul in * w2, low, 8 int8 */
-        "smull  v21.8h, v8.8b, v12.8b\n" /* mul in * w3, low, 8 int8 */
-        "smull  v22.8h, v8.8b, v13.8b\n" /* mul in * w4, low, 8 int8 */
-        "smull  v23.8h, v8.8b, v14.8b\n" /* mul in * w5, low, 8 int8 */
-        "smull  v24.8h, v8.8b, v15.8b\n" /* mul in * w6, low, 8 int8 */
-        "smull  v25.8h, v8.8b, v16.8b\n" /* mul in * w7, low, 8 int8 */
-        /* mul, higher 8 int8 * int8 + int16 = int16 */
-        "smlal2 v18.8h,v8.16b,v9.16b \n" /* mul in * w0, high, 8 int8 */
-        "smlal2 v19.8h,v8.16b,v10.16b\n" /* mul in * w1, high, 8 int8 */
-        "smlal2 v20.8h,v8.16b,v11.16b\n" /* mul in * w2, high, 8 int8 */
-        "smlal2 v21.8h,v8.16b,v12.16b\n" /* mul in * w2, high, 8 int8 */
-        "smlal2 v22.8h,v8.16b,v13.16b\n" /* mul in * w2, high, 8 int8 */
-        "smlal2 v23.8h,v8.16b,v14.16b\n" /* mul in * w2, high, 8 int8 */
-        "smlal2 v24.8h,v8.16b,v15.16b\n" /* mul in * w2, high, 8 int8 */
-        "smlal2 v25.8h,v8.16b,v16.16b\n" /* mul in * w2, high, 8 int8 */
-        "subs %w[cnt], %w[cnt], #1   \n" /* sub main loop count */
-        /* add int16 to int32 */
-        "sadalp v0.4s, v18.8h \n"        /* pair acc, 8 int16 -> 4 int32 */
-        "sadalp v1.4s, v19.8h \n"        /* pair acc, 8 int16 -> 4 int32 */
-        "sadalp v2.4s, v20.8h \n"        /* pair acc, 8 int16 -> 4 int32 */
-        "sadalp v3.4s, v21.8h \n"        /* pair acc, 8 int16 -> 4 int32 */
-        "sadalp v4.4s, v22.8h \n"        /* pair acc, 8 int16 -> 4 int32 */
-        "sadalp v5.4s, v23.8h \n"        /* pair acc, 8 int16 -> 4 int32 */
-        "sadalp v6.4s, v24.8h \n"        /* pair acc, 8 int16 -> 4 int32 */
-        "sadalp v7.4s, v25.8h \n"        /* pair acc, 8 int16 -> 4 int32 */
-        "bne 1b                      \n" /* jump to main loop */
-        /* pair add to final result */
-        "2:                          \n" /* reduce to scale */
-        "addp v8.4s , v0.4s , v1.4s  \n" /* pair add to 4 int32*/
-        "addp v9.4s , v2.4s , v3.4s  \n" /* pair add to 4 int32*/
-        "addp v10.4s, v4.4s , v5.4s  \n" /* pair add to 4 int32*/
-        "addp v11.4s, v6.4s , v7.4s  \n" /* pair add to 4 int32*/
-
-        "addp v12.4s, v8.4s , v9.4s  \n" /* pair add to 4 int32*/
-        "addp v13.4s, v10.4s, v11.4s \n" /* pair add to 4 int32*/
-
-        /* write to output */
-        "stp q12, q13, [%[out]]     \n" /* save result */
-        : [in] "+r"(ptr_in),
-          [w0] "+r"(ptr_w0),
-          [w1] "+r"(ptr_w1),
-          [w2] "+r"(ptr_w2),
-          [w3] "+r"(ptr_w3),
-          [w4] "+r"(ptr_w4),
-          [w5] "+r"(ptr_w5),
-          [w6] "+r"(ptr_w6),
-          [w7] "+r"(ptr_w7),
-          [cnt] "+r"(cnt_loop)
-        : [out] "r"(ptr_out)
-        : "cc",
-          "memory",
-          "v0",
-          "v1",
-          "v2",
-          "v3",
-          "v4",
-          "v5",
-          "v6",
-          "v7",
-          "v8",
-          "v9",
-          "v10",
-          "v11",
-          "v12",
-          "v13",
-          "v14",
-          "v15",
-          "v16",
-          "v17",
-          "v18",
-          "v19",
-          "v20",
-          "v21",
-          "v22",
-          "v23",
-          "v24",
-          "v25");
-    for (int i = 0; i < tail; ++i) {
-      ptr_out[0] += ptr_in[i] * ptr_w0[i];
-      ptr_out[1] += ptr_in[i] * ptr_w1[i];
-      ptr_out[2] += ptr_in[i] * ptr_w2[i];
-      ptr_out[3] += ptr_in[i] * ptr_w3[i];
-      ptr_out[4] += ptr_in[i] * ptr_w4[i];
-      ptr_out[5] += ptr_in[i] * ptr_w5[i];
-      ptr_out[6] += ptr_in[i] * ptr_w6[i];
-      ptr_out[7] += ptr_in[i] * ptr_w7[i];
+    auto bias_ptr = is_bias ? bias + out_idx : nullptr;
+    if (j == out_cnt - 1 && remain) {
+      switch (8 - remain) {
+        case 7:
+          ptr_w1 = ptr_zero;
+        case 6:
+          ptr_w2 = ptr_zero;
+        case 5:
+          ptr_w3 = ptr_zero;
+        case 4:
+          ptr_w4 = ptr_zero;
+        case 3:
+          ptr_w5 = ptr_zero;
+        case 2:
+          ptr_w6 = ptr_zero;
+        case 1:
+          ptr_w7 = ptr_zero;
+          out_p = out_temp;
+          break;
+        default:
+          break;
+      }
+      switch (8 - remain) {
+        case 7:
+          ptr_w0 = ptr_w;
+          break;
+        case 6:
+          ptr_w1 = ptr_w;
+          break;
+        case 5:
+          ptr_w2 = ptr_w;
+          break;
+        case 4:
+          ptr_w3 = ptr_w;
+          break;
+        case 3:
+          ptr_w4 = ptr_w;
+          break;
+        case 2:
+          ptr_w5 = ptr_w;
+          break;
+        case 1:
+          ptr_w6 = ptr_w;
+          break;
+        default:
+          break;
+      }
     }
-  }
-
-//! deal with remains
-#pragma omp parallel for
-  for (int j = out_cnt * 8; j < M; j++) {
-    int* ptr_out = outbuf + j;
-    const int8_t* ptr_in = data_in;
-    const int8_t* ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    asm volatile(
-        "prfm  pldl1keep, [%[in]]               \n" /* preload din */
-        "prfm  pldl1keep, [%[w0]]       \n"         /* preload w0 */
-        "movi   v0.4s,  #0              \n"         /* set out0 to 0 */
-        /* check main loop */
-        "cmp %w[cnt], #1                \n" /* check whether has main loop */
-        "blt  2f                        \n" /* jump to tail */
-        /* main loop */
-        "1:                             \n" /* main loop */
-        "ldr    q8,     [%[in]], #16    \n" /* load input, 16 int8 */
-        "ldr    q9,     [%[w0]], #16    \n" /* load w0, 16 int8 */
-        /* mul, lower 8 int8 * int8 = int16 */
-        "smull  v18.8h, v8.8b, v9.8b    \n" /* mul in * w0, low, 8 int8 */
-        "subs %w[cnt], %w[cnt], #1      \n" /* sub main loop count */
-        /* mul, higher 8 int8 * int8 + int16 = int16 */
-        "smlal2 v18.8h,v8.16b,v9.16b    \n" /* mul in * w0, high, 8 int8 */
-        /* add int16 to int32 */
-        "sadalp v0.4s, v18.8h           \n" /* pair acc, 8 int16 -> 4 int32 */
-        "bne 1b                         \n" /* jump to main loop */
-        /* pair add to final result */
-        "2:                             \n" /* reduce to scale */
-        "addv   s8, v0.4s               \n" /* reduction to out0 */
-        /* write to output */
-        "str s8, [%[out]]               \n" /* save result */
-        : [in] "+r"(ptr_in), [w0] "+r"(ptr_w0), [cnt] "+r"(cnt_loop)
-        : [out] "r"(ptr_out)
-        : "cc", "memory", "v0", "v8", "v9", "v18");
-    for (int i = 0; i < tail; ++i) {
-      ptr_out[0] += ptr_in[i] * ptr_w0[i];
+    gemv_int8_asm<dtype>(ptr_in,
+                         ptr_w0,
+                         ptr_w1,
+                         ptr_w2,
+                         ptr_w3,
+                         ptr_w4,
+                         ptr_w5,
+                         ptr_w6,
+                         ptr_w7,
+                         cnt,
+                         scale_ptr,
+                         bias_ptr,
+                         static_cast<int>(act),
+                         alpha,
+                         out_p);
+    if (remain > 0) {
+      for (int i = 0; i < remain; i++) {
+        out_ptr[i] = out_p[i];
+      }
     }
   }
 #else  //  __aarch64__
+
   int out_cnt = M >> 2;
+  int remain = M & 3;
+  if (remain > 0) out_cnt++;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
     int out_idx = j * 4;
-    int* ptr_out = outbuf + out_idx;
+    dtype* out_ptr = data_out + out_idx;
+    dtype* out_p = out_ptr;
+    const float* scale_ptr = scale + out_idx;
+    dtype out_temp[4] = {0, 0, 0, 0};
     const int8_t* ptr_in = data_in;
-    const int8_t* ptr_w0 = weights_ptr + (N * out_idx);
+    const int8_t* ptr_w0 = A + (N * out_idx);
     const int8_t* ptr_w1 = ptr_w0 + N;
     const int8_t* ptr_w2 = ptr_w1 + N;
     const int8_t* ptr_w3 = ptr_w2 + N;
-    int cnt_loop = cnt;
-    asm volatile(
-        "pld [%[in]]                    @ preload cache line, input\n"
-        "pld [%[w0]]                    @ preload cache line, weights r0\n"
-        "pld [%[w1]]                    @ preload cache line, weights r1\n"
-        "pld [%[w2]]                    @ preload cache line, weights r2\n"
-        "pld [%[w3]]                    @ preload cache line, weights r3\n"
-        "vmov.u32 q0, #0                @ set q0 to 0\n"
-        "vmov.u32 q1, #0                @ set q1 to 0\n"
-        "vmov.u32 q2, #0                @ set q2 to 0\n"
-        "vmov.u32 q3, #0                @ set q3 to 0\n"
-        // "vld1.32 {d20-d21}, %[bias]     @ load bias data"
-        "cmp %[cnt], #1                 @ check whether has main loop\n"
-        "blt  2f                        @ jump to pair add\n"
-        /* main loop */
-        "1:                             @ main loop\n"
-        "vld1.8 {d8-d9}, [%[in]]!       @ load input, q4\n"
-        "vld1.8 {d12-d13}, [%[w0]]!     @ load weights r0, q6\n"
-        "vld1.8 {d14-d15}, [%[w1]]!     @ load weights r1, q7\n"
-        "vld1.8 {d16-d17}, [%[w2]]!     @ load weights r2, q8\n"
-        "vld1.8 {d18-d19}, [%[w3]]!     @ load weights r3, q9\n"
-        /* mul, int8 * int8 = int16 */
-        "vmull.s8 q12, d8, d12          @ mul add\n"
-        "vmull.s8 q13, d8, d14          @ mul add\n"
-        "vmull.s8 q14, d8, d16          @ mul add\n"
-        "vmull.s8 q15, d8, d18          @ mul add\n"
-        /* mla, int8 * int8 + int16 = int16 */
-        "vmlal.s8 q12, d9, d13          @ mul add\n"
-        "vmlal.s8 q13, d9, d15          @ mul add\n"
-        "vmlal.s8 q14, d9, d17          @ mul add\n"
-        "vmlal.s8 q15, d9, d19          @ mul add\n"
-        /* pacc, int16 + int32 = int32 */
-        "vpadal.s16 q0, q12             @ pair acc\n"
-        "vpadal.s16 q1, q13             @ pair acc\n"
-        "vpadal.s16 q2, q14             @ pair acc\n"
-        "vpadal.s16 q3, q15             @ pair acc\n"
-        "subs %[cnt], #1                @ sub loop count \n"
-        /* check loop end */
-        "bne 1b                         @ jump to main loop\n"
-        /* pair add to final result */
-        "2:                             @ pair add \n"
-        "vpadd.s32 d8, d0, d1           @ pair add, first step\n"
-        "vpadd.s32 d9, d2, d3           @ pair add, first step\n"
-        "vpadd.s32 d10, d4, d5          @ pair add, first step\n"
-        "vpadd.s32 d11, d6, d7          @ pair add, first step\n"
-        "vpadd.s32 d0, d8, d9           @ pair add, second step\n"
-        "vpadd.s32 d1, d10, d11         @ pair add, second step\n"
-        /* write output */
-        "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
-        : [in] "+r"(ptr_in),
-          [w0] "+r"(ptr_w0),
-          [w1] "+r"(ptr_w1),
-          [w2] "+r"(ptr_w2),
-          [w3] "+r"(ptr_w3),
-          [cnt] "+r"(cnt_loop)
-        : [out] "r"(ptr_out)
-        : "cc",
-          "memory",
-          "q0",
-          "q1",
-          "q2",
-          "q3",
-          "q4",
-          "q5",
-          "q6",
-          "q7",
-          "q8",
-          "q9",
-          "q12",
-          "q13",
-          "q14",
-          "q15");
-    for (int i = 0; i < tail; ++i) {
-      ptr_out[0] += ptr_in[i] * ptr_w0[i];
-      ptr_out[1] += ptr_in[i] * ptr_w1[i];
-      ptr_out[2] += ptr_in[i] * ptr_w2[i];
-      ptr_out[3] += ptr_in[i] * ptr_w3[i];
+    if (j == out_cnt - 1 && remain) {
+      switch (4 - remain) {
+        case 3:
+          ptr_w1 = ptr_zero;
+        case 2:
+          ptr_w2 = ptr_zero;
+        case 1:
+          ptr_w3 = ptr_zero;
+          out_p = out_temp;
+          break;
+        default:
+          break;
+      }
+      switch (4 - remain) {
+        case 3:
+          ptr_w0 = ptr_w;
+          break;
+        case 2:
+          ptr_w1 = ptr_w;
+          break;
+        case 1:
+          ptr_w2 = ptr_w;
+          break;
+        default:
+          break;
+      }
+    }
+    auto bias_ptr = is_bias ? bias + out_idx : nullptr;
+    gemv_int8_asm<dtype>(ptr_in,
+                         ptr_w0,
+                         ptr_w1,
+                         ptr_w2,
+                         ptr_w3,
+                         cnt,
+                         scale_ptr,
+                         bias_ptr,
+                         static_cast<int>(act),
+                         alpha,
+                         out_p);
+    if (remain > 0) {
+      for (int i = 0; i < remain; i++) {
+        out_ptr[i] = out_p[i];
+      }
     }
   }
-//! deal with remains
-#pragma omp parallel for
-  for (int j = out_cnt * 4; j < M; j++) {
-    int* ptr_out = outbuf + j;
-    const int8_t* ptr_in = data_in;
-    const int8_t* ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    asm volatile(
-        "pld [%[in]]                        @ preload cache line, input\n"
-        "pld [%[w0]]                        @ preload cache line, weights r0\n"
-        "vmov.u32 q0, #0                    @ set q0 to 0\n"
-        "cmp %[cnt], #1                     @ check whether has main loop\n"
-        "blt  2f                            @ jump to tail\n"
-        /* main loop */
-        "1:                                 @ main loop\n"
-        "vld1.8 {d24-d25}, [%[in]]!         @ load input, q12\n"
-        "vld1.8 {d28-d29}, [%[w0]]!         @ load weights q14\n"
-        /* mull int8 * int8 = int16*/
-        "vmull.s8 q1, d24, d28              @ mul add\n"
-        "vmlal.s8 q1, d25, d29              @ mul add\n"
-        "subs %[cnt] , #1                   @ sub loop count \n"
-        /* pacc int16 + int32 = int32*/
-        "vpadal.s16 q0, q1                  @ pair acc\n"
-        "bne 1b                             @ jump to main loop\n"
-        /* pair add to final result */
-        "2:                                 @ end processing\n"
-        "vpadd.s32 d2, d0, d1               @ pair add, first step\n"
-        "vpadd.s32 d0, d2, d2               @ pair add, final step\n"
-        /* write output */
-        "vst1.32 {d0[0]}, [%[out]]          @ save result\n"
-        : [in] "+r"(ptr_in), [w0] "+r"(ptr_w0), [cnt] "+r"(cnt_loop)
-        : [out] "r"(ptr_out)
-        : "cc", "memory", "q0", "q1", "q12", "q13");
-    for (int i = 0; i < tail; ++i) {
-      ptr_out[0] += ptr_in[i] * ptr_w0[i];
-    }
-  }
+
 #endif  //  __aarch64__
-  write_gemv_out(
-      outbuf, data_out, scale, bias_ptr, M, flag_act, act, six, alpha);
-  return true;
 }
 
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
 template <typename dtype>
-bool gemv_int8_sdot(const int8_t* A,
+void gemv_int8_sdot(const int8_t* A,
                     const int8_t* x,
-                    dtype* y,
-                    bool transA,
+                    dtype* data_out,
                     int M,
                     int N,
                     const float* scale,
                     bool is_bias,
                     const float* bias,
-                    bool flag_act,
+                    bool fact,
                     lite_api::ActivationType act,
-                    float six,
-                    float alpha) {
-  if (transA) {
-    gemv_int8_trans_oth(
-        A, x, y, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
-    return true;
-  }
-  dtype* data_out = y;
-  const int8_t* data_in = x;
-  const int8_t* weights_ptr = A;
-  int cnt = N >> 4;
+                    float alpha,
+                    ARMContext* ctx) {
+  int Nup = (N + 15) / 16 * 16;
+  int cnt = Nup >> 4;
   int tail = N & 15;
-  int size_m = (M >> 3) << 3;
-  int outbuf[M];  // NOLINT
-  memset(outbuf, 0.f, sizeof(int) * M);
-  float zerobuf[M];  // NOLINT
-  memset(zerobuf, 0, sizeof(float) * M);
-  const float* bias_ptr = is_bias ? bias : zerobuf;
+  int out_cnt = M >> 3;
+  int remain = M & 7;
+  if (remain > 0) out_cnt++;
+  int8_t* ptr_zero = ctx->workspace_data<int8_t>();
+  memset(ptr_zero, 0, Nup * 3);
+  int8_t* data_in = ptr_zero + Nup;
+  lite::TargetWrapperHost::MemcpySync(data_in, x, N);
+  int8_t* ptr_w = data_in + Nup;
+  lite::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
+
 #pragma omp parallel for
-  for (int j = 0; j < M - 7; j += 8) {
-    int* ptr_out = outbuf + j;
-    const float* scale_ptr = scale + j;
+  for (int j = 0; j < out_cnt; j++) {
+    int out_idx = j * 8;
+    dtype* out_ptr = data_out + out_idx;
+    dtype* out_p = out_ptr;
+    const float* scale_ptr = scale + out_idx;
+    dtype out_temp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    auto bias_ptr = is_bias ? bias + out_idx : nullptr;
     const int8_t* ptr_in = data_in;
-    const int8_t* ptr_w0 = weights_ptr + (N * j);
+    const int8_t* ptr_w0 = A + (N * out_idx);
     const int8_t* ptr_w1 = ptr_w0 + N;
     const int8_t* ptr_w2 = ptr_w1 + N;
     const int8_t* ptr_w3 = ptr_w2 + N;
@@ -2179,219 +2353,138 @@ bool gemv_int8_sdot(const int8_t* A,
     const int8_t* ptr_w5 = ptr_w4 + N;
     const int8_t* ptr_w6 = ptr_w5 + N;
     const int8_t* ptr_w7 = ptr_w6 + N;
-    int cnt_loop = cnt;
+    if (j == out_cnt - 1 && remain) {
+      switch (8 - remain) {
+        case 7:
+          ptr_w1 = ptr_zero;
+        case 6:
+          ptr_w2 = ptr_zero;
+        case 5:
+          ptr_w3 = ptr_zero;
+        case 4:
+          ptr_w4 = ptr_zero;
+        case 3:
+          ptr_w5 = ptr_zero;
+        case 2:
+          ptr_w6 = ptr_zero;
+        case 1:
+          ptr_w7 = ptr_zero;
+          out_p = out_temp;
+          break;
+        default:
+          break;
+      }
+      switch (8 - remain) {
+        case 7:
+          ptr_w0 = ptr_w;
+          break;
+        case 6:
+          ptr_w1 = ptr_w;
+          break;
+        case 5:
+          ptr_w2 = ptr_w;
+          break;
+        case 4:
+          ptr_w3 = ptr_w;
+          break;
+        case 3:
+          ptr_w4 = ptr_w;
+          break;
+        case 2:
+          ptr_w5 = ptr_w;
+          break;
+        case 1:
+          ptr_w6 = ptr_w;
+          break;
+        default:
+          break;
+      }
+    }
+
     if (cnt > 0) {
-      asm volatile(
-          "prfm  pldl1keep, [%[in]]           \n" /* preload din */
-          "prfm  pldl1keep, [%[w0]]   \n"         /* preload w0 */
-          "prfm  pldl1keep, [%[w1]]   \n"         /* preload w1 */
-          "prfm  pldl1keep, [%[w2]]   \n"         /* preload w2 */
-          "prfm  pldl1keep, [%[w3]]   \n"         /* preload w3 */
-          "prfm  pldl1keep, [%[w4]]   \n"         /* preload w4 */
-          "prfm  pldl1keep, [%[w5]]   \n"         /* preload w5 */
-          "prfm  pldl1keep, [%[w6]]   \n"         /* preload w6 */
-          "prfm  pldl1keep, [%[w7]]   \n"         /* preload w7 */
-          "movi   v0.4s,  #0          \n"         /* set out0 to 0 */
-          "movi   v1.4s,  #0          \n"         /* set out1 to 0 */
-          "movi   v2.4s,  #0          \n"         /* set out2 to 0 */
-          "movi   v3.4s,  #0          \n"         /* set out3 to 0 */
-          "movi   v4.4s,  #0          \n"         /* set out4 to 0 */
-          "movi   v5.4s,  #0          \n"         /* set out5 to 0 */
-          "movi   v6.4s,  #0          \n"         /* set out6 to 0 */
-          "movi   v7.4s,  #0          \n"         /* set out7 to 0 */
-          /* main loop */
-          "1:                         \n" /* main loop */
-          "ldr    q8,    [%[in]], #16 \n" /* load input, 16 int8 */
-          "ldr    q9,   [%[w0]], #16 \n"  /* load w0, 16 int8 */
-          "ldr    q10,   [%[w1]], #16 \n" /* load w0, 16 int8 */
-          "ldr    q11,   [%[w2]], #16 \n" /* load w0, 16 int8 */
-          "ldr    q12,   [%[w3]], #16 \n" /* load w0, 16 int8 */
-          "ldr    q13,   [%[w4]], #16 \n" /* load w0, 16 int8 */
-          "ldr    q14,   [%[w5]], #16 \n" /* load w0, 16 int8 */
-          "ldr    q15,   [%[w6]], #16 \n" /* load w0, 16 int8 */
-          "ldr    q16,   [%[w7]], #16 \n" /* load w0, 16 int8 */
-
-          ".word 0x4e899500  // sdot   v0.4s, v8.16b, v9.16b \n"  /* out0, out1,
-                                                                     out2, out3
-                                                                     */
-          ".word 0x4e8a9501  // sdot   v1.4s, v8.16b, v10.16b \n" /* out4, out5,
-                                                                     out6, out7
-                                                                     */
-          ".word 0x4e8b9502  // sdot   v2.4s, v8.16b, v11.16b \n" /* out0, out1,
-                                                                     out2, out3
-                                                                     */
-          ".word 0x4e8c9503  // sdot   v3.4s, v8.16b, v12.16b \n" /* out4, out5,
-                                                                     out6, out7
-                                                                     */
-          "subs %w[cnt], %w[cnt], #1 \n"
-          ".word 0x4e8d9504  // sdot   v4.4s, v8.16b, v13.16b \n" /* out0, out1,
-                                                                     out2, out3
-                                                                     */
-          ".word 0x4e8e9505  // sdot   v5.4s, v8.16b, v14.16b \n" /* out4, out5,
-                                                                     out6, out7
-                                                                     */
-          ".word 0x4e8f9506  // sdot   v6.4s, v8.16b, v15.16b \n" /* out0, out1,
-                                                                     out2, out3
-                                                                     */
-          ".word 0x4e909507  // sdot   v7.4s, v8.16b, v16.16b \n" /* out4, out5,
-                                                                     out6, out7
-                                                                     */
-          "bne 1b                      \n" /* jump to main loop */
-          /* pair add to final result */
-          "2:                          \n"  /* reduce to scale */
-          "addp v10.4s , v0.4s , v1.4s  \n" /* pair add to 4 int32*/
-          "addp v11.4s , v2.4s , v3.4s  \n" /* pair add to 4 int32*/
-          "addp v12.4s , v4.4s , v5.4s  \n" /* pair add to 4 int32*/
-          "addp v13.4s , v6.4s , v7.4s  \n" /* pair add to 4 int32*/
-
-          "addp v0.4s , v10.4s , v11.4s  \n" /* pair add to 4 int32*/
-          "addp v1.4s , v12.4s , v13.4s  \n" /* pair add to 4 int32*/
-          /* write to output */
-          "stp q0, q1, [%[out]]     \n" /* save result */
-          : [in] "+r"(ptr_in),
-            [w0] "+r"(ptr_w0),
-            [w1] "+r"(ptr_w1),
-            [w2] "+r"(ptr_w2),
-            [w3] "+r"(ptr_w3),
-            [w4] "+r"(ptr_w4),
-            [w5] "+r"(ptr_w5),
-            [w6] "+r"(ptr_w6),
-            [w7] "+r"(ptr_w7),
-            [cnt] "+r"(cnt_loop)
-          : [out] "r"(ptr_out)
-          : "cc",
-            "memory",
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11",
-            "v12",
-            "v13",
-            "v14",
-            "v15",
-            "v16",
-            "v17",
-            "v18");
-    }
-    for (int i = 0; i < tail; ++i) {
-      ptr_out[0] += ptr_in[i] * ptr_w0[i];
-      ptr_out[1] += ptr_in[i] * ptr_w1[i];
-      ptr_out[2] += ptr_in[i] * ptr_w2[i];
-      ptr_out[3] += ptr_in[i] * ptr_w3[i];
-      ptr_out[4] += ptr_in[i] * ptr_w4[i];
-      ptr_out[5] += ptr_in[i] * ptr_w5[i];
-      ptr_out[6] += ptr_in[i] * ptr_w6[i];
-      ptr_out[7] += ptr_in[i] * ptr_w7[i];
+      gemv_int8_dot_asm<dtype>(ptr_in,
+                               ptr_w0,
+                               ptr_w1,
+                               ptr_w2,
+                               ptr_w3,
+                               ptr_w4,
+                               ptr_w5,
+                               ptr_w6,
+                               ptr_w7,
+                               cnt,
+                               scale_ptr,
+                               bias_ptr,
+                               static_cast<int>(act),
+                               alpha,
+                               out_p);
+      if (remain > 0) {
+        for (int i = 0; i < remain; i++) {
+          out_ptr[i] = out_p[i];
+        }
+      }
     }
   }
-//! deal with remains
-#pragma omp parallel for
-  for (int j = size_m; j < M; j++) {
-    // int *ptr_out = data_out + j;
-    const float* scale_ptr = scale + j;
-    int* ptr_out = outbuf + j;
-    const int8_t* ptr_in = data_in;
-    const int8_t* ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    asm volatile(
-        "prfm  pldl1keep, [%[in]]               \n" /* preload din */
-        "prfm  pldl1keep, [%[w0]]       \n"         /* preload w0 */
-        "cmp %w[cnt], #1                \n" /* check whether has main loop */
-        "movi   v0.4s,  #0              \n" /* set out0 to 0 */
-        /* check main loop */
-        "blt  2f                        \n" /* jump to tail */
-        /* main loop */
-        "1:                             \n" /* main loop */
-        "ldr    q8,     [%[in]], #16    \n" /* load input, 16 int8 */
-        "ldr    q9,     [%[w0]], #16    \n" /* load w0, 16 int8 */
-        "subs %w[cnt], %w[cnt], #1      \n" /* sub main loop count */
-        /* mul, lower 8 int8 * int8 = int16 */
-        ".word 0x4e899500  // sdot v0.4s, v8.16b, v9.16b \n"
-        "bne 1b                         \n" /* jump to main loop */
-        /* pair add to final result */
-        "2:                             \n" /* reduce to scale */
-        "addp   v1.4s, v0.4s, v0.4s     \n" /* reduction to out0 */
-        "addp   v2.4s, v1.4s, v1.4s     \n" /* reduction to out0 */
-        /* write to output */
-        "str s2, [%[out]]               \n" /* save result */
-        : [in] "+r"(ptr_in), [w0] "+r"(ptr_w0), [cnt] "+r"(cnt_loop)
-        : [out] "r"(ptr_out)
-        : "cc", "memory", "v0", "v1", "v2", "v8", "v9", "v18");
-    for (int i = 0; i < tail; ++i) {
-      ptr_out[0] += ptr_in[i] * ptr_w0[i];
-    }
-  }
-  write_gemv_out(
-      outbuf, data_out, scale, bias_ptr, M, flag_act, act, six, alpha);
-  return true;
 }
 #endif  // __aarch64__ && sdot
 
-template <>
-bool gemv_int8<float>(const int8_t* A,
-                      const int8_t* x,
-                      float* y,
-                      bool transA,
-                      int M,
-                      int N,
-                      const float* scale,
-                      bool is_bias,
-                      const float* bias,
-                      bool flag_act,
-                      lite_api::ActivationType act,
-                      const ARMContext* ctx,
-                      float six,
-                      float alpha) {
-#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+template <typename dtype>
+void gemv_int8(const int8_t* A,
+               const int8_t* x,
+               dtype* y,
+               bool transA,
+               int M,
+               int N,
+               const float* scale,
+               bool is_bias,
+               const float* bias,
+               const operators::ActivationParam act_param,
+               ARMContext* ctx) {
+#define IN_PARAMS                                            \
+  A, x, y, M, N, scale, is_bias, bias, act_param.has_active, \
+      act_param.active_type, alpha, ctx
+
+  float alpha = 1.f;
+  if (act_param.has_active) {
+    if (act_param.active_type == lite_api::ActivationType::kRelu6) {
+      alpha = act_param.threshold;
+    } else if (act_param.active_type == lite_api::ActivationType::kLeakyRelu) {
+      alpha = act_param.Leaky_relu_alpha;
+    }
+  }
+  if (transA) {
+    gemv_int8_trans_oth(IN_PARAMS);
+    return;
+  }
+
+#ifdef __aarch64__
   if (ctx->has_dot()) {
-    return gemv_int8_sdot<float>(
-        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
+#ifdef WITH_ARM_DOTPROD
+    gemv_int8_sdot<dtype>(IN_PARAMS);
+#endif
   } else {
-    return gemv_int8_oth<float>(
-        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
+    gemv_int8_oth<dtype>(IN_PARAMS);
   }
 #else
-  return gemv_int8_oth<float>(
-      A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
+  gemv_int8_oth<dtype>(IN_PARAMS);
 #endif
+#undef IN_PARAMS
 }
 
-template <>
-bool gemv_int8<int8_t>(const int8_t* A,
-                       const int8_t* x,
-                       int8_t* y,
-                       bool transA,
-                       int M,
-                       int N,
-                       const float* scale,
-                       bool is_bias,
-                       const float* bias,
-                       bool flag_act,
-                       lite_api::ActivationType act,
-                       const ARMContext* ctx,
-                       float six,
-                       float alpha) {
-#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
-  if (ctx->has_dot()) {
-    return gemv_int8_sdot<int8_t>(
-        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
-  } else {
-    return gemv_int8_oth<int8_t>(
-        A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
-  }
-#else
-  return gemv_int8_oth<int8_t>(
-      A, x, y, transA, M, N, scale, is_bias, bias, flag_act, act, six, alpha);
-#endif
-}
+#define GEMV_INT8_FUN(dtype)                                                 \
+  template void gemv_int8<dtype>(const int8_t* A,                            \
+                                 const int8_t* x,                            \
+                                 dtype* y,                                   \
+                                 bool transA,                                \
+                                 int M,                                      \
+                                 int N,                                      \
+                                 const float* scale,                         \
+                                 bool is_bias,                               \
+                                 const float* bias,                          \
+                                 const operators::ActivationParam act_param, \
+                                 ARMContext* ctx);
+
+GEMV_INT8_FUN(int8_t);
+GEMV_INT8_FUN(float);
 
 }  // namespace math
 }  // namespace arm
