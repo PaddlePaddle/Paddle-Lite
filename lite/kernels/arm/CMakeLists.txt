@@ -126,3 +126,4 @@ DEPS ${lite_kernel_deps} math_arm)
      lite_cc_test(test_axpy_compute_arm SRCS axpy_compute_test.cc DEPS arm_extra_kernels)
      lite_cc_test(test_layer_norm_compute_arm SRCS layer_norm_compute_test.cc DEPS arm_extra_kernels)
  endif()
+

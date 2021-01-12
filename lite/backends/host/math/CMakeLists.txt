@@ -4,4 +4,5 @@ lite_cc_library(math_host SRCS
     pad3d.cc
     concat.cc
     stack.cc
+    reduce_all.cc
     DEPS context)
