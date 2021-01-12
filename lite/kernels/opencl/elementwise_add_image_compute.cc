@@ -26,51 +26,66 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-void ElementwiseAddImageCompute::PrepareForRun() {}
+void ElementwiseAddImageCompute::PrepareForRun() {
+  if (param_.is_type<param_t>()) {
+    ele_param_ = param_.get_mutable<param_t>();
+  } else {
+    ele_param_ =
+        param_.get_mutable<operators::FusionElementwiseActivationParam>();
+    auto act_t =
+        static_cast<operators::FusionElementwiseActivationParam*>(ele_param_)
+            ->act_type;
+    VLOG(4) << "act: " << act_t;
+    if (act_t != "relu") {
+      LOG(FATAL) << "Unsupported Activation type: " << act_t;
+    }
+    build_options_ += " -DRELU";
+  }
+  // choose kernel
+  auto* x = ele_param_->X;
+  auto* y = ele_param_->Y;
+  auto* out = ele_param_->Out;
+  auto axis = ele_param_->axis;
 
-void ElementwiseAddImageCompute::ReInitWhenNeeded() {
-  ele_param_ = param_.get_mutable<param_t>();
-  auto x_dims = ele_param_->X->dims();
-  if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
-      first_epoch_for_reinit_) {
-    last_x_dims_ = x_dims;
-    first_epoch_for_reinit_ = false;
-
-    // choose kernel
-    auto* x = ele_param_->X;
-    auto* y = ele_param_->Y;
-    auto* out = ele_param_->Out;
-    auto axis = ele_param_->axis;
-
-    if (y->dims().size() == 4) {
-      kernel_func_name_ = "elementwise_add";  // y: ImageDefault
-    } else if (y->dims().size() == 1) {
-      if (axis == x->dims().size() - 1) {
-        kernel_func_name_ = "width_add";  // y: ImageDefault
-      } else if (axis == x->dims().size() - 3) {
-        kernel_func_name_ = "channel_add";  // y: ImageFolder
-      } else {
-        LOG(FATAL) << "ElementwiseAddImage doesn't support axis:" << axis
-                   << ", x->dims().size():" << x->dims().size()
-                   << ", y->dims.size():" << y->dims().size();
-      }
+  if (y->dims().size() == 4) {
+    kernel_func_name_ = "elementwise_add";  // y: ImageDefault
+  } else if (y->dims().size() == 1) {
+    if (axis == x->dims().size() - 1) {
+      kernel_func_name_ = "width_add";  // y: ImageDefault
+    } else if (axis == x->dims().size() - 3) {
+      kernel_func_name_ = "channel_add";  // y: ImageFolder
     } else {
       LOG(FATAL) << "ElementwiseAddImage doesn't support axis:" << axis
                  << ", x->dims().size():" << x->dims().size()
                  << ", y->dims.size():" << y->dims().size();
     }
-    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+  } else {
+    LOG(FATAL) << "ElementwiseAddImage doesn't support axis:" << axis
+               << ", x->dims().size():" << x->dims().size()
+               << ", y->dims.size():" << y->dims().size();
+  }
+  VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
-    auto& context = ctx_->As<OpenCLContext>();
-    context.cl_context()->AddKernel(kernel_func_name_,
-                                    "image/elementwise_add_kernel.cl",
-                                    build_options_,
-                                    time_stamp_);
+  auto& context = ctx_->As<OpenCLContext>();
+  context.cl_context()->AddKernel(kernel_func_name_,
+                                  "image/elementwise_add_kernel.cl",
+                                  build_options_,
+                                  time_stamp_);
 
-    STL::stringstream kernel_key;
-    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
-    kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+  STL::stringstream kernel_key;
+  kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+  kernel_ = context.cl_context()->GetKernel(kernel_key.str());
+}
 
+void ElementwiseAddImageCompute::ReInitWhenNeeded() {
+  auto* x = ele_param_->X;
+  auto* y = ele_param_->Y;
+  auto* out = ele_param_->Out;
+  auto x_dims = ele_param_->X->dims();
+  if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
+      first_epoch_for_reinit_) {
+    last_x_dims_ = x_dims;
+    first_epoch_for_reinit_ = false;
     // compute image shape
     paddle::lite::CLImageConverterDefault default_convertor;
     x_img_shape_ = default_convertor.InitImageDimInfoWith(x->dims());  // w, h
@@ -199,5 +214,23 @@ REGISTER_LITE_KERNEL(elementwise_add,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
-
+REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     ocl::ElementwiseAddImageCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
 #define LITE_WITH_LOG
