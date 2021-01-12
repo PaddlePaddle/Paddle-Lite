@@ -48,16 +48,74 @@ static float FindAbsMax(const float* input, int size) {
   return abs_max_value;
 }
 
+// Per-layer quantize tensor
 template <typename T>
-void QuantizeTensorInPlace(Tensor* weight, float scale) {
+void QuantizeTensorInPlace(Tensor* input, float scale) {
+  if (input->precision() != PRECISION(kFloat)) {
+    LOG(FATAL) << "Error: the precision of input should be float.";
+  }
   Tensor temp_tensor;
-  temp_tensor.CopyDataFrom(*weight);
-  weight->clear();
+  temp_tensor.CopyDataFrom(*input);
+  input->clear();
 
   float* temp_data = temp_tensor.mutable_data<float>();
-  T* weight_data = weight->mutable_data<T>();
-  for (size_t i = 0; i < weight->numel(); i++) {
-    weight_data[i] = static_cast<T>(std::round(temp_data[i] / scale));
+  T* quantized_data = input->mutable_data<T>();
+  for (size_t i = 0; i < input->numel(); i++) {
+    quantized_data[i] = static_cast<T>(std::round(temp_data[i] / scale));
+  }
+}
+
+// Per-channel quantize tensor
+template <typename T>
+void QuantizeTensorInPlace(Tensor* input,
+                           const std::vector<float>& scales,
+                           int quant_axis) {
+  if (input->precision() != PRECISION(kFloat)) {
+    LOG(FATAL) << "Error: the precision of input should be float.";
+  }
+  if (quant_axis != 0 && quant_axis != 1) {
+    LOG(FATAL) << "Input error: quant_axis should be 0 or 1.";
+  }
+  Tensor origin_tensor;
+  origin_tensor.CopyDataFrom(*input);
+  input->clear();
+
+  auto dims = origin_tensor.dims();
+  const int64_t channel = dims[quant_axis];
+  if (dims.size() < 2) {
+    LOG(FATAL) << "Error: the rank of input tensor should at least be 2.";
+  }
+  if (scales.size() != channel) {
+    LOG(FATAL) << "Params Error: scale size should be equal to channel.";
+  }
+  float* origin_data = origin_tensor.mutable_data<float>();
+  T* quantized_data = input->mutable_data<T>();
+
+  if (quant_axis == 0) {
+    const int64_t step = origin_tensor.numel() / channel;
+    for (int i = 0; i < channel; i++) {
+      float scale = scales[i];
+      auto* src_start = origin_data + i * step;
+      auto* src_end = origin_data + (i + 1) * step;
+      auto* dest_start = quantized_data + i * step;
+      std::transform(src_start, src_end, dest_start, [&scale](float x) {
+        return static_cast<T>(std::round(x / scale));
+      });
+    }
+  } else if (quant_axis == 1) {
+    const int64_t step_i = origin_tensor.numel() / dims[0];
+    const int64_t step_j = origin_tensor.numel() / (dims[0] * dims[1]);
+    for (int i = 0; i < dims[0]; i++) {
+      for (int j = 0; j < dims[1]; j++) {
+        float scale = scales[j];
+        auto* src_start = origin_data + i * step_i + j * step_j;
+        auto* src_end = origin_data + i * step_i + (j + 1) * step_j;
+        auto* dest_start = quantized_data + i * step_i + j * step_j;
+        std::transform(src_start, src_end, dest_start, [&scale](float x) {
+          return static_cast<T>(std::round(x / scale));
+        });
+      }
+    }
   }
 }
 
@@ -369,62 +427,97 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
 
   auto input_var_name = input_var_node->arg()->name;
   auto output_var_name = output_var_node->arg()->name;
-  bool input_var_is_weight = input_var_node->arg()->is_weight;
+  bool input_var_is_activation = !input_var_node->arg()->is_weight;
 
-  // get scale value
+  // 1. Get thresholds and scales
+  // The activation only has a scale.
+  // When the weight is per-layer quantized, it has a scale.
+  // When the weight is per-channel quantized, the num of scales is equal
+  // to the output channel of the weight.
   auto* scope = quant_dequant_node->stmt()->op()->scope();
   auto* input_var_tensor =
       scope->FindVar(input_var_name)->GetMutable<lite::Tensor>();
-  float threshold = 0;
-  if (input_var_is_weight) {
-    CHECK_EQ(quant_dequant_op_type_, "fake_quantize_dequantize_abs_max")
-        << "The quant_dequant type of weight should be "
-        << "fake_quantize_dequantize_abs_max for now.";
-    auto* input_var_data = input_var_tensor->data<float>();
-    threshold = FindAbsMax(input_var_data, input_var_tensor->numel());
-  } else {
+
+  std::vector<float> thresholds;
+  if (input_var_is_activation) {
     CHECK_EQ(quant_dequant_op_type_,
              "fake_quantize_dequantize_moving_average_abs_max")
         << "The quant_dequant type of activation should be "
         << "fake_quantize_dequantize_moving_average_abs_max for now.";
     auto* scale_tensor = scope->FindVar(output_scale_node->arg()->name)
                              ->GetMutable<lite::Tensor>();
-    threshold = scale_tensor->data<float>()[0];
+    thresholds.push_back(scale_tensor->data<float>()[0]);
+  } else {
+    CHECK(quant_dequant_op_type_ == "fake_quantize_dequantize_abs_max" ||
+          quant_dequant_op_type_ ==
+              "fake_channel_wise_quantize_dequantize_abs_max")
+        << "The quant_dequant type of weight should be "
+        << "fake_quantize_dequantize_abs_max or "
+        << "fake_channel_wise_quantize_dequantize_abs_max.";
+    if (quant_dequant_op_type_ == "fake_quantize_dequantize_abs_max") {
+      auto* input_var_data = input_var_tensor->data<float>();
+      float threshold = FindAbsMax(input_var_data, input_var_tensor->numel());
+      thresholds.push_back(threshold);
+    } else {
+      auto* scale_tensor = scope->FindVar(output_scale_node->arg()->name)
+                               ->GetMutable<lite::Tensor>();
+      int64_t num = scale_tensor->numel();
+      thresholds.resize(num);
+      memcpy(
+          thresholds.data(), scale_tensor->data<float>(), num * sizeof(float));
+    }
   }
+
   int bit_length =
       quant_dequant_node->stmt()->op_info()->GetAttr<int>("bit_length");
-  float scale_value = threshold / ((1 << (bit_length - 1)) - 1);
+  std::vector<float> scales(thresholds.size(), 0);
+  std::transform(
+      thresholds.begin(),
+      thresholds.end(),
+      scales.begin(),
+      [&bit_length](float x) { return x / ((1 << (bit_length - 1)) - 1); });
 
-  // update op_info of the quantized op
+  // 2. Update op_info of the quantized op
   for (auto* quantized_node : output_var_node->outlinks) {
     auto op_info = *quantized_node->stmt()->op_info();
     op_info.UpdateAllInputs(output_var_name, input_var_name);
     op_info.SetAttr<int>("bit_length", bit_length);
 
-    if (input_var_is_weight) {
-      // the quant axis of conv2d and depthwise_conv2d is 0
-      // the quant axis of conv2d_transpose, mul and matmul is 1
-      std::string op_type = op_info.Type();
-      int quant_axis =
-          (op_type == "conv2d" || op_type == "depthwise_conv2d") ? 0 : 1;
-      int scale_size = input_var_tensor->dims()[quant_axis];
-      std::vector<float> scales(scale_size, scale_value);
+    if (input_var_is_activation) {
       op_info.SetInputScale(input_var_name, scales);
-      // TODO(pjc): support conv2d_transpose and matmul
-      if (op_type == "mul" || op_type == "conv2d" ||
+    } else {
+      std::string op_type = op_info.Type();
+      const int quant_axis =
+          (op_type == "conv2d" || op_type == "depthwise_conv2d") ? 0 : 1;
+      if (quant_dequant_op_type_ == "fake_quantize_dequantize_abs_max") {
+        // Scales of weights are vector, so expand the scale to vector
+        // the quant axis of conv2d and depthwise_conv2d is 0
+        // the quant axis of conv2d_transpose (consider group), mul and matmul
+        // is 1
+        int scale_size = input_var_tensor->dims()[quant_axis];
+        op_info.SetInputScale(input_var_name,
+                              std::vector<float>(scale_size, scales.front()));
+      } else {
+        op_info.SetInputScale(input_var_name, scales);
+      }
+      // PaddleLite only supports this int8 ops for now
+      // TODO(pjc) : support conv2d_transpose
+      if (op_type == "mul" || op_type == "matmul" || op_type == "conv2d" ||
           op_type == "depthwise_conv2d") {
         op_info.SetAttr("enable_int8", true);
-        QuantizeTensorInPlace<int8_t>(input_var_tensor, scale_value);
+        if (scales.size() == 1) {
+          QuantizeTensorInPlace<int8_t>(input_var_tensor, scales.front());
+        } else {
+          QuantizeTensorInPlace<int8_t>(input_var_tensor, scales, quant_axis);
+        }
       }
-    } else {
-      op_info.SetInputScale(input_var_name, {scale_value});
     }
 
     quantized_node->stmt()->ResetOp(op_info, graph->valid_places());
     IR_NODE_LINK_TO(input_var_node, quantized_node);
   }
 
-  // delete nodes and edges
+  // 3. Delete nodes and edges
   std::set<const Node*> nodes2rm = {
       quant_dequant_node, output_scale_node, output_var_node};
   if (quant_dequant_op_type_ ==
