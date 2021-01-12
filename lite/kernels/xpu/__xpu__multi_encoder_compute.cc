@@ -54,6 +54,7 @@ void XPUMultiEncoderCompute::Run() {
     last_slice_seq = 0;
   }
   ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
+  LOG(INFO) << "param.precision: " << param.precision;
   if (param.precision == "int31") {
     LOG(INFO) << " Super param.precision == int31";
     r = xdnn::bert_encoder_transformer_int31(
