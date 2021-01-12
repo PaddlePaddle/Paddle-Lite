@@ -12,30 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/select_input_compute.h"
+#pragma once
+
+#include <vector>
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace host {
+namespace xpu {
 
-void SelectInputCompute::Run() {
-  auto& param = this->Param<param_t>();
-  param.Out->ShareDataWith(*param.X[*param.Mask->data<int>()]);
-}
+template <typename T, PrecisionType PType>
+class XPUBlockFuseCompute : public KernelLite<TARGET(kXPU), PType> {
+ public:
+  using param_t = operators::XPUBlockFuseParam;
 
-}  // namespace host
+  void PrepareForRun() override;
+
+  void Run() override;
+
+ private:
+  std::vector<xdnn::fusion_block<float, int16_t, int16_t, T>> xpu_fusion_block;
+};
+
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_KERNEL(select_input,
-                     kHost,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::SelectInputCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .Finalize();

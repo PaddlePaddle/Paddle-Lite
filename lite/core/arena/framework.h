@@ -139,7 +139,7 @@ class TestCase {
 
     auto* base_tensor_list = base_scope_->NewTensorList(var_name);
     auto* inst_tensor_list = inst_scope_->NewTensorList(var_name);
-    for (int i = 0; i < ddims.size(); i++) {
+    for (size_t i = 0; i < ddims.size(); i++) {
       Tensor item;
       item.Resize(ddims[i]);
       memcpy(item.mutable_data<T>(),
@@ -181,6 +181,11 @@ class TestCase {
 
   // Copy the host tensors to the device tensors if needed by the instruction.
   void PrepareInputsForInstruction();
+
+  // Copy the host tensors according to its target, layout, precision etc.
+  void PrepareInputTargetCopy(const Type* type,
+                              Tensor* inst_tensor,
+                              const Tensor* base_tensor);
 
   // Create output tensors and variables.
   void PrepareOutputsForInstruction() {

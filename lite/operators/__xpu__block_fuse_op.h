@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,20 +14,16 @@
 
 #pragma once
 #include <string>
-#include <vector>
 #include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class TensorArrayToTensorOpLite : public OpLite {
+class XPUBlockFuseOp : public OpLite {
  public:
-  TensorArrayToTensorOpLite() {}
-  explicit TensorArrayToTensorOpLite(const std::string &op_type)
-      : OpLite(op_type) {}
+  XPUBlockFuseOp() {}
+  explicit XPUBlockFuseOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -36,10 +32,11 @@ class TensorArrayToTensorOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "tensorArrayToTensor"; }
+
+  std::string DebugString() const override { return "BlockFuse Op"; }
 
  private:
-  mutable TensorArrayToTensorParam param_;
+  mutable XPUBlockFuseParam param_;
 };
 
 }  // namespace operators

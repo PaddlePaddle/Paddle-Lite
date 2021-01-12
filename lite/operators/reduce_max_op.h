@@ -56,7 +56,7 @@ class ReduceMaxOp : public OpLite {
 #endif
 
  private:
-  mutable ReduceMaxParam param_;
+  mutable ReduceParam param_;
 };
 
 }  // namespace operators

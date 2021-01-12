@@ -248,7 +248,7 @@ inline const T& Any::get() const {
 
 template <typename T>
 T* Any::get_mutable() {
-  check_type<T>();
+  // check_type<T>();
   return Any::TypeInfo<T>::get_ptr(&data_);
 }
 
