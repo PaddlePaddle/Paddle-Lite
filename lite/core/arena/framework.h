@@ -72,21 +72,20 @@ class TestCase {
   template <typename T>
   bool CheckTensorPrecision(const Tensor* a_tensor,
                             const Tensor* b_tensor,
-                            const Type* type,
                             float abs_error);
 
   // checkout the precision of the two tensors. b_tensor is baseline
   bool CheckPrecision(const Tensor* a_tensor,
                       const Tensor* b_tensor,
-                      const Type* type,
-                      float abs_error);
+                      float abs_error,
+                      PrecisionType precision_type);
 
   /// Check the precision of the output variables. It will compare the same
   /// tensor (or all tensors of the tensor_array) in two scopes, one of the
   /// instruction execution, and the other for the baseline.
   bool CheckPrecision(const std::string& var_name,
-                      const Type* type,
-                      float abs_error);
+                      float abs_error,
+                      PrecisionType precision_type);
 
   const cpp::OpDesc& op_desc() { return *op_desc_; }
 
@@ -162,6 +161,8 @@ class TestCase {
 
 #ifdef LITE_WITH_OPENCL
   CLImageConverterDefault converter_;
+  lite::Tensor input_image_cpu_tensor_;
+  lite::Tensor input_cpu_tensor_;
 #endif
 
  private:
@@ -180,11 +181,6 @@ class TestCase {
 
   // Copy the host tensors to the device tensors if needed by the instruction.
   void PrepareInputsForInstruction();
-
-  // Copy the host tensors according to its target, layout, precision etc.
-  void PrepareInputTargetCopy(const Type* type,
-                              Tensor* inst_tensor,
-                              const Tensor* base_tensor);
 
   // Create output tensors and variables.
   void PrepareOutputsForInstruction() {
@@ -218,15 +214,12 @@ class Arena {
     tester_->RunInstruction();
 
     bool success = true;
-    size_t out_var_idx = 0;
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
       for (auto& var : tester_->op_desc().Output(out)) {
         if (std::find(exclude_outs.begin(), exclude_outs.end(), var) !=
             exclude_outs.end()) {
           continue;
         }
-        VLOG(4) << "==== check precision for " << out_var_idx++
-                << "th(from 0) output var:" << out << " ===";
         success = success && CompareTensor(out, var);
       }
     }
@@ -260,7 +253,8 @@ class Arena {
     // get tensor type.
     const Type* type =
         tester_->instruction().kernel()->GetOutputDeclType(arg_name);
-    return tester_->CheckPrecision(var_name, type, abs_error_);
+    auto precision_type = type->precision();
+    return tester_->CheckPrecision(var_name, abs_error_, precision_type);
   }
 
  private:
