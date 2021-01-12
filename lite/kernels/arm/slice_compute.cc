@@ -226,7 +226,7 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, def2)
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("EndsTensorList",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
 using slice_int64 =
