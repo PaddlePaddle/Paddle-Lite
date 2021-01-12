@@ -182,6 +182,11 @@ class TestCase {
   // Copy the host tensors to the device tensors if needed by the instruction.
   void PrepareInputsForInstruction();
 
+  // Copy the host tensors according to its target, layout, precision etc.	
+  void PrepareInputTargetCopy(const Type* type,	
+                              Tensor* inst_tensor,	
+                              const Tensor* base_tensor);	
+
   // Create output tensors and variables.
   void PrepareOutputsForInstruction() {
     for (auto x : op_desc().output_vars()) {
