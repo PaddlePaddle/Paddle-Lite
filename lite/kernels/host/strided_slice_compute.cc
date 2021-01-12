@@ -263,9 +263,6 @@ void StridedSliceCompute<T, PType>::Run() {
   auto axes = param.axes;
   auto infer_flags = param.infer_flags;
   auto decrease_axis = param.decrease_axis;
-  auto starts_size = starts.size();
-  auto ends_size = ends.size();
-  auto strides_size = strides.size();
 
   if (param.StartsTensorList.size() > 0) {
     starts = get_new_data_from_tensorlist(param.StartsTensorList);
