@@ -122,7 +122,7 @@ lite_cc_library(kernel SRCS kernel.cc
         PROFILE_DEPS lite_profiler
   )
 lite_cc_library(op SRCS op_lite.cc DEPS scope op_registry target_wrapper kernel
-  cpp_op_desc tensor utils
+  cpp_wrapper tensor utils
   )
 
 add_dependencies(kernel kernel_list_h)

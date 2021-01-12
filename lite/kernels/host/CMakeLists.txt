@@ -17,61 +17,51 @@ add_kernel(host_basic_kernel Host basic
               fill_constant_batch_size_like_compute.cc
               deformable_conv_compute.cc
               stack_compute.cc
-
+              box_coder_compute.cc
            DEPS
               ${lite_kernel_deps})
-#add_kernel(feed_compute_host Host basic SRCS feed_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(fetch_compute_host Host basic SRCS fetch_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(range_compute_host Host basic SRCS range_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(reshape_compute_host Host basic SRCS reshape_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(squeeze_compute_host Host basic SRCS squeeze_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(unsqueeze_compute_host Host basic SRCS unsqueeze_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(multiclass_nms_compute_host Host basic SRCS multiclass_nms_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(expand_compute_host Host basic SRCS expand_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(expand_as_compute_host Host basic SRCS expand_as_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(fill_constant_compute_host Host basic SRCS fill_constant_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(fill_constant_batch_size_like_compute_host Host basic SRCS fill_constant_batch_size_like_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(deformable_conv_compute_host Host basic SRCS deformable_conv_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(stack_compute_host Host basic SRCS stack_compute.cc DEPS ${lite_kernel_deps})
-#
-## extra kernels
-#add_kernel(unstack_compute_host Host extra SRCS unstack_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(shape_compute_host Host extra SRCS shape_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(is_empty_compute_host Host extra SRCS is_empty_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(crf_decoding_compute_host Host extra SRCS crf_decoding_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(compare_compute_host Host extra SRCS compare_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(logical_compute_host Host extra SRCS logical_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(ctc_align_compute_host Host extra SRCS ctc_align_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(write_to_array_compute_host Host extra SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(read_from_array_compute_host Host extra SRCS read_from_array_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(assign_compute_host Host extra SRCS assign_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(retinanet_detection_output_compute_host Host extra SRCS retinanet_detection_output_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(where_index_compute_host Host extra SRCS where_index_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(print_compute_host Host extra SRCS print_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(while_compute_host Host extra SRCS while_compute.cc DEPS ${lite_kernel_deps} program)
-#add_kernel(conditional_block_compute_host Host extra SRCS conditional_block_compute.cc DEPS ${lite_kernel_deps} program)
-#add_kernel(activation_grad_compute_host Host train SRCS activation_grad_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(pixel_shuffle_compute_host Host extra SRCS pixel_shuffle_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(one_hot_compute_host Host extra SRCS one_hot_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(uniform_random_compute_host Host extra SRCS uniform_random_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(matrix_nms_compute_host Host extra SRCS matrix_nms_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(sin_compute_host Host extra SRCS sin_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(cos_compute_host Host extra SRCS cos_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(crop_compute_host Host extra SRCS crop_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(crop_tensor_compute_host Host extra SRCS crop_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(flatten_contiguous_range_compute_host Host extra SRCS flatten_compute.cc DEPS ${lite_kernel_deps})
-#add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(box_coder_compute_host Host basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(gather_compute_host Host extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(pad3d_compute_host Host extra SRCS pad3d_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(select_input_compute_host Host extra SRCS select_input_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(tensor_array_to_tensor_compute_host Host extra SRCS tensor_array_to_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
-#add_kernel(expand_v2_compute_host Host extra SRCS expand_v2_compute.cc DEPS ${lite_kernel_deps})
-#
-#if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
-#  lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)
-#  lite_cc_test(test_pixel_shuffle_compute_host SRCS pixel_shuffle_compute.cc DEPS pixel_shuffle_compute_host)
-#  lite_cc_test(test_one_hot_compute_host SRCS one_hot_compute_test.cc DEPS one_hot_compute_host)
-#endif()
+
+# extra kernels
+add_kernel(host_extra_kernel Host extra
+           SRCS
+              unstack_compute.cc
+              shape_compute.cc
+              is_empty_compute.cc
+              crf_decoding_compute.cc
+              compare_compute.cc
+              logical_compute.cc
+              ctc_align_compute.cc
+              write_to_array_compute.cc
+              read_from_array_compute.cc
+              assign_compute.cc
+              retinanet_detection_output_compute.cc
+              where_index_compute.cc
+              print_compute.cc
+              while_compute.cc
+              conditional_block_compute.cc
+              activation_grad_compute.cc
+              pixel_shuffle_compute.cc
+              one_hot_compute.cc
+              uniform_random_compute.cc
+              matrix_nms_compute.cc
+              sin_compute.cc
+              cos_compute.cc
+              crop_compute.cc
+              crop_tensor_compute.cc
+              sequence_unpad_compute.cc
+              flatten_compute.cc
+              shuffle_channel_compute.cc
+              activation_compute.cc
+              gather_compute.cc
+              pad3d_compute.cc
+              select_input_compute.cc
+              tensor_array_to_tensor_compute.cc
+              expand_v2_compute.cc
+           DEPS
+              ${lite_kernel_deps})
+
+if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
+  lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS host_extra_kernel)
+  lite_cc_test(test_pixel_shuffle_compute_host SRCS pixel_shuffle_compute.cc DEPS host_extra_kernel)
+  lite_cc_test(test_one_hot_compute_host SRCS one_hot_compute_test.cc DEPS host_extra_kernel)
+endif()

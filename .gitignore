@@ -117,7 +117,10 @@ metal/MobileNetDemo/MobileNetDemo/Resources
 
 #flatbuffers
 lite/model_parser/flatbuffers/framework_generated.h
-
+lite/model_parser/flatbuffers/param_generated.h
+flatbuffers/base.h
+flatbuffers/flatbuffers.h
+flatbuffers/stl_emulation.h
 build*
 
 # hiai libs
