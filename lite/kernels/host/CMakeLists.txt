@@ -14,8 +14,6 @@ add_kernel(fill_constant_compute_host Host basic SRCS fill_constant_compute.cc D
 add_kernel(fill_constant_batch_size_like_compute_host Host basic SRCS fill_constant_batch_size_like_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(deformable_conv_compute_host Host basic SRCS deformable_conv_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(stack_compute_host Host basic SRCS stack_compute.cc DEPS ${lite_kernel_deps})
-
-#2.0 API kernels
 add_kernel(lod_array_length_compute_host Host basic SRCS lod_array_length_compute.cc DEPS ${lite_kernel_deps})
 
 # extra kernels

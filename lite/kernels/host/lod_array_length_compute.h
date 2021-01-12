@@ -31,9 +31,8 @@ class LoDArrayLengthCompute
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
+    ch->kernel_func_name = "lod_array_length_func";
   }
-  std::string kernel_func_name_{"NotImplForLoDArrayLength"};
 #endif
 };
 

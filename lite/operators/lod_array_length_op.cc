@@ -20,16 +20,12 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool LoDArrayLengthOp::CheckShape() const {
-  CHECK(param_.out);
-  return true;
-}
 bool LoDArrayLengthOp::InferShapeImpl() const {
   std::vector<int64_t> out_dims = {1};
   param_.out->Resize(lite::DDim(out_dims));
   return true;
 }
-bool LoDArrayLengthOp::Run() { return OpLite::Run(); }
+
 bool LoDArrayLengthOp::AttachImpl(const cpp::OpDesc &opdesc,
                                   paddle::lite::Scope *scope) {
   auto x_name = opdesc.Input("X").front();
