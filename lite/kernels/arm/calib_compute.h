@@ -60,6 +60,18 @@ class CalibComputeInt8ToFp32
  private:
 };
 
+template <DataLayoutType DLType>
+class CalibComputeInt32ToFp32
+    : public KernelLite<TARGET(kARM), PRECISION(kInt32), DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeInt32ToFp32() override{};
+
+ private:
+};
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
