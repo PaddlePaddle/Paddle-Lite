@@ -101,12 +101,12 @@ DEPS ${lite_kernel_deps} math_arm)
 # 2. extra kernels
 add_kernel(arm_train_kernels ARM extra 
     SRCS
-mean_grad_compute.cc
-elementwise_grad_compute.cc
-mul_grad_compute.cc
-sgd_compute.cc
-sequence_pool_grad_compute.cc
-DEPS ${lite_kernel_deps} math_arm)
+        mean_grad_compute.cc
+        elementwise_grad_compute.cc
+        mul_grad_compute.cc
+        sgd_compute.cc
+        sequence_pool_grad_compute.cc
+    DEPS ${lite_kernel_deps} math_arm)
 
  lite_cc_test(test_scale_compute_arm SRCS scale_compute_test.cc DEPS arm_basic_kernels)
  lite_cc_test(test_softmax_compute_arm SRCS softmax_compute_test.cc DEPS arm_basic_kernels)
