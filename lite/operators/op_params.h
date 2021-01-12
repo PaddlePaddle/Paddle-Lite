@@ -606,6 +606,28 @@ struct SplitParam : ParamBase {
   }
 };
 
+struct UnbindParam : ParamBase {
+  lite::Tensor* x{};
+  std::vector<lite::Tensor*> output{};
+
+  int axis{-1};
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+};
+
 // For Transpose op
 struct TransposeParam : ParamBase {
   const lite::Tensor* x{};
@@ -1702,9 +1724,9 @@ struct LstmParam : ParamBase {
   lite::Tensor* C0{nullptr};
   bool use_peepholes;
   bool is_reverse;
-  std::string gate_activation;
-  std::string cell_activation;
-  std::string candidate_activation;
+  lite_api::ActivationType gate_activation;
+  lite_api::ActivationType cell_activation;
+  lite_api::ActivationType candidate_activation;
   // for int8
   WITH_INT8_CONFIG
 };
