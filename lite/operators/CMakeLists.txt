@@ -94,6 +94,7 @@ add_operator(sequence_expand_as_op_lite extra SRCS sequence_expand_as_op.cc DEPS
 add_operator(assign_value_op basic SRCS assign_value_op.cc DEPS ${op_DEPS})
 add_operator(fake_quantize_dequantize_moving_avg_abs_max_op extra SRCS fake_quantize_dequantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 add_operator(fake_quantize_dequantize_abs_max_op extra SRCS fake_quantize_dequantize_abs_max.cc DEPS ${op_DEPS})
+add_operator(fake_channel_wise_quantize_dequantize_abs_max_op extra SRCS fake_channel_wise_quantize_dequantize_abs_max.cc DEPS ${op_DEPS})
 add_operator(fake_channel_wise_dequantize_max_abs_op extra SRCS fake_channel_wise_dequantize_max_abs.cc DEPS ${op_DEPS})
 add_operator(split_lod_tensor_op_lite extra SRCS split_lod_tensor_op.cc DEPS ${op_DEPS})
 add_operator(merge_lod_tensor_op_lite extra SRCS merge_lod_tensor_op.cc DEPS ${op_DEPS})
