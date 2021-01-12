@@ -25,6 +25,7 @@ void LoDArrayLengthCompute::Run() {
   param.out->mutable_data<int64_t>()[0] = static_cast<int64_t>(input->size());
 #ifdef LITE_WITH_PROFILE
   this->kernel_func_name_ = "lod_array_length_func";
+
 #endif
   return;
 }

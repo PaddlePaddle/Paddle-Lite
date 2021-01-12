@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/operators/lod_array_length_op.h"
+
 #include <vector>
+
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -21,13 +23,11 @@ namespace lite {
 namespace operators {
 
 bool LoDArrayLengthOp::CheckShape() const {
-  CHECK(param_.x);
   CHECK(param_.out);
   return true;
 }
 bool LoDArrayLengthOp::InferShapeImpl() const {
   std::vector<int64_t> out_dims = {1};
-
   param_.out->Resize(lite::DDim(out_dims));
   return true;
 }
