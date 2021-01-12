@@ -15,14 +15,29 @@
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     return()
 endif()
-
 include(CheckCXXCompilerFlag)
-
 if(ANDROID)
     include(cross_compiling/findar)
-    
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -llog -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog -fPIC")
+    if(LITE_WITH_ARM82_FP16)
+        if(${ANDROID_NDK_MAJOR})
+            if(${ANDROID_NDK_MAJOR} GREATER "17")
+                add_definitions(-DENABLE_ARM_FP16)
+                set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+fp16")
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.2-a+fp16")
+            endif()
+        endif()
+    endif()
+
+    if(LITE_WITH_ARM82_INT8_SDOT)
+        if(${ANDROID_NDK_MAJOR})
+            if(${ANDROID_NDK_MAJOR} GREATER "17")
+                set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+dotprod")
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.2-a+dotprod")
+            endif()
+        endif()
+    endif()
 
     # Don't re-export libgcc symbols
     set(REMOVE_ATOMIC_GCC_SYMBOLS "-Wl,--exclude-libs,libatomic.a -Wl,--exclude-libs,libgcc.a")
