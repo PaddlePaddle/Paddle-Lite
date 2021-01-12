@@ -66,7 +66,6 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     bit_length = op_info->GetAttr<int>("bit_length");
     CHECK(op_info->HasOutputScale(y_scale_name, true));
     output_scale = op_info->GetOutputScale(y_scale_name, true)[0];
-
     if (enable_int8) {
       precision = PRECISION(kInt8);
     }

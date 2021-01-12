@@ -34,13 +34,11 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto x_name = op_info->Input("X").front();
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
-  auto x_type = kernel->GetInputDeclType("X");
   auto x_scale_name = "X0_scale";
 
   auto out_name = op_info->Output("Out").front();
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
-  auto out_type = kernel->GetOutputDeclType("Out");
   auto out_scale_name = "Out0_scale";
 
   // for quantization
@@ -53,8 +51,6 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   VLOG(3) << "input shape is: " << x_dims.repr();
   VLOG(3) << "output shape is: " << out_dims.repr();
-  VLOG(3) << "input precision is: " << PrecisionToStr(x_type->precision());
-  VLOG(3) << "output precision is: " << PrecisionToStr(out_type->precision());
   VLOG(3) << "input tensor is: " << PrecisionToStr(x->precision());
 
   if (op_info->HasAttr("enable_int8")) {
@@ -82,7 +78,7 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       qnt.scale.push_back(input_scale);
       x->mutable_data<int8_t>();
     }
-    x_node = graph->Add(x_name, *x, precision, x_type->layout(), qnt);
+    x_node = graph->Add(x_name, *x, precision, layout, qnt);
   }
 
   // Scale node
@@ -93,8 +89,7 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_qnt.scale.push_back(output_scale);
     out->mutable_data<int8_t>();
   }
-  auto output_node =
-      graph->Add(out_name, *out, precision, x_type->layout(), output_qnt);
+  auto output_node = graph->Add(out_name, *out, precision, layout, output_qnt);
 
   std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;
   std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;
