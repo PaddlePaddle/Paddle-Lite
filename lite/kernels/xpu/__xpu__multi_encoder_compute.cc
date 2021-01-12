@@ -55,6 +55,7 @@ void XPUMultiEncoderCompute::Run() {
   }
   ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
   if (param.precision == "int31") {
+    LOG(INFO) << " Super param.precision == int31";
     r = xdnn::bert_encoder_transformer_int31(
         ctx.GetRawContext(),                             /* context */
         batch_size,                                      /* batch_size */
@@ -77,6 +78,7 @@ void XPUMultiEncoderCompute::Run() {
         act_type_,
         last_slice_seq);
   } else {
+    LOG(INFO) << " Super param.precision == int16";
     r = xdnn::bert_encoder_transformer_int16<int16_t>(
         ctx.GetRawContext(),                             /* context */
         batch_size,                                      /* batch_size */
