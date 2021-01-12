@@ -392,7 +392,7 @@ void Program::PrepareWorkspace(
       VLOG(4) << " - type " << static_cast<int>(var_type);
 
       // Collect precision info into var_type_map_
-      if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
+      if (!var_desc->Persistable() && var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
         const auto& var_data_type =
             VarDescType2PrecisionType(var_desc->GetDataType());
         if (var_data_type != PRECISION(kUnk)) {
