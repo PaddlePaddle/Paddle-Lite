@@ -59,6 +59,7 @@ else()
   add_kernel(norm_compute_xpu XPU extra SRCS norm_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(fill_any_like_compute_xpu XPU extra SRCS fill_any_like_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(pad_constant_like_compute_xpu XPU extra SRCS pad_constant_like_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(gather_compute_xpu XPU extra SRCS gather_compute.cc DEPS ${lite_kernel_deps})
 
   # extra(fused kernel)
   add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc DEPS ${lite_kernel_deps})
