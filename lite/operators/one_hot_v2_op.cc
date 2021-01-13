@@ -30,7 +30,6 @@ bool OneHotV2Op::InferShapeImpl() const {
   std::vector<int64_t> out_dims;
   out_dims.push_back(in_dims[0]);
   out_dims.push_back(param_.depth);
-  CHECK_GE(out_dims.size(), 1);
   param_.Out->Resize(DDim(out_dims));
   param_.Out->set_lod(param_.X->lod());
   return true;
