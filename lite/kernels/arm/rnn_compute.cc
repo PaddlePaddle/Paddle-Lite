@@ -201,6 +201,22 @@ void cell(ARMContext* ctx,
                                                       ctx->threads());
 }
 
+// layer, output_tensor, is_bidirection, offset
+#define RUN_LSTM_LAYER(x, y, z, w) \
+  runLSTMLayer(&ctx,               \
+               input_temp_holder,  \
+               parameter_lists[x], \
+               init_h_unbind,      \
+               init_c_unbind,      \
+               sequence_length,    \
+               &last_h_unbind,     \
+               &last_c_unbind,     \
+               y,                  \
+               x,                  \
+               &gate_value,        \
+               z,                  \
+               w)
+
 void runLSTMLayer(ARMContext* ctx,
                   const Tensor* input,
                   std::vector<Tensor> vec,
@@ -442,52 +458,17 @@ void RnnCompute::Run() {
         output_vec[i].Resize({time_step, batch_size, hidden_size / 2});
         output_vec[i].mutable_data<float>();
       }
-      runLSTMLayer(&ctx,
-                   input_temp_holder,
-                   parameter_lists[i],
-                   init_h_unbind,
-                   init_c_unbind,
-                   sequence_length,
-                   &last_h_unbind,
-                   &last_c_unbind,
-                   &output_vec[0],
-                   i,
-                   &gate_value,
-                   true,
-                   0);
-      runLSTMLayer(&ctx,
-                   input_temp_holder,
-                   parameter_lists[i],
-                   init_h_unbind,
-                   init_c_unbind,
-                   sequence_length,
-                   &last_h_unbind,
-                   &last_c_unbind,
-                   &output_vec[1],
-                   i,
-                   &gate_value,
-                   true,
-                   1);
+
+      RUN_LSTM_LAYER(i, &output_vec[0], true, 0);
+      RUN_LSTM_LAYER(i, &output_vec[1], true, 1);
+
       std::vector<Tensor*> output_vec_t = {&output_vec[0], &output_vec[1]};
       lite::arm::math::concat_func<float>(output_vec_t, 2, output);
     } else {
-      runLSTMLayer(&ctx,
-                   input_temp_holder,
-                   parameter_lists[i],
-                   init_h_unbind,
-                   init_c_unbind,
-                   sequence_length,
-                   &last_h_unbind,
-                   &last_c_unbind,
-                   output_holder,
-                   i,
-                   &gate_value,
-                   false,
-                   0);
+      RUN_LSTM_LAYER(i, output_holder, false, 0);
     }
   }
 }
-
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
