@@ -13,17 +13,27 @@
 // limitations under the License.
 
 #include "lite/operators/__xpu__multi_encoder_op.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-bool XPUMultiEncoderOp::CheckShape() const { return true; }
+bool XPUMultiEncoderOp::CheckShape() const {
+  CHECK_EQ(param_.input->dims().size(), 3UL);
+  return true;
+}
 
 bool XPUMultiEncoderOp::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
-  param_.output->Resize(input_shape);
+  if ((param_.slice_starts.size() > 0 && param_.slice_starts[0] == 0) &&
+      (param_.slice_ends.size() > 0 && param_.slice_ends[0] == 1) &&
+      (param_.slice_axes.size() > 0 && param_.slice_axes[0] == 1)) {
+    param_.output->Resize({input_shape[0], 1, input_shape[2]});
+  } else {
+    param_.output->Resize(input_shape);
+  }
   return true;
 }
 
@@ -70,6 +80,17 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.act_type = op_desc.GetAttr<std::string>("act_type");
   param_.precision = op_desc.GetAttr<std::string>("precision");
   param_.enable_qkv_fusion = op_desc.GetAttr<bool>("enable_qkv_fusion");
+
+  if (op_desc.HasAttr("slice_axes")) {
+    param_.slice_axes = op_desc.GetAttr<std::vector<int>>("slice_axes");
+  }
+  if (op_desc.HasAttr("slice_starts")) {
+    param_.slice_starts = op_desc.GetAttr<std::vector<int>>("slice_starts");
+  }
+  if (op_desc.HasAttr("slice_ends")) {
+    param_.slice_ends = op_desc.GetAttr<std::vector<int>>("slice_ends");
+  }
+
   return true;
 }
 

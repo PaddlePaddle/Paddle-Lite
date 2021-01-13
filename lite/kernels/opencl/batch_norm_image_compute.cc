@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <cmath>
-#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
 #ifdef LITE_WITH_PROFILE
@@ -48,33 +47,55 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
 
     auto& out_dims = batch_norm_param_->y->dims();
-    int channel = out_dims[1];
-    int cgroup = (channel + 3) / 4;
-    int cround = cgroup * 4;
-    out_w = out_dims[3];
+    out_w_ = out_dims[3];
 
-    std::vector<half_t> scale_img(cround);
-    std::vector<half_t> bias_img(cround);
-    const float* scale_data = batch_norm_param_->scale->data<float>();
-    const float* bias_data = batch_norm_param_->bias->data<float>();
-    const float* mean_data = batch_norm_param_->mean->data<float>();
-    const float* variance_data = batch_norm_param_->variance->data<float>();
-    for (int c = 0; c < channel; c++) {
+    scale_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+    bias_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+    tensor_hold_scale_image_ = std::unique_ptr<Tensor>(new Tensor);
+    tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
+
+    CLImageConverterFolder scale_bias_converter;
+    const DDim& scale_image_dims = scale_bias_converter.InitImageDimInfoWith(
+        batch_norm_param_->scale->dims());
+    const DDim& bias_image_dims = scale_bias_converter.InitImageDimInfoWith(
+        batch_norm_param_->bias->dims());
+    tensor_hold_scale_image_->Resize(
+        {1, scale_image_dims[0], scale_image_dims[1], 4});
+    tensor_hold_bias_image_->Resize(
+        {1, bias_image_dims[0], bias_image_dims[1], 4});
+    auto* scale_image_data = MUTABLE_DATA_CPU(tensor_hold_scale_image_);
+    auto* bias_image_data = MUTABLE_DATA_CPU(tensor_hold_bias_image_);
+    auto* scale_cpu_data = batch_norm_param_->scale->data<float>();
+    auto* bias_cpu_data = batch_norm_param_->bias->data<float>();
+    auto* mean_cpu_data = batch_norm_param_->mean->data<float>();
+    auto* variance_cpu_data = batch_norm_param_->variance->data<float>();
+
+    int element_num = batch_norm_param_->scale->dims().production();
+    std::vector<float> new_scale_data(element_num);
+    std::vector<float> new_bias_data(element_num);
+    for (int i = 0; i < element_num; i++) {
       float inv_scale =
-          1.f / (std::sqrt(variance_data[c] + batch_norm_param_->epsilon));
-      float new_bias = bias_data[c] - inv_scale * scale_data[c] * mean_data[c];
-      float new_scale = inv_scale * scale_data[c];
-      scale_img[c] = Float2Half(new_scale);
-      bias_img[c] = Float2Half(new_bias);
+          1.f / (std::sqrt(variance_cpu_data[i] + batch_norm_param_->epsilon));
+      float new_bias =
+          bias_cpu_data[i] - inv_scale * scale_cpu_data[i] * mean_cpu_data[i];
+      float new_scale = inv_scale * scale_cpu_data[i];
+      new_scale_data[i] = new_scale;
+      new_bias_data[i] = new_bias;
     }
+    scale_bias_converter.NCHWToImage(new_scale_data.data(),
+                                     scale_image_data,
+                                     batch_norm_param_->scale->dims());
+    scale_bias_converter.NCHWToImage(
+        new_bias_data.data(), bias_image_data, batch_norm_param_->bias->dims());
 
-    DDim scale_img_size{{cgroup, 1}};
-    MUTABLE_DATA_GPU(
-        &scale_image_, scale_img_size[0], scale_img_size[1], scale_img.data());
-    MUTABLE_DATA_GPU(
-        &bias_image_, scale_img_size[0], scale_img_size[1], bias_img.data());
-    bias_image_.mutable_data<half_t, cl::Image2D>(
-        scale_img_size[0], scale_img_size[1], bias_img.data());
+    MUTABLE_DATA_GPU(scale_gpu_image_,
+                     scale_image_dims[0],
+                     scale_image_dims[1],
+                     scale_image_data);
+    MUTABLE_DATA_GPU(bias_gpu_image_,
+                     bias_image_dims[0],
+                     bias_image_dims[1],
+                     bias_image_data);
   }
 
   void ReInitWhenNeeded() override {
@@ -104,8 +125,8 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
     auto* x_img = GET_DATA_GPU(batch_norm_param_->x);
     auto* out_img = MUTABLE_DATA_GPU(
         batch_norm_param_->y, out_img_shape_[0], out_img_shape_[1], nullptr);
-    auto* scale_img = DATA_GPU(&scale_image_);
-    auto* bias_img = DATA_GPU(&bias_image_);
+    auto* scale_img = GET_DATA_GPU(scale_gpu_image_);
+    auto* bias_img = GET_DATA_GPU(bias_gpu_image_);
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -120,7 +141,7 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(3, *bias_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, out_w);
+    status = kernel.setArg(4, out_w_);
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,
@@ -154,9 +175,11 @@ class BatchNormComputeImage2D : public KernelLite<TARGET(kOpenCL),
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-  int out_w{0};
-  Tensor scale_image_;
-  Tensor bias_image_;
+  int out_w_{0};
+  std::unique_ptr<Tensor> scale_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> bias_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> tensor_hold_scale_image_{nullptr};
+  std::unique_ptr<Tensor> tensor_hold_bias_image_{nullptr};
 };
 
 }  // namespace opencl

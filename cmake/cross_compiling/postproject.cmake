@@ -15,14 +15,29 @@
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     return()
 endif()
-
 include(CheckCXXCompilerFlag)
-
 if(ANDROID)
     include(cross_compiling/findar)
-    
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -llog -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog -fPIC")
+    if(LITE_WITH_ARM82_FP16)
+        if(${ANDROID_NDK_MAJOR})
+            if(${ANDROID_NDK_MAJOR} GREATER "17")
+                add_definitions(-DENABLE_ARM_FP16)
+                set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+fp16")
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.2-a+fp16")
+            endif()
+        endif()
+    endif()
+
+    if(LITE_WITH_ARM82_INT8_SDOT)
+        if(${ANDROID_NDK_MAJOR})
+            if(${ANDROID_NDK_MAJOR} GREATER "17")
+                set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+dotprod")
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.2-a+dotprod")
+            endif()
+        endif()
+    endif()
 
     # Don't re-export libgcc symbols
     set(REMOVE_ATOMIC_GCC_SYMBOLS "-Wl,--exclude-libs,libatomic.a -Wl,--exclude-libs,libgcc.a")
@@ -126,7 +141,6 @@ message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 set(CROSS_COMPILE_CMAKE_ARGS
     "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}"
     "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}")
-message(STATUS "postproject cmake CMAKE_ANDROID_ARCH_ABI:${CMAKE_ANDROID_ARCH_ABI}")
 if(ANDROID)
     set(CROSS_COMPILE_CMAKE_ARGS ${CROSS_COMPILE_CMAKE_ARGS}
         "-DCMAKE_ANDROID_ARCH_ABI=${CMAKE_ANDROID_ARCH_ABI}"
@@ -135,7 +149,11 @@ if(ANDROID)
         "-DANDROID_ABI=${CMAKE_ANDROID_ARCH_ABI}"
         "-DANDROID_TOOLCHAIN=${ARM_TARGET_LANG}"
         "-DANDROID_STL=${CMAKE_ANDROID_STL_TYPE}"
+        "-DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}"
+        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_ANDROID_NDK}/build/cmake/android.toolchain.cmake"
         "-DCMAKE_ANDROID_NDK_TOOLCHAIN_VERSION=${CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION}"
+        "-DANDROID_PLATFORM=android-${ANDROID_NATIVE_API_LEVEL}"
+        "-D__ANDROID_API__=${ANDROID_NATIVE_API_LEVEL}"
         )
 endif()
   

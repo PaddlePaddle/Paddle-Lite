@@ -12,14 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/shape_compute.h"
+#pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-REGISTER_LITE_KERNEL(shape,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ShapeCompute<float>,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+template <typename T, PrecisionType PType>
+class UnbindCompute : public KernelLite<TARGET(kHost), PType> {
+ public:
+  void Run() override;
+
+  virtual ~UnbindCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

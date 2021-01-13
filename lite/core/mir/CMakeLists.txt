@@ -27,6 +27,8 @@ lite_cc_library(mir_passes
       fusion/sequence_pool_concat_fuse_pass.cc
       fusion/scale_activation_fuse_pass.cc
       fusion/reshape_fuse_pass.cc
+      fusion/__xpu__resblock_reduction_fuse_pass.cc
+      fusion/__xpu__resblock_normal_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
       fusion/__xpu__resnet_cbam_fuse_pass.cc
       fusion/__xpu__multi_encoder_fuse_pass.cc
@@ -38,9 +40,11 @@ lite_cc_library(mir_passes
       fusion/__xpu__sfa_head_meanstd_fuse_pass.cc
       fusion/__xpu__sfa_head_moment_fuse_pass.cc
       fusion/__xpu__softmax_topk_fuse_pass.cc
+      fusion/__xpu__multi_encoder_slice_link_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc
+      fusion/instance_norm_activation_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
@@ -64,6 +68,7 @@ lite_cc_library(mir_passes
       mlu_postprocess_pass.cc
       weight_quantization_preprocess_pass.cc
       quantized_op_attributes_inference_pass.cc
+      restrict_quantized_op_with_same_input_output_scale_pass.cc
       post_quant_dynamic_pass.cc
   DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
