@@ -14,6 +14,25 @@ limitations under the License. */
 
 #include <cl_common.h>
 
+__kernel void transpose_general_buffer(__global const CL_DTYPE* src,
+                                       __global CL_DTYPE* dst,
+                                       __global const int* out_idxs,
+                                       __private const int out_tensor_c,
+                                       __private const int out_tensor_h,
+                                       __private const int out_tensor_w,
+                                       __private const int out_tensor_hw) {
+  int hidx = get_global_id(0); // [0, h) columns of dst
+  int widx = get_global_id(1); // [0, w) rows of dst
+  int chidx = get_global_id(2); // [0, ch) channels of dst
+
+  // idx = chidx * out_tensor_hw + hidx * out_tensor_w + widx
+  const int idx = mad((CL_DTYPE)chidx,
+                      (CL_DTYPE)out_tensor_hw,
+                      (CL_DTYPE)(mul24(hidx, out_tensor_w) + widx));
+
+  dst[out_idxs[idx]] = src[idx];
+}
+
 __kernel void transpose_4d(__read_only image2d_t input_image,
                            __write_only image2d_t output_image,
                            __private const int out_C,
@@ -122,12 +141,12 @@ __kernel void transpose_4d(__read_only image2d_t input_image,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
 }
 
-__kernel void transpose(__read_only image2d_t input_image,
-                        __write_only image2d_t output_image,
-                        __private const int out_C,
-                        __private const int out_H,
-                        __private const int out_W,
-                        __private const int in_W) {
+__kernel void transpose_2d(__read_only image2d_t input_image,
+                           __write_only image2d_t output_image,
+                           __private const int out_C,
+                           __private const int out_H,
+                           __private const int out_W,
+                           __private const int in_W) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
