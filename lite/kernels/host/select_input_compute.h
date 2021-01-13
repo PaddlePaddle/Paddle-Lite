@@ -23,7 +23,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class SelectInputCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+class SelectInputCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::SelectInputParam;
 
