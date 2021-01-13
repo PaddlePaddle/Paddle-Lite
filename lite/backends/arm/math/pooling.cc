@@ -994,8 +994,12 @@ void pooling1x1s2p0_max(const float* din,
   int size_channel_in = win * hin;
   auto data_out = static_cast<float*>(dout);
   auto data_in = static_cast<const float*>(din);
-
   int w_unroll_size = wout / 4;
+  if ((!(wout % 4) && (wout * 2 - 1 - win))) w_unroll_size--;
+  if (hout * 2 - 2 > hin) {
+    memset(data_out, 0.f, sizeof(float) * wout * chout * hout * num);
+    hout--;
+  }
   int w_unroll_remian = wout - w_unroll_size * 4;
   int win_ext = w_unroll_size * 8;
   auto zero_ptr =
@@ -1115,8 +1119,8 @@ void pooling2x2s2p0_max(const float* din,
   const int K = 2;
   const int P = 0;
   const int S = 2;
-
   int w_unroll_size = wout / 4;
+  if ((!(wout % 4) && (wout * 2 - win))) w_unroll_size--;
   int w_unroll_remian = wout - w_unroll_size * 4;
 
   for (int n = 0; n < num; ++n) {
@@ -1175,6 +1179,7 @@ void pooling2x2s2p0_max(const float* din,
             tmp = std::max(tmp, dr1[i]);
           }
           *(dr_out++) = tmp;
+
           wstart += S;
         }
         r0 = r1 + win;
@@ -1205,8 +1210,8 @@ void pooling2x2s2p0_avg(const float* din,
   const int K = 2;
   const int P = 0;
   const int S = 2;
-
   int w_unroll_size = wout / 4;
+  if ((!(wout % 4) && (wout * 2 - win))) w_unroll_size--;
   int w_unroll_remian = wout - w_unroll_size * 4;
   float32x4_t vcoef = vdupq_n_f32(0.25f);  // divided by 4
   auto zero_ptr =

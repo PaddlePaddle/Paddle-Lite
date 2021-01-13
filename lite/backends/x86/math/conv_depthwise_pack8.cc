@@ -104,11 +104,16 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k21, _r21, _sum0);
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
+          if (has_act) {
+            _sum0 = activation8_m256(_sum0, act_type);
+          }
+
+          _mm256_storeu_ps(output_data, _sum0);
+
           __m256 _sum1 = _bias0;
           __m256 _r03 = _mm256_loadu_ps(r0 + 24);
           __m256 _r13 = _mm256_loadu_ps(r1 + 24);
           __m256 _r23 = _mm256_loadu_ps(r2 + 24);
-          _mm256_storeu_ps(output_data, _sum0);
 
           _sum1 = _mm256_fmadd_ps(_k00, _r01, _sum1);
           _sum1 = _mm256_fmadd_ps(_k01, _r02, _sum1);
@@ -120,11 +125,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum1 = _mm256_fmadd_ps(_k21, _r22, _sum1);
           _sum1 = _mm256_fmadd_ps(_k22, _r23, _sum1);
 
+          if (has_act) {
+            _sum1 = activation8_m256(_sum1, act_type);
+          }
+          _mm256_storeu_ps(output_data + 8, _sum1);
+
           __m256 _sum2 = _bias0;
           __m256 _r04 = _mm256_loadu_ps(r0 + 32);
           __m256 _r14 = _mm256_loadu_ps(r1 + 32);
           __m256 _r24 = _mm256_loadu_ps(r2 + 32);
-          _mm256_storeu_ps(output_data + 8, _sum1);
 
           _sum2 = _mm256_fmadd_ps(_k00, _r02, _sum2);
           _sum2 = _mm256_fmadd_ps(_k01, _r03, _sum2);
@@ -136,11 +145,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum2 = _mm256_fmadd_ps(_k21, _r23, _sum2);
           _sum2 = _mm256_fmadd_ps(_k22, _r24, _sum2);
 
+          if (has_act) {
+            _sum2 = activation8_m256(_sum2, act_type);
+          }
+          _mm256_storeu_ps(output_data + 16, _sum2);
+
           __m256 _sum3 = _bias0;
           __m256 _r05 = _mm256_loadu_ps(r0 + 40);
           __m256 _r15 = _mm256_loadu_ps(r1 + 40);
           __m256 _r25 = _mm256_loadu_ps(r2 + 40);
-          _mm256_storeu_ps(output_data + 16, _sum2);
 
           _sum3 = _mm256_fmadd_ps(_k00, _r03, _sum3);
           _sum3 = _mm256_fmadd_ps(_k01, _r04, _sum3);
@@ -152,11 +165,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum3 = _mm256_fmadd_ps(_k21, _r24, _sum3);
           _sum3 = _mm256_fmadd_ps(_k22, _r25, _sum3);
 
+          if (has_act) {
+            _sum3 = activation8_m256(_sum3, act_type);
+          }
+          _mm256_storeu_ps(output_data + 24, _sum3);
+
           __m256 _sum4 = _bias0;
           __m256 _r06 = _mm256_loadu_ps(r0 + 48);
           __m256 _r16 = _mm256_loadu_ps(r1 + 48);
           __m256 _r26 = _mm256_loadu_ps(r2 + 48);
-          _mm256_storeu_ps(output_data + 24, _sum3);
 
           _sum4 = _mm256_fmadd_ps(_k00, _r04, _sum4);
           _sum4 = _mm256_fmadd_ps(_k01, _r05, _sum4);
@@ -168,11 +185,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum4 = _mm256_fmadd_ps(_k21, _r25, _sum4);
           _sum4 = _mm256_fmadd_ps(_k22, _r26, _sum4);
 
+          if (has_act) {
+            _sum4 = activation8_m256(_sum4, act_type);
+          }
+          _mm256_storeu_ps(output_data + 32, _sum4);
+
           __m256 _sum5 = _bias0;
           __m256 _r07 = _mm256_loadu_ps(r0 + 56);
           __m256 _r17 = _mm256_loadu_ps(r1 + 56);
           __m256 _r27 = _mm256_loadu_ps(r2 + 56);
-          _mm256_storeu_ps(output_data + 32, _sum4);
 
           _sum5 = _mm256_fmadd_ps(_k00, _r05, _sum5);
           _sum5 = _mm256_fmadd_ps(_k01, _r06, _sum5);
@@ -184,11 +205,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum5 = _mm256_fmadd_ps(_k21, _r26, _sum5);
           _sum5 = _mm256_fmadd_ps(_k22, _r27, _sum5);
 
+          if (has_act) {
+            _sum5 = activation8_m256(_sum5, act_type);
+          }
+          _mm256_storeu_ps(output_data + 40, _sum5);
+
           __m256 _sum6 = _bias0;
           __m256 _r08 = _mm256_loadu_ps(r0 + 64);
           __m256 _r18 = _mm256_loadu_ps(r1 + 64);
           __m256 _r28 = _mm256_loadu_ps(r2 + 64);
-          _mm256_storeu_ps(output_data + 40, _sum5);
 
           _sum6 = _mm256_fmadd_ps(_k00, _r06, _sum6);
           _sum6 = _mm256_fmadd_ps(_k01, _r07, _sum6);
@@ -200,11 +225,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum6 = _mm256_fmadd_ps(_k21, _r27, _sum6);
           _sum6 = _mm256_fmadd_ps(_k22, _r28, _sum6);
 
+          if (has_act) {
+            _sum6 = activation8_m256(_sum6, act_type);
+          }
+          _mm256_storeu_ps(output_data + 48, _sum6);
+
           __m256 _sum7 = _bias0;
           __m256 _r09 = _mm256_loadu_ps(r0 + 72);
           __m256 _r19 = _mm256_loadu_ps(r1 + 72);
           __m256 _r29 = _mm256_loadu_ps(r2 + 72);
-          _mm256_storeu_ps(output_data + 48, _sum6);
 
           _sum7 = _mm256_fmadd_ps(_k00, _r07, _sum7);
           _sum7 = _mm256_fmadd_ps(_k01, _r08, _sum7);
@@ -215,6 +244,10 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum7 = _mm256_fmadd_ps(_k20, _r27, _sum7);
           _sum7 = _mm256_fmadd_ps(_k21, _r28, _sum7);
           _sum7 = _mm256_fmadd_ps(_k22, _r29, _sum7);
+
+          if (has_act) {
+            _sum7 = activation8_m256(_sum7, act_type);
+          }
           _mm256_storeu_ps(output_data + 56, _sum7);
 
           r0 += 64;
@@ -245,11 +278,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k21, _r21, _sum0);
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
+          if (has_act) {
+            _sum0 = activation8_m256(_sum0, act_type);
+          }
+          _mm256_storeu_ps(output_data, _sum0);
+
           __m256 _sum1 = _bias0;
           __m256 _r03 = _mm256_loadu_ps(r0 + 24);
           __m256 _r13 = _mm256_loadu_ps(r1 + 24);
           __m256 _r23 = _mm256_loadu_ps(r2 + 24);
-          _mm256_storeu_ps(output_data, _sum0);
 
           _sum1 = _mm256_fmadd_ps(_k00, _r01, _sum1);
           _sum1 = _mm256_fmadd_ps(_k01, _r02, _sum1);
@@ -261,11 +298,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum1 = _mm256_fmadd_ps(_k21, _r22, _sum1);
           _sum1 = _mm256_fmadd_ps(_k22, _r23, _sum1);
 
+          if (has_act) {
+            _sum1 = activation8_m256(_sum1, act_type);
+          }
+          _mm256_storeu_ps(output_data + 8, _sum1);
+
           __m256 _sum2 = _bias0;
           __m256 _r04 = _mm256_loadu_ps(r0 + 32);
           __m256 _r14 = _mm256_loadu_ps(r1 + 32);
           __m256 _r24 = _mm256_loadu_ps(r2 + 32);
-          _mm256_storeu_ps(output_data + 8, _sum1);
 
           _sum2 = _mm256_fmadd_ps(_k00, _r02, _sum2);
           _sum2 = _mm256_fmadd_ps(_k01, _r03, _sum2);
@@ -277,11 +318,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum2 = _mm256_fmadd_ps(_k21, _r23, _sum2);
           _sum2 = _mm256_fmadd_ps(_k22, _r24, _sum2);
 
+          if (has_act) {
+            _sum2 = activation8_m256(_sum2, act_type);
+          }
+          _mm256_storeu_ps(output_data + 16, _sum2);
+
           __m256 _sum3 = _bias0;
           __m256 _r05 = _mm256_loadu_ps(r0 + 40);
           __m256 _r15 = _mm256_loadu_ps(r1 + 40);
           __m256 _r25 = _mm256_loadu_ps(r2 + 40);
-          _mm256_storeu_ps(output_data + 16, _sum2);
 
           _sum3 = _mm256_fmadd_ps(_k00, _r03, _sum3);
           _sum3 = _mm256_fmadd_ps(_k01, _r04, _sum3);
@@ -293,6 +338,9 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum3 = _mm256_fmadd_ps(_k21, _r24, _sum3);
           _sum3 = _mm256_fmadd_ps(_k22, _r25, _sum3);
 
+          if (has_act) {
+            _sum3 = activation8_m256(_sum3, act_type);
+          }
           _mm256_storeu_ps(output_data + 24, _sum3);
 
           r0 += 32;
@@ -323,11 +371,15 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k21, _r21, _sum0);
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
+          if (has_act) {
+            _sum0 = activation8_m256(_sum0, act_type);
+          }
+          _mm256_storeu_ps(output_data, _sum0);
+
           __m256 _sum1 = _bias0;
           __m256 _r03 = _mm256_loadu_ps(r0 + 24);
           __m256 _r13 = _mm256_loadu_ps(r1 + 24);
           __m256 _r23 = _mm256_loadu_ps(r2 + 24);
-          _mm256_storeu_ps(output_data, _sum0);
 
           _sum1 = _mm256_fmadd_ps(_k00, _r01, _sum1);
           _sum1 = _mm256_fmadd_ps(_k01, _r02, _sum1);
@@ -339,6 +391,9 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum1 = _mm256_fmadd_ps(_k21, _r22, _sum1);
           _sum1 = _mm256_fmadd_ps(_k22, _r23, _sum1);
 
+          if (has_act) {
+            _sum1 = activation8_m256(_sum1, act_type);
+          }
           _mm256_storeu_ps(output_data + 8, _sum1);
 
           r0 += 16;
@@ -369,6 +424,9 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k21, _r21, _sum0);
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
+          if (has_act) {
+            _sum0 = activation8_m256(_sum0, act_type);
+          }
           _mm256_storeu_ps(output_data, _sum0);
 
           r0 += 8;
@@ -469,6 +527,11 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k21, _r21, _sum0);
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
+          if (has_act) {
+            _sum0 = activation8_m256(_sum0, act_type);
+          }
+          _mm256_storeu_ps(output_data, _sum0);
+
           __m256 _sum1 = _bias0;
           __m256 _r03 = _mm256_loadu_ps(r0 + 24);
           __m256 _r13 = _mm256_loadu_ps(r1 + 24);
@@ -476,7 +539,6 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           __m256 _r04 = _mm256_loadu_ps(r0 + 32);
           __m256 _r14 = _mm256_loadu_ps(r1 + 32);
           __m256 _r24 = _mm256_loadu_ps(r2 + 32);
-          _mm256_storeu_ps(output_data, _sum0);
 
           _sum1 = _mm256_fmadd_ps(_k00, _r02, _sum1);
           _sum1 = _mm256_fmadd_ps(_k01, _r03, _sum1);
@@ -488,6 +550,11 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum1 = _mm256_fmadd_ps(_k21, _r23, _sum1);
           _sum1 = _mm256_fmadd_ps(_k22, _r24, _sum1);
 
+          if (has_act) {
+            _sum1 = activation8_m256(_sum1, act_type);
+          }
+          _mm256_storeu_ps(output_data + 8, _sum1);
+
           __m256 _sum2 = _bias0;
           __m256 _r05 = _mm256_loadu_ps(r0 + 40);
           __m256 _r15 = _mm256_loadu_ps(r1 + 40);
@@ -495,7 +562,6 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           __m256 _r06 = _mm256_loadu_ps(r0 + 48);
           __m256 _r16 = _mm256_loadu_ps(r1 + 48);
           __m256 _r26 = _mm256_loadu_ps(r2 + 48);
-          _mm256_storeu_ps(output_data + 8, _sum1);
 
           _sum2 = _mm256_fmadd_ps(_k00, _r04, _sum2);
           _sum2 = _mm256_fmadd_ps(_k01, _r05, _sum2);
@@ -507,6 +573,11 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum2 = _mm256_fmadd_ps(_k21, _r25, _sum2);
           _sum2 = _mm256_fmadd_ps(_k22, _r26, _sum2);
 
+          if (has_act) {
+            _sum2 = activation8_m256(_sum2, act_type);
+          }
+          _mm256_storeu_ps(output_data + 16, _sum2);
+
           __m256 _sum3 = _bias0;
           __m256 _r07 = _mm256_loadu_ps(r0 + 56);
           __m256 _r17 = _mm256_loadu_ps(r1 + 56);
@@ -514,7 +585,6 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           __m256 _r08 = _mm256_loadu_ps(r0 + 64);
           __m256 _r18 = _mm256_loadu_ps(r1 + 64);
           __m256 _r28 = _mm256_loadu_ps(r2 + 64);
-          _mm256_storeu_ps(output_data + 16, _sum2);
 
           _sum3 = _mm256_fmadd_ps(_k00, _r06, _sum3);
           _sum3 = _mm256_fmadd_ps(_k01, _r07, _sum3);
@@ -526,6 +596,9 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum3 = _mm256_fmadd_ps(_k21, _r27, _sum3);
           _sum3 = _mm256_fmadd_ps(_k22, _r28, _sum3);
 
+          if (has_act) {
+            _sum3 = activation8_m256(_sum3, act_type);
+          }
           _mm256_storeu_ps(output_data + 24, _sum3);
 
           r0 += 2 * 32;
@@ -556,6 +629,11 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k21, _r21, _sum0);
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
+          if (has_act) {
+            _sum0 = activation8_m256(_sum0, act_type);
+          }
+          _mm256_storeu_ps(output_data, _sum0);
+
           __m256 _sum1 = _bias0;
           __m256 _r03 = _mm256_loadu_ps(r0 + 24);
           __m256 _r13 = _mm256_loadu_ps(r1 + 24);
@@ -563,7 +641,6 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           __m256 _r04 = _mm256_loadu_ps(r0 + 32);
           __m256 _r14 = _mm256_loadu_ps(r1 + 32);
           __m256 _r24 = _mm256_loadu_ps(r2 + 32);
-          _mm256_storeu_ps(output_data, _sum0);
 
           _sum1 = _mm256_fmadd_ps(_k00, _r02, _sum1);
           _sum1 = _mm256_fmadd_ps(_k01, _r03, _sum1);
@@ -575,6 +652,9 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum1 = _mm256_fmadd_ps(_k21, _r23, _sum1);
           _sum1 = _mm256_fmadd_ps(_k22, _r24, _sum1);
 
+          if (has_act) {
+            _sum1 = activation8_m256(_sum1, act_type);
+          }
           _mm256_storeu_ps(output_data + 8, _sum1);
 
           r0 += 2 * 16;
@@ -605,6 +685,9 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k21, _r21, _sum0);
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
+          if (has_act) {
+            _sum0 = activation8_m256(_sum0, act_type);
+          }
           _mm256_storeu_ps(output_data, _sum0);
 
           r0 += 2 * 8;

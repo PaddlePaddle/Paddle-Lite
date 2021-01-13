@@ -12,8 +12,8 @@ SYSTEM_INCLUDES = -I$(NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
                   -I$(NDK_ROOT)/sources/android/support/include \
                   -I$(NDK_ROOT)/sysroot/usr/include \
 
-NDK_VESRION = grep -Eo "[0-9]+[0-9]"
-ifeq ($(NDK_VESRION), 17)
+NDK_VERSION=$(shell echo $(NDK_ROOT) | grep -Eo "[0-9]+[0-9]")
+ifeq ($(NDK_VERSION), 17)
     ifeq ($(ARM_ABI), arm8)
         ifeq ($(SYSTEM), Linux)
             CC = $(NDK_ROOT)/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-g++
@@ -42,7 +42,7 @@ ifeq ($(NDK_VESRION), 17)
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libunwind.a
         INCLUDES = $(SYSTEM_INCLUDES) -I$(NDK_ROOT)/sysroot/usr/include/arm-linux-androideabi
     endif
-else ifeq ($(NDK_VESRION), 21)
+else ifeq ($(NDK_VERSION), 21)
     ifeq ($(ARM_ABI), arm8)
         ifeq ($(SYSTEM), Linux)
             CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android23-clang++

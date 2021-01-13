@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/operators/lod_array_length_op.h"
+
 #include <vector>
+
 #include "lite/core/op_registry.h"
 
 namespace paddle {
