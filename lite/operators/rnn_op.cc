@@ -31,7 +31,6 @@ bool RnnOp::InferShapeImpl() const {
   int seq = in_dims[0];
   int hidden_size = param_.hidden_size;
   bool is_bidirec = param_.is_bidirec;
-  // int num_layers = param_.num_layers;
   int out_hidden_size = is_bidirec ? 2 * hidden_size : hidden_size;
   DDimLite out_dims(std::vector<int64_t>{seq, batch, out_hidden_size});
   param_.Out->Resize(out_dims);
@@ -58,9 +57,6 @@ bool RnnOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     param_.WeightList.push_back(
         scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
-  //  param_.SequenceLength =
-  //  scope->FindVar(opdesc.Input("SequenceLength").front())
-  //                              ->GetMutable<lite::Tensor>();
   param_.DropoutState = scope->FindVar(opdesc.Output("DropoutState").front())
                             ->GetMutable<lite::Tensor>();
   param_.Reserve = scope->FindVar(opdesc.Output("Reserve").front())
@@ -72,8 +68,6 @@ bool RnnOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   for (auto var : State) {
     param_.State.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
   }
-  // CHECK(param_.Input);
-  // CHECK(param_.WeightList);
   param_.dropout_prob = opdesc.GetAttr<float>("dropout_prob");
   param_.is_bidirec = opdesc.GetAttr<bool>("is_bidirec");
   param_.input_size = opdesc.GetAttr<int>("input_size");
