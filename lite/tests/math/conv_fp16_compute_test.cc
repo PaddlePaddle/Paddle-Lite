@@ -144,11 +144,25 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFP16));
 
-  paddle::lite::fill_tensor_rand(*param.filter, -1.f, 1.f);
-  //  paddle::lite::fill_tensor_const(*param.filter, 1.f);
+  Tensor filter_fp32;
+  filter_fp32.Resize(weight_dim);
+  filter_fp32.set_precision(PRECISION(kFloat));
+  paddle::lite::fill_tensor_rand(filter_fp32, -1.f, 1.f);
+  auto a_ptr = filter_fp32.data<float>();
+  auto b_ptr = param.filter->mutable_data<float16_t>();
+  for (int i = 0; i < filter_fp32.numel(); i++) {
+    b_ptr[i] = static_cast<float16_t>(a_ptr[i]);
+  }
   if (flag_bias) {
-    paddle::lite::fill_tensor_rand(*param.bias, -1.f, 1.f);
-    //    paddle::lite::fill_tensor_const(*param.bias, 1.f);
+    Tensor bias_fp32;
+    bias_fp32.Resize({weight_dim[0]});
+    bias_fp32.set_precision(PRECISION(kFloat));
+    paddle::lite::fill_tensor_rand(bias_fp32, -1.f, 1.f);
+    a_ptr = bias_fp32.data<float>();
+    b_ptr = param.bias->mutable_data<float16_t>();
+    for (int i = 0; i < bias_fp32.numel(); i++) {
+      b_ptr[i] = static_cast<float16_t>(a_ptr[i]);
+    }
   }
   auto wptr = param.filter->data<float16_t>();
   auto bias_ptr = flag_bias ? param.bias->data<float16_t>() : nullptr;
@@ -187,16 +201,33 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
         param.x->Resize(dim_in);
         param.output->Resize(dim_out);
 
-        paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
+        Tensor x_fp32;
+        x_fp32.Resize(dim_in);
+        x_fp32.set_precision(PRECISION(kFloat));
+        paddle::lite::fill_tensor_rand(x_fp32, -1.f, 1.f);
         // paddle::lite::fill_tensor_const(*param.x, 1.f);
+        a_ptr = x_fp32.data<float>();
+        b_ptr = param.x->mutable_data<float16_t>();
+        for (int i = 0; i < x_fp32.numel(); i++) {
+          b_ptr[i] = static_cast<float16_t>(a_ptr[i]);
+        }
         auto din = param.x->data<float16_t>();
 
         Tensor tout_basic;
+        Tensor tout_basic_fp32;
         if (FLAGS_check_result) {
+          tout_basic_fp32.set_precision(PRECISION(kFloat));
           tout_basic.set_precision(PRECISION(kFP16));
+          tout_basic_fp32.Resize(dim_out);
           tout_basic.Resize(dim_out);
-          fill_tensor_const(tout_basic, 0.f);
+          auto dout_basic_fp32 = tout_basic_fp32.mutable_data<float16>();
           auto dout_basic = tout_basic.mutable_data<float16_t>();
+
+          fill_tensor_const(tout_basic_fp32, 0.f);
+          for (int i = 0; i < tout_basic_fp32.numel(); i++) {
+            dout_basic[i] = static_cast<float16_t>(dout_basic_fp32[i]);
+          }
+
           conv_basic<float16_t, float16_t>(din,
                                            dout_basic,
                                            dim_in[0],
