@@ -172,9 +172,9 @@ void cell(ARMContext* ctx,
   lstm_value.check_ig = nullptr;
   lstm_value.check_fg = nullptr;
   lstm_value.check_og = nullptr;
-  std::string gate_act = "sigmoid";
-  std::string cell_act = "tanh";
-  std::string cand_act = "tanh";
+  lite_api::ActivationType gate_act = lite_api::ActivationType::kSigmoid_v2;
+  lite_api::ActivationType cell_act = lite_api::ActivationType::kTanh_v2;
+  lite_api::ActivationType cand_act = lite_api::ActivationType::kTanh_v2;
 
   size_t frame_size = init_h->dims()[1];
   size_t batch_size = init_h->dims()[0];

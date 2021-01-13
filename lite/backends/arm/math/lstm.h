@@ -164,9 +164,9 @@ struct RnnLstmUnitFunctor {
                       int frame_size,
                       int batch_size,
                       T cell_clip,
-                      std::string gate_act,
-                      std::string cell_act,
-                      std::string cand_act,
+                      lite_api::ActivationType gate_act,
+                      lite_api::ActivationType cell_act,
+                      lite_api::ActivationType cand_act,
                       int threads) {
     for (int b = 0; b < batch_size; ++b) {
       const int temp_len = frame_size;
