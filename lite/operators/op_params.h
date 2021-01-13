@@ -761,6 +761,14 @@ struct FakeQuantDequantAbsMaxParam : ParamBase {
   int bit_length;
 };
 
+struct FakeChannelWiseQuantDequantAbsMaxParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* out_scale{};
+  int quant_axis;
+  int bit_length;
+};
+
 /// ----------------------- sgd operators ----------------------
 struct SGDParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
