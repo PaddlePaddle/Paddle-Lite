@@ -66,7 +66,6 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     bit_length = op_info->GetAttr<int>("bit_length");
     CHECK(op_info->HasOutputScale(y_scale_name, true));
     output_scale = op_info->GetOutputScale(y_scale_name, true)[0];
-
     if (enable_int8) {
       precision = PRECISION(kInt8);
     }
@@ -77,7 +76,15 @@ int BatchNormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (graph->Has(x_name)) {
     x_node = graph->Get(x_name);
   } else {
-    x_node = graph->Add(x_name, *x);
+    // x_node = graph->Add(x_name, *x);
+    QuantizationInfo qnt;
+    qnt.enable_int8 = enable_int8;
+
+    if (enable_int8) {
+      qnt.scale.push_back(input_scale);
+      qnt.quant_bits = bit_length;
+    }
+    x_node = graph->Add(x_name, *x, precision, layout, qnt);
   }
 
   // Scale, Bias, Mean, Variance node

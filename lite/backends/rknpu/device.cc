@@ -21,20 +21,16 @@ namespace rknpu {
 
 std::unique_ptr<rk::nn::Exection> Device::Build(
     std::string& model_name,                                   // NOLINT
-    rk::nn::Graph* rk_graph,                                   // NOLINT
+    rk::nn::Graph* graph,                                      // NOLINT
     std::vector<std::shared_ptr<rk::nn::Tensor>> input_nodes,  // NOLINT
     std::vector<std::shared_ptr<rk::nn::Tensor>> output_nodes  // NOLINT
     ) {
-  VLOG(3) << "[RKNPU] Build model";
-
-  rk_graph->SetInputsOutputs(input_nodes, output_nodes);
-
-  std::unique_ptr<rk::nn::Exection> exector =
-      std::unique_ptr<rk::nn::Exection>(new rk::nn::Exection(rk_graph));
-
-  exector->Build();
-
-  return exector;
+  graph->SetInputsOutputs(input_nodes, output_nodes);
+  std::unique_ptr<rk::nn::Exection> execution =
+      std::unique_ptr<rk::nn::Exection>(new rk::nn::Exection(graph));
+  execution->Build();
+  VLOG(3) << "[Rockchip NPU] Build model done.";
+  return execution;
 }
 
 }  // namespace rknpu
