@@ -70,6 +70,9 @@ template <typename T>
 void act_rsqrt(const T* din, T* dout, int size, int threads);
 
 template <typename T>
+void act_sqrt(const T* din, T* dout, int size, int threads);
+
+template <typename T>
 void act_square(const T* din, T* dout, int size, int threads);
 
 template <typename T>

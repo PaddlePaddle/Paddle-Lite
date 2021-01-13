@@ -23,7 +23,6 @@ namespace operators {
 class LoDArrayLengthOp : public OpLite {
  public:
   explicit LoDArrayLengthOp(const std::string &op_type) : OpLite(op_type) {}
-  bool CheckShape() const override;
   bool InferShapeImpl() const override;
   bool Run() override;
   std::string DebugString() const override { return "lod_array_length_op"; };
