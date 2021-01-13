@@ -171,7 +171,6 @@ class ArgmaxComputeTester : public arena::TestCase {
 };
 
 void TestArgmax(const Place& place) {
-  std::unique_ptr<arena::TestCase> tester(
   for (int axis : {0, 1, 2, 3}) {
     // attribute: keepdims
     for (bool keepdims : {false, true}) {
@@ -199,7 +198,7 @@ void TestArgmax(const Place& place) {
   }
 }
 
-TEST(Assign, precision) {
+TEST(Argmax, precision) {
   Place place;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
