@@ -46,7 +46,7 @@ const int MALLOC_ALIGN = 64;
 // Byte alignment and memory checking are performed.
 inline void* malloc(size_t size) {
   size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
-  char* p = static_cast<char*>(malloc(offset + size));
+  char* p = static_cast<char*>(std::malloc(offset + size));
   // Memory checking
   CHECK(p) << "Error occurred in malloc period: available space is not enough "
               "for mallocing "
@@ -61,7 +61,7 @@ inline void* malloc(size_t size) {
 // Deallocate the memory.
 inline void free(void* ptr) {
   if (ptr) {
-    free(static_cast<void**>(ptr)[-1]);
+    std::free(static_cast<void**>(ptr)[-1]);
   }
 }
 
@@ -71,7 +71,7 @@ inline void memcpy(void* dst, const void* src, size_t size) {
   if (size > 0) {
     CHECK(dst) << "Error: the destination of memcpy can not be nullptr.";
     CHECK(src) << "Error: the source of memcpy can not be nullptr.";
-    memcpy(dst, src, size);
+    std::memcpy(dst, src, size);
   }
 }
 }  // namespace host
