@@ -55,7 +55,7 @@ std::string DeviceProgram::GenerateModelName(
 // Deserialize the generated model, the precisions and dimensions of the origin
 // output tensors of the subgraph op from the cached configuration file and
 // binary RK IR graph file
-bool DeviceProgram::LoadFromCacheBufferAndFile(
+bool DeviceProgram::LoadCacheFromBufferAndFile(
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
     const std::vector<std::vector<int64_t>>& origin_idims,
@@ -366,7 +366,7 @@ bool SubgraphEngine::BuildDeviceProgram() {
     VLOG(3) << "[Rockchip NPU] Getting subgraph_model_cache_dir: "
             << model_cache_dir;
     // Check and load if the cached model and configuration file exists
-    if (!device_program->LoadFromCacheBufferAndFile(input_names_,
+    if (!device_program->LoadCacheFromBufferAndFile(input_names_,
                                                     output_names_,
                                                     origin_idims_,
                                                     origin_itensors_,

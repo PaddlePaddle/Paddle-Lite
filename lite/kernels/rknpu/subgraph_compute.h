@@ -39,7 +39,7 @@ class DeviceProgram {
       const std::vector<std::string>& input_names,
       const std::vector<std::string>& output_names,
       const std::vector<std::vector<int64_t>>& origin_idims);
-  bool LoadFromCacheBufferAndFile(
+  bool LoadCacheFromBufferAndFile(
       const std::vector<std::string>& input_names,
       const std::vector<std::string>& output_names,
       const std::vector<std::vector<int64_t>>& origin_idims,
