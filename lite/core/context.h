@@ -201,6 +201,42 @@ class Context<TargetType::kRKNPU> {
     if (!var) return "";
     return var->Get<std::string>();
   }
+
+  static void SetSubgraphModelCacheBuffers(
+      Scope* scope,
+      const std::map<std::string,
+                     std::pair<std::vector<char>, std::vector<char>>>&
+          subgraph_model_cache_buffers) {
+    for (auto& subgraph_model_cache_buffer : subgraph_model_cache_buffers) {
+      auto& key = subgraph_model_cache_buffer.first;
+      auto var = scope->Var("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
+      CHECK(var);
+      auto data =
+          var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
+      CHECK(data);
+      *data = subgraph_model_cache_buffer.second;
+    }
+  }
+
+  static bool SubgraphModelCacheBuffers(Scope* scope,
+                                        const std::string& key,
+                                        std::vector<char>* cfg,
+                                        std::vector<char>* bin) {
+    CHECK(cfg);
+    CHECK(bin);
+    cfg->clear();
+    bin->clear();
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
+    if (!var) return false;
+    auto data =
+        var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
+    *cfg = data->first;
+    *bin = data->second;
+    // Reset to reduce memory consumption
+    std::vector<char>().swap(data->first);
+    std::vector<char>().swap(data->second);
+    return true;
+  }
 };
 #endif
 
