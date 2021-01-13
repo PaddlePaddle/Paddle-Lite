@@ -80,15 +80,15 @@ static void naive_elementwise_op(const T* dinx,
     const T* diny_ptr = diny + (i << 2);
     T* dout_ptr = dout + (i << 2);
 
-    register T dinx0 = dinx_ptr[0];
-    register T dinx1 = dinx_ptr[1];
-    register T dinx2 = dinx_ptr[2];
-    register T dinx3 = dinx_ptr[3];
+    T dinx0 = dinx_ptr[0];
+    T dinx1 = dinx_ptr[1];
+    T dinx2 = dinx_ptr[2];
+    T dinx3 = dinx_ptr[3];
 
-    register T diny0 = diny_ptr[0];
-    register T diny1 = diny_ptr[1];
-    register T diny2 = diny_ptr[2];
-    register T diny3 = diny_ptr[3];
+    T diny0 = diny_ptr[0];
+    T diny1 = diny_ptr[1];
+    T diny2 = diny_ptr[2];
+    T diny3 = diny_ptr[3];
 
     dinx0 = naive_op(dinx0, diny0);
     dinx1 = naive_op(dinx1, diny1);
@@ -129,10 +129,10 @@ static void naive_elementwise_op_broadcast(const T* x_data,
       int cnt = num >> 2;
       int remain = num % 4;
       for (int k = 0; k < cnt; ++k) {
-        register T dinx0 = din_ptr[0];
-        register T dinx1 = din_ptr[1];
-        register T dinx2 = din_ptr[2];
-        register T dinx3 = din_ptr[3];
+        T dinx0 = din_ptr[0];
+        T dinx1 = din_ptr[1];
+        T dinx2 = din_ptr[2];
+        T dinx3 = din_ptr[3];
         dinx0 = naive_op(dinx0, diny_data);
         dinx1 = naive_op(dinx1, diny_data);
         dinx2 = naive_op(dinx2, diny_data);
