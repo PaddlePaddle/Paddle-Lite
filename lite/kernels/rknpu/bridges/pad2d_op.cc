@@ -21,41 +21,31 @@ namespace lite {
 namespace subgraph {
 namespace rknpu {
 
-int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
+int Pad2dConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
   CHECK(op != nullptr);
   auto graph = static_cast<Graph*>(ctx);
-  auto scope = op->scope();
   auto op_info = op->op_info();
   auto op_type = op_info->Type();
-  auto x_var_name = op_info->Input("X").front();
-  auto x = scope->FindVar(x_var_name)->GetMutable<lite::Tensor>();
-  auto x_dims = x->dims();
-  auto output_var_name = op_info->Output("Out").front();
-  auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
-  auto output_dims = output->dims();
-  const int64_t* x_shape_data = const_cast<const int64_t*>(&x_dims.data()[0]);
-  const int64_t* output_shape_data =
-      const_cast<const int64_t*>(&output_dims.data()[0]);
-  std::vector<int32_t> i_x_shape_data(x_dims.size());
-  std::vector<int32_t> i_output_shape_data(output_dims.size());
-
+  auto scope = op->scope();
   VLOG(3) << "[RKNPU] Converting " + op_type + "...";
 
-  auto x_type = kernel->GetInputDeclType("X");
-  CHECK(x_type->precision() == PRECISION(kFloat));
-  CHECK(x_type->layout() == DATALAYOUT(kNCHW));
-
-  auto out_type = kernel->GetOutputDeclType("Out");
-  CHECK(out_type->precision() == PRECISION(kFloat));
-  CHECK(out_type->layout() == DATALAYOUT(kNCHW));
-
+  // Get input and output vars and op attributes
+  auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
+  auto x = scope->FindMutableTensor(x_name);
+  auto x_dims = x->dims();
+  auto x_rank = x_dims.size();
+  auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
+  auto output = scope->FindMutableTensor(out_name);
+
+  // For quantization
   bool enable_int8 = false;
   float input_scale = 1.0;
   float output_scale = 1.0;
   int bit_length = 8;
+  DataLayoutType layout = DATALAYOUT(kNCHW);
   PrecisionType precision = PRECISION(kFloat);
 
   if (op_info->HasAttr("enable_int8")) {
@@ -65,22 +55,15 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     bit_length = op_info->GetAttr<int>("bit_length");
     CHECK(op_info->HasOutputScale(out_scale_name, true));
     output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
-
     if (enable_int8) {
       precision = PRECISION(kInt8);
     }
   }
 
-  for (size_t i = 0; i < x_dims.size(); i++) {
-    i_x_shape_data[i] = static_cast<int>(x_shape_data[i]);
-  }
-  for (size_t i = 0; i < output_dims.size(); i++) {
-    i_output_shape_data[i] = static_cast<int>(output_shape_data[i]);
-  }
   // X node
   std::shared_ptr<Node> x_node = nullptr;
-  if (graph->Has(x_var_name)) {
-    x_node = graph->Get(x_var_name);
+  if (graph->Has(x_name)) {
+    x_node = graph->Get(x_name);
   } else {
     QuantizationInfo qnt;
     qnt.enable_int8 = enable_int8;
@@ -88,41 +71,62 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       qnt.scale.push_back(input_scale);
       qnt.quant_bits = bit_length;
     }
-    x_node = graph->Add(x_var_name, *x, precision, x_type->layout(), qnt);
+    x_node = graph->Add(x_name, *x, precision, layout, qnt);
   }
 
+  // Output Node
   std::shared_ptr<Node> output_node = nullptr;
   QuantizationInfo output_qnt;
-
   output_qnt.enable_int8 = enable_int8;
-
   if (enable_int8) {
     output_qnt.quant_bits = bit_length;
     output_qnt.scale.push_back(output_scale);
     output->mutable_data<int8_t>();
   }
-  output_node = graph->Add(
-      output_var_name, *output, precision, out_type->layout(), output_qnt);
+  output_node = graph->Add(out_name, *output, precision, layout, output_qnt);
 
-  auto rGraph = graph->GetHandle();
+  // fill inputs&outputs with node
   std::vector<std::shared_ptr<rk::nn::Tensor>> inputs;
   std::vector<std::shared_ptr<rk::nn::Tensor>> outputs;
-
   inputs.push_back(x_node->data());
   outputs.push_back(output_node->data());
-  if (op_type == "relu") {
-    auto relu = rGraph->AddOperator(
-        rk::nn::OperatorType::RELU, inputs, outputs, nullptr);
-  } else if (op_type == "sigmoid") {
-    auto sigmoid = rGraph->AddOperator(
-        rk::nn::OperatorType::SIGMOID, inputs, outputs, nullptr);
+
+  // OP option
+  rk::nn::PadAttr attr;
+  auto mode = op_info->GetAttr<std::string>("mode");
+  if (mode == "constant") {
+    attr.mode = rk::nn::PadMode::PAD_CONSTANT;
+  } else if (mode == "reflect") {
+    attr.mode = rk::nn::PadMode::PAD_REFLECT;
+  } else if (mode == "edge") {
+    attr.mode = rk::nn::PadMode::PAD_REPLICATE;
   } else {
-    LOG(WARNING) << "[RK-NPU] only support relu and sigmod, "
-                    "but the activation type is "
-                 << op_type;
+    LOG(WARNING) << "[RKNPU] pad mode " << mode << " isn't supported in RK-NPU";
     return FAILED;
   }
-  return SUCCESS;
+
+  auto padding = op_info->GetAttr<std::vector<int>>("paddings");
+  int pads_num = padding.size() / 2;
+  for (int i = 0; i < x_rank; i++) {
+    if (i < pads_num) {
+      attr.begin.push_back(padding[2 * i]);
+      attr.end.push_back(padding[2 * i + 1]);
+    } else {
+      attr.begin.push_back(0);
+      attr.end.push_back(0);
+    }
+  }
+  std::reverse(attr.begin.begin(), attr.begin.end());
+  std::reverse(attr.end.begin(), attr.end.end());
+  auto pad_value = op_info->GetAttr<float>("pad_value");
+  attr.const_val = pad_value;
+
+  // All done (inputs, outputs, attr)
+  auto rGraph = graph->GetHandle();
+  auto pad2d =
+      rGraph->AddOperator(rk::nn::OperatorType::PAD, inputs, outputs, &attr);
+
+  return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
 }  // namespace rknpu
@@ -130,9 +134,6 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_SUBGRAPH_BRIDGE(relu,
+REGISTER_SUBGRAPH_BRIDGE(pad2d,
                          kRKNPU,
-                         paddle::lite::subgraph::rknpu::ActConverter);
-REGISTER_SUBGRAPH_BRIDGE(sigmoid,
-                         kRKNPU,
-                         paddle::lite::subgraph::rknpu::ActConverter);
+                         paddle::lite::subgraph::rknpu::Pad2dConverter);
