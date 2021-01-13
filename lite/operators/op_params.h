@@ -588,6 +588,14 @@ struct DropoutParam : ParamBase {
   std::string dropout_implementation{"downgrade_in_infer"};
 };
 
+// For PadConstantLike op
+struct PadConstantLikeParam : ParamBase {
+  const lite::Tensor* x{};
+  const lite::Tensor* y{};
+  lite::Tensor* output{};
+  float pad_value{0.0f};
+};
+
 // For Split op
 struct SplitParam : ParamBase {
   lite::Tensor* x{};
@@ -698,6 +706,13 @@ struct MeanGradParam : ParamBase {
   lite::Tensor* X_grad{};
 };
 
+struct FillAnyLikeParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  float value{0.0f};
+  int dtype{-1};
+};
+
 /// ----------------------- fill_constant operators ----------------------
 struct FillConstantParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
@@ -709,6 +724,7 @@ struct FillConstantParam : ParamBase {
   float value{0.0f};
   // useless for x86, keep it for compatibility
   bool force_cpu{false};
+  lite::Tensor* in{};
   lite::Tensor* out{};
 };
 
