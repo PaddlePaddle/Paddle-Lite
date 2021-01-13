@@ -48,16 +48,30 @@ struct LstmMetaValue {
 };
 
 template <typename T>
-void activation(
-    const T* din, T* dout, int size, std::string act_str, int threads) {
-  if (act_str == "sigmoid") {
-    act_sigmoid(din, dout, size, threads);
-  } else if (act_str == "tanh") {
-    act_tanh(din, dout, size, threads);
-  } else if (act_str == "relu") {
-    act_relu(din, dout, size, threads);
-  } else {
-    LOG(FATAL) << "unsupport activation " << act_str;
+void activation(const T* din,
+                T* dout,
+                int size,
+                lite_api::ActivationType act_type,
+                int threads) {
+  switch (act_type) {
+    case lite_api::ActivationType::kSigmoid:
+      act_sigmoid(din, dout, size, threads);
+      break;
+    case lite_api::ActivationType::kSigmoid_v2:
+      act_sigmoid(din, dout, size, threads);
+      break;
+    case lite_api::ActivationType::kTanh:
+      act_tanh(din, dout, size, threads);
+      break;
+    case lite_api::ActivationType::kTanh_v2:
+      act_tanh(din, dout, size, threads);
+      break;
+    case lite_api::ActivationType::kRelu:
+      act_relu(din, dout, size, threads);
+      break;
+    default:
+      LOG(FATAL) << "unsupport activation type:" << static_cast<int>(act_type);
+      break;
   }
 }
 
@@ -73,9 +87,9 @@ struct LstmUnitFunctor {
                       int frame_size,
                       int batch_size,
                       T cell_clip,
-                      std::string gate_act,
-                      std::string cell_act,
-                      std::string cand_act,
+                      lite_api::ActivationType gate_act,
+                      lite_api::ActivationType cell_act,
+                      lite_api::ActivationType cand_act,
                       int threads) {
     for (int b = 0; b < batch_size; ++b) {
       const int temp_len = frame_size;

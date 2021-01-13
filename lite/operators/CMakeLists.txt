@@ -77,6 +77,7 @@ add_operator(gru_unit_op extra SRCS gru_unit_op.cc DEPS ${op_DEPS})
 add_operator(gru_op extra SRCS gru_op.cc DEPS ${op_DEPS})
 add_operator(density_prior_box_op basic SRCS density_prior_box_op.cc DEPS ${op_DEPS})
 add_operator(calib_once_op extra SRCS calib_once_op.cc DEPS ${op_DEPS})
+add_operator(reduce_all_op_lite extra SRCS reduce_all_op.cc DEPS ${op_DEPS})
 add_operator(reduce_max_op_lite extra SRCS reduce_max_op.cc DEPS ${op_DEPS})
 add_operator(shape_op_lite extra SRCS shape_op.cc DEPS ${op_DEPS})
 add_operator(sequence_expand_op_lite extra SRCS sequence_expand_op.cc DEPS ${op_DEPS})
@@ -94,6 +95,7 @@ add_operator(sequence_expand_as_op_lite extra SRCS sequence_expand_as_op.cc DEPS
 add_operator(assign_value_op basic SRCS assign_value_op.cc DEPS ${op_DEPS})
 add_operator(fake_quantize_dequantize_moving_avg_abs_max_op extra SRCS fake_quantize_dequantize_moving_avg_max_abs.cc DEPS ${op_DEPS})
 add_operator(fake_quantize_dequantize_abs_max_op extra SRCS fake_quantize_dequantize_abs_max.cc DEPS ${op_DEPS})
+add_operator(fake_channel_wise_quantize_dequantize_abs_max_op extra SRCS fake_channel_wise_quantize_dequantize_abs_max.cc DEPS ${op_DEPS})
 add_operator(fake_channel_wise_dequantize_max_abs_op extra SRCS fake_channel_wise_dequantize_max_abs.cc DEPS ${op_DEPS})
 add_operator(split_lod_tensor_op_lite extra SRCS split_lod_tensor_op.cc DEPS ${op_DEPS})
 add_operator(merge_lod_tensor_op_lite extra SRCS merge_lod_tensor_op.cc DEPS ${op_DEPS})
@@ -130,6 +132,7 @@ add_operator(unstack_op extra SRCS unstack_op.cc DEPS ${op_DEPS})
 add_operator(pad3d_op extra SRCS pad3d_op.cc DEPS ${op_DEPS})
 add_operator(select_input_op extra SRCS select_input_op.cc DEPS ${op_DEPS})
 add_operator(tensor_array_to_tensor_op extra SRCS tensor_array_to_tensor_op.cc DEPS ${op_DEPS})
+add_operator(fill_any_like_op extra SRCS fill_any_like_op.cc DEPS ${op_DEPS})
 
 add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 # for OCR specific
@@ -161,6 +164,9 @@ add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEP
 add_operator(retinanet_detection_output_op extra SRCS retinanet_detection_output_op.cc DEPS ${op_DEPS})
 add_operator(where_index_op extra SRCS where_index_op.cc DEPS ${op_DEPS})
 add_operator(one_hot_op extra SRCS one_hot_op.cc DEPS ${op_DEPS})
+add_operator(one_hot_v2_op extra SRCS one_hot_v2_op.cc DEPS ${op_DEPS})
+add_operator(strided_slice_op extra SRCS strided_slice_op.cc DEPS ${op_DEPS})
+
 # for content-dnn specific
 add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc DEPS ${op_DEPS})
 add_operator(search_seq_fc_op extra SRCS search_seq_fc_op.cc DEPS ${op_DEPS})
@@ -184,6 +190,7 @@ add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc DEPS ${op_DE
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__block_fuse_op extra SRCS __xpu__block_fuse_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc DEPS ${op_DEPS})

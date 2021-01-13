@@ -23,14 +23,14 @@ namespace lite {
 namespace operators {
 
 bool ReduceProdOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.output);
+  CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.Out);
   return true;
 }
 
 bool ReduceProdOpLite::InferShapeImpl() const {
-  auto x = param_.x;
-  auto out = param_.output;
+  auto x = param_.X;
+  auto out = param_.Out;
   std::vector<int> dim = param_.dim;
   bool reduce_all = param_.reduce_all;
   bool keep_dim = param_.keep_dim;
@@ -81,10 +81,10 @@ bool ReduceProdOpLite::InferShapeImpl() const {
 bool ReduceProdOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                   lite::Scope *scope) {
   auto x = op_desc.Input("X").front();
-  param_.x = scope->FindVar(x)->GetMutable<lite::Tensor>();
+  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
 
-  auto output = op_desc.Output("Out").front();
-  param_.output = scope->FindVar(output)->GetMutable<lite::Tensor>();
+  auto Out = op_desc.Output("Out").front();
+  param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
 
   param_.dim = op_desc.GetAttr<std::vector<int>>("dim");
   param_.keep_dim = op_desc.GetAttr<bool>("keep_dim");

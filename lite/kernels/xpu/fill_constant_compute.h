@@ -12,14 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/shape_compute.h"
+#pragma once
+#include "lite/core/kernel.h"
 
-REGISTER_LITE_KERNEL(shape,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ShapeCompute<float>,
-                     def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace xpu {
+
+class FillConstantCompute : public KernelLite<TARGET(kXPU), PRECISION(kAny)> {
+ public:
+  using param_t = operators::FillConstantParam;
+
+  virtual void Run();
+
+  virtual ~FillConstantCompute() = default;
+};
+
+}  // namespace xpu
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

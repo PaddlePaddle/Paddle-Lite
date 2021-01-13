@@ -25,8 +25,8 @@ endif()
 
 message(STATUS "NPU_DDK_ROOT: ${NPU_DDK_ROOT}")
 find_path(NPU_DDK_INC NAMES HiAiModelManagerService.h
-  PATHS ${NPU_DDK_ROOT}/include
-  NO_DEFAULT_PATH)
+  PATHS ${NPU_DDK_ROOT}/include/
+  CMAKE_FIND_ROOT_PATH_BOTH)
 if(NOT NPU_DDK_INC)
   message(FATAL_ERROR "Can not find HiAiModelManagerService.h in ${NPU_DDK_ROOT}/include")
 endif()
@@ -44,20 +44,20 @@ endif()
 
 find_library(NPU_DDK_HIAI_FILE NAMES hiai
   PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH}
-  NO_DEFAULT_PATH)
+  CMAKE_FIND_ROOT_PATH_BOTH)
 
 find_library(NPU_DDK_IR_FILE NAMES hiai_ir
   PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH}
-  NO_DEFAULT_PATH)
+  CMAKE_FIND_ROOT_PATH_BOTH)
 
 find_library(NPU_DDK_IR_BUILD_FILE NAMES hiai_ir_build
   PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH}
-  NO_DEFAULT_PATH)
+  CMAKE_FIND_ROOT_PATH_BOTH)
 
 # Added in HiAI DDK 320 or later version
 find_library(NPU_DDK_HCL_FILE NAMES hcl
   PATHS ${NPU_DDK_ROOT}/${NPU_SUB_LIB_PATH}
-  NO_DEFAULT_PATH)
+  CMAKE_FIND_ROOT_PATH_BOTH)
 
 if(NOT NPU_DDK_HIAI_FILE)
   message(FATAL_ERROR "Can not find NPU_DDK_HIAI_FILE in ${NPU_DDK_ROOT}")

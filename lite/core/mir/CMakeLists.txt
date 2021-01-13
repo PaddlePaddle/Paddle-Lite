@@ -27,6 +27,8 @@ lite_cc_library(mir_passes
       fusion/sequence_pool_concat_fuse_pass.cc
       fusion/scale_activation_fuse_pass.cc
       fusion/reshape_fuse_pass.cc
+      fusion/__xpu__resblock_reduction_fuse_pass.cc
+      fusion/__xpu__resblock_normal_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
       fusion/__xpu__resnet_cbam_fuse_pass.cc
       fusion/__xpu__multi_encoder_fuse_pass.cc
@@ -42,6 +44,7 @@ lite_cc_library(mir_passes
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc
+      fusion/instance_norm_activation_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
