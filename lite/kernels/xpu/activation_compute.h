@@ -110,6 +110,15 @@ class PowCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~PowCompute() = default;
 };
 
+class LogCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~LogCompute() = default;
+};
+
 class SignCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::SignParam;
