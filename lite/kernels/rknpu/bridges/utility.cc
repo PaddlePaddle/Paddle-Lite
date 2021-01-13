@@ -87,8 +87,8 @@ rk::nn::DataLayoutType CvtDataLayoutType(DataLayoutType itype) {
       otype = rk::nn::DataLayoutType::NHWC;
       break;
     default:
-      LOG(FATAL) << "[Rockchip NPU] Can not convert data layout type("
-                 << DataLayoutToStr(itype) << ") from Lite to Rockchip NPU";
+      LOG(WARNING) << "[Rockchip NPU] Can not convert data layout type("
+                   << DataLayoutToStr(itype) << ") from Lite to Rockchip NPU";
       break;
   }
   return otype;
@@ -133,8 +133,11 @@ std::shared_ptr<rk::nn::Tensor> CvtTensor(rk::nn::Graph* graph,
       attr->qntParamSymmetric.scale = scales;
       break;
     default:
-      LOG(FATAL) << "[Rockchip NPU] Can not convert precision type("
-                 << PrecisionToStr(precision) << ") from Lite to Rockchip NPU";
+      // in RKNPU some const node such as batchnorm's scale, mean is float32
+      // const node such as conv's bias is int8
+      LOG(WARNING) << "[Rockchip NPU] Can not convert precision type("
+                   << PrecisionToStr(precision)
+                   << ") from Lite to Rockchip NPU";
       break;
   }
   auto tensor = graph->CreateTensor(attr, data);
