@@ -236,7 +236,8 @@ function make_full_publish_so {
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
-      -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_PROFILE=ON \
+      -DLITE_WITH_PRECISION_PROFILE=ON \
       -DLITE_WITH_LTO=${WITH_LTO} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -358,6 +359,7 @@ function make_cuda {
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=OFF  \
             -DLITE_WITH_PROFILE=OFF \
+            -DLITE_WITH_PRECISION_PROFILE=ON \
             -DLITE_WITH_LTO=${WITH_LTO} \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/model_parser/compatible_pb.h"
+
 #include <string>
 #include <vector>
 #ifndef LITE_ON_TINY_PUBLISH
@@ -22,7 +23,6 @@
 #include "lite/model_parser/naive_buffer/op_version_map.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
-
 #include "lite/model_parser/pb/block_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
 #include "lite/model_parser/pb/op_version_map.h"
@@ -63,7 +63,9 @@ void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
   cpp_desc->SetPersistable(any_desc.Persistable());
   if (cpp_desc->Name() == "_generated_var_19") {
     VarDataType type = cpp_desc->GetType();
+    auto datatype = cpp_desc->GetDataType();
     LOG(INFO) << " _generated_var_19 type:" << static_cast<int>(type);
+    LOG(INFO) << " _generated_var_19 type:" << static_cast<int>(datatype);
   }
 
   if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
