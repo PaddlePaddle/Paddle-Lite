@@ -26,17 +26,18 @@ namespace fp16 {
 const int KBLOCK_FP16 = 2;
 #ifdef __aarch64__
 // for int7/int8 gemm
-const int MBLOCK_INT8_FP16 = 8;
-const int NBLOCK_INT8_FP16 = 12;
+const int MBLOCK_FP16 = 8;
+const int NBLOCK_FP16 = 12;
 #else
-const int MBLOCK_INT8_FP16 = 6;
-const int NBLOCK_INT8_FP16 = 8;
+const int MBLOCK_FP16 = 6;
+const int NBLOCK_FP16 = 8;
 #endif  // __aarch64__
 
-inline int get_hblock_fp16(ARMContext* ctx) { return MBLOCK_INT8_FP16 }
+inline int get_hblock_fp16(ARMContext* ctx) { return MBLOCK_FP16; }
 
 void prepackA_fp16(void* out,
                    const void* in,
+                   __fp16 alpha,
                    int ldin,
                    int m0,
                    int mmax,
@@ -47,6 +48,7 @@ void prepackA_fp16(void* out,
 
 void prepackA_fp16(TensorLite* tout,
                    const TensorLite& tin,
+                   float alpha,
                    int m,
                    int k,
                    int group,
@@ -66,7 +68,7 @@ void sgemm_prepack_fp16(bool is_transB,
                         const __fp16* bias,
                         bool has_bias,
                         const operators::ActivationParam act_param,
-                        Context* ctx);
+                        ARMContext* ctx);
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

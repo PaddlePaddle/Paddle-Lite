@@ -22,6 +22,7 @@ namespace fp16 {
 #ifdef __aarch64__
 void prepackA_8x16(__fp16 *out,
                    const __fp16 *in,
+                   __fp16 alpha,
                    const int ldin,
                    const int m0,
                    const int mmax,
@@ -29,22 +30,26 @@ void prepackA_8x16(__fp16 *out,
                    const int kmax);
 void prepackA_trans_8x16(__fp16 *out,
                          const __fp16 *in,
+                         __fp16 alpha,
                          const int ldin,
                          const int m0,
                          const int mmax,
                          const int k0,
                          const int kmax);
-void sgemm_prepack_8x16(const __fp16 *A_packed,
-                        const __fp16 *B,
-                        const __fp16 *bias,
-                        __fp16 *C,
+void sgemm_prepack_8x16(bool is_transB,
                         int M,
                         int N,
                         int K,
-                        bool is_bias,
-                        bool is_relu,
-                        bool transB,
-                        Context *ctx);
+                        const __fp16 *A_packed,
+                        const __fp16 *B,
+                        int ldb,
+                        __fp16 beta,
+                        __fp16 *C,
+                        int ldc,
+                        const __fp16 *bias,
+                        bool has_bias,
+                        const operators::ActivationParam act_param,
+                        ARMContext *ctx);
 #endif
 
 /**
@@ -52,19 +57,21 @@ void sgemm_prepack_8x16(const __fp16 *A_packed,
  * for arm-v7a, transform data to block x k x 6 layout
  * for arm-v8a, transform data to block x k x 8 layout
  */
-void prepackA(void *out,
-              const void *in,
-              const int ldin,
-              const int m0,
-              const int mmax,
-              const int k0,
-              const int kmax,
-              bool is_trans,
-              Context *ctx) {
+void prepackA_fp16(void *out,
+                   const void *in,
+                   __fp16 alpha,
+                   const int ldin,
+                   const int m0,
+                   const int mmax,
+                   const int k0,
+                   const int kmax,
+                   bool is_trans,
+                   ARMContext *ctx) {
 #ifdef __aarch64__
   if (is_trans) {
     prepackA_trans_8x16(static_cast<__fp16 *>(out),
                         static_cast<const __fp16 *>(in),
+                        alpha,
                         ldin,
                         m0,
                         mmax,
@@ -73,6 +80,7 @@ void prepackA(void *out,
   } else {
     prepackA_8x16(static_cast<__fp16 *>(out),
                   static_cast<const __fp16 *>(in),
+                  alpha,
                   ldin,
                   m0,
                   mmax,
@@ -85,27 +93,36 @@ void prepackA(void *out,
 
 void prepackA_fp16(TensorLite *tout,
                    const TensorLite &tin,
+                   __fp16 alpha,
                    int m,
                    int k,
                    int group,
                    bool is_trans,
                    ARMContext *ctx) {
-  int hblock = get_hblock(ctx->get_arch());
+  int hblock = get_hblock_fp16(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
-  if (tout.valid_size() < group_size_round_up * group) {
-    tout.reshape(Shape(group_size_round_up * group));
+  if (tout->numel() < group_size_round_up * group) {
+    tout->Resize({group_size_round_up * group});
   }
   int lda = k;
   if (is_trans) {
     lda = m;
   }
   for (int g = 0; g < group; ++g) {
-    const __fp16 *weights_group =
-        static_cast<const __fp16 *>(tin.data()) + g * m * k;
-    __fp16 *weights_trans_ptr =
-        static_cast<__fp16 *>(tout.mutable_data()) + g * group_size_round_up;
-    prepackA(weights_trans_ptr, weights_group, lda, 0, m, 0, k, is_trans, ctx);
+    const float *weights_group = tin.data<float>() + g * m * k;
+    float *weights_trans_ptr =
+        tout->mutable_data<float>() + g * group_size_round_up;
+    prepackA_fp16(weights_trans_ptr,
+                  weights_group,
+                  alpha,
+                  lda,
+                  0,
+                  m,
+                  0,
+                  k,
+                  is_trans,
+                  ctx);
   }
 }
 
@@ -123,7 +140,7 @@ void sgemm_prepack_fp16(bool is_transB,
                         const __fp16 *bias,
                         bool has_bias,
                         const operators::ActivationParam act_param,
-                        Context *ctx) {
+                        ARMContext *ctx) {
 #ifdef __aarch64__
   sgemm_prepack_8x16(is_transB,
                      M,
@@ -168,6 +185,7 @@ void sgemm_prepack_fp16(bool is_transB,
 #ifdef __aarch64__
 void prepackA_8x16(__fp16 *out,
                    const __fp16 *in,
+                   __fp16 alpha,
                    const int ldin,
                    const int m0,
                    const int mmax,
@@ -179,12 +197,14 @@ void prepackA_8x16(__fp16 *out,
 
   uint16_t *dout = reinterpret_cast<uint16_t *>(out);
   const uint16_t *inptr = reinterpret_cast<const uint16_t *>(in);
+  bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
 
   int cnt = x_len >> 3;
   int remain = x_len & 7;
   int stride = x_len * 8;
   int cnt_4 = remain >> 2;
   remain = remain & 3;
+  float16x8_t valpha = vdupq_n_f16(alpha);
 #pragma omp parallel for
   for (int y = m0; y < mmax; y += 8) {
     uint16_t *outptr = dout;
@@ -217,16 +237,17 @@ void prepackA_8x16(__fp16 *out,
       }
     }
     int cnt_col = cnt;
+    // clang-format off
     asm volatile(
-        "prfm   pldl1keep, [%[ptr0]]                \n"
-        "prfm   pldl1keep, [%[ptr1]]                \n"
-        "prfm   pldl1keep, [%[ptr2]]                \n"
-        "prfm   pldl1keep, [%[ptr3]]                \n"
+        "prfm   pldl1keep, [%[inptr0]]              \n"
+        "prfm   pldl1keep, [%[inptr1]]              \n"
+        "prfm   pldl1keep, [%[inptr2]]              \n"
+        "prfm   pldl1keep, [%[inptr3]]              \n"
         "cmp %w[cnt], #1                            \n"
-        "prfm   pldl1keep, [%[ptr4]]                \n"
-        "prfm   pldl1keep, [%[ptr5]]                \n"
-        "prfm   pldl1keep, [%[ptr6]]                \n"
-        "prfm   pldl1keep, [%[ptr7]]                \n"
+        "prfm   pldl1keep, [%[inptr4]]              \n"
+        "prfm   pldl1keep, [%[inptr5]]              \n"
+        "prfm   pldl1keep, [%[inptr6]]              \n"
+        "prfm   pldl1keep, [%[inptr7]]              \n"
         "blt 1f                                     \n"
         "0:                                         \n"
         "ld1 {v0.8h}, [%[inptr0]], #16              \n"
@@ -240,22 +261,34 @@ void prepackA_8x16(__fp16 *out,
         "trn2 v9.8h, v0.8h, v1.8h                   \n"
         "ld1 {v6.8h}, [%[inptr6]], #16              \n"
         // c0d0c2d2c4d4c6d6
+        "cmp %w[has_alpha], #1                      \n"
         "trn1 v10.8h, v2.8h, v3.8h                  \n"
         "ld1 {v7.8h}, [%[inptr7]], #16              \n"
         "trn2 v11.8h, v2.8h, v3.8h                  \n"
         // e0f0e2f2e4f4e6f6
         "trn1 v12.8h, v4.8h, v5.8h                  \n"
-        "trn2 v13.8h, v4.8h, v5.8h                  \n" TRANS_C8
+        "trn2 v13.8h, v4.8h, v5.8h                  \n"
+        TRANS_C8
+        "bne 10f                                    \n"
+        "fmul v8.8h, v8.8h, %[valpha].8h            \n"
+        "fmul v9.8h, v9.8h, %[valpha].8h            \n"
+        "fmul v10.8h, v10.8h, %[valpha].8h          \n"
+        "fmul v11.8h, v11.8h, %[valpha].8h          \n"
+        "fmul v12.8h, v12.8h, %[valpha].8h          \n"
+        "fmul v13.8h, v13.8h, %[valpha].8h          \n"
+        "fmul v14.8h, v14.8h, %[valpha].8h          \n"
+        "fmul v15.8h, v15.8h, %[valpha].8h          \n"
+        "10:                                        \n"
         // 0
-        "st1 v8.8h, [%[outptr]], #16                \n"
-        "st1 v12.8h, [%[outptr]], #16               \n"
-        "st1 v10.8h, [%[outptr]], #16               \n"
-        "st1 v14.8h, [%[outptr]], #16               \n"
+        "st1 {v8.8h}, [%[outptr]], #16              \n"
+        "st1 {v12.8h}, [%[outptr]], #16             \n"
+        "st1 {v10.8h}, [%[outptr]], #16             \n"
+        "st1 {v14.8h}, [%[outptr]], #16             \n"
         "subs %w[cnt], %w[cnt], #1                  \n"
-        "st1 v9.8h, [%[outptr]], #16                \n"
-        "st1 v13.8h, [%[outptr]], #16               \n"
-        "st1 v11.8h, [%[outptr]], #16               \n"
-        "st1 v15.8h, [%[outptr]], #16               \n"
+        "st1 {v9.8h}, [%[outptr]], #16              \n"
+        "st1 {v13.8h}, [%[outptr]], #16             \n"
+        "st1 {v11.8h}, [%[outptr]], #16             \n"
+        "st1 {v15.8h}, [%[outptr]], #16             \n"
         "bne 0b                                     \n"
         "1:                                         \n"
         "cmp %w[cnt_4], #1                          \n"
@@ -289,13 +322,26 @@ void prepackA_8x16(__fp16 *out,
         // a3b3..a7b7..
         "trn1 v3.2s, v9.2s, v11.2s                  \n"
         // e0f0g0h0..
+        "cmp %w[has_alpha], #1                      \n"
         "trn1 v4.2s, v12.2s, v14.2s                 \n"
-        "st1 {v0.2s}, [%[outptr]], #8               \n"
         "trn2 v5.2s, v12.2s, v14.2s                 \n"
-        "st1 {v4.2s}, [%[outptr]], #8               \n"
         "trn1 v6.2s, v13.2s, v15.2s                 \n"
-        "st1 {v2.2s}, [%[outptr]], #8               \n"
         "trn2 v7.2s, v13.2s, v15.2s                 \n"
+        "bne 11f                                    \n"
+        "fmul v0.8h, v0.8h, %[valpha].8h            \n"
+        "fmul v1.8h, v1.8h, %[valpha].8h            \n"
+        "fmul v2.8h, v2.8h, %[valpha].8h            \n"
+        "fmul v3.8h, v3.8h, %[valpha].8h            \n"
+        "fmul v4.8h, v4.8h, %[valpha].8h            \n"
+        "fmul v5.8h, v5.8h, %[valpha].8h            \n"
+        "fmul v6.8h, v6.8h, %[valpha].8h            \n"
+        "fmul v7.8h, v7.8h, %[valpha].8h            \n"
+        "11:                                        \n"
+        // 0
+        "st1 {v0.2s}, [%[outptr]], #8               \n"
+        "st1 {v4.2s}, [%[outptr]], #8               \n"
+        // 1
+        "st1 {v2.2s}, [%[outptr]], #8               \n"
         "st1 {v6.2s}, [%[outptr]], #8               \n"
         // 2
         "st1 {v1.2s}, [%[outptr]], #8               \n"
@@ -314,7 +360,9 @@ void prepackA_8x16(__fp16 *out,
           [inptr7] "+r"(inptr7),
           [outptr] "+r"(outptr),
           [cnt] "+r"(cnt_col)
-        : [cnt_4] "r"(cnt_4)
+        : [cnt_4] "r"(cnt_4),
+          [has_alpha] "r"(has_alpha),
+          [valpha] "w"(valpha)
         : "v0",
           "v1",
           "v2",
@@ -333,15 +381,27 @@ void prepackA_8x16(__fp16 *out,
           "v15",
           "cc",
           "memory");
+    // clang-format on
     for (int x = 0; x < remain; x++) {
-      *outptr++ = *inptr0++;
-      *outptr++ = *inptr1++;
-      *outptr++ = *inptr2++;
-      *outptr++ = *inptr3++;
-      *outptr++ = *inptr4++;
-      *outptr++ = *inptr5++;
-      *outptr++ = *inptr6++;
-      *outptr++ = *inptr7++;
+      if (has_alpha) {
+        *outptr++ = *inptr0++ * alpha;
+        *outptr++ = *inptr1++ * alpha;
+        *outptr++ = *inptr2++ * alpha;
+        *outptr++ = *inptr3++ * alpha;
+        *outptr++ = *inptr4++ * alpha;
+        *outptr++ = *inptr5++ * alpha;
+        *outptr++ = *inptr6++ * alpha;
+        *outptr++ = *inptr7++ * alpha;
+      } else {
+        *outptr++ = *inptr0++;
+        *outptr++ = *inptr1++;
+        *outptr++ = *inptr2++;
+        *outptr++ = *inptr3++;
+        *outptr++ = *inptr4++;
+        *outptr++ = *inptr5++;
+        *outptr++ = *inptr6++;
+        *outptr++ = *inptr7++;
+      }
     }
     dout += stride;
   }
@@ -349,6 +409,7 @@ void prepackA_8x16(__fp16 *out,
 
 void prepackA_trans_8x16(__fp16 *out,
                          const __fp16 *in,
+                         __fp16 alpha,
                          const int ldin,
                          const int m0,
                          const int mmax,
@@ -363,15 +424,13 @@ void prepackA_trans_8x16(__fp16 *out,
   int y_len = kmax - k0;
   int cnt = x_len >> 3;
   uint16_t right_remain = x_len & 7;
-  int right_pad = 8 - right_remain;
-  if (right_remain == 0) {
-    right_pad = 0;
-  }
   int stride_out = 8 * y_len;
+  bool has_alpha = fabsf(alpha - 1.f) > 1e-8f;
 
   uint16x8_t vzero = vdupq_n_u16(0);
   uint16x8_t vmask =
       vcltq_u16(vld1q_u16(mask_buffer), vdupq_n_u16(right_remain));
+  float16x8_t valpha = vdupq_n_f16(alpha);
 
 #pragma omp parallel for
   for (int y = 0; y < y_len - 3; y += 4) {
@@ -389,16 +448,23 @@ void prepackA_trans_8x16(__fp16 *out,
         "prfm   pldl1keep, [%[ptr3]]                \n"
         "blt 1f                                     \n"
         "0:                                         \n"
+        "cmp %w[has_alpha], #1                      \n"
         "ld1 {v0.8h}, [%[ptr0]], #16                \n"
         "ld1 {v1.8h}, [%[ptr1]], #16                \n"
         "ld1 {v2.8h}, [%[ptr2]], #16                \n"
         "ld1 {v3.8h}, [%[ptr3]], #16                \n"
+        "bne 3f                                     \n"
+        "fmul v0.8h, v0.8h, %[valpha].8h            \n"
+        "fmul v1.8h, v1.8h, %[valpha].8h            \n"
+        "fmul v2.8h, v2.8h, %[valpha].8h            \n"
+        "fmul v3.8h, v3.8h, %[valpha].8h            \n"
+        "3:                                         \n"
         "subs %w[cnt], %w[cnt], #1                  \n"
         "str q0, [%[outptr]]                        \n"
         "str q1, [%[outptr], #16]                   \n"
         "str q2, [%[outptr], #32]                   \n"
         "str q3, [%[outptr], #48]                   \n"
-        "add %[outputr], %[outptr], %w[stride]      \n"
+        "add %[outptr], %[outptr], %[stride]        \n"
         "bne 0b                                     \n"
         "1:                                         \n"
         "cmp %w[right_remain], #1                   \n"
@@ -407,10 +473,17 @@ void prepackA_trans_8x16(__fp16 *out,
         "ld1 {v1.8h}, [%[ptr1]]                     \n"
         "ld1 {v2.8h}, [%[ptr2]]                     \n"
         "ld1 {v3.8h}, [%[ptr3]]                     \n"
+        "cmp %w[has_alpha], #1                      \n"
         "bif v0.16b, %[vzero].16b, %[vmask].16b     \n"
         "bif v1.16b, %[vzero].16b, %[vmask].16b     \n"
         "bif v2.16b, %[vzero].16b, %[vmask].16b     \n"
         "bif v3.16b, %[vzero].16b, %[vmask].16b     \n"
+        "bne 4f                                     \n"
+        "fmul v0.8h, v0.8h, %[valpha].8h            \n"
+        "fmul v1.8h, v1.8h, %[valpha].8h            \n"
+        "fmul v2.8h, v2.8h, %[valpha].8h            \n"
+        "fmul v3.8h, v3.8h, %[valpha].8h            \n"
+        "4:                                         \n"
         "str q0, [%[outptr]]                        \n"
         "str q1, [%[outptr], #16]                   \n"
         "str q2, [%[outptr], #32]                   \n"
@@ -425,6 +498,8 @@ void prepackA_trans_8x16(__fp16 *out,
         : [right_remain] "r"(right_remain),
           [stride] "r"(stride_out),
           [vzero] "w"(vzero),
+          [has_alpha] "r"(has_alpha),
+          [valpha] "w"(valpha),
           [vmask] "w"(vmask)
         : "cc", "memory", "v0", "v1", "v2", "v3");
   }
@@ -438,22 +513,32 @@ void prepackA_trans_8x16(__fp16 *out,
         "prfm   pldl1keep, [%[ptr0]]                \n"
         "blt 1f                                     \n"
         "0:                                         \n"
+        "cmp %w[has_alpha], #1                      \n"
         "ld1 {v0.8h}, [%[ptr0]], #16                \n"
+        "bne 3f                                     \n"
+        "fmul v0.8h, v0.8h, %[valpha].8h            \n"
+        "3:                                         \n"
         "subs %w[cnt], %w[cnt], #1                  \n"
         "str q0, [%[outptr]]                        \n"
-        "add %[outputr], %[outptr], %w[stride]      \n"
+        "add %[outptr], %[outptr], %[stride]        \n"
         "bne 0b                                     \n"
         "1:                                         \n"
         "cmp %w[right_remain], #1                   \n"
         "blt 2f                                     \n"
+        "cmp %w[has_alpha], #1                      \n"
         "ld1 {v0.8h}, [%[ptr0]]                     \n"
         "bif v0.16b, %[vzero].16b, %[vmask].16b     \n"
+        "bne 4f                                     \n"
+        "fmul v0.8h, v0.8h, %[valpha].8h            \n"
+        "4:                                         \n"
         "str q0, [%[outptr]]                        \n"
         "2:                                         \n"
         : [ptr0] "+r"(ptr0), [outptr] "+r"(outptr_row_col), [cnt] "+r"(cnt_col)
         : [right_remain] "r"(right_remain),
           [stride] "r"(stride_out),
           [vzero] "w"(vzero),
+          [has_alpha] "r"(has_alpha),
+          [valpha] "w"(valpha),
           [vmask] "w"(vmask)
         : "cc", "memory", "v0", "v1", "v2", "v3");
   }
@@ -519,7 +604,7 @@ void loadb(__fp16 *out,
         "stp q2, q3, [%[outptr], #32]               \n"
         "stp q4, q5, [%[outptr], #64]               \n"
         "stp q6, q7, [%[outptr], #96]               \n"
-        "add %[outputr], %[outptr], %w[stride]      \n"
+        "add %[outptr], %[outptr], %[stride]        \n"
         "bne 0b                                     \n"
         "1:                                         \n"
         "cmp %w[right_remain], #1                   \n"
@@ -570,7 +655,7 @@ void loadb(__fp16 *out,
         "prfm   pldl1keep, [%[ptr0]]                \n"
         "subs %w[cnt], %w[cnt], #1                  \n"
         "stp q0, q1, [%[outptr]]                    \n"
-        "add %[outputr], %[outptr], %w[stride]      \n"
+        "add %[outptr], %[outptr], %[stride]        \n"
         "bne 0b                                     \n"
         "1:                                         \n"
         "cmp %w[right_remain], #1                   \n"
@@ -586,7 +671,7 @@ void loadb(__fp16 *out,
           [vzero] "w"(vzero),
           [vmask1] "w"(vmask1),
           [vmask2] "w"(vmask2)
-        : "cc", "memory", "v0", "v1")
+        : "cc", "memory", "v0", "v1");
   }
 }
 
@@ -666,6 +751,7 @@ void loadb_trans(__fp16 *out,
       }
     }
     int cnt_col = cnt;
+    // clang-format off
     asm volatile(
         "prfm   pldl1keep, [%[inptr0]]        \n"
         "prfm   pldl1keep, [%[inptr1]]        \n"
@@ -702,15 +788,16 @@ void loadb_trans(__fp16 *out,
         "trn1 v12.8h, v4.8h, v5.8h            \n"
         "trn2 v13.8h, v4.8h, v5.8h            \n"
         "prfm   pldl1keep, [%[inptr14]]       \n"
-        "prfm   pldl1keep, [%[inptr15]]       \n" TRANS_C8
+        "prfm   pldl1keep, [%[inptr15]]       \n"
+        TRANS_C8
         "ld1 {v0.8h}, [%[inptr8]], #16        \n"
         "str q8, [%[outptr]]                  \n"
         "ld1 {v1.8h}, [%[inptr9]], #16        \n"
         "str q12, [%[outptr], #32]            \n"
         "ld1 {v2.8h}, [%[inptr10]], #16       \n"
-        "st1 q10, [%[outptr], #64]            \n"
+        "str q10, [%[outptr], #64]            \n"
         "ld1 {v3.8h}, [%[inptr11]], #16       \n"
-        "st1 q14, [%[outptr], #96]            \n"
+        "str q14, [%[outptr], #96]            \n"
         "ld1 {v4.8h}, [%[inptr12]], #16       \n"
         "str q9, [%[outptr], #128]            \n"
         "ld1 {v5.8h}, [%[inptr13]], #16       \n"
@@ -735,7 +822,8 @@ void loadb_trans(__fp16 *out,
         "prfm   pldl1keep, [%[inptr4]]        \n"
         "prfm   pldl1keep, [%[inptr5]]        \n"
         "prfm   pldl1keep, [%[inptr6]]        \n"
-        "prfm   pldl1keep, [%[inptr7]]        \n" TRANS_C8
+        "prfm   pldl1keep, [%[inptr7]]        \n"
+        TRANS_C8
         "sub %w[cnt], %w[cnt], #1             \n"
         "str q8, [%[outptr], #16]             \n"
         "str q12, [%[outptr], #48]            \n"
@@ -785,6 +873,7 @@ void loadb_trans(__fp16 *out,
           "v13",
           "v14",
           "v15");
+    // clang-format on
     for (int x = 0; x < remain; x++) {
       *outptr++ = *inptr0++;
       *outptr++ = *inptr1++;
@@ -822,7 +911,7 @@ void sgemm_prepack_8x16(bool is_transB,
                         const __fp16 *bias,
                         bool has_bias,
                         const operators::ActivationParam act_param,
-                        Context *ctx) {
+                        ARMContext *ctx) {
   size_t llc_size = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   auto workspace = ctx->workspace_data<__fp16>();
   int threads = ctx->threads();
@@ -911,7 +1000,9 @@ void sgemm_prepack_8x16(bool is_transB,
             case 5:
               bias_local[2] = bias[y + 2];
             case 6:
-              bias_local[1] = bias[y + 1] default : break;
+              bias_local[1] = bias[y + 1];
+            default:
+              break;
           }
         } else {
           bias_local[0] = bias[y];
@@ -1067,11 +1158,11 @@ void sgemm_prepack_8x16(bool is_transB,
           "fmla v23.8h, v7.8h, %[vbeta].8h    \n"
           "1:                                 \n"
           "cmp %w[cnt], #1                    \n"
-          "ld1 q0, [%[a_ptr]], #16            \n"
-          "ld1 q2, [%[b_ptr]], #16            \n"
+          "ldr q0, [%[a_ptr]], #16            \n"
+          "ldr q2, [%[b_ptr]], #16            \n"
           "blt 2f                             \n"
           "0:                                 \n"
-          "ld1 q3, [%[b_ptr]], #16            \n"
+          "ldr q3, [%[b_ptr]], #16            \n"
           // unrool 0
           "fmla v8.8h, v2.8h, v0.h[0]         \n"
           "fmla v10.8h, v2.8h, v0.h[1]        \n"
@@ -1085,10 +1176,10 @@ void sgemm_prepack_8x16(bool is_transB,
           "prfm   pldl1keep, [%[b_ptr], #128] \n"
           "fmla v9.8h, v3.8h, v0.h[0]         \n"
           "fmla v11.8h, v3.8h, v0.h[1]        \n"
-          "ld1 q1, [%[a_ptr]], #16            \n"
+          "ldr q1, [%[a_ptr]], #16            \n"
           "fmla v13.8h, v3.8h, v0.h[2]        \n"
           "fmla v15.8h, v3.8h, v0.h[3]        \n"
-          "ld1 q4, [%[b_ptr]], #16            \n"
+          "ldr q4, [%[b_ptr]], #16            \n"
           "fmla v17.8h, v3.8h, v0.h[4]        \n"
           "fmla v19.8h, v3.8h, v0.h[5]        \n"
           "fmla v21.8h, v3.8h, v0.h[6]        \n"
@@ -1096,7 +1187,7 @@ void sgemm_prepack_8x16(bool is_transB,
           // unrool 1
           "fmla v8.8h, v4.8h, v1.h[0]         \n"
           "fmla v10.8h, v4.8h, v1.h[1]        \n"
-          "ld1 q5, [%[b_ptr]], #16            \n"
+          "ldr q5, [%[b_ptr]], #16            \n"
           "fmla v12.8h, v4.8h, v1.h[2]        \n"
           "fmla v14.8h, v4.8h, v1.h[3]        \n"
           "fmla v16.8h, v4.8h, v1.h[4]        \n"
@@ -1107,10 +1198,10 @@ void sgemm_prepack_8x16(bool is_transB,
           "prfm   pldl1keep, [%[b_ptr], #128] \n"
           "fmla v9.8h, v5.8h, v1.h[0]         \n"
           "fmla v11.8h, v5.8h, v1.h[1]        \n"
-          "ld1 q0, [%[a_ptr]], #16            \n"
+          "ldr q0, [%[a_ptr]], #16            \n"
           "fmla v13.8h, v5.8h, v1.h[2]        \n"
           "fmla v15.8h, v5.8h, v1.h[3]        \n"
-          "ld1 q2, [%[b_ptr]], #16            \n"
+          "ldr q2, [%[b_ptr]], #16            \n"
           "subs %w[cnt], %w[cnt], #1          \n"
           "fmla v17.8h, v5.8h, v1.h[4]        \n"
           "fmla v19.8h, v5.8h, v1.h[5]        \n"
@@ -1121,7 +1212,7 @@ void sgemm_prepack_8x16(bool is_transB,
           "cmp %w[tail], #1                   \n"
           "blt 3f                             \n"
           // tail=1
-          "ld1 q3, [%[b_ptr]], #16            \n"
+          "ldr q3, [%[b_ptr]], #16            \n"
           "fmla v8.8h, v2.8h, v0.h[0]         \n"
           "fmla v10.8h, v2.8h, v0.h[1]        \n"
           "fmla v12.8h, v2.8h, v0.h[2]        \n"
@@ -1134,10 +1225,10 @@ void sgemm_prepack_8x16(bool is_transB,
           "prfm   pldl1keep, [%[b_ptr], #128] \n"
           "fmla v9.8h, v3.8h, v0.h[0]         \n"
           "fmla v11.8h, v3.8h, v0.h[1]        \n"
-          "ld1 q1, [%[a_ptr]], #16            \n"
+          "ldr q1, [%[a_ptr]], #16            \n"
           "fmla v13.8h, v3.8h, v0.h[2]        \n"
           "fmla v15.8h, v3.8h, v0.h[3]        \n"
-          "ld1 q4, [%[b_ptr]], #16            \n"
+          "ldr q4, [%[b_ptr]], #16            \n"
           "subs %w[tail], %w[tail], #1        \n"
           "fmla v17.8h, v3.8h, v0.h[4]        \n"
           "fmla v19.8h, v3.8h, v0.h[5]        \n"
@@ -1147,7 +1238,7 @@ void sgemm_prepack_8x16(bool is_transB,
           // tail=0
           "fmla v8.8h, v4.8h, v1.h[0]         \n"
           "fmla v10.8h, v4.8h, v1.h[1]        \n"
-          "ld1 q5, [%[b_ptr]], #16            \n"
+          "ldr q5, [%[b_ptr]], #16            \n"
           "fmla v12.8h, v4.8h, v1.h[2]        \n"
           "fmla v14.8h, v4.8h, v1.h[3]        \n"
           "fmla v16.8h, v4.8h, v1.h[4]        \n"

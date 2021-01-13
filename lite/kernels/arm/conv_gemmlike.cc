@@ -17,7 +17,8 @@
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
 #ifdef ENABLE_ARM_FP16
-#include "lite/backends/arm/math/fp16/gemm_prepacked_fp16.h"
+#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#include "lite/backends/arm/math/fp16/packed_sgemm_fp16.h"
 #endif
 
 namespace paddle {
@@ -288,6 +289,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 }
 
 #ifdef ENABLE_ARM_FP16
+template <>
 void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   CHECK(this->ctx_);
@@ -337,7 +339,7 @@ void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
     workspace_size_ = k * n * sizeof(float);
   }
   if (!flag_trans_weights_) {
-    lite::arm::math::fp16::trans_gemm_weights_fp16<Ptype>(
+    lite::arm::math::fp16::trans_gemm_weights_fp16(
         *(param.filter), weights_, param.groups, &ctx);
     flag_trans_weights_ = true;
   }

@@ -15,7 +15,7 @@
 #pragma once
 #include <arm_neon.h>
 #include <cmath>
-#include "lite/backends/arm/math/fp16/gemm_prepacked_fp16.h"
+#include "lite/backends/arm/math/fp16/packed_sgemm_fp16.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
 #include "lite/utils/cp_logging.h"

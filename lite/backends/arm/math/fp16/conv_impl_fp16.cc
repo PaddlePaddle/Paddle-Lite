@@ -15,8 +15,7 @@
 #include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
 #include <arm_neon.h>
 #include <algorithm>
-#include "lite/backends/arm/math/conv_impl.h"
-#include "lite/backends/arm/math/fp16/gemm_prepacked_fp16.h"
+#include "lite/backends/arm/math/fp16/packed_sgemm_fp16.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
@@ -36,6 +35,68 @@ namespace fp16 {
  */
 inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
   return static_cast<unsigned>(a) < static_cast<unsigned>(b);
+}
+/**
+ * \brief normal im2col function for gemm conv
+ * @tparam dtype
+ * @param data_im
+ * @param channels
+ * @param height
+ * @param width
+ * @param kernel_size
+ * @param pad
+ * @param stride
+ * @param data_col
+ */
+void im2col_common_fp16(const float16_t* data_im,
+                        int channels,
+                        int height,
+                        int width,
+                        int kernel_h,
+                        int kernel_w,
+                        int pad_top,
+                        int pad_bottom,
+                        int pad_left,
+                        int pad_right,
+                        int stride_h,
+                        int stride_w,
+                        int dilation_h,
+                        int dilation_w,
+                        float16_t* data_col) {
+  const int output_h =
+      (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) /
+          stride_h +
+      1;
+  const int output_w =
+      (width + pad_left + pad_right - (dilation_w * (kernel_w - 1) + 1)) /
+          stride_w +
+      1;
+  const int channel_size = height * width;
+  for (int channel = channels; channel--; data_im += channel_size) {
+    for (int kernel_row = 0; kernel_row < kernel_h; kernel_row++) {
+      for (int kernel_col = 0; kernel_col < kernel_w; kernel_col++) {
+        int input_row = -pad_top + kernel_row * dilation_h;
+        for (int output_rows = output_h; output_rows; output_rows--) {
+          if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
+            for (int output_cols = output_w; output_cols; output_cols--) {
+              *(data_col++) = 0;
+            }
+          } else {
+            int input_col = -pad_left + kernel_col * dilation_w;
+            for (int output_col = output_w; output_col; output_col--) {
+              if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
+                *(data_col++) = data_im[input_row * width + input_col];
+              } else {
+                *(data_col++) = 0;
+              }
+              input_col += stride_w;
+            }
+          }
+          input_row += stride_h;
+        }
+      }
+    }
+  }
 }
 
 void im2col_s1_fp16(const float16_t* data_im,
@@ -82,8 +143,8 @@ void im2col_s1_fp16(const float16_t* data_im,
           int ow = ow_begin;
           int data_im_offset = data_im_z + ih * width;
           int data_col_offset = data_col_z + oh * output_w;
-          const float* data_im_ptr = data_im + data_im_offset;
-          float* data_col_ptr = data_col + data_col_offset;
+          const float16_t* data_im_ptr = data_im + data_im_offset;
+          float16_t* data_col_ptr = data_col + data_col_offset;
           for (; ow + 7 < ow_end; ow += 8, iw += 8) {
             float16x8_t tmp = vld1q_f16(data_im_ptr + iw);
             vst1q_f16(data_col_ptr + ow, tmp);
@@ -151,8 +212,8 @@ void im2col_s2_fp16(const float16_t* data_im,
           int ow = ow_begin;
           int data_im_offset = data_im_z + ih * width;
           int data_col_offset = data_col_z + oh * output_w;
-          const float* data_im_ptr = data_im + data_im_offset;
-          float* data_col_ptr = data_col + data_col_offset;
+          const float16_t* data_im_ptr = data_im + data_im_offset;
+          float16_t* data_col_ptr = data_col + data_col_offset;
           for (; ow + 7 < ow_end; ow += 8, iw += 16) {
             float16x8x2_t tmp = vld2q_f16(data_im_ptr + iw);
             vst1q_f16(data_col_ptr + ow, tmp.val[0]);
@@ -231,21 +292,21 @@ void im2col_fp16(const float16_t* data_im,
                    dilation_w,
                    data_col);
   } else {
-    im2col_common<float16_t>(data_im,
-                             channels,
-                             height,
-                             width,
-                             kernel_h,
-                             kernel_w,
-                             pad_top,
-                             pad_bottom,
-                             pad_left,
-                             pad_right,
-                             stride_h,
-                             stride_w,
-                             dilation_h,
-                             dilation_w,
-                             data_col);
+    im2col_common_fp16(data_im,
+                       channels,
+                       height,
+                       width,
+                       kernel_h,
+                       kernel_w,
+                       pad_top,
+                       pad_bottom,
+                       pad_left,
+                       pad_right,
+                       stride_h,
+                       stride_w,
+                       dilation_h,
+                       dilation_w,
+                       data_col);
   }
 }
 

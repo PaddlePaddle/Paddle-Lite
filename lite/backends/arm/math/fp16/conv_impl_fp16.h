@@ -23,6 +23,7 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
+typedef __fp16 float16_t;
 void conv1x1s1_gemm_fp16(const float16_t* din,
                          float16_t* dout,
                          int num,
@@ -67,6 +68,21 @@ void im2col_fp16(const float16_t* data_im,
                  int dilation_w,
                  float16_t* data_col);
 
+void im2col_common_fp16(const float16_t* data_im,
+                        int channels,
+                        int height,
+                        int width,
+                        int kernel_h,
+                        int kernel_w,
+                        int pad_top,
+                        int pad_bottom,
+                        int pad_left,
+                        int pad_right,
+                        int stride_h,
+                        int stride_w,
+                        int dilation_h,
+                        int dilation_w,
+                        float16_t* data_col);
 void im2col_s1_fp16(const float16_t* data_im,
                     int channels,
                     int height,
