@@ -59,8 +59,6 @@ if((NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WIT
     lite_cc_test(test_kernel_crop_tensor_compute SRCS crop_tensor_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_crop_compute SRCS crop_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_elementwise_common_broadcast SRCS elementwise_common_broadcast_test.cc DEPS ${test_kernel_deps})
-    lite_cc_test(test_kernel_lod_array_length_compute SRCS lod_array_length_compute_test.cc DEPS ${test_kernel_deps})
-
 
 if(LITE_BUILD_EXTRA)
     lite_cc_test(test_gru_unit SRCS gru_unit_test.cc DEPS ${test_kernel_deps})
@@ -73,6 +71,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_box_clip_compute SRCS box_clip_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_reduce_mean_compute SRCS reduce_mean_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_reduce_sum_compute SRCS reduce_sum_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_reduce_all_compute SRCS reduce_all_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_reduce_prod_compute SRCS reduce_prod_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_stack_compute SRCS stack_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_unstack_compute SRCS unstack_compute_test.cc DEPS ${test_kernel_deps})

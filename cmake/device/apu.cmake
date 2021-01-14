@@ -25,7 +25,8 @@ endif()
 
 message(STATUS "APU_DDK_ROOT: ${APU_DDK_ROOT}")
 find_path(APU_DDK_INC NAMES NeuronAdapter.h
-  PATHS ${APU_DDK_ROOT}/include NO_DEFAULT_PATH)
+  PATHS ${APU_DDK_ROOT}/include
+  CMAKE_FIND_ROOT_PATH_BOTH)
 if(NOT APU_DDK_INC)
   message(FATAL_ERROR "Can not find NeuronAdapter.h in ${APU_DDK_ROOT}/include")
 endif()

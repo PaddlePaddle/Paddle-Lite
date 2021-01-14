@@ -106,6 +106,7 @@ class Optimizer {
          "elementwise_mul_constant_eliminate_pass",     //
          "lite_sequence_pool_concat_fuse_pass",         //
          "lite_scale_activation_fuse_pass",             //
+         "lite_instance_norm_activation_fuse_pass",     //
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
          "lite_elementwise_activation_fuse_pass",  //
@@ -145,7 +146,7 @@ class Optimizer {
 
          "remove_tf_redundant_ops_pass",
          "variable_place_inference_pass",  // inference arg/var's
-
+         "__fpga_kernel_place_correct_pass",
          "mlu_postprocess_pass",
          // info(target/precision/layout/device)
          // using kernel info
