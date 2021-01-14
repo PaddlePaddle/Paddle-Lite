@@ -55,20 +55,20 @@ void prepackA_fp16(TensorLite* tout,
                    bool is_trans,
                    ARMContext* ctx);
 
-void sgemm_prepack_fp16(bool is_transB,
-                        int M,
-                        int N,
-                        int K,
-                        const float16_t* A_packed,
-                        const float16_t* B,
-                        int ldb,
-                        float16_t beta,
-                        float16_t* C,
-                        int ldc,
-                        const float16_t* bias,
-                        bool has_bias,
-                        const operators::ActivationParam act_param,
-                        ARMContext* ctx);
+void gemm_prepack_fp16(bool is_transB,
+                       int M,
+                       int N,
+                       int K,
+                       const float16_t* A_packed,
+                       const float16_t* B,
+                       int ldb,
+                       float16_t beta,
+                       float16_t* C,
+                       int ldc,
+                       const float16_t* bias,
+                       bool has_bias,
+                       const operators::ActivationParam act_param,
+                       ARMContext* ctx);
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

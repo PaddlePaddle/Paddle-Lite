@@ -357,20 +357,20 @@ void conv1x1s1_gemm_fp16(const float16_t* i_data,
           static_cast<const float16_t*>(weights) + g * weights_size_per_group;
       const float16_t* bias_group = static_cast<const float16_t*>(bias) + g * m;
 
-      sgemm_prepack_fp16(false,
-                         m,
-                         n,
-                         k,
-                         weights_group,
-                         din_group,
-                         n,
-                         0.f,
-                         dout_group,
-                         n,
-                         bias_group,
-                         flag_bias,
-                         act_param,
-                         ctx);
+      gemm_prepack_fp16(false,
+                        m,
+                        n,
+                        k,
+                        weights_group,
+                        din_group,
+                        n,
+                        0.f,
+                        dout_group,
+                        n,
+                        bias_group,
+                        flag_bias,
+                        act_param,
+                        ctx);
     }
   }
 }
@@ -440,20 +440,20 @@ void conv_im2col_gemm_fp16(const float16_t* i_data,
                   dilations[0],
                   dilations[1],
                   dB);
-      sgemm_prepack_fp16(false,
-                         m,
-                         n,
-                         k,
-                         weights_group,
-                         dB,
-                         n,
-                         0.f,
-                         dout_group,
-                         n,
-                         bias_group,
-                         flag_bias,
-                         act_param,
-                         ctx);
+      gemm_prepack_fp16(false,
+                        m,
+                        n,
+                        k,
+                        weights_group,
+                        dB,
+                        n,
+                        0.f,
+                        dout_group,
+                        n,
+                        bias_group,
+                        flag_bias,
+                        act_param,
+                        ctx);
     }
   }
 }
