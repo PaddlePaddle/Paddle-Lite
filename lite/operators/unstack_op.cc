@@ -37,9 +37,12 @@ bool UnstackOp::InferShapeImpl() const {
   }
   int num = param_.num;
   auto x_shape = x->dims().Vectorize();
-  CHECK_EQ(x_shape[axis], static_cast<int64_t>(num))
-      << "num(attr) should be equal to x_dims[axis]. But received x_dims: "
-      << x->dims() << ", axis: " << param_.axis << ", num: " << num;
+  CHECK((num == static_cast<int>(x_shape[axis])) &&
+        (num == static_cast<int>(outs.size())))
+      << "num(attr) should be equal to x_dims[axis], and equal to outs' size. "
+         "But received num: "
+      << num << ", x_dims: " << x->dims() << ", axis: " << param_.axis
+      << ", outs.size: " << outs.size();
 
   auto out_shape = x_shape;
   out_shape.erase(out_shape.begin() + axis);
@@ -52,6 +55,7 @@ bool UnstackOp::InferShapeImpl() const {
 bool UnstackOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.X = scope->FindTensor(op_desc.Input("X").front());
   auto out_names = op_desc.Output("Y");
+  param_.Out.clear();
   for (auto out_name : out_names) {
     param_.Out.emplace_back(scope->FindMutableTensor(out_name));
   }
