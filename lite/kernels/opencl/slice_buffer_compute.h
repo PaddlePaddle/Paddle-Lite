@@ -13,18 +13,12 @@
 // limitations under the License.
 #pragma once
 
-#include <memory>
 #include <string>
-#include <vector>
-#include "lite/backends/opencl/cl_half.h"
-#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/operators/op_params.h"
-#include "lite/utils/cp_logging.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
 #endif
-#include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
 namespace lite {
