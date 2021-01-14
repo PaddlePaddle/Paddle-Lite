@@ -355,7 +355,7 @@ void do_elementwise_compute(const char* op_type_str) {
                   ASSERT_EQ(is_fp_close(output_data[i], output_ref_data[i]),
                             true)
                       << op_type_str << "Value differ at index " << i
-                      << "ins value: " << output_data[i]
+                      << "\nins value: " << output_data[i]
                       << ", ref value: " << output_ref_data[i]
                       << ", diff: " << output_data[i] - output_ref_data[i];
                 }
@@ -363,7 +363,7 @@ void do_elementwise_compute(const char* op_type_str) {
                 for (int i = 0; i < output.dims().production(); i++) {
                   ASSERT_EQ(output_data[i], output_ref_data[i])
                       << op_type_str << "Value differ at index " << i
-                      << "ins value: " << output_data[i]
+                      << "\nins value: " << output_data[i]
                       << ", ref value: " << output_ref_data[i]
                       << ", diff: " << output_data[i] - output_ref_data[i];
                 }
