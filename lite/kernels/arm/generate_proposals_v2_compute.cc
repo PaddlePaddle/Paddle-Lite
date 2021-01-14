@@ -399,7 +399,7 @@ void GenerateProposalsV2Compute::Run() {
   int64_t h_bbox = bbox_dim[2];
   int64_t w_bbox = bbox_dim[3];
 
-  rpn_rois->Resize({scores->numel(), 4});
+  rpn_rois->Resize({bbox_deltas->numel() / 4, 4});
   rpn_roi_probs->Resize(std::vector<int64_t>({scores->numel(), 1}));
 
   Tensor bbox_deltas_swap, scores_swap;
@@ -490,5 +490,5 @@ REGISTER_LITE_KERNEL(generate_proposals_v2,
     .BindOutput("RpnRoisLod",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("RpnRoisNum",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();
