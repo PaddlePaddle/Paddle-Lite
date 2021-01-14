@@ -196,6 +196,7 @@ RuntimeProgram::RuntimeProgram(
       static_cast<operators::SubgraphOp*>(op.get())->SetProgramDesc(
           program_desc);
     }
+    LOG(INFO) << "attaching kernel of op:" << op->DebugString();
     op->Attach(*op_desc, exec_scope_);
     std::unique_ptr<KernelBase> kernel;
     if (op_desc->HasAttr(kKernelTypeAttr)) {
