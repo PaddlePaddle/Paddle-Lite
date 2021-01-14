@@ -22,10 +22,12 @@ namespace operators {
 
 class LoDArrayLengthOp : public OpLite {
  public:
+  LoDArrayLengthOp() {}
   explicit LoDArrayLengthOp(const std::string &op_type) : OpLite(op_type) {}
+
   bool InferShapeImpl() const override;
-  bool Run() override;
-  std::string DebugString() const override { return "lod_array_length_op"; };
+
+  std::string DebugString() const override { return "lod_array_length_op"; }
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
