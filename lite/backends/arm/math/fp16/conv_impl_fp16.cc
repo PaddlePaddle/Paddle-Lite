@@ -15,7 +15,7 @@
 #include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
 #include <arm_neon.h>
 #include <algorithm>
-#include "lite/backends/arm/math/fp16/packed_sgemm_fp16.h"
+#include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
@@ -149,7 +149,7 @@ void im2col_s1_fp16(const float16_t* data_im,
             float16x8_t tmp = vld1q_f16(data_im_ptr + iw);
             vst1q_f16(data_col_ptr + ow, tmp);
           }
-          if (ow >= 4) {
+          if (ow + 3 < ow_end) {
             float16x4_t tmp = vld1_f16(data_im_ptr + iw);
             vst1_f16(data_col_ptr + ow, tmp);
             ow += 4;
@@ -218,7 +218,7 @@ void im2col_s2_fp16(const float16_t* data_im,
             float16x8x2_t tmp = vld2q_f16(data_im_ptr + iw);
             vst1q_f16(data_col_ptr + ow, tmp.val[0]);
           }
-          if (ow >= 4) {
+          if (ow + 3 < ow_end) {
             float16x4x2_t tmp = vld2_f16(data_im_ptr + iw);
             vst1_f16(data_col_ptr + ow, tmp.val[0]);
             ow += 4;

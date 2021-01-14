@@ -220,7 +220,7 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
           tout_basic.set_precision(PRECISION(kFP16));
           tout_basic_fp32.Resize(dim_out);
           tout_basic.Resize(dim_out);
-          auto dout_basic_fp32 = tout_basic_fp32.mutable_data<float16>();
+          auto dout_basic_fp32 = tout_basic_fp32.mutable_data<float>();
           auto dout_basic = tout_basic.mutable_data<float16_t>();
 
           fill_tensor_const(tout_basic_fp32, 0.f);
@@ -277,20 +277,35 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
         if (FLAGS_check_result) {
           double max_ratio = 0;
           double max_diff = 0;
-          tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
+          auto basic_ptr = tout_basic.data<float16_t>();
+          auto saber_ptr = param.output->data<float16_t>();
+          paddle::lite::data_diff_kernel(
+              basic_ptr, saber_ptr, tout_basic.numel(), max_ratio, max_diff);
+          // tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
           VLOG(4) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
           if (std::abs(max_ratio) > 1e-3f) {
             if (max_diff > 5e-4f) {
+              int64_t size = tout_basic.numel();
+              int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
               LOG(WARNING) << "basic result";
-              print_tensor(tout_basic);
+              // print_tensor(tout_basic);
+              paddle::lite::print_tensor_host_impl(basic_ptr, size, width);
               LOG(WARNING) << "lite result";
-              print_tensor(*param.output);
+              // print_tensor(*param.output);
+              paddle::lite::print_tensor_host_impl(saber_ptr, size, width);
               Tensor tdiff;
               tdiff.Resize(tout_basic.dims());
-              tdiff.set_precision(PRECISION(kFloat));
-              tensor_diff(tout_basic, *param.output, tdiff);
-              print_tensor(tdiff);
+              tdiff.set_precision(PRECISION(kFP16));
+              auto ptr = tdiff.mutable_data<float16_t>();
+              for (int i = 0; i < size; i++) {
+                ptr[i] = saber_ptr[i] - basic_ptr[i];
+              }
+              auto c_ptr = tdiff.data<float16_t>();
+              LOG(WARNING) << "diff result";
+              paddle::lite::print_tensor_host_impl(c_ptr, size, width);
+              // tensor_diff(tout_basic, *param.output, tdiff);
+              // print_tensor(tdiff);
               LOG(FATAL) << "test fp16 conv: input: " << dim_in
                          << ", output: " << dim_out
                          << ", weight dim: " << weight_dim
