@@ -26,7 +26,7 @@ DEFINE_string(data_dir, "", "input image path");
 namespace paddle {
 namespace lite {
 
-TEST(LSTM_INT8_MODEL, test_lstm_int8_arm) {
+TEST(OCR_LSTM_INT8_MODEL, test_ocr_lstm_int8_arm) {
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
   // Use the full api with CxxConfig to generate the optimized model
   lite_api::CxxConfig cxx_config;
