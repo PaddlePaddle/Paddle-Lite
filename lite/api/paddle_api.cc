@@ -317,6 +317,18 @@ void ConfigBase::set_x86_math_num_threads(int threads) {
 int ConfigBase::x86_math_num_threads() const { return x86_math_num_threads_; }
 #endif
 
+void ConfigBase::set_subgraph_model_cache_buffers(
+    const std::string &key,
+    const std::vector<char> &cfg,
+    const std::vector<char> &bin) {
+  CHECK(!key.empty());
+  CHECK(!cfg.empty());
+  CHECK(!bin.empty());
+  CHECK_EQ(subgraph_model_cache_buffers_.count(key), 0);
+  subgraph_model_cache_buffers_[key] =
+      std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
+}
+
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
                                size_t program_buffer_size,
                                const char *params_buffer,

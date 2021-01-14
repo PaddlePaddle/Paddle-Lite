@@ -35,16 +35,19 @@ class DeviceProgram {
  public:
   DeviceProgram() {}
   ~DeviceProgram() {}
-  std::string GenerateModelName(
+  static std::string GenerateModelName(
       const std::vector<std::string>& input_names,
       const std::vector<std::string>& output_names,
       const std::vector<std::vector<int64_t>>& origin_idims);
-  bool LoadFromCacheFile(const std::vector<std::string>& input_names,
-                         const std::vector<std::string>& output_names,
-                         const std::vector<std::vector<int64_t>>& origin_idims,
-                         const std::vector<Tensor*>& origin_itensors,
-                         const std::vector<Tensor*>& origin_otensors,
-                         const std::string& model_cache_dir);
+  bool LoadCacheFromBufferAndFile(
+      const std::vector<std::string>& input_names,
+      const std::vector<std::string>& output_names,
+      const std::vector<std::vector<int64_t>>& origin_idims,
+      const std::vector<Tensor*>& origin_itensors,
+      const std::vector<Tensor*>& origin_otensors,
+      std::vector<char>* model_cache_cfg_buffer,
+      std::vector<char>* model_cache_bin_buffer,
+      const std::string& model_cache_dir);
   bool BuildGraphAndCacheToFile(
       RuntimeProgram* origin_program,
       const std::vector<std::string>& input_names,
