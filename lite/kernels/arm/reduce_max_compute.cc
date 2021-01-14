@@ -22,7 +22,7 @@ namespace kernels {
 namespace arm {
 
 void ReduceMaxCompute::Run() {
-  auto& param = Param<operators::ReduceMaxParam>();
+  auto& param = Param<operators::ReduceParam>();
   const float* input = param.X->data<float>();
   auto x_dims = param.X->dims();
 
