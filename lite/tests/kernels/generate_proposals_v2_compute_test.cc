@@ -671,7 +671,7 @@ class GenerateProposalsV2ComputeTester : public arena::TestCase {
 TEST(GenerateProposalsV2, precision) {
   // The unit test for generate_proposals_v2 needs the params,
   // which is obtained by runing model by paddle.
-  LOG(INFO) << "test generate proposals op";
+  LOG(INFO) << "test generate proposals v2 op";
 #ifdef LITE_WITH_ARM
   {
     Place place(TARGET(kARM));
