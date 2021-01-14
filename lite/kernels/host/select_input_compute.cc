@@ -31,7 +31,7 @@ void SelectInputCompute::Run() {
 
 REGISTER_LITE_KERNEL(select_input,
                      kHost,
-                     kFloat,
+                     kAny,
                      kNCHW,
                      paddle::lite::kernels::host::SelectInputCompute,
                      def)
