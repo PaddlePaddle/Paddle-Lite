@@ -152,3 +152,4 @@ bool InterpolateV2Op::AttachImpl(const cpp::OpDesc& op_desc,
 } /* namespace paddle */
 
 REGISTER_LITE_OP(bilinear_interp_v2, paddle::lite::operators::InterpolateV2Op);
+REGISTER_LITE_OP(nearest_interp_v2, paddle::lite::operators::InterpolateV2Op);

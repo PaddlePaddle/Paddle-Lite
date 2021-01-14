@@ -131,6 +131,7 @@ add_operator(unstack_op extra SRCS unstack_op.cc DEPS ${op_DEPS})
 add_operator(pad3d_op extra SRCS pad3d_op.cc DEPS ${op_DEPS})
 add_operator(fill_any_like_op extra SRCS fill_any_like_op.cc DEPS ${op_DEPS})
 
+add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
 add_operator(lookup_table_op extra SRCS lookup_table_op.cc DEPS ${op_DEPS})
