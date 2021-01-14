@@ -79,12 +79,6 @@ bool TensorArrayToTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   AttachParam(&param_);
   auto out = op_desc.Output("Out").front();
   auto outIndex = op_desc.Output("OutIndex").front();
-  /*
-    param_.X.clear();
-    for (auto var : inputs) {
-      param_.X.push_back(scope->FindVar(var)->GetMutable<lite::Tensor>());
-    }
-  */
 
   auto in = op_desc.Input("X").front();
   param_.X = scope->FindVar(in)->GetMutable<std::vector<Tensor>>();
