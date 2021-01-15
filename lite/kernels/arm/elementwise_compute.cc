@@ -18,6 +18,8 @@
 #include <utility>
 #include <vector>
 
+#include "lite/backends/arm/math/elementwise_common_broadcast.h"
+#include "lite/backends/arm/math/elementwise_common_broadcast_config.h"
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/kernels/host/elementwise_op_func.h"
 
@@ -25,6 +27,8 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+
+namespace arm_math = paddle::lite::arm::math;
 
 inline DDim trim_trailing_singular_dims(const DDim& dims) {
   // Remove trailing dimensions of size 1 for y
@@ -95,51 +99,122 @@ using BinaryOpFn = lite::kernels::host::BinaryOpFn<T>;
 
 enum class OprandSwapable { NO, YES };
 
-template <class Elem_t, class DimValue_t>
-void common_elmentwise_op_arm(
-    const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
-        batch_arg,
-    BinaryOpFn<Elem_t> op,
-    ElementWiseFn<Elem_t> elementwise_fn) {
-  int batch_num = batch_arg.BatchNum();
-  auto bcast_type = batch_arg.BcastType();
-  int range_length = batch_arg.ElemNumPerBatch();
-  switch (bcast_type) {
-    case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
-      for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-        lite::kernels::host::element_wise_range_to_one<Elem_t>(
-            batch_arg.XAtBatch(batch_id),
-            batch_arg.YAtBatch(batch_id),
-            batch_arg.ZAtBatch(batch_id),
-            range_length,
-            op);
+template <class Elem_t, class DimValue_t, class NeonConfig>
+struct CommonElementWiseOpArm {
+  static void Run(
+      // todo: if necessary, generate
+      //  lite::kernels::host::StaticBatchElementWiseArg by
+      //  batch_arg->ToStaticArg() before kernel launch, it will help to reduce
+      //  runtime overhead.
+      const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
+          batch_arg,
+      BinaryOpFn<Elem_t> op) {
+    int batch_num = batch_arg.BatchNum();
+    auto bcast_type = batch_arg.BcastType();
+    int range_length = batch_arg.ElemNumPerBatch();
+    switch (bcast_type) {
+      case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          arm_math::neon_elementwise_range_to_one<NeonConfig>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length);
+        }
+        break;
       }
-      break;
-    }
-    case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
-      for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-        lite::kernels::host::element_wise_one_to_range<Elem_t>(
-            batch_arg.XAtBatch(batch_id),
-            batch_arg.YAtBatch(batch_id),
-            batch_arg.ZAtBatch(batch_id),
-            range_length,
-            op);
+      case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          arm_math::neon_elementwise_one_to_range<NeonConfig>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length);
+        }
+        break;
       }
-      break;
-    }
-    case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
-      for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
-        elementwise_fn(batch_arg.XAtBatch(batch_id),
-                       batch_arg.YAtBatch(batch_id),
-                       batch_arg.ZAtBatch(batch_id),
-                       range_length);
+      case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          arm_math::neon_elementwise_range_to_range<NeonConfig>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length);
+        }
+        break;
       }
-      break;
+      default: {
+        LOG(FATAL) << "Un supported bcast type";
+        break;
+      }
     }
   }
-}
+};
 
-template <class OpParamType, class T, OprandSwapable opd_swap_able>
+template <class Elem_t, class DimValue_t>
+struct CommonElementWiseOpArm<Elem_t, DimValue_t, arm_math::NullNeonConfig> {
+  static void Run(
+      // todo: if necessary, generate
+      //  lite::kernels::host::StaticBatchElementWiseArg by
+      //  batch_arg->ToStaticArg() before kernel launch, it will help to reduce
+      //  runtime overhead.
+      const lite::kernels::host::BatchElementWiseArg<Elem_t, DimValue_t>&
+          batch_arg,
+      BinaryOpFn<Elem_t> op) {
+    int batch_num = batch_arg.BatchNum();
+    auto bcast_type = batch_arg.BcastType();
+    int range_length = batch_arg.ElemNumPerBatch();
+    switch (bcast_type) {
+      case (lite::kernels::host::BroadcastType::X_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          lite::kernels::host::element_wise_range_to_one<Elem_t>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length,
+              op);
+        }
+        break;
+      }
+      case (lite::kernels::host::BroadcastType::Y_AS_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          lite::kernels::host::element_wise_one_to_range<Elem_t>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length,
+              op);
+        }
+        break;
+      }
+      case (lite::kernels::host::BroadcastType::BOTH_CONTINUOUS): {
+        for (int batch_id = 0; batch_id < batch_num; ++batch_id) {
+          lite::kernels::host::element_wise_range_to_range<Elem_t>(
+              batch_arg.XAtBatch(batch_id),
+              batch_arg.YAtBatch(batch_id),
+              batch_arg.ZAtBatch(batch_id),
+              range_length,
+              op);
+        }
+        break;
+      }
+      default: {
+        LOG(FATAL) << "Un supported bcast type";
+        break;
+      }
+    }
+  }
+};
+
+// Note: All calling to elementwise_compute_template may set a template arg
+//  "NeonConfig" to get better performance than the "NullNeonConfig".
+//  However,it may increase the binary size significantly. So,
+//  do it only if it is necessary.
+//  see ElementwiseAddCompute<T, PType>::Run() to get an example.
+template <class OpParamType,
+          class T,
+          OprandSwapable opd_swap_able,
+          class NeonConfig>
 void elementwise_compute_template(paddle::lite::KernelBase* kernel,
                                   FastBCastFn<T> fast_bcast_fn,
                                   ElementWiseFn<T> elementwise_fn,
@@ -169,9 +244,14 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
              is_fast_broadcast(y_dims, x_dims, axis, &pre, &n, &post)) {
     fast_bcast_fn(y_data, x_data, out_data, pre, n, post);
   } else if (elementwise_fn) {
+    // todo: GenBatchElementWiseArg and common_elmentwise_op_arm can handle any
+    //   kinds of "elementwise op", not only "broadcast". You could refactor the
+    //   code to use only common_elmentwise_op_arm if necessary
     auto batch_arg =
         lite::kernels::host::GenBatchElementWiseArg<T>(x, y, param.Out, axis);
-    common_elmentwise_op_arm<T, int64_t>(batch_arg, op, elementwise_fn);
+    // if NeonConfig is NullNeonConfig, a specialization that uses naive cpu
+    // code will be called
+    CommonElementWiseOpArm<T, int64_t, NeonConfig>::Run(batch_arg, op);
   }
   if (!elementwise_fn && !fast_bcast_fn) {
     LOG(FATAL) << "unsupported elementwise_compute called";
@@ -180,9 +260,14 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
 
 template <typename T, PrecisionType PType>
 void ElementwiseAddCompute<T, PType>::Run() {
+  using NeonConfig = arm_math::MergeConfig<
+      arm_math::AddConfig<T>,
+      arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, T>>;
+
   elementwise_compute_template<operators::ElementwiseParam,
                                T,
-                               OprandSwapable::YES>(
+                               OprandSwapable::YES,
+                               NeonConfig>(
       this,
       lite::arm::math::elementwise_add_broadcast<T>,
       lite::arm::math::elementwise_add<T>,
@@ -196,7 +281,8 @@ void ElementwiseAddActivationCompute::Run() {
     act_supported = true;
     elementwise_compute_template<operators::FusionElementwiseActivationParam,
                                  float,
-                                 OprandSwapable::YES>(
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_add_relu_broadcast<float>,
         lite::arm::math::elementwise_add_relu<float>,
@@ -210,7 +296,8 @@ void ElementwiseAddActivationCompute::Run() {
     act_supported = true;
     elementwise_compute_template<operators::FusionElementwiseActivationParam,
                                  float,
-                                 OprandSwapable::YES>(
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
         this,
         nullptr,
         lite::arm::math::elementwise_add_tanh<float>,
@@ -228,7 +315,8 @@ template <typename T, PrecisionType PType>
 void ElementwiseSubCompute<T, PType>::Run() {
   elementwise_compute_template<operators::ElementwiseParam,
                                T,
-                               OprandSwapable::NO>(
+                               OprandSwapable::NO,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_sub_broadcast<T>,
       lite::arm::math::elementwise_sub<T>,
@@ -242,7 +330,8 @@ void ElementwiseSubActivationCompute::Run() {
     act_supported = true;
     elementwise_compute_template<operators::FusionElementwiseActivationParam,
                                  float,
-                                 OprandSwapable::NO>(
+                                 OprandSwapable::NO,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_sub_relu_broadcast<float>,
         lite::arm::math::elementwise_sub_relu<float>,
@@ -260,7 +349,8 @@ template <typename T, PrecisionType PType>
 void ElementwiseMulCompute<T, PType>::Run() {
   elementwise_compute_template<operators::ElementwiseParam,
                                T,
-                               OprandSwapable::YES>(
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_mul_broadcast<T>,
       lite::arm::math::elementwise_mul<T>,
@@ -276,7 +366,8 @@ void ElementwiseMulActivationCompute<T, PType>::Run() {
     act_supported = true;
     elementwise_compute_template<operators::FusionElementwiseActivationParam,
                                  T,
-                                 OprandSwapable::YES>(
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_mul_relu_broadcast<T>,
         lite::arm::math::elementwise_mul_relu<T>,
@@ -293,7 +384,8 @@ void ElementwiseMulActivationCompute<T, PType>::Run() {
 void ElementwiseMaxCompute::Run() {
   elementwise_compute_template<operators::ElementwiseParam,
                                float,
-                               OprandSwapable::YES>(
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_max_broadcast<float>,
       lite::arm::math::elementwise_max<float>,
@@ -307,7 +399,8 @@ void ElementwiseMaxActivationCompute::Run() {
     act_supported = true;
     elementwise_compute_template<operators::FusionElementwiseActivationParam,
                                  float,
-                                 OprandSwapable::YES>(
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_max_relu_broadcast<float>,
         lite::arm::math::elementwise_max_relu<float>,
@@ -321,11 +414,45 @@ void ElementwiseMaxActivationCompute::Run() {
   }
 }
 
+void ElementwiseMinCompute::Run() {
+  elementwise_compute_template<operators::ElementwiseParam,
+                               float,
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
+      this,
+      lite::arm::math::elementwise_min_broadcast<float>,
+      lite::arm::math::elementwise_min<float>,
+      paddle::lite::kernels::host::naive_min<float>);
+}
+
+void ElementwiseMinActivationCompute::Run() {
+  auto& param = Param<operators::FusionElementwiseActivationParam>();
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float,
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
+        this,
+        lite::arm::math::elementwise_min_relu_broadcast<float>,
+        lite::arm::math::elementwise_min_relu<float>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float,
+            paddle::lite::kernels::host::naive_min<float>,
+            paddle::lite::kernels::host::naive_relu<float>>);
+  }
+  if (!act_supported) {
+    LOG(FATAL) << "unsupported Activation type: " << param.act_type;
+  }
+}
+
 template <typename T, PrecisionType PType>
 void ElementwiseDivCompute<T, PType>::Run() {
   elementwise_compute_template<operators::ElementwiseParam,
                                T,
-                               OprandSwapable::NO>(
+                               OprandSwapable::NO,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_div_broadcast<T>,
       lite::arm::math::elementwise_div<T>,
@@ -339,7 +466,8 @@ void ElementwiseDivActivationCompute::Run() {
     act_supported = true;
     elementwise_compute_template<operators::FusionElementwiseActivationParam,
                                  float,
-                                 OprandSwapable::NO>(
+                                 OprandSwapable::NO,
+                                 arm_math::NullNeonConfig>(
         this,
         lite::arm::math::elementwise_div_relu_broadcast<float>,
         lite::arm::math::elementwise_div_relu<float>,
@@ -357,7 +485,8 @@ template <typename T, PrecisionType PType>
 void ElementwiseModCompute<T, PType>::Run() {
   elementwise_compute_template<operators::ElementwiseParam,
                                T,
-                               OprandSwapable::NO>(
+                               OprandSwapable::NO,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_mod_broadcast<T>,
       lite::arm::math::elementwise_mod<T>,
@@ -368,7 +497,8 @@ template <typename T, PrecisionType PType>
 void ElementwisePowCompute<T, PType>::Run() {
   elementwise_compute_template<operators::ElementwiseParam,
                                T,
-                               OprandSwapable::YES>(
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
       this,
       lite::arm::math::elementwise_pow_broadcast<T>,
       lite::arm::math::elementwise_pow<T>,
@@ -513,6 +643,29 @@ REGISTER_LITE_KERNEL(
     kFloat,
     kNCHW,
     paddle::lite::kernels::arm::ElementwiseMaxActivationCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_min,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::ElementwiseMinCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    fusion_elementwise_min_activation,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::ElementwiseMinActivationCompute,
     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
