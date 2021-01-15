@@ -201,7 +201,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
-    impl_->SetProfileRuntimeKernelInfo(ch);
+    ch->kernel_func_name = "NotImplForConv";
   }
 #endif
 

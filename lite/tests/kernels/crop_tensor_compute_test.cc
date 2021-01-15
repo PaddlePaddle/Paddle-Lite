@@ -184,20 +184,20 @@ class CropTensorComputeTester : public arena::TestCase {
 template <class T = float>
 void TestCropTensor(Place place, float abs_error = 1e-5) {
   place.precision = lite_api::PrecisionTypeTrait<float>::Type();
-  std::string alis = "def";
+  std::string alias = "def";
   if (lite_api::PrecisionTypeTrait<T>::Type() == PrecisionType::kInt32) {
-    alis = "int32_precision";
+    alias = "int32_precision";
   }
 
   // test 1D
   std::unique_ptr<arena::TestCase> tester_1d(
-      new CropTensorComputeTester<T>(place, alis, {1}, {3}, DDim({4})));
+      new CropTensorComputeTester<T>(place, alias, {1}, {3}, DDim({4})));
   arena::Arena arena_1d(std::move(tester_1d), place, abs_error);
   arena_1d.TestPrecision();
 
   // test 4D
   std::unique_ptr<arena::TestCase> tester_4d(new CropTensorComputeTester<T>(
-      place, alis, {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5})));
+      place, alias, {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5})));
   arena::Arena arena_4d(std::move(tester_4d), place, abs_error);
   arena_4d.TestPrecision();
 }
