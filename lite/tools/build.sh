@@ -13,6 +13,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
 
 # global variables
+CMAKE_EXTRA_OPTIONS=""
 BUILD_EXTRA=OFF
 BUILD_TRAIN=OFF
 BUILD_JAVA=ON
@@ -45,6 +46,12 @@ WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
+# min android api level
+MIN_ANDROID_API_LEVEL_ARMV7=16
+MIN_ANDROID_API_LEVEL_ARMV8=21
+# android api level, which can also be set to a specific number 
+ANDROID_API_LEVEL="Default"
+CMAKE_API_LEVEL_OPTIONS=""
 
 readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
 
@@ -103,6 +110,23 @@ function prepare_thirdparty {
     fi
 }
 
+function set_android_api_level {
+  # android api level for android version
+  if [ "${ARM_ABI}" == "armv7" ]; then
+      MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV7}
+  else
+      MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV8}
+  fi
+  if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
+      CMAKE_API_LEVEL_OPTIONS=""
+  elif [ ${ANDROID_API_LEVEL} -ge ${MIN_ANDROID_API_LEVEL} ]; then
+      CMAKE_API_LEVEL_OPTIONS="-DANDROID_NATIVE_API_LEVEL=${ANDROID_API_LEVEL}"
+  else
+      echo "Error: ANDROID_API_LEVEL should be no less than ${MIN_ANDROID_API_LEVEL} on ${ARM_ABI}."
+      exit 1
+  fi
+}
+
 function build_opt {
     cd $workspace
     prepare_thirdparty
@@ -135,9 +159,15 @@ function make_tiny_publish_so {
     BUILD_JAVA=OFF
   fi
   
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${ANDROID_API_LEVEL}
+  fi
+
   cmake .. \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
+      ${CMAKE_EXTRA_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
@@ -173,6 +203,10 @@ function make_opencl {
   #git submodule update --init --recursive
   prepare_thirdparty
 
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+  fi
+
   root_dir=$(pwd)
   build_dir=$root_dir/build.lite.${os}.${abi}.${lang}.opencl
   if [ -d $build_directory ]
@@ -187,6 +221,7 @@ function make_opencl {
   # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
   # $3: ARM_TARGET_LANG in "gcc" "clang"
   cmake .. \
+      ${CMAKE_API_LEVEL_OPTIONS} \
       -DLITE_WITH_OPENCL=ON \
       -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
@@ -231,10 +266,16 @@ function make_full_publish_so {
     BUILD_JAVA=OFF
   fi
 
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${ANDROID_API_LEVEL}
+  fi
+
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
       ${PYTHON_FLAGS} \
       ${CMAKE_COMMON_OPTIONS} \
+      ${CMAKE_EXTRA_OPTIONS} \
       -DWITH_TESTING=OFF \
       -DLITE_WITH_JAVA=$BUILD_JAVA \
       -DLITE_WITH_PYTHON=$BUILD_PYTHON \
@@ -279,11 +320,17 @@ function make_all_tests {
     rm -rf $build_dir
   fi
   mkdir -p $build_directory
+
   cd $build_directory
+  if [ ${os} == "android" ]; then
+    set_android_api_level
+    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${ANDROID_API_LEVEL}
+  fi
  
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
+      ${CMAKE_EXTRA_OPTIONS} \
       -DWITH_TESTING=ON \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DLITE_WITH_LTO=${WITH_LTO} \
@@ -516,6 +563,10 @@ function main {
                 ;;
             --android_stl=*)
                 ANDROID_STL="${i#*=}"
+                shift
+                ;;
+            --android_api_level=*)
+                ANDROID_API_LEVEL="${i#*=}"
                 shift
                 ;;
             --build_extra=*)

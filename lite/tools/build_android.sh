@@ -8,8 +8,11 @@ set +x
 ARCH=armv8
 # c++_static or c++_shared, default c++_static.
 ANDROID_STL=c++_static
-# android api level
-ANDROID_API_LEVEL=Default
+# min android api level
+MIN_ANDROID_API_LEVEL_ARMV7=16
+MIN_ANDROID_API_LEVEL_ARMV8=21
+# android api level, which can also be set to a specific number 
+ANDROID_API_LEVEL="Default"
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
 # ON or OFF, default OFF.
@@ -126,6 +129,24 @@ function prepare_thirdparty {
 # 4. compiling functions
 ####################################################################################################
 
+# helper function for setting android api level
+function set_android_api_level {
+  # android api level for android version
+  if [ "${ARCH}" == "armv7" ]; then
+      MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV7}
+  else
+      MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV8}
+  fi
+  if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
+      cmake_api_level_options=""
+  elif [ ${ANDROID_API_LEVEL} -ge ${MIN_ANDROID_API_LEVEL} ]; then
+      cmake_api_level_options="-DANDROID_NATIVE_API_LEVEL=${ANDROID_API_LEVEL}"
+  else
+      echo "Error: ANDROID_API_LEVEL should be no less than ${MIN_ANDROID_API_LEVEL} on ${ARCH}."
+      exit 1
+  fi
+}
+
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
@@ -154,15 +175,7 @@ function make_tiny_publish_so {
   fi
 
   # android api level for android version
-  if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
-      cmake_api_level_options=""
-  elif [ ${ANDROID_API_LEVEL} -gt 20 ]; then
-      cmake_api_level_options="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
-  else
-      echo "Error: ANDROID_API_LEVEL should be no less than 21, because Paddle-Lite doesn't support Android version that's lower than Android5.0."
-      exit 1
-  fi
-
+  set_android_api_level
 
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
@@ -222,14 +235,7 @@ function make_full_publish_so {
   fi
 
   # android api level for android version
-  if [ "${ANDROID_API_LEVEL}" == "Default" ]; then
-      cmake_api_level_options=""
-  elif [ ${ANDROID_API_LEVEL} -gt 20 ]; then
-      cmake_api_level_options="-DANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
-  else
-      echo "Error: ANDROID_API_LEVEL should be no less than 21, because Paddle-Lite doesn't support Android version that's lower than Android5.0."
-      exit 1
-  fi
+  set_android_api_level
 
   local cmake_mutable_options="
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
@@ -283,9 +289,12 @@ function print_usage {
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
-    echo -e "|     --android_api_level: (21~27); control android api level, default value is 22 when arch=armv7 , 23 when arch=armv8.               |"
-    echo -e "|                 eg. when android platform version is lower than Android6.0, we need to set android_api_level:                        |"
-    echo -e "|                     Android5.1: --android_api_level=22    Android5.0: --android_api_level=21     LowerThanAndroid5.0: not supported  |"
+    echo -e "|     --android_api_level: (16~27); control android api level, default is 16 on armv7 and 21 on armv8. You could set a specific        |"
+    echo -e "|             android_api_level as you need.                                                                                           |"
+    echo -e "|                       | Paddle-Lite Requird / ARM ABI      | armv7 | armv8 |                                                         |"
+    echo -e "|                       |------------------------------------|-------|-------|                                                         |"
+    echo -e "|                       |Supported Minimum Android API Level |  16   |  21   |                                                         |"
+    echo -e "|                       |Supported Minimum Android Version   |  4.1  |  5.0  |                                                         |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
