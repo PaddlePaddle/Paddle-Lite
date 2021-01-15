@@ -2119,7 +2119,7 @@ struct SelectInputParam : ParamBase {
 };
 
 struct TensorArrayToTensorParam : ParamBase {
-  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor>* X{};
   lite::Tensor* Out{};
   lite::Tensor* OutIndex{};
   int axis{0};
