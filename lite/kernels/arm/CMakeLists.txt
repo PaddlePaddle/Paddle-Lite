@@ -48,6 +48,7 @@ add_kernel(dropout_compute_arm ARM basic SRCS dropout_compute.cc DEPS ${lite_ker
 add_kernel(layout_compute_arm ARM basic SRCS layout_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(instance_norm_compute_arm ARM basic SRCS instance_norm_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(grid_sampler_compute_arm ARM basic SRCS grid_sampler_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(rnn_compute_arm ARM extra SRCS rnn_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 ## 2.other basic kernels: basic kernels that not used in basic models
 add_kernel(activation_extra_compute_arm ARM extrta SRCS activation_extra_compute.cc DEPS ${lite_kernel_deps} math_arm)
