@@ -21,7 +21,7 @@ namespace host {
 
 void SelectInputCompute::Run() {
   auto& param = this->Param<param_t>();
-  param.Out->ShareDataWith(*param.X[*param.Mask->data<int>()]);
+  param.Out->CopyDataFrom(*param.X[*param.Mask->data<int>()]);
 }
 
 }  // namespace host
@@ -35,9 +35,8 @@ REGISTER_LITE_KERNEL(select_input,
                      kNCHW,
                      paddle::lite::kernels::host::SelectInputCompute,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("Mask",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
