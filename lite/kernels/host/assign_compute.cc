@@ -23,35 +23,6 @@ void AssignCompute::Run() {
   auto& param = Param<param_t>();
   if (param.X != nullptr) {
     param.Out->CopyDataFrom(*param.X);
-    auto p = param.Out->precision();
-    LOG(INFO) << "assign in kernel out_type:" << lite_api::PrecisionToStr(p);
-    for (size_t i = 0; i < param.Out->dims().size(); i++) {
-      LOG(INFO) << "assign in kernel out_dims[" << i << "] "
-                << param.Out->dims()[i];
-    }
-    switch (p) {
-      case PRECISION(kFloat): {
-        auto* o_data = param.Out->template mutable_data<float>();
-        for (size_t i = 0; i < 10 && i < param.Out->numel(); i++) {
-          LOG(INFO) << "assign in kernel out_data[" << i << "] " << o_data[i];
-        }
-      } break;
-      case PRECISION(kInt32): {
-        auto* o_data = param.Out->template mutable_data<int32_t>();
-        for (size_t i = 0; i < 10 && i < param.Out->numel(); i++) {
-          LOG(INFO) << "assign in kernel out_data[" << i << "] " << o_data[i];
-        }
-      } break;
-      case PRECISION(kInt64): {
-        auto* o_data = param.Out->template mutable_data<int64_t>();
-        for (size_t i = 0; i < 10 && i < param.Out->numel(); i++) {
-          LOG(INFO) << "assign in kernel out_data[" << i << "] " << o_data[i];
-        }
-      } break;
-      default:
-        LOG(INFO) << "todo.";
-        break;
-    }
   } else if (param.X_array != nullptr) {
     auto x_array = param.X_array;
     auto out_array = param.Out_array;
