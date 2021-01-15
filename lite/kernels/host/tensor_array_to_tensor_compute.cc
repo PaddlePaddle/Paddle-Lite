@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/host/tensor_array_to_tensor_compute.h"
+
 #include <vector>
+
 #include "lite/backends/host/math/concat.h"
 #include "lite/backends/host/math/stack.h"
 
