@@ -20,7 +20,7 @@ namespace lite {
 namespace operators {
 
 bool FillZerosLikeOp::CheckShape() const {
-  CHECK(param_.out);
+  CHECK(param_.Out);
   return true;
 }
 
