@@ -37,14 +37,9 @@ bool ExpandV2OpLite::CheckShape() const {
     for (size_t i = 0; i < param_.expand_shapes_tensor.size(); i++) {
       expand_shape.push_back(
           param_.expand_shapes_tensor[i]->template data<int>()[0]);
-      LOG(INFO) << "expand[" << i << "] "
-                << param_.expand_shapes_tensor[i]->template data<int>()[0];
     }
   } else {
     expand_shape = param_.shape;
-  }
-  for (size_t i = 0; i < x_dims_size; i++) {
-    LOG(INFO) << "x_dims[" << i << "] " << param_.X->dims()[i];
   }
   auto shape_size = expand_shape.size();
   CHECK_GE(shape_size, x_dims_size) << "The size of shape for expand_v2 op "

@@ -80,9 +80,6 @@ bool SliceOp::InferShapeImpl() const {
     out_dims = new_dims;
   }
   param_.Out->Resize(out_dims);
-  for (size_t i = 0; i < param_.Out->dims().size(); i++) {
-    LOG(INFO) << "out_dims[" << i << "] " << param_.Out->dims()[i];
-  }
   if (axes[0] != 0) {
     param_.Out->set_lod(param_.X->lod());
   }
@@ -125,7 +122,6 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.StartsTensorList.clear();
   if (opdesc.HasInput("StartsTensorList") &&
       !opdesc.Input("StartsTensorList").empty()) {
-    LOG(INFO) << "StartsTensorList " << opdesc.Input("StartsTensorList").size();
     auto StartsTensorList = opdesc.Input("StartsTensorList");
     for (auto var : StartsTensorList) {
       param_.StartsTensorList.push_back(
@@ -139,8 +135,6 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.EndsTensorList.clear();
   if (opdesc.HasInput("EndsTensorList") &&
       !opdesc.Input("EndsTensorList").empty()) {
-    LOG(INFO) << "EndsTensorList size "
-              << opdesc.Input("EndsTensorList").size();
     auto EndsTensorList = opdesc.Input("EndsTensorList");
     for (auto var : EndsTensorList) {
       param_.EndsTensorList.push_back(

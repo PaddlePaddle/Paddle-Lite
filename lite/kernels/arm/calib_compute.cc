@@ -29,9 +29,6 @@ void CalibComputeFp32ToInt8<DLType>::Run() {
   std::vector<float> scale = {param.scale};
   const auto* din = param.input->template data<float>();
   auto* dout = param.output->template mutable_data<signed char>();
-  for (auto i = 0; i < param.input->numel(); ++i) {
-    LOG(INFO) << "fp32toint8[" << i << "]" << din[i];
-  }
   lite::arm::math::fp32_to_int8(
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
@@ -42,7 +39,6 @@ void CalibComputeInt64ToInt32<DLType>::Run() {
   const auto* din = param.input->template data<int64_t>();
   auto* dout = param.output->template mutable_data<int32_t>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    LOG(INFO) << "int64toint32[" << i << "]" << din[i];
     dout[i] = static_cast<int32_t>(din[i]);
   }
 }
@@ -53,7 +49,6 @@ void CalibComputeInt32ToInt64<DLType>::Run() {
   const auto* din = param.input->template data<int32_t>();
   auto* dout = param.output->template mutable_data<int64_t>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    LOG(INFO) << "int32toint64[" << i << "]" << din[i];
     dout[i] = static_cast<int64_t>(din[i]);
   }
 }
@@ -64,9 +59,6 @@ void CalibComputeInt8ToFp32<DLType>::Run() {
   const auto* din = param.input->template data<signed char>();
   std::vector<float> scale = {param.scale};
   auto* dout = param.output->template mutable_data<float>();
-  for (auto i = 0; i < param.input->numel(); ++i) {
-    LOG(INFO) << "int8tofp32[" << i << "]" << din[i];
-  }
   lite::arm::math::int8_to_fp32(
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
@@ -77,7 +69,6 @@ void CalibComputeInt32ToFp32<DLType>::Run() {
   const auto* din = param.input->template data<int32_t>();
   auto* dout = param.output->template mutable_data<float>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    LOG(INFO) << "int32tofp32[" << i << "]" << din[i];
     dout[i] = static_cast<float>(din[i]);
   }
 }
@@ -88,7 +79,6 @@ void CalibComputeFp32ToInt32<DLType>::Run() {
   const auto* din = param.input->template data<float>();
   auto* dout = param.output->template mutable_data<int32_t>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    LOG(INFO) << "fp32toint32[" << i << "]" << din[i];
     dout[i] = static_cast<int32_t>(din[i]);
   }
 }
@@ -99,7 +89,6 @@ void CalibComputeInt64ToFp32<DLType>::Run() {
   const auto* din = param.input->template data<int64_t>();
   auto* dout = param.output->template mutable_data<float>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    LOG(INFO) << "int64tofp32[" << i << "]" << din[i];
     dout[i] = static_cast<float>(din[i]);
   }
 }

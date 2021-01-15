@@ -272,11 +272,6 @@ void ElementwiseAddCompute<T, PType>::Run() {
       lite::arm::math::elementwise_add_broadcast<T>,
       lite::arm::math::elementwise_add<T>,
       paddle::lite::kernels::host::naive_add<T>);
-  auto& param = this->template Param<operators::ElementwiseParam>();
-  auto* out_data = param.Out->template mutable_data<T>();
-  for (size_t i = 0; i < 10 && i < param.Out->numel(); i++) {
-    LOG(INFO) << "out[" << i << "]: " << out_data[i];
-  }
 }
 
 template <>
@@ -289,19 +284,6 @@ void ElementwiseAddCompute<int64_t, PRECISION(kInt64)>::Run() {
       lite::arm::math::elementwise_add_broadcast<int64_t>,
       lite::arm::math::elementwise_add<int64_t>,
       paddle::lite::kernels::host::naive_add<int64_t>);
-  auto& param = this->template Param<operators::ElementwiseParam>();
-  auto* x_data = param.X->template data<int64_t>();
-  auto* y_data = param.Y->template data<int64_t>();
-  auto* out_data = param.Out->template mutable_data<int64_t>();
-  for (size_t i = 0; i < 10 && i < param.X->numel(); i++) {
-    LOG(INFO) << "add x[" << i << "]: " << x_data[i];
-  }
-  for (size_t i = 0; i < 10 && i < param.Y->numel(); i++) {
-    LOG(INFO) << "add y[" << i << "]: " << y_data[i];
-  }
-  for (size_t i = 0; i < 10 && i < param.Out->numel(); i++) {
-    LOG(INFO) << "add out[" << i << "]: " << out_data[i];
-  }
 }
 
 void ElementwiseAddActivationCompute::Run() {

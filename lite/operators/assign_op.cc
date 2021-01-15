@@ -48,7 +48,6 @@ bool AssignOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
     param_.Out = scope->FindMutableTensor(out_name);
   } else if (x_var->IsType<std::vector<Tensor>>()) {
     param_.X_array = x_var->GetMutable<std::vector<Tensor>>();
-    LOG(INFO) << "X_array_size = " << param_.X_array->size();
     param_.Out_array =
         scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
   } else {
