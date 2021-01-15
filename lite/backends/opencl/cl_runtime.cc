@@ -220,6 +220,9 @@ bool CLRuntime::InitializeDevice() {
   if (device_info_.size() > 0 && device_info_.size() <= 2) {
     return false;
   }
+  if (device_info_.size() > 2) {
+    return true;
+  }
   device_info_["PLACEHOLDER"] = 1;
   // ===================== BASIC =====================
   // CL_DEVICE_TYPE_GPU
