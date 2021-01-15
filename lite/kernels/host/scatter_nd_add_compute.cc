@@ -69,7 +69,7 @@ void ScatterNdAddCompute::Run() {
     num *= update_dims[i];
   }
   std::vector<int64_t> input_offset;
-  input_offset.Resize(in_dims.size());
+  input_offset.resize(in_dims.size());
   input_offset[in_dims.size() - 1] = 1;
   for (int i = in_dims.size() - 2; i >= 0; i--) {
     input_offset[i] = input_offset[i + 1] * in_dims[i + 1];
