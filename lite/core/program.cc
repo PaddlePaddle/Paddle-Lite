@@ -415,8 +415,6 @@ void Program::PrepareWorkspace(
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
         auto* var = exec_scope_->Var(var_name);
-        VLOG(4) << "Var " << var_name << " in block " << block_idx;
-        VLOG(4) << " - type " << static_cast<int>(var_type);
         if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
           // Create the tensor with the shape from var desc, it's convenient to
           // the graph analysis in the passes, but you should resize the tensor
@@ -431,18 +429,6 @@ void Program::PrepareWorkspace(
         }
       } else {
         if (var_name == "feed" || var_name == "fetch") continue;
-#ifndef LITE_WITH_XPU
-        // Collect precision info into var_type_map_
-        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
-          const auto& var_data_type =
-              VarDescType2PrecisionType(var_desc->GetDataType());
-          if (var_data_type != PRECISION(kUnk)) {
-            var_type_map_[var_name] = LiteType::GetTensorTy(
-                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
-          }
-          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
-        }
-#endif
         weights_.push_back(var_name);
         scope_->Var(var_name);
       }

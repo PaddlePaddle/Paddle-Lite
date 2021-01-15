@@ -29,6 +29,9 @@ void CalibComputeFp32ToInt8<DLType>::Run() {
   std::vector<float> scale = {param.scale};
   const auto* din = param.input->template data<float>();
   auto* dout = param.output->template mutable_data<signed char>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    LOG(INFO) << "fp32toint8[" << i << "]" << din[i];
+  }
   lite::arm::math::fp32_to_int8(
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
@@ -37,10 +40,21 @@ template <DataLayoutType DLType>
 void CalibComputeInt64ToInt32<DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int64_t>();
-  std::vector<float> scale = {param.scale};
   auto* dout = param.output->template mutable_data<int32_t>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    dout[i] = din[i];
+    LOG(INFO) << "int64toint32[" << i << "]" << din[i];
+    dout[i] = static_cast<int32_t>(din[i]);
+  }
+}
+
+template <DataLayoutType DLType>
+void CalibComputeInt32ToInt64<DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<int32_t>();
+  auto* dout = param.output->template mutable_data<int64_t>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    LOG(INFO) << "int32toint64[" << i << "]" << din[i];
+    dout[i] = static_cast<int64_t>(din[i]);
   }
 }
 
@@ -50,6 +64,9 @@ void CalibComputeInt8ToFp32<DLType>::Run() {
   const auto* din = param.input->template data<signed char>();
   std::vector<float> scale = {param.scale};
   auto* dout = param.output->template mutable_data<float>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    LOG(INFO) << "int8tofp32[" << i << "]" << din[i];
+  }
   lite::arm::math::int8_to_fp32(
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
@@ -57,19 +74,32 @@ void CalibComputeInt8ToFp32<DLType>::Run() {
 template <DataLayoutType DLType>
 void CalibComputeInt32ToFp32<DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
-  const auto* din = param.input->template data<signed char>();
+  const auto* din = param.input->template data<int32_t>();
   auto* dout = param.output->template mutable_data<float>();
   for (auto i = 0; i < param.input->numel(); ++i) {
+    LOG(INFO) << "int32tofp32[" << i << "]" << din[i];
     dout[i] = static_cast<float>(din[i]);
+  }
+}
+
+template <DataLayoutType DLType>
+void CalibComputeFp32ToInt32<DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<float>();
+  auto* dout = param.output->template mutable_data<int32_t>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    LOG(INFO) << "fp32toint32[" << i << "]" << din[i];
+    dout[i] = static_cast<int32_t>(din[i]);
   }
 }
 
 template <DataLayoutType DLType>
 void CalibComputeInt64ToFp32<DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
-  const auto* din = param.input->template data<signed char>();
+  const auto* din = param.input->template data<int64_t>();
   auto* dout = param.output->template mutable_data<float>();
   for (auto i = 0; i < param.input->numel(); ++i) {
+    LOG(INFO) << "int64tofp32[" << i << "]" << din[i];
     dout[i] = static_cast<float>(din[i]);
   }
 }
@@ -101,6 +131,30 @@ REGISTER_LITE_KERNEL(
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib,
+    kARM,
+    kInt32,
+    kNCHW,
+    paddle::lite::kernels::arm::CalibComputeInt32ToInt64<DATALAYOUT(kNCHW)>,
+    int32_to_int64)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib,
+    kARM,
+    kInt32,
+    kNCHW,
+    paddle::lite::kernels::arm::CalibComputeFp32ToInt32<DATALAYOUT(kNCHW)>,
+    fp32_to_int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

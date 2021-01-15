@@ -33,6 +33,7 @@ bool FillConstantOp::InferShapeImpl() const {
     for (int i = 0; i < shape_tensor->numel(); i++) {
       out_shape.push_back(shape_tensor_data[i]);
     }
+    LOG(INFO) << "is shape tensor ";
   } else if (!shape_tensor_list.empty()) {
     for (size_t i = 0; i < shape_tensor_list.size(); i++) {
       out_shape.push_back(shape_tensor_list[i]->data<int>()[0]);
@@ -42,6 +43,10 @@ bool FillConstantOp::InferShapeImpl() const {
   } else {
     LOG(FATAL) << "no valid out_shape. Must set one of shape_tensor, or "
                   "shape_tensor_list, or shape.";
+  }
+  LOG(INFO) << "out_shape " << out_shape.size();
+  for (size_t i = 0; i < out_shape.size(); i++) {
+    LOG(INFO) << "out_shape[" << i << "] " << out_shape[i];
   }
 
   param_.out->Resize(out_shape);
@@ -72,6 +77,7 @@ bool FillConstantOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     auto shape_tensor_name = opdesc.Input("ShapeTensor").front();
     param_.shape_tensor = GetMutableVar<lite::Tensor>(scope, shape_tensor_name);
   }
+  param_.shape_tensor_list.clear();
   if (opdesc.HasInput("ShapeTensorList") &&
       !opdesc.Input("ShapeTensorList").empty()) {
     for (auto shape_tensor_name : opdesc.Input("ShapeTensorList")) {
