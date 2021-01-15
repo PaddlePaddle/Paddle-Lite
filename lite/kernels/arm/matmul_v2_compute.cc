@@ -245,7 +245,7 @@ void MatMulV2Compute::Run() {
                            nullptr,
                            false,
                            act_param,
-                           &ctx)
+                           &ctx);
   } else if (x_dims.size() == 1 && y_dims.size() == 1) {
     // x: [K], y: [K], out: [1]
     if (x_transpose == false && y_transpose == false) {
@@ -284,7 +284,7 @@ void MatMulV2Compute::Run() {
                            nullptr,
                            false,
                            act_param,
-                           &ctx)
+                           &ctx);
   } else {
     LOG(FATAL) << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
                << ")";
