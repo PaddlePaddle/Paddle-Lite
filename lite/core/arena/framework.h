@@ -72,21 +72,21 @@ class TestCase {
   template <typename T>
   bool CheckTensorPrecision(const Tensor* a_tensor,
                             const Tensor* b_tensor,
-                            float abs_error,
-                            const Type* type);
+                            const Type* type,
+                            float abs_error);
 
   // checkout the precision of the two tensors. b_tensor is baseline
   bool CheckPrecision(const Tensor* a_tensor,
                       const Tensor* b_tensor,
-                      float abs_error,
-                      const Type* out_arg_type);
+                      const Type* type,
+                      float abs_error);
 
   /// Check the precision of the output variables. It will compare the same
   /// tensor (or all tensors of the tensor_array) in two scopes, one of the
   /// instruction execution, and the other for the baseline.
   bool CheckPrecision(const std::string& var_name,
-                      float abs_error,
-                      const Type* out_arg_type);
+                      const Type* type,
+                      float abs_error);
 
   const cpp::OpDesc& op_desc() { return *op_desc_; }
 
@@ -140,7 +140,7 @@ class TestCase {
 
     auto* base_tensor_list = base_scope_->NewTensorList(var_name);
     auto* inst_tensor_list = inst_scope_->NewTensorList(var_name);
-    for (int i = 0; i < ddims.size(); i++) {
+    for (size_t i = 0; i < ddims.size(); i++) {
       Tensor item;
       item.Resize(ddims[i]);
       memcpy(item.mutable_data<T>(),
@@ -162,8 +162,6 @@ class TestCase {
 
 #ifdef LITE_WITH_OPENCL
   CLImageConverterDefault converter_;
-  lite::Tensor input_image_cpu_tensor_;
-  lite::Tensor input_cpu_tensor_;
 #endif
 
  private:
@@ -260,9 +258,9 @@ class Arena {
   // input_name: X
   bool CompareTensor(const std::string& arg_name, const std::string& var_name) {
     // get tensor type.
-    const Type* out_arg_type =
+    const Type* type =
         tester_->instruction().kernel()->GetOutputDeclType(arg_name);
-    return tester_->CheckPrecision(var_name, abs_error_, out_arg_type);
+    return tester_->CheckPrecision(var_name, type, abs_error_);
   }
 
  private:
