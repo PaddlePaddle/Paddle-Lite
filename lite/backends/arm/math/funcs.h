@@ -184,7 +184,6 @@ inline float32x4_t log_ps(float32x4_t x) {
 // exp() computed for 4 float at once
 inline float32x4_t exp_ps(float32x4_t x) {
   float32x4_t tmp, fx;
-
   float32x4_t one = vdupq_n_f32(1);
   x = vminq_f32(x, vdupq_n_f32(c_exp_hi));
   x = vmaxq_f32(x, vdupq_n_f32(c_exp_lo));
@@ -192,8 +191,16 @@ inline float32x4_t exp_ps(float32x4_t x) {
   // express exp(x) as exp(g + n*log(2))
   fx = vmlaq_f32(vdupq_n_f32(0.5f), x, vdupq_n_f32(c_cephes_LOG2EF));
 
-  // perform a floorf
+// perform a floorf
+#ifdef __aarch64__
   tmp = vcvtq_f32_s32(vcvtq_s32_f32(fx));
+#else
+  uint32x4_t vmask_1 = vcgeq_f32(fx, vdupq_n_f32(0.f));
+  float32x4_t voffset_1 =
+      vbslq_f32(vmask_1, vdupq_n_f32(0.5f), vdupq_n_f32(-0.5f));
+  float32x4_t fx_tmp_1 = vaddq_f32(fx, voffset_1);
+  tmp = vcvtq_f32_s32(vcvtq_s32_f32(fx_tmp_1));
+#endif
 
   // if greater, substract 1
   uint32x4_t mask = vcgtq_f32(tmp, fx);
@@ -238,11 +245,18 @@ inline float32x4_t exp_ps(float32x4_t x) {
 
   // build 2^n
   int32x4_t mm;
+#ifdef __aarch64__
   mm = vcvtq_s32_f32(fx);
+#else
+  uint32x4_t vmask_2 = vcgeq_f32(fx, vdupq_n_f32(0.f));
+  float32x4_t voffset_2 =
+      vbslq_f32(vmask_2, vdupq_n_f32(0.5f), vdupq_n_f32(-0.5f));
+  float32x4_t fx_tmp_2 = vaddq_f32(fx, voffset_2);
+  mm = vcvtq_s32_f32(fx_tmp_2);
+#endif
   mm = vaddq_s32(mm, vdupq_n_s32(0x7f));
   mm = vshlq_n_s32(mm, 23);
   float32x4_t pow2n = vreinterpretq_f32_s32(mm);
-
   y = vmulq_f32(y, pow2n);
   return y;
 }

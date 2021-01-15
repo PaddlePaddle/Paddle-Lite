@@ -20,20 +20,16 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace host {
+namespace arm {
 
-template <PrecisionType Ptype>
-class OneHotCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+class RnnCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  using param_t = operators::OneHotParam;
-
   void Run() override;
 
-  virtual ~OneHotCompute() = default;
+  virtual ~RnnCompute() = default;
 };
 
-}  // namespace host
+}  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

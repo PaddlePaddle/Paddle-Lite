@@ -2159,13 +2159,13 @@ struct TensorArrayToTensorParam : ParamBase {
 
 struct RnnParam : ParamBase {
   lite::Tensor* Input;
-  lite::Tensor* PreState;
+  std::vector<lite::Tensor*> PreState;
   std::vector<lite::Tensor*> WeightList;
   lite::Tensor* SequenceLength;
   lite::Tensor* DropoutState;
   lite::Tensor* Reserve;
   lite::Tensor* Out;
-  lite::Tensor* State;
+  std::vector<lite::Tensor*> State;
   float dropout_prob{0.0};
   bool is_bidirec{false};
   int input_size{10};

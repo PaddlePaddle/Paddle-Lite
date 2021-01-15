@@ -466,7 +466,7 @@ void GenerateProposalsCompute::Run() {
   }
 
   if (param.RpnRoisNum != nullptr) {
-    param.RpnRoisLod->Resize(DDim(std::vector<DDim::value_type>({num})));
+    param.RpnRoisNum->Resize(DDim(std::vector<DDim::value_type>({num})));
     int64_t *num_data = param.RpnRoisNum->mutable_data<int64_t>();
     for (int i = 0; i < num; i++) {
       num_data[i] = tmp_num[i];
