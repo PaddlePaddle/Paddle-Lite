@@ -57,6 +57,7 @@ if(LITE_WITH_ARM)
     lite_cc_test_with_model_and_data(test_mobilenet_v2_int8_arm MODEL mobilenet_v2_int8_for_arm DATA ILSVRC2012_small)
     lite_cc_test_with_model_and_data(test_resnet50_int8_arm MODEL resnet50_int8_for_arm DATA ILSVRC2012_small)
     lite_cc_test_with_model_and_data(test_lstm_int8_arm MODEL ocr_rec_quant_mul_lstm_for_arm DATA ocr_rec_img_txt)
+    lite_cc_test_with_model_and_data(test_lac_crf_fp32_arm MODEL lac_crf_fp32_arm DATA lac_crf_data_txt)
 endif()
 
 if(LITE_WITH_NPU)
