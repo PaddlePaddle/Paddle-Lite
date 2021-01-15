@@ -225,7 +225,7 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kFP16, kNCHW, ConvFp16, def)
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
-#endif
+#endif  // ENABLE_ARM_FP16
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kFloat, kNCHW, ConvFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})

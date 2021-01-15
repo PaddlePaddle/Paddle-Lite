@@ -227,6 +227,10 @@ if (LITE_BUILD_EXTRA)
   add_definitions("-DLITE_BUILD_EXTRA")
 endif(LITE_BUILD_EXTRA)
 
+if (LITE_WITH_ARM82_FP16)
+  add_definitions("-DLITE_WITH_ARM82_FP16")
+endif(LITE_WITH_ARM82_FP16)
+
 if (LITE_WITH_PYTHON)
   add_definitions("-DLITE_WITH_PYTHON")
 endif(LITE_WITH_PYTHON)
