@@ -28,6 +28,8 @@ inline std::vector<int64_t> get_new_data_from_tensorlist(
   for (size_t i = 0; i < list_new_data_tensor.size(); ++i) {
     auto tensor = list_new_data_tensor[i];
     CHECK_EQ(tensor->dims(), DDim({1})) << "shape of dim tensor should be [1]";
+    LOG(INFO) << "tensorlist [" << i << "]"
+              << static_cast<int64_t>(*tensor->data<int64_t>());
     vec_new_data.push_back(static_cast<int64_t>(*tensor->data<int64_t>()));
   }
   return vec_new_data;
@@ -39,6 +41,9 @@ inline std::vector<int64_t> get_new_data_from_tensor(
   auto* new_data = new_data_tensor->data<int64_t>();
   vec_new_data =
       std::vector<int64_t>(new_data, new_data + new_data_tensor->numel());
+  for (int i = 0; i < new_data_tensor->numel(); i++) {
+    LOG(INFO) << "tensor [" << i << "]" << new_data[i];
+  }
   return vec_new_data;
 }
 
@@ -83,10 +88,18 @@ void SliceCompute<T, PType>::Run() {
     } else if (list_new_ends_tensor.size() > 0) {
       ends = get_new_data_from_tensorlist(list_new_ends_tensor);
     }
+    LOG(INFO) << "starts:";
+    for (int i = 0; i < starts.size(); i++) {
+      LOG(INFO) << "[" << i << "]" << starts[i];
+    }
+    LOG(INFO) << "ends:";
+    for (int i = 0; i < ends.size(); i++) {
+      LOG(INFO) << "[" << i << "]" << ends[i];
+    }
     CHECK_EQ(ends.size(), axes.size())
         << "The size of ends must be equal to the size of axes.";
     out_dims = in_dims;
-    int dim_value, start, end;
+    int64_t dim_value, start, end;
     for (size_t i = 0; i < axes.size(); ++i) {
       dim_value = out_dims[axes[i]];
       if (dim_value > 0) {
@@ -101,8 +114,8 @@ void SliceCompute<T, PType>::Run() {
 
         start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
         end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
-        start = std::max(start, 0);
-        end = std::max(end, 0);
+        start = std::max(start, static_cast<int64_t>(0));
+        end = std::max(end, static_cast<int64_t>(0));
         end = std::min(end, dim_value);
         CHECK_GT(end, start) << "end should greater than start";
         out_dims[axes[i]] = end - start;
@@ -164,6 +177,15 @@ void SliceCompute<T, PType>::Run() {
   auto* o_data = out->template mutable_data<T>();
   std::vector<int32_t> starts_final(starts.begin(), starts.end());
   std::vector<int32_t> ends_final(ends.begin(), ends.end());
+  LOG(INFO) << "final starts:";
+  for (int i = 0; i < starts_final.size(); i++) {
+    LOG(INFO) << "[" << i << "]" << starts_final[i];
+  }
+  LOG(INFO) << "final ends:";
+  for (int i = 0; i < ends_final.size(); i++) {
+    LOG(INFO) << "[" << i << "]" << ends_final[i];
+  }
+
   lite::arm::math::slice(
       x_data, in_dims.data(), axes, starts_final, ends_final, o_data, &ctx);
   param.Out->Resize(out_dims);
