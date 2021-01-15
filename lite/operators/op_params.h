@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
@@ -2088,6 +2089,25 @@ struct FlattenContiguousRangeParam : ParamBase {
   lite::Tensor* xshape;
   int start_axis;
   int stop_axis;
+};
+
+struct LoDArrayLengthParam : ParamBase {
+  std::vector<lite::Tensor>* x{};
+  lite::Tensor* out{};
+};
+
+struct SelectInputParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Mask{};
+  lite::Tensor* Out{};
+};
+
+struct TensorArrayToTensorParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  lite::Tensor* OutIndex{};
+  int axis{0};
+  bool use_stack{false};
 };
 
 struct RnnParam : ParamBase {
