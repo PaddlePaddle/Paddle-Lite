@@ -28,24 +28,14 @@ if(NOT DEFINED ANDROID_NDK)
 endif()
 
 if(NOT DEFINED ANDROID_NATIVE_API_LEVEL)
-    set(ANDROID_NATIVE_API_LEVEL "23")
+    set(ANDROID_NATIVE_API_LEVEL "21")
     if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
         if(LITE_WITH_NPU AND NOT LITE_ON_TINY_PUBLISH)
             set(ANDROID_NATIVE_API_LEVEL "24") # HIAI DDK depends on android-24
         else()
-            set(ANDROID_NATIVE_API_LEVEL "22")
+            set(ANDROID_NATIVE_API_LEVEL "16")
         endif()
     endif()
-endif()
-
-if(LITE_WITH_ARM82_FP16)
-    set(CMAKE_C_FLAGS   "CMAKE_C_FLAGS"   -march=armv8.2-a+fp16)
-    set(CMAKE_CXX_FLAGS "CMAKE_CXX_FLAGS" -march=armv8.2-a+fp16)
-endif()
-
-if(LITE_WITH_ARM82_INT8)
-    set(CMAKE_C_FLAGS   "CMAKE_C_FLAGS"   -march=armv8.2-a+dotprod)
-    set(CMAKE_CXX_FLAGS "CMAKE_CXX_FLAGS" -march=armv8.2-a+dotprod)
 endif()
 
 # then check input arm abi

@@ -272,6 +272,7 @@ void RuntimeProgram::Run() {
                                  lite::Color::Engine);
   }
 #endif
+
   int idx = -1;
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
@@ -291,7 +292,9 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
+
     inst.Run();
+
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
     precision_profiler_summary +=
@@ -416,6 +419,18 @@ void Program::PrepareWorkspace(
         }
       } else {
         if (var_name == "feed" || var_name == "fetch") continue;
+#ifndef LITE_WITH_XPU
+        // Collect precision info into var_type_map_
+        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
+          const auto& var_data_type =
+              VarDescType2PrecisionType(var_desc->GetDataType());
+          if (var_data_type != PRECISION(kUnk)) {
+            var_type_map_[var_name] = LiteType::GetTensorTy(
+                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
+          }
+          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
+        }
+#endif
         weights_.push_back(var_name);
         scope_->Var(var_name);
       }

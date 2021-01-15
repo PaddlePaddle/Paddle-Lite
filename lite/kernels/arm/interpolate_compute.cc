@@ -35,6 +35,7 @@ void BilinearInterpCompute::Run() {
   int out_w = param.out_w;
   int out_h = param.out_h;
   bool align_corners = param.align_corners;
+  int align_mode = param.align_mode;
   std::string interp_method = "Bilinear";
   lite::arm::math::interpolate(X,
                                OutSize,
@@ -45,6 +46,7 @@ void BilinearInterpCompute::Run() {
                                out_w,
                                scale,
                                align_corners,
+                               align_mode,
                                interp_method);
 }
 
@@ -59,6 +61,7 @@ void NearestInterpCompute::Run() {
   int out_w = param.out_w;
   int out_h = param.out_h;
   bool align_corners = param.align_corners;
+  int align_mode = param.align_mode;
   std::string interp_method = "Nearest";
   lite::arm::math::interpolate(X,
                                OutSize,
@@ -69,6 +72,7 @@ void NearestInterpCompute::Run() {
                                out_w,
                                scale,
                                align_corners,
+                               align_mode,
                                interp_method);
 }
 
