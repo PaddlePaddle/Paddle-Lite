@@ -104,7 +104,7 @@ TEST(MobileNetV1_Int8_Dygraph, test_mobilenet_v1_int8_dygraph_arm) {
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
   LOG(INFO) << out_accuracy;
-  ASSERT_GE(out_accuracy, 0.54f);
+  ASSERT_GE(out_accuracy, 0.53f);
 }
 
 }  // namespace lite

@@ -106,6 +106,7 @@ class Optimizer {
          "elementwise_mul_constant_eliminate_pass",     //
          "lite_sequence_pool_concat_fuse_pass",         //
          "lite_scale_activation_fuse_pass",             //
+         "lite_instance_norm_activation_fuse_pass",     //
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
          "lite_elementwise_activation_fuse_pass",  //
@@ -115,6 +116,8 @@ class Optimizer {
          "__xpu__resnet_d_fuse_pass",
          "__xpu__resnet_cbam_fuse_pass",
          "__xpu__conv2d_fuse_pass",
+         "__xpu__resblock_reduction_fuse_pass",
+         "__xpu__resblock_normal_fuse_pass",
          "__xpu__conv2d_link_previous_out_max_pass",
          "__xpu__sfa_head_meanstd_fuse_pass",
          "__xpu__sfa_head_moment_fuse_pass",
@@ -143,7 +146,7 @@ class Optimizer {
 
          "remove_tf_redundant_ops_pass",
          "variable_place_inference_pass",  // inference arg/var's
-
+         "__fpga_kernel_place_correct_pass",
          "mlu_postprocess_pass",
          // info(target/precision/layout/device)
          // using kernel info

@@ -19,6 +19,7 @@
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/arm/activation_compute.h"
+#include "lite/kernels/arm/activation_extra_compute.h"
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 

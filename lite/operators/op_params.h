@@ -206,15 +206,6 @@ struct MulGradParam : ParamBase {
   int y_num_col_dims{1};
 };
 
-// For ReduceMean Op
-struct ReduceMeanParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* Out{};
-
-  std::vector<int> dim;
-  bool keep_dim{false};
-};
-
 // For Stack Op
 struct StackParam : ParamBase {
   std::vector<lite::Tensor*> X;
@@ -588,6 +579,14 @@ struct DropoutParam : ParamBase {
   std::string dropout_implementation{"downgrade_in_infer"};
 };
 
+// For PadConstantLike op
+struct PadConstantLikeParam : ParamBase {
+  const lite::Tensor* x{};
+  const lite::Tensor* y{};
+  lite::Tensor* output{};
+  float pad_value{0.0f};
+};
+
 // For Split op
 struct SplitParam : ParamBase {
   lite::Tensor* x{};
@@ -598,6 +597,28 @@ struct SplitParam : ParamBase {
   int axis{-1};
   int num{0};
   std::vector<int> sections;
+  ///////////////////////////////////////////////////////////////////////////////////
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({x}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({output}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+};
+
+struct UnbindParam : ParamBase {
+  lite::Tensor* x{};
+  std::vector<lite::Tensor*> output{};
+
+  int axis{-1};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -698,6 +719,13 @@ struct MeanGradParam : ParamBase {
   lite::Tensor* X_grad{};
 };
 
+struct FillAnyLikeParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  float value{0.0f};
+  int dtype{-1};
+};
+
 /// ----------------------- fill_constant operators ----------------------
 struct FillConstantParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
@@ -709,6 +737,7 @@ struct FillConstantParam : ParamBase {
   float value{0.0f};
   // useless for x86, keep it for compatibility
   bool force_cpu{false};
+  lite::Tensor* in{};
   lite::Tensor* out{};
 };
 
@@ -758,6 +787,14 @@ struct FakeQuantDequantAbsMaxParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* out{};
   lite::Tensor* out_scale{};
+  int bit_length;
+};
+
+struct FakeChannelWiseQuantDequantAbsMaxParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* out_scale{};
+  int quant_axis;
   int bit_length;
 };
 
@@ -1250,13 +1287,6 @@ struct SequenceArithmeticParam : ParamBase {
   lite::Tensor* Out{};
 };
 
-struct ReduceMaxParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
-  std::vector<int> dim{};
-  bool keep_dim{false};
-};
-
 struct LodResetParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
@@ -1271,8 +1301,8 @@ struct IsEmptyParam : ParamBase {
 };
 
 struct ReduceParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* output{};
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
   std::vector<int> dim{0};
   bool keep_dim{false};
   bool reduce_all{false};
@@ -1703,6 +1733,9 @@ struct InstanceNormParam : ParamBase {
   lite::Tensor* saved_mean{};
   lite::Tensor* saved_variance{};
   float epsilon;
+  bool fuse_relu{false};
+  std::string activation_type{""};
+  float alpha{6.};
 };
 /// --------------------- group_norm operators --------------------
 struct GroupNormParam : ParamBase {
@@ -1739,9 +1772,9 @@ struct LstmParam : ParamBase {
   lite::Tensor* C0{nullptr};
   bool use_peepholes;
   bool is_reverse;
-  std::string gate_activation;
-  std::string cell_activation;
-  std::string candidate_activation;
+  lite_api::ActivationType gate_activation;
+  lite_api::ActivationType cell_activation;
+  lite_api::ActivationType candidate_activation;
   // for int8
   WITH_INT8_CONFIG
 };
@@ -1778,6 +1811,27 @@ struct XPUSoftmaxTopkParam : ParamBase {
   lite::Tensor* indices{};
   int axis{-1};
   int K{1};
+};
+struct XPUBlockFuseParam : ParamBase {
+  const lite::Tensor* input{};
+  const lite::Tensor* filter;
+  const lite::Tensor* max_filter;
+  const lite::Tensor* bias;
+  const lite::Tensor* input_max{};
+  lite::Tensor* output{};
+  lite::Tensor* output_max{};
+  std::vector<int> op_type;
+  std::vector<int> place_x;
+  std::vector<int> place_y;
+  std::vector<int> place_z;
+  std::vector<int> filter_dims;
+  std::vector<int> strides;
+  std::vector<int> paddings;
+  std::vector<int> dilations;
+  std::vector<int> groups;
+  std::vector<int> act_type;
+  std::vector<float> act_param;
+  std::vector<int> block_lod;
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -1965,6 +2019,7 @@ struct XPUConv2dParam : ParamBase {
   std::shared_ptr<std::vector<int>> paddings;
   std::shared_ptr<std::vector<int>> dilations;
   int groups{1};
+  bool has_branch{false};
 };
 
 struct XPUSfaHeadParam : ParamBase {
@@ -2097,13 +2152,13 @@ struct TensorArrayToTensorParam : ParamBase {
 
 struct RnnParam : ParamBase {
   lite::Tensor* Input;
-  lite::Tensor* PreState;
+  std::vector<lite::Tensor*> PreState;
   std::vector<lite::Tensor*> WeightList;
   lite::Tensor* SequenceLength;
   lite::Tensor* DropoutState;
   lite::Tensor* Reserve;
   lite::Tensor* Out;
-  lite::Tensor* State;
+  std::vector<lite::Tensor*> State;
   float dropout_prob{0.0};
   bool is_bidirec{false};
   int input_size{10};
@@ -2114,6 +2169,23 @@ struct RnnParam : ParamBase {
   int seed{0};
 };
 
+struct StridedSliceParam : ParamBase {
+  lite::Tensor* Input{};
+  lite::Tensor* Out{};
+  std::vector<int> starts{};
+  std::vector<int> ends{};
+  std::vector<int> strides{};
+  std::vector<int> axes{};
+  std::vector<int> infer_flags{};
+  std::vector<int> decrease_axis{};
+  std::vector<lite::Tensor*> StartsTensorList{};
+  std::vector<lite::Tensor*> EndsTensorList{};
+  std::vector<lite::Tensor*> StridesTensorList{};
+  bool tensor_input{false};
+  lite::Tensor* EndsTensor{nullptr};
+  lite::Tensor* StartsTensor{nullptr};
+  lite::Tensor* StridesTensor{nullptr};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

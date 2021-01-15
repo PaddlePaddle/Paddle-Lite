@@ -158,6 +158,23 @@ class YoloBoxComputeTester : public arena::TestCase {
     float* boxes_data = boxes->mutable_data<float>();
     float* scores_data = scores->mutable_data<float>();
 
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "x_n:" << n;
+    LOG(INFO) << "x_h:" << h;
+    LOG(INFO) << "x_c:" << in->dims()[1];
+    LOG(INFO) << "x_w:" << w;
+    LOG(INFO) << "x_stride_:" << stride;
+    LOG(INFO) << "x_size_:" << in_size;
+    LOG(INFO) << "box_num_:" << box_num;
+    LOG(INFO) << "anchor_num_:" << an_num;
+    LOG(INFO) << "anchor_stride_:" << an_stride;
+    LOG(INFO) << "class_num_:" << class_num;
+    LOG(INFO) << "clip_bbox_:" << clip_bbox_;
+    LOG(INFO) << "conf_thresh_:" << conf_thresh;
+    LOG(INFO) << "scale_x_y_:" << scale_x_y_;
+// LOG(INFO) << "bias_:" << bias_;
+#endif
+
     float box[4];
     for (int i = 0; i < n; i++) {
       int img_height = imgsize_data[2 * i];
@@ -249,7 +266,10 @@ void TestYoloBox(Place place, float abs_error) {
 TEST(YoloBox, precision) {
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL));
+  abs_error = 2e-2;
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
