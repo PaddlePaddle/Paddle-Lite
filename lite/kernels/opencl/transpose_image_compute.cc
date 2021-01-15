@@ -199,10 +199,10 @@ class TransposeComputeFloatImage
 
   void Run() override {
     auto x = transpose_param_->x;
-    auto* x_image = x->data<half_t, cl::Image2D>();
+    auto* x_image = GET_DATA_GPU(x->data);
     auto output = transpose_param_->output;
-    auto output_image = output->mutable_data<half_t, cl::Image2D>(
-        output_image_w_, output_image_h_);
+    auto output_image = MUTABLE_DATA_GPU(
+        output->mutable_data, output_image_w_, output_image_h_, nullptr);
 
     auto& context = ctx_->As<OpenCLContext>();
     auto kernel = kernel_;
