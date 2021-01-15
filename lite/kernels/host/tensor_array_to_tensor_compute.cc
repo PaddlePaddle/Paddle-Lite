@@ -44,6 +44,7 @@ void TensorArrayToTensorCompute::Run() {
   } else {
     lite::host::math::concat_func<float>(inputs, axis, out);
   }
+  param.X->clear();
 }
 
 }  // namespace host

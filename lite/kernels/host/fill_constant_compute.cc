@@ -29,12 +29,10 @@ void FillConstantCompute::FillConstData() {
   auto data = param.out->template mutable_data<T>();
   for (int i = 0; i < param.out->numel(); i++) {
     data[i] = value;
-    LOG(INFO) << "fill[" << i << "]" << value;
   }
 }
 
 void FillConstantCompute::Run() {
-  LOG(INFO) << "fill start";
   auto& param = *param_.get_mutable<param_t>();
   if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
     FillConstData<float>();
@@ -49,7 +47,6 @@ void FillConstantCompute::Run() {
   } else {
     LOG(FATAL) << "not supported dtype " << param.dtype;
   }
-  LOG(INFO) << "fill end";
 }
 
 }  // namespace host

@@ -281,15 +281,16 @@ void ElementwiseAddCompute<T, PType>::Run() {
 
 template <>
 void ElementwiseAddCompute<int64_t, PRECISION(kInt64)>::Run() {
-  elementwise_compute_template<operators::ElementwiseParam,
-                               int64_t,
-                               OprandSwapable::YES,
-                               arm_math::NullNeonConfig>(
-      this,
-      lite::arm::math::elementwise_add_broadcast<int64_t>,
-      lite::arm::math::elementwise_add<int64_t>,
-      paddle::lite::kernels::host::naive_add<int64_t>);
   auto& param = this->template Param<operators::ElementwiseParam>();
+  for (size_t i = 0; i < param.X->dims().size(); i++) {
+    LOG(INFO) << "x_dims[" << i << "] " << param.X->dims()[i];
+  }
+  for (size_t i = 0; i < param.Y->dims().size(); i++) {
+    LOG(INFO) << "y_dims[" << i << "] " << param.Y->dims()[i];
+  }
+  for (size_t i = 0; i < param.Out->dims().size(); i++) {
+    LOG(INFO) << "out_dims[" << i << "] " << param.Out->dims()[i];
+  }
   auto* x_data = param.X->template data<int64_t>();
   auto* y_data = param.Y->template data<int64_t>();
   auto* out_data = param.Out->template mutable_data<int64_t>();
@@ -299,6 +300,14 @@ void ElementwiseAddCompute<int64_t, PRECISION(kInt64)>::Run() {
   for (size_t i = 0; i < 10 && i < param.Y->numel(); i++) {
     LOG(INFO) << "add y[" << i << "]: " << y_data[i];
   }
+  elementwise_compute_template<operators::ElementwiseParam,
+                               int64_t,
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
+      this,
+      lite::arm::math::elementwise_add_broadcast<int64_t>,
+      lite::arm::math::elementwise_add<int64_t>,
+      paddle::lite::kernels::host::naive_add<int64_t>);
   for (size_t i = 0; i < 10 && i < param.Out->numel(); i++) {
     LOG(INFO) << "add out[" << i << "]: " << out_data[i];
   }
@@ -377,6 +386,25 @@ void ElementwiseSubActivationCompute::Run() {
 
 template <typename T, PrecisionType PType>
 void ElementwiseMulCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::ElementwiseParam>();
+  for (size_t i = 0; i < param.X->dims().size(); i++) {
+    LOG(INFO) << "x_dims[" << i << "] " << param.X->dims()[i];
+  }
+  for (size_t i = 0; i < param.Y->dims().size(); i++) {
+    LOG(INFO) << "y_dims[" << i << "] " << param.Y->dims()[i];
+  }
+  for (size_t i = 0; i < param.Out->dims().size(); i++) {
+    LOG(INFO) << "out_dims[" << i << "] " << param.Out->dims()[i];
+  }
+  auto* x_data = param.X->template data<T>();
+  auto* y_data = param.Y->template data<T>();
+  auto* out_data = param.Out->template mutable_data<T>();
+  for (size_t i = 0; i < 10 && i < param.X->numel(); i++) {
+    LOG(INFO) << "mul x[" << i << "]: " << x_data[i];
+  }
+  for (size_t i = 0; i < 10 && i < param.Y->numel(); i++) {
+    LOG(INFO) << "mul y[" << i << "]: " << y_data[i];
+  }
   elementwise_compute_template<operators::ElementwiseParam,
                                T,
                                OprandSwapable::YES,
@@ -385,6 +413,9 @@ void ElementwiseMulCompute<T, PType>::Run() {
       lite::arm::math::elementwise_mul_broadcast<T>,
       lite::arm::math::elementwise_mul<T>,
       paddle::lite::kernels::host::naive_mul<T>);
+  for (size_t i = 0; i < 10 && i < param.Out->numel(); i++) {
+    LOG(INFO) << "add out[" << i << "]: " << out_data[i];
+  }
 }
 
 template <typename T, PrecisionType PType>

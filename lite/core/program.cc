@@ -397,19 +397,25 @@ void Program::PrepareWorkspace(
       VLOG(4) << "Var " << var_name << " in block " << block_idx;
       VLOG(4) << " - type " << static_cast<int>(var_type);
 
-      // Collect precision info into var_type_map_
-      if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
-        const auto& var_data_type =
-            VarDescType2PrecisionType(var_desc->GetDataType());
-        if (var_data_type != PRECISION(kUnk)) {
-          var_type_map_[var_name] = LiteType::GetTensorTy(
-              TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
+#ifdef LITE_WITH_XPU
+      if (!var_desc->Persistable()) {
+#endif
+        // Collect precision info into var_type_map_
+        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
+          const auto& var_data_type =
+              VarDescType2PrecisionType(var_desc->GetDataType());
+          if (var_data_type != PRECISION(kUnk)) {
+            var_type_map_[var_name] = LiteType::GetTensorTy(
+                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
+          }
+          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
+        } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
+          var_type_map_[var_name] = LiteType::GetTensorListTy(
+              TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
         }
-        VLOG(4) << " - data type " << static_cast<int>(var_data_type);
-      } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
-        var_type_map_[var_name] = LiteType::GetTensorListTy(
-            TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+#ifdef LITE_WITH_XPU
       }
+#endif
 
       // Create tensors or wights from variable description.
       if (!var_desc->Persistable()) {
