@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/fill_constant_compute.h"
+#include "lite/kernels/host/fill_any_like_compute.h"
 
 namespace paddle {
 namespace lite {
