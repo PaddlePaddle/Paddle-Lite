@@ -176,8 +176,8 @@ TEST(Gather, precision) {
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);
+// #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+//   place = TARGET(kXPU);
 #else
   return;
 #endif
