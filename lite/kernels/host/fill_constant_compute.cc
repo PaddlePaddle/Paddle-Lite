@@ -29,6 +29,7 @@ void FillConstantCompute::FillConstData() {
   auto data = param.out->template mutable_data<T>();
   for (int i = 0; i < param.out->numel(); i++) {
     data[i] = value;
+    LOG(INFO) << "fill[" << i << "]" << value;
   }
 }
 
