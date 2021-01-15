@@ -2162,6 +2162,14 @@ struct StridedSliceParam : ParamBase {
   lite::Tensor* StartsTensor{nullptr};
   lite::Tensor* StridesTensor{nullptr};
 };
+
+struct ScatterNdAddParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* indexs{};
+  lite::Tensor* updates{};
+  lite::Tensor* output{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
