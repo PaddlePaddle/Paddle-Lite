@@ -80,6 +80,9 @@ bool SliceOp::InferShapeImpl() const {
     out_dims = new_dims;
   }
   param_.Out->Resize(out_dims);
+  for (size_t i = 0; i < param_.Out->dims().size(); i++) {
+    LOG(INFO) << "out_dims[" << i << "] " << param_.Out->dims()[i];
+  }
   if (axes[0] != 0) {
     param_.Out->set_lod(param_.X->lod());
   }
