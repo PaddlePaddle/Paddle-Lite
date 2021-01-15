@@ -15,6 +15,7 @@
 #pragma once
 #include <cmath>
 #include "lite/core/context.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
@@ -23,7 +24,7 @@ namespace math {
 
 // fixme now only support transA = false
 template <typename dtype>
-bool gemv_int8(const int8_t* A,
+void gemv_int8(const int8_t* A,
                const int8_t* x,
                dtype* y,
                bool transA,
@@ -32,11 +33,8 @@ bool gemv_int8(const int8_t* A,
                const float* scale,
                bool is_bias,
                const float* bias,
-               bool flag_act,
-               lite_api::ActivationType act,
-               const ARMContext* ctx,
-               float six = 6.f,
-               float alpha = 1.f);
+               const operators::ActivationParam act_param,
+               ARMContext* ctx);
 
 }  // namespace math
 }  // namespace arm

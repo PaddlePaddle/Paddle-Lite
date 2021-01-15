@@ -88,3 +88,22 @@ REGISTER_LITE_KERNEL(
                                        PRECISION(kAny),
                                        DATALAYOUT(kAny))})
     .Finalize();
+REGISTER_LITE_KERNEL(one_hot_v2,
+                     kHost,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::host::OneHotCompute,
+                     def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("depth_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();

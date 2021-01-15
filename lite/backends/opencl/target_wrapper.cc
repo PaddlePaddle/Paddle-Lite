@@ -14,6 +14,8 @@
 
 #include "lite/backends/opencl/target_wrapper.h"
 #include <algorithm>
+#include <map>
+#include <string>
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/cl_utility.h"
@@ -58,10 +60,30 @@ void TargetWrapperCL::Free(void *ptr) {
   }
 }
 
+bool ImageValid(const size_t req_img_w, const size_t req_img_h) {
+  bool valid = true;
+  std::map<std::string, size_t> &dev_map = CLRuntime::Global()->GetDeviceInfo();
+  auto support_img = dev_map["CL_DEVICE_IMAGE_SUPPORT"];
+  if (!support_img) {
+    LOG(FATAL) << "device does not support opencl image: " << support_img;
+    valid = false;
+  }
+  auto max_img_w = dev_map["CL_DEVICE_IMAGE2D_MAX_WIDTH"];
+  auto max_img_h = dev_map["CL_DEVICE_IMAGE2D_MAX_HEIGHT"];
+  if (req_img_w > max_img_w || req_img_h > max_img_h) {
+    LOG(FATAL) << "malloc image is out of max image size(w,h):" << max_img_w
+               << "," << max_img_h << ", need image size(w,h):" << req_img_w
+               << "," << req_img_h;
+    valid = false;
+  }
+  return valid;
+}
+
 template <>
 void *TargetWrapperCL::MallocImage<float>(const size_t cl_image2d_width,
                                           const size_t cl_image2d_height,
                                           void *host_ptr) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFloat)));
   cl_int status;
   cl::Image2D *cl_image = new cl::Image2D(
@@ -86,6 +108,7 @@ template <>  // use uint16_t represents half float
 void *TargetWrapperCL::MallocImage<uint16_t>(const size_t cl_image2d_width,
                                              const size_t cl_image2d_height,
                                              void *host_ptr) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kFP16)));
   cl_int status;
   cl::Image2D *cl_image = new cl::Image2D(
@@ -110,6 +133,7 @@ template <>
 void *TargetWrapperCL::MallocImage<int32_t>(const size_t cl_image2d_width,
                                             const size_t cl_image2d_height,
                                             void *host_ptr) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
   cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kInt32)));
   cl_int status;
   cl::Image2D *cl_image = new cl::Image2D(
