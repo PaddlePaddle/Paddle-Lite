@@ -61,6 +61,7 @@ void activation(
   }
 }
 
+template <typename T>
 void activation(const T* din,
                 T* dout,
                 int size,
