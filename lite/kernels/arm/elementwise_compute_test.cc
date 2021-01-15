@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -283,7 +284,7 @@ void do_elementwise_compute(const char* op_type_str) {
   ElementWiseComputeTemplate<T, PType> elementwise_add;
   operators::ElementwiseParam param;
   lite::Tensor x, y, output, output_ref;
-  unsigned int rand_seed = 1;
+  srand(time(NULL));
 
 #if 1
   for (auto n : {1, 3, 4}) {
@@ -336,12 +337,10 @@ void do_elementwise_compute(const char* op_type_str) {
               T* output_data = output.mutable_data<T>();
               T* output_ref_data = output_ref.mutable_data<T>();
               for (int i = 0; i < x_dim.production(); i++) {
-                x_data[i] = 1.0 * rand_r(&rand_seed) * rand_r(&rand_seed) /
-                            (rand_r(&rand_seed) + 1);
+                x_data[i] = 1.0 * rand() * rand() / (rand() + 1);  // NOLINT
               }
               for (int i = 0; i < y_dim.production(); i++) {
-                y_data[i] = 1.0 * rand_r(&rand_seed) * rand_r(&rand_seed) /
-                            (rand_r(&rand_seed) + 1);
+                y_data[i] = 1.0 * rand() * rand() / (rand() + 1);  // NOLINT
               }
               param.X = &x;
               param.Y = &y;
@@ -355,12 +354,18 @@ void do_elementwise_compute(const char* op_type_str) {
                 for (int i = 0; i < output.dims().production(); i++) {
                   ASSERT_EQ(is_fp_close(output_data[i], output_ref_data[i]),
                             true)
-                      << op_type_str << "Value differ at index " << i;
+                      << op_type_str << "Value differ at index " << i
+                      << "\nins value: " << output_data[i]
+                      << ", ref value: " << output_ref_data[i]
+                      << ", diff: " << output_data[i] - output_ref_data[i];
                 }
               } else {
                 for (int i = 0; i < output.dims().production(); i++) {
                   ASSERT_EQ(output_data[i], output_ref_data[i])
-                      << op_type_str << "Value differ at index " << i;
+                      << op_type_str << "Value differ at index " << i
+                      << "\nins value: " << output_data[i]
+                      << ", ref value: " << output_ref_data[i]
+                      << ", diff: " << output_data[i] - output_ref_data[i];
                 }
               }
             }
