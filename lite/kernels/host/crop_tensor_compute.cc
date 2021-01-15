@@ -26,6 +26,16 @@ void CropTensorCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::CropTensorParam>();
   const lite::Tensor* x = param.X;
   lite::Tensor* out = param.Out;
+  auto x_dims = x->dims();
+  auto out_dims = out->dims();
+  // if `Shape` parameter contains -1, we will replace -1 elements
+  // with corresponding value in input x_dims.
+  for (int i = 0; i < out_dims.size(); i++) {
+    if (out_dims[i] == -1) {
+      out_dims[i] = x_dims[i];
+    }
+  }
+  out->Resize(out_dims);
 
   auto out_shape = out->dims().Vectorize();
   std::vector<int> shape = std::vector<int>(out_shape.begin(), out_shape.end());

@@ -65,6 +65,8 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // exe_scope to store the execution-level configuration
   Context<TargetType::kRKNPU>::SetSubgraphModelCacheDir(
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
+  Context<TargetType::kRKNPU>::SetSubgraphModelCacheBuffers(
+      raw_predictor_->scope(), config.subgraph_model_cache_buffers());
 #endif
 
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
