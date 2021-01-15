@@ -460,7 +460,7 @@ void GenerateProposalsV2Compute::Run() {
 
   if (param.RpnRoisNum != nullptr) {
     param.RpnRoisNum->Resize(DDim(std::vector<DDim::value_type>({num})));
-    int64_t *num_data = param.RpnRoisNum->mutable_data<int64_t>();
+    int32_t *num_data = param.RpnRoisNum->mutable_data<int32_t>();
     for (int i = 0; i < num; i++) {
       num_data[i] = tmp_num[i];
     }
