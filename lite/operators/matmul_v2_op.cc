@@ -65,41 +65,43 @@ bool MatMulV2OpLite::CheckShape() const {
 bool MatMulV2OpLite::InferShapeImpl() const {
   const auto x_dims = param_.X->dims();
   const auto y_dims = param_.Y->dims();
-  bool x_transpose = param_.transpose_X;
-  bool y_transpose = param_.transpose_Y;
+  bool trans_x = param_.transpose_X;
+  bool trans_y = param_.transpose_Y;
   std::vector<int64_t> dim_out_vec;
   bool x_broadcasted = false;
   bool y_broadcasted = false;
-  int ndims_x = x_dims.size();
-  int ndims_y = y_dims.size();
+  std::vector<int64_t> dims_x = x_dims.data();
+  std::vector<int64_t> dims_y = y_dims.data();
+  int ndims_x = dims_x.size();
+  int ndims_y = dims_y.size();
   if (ndims_x == 1) {
-    x_dims.insert(x_dims.begin(), 1);
+    dims_x.insert(dims_x.begin(), 1);
     ndims_x = 2;
     x_broadcasted = true;
   }
   if (ndims_y == 1) {
-    y_dims.push_back(1);
+    dims_y.push_back(1);
     ndims_y = 2;
     y_broadcasted = true;
   }
   int64_t M = 1;
   int64_t N = 1;
   if (trans_x) {
-    M = x_dims[ndims_x - 1];
+    M = dims_x[ndims_x - 1];
   } else {
-    M = x_dims[ndims_x - 2];
+    M = dims_x[ndims_x - 2];
   }
 
   if (trans_y) {
-    N = y_dims[ndims_y - 2];
+    N = dims_y[ndims_y - 2];
   } else {
-    N = y_dims[ndims_y - 1];
+    N = dims_y[ndims_y - 1];
   }
   std::vector<int64_t> new_dims;
   if (ndims_x >= ndims_y) {
-    dim_out_vec.assign(x_dims.begin(), x_dims.end() - 2);
+    dim_out_vec.assign(dims_x.begin(), dims_x.end() - 2);
   } else {
-    dim_out_vec.assign(y_dims.begin(), y_dims.end() - 2);
+    dim_out_vec.assign(dims_y.begin(), dims_y.end() - 2);
   }
   if (!x_broadcasted) {
     dim_out_vec.push_back(M);
@@ -130,9 +132,9 @@ bool MatMulV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.X = GetVar<lite::Tensor>(scope, X);
   param_.Y = GetVar<lite::Tensor>(scope, Y);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out);
-  param_.transpose_X = op_desc.GetAttr<bool>("transpose_X");
-  param_.transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
-  if (op_desc.HasAttr<float>("alpha")) {
+  param_.transpose_X = op_desc.GetAttr<bool>("trans_x");
+  param_.transpose_Y = op_desc.GetAttr<bool>("trans_y");
+  if (op_desc.HasAttr("alpha")) {
     param_.alpha = op_desc.GetAttr<float>("alpha");
   }
   return true;
