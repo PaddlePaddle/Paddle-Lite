@@ -159,7 +159,7 @@ function make_tiny_publish_so {
   
   if [ ${os} == "android" ]; then
     set_android_api_level
-    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${ANDROID_API_LEVEL}
+    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
   fi
 
   cmake .. \
@@ -264,7 +264,7 @@ function make_full_publish_so {
 
   if [ ${os} == "android" ]; then
     set_android_api_level
-    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${ANDROID_API_LEVEL}
+    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
   fi
 
   prepare_workspace $root_dir $build_directory
@@ -318,7 +318,7 @@ function make_all_tests {
   cd $build_directory
   if [ ${os} == "android" ]; then
     set_android_api_level
-    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${ANDROID_API_LEVEL}
+    CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
   fi
  
   prepare_workspace $root_dir $build_directory
