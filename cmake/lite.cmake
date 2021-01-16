@@ -669,7 +669,8 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     return()
   endif()
 
-  if(NOT IOS)
+  if(NOT IOS AND NOT APPLE)
+    message(status "====xxxxxxxxxxxxxxxxxxxxxxxxxx=============")
     file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
       "CREATE ${bundled_tgt_full_name}\n" )
 
@@ -696,13 +697,24 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
       COMMENT "Bundling ${bundled_tgt_name}"
       VERBATIM)
   else()
+    message(status "====yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy=============")
     foreach(lib ${static_libs})
       set(libfiles ${libfiles} $<TARGET_FILE:${lib}>)
+      message(STATUS "static_libs: ${lib}")
     endforeach()
-    add_custom_command(
-      COMMAND /usr/bin/libtool -static -o ${bundled_tgt_full_name} ${libfiles}
-      OUTPUT ${bundled_tgt_full_name}
-    )
+    if(FALSE)
+      add_custom_command(
+        COMMAND ${CMAKE_AR} -cru ${bundled_tgt_full_name} ${libfiles}
+        #COMMAND ${CMAKE_AR} -v -r ${bundled_tgt_full_name} ${libfiles}
+        #COMMAND ${CMAKE_AR} -v -q ${bundled_tgt_full_name} ${libfiles}
+        OUTPUT ${bundled_tgt_full_name}
+      )
+    else()
+      add_custom_command(
+        COMMAND /usr/bin/libtool -static -o ${bundled_tgt_full_name} ${libfiles}
+        OUTPUT ${bundled_tgt_full_name}
+      )
+    endif()
   endif()
 
   add_custom_target(${fake_target} ALL DEPENDS ${bundled_tgt_full_name})
