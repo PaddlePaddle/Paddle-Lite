@@ -66,3 +66,14 @@ REGISTER_LITE_KERNEL(unstack, kHost, kFloat, kAny, unstack_float, def)
                 {LiteType::GetTensorTy(
                     TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
     .Finalize();
+
+using unstack_int32 =
+    paddle::lite::kernels::host::UnstackCompute<int32_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(unstack, kHost, kFloat, kAny, unstack_int32, unstack_int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .Finalize();
