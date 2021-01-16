@@ -958,6 +958,8 @@ struct MulticlassNmsParam : ParamBase {
   float nms_eta{1.0f};
   int keep_top_k;
   bool normalized{true};
+  const lite::Tensor* rois_num{};
+  lite::Tensor* nms_rois_num{};
 };
 
 /// ----------------------- matrix_nms operators ----------------------
@@ -2119,7 +2121,7 @@ struct SelectInputParam : ParamBase {
 };
 
 struct TensorArrayToTensorParam : ParamBase {
-  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor>* X{};
   lite::Tensor* Out{};
   lite::Tensor* OutIndex{};
   int axis{0};
