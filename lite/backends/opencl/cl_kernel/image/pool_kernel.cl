@@ -91,7 +91,13 @@ __kernel void pool_avg(__read_only image2d_t input,
           CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
     }
   }
-  CL_DTYPE4 avg = sum / ((end_h - start_h)*(end_w - start_w));
+  CL_DTYPE div;
+#ifdef EXCLUSIVE
+  div = (CL_DTYPE)((end_h - start_h)*(end_w - start_w));
+#else
+  div = (CL_DTYPE)(ksize_w * ksize_h);
+#endif 
+  CL_DTYPE4 avg = sum / div;
   const int pos_out_x = mad24(out_c, out_width, out_w);
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_out_x, out_nh), avg);
 }
