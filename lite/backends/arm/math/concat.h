@@ -51,7 +51,7 @@ void concat_func(const std::vector<lite::Tensor*>& input,
     auto* dout_ptr = dst_ptr + offset_concat_axis * concat_input_size;
     int64_t in_sum = in_concat_axis * concat_input_size;
     for (int i = 0; i < num_cancats; i++) {
-      std::memcpy(dout_ptr, src_ptr, sizeof(T) * in_sum);
+      host::memcpy(dout_ptr, src_ptr, sizeof(T) * in_sum);
       dout_ptr += out_sum;
       src_ptr += in_sum;
     }
