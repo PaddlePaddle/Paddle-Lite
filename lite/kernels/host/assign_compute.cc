@@ -22,8 +22,14 @@ namespace host {
 void AssignCompute::Run() {
   auto& param = Param<param_t>();
   if (param.X != nullptr) {
+    if (param.X == param.Out) {
+      return;
+    }
     param.Out->CopyDataFrom(*param.X);
   } else if (param.X_array != nullptr) {
+    if (param.X_array == param.Out_array) {
+      return;
+    }
     auto x_array = param.X_array;
     auto out_array = param.Out_array;
     out_array->resize(x_array->size());

@@ -185,6 +185,15 @@ class Optimizer {
 #endif
         }};
 
+    // It's just a workaround to avoid repeated op fusion if the filter weights
+    // are shared among sub-blocks
+    if (graphs_.size() > 1) {
+      passes_local.erase(std::remove(passes_local.begin(),
+                                     passes_local.end(),
+                                     "lite_conv_bn_fuse_pass"),
+                         passes_local.end());
+    }
+
     // multi_stream_analysis_pass must be in the front of
     // runtime_context_assign_pass
     // post_quant_dynamic_pass must be in the behind of
