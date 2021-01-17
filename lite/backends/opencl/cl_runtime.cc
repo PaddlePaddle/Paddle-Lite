@@ -217,8 +217,13 @@ bool CLRuntime::InitializeDevice() {
   for (auto i : device_info_) {
     VLOG(3) << ">>> " << i.first << " " << i.second;
   }
+  // initialized without valid opencl device
   if (device_info_.size() > 0 && device_info_.size() <= 2) {
     return false;
+  }
+  // initialized with valid opencl device
+  if (device_info_.size() > 2) {
+    return true;
   }
   device_info_["PLACEHOLDER"] = 1;
   // ===================== BASIC =====================
