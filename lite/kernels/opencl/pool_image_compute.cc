@@ -47,6 +47,10 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
     kernel_func_name_ += param.pooling_type;
     const bool global_pooling = param.global_pooling;
+    const bool exclusive = param.exclusive;
+    if (exclusive) {
+      build_options_ += " -DEXCLUSIVE";
+    }
     if (global_pooling) {
       kernel_func_name_ += "_global";
     }

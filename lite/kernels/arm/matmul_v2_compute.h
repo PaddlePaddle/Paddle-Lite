@@ -13,26 +13,30 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/types.h"
 
-// Use internal log or glog, the priority is as follows:
-// 1. tiny_publish should use internally implemented logging.
-// 2. if LITE_WITH_LOG is turned off, internal logging is used.
-// 3. use glog in other cases.
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace arm {
 
-#if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
-    defined(LITE_ON_MODEL_OPTIMIZE_TOOL)
-#include "lite/utils/logging.h"
-#else
-#ifndef LITE_WITH_LOG
-#include "lite/utils/logging.h"
-#else
-#include <glog/logging.h>
-#endif
-#endif
+class MatMulV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::MatMulParam;
 
-// On windows environment, min and max will be undefined to
-// avoid compiling error.
-#if defined(_MSC_VER)
-#undef min
-#undef max
-#endif
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  virtual ~MatMulV2Compute() = default;
+
+ private:
+  int m_, n_, k_;
+};
+
+}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

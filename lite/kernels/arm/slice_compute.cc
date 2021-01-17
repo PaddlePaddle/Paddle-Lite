@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/kernels/arm/slice_compute.h"
+
 #include <algorithm>
 #include <vector>
+
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
@@ -182,10 +184,24 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_float, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
-using slice_int32_precision_fp32 =
-    paddle::lite::kernels::arm::SliceCompute<int, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    slice, kARM, kFloat, kNCHW, slice_int32_precision_fp32, def2)
+using slice_boolean =
+    paddle::lite::kernels::arm::SliceCompute<bool, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_boolean, bool_slice)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .BindInput("StartsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("StartsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("EndsTensorList",
+               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kBool))})
+    .Finalize();
+
+using slice_int32 =
+    paddle::lite::kernels::arm::SliceCompute<int, PRECISION(kInt32)>;
+REGISTER_LITE_KERNEL(slice, kARM, kInt32, kNCHW, slice_int32, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("StartsTensor",
