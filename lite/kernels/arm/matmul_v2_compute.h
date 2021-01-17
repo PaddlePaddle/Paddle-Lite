@@ -13,35 +13,30 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include <vector>
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/types.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace arm {
 
-class TensorArrayToTensorOpLite : public OpLite {
+class MatMulV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  TensorArrayToTensorOpLite() {}
-  explicit TensorArrayToTensorOpLite(const std::string &op_type)
-      : OpLite(op_type) {}
+  using param_t = operators::MatMulParam;
 
-  bool CheckShape() const override;
+  void PrepareForRun() override;
 
-  bool InferShapeImpl() const override;
+  void Run() override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "tensorArrayToTensor"; }
+  virtual ~MatMulV2Compute() = default;
 
  private:
-  mutable TensorArrayToTensorParam param_;
+  int m_, n_, k_;
 };
 
-}  // namespace operators
+}  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
