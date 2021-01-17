@@ -1726,9 +1726,9 @@ struct LstmParam : ParamBase {
   lite::Tensor* C0{nullptr};
   bool use_peepholes;
   bool is_reverse;
-  std::string gate_activation;
-  std::string cell_activation;
-  std::string candidate_activation;
+  lite_api::ActivationType gate_activation;
+  lite_api::ActivationType cell_activation;
+  lite_api::ActivationType candidate_activation;
   // for int8
   WITH_INT8_CONFIG
 };
@@ -2088,6 +2088,25 @@ struct FlattenContiguousRangeParam : ParamBase {
   lite::Tensor* xshape;
   int start_axis;
   int stop_axis;
+};
+
+struct RnnParam : ParamBase {
+  lite::Tensor* Input;
+  std::vector<lite::Tensor*> PreState;
+  std::vector<lite::Tensor*> WeightList;
+  lite::Tensor* SequenceLength;
+  lite::Tensor* DropoutState;
+  lite::Tensor* Reserve;
+  lite::Tensor* Out;
+  std::vector<lite::Tensor*> State;
+  float dropout_prob{0.0};
+  bool is_bidirec{false};
+  int input_size{10};
+  int hidden_size{100};
+  int num_layers{1};
+  std::string mode{"LSTM"};
+  bool is_test{false};
+  int seed{0};
 };
 
 struct StridedSliceParam : ParamBase {
