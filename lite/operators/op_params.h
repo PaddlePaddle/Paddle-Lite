@@ -958,6 +958,8 @@ struct MulticlassNmsParam : ParamBase {
   float nms_eta{1.0f};
   int keep_top_k;
   bool normalized{true};
+  const lite::Tensor* rois_num{};
+  lite::Tensor* nms_rois_num{};
 };
 
 /// ----------------------- matrix_nms operators ----------------------
@@ -2112,6 +2114,11 @@ struct FlattenContiguousRangeParam : ParamBase {
   int stop_axis;
 };
 
+struct LoDArrayLengthParam : ParamBase {
+  std::vector<lite::Tensor>* x{};
+  lite::Tensor* out{};
+};
+
 struct SelectInputParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Mask{};
@@ -2119,7 +2126,7 @@ struct SelectInputParam : ParamBase {
 };
 
 struct TensorArrayToTensorParam : ParamBase {
-  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor>* X{};
   lite::Tensor* Out{};
   lite::Tensor* OutIndex{};
   int axis{0};
@@ -2128,13 +2135,13 @@ struct TensorArrayToTensorParam : ParamBase {
 
 struct RnnParam : ParamBase {
   lite::Tensor* Input;
-  lite::Tensor* PreState;
+  std::vector<lite::Tensor*> PreState;
   std::vector<lite::Tensor*> WeightList;
   lite::Tensor* SequenceLength;
   lite::Tensor* DropoutState;
   lite::Tensor* Reserve;
   lite::Tensor* Out;
-  lite::Tensor* State;
+  std::vector<lite::Tensor*> State;
   float dropout_prob{0.0};
   bool is_bidirec{false};
   int input_size{10};

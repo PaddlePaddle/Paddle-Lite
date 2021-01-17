@@ -23,11 +23,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class TensorArrayToTensorOpLite : public OpLite {
+class RnnOp : public OpLite {
  public:
-  TensorArrayToTensorOpLite() {}
-  explicit TensorArrayToTensorOpLite(const std::string &op_type)
-      : OpLite(op_type) {}
+  RnnOp() {}
+  explicit RnnOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -36,10 +35,11 @@ class TensorArrayToTensorOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "tensorArrayToTensor"; }
+
+  std::string DebugString() const override { return "rnn"; }
 
  private:
-  mutable TensorArrayToTensorParam param_;
+  mutable RnnParam param_;
 };
 
 }  // namespace operators

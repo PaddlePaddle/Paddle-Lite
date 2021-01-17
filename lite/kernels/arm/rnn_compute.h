@@ -13,35 +13,23 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include <vector>
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace arm {
 
-class TensorArrayToTensorOpLite : public OpLite {
+class RnnCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  TensorArrayToTensorOpLite() {}
-  explicit TensorArrayToTensorOpLite(const std::string &op_type)
-      : OpLite(op_type) {}
+  void Run() override;
 
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "tensorArrayToTensor"; }
-
- private:
-  mutable TensorArrayToTensorParam param_;
+  virtual ~RnnCompute() = default;
 };
 
-}  // namespace operators
+}  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

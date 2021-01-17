@@ -57,6 +57,8 @@ add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
 add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
 add_operator(pow_op extra SRCS pow_op.cc DEPS ${op_DEPS})
 add_operator(sign_op extra SRCS sign_op.cc DEPS ${op_DEPS})
+add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc DEPS ${op_DEPS})
+add_operator(rnn_op extra SRCS rnn_op.cc DEPS ${op_DEPS})
 
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
@@ -133,6 +135,7 @@ add_operator(pad3d_op extra SRCS pad3d_op.cc DEPS ${op_DEPS})
 add_operator(select_input_op extra SRCS select_input_op.cc DEPS ${op_DEPS})
 add_operator(tensor_array_to_tensor_op extra SRCS tensor_array_to_tensor_op.cc DEPS ${op_DEPS})
 add_operator(fill_any_like_op extra SRCS fill_any_like_op.cc DEPS ${op_DEPS})
+add_operator(matmul_v2_op extra SRCS matmul_v2_op.cc DEPS ${op_DEPS})
 
 add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 # for OCR specific
