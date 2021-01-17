@@ -407,7 +407,7 @@ void GenerateProposalsCompute::Run() {
   int64_t h_bbox = bbox_dim[2];
   int64_t w_bbox = bbox_dim[3];
 
-  rpn_rois->Resize({scores->numel(), 4});
+  rpn_rois->Resize({bbox_deltas->numel(), 4});
   rpn_roi_probs->Resize(std::vector<int64_t>({scores->numel(), 1}));
 
   Tensor bbox_deltas_swap, scores_swap;

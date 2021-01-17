@@ -345,6 +345,22 @@ static std::pair<Tensor, Tensor> ProposalForOneImage(
 
   Tensor keep;
   FilterBoxesWithoutScale<float>(&proposals, min_size, im_shape_slice, &keep);
+  // Handle the case when there is no keep index left
+  if (keep.numel() == 0) {
+    Tensor scores_filter;
+    scores_filter.Resize(std::vector<int64_t>({1, 1}));
+    bbox_sel.Resize(std::vector<int64_t>({1, 4}));
+    auto *scores_filter_data = scores_filter.mutable_data<float>();
+    for (size_t i = 0; i < scores_filter.numel(); i++) {
+      scores_filter_data[i] = 0;
+    }
+    auto *bbox_sel_data = bbox_sel.mutable_data<float>();
+    for (size_t i = 0; i < scores_filter.numel(); i++) {
+      bbox_sel_data[i] = 0;
+    }
+    return std::make_pair(bbox_sel, scores_filter);
+  }
+
   Tensor scores_filter;
   scores_filter.Resize(std::vector<int64_t>({keep.numel(), 1}));
   bbox_sel.Resize(std::vector<int64_t>({keep.numel(), 4}));
