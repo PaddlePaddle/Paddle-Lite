@@ -33,10 +33,10 @@ bool ExpandV2OpLite::CheckShape() const {
     for (int64_t i = 0; i < param_.Shape->numel(); i++) {
       expand_shape.push_back(Shape_data[i]);
     }
-  } else if (param_.expand_shapes_tensor != nullptr) {
-    for (size_t i = 0; i < param_.expand_shapes_tensor->size(); i++) {
+  } else if (!param_.expand_shapes_tensor.empty()) {
+    for (size_t i = 0; i < param_.expand_shapes_tensor.size(); i++) {
       expand_shape.push_back(
-          param_.expand_shapes_tensor->at(i).template data<int>()[0]);
+          param_.expand_shapes_tensor[i]->template data<int>()[0]);
     }
   } else {
     expand_shape = param_.shape;
@@ -94,11 +94,18 @@ bool ExpandV2OpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.X = GetVar<lite::Tensor>(scope, X_name);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
 
-  if (opdesc.HasInput("Shape")) {
-    param_.Shape = scope->FindTensor("Shape");
+  if (opdesc.HasInput("Shape") && !opdesc.Input("Shape").empty()) {
+    auto shape_tensor_name = opdesc.Input("Shape").front();
+    param_.Shape = GetMutableVar<lite::Tensor>(scope, shape_tensor_name);
   }
-  if (opdesc.HasInput("expand_shapes_tensor")) {
-    param_.expand_shapes_tensor = scope->FindTensorList("expand_shapes_tensor");
+  param_.expand_shapes_tensor.clear();  // Avoid errors caused by repeated calls
+  if (opdesc.HasInput("expand_shapes_tensor") &&
+      !opdesc.Input("expand_shapes_tensor").empty()) {
+    for (auto expand_shapes_tensor_name :
+         opdesc.Input("expand_shapes_tensor")) {
+      param_.expand_shapes_tensor.push_back(
+          GetMutableVar<lite::Tensor>(scope, expand_shapes_tensor_name));
+    }
   }
 
   param_.shape = opdesc.GetAttr<std::vector<int>>("shape");
