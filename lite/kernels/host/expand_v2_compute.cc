@@ -31,10 +31,10 @@ void ExpandV2Compute<T, PType>::Run() {
     for (int64_t i = 0; i < param.Shape->numel(); i++) {
       expand_shape.push_back(Shape_data[i]);
     }
-  } else if (param.expand_shapes_tensor != nullptr) {
-    for (size_t i = 0; i < param.expand_shapes_tensor->size(); i++) {
+  } else if (!param.expand_shapes_tensor.empty()) {
+    for (size_t i = 0; i < param.expand_shapes_tensor.size(); i++) {
       expand_shape.push_back(
-          param.expand_shapes_tensor->at(i).template data<int>()[0]);
+          param.expand_shapes_tensor[i]->template data<int>()[0]);
     }
   } else {
     expand_shape = param.shape;

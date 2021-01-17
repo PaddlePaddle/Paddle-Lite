@@ -119,13 +119,10 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   starts_size = param_.starts.size();
   ends_size = param_.ends.size();
 
+  param_.StartsTensorList.clear();
   if (opdesc.HasInput("StartsTensorList") &&
       !opdesc.Input("StartsTensorList").empty()) {
-    LOG(INFO) << "opdesc input size "
-              << opdesc.Input("StartsTensorList").size();
-    LOG(INFO) << "param init size " << param_.StartsTensorList.size();
     auto StartsTensorList = opdesc.Input("StartsTensorList");
-    param_.StartsTensorList.clear();
     for (auto var : StartsTensorList) {
       param_.StartsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
@@ -133,11 +130,12 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     CHECK_GT(param_.StartsTensorList.size(), 0u)
         << "StartsTensorList size can't be zero";
     starts_size = param_.StartsTensorList.size();
+    LOG(INFO) << "param init size " << param_.StartsTensorList.size();
   }
+  param_.EndsTensorList.clear();
   if (opdesc.HasInput("EndsTensorList") &&
       !opdesc.Input("EndsTensorList").empty()) {
     auto EndsTensorList = opdesc.Input("EndsTensorList");
-    param_.EndsTensorList.clear();
     for (auto var : EndsTensorList) {
       param_.EndsTensorList.push_back(
           scope->FindVar(var)->GetMutable<lite::Tensor>());
