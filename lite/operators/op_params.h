@@ -2127,6 +2127,20 @@ struct StridedSliceParam : ParamBase {
   lite::Tensor* StridesTensor{nullptr};
 };
 
+struct SelectInputParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Mask{};
+  lite::Tensor* Out{};
+};
+
+struct TensorArrayToTensorParam : ParamBase {
+  std::vector<lite::Tensor>* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* OutIndex{};
+  int axis{0};
+  bool use_stack{false};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
