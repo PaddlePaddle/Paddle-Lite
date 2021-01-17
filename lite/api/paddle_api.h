@@ -143,8 +143,11 @@ class LITE_API ConfigBase {
   // gpu opencl
   CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
   CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
-  // to save subgraph model for npu/xpu/...
+  // Where to cache the npu/xpu/rknpu/apu offline model to the binary files
   std::string subgraph_model_cache_dir_{""};
+  // Set the cached npu/xpu/rknpu/apu offline model from the buffers
+  std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
+      subgraph_model_cache_buffers_{};
   int device_id_{0};
   int x86_math_num_threads_ = 1;
 
@@ -169,6 +172,13 @@ class LITE_API ConfigBase {
   }
   const std::string& subgraph_model_cache_dir() const {
     return subgraph_model_cache_dir_;
+  }
+  void set_subgraph_model_cache_buffers(const std::string& key,
+                                        const std::vector<char>& cfg,
+                                        const std::vector<char>& bin);
+  const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>&
+  subgraph_model_cache_buffers() const {
+    return subgraph_model_cache_buffers_;
   }
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }

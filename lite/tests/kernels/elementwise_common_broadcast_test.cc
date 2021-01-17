@@ -22,6 +22,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
 #include "lite/core/op_registry.h"
+#include "lite/tests/utils/fill_data.h"
 
 template <class T>
 bool is_fp_close(T v1, T v2, T rel_tol = 1e-4, T abs_tol = 1e-5) {
@@ -85,11 +86,9 @@ void BroadcastCPURef(const T* x,
 }
 
 int randint(int beg, int end) {
-  static unsigned int seed = 0;
-  int rd = rand_r(&seed);
-  int range = end - beg + 1;
-  rd = rd % range;
-  return rd + beg;
+  int res = 0;
+  fill_data_rand(&res, beg, end, 1);
+  return res;
 }
 
 bool randbool() { return randint(0, 1000000) < 50000; }
