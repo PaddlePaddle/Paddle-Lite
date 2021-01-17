@@ -206,15 +206,6 @@ struct MulGradParam : ParamBase {
   int y_num_col_dims{1};
 };
 
-// For ReduceMean Op
-struct ReduceMeanParam : ParamBase {
-  lite::Tensor* X{};
-  lite::Tensor* Out{};
-
-  std::vector<int> dim;
-  bool keep_dim{false};
-};
-
 // For Stack Op
 struct StackParam : ParamBase {
   std::vector<lite::Tensor*> X;
@@ -1274,13 +1265,6 @@ struct SequenceArithmeticParam : ParamBase {
   lite::Tensor* Out{};
 };
 
-struct ReduceMaxParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
-  std::vector<int> dim{};
-  bool keep_dim{false};
-};
-
 struct LodResetParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
@@ -1295,8 +1279,8 @@ struct IsEmptyParam : ParamBase {
 };
 
 struct ReduceParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* output{};
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
   std::vector<int> dim{0};
   bool keep_dim{false};
   bool reduce_all{false};
@@ -2106,6 +2090,24 @@ struct FlattenContiguousRangeParam : ParamBase {
   int stop_axis;
 };
 
+struct StridedSliceParam : ParamBase {
+  lite::Tensor* Input{};
+  lite::Tensor* Out{};
+  std::vector<int> starts{};
+  std::vector<int> ends{};
+  std::vector<int> strides{};
+  std::vector<int> axes{};
+  std::vector<int> infer_flags{};
+  std::vector<int> decrease_axis{};
+  std::vector<lite::Tensor*> StartsTensorList{};
+  std::vector<lite::Tensor*> EndsTensorList{};
+  std::vector<lite::Tensor*> StridesTensorList{};
+  bool tensor_input{false};
+  lite::Tensor* EndsTensor{nullptr};
+  lite::Tensor* StartsTensor{nullptr};
+  lite::Tensor* StridesTensor{nullptr};
+};
+
 struct SelectInputParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Mask{};
@@ -2118,25 +2120,6 @@ struct TensorArrayToTensorParam : ParamBase {
   lite::Tensor* OutIndex{};
   int axis{0};
   bool use_stack{false};
-};
-
-struct RnnParam : ParamBase {
-  lite::Tensor* Input;
-  lite::Tensor* PreState;
-  std::vector<lite::Tensor*> WeightList;
-  lite::Tensor* SequenceLength;
-  lite::Tensor* DropoutState;
-  lite::Tensor* Reserve;
-  lite::Tensor* Out;
-  lite::Tensor* State;
-  float dropout_prob{0.0};
-  bool is_bidirec{false};
-  int input_size{10};
-  int hidden_size{100};
-  int num_layers{1};
-  std::string mode{"LSTM"};
-  bool is_test{false};
-  int seed{0};
 };
 
 }  // namespace operators

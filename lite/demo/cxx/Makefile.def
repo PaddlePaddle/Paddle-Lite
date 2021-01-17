@@ -20,9 +20,9 @@ ifeq ($(NDK_VERSION), 17)
         else
             CC = $(NDK_ROOT)/toolchains/aarch64-linux-android-4.9/prebuilt/darwin-x86_64/bin/aarch64-linux-android-g++
         endif
-        CXX_FLAGS = -funwind-tables -no-canonical-prefixes -D__ANDROID_API__=23 -fexceptions -frtti -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
+        CXX_FLAGS = -funwind-tables -no-canonical-prefixes -D__ANDROID_API__=21 -fexceptions -frtti -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
         CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--gc-sections
-        SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-24/arch-arm64
+        SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-21/arch-arm64
         SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_static.a \
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a
         INCLUDES = $(SYSTEM_INCLUDES) -I$(NDK_ROOT)/sysroot/usr/include/aarch64-linux-android
@@ -33,9 +33,9 @@ ifeq ($(NDK_VERSION), 17)
             CC = $(NDK_ROOT)/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-g++
         endif
         CXX_FLAGS = -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp -funwind-tables -no-canonical-prefixes \
-                   -D__ANDROID_API__=23 -fexceptions -frtti  -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
+                   -D__ANDROID_API__=16 -fexceptions -frtti  -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
         CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--fix-cortex-a8 -Wl,--gc-sections -Wl,-z,nocopyreloc
-        SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-23/arch-arm
+        SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-16/arch-arm
         SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++_static.a \
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++abi.a \
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libandroid_support.a \
@@ -45,27 +45,27 @@ ifeq ($(NDK_VERSION), 17)
 else ifeq ($(NDK_VERSION), 21)
     ifeq ($(ARM_ABI), arm8)
         ifeq ($(SYSTEM), Linux)
-            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android23-clang++
+            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
         else
-            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android23-clang++
+            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android21-clang++
         endif
-        CXX_FLAGS = -funwind-tables -no-canonical-prefixes -D__ANDROID_API__=23 -fexceptions -frtti -std=c++11 -fopenmp -static-openmp -O3 -DNDEBUG -fPIE
+        CXX_FLAGS = -funwind-tables -no-canonical-prefixes -D__ANDROID_API__=21 -fexceptions -frtti -std=c++11 -fopenmp -static-openmp -O3 -DNDEBUG -fPIE
         CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--gc-sections
-        #SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-24/arch-arm64
+        #SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-21/arch-arm64
         SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_static.a \
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a \
-                      $(NDK_ROOT)/platforms/android-23/arch-arm64/usr/lib/libstdc++.so
+                      $(NDK_ROOT)/platforms/android-21/arch-arm64/usr/lib/libstdc++.so
         INCLUDES = $(SYSTEM_INCLUDES) -I$(NDK_ROOT)/sysroot/usr/include/aarch64-linux-android
     else
         ifeq ($(SYSTEM), Linux)
-            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi23-clang++
+            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi16-clang++
         else
-            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi23-clang++
+            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi16-clang++
         endif
         CXX_FLAGS = -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp -funwind-tables -no-canonical-prefixes \
-                   -D__ANDROID_API__=23 -fexceptions -frtti  -std=c++11 -fopenmp -static-openmp -O3 -DNDEBUG -fPIE
+                   -D__ANDROID_API__=16 -fexceptions -frtti  -std=c++11 -fopenmp -static-openmp -O3 -DNDEBUG -fPIE
         CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--fix-cortex-a8 -Wl,--gc-sections -Wl,-z,nocopyreloc
-        #SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-23/arch-arm
+        #SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-16/arch-arm
         SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++_static.a \
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++abi.a \
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libandroid_support.a \
@@ -75,27 +75,27 @@ else ifeq ($(NDK_VERSION), 21)
 else
     ifeq ($(ARM_ABI), arm8)
         ifeq ($(SYSTEM), Linux)
-            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android23-clang++
+            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++
         else
-            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android23-clang++
+            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android21-clang++
         endif
-        CXX_FLAGS = -funwind-tables -no-canonical-prefixes -D__ANDROID_API__=23 -fexceptions -frtti -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
+        CXX_FLAGS = -funwind-tables -no-canonical-prefixes -D__ANDROID_API__=21 -fexceptions -frtti -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
         CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--gc-sections
         #SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-24/arch-arm64
         SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_static.a \
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a \
-                      $(NDK_ROOT)/platforms/android-23/arch-arm64/usr/lib/libstdc++.so
+                      $(NDK_ROOT)/platforms/android-21/arch-arm64/usr/lib/libstdc++.so
         INCLUDES = $(SYSTEM_INCLUDES) -I$(NDK_ROOT)/sysroot/usr/include/aarch64-linux-android
     else
         ifeq ($(SYSTEM), Linux)
-            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi23-clang++
+            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi16-clang++
         else
-            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi23-clang++
+            CC = $(NDK_ROOT)/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi16-clang++
         endif
         CXX_FLAGS = -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp -funwind-tables -no-canonical-prefixes \
-                   -D__ANDROID_API__=23 -fexceptions -frtti  -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
+                   -D__ANDROID_API__=16 -fexceptions -frtti  -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
         CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--fix-cortex-a8 -Wl,--gc-sections -Wl,-z,nocopyreloc
-        #SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-23/arch-arm
+        #SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-16/arch-arm
         SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++_static.a \
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++abi.a \
                       $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libandroid_support.a \
