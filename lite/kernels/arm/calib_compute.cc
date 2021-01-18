@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/calib_compute.h"
+
 #include <vector>
+
 #include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
@@ -37,10 +39,19 @@ template <DataLayoutType DLType>
 void CalibComputeInt64ToInt32<DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int64_t>();
-  std::vector<float> scale = {param.scale};
   auto* dout = param.output->template mutable_data<int32_t>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    dout[i] = din[i];
+    dout[i] = static_cast<int32_t>(din[i]);
+  }
+}
+
+template <DataLayoutType DLType>
+void CalibComputeInt32ToInt64<DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<int32_t>();
+  auto* dout = param.output->template mutable_data<int64_t>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    dout[i] = static_cast<int64_t>(din[i]);
   }
 }
 
@@ -52,6 +63,36 @@ void CalibComputeInt8ToFp32<DLType>::Run() {
   auto* dout = param.output->template mutable_data<float>();
   lite::arm::math::int8_to_fp32(
       din, dout, scale.data(), 1, 1, param.input->numel());
+}
+
+template <DataLayoutType DLType>
+void CalibComputeInt32ToFp32<DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<int32_t>();
+  auto* dout = param.output->template mutable_data<float>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    dout[i] = static_cast<float>(din[i]);
+  }
+}
+
+template <DataLayoutType DLType>
+void CalibComputeFp32ToInt32<DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<float>();
+  auto* dout = param.output->template mutable_data<int32_t>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    dout[i] = static_cast<int32_t>(din[i]);
+  }
+}
+
+template <DataLayoutType DLType>
+void CalibComputeInt64ToFp32<DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<int64_t>();
+  auto* dout = param.output->template mutable_data<float>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    dout[i] = static_cast<float>(din[i]);
+  }
 }
 
 }  // namespace arm
@@ -69,6 +110,54 @@ REGISTER_LITE_KERNEL(
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib,
+    kARM,
+    kInt32,
+    kNCHW,
+    paddle::lite::kernels::arm::CalibComputeInt32ToFp32<DATALAYOUT(kNCHW)>,
+    int32_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib,
+    kARM,
+    kInt32,
+    kNCHW,
+    paddle::lite::kernels::arm::CalibComputeInt32ToInt64<DATALAYOUT(kNCHW)>,
+    int32_to_int64)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib,
+    kARM,
+    kInt32,
+    kNCHW,
+    paddle::lite::kernels::arm::CalibComputeFp32ToInt32<DATALAYOUT(kNCHW)>,
+    fp32_to_int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib,
+    kARM,
+    kInt64,
+    kNCHW,
+    paddle::lite::kernels::arm::CalibComputeInt64ToFp32<DATALAYOUT(kNCHW)>,
+    int64_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

@@ -1450,7 +1450,7 @@ struct UnsqueezeParam : ParamBase {
 struct ExpandParam : ParamBase {
   const lite::Tensor* X{nullptr};
   const lite::Tensor* ExpandTimes{nullptr};
-  const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
+  std::vector<lite::Tensor*> expand_times_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
 };
@@ -1459,7 +1459,7 @@ struct ExpandParam : ParamBase {
 struct ExpandV2Param : ParamBase {
   const lite::Tensor* X{nullptr};
   const lite::Tensor* Shape{nullptr};
-  const std::vector<lite::Tensor>* expand_shapes_tensor{nullptr};
+  std::vector<lite::Tensor*> expand_shapes_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> shape{};
 };
@@ -1519,6 +1519,7 @@ struct RoiAlignParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
   lite::Tensor* RoisLod{};
+  lite::Tensor* RoisNum{};
   lite::Tensor* Out{};
   float spatial_scale{1.0};
   int pooled_height{1};

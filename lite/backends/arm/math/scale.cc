@@ -604,6 +604,65 @@ void scale_leaky_relu<int>(
 }
 
 template <>
+void scale<int64_t>(
+    const int64_t* din, int64_t* dout, int num, int64_t scale, int64_t bias) {
+  const int64_t* din_ptr = din;
+  int64_t* dout_ptr = dout;
+  for (int i = 0; i < num; i++) {
+    *dout_ptr = *din_ptr * scale + bias;
+    dout_ptr++;
+    din_ptr++;
+  }
+}
+
+template <>
+void scale_relu<int64_t>(
+    const int64_t* din, int64_t* dout, int num, int64_t scale, int64_t bias) {
+  const int64_t* din_ptr = din;
+  int64_t* dout_ptr = dout;
+  for (int i = 0; i < num; i++) {
+    *dout_ptr = *din_ptr * scale + bias;
+    *dout_ptr = *dout_ptr > 0 ? *dout_ptr : 0;
+    dout_ptr++;
+    din_ptr++;
+  }
+}
+
+template <>
+void scale_relu6<int64_t>(const int64_t* din,
+                          int64_t* dout,
+                          int num,
+                          int64_t scale,
+                          int64_t bias,
+                          int64_t alpha) {
+  const int64_t* din_ptr = din;
+  int64_t* dout_ptr = dout;
+  for (int i = 0; i < num; i++) {
+    *dout_ptr = *din_ptr * scale + bias;
+    *dout_ptr = *dout_ptr > 0 ? (*dout_ptr > alpha ? alpha : *dout_ptr) : 0;
+    dout_ptr++;
+    din_ptr++;
+  }
+}
+
+template <>
+void scale_leaky_relu<int64_t>(const int64_t* din,
+                               int64_t* dout,
+                               int num,
+                               int64_t scale,
+                               int64_t bias,
+                               int64_t alpha) {
+  const int64_t* din_ptr = din;
+  int64_t* dout_ptr = dout;
+  for (int i = 0; i < num; i++) {
+    *dout_ptr = *din_ptr * scale + bias;
+    *dout_ptr = *dout_ptr > 0 ? *dout_ptr : (*dout_ptr) * alpha;
+    dout_ptr++;
+    din_ptr++;
+  }
+}
+
+template <>
 void scale<float>(const float* din,
                   float* dout,
                   int outer_dim,

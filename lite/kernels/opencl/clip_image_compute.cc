@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <limits>
+
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
