@@ -19,7 +19,6 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/tests/cv/cv_basic.h"
-#include "lite/tests/utils/fill_data.h"
 #include "lite/utils/cv/paddle_image_preprocess.h"
 #include "time.h"  // NOLINT
 
@@ -53,7 +52,7 @@ typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
 
 void fill_tensor_host_rand(uint8_t* dio, int64_t size) {
-  fill_const_rand(dio, 0, 256, size);
+  fill_data_rand(dio, 0, 256, size);
 }
 
 void print_int8(uint8_t* ptr, int size, int width) {
@@ -1371,8 +1370,8 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
 #if 1
 TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 8, 16, 112, 224, 1080}) {
-      for (auto h : {1, 16, 112, 224}) {
+    for (auto w : {8, 16, 112, 224, 1080}) {
+      for (auto h : {16, 112, 224}) {
         for (auto rotate : {90, 180, 270}) {
           for (auto flip : {-1, 0, 1}) {
             for (auto srcFormat : {0, 1, 2, 3}) {
