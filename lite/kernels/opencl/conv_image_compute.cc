@@ -80,10 +80,6 @@ void ConvImageCompute::PrepareForRun() {
   VLOG(3) << "padding :" << pad_up_ << " " << pad_down_ << " " << pad_left_
           << " " << pad_right_;
 #endif
-  if (filter_tensor_h_ == 3 && filter_tensor_w_ == 3 && groups_ > 1 &&
-      stride_h_ > 1) {
-    pad_equal = (pad_left_ == pad_up_);
-  }
   CHECK_GE(conv_param_->dilations->size(), 2);
   CHECK_GE(conv_param_->paddings->size(), 2);
   CHECK_GE(conv_param_->strides.size(), 2);
@@ -169,6 +165,7 @@ void ConvImageCompute::PrepareForRun() {
     impl_ = &ConvImageCompute::DepthwiseConv2d;
   } else if (filter_tensor_h_ == 3 && filter_tensor_w_ == 3) {
     // conv2d_3x3
+    pad_equal = (pad_left_ == pad_up_);
     CHECK(pad_equal && stride_equal && dilation_equal);
     if (groups_ == 1) {
       kernel_func_names_.push_back(
@@ -328,6 +325,14 @@ void ConvImageCompute::PrepareForRun() {
       build_options_single += " -DHARD_SWISH -DACT_THRESHOLD=" + threshold +
                               "f" + " -DACT_SCALE=" + scale + "f" +
                               " -DACT_OFFSET=" + offset + "f";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kHardSigmoid) {
+      std::string slope =
+          std::to_string(conv_param_->activation_param.hard_sigmoid_slope);
+      std::string offset =
+          std::to_string(conv_param_->activation_param.hard_sigmoid_offset);
+      build_options_single += " -DHARD_SIGMOID -DHARD_SIGMOID_SLOPE=" + slope +
+                              "f" + " -DHARD_SIGMOID_OFFSET=" + offset + "f";
     } else {
       LOG(FATAL) << "Unsupported activation type:"
                  << static_cast<int>(conv_param_->activation_param.active_type);

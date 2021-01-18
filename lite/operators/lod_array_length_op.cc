@@ -12,36 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <string>
+#include "lite/operators/lod_array_length_op.h"
+
 #include <vector>
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
+
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class TensorArrayToTensorOpLite : public OpLite {
- public:
-  TensorArrayToTensorOpLite() {}
-  explicit TensorArrayToTensorOpLite(const std::string &op_type)
-      : OpLite(op_type) {}
+bool LoDArrayLengthOp::InferShapeImpl() const {
+  std::vector<int64_t> out_dims = {1};
+  param_.out->Resize(lite::DDim(out_dims));
+  return true;
+}
 
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "tensorArrayToTensor"; }
-
- private:
-  mutable TensorArrayToTensorParam param_;
-};
+bool LoDArrayLengthOp::AttachImpl(const cpp::OpDesc &opdesc,
+                                  paddle::lite::Scope *scope) {
+  auto x_name = opdesc.Input("X").front();
+  auto out = opdesc.Output("Out").front();
+  param_.x = scope->FindVar(x_name)->GetMutable<std::vector<Tensor>>();
+  param_.out = GetMutableTensor(scope, out);
+  return true;
+}
 
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(lod_array_length, paddle::lite::operators::LoDArrayLengthOp);

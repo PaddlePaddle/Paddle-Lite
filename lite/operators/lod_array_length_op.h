@@ -14,32 +14,35 @@
 
 #pragma once
 #include <string>
-#include <vector>
 #include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class TensorArrayToTensorOpLite : public OpLite {
+class LoDArrayLengthOp : public OpLite {
  public:
-  TensorArrayToTensorOpLite() {}
-  explicit TensorArrayToTensorOpLite(const std::string &op_type)
-      : OpLite(op_type) {}
-
-  bool CheckShape() const override;
+  LoDArrayLengthOp() {}
+  explicit LoDArrayLengthOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool InferShapeImpl() const override;
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+  std::string DebugString() const override { return "lod_array_length_op"; }
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "tensorArrayToTensor"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    auto output_dims = param_.out->dims();
+    ch->output_shape = ch->DimToStr(output_dims);
+  }
+#endif
+
+ protected:
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
  private:
-  mutable TensorArrayToTensorParam param_;
+  operators::LoDArrayLengthParam param_;
 };
 
 }  // namespace operators

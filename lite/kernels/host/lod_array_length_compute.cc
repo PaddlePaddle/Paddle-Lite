@@ -12,34 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <algorithm>
-#include <string>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/kernels/host/lod_array_length_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
 
-class SelectInputCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
- public:
-  using param_t = operators::SelectInputParam;
-
-  void Run() override;
-
-  virtual ~SelectInputCompute() = default;
-#ifdef LITE_WITH_PROFILE
-  virtual void SetProfileRuntimeKernelInfo(
-      paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = kernel_func_name_;
-  }
-  std::string kernel_func_name_{"NotImplForSelectInput"};
-#endif
-};
+void LoDArrayLengthCompute::Run() {
+  auto& param = this->Param<operators::LoDArrayLengthParam>();
+  auto input = param.x;
+  param.out->mutable_data<int64_t>()[0] = static_cast<int64_t>(input->size());
+  return;
+}
 
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+REGISTER_LITE_KERNEL(lod_array_length,
+                     kHost,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::host::LoDArrayLengthCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorListTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .Finalize();
