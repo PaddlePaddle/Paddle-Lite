@@ -16,7 +16,6 @@ add_kernel(deformable_conv_compute_host Host basic SRCS deformable_conv_compute.
 add_kernel(stack_compute_host Host basic SRCS stack_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(gather_compute_host Host basic SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(lod_array_length_compute_host Host basic SRCS lod_array_length_compute.cc DEPS ${lite_kernel_deps})
-add_kernel(unbind_compute_host Host basic SRCS unbind_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(argmax_compute_host Host basic SRCS argmax_compute.cc DEPS ${lite_kernel_deps} math_host)
 
 # extra kernels
