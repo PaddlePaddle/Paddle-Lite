@@ -14,6 +14,7 @@
 
 #pragma once
 #include <algorithm>
+#include <string>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -22,15 +23,20 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <PrecisionType Ptype>
-class OneHotCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+class SelectInputCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
-  using param_t = operators::OneHotParam;
+  using param_t = operators::SelectInputParam;
 
   void Run() override;
 
-  virtual ~OneHotCompute() = default;
+  virtual ~SelectInputCompute() = default;
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForSelectInput"};
+#endif
 };
 
 }  // namespace host

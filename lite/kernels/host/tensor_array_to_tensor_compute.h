@@ -22,15 +22,14 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <PrecisionType Ptype>
-class OneHotCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+class TensorArrayToTensorCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::OneHotParam;
+  using param_t = operators::TensorArrayToTensorParam;
 
   void Run() override;
 
-  virtual ~OneHotCompute() = default;
+  virtual ~TensorArrayToTensorCompute() = default;
 };
 
 }  // namespace host

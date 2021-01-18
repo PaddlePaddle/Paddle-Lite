@@ -12,28 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/backends/host/math/stack.h"
 #include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace host {
-
-template <PrecisionType Ptype>
-class OneHotCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
- public:
-  using param_t = operators::OneHotParam;
-
-  void Run() override;
-
-  virtual ~OneHotCompute() = default;
-};
-
-}  // namespace host
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+#include <limits>
+#include <memory>

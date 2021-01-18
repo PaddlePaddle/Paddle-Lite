@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -22,18 +21,16 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <PrecisionType Ptype>
-class OneHotCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+template <typename T, PrecisionType PType>
+class StridedSliceCompute
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::OneHotParam;
-
   void Run() override;
 
-  virtual ~OneHotCompute() = default;
+  virtual ~StridedSliceCompute() = default;
 };
 
-}  // namespace host
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+} /* namespace host */
+} /* namespace kernels */
+} /* namespace lite */
+} /* namespace paddle */

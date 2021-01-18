@@ -13,27 +13,35 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <string>
+#include <vector>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace host {
+namespace operators {
 
-template <PrecisionType Ptype>
-class OneHotCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+class TensorArrayToTensorOpLite : public OpLite {
  public:
-  using param_t = operators::OneHotParam;
+  TensorArrayToTensorOpLite() {}
+  explicit TensorArrayToTensorOpLite(const std::string &op_type)
+      : OpLite(op_type) {}
 
-  void Run() override;
+  bool CheckShape() const override;
 
-  virtual ~OneHotCompute() = default;
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "tensorArrayToTensor"; }
+
+ private:
+  mutable TensorArrayToTensorParam param_;
 };
 
-}  // namespace host
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
