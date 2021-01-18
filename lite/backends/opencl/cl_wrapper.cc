@@ -81,7 +81,7 @@ bool CLWrapper::InitHandle() {
 
 bool CLWrapper::InitFunctions() {
   if (handle_ == nullptr) {
-    LOG(INFO) << "The library handle can't be null!";
+    LOG(ERROR) << "The library handle can't be null!";
     return false;
   }
   bool dlsym_success = true;
