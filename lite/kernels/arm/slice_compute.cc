@@ -206,7 +206,7 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_boolean, bool_slice)
 
 using slice_int32 =
     paddle::lite::kernels::arm::SliceCompute<int, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(slice, kARM, kInt32, kNCHW, slice_int32, def)
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("StartsTensor",
