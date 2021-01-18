@@ -22,6 +22,17 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+inline std::vector<uint64_t> GetNmsLodFromRoisNum(const Tensor* rois_num) {
+  std::vector<uint64_t> rois_lod;
+  auto* rois_num_data = rois_num->data<int>();
+  rois_lod.push_back(static_cast<uint64_t>(0));
+  for (int i = 0; i < rois_num->numel(); ++i) {
+    rois_lod.push_back(rois_lod.back() +
+                       static_cast<uint64_t>(rois_num_data[i]));
+  }
+  return rois_lod;
+}
+
 template <class T>
 bool SortScorePairDescend(const std::pair<float, T>& pair1,
                           const std::pair<float, T>& pair2) {
@@ -330,6 +341,9 @@ void MulticlassNmsCompute::Run() {
   auto* index = param.index;
   auto score_dims = scores->dims();
   auto score_size = score_dims.size();
+  auto has_roissum = param.rois_num != nullptr;
+  auto return_rois_num = param.nms_rois_num != nullptr;
+  auto rois_num = param.rois_num;
 
   std::vector<std::map<int, std::vector<int>>> all_indices;
   std::vector<uint64_t> batch_starts = {0};
@@ -338,7 +352,12 @@ void MulticlassNmsCompute::Run() {
   int64_t out_dim = box_dim + 2;
   int num_nmsed_out = 0;
   Tensor boxes_slice, scores_slice;
-  int n = score_size == 3 ? batch_size : boxes->lod().back().size() - 1;
+  int n;
+  if (has_roissum) {
+    n = score_size == 3 ? batch_size : rois_num->numel();
+  } else {
+    n = score_size == 3 ? batch_size : boxes->lod().back().size() - 1;
+  }
   for (int i = 0; i < n; ++i) {
     if (score_size == 3) {
       scores_slice = scores->Slice<float>(i, i + 1);
@@ -346,7 +365,12 @@ void MulticlassNmsCompute::Run() {
       boxes_slice = boxes->Slice<float>(i, i + 1);
       boxes_slice.Resize({score_dims[2], box_dim});
     } else {
-      auto boxes_lod = boxes->lod().back();
+      std::vector<uint64_t> boxes_lod;
+      if (has_roissum) {
+        boxes_lod = GetNmsLodFromRoisNum(rois_num);
+      } else {
+        boxes_lod = boxes->lod().back();
+      }
       scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
       boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
     }
@@ -383,7 +407,12 @@ void MulticlassNmsCompute::Run() {
           offset = i * score_dims[2];
         }
       } else {
-        auto boxes_lod = boxes->lod().back();
+        std::vector<uint64_t> boxes_lod;
+        if (has_roissum) {
+          boxes_lod = GetNmsLodFromRoisNum(rois_num);
+        } else {
+          boxes_lod = boxes->lod().back();
+        }
         scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
         boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
         if (return_index) {
@@ -408,6 +437,16 @@ void MulticlassNmsCompute::Run() {
                                 offset);
       }
     }
+  }
+
+  if (return_rois_num) {
+    auto* nms_rois_num = param.nms_rois_num;
+    nms_rois_num->mutable_data<int>();
+    int* num_data = nms_rois_num->mutable_data<int>();
+    for (int i = 1; i <= n; i++) {
+      num_data[i - 1] = batch_starts[i] - batch_starts[i - 1];
+    }
+    nms_rois_num->Resize({n});
   }
 
   LoD lod;
@@ -443,5 +482,22 @@ REGISTER_LITE_KERNEL(multiclass_nms2,
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Index",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(multiclass_nms3,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::MulticlassNmsCompute,
+                     def)
+    .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("RoisNum",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Index",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("NmsRoisNum",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();

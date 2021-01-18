@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <limits>
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
@@ -136,9 +137,9 @@ class ClipComputeImageDefault : public KernelLite<TARGET(kOpenCL),
   DDim last_x_dims_;
 
   std::string kernel_func_name_{"clip"};
-  float max_{FLT_MAX};
+  float max_{std::numeric_limits<float>::max()};  // FLT_MAX
   int use_max_{1};
-  float min_{FLT_MIN};
+  float min_{std::numeric_limits<float>::min()};  // FLT_MIN
   int use_min_{1};
 
   cl::Kernel kernel_;
