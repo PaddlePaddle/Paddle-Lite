@@ -26,7 +26,7 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-inline std::vector<int32_t> get_new_data_from_tensorlist(
+inline static std::vector<int32_t> get_new_data_from_tensorlist(
     const std::vector<lite::Tensor*>& list_new_data_tensor) {
   // get tensor
   std::vector<int32_t> vec_new_data;
@@ -38,7 +38,7 @@ inline std::vector<int32_t> get_new_data_from_tensorlist(
   return vec_new_data;
 }
 
-inline std::vector<int32_t> get_new_data_from_tensor(
+inline static std::vector<int32_t> get_new_data_from_tensor(
     const lite::Tensor* new_data_tensor) {
   std::vector<int32_t> vec_new_data;
   auto* new_data = new_data_tensor->data<int32_t>();
@@ -49,7 +49,6 @@ inline std::vector<int32_t> get_new_data_from_tensor(
 
 template <typename T, PrecisionType PType>
 void SliceCompute<T, PType>::PrepareForRun() {
-  VLOG(1) << "IN SLICE BUFFER";
   auto& context = this->ctx_->template As<OpenCLContext>();
   slice_param_ = this->param_.template get_mutable<param_t>();
   auto param = *slice_param_;
@@ -63,8 +62,8 @@ void SliceCompute<T, PType>::PrepareForRun() {
   } else {
     LOG(FATAL) << "Not support data type";
   }
-  // define a template function also works
 
+  VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   context.cl_context()->AddKernel(
       kernel_func_name_, "buffer/slice_kernel.cl", build_options_, time_stamp_);
 
@@ -219,44 +218,11 @@ void SliceCompute<T, PType>::ReInitWhenNeeded() {
       out_num_ *= out_dims[i];
     }
 
-    for (auto j = 0; j < LEN; j++) {
-      printf("k src_step: %d\n", src_step[j]);
-      printf("k dst_step: %d\n", dst_step[j]);
-      printf("k real_starts: %d\n", real_starts[j]);
-    }
-    /*
-        auto src_step_t = std::unique_ptr<Tensor>(new Tensor);
-        auto* src_step_gpu_data =
-            src_step_t->mutable_data(TARGET(kOpenCL), MEM_SIZE);
-        TargetWrapperCL::MemcpySync(
-            src_step_gpu_data, src_step.data(), MEM_SIZE, IoDirection::HtoD);
-        auto dst_step_t = std::unique_ptr<Tensor>(new Tensor);
-        auto* dst_step_gpu_data =
-            dst_step_t->mutable_data(TARGET(kOpenCL), MEM_SIZE);
-        TargetWrapperCL::MemcpySync(
-            dst_step_gpu_data, dst_step.data(), MEM_SIZE, IoDirection::HtoD);
-        auto real_starts_t = std::unique_ptr<Tensor>(new Tensor);
-        auto* real_starts_gpu_data =
-            real_starts_t->mutable_data(TARGET(kOpenCL), MEM_SIZE);
-        TargetWrapperCL::MemcpySync(
-            real_starts_gpu_data, real_starts.data(), MEM_SIZE,
-       IoDirection::HtoD);
-        src_step_buf_ = const_cast<cl::Buffer*>(src_step_t->data<int,
-       cl::Buffer>());
-        dst_step_buf_ = const_cast<cl::Buffer*>(dst_step_t->data<int,
-       cl::Buffer>());
-        real_starts_buf_ = const_cast<cl::Buffer*>(real_starts_t->data<int,
-       cl::Buffer>());
-    */
-    auto* src_step_buf_ =
+    // malloc temporary GPU data
+    src_step_buf_ = static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(MEM_SIZE));
+    dst_step_buf_ = static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(MEM_SIZE));
+    real_starts_buf_ =
         static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(MEM_SIZE));
-    auto* dst_step_buf_ =
-        static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(MEM_SIZE));
-    auto* real_starts_buf_ =
-        static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(MEM_SIZE));
-    size_t buffer_size;
-    src_step_buf_->getInfo(CL_MEM_SIZE, &buffer_size);
-    LOG(INFO) << "src_step buffer size: " << buffer_size;
     TargetWrapperCL::MemcpySync(
         src_step_buf_, src_step.data(), MEM_SIZE, IoDirection::HtoD);
     TargetWrapperCL::MemcpySync(
@@ -290,6 +256,7 @@ void SliceCompute<T, PType>::Run() {
   cl_int status;
   int arg_idx = 0;
   auto kernel = kernel_;
+  CHECK(src_step_buf_ != nullptr);
   status = kernel.setArg(arg_idx++, *x_buf);
   CL_CHECK_FATAL(status);
   status = kernel.setArg(arg_idx++, *out_buf);

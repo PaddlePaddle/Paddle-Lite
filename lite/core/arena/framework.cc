@@ -114,9 +114,6 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
         case DATALAYOUT(kNCHW): {
           // buffer
           auto* ptr = base_tensor->data<float>();
-          for (auto i = 0; i < base_tensor->dims().production(); i++) {
-            LOG(INFO) << "BASE DATA: " << *(ptr++);
-          }
           TargetWrapperCL::MemcpySync(
               inst_tensor->mutable_data(type->target(),
                                         base_tensor->memory_size()),
@@ -249,7 +246,6 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
             inst_tensor->raw_data(),
             sizeof(T) * inst_tensor->dims().production(),
             IoDirection::DtoH);
-        VLOG(1) << "RESULT inst dims: " << inst_tensor->dims();
       }
       inst_data = inst_host_tensor.data<T>();
       break;

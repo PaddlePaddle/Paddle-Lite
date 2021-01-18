@@ -28,7 +28,7 @@ add_kernel(scale_opencl_image OPENCL basic SRCS scale_image_compute.cc DEPS ${cl
 add_kernel(grid_sampler_opencl_image OPENCL basic SRCS grid_sampler_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(lrn_opencl_image OPENCL basic SRCS lrn_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(bilinear_interp_opencl_image OPENCL basic SRCS bilinear_interp_image_compute.cc DEPS ${cl_kernel_deps})
-add_kernel(slice_opencl_image OPENCL basic SRCS slice_image_compute.cc DEPS ${cl_kernel_deps})
+# add_kernel(slice_opencl_image OPENCL basic SRCS slice_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(instance_norm_opencl_image OPENCL basic SRCS instance_norm_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(dropout_opencl_image OPENCL basic SRCS dropout_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(pad2d_opencl_image OPENCL basic SRCS pad2d_image_compute.cc DEPS ${cl_kernel_deps})
@@ -99,8 +99,8 @@ lite_cc_test(test_lrn_image_opencl SRCS lrn_image_compute_test.cc
 
 lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_compute_test.cc
              DEPS bilinear_interp_opencl_image op_registry program context)
-lite_cc_test(test_slice_image_opencl SRCS slice_image_compute_test.cc
-             DEPS slice_opencl_image op_registry program context)
+#lite_cc_test(test_slice_image_opencl SRCS slice_image_compute_test.cc
+#             DEPS slice_opencl_image op_registry program context)
 
 #lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
 #             DEPS instance_norm_opencl_image op_registry program context)

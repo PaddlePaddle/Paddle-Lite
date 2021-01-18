@@ -37,6 +37,12 @@ class SliceCompute
 
   void Run() override;
 
+  ~SliceCompute() {
+    TargetWrapperCL::Free(src_step_buf_);
+    TargetWrapperCL::Free(dst_step_buf_);
+    TargetWrapperCL::Free(real_starts_buf_);
+  }
+
  protected:
   param_t* slice_param_{nullptr};
   bool first_epoch_for_reinit_{true};
@@ -49,7 +55,7 @@ class SliceCompute
   cl::Buffer* src_step_buf_{nullptr};
   cl::Buffer* dst_step_buf_{nullptr};
   cl::Buffer* real_starts_buf_{nullptr};
-  int32_t out_num_{};
+  int32_t out_num_{0};
 };
 
 }  // namespace opencl
