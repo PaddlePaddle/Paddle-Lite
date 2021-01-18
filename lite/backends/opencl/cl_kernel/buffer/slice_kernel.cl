@@ -33,6 +33,17 @@ __kernel void slice(__global const DTYPE* in,
     int cur_id = index_id / dst_step[j];
     index_id = index_id % dst_step[j];
     src_id += (cur_id + real_starts[j]) * src_step[j];
+    if (dst_id == 0) {
+      printf("ins src_step: %d\n", src_step[j]);
+      printf("ins dst_step: %d\n", dst_step[j]);
+      printf("ins real_starts: %d\n", real_starts[j]);
+    }
   }
   out[dst_id] = in[src_id];
+  if (dst_id == 0) {
+    printf("ins dim_size: %d\tout_num: %d\n", dim_size, out_num);
+  }
+
+  printf("ins in[%d]: %f\n", src_id, in[src_id]);
+  printf("ins out[%d]: %f\n", dst_id, out[dst_id]);
 }

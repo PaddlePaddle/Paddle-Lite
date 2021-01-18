@@ -219,12 +219,44 @@ void SliceCompute<T, PType>::ReInitWhenNeeded() {
       out_num_ *= out_dims[i];
     }
 
+    for (auto j = 0; j < LEN; j++) {
+      printf("k src_step: %d\n", src_step[j]);
+      printf("k dst_step: %d\n", dst_step[j]);
+      printf("k real_starts: %d\n", real_starts[j]);
+    }
+    /*
+        auto src_step_t = std::unique_ptr<Tensor>(new Tensor);
+        auto* src_step_gpu_data =
+            src_step_t->mutable_data(TARGET(kOpenCL), MEM_SIZE);
+        TargetWrapperCL::MemcpySync(
+            src_step_gpu_data, src_step.data(), MEM_SIZE, IoDirection::HtoD);
+        auto dst_step_t = std::unique_ptr<Tensor>(new Tensor);
+        auto* dst_step_gpu_data =
+            dst_step_t->mutable_data(TARGET(kOpenCL), MEM_SIZE);
+        TargetWrapperCL::MemcpySync(
+            dst_step_gpu_data, dst_step.data(), MEM_SIZE, IoDirection::HtoD);
+        auto real_starts_t = std::unique_ptr<Tensor>(new Tensor);
+        auto* real_starts_gpu_data =
+            real_starts_t->mutable_data(TARGET(kOpenCL), MEM_SIZE);
+        TargetWrapperCL::MemcpySync(
+            real_starts_gpu_data, real_starts.data(), MEM_SIZE,
+       IoDirection::HtoD);
+        src_step_buf_ = const_cast<cl::Buffer*>(src_step_t->data<int,
+       cl::Buffer>());
+        dst_step_buf_ = const_cast<cl::Buffer*>(dst_step_t->data<int,
+       cl::Buffer>());
+        real_starts_buf_ = const_cast<cl::Buffer*>(real_starts_t->data<int,
+       cl::Buffer>());
+    */
     auto* src_step_buf_ =
         static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(MEM_SIZE));
     auto* dst_step_buf_ =
         static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(MEM_SIZE));
     auto* real_starts_buf_ =
         static_cast<cl::Buffer*>(TargetWrapperCL::Malloc(MEM_SIZE));
+    size_t buffer_size;
+    src_step_buf_->getInfo(CL_MEM_SIZE, &buffer_size);
+    LOG(INFO) << "src_step buffer size: " << buffer_size;
     TargetWrapperCL::MemcpySync(
         src_step_buf_, src_step.data(), MEM_SIZE, IoDirection::HtoD);
     TargetWrapperCL::MemcpySync(

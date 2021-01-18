@@ -62,6 +62,7 @@ static void slice_ref(const float* input,
     out_num *= out_dims[i];
   }
 
+  printf("dim_size: %d\tout_num: %d\n", out_dims.size(), out_num);
   for (int dst_id = 0; dst_id < out_num; dst_id++) {
     int src_id = 0;
     int index_id = dst_id;
@@ -69,8 +70,15 @@ static void slice_ref(const float* input,
       int cur_id = index_id / dst_step[j];
       index_id = index_id % dst_step[j];
       src_id += (cur_id + real_starts[j]) * src_step[j];
+      if (dst_id == 0) {
+        printf("src_step: %d\n", src_step[j]);
+        printf("dst_step: %d\n", dst_step[j]);
+        printf("real_starts: %d\n", real_starts[j]);
+      }
     }
     out[dst_id] = input[src_id];
+    printf("in[%d]: %f\n", src_id, input[src_id]);
+    printf("out[%d]: %f\n", dst_id, out[dst_id]);
   }
 }
 
