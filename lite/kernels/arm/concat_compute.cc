@@ -93,6 +93,9 @@ void ConcatCompute::Run() {
     case PRECISION(kInt64):
       ConcatFunc<int64_t>(inputs, axis, out);
       break;
+    case PRECISION(kBool):
+      ConcatFunc<bool>(inputs, axis, out);
+      break;
     default:
       LOG(FATAL) << "Concat does not implement for the "
                  << "input type:"
