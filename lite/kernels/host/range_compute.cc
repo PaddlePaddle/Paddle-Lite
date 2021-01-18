@@ -59,6 +59,27 @@ REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_float, def)
                                        DATALAYOUT(kAny))})
     .Finalize();
 
+using range_int64 =
+    paddle::lite::kernels::host::RangeCompute<int64_t, PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(range, kHost, kInt64, kAny, range_int64, def)
+    .BindInput("Start",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("End",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Step",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
 using range_int32 =
     paddle::lite::kernels::host::RangeCompute<int, PRECISION(kInt32)>;
 REGISTER_LITE_KERNEL(range, kHost, kInt32, kAny, range_int32, def)

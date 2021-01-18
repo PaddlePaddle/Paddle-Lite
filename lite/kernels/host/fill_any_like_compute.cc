@@ -24,7 +24,7 @@ void FillAnyLikeCompute::FillAnyData() {
   auto& param = *param_.get_mutable<param_t>();
   T value = param.value;
   auto data = param.Out->template mutable_data<T>();
-  for (int i = 0; i < param.out->numel(); i++) {
+  for (int i = 0; i < param.Out->numel(); i++) {
     data[i] = value;
   }
 }
@@ -51,7 +51,7 @@ void FillAnyLikeCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(fill_any_like_compute,
+REGISTER_LITE_KERNEL(fill_any_like,
                      kHost,
                      kAny,
                      kNCHW,
@@ -59,10 +59,10 @@ REGISTER_LITE_KERNEL(fill_any_like_compute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindPaddleOpVersion("fill_any_like_compute", 1)
+    .BindPaddleOpVersion("fill_any_like", 1)
     .Finalize();
 
-REGISTER_LITE_KERNEL(fill_zeros_like_compute,
+REGISTER_LITE_KERNEL(fill_zeros_like,
                      kHost,
                      kAny,
                      kNCHW,
@@ -70,5 +70,5 @@ REGISTER_LITE_KERNEL(fill_zeros_like_compute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindPaddleOpVersion("fill_any_like_compute", 1)
+    .BindPaddleOpVersion("fill_any_like", 1)
     .Finalize();

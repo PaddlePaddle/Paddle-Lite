@@ -133,6 +133,15 @@ void GatherCompute<IndexType, AxisType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt64Int64, int64int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("Axis",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt32Int32, int32int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("Index",
@@ -142,14 +151,6 @@ REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt32Int32, int32int32)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt64Int64, int64int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindInput("Index",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .BindInput("Axis",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .Finalize();
 REGISTER_LITE_KERNEL(gather, kHost, kFloat, kNCHW, GatherInt64Int32, int64int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("Index",

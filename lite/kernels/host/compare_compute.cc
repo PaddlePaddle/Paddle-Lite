@@ -126,6 +126,22 @@ REGISTER_LITE_KERNEL(equal, kHost, kFloat, kAny, equal_float, def)
     .BindPaddleOpVersion("equal", 1)
     .Finalize();
 
+using equal_int64 = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kInt64),
+    paddle::lite::kernels::host::_EqualFunctor<int64_t>>;
+REGISTER_LITE_KERNEL(equal, kHost, kInt64, kAny, equal_int64, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindPaddleOpVersion("equal", 1)
+    .Finalize();
+
 using equal_int32 = paddle::lite::kernels::host::CompareCompute<
     PRECISION(kInt32),
     paddle::lite::kernels::host::_EqualFunctor<int32_t>>;
