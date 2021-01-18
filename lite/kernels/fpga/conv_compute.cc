@@ -113,6 +113,8 @@ void ConvCompute::PrepareForRun() {
 
 void ConvCompute::Run() {
   auto& param = this->Param<param_t>();
+  param.x->ZynqTensor()->scale()[0] = param.input_scale;
+  param.x->ZynqTensor()->scale()[1] = 1 / param.input_scale;
   if (param.x->ZynqTensor()->shape().channel() != 1 &&
       param.groups == param.x->ZynqTensor()->shape().channel()) {
     dw_conv_pe_.dispatch();

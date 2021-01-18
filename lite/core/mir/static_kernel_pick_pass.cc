@@ -82,7 +82,8 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     std::stable_sort(scored.begin(), scored.end(), KernelScoreCmp);
     instruct.kernels().clear();
 
-    if (!instruct.op_info()->HasAttr("enable_int8")) {
+    // if (!instruct.op_info()->HasAttr("enable_int8")) {
+      if (true) {
       // Move kernel back
       // Just keep a single best kernel.
       // TODO(Superjomn) reconsider this.

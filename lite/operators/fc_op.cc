@@ -122,6 +122,12 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     if (op_info->HasOutputScale(out_scale_name, true))
       param_.output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
   }
+
+  auto input_scale_name = "Input0_scale";
+  if (op_info->HasInputScale(input_scale_name, true)) {
+    param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+  }
+
   return true;
 }
 

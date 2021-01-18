@@ -163,6 +163,11 @@ class ConvOpLite : public OpLite {
       }
     }
 
+    auto input_scale_name = "Input0_scale";
+    if (op_info->HasInputScale(input_scale_name, true)) {
+      param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+    }
+        
     // 2-pad to 4-pad
     if (paddings.size() == 2L) {
       for (size_t i = 0; i < param_.strides.size(); ++i) {

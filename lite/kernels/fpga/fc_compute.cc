@@ -48,6 +48,10 @@ void FcCompute::PrepareForRun() {
 }
 
 void FcCompute::Run() {
+  auto& param = this->Param<param_t>();
+  param.input->ZynqTensor()->scale()[0] = param.input_scale;
+  param.input->ZynqTensor()->scale()[1] = 1 / param.input_scale;
+
   pe_.dispatch();
 
 #ifdef FPGA_PRINT_TENSOR
