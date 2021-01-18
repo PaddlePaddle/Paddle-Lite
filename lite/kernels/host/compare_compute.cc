@@ -93,7 +93,7 @@ void CompareCompute<PType, CompareFunctor>::Run() {
     int axis = (param.axis == -1 ? x_dims.size() - y_dims.size() : param.axis);
     // If Y contains only one data, all_broad_cast mode will be applied.
     // In this mode, each member in X will compare to the only var in Y.
-    if(param.Y->numel() ==1) {
+    if (param.Y->numel() == 1) {
       axis = x_dims.size();
     }
     int outer_num, mid_num, inner_num;
