@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/kernels/arm/slice_compute.h"
+
 #include <algorithm>
 #include <vector>
+
 #include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
