@@ -113,7 +113,6 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
         }
         case DATALAYOUT(kNCHW): {
           // buffer
-          auto* ptr = base_tensor->data<float>();
           TargetWrapperCL::MemcpySync(
               inst_tensor->mutable_data(type->target(),
                                         base_tensor->memory_size()),
