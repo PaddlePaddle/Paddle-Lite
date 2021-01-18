@@ -124,37 +124,6 @@ class SliceComputeImage2D : public KernelLite<TARGET(kOpenCL),
   std::string time_stamp_{GetTimeStamp()};
 };
 
-class SliceComputeInt32
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)> {
- public:
-  using param_t = operators::SliceParam;
-
-  std::string doc() const override { return "Slice using cl::Buffer, kInt32"; }
-
-  void Run() override {
-    const auto& param = *param_.get_mutable<param_t>();
-    const auto& in_dims = param.X->dims();
-    std::vector<int> axes = param.axes;
-    std::vector<int32_t> starts = param.starts;
-
-    if (in_dims.size() == 1 && in_dims[0] < 5 && axes[0] == 0) {
-      auto* x_data = param.X->data<int, cl::Buffer>();
-      std::vector<int> input_cpu(in_dims[0]);
-      TargetWrapperCL::MemcpySync(
-          input_cpu.data(), x_data, param.X->memory_size(), IoDirection::DtoH);
-      int* x_ptr = input_cpu.data();
-      auto* y_data = param.Out->mutable_data<int, cl::Buffer>(TARGET(kOpenCL));
-      TargetWrapperCL::MemcpySync(y_data,
-                                  (x_ptr + starts[0]),
-                                  param.Out->memory_size(),
-                                  IoDirection::HtoD);
-    } else {
-      LOG(FATAL) << "opencl slice_int32 only support shape tensor "
-                    "[int32,int32,int32,int32]";
-    }
-  }
-};
-
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
@@ -182,28 +151,4 @@ REGISTER_LITE_KERNEL(slice,
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(slice,
-                     kOpenCL,
-                     kInt32,
-                     kNCHW,
-                     paddle::lite::kernels::opencl::SliceComputeInt32,
-                     def)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kInt32),
-                                      DATALAYOUT(kNCHW))})
-    .BindInput("StartsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("EndsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("StartsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindInput("EndsTensorList",
-               {LiteType::GetTensorListTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kInt32),
-                                       DATALAYOUT(kNCHW))})
     .Finalize();
