@@ -26,8 +26,17 @@ CLWrapper *CLWrapper::Global() {
 }
 
 CLWrapper::CLWrapper() {
+  if (!is_first_init_ && !opencl_lib_found_) {
+    LOG(INFO) << "This isn't first init for CLWrapper, opencl library not "
+                 "found previously";
+    return;
+  }
   opencl_lib_found_ = InitHandle();
-  CHECK(opencl_lib_found_) << "Fail to initialize the OpenCL library!";
+  if (!opencl_lib_found_) {
+    LOG(INFO) << "Failed to find and initialize Opencl library";
+    return;
+  }
+  is_first_init_ = false;
   dlsym_success_ = InitFunctions();
 }
 
@@ -71,7 +80,10 @@ bool CLWrapper::InitHandle() {
 }
 
 bool CLWrapper::InitFunctions() {
-  CHECK(handle_ != nullptr) << "The library handle can't be null!";
+  if (handle_ == nullptr) {
+    LOG(INFO) << "The library handle can't be null!";
+    return false;
+  }
   bool dlsym_success = true;
 
 #define PADDLE_DLSYM(cl_func)                                        \

@@ -1177,10 +1177,10 @@ void ConvImageCompute::PrintConvInfo() {
   LOG(INFO) << "================================";
   LOG(INFO) << "c_blk_=" << c_blk_ << ", w_blk_=" << w_blk_
             << ",nh_blk_=" << nh_blk_;
-  LOG(INFO) << "input_image_p_:" << input_image_p_;
-  LOG(INFO) << "filter_image_p_:" << filter_image_p_;
-  LOG(INFO) << "bias_image_p_:" << bias_image_p_;
-  LOG(INFO) << "output_image_p_:" << output_image_p_;
+  //  LOG(INFO) << "input_image_p_:" << input_image_p_;
+  //  LOG(INFO) << "filter_image_p_:" << filter_image_p_;
+  //  LOG(INFO) << "bias_image_p_:" << bias_image_p_;
+  // LOG(INFO) << "output_image_p_:" << output_image_p_;
 
   LOG(INFO) << "stride_h_:" << stride_h_;
   LOG(INFO) << "stride_w_:" << stride_w_;
