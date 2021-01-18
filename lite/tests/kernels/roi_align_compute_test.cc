@@ -24,7 +24,7 @@ namespace lite {
 
 static int randint(int beg, int end) {
   int res = 0;
-  fill_data_rand(&res, beg, end, 1);
+  fill_data_rand<int>(&res, beg, end, 1);
   return res;
 }
 static constexpr int kROISize = 4;

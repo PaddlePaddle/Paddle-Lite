@@ -62,7 +62,7 @@ inline void fill_data_rand(uint8_t* dio,
   }
 }
 void fill_tensor_host_rand(uint8_t* dio, int64_t size) {
-  fill_data_rand(dio, 0, 256, size);
+  fill_data_rand<uint8_t>(dio, 0, 256, size);
 }
 
 void print_int8(uint8_t* ptr, int size, int width) {
