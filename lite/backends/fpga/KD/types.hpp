@@ -25,48 +25,35 @@ enum DataType : int {
   INT64 = 4,
 };
 
-template<typename T>
+template <typename T>
 struct TypeResolver {
-  DataType operator() () {
-    return FP32;
-  }
+  DataType operator()() { return FP32; }
 };
 
-template<>
+template <>
 struct TypeResolver<float> {
-  DataType operator() () {
-    return FP32;
-  }
+  DataType operator()() { return FP32; }
 };
 
-template<>
+template <>
 struct TypeResolver<float16> {
-  DataType operator() () {
-    return FP16;
-  }
+  DataType operator()() { return FP16; }
 };
 
-template<>
+template <>
 struct TypeResolver<int8_t> {
-  DataType operator() () {
-    return INT8;
-  }
+  DataType operator()() { return INT8; }
 };
 
-template<>
+template <>
 struct TypeResolver<int> {
-  DataType operator() () {
-    return INT32;
-  }
+  DataType operator()() { return INT32; }
 };
 
-template<>
+template <>
 struct TypeResolver<int64_t> {
-  DataType operator() () {
-    return INT64;
-  }
+  DataType operator()() { return INT64; }
 };
-
 
 // zynqmp::DataType data_type = zynqmp::FP32;
 //   if (typeid(T) == typeid(float)) {
@@ -88,7 +75,6 @@ struct TypeResolver<int64_t> {
 //     data_type = zynqmp::INT64;
 //   }
 //   return data_type;
-
 
 inline int CellSize(DataType type) {
   switch (type) {
