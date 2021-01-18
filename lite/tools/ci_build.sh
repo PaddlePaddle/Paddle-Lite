@@ -217,7 +217,7 @@ function build_opencl {
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
     cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON -DWITH_AXV=ON
+        -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON -DWITH_AVX=ON
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
     # make test_gen_code -j$NUM_CORES_FOR_COMPILE
