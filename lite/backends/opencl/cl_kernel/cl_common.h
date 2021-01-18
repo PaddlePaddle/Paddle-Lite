@@ -128,6 +128,13 @@ inline CL_DTYPE activation(CL_DTYPE in
            in / (CL_DTYPE)ACT_SCALE;
 #endif
 
+#ifdef HARD_SIGMOID
+  output =
+      clamp(in * (CL_DTYPE)HARD_SIGMOID_SLOPE + (CL_DTYPE)HARD_SIGMOID_OFFSET,
+            (CL_DTYPE)0.0,
+            (CL_DTYPE)1.0);
+#endif
+
   return output;
 }
 
@@ -165,6 +172,13 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
   output = fmin(fmax(in + (CL_DTYPE4)ACT_OFFSET, (CL_DTYPE4)0),
                 (CL_DTYPE4)ACT_THRESHOLD) *
            in / (CL_DTYPE4)ACT_SCALE;
+#endif
+
+#ifdef HARD_SIGMOID
+  output =
+      clamp(in * (CL_DTYPE4)HARD_SIGMOID_SLOPE + (CL_DTYPE4)HARD_SIGMOID_OFFSET,
+            (CL_DTYPE4)0.0,
+            (CL_DTYPE4)1.0);
 #endif
 
   return output;

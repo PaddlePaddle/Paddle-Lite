@@ -92,6 +92,11 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
     op_desc.SetAttr("hard_swish_threshold", threshold);
     op_desc.SetAttr("hard_swish_scale", scale);
     op_desc.SetAttr("hard_swish_offset", offset);
+  } else if (act_type_ == "hard_sigmoid") {
+    float slope = act_op_desc.GetAttr<float>("slope");
+    float offset = act_op_desc.GetAttr<float>("offset");
+    op_desc.SetAttr("slope", slope);
+    op_desc.SetAttr("offset", offset);
   }
   return op_desc;
 }

@@ -13,30 +13,26 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/operators/generate_proposals_v2_op.h"
 
-#include <iostream>
-#include <list>
-#include <map>
-#include <memory>
-#include <string>
-#include <utility>
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
 
-#include "lite/utils/any.h"
-#include "lite/utils/check.h"
-#include "lite/utils/cp_logging.h"
-#include "lite/utils/hash.h"
-#include "lite/utils/io.h"
-#include "lite/utils/macros.h"
-#include "lite/utils/string.h"
-#include "lite/utils/varient.h"
+class GenerateProposalsV2Compute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::GenerateProposalsV2Param;
 
-#ifdef LITE_ON_TINY_PUBLISH
-#include "lite/utils/replace_stl/stream.h"
-#endif
+  void Run() override;
 
-// On windows environment, min and max will be undefined to
-// avoid compiling error.
-#if defined(_MSC_VER)
-#undef min
-#undef max
-#endif
+  virtual ~GenerateProposalsV2Compute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
