@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"

@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/generate_proposals_v2_compute.h"
+
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -457,7 +459,7 @@ void GenerateProposalsV2Compute::Run() {
   }
 
   if (param.RpnRoisNum != nullptr) {
-    param.RpnRoisLod->Resize(DDim(std::vector<DDim::value_type>({num})));
+    param.RpnRoisNum->Resize(DDim(std::vector<DDim::value_type>({num})));
     int64_t *num_data = param.RpnRoisNum->mutable_data<int64_t>();
     for (int i = 0; i < num; i++) {
       num_data[i] = tmp_num[i];
@@ -475,7 +477,7 @@ void GenerateProposalsV2Compute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(generate_proposals_v2,
-                     kHost,
+                     kARM,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::host::GenerateProposalsV2Compute,
