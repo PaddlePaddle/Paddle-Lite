@@ -29,3 +29,10 @@
 #include <glog/logging.h>
 #endif
 #endif
+
+// On windows environment, min and max will be undefined to
+// avoid compiling error.
+#if defined(_MSC_VER)
+#undef min
+#undef max
+#endif

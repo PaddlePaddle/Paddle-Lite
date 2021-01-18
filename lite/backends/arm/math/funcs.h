@@ -372,7 +372,19 @@ inline float32x4_t div_ps(float32x4_t a, float32x4_t b) {
 
 inline float32x4_t pow_ps(float32x4_t a, float32x4_t b) {
   // pow(x, m) = exp(m * log(x))
-  return exp_ps(vmulq_f32(b, log_ps(a)));
+  float32x4_t vone = vdupq_n_f32(1.f);
+  // x < 0
+  for (int i = 0; i < 4; i++) {
+    if (a[i] < 0) {
+      a[i] = -a[i];
+      if (static_cast<int>(b[i]) % 2) {
+        vone[i] = -1.f;
+      }
+    }
+  }
+  float32x4_t vsum = exp_ps(vmulq_f32(b, log_ps(a)));
+  vsum = vmulq_f32(vsum, vone);
+  return vsum;
 }
 
 inline float32x4_t vpaddq_f32(float32x4_t a, float32x4_t b) {

@@ -958,6 +958,8 @@ struct MulticlassNmsParam : ParamBase {
   float nms_eta{1.0f};
   int keep_top_k;
   bool normalized{true};
+  const lite::Tensor* rois_num{};
+  lite::Tensor* nms_rois_num{};
 };
 
 /// ----------------------- matrix_nms operators ----------------------
@@ -1420,7 +1422,31 @@ struct GenerateProposalsParam : ParamBase {
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
   lite::Tensor* RpnRoisLod{};
+  lite::Tensor* RpnRoisNum{};
 };
+
+struct GenerateProposalsV2Param : ParamBase {
+  // inputs
+  const lite::Tensor* Scores{};
+  const lite::Tensor* BboxDeltas{};
+  const lite::Tensor* ImShape{};
+  lite::Tensor* Anchors{};
+  lite::Tensor* Variances{};
+
+  // attrs
+  int pre_nms_topN{6000};
+  int post_nms_topN{1000};
+  float nms_thresh{0.5f};
+  float min_size{0.1f};
+  float eta{1.0f};
+
+  // outputs
+  lite::Tensor* RpnRois{};
+  lite::Tensor* RpnRoiProbs{};
+  lite::Tensor* RpnRoisLod{};
+  lite::Tensor* RpnRoisNum{};
+};
+
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam : ParamBase {
   const lite::Tensor* X{};
@@ -2112,6 +2138,11 @@ struct FlattenContiguousRangeParam : ParamBase {
   int stop_axis;
 };
 
+struct LoDArrayLengthParam : ParamBase {
+  std::vector<lite::Tensor>* x{};
+  lite::Tensor* out{};
+};
+
 struct SelectInputParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Mask{};
@@ -2119,7 +2150,7 @@ struct SelectInputParam : ParamBase {
 };
 
 struct TensorArrayToTensorParam : ParamBase {
-  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor>* X{};
   lite::Tensor* Out{};
   lite::Tensor* OutIndex{};
   int axis{0};

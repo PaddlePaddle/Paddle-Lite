@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/generate_proposals_op.h"
+#include "lite/operators/generate_proposals_v2_op.h"
 #include <vector>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
@@ -21,10 +21,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool GenerateProposalsOpLite::CheckShape() const {
+bool GenerateProposalsV2OpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.Scores);
   CHECK_OR_FALSE(param_.BboxDeltas);
-  CHECK_OR_FALSE(param_.ImInfo);
+  CHECK_OR_FALSE(param_.ImShape);
   CHECK_OR_FALSE(param_.Anchors);
   CHECK_OR_FALSE(param_.Variances);
   CHECK_OR_FALSE(param_.RpnRois);
@@ -32,7 +32,7 @@ bool GenerateProposalsOpLite::CheckShape() const {
 
   auto scores_dims = param_.Scores->dims();
   auto bbox_dims = param_.BboxDeltas->dims();
-  auto im_info_dims = param_.ImInfo->dims();
+  auto im_info_dims = param_.ImShape->dims();
   auto anchors_dims = param_.Anchors->dims();
   auto vars_dims = param_.Variances->dims();
 
@@ -43,21 +43,21 @@ bool GenerateProposalsOpLite::CheckShape() const {
   return true;
 }
 
-bool GenerateProposalsOpLite::InferShapeImpl() const {
+bool GenerateProposalsV2OpLite::InferShapeImpl() const {
   param_.RpnRois->Resize(std::vector<int64_t>({-1, 4}));
   param_.RpnRoiProbs->Resize(std::vector<int64_t>({-1, 1}));
   return true;
 }
 
-bool GenerateProposalsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
-                                         lite::Scope *scope) {
+bool GenerateProposalsV2OpLite::AttachImpl(const cpp::OpDesc &op_desc,
+                                           lite::Scope *scope) {
   // inputs
   param_.Scores = scope->FindVar(op_desc.Input("Scores").front())
                       ->GetMutable<lite::Tensor>();
   param_.BboxDeltas = scope->FindVar(op_desc.Input("BboxDeltas").front())
                           ->GetMutable<lite::Tensor>();
-  param_.ImInfo = scope->FindVar(op_desc.Input("ImInfo").front())
-                      ->GetMutable<lite::Tensor>();
+  param_.ImShape = scope->FindVar(op_desc.Input("ImShape").front())
+                       ->GetMutable<lite::Tensor>();
   param_.Anchors = scope->FindVar(op_desc.Input("Anchors").front())
                        ->GetMutable<lite::Tensor>();
   param_.Variances = scope->FindVar(op_desc.Input("Variances").front())
@@ -93,5 +93,5 @@ bool GenerateProposalsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(generate_proposals,
-                 paddle::lite::operators::GenerateProposalsOpLite);
+REGISTER_LITE_OP(generate_proposals_v2,
+                 paddle::lite::operators::GenerateProposalsV2OpLite);

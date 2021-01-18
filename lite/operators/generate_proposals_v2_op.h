@@ -14,19 +14,20 @@
 
 #pragma once
 #include <string>
-#include <vector>
 #include "lite/core/op_lite.h"
 #include "lite/core/scope.h"
+#include "lite/operators/op_params.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class TensorArrayToTensorOpLite : public OpLite {
+class GenerateProposalsV2OpLite : public OpLite {
  public:
-  TensorArrayToTensorOpLite() {}
-  explicit TensorArrayToTensorOpLite(const std::string &op_type)
+  GenerateProposalsV2OpLite() {}
+
+  explicit GenerateProposalsV2OpLite(const std::string &op_type)
       : OpLite(op_type) {}
 
   bool CheckShape() const override;
@@ -36,10 +37,11 @@ class TensorArrayToTensorOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "tensorArrayToTensor"; }
+
+  std::string DebugString() const override { return "generate_proposals_v2"; }
 
  private:
-  mutable TensorArrayToTensorParam param_;
+  mutable GenerateProposalsV2Param param_;
 };
 
 }  // namespace operators

@@ -54,7 +54,7 @@ DDim infer_shape(const std::vector<const Tensor*>& inputs,
 class TensorArrayToTensorComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
-  std::vector<std::string> x_vct_{};
+  std::string x_ = "x";
   std::string out_ = "out";
   std::string OutIndex_ = "outIndex";
   int axis_ = 0;
@@ -74,9 +74,10 @@ class TensorArrayToTensorComputeTester : public arena::TestCase {
   }
 
   void RunBaseline(Scope* scope) override {
+    auto x = scope->FindVar(x_)->GetMutable<std::vector<Tensor>>();
     std::vector<const Tensor*> x_vct;
-    for (std::string& name : x_vct_) {
-      x_vct.push_back(scope->FindTensor(name));
+    for (int i = 0; i < x->size(); i++) {
+      x_vct.push_back(&(*x)[i]);
     }
 
     auto out = scope->NewTensor(out_);
@@ -165,7 +166,7 @@ class TensorArrayToTensorComputeTester : public arena::TestCase {
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("tensor_array_to_tensor");
-    op_desc->SetInput("X", x_vct_);
+    op_desc->SetInput("X", {x_});
     op_desc->SetAttr("axis", axis_);
     op_desc->SetAttr("use_stack", use_stack_);
     op_desc->SetOutput("Out", {out_});
@@ -173,15 +174,17 @@ class TensorArrayToTensorComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
+    std::vector<std::vector<float>> x_data(x_num_);
+    std::vector<DDim> dims(x_num_);
+
     for (int n = 0; n < x_num_; n++) {
-      std::vector<float> x_data(x_dims_.production());
+      dims[n] = x_dims_;
+      x_data[n].resize(x_dims_.production());
       for (int i = 0; i < x_dims_.production(); i++) {
-        x_data[i] = static_cast<float>(i + n);
+        x_data[n][i] = static_cast<float>(i + n);
       }
-      const std::string x_name = "x_tensor_" + paddle::lite::to_string(n);
-      x_vct_.push_back(x_name);
-      SetCommonTensor(x_name, x_dims_, x_data.data());
     }
+    SetCommonTensorList(x_, dims, x_data);
   }
 };
 

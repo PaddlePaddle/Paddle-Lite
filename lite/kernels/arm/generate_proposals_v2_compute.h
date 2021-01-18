@@ -13,35 +13,26 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include <vector>
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
+#include <algorithm>
+#include "lite/core/kernel.h"
+#include "lite/operators/generate_proposals_v2_op.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace host {
 
-class TensorArrayToTensorOpLite : public OpLite {
+class GenerateProposalsV2Compute
+    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  TensorArrayToTensorOpLite() {}
-  explicit TensorArrayToTensorOpLite(const std::string &op_type)
-      : OpLite(op_type) {}
+  using param_t = operators::GenerateProposalsV2Param;
 
-  bool CheckShape() const override;
+  void Run() override;
 
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "tensorArrayToTensor"; }
-
- private:
-  mutable TensorArrayToTensorParam param_;
+  virtual ~GenerateProposalsV2Compute() = default;
 };
 
-}  // namespace operators
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
