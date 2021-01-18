@@ -2096,20 +2096,6 @@ struct LoDArrayLengthParam : ParamBase {
   lite::Tensor* out{};
 };
 
-struct SelectInputParam : ParamBase {
-  std::vector<lite::Tensor*> X{};
-  lite::Tensor* Mask{};
-  lite::Tensor* Out{};
-};
-
-struct TensorArrayToTensorParam : ParamBase {
-  std::vector<lite::Tensor*> X{};
-  lite::Tensor* Out{};
-  lite::Tensor* OutIndex{};
-  int axis{0};
-  bool use_stack{false};
-};
-
 struct RnnParam : ParamBase {
   lite::Tensor* Input;
   std::vector<lite::Tensor*> PreState;
