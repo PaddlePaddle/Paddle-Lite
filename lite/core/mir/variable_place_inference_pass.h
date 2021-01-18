@@ -169,7 +169,7 @@ class VariablePlaceInferencePass : public DebugPass {
         VLOG(4) << " - output arg name:" << arg_name
                 << " var name:" << var_name;
         const auto* decl_type = kernel.GetOutputDeclType(arg_name);
-        if (!(*var_type) || var.is_weight) {
+        if (!(*var_type)) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
           if (var.is_weight) {
             SetWeightType(out_node, *decl_type, with_targets);
