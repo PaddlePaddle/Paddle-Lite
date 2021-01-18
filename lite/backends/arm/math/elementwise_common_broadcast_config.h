@@ -31,6 +31,14 @@ __ai void vst1q_s32_wrap(int32_t* a, int32x4_t b) { return vst1q_s32(a, b); }
 #undef vst1q_s32
 #define vst1q_s32 vst1q_s32_wrap
 
+__ai int64x2_t vld1q_s64_wrap(const int64_t* p0) { return vld1q_s64(p0); }
+#undef vld1q_s64
+#define vld1q_s64 vld1q_s64_wrap
+
+__ai void vst1q_s64_wrap(int64_t* a, int64x2_t b) { return vst1q_s64(a, b); }
+#undef vst1q_s64
+#define vst1q_s64 vst1q_s64_wrap
+
 __ai float32x4_t vld1q_f32_wrap(const float* p0) { return vld1q_f32(p0); }
 #undef vld1q_f32
 #define vld1q_f32 vld1q_f32_wrap
@@ -71,6 +79,17 @@ struct BasicConfig<int32_t> {
   constexpr static auto neon_dup = vdupq_n_s32;
   constexpr static auto neon_ld = vld1q_s32;
   constexpr static auto neon_st = vst1q_s32;
+  constexpr static int cnt_num = 4;
+};
+
+template <>
+struct BasicConfig<int64_t> {
+  using T = int64_t;
+  using NeonT = int64x2_t;
+  constexpr static auto neon_dup = vdupq_n_s64;
+  constexpr static auto neon_ld = vld1q_s64;
+  constexpr static auto neon_st = vst1q_s64;
+  constexpr static int cnt_num = 2;
 };
 
 template <>
@@ -80,6 +99,7 @@ struct BasicConfig<float> {
   constexpr static auto neon_dup = vdupq_n_f32;
   constexpr static auto neon_ld = vld1q_f32;
   constexpr static auto neon_st = vst1q_f32;
+  constexpr static int cnt_num = 4;
 };
 
 enum class ActiveType { NO_ACTIVE, RELU };
@@ -109,6 +129,13 @@ struct AddConfig<int32_t> : public BasicConfig<int32_t> {
   constexpr static auto naive_op = naive_add<int32_t>;
   constexpr static auto neon_op = vaddq_s32;
 };
+
+template <>
+struct AddConfig<int64_t> : public BasicConfig<int64_t> {
+  constexpr static auto naive_op = naive_add<int64_t>;
+  constexpr static auto neon_op = vaddq_s64;
+};
+
 template <>
 struct AddConfig<float> : public BasicConfig<float> {
   constexpr static auto naive_op = naive_add<float>;

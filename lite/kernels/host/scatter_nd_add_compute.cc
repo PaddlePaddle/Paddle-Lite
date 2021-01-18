@@ -56,7 +56,7 @@ void scatter_nd_add<float>(const int64_t* indexs,
 }
 
 void ScatterNdAddCompute::Run() {
-  auto& param = this->template Param<operators::ScatterParam>();
+  auto& param = this->template Param<param_t>();
   const float* din_data = param.x->template data<float>();
   const float* updates_data = param.updates->template data<float>();
   const int64_t* indexs_data = param.indexs->template data<int64_t>();
@@ -81,8 +81,8 @@ void ScatterNdAddCompute::Run() {
                  output_data,
                  input_offset,
                  index_size,
-                 in_dims.size(),
-                 num);
+                 num,
+                 in_dims.size());
 }
 
 }  // namespace host

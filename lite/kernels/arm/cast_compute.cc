@@ -73,6 +73,11 @@ void CastCompute::Run() {
     const bool* x_data_end = x_data_begin + param.X->numel();
     float* out_data = param.Out->mutable_data<float>();
     std::transform(x_data_begin, x_data_end, out_data, TransOp<bool, float>);
+  } else if (param.in_dtype == 0 && param.out_dtype == 3) {  // bool->int64
+    const bool* x_data_begin = param.X->data<bool>();
+    const bool* x_data_end = x_data_begin + param.X->numel();
+    int64_t* out_data = param.Out->mutable_data<int64_t>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<bool, int64_t>);
   } else if (param.in_dtype == 3 && param.out_dtype == 5) {  // int64->fp32
     const int64_t* x_data_begin = param.X->data<int64_t>();
     const int64_t* x_data_end = x_data_begin + param.X->numel();
@@ -91,6 +96,11 @@ void CastCompute::Run() {
     unsigned char* out_data = param.Out->mutable_data<unsigned char>();
     std::transform(
         x_data_begin, x_data_end, out_data, TransOp<float, unsigned char>);
+  } else if (param.in_dtype == 5 && param.out_dtype == 3) {  // float32 -> INT64
+    const float* x_data_begin = param.X->data<float>();
+    const float* x_data_end = x_data_begin + param.X->numel();
+    int64_t* out_data = param.Out->mutable_data<int64_t>();
+    std::transform(x_data_begin, x_data_end, out_data, TransOp<float, int64_t>);
   } else {
     LOG(FATAL) << "other has not been implemented transform with dtype"
                << param.in_dtype << " X, dtype" << param.out_dtype << " Out";
