@@ -325,6 +325,14 @@ void ConvImageCompute::PrepareForRun() {
       build_options_single += " -DHARD_SWISH -DACT_THRESHOLD=" + threshold +
                               "f" + " -DACT_SCALE=" + scale + "f" +
                               " -DACT_OFFSET=" + offset + "f";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kHardSigmoid) {
+      std::string slope =
+          std::to_string(conv_param_->activation_param.hard_sigmoid_slope);
+      std::string offset =
+          std::to_string(conv_param_->activation_param.hard_sigmoid_offset);
+      build_options_single += " -DHARD_SIGMOID -DHARD_SIGMOID_SLOPE=" + slope +
+                              "f" + " -DHARD_SIGMOID_OFFSET=" + offset + "f";
     } else {
       LOG(FATAL) << "Unsupported activation type:"
                  << static_cast<int>(conv_param_->activation_param.active_type);
