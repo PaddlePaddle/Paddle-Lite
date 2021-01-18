@@ -18,12 +18,6 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool ScatterNdAddOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.output);
-  return true;
-}
-
 bool ScatterNdAddOp::InferShapeImpl() const {
   auto index_dims = param_.indexs->dims();
   auto update_dims = param_.updates->dims();
@@ -35,7 +29,6 @@ bool ScatterNdAddOp::InferShapeImpl() const {
       << "Input(Index).shape[-1] should be no greater than Input(X).rank";
   CHECK_GE(input_dims_size, 2L)
       << "The rank of Input(Index) should be greater than 1";
-  // update.shape = index.shape[:-1] + output.shape[index.shape[-1]:]
   std::vector<int64_t> r_updates_dims;
   for (int64_t i = 0; i < index_dims_size - 1; ++i) {
     r_updates_dims.emplace_back(index_dims[i]);

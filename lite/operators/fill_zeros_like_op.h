@@ -29,8 +29,6 @@ class FillZerosLikeOp : public OpLite {
 
   explicit FillZerosLikeOp(const std::string &op_type) : OpLite(op_type) {}
 
-  bool CheckShape() const override;
-
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
