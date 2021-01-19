@@ -182,20 +182,6 @@ void print_tensor_host_impl(const float* din, int64_t size, int64_t width) {
   printf("\n");
 }
 
-#ifdef ENABLE_ARM_FP16
-typedef __fp16 float16_t;
-template <>
-void print_tensor_host_impl(const float16_t* din, int64_t size, int64_t width) {
-  for (int i = 0; i < size; ++i) {
-    printf("%.6f ", din[i]);
-    if ((i + 1) % width == 0) {
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
-#endif
-
 template <>
 void print_tensor_host_impl(const int* din, int64_t size, int64_t width) {
   for (int i = 0; i < size; ++i) {

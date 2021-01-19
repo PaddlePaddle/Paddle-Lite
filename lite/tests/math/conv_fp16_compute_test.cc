@@ -17,6 +17,7 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
+#include "lite/tests/utils/fill_data.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
 
@@ -34,7 +35,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
-DEFINE_bool(basic_test, true, "do all tests");
+DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -147,22 +148,19 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
   Tensor filter_fp32;
   filter_fp32.Resize(weight_dim);
   filter_fp32.set_precision(PRECISION(kFloat));
-  paddle::lite::fill_tensor_rand(filter_fp32, -1.f, 1.f);
-  auto a_ptr = filter_fp32.data<float>();
+  auto a_ptr = filter_fp32.mutable_data<float>();
   auto b_ptr = param.filter->mutable_data<float16_t>();
-  for (int i = 0; i < filter_fp32.numel(); i++) {
-    b_ptr[i] = static_cast<float16_t>(a_ptr[i]);
-  }
+  fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.filter->numel());
+  fp16_to_float(param.filter->data<float16_t>(), a_ptr, param.filter->numel());
+
+  Tensor bias_fp32;
   if (flag_bias) {
-    Tensor bias_fp32;
     bias_fp32.Resize({weight_dim[0]});
     bias_fp32.set_precision(PRECISION(kFloat));
-    paddle::lite::fill_tensor_rand(bias_fp32, -1.f, 1.f);
-    a_ptr = bias_fp32.data<float>();
+    a_ptr = bias_fp32.mutable_data<float>();
     b_ptr = param.bias->mutable_data<float16_t>();
-    for (int i = 0; i < bias_fp32.numel(); i++) {
-      b_ptr[i] = static_cast<float16_t>(a_ptr[i]);
-    }
+    fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.bias->numel());
+    fp16_to_float(param.bias->data<float16_t>(), a_ptr, param.bias->numel());
   }
   auto wptr = param.filter->data<float16_t>();
   auto bias_ptr = flag_bias ? param.bias->data<float16_t>() : nullptr;
@@ -204,30 +202,60 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
         Tensor x_fp32;
         x_fp32.Resize(dim_in);
         x_fp32.set_precision(PRECISION(kFloat));
-        paddle::lite::fill_tensor_rand(x_fp32, -1.f, 1.f);
-        // paddle::lite::fill_tensor_const(*param.x, 1.f);
-        a_ptr = x_fp32.data<float>();
+        a_ptr = x_fp32.mutable_data<float>();
         b_ptr = param.x->mutable_data<float16_t>();
-        for (int i = 0; i < x_fp32.numel(); i++) {
-          b_ptr[i] = static_cast<float16_t>(a_ptr[i]);
-        }
+        fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.x->numel());
+        fp16_to_float(param.x->data<float16_t>(), a_ptr, param.x->numel());
         auto din = param.x->data<float16_t>();
+        auto din_fp32 = x_fp32.data<float>();
 
         Tensor tout_basic;
         Tensor tout_basic_fp32;
+        Tensor tout_basic_fp16;
+        Tensor tout_basic_diff;
+        double basic_max_ratio = 0;
+        double basic_max_diff = 0;
         if (FLAGS_check_result) {
           tout_basic_fp32.set_precision(PRECISION(kFloat));
           tout_basic.set_precision(PRECISION(kFP16));
+          tout_basic_fp16.set_precision(PRECISION(kFP16));
+          tout_basic_diff.set_precision(PRECISION(kFP16));
           tout_basic_fp32.Resize(dim_out);
           tout_basic.Resize(dim_out);
+          tout_basic_fp16.Resize(dim_out);
+          tout_basic_diff.Resize(dim_out);
           auto dout_basic_fp32 = tout_basic_fp32.mutable_data<float>();
           auto dout_basic = tout_basic.mutable_data<float16_t>();
+          auto bias_fp32_ptr = flag_bias ? bias_fp32.data<float>() : nullptr;
+          auto filter_fp32_ptr = filter_fp32.data<float>();
 
-          fill_tensor_const(tout_basic_fp32, 0.f);
-          for (int i = 0; i < tout_basic_fp32.numel(); i++) {
-            dout_basic[i] = static_cast<float16_t>(dout_basic_fp32[i]);
-          }
+          fill_data_const<float>(dout_basic_fp32, 0.f, tout_basic_fp32.numel());
+          fill_data_const<float16_t>(dout_basic, 0.f, tout_basic.numel());
 
+          conv_basic<float, float>(din_fp32,
+                                   dout_basic_fp32,
+                                   dim_in[0],
+                                   dim_out[1],
+                                   dim_out[2],
+                                   dim_out[3],
+                                   dim_in[1],
+                                   dim_in[2],
+                                   dim_in[3],
+                                   filter_fp32_ptr,
+                                   bias_fp32_ptr,
+                                   group,
+                                   weight_dim[3],
+                                   weight_dim[2],
+                                   strides[1],
+                                   strides[0],
+                                   dilas[1],
+                                   dilas[0],
+                                   pads[2],
+                                   pads[0],
+                                   flag_bias,
+                                   flag_act,
+                                   six,
+                                   leakey_relu_scale);
           conv_basic<float16_t, float16_t>(din,
                                            dout_basic,
                                            dim_in[0],
@@ -252,6 +280,20 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
                                            flag_act,
                                            six,
                                            leakey_relu_scale);
+          // fp32 -> fp16
+          auto dout_basic_fp16_ptr = tout_basic_fp16.mutable_data<float16_t>();
+          auto diff_ptr = tout_basic_diff.mutable_data<float16_t>();
+          float_to_fp16(
+              dout_basic_fp32, dout_basic_fp16_ptr, tout_basic_fp16.numel());
+          // basic_diff: fp16 - (fp32->fp16)
+          data_diff(dout_basic,
+                    dout_basic_fp16_ptr,
+                    diff_ptr,
+                    tout_basic.numel(),
+                    basic_max_ratio,
+                    basic_max_diff);
+          VLOG(4) << "compare result, max diff: " << basic_max_diff
+                  << ", max ratio: " << basic_max_ratio;
         }
         /// warm up
         for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -277,35 +319,34 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
         if (FLAGS_check_result) {
           double max_ratio = 0;
           double max_diff = 0;
-          auto basic_ptr = tout_basic.data<float16_t>();
+          auto basic_ptr = tout_basic_fp16.data<float16_t>();
           auto saber_ptr = param.output->data<float16_t>();
-          paddle::lite::data_diff_kernel(
-              basic_ptr, saber_ptr, tout_basic.numel(), max_ratio, max_diff);
+          Tensor tdiff;
+          tdiff.Resize(tout_basic.dims());
+          tdiff.set_precision(PRECISION(kFP16));
+          auto ptr = tdiff.mutable_data<float16_t>();
+          // paddle::lite::data_diff_kernel(
+          data_diff(basic_ptr,
+                    saber_ptr,
+                    ptr,
+                    tout_basic.numel(),
+                    max_ratio,
+                    max_diff);
           // tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
           VLOG(4) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
-          if (std::abs(max_ratio) > 1e-3f) {
-            if (max_diff > 5e-4f) {
+          if (std::abs(max_ratio) > basic_max_ratio &&
+              std::abs(max_ratio) > 1e-3f) {
+            if (max_diff > basic_max_diff && max_diff > 5e-4f) {
               int64_t size = tout_basic.numel();
               int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
               LOG(WARNING) << "basic result";
-              // print_tensor(tout_basic);
-              paddle::lite::print_tensor_host_impl(basic_ptr, size, width);
+              print_tensor(basic_ptr, size, width);
               LOG(WARNING) << "lite result";
               // print_tensor(*param.output);
-              paddle::lite::print_tensor_host_impl(saber_ptr, size, width);
-              Tensor tdiff;
-              tdiff.Resize(tout_basic.dims());
-              tdiff.set_precision(PRECISION(kFP16));
-              auto ptr = tdiff.mutable_data<float16_t>();
-              for (int i = 0; i < size; i++) {
-                ptr[i] = saber_ptr[i] - basic_ptr[i];
-              }
-              auto c_ptr = tdiff.data<float16_t>();
+              print_tensor(saber_ptr, size, width);
               LOG(WARNING) << "diff result";
-              paddle::lite::print_tensor_host_impl(c_ptr, size, width);
-              // tensor_diff(tout_basic, *param.output, tdiff);
-              // print_tensor(tdiff);
+              print_tensor(ptr, size, width);
               LOG(FATAL) << "test fp16 conv: input: " << dim_in
                          << ", output: " << dim_out
                          << ", weight dim: " << weight_dim
@@ -370,7 +411,7 @@ TEST(TestConv1x1s1, test_conv1x1s1) {
                   dims.push_back(DDim({batch, cin, h, h}));
                 }
               }
-              const float leakey_relu_scale = 8.88;
+              const float leakey_relu_scale = 1.0f;
               test_conv_fp16(dims,
                              weights_dim,
                              g,
@@ -391,7 +432,7 @@ TEST(TestConv1x1s1, test_conv1x1s1) {
 }
 #endif  /// conv1x1s1
 
-#if 0   /// random param conv
+#if 1  /// random param conv
 TEST(TestConvRand, test_conv_rand) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8}) {
@@ -427,7 +468,7 @@ TEST(TestConvRand, test_conv_rand) {
                                   kw == 3 && kh == 3 && stride == 1) {
                                 break;
                               }
-                              const float leakey_relu_scale = 8.88;
+                              const float leakey_relu_scale = 1.0f;
                               test_conv_fp16(
                                   dims,
                                   weights_dim,

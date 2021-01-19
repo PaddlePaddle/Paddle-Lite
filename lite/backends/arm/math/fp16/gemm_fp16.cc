@@ -673,20 +673,6 @@ void loadb(float16_t *out,
           [vmask2] "w"(vmask2)
         : "cc", "memory", "v0", "v1");
   }
-  LOG(INFO) << "din: ";
-  for (int i = 0; i < y_len; i++) {
-    for (int j = 0; j < x_len; j++) {
-      printf("%f  ", in[i * x_len + j]);
-    }
-    printf("\n");
-  }
-  LOG(INFO) << "dout: ";
-  for (int i = 0; i < y_len; i++) {
-    for (int j = 0; j < x_len; j++) {
-      printf("%f  ", out[i * x_len + j]);
-    }
-    printf("\n");
-  }
 }
 
 void loadb_trans(float16_t *out,
@@ -708,7 +694,8 @@ void loadb_trans(float16_t *out,
   uint16x8_t vzero = vdupq_n_u16(0);
   uint16x8_t vmask = vcltq_u16(vld1q_u16(mask_buffer), vdupq_n_u16(remain));
 
-  //! data B is not transposed, transpose B to k * 16
+//! data B is not transposed, transpose B to k * 16
+#pragma omp parallel for
   for (int y = n0; y < nmax; y += 16) {
     const uint16_t *inptr0 = inptr + y * ldin + k0;
     const uint16_t *inptr1 = inptr0 + ldin;

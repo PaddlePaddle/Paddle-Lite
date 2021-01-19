@@ -31,3 +31,82 @@ inline void fill_data_rand(Dtype* dio, Dtype vstart, Dtype vend, size_t size) {
     dio[i] = static_cast<Dtype>(vstart + (vend - vstart) * dis(gen));
   }
 }
+
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 float16_t;
+inline void data_diff(const float16_t* src1_truth,
+                      const float16_t* src2,
+                      float16_t* dst,
+                      int size,
+                      double& max_ratio,   // NOLINT
+                      double& max_diff) {  // NOLINT
+  const double eps = 1e-6f;
+  max_diff = fabs(src1_truth[0] - src2[0]);
+  dst[0] = max_diff;
+  max_ratio = fabs(max_diff) / (std::abs(src1_truth[0]) + eps);
+  for (int i = 1; i < size; ++i) {
+    double diff = fabs(src1_truth[i] - src2[i]);
+    dst[i] = diff;
+    max_diff = max_diff < diff ? diff : max_diff;
+    double ratio = fabs(diff) / (std::abs(src1_truth[i]) + eps);
+    if (max_ratio < ratio) {
+      max_ratio = ratio;
+    }
+  }
+}
+
+inline void print_tensor(const float16_t* din, int64_t size, int64_t width) {
+  for (int i = 0; i < size; ++i) {
+    printf("%.6f ", din[i]);
+    if ((i + 1) % width == 0) {
+      printf("\n");
+    }
+  }
+  printf("\n");
+}
+
+inline float16_t convert_half(float val) {
+  // 强制把float转为uint64_t
+  uint64_t val2 = *(uint64_t*)(&val);  // NOLINT
+  // 截取后23位尾数，右移13位，剩余10位；
+  // 符号位直接右移16位；
+  // 截取指数的8位先右移13位(左边多出3位不管了), 之前是0~255表示-127~128,
+  // 调整之后变成0~31表示-15~16
+  // 因此要减去127-15=112(在左移10位的位置).
+  uint16_t t = ((val2 & 0x007fffff) >> 13) | ((val2 & 0x80000000) >> 16) |
+               (((val2 & 0x7f800000) >> 13) - (112 << 10));
+  // 四舍五入(尾数被截掉部分的最高位为1, 则尾数剩余部分+1)
+  if (val2 & 0x1000) {
+    t++;
+  }
+  float16_t h = *(float16_t*)(&t);  // NOLINT
+  return h;
+}
+
+inline float convert_full(float16_t val) {
+  uint16_t val2 = *(uint16_t*)(&val);  // NOLINT
+  uint16_t frac = (val2 & 0x3ff) | 0x400;
+  int exp = ((val2 & 0x7c00) >> 10) - 25;
+  float m;
+  if (frac == 0 && exp == 0x1f) {
+    m = 0x7F800000;
+  } else if (frac || exp) {
+    m = frac * pow(2, exp);
+  } else {
+    m = 0.f;
+  }
+  return (val2 & 0x8000) ? -m : m;
+}
+
+inline void float_to_fp16(const float* src, float16_t* dst, size_t size) {
+  for (size_t i = 0; i < size; i++) {
+    dst[i] = convert_half(src[i]);
+  }
+}
+
+inline void fp16_to_float(const float16_t* src, float* dst, size_t size) {
+  for (size_t i = 0; i < size; i++) {
+    dst[i] = convert_full(src[i]);
+  }
+}
+#endif  // ENABLE_ARM_FP16
