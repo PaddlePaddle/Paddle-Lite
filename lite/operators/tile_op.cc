@@ -43,7 +43,7 @@ bool TileOp::InferShapeImpl() const {
   const auto x_dims = param_.X->dims();
   std::vector<int> repeat_times;
   if (param_.RepeatTimes) {
-    auto repeat_times_size = param_.RepeatTimes->numel();
+    auto repeat_times_size = param_.RepeatTimes->dims().size();
     for (int64_t i = 0; i < repeat_times_size; i++) {
       repeat_times.push_back(param_.RepeatTimes->data<int>()[i]);
     }
