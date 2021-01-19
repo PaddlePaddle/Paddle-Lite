@@ -93,7 +93,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto filter_node = graph->Add(filter_name, *filter);
 
   // Conv node
-  auto conv_attrs = xtcl::make_node<xtcl::network::Conv2DAttrs>();
+  auto conv_attrs = xtcl::make_object<xtcl::network::Conv2DAttrs>();
   conv_attrs->strides = std::move(CvtShape<xtcl::xIndexExpr>(strides));
   conv_attrs->padding = std::move(CvtShape<xtcl::xIndexExpr>(paddings));
   conv_attrs->dilation = std::move(CvtShape<xtcl::xIndexExpr>(dilations));
