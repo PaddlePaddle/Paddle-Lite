@@ -5,7 +5,6 @@ function(lite_fbs_library TARGET)
   add_dependencies(${TARGET} ${args_FBS_DEPS})
 endfunction()
 
-include_directories("${PADDLE_SOURCE_DIR}/lite/model_parser/flatbuffer/external")
 lite_fbs_library(fbs_op_desc SRCS op_desc.cc FBS_DEPS fbs_headers)
 lite_fbs_library(fbs_var_desc SRCS var_desc.cc FBS_DEPS fbs_headers)
 lite_fbs_library(fbs_block_desc SRCS block_desc.cc FBS_DEPS fbs_headers)
