@@ -205,7 +205,7 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_boolean, bool_slice)
     .Finalize();
 
 using slice_int32 =
-    paddle::lite::kernels::arm::SliceCompute<int, PRECISION(kInt32)>;
+    paddle::lite::kernels::arm::SliceCompute<int, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, int32_slice)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
