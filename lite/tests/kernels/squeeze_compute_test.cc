@@ -228,17 +228,23 @@ void test_squeeze2(Place place) {
 }
 
 TEST(squeeze, precision) {
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  Place place(TARGET(kHost));
-#endif
+#if defined(LITE_WITH_OPENCL)
+  Place place(TARGET(kOpenCL));
   test_squeeze(place);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  Place place(TARGET(kHost));
+  test_squeeze(place);
+#endif
 }
 
 TEST(squeeze2, precision) {
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  Place place(TARGET(kHost));
-#endif
+#if defined(LITE_WITH_OPENCL)
+  Place place(TARGET(kOpenCL));
   test_squeeze2(place);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  Place place(TARGET(kHost));
+  test_squeeze2(place);
+#endif
 }
 
 }  // namespace lite
