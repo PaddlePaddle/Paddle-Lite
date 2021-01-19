@@ -399,10 +399,10 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
 #ifdef LITE_WITH_FPGA
   float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
   int channel = channel_scale_tensor->data_size();
-  int weight_wh = quantized_weight_t->data_size() / channel;
+  int weight_chw = quantized_weight_t->data_size() / channel;
 
   for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
-    int c = i / weight_wh;
+    int c = i / weight_chw;
     quantized_weight_data[i] = temp_data[i] * weight_scale[c];
   }
   quantized_weight_t->set_persistable(true);

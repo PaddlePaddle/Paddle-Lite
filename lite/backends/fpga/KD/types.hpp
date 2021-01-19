@@ -55,27 +55,6 @@ struct TypeResolver<int64_t> {
   DataType operator()() { return INT64; }
 };
 
-// zynqmp::DataType data_type = zynqmp::FP32;
-//   if (typeid(T) == typeid(float)) {
-//     data_type = zynqmp::FP32;
-//   }
-//   if (typeid(T) == typeid(zynqmp::float16)) {
-//     data_type = zynqmp::FP16;
-//   }
-//   if (typeid(T) == typeid(int)) {
-//     data_type = zynqmp::INT32;
-//   }
-//   if (typeid(T) == typeid(int32_t)) {
-//     data_type = zynqmp::INT32;
-//   }
-//   if (typeid(T) == typeid(int8_t)) {
-//     data_type = zynqmp::INT8;
-//   }
-//   if (typeid(T) == typeid(int64_t)) {
-//     data_type = zynqmp::INT64;
-//   }
-//   return data_type;
-
 inline int CellSize(DataType type) {
   switch (type) {
     case FP32:
