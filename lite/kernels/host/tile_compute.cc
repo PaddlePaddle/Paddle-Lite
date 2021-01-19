@@ -23,7 +23,7 @@ namespace host {
 template <typename T, PrecisionType PType>
 void TileCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::TileParam>();
-  auto rank = std::max(param.X->dims().size(), param.repeat_times.size());
+  // auto rank = std::max(param.X->dims().size(), param.repeat_times.size());
   auto repeat_times = param.repeat_times;
   auto in_dims = param.X->dims();
   auto vec_in_dims = in_dims.Vectorize();
