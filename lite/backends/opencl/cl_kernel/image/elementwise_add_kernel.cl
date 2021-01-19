@@ -16,7 +16,8 @@ limitations under the License. */
 
 __kernel void elementwise_add(__read_only image2d_t input,
                               __read_only image2d_t bias,
-                              __write_only image2d_t outputImage) {
+                              __write_only image2d_t outputImage,
+                              int h, int w) {
      int x = get_global_id(0);
      int y = get_global_id(1);
 
@@ -24,7 +25,13 @@ __kernel void elementwise_add(__read_only image2d_t input,
      coords.x = x;
      coords.y = y;
 
+#ifdef BROADCAST
+     int c_blk = x / w;
+     int n_blk = y / h;
+     CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(c_blk, n_blk));
+#else
      CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);
+#endif
      CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords);
      CL_DTYPE4 output = activation_type4(in + biase);
 

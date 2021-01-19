@@ -84,7 +84,7 @@ with open(kernels_list_path) as f:
         with open(path.strip()) as g:
             c = g.read()
             kernel_parser = RegisterLiteKernelParser(c)
-            kernel_parser.parse("ON")
+            kernel_parser.parse("ON", "ON")
             for k in kernel_parser.kernels:
                 if hasattr(TargetType, k.target):
                     index = getattr(TargetType, k.target)
@@ -96,7 +96,7 @@ with open(faked_kernels_list_path) as f:
         with open(path.strip()) as g:
             c = g.read()
             kernel_parser = RegisterLiteKernelParser(c)
-            kernel_parser.parse("ON")
+            kernel_parser.parse("ON", "ON")
             for k in kernel_parser.kernels:
                 if hasattr(TargetType, k.target):
                     index = getattr(TargetType, k.target)
