@@ -279,11 +279,11 @@ bool test_gemm_int8(bool tra,
       tdiff.set_precision(PRECISION(kFloat));
       tdiff.Resize(tc_fp32.dims());
       tensor_diff(tc_basic_fp32, tc_fp32, tdiff);
-      LOG(warning) << "basic result: ";
+      LOG(INFO) << "basic result: ";
       print_tensor(tc_basic_fp32);
-      LOG(warning) << "lite result: ";
+      LOG(INFO) << "lite result: ";
       print_tensor(tc_fp32);
-      LOG(warning) << "diff result: ";
+      LOG(INFO) << "diff result: ";
       print_tensor(tdiff);
       return false;
     }
@@ -318,11 +318,11 @@ bool test_gemm_int8(bool tra,
       check =
           check && count < std::max(10, static_cast<int>(0.01 * tdiff.numel()));
       if (!check) {
-        LOG(WARNING) << "int8 basic result";
+        LOG(INFO) << "int8 basic result";
         print_tensor(tc_basic_int8);
-        LOG(WARNING) << "int8 lite result";
+        LOG(INFO) << "int8 lite result";
         print_tensor(tc_int8);
-        LOG(WARNING) << "int8 diff tensor";
+        LOG(INFO) << "int8 diff tensor";
         print_tensor(tdiff);
         return false;
       }
