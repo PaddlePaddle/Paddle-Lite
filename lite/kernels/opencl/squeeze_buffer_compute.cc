@@ -28,7 +28,7 @@ extern float CopyFromDeviceToDeviceSync(void* target,
                                         size_t size);
 
 class SqueezeCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::SqueezeParam;
 
@@ -64,43 +64,6 @@ class SqueezeCompute
   float h2d_duration_{0};
 };
 
-class Squeeze2Compute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
- public:
-  using param_t = operators::SqueezeParam;
-
-  std::string doc() const override {
-    return "squeeze2 using cl::Buffer, kFloat";
-  }
-
-  void Run() override {
-    param_t* squeeze2_param_ = param_.get_mutable<param_t>();
-    auto* x_data = squeeze2_param_->X->data<float, cl::Buffer>();
-    auto* out_data =
-        squeeze2_param_->Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-
-    h2d_duration_ = CopyFromDeviceToDeviceSync(
-        out_data, x_data, squeeze2_param_->Out->memory_size());
-#ifdef LITE_WITH_LOG
-    size_t buffer_size;
-    out_data->getInfo(CL_MEM_SIZE, &buffer_size);
-    VLOG(4) << "out of squeeze2, opencl buffer size: " << buffer_size;
-    VLOG(4) << "squeeze2 out dims: " << squeeze2_param_->Out->dims();
-    VLOG(4) << "squeeze2_param_->Out->memory_size():"
-            << squeeze2_param_->Out->memory_size();
-#endif
-  }
-
-#ifdef LITE_WITH_PROFILE
-  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = "squeeze2";
-    ch->io_duration = h2d_duration_;
-  }
-#endif
-
-  float h2d_duration_{0};
-};
-
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
@@ -108,36 +71,36 @@ class Squeeze2Compute
 
 REGISTER_LITE_KERNEL(squeeze,
                      kOpenCL,
-                     kFloat,
-                     kNCHW,
+                     kAny,
+                     kAny,
                      paddle::lite::kernels::opencl::SqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(squeeze2,
                      kOpenCL,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::opencl::Squeeze2Compute,
+                     kAny,
+                     kAny,
+                     paddle::lite::kernels::opencl::SqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kNCHW))})
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .BindOutput("XShape",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kNCHW))})
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
