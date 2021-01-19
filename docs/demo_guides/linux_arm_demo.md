@@ -46,7 +46,7 @@ demo结果如下:
 <img width="836" alt="image" src="https://user-images.githubusercontent.com/50474132/82852558-da228580-9f35-11ea-837c-e4d71066da57.png">
 
 ## 使用C++接口预测
-Linux(ARM) demo 示例基于C++ API 开发，调用Paddle-Lite C++ API包括以下五步。更详细的API 描述参考： [Paddle-Lite C++ API](../api_reference/cxx_api_doc.html)。
+Linux(ARM) demo 示例基于C++ API 开发，调用Paddle-Lite C++ API包括以下五步。更详细的API 描述参考： [Paddle-Lite C++ API](../api_reference/cxx_api_doc)。
 
 ```c++
 #include <iostream>
