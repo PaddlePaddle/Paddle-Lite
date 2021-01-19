@@ -61,8 +61,11 @@ void RunModel() {
   config.set_threads(FLAGS_threads);
 #ifdef DEMO_WITH_OPENCL
   std::vector<Place> valid_places{
+      Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)},
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+      Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)},
       Place{TARGET(kARM), PRECISION(kFloat)}};
 #else
   std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
