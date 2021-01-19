@@ -129,6 +129,13 @@ class ConvOpLite : public OpLite {
             op_desc.GetAttr<float>("hard_swish_scale");
         param_.activation_param.hard_swish_offset =
             op_desc.GetAttr<float>("hard_swish_offset");
+      } else if (act_type == "hard_sigmoid") {
+        param_.activation_param.active_type =
+            lite_api::ActivationType::kHardSigmoid;
+        param_.activation_param.hard_sigmoid_slope =
+            op_desc.GetAttr<float>("slope");
+        param_.activation_param.hard_sigmoid_offset =
+            op_desc.GetAttr<float>("offset");
       } else {
         LOG(FATAL) << "The fused conv only supports fuse with relu, leaky "
                       "relu, hard_swish, while the given activation type is "

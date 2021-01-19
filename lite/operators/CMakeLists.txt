@@ -57,6 +57,8 @@ add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc DEPS ${op_DEPS})
 add_operator(flatten_op basic SRCS flatten_op.cc DEPS ${op_DEPS})
 add_operator(pow_op extra SRCS pow_op.cc DEPS ${op_DEPS})
 add_operator(sign_op extra SRCS sign_op.cc DEPS ${op_DEPS})
+add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc DEPS ${op_DEPS})
+add_operator(rnn_op extra SRCS rnn_op.cc DEPS ${op_DEPS})
 
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc DEPS ${op_DEPS})
@@ -88,6 +90,7 @@ add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
 add_operator(gather_op extra SRCS gather_op.cc DEPS ${op_DEPS})
 add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEPS})
 add_operator(generate_proposals_op extra SRCS generate_proposals_op.cc DEPS ${op_DEPS})
+add_operator(generate_proposals_v2_op extra SRCS generate_proposals_v2_op.cc DEPS ${op_DEPS})
 add_operator(roi_align_op extra SRCS roi_align_op.cc DEPS ${op_DEPS})
 add_operator(box_clip_op extra SRCS box_clip_op.cc DEPS ${op_DEPS})
 add_operator(fake_quantize_range_abs_max_op extra SRCS fake_quantize_range_abs_max.cc DEPS ${op_DEPS})
@@ -133,6 +136,7 @@ add_operator(pad3d_op extra SRCS pad3d_op.cc DEPS ${op_DEPS})
 add_operator(select_input_op extra SRCS select_input_op.cc DEPS ${op_DEPS})
 add_operator(tensor_array_to_tensor_op extra SRCS tensor_array_to_tensor_op.cc DEPS ${op_DEPS})
 add_operator(fill_any_like_op extra SRCS fill_any_like_op.cc DEPS ${op_DEPS})
+add_operator(matmul_v2_op extra SRCS matmul_v2_op.cc DEPS ${op_DEPS})
 
 add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 # for OCR specific
@@ -164,6 +168,7 @@ add_operator(sequence_softmax_op extra SRCS sequence_softmax_op.cc DEPS ${op_DEP
 add_operator(retinanet_detection_output_op extra SRCS retinanet_detection_output_op.cc DEPS ${op_DEPS})
 add_operator(where_index_op extra SRCS where_index_op.cc DEPS ${op_DEPS})
 add_operator(one_hot_op extra SRCS one_hot_op.cc DEPS ${op_DEPS})
+add_operator(one_hot_v2_op extra SRCS one_hot_v2_op.cc DEPS ${op_DEPS})
 add_operator(strided_slice_op extra SRCS strided_slice_op.cc DEPS ${op_DEPS})
 
 # for content-dnn specific
