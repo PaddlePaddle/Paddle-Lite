@@ -174,14 +174,6 @@ void SliceCompute<T, PType>::Run() {
   CL_CHECK_FATAL(status);
 }
 
-#ifdef LITE_WITH_PROFILE
-void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-  ch->cl_event =
-      this->event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
-}
-#endif
-
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
