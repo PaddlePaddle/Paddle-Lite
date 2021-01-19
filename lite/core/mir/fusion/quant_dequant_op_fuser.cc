@@ -163,11 +163,6 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetInputScale(out_act_name, {scale_value});
     op_desc.SetAttr<int>("bit_length", bit_length);
     op_desc.UpdateAllInputs(out_act_name, in_act_name);
-
-#ifdef LITE_WITH_FPGA
-    op_desc.SetAttr("fpga_static_quant", true);
-#endif
-
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
     IR_NODE_LINK_TO(input_act_node, quantized_node)
   }
@@ -287,7 +282,6 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   }
   quantized_weight_t->set_persistable(true);
   quantized_weight_t->set_precision(PRECISION(kFloat));
-
 #else
   int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
   for (size_t i = 0; i < weight_num; i++) {
@@ -399,10 +393,10 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
 #ifdef LITE_WITH_FPGA
   float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
   int channel = channel_scale_tensor->data_size();
-  int weight_chw = quantized_weight_t->data_size() / channel;
+  int weight_cwh = quantized_weight_t->data_size() / channel;
 
   for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
-    int c = i / weight_chw;
+    int c = i / weight_cwh;
     quantized_weight_data[i] = temp_data[i] * weight_scale[c];
   }
   quantized_weight_t->set_persistable(true);
@@ -541,6 +535,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
           op_type == "depthwise_conv2d") {
 #ifndef LITE_WITH_FPGA
         op_info.SetAttr("enable_int8", true);
+#endif
         if (scales.size() == 1) {
           QuantizeTensorInPlace<int8_t>(input_var_tensor, scales.front());
         } else {
