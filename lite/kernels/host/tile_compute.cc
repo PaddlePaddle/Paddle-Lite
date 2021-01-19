@@ -51,14 +51,14 @@ void TileCompute<T, PType>::Run() {
   auto& in = param.X;
   auto& out = param.Out;
   out->Resize(out_dims);
-  Tensor* tmp_src_tensor;
-  Tensor* tmp_dst_tensor;
+  Tensor tmp_src_tensor;
+  Tensor tmp_dst_tensor;
   auto out_data = out->template mutable_data<T>();
   auto in_data = in->template data<T>();
-  tmp_src_tensor->Resize(out_dims);
-  tmp_dst_tensor->Resize(out_dims);
-  auto tmp_src = tmp_src_tensor->mutable_data<float>();
-  auto tmp_dst = tmp_dst_tensor->mutable_data<float>();
+  tmp_src_tensor.Resize(out_dims);
+  tmp_dst_tensor.Resize(out_dims);
+  auto tmp_src = tmp_src_tensor.mutable_data<T>();
+  auto tmp_dst = tmp_dst_tensor.mutable_data<T>();
   for (int i = 0; i < in->dims().production(); i++) {
     tmp_src[i] = in_data[i];
   }
@@ -66,12 +66,12 @@ void TileCompute<T, PType>::Run() {
     for (int m = 0; m < in_dims.production() / in_stride[i]; m++) {
       if (bcast_dims[i] > 1) {
         for (int j = 0; j < bcast_dims[i]; j++) {
-          int dst_stride = repeat_stride[i] * sizeof(float);
+          int dst_stride = repeat_stride[i] * sizeof(T);
           std::memcpy(tmp_dst + j * dst_stride + m * bcast_dims[i] * dst_stride,
                       tmp_src + m * in_stride[i],
                       dst_stride);
         }
-        tmp_src_tensor->CopyDataFrom(*tmp_dst_tensor);
+        tmp_src_tensor.CopyDataFrom(tmp_dst_tensor);
       }
     }
   }

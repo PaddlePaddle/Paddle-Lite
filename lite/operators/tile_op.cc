@@ -115,9 +115,9 @@ bool TileOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   AttachParam(&param_);
   param_.X = scope->FindMutableTensor(opdesc.Input("X").front());
   if (opdesc.HasInput("RepeatTimes") && !opdesc.Input("RepeatTimes").empty()) {
-    param_.RepeatTimes =
-        scope->FindMutableTensor(opdesc.Input("RepeatTimes").front());
+    param_.RepeatTimes = scope->FindTensor(opdesc.Input("RepeatTimes").front());
   }
+  /*
   if (opdesc.HasInput("repeat_times_tensor") &&
       !opdesc.Input("repeat_times_tensor").empty()) {
     auto temp = opdesc.Input("repeat_times_tensor");
@@ -126,6 +126,7 @@ bool TileOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
           scope->FindVar(var)->GetMutable<lite::Tensor>());
     }
   }
+  */
   if (opdesc.HasAttr("repeat_times")) {
     param_.repeat_times = opdesc.GetAttr<std::vector<int>>("repeat_times");
   }
