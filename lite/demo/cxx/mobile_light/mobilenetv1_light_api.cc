@@ -138,8 +138,11 @@ void RunModel(std::string model_dir,
   //  second, [convert and use opencl nb
   //    model](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/user_guides/opt/opt_bin.md).
 
+  // is_opencl_backend_valid
+  // default check_fp16(true) for ARM platform: Android, ARM-Linux
+  // default check_fp16(false) for X86 platform: X86-Linux, X86-MacOS, X86-WinOS
   bool is_opencl_backend_valid =
-      ::IsOpenCLBackendValid(/*check_fp16_valid = false*/);
+      ::IsOpenCLBackendValid(/*check_fp16_valid = true*/);
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
   /*  Uncomment code below to enable OpenCL

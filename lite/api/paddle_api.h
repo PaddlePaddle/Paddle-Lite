@@ -43,7 +43,13 @@ enum class L3CacheSetMethod {
 };
 
 // return true if current device supports OpenCL model
+#ifdef LITE_WITH_ARM
+// default check_fp16(true) for ARM platform: Android, ARM-Linux
+LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = true);
+#else
+// default check_fp16(false) for X86 platform: X86-Linux, X86-MacOS, X86-WinOS
 LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = false);
+#endif
 
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
