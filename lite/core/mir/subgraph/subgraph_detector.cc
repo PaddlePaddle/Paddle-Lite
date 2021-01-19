@@ -274,6 +274,10 @@ std::set<Node *> SubgraphDetector::GetExcludedNodesFromConfigFile() {
       }
 
       if (matched) {
+        // Don't use int8 kernels in the 'static_kernel_pick_pass'
+        if (stmt->op_info()->HasAttr("enable_int8")) {
+          stmt->mutable_op_info()->SetAttr("enable_int8", false);
+        }
         excluded_nodes.insert(&node);
       }
     }
