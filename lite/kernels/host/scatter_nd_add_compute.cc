@@ -74,7 +74,7 @@ void ScatterNdAddCompute::Run() {
   for (int i = in_dims.size() - 2; i >= 0; i--) {
     input_offset[i] = input_offset[i + 1] * in_dims[i + 1];
   }
-  host::memcpy(output_data, din_data, sizeof(float) * param.x->numel());
+  memcpy(output_data, din_data, sizeof(float) * param.x->numel());
   scatter_nd_add(indexs_data,
                  updates_data,
                  output_data,

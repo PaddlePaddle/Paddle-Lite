@@ -32,16 +32,16 @@ void FillAnyLikeCompute::FillAnyData() {
 void FillAnyLikeCompute::Run() {
   auto& param = *param_.get_mutable<param_t>();
   switch (param.dtype) {
-    case static_cast<int32_t>(lite::core::FluidType::FP32:
+    case static_cast<int32_t>(lite::core::FluidType::FP32):
       FillAnyData<float>();
       break;
-    case  static_cast<int32_t>(lite::core::FluidType::INT32:
+    case  static_cast<int32_t>(lite::core::FluidType::INT32):
       FillAnyData<int32_t>();
       break;
-    case  static_cast<int32_t>(lite::core::FluidType::INT8:
+    case  static_cast<int32_t>(lite::core::FluidType::INT8):
       FillAnyData<int8_t>();
       break;
-    case  static_cast<int32_t>(lite::core::FluidType::INT64:
+    case  static_cast<int32_t>(lite::core::FluidType::INT64):
       FillAnyData<int64_t>();
       break;
     default:
