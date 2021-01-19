@@ -13,30 +13,30 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/types.h"
 
-#include <iostream>
-#include <list>
-#include <map>
-#include <memory>
-#include <string>
-#include <utility>
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace arm {
 
-#include "lite/utils/any.h"
-#include "lite/utils/check.h"
-#include "lite/utils/cp_logging.h"
-#include "lite/utils/hash.h"
-#include "lite/utils/io.h"
-#include "lite/utils/macros.h"
-#include "lite/utils/string.h"
-#include "lite/utils/varient.h"
+class MatMulV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::MatMulParam;
 
-#ifdef LITE_ON_TINY_PUBLISH
-#include "lite/utils/replace_stl/stream.h"
-#endif
+  void PrepareForRun() override;
 
-// On windows environment, min and max will be undefined to
-// avoid compiling error.
-#if defined(_MSC_VER)
-#undef min
-#undef max
-#endif
+  void Run() override;
+
+  virtual ~MatMulV2Compute() = default;
+
+ private:
+  int m_, n_, k_;
+};
+
+}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

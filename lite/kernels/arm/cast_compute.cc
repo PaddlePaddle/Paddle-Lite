@@ -111,6 +111,12 @@ void CastCompute::Run() {
     const int32_t* x_data_end = x_data_begin + param.X->numel();
     bool* out_data = param.Out->mutable_data<bool>();
     std::transform(x_data_begin, x_data_end, out_data, TransOp<int32_t, bool>);
+  } else if (param.in_dtype == 2 && param.out_dtype == 2) {  // INT32 -> bool
+    const int32_t* x_data_begin = param.X->data<int32_t>();
+    const int32_t* x_data_end = x_data_begin + param.X->numel();
+    int32_t* out_data = param.Out->mutable_data<int32_t>();
+    std::transform(
+        x_data_begin, x_data_end, out_data, TransOp<int32_t, int32_t>);
   } else {
     LOG(FATAL) << "other has not been implemented transform with dtype"
                << param.in_dtype << " X, dtype" << param.out_dtype << " Out";

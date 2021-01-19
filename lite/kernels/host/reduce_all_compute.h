@@ -13,30 +13,25 @@
 // limitations under the License.
 
 #pragma once
+#include <stdint.h>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-#include <iostream>
-#include <list>
-#include <map>
-#include <memory>
-#include <string>
-#include <utility>
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
 
-#include "lite/utils/any.h"
-#include "lite/utils/check.h"
-#include "lite/utils/cp_logging.h"
-#include "lite/utils/hash.h"
-#include "lite/utils/io.h"
-#include "lite/utils/macros.h"
-#include "lite/utils/string.h"
-#include "lite/utils/varient.h"
+class ReduceAllCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  void Run() override;
 
-#ifdef LITE_ON_TINY_PUBLISH
-#include "lite/utils/replace_stl/stream.h"
-#endif
+  virtual ~ReduceAllCompute() = default;
 
-// On windows environment, min and max will be undefined to
-// avoid compiling error.
-#if defined(_MSC_VER)
-#undef min
-#undef max
-#endif
+ private:
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

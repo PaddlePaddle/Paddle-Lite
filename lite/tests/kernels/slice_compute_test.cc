@@ -275,7 +275,12 @@ void test_slice_tensor_list(Place place) {
 }
 
 TEST(Slice, precision) {
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_OPENCL)
+  Place place = TARGET(kOpenCL);
+  test_slice(place);
+  test_slice_tensor(place);
+  test_slice_tensor_list(place);
+#elif defined(LITE_WITH_ARM)
   Place place(TARGET(kARM));
   test_slice(place);
   test_slice_tensor(place);
