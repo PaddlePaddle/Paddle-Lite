@@ -163,6 +163,11 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetInputScale(out_act_name, {scale_value});
     op_desc.SetAttr<int>("bit_length", bit_length);
     op_desc.UpdateAllInputs(out_act_name, in_act_name);
+
+#ifdef LITE_WITH_FPGA
+    op_desc.SetAttr("fpga_static_quant", true);
+#endif
+
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
     IR_NODE_LINK_TO(input_act_node, quantized_node)
   }
@@ -282,6 +287,7 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   }
   quantized_weight_t->set_persistable(true);
   quantized_weight_t->set_precision(PRECISION(kFloat));
+
 #else
   int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
   for (size_t i = 0; i < weight_num; i++) {
