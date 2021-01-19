@@ -17,7 +17,7 @@
 #include <map>
 #include <string>
 #include "lite/model_parser/base/apis.h"
-#include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "framework_generated.h" // NOLINT
 
 namespace paddle {
 namespace lite {

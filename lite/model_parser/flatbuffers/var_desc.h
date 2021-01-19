@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 #include "lite/model_parser/base/var_desc.h"
-#include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "framework_generated.h"  // NOLINT
 #include "lite/model_parser/flatbuffers/traits.h"
 #include "lite/utils/all.h"
 

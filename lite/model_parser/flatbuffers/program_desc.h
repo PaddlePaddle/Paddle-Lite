@@ -22,7 +22,7 @@
 #include "lite/model_parser/base/io.h"
 #include "lite/model_parser/base/program_desc.h"
 #include "lite/model_parser/flatbuffers/block_desc.h"
-#include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "framework_generated.h" // NOLINT
 #include "lite/model_parser/flatbuffers/op_version_map.h"
 #include "lite/utils/all.h"
 

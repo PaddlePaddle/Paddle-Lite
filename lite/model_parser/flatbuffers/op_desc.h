@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "lite/model_parser/base/op_desc.h"
-#include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "framework_generated.h" // NOLINT
 #include "lite/model_parser/flatbuffers/traits.h"
 #include "lite/model_parser/flatbuffers/vector_view.h"
 #include "lite/utils/all.h"

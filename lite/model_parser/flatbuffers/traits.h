@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 #include "lite/model_parser/base/traits.h"
-#include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "framework_generated.h"  // NOLINT
 
 namespace paddle {
 namespace lite {

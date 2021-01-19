@@ -17,7 +17,7 @@
 #include <memory>
 #include <vector>
 #include "lite/model_parser/base/block_desc.h"
-#include "lite/model_parser/flatbuffers/framework_generated.h"
+#include "framework_generated.h" // NOLINT
 #include "lite/model_parser/flatbuffers/op_desc.h"
 #include "lite/model_parser/flatbuffers/var_desc.h"
 #include "lite/utils/all.h"

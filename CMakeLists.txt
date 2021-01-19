@@ -178,8 +178,12 @@ if(LITE_WITH_IMAGINATION_NNA)
 	include(device/imagination_nna)
 endif()
 
-include(external/flatbuffers)
-
+if(NOT LITE_ON_TINY_PUBLISH)
+    include(external/flatbuffers)
+else()
+    include_directories("${PADDLE_SOURCE_DIR}/lite/model_parser/flatbuffers/external")
+    add_custom_target(fbs_headers)
+endif()
 # for opencl
 if (LITE_WITH_OPENCL)
     include(external/opencl-headers)

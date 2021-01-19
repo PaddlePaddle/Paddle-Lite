@@ -22,8 +22,8 @@
 #include <vector>
 #include "lite/model_parser/base/io.h"
 #include "lite/model_parser/base/param_desc.h"
-#include "lite/model_parser/flatbuffers/framework_generated.h"
-#include "lite/model_parser/flatbuffers/param_generated.h"
+#include "framework_generated.h" // NOLINT
+#include "param_generated.h"     // NOLINT
 #include "lite/model_parser/flatbuffers/traits.h"
 
 namespace paddle {

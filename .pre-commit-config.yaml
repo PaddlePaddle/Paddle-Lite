@@ -53,4 +53,4 @@ repos:
         language: system
         files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
         exclude: (?!.*third_party)^.*$|(?!.*book)^.*$
-        exclude: ^(mobile/|metal/|web/)
+        exclude: ^(mobile/|metal/|web/|lite/model_parser/flatbuffers/external)
