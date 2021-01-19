@@ -335,9 +335,8 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
           // tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
           VLOG(4) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
-          if (std::abs(max_ratio) > basic_max_ratio &&
-              std::abs(max_ratio) > 1e-3f) {
-            if (max_diff > basic_max_diff && max_diff > 5e-4f) {
+          if (std::abs(max_ratio) > basic_max_ratio) {
+            if (max_diff > basic_max_diff) {
               int64_t size = tout_basic.numel();
               int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
               LOG(WARNING) << "basic result";
@@ -420,7 +419,7 @@ TEST(TestConv1x1s1, test_conv1x1s1) {
                              {1, 1},
                              flag_bias,
                              flag_act,
-                             {1, 2, 4},
+                             {4},
                              {FLAGS_power_mode},
                              leakey_relu_scale);
             }
