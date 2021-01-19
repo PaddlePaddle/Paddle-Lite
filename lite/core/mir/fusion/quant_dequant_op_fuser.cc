@@ -13,11 +13,13 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
+
 #include <algorithm>
 #include <cmath>
 #include <memory>
 #include <set>
 #include <vector>
+
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -163,6 +165,11 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetInputScale(out_act_name, {scale_value});
     op_desc.SetAttr<int>("bit_length", bit_length);
     op_desc.UpdateAllInputs(out_act_name, in_act_name);
+
+#ifdef LITE_WITH_FPGA
+    op_desc.SetAttr("fpga_static_quant", true);
+#endif
+
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
     IR_NODE_LINK_TO(input_act_node, quantized_node)
   }
@@ -393,10 +400,9 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
 #ifdef LITE_WITH_FPGA
   float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
   int channel = channel_scale_tensor->data_size();
-  int weight_cwh = quantized_weight_t->data_size() / channel;
-
+  int weight_chw = quantized_weight_t->data_size() / channel;
   for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
-    int c = i / weight_cwh;
+    int c = i / weight_chw;
     quantized_weight_data[i] = temp_data[i] * weight_scale[c];
   }
   quantized_weight_t->set_persistable(true);

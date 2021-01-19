@@ -163,6 +163,7 @@ class ConvOpLite : public OpLite {
       }
     }
 
+#ifdef LITE_WITH_FPGA
     if (op_info != nullptr && op_info->HasAttr("fpga_static_quant")) {
       param_.enable_int8 = op_info->GetAttr<bool>("fpga_static_quant");
       auto input_scale_name = "Input0_scale";
@@ -170,6 +171,7 @@ class ConvOpLite : public OpLite {
         param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
       }
     }
+#endif
 
     // 2-pad to 4-pad
     if (paddings.size() == 2L) {

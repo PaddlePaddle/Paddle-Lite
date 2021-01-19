@@ -123,6 +123,7 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       param_.output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
   }
 
+#ifdef LITE_WITH_FPGA
   if (op_info != nullptr && op_info->HasAttr("fpga_static_quant")) {
     param_.enable_int8 = op_info->GetAttr<bool>("fpga_static_quant");
     auto input_scale_name = "Input0_scale";
@@ -130,6 +131,7 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
     }
   }
+#endif
 
   return true;
 }
