@@ -29,7 +29,6 @@ class ExpandComputeTester : public arena::TestCase {
   std::string x_ = "X";
   std::string out_ = "Out";
   std::string expandtimes_ = "ExpandTimes";
-  std::string expand_times_tensor_ = "expand_times_tensor";
   std::vector<int> expand_times_;
   DDim dims_;
 
@@ -80,7 +79,12 @@ class ExpandComputeTester : public arena::TestCase {
       op_desc->SetInput("ExpandTimes", {expandtimes_});
     }
     if (has_expand_times_tensor) {
-      op_desc->SetInput("expand_times_tensor", {expand_times_tensor_});
+      std::vector<std::string> expand_times_tensor_;
+      for (auto i = 0; i < expand_times_.size(); i++) {
+        expand_times_tensor_.push_back("expand_times_tensor_" +
+                                       paddle::lite::to_string(i));
+        op_desc->SetInput("expand_times_tensor", expand_times_tensor_);
+      }
     }
     op_desc->SetOutput("Out", {out_});
     op_desc->SetAttr("expand_times", expand_times_);
@@ -92,22 +96,17 @@ class ExpandComputeTester : public arena::TestCase {
       in_data[i] = i;
     }
     SetCommonTensor(x_, dims_, in_data.data());
-
     if (has_expandtimes) {
       SetCommonTensor(expandtimes_,
                       DDim{{static_cast<int64_t>(expand_times_.size())}},
                       expand_times_.data());
     }
     if (has_expand_times_tensor) {
-      std::vector<DDim> expand_times_tensor_dims(expand_times_.size(),
-                                                 DDim{{1}});
-      std::vector<std::vector<int>> expand_times_tensor_data;
-      for (size_t i = 0; i < expand_times_.size(); i++) {
-        expand_times_tensor_data.push_back({expand_times_[i]});
+      for (int i = 0; i < expand_times_.size(); ++i) {
+        SetCommonTensor("expand_times_tensor_" + paddle::lite::to_string(i),
+                        DDim({1}),
+                        &expand_times_[i]);
       }
-      SetCommonTensorList(expand_times_tensor_,
-                          expand_times_tensor_dims,
-                          expand_times_tensor_data);
     }
   }
 };
