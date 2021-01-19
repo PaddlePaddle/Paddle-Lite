@@ -242,7 +242,7 @@ class CLRuntime {
   // CLPrecisionType
   // 0 - AUTO, 1 - fp32, 2 - fp16
   lite_api::CLPrecisionType precision_{lite_api::CL_PRECISION_AUTO};
-}
+};  // NOLINT
 
 }  // namespace lite
 }  // namespace paddle
