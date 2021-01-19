@@ -23,6 +23,7 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
+typedef __fp16 float16_t;
 const int KBLOCK_FP16 = 2;
 #ifdef __aarch64__
 // for int7/int8 gemm
