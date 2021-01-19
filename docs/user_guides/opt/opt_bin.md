@@ -9,7 +9,7 @@ opt是 x86 平台上的可执行文件，需要在PC端运行：支持Linux终�
 ```bash
  ./opt
 ```
-> **注意：** 如果您是通过[准备opt](../model_optimize_tool#id1)页面中，"方法二：下载opt可执行文件" 中提供的链接下载得到的opt可执行文件，请先通过`chmod +x ./opt`命令为下载的opt文件添加可执行权限。
+> **注意：** 如果您是通过[准备opt](../model_optimize_tool)页面中，"方法二：下载opt可执行文件" 中提供的链接下载得到的opt可执行文件，请先通过`chmod +x ./opt`命令为下载的opt文件添加可执行权限。
 
 ![](https://paddlelite-data.bj.bcebos.com/doc_images/1.png)
 
