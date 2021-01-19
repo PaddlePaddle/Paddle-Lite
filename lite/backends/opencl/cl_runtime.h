@@ -87,6 +87,17 @@ class CLRuntime {
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
 #endif
+    // note(ysh329): entered this func means:
+    //  1. opencl_lib_found must be true
+    //  2. dlsym_success must be true
+    if (!paddle::lite::CLWrapper::Global()->OpenclLibFound() ||
+        !paddle::lite::CLWrapper::Global()->DlsymSuccess()) {
+      LOG(ERROR) << "Invalid opencl device, OpenclLibFound:"
+                 << paddle::lite::CLWrapper::Global()->OpenclLibFound()
+                 << ", DlsymSuccess:"
+                 << paddle::lite::CLWrapper::Global()->DlsymSuccess();
+      return false;
+    }
 
     bool support_fp16 = support_half();
     is_device_avaliable_for_opencl_ =
@@ -186,7 +197,7 @@ class CLRuntime {
                                       nullptr,
                                       &status_);
     // use in is opencl valid check, do not exit here when release.
-    CL_CHECK_FATAL(status_);
+    CL_CHECK_ERROR(status_);
     return context;
   }
 
@@ -204,7 +215,7 @@ class CLRuntime {
     auto queue = std::make_shared<cl::CommandQueue>(
         context, device(), properties, &status_);
     // use in is opencl valid check, do not exit here when release.
-    CL_CHECK_FATAL(status_);
+    CL_CHECK_ERROR(status_);
     return queue;
   }
 
