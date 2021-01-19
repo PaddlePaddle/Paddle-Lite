@@ -113,7 +113,7 @@ lite_option(CUDA_WITH_FP16      "Compile with cuda half support" OFF)
 lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
 lite_option(LITE_WITH_XCODE     "when debug in xcode, its ON." OFF)
 lite_option(LITE_WITH_ARM82_FP16  "when compile with arm v8.2 fp16, it's ON." OFF)
-lite_option(LITE_WITH_ARM82_INT8_SDOT  "when compile with arm v8.2 int8, it's ON." OFF)
+lite_option(LITE_WITH_ARM82_INT8  "when compile with arm v8.2 int8, it's ON." OFF)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
@@ -178,8 +178,12 @@ if(LITE_WITH_IMAGINATION_NNA)
 	include(device/imagination_nna)
 endif()
 
-include(external/flatbuffers)
-
+if(NOT LITE_ON_TINY_PUBLISH)
+    include(external/flatbuffers)
+else()
+    include_directories("${PADDLE_SOURCE_DIR}/lite/model_parser/flatbuffers/external")
+    add_custom_target(fbs_headers)
+endif()
 # for opencl
 if (LITE_WITH_OPENCL)
     include(external/opencl-headers)
