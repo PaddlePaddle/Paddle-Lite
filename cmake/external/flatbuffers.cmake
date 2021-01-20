@@ -109,3 +109,8 @@ include_directories(${FLATBUFFERS_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FBS_DIR})
 
 add_custom_target(fbs_headers ALL DEPENDS framework_fbs_header param_fbs_header)
+
+file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/.fbs_dummy.cc CONTENT "")
+add_library(fbs_headers_dummy STATIC ${CMAKE_CURRENT_BINARY_DIR}/.fbs_dummy.cc)
+add_dependencies(fbs_headers_dummy fbs_headers)
+link_libraries(fbs_headers_dummy)
