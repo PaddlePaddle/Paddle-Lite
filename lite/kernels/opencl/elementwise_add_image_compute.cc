@@ -57,7 +57,8 @@ void ElementwiseAddImageCompute::PrepareForRun() {
       kernel_func_name_ = "width_add";  // y: ImageDefault
       if (y->persistable()) {
         y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
-        tensor_hold_y_image_ = std::unique_ptr<Tensor>(new Tensor);
+        std::unique_ptr<Tensor> tensor_hold_y_image_ =
+            std::unique_ptr<Tensor>(new Tensor);
         CLImageConverterDefault default_converter;
         const DDim& y_image_dims =
             default_converter.InitImageDimInfoWith(y->dims());
@@ -75,7 +76,8 @@ void ElementwiseAddImageCompute::PrepareForRun() {
       kernel_func_name_ = "channel_add";  // y: ImageFolder
       if (y->persistable()) {
         y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
-        tensor_hold_y_image_ = std::unique_ptr<Tensor>(new Tensor);
+        std::unique_ptr<Tensor> tensor_hold_y_image_ =
+            std::unique_ptr<Tensor>(new Tensor);
         CLImageConverterFolder folder_converter;
         const DDim& y_image_dims =
             folder_converter.InitImageDimInfoWith(y->dims());
