@@ -2171,6 +2171,8 @@ struct TensorArrayToTensorParam : ParamBase {
   lite::Tensor* OutIndex{};
   int axis{0};
   bool use_stack{false};
+};
+ 
 struct ScatterNdAddParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* indexs{};
