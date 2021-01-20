@@ -55,8 +55,40 @@ void ElementwiseAddImageCompute::PrepareForRun() {
   } else if (y->dims().size() == 1) {
     if (axis == x->dims().size() - 1) {
       kernel_func_name_ = "width_add";  // y: ImageDefault
+      if (y->persistable()) {
+        y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
+        tensor_hold_y_image_ = std::unique_ptr<Tensor>(new Tensor);
+        CLImageConverterDefault default_converter;
+        const DDim& y_image_dims =
+            default_converter.InitImageDimInfoWith(y->dims());
+        tensor_hold_y_image_->Resize({1, y_image_dims[0], y_image_dims[1], 4});
+
+        auto* y_cpu_image = MUTABLE_DATA_CPU(tensor_hold_y_image_);
+        auto* y_cpu_nchw =
+            static_cast<float*>(const_cast<void*>(y->raw_data()));
+        default_converter.NCHWToImage(y_cpu_nchw, y_cpu_image, y->dims());
+
+        MUTABLE_DATA_GPU(
+            y_weights_image_, y_image_dims[0], y_image_dims[1], y_cpu_image);
+      }
     } else if (axis == x->dims().size() - 3) {
       kernel_func_name_ = "channel_add";  // y: ImageFolder
+      if (y->persistable()) {
+        y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
+        tensor_hold_y_image_ = std::unique_ptr<Tensor>(new Tensor);
+        CLImageConverterFolder folder_converter;
+        const DDim& y_image_dims =
+            folder_converter.InitImageDimInfoWith(y->dims());
+        tensor_hold_y_image_->Resize({1, y_image_dims[0], y_image_dims[1], 4});
+
+        auto* y_cpu_image = MUTABLE_DATA_CPU(tensor_hold_y_image_);
+        auto* y_cpu_nchw =
+            static_cast<float*>(const_cast<void*>(y->raw_data()));
+        folder_converter.NCHWToImage(y_cpu_nchw, y_cpu_image, y->dims());
+
+        MUTABLE_DATA_GPU(
+            y_weights_image_, y_image_dims[0], y_image_dims[1], y_cpu_image);
+      }
     } else {
       LOG(FATAL) << "ElementwiseAddImage doesn't support axis:" << axis
                  << ", x->dims().size():" << x->dims().size()
@@ -156,7 +188,12 @@ void ElementwiseAddImageCompute::Run() {
 #endif
       status = kernel.setArg(0, *x_img);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(1, *y_img);
+      if (y->persistable()) {
+        auto* y_img = GET_DATA_GPU(y_weights_image_);
+        status = kernel.setArg(1, *y_img);
+      } else {
+        status = kernel.setArg(1, *y_img);
+      }
       CL_CHECK_FATAL(status);
       status = kernel.setArg(2, *out_img);
       CL_CHECK_FATAL(status);
