@@ -50,6 +50,17 @@ typedef paddle::lite::Tensor Tensor;
 
 using paddle::lite::profile::Timer;
 
+inline void fill_data_rand(uint8_t* dio,
+                           uint8_t vstart,
+                           uint8_t vend,
+                           size_t size) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<float> dis(0, 1.f);
+  for (size_t i = 0; i < size; ++i) {
+    dio[i] = static_cast<uint8_t>(vstart + (vend - vstart) * dis(gen));
+  }
+}
 void fill_tensor_host_rand(uint8_t* dio, int64_t size) {
   fill_data_rand<uint8_t>(dio, 0, 256, size);
 }
