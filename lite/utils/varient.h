@@ -131,6 +131,17 @@ struct variant {
   }
 
   template <typename T>
+  const T& get_if() const {
+    // It is a dynamic_cast-like behaviour
+    if (type_id == typeid(T).hash_code()) {
+      return *reinterpret_cast<const T*>(&data);
+    } else {
+      return nullptr;
+    }
+    return *reinterpret_cast<const T*>(&data);
+  }
+
+  template <typename T>
   T* get_mutable() {
     // It is a dynamic_cast-like behaviour
     if (type_id == typeid(T).hash_code()) {
@@ -144,6 +155,17 @@ struct variant {
 #endif
     }
   }
+
+  template <typename T>
+  T* get_mutable_if() {
+    // It is a dynamic_cast-like behaviour
+    if (type_id == typeid(T).hash_code()) {
+      return reinterpret_cast<T*>(&data);
+    } else {
+      return nullptr;
+    }
+  }
+
   ~variant() { helper_t::destroy(type_id, &data); }
 };
 

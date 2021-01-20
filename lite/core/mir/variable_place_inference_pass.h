@@ -72,6 +72,10 @@ class VariablePlaceInferencePass : public DebugPass {
     } else if (with_targets.at("kCUDA")) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    } else if (with_targets.at("kMetal") &&
+               type.precision() == PRECISION(kUnk)) {
+      weight_node->AsArg().type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));
@@ -112,7 +116,9 @@ class VariablePlaceInferencePass : public DebugPass {
     std::map<std::string, bool> with_targets{
         {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
         {"kCUDA", valid_places_has_target(TARGET(kCUDA))},
-        {"kFPGA", valid_places_has_target(TARGET(kFPGA))}};
+        {"kFPGA", valid_places_has_target(TARGET(kFPGA))},
+        {"kMetal", valid_places_has_target(TARGET(kMetal))},
+    };
     VLOG(4) << "with_targets['kOpenCL']:" << with_targets["kOpenCL"];
     VLOG(4) << "with_targets['kFPGA']:" << with_targets["kFPGA"];
 
@@ -139,9 +145,12 @@ class VariablePlaceInferencePass : public DebugPass {
         const auto& var_name = var.name;
         auto* var_type = &var.type;
         std::string arg_name;
+
         CHECK(op_info->GetInputArgname(var_name, &arg_name))
             << "Can not find the input argument for var " << var_name;
         VLOG(4) << " - input arg name:" << arg_name << " var name:" << var_name;
+        if (var_name == "fc7_weights") printf("hello\n");
+
         const auto* decl_type = kernel.GetInputDeclType(arg_name);
         if (!(*var_type)) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
@@ -151,11 +160,15 @@ class VariablePlaceInferencePass : public DebugPass {
             *var_type = decl_type;
           }
         } else if (!(*var_type)->place().is_valid()) {
-          // If is quantization, infer the Int8 type.
-          if (decl_type->precision() == PRECISION(kInt8)) {
-            *var_type = decl_type;
+          if (var.is_weight && with_targets["kMetal"]) {
+            SetWeightType(in_node, **var_type, with_targets);
           } else {
-            UpdateTypeFrom(var_type, decl_type);
+            // If is quantization, infer the Int8 type.
+            if (decl_type->precision() == PRECISION(kInt8)) {
+              *var_type = decl_type;
+            } else {
+              UpdateTypeFrom(var_type, decl_type);
+            }
           }
         }
       }

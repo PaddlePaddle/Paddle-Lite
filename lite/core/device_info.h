@@ -13,10 +13,13 @@
 // limitations under the License.
 
 #pragma once
-
+#ifdef LITE_WITH_METAL
+#import <lite/backends/metal/target_wrapper.h>
+#endif
 #include <cstdarg>
 #include <string>
 #include <vector>
+
 #include "lite/api/paddle_api.h"
 #include "lite/core/tensor.h"
 #include "lite/utils/cp_logging.h"
@@ -336,6 +339,47 @@ class Device<TARGET(kCUDA)> {
 };
 
 template class Env<TARGET(kCUDA)>;
+#endif
+
+#ifdef LITE_WITH_METAL
+template <>
+class Device<TARGET(kMetal)> {
+ public:
+  Device(int dev_id, void* device) : idx_(dev_id), device_(device) {}
+  void Init() {}
+
+ private:
+  int idx_{0};
+  void* device_{nullptr};
+};
+
+// template class Env<TARGET(kMetal)>;
+template <>
+class Env<TARGET(kMetal)> {
+ public:
+  //  typedef TargetWrapper<TARGET(kMetal)> TagetWrapperMetal;
+  typedef std::vector<Device<TARGET(kMetal)>> Devs;
+
+  static Devs& Global() {
+    static Devs* devs = new Devs();
+    return *devs;
+  }
+
+  static void Init(int max_stream = 1) {
+    Devs& devs = Global();
+    int count = global_ctx.get_devices_num();
+
+    if (count < 1) return;
+
+    for (int i = 0; i < count; i++) {
+      auto dev = Device<TARGET(kMetal)>(
+          i, reinterpret_cast<void*>(global_ctx.get_device_by_id(i)));
+      dev.Init();
+      devs.push_back(dev);
+    }
+  }
+};
+
 #endif
 
 }  // namespace lite

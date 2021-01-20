@@ -29,6 +29,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   bool has_opencl = false;
   bool has_cuda = false;
   bool has_x86 = false;
+  bool has_metal = false;
   for (auto& place : graph->valid_places()) {
     if (place.precision == PRECISION(kInt8)) {
       has_int8 = true;
@@ -45,6 +46,9 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     if (place.target == TARGET(kX86)) {
       has_x86 = true;
     }
+    if (place.target == TARGET(kMetal)) {
+      has_metal = true;
+    }
   }
 
   if (has_arm) {
@@ -59,10 +63,16 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (!has_int8 && has_cuda) {
     act_types.push_back("leaky_relu");
   }
-  if (has_x86) {
+  if (has_x86 && !has_metal) {
     act_types.push_back("relu");
     act_types.push_back("relu6");
   }
+
+  if (has_metal) {
+    act_types.push_back("relu");
+    act_types.push_back("relu6");
+  }
+
   for (auto conv_type : {"conv2d", "depthwise_conv2d", "conv2d_transpose"}) {
     for (auto act_type : act_types) {
       for (auto has_bias : {true, false}) {

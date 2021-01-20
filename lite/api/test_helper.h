@@ -29,6 +29,11 @@
 
 // for eval
 DEFINE_string(model_dir, "", "model dir");
+DEFINE_string(model_file, "", "model file");
+DEFINE_string(model_param, "", "model param");
+#ifdef LITE_WITH_METAL
+DEFINE_string(metal_dir, "", "metal lib dir");
+#endif
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
 DEFINE_int32(power_mode,

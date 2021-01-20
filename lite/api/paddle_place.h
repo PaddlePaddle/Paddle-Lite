@@ -59,7 +59,8 @@ enum class TargetType : int {
   kAPU = 13,
   kHuaweiAscendNPU = 14,
   kImaginationNNA = 15,
-  NUM = 16,  // number of fields.
+  kMetal = 16,
+  NUM = 17,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -83,7 +84,9 @@ enum class DataLayoutType : int {
   kImageFolder = 5,   // for opencl image2d
   kImageNW = 6,       // for opencl image2d
   kAny = 2,           // any data layout
-  NUM = 7,            // number of fields.
+  kMetalTexture2DArray = 7,
+  kMetalTexture2D = 8,
+  NUM = 9,  // number of fields.
 };
 
 typedef enum {

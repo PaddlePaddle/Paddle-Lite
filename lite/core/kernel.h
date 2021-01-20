@@ -96,6 +96,9 @@ class KernelBase {
 #if defined(LITE_WITH_CUDA)
     WorkSpace::Global_CUDA().AllocReset();
 #endif
+#if defined(LITE_WITH_METAL)
+    WorkSpace::Global_METAL().AllocReset();
+#endif
 #if defined(LITE_WITH_MLU)
     WorkSpace::Global_MLU().AllocReset();
 #endif

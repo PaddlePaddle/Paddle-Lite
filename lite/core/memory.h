@@ -15,7 +15,10 @@
 #pragma once
 #include <algorithm>
 #include <string>
+#include <vector>
+
 #include "lite/api/paddle_place.h"
+#include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/logging.h"
 #include "lite/utils/macros.h"
@@ -39,6 +42,10 @@
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/target_wrapper.h"
 #endif  // LITE_WITH_XPU
+
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/target_wrapper.h"
+#endif  // LITE_WITH_METAL
 
 namespace paddle {
 namespace lite {
@@ -84,6 +91,11 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperCL::MemcpySync(dst, src, size, dir);
       break;
 #endif  // LITE_WITH_OPENCL
+#ifdef LITE_WITH_METAL
+    case TargetType::kMetal:
+      TargetWrapperMetal::MemcpySync(dst, src, size, dir);
+      break;
+#endif  // LITE_WITH_METAL
 #ifdef LITE_WITH_MLU
     case TARGET(kMLU):
       TargetWrapperMlu::MemcpySync(dst, src, size, dir);
@@ -159,12 +171,31 @@ class Buffer {
   }
 #endif
 
+#ifdef LITE_WITH_METAL
+  template <typename T>
+  void ResetLazyMetalImage(TargetType target,
+                           const DDim& dim,
+                           std::vector<int> transpose = {0, 2, 3, 1},
+                           void* host_ptr = nullptr) {
+    if (target != target_ || host_ptr != nullptr || dim_ != dim) {
+      CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
+      Free();
+      data_ = TargetWrapperMetal::MallocImage<T>(dim, transpose, host_ptr);
+      target_ = target;
+      metal_use_image2d_ = true;
+      dim_ = dim;
+    }
+  }
+#endif
+
   void Free() {
     if (space_ > 0 && own_data_) {
-      if (!cl_use_image2d_) {
+      if (!cl_use_image2d_ && !metal_use_image2d_) {
         TargetFree(target_, data_);
-      } else {
+      } else if (cl_use_image2d_) {
         TargetFree(target_, data_, "cl_use_image2d_");
+      } else if (metal_use_image2d_) {
+        TargetFree(target_, data_, "metal_use_image2d_");
       }
     }
     data_ = nullptr;
@@ -191,6 +222,10 @@ class Buffer {
   bool cl_use_image2d_{false};   // only used for OpenCL Image2D
   size_t cl_image2d_width_{0};   // only used for OpenCL Image2D
   size_t cl_image2d_height_{0};  // only used for OpenCL Image2D
+
+  bool metal_use_image2d_{false};  // only used for Metal Image2D
+  DDim dim_;
+
   void* data_{nullptr};
   bool own_data_{true};
   TargetType target_{TargetType::kHost};

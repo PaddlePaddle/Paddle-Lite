@@ -114,6 +114,19 @@ std::vector<Place> ParserValidPlaces() {
           Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
+    } else if (target_repr == "arm_metal") {
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(TARGET(kARM));
+    } else if (target_repr == "x86_metal") {
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places.emplace_back(TARGET(kX86));
+      valid_places.emplace_back(TARGET(kHost));
     } else if (target_repr == "x86") {
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});

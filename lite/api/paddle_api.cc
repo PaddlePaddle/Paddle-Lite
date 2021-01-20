@@ -37,6 +37,10 @@
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
 
+#ifdef LITE_WITH_METAL
+#include "lite/backends/metal/target_wrapper.h"
+#endif
+
 namespace paddle {
 namespace lite_api {
 
@@ -142,6 +146,13 @@ void Tensor::CopyFromCpu(const T *src_data) {
 #else
     LOG(FATAL) << "Please compile the lib with MLU.";
 #endif
+  } else if (type == TargetType::kMetal) {
+#ifdef LITE_WITH_METAL
+    lite::TargetWrapperMetal::MemcpySync(
+        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
+#else
+    LOG(FATAL) << "Please compile the lib with METAL.";
+#endif
   } else {
     LOG(FATAL) << "The CopyFromCpu interface just support kHost, kARM, kCUDA";
   }
@@ -171,6 +182,13 @@ void Tensor::CopyToCpu(T *data) const {
         data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
 #else
     LOG(FATAL) << "Please compile the lib with MLU.";
+#endif
+  } else if (type == TargetType::kMetal) {
+#ifdef LITE_WITH_METAL
+    lite::TargetWrapperMetal::MemcpySync(
+        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
+#else
+    LOG(FATAL) << "Please compile the lib with METAL.";
 #endif
   } else {
     LOG(FATAL) << "The CopyToCpu interface just support kHost, kARM, kCUDA";
@@ -308,6 +326,30 @@ void ConfigBase::set_threads(int threads) {
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
 #endif
+}
+
+void ConfigBase::set_metal_dir(const std::string &path) {
+#ifdef LITE_WITH_METAL
+  metal_path_ = path;
+  lite::TargetWrapperMetal::set_metal_path(metal_path_);
+#endif
+  return;
+}
+
+void ConfigBase::set_metal_use_aggressive_optimization(bool flag) {
+#ifdef LITE_WITH_METAL
+  metal_use_agressive_ = flag;
+  lite::TargetWrapperMetal::set_metal_use_aggressive_optimization(flag);
+#endif
+  return;
+}
+
+void ConfigBase::set_metal_use_mps(bool flag) {
+#ifdef LITE_WITH_METAL
+  metal_use_mps_ = flag;
+  lite::TargetWrapperMetal::set_metal_use_mps(flag);
+#endif
+  return;
 }
 
 #ifdef LITE_WITH_X86
