@@ -182,7 +182,10 @@ if(NOT LITE_ON_TINY_PUBLISH)
     include(external/flatbuffers)
 else()
     include_directories("${PADDLE_SOURCE_DIR}/lite/model_parser/flatbuffers/external")
-    add_custom_target(fbs_headers)
+    add_custom_target(fbs_headers ${TARGET}
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/external/framework_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/external/param_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+            )
 endif()
 # for opencl
 if (LITE_WITH_OPENCL)
