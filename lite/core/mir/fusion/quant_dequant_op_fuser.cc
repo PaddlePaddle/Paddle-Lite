@@ -13,11 +13,13 @@
 // limitations under the License.
 
 #include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
+
 #include <algorithm>
 #include <cmath>
 #include <memory>
 #include <set>
 #include <vector>
+
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -163,6 +165,11 @@ void DeleteQuantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetInputScale(out_act_name, {scale_value});
     op_desc.SetAttr<int>("bit_length", bit_length);
     op_desc.UpdateAllInputs(out_act_name, in_act_name);
+
+#ifdef LITE_WITH_FPGA
+    op_desc.SetAttr("fpga_static_quant", true);
+#endif
+
     quantized_node->stmt()->ResetOp(op_desc, graph->valid_places());
     IR_NODE_LINK_TO(input_act_node, quantized_node)
   }
@@ -263,8 +270,10 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   for (int i = 0; i < weight_scale_size; i++) {
     weight_scale.push_back(whole_weight_scale);
   }
-
+#ifndef LITE_WITH_FPGA
   op_desc.SetAttr("enable_int8", true);
+#endif
+
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
@@ -272,12 +281,22 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   temp_tensor.CopyDataFrom(*quantized_weight_t);
   float* temp_data = temp_tensor.mutable_data<float>();
   size_t weight_num = quantized_weight_t->data_size();
+
+#ifdef LITE_WITH_FPGA
+  float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
+  for (size_t i = 0; i < weight_num; i++) {
+    quantized_weight_data[i] = temp_data[i] * whole_weight_scale;
+  }
+  quantized_weight_t->set_persistable(true);
+  quantized_weight_t->set_precision(PRECISION(kFloat));
+#else
   int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
   for (size_t i = 0; i < weight_num; i++) {
     quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
   }
   quantized_weight_t->set_persistable(true);
   quantized_weight_t->set_precision(PRECISION(kInt8));
+#endif
 
   // new op and relink nodes
   auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
@@ -365,7 +384,9 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_desc.SetOutput("Out", {dequant_op_out->arg()->name});
   }
 
+#ifndef LITE_WITH_FPGA
   op_desc.SetAttr("enable_int8", true);
+#endif
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
@@ -375,12 +396,26 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   Tensor temp_tensor;
   temp_tensor.CopyDataFrom(*quantized_weight_t);
   float* temp_data = temp_tensor.mutable_data<float>();
+
+#ifdef LITE_WITH_FPGA
+  float* quantized_weight_data = quantized_weight_t->mutable_data<float>();
+  int channel = channel_scale_tensor->data_size();
+  int weight_chw = quantized_weight_t->data_size() / channel;
+  for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
+    int c = i / weight_chw;
+    quantized_weight_data[i] = temp_data[i] * weight_scale[c];
+  }
+  quantized_weight_t->set_persistable(true);
+  quantized_weight_t->set_precision(PRECISION(kFloat));
+
+#else
   int8_t* quantized_weight_data = quantized_weight_t->mutable_data<int8_t>();
   for (size_t i = 0; i < quantized_weight_t->data_size(); i++) {
     quantized_weight_data[i] = static_cast<int8_t>(temp_data[i]);
   }
   quantized_weight_t->set_persistable(true);
   quantized_weight_t->set_precision(PRECISION(kInt8));
+#endif
 
   // new op and relink nodes
   auto new_quantized_op = LiteOpRegistry::Global().Create(quantized_op_type_);
@@ -504,7 +539,9 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
       // TODO(pjc) : support conv2d_transpose
       if (op_type == "mul" || op_type == "matmul" || op_type == "conv2d" ||
           op_type == "depthwise_conv2d") {
+#ifndef LITE_WITH_FPGA
         op_info.SetAttr("enable_int8", true);
+#endif
         if (scales.size() == 1) {
           QuantizeTensorInPlace<int8_t>(input_var_tensor, scales.front());
         } else {

@@ -723,7 +723,7 @@ struct FillAnyLikeParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
   float value{0.0f};
-  int dtype{-1};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
 };
 
 /// ----------------------- fill_constant operators ----------------------
@@ -2194,6 +2194,14 @@ struct StridedSliceParam : ParamBase {
   lite::Tensor* StartsTensor{nullptr};
   lite::Tensor* StridesTensor{nullptr};
 };
+
+struct ScatterNdAddParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* indexs{};
+  lite::Tensor* updates{};
+  lite::Tensor* output{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
