@@ -20,6 +20,13 @@
 namespace paddle {
 namespace lite {
 
+inline std::vector<int64_t> vector_int2int64_t(std::vector<int> input) {
+  std::vector<int64_t> output{};
+  for (auto i : input) {
+    output.push_back(static_cast<int64_t>(i));
+  }
+  return output;
+}
 static void slice_ref(const float* input,
                       std::vector<int64_t> in_dims,
                       std::vector<int> axes,
@@ -81,6 +88,8 @@ class SliceComputeTester : public arena::TestCase {
   std::string output_ = "Out";
   std::vector<int> axes_;
   std::vector<int> starts_;
+  std::vector<int64_t> starts_i64;
+  std::vector<int64_t> ends_i64;
   std::vector<int> ends_;
   std::vector<int> decrease_axis_;
   DDim dims_;
@@ -111,7 +120,10 @@ class SliceComputeTester : public arena::TestCase {
         dims_(dims),
         infer_flags_(infer_flags),
         use_tensor_(use_tensor),
-        use_tensor_list_(use_tensor_list) {}
+        use_tensor_list_(use_tensor_list) {
+    this->starts_i64 = vector_int2int64_t(starts);
+    this->ends_i64 = vector_int2int64_t(ends);
+  }
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(output_);
@@ -197,20 +209,20 @@ class SliceComputeTester : public arena::TestCase {
     if (use_tensor_) {
       SetCommonTensor(starts_tensor_,
                       DDim({static_cast<int64_t>(starts_.size())}),
-                      starts_.data());
+                      starts_i64.data());
       SetCommonTensor(ends_tensor_,
                       DDim({static_cast<int64_t>(ends_.size())}),
-                      ends_.data());
+                      ends_i64.data());
     } else if (use_tensor_list_) {
       for (int i = 0; i < starts_.size(); ++i) {
         SetCommonTensor("starts_tensor_list_" + paddle::lite::to_string(i),
                         DDim({1}),
-                        &starts_[i]);
+                        &starts_i64[i]);
       }
       for (int i = 0; i < ends_.size(); ++i) {
         SetCommonTensor("ends_tensor_list_" + paddle::lite::to_string(i),
                         DDim({1}),
-                        &ends_[i]);
+                        &ends_i64[i]);
       }
     }
   }
