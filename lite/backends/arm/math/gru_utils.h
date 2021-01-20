@@ -521,13 +521,12 @@ struct GRUUnitFunctor {
                                       reset_out_value_int8.get(),
                                       reset_out_size,
                                       reset_out_scale);
-      //
+
       std::vector<float> scales(batch_size, weight_scale[0]);
       for (auto&& x : scales) {
         x *= reset_out_scale;
       }
 
-      //
       std::unique_ptr<float[]> out_data(new float[batch_size * frame_size]);
       lite::arm::math::gemm_s8(false,
                                false,
