@@ -176,7 +176,7 @@ void TestReshape4D(Place place, float abs_error) {
 void TestReshape3D(Place place, float abs_error) {
   DDim dims{{2, 3, 20}};
   std::vector<std::vector<int>> shapes{
-      {5, 4, 3, 2}, {2, 3, 20}, {2, 60}, {120}, {2, 3, -1}, {0, 60}, {0, -1}};
+      {5, 4, 3, 2}, {3, 2, 20}, {2, 60}, {120}, {2, 6, -1}, {0, 60}, {0, -1}};
   for (auto shape : shapes) {
     std::unique_ptr<arena::TestCase> tester(
         new ReshapeComputeTester(place, "def", dims, shape));
@@ -198,7 +198,6 @@ void TestReshape2D(Place place, float abs_error) {
 }
 
 TEST(Reshape, precision) {
-  LOG(INFO) << "test Reshape op";
   float abs_error = 2e-5;
   Place place;
 #if defined(LITE_WITH_NPU)
@@ -206,8 +205,8 @@ TEST(Reshape, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
-// #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
-//   place = TARGET(kXPU);
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
