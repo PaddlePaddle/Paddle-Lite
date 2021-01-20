@@ -1371,8 +1371,8 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
 #if 1
 TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 8, 16, 112, 224, 1080}) {
-      for (auto h : {1, 16, 112, 224}) {
+    for (auto w : {8, 16, 112, 224, 1080}) {
+      for (auto h : {16, 112, 224}) {
         for (auto rotate : {90, 180, 270}) {
           for (auto flip : {-1, 0, 1}) {
             for (auto srcFormat : {0, 1, 2, 3}) {
