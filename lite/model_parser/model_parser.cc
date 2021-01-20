@@ -113,13 +113,13 @@ void LoadCombinedParamsPb(const std::string &path,
 }
 
 void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {
-  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
 }
 void TensorFromStream(std::istream &is, lite::Tensor *tensor) {
-  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
 }
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
-  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
 }
 void LoadModelPb(const std::string &model_dir,
                  const std::string &model_file,
