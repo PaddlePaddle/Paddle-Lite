@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/operators/slice_op.h"
+
 #include <algorithm>
+
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -130,7 +132,6 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     CHECK_GT(param_.StartsTensorList.size(), 0u)
         << "StartsTensorList size can't be zero";
     starts_size = param_.StartsTensorList.size();
-    LOG(INFO) << "param init size " << param_.StartsTensorList.size();
   }
   param_.EndsTensorList.clear();
   if (opdesc.HasInput("EndsTensorList") &&
