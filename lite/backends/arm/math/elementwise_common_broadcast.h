@@ -71,7 +71,7 @@ inline void do_neon_elementwise(const typename Config::T* dinx,
   constexpr bool neon_active_defined = static_cast<bool>(Config::neon_active);
 
   constexpr int k_neont_element_num = sizeof(NeonT) / sizeof(T);
-  constexpr int k_neon_t_num_per_loop = 4;
+  constexpr int k_neon_t_num_per_loop = Config::cnt_num;
   constexpr int k_batch_element_num =
       k_neon_t_num_per_loop * k_neont_element_num;
   int cnt = num / k_batch_element_num;

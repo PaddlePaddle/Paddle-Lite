@@ -129,6 +129,13 @@ class ConvOpLite : public OpLite {
             op_desc.GetAttr<float>("hard_swish_scale");
         param_.activation_param.hard_swish_offset =
             op_desc.GetAttr<float>("hard_swish_offset");
+      } else if (act_type == "hard_sigmoid") {
+        param_.activation_param.active_type =
+            lite_api::ActivationType::kHardSigmoid;
+        param_.activation_param.hard_sigmoid_slope =
+            op_desc.GetAttr<float>("slope");
+        param_.activation_param.hard_sigmoid_offset =
+            op_desc.GetAttr<float>("offset");
       } else {
         LOG(FATAL) << "The fused conv only supports fuse with relu, leaky "
                       "relu, hard_swish, while the given activation type is "
@@ -155,6 +162,16 @@ class ConvOpLite : public OpLite {
             op_info->GetOutputScale(output_scale_name, true)[0];
       }
     }
+
+#ifdef LITE_WITH_FPGA
+    if (op_info != nullptr && op_info->HasAttr("fpga_static_quant")) {
+      param_.enable_int8 = op_info->GetAttr<bool>("fpga_static_quant");
+      auto input_scale_name = "Input0_scale";
+      if (op_info->HasInputScale(input_scale_name, true)) {
+        param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+      }
+    }
+#endif
 
     // 2-pad to 4-pad
     if (paddings.size() == 2L) {

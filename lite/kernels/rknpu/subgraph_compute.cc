@@ -55,38 +55,56 @@ std::string DeviceProgram::GenerateModelName(
 // Deserialize the generated model, the precisions and dimensions of the origin
 // output tensors of the subgraph op from the cached configuration file and
 // binary RK IR graph file
-bool DeviceProgram::LoadFromCacheFile(
+bool DeviceProgram::LoadCacheFromBufferAndFile(
     const std::vector<std::string>& input_names,
     const std::vector<std::string>& output_names,
     const std::vector<std::vector<int64_t>>& origin_idims,
     const std::vector<Tensor*>& origin_itensors,
     const std::vector<Tensor*>& origin_otensors,
+    std::vector<char>* model_cache_cfg_buffer,
+    std::vector<char>* model_cache_bin_buffer,
     const std::string& model_cache_dir) {
-  // Generate the model name if not initialized
-  if (model_name_.empty()) {
-    model_name_ = GenerateModelName(input_names, output_names, origin_idims);
-  }
+  CHECK(!model_name_.empty());
   // Deserialize the preicisions, shapes and scales of the origin input/output
   // tensors from the cached configuration file
-  auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
-  VLOG(3) << "[Rockchip NPU] Load configuration from " << config_path;
-  std::vector<char> config_buffer;
-  if (!ReadFile(config_path, &config_buffer)) {
-    LOG(WARNING) << "[Rockchip NPU] read from " << config_path << " failed!";
+  if (!model_cache_cfg_buffer->empty()) {
+    VLOG(3) << "[Rockchip NPU] Load configuration from buffer";
+  } else if (!model_cache_dir.empty()) {
+    auto config_path = model_cache_dir + "/" + model_name_ + ".cfg";
+    VLOG(3) << "[Rockchip NPU] Load configuration from " << config_path;
+    if (!ReadFile(config_path, model_cache_cfg_buffer)) {
+      LOG(WARNING) << "[Rockchip NPU] read from " << config_path << " failed!";
+      return false;
+    }
+  } else {
     return false;
   }
-  std::string str(config_buffer.begin(), config_buffer.end());
+  std::string str(model_cache_cfg_buffer->begin(),
+                  model_cache_cfg_buffer->end());
   // Parse the precision and shapes of the output tensors
   std::vector<std::shared_ptr<rk::nn::Tensor>> device_inodes;
   auto inputs_outputs = Split<std::string>(str, "\n");
   CHECK_EQ(inputs_outputs.size(), 2);  // inputs and outputs
   // Create a new RK IR graph and restore from the cached binary file
   graph_ = std::make_shared<rk::nn::Graph>();
-  auto model_path = model_cache_dir + "/" + model_name_ + ".dat";
-  VLOG(3) << "[Rockchip NPU] Load model from " << model_path;
-  if (graph_->LoadCache(model_path) != rk::nn::RK_SUCCESS) {
-    LOG(WARNING) << "[Rockchip NPU] Load cached binary graph from "
-                 << model_path << " failed!";
+  if (!model_cache_bin_buffer->empty()) {
+    VLOG(3) << "[Rockchip NPU] Load model from buffer";
+    if (graph_->LoadCache(model_cache_bin_buffer->data(),
+                          model_cache_bin_buffer->size()) !=
+        rk::nn::RK_SUCCESS) {
+      LOG(WARNING)
+          << "[Rockchip NPU] Load cached binary graph from buffer failed!";
+      return false;
+    }
+  } else if (!model_cache_dir.empty()) {
+    auto model_path = model_cache_dir + "/" + model_name_ + ".bin";
+    VLOG(3) << "[Rockchip NPU] Load model from " << model_path;
+    if (graph_->LoadCache(model_path) != rk::nn::RK_SUCCESS) {
+      LOG(WARNING) << "[Rockchip NPU] Load cached binary graph from "
+                   << model_path << " failed!";
+      return false;
+    }
+  } else {
     return false;
   }
   // Restore the input RK IR nodes
@@ -141,16 +159,13 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
     const std::vector<Tensor*>& origin_itensors,
     const std::vector<Tensor*>& origin_otensors,
     const std::string& model_cache_dir) {
-  // Generate the model name if not initialized
-  if (model_name_.empty()) {
-    model_name_ = GenerateModelName(input_names, output_names, origin_idims);
-  }
+  CHECK(!model_name_.empty());
   // Create a new RK IR graph
   graph_ = std::make_shared<rk::nn::Graph>();
   if (!model_cache_dir.empty()) {
     // Enable caching the compiled RK IR graph to a binary file when the first
     // run
-    auto model_path = model_cache_dir + "/" + model_name_ + ".dat";
+    auto model_path = model_cache_dir + "/" + model_name_ + ".bin";
     if (graph_->EnableCreateCache(model_path) == rk::nn::RK_SUCCESS) {
       VLOG(3) << "[Rockchip NPU] The compiled RK IR graph will be saved to "
               << model_path << " when the first run";
@@ -327,6 +342,23 @@ bool SubgraphEngine::BuildDeviceProgram() {
   // Check if the cache device program exists
   if (!device_programs_.count(origin_idims_)) {
     auto device_program = std::make_shared<DeviceProgram>();
+    // Generate the model name by the names and dimensions of the input and
+    // output tensors
+    device_program->model_name_ = DeviceProgram::GenerateModelName(
+        input_names_, output_names_, origin_idims_);
+    // Load the cached configuration and model from the buffers which are stored
+    // as the tensors in the exec scope
+    std::vector<char> model_cache_cfg_buffer;
+    std::vector<char> model_cache_bin_buffer;
+    ctx_->As<RKNPUContext>().SubgraphModelCacheBuffers(
+        exec_scope_,
+        device_program->model_name_,
+        &model_cache_cfg_buffer,
+        &model_cache_bin_buffer);
+    VLOG(3) << "[Rockchip NPU] Getting subgraph_model_cache_cfg_buffer: "
+            << model_cache_cfg_buffer.size()
+            << ", subgraph_model_cache_bin_buffer: "
+            << model_cache_bin_buffer.size();
     // Obtain the model cache dir from the Rockchip NPU Context of the subgraph
     // op
     auto model_cache_dir =
@@ -334,13 +366,14 @@ bool SubgraphEngine::BuildDeviceProgram() {
     VLOG(3) << "[Rockchip NPU] Getting subgraph_model_cache_dir: "
             << model_cache_dir;
     // Check and load if the cached model and configuration file exists
-    if (model_cache_dir.empty() ||
-        !device_program->LoadFromCacheFile(input_names_,
-                                           output_names_,
-                                           origin_idims_,
-                                           origin_itensors_,
-                                           origin_otensors_,
-                                           model_cache_dir)) {
+    if (!device_program->LoadCacheFromBufferAndFile(input_names_,
+                                                    output_names_,
+                                                    origin_idims_,
+                                                    origin_itensors_,
+                                                    origin_otensors_,
+                                                    &model_cache_cfg_buffer,
+                                                    &model_cache_bin_buffer,
+                                                    model_cache_dir)) {
       // Build the model online, including converting the paddle ops to the RK
       // IR nodes, building the RK IR graph, and generate a execution for
       // inference.

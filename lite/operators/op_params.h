@@ -579,6 +579,14 @@ struct DropoutParam : ParamBase {
   std::string dropout_implementation{"downgrade_in_infer"};
 };
 
+// For PadConstantLike op
+struct PadConstantLikeParam : ParamBase {
+  const lite::Tensor* x{};
+  const lite::Tensor* y{};
+  lite::Tensor* output{};
+  float pad_value{0.0f};
+};
+
 // For Split op
 struct SplitParam : ParamBase {
   lite::Tensor* x{};
@@ -711,6 +719,13 @@ struct MeanGradParam : ParamBase {
   lite::Tensor* X_grad{};
 };
 
+struct FillAnyLikeParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  float value{0.0f};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+};
+
 /// ----------------------- fill_constant operators ----------------------
 struct FillConstantParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
@@ -722,6 +737,7 @@ struct FillConstantParam : ParamBase {
   float value{0.0f};
   // useless for x86, keep it for compatibility
   bool force_cpu{false};
+  lite::Tensor* in{};
   lite::Tensor* out{};
 };
 
@@ -771,6 +787,14 @@ struct FakeQuantDequantAbsMaxParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* out{};
   lite::Tensor* out_scale{};
+  int bit_length;
+};
+
+struct FakeChannelWiseQuantDequantAbsMaxParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* out{};
+  lite::Tensor* out_scale{};
+  int quant_axis;
   int bit_length;
 };
 
@@ -934,6 +958,8 @@ struct MulticlassNmsParam : ParamBase {
   float nms_eta{1.0f};
   int keep_top_k;
   bool normalized{true};
+  const lite::Tensor* rois_num{};
+  lite::Tensor* nms_rois_num{};
 };
 
 /// ----------------------- matrix_nms operators ----------------------
@@ -1396,7 +1422,31 @@ struct GenerateProposalsParam : ParamBase {
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
   lite::Tensor* RpnRoisLod{};
+  lite::Tensor* RpnRoisNum{};
 };
+
+struct GenerateProposalsV2Param : ParamBase {
+  // inputs
+  const lite::Tensor* Scores{};
+  const lite::Tensor* BboxDeltas{};
+  const lite::Tensor* ImShape{};
+  lite::Tensor* Anchors{};
+  lite::Tensor* Variances{};
+
+  // attrs
+  int pre_nms_topN{6000};
+  int post_nms_topN{1000};
+  float nms_thresh{0.5f};
+  float min_size{0.1f};
+  float eta{1.0f};
+
+  // outputs
+  lite::Tensor* RpnRois{};
+  lite::Tensor* RpnRoiProbs{};
+  lite::Tensor* RpnRoisLod{};
+  lite::Tensor* RpnRoisNum{};
+};
+
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam : ParamBase {
   const lite::Tensor* X{};
@@ -2088,6 +2138,11 @@ struct FlattenContiguousRangeParam : ParamBase {
   int stop_axis;
 };
 
+struct LoDArrayLengthParam : ParamBase {
+  std::vector<lite::Tensor>* x{};
+  lite::Tensor* out{};
+};
+
 struct SelectInputParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Mask{};
@@ -2095,7 +2150,7 @@ struct SelectInputParam : ParamBase {
 };
 
 struct TensorArrayToTensorParam : ParamBase {
-  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor>* X{};
   lite::Tensor* Out{};
   lite::Tensor* OutIndex{};
   int axis{0};
@@ -2104,13 +2159,13 @@ struct TensorArrayToTensorParam : ParamBase {
 
 struct RnnParam : ParamBase {
   lite::Tensor* Input;
-  lite::Tensor* PreState;
+  std::vector<lite::Tensor*> PreState;
   std::vector<lite::Tensor*> WeightList;
   lite::Tensor* SequenceLength;
   lite::Tensor* DropoutState;
   lite::Tensor* Reserve;
   lite::Tensor* Out;
-  lite::Tensor* State;
+  std::vector<lite::Tensor*> State;
   float dropout_prob{0.0};
   bool is_bidirec{false};
   int input_size{10};
@@ -2119,6 +2174,31 @@ struct RnnParam : ParamBase {
   std::string mode{"LSTM"};
   bool is_test{false};
   int seed{0};
+};
+
+struct StridedSliceParam : ParamBase {
+  lite::Tensor* Input{};
+  lite::Tensor* Out{};
+  std::vector<int> starts{};
+  std::vector<int> ends{};
+  std::vector<int> strides{};
+  std::vector<int> axes{};
+  std::vector<int> infer_flags{};
+  std::vector<int> decrease_axis{};
+  std::vector<lite::Tensor*> StartsTensorList{};
+  std::vector<lite::Tensor*> EndsTensorList{};
+  std::vector<lite::Tensor*> StridesTensorList{};
+  bool tensor_input{false};
+  lite::Tensor* EndsTensor{nullptr};
+  lite::Tensor* StartsTensor{nullptr};
+  lite::Tensor* StridesTensor{nullptr};
+};
+
+struct ScatterNdAddParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* indexs{};
+  lite::Tensor* updates{};
+  lite::Tensor* output{};
 };
 
 }  // namespace operators

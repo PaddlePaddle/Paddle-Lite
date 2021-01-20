@@ -104,7 +104,8 @@ cl::Platform& CLRuntime::platform() {
 
 cl::Context& CLRuntime::context() {
   if (context_ == nullptr) {
-    LOG(FATAL) << "context_ create failed. ";
+    LOG(FATAL) << "context_ create failed, check whether context create "
+                  "successfully in CreateContext!";
   }
   return *context_;
 }
@@ -118,7 +119,8 @@ cl::Device& CLRuntime::device() {
 
 cl::CommandQueue& CLRuntime::command_queue() {
   if (command_queue_ == nullptr) {
-    LOG(FATAL) << "command_queue_ create failed. ";
+    LOG(FATAL) << "command_queue_ create failed, check whether command queue "
+                  "create successfully in CreateCommandQueue!";
   }
   return *command_queue_;
 }
@@ -180,7 +182,7 @@ bool CLRuntime::InitializePlatform() {
   // has return status do not exit here when release
   CL_CHECK_ERROR(status_);
   if (all_platforms.empty()) {
-    LOG(FATAL) << "No OpenCL platform found!";
+    LOG(ERROR) << "No OpenCL platform found!";
     return false;
   }
   platform_ = std::make_shared<cl::Platform>();
@@ -213,12 +215,19 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
 }
 
 bool CLRuntime::InitializeDevice() {
+#ifdef LITE_WITH_LOG
   VLOG(3) << "device_info_.size():" << device_info_.size();
   for (auto i : device_info_) {
     VLOG(3) << ">>> " << i.first << " " << i.second;
   }
+#endif
+  // initialized without valid opencl device
   if (device_info_.size() > 0 && device_info_.size() <= 2) {
     return false;
+  }
+  // initialized with valid opencl device
+  if (device_info_.size() > 2) {
+    return true;
   }
   device_info_["PLACEHOLDER"] = 1;
   // ===================== BASIC =====================
@@ -352,19 +361,19 @@ bool CLRuntime::InitializeDevice() {
   if (image_support) {
     LOG(INFO) << "The chosen device supports image processing.";
     device_info_["CL_DEVICE_IMAGE_SUPPORT"] = 1;
+
+    auto image2d_max_height = device_->getInfo<CL_DEVICE_IMAGE2D_MAX_HEIGHT>();
+    LOG(INFO) << "CL_DEVICE_IMAGE2D_MAX_HEIGHT:" << image2d_max_height;
+    device_info_["CL_DEVICE_IMAGE2D_MAX_HEIGHT"] = image2d_max_height;
+
+    auto image2d_max_width = device_->getInfo<CL_DEVICE_IMAGE2D_MAX_WIDTH>();
+    LOG(INFO) << "CL_DEVICE_IMAGE2D_MAX_WIDTH:" << image2d_max_width;
+    device_info_["CL_DEVICE_IMAGE2D_MAX_WIDTH"] = image2d_max_width;
   } else {
-    LOG(INFO) << "The chosen device doesn't support image processing!";
+    LOG(ERROR) << "The chosen device doesn't support image processing!";
     device_info_["CL_DEVICE_IMAGE_SUPPORT"] = 0;
     return false;
   }
-
-  auto image2d_max_height = device_->getInfo<CL_DEVICE_IMAGE2D_MAX_HEIGHT>();
-  LOG(INFO) << "CL_DEVICE_IMAGE2D_MAX_HEIGHT:" << image2d_max_height;
-  device_info_["CL_DEVICE_IMAGE2D_MAX_HEIGHT"] = image2d_max_height;
-
-  auto image2d_max_width = device_->getInfo<CL_DEVICE_IMAGE2D_MAX_WIDTH>();
-  LOG(INFO) << "CL_DEVICE_IMAGE2D_MAX_WIDTH:" << image2d_max_width;
-  device_info_["CL_DEVICE_IMAGE2D_MAX_WIDTH"] = image2d_max_width;
 
   // ===================== OTHERS / EXTENSION / VERSION =====================
   // CL_DEVICE_EXTENSIONS
@@ -400,7 +409,10 @@ void CLRuntime::GetAdrenoContextProperties(
     std::vector<cl_context_properties>* properties,
     GPUPerfMode gpu_perf_mode,
     GPUPriorityLevel gpu_priority_level) {
-  CHECK(properties) << "cl_context_properties is nullptr";
+  if (properties == nullptr) {
+    LOG(ERROR) << "cl_context_properties is nullptr";
+    return;
+  }
   properties->reserve(5);
   switch (gpu_perf_mode) {
     case GPUPerfMode::PERF_LOW:
