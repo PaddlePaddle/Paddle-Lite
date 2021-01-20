@@ -96,12 +96,15 @@ class CLRuntime {
     return is_device_avaliable_for_opencl_;
   }
 
-  void set_auto_tune(lite_api::CLTuneMode tune_mode) {
+  void set_auto_tune(lite_api::CLTuneMode tune_mode, size_t lws_repeats = 4) {
     auto_tune_ = tune_mode;
+    lws_repeats_ = lws_repeats;
     command_queue_ = CreateCommandQueue(context());
   }
 
   lite_api::CLTuneMode auto_tune() { return auto_tune_; }
+
+  size_t lws_repeats() { return lws_repeats_; }
 
   void set_precision(
       lite_api::CLPrecisionType p = lite_api::CL_PRECISION_AUTO) {
@@ -241,10 +244,12 @@ class CLRuntime {
   // 3 - Exhaustive
   lite_api::CLTuneMode auto_tune_{lite_api::CL_TUNE_NONE};
 
+  size_t lws_repeats_{0};
+
   // CLPrecisionType
   // 0 - AUTO, 1 - fp32, 2 - fp16
   lite_api::CLPrecisionType precision_{lite_api::CL_PRECISION_AUTO};
-};  // NOLINT
+};
 
 }  // namespace lite
 }  // namespace paddle

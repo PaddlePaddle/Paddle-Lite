@@ -269,11 +269,12 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #endif
 }
 
-void ConfigBase::set_opencl_tune(CLTuneMode tune_mode) {
+void ConfigBase::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
     opencl_tune_mode_ = tune_mode;
-    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_);
+    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_,
+                                                     lws_repeats);
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "opencl_tune_mode:"
               << static_cast<size_t>(
