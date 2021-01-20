@@ -100,7 +100,7 @@ object_detection_demo/app/build.gradle
 
 ## 代码讲解 （使用Paddle-Lite Java API 执行预测）
 
-Android 示例基于Java API 开发，调用Paddle-Lite Java API包括以下五步。更详细的API 描述参考： [Paddle-Lite Java API](https://paddle-lite.readthedocs.io/zh/latest/api_reference/java_api_doc.html)。
+Android 示例基于Java API 开发，调用Paddle-Lite Java API包括以下五步。更详细的API 描述参考： [Paddle-Lite Java API](../api_reference/java_api_doc)。
 
 ```c++
 // 导入Java API
