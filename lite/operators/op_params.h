@@ -2172,14 +2172,13 @@ struct TensorArrayToTensorParam : ParamBase {
   int axis{0};
   bool use_stack{false};
 };
- 
+
 struct ScatterNdAddParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* indexs{};
   lite::Tensor* updates{};
   lite::Tensor* output{};
 };
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
