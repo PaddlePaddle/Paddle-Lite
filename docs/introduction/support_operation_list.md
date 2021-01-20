@@ -8,7 +8,7 @@
 
 注意，Host算子是用纯C/C++实现的kernel，不涉及特定硬件上的加速指令，所以Host算子具有较强的平台可移植性，可以在ARM和X86上执行。
 
-PaddleLite在ARM或者X86上部署模型，如果特定算子在ARM或者X86上不支持，但是在Host支持，在模型优化阶段该算子会选择Host算子。
+PaddleLite在支持GCC C++的硬件架构上部署模型，如果特定算子在该硬件上不支持，但是Host类别支持，在模型优化阶段该算子会选择Host算子。
 
 | OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU |
 |-:|-|-|-|-|-|-|-|-|-|-|
