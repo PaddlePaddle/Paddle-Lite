@@ -391,7 +391,7 @@ void ConvImageCompute::PrepareForRun() {
                                     build_options_[i],
                                     time_stamp_);
   }
-  SetLocalWorkSize();
+  SetLocalWorkSize(CLRuntime::Global()->lws_repeats());
 }
 
 void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
