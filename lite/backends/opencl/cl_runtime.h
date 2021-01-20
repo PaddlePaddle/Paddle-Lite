@@ -86,7 +86,11 @@ class CLRuntime {
                  << paddle::lite::CLWrapper::Global()->DlsymSuccess();
       return false;
     }
-
+    // for sepcial case: gionee M6, with invalid opencl device type
+    if (device_info_.count("CL_DEVICE_TYPE") == 0) {
+      LOG(ERROR) << "Invalid opencl device, CL_DEVICE_TYPE is None.";
+      return false;
+    }
     bool support_fp16 = support_half();
     is_device_avaliable_for_opencl_ =
         check_fp16_valid ? support_fp16 : is_device_avaliable_for_opencl_;
