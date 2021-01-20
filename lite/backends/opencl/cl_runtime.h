@@ -74,22 +74,13 @@ class CLRuntime {
     return static_cast<bool>(device_info_["CL_DEVICE_EXTENSIONS_FP16"]);
   }
 
-#ifdef LITE_WITH_ARM
-  // default check_fp16(true) for ARM platform: Android, ARM-Linux
-  bool OpenCLAvaliableForDevice(bool check_fp16_valid = true) {
-#else
-  // default check_fp16(false) for X86 platform: X86-Linux, X86-MacOS, X86-WinOS
   bool OpenCLAvaliableForDevice(bool check_fp16_valid = false) {
-#endif
 // note(ysh329): entered this func means:
 //  1. opencl_lib_found must be true
 //  2. dlsym_success must be true
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
 #endif
-    // note(ysh329): entered this func means:
-    //  1. opencl_lib_found must be true
-    //  2. dlsym_success must be true
     if (!paddle::lite::CLWrapper::Global()->OpenclLibFound() ||
         !paddle::lite::CLWrapper::Global()->DlsymSuccess()) {
       LOG(ERROR) << "Invalid opencl device, OpenclLibFound:"
