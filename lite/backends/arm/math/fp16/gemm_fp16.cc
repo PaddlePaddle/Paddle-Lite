@@ -201,13 +201,12 @@ void prepackA_8x16(float16_t *out,
 
   int cnt = x_len >> 3;
   int remain = x_len & 7;
-  int stride = x_len * 8;
   int cnt_4 = remain >> 2;
   remain = remain & 3;
   float16x8_t valpha = vdupq_n_f16(alpha);
 #pragma omp parallel for
   for (int y = m0; y < mmax; y += 8) {
-    uint16_t *outptr = dout;
+    uint16_t *outptr = dout + (y - m0) * x_len;
     const uint16_t *inptr0 = inptr + y * ldin + k0;
     const uint16_t *inptr1 = inptr0 + ldin;
     const uint16_t *inptr2 = inptr1 + ldin;
@@ -403,7 +402,6 @@ void prepackA_8x16(float16_t *out,
         *outptr++ = *inptr7++;
       }
     }
-    dout += stride;
   }
 }
 

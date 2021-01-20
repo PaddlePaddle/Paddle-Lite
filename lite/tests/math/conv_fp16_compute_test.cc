@@ -151,6 +151,7 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
   auto a_ptr = filter_fp32.mutable_data<float>();
   auto b_ptr = param.filter->mutable_data<float16_t>();
   fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.filter->numel());
+  // fill_data_const<float16_t>(b_ptr, -1.f, param.filter->numel());
   fp16_to_float(param.filter->data<float16_t>(), a_ptr, param.filter->numel());
 
   Tensor bias_fp32;
@@ -160,6 +161,7 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
     a_ptr = bias_fp32.mutable_data<float>();
     b_ptr = param.bias->mutable_data<float16_t>();
     fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.bias->numel());
+    // fill_data_const<float16_t>(b_ptr, -1.f, param.bias->numel());
     fp16_to_float(param.bias->data<float16_t>(), a_ptr, param.bias->numel());
   }
   auto wptr = param.filter->data<float16_t>();
@@ -179,7 +181,7 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
         param.x->Resize(dim_in);
         DDim out_tmp_dims = compute_out_dim(dim_in, param);
         if (out_tmp_dims[2] < 1 || out_tmp_dims[3] < 1) {
-          continue;
+          return;
         }
         param.output->Resize(out_tmp_dims);
         break;
@@ -194,7 +196,7 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
             << "input channel must equal to weights channel";
         DDim dim_out = compute_out_dim(dim_in, param);
         if (dim_out[2] < 1 || dim_out[3] < 1) {
-          continue;
+          return;
         }
         param.x->Resize(dim_in);
         param.output->Resize(dim_out);
@@ -205,6 +207,7 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
         a_ptr = x_fp32.mutable_data<float>();
         b_ptr = param.x->mutable_data<float16_t>();
         fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.x->numel());
+        // fill_data_const<float16_t>(b_ptr, -1.f, param.x->numel());
         fp16_to_float(param.x->data<float16_t>(), a_ptr, param.x->numel());
         auto din = param.x->data<float16_t>();
         auto din_fp32 = x_fp32.data<float>();
@@ -335,9 +338,23 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
           // tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
           VLOG(4) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
-          if (std::abs(max_ratio) > basic_max_ratio) {
-            if (max_diff > basic_max_diff) {
-              int64_t size = tout_basic.numel();
+          if (max_diff > basic_max_diff) {
+            int64_t size = tout_basic.numel();
+            int count = 0;
+            bool check = true;
+            for (int i = 0; i < size; i++) {
+              if (abs(ptr[i]) > 1) {
+                check = false;
+                break;
+              }
+              if (abs(ptr[i]) > 0.01) {
+                count += 1;
+              }
+            }
+            VLOG(4) << "check: " << check << ", count: " << count;
+            check =
+                check && count < std::max(10, static_cast<int>(0.01 * size));
+            if (!check) {
               int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
               LOG(WARNING) << "basic result";
               print_tensor(basic_ptr, size, width);
@@ -407,21 +424,22 @@ TEST(TestConv1x1s1, test_conv1x1s1) {
               DDim weights_dim({cout, cin / g, 1, 1});
               for (auto& batch : {1, 2}) {
                 for (auto& h : {1, 7, 19, 28, 32, 56, 1}) {
+                  dims.clear();
                   dims.push_back(DDim({batch, cin, h, h}));
+                  const float leakey_relu_scale = 1.0f;
+                  test_conv_fp16(dims,
+                                 weights_dim,
+                                 g,
+                                 {1, 1},
+                                 {0, 0, 0, 0},
+                                 {1, 1},
+                                 flag_bias,
+                                 flag_act,
+                                 {4},
+                                 {FLAGS_power_mode},
+                                 leakey_relu_scale);
                 }
               }
-              const float leakey_relu_scale = 1.0f;
-              test_conv_fp16(dims,
-                             weights_dim,
-                             g,
-                             {1, 1},
-                             {0, 0, 0, 0},
-                             {1, 1},
-                             flag_bias,
-                             flag_act,
-                             {4},
-                             {FLAGS_power_mode},
-                             leakey_relu_scale);
             }
           }
         }
@@ -454,32 +472,35 @@ TEST(TestConvRand, test_conv_rand) {
                               DDim weights_dim({cout, cin / g, kh, kw});
                               for (auto& batch : {1, 2}) {
                                 for (auto& h : {1, 3, 19, 32}) {
+                                  dims.clear();
                                   dims.push_back(DDim({batch, cin, h, h}));
+                                  // skip 3x3 depthwise conv
+                                  if (g == cin && cin == cout && kw == 3 &&
+                                      kh == 3) {
+                                    break;
+                                  }
+                                  // skip 3x3s1 direct conv
+                                  if (g == 1 && (cin != 1 || cout != 1) &&
+                                      kw == 3 && kh == 3 && stride == 1) {
+                                    break;
+                                  }
+                                  const float leakey_relu_scale = 1.0f;
+                                  test_conv_fp16(dims,
+                                                 weights_dim,
+                                                 g,
+                                                 {stride, stride},
+                                                 {pad_top,
+                                                  pad_bottom,
+                                                  pad_left,
+                                                  pad_right},
+                                                 {dila, dila},
+                                                 flag_bias,
+                                                 flag_act,
+                                                 {4},
+                                                 {FLAGS_power_mode},
+                                                 leakey_relu_scale);
                                 }
                               }
-                              // skip 3x3 depthwise conv
-                              if (g == cin && cin == cout && kw == 3 &&
-                                  kh == 3) {
-                                break;
-                              }
-                              // skip 3x3s1 direct conv
-                              if (g == 1 && (cin != 1 || cout != 1) &&
-                                  kw == 3 && kh == 3 && stride == 1) {
-                                break;
-                              }
-                              const float leakey_relu_scale = 1.0f;
-                              test_conv_fp16(
-                                  dims,
-                                  weights_dim,
-                                  g,
-                                  {stride, stride},
-                                  {pad_top, pad_bottom, pad_left, pad_right},
-                                  {dila, dila},
-                                  flag_bias,
-                                  flag_act,
-                                  {4},
-                                  {FLAGS_power_mode},
-                                  leakey_relu_scale);
                             }
                           }
                         }
