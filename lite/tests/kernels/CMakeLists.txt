@@ -99,6 +99,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_pad3d_compute SRCS  pad3d_compute_test.cc DEPS arena_framework ${test_kernel_deps})
     lite_cc_test(test_kernel_select_input_compute SRCS select_input_compute_test.cc DEPS arena_framework ${test_kernel_deps})
     # lite_cc_test(test_kernel_tensor_array_to_tensor_compute SRCS tensor_array_to_tensor_compute_test.cc DEPS arena_framework ${test_kernel_deps})
+    # TODO: fix tensor_array_to_tensor unittest
     
     # for training kernel
     if (LITE_WITH_TRAIN)
