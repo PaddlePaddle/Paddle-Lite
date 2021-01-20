@@ -2174,7 +2174,7 @@ struct TileParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* Out{};
   std::vector<int> repeat_times{};
-  const lite::Tensor* RepeatTimes{};
+  lite::Tensor* RepeatTimes{};
   std::vector<lite::Tensor*> repeat_times_tensor{};
 };
 
