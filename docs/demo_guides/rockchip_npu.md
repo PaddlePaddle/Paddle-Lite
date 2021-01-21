@@ -279,7 +279,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
 - 通过Paddle训练或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
 - 通过Paddle+PaddleSlim后量化方式，生成[MobileNetV1-int8全量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
-  - 下载[PaddleSlim-quant-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/tools/rockchip/PaddleSlim-quant-demo_v2_8_0.tar.gz)，解压后清单如下：
+  - 下载[PaddleSlim-quant-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/tools/PaddleSlim-quant-demo_v2_8_0.tar.gz)，解压后清单如下：
     ```shell
     - PaddleSlim-quant-demo
       - image_classification_demo
