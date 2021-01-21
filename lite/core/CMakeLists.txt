@@ -80,6 +80,7 @@ add_custom_command(
   "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
   ${LITE_BUILD_TAILOR}
   ${LITE_BUILD_EXTRA}
+  ${LITE_WITH_ARM82_FP16}
   OUTPUT kernels.h # not a real path to the output to force it execute every time.
   )
 # A trick to generate the paddle_use_ops.h

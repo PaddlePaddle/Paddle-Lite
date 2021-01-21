@@ -43,9 +43,9 @@ inline lite_api::ActivationType get_gru_act_type(const std::string& type) {
   }
 }
 
-void GRUCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
+void GRUComputeRun(const operators::GRUParam& param,
+                   ARMContext* ctx,
+                   bool enable_quant) {
   // inputs
   auto input = param.input;
   auto h0 = param.h0;
@@ -61,12 +61,20 @@ void GRUCompute::Run() {
   int frame_size = hidden_dims[1];
   auto batch_size = input->dims()[0];
 
-  const float* weight_data = weight->data<float>();
-  float* batch_gate_data = batch_gate->mutable_data<float>();
+  std::vector<float> weight_scale{};
+  int bit_length{};
+  if (enable_quant) {
+    CHECK(param.enable_int8);
+    CHECK_EQ(weight->dims().size(), 2);
+    CHECK_EQ(param.weight_scale.size(), weight->dims()[1]);
+    weight_scale = param.weight_scale;
+    bit_length = param.bit_length;
+  }
 
   lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
   to_batch(*input, batch_gate, true, param.is_reverse);
 
+  float* batch_gate_data = batch_gate->mutable_data<float>();
   if (bias) {
     auto bias_data = bias->data<float>();
     lite::arm::math::gru_add_with_bias(batch_gate_data,
@@ -77,23 +85,34 @@ void GRUCompute::Run() {
   }
 
   lite::arm::math::GRUMetaValue<float> gru_value;
-
-  gru_value.gate_weight = const_cast<float*>(weight_data);
-  gru_value.state_weight =
-      const_cast<float*>(weight_data + 2 * frame_size * frame_size);
-  Tensor ordered_h0;
-
-  std::vector<uint64_t> order(batch_gate->lod()[2]);
-
+  if (enable_quant) {
+    if (weight->precision() != PRECISION(kInt8)) {
+      LOG(FATAL) << "Precision Error: The precision of quantized gru's "
+                 << "weights should be int8_t, but it is "
+                 << static_cast<int>(weight->precision());
+    }
+    const int8_t* weight_data = weight->data<int8_t>();
+    gru_value.gate_weight_int8 = const_cast<int8_t*>(weight_data);
+    gru_value.state_weight_int8 =
+        const_cast<int8_t*>(weight_data + 2 * frame_size * frame_size);
+  } else {
+    const float* weight_data = weight->data<float>();
+    gru_value.gate_weight = const_cast<float*>(weight_data);
+    gru_value.state_weight =
+        const_cast<float*>(weight_data + 2 * frame_size * frame_size);
+  }
   if (h0) {
     // Since the batch computing for GRU reorders the input sequences
     // according to their length. The initialized cell state also needs
     // to reorder.
+    Tensor ordered_h0;
+    std::vector<uint64_t> order(batch_gate->lod()[2]);
     lite::arm::math::ReorderInitState<float>(*h0, order, &ordered_h0, true);
     gru_value.prev_out_value = ordered_h0.mutable_data<float>();
   } else {
     gru_value.prev_out_value = nullptr;
   }
+
   auto batch_starts = batch_gate->lod()[0];
   size_t seq_len = batch_starts.size() - 1;
   auto active_node = get_gru_act_type(param.activation);
@@ -112,13 +131,25 @@ void GRUCompute::Run() {
         batch_reset_hidden_prev->mutable_data<float>() +
         bstart * batch_reset_hidden_prev->dims()[1];
 
-    lite::arm::math::GRUUnitFunctor<float>::compute(gru_value,
-                                                    frame_size,
-                                                    cur_batch_size,
-                                                    active_node,
-                                                    active_gate,
-                                                    param.origin_mode,
-                                                    &ctx);
+    if (enable_quant) {
+      lite::arm::math::GRUUnitFunctor<float>::quant_compute(gru_value,
+                                                            frame_size,
+                                                            cur_batch_size,
+                                                            active_node,
+                                                            active_gate,
+                                                            param.origin_mode,
+                                                            weight_scale,
+                                                            bit_length,
+                                                            ctx);
+    } else {
+      lite::arm::math::GRUUnitFunctor<float>::compute(gru_value,
+                                                      frame_size,
+                                                      cur_batch_size,
+                                                      active_node,
+                                                      active_gate,
+                                                      param.origin_mode,
+                                                      ctx);
+    }
 
     gru_value.prev_out_value = gru_value.output_value;
   }
@@ -128,16 +159,51 @@ void GRUCompute::Run() {
   to_seq(*batch_hidden, hidden);
 }
 
+template <>
+void GRUCompute<PRECISION(kFloat)>::Run() {
+  auto& param = this->Param<operators::GRUParam>();
+  auto& ctx = this->ctx_->As<ARMContext>();
+  GRUComputeRun(param, &ctx, false);
+}
+
+template <>
+void GRUCompute<PRECISION(kInt8)>::Run() {
+  auto& param = this->Param<operators::GRUParam>();
+  auto& ctx = this->ctx_->As<ARMContext>();
+  GRUComputeRun(param, &ctx, true);
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    gru, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::GRUCompute, def)
+REGISTER_LITE_KERNEL(gru,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::GRUCompute<PRECISION(kFloat)>,
+                     def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("H0", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Weight", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("BatchGate", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("BatchResetHiddenPrev", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("BatchHidden", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Hidden", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(gru,
+                     kARM,
+                     kInt8,
+                     kNCHW,
+                     paddle::lite::kernels::arm::GRUCompute<PRECISION(kInt8)>,
+                     def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("H0", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Weight",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("BatchGate", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("BatchResetHiddenPrev", {LiteType::GetTensorTy(TARGET(kARM))})
