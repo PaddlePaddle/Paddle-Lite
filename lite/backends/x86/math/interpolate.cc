@@ -15,6 +15,9 @@ limitations under the License. */
 #include "lite/backends/x86/math/interpolate.h"
 #include <string>
 #include <vector>
+#if defined(__AVX__)
+#include <immintrin.h>
+#endif
 #include "lite/backends/x86/math/math_function.h"
 
 namespace paddle {
@@ -94,6 +97,7 @@ void bilinear_interp(const float* input_data,
   }
 
   int total_count = n * c;
+#if defined(__AVX__)
   float* buf = (float*)malloc(out_w * 2 * sizeof(float));
   int in_stride = in_h * in_w, out_stride = out_h * out_w;
   for (int i = 0; i < total_count; i++) {
@@ -101,8 +105,8 @@ void bilinear_interp(const float* input_data,
     for (int h = 0; h < out_h; h++) {
       float* output_ptr = output_data + i * out_stride + h * out_w;
       // load input 
-      const float* in_row0 = input_data + i * in_stride + vy_n[h] * in_w;
-      const float* in_row1 = input_data + i * in_stride + vy_s[h] * in_w;
+      const float* in_row0 = input_data_ptr + vy_n[h] * in_w;
+      const float* in_row1 = input_data_ptr + vy_s[h] * in_w;
       for(int idx = 0; idx < out_w; ++ idx) {
         buf[idx] = in_row0[vx_w[idx]] * vd_e[idx] + in_row0[vx_e[idx]] * vd_w[idx];
         buf[idx + out_w] = in_row1[vx_w[idx]] * vd_e[idx] + in_row1[vx_e[idx]] * vd_w[idx];        
@@ -140,6 +144,26 @@ void bilinear_interp(const float* input_data,
     }
   }
   free(buf);
+#else
+#ifdef PADDLE_WITH_MKLML
+#pragma omp parallel for collapse(3)
+#endif
+  for (int i = 0; i < total_count; i++) {
+    for (int h = 0; h < out_h; h++) {
+      for (int w = 0; w < out_w; w++) {
+        // bilinear interpolation
+        const float* input_data_ptr = input_data + i * in_h * in_w;
+        float* output_data_ptr =
+            output_data + i * out_h * out_w + h * out_w + w;
+        *output_data_ptr =
+            input_data_ptr[vy_n[h] * in_w + vx_w[w]] * vd_s[h] * vd_e[w] +
+            input_data_ptr[vy_s[h] * in_w + vx_w[w]] * vd_n[h] * vd_e[w] +
+            input_data_ptr[vy_n[h] * in_w + vx_e[w]] * vd_s[h] * vd_w[w] +
+            input_data_ptr[vy_s[h] * in_w + vx_e[w]] * vd_n[h] * vd_w[w];
+      }
+    }
+  }
+#endif
 }
 void nearest_interp(const float* input_data,
                     float* output_data,
