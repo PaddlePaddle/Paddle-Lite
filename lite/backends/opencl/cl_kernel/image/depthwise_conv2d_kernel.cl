@@ -22,7 +22,8 @@ __kernel void depth_conv2d_3x3(
     __read_only image2d_t filter,
     __read_only image2d_t bias,
     __write_only image2d_t output_image,
-    __private const int stride,
+    __private const int stride_h,
+    __private const int stride_w,
     __private const int offset,
     __private const int dilation,
     __private const int input_c,
@@ -39,7 +40,7 @@ __kernel void depth_conv2d_3x3(
   const int batch_index = out_nh / output_height;
   const int out_nh_in_one_batch = out_nh % output_height;
 
-  int2 stride_xy = (int2)(stride, stride);
+  int2 stride_xy = (int2)(stride_w, stride_h);
   int2 ouput_pos_in_one_block = (int2)(out_w, out_nh_in_one_batch);
 
   int2 in_pos_in_one_block =
