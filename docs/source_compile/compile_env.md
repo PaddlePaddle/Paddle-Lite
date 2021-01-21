@@ -230,7 +230,7 @@ brew cask install java
 
 ## 4. Windows开发环境
 
-编译环境需求，目前Windows暂不支持GPU编译，仅支持[X86平台](../demo_guides/x86.html#windows)预测库编译。
+编译环境需求，目前Windows仅支持[X86平台](../demo_guides/x86.html#windows)预测库编译。
 
 - Windows 10 专业版
 - *Python 版本 2.7/3.5.1+ (64 bit)*
