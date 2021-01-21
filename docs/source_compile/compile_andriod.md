@@ -76,7 +76,16 @@ inference_lite_lib.android.armv8/
 --with_log: (OFF|ON)         是否输出日志信息, 默认为 ON
 --with_exception: (OFF|ON)   是否在错误发生时抛出异常，默认为 OFF   
 --with_extra: (OFF|ON)       是否编译OCR/NLP模型相关kernel&OP，默认为OFF，只编译CV模型相关kernel&OP
+--android_api_level: (num)   指定编译时支持的最低Android API Level，默认为Default
 ```
+
+- Android 版本支持情况
+Paddle-Lite 默认支持的最低安卓版本如下表所示，使用者可以通过`--android_api_level`选项设定一个具体的数值，该数值应不低于下表中最低支持的 Android API Level。
+
+| Paddle-Lite Requird / ARM ABI                | armv7 | armv8 |
+| :-- | :-- | :-- |
+| Supported Minimum Android API Level          |  16   |  21   |
+| Supported Minimum Android Platform Version   |  4.1  |  5.0  |
 
 - 裁剪预测库方法（只编译模型中的kernel&OP，降低预测库体积），详情请参考:  [裁剪预测库](library_tailoring)
 
