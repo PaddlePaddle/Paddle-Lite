@@ -74,7 +74,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   auto insert_invalid_op_nodes_for_specific_target = [&](
       std::set<std::string> op_node_set, TargetType specific_target) {
     std::set<std::string> invalid_op_nodes_opencl = {
-        "layout", "fc", "yolo_box", "shape"};
+        "layout", "fc", "yolo_box", "shape", "slice"};
     for (auto& op_node : graph->StmtTopologicalOrder()) {
       if (!op_node->IsStmt()) continue;
       TargetType op_target_type = op_node->AsStmt().place().target;
