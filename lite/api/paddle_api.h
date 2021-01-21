@@ -135,60 +135,6 @@ class LITE_API PaddlePredictor {
   lite_api::PowerMode mode_{lite_api::LITE_POWER_NO_BIND};
 };
 
-/// Base class for all the configs.
-class LITE_API ConfigBase {
-  std::string model_dir_;
-  int threads_{1};
-  PowerMode mode_{LITE_POWER_NO_BIND};
-  // gpu opencl
-  CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
-  CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
-  // Where to cache the npu/xpu/rknpu/apu offline model to the binary files
-  std::string subgraph_model_cache_dir_{""};
-  // Set the cached npu/xpu/rknpu/apu offline model from the buffers
-  std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
-      subgraph_model_cache_buffers_{};
-  int device_id_{0};
-  int x86_math_num_threads_ = 1;
-
- public:
-  explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
-  // set Model_dir
-  void set_model_dir(const std::string& x) { model_dir_ = x; }
-  const std::string& model_dir() const { return model_dir_; }
-  // set Thread
-  void set_threads(int threads);
-  int threads() const { return threads_; }
-  // set Power_mode
-  void set_power_mode(PowerMode mode);
-  PowerMode power_mode() const { return mode_; }
-  // set GPU opencl tune
-  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
-                       size_t lws_repeats = 4);
-  // set GPU opencl precision
-  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
-  // set subgraph_model_dir
-  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
-    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
-  }
-  const std::string& subgraph_model_cache_dir() const {
-    return subgraph_model_cache_dir_;
-  }
-  void set_subgraph_model_cache_buffers(const std::string& key,
-                                        const std::vector<char>& cfg,
-                                        const std::vector<char>& bin);
-  const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>&
-  subgraph_model_cache_buffers() const {
-    return subgraph_model_cache_buffers_;
-  }
-  // set Device ID
-  void set_device_id(int device_id) { device_id_ = device_id; }
-  int get_device_id() const { return device_id_; }
-  // set x86_math_num_threads
-  void set_x86_math_num_threads(int threads);
-  int x86_math_num_threads() const;
-};
-
 class LITE_API CxxModelBuffer {
  public:
   CxxModelBuffer(const char* program_buffer,
@@ -320,6 +266,47 @@ class LITE_API CxxConfig : public ConfigBase {
   bool quant_model() const { return quant_model_; }
   void set_quant_type(QuantType quant_type) { quant_type_ = quant_type; }
   QuantType quant_type() const { return quant_type_; }
+};
+
+// Base class for all the configs
+class LITE_API ConfigBase {
+ public:
+  ~ConfigBase();
+  explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
+
+  // set Model_dir
+  void set_model_dir(const std::string& x);
+  const std::string& model_dir() const;
+  // set Thread
+  void set_threads(int threads);
+  int threads() const;
+  // set Power_mode
+  void set_power_mode(PowerMode mode);
+  PowerMode power_mode() const;
+  // set GPU opencl tune
+  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE);
+  // set GPU opencl precision
+  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
+  // set subgraph_model_dir
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir);
+  const std::string& subgraph_model_cache_dir() const;
+  void set_subgraph_model_cache_buffers(const std::string& key,
+                                        const std::vector<char>& cfg,
+                                        const std::vector<char>& bin);
+  const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>&
+  subgraph_model_cache_buffers() const;
+  // set Device ID
+  void set_device_id(int device_id);
+  int get_device_id() const;
+  // set x86_math_num_threads
+  void set_x86_math_num_threads(int threads);
+  int x86_math_num_threads() const;
+
+ private:
+  // Internal implementation class
+  class Impl;
+  // Pointer to the internal implementation
+  unique_ptr<Impl> pimpl;
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

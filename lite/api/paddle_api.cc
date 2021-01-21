@@ -257,77 +257,153 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
   return std::shared_ptr<PaddlePredictor>();
 }
 
-ConfigBase::ConfigBase(PowerMode mode, int threads) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Init();
-  lite::DeviceInfo::Global().SetRunMode(mode, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
-}
+class ConfigBase::Impl {
+ public:
+  std::string model_dir_;
+  int threads_{1};
+  PowerMode mode_{LITE_POWER_NO_BIND};
+  // gpu opencl
+  CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
+  CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
+  // Where to cache the npu/xpu/rknpu/apu offline model to the binary files
+  std::string subgraph_model_cache_dir_{""};
+  // Set the cached npu/xpu/rknpu/apu offline model from the buffers
+  std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
+      subgraph_model_cache_buffers_{};
+  int device_id_{0};
+  int x86_math_num_threads_ = 1;
 
-void ConfigBase::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
-#ifdef LITE_WITH_OPENCL
-  if (paddle::lite_api::IsOpenCLBackendValid()) {
-    opencl_tune_mode_ = tune_mode;
-    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_,
-                                                     lws_repeats);
-#ifdef LITE_WITH_LOG
-    LOG(INFO) << "opencl_tune_mode:"
-              << static_cast<size_t>(
-                     paddle::lite::CLRuntime::Global()->auto_tune());
+  explicit Impl(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1) {
+#ifdef LITE_WITH_ARM
+    lite::DeviceInfo::Init();
+    lite::DeviceInfo::Global().SetRunMode(mode, threads);
+    mode_ = lite::DeviceInfo::Global().mode();
+    threads_ = lite::DeviceInfo::Global().threads();
 #endif
   }
-#endif
-}
-
-void ConfigBase::set_opencl_precision(CLPrecisionType p) {
-#ifdef LITE_WITH_OPENCL
-  if (paddle::lite_api::IsOpenCLBackendValid()) {
-    opencl_precision_ = p;
-    paddle::lite::CLRuntime::Global()->set_precision(p);
-#ifdef LITE_WITH_LOG
-    LOG(INFO) << "get opencl precision:"
-              << static_cast<size_t>(
-                     paddle::lite::CLRuntime::Global()->get_precision());
+  // set Model_dir
+  void set_model_dir(const std::string &x) { model_dir_ = x; }
+  // set Thread
+  void set_threads(int threads) {
+#ifdef LITE_WITH_ARM
+    lite::DeviceInfo::Global().SetRunMode(mode_, threads);
+    mode_ = lite::DeviceInfo::Global().mode();
+    threads_ = lite::DeviceInfo::Global().threads();
 #endif
   }
-#endif
-}
-
-void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
+  // set Power_mode
+  void set_power_mode(PowerMode mode) {
 #ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode, threads_);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
+    lite::DeviceInfo::Global().SetRunMode(mode, threads_);
+    mode_ = lite::DeviceInfo::Global().mode();
+    threads_ = lite::DeviceInfo::Global().threads();
 #endif
+  }
+  // set GPU opencl tune
+  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE) {
+#ifdef LITE_WITH_OPENCL
+    if (paddle::lite_api::IsOpenCLBackendValid()) {
+      opencl_tune_mode_ = tune_mode;
+      paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_);
+#ifdef LITE_WITH_LOG
+      LOG(INFO) << "opencl_tune_mode:"
+                << static_cast<size_t>(
+                       paddle::lite::CLRuntime::Global()->auto_tune());
+#endif
+    }
+#endif
+  }
+  // set GPU opencl precision
+  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO) {
+#ifdef LITE_WITH_OPENCL
+    if (paddle::lite_api::IsOpenCLBackendValid()) {
+      opencl_precision_ = p;
+      paddle::lite::CLRuntime::Global()->set_precision(p);
+#ifdef LITE_WITH_LOG
+      LOG(INFO) << "get opencl precision:"
+                << static_cast<size_t>(
+                       paddle::lite::CLRuntime::Global()->get_precision());
+#endif
+    }
+#endif
+  }
+
+  // set subgraph_model_dir
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  void set_subgraph_model_cache_buffers(const std::string &key,
+                                        const std::vector<char> &cfg,
+                                        const std::vector<char> &bin) {
+    CHECK(!key.empty());
+    CHECK(!cfg.empty());
+    CHECK(!bin.empty());
+    CHECK_EQ(subgraph_model_cache_buffers_.count(key), 0);
+    subgraph_model_cache_buffers_[key] =
+        std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
+  }
+  // set Device ID
+  void set_device_id(int device_id) { device_id_ = device_id; }
+  // set x86_math_num_threads
+  void set_x86_math_num_threads(int threads) {
+    x86_math_num_threads_ = threads;
+  }
 }
 
-void ConfigBase::set_threads(int threads) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode_, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
+ConfigBase::ConfigBase(PowerMode mode, int threads)
+    pImpl(std::make_unique<Impl>(mode, threads)) {
 }
+ConfigBase::~ConfigBase() = default;
 
-#ifdef LITE_WITH_X86
-void ConfigBase::set_x86_math_num_threads(int threads) {
-  x86_math_num_threads_ = threads;
+// set Model_dir
+void ConfigBase::set_model_dir(const std::string &x) {
+  pimpl->set_model_dir(x);
 }
-int ConfigBase::x86_math_num_threads() const { return x86_math_num_threads_; }
-#endif
-
+const ConfigBase::std::string &model_dir() const { return pimpl->model_dir_; }
+// set Thread
+void ConfigBase::set_threads(int threads) { pimpl->set_threads(threads); }
+int ConfigBase::threads() const { return pimpl->threads_; }
+// set Power_mode
+void ConfigBase::set_power_mode(PowerMode mode) { pimpl->set_power_mode(mode); }
+PowerMode ConfigBase::power_mode() const { return pimpl->mode_; }
+// set GPU opencl tune
+void ConfigBase::set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE) {
+  pimpl->set_opencl_tune(tune_mode);
+}
+// set GPU opencl precision
+void ConfigBase::set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO) {
+  pimpl->set_opencl_precision(p);
+}
+// set subgraph_model_dir
+void ConfigBase::set_subgraph_model_cache_dir(
+    std::string subgraph_model_cache_dir) {
+  pimpl->set_subgraph_model_cache_dir(subgraph_model_cache_dir);
+}
+const ConfigBase::std::string &subgraph_model_cache_dir() const {
+  return pimpl->subgraph_model_cache_dir_;
+}
 void ConfigBase::set_subgraph_model_cache_buffers(
     const std::string &key,
     const std::vector<char> &cfg,
     const std::vector<char> &bin) {
-  CHECK(!key.empty());
-  CHECK(!cfg.empty());
-  CHECK(!bin.empty());
-  CHECK_EQ(subgraph_model_cache_buffers_.count(key), 0);
-  subgraph_model_cache_buffers_[key] =
-      std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
+  pimpl->set_subgraph_model_cache_buffers(key, cfg, bin);
+}
+const ConfigBase::std::map<std::string,
+                           std::pair<std::vector<char>, std::vector<char>>>
+    &ConfigBase::subgraph_model_cache_buffers() const {
+  return pimpl->subgraph_model_cache_buffers_;
+}
+// set Device ID
+void ConfigBase::set_device_id(int device_id) {
+  pimpl->set_device_id(device_id);
+}
+int ConfigBase::get_device_id() const { return pimpl->device_id_; }
+// set x86_math_num_threads
+void ConfigBase::set_x86_math_num_threads(int threads) {
+  pimpl->set_x86_math_num_threads(threads);
+}
+int ConfigBase::x86_math_num_threads() const {
+  return pimpl->x86_math_num_threads_;
 }
 
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
