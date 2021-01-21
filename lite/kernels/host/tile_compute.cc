@@ -62,7 +62,6 @@ void TileCompute<T, PType>::Run() {
   out->Resize(out_dims);
   Tensor tmp_src_tensor;
   Tensor tmp_dst_tensor;
-  auto out_data = out->template mutable_data<T>();
   auto in_data = in->template data<T>();
   tmp_src_tensor.Resize(out_dims);
   tmp_dst_tensor.Resize(out_dims);
