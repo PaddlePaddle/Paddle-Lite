@@ -2092,6 +2092,14 @@ struct XPUGenerateSequenceParam : ParamBase {
   int dtype{-1};
 };
 
+struct XPULogitParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+  float eps{1e-7};
+
+  std::string op_type{""};
+};
+
 // For DeformableConvolution op
 struct DeformableConvParam : ParamBase {
   lite::Tensor* x{};
