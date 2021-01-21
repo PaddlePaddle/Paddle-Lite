@@ -30,14 +30,6 @@ class UnsqueezeCompute
   virtual ~UnsqueezeCompute() = default;
 };
 
-class Unsqueeze2Compute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
- public:
-  void Run() override;
-
-  virtual ~Unsqueeze2Compute() = default;
-};
-
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite

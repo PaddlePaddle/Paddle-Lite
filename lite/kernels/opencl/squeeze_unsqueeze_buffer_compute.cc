@@ -44,20 +44,27 @@ class SqueezeUnsqueezeCompute
       auto* kernel_param = param_.get_mutable<param_t>();
       x = kernel_param->X;
       out = kernel_param->Out;
+      kernel_inplace = kernel_param->inplace;
     } else {
       auto* kernel_param = param_.get_mutable<operators::UnsqueezeParam>();
       x = kernel_param->X;
       out = kernel_param->Out;
+      kernel_inplace = kernel_param->inplace;
     }
 
     auto* x_data = x->data<float, cl::Buffer>();
-    auto* out_data = out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-
-    d2d_duration_ =
-        CopyFromDeviceToDeviceSync(out_data, x_data, out->memory_size());
+    if (kernel_inplace) {
+      auto out_dims = out->dims();
+      out->ShareDataWith(*x);
+      out->Resize(out_dims);
+    } else {
+      auto* out_data = out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      d2d_duration_ =
+          CopyFromDeviceToDeviceSync(out_data, x_data, out->memory_size());
+    }
 #ifdef LITE_WITH_LOG
     size_t buffer_size;
-    out_data->getInfo(CL_MEM_SIZE, &buffer_size);
+    x_data->getInfo(CL_MEM_SIZE, &buffer_size);
     VLOG(4) << "out of squeeze, opencl buffer size: " << buffer_size;
     VLOG(4) << "squeeze out dims: " << out->dims();
     VLOG(4) << "out->memory_size():" << out->memory_size();
@@ -66,12 +73,15 @@ class SqueezeUnsqueezeCompute
 
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-    ch->kernel_func_name = "io_copy_d2d";
-    ch->io_duration = d2d_duration_;
+    if (!kernel_inplace) {
+      ch->kernel_func_name = "io_copy_d2d";
+      ch->io_duration = d2d_duration_;
+    }
   }
 #endif
 
   float d2d_duration_{0};
+  bool kernel_inplace;
 };
 
 }  // namespace opencl
