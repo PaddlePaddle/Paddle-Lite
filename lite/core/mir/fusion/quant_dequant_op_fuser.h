@@ -94,7 +94,7 @@ class QuantDequantOpFuser : public FuseBase {
   std::string quant_dequant_op_type_{};
 };
 
-/* DynamicQuantOpFuser is applied for LSTM for now.
+/* DynamicQuantOpFuser is applied for LSTM and GRU for now.
  * This fuser collects the weight scale and convert the weight from fp32
  * to int8.
 */

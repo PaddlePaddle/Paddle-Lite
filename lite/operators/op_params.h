@@ -1039,6 +1039,9 @@ struct GRUParam : ParamBase {
   std::string activation{"tanh"};
   bool is_reverse{false};
   bool origin_mode{false};
+
+  // for int8
+  WITH_INT8_CONFIG
 };
 
 /// ----------------------- BeamSearchDecode operators ----------------------f
