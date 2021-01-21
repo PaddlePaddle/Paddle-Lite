@@ -22,24 +22,24 @@ namespace fp16 {
 // clang-format off
 #ifdef __aarch64__
 #define GEMV_INIT                       \
-  "prfm  pldl1keep, [%[in]]     \n"     \
+  "prfm  pldl1keep, [%[ptr_in]] \n"     \
   "prfm  pldl1keep, [%[ptr_w0]] \n"     \
   "prfm  pldl1keep, [%[ptr_w1]] \n"     \
   "prfm  pldl1keep, [%[ptr_w2]] \n"     \
   "prfm  pldl1keep, [%[ptr_w3]] \n"     \
-  "dup v9.8h, %[vbias].h[0]     \n"     \
+  "movi v9.8h, #0               \n"     \
   "prfm  pldl1keep, [%[ptr_w4]] \n"     \
-  "dup v10.8h, %[vbias].h[1]    \n"     \
+  "movi v10.8h, #0               \n"    \
   "prfm  pldl1keep, [%[ptr_w5]] \n"     \
-  "dup v11.8h, %[vbias].h[2]    \n"     \
+  "movi v11.8h, #0               \n"    \
   "prfm  pldl1keep, [%[ptr_w6]] \n"     \
-  "dup v12.8h, %[vbias].h[3]    \n"     \
+  "movi v12.8h, #0               \n"    \
   "prfm  pldl1keep, [%[ptr_w7]] \n"     \
-  "dup v13.8h, %[vbias].h[4]    \n"     \
+  "movi v13.8h, #0               \n"    \
   "cmp %w[cnt], #1              \n"     \
-  "dup v14.8h, %[vbias].h[5]    \n"     \
-  "dup v15.8h, %[vbias].h[6]    \n"     \
-  "dup v16.8h, %[vbias].h[7]    \n"     \
+  "movi v14.8h, #0               \n"    \
+  "movi v15.8h, #0               \n"    \
+  "movi v16.8h, #0               \n"    \
   "blt 1f                       \n"     \
   "0:                           \n"     \
   "ld1 {v0.8h}, [%[ptr_in]], #16\n"     \
@@ -104,6 +104,46 @@ namespace fp16 {
   "fmla v16.8h, v8.8h, v17.8h   \n"      \
   "bne 0b                       \n"
 
+#define STORE_TRANS                      \
+  "1:                           \n"      \
+  "cmp %w[flag_act], #0         \n"      \
+  "fadd v0.8h, v9.8h, v10.8h    \n"      \
+  "fadd v1.8h, v11.8h, v12.8h   \n"      \
+  "fadd v2.8h, v13.8h, v14.8h   \n"      \
+  "fadd v3.8h, v15.8h, v16.8h   \n"      \
+  "beq 2f                       \n"      \
+  "cmp %w[flag_act], #1         \n"      \
+  "fadd v4.8h, v0.8h, v1.8h     \n"      \
+  "fadd v5.8h, v2.8h, v3.8h    \n"       \
+  "fadd v6.8h, v4.8h, v5.8h    \n"       \
+  "fadd v6.8h, v6.8h, %[vbias].8h\n"     \
+  "beq 3f                       \n"      \
+  "cmp %w[flag_act], #2         \n"      \
+  "beq 4f                       \n"      \
+  /* leakyrelu */                        \
+  "fmul v7.8h, v6.8h, %[valpha].8h\n"    \
+  "fcmge v8.8h, v6.8h, %[vzero].8h\n"    \
+  "bif  v6.16b, v7.16b, v8.16b  \n"      \
+  "b 5f                         \n"      \
+  /* relu6 */                            \
+  "4:                           \n"      \
+  "fmax v6.8h, v6.8h, %[vzero].8h\n"     \
+  "fmin v6.8h, v6.8h, %[valpha].8h\n"    \
+  "b 5f                         \n"      \
+  /* relu */                             \
+  "3:                           \n"      \
+  "fmax v6.8h, v6.8h, %[vzero].8h\n"     \
+  "b 5f                         \n"      \
+  /* no act */                           \
+  "2:                           \n"      \
+  "fadd v4.8h, v0.8h, v1.8h    \n"       \
+  "fadd v5.8h, v2.8h, v3.8h    \n"       \
+  "fadd v6.8h, v4.8h, v5.8h    \n"       \
+  "fadd v6.8h, v6.8h, %[vbias].8h\n"     \
+  /* store */                            \
+  "5:                           \n"      \
+  "st1 {v6.8h}, [%[outptr]]     \n"
+
 #define STORE                            \
   "1:                           \n"      \
   "cmp %w[flag_act], #0         \n"      \
@@ -116,6 +156,7 @@ namespace fp16 {
   "faddp v4.8h, v0.8h, v1.8h    \n"      \
   "faddp v5.8h, v2.8h, v3.8h    \n"      \
   "faddp v6.8h, v4.8h, v5.8h    \n"      \
+  "fadd v6.8h, v6.8h, %[vbias].8h\n"     \
   "beq 3f                       \n"      \
   "cmp %w[flag_act], #2         \n"      \
   "beq 4f                       \n"      \
@@ -138,9 +179,10 @@ namespace fp16 {
   "faddp v4.8h, v0.8h, v1.8h    \n"      \
   "faddp v5.8h, v2.8h, v3.8h    \n"      \
   "faddp v6.8h, v4.8h, v5.8h    \n"      \
+  "fadd v6.8h, v6.8h, %[vbias].8h\n"     \
   /* store */                            \
   "5:                           \n"      \
-  "st1 {v6.8h}, [%[outptr]], #16\n"
+  "st1 {v6.8h}, [%[outptr]]     \n"
 
 #define GEMV_ASM_PARAMS                  \
       [ptr_in] "+r"(ptr_in),             \
@@ -152,11 +194,12 @@ namespace fp16 {
       [ptr_w5] "+r"(ptr_w5),             \
       [ptr_w6] "+r"(ptr_w6),             \
       [ptr_w7] "+r"(ptr_w7),             \
-      [cnt] "+"(cnt_col)                 \
+      [cnt] "+r"(cnt_col)                \
     : [vbias] "w"(vbias),                \
       [vzero] "w"(vzero),                \
       [valpha] "w"(valpha),              \
       [flag_act] "r"(flag_act),          \
+      [outptr] "r"(out_p),              \
       [stride] "r"(stride)               \
     : "cc", "memory", "v0", "v1", "v2",  \
       "v3", "v4", "v5", "v6", "v7",      \
@@ -165,16 +208,23 @@ namespace fp16 {
 
 #endif
 // clang-format on
+#define PTR_ACQUIRE_PARAM1(dtype)                                    \
+  const dtype *ptr_zero, const dtype *ptr_w0, const dtype *ptr_w1,   \
+      const dtype *ptr_w2, const dtype *ptr_w3, const dtype *ptr_w4, \
+      const dtype *ptr_w5, const dtype *ptr_w6, const dtype *ptr_w7, \
+      const dtype *ptr_w, dtype *out_p, dtype *out_temp, int remain
+
 #define PTR_ACQUIRE_PARAM(dtype)                                     \
   const dtype *ptr_zero, const dtype *ptr_w0, const dtype *ptr_w1,   \
       const dtype *ptr_w2, const dtype *ptr_w3, const dtype *ptr_w4, \
       const dtype *ptr_w5, const dtype *ptr_w6, const dtype *ptr_w7, \
-      const dtype *ptr_w, dtype *out_p, dtype *out_tmp, int remain
+      int remain
 
 inline void act_acquire(lite_api::ActivationType act,
-                        int &flag_act,      // NOLINT
-                        float &local_alpha  // NOLINT
-                        ) {
+                        int &flag_act,       // NOLINT
+                        float &local_alpha,  // NOLINT
+                        float six,
+                        float alpha) {
   if (act == lite_api::ActivationType::kRelu) {
     flag_act = 0x01;
   } else if (act == lite_api::ActivationType::kRelu6) {
@@ -186,7 +236,7 @@ inline void act_acquire(lite_api::ActivationType act,
   }
 }
 
-inline void ptr_acquire(PTR_ACQUIRE_PARAM(float16_t)) {
+inline void ptr_acquire(PTR_ACQUIRE_PARAM1(float16_t)) {
   switch (8 - remain) {
     case 7:
       ptr_w1 = ptr_zero;
@@ -233,8 +283,57 @@ inline void ptr_acquire(PTR_ACQUIRE_PARAM(float16_t)) {
       break;
   }
 }
+inline void ptr_acquire_remain(PTR_ACQUIRE_PARAM(float16_t)) {
+  switch (8 - remain) {
+    case 7:
+      ptr_w0 = ptr_zero;
+      break;
+    case 6:
+      ptr_w1 = ptr_zero;
+      break;
+    case 5:
+      ptr_w2 = ptr_zero;
+      break;
+    case 4:
+      ptr_w3 = ptr_zero;
+      break;
+    case 3:
+      ptr_w4 = ptr_zero;
+      break;
+    case 2:
+      ptr_w5 = ptr_zero;
+      break;
+    case 1:
+      ptr_w6 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
 
-bool gemv_fp16_trans(const float16_t *A,
+inline void ptr_acquire_norm(PTR_ACQUIRE_PARAM(float16_t)) {
+  switch (8 - remain) {
+    case 7:
+      ptr_w1 = ptr_zero;
+    case 6:
+      ptr_w2 = ptr_zero;
+    case 5:
+      ptr_w3 = ptr_zero;
+    case 4:
+      ptr_w4 = ptr_zero;
+    case 3:
+      ptr_w5 = ptr_zero;
+    case 2:
+      ptr_w6 = ptr_zero;
+    case 1:
+      ptr_w7 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
+
+void gemv_fp16_trans(const float16_t *A,
                      const float16_t *x,
                      float16_t *y,
                      int M,
@@ -242,23 +341,31 @@ bool gemv_fp16_trans(const float16_t *A,
                      float16_t beta,
                      bool is_bias,
                      const float16_t *bias,
-                     bool flag_act,
+                     bool is_act,
                      lite_api::ActivationType act,
-                     const ARMContext *ctx,
+                     ARMContext *ctx,
                      float16_t six,
                      float16_t alpha) {
   int Nup = (N + 7) / 8 * 8;
-  float16_t *ptr_zero = ctx->workspace_data<float16_t>();
+  int Mup = (M + 7) / 8 * 8;
+  auto ptr_zero = ctx->workspace_data<float16_t>();
   memset(ptr_zero, 0, Nup * sizeof(float16_t));
-  float16_t *ptr_w = ptr_zero + Nup;
-  lite::TargetWrapperHost::MemcpySync(ptr_w, A, N);
+  auto bias_ptr = ptr_zero + Nup;
+  if (is_bias) {
+    lite::TargetWrapperHost::MemcpySync(bias_ptr, bias, M * sizeof(float16_t));
+  } else {
+    memset(bias_ptr, 0, Mup * sizeof(float16_t));
+  }
+  float16_t *ptr_w = bias_ptr + Mup;
+  lite::TargetWrapperHost::MemcpySync(ptr_w, A, N * sizeof(float16_t));
   float16_t *data_in = ptr_w + Nup;
-  lite::TargetWrapperHost::MemcpySync(data_in, x + (M - 1) * N, N);
+  lite::TargetWrapperHost::MemcpySync(
+      data_in, x + (M - 1) * N, N * sizeof(float16_t));
   int cnt = Nup >> 3;
   float local_alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
-  if (flag_act) {
-    act_acquire(act, &flag_act, &local_alpha);
+  if (is_act) {
+    act_acquire(act, flag_act, local_alpha, six, alpha);
   }
 
 #ifdef __aarch64__
@@ -268,11 +375,13 @@ bool gemv_fp16_trans(const float16_t *A,
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t valpha = vdupq_n_f16(local_alpha);
   int stride = 16 * (M - 1);  // (8 * M - 8) * 2
+  int rem_n = N & 7;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
     int out_idx = j * 8;
     float16_t out_temp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    float16_t *ptr_out = y + out_idx;
+    float16_t *out_ptr = y + out_idx;
+    float16_t *out_p = out_ptr;
     const float16_t *ptr_in = ptr_w;
     const float16_t *ptr_w0 = x + out_idx;
     const float16_t *ptr_w1 = ptr_w0 + M;
@@ -282,25 +391,33 @@ bool gemv_fp16_trans(const float16_t *A,
     const float16_t *ptr_w5 = ptr_w4 + M;
     const float16_t *ptr_w6 = ptr_w5 + M;
     const float16_t *ptr_w7 = ptr_w6 + M;
-    float16x8_t vbias = is_bias ? vld1q_f16(bias + out_idx) : vdupq_n_f16(0.f);
+    float16x8_t vbias = vld1q_f16(bias_ptr + out_idx);
+    ptr_acquire_norm(ptr_zero,
+                     ptr_w0,
+                     ptr_w1,
+                     ptr_w2,
+                     ptr_w3,
+                     ptr_w4,
+                     ptr_w5,
+                     ptr_w6,
+                     ptr_w7,
+                     rem_n);
     if (j == out_cnt - 1 && remain) {
-      ptr_acquire(ptr_zero,
-                  ptr_w0,
-                  ptr_w1,
-                  ptr_w2,
-                  ptr_w3,
-                  ptr_w4,
-                  ptr_w5,
-                  ptr_w6,
-                  ptr_w7,
-                  data_in,
-                  out_p,
-                  out_temp,
-                  remain);
+      ptr_acquire_remain(data_in,
+                         ptr_w0,
+                         ptr_w1,
+                         ptr_w2,
+                         ptr_w3,
+                         ptr_w4,
+                         ptr_w5,
+                         ptr_w6,
+                         ptr_w7,
+                         remain);
+      out_p = out_temp;
     }
     // 8x8
     int cnt_col = cnt;
-    asm volatile(GEMV_INIT GEMV_TRANS_COMPUTE STORE : GEMV_ASM_PARAMS);
+    asm volatile(GEMV_INIT GEMV_TRANS_COMPUTE STORE_TRANS : GEMV_ASM_PARAMS);
     if (remain > 0) {
       for (int i = 0; i < remain; i++) {
         out_ptr[i] = out_p[i];
@@ -311,7 +428,7 @@ bool gemv_fp16_trans(const float16_t *A,
 #endif
 }
 
-bool gemv_fp16(const float16_t *A,
+void gemv_fp16(const float16_t *A,
                const float16_t *x,
                float16_t *y,
                bool transA,
@@ -320,37 +437,39 @@ bool gemv_fp16(const float16_t *A,
                float16_t beta,
                bool is_bias,
                const float16_t *bias,
-               bool flag_act,
+               bool is_act,
                lite_api::ActivationType act,
-               const ARMContext *ctx,
+               ARMContext *ctx,
                float16_t six,
                float16_t alpha) {
   if (transA) {
     // 8x16
     gemv_fp16_trans(
-        A, x, y, M, N, beta, is_bias, bias, flag_act, act, six, alpha);
+        A, x, y, M, N, beta, is_bias, bias, is_act, act, ctx, six, alpha);
     return;
   }
   int Nup = (N + 15) / 16 * 16;
-  float16_t *ptr_zero = ctx->workspace_data<float16_t>();
+  int Mup = (M + 7) / 8 * 8;
+  auto ptr_zero = ctx->workspace_data<float16_t>();
   memset(ptr_zero, 0, Nup * sizeof(float16_t));
-  float16_t *data_in = ptr_zero + Nup;
-  lite::TargetWrapperHost::MemcpySync(data_in, x, N);
+  auto bias_ptr = ptr_zero + Nup;
+  if (is_bias) {
+    lite::TargetWrapperHost::MemcpySync(bias_ptr, bias, M * sizeof(float16_t));
+    memset(bias_ptr + M, 0, (Mup - M) * sizeof(float16_t));
+  } else {
+    memset(bias_ptr, 0, Mup * sizeof(float16_t));
+  }
+
+  float16_t *data_in = bias_ptr + Mup;
+  lite::TargetWrapperHost::MemcpySync(data_in, x, N * sizeof(float16_t));
   float16_t *ptr_w = data_in + Nup;
-  lite::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
+  lite::TargetWrapperHost::MemcpySync(
+      ptr_w, A + (M - 1) * N, N * sizeof(float16_t));
   int cnt = Nup >> 4;
   float local_alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
-  if (flag_act) {
-    if (act == lite_api::ActivationType::kRelu) {
-      flag_act = 0x01;
-    } else if (act == lite_api::ActivationType::kRelu6) {
-      flag_act = 0x02;
-      local_alpha = six;
-    } else if (act == lite_api::ActivationType::kLeakyRelu) {
-      flag_act = 0x03;
-      local_alpha = alpha;
-    }
+  if (is_act) {
+    act_acquire(act, flag_act, local_alpha, six, alpha);
   }
 
 #ifdef __aarch64__
@@ -364,7 +483,8 @@ bool gemv_fp16(const float16_t *A,
   for (int j = 0; j < out_cnt; j++) {
     int out_idx = j * 8;
     float16_t out_temp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    float16_t *ptr_out = y + out_idx;
+    float16_t *out_ptr = y + out_idx;
+    float16_t *out_p = out_ptr;
     const float16_t *ptr_in = data_in;
     const float16_t *ptr_w0 = A + (N * out_idx);
     const float16_t *ptr_w1 = ptr_w0 + N;
@@ -374,57 +494,32 @@ bool gemv_fp16(const float16_t *A,
     const float16_t *ptr_w5 = ptr_w4 + N;
     const float16_t *ptr_w6 = ptr_w5 + N;
     const float16_t *ptr_w7 = ptr_w6 + N;
-    float16x8_t vbias = is_bias ? vld1q_f16(bias + out_idx) : vdupq_n_f16(0.f);
+    float16x8_t vbias = vld1q_f16(bias_ptr + out_idx);
     if (j == out_cnt - 1 && remain) {
-      switch (8 - remain) {
-        case 7:
-          ptr_w1 = ptr_zero;
-        case 6:
-          ptr_w2 = ptr_zero;
-        case 5:
-          ptr_w3 = ptr_zero;
-        case 4:
-          ptr_w4 = ptr_zero;
-        case 3:
-          ptr_w5 = ptr_zero;
-        case 2:
-          ptr_w6 = ptr_zero;
-        case 1:
-          ptr_w7 = ptr_zero;
-          out_p = out_temp;
-          break;
-        default:
-          break;
-      }
-      switch (8 - remain) {
-        case 7:
-          ptr_w0 = ptr_w;
-          break;
-        case 6:
-          ptr_w1 = ptr_w;
-          break;
-        case 5:
-          ptr_w2 = ptr_w;
-          break;
-        case 4:
-          ptr_w3 = ptr_w;
-          break;
-        case 3:
-          ptr_w4 = ptr_w;
-          break;
-        case 2:
-          ptr_w5 = ptr_w;
-          break;
-        case 1:
-          ptr_w6 = ptr_w;
-          break;
-        default:
-          break;
-      }
+      ptr_acquire_norm(ptr_zero,
+                       ptr_w0,
+                       ptr_w1,
+                       ptr_w2,
+                       ptr_w3,
+                       ptr_w4,
+                       ptr_w5,
+                       ptr_w6,
+                       ptr_w7,
+                       remain);
+      ptr_acquire_remain(ptr_w,
+                         ptr_w0,
+                         ptr_w1,
+                         ptr_w2,
+                         ptr_w3,
+                         ptr_w4,
+                         ptr_w5,
+                         ptr_w6,
+                         ptr_w7,
+                         remain);
     }
     // 8x16
     int cnt_col = cnt;
-    asm volatile(GEMV_INIT GEMV_TRANS_COMPUTE STORE : GEMV_ASM_PARAMS);
+    asm volatile(GEMV_INIT GEMV_COMPUTE STORE : GEMV_ASM_PARAMS);
     if (remain > 0) {
       for (int i = 0; i < remain; i++) {
         out_ptr[i] = out_p[i];

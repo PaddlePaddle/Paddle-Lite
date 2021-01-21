@@ -324,17 +324,21 @@ void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   if (flag_1x1gemm_) {
     lite::arm::math::fp16::conv1x1s1_gemm_fp16(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    // #ifdef LITE_WITH_PROFILE
-    //     kernel_func_name_ = "conv1x1s1_gemm_fp16";
-    // #endif
+// #ifdef LITE_WITH_PROFILE
+//     kernel_func_name_ = "conv1x1s1_gemm_fp16";
+// #endif
+#ifdef LITE_WITH_PROFILE
     KERNEL_FUNC_NAME("conv1x1s1_gemm_fp16")
+#endif
   } else {
     lite::arm::math::fp16::conv_im2col_gemm_fp16(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-    // #ifdef LITE_WITH_PROFILE
-    //     kernel_func_name_ = "conv_im2col_gemm_fp16";
-    // #endif
+// #ifdef LITE_WITH_PROFILE
+//     kernel_func_name_ = "conv_im2col_gemm_fp16";
+// #endif
+#ifdef LITE_WITH_PROFILE
     KERNEL_FUNC_NAME("conv_im2col_gemm_fp16")
+#endif
   }
 }
 

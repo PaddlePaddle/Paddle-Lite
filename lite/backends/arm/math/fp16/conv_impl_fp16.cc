@@ -16,6 +16,7 @@
 #include <arm_neon.h>
 #include <algorithm>
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
+#include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"

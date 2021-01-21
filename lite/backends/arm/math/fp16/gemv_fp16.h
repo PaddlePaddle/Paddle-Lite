@@ -25,7 +25,7 @@ namespace arm {
 namespace math {
 namespace fp16 {
 typedef __fp16 float16_t;
-bool gemv_fp16(const float16_t *A,
+void gemv_fp16(const float16_t *A,
                const float16_t *x,
                float16_t *y,
                bool transA,
@@ -36,7 +36,7 @@ bool gemv_fp16(const float16_t *A,
                const float16_t *bias,
                bool flag_act,
                lite_api::ActivationType act,
-               const ARMContext *ctx,
+               ARMContext *ctx,
                float16_t six = 6.f,
                float16_t alpha = 1.f);
 }  // namespace fp16
