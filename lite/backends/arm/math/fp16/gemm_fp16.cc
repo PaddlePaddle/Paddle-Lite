@@ -50,6 +50,7 @@ void gemm_prepack_8x16(bool is_transB,
                        bool has_bias,
                        const operators::ActivationParam act_param,
                        ARMContext *ctx);
+#else
 #endif
 
 /**
@@ -650,8 +651,8 @@ void loadb(float16_t *out,
         "blt 1f                                     \n"
         "0:                                         \n"
         "ldp q0, q1, [%[ptr0]], #32                 \n"
-        "prfm   pldl1keep, [%[ptr0]]                \n"
         "subs %w[cnt], %w[cnt], #1                  \n"
+        "prfm   pldl1keep, [%[ptr0]]                \n"
         "stp q0, q1, [%[outptr]]                    \n"
         "add %[outptr], %[outptr], %[stride]        \n"
         "bne 0b                                     \n"
@@ -688,9 +689,6 @@ void loadb_trans(float16_t *out,
   memset(zerobuff, 0, sizeof(uint16_t) * size);
   int cnt = x_len >> 3;
   int remain = x_len & 7;
-  uint16_t mask_buffer[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint16x8_t vzero = vdupq_n_u16(0);
-  uint16x8_t vmask = vcltq_u16(vld1q_u16(mask_buffer), vdupq_n_u16(remain));
 
 //! data B is not transposed, transpose B to k * 16
 #pragma omp parallel for
@@ -893,7 +891,6 @@ void loadb_trans(float16_t *out,
     }
   }
 }
-
 #else
 #endif
 #ifdef __aarch64__
@@ -1103,7 +1100,6 @@ void gemm_prepack_8x16(bool is_transB,
         // clang-format off
         asm volatile(
           "prfm   pldl1keep, [%[a_ptr]]       \n"
-          // "ldr q6, [%[bias_ptr]]              \n"
           "prfm   pldl1keep, [%[b_ptr]]       \n"
           "dup	v8.8h, %[vbias].h[0]          \n"
           "dup	v9.8h, %[vbias].h[0]          \n"
