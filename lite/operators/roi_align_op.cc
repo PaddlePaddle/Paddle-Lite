@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/roi_align_op.h"
+
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
@@ -49,14 +50,24 @@ bool RoiAlignOpLite::InferShapeImpl() const {
 
 bool RoiAlignOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                 lite::Scope *scope) {
-  param_.X =
-      scope->FindVar(op_desc.Input("X").front())->GetMutable<lite::Tensor>();
-  param_.ROIs =
-      scope->FindVar(op_desc.Input("ROIs").front())->GetMutable<lite::Tensor>();
+  auto x_var = scope->FindVar(op_desc.Input("X").front());
+  CHECK(x_var);
+  param_.X = x_var->GetMutable<lite::Tensor>();
+
+  auto rois_var = scope->FindVar(op_desc.Input("ROIs").front());
+  CHECK(rois_var);
+  param_.ROIs = rois_var->GetMutable<lite::Tensor>();
 
   if (op_desc.HasInput("RoisLod") && !op_desc.Input("RoisLod").empty()) {
-    param_.RoisLod = scope->FindVar(op_desc.Input("RoisLod").front())
-                         ->GetMutable<lite::Tensor>();
+    auto rois_lod_var = scope->FindVar(op_desc.Input("RoisLod").front());
+    CHECK(rois_lod_var);
+    param_.RoisLod = rois_lod_var->GetMutable<lite::Tensor>();
+  }
+
+  if (op_desc.HasInput("RoisNum") && !op_desc.Input("RoisNum").empty()) {
+    auto rois_num_var = scope->FindVar(op_desc.Input("RoisNum").front());
+    CHECK(rois_num_var);
+    param_.RoisNum = rois_num_var->GetMutable<lite::Tensor>();
   }
 
   param_.spatial_scale = op_desc.GetAttr<float>("spatial_scale");

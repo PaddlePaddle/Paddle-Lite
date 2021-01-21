@@ -163,7 +163,8 @@ class LITE_API ConfigBase {
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
   // set GPU opencl tune
-  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE);
+  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
+                       size_t lws_repeats = 4);
   // set GPU opencl precision
   void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
   // set subgraph_model_dir
