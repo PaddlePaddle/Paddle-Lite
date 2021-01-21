@@ -51,7 +51,7 @@ typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
 
 void fill_tensor_host_rand(uint8_t* dio, int64_t size) {
-  fill_data_rand(dio, 0, 256, size);
+  fill_data_rand<uint8_t>(dio, 0, 256, size);
 }
 
 void print_int8(uint8_t* ptr, int size, int width) {
@@ -797,11 +797,11 @@ void print_info(ImageFormat srcFormat,
     LOG(INFO) << "Layout NHWC";
   }
 }
-#if 0
+#if 1
 TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 4, 8, 16, 112, 224, 1092}) {
-      for (auto h : {1, 4, 16, 112, 224}) {
+    for (auto w : {4, 8, 16, 112, 224, 1092}) {
+      for (auto h : {4, 16, 112, 224}) {
         for (auto rotate : {180}) {
           for (auto flip : {0}) {
             for (auto srcFormat : {12}) {
@@ -809,20 +809,20 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
                 for (auto layout : {1}) {
                   // RGBA = 0, BGRA, RGB, BGR, GRAY, NV21 = 11, NV12
                   if ((srcFormat == ImageFormat::RGB ||
-                      srcFormat == ImageFormat::BGR) &&
+                       srcFormat == ImageFormat::BGR) &&
                       (dstFormat == ImageFormat::RGBA ||
                        dstFormat == ImageFormat::BGRA)) {
                     continue;  // anakin is not suupport
                   }
                   print_info((ImageFormat)srcFormat,
-                            (ImageFormat)dstFormat,
-                            w,
-                            h,
-                            w,
-                            h,
-                            rotate,
-                            flip,
-                            layout);
+                             (ImageFormat)dstFormat,
+                             w,
+                             h,
+                             w,
+                             h,
+                             rotate,
+                             flip,
+                             layout);
                   test_convert({FLAGS_cluster},
                                {1},
                                w,
@@ -845,7 +845,7 @@ TEST(TestImageConvertRand, test_func_image_convert_preprocess) {
   }
 }
 #endif
-#if 0
+#if 1
 TEST(TestImageResizeRand, test_func_image_resize_preprocess) {
   if (FLAGS_basic_test) {
     for (auto w : {8, 16, 112, 224, 1092}) {
@@ -858,14 +858,14 @@ TEST(TestImageResizeRand, test_func_image_resize_preprocess) {
                   for (auto layout : {1}) {
                     auto dstFormat = srcFormat;
                     print_info((ImageFormat)srcFormat,
-                                (ImageFormat)dstFormat,
-                                w,
-                                h,
-                                ww,
-                                hh,
-                                rotate,
-                                flip,
-                                layout);
+                               (ImageFormat)dstFormat,
+                               w,
+                               h,
+                               ww,
+                               hh,
+                               rotate,
+                               flip,
+                               layout);
                     test_resize({FLAGS_cluster},
                                 {1},
                                 w,
@@ -892,8 +892,8 @@ TEST(TestImageResizeRand, test_func_image_resize_preprocess) {
 #if 1
 TEST(TestImageFlipRand, test_func_image_flip_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 8, 16, 112, 224, 1080}) {
-      for (auto h : {1, 16, 112, 224}) {
+    for (auto w : {8, 16, 112, 224, 1080}) {
+      for (auto h : {16, 112, 224}) {
         for (auto rotate : {90}) {
           for (auto flip : {-1, 0, 1}) {
             for (auto srcFormat : {0, 1, 2, 3}) {
@@ -932,8 +932,8 @@ TEST(TestImageFlipRand, test_func_image_flip_preprocess) {
 #if 1
 TEST(TestImageRotateRand, test_func_image_rotate_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 8, 16, 112, 224, 1092}) {
-      for (auto h : {1, 16, 112, 224}) {
+    for (auto w : {8, 16, 112, 224, 1092}) {
+      for (auto h : {16, 112, 224}) {
         for (auto rotate : {90, 180, 270}) {
           for (auto flip : {0}) {
             for (auto srcFormat : {0, 1, 2, 3}) {
@@ -972,8 +972,8 @@ TEST(TestImageRotateRand, test_func_image_rotate_preprocess) {
 #if 1
 TEST(TestImageToTensorRand, test_func_image_to_tensor_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 8, 16, 112, 224, 1092}) {
-      for (auto h : {1, 16, 112, 224}) {
+    for (auto w : {8, 16, 112, 224, 1092}) {
+      for (auto h : {16, 112, 224}) {
         for (auto rotate : {90}) {
           for (auto flip : {0}) {
             for (auto srcFormat : {0, 1, 2, 3}) {

@@ -33,3 +33,10 @@
 #ifdef LITE_ON_TINY_PUBLISH
 #include "lite/utils/replace_stl/stream.h"
 #endif
+
+// On windows environment, min and max will be undefined to
+// avoid compiling error.
+#if defined(_MSC_VER)
+#undef min
+#undef max
+#endif
