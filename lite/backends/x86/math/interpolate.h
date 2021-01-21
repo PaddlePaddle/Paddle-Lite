@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <immintrin.h>
 #include <string>
 #include <vector>
 #include "lite/core/tensor.h"
