@@ -4692,8 +4692,8 @@ void gemm_prepack_sdot_intragroup_int8(const int8_t* A_packed,
   size_t llc_size = ctx->llc_size() / 4;
   auto workspace = ctx->workspace_data<int8_t>();
   //! MBLOCK_INT8_DOT * x (result) + MBLOCK_INT8_DOT * k/4 (A) + x * k (B) = l2
-  int x_block = (llc_size - (MBLOCK_INT8_DOT * K/4)) /
-                (sizeof(int8_t) * (K + MBLOCK_INT8_DOT));
+  int x_block = (llc_size - (MBLOCK_INT8_DOT * K/4)*2) /
+                (K + MBLOCK_INT8_DOT*sizeof(float));
   x_block /= NBLOCK_INTRAGROUP_INT8_DOT;
   x_block *= NBLOCK_INTRAGROUP_INT8_DOT;
   int x_num = (N + (x_block - 1)) / x_block;

@@ -125,7 +125,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run WinogradConv Int8";
   }else if (param.groups == 1 && kw == 1 && sw == 1 && no_dilation &&
-             pads_equal) {
+             pads_equal && param.is_sparse) {
     impl_ = new IntragroupConv<PRECISION(kInt8), PRECISION(kFloat)>;
     VLOG(3) << "Run IntragroupConv Int8";
   }  else {
@@ -180,7 +180,7 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
     VLOG(3) << "Run WinogradConv Int8";
   } else if (param.groups == 1 && kw == 1 && sw == 1 && no_dilation &&
-             pads_equal) {
+             pads_equal && param.is_sparse) {
     impl_ = new IntragroupConv<PRECISION(kInt8), PRECISION(kInt8)>;
     VLOG(3) << "Run IntragroupConv Int8";
   } 
