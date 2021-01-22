@@ -36,10 +36,14 @@ bool IsQuantizedMode(const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
       "fake_quantize_abs_max",
       "fake_quantize_range_abs_max",
       "fake_quantize_moving_average_abs_max",
-      "fake_quantize_dequantize_moving_average_abs_max",
+      "fake_channel_wise_quantize_abs_max",
       "fake_dequantize_max_abs",
-      "fake_channel_wise_dequantize_max_abs"};
-  const std::vector<std::string> dynamic_quant_op = {"lstm"};
+      "fake_channel_wise_dequantize_max_abs",
+      "fake_quantize_dequantize_abs_max",
+      "fake_quantize_dequantize_moving_average_abs_max",
+      "fake_channel_wise_quantize_dequantize_abs_max",
+  };
+  const std::vector<std::string> dynamic_quant_op = {"lstm", "gru"};
   bool is_quantized_model = false;
   for (size_t i = 0; i < program_desc->BlocksSize() && !is_quantized_model;
        ++i) {
