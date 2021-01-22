@@ -6,6 +6,8 @@
 Welcome to Paddle-Lite's documentation!
 =======================================
 
+*请在页面左下角选择特定版本的文档。*
+
 .. toctree::
   :maxdepth: 1
   :caption: 简介
