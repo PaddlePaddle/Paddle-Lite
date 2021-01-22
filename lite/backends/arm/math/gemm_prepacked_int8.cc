@@ -2509,7 +2509,6 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "b  9f\n"
 
 #define GEMM_INT8_LEAKY_RELU  \
-
   /* do relu6 */       \
   "11: \n"             \
   "vmov.i32   q15, #0\n"      /* for relu */  \
@@ -2640,21 +2639,21 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "vst1.32    {d4-d7},    [%[c_ptr2]]!\n" /* write r2, float32x4 x2 */ \
   "vst1.32    {d8-d11},   [%[c_ptr3]]!\n" /* write r3, float32x4 x2 */
 
-    // clang-format on
+// clang-format on
 
-    template <>
-    inline void gemm_int8_kernel(const int8_t* a_ptr,
-                                 const int8_t*& b_ptr,  // NOLINT
-                                 const float* bias,
-                                 float32_t*& c_ptr0,  // NOLINT
-                                 float32_t*& c_ptr1,  // NOLINT
-                                 float32_t*& c_ptr2,  // NOLINT
-                                 float32_t*& c_ptr3,  // NOLINT
-                                 const float32_t* scale,
-                                 const float32_t* alpha,
-                                 int is_relu,
-                                 int k,
-                                 int rem) {
+template <>
+inline void gemm_int8_kernel(const int8_t* a_ptr,
+                             const int8_t*& b_ptr,  // NOLINT
+                             const float* bias,
+                             float32_t*& c_ptr0,  // NOLINT
+                             float32_t*& c_ptr1,  // NOLINT
+                             float32_t*& c_ptr2,  // NOLINT
+                             float32_t*& c_ptr3,  // NOLINT
+                             const float32_t* scale,
+                             const float32_t* alpha,
+                             int is_relu,
+                             int k,
+                             int rem) {
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_FP32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
