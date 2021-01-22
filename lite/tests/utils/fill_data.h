@@ -66,16 +66,14 @@ inline void print_tensor(const float16_t* din, int64_t size, int64_t width) {
 }
 
 inline float16_t convert_half(float val) {
-  // 强制把float转为uint64_t
+  // float -> uint64
   uint64_t val2 = *(uint64_t*)(&val);  // NOLINT
-  // 截取后23位尾数，右移13位，剩余10位；
-  // 符号位直接右移16位；
-  // 截取指数的8位先右移13位(左边多出3位不管了), 之前是0~255表示-127~128,
-  // 调整之后变成0~31表示-15~16
-  // 因此要减去127-15=112(在左移10位的位置).
+  // fraction = 9-31, expand = 1-8, sign = 0
+  // fraction = 0x007fffff, expand = 0x7f800000, sign = 0x80000000
+  // [-127, 128] -> [-31, 32], 127 - 15 = 112(left 10)
   uint16_t t = ((val2 & 0x007fffff) >> 13) | ((val2 & 0x80000000) >> 16) |
                (((val2 & 0x7f800000) >> 13) - (112 << 10));
-  // 四舍五入(尾数被截掉部分的最高位为1, 则尾数剩余部分+1)
+  // round remind
   if (val2 & 0x1000) {
     t++;
   }
