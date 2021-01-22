@@ -119,6 +119,7 @@ lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
 lite_option(LITE_WITH_XCODE     "when debug in xcode, its ON." OFF)
 lite_option(LITE_WITH_ARM82_FP16  "when compile with arm v8.2 fp16, it's ON." OFF)
 lite_option(LITE_WITH_ARM82_INT8_SDOT  "when compile with arm v8.2 int8, it's ON." OFF)
+lite_option(LITE_WITH_CODE_META_INFO  "include git version in the header file." ON)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
