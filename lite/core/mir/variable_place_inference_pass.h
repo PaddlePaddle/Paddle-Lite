@@ -149,7 +149,6 @@ class VariablePlaceInferencePass : public DebugPass {
         CHECK(op_info->GetInputArgname(var_name, &arg_name))
             << "Can not find the input argument for var " << var_name;
         VLOG(4) << " - input arg name:" << arg_name << " var name:" << var_name;
-        if (var_name == "fc7_weights") printf("hello\n");
 
         const auto* decl_type = kernel.GetInputDeclType(arg_name);
         if (!(*var_type)) {
