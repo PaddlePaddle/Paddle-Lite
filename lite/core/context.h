@@ -307,9 +307,7 @@ class Context<TargetType::kARM> {
   bool ExtendWorkspace(size_t size) {
     return DeviceInfo::Global().ExtendWorkspace(size);
   }
-#ifdef ENABLE_ARM_FP16
-  typedef __fp16 float16_t;
-#endif
+
   std::string name() const { return "ARMContext"; }
 };
 #endif
