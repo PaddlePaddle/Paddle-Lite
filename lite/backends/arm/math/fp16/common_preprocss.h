@@ -39,12 +39,6 @@ typedef __fp16 float16_t;
 #define PTR_ACQUIRE_PARAM_B8(dtype) \
   dtype *bias_local, const dtype *bias, int y, int numa, int numb
 
-#define PTR_ACQUIRE_PARAM_C8(dtype)                                           \
-  dtype *c_ptr1, dtype *c_ptr2, dtype *c_ptr3, dtype *c_ptr4, dtype *c_ptr5,  \
-      dtype *c_ptr6, dtype *c_ptr7, dtype *cout1, dtype *cout2, dtype *cout3, \
-      dtype *cout4, dtype *cout5, dtype *cout6, dtype *cout7, int numa,       \
-      int numb
-
 #define PTR_ACQUIRE_PARAM_A16(dtype)                                    \
   const dtype *zerobuff, const dtype *inptr1, const dtype *inptr2,      \
       const dtype *inptr3, const dtype *inptr4, const dtype *inptr5,    \
@@ -146,15 +140,6 @@ inline void act_acquire(lite_api::ActivationType act,
                         float &local_alpha,  // NOLINT
                         float six,
                         float alpha) {
-  //   if (act == lite_api::ActivationType::kRelu) {
-  //     flag_act = 0x01;
-  //   } else if (act == lite_api::ActivationType::kRelu6) {
-  //     flag_act = 0x02;
-  //     local_alpha = six;
-  //   } else if (act == lite_api::ActivationType::kLeakyRelu) {
-  //     flag_act = 0x03;
-  //     local_alpha = alpha;
-  //   }
   switch (act) {
     case lite_api::ActivationType::kRelu:
       flag_act = 0x01;
@@ -263,28 +248,6 @@ inline void ptr_acquire_b8(PTR_ACQUIRE_PARAM_B8(dtype)) {
       bias_local[1] = bias[y + 1];
     case 6:
       bias_local[0] = bias[y];
-    default:
-      break;
-  }
-}
-
-template <typename dtype>
-inline void ptr_acquire_c8(PTR_ACQUIRE_PARAM_C8(dtype)) {
-  switch (numa - numb) {
-    case 6:
-      c_ptr1 = cout1;
-    case 5:
-      c_ptr2 = cout2;
-    case 4:
-      c_ptr3 = cout3;
-    case 3:
-      c_ptr4 = cout4;
-    case 2:
-      c_ptr5 = cout5;
-    case 1:
-      c_ptr6 = cout6;
-    case 0:
-      c_ptr7 = cout7;
     default:
       break;
   }

@@ -50,7 +50,6 @@ void gemm_prepack_8x16(bool is_transB,
                        bool has_bias,
                        const operators::ActivationParam act_param,
                        ARMContext *ctx);
-#else
 #endif
 
 /**
@@ -632,8 +631,8 @@ void loadb(float16_t *out,
         "blt 1f                                     \n"
         "0:                                         \n"
         "ldp q0, q1, [%[ptr0]], #32                 \n"
-        "subs %w[cnt], %w[cnt], #1                  \n"
         "prfm   pldl1keep, [%[ptr0]]                \n"
+        "subs %w[cnt], %w[cnt], #1                  \n"
         "stp q0, q1, [%[outptr]]                    \n"
         "add %[outptr], %[outptr], %[stride]        \n"
         "bne 0b                                     \n"
@@ -856,6 +855,7 @@ void loadb_trans(float16_t *out,
     }
   }
 }
+
 #else
 #endif
 #ifdef __aarch64__
@@ -931,9 +931,8 @@ void gemm_prepack_8x16(bool is_transB,
         }
       }
       float16x8_t vbias = vld1q_f16(bias_local);
-
+      // prepare out data
       GEMM_PREPARE_C(float16_t, NBLOCK_FP16)
-
       const float16_t *a_ptr_l = A_packed + y * K;
       const float16_t *b_ptr = b_pannel;
       for (int xb = 0; xb < bblocks; xb++) {
@@ -958,6 +957,7 @@ void gemm_prepack_8x16(bool is_transB,
           }
         }
         if (flag_p_remain && (xb == bblocks - 1)) {
+          // deal with cout remain data
           GEMM_REMAIN_C_PREPARE
         }
         const float16_t *a_ptr = a_ptr_l;
