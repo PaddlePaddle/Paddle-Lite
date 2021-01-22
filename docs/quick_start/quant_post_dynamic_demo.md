@@ -24,34 +24,34 @@ tar zxf mobilenet_v1.tar.gz
 
 ```shell
 ./opt \
-    --model_dir mobilenet_v1 \
-    --optimize_out_type naive_buffer \
-    --optimize_out mobilenet_v1_opt \
-    --valid_targets arm
+    --model_dir=mobilenet_v1 \
+    --optimize_out_type=naive_buffer \
+    --optimize_out=mobilenet_v1_opt \
+    --valid_targets=arm
 ```
 
 使用opt工具，开启动态离线量化，设置量化为16比特，产出优化后的mobilenetv1量化模型。
 
 ```shell
 ./opt \
-    --model_dir mobilenet_v1 \
-    --optimize_out_type naive_buffer \
-    --optimize_out mobilenet_v1_int16_opt \
-    --valid_targets arm  \
-    --quant_model true \
-    --quant_type QUANT_INT16
+    --model_dir=mobilenet_v1 \
+    --optimize_out_type=naive_buffer \
+    --optimize_out=mobilenet_v1_int16_opt \
+    --valid_targets=arm  \
+    --quant_model=true \
+    --quant_type=QUANT_INT16
 ```
 
 使用opt工具，开启动态离线量化，设置量化为8比特，产出优化后的mobilenetv1量化模型。
 
 ```shell
 ./opt \
-    --model_dir mobilenet_v1 \
-    --optimize_out_type naive_buffer \
-    --optimize_out mobilenet_v1_int8_opt \
-    --valid_targets arm  \
-    --quant_model true \
-    --quant_type QUANT_INT8
+    --model_dir=mobilenet_v1 \
+    --optimize_out_type=naive_buffer \
+    --optimize_out=mobilenet_v1_int8_opt \
+    --valid_targets=arm  \
+    --quant_model=true \
+    --quant_type=QUANT_INT8
 ```
 
 对比优化后的模型体积:
