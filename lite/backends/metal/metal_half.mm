@@ -384,13 +384,13 @@ float MetalHalf2Float(metal_half h) {
   return *reinterpret_cast<float *>(&v);
 }
 
-void MetalFloatArray2HalfArray(float *f_array, metal_half *h_array, int count) {
+void MetalFloatArray2HalfArray(const float *f_array, metal_half *h_array, int count) {
   for (int i = 0; i < count; ++i) {
     h_array[i] = MetalFloat2Half(f_array[i]);
   }
 }
 
-void MetalHalfArray2FloatArray(metal_half *h_array, float *f_array, int count) {
+void MetalHalfArray2FloatArray(const metal_half *h_array, float *f_array, int count) {
   for (int i = 0; i < count; ++i) {
     f_array[i] = MetalHalf2Float(h_array[i]);
   }

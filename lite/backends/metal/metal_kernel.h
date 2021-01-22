@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by liuzheyuan on 2020/9/30.
-//
-
 #ifndef LITE_BACKENDS_METAL_METAL_KERNEL_H_
 #define LITE_BACKENDS_METAL_METAL_KERNEL_H_
 

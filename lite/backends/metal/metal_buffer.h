@@ -81,10 +81,18 @@ class metal_buffer {
             size_t dst_offset) const;
 
   template <typename P>
-  void from_nchw(const P* src);
+  void from_nchw(const P* src) {
+    static_assert(
+        std::is_same<float, P>::value || std::is_same<metal_half, P>::value,
+        "can support float and half");
+  }
 
   template <typename P>
-  void to_nchw(P* dst);
+  void to_nchw(P* dst) {
+    static_assert(
+        std::is_same<float, P>::value || std::is_same<metal_half, P>::value,
+        "can support float and half");
+  }
 
 #if defined(__OBJC__)
   id<MTLBuffer> get_buffer() const;
@@ -98,9 +106,7 @@ class metal_buffer {
 
  private:
   template <typename P>
-  void expandNHWC();
-
-  template <typename T>
+  void expand_nhwc();
   void convert();
 
   metal_device* mtl_device_;
@@ -109,21 +115,21 @@ class metal_buffer {
   size_t size_;
   int offset_ = 0;
 
-  DDim tensorDim_;
+  DDim tensor_dim_;
   __unused DDim padToFourDim_;
   DDim dim_;
   void* data_ = nullptr;
 
   int precision_size_;
-  size_t dataLength_;
+  size_t data_length_;
 
   int c_;
   int c_slices_;
   int padded_c_;
   int count_;
-  bool padWhenOneC_;
-  bool convertToNHWC_;
-  bool withTranspose_;
+  bool pad_when_one_channel_;
+  bool convert_to_nhwc_;
+  bool with_transpose_;
   METAL_PRECISION_TYPE precision_;
   METAL_ACCESS_FLAG flags_;
 };

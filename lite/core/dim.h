@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by liuzheyuan on 2020/10/22.
-//
-
 #ifndef LITE_CORE_DIM_H_
 #define LITE_CORE_DIM_H_
 

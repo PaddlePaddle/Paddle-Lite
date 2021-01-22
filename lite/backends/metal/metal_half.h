@@ -22,9 +22,13 @@ metal_half MetalFloat2Half(float f);
 
 float MetalHalf2Float(metal_half h);
 
-void MetalFloatArray2HalfArray(float *f_array, metal_half *h_array, int count);
+void MetalFloatArray2HalfArray(const float *f_array,
+                               metal_half *h_array,
+                               int count);
 
-void MetalHalfArray2FloatArray(metal_half *h_array, float *f_array, int count);
+void MetalHalfArray2FloatArray(const metal_half *h_array,
+                               float *f_array,
+                               int count);
 
 }  // namespace lite
 }  // namespace paddle

@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by liuzheyuan on 2020/11/28.
-//
-
 #ifndef LITE_WITH_FPGA
 #include "lite/core/dim.h"
 #include <string>
