@@ -86,6 +86,10 @@ class CLRuntime {
                  << paddle::lite::CLWrapper::Global()->DlsymSuccess();
       return false;
     }
+    if (device_info_.count("CL_DEVICE_TYPE") == 0) {
+      LOG(ERROR) << "Invalid opencl device, CL_DEVICE_TYPE is None.";
+      return false;
+    }
 
     bool support_fp16 = support_half();
     is_device_avaliable_for_opencl_ =
@@ -93,12 +97,15 @@ class CLRuntime {
     return is_device_avaliable_for_opencl_;
   }
 
-  void set_auto_tune(lite_api::CLTuneMode tune_mode) {
+  void set_auto_tune(lite_api::CLTuneMode tune_mode, size_t lws_repeats = 4) {
     auto_tune_ = tune_mode;
+    lws_repeats_ = lws_repeats;
     command_queue_ = CreateCommandQueue(context());
   }
 
   lite_api::CLTuneMode auto_tune() { return auto_tune_; }
+
+  size_t lws_repeats() { return lws_repeats_; }
 
   void set_precision(
       lite_api::CLPrecisionType p = lite_api::CL_PRECISION_AUTO) {
@@ -235,6 +242,7 @@ class CLRuntime {
                                                             // Rapid, 2 -
                                                             // Normal, 3 -
                                                             // Exhaustive
+  size_t lws_repeats_{0};
 
   lite_api::CLPrecisionType precision_{
       lite_api::CL_PRECISION_AUTO};  // 0 - AUTO, 1 - fp32, 2 - fp16

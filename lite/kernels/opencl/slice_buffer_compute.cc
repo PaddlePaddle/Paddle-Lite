@@ -66,113 +66,6 @@ void SliceCompute<T, PType>::PrepareForRun() {
   VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   context.cl_context()->AddKernel(
       kernel_func_name_, "buffer/slice_kernel.cl", build_options_, time_stamp_);
-
-  auto in = param.X;
-  auto in_dims = in->dims();
-  auto out = param.Out;
-  auto out_dims = out->dims();
-
-  std::vector<int> axes = param.axes;
-  std::vector<int32_t> starts = param.starts;
-  std::vector<int32_t> ends = param.ends;
-  std::vector<int> decrease_axis = param.decrease_axis;
-  std::vector<int> infer_flags = param.infer_flags;
-
-  auto list_new_ends_tensor = param.EndsTensorList;
-  auto list_new_starts_tensor = param.StartsTensorList;
-
-  bool need_infer = false;
-  if (param.StartsTensor || param.EndsTensor) {
-    need_infer = true;
-  }
-  if (list_new_starts_tensor.size() > 0 || list_new_ends_tensor.size() > 0) {
-    need_infer = true;
-  }
-  if (need_infer) {
-    if (param.StartsTensor) {
-      starts = get_new_data_from_tensor(param.StartsTensor);
-    } else if (list_new_starts_tensor.size() > 0) {
-      starts = get_new_data_from_tensorlist(list_new_starts_tensor);
-    }
-    CHECK_EQ(starts.size(), axes.size())
-        << "The size of starts must be equal to the size of axes.";
-    if (param.EndsTensor) {
-      ends = get_new_data_from_tensor(param.EndsTensor);
-    } else if (list_new_ends_tensor.size() > 0) {
-      ends = get_new_data_from_tensorlist(list_new_ends_tensor);
-    }
-    CHECK_EQ(ends.size(), axes.size())
-        << "The size of ends must be equal to the size of axes.";
-    out_dims = in_dims;
-    int dim_value, start, end;
-    for (size_t i = 0; i < axes.size(); ++i) {
-      dim_value = out_dims[axes[i]];
-      if (dim_value > 0) {
-        // when end = start+1 and start == -1
-        if (starts[i] == -1 && ends[i] == 0 && infer_flags[i] == -1) {
-          auto ret =
-              std::find(decrease_axis.begin(), decrease_axis.end(), axes[i]);
-          if (ret != decrease_axis.end()) {
-            ends[i] = 10000000;
-          }
-        }
-
-        start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
-        end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
-        start = std::max(start, 0);
-        end = std::max(end, 0);
-        end = std::min(end, dim_value);
-        CHECK_GT(end, start) << "end should greater than start";
-        out_dims[axes[i]] = end - start;
-      }
-    }
-    out->Resize(out_dims);
-    // generate new shape
-    if (decrease_axis.size() > 0) {
-      std::vector<int64_t> new_out_shape;
-      for (size_t i = 0; i < decrease_axis.size(); ++i) {
-        CHECK_EQ(out_dims[decrease_axis[i]], 1) << "decrease dim should be 1";
-        out_dims[decrease_axis[i]] = 0;
-      }
-
-      for (int i = 0; i < out_dims.size(); ++i) {
-        if (out_dims[i] != 0) {
-          new_out_shape.push_back(out_dims[i]);
-        }
-      }
-      if (new_out_shape.size() == 0) {
-        new_out_shape.push_back(1);
-      }
-      DDim new_dims;
-      new_dims.ConstructFrom(new_out_shape);
-      out_dims = new_dims;
-    }
-  }
-
-  // resize out dims
-  if (decrease_axis.size() > 0) {
-    if (decrease_axis.size() == static_cast<size_t>(in_dims.size())) {
-      std::vector<int64_t> vec_origin_out_shape(decrease_axis.size(), 1);
-      out->Resize(DDim(vec_origin_out_shape));
-    } else {
-      std::vector<int64_t> vec_origin_out_shape(
-          out_dims.size() + decrease_axis.size(), -1);
-
-      for (size_t i = 0; i < decrease_axis.size(); ++i) {
-        vec_origin_out_shape[decrease_axis[i]] = 1;
-      }
-
-      int index = 0;
-      for (size_t i = 0; i < vec_origin_out_shape.size(); ++i) {
-        if (vec_origin_out_shape[i] == -1) {
-          vec_origin_out_shape[i] = out_dims[index];
-          ++index;
-        }
-      }
-
-      out->Resize(DDim(vec_origin_out_shape));
-    }
-  }
 }
 
 template <typename T, PrecisionType PType>
@@ -256,7 +149,6 @@ void SliceCompute<T, PType>::Run() {
   cl_int status;
   int arg_idx = 0;
   auto kernel = kernel_;
-  CHECK(src_step_buf_ != nullptr);
   status = kernel.setArg(arg_idx++, *x_buf);
   CL_CHECK_FATAL(status);
   status = kernel.setArg(arg_idx++, *out_buf);
@@ -281,14 +173,6 @@ void SliceCompute<T, PType>::Run() {
                                 this->event_);
   CL_CHECK_FATAL(status);
 }
-
-#ifdef LITE_WITH_PROFILE
-void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-  ch->cl_event =
-      this->event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
-}
-#endif
 
 }  // namespace opencl
 }  // namespace kernels

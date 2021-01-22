@@ -15,6 +15,7 @@
 #include "lite/core/mir/fusion/quant_dequant_fuse_pass.h"
 #include <list>
 #include <memory>
+#include <utility>
 #include <vector>
 #include "lite/api/paddle_place.h"
 #include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
@@ -56,8 +57,13 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 
   // process dynamic quant op
-  fusion::DynamicQuantOpFuser lstm_dq_fuser("lstm", "Weight");
-  lstm_dq_fuser(graph.get());
+  std::vector<std::pair<std::string, std::string>> op_argnames;
+  op_argnames.emplace_back(std::make_pair("lstm", "Weight"));
+  op_argnames.emplace_back(std::make_pair("gru", "Weight"));
+  for (auto pair : op_argnames) {
+    fusion::DynamicQuantOpFuser dq_fuser(pair.first, pair.second);
+    dq_fuser(graph.get());
+  }
 }
 
 }  // namespace mir
