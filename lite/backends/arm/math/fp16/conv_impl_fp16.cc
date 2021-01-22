@@ -295,7 +295,9 @@ void conv1x1s1_gemm_fp16(GEMM_PARAM(float16_t)) {
   int hblock = get_hblock_fp16(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
-  weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  if (n > 1 && m > 1) {
+    weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  }
 
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
@@ -387,7 +389,9 @@ void conv_im2col_gemm_fp16(GEMM_PARAM(float16_t)) {
   int weights_size_per_group = m * k;
 
   auto act_param = param.activation_param;
-  weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  if (n > 1 && m > 1) {
+    weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  }
 
   float16_t* tmp_work_space =
       ctx->workspace_data<float16_t>() + ctx->llc_size() / sizeof(float16_t);

@@ -15,6 +15,7 @@
 #pragma once
 
 #include <cmath>
+#include "lite/backends/arm/math/fp16/common_preprocess.h"
 #include "lite/core/context.h"
 #include "lite/core/device_info.h"
 #include "lite/operators/op_params.h"

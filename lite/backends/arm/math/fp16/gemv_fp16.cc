@@ -208,131 +208,6 @@ namespace fp16 {
 
 #endif
 // clang-format on
-#define PTR_ACQUIRE_PARAM1(dtype)                                    \
-  const dtype *ptr_zero, const dtype *ptr_w0, const dtype *ptr_w1,   \
-      const dtype *ptr_w2, const dtype *ptr_w3, const dtype *ptr_w4, \
-      const dtype *ptr_w5, const dtype *ptr_w6, const dtype *ptr_w7, \
-      const dtype *ptr_w, dtype *out_p, dtype *out_temp, int remain
-
-#define PTR_ACQUIRE_PARAM(dtype)                                     \
-  const dtype *ptr_zero, const dtype *ptr_w0, const dtype *ptr_w1,   \
-      const dtype *ptr_w2, const dtype *ptr_w3, const dtype *ptr_w4, \
-      const dtype *ptr_w5, const dtype *ptr_w6, const dtype *ptr_w7, \
-      int remain
-
-inline void act_acquire(lite_api::ActivationType act,
-                        int &flag_act,       // NOLINT
-                        float &local_alpha,  // NOLINT
-                        float six,
-                        float alpha) {
-  if (act == lite_api::ActivationType::kRelu) {
-    flag_act = 0x01;
-  } else if (act == lite_api::ActivationType::kRelu6) {
-    flag_act = 0x02;
-    local_alpha = six;
-  } else if (act == lite_api::ActivationType::kLeakyRelu) {
-    flag_act = 0x03;
-    local_alpha = alpha;
-  }
-}
-
-inline void ptr_acquire(PTR_ACQUIRE_PARAM1(float16_t)) {
-  switch (8 - remain) {
-    case 7:
-      ptr_w1 = ptr_zero;
-    case 6:
-      ptr_w2 = ptr_zero;
-    case 5:
-      ptr_w3 = ptr_zero;
-    case 4:
-      ptr_w4 = ptr_zero;
-    case 3:
-      ptr_w5 = ptr_zero;
-    case 2:
-      ptr_w6 = ptr_zero;
-    case 1:
-      ptr_w7 = ptr_zero;
-      out_p = out_temp;
-      break;
-    default:
-      break;
-  }
-  switch (8 - remain) {
-    case 7:
-      ptr_w0 = ptr_w;
-      break;
-    case 6:
-      ptr_w1 = ptr_w;
-      break;
-    case 5:
-      ptr_w2 = ptr_w;
-      break;
-    case 4:
-      ptr_w3 = ptr_w;
-      break;
-    case 3:
-      ptr_w4 = ptr_w;
-      break;
-    case 2:
-      ptr_w5 = ptr_w;
-      break;
-    case 1:
-      ptr_w6 = ptr_w;
-      break;
-    default:
-      break;
-  }
-}
-inline void ptr_acquire_remain(PTR_ACQUIRE_PARAM(float16_t)) {
-  switch (8 - remain) {
-    case 7:
-      ptr_w0 = ptr_zero;
-      break;
-    case 6:
-      ptr_w1 = ptr_zero;
-      break;
-    case 5:
-      ptr_w2 = ptr_zero;
-      break;
-    case 4:
-      ptr_w3 = ptr_zero;
-      break;
-    case 3:
-      ptr_w4 = ptr_zero;
-      break;
-    case 2:
-      ptr_w5 = ptr_zero;
-      break;
-    case 1:
-      ptr_w6 = ptr_zero;
-      break;
-    default:
-      break;
-  }
-}
-
-inline void ptr_acquire_norm(PTR_ACQUIRE_PARAM(float16_t)) {
-  switch (8 - remain) {
-    case 7:
-      ptr_w1 = ptr_zero;
-    case 6:
-      ptr_w2 = ptr_zero;
-    case 5:
-      ptr_w3 = ptr_zero;
-    case 4:
-      ptr_w4 = ptr_zero;
-    case 3:
-      ptr_w5 = ptr_zero;
-    case 2:
-      ptr_w6 = ptr_zero;
-    case 1:
-      ptr_w7 = ptr_zero;
-      break;
-    default:
-      break;
-  }
-}
-
 void gemv_fp16_trans(const float16_t *A,
                      const float16_t *x,
                      float16_t *y,
@@ -358,6 +233,7 @@ void gemv_fp16_trans(const float16_t *A,
   }
   float16_t *ptr_w = bias_ptr + Mup;
   lite::TargetWrapperHost::MemcpySync(ptr_w, A, N * sizeof(float16_t));
+  memset(ptr_w + N, 0, (Nup - N) * sizeof(float16_t));
   float16_t *data_in = ptr_w + Nup;
   lite::TargetWrapperHost::MemcpySync(
       data_in, x + (M - 1) * N, N * sizeof(float16_t));
@@ -392,27 +268,27 @@ void gemv_fp16_trans(const float16_t *A,
     const float16_t *ptr_w6 = ptr_w5 + M;
     const float16_t *ptr_w7 = ptr_w6 + M;
     float16x8_t vbias = vld1q_f16(bias_ptr + out_idx);
-    ptr_acquire_norm(ptr_zero,
-                     ptr_w0,
-                     ptr_w1,
-                     ptr_w2,
-                     ptr_w3,
-                     ptr_w4,
-                     ptr_w5,
-                     ptr_w6,
-                     ptr_w7,
-                     rem_n);
+    ptr_acquire_norm<float16_t>(ptr_zero,
+                                ptr_w0,
+                                ptr_w1,
+                                ptr_w2,
+                                ptr_w3,
+                                ptr_w4,
+                                ptr_w5,
+                                ptr_w6,
+                                ptr_w7,
+                                rem_n);
     if (j == out_cnt - 1 && remain) {
-      ptr_acquire_remain(data_in,
-                         ptr_w0,
-                         ptr_w1,
-                         ptr_w2,
-                         ptr_w3,
-                         ptr_w4,
-                         ptr_w5,
-                         ptr_w6,
-                         ptr_w7,
-                         remain);
+      ptr_acquire_remain<float16_t>(data_in,
+                                    ptr_w0,
+                                    ptr_w1,
+                                    ptr_w2,
+                                    ptr_w3,
+                                    ptr_w4,
+                                    ptr_w5,
+                                    ptr_w6,
+                                    ptr_w7,
+                                    remain);
       out_p = out_temp;
     }
     // 8x8
@@ -462,6 +338,7 @@ void gemv_fp16(const float16_t *A,
 
   float16_t *data_in = bias_ptr + Mup;
   lite::TargetWrapperHost::MemcpySync(data_in, x, N * sizeof(float16_t));
+  memset(data_in + N, 0, (Nup - N) * sizeof(float16_t));
   float16_t *ptr_w = data_in + Nup;
   lite::TargetWrapperHost::MemcpySync(
       ptr_w, A + (M - 1) * N, N * sizeof(float16_t));
@@ -496,26 +373,26 @@ void gemv_fp16(const float16_t *A,
     const float16_t *ptr_w7 = ptr_w6 + N;
     float16x8_t vbias = vld1q_f16(bias_ptr + out_idx);
     if (j == out_cnt - 1 && remain) {
-      ptr_acquire_norm(ptr_zero,
-                       ptr_w0,
-                       ptr_w1,
-                       ptr_w2,
-                       ptr_w3,
-                       ptr_w4,
-                       ptr_w5,
-                       ptr_w6,
-                       ptr_w7,
-                       remain);
-      ptr_acquire_remain(ptr_w,
-                         ptr_w0,
-                         ptr_w1,
-                         ptr_w2,
-                         ptr_w3,
-                         ptr_w4,
-                         ptr_w5,
-                         ptr_w6,
-                         ptr_w7,
-                         remain);
+      ptr_acquire_norm<float16_t>(ptr_zero,
+                                  ptr_w0,
+                                  ptr_w1,
+                                  ptr_w2,
+                                  ptr_w3,
+                                  ptr_w4,
+                                  ptr_w5,
+                                  ptr_w6,
+                                  ptr_w7,
+                                  remain);
+      ptr_acquire_remain<float16_t>(ptr_w,
+                                    ptr_w0,
+                                    ptr_w1,
+                                    ptr_w2,
+                                    ptr_w3,
+                                    ptr_w4,
+                                    ptr_w5,
+                                    ptr_w6,
+                                    ptr_w7,
+                                    remain);
     }
     // 8x16
     int cnt_col = cnt;

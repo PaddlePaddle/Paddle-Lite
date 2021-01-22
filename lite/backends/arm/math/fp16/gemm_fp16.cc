@@ -69,24 +69,13 @@ void prepackA_fp16(void *out,
                    bool is_trans,
                    ARMContext *ctx) {
 #ifdef __aarch64__
+#define PREPACKA_PARAMS                                                     \
+  static_cast<float16_t *>(out), static_cast<const float16_t *>(in), alpha, \
+      ldin, m0, mmax, k0, kmax
   if (is_trans) {
-    prepackA_trans_8x16(static_cast<float16_t *>(out),
-                        static_cast<const float16_t *>(in),
-                        alpha,
-                        ldin,
-                        m0,
-                        mmax,
-                        k0,
-                        kmax);
+    prepackA_trans_8x16(PREPACKA_PARAMS);
   } else {
-    prepackA_8x16(static_cast<float16_t *>(out),
-                  static_cast<const float16_t *>(in),
-                  alpha,
-                  ldin,
-                  m0,
-                  mmax,
-                  k0,
-                  kmax);
+    prepackA_8x16(PREPACKA_PARAMS);
   }
 #else
 #endif
@@ -217,24 +206,16 @@ void prepackA_8x16(float16_t *out,
     const uint16_t *inptr6 = inptr5 + ldin;
     const uint16_t *inptr7 = inptr6 + ldin;
     if ((y + 7) >= mmax) {
-      switch ((y + 7) - mmax) {
-        case 6:
-          inptr1 = zerobuff;
-        case 5:
-          inptr2 = zerobuff;
-        case 4:
-          inptr3 = zerobuff;
-        case 3:
-          inptr4 = zerobuff;
-        case 2:
-          inptr5 = zerobuff;
-        case 1:
-          inptr6 = zerobuff;
-        case 0:
-          inptr7 = zerobuff;
-        default:
-          break;
-      }
+      ptr_acquire_a8<uint16_t>(zerobuff,
+                               inptr1,
+                               inptr2,
+                               inptr3,
+                               inptr4,
+                               inptr5,
+                               inptr6,
+                               inptr7,
+                               (y + 7),
+                               mmax);
     }
     int cnt_col = cnt;
     // clang-format off
@@ -712,40 +693,24 @@ void loadb_trans(float16_t *out,
 
     //! cope with row index exceed real size, set to zero buffer
     if ((y + 15) >= nmax) {
-      switch ((y + 15) - nmax) {
-        case 14:
-          inptr1 = zerobuff;
-        case 13:
-          inptr2 = zerobuff;
-        case 12:
-          inptr3 = zerobuff;
-        case 11:
-          inptr4 = zerobuff;
-        case 10:
-          inptr5 = zerobuff;
-        case 9:
-          inptr6 = zerobuff;
-        case 8:
-          inptr7 = zerobuff;
-        case 7:
-          inptr8 = zerobuff;
-        case 6:
-          inptr9 = zerobuff;
-        case 5:
-          inptr10 = zerobuff;
-        case 4:
-          inptr11 = zerobuff;
-        case 3:
-          inptr12 = zerobuff;
-        case 2:
-          inptr13 = zerobuff;
-        case 1:
-          inptr14 = zerobuff;
-        case 0:
-          inptr15 = zerobuff;
-        default:
-          break;
-      }
+      ptr_acquire_a16<uint16_t>(zerobuff,
+                                inptr1,
+                                inptr2,
+                                inptr3,
+                                inptr4,
+                                inptr5,
+                                inptr6,
+                                inptr7,
+                                inptr8,
+                                inptr9,
+                                inptr10,
+                                inptr11,
+                                inptr12,
+                                inptr13,
+                                inptr14,
+                                inptr15,
+                                (y + 15),
+                                nmax);
     }
     int cnt_col = cnt;
     // clang-format off
@@ -917,40 +882,16 @@ void gemm_prepack_8x16(bool is_transB,
   float local_alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
-      flag_act = 0x01;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
-      flag_act = 0x02;
-      local_alpha = act_param.Relu_clipped_coef;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
-      flag_act = 0x03;
-      local_alpha = act_param.Leaky_relu_alpha;
-    }
+    act_acquire(act_type,
+                flag_act,
+                local_alpha,
+                act_param.Relu_clipped_coef,
+                act_param.Leaky_relu_alpha);
   }
 
   float16x8_t valpha = vdupq_n_f16(local_alpha);
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block =
-      (llc_size - (MBLOCK_FP16 * K)) / (sizeof(float16_t) * (K + MBLOCK_FP16));
-  x_block /= NBLOCK_FP16;
-  x_block *= NBLOCK_FP16;
-  int x_num = (N + (x_block - 1)) / x_block;
-  x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + NBLOCK_FP16 - 1) / NBLOCK_FP16;
-  x_block *= NBLOCK_FP16;
-  x_block = x_block < NBLOCK_FP16 ? NBLOCK_FP16 : x_block;
-
-  // unroll 2 loop
-  int tail_pre = (K & (KBLOCK_FP16 - 1));
-  int k_pre = ((K + KBLOCK_FP16 - 1) / KBLOCK_FP16) - 1;
-
-  bool flag_p_remain = false;
-  int remain = 0;
-  if (tail_pre == 0) {
-    tail_pre = KBLOCK_FP16;
-  }
-
-  int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  X_BLOCK_COMPUTE(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
   float16x8_t vbeta = vdupq_n_f16(beta);
   float16x8_t vzero = vdupq_n_f16(0.f);
 
@@ -982,63 +923,16 @@ void gemm_prepack_8x16(bool is_transB,
       float16_t bias_local[8] = {0};
       if (has_bias) {
         if (y + 7 >= ymax) {
-          switch ((y + 7) - ymax) {
-            case 0:
-              bias_local[6] = bias[y + 6];
-            case 1:
-              bias_local[5] = bias[y + 5];
-            case 2:
-              bias_local[4] = bias[y + 4];
-            case 3:
-              bias_local[3] = bias[y + 3];
-            case 4:
-              bias_local[2] = bias[y + 2];
-            case 5:
-              bias_local[1] = bias[y + 1];
-            case 6:
-              bias_local[0] = bias[y];
-            default:
-              break;
-          }
+          ptr_acquire_b8<float16_t>(bias_local, bias, y, (y + 7), ymax);
         } else {
-          bias_local[0] = bias[y];
-          bias_local[1] = bias[y + 1];
-          bias_local[2] = bias[y + 2];
-          bias_local[3] = bias[y + 3];
-          bias_local[4] = bias[y + 4];
-          bias_local[5] = bias[y + 5];
-          bias_local[6] = bias[y + 6];
-          bias_local[7] = bias[y + 7];
+          for (int i = 0; i < 8; i++) {
+            bias_local[i] = bias[y + i];
+          }
         }
       }
       float16x8_t vbias = vld1q_f16(bias_local);
 
-      float16_t cout0[NBLOCK_FP16];
-      float16_t cout1[NBLOCK_FP16];
-      float16_t cout2[NBLOCK_FP16];
-      float16_t cout3[NBLOCK_FP16];
-      float16_t cout4[NBLOCK_FP16];
-      float16_t cout5[NBLOCK_FP16];
-      float16_t cout6[NBLOCK_FP16];
-      float16_t cout7[NBLOCK_FP16];
-
-      float16_t *c_ptr0 = C + y * ldc + x0;
-      float16_t *c_ptr1 = c_ptr0 + ldc;
-      float16_t *c_ptr2 = c_ptr1 + ldc;
-      float16_t *c_ptr3 = c_ptr2 + ldc;
-      float16_t *c_ptr4 = c_ptr3 + ldc;
-      float16_t *c_ptr5 = c_ptr4 + ldc;
-      float16_t *c_ptr6 = c_ptr5 + ldc;
-      float16_t *c_ptr7 = c_ptr6 + ldc;
-
-      float16_t *pout0 = c_ptr0;
-      float16_t *pout1 = c_ptr1;
-      float16_t *pout2 = c_ptr2;
-      float16_t *pout3 = c_ptr3;
-      float16_t *pout4 = c_ptr4;
-      float16_t *pout5 = c_ptr5;
-      float16_t *pout6 = c_ptr6;
-      float16_t *pout7 = c_ptr7;
+      GEMM_PREPARE_C(float16_t, NBLOCK_FP16)
 
       const float16_t *a_ptr_l = A_packed + y * K;
       const float16_t *b_ptr = b_pannel;
@@ -1064,35 +958,7 @@ void gemm_prepack_8x16(bool is_transB,
           }
         }
         if (flag_p_remain && (xb == bblocks - 1)) {
-          pout0 = c_ptr0;
-          pout1 = c_ptr1;
-          pout2 = c_ptr2;
-          pout3 = c_ptr3;
-          pout4 = c_ptr4;
-          pout5 = c_ptr5;
-          pout6 = c_ptr6;
-          pout7 = c_ptr7;
-
-          c_ptr0 = cout0;
-          c_ptr1 = cout1;
-          c_ptr2 = cout2;
-          c_ptr3 = cout3;
-          c_ptr4 = cout4;
-          c_ptr5 = cout5;
-          c_ptr6 = cout6;
-          c_ptr7 = cout7;
-          if (has_beta) {
-            for (int i = 0; i < remain; ++i) {
-              cout0[i] = pout0[i];
-              cout1[i] = pout1[i];
-              cout2[i] = pout2[i];
-              cout3[i] = pout3[i];
-              cout4[i] = pout4[i];
-              cout5[i] = pout5[i];
-              cout6[i] = pout6[i];
-              cout7[i] = pout7[i];
-            }
-          }
+          GEMM_REMAIN_C_PREPARE
         }
         const float16_t *a_ptr = a_ptr_l;
         int tail = tail_pre;
