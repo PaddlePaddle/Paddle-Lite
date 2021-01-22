@@ -123,6 +123,7 @@ add_operator(collect_fpn_proposals_op_lite extra SRCS collect_fpn_proposals_op.c
 add_operator(distribute_fpn_proposals_op_lite extra SRCS distribute_fpn_proposals_op.cc DEPS ${op_DEPS})
 add_operator(crf_decoding_op_lite extra SRCS crf_decoding_op.cc DEPS ${op_DEPS})
 add_operator(ctc_align_op_lite extra SRCS ctc_align_op.cc DEPS ${op_DEPS})
+add_operator(cumsum_op_lite extra SRCS cumsum_op.cc DEPS ${op_DEPS})
 add_operator(max_pool_with_index_op extra SRCS max_pool_with_index_op.cc DEPS ${op_DEPS})
 add_operator(pixel_shuffle_op extra SRCS pixel_shuffle_op.cc DEPS ${op_DEPS})
 add_operator(clip_op extra SRCS clip_op.cc DEPS ${op_DEPS})
@@ -138,7 +139,6 @@ add_operator(tensor_array_to_tensor_op extra SRCS tensor_array_to_tensor_op.cc D
 add_operator(fill_any_like_op extra SRCS fill_any_like_op.cc DEPS ${op_DEPS})
 add_operator(fill_zeros_like_op extra SRCS fill_zeros_like_op.cc DEPS ${op_DEPS})
 add_operator(matmul_v2_op extra SRCS matmul_v2_op.cc DEPS ${op_DEPS})
-
 add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 add_operator(scatter_nd_add_op extra SRCS scatter_nd_add_op.cc DEPS ${op_DEPS})
 

@@ -2206,6 +2206,16 @@ struct ScatterNdAddParam : ParamBase {
   lite::Tensor* output{};
 };
 
+struct CumsumParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  lite::Tensor* Out{nullptr};
+
+  int axis{-1};
+  bool flatten{false};
+  bool exclusive{false};
+  bool reverse{false};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
