@@ -98,7 +98,7 @@ void bilinear_interp(const float* input_data,
 
   int total_count = n * c;
 #if defined(__AVX__)
-  float* buf = (float*)malloc(out_w * 2 * sizeof(float));
+  float* buf = reinterpret_cast<float*>(malloc(out_w * 2 * sizeof(float)));
   int in_stride = in_h * in_w, out_stride = out_h * out_w;
   for (int i = 0; i < total_count; i++) {
     const float* input_data_ptr = input_data + i * in_stride;
