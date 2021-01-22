@@ -184,7 +184,7 @@ if(LITE_WITH_IMAGINATION_NNA)
 endif()
 
 # flatbuffer module for loading model
-if(NOT LITE_ON_TINY_PUBLISH)
+if(LITE_UPDATE_FBS_HEAD)
     include(external/flatbuffers)
 else()
     include_directories("${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build")

@@ -119,6 +119,7 @@ metal/MobileNetDemo/MobileNetDemo/Resources
 lite/model_parser/flatbuffers/framework_generated.h
 lite/model_parser/flatbuffers/param_generated.h
 build*
+third-party/*
 
 # hiai libs
 ai_ddk_lib*
