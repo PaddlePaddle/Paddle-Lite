@@ -266,11 +266,12 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #endif
 }
 
-void ConfigBase::set_opencl_tune(CLTuneMode tune_mode) {
+void ConfigBase::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
     opencl_tune_mode_ = tune_mode;
-    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_);
+    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_,
+                                                     lws_repeats);
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "opencl_tune_mode:"
               << static_cast<size_t>(
@@ -316,6 +317,18 @@ void ConfigBase::set_x86_math_num_threads(int threads) {
 }
 int ConfigBase::x86_math_num_threads() const { return x86_math_num_threads_; }
 #endif
+
+void ConfigBase::set_subgraph_model_cache_buffers(
+    const std::string &key,
+    const std::vector<char> &cfg,
+    const std::vector<char> &bin) {
+  CHECK(!key.empty());
+  CHECK(!cfg.empty());
+  CHECK(!bin.empty());
+  CHECK_EQ(subgraph_model_cache_buffers_.count(key), 0);
+  subgraph_model_cache_buffers_[key] =
+      std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
+}
 
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
                                size_t program_buffer_size,

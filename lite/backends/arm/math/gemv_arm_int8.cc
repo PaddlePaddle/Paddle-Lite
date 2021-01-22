@@ -1785,7 +1785,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
   return true;
 }
 
-#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+#if defined(__aarch64__)
 // clang-format off
 #define GEMV_COMPUTE_INIT                                                 \
     "prfm  pldl1keep, [%[in]]     \n"   /* preload din */                 \

@@ -30,14 +30,6 @@ class SqueezeCompute
   virtual ~SqueezeCompute() = default;
 };
 
-class Squeeze2Compute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
- public:
-  void Run() override;
-
-  virtual ~Squeeze2Compute() = default;
-};
-
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
