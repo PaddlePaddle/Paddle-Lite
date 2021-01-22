@@ -28,7 +28,8 @@ namespace fusion {
  * The mul op must satisfy the following conditions:
  * 1. the transpose_X and transpose_Y attrs are false
  * 2. the alpha attr is 1.0
- * 3. the rank of input X and Y is 2
+ * 3. the rank of input X is greater than 1
+ * 4. the rank of input Y is 2
  *
  * Notice:
  *  the rank of input activation is obtained from var_desc,

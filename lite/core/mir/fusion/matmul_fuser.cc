@@ -24,7 +24,8 @@ namespace fusion {
 
 void MatmulFuser::BuildPattern() {
   // Teller function about matmul's inputs:
-  //          the rank of input X and Y should 2
+  //          the rank of input X is greater than 1
+  //          the rank of input Y should be 2
   auto inputs_teller = [](const Node* node) -> bool {
     auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
     auto input_x_name = op_desc.Input("X").front();
@@ -35,18 +36,13 @@ void MatmulFuser::BuildPattern() {
     size_t x_rank = x_shape.size();
     size_t y_rank = y_shape.size();
 
-    return (x_rank == 2 && y_rank == 2);
+    return (x_rank >= 2 && y_rank == 2);
   };
 
   // create nodes.
   auto* x = VarNode("x")->assert_is_op_input("matmul", "X");
   auto* y = VarNode("y")->assert_is_op_input("matmul", "Y");
-  /*
-   * The mul op must satisfy the following conditions:
-   * 1. the transpose_X and transpose_Y attrs are false
-   * 2. the alpha attr is 1.0
-   * 3. the rank of input X and Y is 2
-   */
+
   auto* matmul =
       OpNode("matmul", "matmul")
           ->assert_op_attr<bool>("transpose_X", false)
@@ -82,12 +78,19 @@ void MatmulFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
 
 cpp::OpDesc MatmulFuser::GenOpDesc(const key2nodes_t& matched) {
   auto op_desc = *matched.at("matmul")->stmt()->op_info();
+
+  auto matmul_op = matched.at("matmul")->stmt()->op();
+  auto* scope = matmul_op->scope();
+  auto input_x_name = op_desc.Input("X").front();
+  auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
+  size_t x_rank = x_shape.size();
+
   op_desc.mutable_inputs()->clear();
   op_desc.mutable_outputs()->clear();
   op_desc.SetType("mul");
   op_desc.SetInput("X", {matched.at("x")->arg()->name});
   op_desc.SetInput("Y", {matched.at("y")->arg()->name});
-  op_desc.SetAttr<int>("x_num_col_dims", 1);
+  op_desc.SetAttr<int>("x_num_col_dims", x_rank - 1);
   op_desc.SetAttr<int>("y_num_col_dims", 1);
   op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
   return op_desc;
