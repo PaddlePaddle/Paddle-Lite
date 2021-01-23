@@ -28,6 +28,7 @@ USE_MIR_PASS(runtime_context_assign_pass);
 USE_MIR_PASS(graph_visualize_pass);
 
 USE_MIR_PASS(adaptive_1x1_pool2d_convert_global_pass);
+USE_MIR_PASS(remove_scale1_pass);
 USE_MIR_PASS(remove_tf_redundant_ops_pass);
 USE_MIR_PASS(lite_conv_bn_fuse_pass);
 USE_MIR_PASS(lite_conv_conv_fuse_pass);
@@ -48,6 +49,7 @@ USE_MIR_PASS(lite_match_matrix_activation_fuse_pass);
 USE_MIR_PASS(lite_scales_fuse_pass);
 USE_MIR_PASS(lite_sequence_reverse_embedding_fuse_pass);
 USE_MIR_PASS(lite_elementwise_activation_fuse_pass);
+USE_MIR_PASS(lite_elementwise_scale_fuse_pass);
 USE_MIR_PASS(lite_quant_dequant_fuse_pass);
 USE_MIR_PASS(type_precision_cast_pass);
 USE_MIR_PASS(type_layout_cast_pass);

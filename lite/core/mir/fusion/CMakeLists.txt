@@ -61,6 +61,9 @@ lite_cc_library(fuse_sequence_reverse_embedding
 lite_cc_library(fuse_instance_norm_activation
         SRCS instance_norm_activation_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_elementwise_add_scale
+        SRCS elementwise_add_scale_fuser.cc
+        DEPS pattern_matcher_high_api)
 
 set(mir_fusers
     fuse_reshape2_matmul
@@ -84,6 +87,7 @@ set(mir_fusers
     fuse_scales
     fuse_sequence_reverse_embedding
     fuse_instance_norm_activation
+    fuse_elementwise_add_scale
     CACHE INTERNAL "fusers")
 
 if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
