@@ -587,7 +587,7 @@ void DynamicQuantOpFuser::InsertNewNode(SSAGraph* graph,
   auto weight_tensor = scope->FindVar(weight_name)->GetMutable<lite::Tensor>();
   auto weight_dims = weight_tensor->dims();
   CHECK(weight_dims.size() == 2) << "The rank of weight should be 2.";
-  VLOG(4) << "Quantizes lstm's weight:" << weight_name;
+  VLOG(4) << "Quantizes weight of lstm or gru:" << weight_name;
 
   // process weight scale
   auto op_info = *op_node->stmt()->mutable_op_info();
