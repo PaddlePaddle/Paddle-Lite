@@ -30,6 +30,15 @@ typedef enum {
 } GpuType;
 
 typedef enum {
+  CL_VER_UNKNOWN = 0,
+  CL_VER_1_0 = 1,
+  CL_VER_1_1 = 2,
+  CL_VER_1_2 = 3,
+  CL_VER_2_0 = 4,
+  CL_VER_2_1 = 5
+} OpenCLVersion;
+
+typedef enum {
   PERF_DEFAULT = 0,
   PERF_LOW = 1,
   PERF_NORMAL = 2,
@@ -181,7 +190,8 @@ class CLRuntime {
     auto perf_mode = GPUPerfMode::PERF_HIGH;
     auto priority_level = GPUPriorityLevel::PRIORITY_HIGH;
     std::vector<cl_context_properties> context_properties;
-    if (gpu_type_ == GpuType::QUALCOMM_ADRENO) {
+    if (gpu_type_ == GpuType::QUALCOMM_ADRENO &&
+        opencl_version_ >= OpenCLVersion::CL_VER_2_0) {
       GetAdrenoContextProperties(
           &context_properties, perf_mode, priority_level);
     }
@@ -214,9 +224,12 @@ class CLRuntime {
     return queue;
   }
 
+  OpenCLVersion ParseDeviceVersion(const std::string& device_version);
   GpuType ParseGpuTypeFromDeviceName(std::string device_name);
 
   std::map<std::string, size_t> device_info_;
+
+  OpenCLVersion opencl_version_;
 
   GpuType gpu_type_{GpuType::UNKNOWN};
 

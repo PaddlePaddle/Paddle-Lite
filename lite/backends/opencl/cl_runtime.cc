@@ -14,6 +14,7 @@ limitations under the License. */
 #include <utility>
 #include <vector>
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -187,7 +188,30 @@ bool CLRuntime::InitializePlatform() {
   }
   platform_ = std::make_shared<cl::Platform>();
   *platform_ = all_platforms[0];
+  const std::string extensions = platform_->getInfo<CL_PLATFORM_EXTENSIONS>();
+  LOG(INFO) << "Platform extension: " << extensions;
   return true;
+}
+
+OpenCLVersion CLRuntime::ParseDeviceVersion(const std::string& device_version) {
+  // OpenCL Device version string format:
+  // OpenCL<space><major_version.minor_version><space>
+  // <vendor-specific information>
+  auto words = Split<std::string>(device_version, std::string{" "});
+  if (words[1] == "2.1") {
+    return OpenCLVersion::CL_VER_2_1;
+  } else if (words[1] == "2.0") {
+    return OpenCLVersion::CL_VER_2_0;
+  } else if (words[1] == "1.2") {
+    return OpenCLVersion::CL_VER_1_2;
+  } else if (words[1] == "1.1") {
+    return OpenCLVersion::CL_VER_1_1;
+  } else if (words[1] == "1.0") {
+    return OpenCLVersion::CL_VER_1_0;
+  } else {
+    LOG(ERROR) << "Do not support OpenCL version: " << words[1];
+    return OpenCLVersion::CL_VER_UNKNOWN;
+  }
 }
 
 GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
@@ -279,6 +303,9 @@ bool CLRuntime::InitializeDevice() {
   };
   const std::string device_version = device_->getInfo<CL_DEVICE_VERSION>();
   LOG(INFO) << "device_version:" << device_version;
+  opencl_version_ = ParseDeviceVersion(device_version);
+  CHECK(opencl_version_ != OpenCLVersion::CL_VER_UNKNOWN)
+      << "The device version[" << device_version << "] is illegal!";
 
   LOG(INFO) << "device_type:" << device_type_to_str(device_type);
   device_info_["CL_DEVICE_TYPE"] = device_type;
