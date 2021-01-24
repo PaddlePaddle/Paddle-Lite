@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/interpolate.h"
+
 #include <string>
 #include <vector>
 #if defined(__AVX__)
@@ -51,8 +52,8 @@ void bilinear_interp(const float* input_data,
   for (int k = 0; k < out_h; k++) {
     float k_r = ratio_h * k;
     float z_r = ratio_h * 0.5;
-    int y_n = align_flag ? static_cast<int>(k_r + z_r - 0.5)
-                         : static_cast<int>(k_r);
+    int y_n =
+        align_flag ? static_cast<int>(k_r + z_r - 0.5) : static_cast<int>(k_r);
     y_n = (y_n > 0) ? y_n : 0;
     int y_s = (y_n + 1) < (in_h - 1) ? (y_n + 1) : (in_h - 1);
     float idx_src_y = k_r + z_r - 0.5;
@@ -104,41 +105,43 @@ void bilinear_interp(const float* input_data,
     const float* input_data_ptr = input_data + i * in_stride;
     for (int h = 0; h < out_h; h++) {
       float* output_ptr = output_data + i * out_stride + h * out_w;
-      // load input 
+      // load input
       const float* in_row0 = input_data_ptr + vy_n[h] * in_w;
       const float* in_row1 = input_data_ptr + vy_s[h] * in_w;
-      for(int idx = 0; idx < out_w; ++ idx) {
-        buf[idx] = in_row0[vx_w[idx]] * vd_e[idx] + in_row0[vx_e[idx]] * vd_w[idx];
-        buf[idx + out_w] = in_row1[vx_w[idx]] * vd_e[idx] + in_row1[vx_e[idx]] * vd_w[idx];        
+      for (int idx = 0; idx < out_w; ++idx) {
+        buf[idx] =
+            in_row0[vx_w[idx]] * vd_e[idx] + in_row0[vx_e[idx]] * vd_w[idx];
+        buf[idx + out_w] =
+            in_row1[vx_w[idx]] * vd_e[idx] + in_row1[vx_e[idx]] * vd_w[idx];
       }
-      
+
       __m256 yt0 = _mm256_set1_ps(vd_s[h]);
       __m256 yt1 = _mm256_set1_ps(vd_n[h]);
       __m128 ys0 = _mm_set1_ps(vd_s[h]);
       __m128 ys1 = _mm_set1_ps(vd_n[h]);
       int w = 0;
-      for(; w + 8 < out_w; w += 8) {
+      for (; w + 8 < out_w; w += 8) {
         __m256 xr0 = _mm256_loadu_ps(reinterpret_cast<float*>(buf + w));
         __m256 xr1 = _mm256_loadu_ps(reinterpret_cast<float*>(buf + w + out_w));
 
         __m256 r0 = _mm256_mul_ps(yt0, xr0);
         __m256 r1 = _mm256_mul_ps(yt1, xr1);
-        __m256 r  = _mm256_add_ps(r0, r1);
-        
+        __m256 r = _mm256_add_ps(r0, r1);
+
         _mm256_storeu_ps(output_ptr + w, r);
       }
-      for(; w + 4 < out_w; w += 4) {
+      for (; w + 4 < out_w; w += 4) {
         __m128 xr0 = _mm_loadu_ps(buf + w);
         __m128 xr1 = _mm_loadu_ps(buf + w + out_w);
 
         __m128 r0 = _mm_mul_ps(ys0, xr0);
         __m128 r1 = _mm_mul_ps(ys1, xr1);
-        __m128 r  = _mm_add_ps(r0, r1);
+        __m128 r = _mm_add_ps(r0, r1);
 
         _mm_storeu_ps(output_ptr + w, r);
       }
 
-      for (;w < out_w; ++ w) {
+      for (; w < out_w; ++w) {
         output_ptr[w] = vd_s[h] * buf[w] + vd_n[h] * buf[w + out_w];
       }
     }
