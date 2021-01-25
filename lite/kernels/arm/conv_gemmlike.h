@@ -96,7 +96,6 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     } else if (n == 1 || m == 1) {
       flag_trans_weights_ = false;
     }
-#endif
     last_shape_ = x_dims;
   }
   virtual void PrepareForRun();

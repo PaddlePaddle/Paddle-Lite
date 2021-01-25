@@ -216,7 +216,7 @@ void im2col_s2_fp16(IM2COL_PARAM(float16_t)) {
  * @param stride
  * @param data_col
  */
-void im2col_fp16(IM2COL_COMMON_PARAM(float16_t)) {
+void im2col_fp16(IM2COL_PARAM(float16_t), int stride_h, int stride_w) {
   bool pads_equal = ((pad_top == pad_bottom) && (pad_left == pad_right));
   bool pads_all_equal = (pads_equal && pad_top == pad_left);
   bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);
@@ -377,11 +377,11 @@ void conv_im2col_gemm_fp16(GEMM_PARAM(float16_t)) {
                   paddings[1],
                   paddings[2],
                   paddings[3],
-                  param.strides[0],
-                  param.strides[1],
                   dilations[0],
                   dilations[1],
-                  dB);
+                  dB,
+                  param.strides[0],
+                  param.strides[1]);
       if (n == 1) {
         gemv_fp16(weights_group,
                   dB,
