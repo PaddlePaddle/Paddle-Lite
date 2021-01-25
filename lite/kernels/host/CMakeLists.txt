@@ -27,6 +27,7 @@ add_kernel(crf_decoding_compute_host Host extra SRCS crf_decoding_compute.cc DEP
 add_kernel(compare_compute_host Host extra SRCS compare_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(logical_compute_host Host extra SRCS logical_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(ctc_align_compute_host Host extra SRCS ctc_align_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(cumsum_compute_host Host extra SRCS cumsum_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(write_to_array_compute_host Host extra SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(read_from_array_compute_host Host extra SRCS read_from_array_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(assign_compute_host Host extra SRCS assign_compute.cc DEPS ${lite_kernel_deps})
