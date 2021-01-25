@@ -38,15 +38,6 @@ inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
   return static_cast<unsigned>(a) < static_cast<unsigned>(b);
 }
 
-#define IM2COL_PARAM(dtype)                                                   \
-  const dtype *data_im, int channels, int height, int width, int kernel_h,    \
-      int kernel_w, int pad_top, int pad_bottom, int pad_left, int pad_right, \
-      int dilation_h, int dilation_w, dtype *data_col
-
-#define GEMM_PARAM(dtype)                                                      \
-  const dtype *i_data, dtype *o_data, int num, int oc, int oh, int ow, int ic, \
-      int ih, int win, const dtype *weights, const dtype *bias,                \
-      const operators::ConvParam &param, ARMContext *ctx
 /**
  * \brief normal im2col function for gemm conv
  * @tparam dtype
