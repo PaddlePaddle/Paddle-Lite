@@ -68,8 +68,12 @@ inline void print_tensor(const float16_t* din, int64_t size, int64_t width) {
 inline float16_t convert_half(float val) {
   // float -> uint64
   uint64_t val2 = *(uint64_t*)(&val);  // NOLINT
+  // fraction = 9-31, expand = 1-8, sign = 0
+  // fraction = 0x007fffff, expand = 0x7f800000, sign = 0x80000000
+  // [-127, 128] -> [-31, 32], 127 - 15 = 112(left 10)
   uint16_t t = ((val2 & 0x007fffff) >> 13) | ((val2 & 0x80000000) >> 16) |
                (((val2 & 0x7f800000) >> 13) - (112 << 10));
+  // round remind
   if (val2 & 0x1000) {
     t++;
   }

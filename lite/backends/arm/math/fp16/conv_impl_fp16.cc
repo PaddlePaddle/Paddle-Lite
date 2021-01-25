@@ -37,13 +37,8 @@ namespace fp16 {
 inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
   return static_cast<unsigned>(a) < static_cast<unsigned>(b);
 }
-#define IM2COL_COMMON_PARAM(dtype)                                            \
-  const dtype *data_im, int channels, int height, int width, int kernel_h,    \
-      int kernel_w, int pad_top, int pad_bottom, int pad_left, int pad_right, \
-      int stride_h, int stride_w, int dilation_h, int dilation_w,             \
-      dtype *data_col
 
-#define IM2COL_SPEC_PARAM(dtype)                                              \
+#define IM2COL_PARAM(dtype)                                                   \
   const dtype *data_im, int channels, int height, int width, int kernel_h,    \
       int kernel_w, int pad_top, int pad_bottom, int pad_left, int pad_right, \
       int dilation_h, int dilation_w, dtype *data_col
@@ -64,7 +59,7 @@ inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
  * @param stride
  * @param data_col
  */
-void im2col_common_fp16(IM2COL_COMMON_PARAM(float16_t)) {
+void im2col_common_fp16(IM2COL_PARAM(float16_t), int stride_h, int stride_w) {
   const int output_h =
       (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) /
           stride_h +
@@ -101,7 +96,7 @@ void im2col_common_fp16(IM2COL_COMMON_PARAM(float16_t)) {
   }
 }
 
-void im2col_s1_fp16(IM2COL_SPEC_PARAM(float16_t)) {
+void im2col_s1_fp16(IM2COL_PARAM(float16_t)) {
   const int output_h =
       (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) + 1;
   const int output_w =
@@ -154,7 +149,7 @@ void im2col_s1_fp16(IM2COL_SPEC_PARAM(float16_t)) {
   }
 }
 
-void im2col_s2_fp16(IM2COL_SPEC_PARAM(float16_t)) {
+void im2col_s2_fp16(IM2COL_PARAM(float16_t)) {
   const int output_h =
       (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) / 2 +
       1;
@@ -227,50 +222,15 @@ void im2col_fp16(IM2COL_COMMON_PARAM(float16_t)) {
   bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);
   bool no_dilation = (dilation_h == 1) && (dilation_w == 1);
   bool kspd = pads_all_equal && ks_equal && no_dilation;
+#define IM2COL_IN_PARAMS                                                     \
+  data_im, channels, height, width, kernel_h, kernel_w, pad_top, pad_bottom, \
+      pad_left, pad_right, dilation_h, dilation_w, data_col
   if (kspd && stride_h == 1) {
-    im2col_s1_fp16(data_im,
-                   channels,
-                   height,
-                   width,
-                   kernel_h,
-                   kernel_w,
-                   pad_top,
-                   pad_bottom,
-                   pad_left,
-                   pad_right,
-                   dilation_h,
-                   dilation_w,
-                   data_col);
+    im2col_s1_fp16(IM2COL_IN_PARAMS);
   } else if (kspd && stride_h == 2) {
-    im2col_s2_fp16(data_im,
-                   channels,
-                   height,
-                   width,
-                   kernel_h,
-                   kernel_w,
-                   pad_top,
-                   pad_bottom,
-                   pad_left,
-                   pad_right,
-                   dilation_h,
-                   dilation_w,
-                   data_col);
+    im2col_s2_fp16(IM2COL_IN_PARAMS);
   } else {
-    im2col_common_fp16(data_im,
-                       channels,
-                       height,
-                       width,
-                       kernel_h,
-                       kernel_w,
-                       pad_top,
-                       pad_bottom,
-                       pad_left,
-                       pad_right,
-                       stride_h,
-                       stride_w,
-                       dilation_h,
-                       dilation_w,
-                       data_col);
+    im2col_common_fp16(IM2COL_IN_PARAMS, stride_h, stride_w);
   }
 }
 
