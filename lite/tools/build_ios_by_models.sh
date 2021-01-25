@@ -47,6 +47,7 @@ done
 
 # step 3. record model infos
 rm -rf model_info && mkdir model_info
+rm -rf optimized_model && mkdir optimized_model
 content=$(ls ./models_opt | grep -v .nb)
 
 for dir_name in $content
@@ -55,6 +56,7 @@ cat ./models_opt/$dir_name/.tailored_kernels_list >> ./model_info/tailored_kerne
 cat ./models_opt/$dir_name/.tailored_kernels_source_list >> ./model_info/tailored_kernels_source_list
 cat ./models_opt/$dir_name/.tailored_ops_list >> ./model_info/tailored_ops_list
 cat ./models_opt/$dir_name/.tailored_ops_source_list >> ./model_info/tailored_ops_source_list
+cp -f ./models_opt/$dir_name.nb optimized_model
 done
 
 sort -n ./model_info/tailored_kernels_list | uniq > ./model_info/.tailored_kernels_list
@@ -75,7 +77,7 @@ rm -rf $result_name && mkdir $result_name
 cp -rf build.ios.ios.armv7/inference_lite_lib.ios.armv7/ $result_name/armv7
 cp -rf build.ios.ios64.armv8/inference_lite_lib.ios64.armv8 $result_name/armv8
 cp build.opt/lite/api/opt $result_name/
-cp build.opt/lite/api/models_opt $result_name
+mv build.opt/lite/api/optimized_model $result_name
 
 # step6. compress the result into tar file
 tar zcf $result_name.tar.gz $result_name
