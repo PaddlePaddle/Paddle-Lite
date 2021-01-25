@@ -56,15 +56,33 @@ bool GridSamplerOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
   param_.align_corners =
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
-
+  using PMODE = operators::GridSamplerParam::PAD_MODE;
+  using GMODE = operators::GridSamplerParam::MODE;
   if (op_desc.HasAttr("align_corners")) {
     param_.align_corners = op_desc.GetAttr<bool>("align_corners");
   }
   if (op_desc.HasAttr("padding_mode")) {
-    param_.padding_mode = op_desc.GetAttr<std::string>("padding_mode");
+    auto padding_mode = op_desc.GetAttr<std::string>("padding_mode");
+    if (padding_mode == "zeros") {
+      param_.padding_mode = PMODE::ZEROS;
+    } else if (padding_mode == "border") {
+      param_.padding_mode = PMODE::BORDER;
+
+    } else if (padding_mode == "reflection") {
+      param_.padding_mode = PMODE::REFLECTION;
+    } else {
+      LOG(FATAL) << "Unsupported padding mode: " << padding_mode;
+    }
   }
   if (op_desc.HasAttr("mode")) {
-    param_.mode = op_desc.GetAttr<std::string>("mode");
+    auto mode = op_desc.GetAttr<std::string>("mode");
+    if (mode == "bilinear") {
+      param_.mode = GMODE::BILINEAR;
+    } else if (mode == "nearest") {
+      param_.mode = GMODE::NEAREST;
+    } else {
+      LOG(FATAL) << "Unsupported mode: " << mode;
+    }
   }
 
   return true;

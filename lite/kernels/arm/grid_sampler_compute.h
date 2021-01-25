@@ -24,7 +24,8 @@ namespace arm {
 class GridSamplerCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   using param_t = operators::GridSamplerParam;
-
+  using PMODE = operators::GridSamplerParam::PAD_MODE;
+  using GMODE = operators::GridSamplerParam::MODE;
   void PrepareForRun() override;
 
   void Run() override;

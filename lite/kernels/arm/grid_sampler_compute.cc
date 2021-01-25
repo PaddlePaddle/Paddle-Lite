@@ -28,8 +28,8 @@ void GridSamplerCompute::PrepareForRun() {}
 void GridSamplerCompute::Run() {
   auto& param = this->Param<param_t>();
   bool align_corners = param.align_corners;
-  std::string padding_mode = param.padding_mode;
-  std::string mode = param.mode;
+  PMODE padding_mode = param.padding_mode;
+  GMODE mode = param.mode;
   auto n = param.x->dims()[0];
   auto c = param.x->dims()[1];
   auto h = param.x->dims()[2];
@@ -62,6 +62,7 @@ void GridSamplerCompute::Run() {
   float32x4_t vxmax = vdupq_n_f32(x_max);
   float32x4_t vymax = vdupq_n_f32(y_max);
   float32x4_t vone = vdupq_n_f32(1.f);
+  float32x4_t vnone = vdupq_n_f32(-1.f + 1e-5);
   float32x4_t vhalf = vdupq_n_f32(0.5f);
   float32x4_t vzero = vdupq_n_f32(0.f);
 
@@ -74,102 +75,115 @@ void GridSamplerCompute::Run() {
 
   // compute coor, dis, bound
   int i = coor_size;
-#if 0
-  for (; i > 3; i -= 4) {
-    float32x4x2_t xy = vld2q_f32(grid);
-    // align corners
-    float32x4_t grid_x = align_corners ?
-        vmulq_n_f32(vaddq_f32(xy.val[0], vone), 0.5 * x_max) :
-        vmulq_n_f32(vaddq_f32(xy.val[0], vone), 0.5 * w) - vhalf;
-    float32x4_t grid_y = align_corners ?
-        vmulq_n_f32(vaddq_f32(xy.val[1], vone), 0.5 * y_max) :
-        vmulq_n_f32(vaddq_f32(xy.val[1], vone), 0.5 * h) - vhalf;
-    grid += 8;
+  if (mode != GMODE::NEAREST) {
+    for (; i > 3; i -= 4) {
+      float32x4x2_t xy = vld2q_f32(grid);
+      float32x4_t grid_x =
+          align_corners ? vmulq_n_f32(vaddq_f32(xy.val[0], vone), 0.5 * x_max)
+                        : vsubq_f32(vmulq_n_f32(vaddq_f32(xy.val[0], vone),
+                                                (0.5 * (x_max + 1))),
+                                    vhalf);
+      float32x4_t grid_y =
+          align_corners ? vmulq_n_f32(vaddq_f32(xy.val[1], vone), 0.5 * y_max)
+                        : vsubq_f32(vmulq_n_f32(vaddq_f32(xy.val[1], vone),
+                                                (0.5 * (y_max + 1))),
+                                    vhalf);
 
-    // clip
-    if (padding_mode == "zeros") {
-      // nothing to do
-    } else if (padding_mode == "border") {
-      grid_x = vmaxq_f32(vminq_f32(grid_x, vzero), vxmax);
-      grid_y = vmaxq_f32(vminq_f32(grid_y, vzero), vymax);
-    } else if (padding_mode == "reflection") {
-      if (align_corners) {
-        // x
-        float32x4_t v2x = vdupq_n_f32(x_max * 2);
-        float32x4_t vgrid_x_abs = vabsq_f32(v2x);
-        float32x4_t vextra_x = vgrid_x_abs -
-                    vcvtq_s32_f32(vgrid_x_abs / v2x) * v2x;
-        grid_x = vminq_f32(vextra_x, v2x - vextra_x);
-        // y
-        float32x4_t v2y = vdupq_n_f32(y_max * 2);
-        float32x4_t vgrid_y_abs = vabsq_f32(v2y);
-        float32x4_t vextra_y = vgrid_y_abs -
-                    vcvtq_s32_f32(vgrid_y_abs / v2y) * v2y;
-        grid_y = vminq_f32(vextra_y, v2y - vextra_y);
-      } else {
-        // x
-        float32x4_t v2x = vdupq_n_f32((x_max + 1.f) * 2);
-        float32x4_t vgrid_x_abs = vabsq_f32(v2x + vhalf);
-        float32x4_t vextra_x = vgrid_x_abs -
-                    vcvtq_s32_f32(vgrid_x_abs / v2x) * v2x;
-        grid_x = vminq_f32(vextra_x, v2x - vextra_x) - vhalf;
-        grid_x = vminq_f32(vmaxq_f32(grid_x, vzero), vxmax);
-        // y
-        float32x4_t v2y = vdupq_n_f32((y_max + 1.f) * 2);
-        float32x4_t vgrid_y_abs = vabsq_f32(v2y + vhalf);
-        float32x4_t vextra_y = vgrid_y_abs -
-                    vcvtq_s32_f32(vgrid_y_abs / v2y) * v2y;
-        grid_y = vminq_f32(vextra_y, v2y - vextra_y) - vhalf;
-        grid_y = vminq_f32(vmaxq_f32(grid_y, vzero), vymax);
+      grid += 8;
+      switch (padding_mode) {
+        case PMODE::BORDER:
+          grid_x = vminq_f32(vmaxq_f32(grid_x, vzero), vxmax);
+          grid_y = vminq_f32(vmaxq_f32(grid_y, vzero), vymax);
+          break;
+        case PMODE::REFLECTION:
+          if (align_corners) {
+            float32x4_t double_range_x = vdupq_n_f32(x_max * 2);
+            float32x4_t grid_x_abs = vabsq_f32(grid_x);
+            float32x4_t extra_x = vdivq_f32(grid_x_abs, (double_range_x));
+            extra_x = vcvtq_f32_s32(vcvtq_s32_f32(extra_x));
+            extra_x = vsubq_f32(grid_x_abs, vmulq_f32(extra_x, double_range_x));
+            grid_x = vminq_f32(extra_x, vsubq_f32((double_range_x), extra_x));
+
+            float32x4_t double_range_y = vdupq_n_f32(y_max * 2);
+            float32x4_t grid_y_abs = vabsq_f32(grid_y);
+            float32x4_t extra_y = vdivq_f32(grid_y_abs, (double_range_y));
+            extra_y = vcvtq_f32_s32(vcvtq_s32_f32(extra_y));
+            extra_y = vsubq_f32(grid_y_abs, vmulq_f32(extra_y, double_range_y));
+            grid_y = vminq_f32(extra_y, vsubq_f32((double_range_y), extra_y));
+          } else {
+            float32x4_t double_range_x = vdupq_n_f32((x_max + 1) * 2);
+            float32x4_t grid_x_abs = vabsq_f32(vaddq_f32(grid_x, vhalf));
+            float32x4_t extra_x = vdivq_f32(grid_x_abs, (double_range_x));
+            extra_x = vcvtq_f32_s32(vcvtq_s32_f32(extra_x));
+            extra_x =
+                vsubq_f32(grid_x_abs, vmulq_f32(extra_x, (double_range_x)));
+            grid_x = vminq_f32(extra_x, vsubq_f32((double_range_x), extra_x));
+            grid_x = vminq_f32(vmaxq_f32(vsubq_f32(grid_x, vhalf), vzero),
+                               vdupq_n_f32(x_max));
+
+            float32x4_t double_range_y = vdupq_n_f32((y_max + 1) * 2);
+            float32x4_t grid_y_abs = vabsq_f32(vaddq_f32(grid_y, vhalf));
+            float32x4_t extra_y = vdivq_f32(grid_y_abs, (double_range_y));
+            extra_y = vcvtq_f32_s32(vcvtq_s32_f32(extra_y));
+            extra_y =
+                vsubq_f32(grid_y_abs, vmulq_f32(extra_y, (double_range_y)));
+            grid_y = vminq_f32(extra_y, vsubq_f32((double_range_y), extra_y));
+            grid_y = vminq_f32(vmaxq_f32(vsubq_f32(grid_y, vhalf), vzero),
+                               vdupq_n_f32(y_max));
+          }
+          break;
+        case PMODE::ZEROS:
+          break;
+        default:
+          LOG(FATAL) << "Unsupported padding mode: "
+                     << static_cast<int>(padding_mode);
       }
+      // compute xw, we, yn, ys
+      int32x4x4_t vcoor;
+      uint32x4_t mask_x = vcgtq_f32(vzero, grid_x);
+      float32x4_t temp_x = vbslq_f32(mask_x, vnone, vzero);
+      temp_x = vaddq_f32(grid_x, temp_x);
+      uint32x4_t mask_y = vcgtq_f32(vzero, grid_y);
+      float32x4_t temp_y = vbslq_f32(mask_y, vnone, vzero);
+      temp_y = vaddq_f32(grid_y, temp_y);
+      vcoor.val[0] = vcvtq_s32_f32(temp_x);
+      vcoor.val[2] = vcvtq_s32_f32(temp_y);
+      float32x4_t vxwf = vcvtq_f32_s32(vcoor.val[0]);
+      float32x4_t vynf = vcvtq_f32_s32(vcoor.val[2]);
+      float32x4_t vxef = vaddq_f32(vxwf, vone);
+      float32x4_t vysf = vaddq_f32(vynf, vone);
+      vcoor.val[1] = vcvtq_s32_f32(vxef);
+      vcoor.val[3] = vcvtq_s32_f32(vysf);
+      vst4q_s32(coor_p, vcoor);
+      coor_p += 16;
+
+      // compute dw, dn ,de, ds
+      float32x4x4_t vdis;
+      vdis.val[0] = vsubq_f32(grid_x, vxwf);
+      vdis.val[2] = vsubq_f32(grid_y, vynf);
+      vdis.val[1] = vsubq_f32(vxef, grid_x);
+      vdis.val[3] = vsubq_f32(vysf, grid_y);
+      vst4q_f32(dis_p, vdis);
+      dis_p += 16;
+
+      // compute bound
+      uint32x4x4_t vbound;
+      uint32x4_t logic_xw =
+          vorrq_u32(vcltq_f32(vxwf, vzero), vcgtq_f32(vxwf, vxmax));
+      uint32x4_t logic_xe =
+          vorrq_u32(vcltq_f32(vxef, vzero), vcgtq_f32(vxef, vxmax));
+      uint32x4_t logic_yn =
+          vorrq_u32(vcltq_f32(vynf, vzero), vcgtq_f32(vynf, vymax));
+      uint32x4_t logic_ys =
+          vorrq_u32(vcltq_f32(vysf, vzero), vcgtq_f32(vysf, vymax));
+      vbound.val[0] = vmvnq_u32(vorrq_u32(logic_xw, logic_yn));
+      vbound.val[1] = vmvnq_u32(vorrq_u32(logic_xe, logic_yn));
+      vbound.val[2] = vmvnq_u32(vorrq_u32(logic_xw, logic_ys));
+      vbound.val[3] = vmvnq_u32(vorrq_u32(logic_xe, logic_ys));
+      vst4q_u32(bound_p, vbound);
+      bound_p += 16;
     }
-    if (mode == "nearest") {
-    vst1q_f32(grid_new_x, grid_x);
-    vst1q_f32(grid_new_y, grid_y);
-    grid_new_x += 4;
-    grid_new_y += 4;
-    }
-
-    // compute xw, we, yn, ys
-    int32x4x4_t vcoor;
-    vcoor.val[0] = vcvtq_s32_f32(grid_x);
-    vcoor.val[2] = vcvtq_s32_f32(grid_y);
-    float32x4_t vxwf = vcvtq_f32_s32(vcoor.val[0]);
-    float32x4_t vynf = vcvtq_f32_s32(vcoor.val[2]);
-    float32x4_t vxef = vaddq_f32(vxwf, vone);
-    float32x4_t vysf = vaddq_f32(vynf, vone);
-    vcoor.val[1] = vcvtq_s32_f32(vxef);
-    vcoor.val[3] = vcvtq_s32_f32(vysf);
-    vst4q_s32(coor_p, vcoor);
-    coor_p += 16;
-
-    // compute dw, dn ,de, ds
-    float32x4x4_t vdis;
-    vdis.val[0] = vsubq_f32(grid_x, vxwf);
-    vdis.val[2] = vsubq_f32(grid_y, vynf);
-    vdis.val[1] = vsubq_f32(vxef, grid_x);
-    vdis.val[3] = vsubq_f32(vysf, grid_y);
-    vst4q_f32(dis_p, vdis);
-    dis_p += 16;
-
-    // compute bound
-    uint32x4x4_t vbound;
-    uint32x4_t logic_xw =
-        vorrq_u32(vcltq_f32(vxwf, vzero), vcgtq_f32(vxwf, vxmax));
-    uint32x4_t logic_xe =
-        vorrq_u32(vcltq_f32(vxef, vzero), vcgtq_f32(vxef, vxmax));
-    uint32x4_t logic_yn =
-        vorrq_u32(vcltq_f32(vynf, vzero), vcgtq_f32(vynf, vymax));
-    uint32x4_t logic_ys =
-        vorrq_u32(vcltq_f32(vysf, vzero), vcgtq_f32(vysf, vymax));
-    vbound.val[0] = vmvnq_u32(vorrq_u32(logic_xw, logic_yn));
-    vbound.val[1] = vmvnq_u32(vorrq_u32(logic_xe, logic_yn));
-    vbound.val[2] = vmvnq_u32(vorrq_u32(logic_xw, logic_ys));
-    vbound.val[3] = vmvnq_u32(vorrq_u32(logic_xe, logic_ys));
-    vst4q_u32(bound_p, vbound);
-    bound_p += 16;
   }
-#endif
   for (; i > 0; i--) {
     float x = grid[0];
     float y = grid[1];
@@ -178,58 +192,59 @@ void GridSamplerCompute::Run() {
     float grid_y = align_corners ? (y + 1) * 0.5 * y_max
                                  : (y + 1) * 0.5 * (y_max + 1) - 0.5;
     grid += 2;
-
-    // clip
-    if (padding_mode == "zeros") {
-      // nothing to do
-    } else if (padding_mode == "border") {
-      grid_x = fmin(fmax(grid_x, 0), x_max);
-      grid_y = fmin(fmax(grid_y, 0), y_max);
-    } else if (padding_mode == "reflection") {
-      if (align_corners) {
-        // x
-        float double_range_x = x_max * 2;
-        float grid_x_abs = abs(grid_x);
-        float extra_x =
-            grid_x_abs -
-            static_cast<int>(grid_x_abs / double_range_x) * double_range_x;
-        grid_x = fmin(extra_x, double_range_x - extra_x);
-        // y
-        float double_range_y = y_max * 2;
-        float grid_y_abs = abs(grid_y);
-        float extra_y =
-            grid_y_abs -
-            static_cast<int>(grid_y_abs / double_range_y) * double_range_y;
-        grid_y = fmin(extra_y, double_range_y - extra_y);
-      } else {
-        // x
-        float double_range_x = (x_max + 1) * 2;
-        float grid_x_abs = abs(grid_x + 0.5);
-        float extra_x =
-            grid_x_abs -
-            static_cast<int>(grid_x_abs / double_range_x) * double_range_x;
-        grid_x = fmin(extra_x, double_range_x - extra_x) - 0.5;
+    switch (padding_mode) {
+      case PMODE::BORDER:
         grid_x = fmin(fmax(grid_x, 0), x_max);
-        // y
-        float double_range_y = (y_max + 1) * 2;
-        float grid_y_abs = abs(grid_y + 0.5);
-        float extra_y =
-            grid_y_abs -
-            static_cast<int>(grid_y_abs / double_range_y) * double_range_y;
-        grid_y = fmin(extra_y, double_range_y - extra_y) - 0.5;
         grid_y = fmin(fmax(grid_y, 0), y_max);
-      }
-    } else {
-      LOG(FATAL) << "Unsupported padding mode: " << padding_mode;
+        break;
+      case PMODE::REFLECTION:
+        if (align_corners) {
+          // x
+          float double_range_x = x_max * 2;
+          float grid_x_abs = abs(grid_x);
+          float extra_x =
+              grid_x_abs -
+              static_cast<int>(grid_x_abs / double_range_x) * double_range_x;
+          grid_x = fmin(extra_x, double_range_x - extra_x);
+          // y
+          float double_range_y = y_max * 2;
+          float grid_y_abs = abs(grid_y);
+          float extra_y =
+              grid_y_abs -
+              static_cast<int>(grid_y_abs / double_range_y) * double_range_y;
+          grid_y = fmin(extra_y, double_range_y - extra_y);
+        } else {
+          // x
+          float double_range_x = (x_max + 1) * 2;
+          float grid_x_abs = abs(grid_x + 0.5);
+          float extra_x =
+              grid_x_abs -
+              static_cast<int>(grid_x_abs / double_range_x) * double_range_x;
+          grid_x = fmin(extra_x, double_range_x - extra_x) - 0.5;
+          grid_x = fmin(fmax(grid_x, 0), x_max);
+          // y
+          float double_range_y = (y_max + 1) * 2;
+          float grid_y_abs = abs(grid_y + 0.5);
+          float extra_y =
+              grid_y_abs -
+              static_cast<int>(grid_y_abs / double_range_y) * double_range_y;
+          grid_y = fmin(extra_y, double_range_y - extra_y) - 0.5;
+          grid_y = fmin(fmax(grid_y, 0), y_max);
+        }
+        break;
+      case PMODE::ZEROS:
+        break;
+      default:
+        LOG(FATAL) << "Unsupported padding mode: "
+                   << static_cast<int>(padding_mode);
     }
 
-    if (mode == "nearest") {
+    if (mode == GMODE::NEAREST) {
       *grid_new_x = round(grid_x);
       *grid_new_y = round(grid_y);
       grid_new_x++;
       grid_new_y++;
     }
-
     // compute xw, xe, yn, ys
     int32_t xw = static_cast<int32_t>(floor(grid_x));
     int32_t xe = xw + 1;
@@ -260,8 +275,7 @@ void GridSamplerCompute::Run() {
     *bound_p++ = ((logic_xw || logic_ys) ? 0 : 0xffffffff);
     *bound_p++ = ((logic_xe || logic_ys) ? 0 : 0xffffffff);
   }
-
-  if (mode == "bilinear") {
+  if (mode == GMODE::BILINEAR) {
     size_t cube_size = c * h * w;
     size_t spatial_size = h * w;
     // compute output
@@ -310,7 +324,7 @@ void GridSamplerCompute::Run() {
         }
       }
     }
-  } else if (mode == "nearest") {
+  } else if (mode == GMODE::NEAREST) {
     auto out_h = param.grid->dims()[1];
     auto out_w = param.grid->dims()[2];
     for (int nn = 0; nn < n; nn++) {
@@ -333,7 +347,7 @@ void GridSamplerCompute::Run() {
       }
     }
   } else {
-    LOG(FATAL) << "Unsupported mode " << mode;
+    LOG(FATAL) << "Unsupported mode " << static_cast<int>(mode);
   }
 }
 

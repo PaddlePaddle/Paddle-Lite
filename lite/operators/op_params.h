@@ -1730,12 +1730,21 @@ struct GroupNormParam : ParamBase {
 
 /// --------------------- grid sampler operators --------------------
 struct GridSamplerParam : ParamBase {
+  enum class PAD_MODE : int {
+    ZEROS,
+    BORDER,
+    REFLECTION,
+  };
+  enum class MODE : int {
+    BILINEAR,
+    NEAREST,
+  };
   lite::Tensor* x{};
   lite::Tensor* out{};
   lite::Tensor* grid{};
   bool align_corners{true};
-  std::string padding_mode{"zeros"};
-  std::string mode{"bilinear"};
+  PAD_MODE padding_mode{PAD_MODE::ZEROS};
+  MODE mode{MODE::NEAREST};
 };
 
 struct LstmParam : ParamBase {
