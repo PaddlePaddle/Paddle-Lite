@@ -22,7 +22,9 @@
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
-
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
+#endif
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -82,6 +84,15 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
       flag_1x1gemm_ = false;
       workspace_size_ = k * n * sizeof(float);
     }
+#ifdef ENABLE_ARM_FP16
+    if (!flag_trans_weights_) {
+      lite::arm::math::fp16::trans_gemm_weights_fp16(
+          *(param.filter), weights_, param.groups, &ctx);
+      flag_trans_weights_ = true;
+    } else {
+      flag_trans_weights_ = false;
+    }
+#else
     if (!flag_trans_weights_ && n > 1 && m > 1) {
       lite::arm::math::trans_gemm_weights<Ptype>(
           *(param.filter), weights_, param.groups, &ctx);
@@ -89,6 +100,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
     } else if (n == 1 || m == 1) {
       flag_trans_weights_ = false;
     }
+#endif
     last_shape_ = x_dims;
   }
   virtual void PrepareForRun();
