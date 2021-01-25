@@ -32,9 +32,6 @@ void ElementwiseScaleFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     fusion::ElementwiseScaleFuser fuser(elt_type);
     fuser(graph.get());
   }
-  LOG(INFO) << 1111;
-  Visualize(graph.get());
-  LOG(INFO) << 1111;
 }
 
 }  // namespace mir

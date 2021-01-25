@@ -74,7 +74,7 @@ cpp::OpDesc ElementwiseScaleFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetOutput("Out", {matched.at("output")->arg()->name});
   auto* scale_op_desc = matched.at("scale")->stmt()->op_info();
   op_desc.SetAttr("fuse_scale", true);
-  op_desc.SetAttr("activation_type", "");
+  op_desc.SetAttr<std::string>("activation_type", "");
   if (scale_op_desc->HasAttr("activation_type")) {
     op_desc.SetAttr("activation_type",
                     scale_op_desc->GetAttr<std::string>("activation_type"));
@@ -83,8 +83,12 @@ cpp::OpDesc ElementwiseScaleFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetAttr("scale", scale);
   float bias = scale_op_desc->GetAttr<float>("bias");
   op_desc.SetAttr("bias", bias);
-  float alpha = scale_op_desc->GetAttr<float>("alpha");
-  op_desc.SetAttr("alpha", alpha);
+  op_desc.SetAttr("alpha",
+                  6.f);  // default value for placeholder  of element+scale pass
+  if (scale_op_desc->HasAttr("alpha")) {
+    float alpha = scale_op_desc->GetAttr<float>("alpha");
+    op_desc.SetAttr("alpha", alpha);
+  }
   return op_desc;
 }
 
