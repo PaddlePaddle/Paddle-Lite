@@ -2036,6 +2036,16 @@ struct XPUSfaHeadParam : ParamBase {
   std::string op_type{""};
 };
 
+struct XPUGenerateSequenceParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+
+  int axis{-1};
+  bool flatten{false};
+  float value{0};
+  int dtype{-1};
+};
+
 // For DeformableConvolution op
 struct DeformableConvParam : ParamBase {
   lite::Tensor* x{};
