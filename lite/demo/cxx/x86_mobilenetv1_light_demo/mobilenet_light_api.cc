@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include <iostream>
 #include <vector>
 #if defined(_MSC_VER)
@@ -166,7 +167,8 @@ void RunModel(std::string model_dir,
     // CL_TUNE_EXHAUSTIVE: 3
     config.set_opencl_tune(CL_TUNE_NONE);
 
-    // opencl precision option
+    // opencl precision option. Most x86 devices only support fp32, so set
+    // CL_PRECISION_FP32 as default.
     // CL_PRECISION_AUTO: 0, first fp16 if valid, default
     // CL_PRECISION_FP32: 1, force fp32
     // CL_PRECISION_FP16: 2, force fp16
@@ -184,7 +186,6 @@ void RunModel(std::string model_dir,
       CreatePaddlePredictor<MobileConfig>(config);
 
   // 3. Prepare input data
-  std::cout << "input_shapes.size():" << input_shapes.size() << std::endl;
   for (int j = 0; j < input_shapes.size(); ++j) {
     auto input_tensor = predictor->GetInput(j);
     input_tensor->Resize(input_shapes[j]);
