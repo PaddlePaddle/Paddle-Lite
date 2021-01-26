@@ -118,6 +118,8 @@ void ConvScaleFuser::InsertNewNode(SSAGraph* graph,
   } else {
     LOG(FATAL) << "Unsupported for Conv without bias";
     /*
+    note: Uncomment codes below, because not ready for convert VarNode
+          or Tensor to Node.
     auto* conv_bias_t = scope->NewTensor(conv_bias_var_name);
     CHECK(conv_weight_t->dims().size() == 4) << "The dimension of conv weight
     must be 4.";
