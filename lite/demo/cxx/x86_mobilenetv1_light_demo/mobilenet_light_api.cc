@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Windows.h>
 #include <iostream>
 #include <vector>
+#if defined(_MSC_VER)
+#include <Windows.h>
 #undef min
 #undef max
+#else
+#include <sys/time.h>
+#endif
 #include "paddle_api.h"  // NOLINT
 /////////////////////////////////////////////////////////////////////////
 // If this demo is linked to static library:libpaddle_api_light_bundled.a
@@ -115,12 +119,19 @@ double compute_standard_deviation(const T* in,
 }
 
 inline uint64_t GetCurrentUS() {
+  uint64_t time;
+#if defined(_MSC_VER)
   LARGE_INTEGER now, freq;
   QueryPerformanceCounter(&now);
   QueryPerformanceFrequency(&freq);
   uint64_t sec = now.QuadPart / freq.QuadPart;
   uint64_t usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
-  uint64_t time = sec * 1000000 + usec;
+  time = sec * 1000000 + usec;
+#else
+  struct timeval tv;
+  gettimeofday(&tv, nullptr);
+  time = static_cast<uint64_t>(tv.tv_sec) * 1000000 + tv.tv_usec;
+#endif
   return time;
 }
 
