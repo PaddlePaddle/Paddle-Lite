@@ -30,7 +30,7 @@ bool XPUEmbeddingWithEltwiseAddOp::CheckShape() const {
 
   CHECK_EQ_OR_FALSE(table_dims.size(), 2);
   // id_dims must be [batch_size, seq_len] or [batch_size, seq_len, 1]
-  CHECK_EQ_OR_FALSE((id_rank == 2 || id_rank == 3), true);
+  CHECK(id_rank == 2 || id_rank == 3) << "unsupported id_rank: " << id_rank;
 
   return true;
 }
