@@ -42,6 +42,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 - scale
 - flatten
 - flatten2
+- pad2d
 
 可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/rknpu/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/rknpu/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
