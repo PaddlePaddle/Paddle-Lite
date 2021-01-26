@@ -376,6 +376,16 @@ void ConvImageCompute::PrepareForRun() {
     MUTABLE_DATA_GPU(bias_gpu_image_, 1, 1, bias_image_data);
   }
 
+  // scale options
+  if (conv_param_->scale_activation_type == "") {
+    // do nothing
+  } else if (conv_param_->scale_activation_type == "relu6") {
+    build_options_single += " -DSCALE_ACTIVATION -DFUSE_SCALE_RELU6 ";
+  } else {
+    LOG(FATAL) << "Unsupported scale_activation_type:"
+               << conv_param_->scale_activation_type;
+  }
+
   // define image pointer for filter, bias
   input_image_p_ = DATA_GPU(conv_param_->x);
   filter_image_p_ = DATA_GPU(filter_gpu_image_);

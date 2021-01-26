@@ -113,6 +113,7 @@ class Optimizer {
     (defined LITE_WITH_ARM)
          "lite_elementwise_activation_fuse_pass",  //
 #endif
+         "lite_conv_scale_fuse_pass",
          "identity_dropout_eliminate_pass",
          "__xpu__resnet_fuse_pass",
          "__xpu__resnet_d_fuse_pass",
