@@ -32,9 +32,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class fc_image_compute : public KernelLite<TARGET(kMetal),
-                                           PRECISION(kFloat),
-                                           DATALAYOUT(kMetalTexture2DArray)> {
+class FCImageCompute : public KernelLite<TARGET(kMetal),
+                                         PRECISION(kFloat),
+                                         DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::FcParam;
 
  public:
@@ -42,24 +42,23 @@ class fc_image_compute : public KernelLite<TARGET(kMetal),
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  const metal_image* weight_buffer_;
-  const metal_image* bias_buffer_;
-  metal_image* output_buffer_;
+  const MetalImage* input_buffer_;
+  const MetalImage* weight_buffer_;
+  const MetalImage* bias_buffer_;
+  MetalImage* output_buffer_;
 
-  std::shared_ptr<metal_buffer> param_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
   Tensor shape_out_dev_;
-  reshape_image_compute reshape_;
+  ReshapeImageCompute reshape_;
 
   DDim input_x_mul_dim_;
   bool insert_shape = false;
 };
 
-class fc_image_compute_half
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
+class FCImageComputeHalf : public KernelLite<TARGET(kMetal),
+                                             PRECISION(kFP16),
+                                             DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::FcParam;
 
  public:
@@ -67,14 +66,14 @@ class fc_image_compute_half
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  const metal_image* weight_buffer_;
-  const metal_image* bias_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  const MetalImage* input_buffer_;
+  const MetalImage* weight_buffer_;
+  const MetalImage* bias_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
   Tensor shape_out_dev_;
-  reshape_image_compute_half reshape_;
+  ReshapeImageComputeHalf reshape_;
   DDim input_x_mul_dim_;
   bool insert_shape = false;
 };

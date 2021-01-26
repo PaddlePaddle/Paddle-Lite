@@ -25,18 +25,18 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-void elementwise_mul_image_compute::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void ElementwiseMulImageCompute::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
   auto input_dims = param.X->dims();
 
-  output_buffer_ = param.Out->mutable_data<float, metal_image>(output_dims);
-  input_buffer_x_ = param.X->data<float, metal_image>();
-  input_buffer_y_ = param.Y->data<float, metal_image>();
+  output_buffer_ = param.Out->mutable_data<float, MetalImage>(output_dims);
+  input_buffer_x_ = param.X->data<float, MetalImage>();
+  input_buffer_y_ = param.Y->data<float, MetalImage>();
 
   std::vector<int> xdim, ydim, xtrans, ytrans;
   for (int i = 0; i < 4; i++) {
@@ -47,9 +47,9 @@ void elementwise_mul_image_compute::PrepareForRun() {
   auto axis = param.axis;
   int params_axis = 0;
   if (axis == -1) {
-    params_axis = 4 - (int)(output_buffer_->tensorDim_.size());
+    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size());
   } else {
-    params_axis = 4 - (int)(output_buffer_->tensorDim_.size()) + axis;
+    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size()) + axis;
   }
   int params_fast = 0;
   if ((input_buffer_x_->dim_ == input_buffer_y_->dim_) &&
@@ -59,58 +59,58 @@ void elementwise_mul_image_compute::PrepareForRun() {
   }
 
   int addByChannel = 0;
-  if (input_buffer_y_->tensorDim_.size() == 1 &&
+  if (input_buffer_y_->tensor_dim_.size() == 1 &&
       (axis == 1 ||
-       (axis == -1 && input_buffer_y_->tensorDim_[0] == input_buffer_x_->padToFourDim_[1]))) {
+       (axis == -1 && input_buffer_y_->tensor_dim_[0] == input_buffer_x_->pad_to_four_dim_[1]))) {
     addByChannel = 1;
   }
 
-  ElementwiseMetalParam metalParam = {addByChannel};
-  params_buffer_ = mtl_ctx->create_buffer(
-      *device, &metalParam, sizeof(metalParam), METAL_ACCESS_FLAG::CPUWriteOnly);
+  ElementwiseMetalParam element_params = {addByChannel};
+  params_buffer_ = mtl_ctx->CreateBuffer(
+      *device, &element_params, sizeof(element_params), METAL_ACCESS_FLAG::CPUWriteOnly);
 }
 
-void elementwise_mul_image_compute::Run() {
+void ElementwiseMulImageCompute::Run() {
   const auto& param = this->Param<param_t>();
-  auto output_width = output_buffer_->textureWidth_;
-  auto output_height = output_buffer_->textureHeight_;
-  auto output_array_length = output_buffer_->arrayLength_;
+  auto output_width = output_buffer_->texture_width_;
+  auto output_height = output_buffer_->texture_height_;
+  auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
     string function_name = "elementwise_mul";
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    auto kernel = mtl_ctx->get_kernel(*mtl_dev, function_name);
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
 
-    metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                    static_cast<metal_uint>(output_height),
-                                    static_cast<metal_uint>(output_array_length)};
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                    static_cast<MetalUint>(output_height),
+                                    static_cast<MetalUint>(output_array_length)};
 
-    auto args = {metal_kernel_arg{input_buffer_x_},
-                 metal_kernel_arg{input_buffer_y_},
-                 metal_kernel_arg{output_buffer_},
-                 metal_kernel_arg{params_buffer_}};
+    auto args = {MetalKernelArgument{input_buffer_x_},
+                 MetalKernelArgument{input_buffer_y_},
+                 MetalKernelArgument{output_buffer_},
+                 MetalKernelArgument{params_buffer_}};
 
-    kernel->execute(*queue, global_work_size, 0, args);
-    queue->wait_until_complete();
+    kernel->Execute(*queue, global_work_size, false, args);
+    queue->WaitUntilComplete();
   }
 }
 
-void elementwise_mul_image_compute_half::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void ElementwiseMulImageComputeHalf::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
   auto input_dims = param.X->dims();
 
-  output_buffer_ = param.Out->mutable_data<metal_half, metal_image>(output_dims);
-  input_buffer_x_ = param.X->data<metal_half, metal_image>();
-  input_buffer_y_ = param.Y->data<metal_half, metal_image>();
+  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
+  input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
+  input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
 
   std::vector<int> xdim, ydim, xtrans, ytrans;
   for (int i = 0; i < 4; i++) {
@@ -121,9 +121,9 @@ void elementwise_mul_image_compute_half::PrepareForRun() {
   auto axis = param.axis;
   int params_axis = 0;
   if (axis == -1) {
-    params_axis = 4 - (int)(output_buffer_->tensorDim_.size());
+    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size());
   } else {
-    params_axis = 4 - (int)(output_buffer_->tensorDim_.size()) + axis;
+    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size()) + axis;
   }
   int params_fast = 0;
   if ((input_buffer_x_->dim_ == input_buffer_y_->dim_) &&
@@ -133,48 +133,48 @@ void elementwise_mul_image_compute_half::PrepareForRun() {
   }
 
   int addByChannel = 0;
-  if (input_buffer_y_->tensorDim_.size() == 1 &&
+  if (input_buffer_y_->tensor_dim_.size() == 1 &&
       (axis == 1 ||
-       (axis == -1 && input_buffer_y_->tensorDim_[0] == input_buffer_x_->padToFourDim_[1]))) {
+       (axis == -1 && input_buffer_y_->tensor_dim_[0] == input_buffer_x_->pad_to_four_dim_[1]))) {
     addByChannel = 1;
   }
 
-  ElementwiseMetalParam metalParam = {addByChannel};
-  params_buffer_ = mtl_ctx->create_buffer(
-      *device, &metalParam, sizeof(metalParam), METAL_ACCESS_FLAG::CPUWriteOnly);
+  ElementwiseMetalParam element_params = {addByChannel};
+  params_buffer_ = mtl_ctx->CreateBuffer(
+      *device, &element_params, sizeof(element_params), METAL_ACCESS_FLAG::CPUWriteOnly);
 }
 
-void elementwise_mul_image_compute_half::Run() {
+void ElementwiseMulImageComputeHalf::Run() {
   const auto& param = this->Param<param_t>();
-  auto output_width = output_buffer_->textureWidth_;
-  auto output_height = output_buffer_->textureHeight_;
-  auto output_array_length = output_buffer_->arrayLength_;
+  auto output_width = output_buffer_->texture_width_;
+  auto output_height = output_buffer_->texture_height_;
+  auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
     string function_name = "elementwise_mul_half";
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    auto kernel = mtl_ctx->get_kernel(*mtl_dev, function_name);
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
 
-    metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                    static_cast<metal_uint>(output_height),
-                                    static_cast<metal_uint>(output_array_length)};
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                    static_cast<MetalUint>(output_height),
+                                    static_cast<MetalUint>(output_array_length)};
 
-    auto args = {metal_kernel_arg{input_buffer_x_},
-                 metal_kernel_arg{input_buffer_y_},
-                 metal_kernel_arg{output_buffer_},
-                 metal_kernel_arg{params_buffer_}};
+    auto args = {MetalKernelArgument{input_buffer_x_},
+                 MetalKernelArgument{input_buffer_y_},
+                 MetalKernelArgument{output_buffer_},
+                 MetalKernelArgument{params_buffer_}};
 
-    kernel->execute(*queue, global_work_size, 0, args);
-    queue->wait_until_complete();
+    kernel->Execute(*queue, global_work_size, false, args);
+    queue->WaitUntilComplete();
   }
 #if 0
-  metal_debug::dump_image("output_buffer_", output_buffer_, param.Out->dims().production());
-  metal_debug::dump_image("input_buffer_x_half", input_buffer_x_, param.X->dims().production());
-  metal_debug::dump_image("input_buffer_y_half", input_buffer_y_, param.Y->dims().production());
+  metal_debug::DumpImage("output_buffer_", output_buffer_, param.Out->dims().production());
+  metal_debug::DumpImage("input_buffer_x_half", input_buffer_x_, param.X->dims().production());
+  metal_debug::DumpImage("input_buffer_y_half", input_buffer_y_, param.Y->dims().production());
 #endif
 }
 
@@ -187,7 +187,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::elementwise_mul_image_compute,
+                     paddle::lite::kernels::metal::ElementwiseMulImageCompute,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
@@ -205,7 +205,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::elementwise_mul_image_compute_half,
+                     paddle::lite::kernels::metal::ElementwiseMulImageComputeHalf,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                PRECISION(kFP16),

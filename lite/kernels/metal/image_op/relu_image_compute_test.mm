@@ -64,7 +64,7 @@ TEST(relu_metal, retrive_op) {
 }
 
 TEST(relu_metal, init) {
-  relu_image_compute relu;
+  ReluImageCompute relu;
   ASSERT_EQ(relu.precision(), PRECISION(kFloat));
   ASSERT_EQ(relu.target(), TARGET(kMetal));
 }
@@ -135,7 +135,7 @@ TEST(relu_metal, compute) {
                       x_data[i] = sign * static_cast<float>(i % 64);
                     }
 
-                    auto x_dev_ptr = x_dev.mutable_data<float, metal_image>(
+                    auto x_dev_ptr = x_dev.mutable_data<float, MetalImage>(
                         x_dev.dims(), {0, 2, 3, 1}, (void*)x_data);
                     auto y_host_ptr = y.mutable_data<float>();
 
@@ -144,18 +144,18 @@ TEST(relu_metal, compute) {
                       Tensor x_from_dev;
                       x_from_dev.Resize(in_out_shape);
                       auto x_from_dev_ptr = x_from_dev.mutable_data<float>();
-                      x_dev_ptr->to_nchw<float>(x_from_dev_ptr);
+                      x_dev_ptr->CopyToNCHW<float>(x_from_dev_ptr);
                       for (int i = 0; i < x_from_dev.dims().production(); i++) {
                         ASSERT_NEAR(x_from_dev_ptr[i], x_data[i], 1e-5);
                       }
                     }
 
                     // prepare kernel params and run
-                    relu_image_compute relu;
+                    ReluImageCompute relu;
                     std::unique_ptr<KernelContext> ctx(new KernelContext);
-                    ctx->As<MetalContext>().InitOnce();
+                    ctx->As<ContextMetal>().InitOnce();
 
-                    auto mt = (metal_context*)ctx->As<MetalContext>().context();
+                    auto mt = (MetalContext*)ctx->As<ContextMetal>().context();
                     mt->set_metal_path("/Users/liuzheyuan/code/Paddle-Lite/cmake-build-debug/lite/"
                                        "backends/metal/lite.metallib");
 
@@ -166,8 +166,8 @@ TEST(relu_metal, compute) {
                     relu.SetParam(param);
                     relu.Launch();
 
-                    auto y_dev_ptr = y_dev.data<float, metal_image>();
-                    y_dev_ptr->to_nchw<float>(y_data);
+                    auto y_dev_ptr = y_dev.data<float, MetalImage>();
+                    y_dev_ptr->CopyToNCHW<float>(y_data);
 
                     // invoking ref implementation and compare results
                     param.X = &x;
@@ -197,7 +197,7 @@ TEST(relu_metal_half, retrive_op_half) {
 }
 
 TEST(relu_metal_half, init) {
-  relu_image_compute_half relu_half;
+  ReluImageComputeHalf relu_half;
   ASSERT_EQ(relu_half.precision(), PRECISION(kFP16));
   ASSERT_EQ(relu_half.target(), TARGET(kMetal));
 }
@@ -271,8 +271,8 @@ TEST(relu_metal_half, compute) {
                     //                    auto x_dev_ptr = x_dev.mutable_data<float, metal_image>(n,
                     //                    c, h, w, (void*)x_data);
                     auto x_dev_ptr =
-                        x_dev.mutable_data<metal_half, metal_image>(x_dev.dims(), {0, 2, 3, 1});
-                    x_dev_ptr->from_nchw<float>(x_data);
+                        x_dev.mutable_data<MetalHalf, MetalImage>(x_dev.dims(), {0, 2, 3, 1});
+                    x_dev_ptr->CopyFromNCHW<float>(x_data);
                     auto y_host_ptr = y.mutable_data<float>();
 
                     {
@@ -280,16 +280,16 @@ TEST(relu_metal_half, compute) {
                       Tensor x_from_dev;
                       x_from_dev.Resize(in_out_shape);
                       auto x_from_dev_ptr = x_from_dev.mutable_data<float>();
-                      x_dev_ptr->to_nchw<float>(reinterpret_cast<float*>(x_from_dev_ptr));
+                      x_dev_ptr->CopyToNCHW<float>(reinterpret_cast<float*>(x_from_dev_ptr));
                       for (int i = 0; i < x_from_dev.dims().production(); i++) {
                         ASSERT_NEAR(x_from_dev_ptr[i], x_data[i], 1e-5);
                       }
                     }
 
                     // prepare kernel params and run
-                    relu_image_compute_half relu;
+                    ReluImageComputeHalf relu;
                     std::unique_ptr<KernelContext> ctx(new KernelContext);
-                    ctx->As<MetalContext>().InitOnce();
+                    ctx->As<ContextMetal>().InitOnce();
                     relu.SetContext(std::move(ctx));
                     operators::ActivationParam param;
                     param.X = &x_dev;
@@ -297,8 +297,8 @@ TEST(relu_metal_half, compute) {
                     relu.SetParam(param);
                     relu.Launch();
 
-                    auto y_dev_ptr = y_dev.data<metal_half, metal_image>();
-                    y_dev_ptr->to_nchw<float>(y_data);
+                    auto y_dev_ptr = y_dev.data<MetalHalf, MetalImage>();
+                    y_dev_ptr->CopyToNCHW<float>(y_data);
 
                     // invoking ref implementation and compare results
                     param.X = &x;

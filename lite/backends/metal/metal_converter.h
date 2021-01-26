@@ -23,21 +23,21 @@ namespace paddle {
 namespace lite {
 
 template <typename P>
-class data_converter {
+class DataConverter {
  public:
-  virtual void convert(P *from, P *to, DDim fromDim) = 0;
-  virtual DDim getToDim(DDim fromDim) = 0;
-  virtual int capacity(DDim fromDim) { return 0; }
+  virtual void Convert(P *from, P *to, DDim fromDim) = 0;
+  virtual DDim GetToDim(DDim fromDim) = 0;
+  virtual int Capacity(DDim fromDim) { return 0; }
 };
 
 template <typename P>
-class MPSPointerConverter : public data_converter<P> {
+class MPSPointerConverter : public DataConverter<P> {
   /// [ outputChannels ][ inputChannels ][ kernelHeight ][ kernelWidth ] ->
   /// [ outputChannels ][ kernelHeight ][ kernelWidth ][ inputChannels ]
   /// - Parameters:
   ///   - from: from pointer
   ///   - to: to pointer
-  void convert(P *from, P *to, DDim fromDim) override {
+  void Convert(P *from, P *to, DDim fromDim) override {
     auto outputChannels = fromDim[0];
     auto inputChannels = fromDim[1];
     auto kernelHeight = fromDim[2];
@@ -59,7 +59,7 @@ class MPSPointerConverter : public data_converter<P> {
     }
   }
 
-  DDim getToDim(DDim fromDim) override {
+  DDim GetToDim(DDim fromDim) override {
     auto outputChannels = fromDim[0];
     auto inputChannels = fromDim[1];
     auto kernelHeight = fromDim[2];
@@ -71,13 +71,13 @@ class MPSPointerConverter : public data_converter<P> {
 };
 
 template <typename P>
-class ConvTransposeConverter : public data_converter<P> {
+class ConvTransposeConverter : public DataConverter<P> {
   /// [ outputChannels ][ inputChannels ][ kernelHeight ][ kernelWidth ] ->
   /// [ outputChannels ][ kernelHeight ][ kernelWidth ][ inputChannels ]
   /// - Parameters:
   ///   - from: from pointer
   ///   - to: to pointer
-  void convert(P *from, P *to, DDim fromDim) override {
+  void Convert(P *from, P *to, DDim fromDim) override {
     auto N = fromDim[0];
     auto C = fromDim[1];
     auto H = fromDim[2];
@@ -99,7 +99,7 @@ class ConvTransposeConverter : public data_converter<P> {
     }
   }
 
-  DDim getToDim(DDim fromDim) override {
+  DDim GetToDim(DDim fromDim) override {
     auto N = fromDim[0];
     auto C = fromDim[1];
     auto H = fromDim[2];
@@ -110,15 +110,15 @@ class ConvTransposeConverter : public data_converter<P> {
 };
 
 template <typename P>
-class WinogradPointerConverter : public data_converter<P> {
-  void convert(P *from, P *to, DDim fromDim) override {
+class WinogradPointerConverter : public DataConverter<P> {
+  void Convert(P *from, P *to, DDim fromDim) override {
     auto N = fromDim[0];
     auto C = fromDim[1];
     auto H = fromDim[2];
     auto W = fromDim[3];
     if (H != 3 || W != 3) {
       throw std::logic_error(
-          "WinogradPointerConverter convert H and W must equal to 3");
+          "WinogradPointerConverter Convert H and W must equal to 3");
     }
     for (int n = 0; n < N; n++) {
       for (int c = 0; c < C; c++) {
@@ -198,41 +198,41 @@ class WinogradPointerConverter : public data_converter<P> {
     }
   }
 
-  DDim getToDim(DDim fromDim) override {
+  DDim GetToDim(DDim fromDim) override {
     auto N = fromDim[0];
     auto C = fromDim[1];
     auto H = fromDim[2];
     auto W = fromDim[3];
     if (H != 3 || W != 3) {
       throw std::logic_error(
-          "ERROR: WinogradPointerConverter getToDim H and W must equal to 3");
+          "ERROR: WinogradPointerConverter GetToDim H and W must equal to 3");
     }
     auto toDim = DDimLite({N, C, H + 1, W + 1});
     return toDim;
   }
 
-  int capacity(DDim fromDim) override {
+  int Capacity(DDim fromDim) override {
     auto N = fromDim[0];
     auto C = fromDim[1];
     auto H = fromDim[2];
     auto W = fromDim[3];
     if (H != 3 || W != 3) {
       throw std::logic_error(
-          "ERROR: WinogradPointerConverter capacity H and W must equal to 3");
+          "ERROR: WinogradPointerConverter Capacity H and W must equal to 3");
     }
     return static_cast<int>(N * C * (H + 1) * (W + 1));
   }
 };
 
-class metal_converter {
+class MetalConverter {
  public:
   template <typename SP, typename DP>
   static void NCHW2NHWC(
       DP *dstPtr, const SP *srcPtr, int N, int C, int H, int W) {}
 
   template <>
-  void NCHW2NHWC<float, metal_half>(
-      metal_half *dstPtr, const float *srcPtr, int N, int C, int H, int W) {
+  void NCHW2NHWC<float, MetalHalf>(
+      MetalHalf *dstPtr, const float *srcPtr, int N, int C, int H, int W) {
     auto HXW = H * W;
     auto CXHXW = C * H * W;
     int index = 0;
@@ -268,12 +268,8 @@ class metal_converter {
   }
 
   template <>
-  void NCHW2NHWC<metal_half, metal_half>(metal_half *dstPtr,
-                                         const metal_half *srcPtr,
-                                         int N,
-                                         int C,
-                                         int H,
-                                         int W) {
+  void NCHW2NHWC<MetalHalf, MetalHalf>(
+      MetalHalf *dstPtr, const MetalHalf *srcPtr, int N, int C, int H, int W) {
     auto HXW = H * W;
     auto CXHXW = C * H * W;
     int index = 0;
@@ -290,7 +286,7 @@ class metal_converter {
   }
 
   template <typename DP, typename SP>
-  static void NHWC_EXPAND2NCHW(
+  static void NHWCExpand2NCHW(
       DP *dstPtr, const SP *srcPtr, int N, int C, int H, int W) {
     auto C_EXPAND = ((C + 3) / 4) * 4;
     auto HXWXC_E = H * W * C_EXPAND;
@@ -309,8 +305,8 @@ class metal_converter {
   }
 
   template <>
-  void NHWC_EXPAND2NCHW<float, metal_half>(
-      float *dstPtr, const metal_half *srcPtr, int N, int C, int H, int W) {
+  void NHWCExpand2NCHW<float, MetalHalf>(
+      float *dstPtr, const MetalHalf *srcPtr, int N, int C, int H, int W) {
     auto C_EXPAND = ((C + 3) / 4) * 4;
     auto HXWXC_E = H * W * C_EXPAND;
     auto WXC_E = W * C_EXPAND;
@@ -329,7 +325,7 @@ class metal_converter {
   }
 
   template <>
-  void NHWC_EXPAND2NCHW<float, float>(
+  void NHWCExpand2NCHW<float, float>(
       float *dstPtr, const float *srcPtr, int N, int C, int H, int W) {
     auto C_EXPAND = ((C + 3) / 4) * 4;
     auto HXWXC_E = H * W * C_EXPAND;
@@ -348,8 +344,8 @@ class metal_converter {
   }
 
   template <>
-  void NHWC_EXPAND2NCHW<metal_half, float>(
-      metal_half *dstPtr, const float *srcPtr, int N, int C, int H, int W) {
+  void NHWCExpand2NCHW<MetalHalf, float>(
+      MetalHalf *dstPtr, const float *srcPtr, int N, int C, int H, int W) {
     auto C_EXPAND = ((C + 3) / 4) * 4;
     auto HXWXC_E = H * W * C_EXPAND;
     auto WXC_E = W * C_EXPAND;
@@ -368,12 +364,8 @@ class metal_converter {
   }
 
   template <>
-  void NHWC_EXPAND2NCHW<metal_half, metal_half>(metal_half *dstPtr,
-                                                const metal_half *srcPtr,
-                                                int N,
-                                                int C,
-                                                int H,
-                                                int W) {
+  void NHWCExpand2NCHW<MetalHalf, MetalHalf>(
+      MetalHalf *dstPtr, const MetalHalf *srcPtr, int N, int C, int H, int W) {
     auto C_EXPAND = ((C + 3) / 4) * 4;
     auto HXWXC_E = H * W * C_EXPAND;
     auto WXC_E = W * C_EXPAND;
@@ -430,8 +422,8 @@ class metal_converter {
   }
 
   template <>
-  void NHWC2NCHW<float, metal_half>(
-      float *dstPtr, const metal_half *srcPtr, int N, int C, int H, int W) {
+  void NHWC2NCHW<float, MetalHalf>(
+      float *dstPtr, const MetalHalf *srcPtr, int N, int C, int H, int W) {
     auto C_EXPAND = C;
     auto HXWXC_E = H * W * C_EXPAND;
     auto WXC_E = W * C_EXPAND;
@@ -450,12 +442,8 @@ class metal_converter {
   }
 
   template <>
-  void NHWC2NCHW<metal_half, metal_half>(metal_half *dstPtr,
-                                         const metal_half *srcPtr,
-                                         int N,
-                                         int C,
-                                         int H,
-                                         int W) {
+  void NHWC2NCHW<MetalHalf, MetalHalf>(
+      MetalHalf *dstPtr, const MetalHalf *srcPtr, int N, int C, int H, int W) {
     auto C_EXPAND = C;
     auto HXWXC_E = H * W * C_EXPAND;
     auto WXC_E = W * C_EXPAND;
@@ -474,8 +462,8 @@ class metal_converter {
   }
 
   template <>
-  void NHWC2NCHW<metal_half, float>(
-      metal_half *dstPtr, const float *srcPtr, int N, int C, int H, int W) {
+  void NHWC2NCHW<MetalHalf, float>(
+      MetalHalf *dstPtr, const float *srcPtr, int N, int C, int H, int W) {
     auto C_EXPAND = C;
     auto HXWXC_E = H * W * C_EXPAND;
     auto WXC_E = W * C_EXPAND;

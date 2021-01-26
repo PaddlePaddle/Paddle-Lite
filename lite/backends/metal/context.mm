@@ -14,18 +14,17 @@
 
 
 #include "lite/backends/metal/context.h"
-#include "lite/backends/metal/metal_context.h"
 
 namespace paddle {
 namespace lite {
 
-void MetalContext::InitOnce() {
-  global_ctx.prepare_devices();
-  this->metal_context_ = &global_ctx;
+void ContextMetal::InitOnce() {
+  TargetWrapperMetal::ctx_.PrepareDevices();
+  this->context_ = &TargetWrapperMetal::ctx_;
 }
 
-void MetalContext::CopySharedTo(MetalContext* ctx) {
-  ctx->metal_context_ = metal_context_;
+void ContextMetal::CopySharedTo(ContextMetal* ctx) {
+  ctx->context_ = context_;
   return;
 }
 

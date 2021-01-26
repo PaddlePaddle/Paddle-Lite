@@ -28,46 +28,45 @@
 namespace paddle {
 namespace lite {
 
-class metal_context {
+class MetalContext {
  public:
   /// device
-  void prepare_devices();
-  int get_devices_num();
-  metal_device* get_device_by_id(int id);
-  const metal_device* get_default_device();
+  void PrepareDevices();
+  int GetDevicesNum();
+  MetalDevice* GetDeviceByID(int id);
+  const MetalDevice* GetDefaultDevice();
 
   void set_metal_path(std::string path);
   void set_use_aggressive_optimization(bool flag);
   void set_use_mps(bool flag);
-
-  bool get_use_mps() const { return use_mps_; }
-  bool get_use_aggressive_optimization() const {
+  bool use_mps() const { return use_mps_; }
+  bool use_aggressive_optimization() const {
     return use_aggressive_optimization_;
   }
 
   /// queue
-  std::shared_ptr<metal_queue> get_default_queue(const metal_device& device);
-  std::shared_ptr<metal_queue> create_queue(const metal_device& device);
+  std::shared_ptr<MetalQueue> GetDefaultQueue(const MetalDevice& device);
+  std::shared_ptr<MetalQueue> CreateQueue(const MetalDevice& device);
 
   /// program
-  std::shared_ptr<metal_kernel> get_kernel(const metal_device& device,
-                                           std::string function_name,
-                                           std::string library_name = "");
+  std::shared_ptr<MetalKernel> GetKernel(const MetalDevice& device,
+                                         std::string function_name,
+                                         std::string library_name = "");
 
   /// buffer_and_image
-  std::shared_ptr<metal_buffer> create_buffer(
-      const metal_device& device,
+  std::shared_ptr<MetalBuffer> CreateBuffer(
+      const MetalDevice& device,
       size_t length,
       METAL_ACCESS_FLAG flags = METAL_ACCESS_FLAG::CPUReadWrite);
 
-  std::shared_ptr<metal_buffer> create_buffer(
-      const metal_device& device,
+  std::shared_ptr<MetalBuffer> CreateBuffer(
+      const MetalDevice& device,
       void* data,
       size_t length,
       METAL_ACCESS_FLAG flags = METAL_ACCESS_FLAG::CPUReadWrite);
 
-  metal_device* best_metal_device_{nullptr};
-  mutable std::vector<std::shared_ptr<metal_device>> devices_ = {};
+  MetalDevice* best_metal_device_{nullptr};
+  mutable std::vector<std::shared_ptr<MetalDevice>> devices_ = {};
 
  private:
   bool got_devices_{false};

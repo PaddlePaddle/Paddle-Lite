@@ -32,7 +32,7 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class elementwise_add_image_compute
+class ElementwiseAddImageCompute
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFloat),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -43,13 +43,13 @@ class elementwise_add_image_compute
   void Run() override;
 
  private:
-  const metal_image* input_buffer_x_;
-  const metal_image* input_buffer_y_;
-  std::shared_ptr<metal_buffer> params_buffer_;
-  metal_image* output_buffer_;
+  const MetalImage* input_buffer_x_;
+  const MetalImage* input_buffer_y_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
+  MetalImage* output_buffer_;
 };
 
-class elementwise_add_image_compute_half
+class ElementwiseAddImageComputeHalf
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFP16),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -60,10 +60,10 @@ class elementwise_add_image_compute_half
   void Run() override;
 
  private:
-  const metal_image* input_buffer_x_;
-  const metal_image* input_buffer_y_;
-  std::shared_ptr<metal_buffer> params_buffer_;
-  metal_image* output_buffer_;
+  const MetalImage* input_buffer_x_;
+  const MetalImage* input_buffer_y_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
+  MetalImage* output_buffer_;
 };
 
 }  // namespace metal

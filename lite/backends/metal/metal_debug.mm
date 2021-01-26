@@ -18,54 +18,54 @@
 namespace paddle {
 namespace lite {
 
-void metal_debug::dump_image(std::string name, metal_image* image, int length, dump_mode mode) {
+void MetalDebug::DumpImage(std::string name, MetalImage* image, int length, DumpMode mode) {
   float* buf = (float*)malloc(sizeof(float) * length);
   std::string filename = name + ".txt";
   FILE* fp = fopen(filename.c_str(), "w");
-  image->to_nchw<float>(buf);
+  image->CopyToNCHW<float>(buf);
   for (int i = 0; i < length; ++i) {
-    if (mode == dump_mode::TO_FILE || mode == dump_mode::TO_BOTH) fprintf(fp, "%f\n", buf[i]);
-    if (mode == dump_mode::TO_STDOUT || mode == dump_mode::TO_BOTH) VLOG(4) << buf[i];
+    if (mode == DumpMode::kFile || mode == DumpMode::kBoth) fprintf(fp, "%f\n", buf[i]);
+    if (mode == DumpMode::kStd || mode == DumpMode::kBoth) VLOG(4) << buf[i];
   }
   free(buf);
   fclose(fp);
   fp = NULL;
 }
 
-void metal_debug::dump_image(std::string name,
-                             const metal_image* image,
+void MetalDebug::DumpImage(std::string name,
+                             const MetalImage* image,
                              int length,
-                             dump_mode mode) {
-  dump_image(name, const_cast<metal_image*>(image), length, mode);
+                             DumpMode mode) {
+  DumpImage(name, const_cast<MetalImage*>(image), length, mode);
 }
 
-void metal_debug::dump_buffer(std::string name, metal_buffer* buffer, int length, dump_mode mode) {
+void MetalDebug::DumpBuffer(std::string name, MetalBuffer* buffer, int length, DumpMode mode) {
   float* buf = (float*)malloc(sizeof(float) * length);
   std::string filename = name + ".txt";
   FILE* fp = fopen(filename.c_str(), "w");
-  buffer->to_nchw<float>(buf);
+  buffer->CopyToNCHW<float>(buf);
   for (int i = 0; i < length; ++i) {
-    if (mode == dump_mode::TO_FILE || mode == dump_mode::TO_BOTH) fprintf(fp, "%f\n", buf[i]);
-    if (mode == dump_mode::TO_STDOUT || mode == dump_mode::TO_BOTH) VLOG(4) << buf[i];
+    if (mode == DumpMode::kFile || mode == DumpMode::kBoth) fprintf(fp, "%f\n", buf[i]);
+    if (mode == DumpMode::kStd || mode == DumpMode::kBoth) VLOG(4) << buf[i];
   }
   free(buf);
   fclose(fp);
   fp = NULL;
 }
 
-void metal_debug::dump_buffer(std::string name,
-                              const metal_buffer* buf,
+void MetalDebug::DumpBuffer(std::string name,
+                              const MetalBuffer* buf,
                               int length,
-                              dump_mode mode) {
-  dump_buffer(name, const_cast<metal_buffer*>(buf), length, mode);
+                              DumpMode mode) {
+  DumpBuffer(name, const_cast<MetalBuffer*>(buf), length, mode);
 }
 
-void metal_debug::dump_nchw_float(std::string name, float* data, int length, dump_mode mode) {
+void MetalDebug::DumpNCHWFloat(std::string name, float* data, int length, DumpMode mode) {
   std::string filename = name + ".txt";
   FILE* fp = fopen(filename.c_str(), "w");
   for (int i = 0; i < length; ++i) {
-    if (mode == dump_mode::TO_FILE || mode == dump_mode::TO_BOTH) fprintf(fp, "%f\n", data[i]);
-    if (mode == dump_mode::TO_STDOUT || mode == dump_mode::TO_BOTH) VLOG(4) << data[i];
+    if (mode == DumpMode::kFile || mode == DumpMode::kBoth) fprintf(fp, "%f\n", data[i]);
+    if (mode == DumpMode::kStd || mode == DumpMode::kBoth) VLOG(4) << data[i];
   }
   free(data);
   fclose(fp);

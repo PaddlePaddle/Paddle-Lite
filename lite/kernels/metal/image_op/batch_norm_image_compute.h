@@ -32,7 +32,7 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class batch_norm_image_compute
+class BatchNormImageCompute
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFloat),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -43,30 +43,22 @@ class batch_norm_image_compute
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> params_buffer_;
-
-  int input_tensor_n_{-1};
-  int input_tensor_c_{-1};
-  int input_tensor_h_{-1};
-  int input_tensor_w_{-1};
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
 
   int output_tensor_n_{-1};
-  int output_tensor_c_{-1};
-  int output_tensor_h_{-1};
-  int output_tensor_w_{-1};
 
-  std::shared_ptr<metal_buffer> bias_buffer_;
-  std::shared_ptr<metal_buffer> mean_buffer_;
-  std::shared_ptr<metal_buffer> scale_buffer_;
-  std::shared_ptr<metal_buffer> variance_buffer_;
+  std::shared_ptr<MetalBuffer> bias_buffer_;
+  std::shared_ptr<MetalBuffer> mean_buffer_;
+  std::shared_ptr<MetalBuffer> scale_buffer_;
+  std::shared_ptr<MetalBuffer> variance_buffer_;
 
   float epsilon_;
-  float momentum;
+  float momentum_;
 };
 
-class batch_norm_image_compute_half
+class BatchNormImageComputeHalf
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFP16),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -77,23 +69,18 @@ class batch_norm_image_compute_half
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  int input_tensor_n_{-1};
-  int input_tensor_c_{-1};
-  int input_tensor_h_{-1};
-  int input_tensor_w_{-1};
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+
   int output_tensor_n_{-1};
-  int output_tensor_c_{-1};
-  int output_tensor_h_{-1};
-  int output_tensor_w_{-1};
-  std::shared_ptr<metal_buffer> bias_buffer_;
-  std::shared_ptr<metal_buffer> mean_buffer_;
-  std::shared_ptr<metal_buffer> scale_buffer_;
-  std::shared_ptr<metal_buffer> variance_buffer_;
-  std::shared_ptr<metal_buffer> params_buffer_;
+
+  std::shared_ptr<MetalBuffer> bias_buffer_;
+  std::shared_ptr<MetalBuffer> mean_buffer_;
+  std::shared_ptr<MetalBuffer> scale_buffer_;
+  std::shared_ptr<MetalBuffer> variance_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
   float epsilon_;
-  float momentum;
+  float momentum_;
 };
 
 }  // namespace metal

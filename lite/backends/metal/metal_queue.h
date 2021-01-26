@@ -28,19 +28,19 @@
 namespace paddle {
 namespace lite {
 
-class metal_queue {
+class MetalQueue {
  public:
 #if defined(__OBJC__)
-  metal_queue(const metal_device* device, id<MTLCommandQueue> queue);
+  MetalQueue(const MetalDevice* device, id<MTLCommandQueue> queue);
 #endif
 
-  void wait_until_complete() const;
-  void wait_until_dispatch() const;
+  void WaitUntilComplete() const;
+  void WaitUntilDispatch() const;
 
 #if defined(__OBJC__)
-  id<MTLCommandBuffer> create_command_buffer() const;
+  id<MTLCommandBuffer> CreateCommandBuffer() const;
 #else
-  void* create_command_buffer() const;
+  void* CreateCommandBuffer() const;
 #endif
 
  private:
@@ -51,9 +51,11 @@ class metal_queue {
   mutable std::vector<void*> command_buffers_;
   void* metal_queue_;
 #endif
-  metal_device* mtl_device_;
+  MetalDevice* mtl_device_;
   //  mutable std::recursive_mutex command_buffers_lock_;
 };
+
 }  // namespace lite
 }  // namespace paddle
+
 #endif  // LITE_BACKENDS_METAL_METAL_QUEUE_H_

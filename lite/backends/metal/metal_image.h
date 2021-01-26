@@ -25,57 +25,61 @@
 namespace paddle {
 namespace lite {
 
-class metal_image {
+class MetalImage {
  public:
-  metal_image() = delete;
-  virtual ~metal_image();
+  MetalImage() = delete;
+  virtual ~MetalImage();
 
 #if defined(__OBJC__)
-  id<MTLTexture> get_image() const;
-  id<MTLTexture> mtl_image_{nil};
-  id<MTLDevice> mtl_device_{nil};
-  MTLTextureDescriptor* desc_{nil};
+  id<MTLTexture> image() const;
 #else
-  void* get_image() const;
-  void* mtl_image_{nullptr};
-  metal_device* mtl_device_;
-  void* desc_{nullptr};
+  void* image() const;
 #endif
 
-  metal_image(const metal_device& device,
-              const DDim& inDim,
-              std::vector<int> inTranspose = {0, 2, 3, 1},
-              METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::FLOAT,
-              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
+  MetalImage(const MetalDevice& device,
+             const DDim& inDim,
+             std::vector<int> inTranspose = {0, 2, 3, 1},
+             METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::FLOAT,
+             METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
   template <typename SP>
-  void from_nchw(const SP* src);
+  void CopyFromNCHW(const SP* src);
 
-  template <typename P>
-  void to_nchw(P* dst) const;
+  template <typename DP>
+  void CopyToNCHW(DP* dst) const;
 
-  static DDim fourDimFrom(DDim inDim);
-  void zero() const;
-  __unused void updateDim(DDim inDim);
+  static DDim FourDimFrom(DDim in_dim);
+  void Zero() const;
+  __unused void UpdateDim(DDim in_dim);
 
   // std::recursive_mutex buffer_lock_;
   size_t size_{};
-  bool useMPS_ = false;
-  size_t channelsPerPixels_{};
-  size_t arrayLength_{};
-  size_t textureWidth_{};
-  size_t textureHeight_{};
+  bool use_mps_ = false;
+  size_t channels_per_pixel_{};
+  size_t array_length_{};
+  size_t texture_width_{};
+  size_t texture_height_{};
 
-  DDim tensorDim_;
+  DDim tensor_dim_;
   DDim dim_;
-  DDim padToFourDim_;
+  DDim pad_to_four_dim_;
   std::vector<int> transpose_ = {0, 1, 2, 3};
 
  private:
-  void updateDims(const DDim& inTensorDim);
-  void initTexture(std::vector<int> inTranspose);
-  const METAL_PRECISION_TYPE precisionType_;
+  void UpdateDims(const DDim& in_tensor_dim);
+  void InitTexture(std::vector<int> in_transpose);
+  const METAL_PRECISION_TYPE precision_type_;
   const METAL_ACCESS_FLAG flag_;
+
+#if defined(__OBJC__)
+  id<MTLTexture> image_{nil};
+  id<MTLDevice> device_{nil};
+  MTLTextureDescriptor* desc_{nil};
+#else
+  void* image_{nullptr};
+  void* device_;
+  void* desc_{nullptr};
+#endif
 };
 
 }  // namespace lite

@@ -31,9 +31,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class exp_image_compute : public KernelLite<TARGET(kMetal),
-                                            PRECISION(kFloat),
-                                            DATALAYOUT(kMetalTexture2DArray)> {
+class ExpImageCompute : public KernelLite<TARGET(kMetal),
+                                          PRECISION(kFloat),
+                                          DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ActivationParam;
 
  public:
@@ -41,13 +41,13 @@ class exp_image_compute : public KernelLite<TARGET(kMetal),
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
 };
 
-class exp_image_compute_half
+class ExpImageComputeHalf
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFP16),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -58,10 +58,10 @@ class exp_image_compute_half
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
 };
 
 }  // namespace metal

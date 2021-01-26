@@ -23,7 +23,7 @@
 
 namespace paddle {
 namespace lite {
-extern metal_context global_ctx;
+
 using TargetWrapperMetal = TargetWrapper<TARGET(kMetal)>;
 
 template <>
@@ -35,15 +35,13 @@ class TargetWrapper<TARGET(kMetal)> {
     return dev_id;
   }
 
-  static void set_metal_path(std::string path) {
-    global_ctx.set_metal_path(path);
-  }
+  static void set_metal_path(std::string path) { ctx_.set_metal_path(path); }
 
   static void set_metal_use_aggressive_optimization(bool flag) {
-    global_ctx.set_use_aggressive_optimization(flag);
+    ctx_.set_use_aggressive_optimization(flag);
   }
 
-  static void set_metal_use_mps(bool flag) { global_ctx.set_use_mps(flag); }
+  static void set_metal_use_mps(bool flag) { ctx_.set_use_mps(flag); }
 
   template <typename T>
   static void* MallocImage(const DDim dim,
@@ -64,6 +62,8 @@ class TargetWrapper<TARGET(kMetal)> {
 
   static void* Map(void* data, int offset, size_t size);
   static void UnMap(void* data);
+
+  static LITE_THREAD_LOCAL MetalContext ctx_;
 };
 }  // namespace lite
 }  // namespace paddle

@@ -31,9 +31,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class relu_image_compute : public KernelLite<TARGET(kMetal),
-                                             PRECISION(kFloat),
-                                             DATALAYOUT(kMetalTexture2DArray)> {
+class ReluImageCompute : public KernelLite<TARGET(kMetal),
+                                           PRECISION(kFloat),
+                                           DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ActivationParam;
 
  public:
@@ -41,15 +41,14 @@ class relu_image_compute : public KernelLite<TARGET(kMetal),
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
 };
 
-class relu6_image_compute
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
-                        DATALAYOUT(kMetalTexture2DArray)> {
+class Relu6ImageCompute : public KernelLite<TARGET(kMetal),
+                                            PRECISION(kFloat),
+                                            DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ActivationParam;
 
  public:
@@ -57,29 +56,13 @@ class relu6_image_compute
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
-  std::shared_ptr<metal_buffer> param_buffer_;
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
 };
 
-class relu_image_compute_half
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFP16),
-                        DATALAYOUT(kMetalTexture2DArray)> {
-  using param_t = operators::ActivationParam;
-
- public:
-  void PrepareForRun() override;
-  void Run() override;
-
- private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
-};
-
-class relu6_image_compute_half
+class ReluImageComputeHalf
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFP16),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -90,10 +73,26 @@ class relu6_image_compute_half
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
-  std::shared_ptr<metal_buffer> param_buffer_;
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
+};
+
+class Relu6ImageComputeHalf
+    : public KernelLite<TARGET(kMetal),
+                        PRECISION(kFP16),
+                        DATALAYOUT(kMetalTexture2DArray)> {
+  using param_t = operators::ActivationParam;
+
+ public:
+  void PrepareForRun() override;
+  void Run() override;
+
+ private:
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
 };
 
 }  // namespace metal

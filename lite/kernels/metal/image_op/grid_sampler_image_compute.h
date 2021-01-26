@@ -31,7 +31,7 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class grid_sampler_image_compute
+class GridSamplerImageCompute
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFloat),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -42,13 +42,13 @@ class grid_sampler_image_compute
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
 };
 
-class grid_sampler_image_compute_half
+class GridSamplerImageComputeHalf
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFP16),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -59,10 +59,10 @@ class grid_sampler_image_compute_half
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  const MetalImage* input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
 };
 
 }  // namespace metal

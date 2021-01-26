@@ -31,13 +31,13 @@ class IoCopyHostToMetalTexture
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
  public:
   void PrepareForRun() override {
-    auto& context = ctx_->As<MetalContext>();
-    auto mtl_ctx = (metal_context*)context.context();
-    auto device = mtl_ctx->get_default_device();
+    auto& context = ctx_->As<ContextMetal>();
+    auto mtl_ctx = (MetalContext*)context.context();
+    auto device = mtl_ctx->GetDefaultDevice();
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) || param.x->target() == TARGET(kARM) ||
           param.x->target() == TARGET(kX86));
-    output_buffer_ = param.y->template mutable_data<float, metal_image>(param.y->dims());
+    output_buffer_ = param.y->template mutable_data<float, MetalImage>(param.y->dims());
     auto input_dims = param.x->dims();
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
@@ -45,48 +45,48 @@ class IoCopyHostToMetalTexture
       std::string function_name = "";
       if (std::is_same<float, float>::value) {
         function_name = "buffer_to_texture_array_n_channel_kernel";
-      } else if (std::is_same<float, metal_half>::value) {
+      } else if (std::is_same<float, MetalHalf>::value) {
         function_name = "buffer_to_texture_array_n_channel_kernel_half";
       }
 
-      kernel_ = mtl_ctx->get_kernel(*device, function_name);
+      kernel_ = mtl_ctx->GetKernel(*device, function_name);
     }
   }
 
   void Run() override {
-    auto& context = ctx_->As<MetalContext>();
-    auto mtl_ctx = (metal_context*)context.context();
-    auto device = mtl_ctx->get_default_device();
+    auto& context = ctx_->As<ContextMetal>();
+    auto mtl_ctx = (MetalContext*)context.context();
+    auto device = mtl_ctx->GetDefaultDevice();
     auto& param = Param<operators::IoCopyParam>();
     auto src = param.x->template data<float>();
     auto input_dims = param.x->dims();
     auto output_dims = param.y->dims();
     auto mem_size = param.x->dims().production() * sizeof(float);
-    auto src_buffer_ = mtl_ctx->create_buffer(
+    auto src_buffer_ = mtl_ctx->CreateBuffer(
         *device, const_cast<float*>(src), mem_size, METAL_ACCESS_FLAG::CPUWriteOnly);
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
-      auto output_width = output_buffer_->textureWidth_;
-      auto output_height = output_buffer_->textureHeight_;
-      auto output_array_length = output_buffer_->arrayLength_;
+      auto output_width = output_buffer_->texture_width_;
+      auto output_height = output_buffer_->texture_height_;
+      auto output_array_length = output_buffer_->array_length_;
 
-      auto& context = ctx_->As<MetalContext>();
-      auto mtl_ctx = (metal_context*)context.context();
-      auto mtl_dev = mtl_ctx->get_default_device();
+      auto& context = ctx_->As<ContextMetal>();
+      auto mtl_ctx = (MetalContext*)context.context();
+      auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
       {
-        auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-        metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                        static_cast<metal_uint>(output_height),
-                                        static_cast<metal_uint>(output_array_length)};
+        auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+        MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                        static_cast<MetalUint>(output_height),
+                                        static_cast<MetalUint>(output_array_length)};
 
-        auto args = {metal_kernel_arg{src_buffer_}, metal_kernel_arg{output_buffer_}};
-        kernel_->execute(*queue, global_work_size, 0, args);
-        queue->wait_until_complete();
+        auto args = {MetalKernelArgument{src_buffer_}, MetalKernelArgument{output_buffer_}};
+        kernel_->Execute(*queue, global_work_size, false, args);
+        queue->WaitUntilComplete();
       }
     } else {
-      output_buffer_->from_nchw<float>(src);
+      output_buffer_->CopyFromNCHW<float>(src);
     }
   }
 
@@ -109,8 +109,8 @@ class IoCopyHostToMetalTexture
 
   std::string doc() const override { return "Copy IO from HOST to Metal"; }
 
-  metal_image* output_buffer_ = nullptr;
-  std::shared_ptr<metal_kernel> kernel_;
+  MetalImage* output_buffer_ = nullptr;
+  std::shared_ptr<MetalKernel> kernel_;
 };
 
 /*
@@ -122,11 +122,11 @@ class IoCopykMetalTextureToHost
   void Run() override {
     auto& param = this->Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kMetal));
-    auto src = param.x->template data<float, metal_image>();
+    auto src = param.x->template data<float, MetalImage>();
 
     auto mem_size = param.x->dims().production() * sizeof(float);
     auto data = param.y->template mutable_data<float>(TARGET(kHost), mem_size);
-    src->template to_nchw<float>(data);
+    src->template CopyToNCHW<float>(data);
   }
 
   std::string doc() const override { return "Copy IO from kMetal to HOST"; }
@@ -138,26 +138,26 @@ class IoCopyHostToMetalTextureHalf
     : public KernelLite<TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)> {
  public:
   void PrepareForRun() override {
-    auto& context = ctx_->As<MetalContext>();
-    auto mtl_ctx = (metal_context*)context.context();
-    auto device = mtl_ctx->get_default_device();
+    auto& context = ctx_->As<ContextMetal>();
+    auto mtl_ctx = (MetalContext*)context.context();
+    auto device = mtl_ctx->GetDefaultDevice();
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) || param.x->target() == TARGET(kARM) ||
           param.x->target() == TARGET(kX86));
-    output_buffer_ = param.y->template mutable_data<metal_half, metal_image>(param.y->dims());
+    output_buffer_ = param.y->template mutable_data<MetalHalf, MetalImage>(param.y->dims());
     auto input_dims = param.x->dims();
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
       std::string function_name = "buffer_to_texture_array_n_channel_kernel_half";
-      kernel_ = mtl_ctx->get_kernel(*device, function_name);
+      kernel_ = mtl_ctx->GetKernel(*device, function_name);
     }
   }
 
   void Run() override {
-    auto& context = ctx_->As<MetalContext>();
-    auto mtl_ctx = (metal_context*)context.context();
-    auto device = mtl_ctx->get_default_device();
+    auto& context = ctx_->As<ContextMetal>();
+    auto mtl_ctx = (MetalContext*)context.context();
+    auto device = mtl_ctx->GetDefaultDevice();
     auto& param = Param<operators::IoCopyParam>();
     auto src = param.x->template data<float>();
     auto input_dims = param.x->dims();
@@ -166,28 +166,28 @@ class IoCopyHostToMetalTextureHalf
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
-      auto src_buffer_ = mtl_ctx->create_buffer(
+      auto src_buffer_ = mtl_ctx->CreateBuffer(
           *device, const_cast<float*>(src), mem_size, METAL_ACCESS_FLAG::CPUWriteOnly);
-      auto output_width = output_buffer_->textureWidth_;
-      auto output_height = output_buffer_->textureHeight_;
-      auto output_array_length = output_buffer_->arrayLength_;
+      auto output_width = output_buffer_->texture_width_;
+      auto output_height = output_buffer_->texture_height_;
+      auto output_array_length = output_buffer_->array_length_;
 
-      auto& context = ctx_->As<MetalContext>();
-      auto mtl_ctx = (metal_context*)context.context();
-      auto mtl_dev = mtl_ctx->get_default_device();
+      auto& context = ctx_->As<ContextMetal>();
+      auto mtl_ctx = (MetalContext*)context.context();
+      auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
       {
-        auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-        metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                        static_cast<metal_uint>(output_height),
-                                        static_cast<metal_uint>(output_array_length)};
+        auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+        MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                        static_cast<MetalUint>(output_height),
+                                        static_cast<MetalUint>(output_array_length)};
 
-        auto args = {metal_kernel_arg{src_buffer_}, metal_kernel_arg{output_buffer_}};
-        kernel_->execute(*queue, global_work_size, 0, args);
-        queue->wait_until_complete();
+        auto args = {MetalKernelArgument{src_buffer_}, MetalKernelArgument{output_buffer_}};
+        kernel_->Execute(*queue, global_work_size, false, args);
+        queue->WaitUntilComplete();
       }
     } else {
-      output_buffer_->from_nchw<float>(src);
+      output_buffer_->CopyFromNCHW<float>(src);
     }
   }
 
@@ -210,8 +210,8 @@ class IoCopyHostToMetalTextureHalf
 
   std::string doc() const override { return "Copy IO from HOST to Metal"; }
 
-  metal_image* output_buffer_ = nullptr;
-  std::shared_ptr<metal_kernel> kernel_;
+  MetalImage* output_buffer_ = nullptr;
+  std::shared_ptr<MetalKernel> kernel_;
 };
 
 /*
@@ -223,11 +223,11 @@ class IoCopykMetalTextureToHostHalf
   void Run() override {
     auto& param = this->Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kMetal));
-    auto src = param.x->template data<float, metal_image>();
+    auto src = param.x->template data<float, MetalImage>();
 
     auto mem_size = param.x->dims().production() * sizeof(float);
     auto data = param.y->template mutable_data<float>(TARGET(kHost), mem_size);
-    src->template to_nchw<float>(data);
+    src->template CopyToNCHW<float>(data);
   }
 
   std::string doc() const override { return "Copy IO from kMetal to HOST"; }
@@ -239,56 +239,56 @@ class IoCopyHostToMetalTextureHalf2Half
     : public KernelLite<TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kMetalTexture2DArray)> {
  public:
   void PrepareForRun() override {
-    auto& context = ctx_->As<MetalContext>();
-    auto mtl_ctx = (metal_context*)context.context();
-    auto device = mtl_ctx->get_default_device();
+    auto& context = ctx_->As<ContextMetal>();
+    auto mtl_ctx = (MetalContext*)context.context();
+    auto device = mtl_ctx->GetDefaultDevice();
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kHost) || param.x->target() == TARGET(kARM) ||
           param.x->target() == TARGET(kX86));
-    output_buffer_ = param.y->template mutable_data<metal_half, metal_image>(param.y->dims());
+    output_buffer_ = param.y->template mutable_data<MetalHalf, MetalImage>(param.y->dims());
     auto input_dims = param.x->dims();
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
       std::string function_name = "buffer_to_texture_array_n_channel_kernel_half";
-      kernel_ = mtl_ctx->get_kernel(*device, function_name);
+      kernel_ = mtl_ctx->GetKernel(*device, function_name);
     }
   }
 
   void Run() override {
-    auto& context = ctx_->As<MetalContext>();
-    auto mtl_ctx = (metal_context*)context.context();
-    auto device = mtl_ctx->get_default_device();
+    auto& context = ctx_->As<ContextMetal>();
+    auto mtl_ctx = (MetalContext*)context.context();
+    auto device = mtl_ctx->GetDefaultDevice();
     auto& param = Param<operators::IoCopyParam>();
-    auto src = param.x->template data<metal_half>();
+    auto src = param.x->template data<MetalHalf>();
     auto input_dims = param.x->dims();
     auto output_dims = param.y->dims();
-    auto mem_size = param.x->dims().production() * sizeof(metal_half);
-    auto src_buffer_ = mtl_ctx->create_buffer(
-        *device, const_cast<metal_half*>(src), mem_size, METAL_ACCESS_FLAG::CPUReadWrite);
+    auto mem_size = param.x->dims().production() * sizeof(MetalHalf);
+    auto src_buffer_ = mtl_ctx->CreateBuffer(
+        *device, const_cast<MetalHalf*>(src), mem_size, METAL_ACCESS_FLAG::CPUReadWrite);
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
-      auto output_width = output_buffer_->textureWidth_;
-      auto output_height = output_buffer_->textureHeight_;
-      auto output_array_length = output_buffer_->arrayLength_;
+      auto output_width = output_buffer_->texture_width_;
+      auto output_height = output_buffer_->texture_height_;
+      auto output_array_length = output_buffer_->array_length_;
 
-      auto& context = ctx_->As<MetalContext>();
-      auto mtl_ctx = (metal_context*)context.context();
-      auto mtl_dev = mtl_ctx->get_default_device();
+      auto& context = ctx_->As<ContextMetal>();
+      auto mtl_ctx = (MetalContext*)context.context();
+      auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
       {
-        auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-        metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                        static_cast<metal_uint>(output_height),
-                                        static_cast<metal_uint>(output_array_length)};
+        auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+        MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                        static_cast<MetalUint>(output_height),
+                                        static_cast<MetalUint>(output_array_length)};
 
-        auto args = {metal_kernel_arg{src_buffer_}, metal_kernel_arg{output_buffer_}};
-        kernel_->execute(*queue, global_work_size, 0, args);
-        queue->wait_until_complete();
+        auto args = {MetalKernelArgument{src_buffer_}, MetalKernelArgument{output_buffer_}};
+        kernel_->Execute(*queue, global_work_size, false, args);
+        queue->WaitUntilComplete();
       }
     } else {
-      output_buffer_->from_nchw<metal_half>(src);
+      output_buffer_->CopyFromNCHW<MetalHalf>(src);
     }
   }
 
@@ -311,8 +311,8 @@ class IoCopyHostToMetalTextureHalf2Half
 
   std::string doc() const override { return "Copy IO from HOST to Metal"; }
 
-  metal_image* output_buffer_ = nullptr;
-  std::shared_ptr<metal_kernel> kernel_;
+  MetalImage* output_buffer_ = nullptr;
+  std::shared_ptr<MetalKernel> kernel_;
 };
 
 /*
@@ -324,11 +324,11 @@ class IoCopykMetalTextureToHostHalf2Half
   void Run() override {
     auto& param = this->Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kMetal));
-    auto src = param.x->template data<metal_half, metal_image>();
+    auto src = param.x->template data<MetalHalf, MetalImage>();
 
-    auto mem_size = param.x->dims().production() * sizeof(metal_half);
-    auto data = param.y->template mutable_data<metal_half>(TARGET(kHost), mem_size);
-    src->template to_nchw<metal_half>(data);
+    auto mem_size = param.x->dims().production() * sizeof(MetalHalf);
+    auto data = param.y->template mutable_data<MetalHalf>(TARGET(kHost), mem_size);
+    src->template CopyToNCHW<MetalHalf>(data);
   }
 
   std::string doc() const override { return "Copy IO from kMetal to HOST"; }

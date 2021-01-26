@@ -12,22 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/mul_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/mul_image_compute.h"
 
-using namespace std;
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-void mul_image_compute::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void MulImageCompute::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -42,72 +40,72 @@ void mul_image_compute::PrepareForRun() {
     s2 *= input_dims[i];
   }
 
-  input_buffer_x_ = param.x->data<float, metal_image>();
-  input_buffer_y_ = param.y->data<float, metal_image>();
+  input_buffer_x_ = param.x->data<float, MetalImage>();
+  input_buffer_y_ = param.y->data<float, MetalImage>();
 
   std::vector<int> nhwc = {0, 1, 2, 3};
   this->inputXMulDim = DDimLite({s1, s2});
-  assert(input_buffer_y_->transpose_ == nhwc && input_buffer_y_->tensorDim_.size() == 2 &&
-         s2 == input_buffer_y_->tensorDim_[0]);
+  assert(input_buffer_y_->transpose_ == nhwc && input_buffer_y_->tensor_dim_.size() == 2 &&
+         s2 == input_buffer_y_->tensor_dim_[0]);
 
-  output_buffer_ = param.output->mutable_data<float, metal_image>(output_dims);
+  output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
 
   if (input_dims.size() != 2 || input_buffer_x_->transpose_ != nhwc) {
     insert_shape = true;
     std::unique_ptr<KernelContext> reshape_ctx(new KernelContext);
-    reshape_ctx->As<MetalContext>().InitOnce();
-    operators::ReshapeParam reshapeParam;
-    reshapeParam.x = param.x;
+    reshape_ctx->As<ContextMetal>().InitOnce();
+    operators::ReshapeParam reshape_param;
+    reshape_param.x = param.x;
 
     shape_out_dev.Resize(this->inputXMulDim.Vectorize());
-    reshapeParam.output = &shape_out_dev;
+    reshape_param.output = &shape_out_dev;
     reshape_.SetContext(std::move(reshape_ctx));
-    reshape_.SetParam(reshapeParam);
+    reshape_.SetParam(reshape_param);
     reshape_.PrepareForRun();
   }
 
   std::string function_name = "mul";
-  kernel_ = mtl_ctx->get_kernel(*device, function_name.c_str());
+  kernel_ = mtl_ctx->GetKernel(*device, function_name.c_str());
 }
 
-void mul_image_compute::Run() {
+void MulImageCompute::Run() {
   const auto& param = this->Param<param_t>();
   auto input_dims = param.x->dims();
   auto output_dims = param.output->dims();
   auto input = param.x;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    metal_uint output_width = output_buffer_->get_image().width;
-    metal_uint output_height = output_buffer_->get_image().height;
-    metal_uint output_array_length = output_buffer_->get_image().arrayLength;
-    metal_uint3 global_work_size = {output_width, output_height, output_array_length};
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    MetalUint output_width = output_buffer_->image().width;
+    MetalUint output_height = output_buffer_->image().height;
+    MetalUint output_array_length = output_buffer_->image().arrayLength;
+    MetalUint3 global_work_size = {output_width, output_height, output_array_length};
     if (insert_shape) {
       reshape_.Run();
-      auto shape_buffer = shape_out_dev.data<float, metal_image>();
+      auto shape_buffer = shape_out_dev.data<float, MetalImage>();
 
-      auto args = {metal_kernel_arg{shape_buffer},
-                   metal_kernel_arg{input_buffer_y_},
-                   metal_kernel_arg{output_buffer_}};
-      kernel_->execute(*queue, global_work_size, 0, args);
+      auto args = {MetalKernelArgument{shape_buffer},
+                   MetalKernelArgument{input_buffer_y_},
+                   MetalKernelArgument{output_buffer_}};
+      kernel_->Execute(*queue, global_work_size, false, args);
     } else {
-      auto args = {metal_kernel_arg{input_buffer_x_},
-                   metal_kernel_arg{input_buffer_y_},
-                   metal_kernel_arg{output_buffer_}};
-      kernel_->execute(*queue, global_work_size, 0, args);
+      auto args = {MetalKernelArgument{input_buffer_x_},
+                   MetalKernelArgument{input_buffer_y_},
+                   MetalKernelArgument{output_buffer_}};
+      kernel_->Execute(*queue, global_work_size, false, args);
     }
-    queue->wait_until_complete();
+    queue->WaitUntilComplete();
   }
 }
 
-void mul_image_compute_half::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void MulImageComputeHalf::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -122,69 +120,69 @@ void mul_image_compute_half::PrepareForRun() {
     s2 *= input_dims[i];
   }
 
-  input_buffer_x_ = param.x->data<metal_half, metal_image>();
-  input_buffer_y_ = param.y->data<metal_half, metal_image>();
+  input_buffer_x_ = param.x->data<MetalHalf, MetalImage>();
+  input_buffer_y_ = param.y->data<MetalHalf, MetalImage>();
 
   std::vector<int> nhwc = {0, 1, 2, 3};
   this->inputXMulDim = DDimLite({s1, s2});
-  assert(input_buffer_y_->transpose_ == nhwc && input_buffer_y_->tensorDim_.size() == 2 &&
-         s2 == input_buffer_y_->tensorDim_[0]);
+  assert(input_buffer_y_->transpose_ == nhwc && input_buffer_y_->tensor_dim_.size() == 2 &&
+         s2 == input_buffer_y_->tensor_dim_[0]);
 
-  output_buffer_ = param.output->mutable_data<float, metal_image>(output_dims);
+  output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
 
   if (input_dims.size() != 2 || input_buffer_x_->transpose_ != nhwc) {
     insert_shape = true;
     std::unique_ptr<KernelContext> reshape_ctx(new KernelContext);
-    reshape_ctx->As<MetalContext>().InitOnce();
-    operators::ReshapeParam reshapeParam;
-    reshapeParam.x = param.x;
+    reshape_ctx->As<ContextMetal>().InitOnce();
+    operators::ReshapeParam reshape_param;
+    reshape_param.x = param.x;
 
     shape_out_dev.Resize(this->inputXMulDim.Vectorize());
-    reshapeParam.output = &shape_out_dev;
+    reshape_param.output = &shape_out_dev;
     reshape_.SetContext(std::move(reshape_ctx));
-    reshape_.SetParam(reshapeParam);
+    reshape_.SetParam(reshape_param);
     reshape_.PrepareForRun();
   }
 
   std::string function_name = "mul_half";
-  kernel_ = mtl_ctx->get_kernel(*device, function_name.c_str());
+  kernel_ = mtl_ctx->GetKernel(*device, function_name.c_str());
 }
 
-void mul_image_compute_half::Run() {
+void MulImageComputeHalf::Run() {
   const auto& param = this->Param<param_t>();
   auto input_dims = param.x->dims();
   auto output_dims = param.output->dims();
   auto input = param.x;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    metal_uint output_width = output_buffer_->get_image().width;
-    metal_uint output_height = output_buffer_->get_image().height;
-    metal_uint output_array_length = output_buffer_->get_image().arrayLength;
-    metal_uint3 global_work_size = {output_width, output_height, output_array_length};
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    MetalUint output_width = output_buffer_->image().width;
+    MetalUint output_height = output_buffer_->image().height;
+    MetalUint output_array_length = output_buffer_->image().arrayLength;
+    MetalUint3 global_work_size = {output_width, output_height, output_array_length};
     if (insert_shape) {
       reshape_.Run();
-      auto shape_buffer = shape_out_dev.data<metal_half, metal_image>();
-      auto args = {metal_kernel_arg{shape_buffer},
-                   metal_kernel_arg{input_buffer_y_},
-                   metal_kernel_arg{output_buffer_}};
-      kernel_->execute(*queue, global_work_size, 0, args);
+      auto shape_buffer = shape_out_dev.data<MetalHalf, MetalImage>();
+      auto args = {MetalKernelArgument{shape_buffer},
+                   MetalKernelArgument{input_buffer_y_},
+                   MetalKernelArgument{output_buffer_}};
+      kernel_->Execute(*queue, global_work_size, false, args);
     } else {
-      auto args = {metal_kernel_arg{input_buffer_x_},
-                   metal_kernel_arg{input_buffer_y_},
-                   metal_kernel_arg{output_buffer_}};
-      kernel_->execute(*queue, global_work_size, 0, args);
+      auto args = {MetalKernelArgument{input_buffer_x_},
+                   MetalKernelArgument{input_buffer_y_},
+                   MetalKernelArgument{output_buffer_}};
+      kernel_->Execute(*queue, global_work_size, false, args);
     }
-    queue->wait_until_complete();
+    queue->WaitUntilComplete();
   }
 #if 0
-  metal_debug::dump_image("input_buffer_x_half", input_buffer_x_, param.x->dims().production());
-  metal_debug::dump_image("input_buffer_y_half", input_buffer_y_, param.y->dims().production());
-  metal_debug::dump_image("output_buffer_", output_buffer_, param.output->dims().production());
+  metal_debug::DumpImage("input_buffer_x_half", input_buffer_x_, param.x->dims().production());
+  metal_debug::DumpImage("input_buffer_y_half", input_buffer_y_, param.y->dims().production());
+  metal_debug::DumpImage("output_buffer_", output_buffer_, param.output->dims().production());
 #endif
 }
 
@@ -197,7 +195,7 @@ REGISTER_LITE_KERNEL(mul,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::mul_image_compute,
+                     paddle::lite::kernels::metal::MulImageCompute,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
@@ -214,7 +212,7 @@ REGISTER_LITE_KERNEL(mul,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::mul_image_compute_half,
+                     paddle::lite::kernels::metal::MulImageComputeHalf,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFP16),

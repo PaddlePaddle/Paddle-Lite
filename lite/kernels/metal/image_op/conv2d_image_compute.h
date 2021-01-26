@@ -33,10 +33,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class conv2d_image_compute
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
-                        DATALAYOUT(kMetalTexture2DArray)> {
+class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
+                                             PRECISION(kFloat),
+                                             DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ConvParam;
 
  public:
@@ -44,34 +43,34 @@ class conv2d_image_compute
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
+  const MetalImage* input_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
 
-  static std::string kernelFunctionName(const param_t& param,
+  static std::string KernelFunctionName(const param_t& param,
                                         bool useAggressiveOptimization = false);
 
-  static bool isWinoGrad(std::string function_name);
+  static bool IsWinoGrad(std::string function_name);
 
  private:
-  void setupWithMPS();
-  void setupWithoutMPS();
+  void SetupWithMPS();
+  void SetupWithoutMPS();
 
   const float* bias_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> filter_buffer_;
-  std::shared_ptr<metal_buffer> params_buffer_;
-  std::shared_ptr<metal_kernel> program_;
-  const metal_image* bias_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> filter_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
+  std::shared_ptr<MetalKernel> program_;
+  const MetalImage* bias_buffer_;
 
   Tensor blank_tensor_;
   std::string function_name_;
-  bool useWinoGrad;
+  bool use_winograd_;
 
   int16_t activate_type_ = 0;
   int16_t relu6_thredhold_ = 6;
 };
 
-class conv2d_image_compute_half
+class Conv2dImageComputeHalf
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFP16),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -82,28 +81,28 @@ class conv2d_image_compute_half
   void Run() override;
 
  private:
-  const metal_image* input_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
+  const MetalImage* input_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
 
-  static std::string kernelFunctionName(const param_t& param,
+  static std::string KernelFunctionName(const param_t& param,
                                         bool useAggressiveOptimization = false);
 
-  static bool isWinoGrad(std::string function_name);
+  static bool IsWinoGrad(std::string function_name);
 
  private:
-  void setupWithMPS();
-  void setupWithoutMPS();
+  void SetupWithMPS();
+  void SetupWithoutMPS();
 
   const float* bias_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> filter_buffer_;
-  std::shared_ptr<metal_buffer> params_buffer_;
-  std::shared_ptr<metal_kernel> program_;
-  const metal_image* bias_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> filter_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
+  std::shared_ptr<MetalKernel> program_;
+  const MetalImage* bias_buffer_;
 
   Tensor blank_tensor_;
   std::string function_name_;
-  bool useWinoGrad;
+  bool use_winograd_;
 
   int16_t activate_type_ = 0;
   int16_t relu6_thredhold_ = 6;

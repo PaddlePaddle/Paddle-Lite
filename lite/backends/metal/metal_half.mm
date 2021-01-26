@@ -374,23 +374,23 @@ static const uint8_t shifttable[512] = {
     0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18,
     0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x0d};
 
-metal_half MetalFloat2Half(float f) {
+MetalHalf MetalFloat2Half(float f) {
   uint32_t v = *reinterpret_cast<uint32_t *>(&f);
-  return static_cast<metal_half>(basetable[(v >> 23) & 0x1ff] + ((v & 0x007fffff) >> shifttable[(v >> 23) & 0x1ff]));
+  return static_cast<MetalHalf>(basetable[(v >> 23) & 0x1ff] + ((v & 0x007fffff) >> shifttable[(v >> 23) & 0x1ff]));
 }
 
-float MetalHalf2Float(metal_half h) {
+float MetalHalf2Float(MetalHalf h) {
   uint32_t v = mantissatable[offsettable[h >> 10] + (h & 0x3ff)] + exponenttable[h >> 10];
   return *reinterpret_cast<float *>(&v);
 }
 
-void MetalFloatArray2HalfArray(const float *f_array, metal_half *h_array, int count) {
+void MetalFloatArray2HalfArray(const float *f_array, MetalHalf *h_array, int count) {
   for (int i = 0; i < count; ++i) {
     h_array[i] = MetalFloat2Half(f_array[i]);
   }
 }
 
-void MetalHalfArray2FloatArray(const metal_half *h_array, float *f_array, int count) {
+void MetalHalfArray2FloatArray(const MetalHalf *h_array, float *f_array, int count) {
   for (int i = 0; i < count; ++i) {
     f_array[i] = MetalHalf2Float(h_array[i]);
   }

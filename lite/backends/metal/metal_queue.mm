@@ -17,19 +17,18 @@
 #include "lite/utils/cp_logging.h"
 #include "lite/backends/metal/metal_queue.h"
 
-using namespace std;
+
 namespace paddle {
 namespace lite {
 
-metal_queue::metal_queue(const metal_device* device, id<MTLCommandQueue> queue)
-    : metal_queue_(queue) {
-  mtl_device_ = const_cast<metal_device*>(device);
+MetalQueue::MetalQueue(const MetalDevice* device, id<MTLCommandQueue> queue) : metal_queue_(queue) {
+  mtl_device_ = const_cast<MetalDevice*>(device);
 }
 
-id<MTLCommandBuffer> metal_queue::create_command_buffer() const {
+id<MTLCommandBuffer> MetalQueue::CreateCommandBuffer() const {
   id<MTLCommandBuffer> cmd_buffer = [metal_queue_ commandBufferWithUnretainedReferences];
   [cmd_buffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-//    std::lock_guard<std::recursive_mutex> lock(command_buffers_lock_);
+    //    std::lock_guard<std::recursive_mutex> lock(command_buffers_lock_);
     const auto iter = find_if(
         command_buffers_.cbegin(),
         command_buffers_.cend(),
@@ -42,16 +41,16 @@ id<MTLCommandBuffer> metal_queue::create_command_buffer() const {
     command_buffers_.erase(iter);
   }];
   {
-//    std::lock_guard<std::recursive_mutex> lock(command_buffers_lock_);
+    // std::lock_guard<std::recursive_mutex> lock(command_buffers_lock_);
     command_buffers_.emplace_back(cmd_buffer);
   }
   return cmd_buffer;
 }
 
-void metal_queue::wait_until_complete() const {
+void MetalQueue::WaitUntilComplete() const {
   decltype(command_buffers_) cur_cmd_buffers;
   {
-//    std::lock_guard<std::recursive_mutex> lock(command_buffers_lock_);
+    // std::lock_guard<std::recursive_mutex> lock(command_buffers_lock_);
     cur_cmd_buffers = command_buffers_;
   }
   for (const auto& cmd_buffer : cur_cmd_buffers) {
@@ -59,10 +58,10 @@ void metal_queue::wait_until_complete() const {
   }
 }
 
-void metal_queue::wait_until_dispatch() const {
+void MetalQueue::WaitUntilDispatch() const {
   decltype(command_buffers_) cur_cmd_buffers;
   {
-//    std::lock_guard<std::recursive_mutex> lock(command_buffers_lock_);
+    // std::lock_guard<std::recursive_mutex> lock(command_buffers_lock_);
     cur_cmd_buffers = command_buffers_;
   }
   for (const auto& cmd_buffer : cur_cmd_buffers) {

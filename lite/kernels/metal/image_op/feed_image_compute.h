@@ -31,9 +31,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class feed_image_compute : public KernelLite<TARGET(kMetal),
-                                             PRECISION(kFloat),
-                                             DATALAYOUT(kMetalTexture2DArray)> {
+class FeedImageCompute : public KernelLite<TARGET(kMetal),
+                                           PRECISION(kFloat),
+                                           DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::FeedParam;
 
  public:
@@ -41,10 +41,10 @@ class feed_image_compute : public KernelLite<TARGET(kMetal),
   void Run() override;
 
  private:
-  std::shared_ptr<metal_buffer> input_buffer_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  std::shared_ptr<MetalBuffer> input_buffer_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
 };
 
 }  // namespace metal

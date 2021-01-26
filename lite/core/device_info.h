@@ -367,13 +367,14 @@ class Env<TARGET(kMetal)> {
 
   static void Init(int max_stream = 1) {
     Devs& devs = Global();
-    int count = global_ctx.get_devices_num();
+    int count = TargetWrapperMetal::ctx_.GetDevicesNum();
 
     if (count < 1) return;
 
     for (int i = 0; i < count; i++) {
       auto dev = Device<TARGET(kMetal)>(
-          i, reinterpret_cast<void*>(global_ctx.get_device_by_id(i)));
+          i,
+          reinterpret_cast<void*>(TargetWrapperMetal::ctx_.GetDeviceByID(i)));
       dev.Init();
       devs.push_back(dev);
     }

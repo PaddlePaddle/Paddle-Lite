@@ -25,95 +25,95 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-void hard_swish_image_compute::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void HardSwishImageCompute::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
 
-  input_buffer_ = param.X->data<float, metal_image>();
-  output_buffer_ = param.Out->mutable_data<float, metal_image>(output_dims);
+  input_buffer_ = param.X->data<float, MetalImage>();
+  output_buffer_ = param.Out->mutable_data<float, MetalImage>(output_dims);
 
   HardSwishMetalParam metal_param{
       param.hard_swish_offset, param.hard_swish_threshold, param.hard_swish_scale};
-  param_buffer_ = mtl_ctx->create_buffer(
+  param_buffer_ = mtl_ctx->CreateBuffer(
       *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   string function_name = "hard_swish_float";
-  kernel_ = mtl_ctx->get_kernel(*device, function_name);
+  kernel_ = mtl_ctx->GetKernel(*device, function_name);
 }
 
 
-void hard_swish_image_compute::Run() {
-  auto output_width = output_buffer_->textureWidth_;
-  auto output_height = output_buffer_->textureHeight_;
-  auto output_array_length = output_buffer_->arrayLength_;
+void HardSwishImageCompute::Run() {
+  auto output_width = output_buffer_->texture_width_;
+  auto output_height = output_buffer_->texture_height_;
+  auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                    static_cast<metal_uint>(output_height),
-                                    static_cast<metal_uint>(output_array_length)};
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                    static_cast<MetalUint>(output_height),
+                                    static_cast<MetalUint>(output_array_length)};
 
-    auto args = {metal_kernel_arg{input_buffer_},
-                 metal_kernel_arg{output_buffer_},
-                 metal_kernel_arg{param_buffer_}};
-    kernel_->execute(*queue, global_work_size, false, args);
-    queue->wait_until_complete();
+    auto args = {MetalKernelArgument{input_buffer_},
+                 MetalKernelArgument{output_buffer_},
+                 MetalKernelArgument{param_buffer_}};
+    kernel_->Execute(*queue, global_work_size, false, args);
+    queue->WaitUntilComplete();
   }
 }
 
-void hard_swish_image_compute_half::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void HardSwishImageComputeHalf::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
 
-  input_buffer_ = param.X->data<metal_half, metal_image>();
-  output_buffer_ = param.Out->mutable_data<metal_half, metal_image>(output_dims);
+  input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
   HardSwishMetalParam metal_param{
       param.hard_swish_offset, param.hard_swish_threshold, param.hard_swish_scale};
-  param_buffer_ = mtl_ctx->create_buffer(
+  param_buffer_ = mtl_ctx->CreateBuffer(
       *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   string function_name = "hard_swish_half";
-  kernel_ = mtl_ctx->get_kernel(*device, function_name);
+  kernel_ = mtl_ctx->GetKernel(*device, function_name);
 }
 
-void hard_swish_image_compute_half::Run() {
-  auto output_width = output_buffer_->textureWidth_;
-  auto output_height = output_buffer_->textureHeight_;
-  auto output_array_length = output_buffer_->arrayLength_;
+void HardSwishImageComputeHalf::Run() {
+  auto output_width = output_buffer_->texture_width_;
+  auto output_height = output_buffer_->texture_height_;
+  auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                    static_cast<metal_uint>(output_height),
-                                    static_cast<metal_uint>(output_array_length)};
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                    static_cast<MetalUint>(output_height),
+                                    static_cast<MetalUint>(output_array_length)};
 
-    auto args = {metal_kernel_arg{input_buffer_},
-                 metal_kernel_arg{output_buffer_},
-                 metal_kernel_arg{param_buffer_}};
+    auto args = {MetalKernelArgument{input_buffer_},
+                 MetalKernelArgument{output_buffer_},
+                 MetalKernelArgument{param_buffer_}};
 
-    kernel_->execute(*queue, global_work_size, false, args);
-    queue->wait_until_complete();
+    kernel_->Execute(*queue, global_work_size, false, args);
+    queue->WaitUntilComplete();
   }
 #if 0
   const auto& param = this->Param<param_t>();
-  metal_debug::dump_image("input_buffer_", input_buffer_, param.x->dims().production());
-  metal_debug::dump_image("output_buffer_", output_buffer_, param.output->dims().production());
+  metal_debug::DumpImage("input_buffer_", input_buffer_, param.x->dims().production());
+  metal_debug::DumpImage("output_buffer_", output_buffer_, param.output->dims().production());
 #endif
 }
 
@@ -126,7 +126,7 @@ REGISTER_LITE_KERNEL(hard_swish,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::hard_swish_image_compute,
+                     paddle::lite::kernels::metal::HardSwishImageCompute,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
@@ -141,7 +141,7 @@ REGISTER_LITE_KERNEL(hard_swish,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::hard_swish_image_compute_half,
+                     paddle::lite::kernels::metal::HardSwishImageComputeHalf,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                PRECISION(kFP16),

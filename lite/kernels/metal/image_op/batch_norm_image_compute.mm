@@ -15,7 +15,6 @@
 #include "lite/kernels/metal/image_op/batch_norm_image_compute.h"
 #include "lite/core/op_registry.h"
 
-using namespace std;
 
 namespace paddle {
 namespace lite {
@@ -24,10 +23,10 @@ namespace metal {
 
 #define ALIGEN_C4_SIZE(n, c, h, w) ((n * c + 3) / 4 * h * w) * 4
 
-void batch_norm_image_compute::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void BatchNormImageCompute::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.x->dims();
@@ -35,18 +34,10 @@ void batch_norm_image_compute::PrepareForRun() {
   auto scale_dims = param.scale->dims();
   auto bias_dims = param.bias->dims();
 
-  input_tensor_n_ = static_cast<int>(input_dims[0]);
-  input_tensor_c_ = static_cast<int>(input_dims[1]);
-  input_tensor_h_ = static_cast<int>(input_dims[2]);
-  input_tensor_w_ = static_cast<int>(input_dims[3]);
-
   output_tensor_n_ = static_cast<int>(output_dims[0]);
-  output_tensor_c_ = static_cast<int>(output_dims[1]);
-  output_tensor_h_ = static_cast<int>(output_dims[2]);
-  output_tensor_w_ = static_cast<int>(output_dims[3]);
 
-  output_buffer_ = param.y->mutable_data<float, metal_image>(param.y->dims());
-  input_buffer_ = param.x->data<float, metal_image>();
+  output_buffer_ = param.y->mutable_data<float, MetalImage>(param.y->dims());
+  input_buffer_ = param.x->data<float, MetalImage>();
 
   auto bias_raw_buffer = param.bias->data<float>();
   auto scale_raw_buffer = param.scale->data<float>();
@@ -61,16 +52,15 @@ void batch_norm_image_compute::PrepareForRun() {
 
   auto count = scale_dims.production();
 
-  scale_buffer_ = mtl_ctx->create_buffer(*device, scale_size * sizeof(float));
-
-  bias_buffer_ = mtl_ctx->create_buffer(*device, bias_size * sizeof(float));
-  auto bias_dev_ptr = (float*)(bias_buffer_->get_buffer().contents);
-  auto scale_dev_ptr = (float*)(scale_buffer_->get_buffer().contents);
+  scale_buffer_ = mtl_ctx->CreateBuffer(*device, scale_size * sizeof(float));
+  bias_buffer_ = mtl_ctx->CreateBuffer(*device, bias_size * sizeof(float));
+  auto bias_dev_ptr = (float*)(bias_buffer_->buffer().contents);
+  auto scale_dev_ptr = (float*)(scale_buffer_->buffer().contents);
 
   for (int i = 0; i < count; i++) {
-    auto invStd = 1.0f / std::sqrt(variance_ptr[i] + param.epsilon);
-    bias_dev_ptr[i] = bias_host_ptr[i] - mean_raw_buffer[i] * invStd * scale_host_ptr[i];
-    scale_dev_ptr[i] = invStd * scale_host_ptr[i];
+    auto inv_std = 1.0f / std::sqrt(variance_ptr[i] + param.epsilon);
+    bias_dev_ptr[i] = bias_host_ptr[i] - mean_raw_buffer[i] * inv_std * scale_host_ptr[i];
+    scale_dev_ptr[i] = inv_std * scale_host_ptr[i];
   }
 
   for (int i = 1; i < (scale_size / scale_dims[0]); i++) {
@@ -79,7 +69,7 @@ void batch_norm_image_compute::PrepareForRun() {
   }
 }
 
-void batch_norm_image_compute::Run() {
+void BatchNormImageCompute::Run() {
   const auto& param = this->Param<param_t>();
   auto input_dims = param.x->dims();
   auto output_dims = param.y->dims();
@@ -87,33 +77,33 @@ void batch_norm_image_compute::Run() {
   auto output_height = output_dims[2];
   auto output_array_length = (output_dims[0] * output_dims[1] + 3) / 4;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
-    string function_name = "batchnorm";
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    auto kernel = mtl_ctx->get_kernel(*mtl_dev, function_name);
+    std::string function_name = "batchnorm";
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
 
-    metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                    static_cast<metal_uint>(output_height),
-                                    static_cast<metal_uint>(output_array_length)};
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
 
-    auto args = {metal_kernel_arg(input_buffer_),
-                 metal_kernel_arg(output_buffer_),
-                 metal_kernel_arg(scale_buffer_),
-                 metal_kernel_arg(bias_buffer_)};
+    auto args = {MetalKernelArgument(input_buffer_),
+                 MetalKernelArgument(output_buffer_),
+                 MetalKernelArgument(scale_buffer_),
+                 MetalKernelArgument(bias_buffer_)};
 
-    kernel->execute(*queue, global_work_size, 0, args);
-    queue->wait_until_complete();
+    kernel->Execute(*queue, global_work_size, false, args);
+    queue->WaitUntilComplete();
   }
 }
 
-void batch_norm_image_compute_half::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void BatchNormImageComputeHalf::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.x->dims();
@@ -121,18 +111,10 @@ void batch_norm_image_compute_half::PrepareForRun() {
   auto scale_dims = param.scale->dims();
   auto bias_dims = param.bias->dims();
 
-  input_tensor_n_ = static_cast<int>(input_dims[0]);
-  input_tensor_c_ = static_cast<int>(input_dims[1]);
-  input_tensor_h_ = static_cast<int>(input_dims[2]);
-  input_tensor_w_ = static_cast<int>(input_dims[3]);
-
   output_tensor_n_ = static_cast<int>(output_dims[0]);
-  output_tensor_c_ = static_cast<int>(output_dims[1]);
-  output_tensor_h_ = static_cast<int>(output_dims[2]);
-  output_tensor_w_ = static_cast<int>(output_dims[3]);
 
-  output_buffer_ = param.y->mutable_data<metal_half, metal_image>(param.y->dims());
-  input_buffer_ = param.x->data<metal_half, metal_image>();
+  output_buffer_ = param.y->mutable_data<MetalHalf, MetalImage>(param.y->dims());
+  input_buffer_ = param.x->data<MetalHalf, MetalImage>();
 
   auto bias_raw_buffer = param.bias->data<float>();
   auto scale_raw_buffer = param.scale->data<float>();
@@ -147,25 +129,25 @@ void batch_norm_image_compute_half::PrepareForRun() {
 
   auto count = scale_dims.production();
 
-  scale_buffer_ = mtl_ctx->create_buffer(*device, scale_size * sizeof(metal_half));
-  bias_buffer_ = mtl_ctx->create_buffer(*device, bias_size * sizeof(metal_half));
-  auto bias_dev_ptr = (metal_half*)(bias_buffer_->get_buffer().contents);
-  auto scale_dev_ptr = (metal_half*)(scale_buffer_->get_buffer().contents);
+  scale_buffer_ = mtl_ctx->CreateBuffer(*device, scale_size * sizeof(MetalHalf));
+  bias_buffer_ = mtl_ctx->CreateBuffer(*device, bias_size * sizeof(MetalHalf));
+  auto bias_dev_ptr = (MetalHalf*)(bias_buffer_->buffer().contents);
+  auto scale_dev_ptr = (MetalHalf*)(scale_buffer_->buffer().contents);
 
   for (int i = 0; i < count; i++) {
-    auto invStd = 1.0f / std::sqrt(variance_ptr[i] + param.epsilon);
+    auto inv_std = 1.0f / std::sqrt(variance_ptr[i] + param.epsilon);
     bias_dev_ptr[i] =
-        MetalFloat2Half(bias_host_ptr[i] - mean_raw_buffer[i] * invStd * scale_host_ptr[i]);
-    scale_dev_ptr[i] = MetalFloat2Half(invStd * scale_host_ptr[i]);
+        MetalFloat2Half(bias_host_ptr[i] - mean_raw_buffer[i] * inv_std * scale_host_ptr[i]);
+    scale_dev_ptr[i] = MetalFloat2Half(inv_std * scale_host_ptr[i]);
   }
 
   for (int i = 1; i < (scale_size / scale_dims[0]); i++) {
-    memcpy(bias_dev_ptr + i * scale_dims[0], bias_dev_ptr, count * sizeof(metal_half));
-    memcpy(scale_dev_ptr + i * scale_dims[0], scale_dev_ptr, count * sizeof(metal_half));
+    memcpy(bias_dev_ptr + i * scale_dims[0], bias_dev_ptr, count * sizeof(MetalHalf));
+    memcpy(scale_dev_ptr + i * scale_dims[0], scale_dev_ptr, count * sizeof(MetalHalf));
   }
 }
 
-void batch_norm_image_compute_half::Run() {
+void BatchNormImageComputeHalf::Run() {
   const auto& param = this->Param<param_t>();
   auto input_dims = param.x->dims();
   auto output_dims = param.y->dims();
@@ -173,26 +155,26 @@ void batch_norm_image_compute_half::Run() {
   auto output_height = output_dims[2];
   auto output_array_length = (output_dims[0] * output_dims[1] + 3) / 4;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
-    string function_name = "batchnorm_half";
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    auto kernel = mtl_ctx->get_kernel(*mtl_dev, function_name);
+    std::string function_name = "batchnorm_half";
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
 
-    metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                    static_cast<metal_uint>(output_height),
-                                    static_cast<metal_uint>(output_array_length)};
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
 
-    auto args = {metal_kernel_arg{input_buffer_},
-                 metal_kernel_arg{output_buffer_},
-                 metal_kernel_arg{scale_buffer_},
-                 metal_kernel_arg{bias_buffer_}};
+    auto args = {MetalKernelArgument{input_buffer_},
+                 MetalKernelArgument{output_buffer_},
+                 MetalKernelArgument{scale_buffer_},
+                 MetalKernelArgument{bias_buffer_}};
 
-    kernel->execute(*queue, global_work_size, 0, args);
-    queue->wait_until_complete();
+    kernel->Execute(*queue, global_work_size, false, args);
+    queue->WaitUntilComplete();
   }
 }
 
@@ -205,7 +187,7 @@ REGISTER_LITE_KERNEL(batch_norm,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::batch_norm_image_compute,
+                     paddle::lite::kernels::metal::BatchNormImageCompute,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
@@ -244,7 +226,7 @@ REGISTER_LITE_KERNEL(batch_norm,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::batch_norm_image_compute_half,
+                     paddle::lite::kernels::metal::BatchNormImageComputeHalf,
                      def)
 .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFP16),

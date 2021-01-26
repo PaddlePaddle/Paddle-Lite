@@ -34,9 +34,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class mul_image_compute : public KernelLite<TARGET(kMetal),
-                                            PRECISION(kFloat),
-                                            DATALAYOUT(kMetalTexture2DArray)> {
+class MulImageCompute : public KernelLite<TARGET(kMetal),
+                                          PRECISION(kFloat),
+                                          DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::MulParam;
   using param_reshape_t = operators::ReshapeParam;
 
@@ -45,22 +45,22 @@ class mul_image_compute : public KernelLite<TARGET(kMetal),
   void Run() override;
 
  private:
-  const metal_image* input_buffer_x_;
-  const metal_image* input_buffer_y_;
+  const MetalImage* input_buffer_x_;
+  const MetalImage* input_buffer_y_;
 
-  metal_image* output_buffer_;
+  MetalImage* output_buffer_;
 
-  std::shared_ptr<metal_buffer> params_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
 
-  std::shared_ptr<metal_kernel> kernel_;
+  std::shared_ptr<MetalKernel> kernel_;
   DDim inputXMulDim;
 
-  reshape_image_compute reshape_;
+  ReshapeImageCompute reshape_;
   Tensor shape_out_dev;
   bool insert_shape = false;
 };
 
-class mul_image_compute_half
+class MulImageComputeHalf
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFP16),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -72,15 +72,15 @@ class mul_image_compute_half
   void Run() override;
 
  private:
-  const metal_image* input_buffer_x_;
-  const metal_image* input_buffer_y_;
+  const MetalImage* input_buffer_x_;
+  const MetalImage* input_buffer_y_;
 
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> params_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> params_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
 
   DDim inputXMulDim;
-  reshape_image_compute_half reshape_;
+  ReshapeImageComputeHalf reshape_;
   Tensor shape_out_dev;
   bool insert_shape = false;
 };

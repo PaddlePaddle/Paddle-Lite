@@ -25,101 +25,106 @@
 namespace paddle {
 namespace lite {
 
-struct metal_kernel_arg {
-  explicit metal_kernel_arg(const metal_buffer* buf) noexcept {
-    var_.set<const metal_buffer*>(buf);
+struct MetalKernelArgument {
+  explicit MetalKernelArgument(const MetalBuffer* buf) noexcept {
+    var_.set<const MetalBuffer*>(buf);
   }
-  explicit metal_kernel_arg(const metal_buffer& buf) noexcept {
-    var_.set<const metal_buffer*>(&buf);
-  }
-
-  explicit metal_kernel_arg(const std::shared_ptr<metal_buffer>& buf) noexcept {
-    var_.set<const metal_buffer*>(buf.get());
-  }
-  explicit metal_kernel_arg(const std::unique_ptr<metal_buffer>& buf) noexcept {
-    var_.set<const metal_buffer*>(buf.get());
+  explicit MetalKernelArgument(const MetalBuffer& buf) noexcept {
+    var_.set<const MetalBuffer*>(&buf);
   }
 
-  explicit metal_kernel_arg(const std::vector<metal_buffer*>* bufs) noexcept {
-    var_.set<const std::vector<metal_buffer*>*>(bufs);
+  explicit MetalKernelArgument(
+      const std::shared_ptr<MetalBuffer>& buf) noexcept {
+    var_.set<const MetalBuffer*>(buf.get());
+  }
+  explicit MetalKernelArgument(
+      const std::unique_ptr<MetalBuffer>& buf) noexcept {
+    var_.set<const MetalBuffer*>(buf.get());
   }
 
-  explicit metal_kernel_arg(const std::vector<metal_buffer*>& bufs) noexcept {
-    var_.set<const std::vector<metal_buffer*>*>(&bufs);
+  explicit MetalKernelArgument(const std::vector<MetalBuffer*>* bufs) noexcept {
+    var_.set<const std::vector<MetalBuffer*>*>(bufs);
   }
 
-  explicit metal_kernel_arg(
-      const std::vector<std::shared_ptr<metal_buffer>>* bufs) noexcept {
-    var_.set<const std::vector<std::shared_ptr<metal_buffer>>*>(bufs);
+  explicit MetalKernelArgument(const std::vector<MetalBuffer*>& bufs) noexcept {
+    var_.set<const std::vector<MetalBuffer*>*>(&bufs);
   }
 
-  explicit metal_kernel_arg(
-      const std::vector<std::shared_ptr<metal_buffer>>& bufs) noexcept {
-    var_.set<const std::vector<std::shared_ptr<metal_buffer>>*>(&bufs);
+  explicit MetalKernelArgument(
+      const std::vector<std::shared_ptr<MetalBuffer>>* bufs) noexcept {
+    var_.set<const std::vector<std::shared_ptr<MetalBuffer>>*>(bufs);
   }
 
-  explicit metal_kernel_arg(const metal_image* img) noexcept {
-    var_.set<const metal_image*>(img);
+  explicit MetalKernelArgument(
+      const std::vector<std::shared_ptr<MetalBuffer>>& bufs) noexcept {
+    var_.set<const std::vector<std::shared_ptr<MetalBuffer>>*>(&bufs);
   }
 
-  explicit metal_kernel_arg(const metal_image& img) noexcept {
-    var_.set<const metal_image*>(&img);
+  explicit MetalKernelArgument(const MetalImage* img) noexcept {
+    var_.set<const MetalImage*>(img);
   }
 
-  explicit metal_kernel_arg(const std::shared_ptr<metal_image>& img) noexcept {
-    var_.set<const metal_image*>(img.get());
+  explicit MetalKernelArgument(const MetalImage& img) noexcept {
+    var_.set<const MetalImage*>(&img);
   }
 
-  explicit metal_kernel_arg(const std::unique_ptr<metal_image>& img) noexcept {
-    var_.set<const metal_image*>(img.get());
+  explicit MetalKernelArgument(
+      const std::shared_ptr<MetalImage>& img) noexcept {
+    var_.set<const MetalImage*>(img.get());
   }
 
-  explicit metal_kernel_arg(const std::vector<metal_image*>* imgs) noexcept {
-    var_.set<const std::vector<metal_image*>*>(imgs);
+  explicit MetalKernelArgument(
+      const std::unique_ptr<MetalImage>& img) noexcept {
+    var_.set<const MetalImage*>(img.get());
   }
 
-  explicit metal_kernel_arg(const std::vector<metal_image*>& imgs) noexcept {
-    var_.set<const std::vector<metal_image*>*>(&imgs);
+  explicit MetalKernelArgument(const std::vector<MetalImage*>* imgs) noexcept {
+    var_.set<const std::vector<MetalImage*>*>(imgs);
   }
 
-  explicit metal_kernel_arg(
-      const std::vector<std::shared_ptr<metal_image>>* imgs) noexcept {
-    var_.set<const std::vector<std::shared_ptr<metal_image>>*>(imgs);
+  explicit MetalKernelArgument(const std::vector<MetalImage*>& imgs) noexcept {
+    var_.set<const std::vector<MetalImage*>*>(&imgs);
   }
 
-  explicit metal_kernel_arg(
-      const std::vector<std::shared_ptr<metal_image>>& imgs) noexcept {
-    var_.set<const std::vector<std::shared_ptr<metal_image>>*>(&imgs);
+  explicit MetalKernelArgument(
+      const std::vector<std::shared_ptr<MetalImage>>* imgs) noexcept {
+    var_.set<const std::vector<std::shared_ptr<MetalImage>>*>(imgs);
+  }
+
+  explicit MetalKernelArgument(
+      const std::vector<std::shared_ptr<MetalImage>>& imgs) noexcept {
+    var_.set<const std::vector<std::shared_ptr<MetalImage>>*>(&imgs);
   }
 
   template <typename T>
-  explicit metal_kernel_arg(const std::shared_ptr<T>& arg) noexcept
-      : metal_kernel_arg(*arg) {}
+  explicit MetalKernelArgument(const std::shared_ptr<T>& arg) noexcept
+      : MetalKernelArgument(*arg) {}
 
   template <typename T>
-  explicit metal_kernel_arg(const std::unique_ptr<T>& arg) noexcept
-      : metal_kernel_arg(*arg) {}
+  explicit MetalKernelArgument(const std::unique_ptr<T>& arg) noexcept
+      : MetalKernelArgument(*arg) {}
 
   template <
       typename T,
       typename std::enable_if<(
           !std::is_convertible<
               typename std::decay<typename std::remove_pointer<T>::type>::type*,
-              metal_buffer*>::value &&
+              MetalBuffer*>::value &&
           !std::is_convertible<
               typename std::decay<typename std::remove_pointer<T>::type>::type*,
-              metal_image*>::value)>::type* = nullptr>
-  explicit metal_kernel_arg(const T& generic_arg) noexcept : size_(sizeof(T)) {
+              MetalImage*>::value)>::type* = nullptr>
+  explicit MetalKernelArgument(const T& generic_arg) noexcept
+      : size_(sizeof(T)) {
     var_.set<const void*>(&generic_arg);
   }
 
   variant<const void*,
-          const metal_buffer*,
-          const std::vector<metal_buffer*>*,
-          const std::vector<std::shared_ptr<metal_buffer>>*,
-          const metal_image*,
-          const std::vector<metal_image*>*,
-          const std::vector<std::shared_ptr<metal_image>>*>
+          const MetalBuffer*,
+          const std::vector<MetalBuffer*>*,
+          const std::vector<std::shared_ptr<MetalBuffer>>*,
+          const MetalImage*,
+          const std::vector<MetalImage*>*,
+          const std::vector<std::shared_ptr<MetalImage>>*>
       var_;
 
   size_t size_{0};

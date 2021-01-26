@@ -22,34 +22,34 @@
 namespace paddle {
 namespace lite {
 
-class metal_debug {
+class MetalDebug {
  public:
-  enum class dump_mode {
-    TO_FILE,
-    TO_STDOUT,
-    TO_BOTH,
+  enum class DumpMode {
+    kFile,
+    kStd,
+    kBoth,
   };
 
-  static void dump_image(std::string name,
-                         metal_image* image,
+  static void DumpImage(std::string name,
+                        MetalImage* image,
+                        int length,
+                        DumpMode mode = DumpMode::kBoth);
+  static void DumpImage(std::string name,
+                        const MetalImage* image,
+                        int length,
+                        DumpMode mode = DumpMode::kBoth);
+  static void DumpBuffer(std::string name,
+                         MetalBuffer* image,
                          int length,
-                         dump_mode mode = dump_mode::TO_BOTH);
-  static void dump_image(std::string name,
-                         const metal_image* image,
+                         DumpMode mode = DumpMode::kBoth);
+  static void DumpBuffer(std::string name,
+                         const MetalBuffer* image,
                          int length,
-                         dump_mode mode = dump_mode::TO_BOTH);
-  static void dump_buffer(std::string name,
-                          metal_buffer* image,
-                          int length,
-                          dump_mode mode = dump_mode::TO_BOTH);
-  static void dump_buffer(std::string name,
-                          const metal_buffer* image,
-                          int length,
-                          dump_mode mode = dump_mode::TO_BOTH);
-  void dump_nchw_float(std::string name,
-                       float* data,
-                       int length,
-                       dump_mode mode = dump_mode::TO_BOTH);
+                         DumpMode mode = DumpMode::kBoth);
+  void DumpNCHWFloat(std::string name,
+                     float* data,
+                     int length,
+                     DumpMode mode = DumpMode::kBoth);
 };
 
 }  // namespace lite

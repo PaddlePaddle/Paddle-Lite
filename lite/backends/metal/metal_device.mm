@@ -19,9 +19,8 @@
 
 namespace paddle {
 namespace lite {
-using namespace std;
 
-shared_ptr<metal_queue> metal_device::create_queue() const {
+std::shared_ptr<MetalQueue> MetalDevice::CreateQueue() const {
   id<MTLCommandQueue> queue = [device_ newCommandQueue];
   if (queue == nil) {
     LOG(ERROR) << "ERROR: fail to create command queue"
@@ -29,22 +28,22 @@ shared_ptr<metal_queue> metal_device::create_queue() const {
     return {};
   }
 
-  auto ret = make_shared<metal_queue>(this, queue);
+  auto ret = std::make_shared<MetalQueue>(this, queue);
   queues_.push_back(ret);
   return ret;
 }
 
-shared_ptr<metal_queue> metal_device::get_default_queue() const {
+std::shared_ptr<MetalQueue> MetalDevice::GetDefaultQueue() const {
   if (queues_.size() > 0) {
     return queues_[0];
   } else {
-    return create_queue();
+    return CreateQueue();
   }
 }
 
-id<MTLDevice> metal_device::get_device() const { return device_; }
-void metal_device::set_device(id<MTLDevice> device) { device_ = device; }
-void metal_device::set_context(metal_context *context) { context_ = context; }
-void metal_device::set_name(const char *name) { name_ = name; }
+id<MTLDevice> MetalDevice::device() const { return device_; }
+void MetalDevice::set_device(id<MTLDevice> device) { device_ = device; }
+void MetalDevice::set_context(MetalContext *context) { context_ = context; }
+void MetalDevice::set_name(const char *name) { name_ = name; }
 }
 }

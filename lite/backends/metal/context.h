@@ -21,18 +21,18 @@ namespace lite {
 
 template <TargetType Type>
 class Context;
-using MetalContext = Context<TargetType::kMetal>;
+using ContextMetal = Context<TargetType::kMetal>;
 
 template <>
 class Context<TargetType::kMetal> {
  public:
   void InitOnce();
-  void CopySharedTo(MetalContext* ctx);
-  void* context() { return metal_context_; }
+  void CopySharedTo(ContextMetal* ctx);
+
+  void* context() { return context_; }
 
  private:
-  int device_id_;
-  void* metal_context_;
+  void* context_;
 };
 
 }  // namespace lite

@@ -20,27 +20,28 @@
 #endif
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace paddle {
 namespace lite {
 
-class metal_queue;
-class metal_context;
+class MetalQueue;
+class MetalContext;
 
-class metal_device {
+class MetalDevice {
  public:
-  std::shared_ptr<metal_queue> create_queue() const;
-  std::shared_ptr<metal_queue> get_default_queue() const;
+  std::shared_ptr<MetalQueue> CreateQueue() const;
+  std::shared_ptr<MetalQueue> GetDefaultQueue() const;
 
 #if defined(__OBJC__)
-  id<MTLDevice> get_device() const;
+  id<MTLDevice> device() const;
   void set_device(id<MTLDevice> device);
 #else
-  void *get_device() const;
+  void *device() const;
   void set_device(void *device);
 #endif
-  void set_context(metal_context *context);
+  void set_context(MetalContext *context);
   void set_name(const char *name);
 
  private:
@@ -49,9 +50,9 @@ class metal_device {
 #else
   void *device_;
 #endif
-  metal_context *context_;
-  mutable std::vector<std::shared_ptr<metal_queue>> queues_;
-  const char *name_;
+  MetalContext *context_;
+  mutable std::vector<std::shared_ptr<MetalQueue>> queues_;
+  std::string name_;
 };
 }  // namespace lite
 }  // namespace paddle

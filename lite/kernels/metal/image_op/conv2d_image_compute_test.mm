@@ -168,7 +168,7 @@ void PrintData(
 //  // b: x_d      ==> <k, n> <=> <ic, ih*iw>
 //  // c: output_d ==> <m, n> <=> <oc, ih*iw>
 //  std::unique_ptr<KernelContext> context(new KernelContext);
-//  context->As<MetalContext>().InitOnce();
+//  context->As<ContextMetal>().InitOnce();
 //  const int ksize = 1;
 //  const int stride = 1;
 //  const int pad = 0;
@@ -241,8 +241,8 @@ void PrintData(
 //
 //  kernel->SetParam(param);
 //  std::unique_ptr<KernelContext> conv_context(new KernelContext);
-//  context->As<MetalContext>().CopySharedTo(
-//      &(conv_context->As<MetalContext>()));
+//  context->As<ContextMetal>().CopySharedTo(
+//      &(conv_context->As<ContextMetal>()));
 //  kernel->SetContext(std::move(conv_context));
 //  // a: filter_d ==> <m, k> <=> <oc, ic>
 //  // b: x_d      ==> <k, n> <=> <ic, ih*iw>
@@ -379,7 +379,7 @@ TEST(depthwise_conv2d, buffer_compare) {
   const DDim x_dim = DDim(vec_dim);
   a.Resize(x_dim);
 
-  auto image = a.mutable_data<metal_half, metal_image>(x_dim);
+  auto image = a.mutable_data<MetalHalf, MetalImage>(x_dim);
 
   std::vector<float> input = {0.610179,
                               -0.340205,
@@ -398,12 +398,12 @@ TEST(depthwise_conv2d, buffer_compare) {
                               7.417082,
                               5.028472};
 
-  image->from_nchw<float>(input.data());
+  image->CopyFromNCHW<float>(input.data());
 
   std::vector<float> output;
   output.resize(16);
 
-  image->to_nchw<float>(output.data());
+  image->CopyToNCHW<float>(output.data());
 
   //  for (int i = 0; i < 16; i++) {
   //    std::cout << input[i] << " : " << output[i] << std::endl;
@@ -414,7 +414,7 @@ TEST(depthwise_conv2d, buffer_compare) {
 //#define LOOP_TEST
 TEST(conv2d, compute_conv2d_gemm) {
   std::unique_ptr<KernelContext> context(new KernelContext);
-  context->As<MetalContext>().InitOnce();
+  context->As<ContextMetal>().InitOnce();
   // x_dims:1 3 224 224
   // output_dims:1 32 112 112
   // filter_dims:32 3 3 3
@@ -488,9 +488,9 @@ TEST(conv2d, compute_conv2d_gemm) {
 
                 kernel->SetParam(param);
                 std::unique_ptr<KernelContext> conv_context(new KernelContext);
-                context->As<MetalContext>().CopySharedTo(&(conv_context->As<MetalContext>()));
+                context->As<ContextMetal>().CopySharedTo(&(conv_context->As<ContextMetal>()));
 
-                auto mt = (metal_context*)context->As<MetalContext>().context();
+                auto mt = (MetalContext*)context->As<ContextMetal>().context();
                 mt->set_metal_path("/Users/liuzheyuan/code/Paddle-Lite/cmake-build-debug/lite/"
                                    "backends/metal/lite.metallib");
                 kernel->SetContext(std::move(conv_context));
@@ -509,9 +509,9 @@ TEST(conv2d, compute_conv2d_gemm) {
                 out.Resize(out_dim);
                 out_ref.Resize(out_dim);
 
-                auto* x_data_img = x.mutable_data<float, metal_image>(x_dim);
+                auto* x_data_img = x.mutable_data<float, MetalImage>(x_dim);
                 auto* filter_data = filter.mutable_data<float>();
-                auto* bias_data = bias.mutable_data<float, metal_image>(bias_dim);
+                auto* bias_data = bias.mutable_data<float, MetalImage>(bias_dim);
 
                 std::default_random_engine engine;
                 std::uniform_real_distribution<float> dist(-5, 5);
@@ -521,7 +521,7 @@ TEST(conv2d, compute_conv2d_gemm) {
                 for (int i = 0; i < x_dim.production(); ++i) {
                   x_data_cpu[i] = static_cast<float>(dist(engine));
                 }
-                x_data_img->from_nchw<float>(x_data_cpu.data());
+                x_data_img->CopyFromNCHW<float>(x_data_cpu.data());
 
                 // preparam kernel
                 for (int i = 0; i < filter_dim.production(); ++i) {
@@ -548,7 +548,7 @@ TEST(conv2d, compute_conv2d_gemm) {
                   for (int i = 0; i < bias_dim.production(); ++i) {
                     bias_cpu_data[i] = 0;  // static_cast<float>(dist(engine));
                   }
-                  bias_data->from_nchw<float>(bias_cpu_data);
+                  bias_data->CopyFromNCHW<float>(bias_cpu_data);
                 }
 
                 // run metal kernel
@@ -579,10 +579,10 @@ TEST(conv2d, compute_conv2d_gemm) {
                                          bias_flag,
                                          relu_flag);
 
-                auto* out_data = out.data<float, metal_image>();
+                auto* out_data = out.data<float, MetalImage>();
 
                 std::vector<float> out_data_cpu(out_dim.production());
-                out_data->to_nchw<float>(out_data_cpu.data());
+                out_data->CopyToNCHW<float>(out_data_cpu.data());
 #ifdef PRINT_RESULT
                 // a: filter_d ==> <m, k> <=> <oc, ic>
                 // b: x_d      ==> <k, n> <=> <ic, ih*iw>

@@ -24,105 +24,101 @@
 // #include <mutex>
 #include "lite/backends/metal/metal_common.h"
 #include "lite/backends/metal/metal_converter.h"
+#include "lite/backends/metal/metal_device.h"
+#include "lite/backends/metal/metal_queue.h"
 
 namespace paddle {
 namespace lite {
 
-class metal_device;
-class metal_queue;
-
-class metal_buffer {
+class MetalBuffer {
  public:
-  metal_buffer(const metal_device& device,
-               size_t size,
-               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
+  MetalBuffer(const MetalDevice& device,
+              size_t size,
+              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
-  metal_buffer(const metal_device& device,
-               void* data,
-               size_t size,
-               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
+  MetalBuffer(const MetalDevice& device,
+              void* data,
+              size_t size,
+              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
-  metal_buffer(const metal_device& device, void* mtl_buffer);
+  MetalBuffer(const MetalDevice& device, void* mtl_buffer);
 
-  metal_buffer(const metal_device& device,
-               DDim inDim,
-               METAL_PRECISION_TYPE precision = METAL_PRECISION_TYPE::FLOAT,
-               bool padWhenOneC = false,
-               bool convertToNHWC = true,
-               bool withTranspose = false,
-               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
+  MetalBuffer(const MetalDevice& device,
+              DDim inDim,
+              METAL_PRECISION_TYPE precision = METAL_PRECISION_TYPE::FLOAT,
+              bool padWhenOneC = false,
+              bool convertToNHWC = true,
+              bool withTranspose = false,
+              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
-  metal_buffer() = delete;
+  MetalBuffer() = delete;
 
-  ~metal_buffer();
+  ~MetalBuffer();
 
   template <typename P>
-  P* convert(data_converter<P>* converter);
+  P* Convert(DataConverter<P>* converter);
 
-  void read(void* data, size_t size, size_t offset) const;
+  void Read(void* data, size_t size, size_t offset) const;
+  void Read(void* data, size_t size, size_t offset, const MetalQueue& queue);
 
-  void write(const void* src,
+  void Write(const void* src,
              size_t size,
              size_t offset,
-             const metal_queue& queue);
-  void write(const void* src, size_t size, size_t offset) const;
+             const MetalQueue& queue);
+  void Write(const void* src, size_t size, size_t offset) const;
 
-  void read(void* data, size_t size, size_t offset, const metal_queue& queue);
-
-  void copy(const metal_queue& queue,
-            const metal_buffer& src,
+  void Copy(const MetalQueue& queue,
+            const MetalBuffer& src,
             size_t size_,
             size_t src_offset,
             size_t dst_offset);
-
-  void copy(const metal_buffer& src,
+  void Copy(const MetalBuffer& src,
             size_t size_,
             size_t src_offset,
             size_t dst_offset) const;
 
   template <typename P>
-  void from_nchw(const P* src) {
+  void CopyFromNCHW(const P* src) {
     static_assert(
-        std::is_same<float, P>::value || std::is_same<metal_half, P>::value,
+        std::is_same<float, P>::value || std::is_same<MetalHalf, P>::value,
         "can support float and half");
   }
 
   template <typename P>
-  void to_nchw(P* dst) {
+  void CopyToNCHW(P* dst) {
     static_assert(
-        std::is_same<float, P>::value || std::is_same<metal_half, P>::value,
+        std::is_same<float, P>::value || std::is_same<MetalHalf, P>::value,
         "can support float and half");
   }
 
 #if defined(__OBJC__)
-  id<MTLBuffer> get_buffer() const;
-  id<MTLBuffer> mtl_buffer_{nil};
+  id<MTLBuffer> buffer() const;
+  id<MTLBuffer> buffer_{nil};
 #else
   void* get_buffer() const;
   void* mtl_buffer_{nullptr};
 #endif
-  int get_offset() const;
+  int offset() const;
   void set_offset(int offset);
 
  private:
   template <typename P>
-  void expand_nhwc();
-  void convert();
+  void ExpandNHWC();
+  void Convert();
 
-  metal_device* mtl_device_;
-
+ private:
   //  std::recursive_mutex buffer_lock_;
   size_t size_;
   int offset_ = 0;
 
   DDim tensor_dim_;
-  __unused DDim padToFourDim_;
+  __unused DDim pad_to_four_dim_;
   DDim dim_;
   void* data_ = nullptr;
 
   int precision_size_;
   size_t data_length_;
-
+  MetalDevice* mtl_device_;
   int c_;
   int c_slices_;
   int padded_c_;

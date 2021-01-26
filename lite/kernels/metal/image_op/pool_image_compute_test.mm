@@ -181,7 +181,7 @@ TEST(pool_metal, retrive_op) {
 }
 
 TEST(pool_metal, init) {
-  pool_image_compute pool;
+  PoolImageCompute pool;
   ASSERT_EQ(pool.precision(), PRECISION(kFloat));
   ASSERT_EQ(pool.target(), TARGET(kMetal));
 }
@@ -250,7 +250,7 @@ TEST(pool_metal, compute) {
                           x_data[i] = sign * (i % 128);
                         }
 
-                        auto x_dev_ptr = x_dev.mutable_data<float, metal_image>(
+                        auto x_dev_ptr = x_dev.mutable_data<float, MetalImage>(
                             x_dev.dims(), {0, 2, 3, 1}, (void*)x_data);
                         auto y_host_ptr = y.mutable_data<float>();
 
@@ -259,17 +259,17 @@ TEST(pool_metal, compute) {
                           Tensor x_from_dev;
                           x_from_dev.Resize(in_out_shape);
                           auto x_from_dev_ptr = x_from_dev.mutable_data<float>();
-                          x_dev_ptr->to_nchw<float>(x_from_dev_ptr);
+                          x_dev_ptr->CopyToNCHW<float>(x_from_dev_ptr);
                           for (int i = 0; i < x_from_dev.dims().production(); i++) {
                             ASSERT_NEAR(x_from_dev_ptr[i], x_data[i], 1e-5);
                           }
                         }
 
                         // prepare kernel params and run
-                        pool_image_compute pool;
+                        PoolImageCompute pool;
                         std::unique_ptr<KernelContext> ctx(new KernelContext);
-                        ctx->As<MetalContext>().InitOnce();
-                        auto mt = (metal_context*)ctx->As<MetalContext>().context();
+                        ctx->As<ContextMetal>().InitOnce();
+                        auto mt = (MetalContext*)ctx->As<ContextMetal>().context();
                         mt->set_metal_path(
                             "/Users/liuzheyuan/code/Paddle-Lite/cmake-build-debug/lite/"
                             "backends/metal/lite.metallib");
@@ -278,8 +278,8 @@ TEST(pool_metal, compute) {
                         pool.SetParam(param);
                         pool.Launch();
 
-                        auto y_dev_ptr = y_dev.data<float, metal_image>();
-                        y_dev_ptr->to_nchw<float>(y_data);
+                        auto y_dev_ptr = y_dev.data<float, MetalImage>();
+                        y_dev_ptr->CopyToNCHW<float>(y_data);
 
                         // invoking ref implementation and compare results
                         param.x = &x;

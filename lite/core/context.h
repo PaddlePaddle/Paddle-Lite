@@ -547,8 +547,8 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_METAL
       case TARGET(kMetal):
-        kernel_contexts_[TargetType::kMetal].As<MetalContext>().CopySharedTo(
-            &ctx->As<MetalContext>());
+        kernel_contexts_[TargetType::kMetal].As<ContextMetal>().CopySharedTo(
+            &ctx->As<ContextMetal>());
         break;
 #endif
 #ifdef LITE_WITH_FPGA
@@ -610,7 +610,7 @@ class ContextScheduler {
     InitContext<TargetType::kOpenCL, OpenCLContext>();
 #endif
 #ifdef LITE_WITH_METAL
-    InitContext<TargetType::kMetal, MetalContext>();
+    InitContext<TargetType::kMetal, ContextMetal>();
 #endif
 #ifdef LITE_WITH_FPGA
     InitContext<TargetType::kFPGA, FPGAContext>();

@@ -60,9 +60,9 @@ void batch_norm_compute_ref(const operators::BatchNormParam& param) {
     }
 
     for (int c = 0; c < channel_size; c++) {
-      auto invStd = (float)(1.0f / std::sqrt(variance_data[c] + param.epsilon));
-      bias_data[c] = bias_data[c] - mean_data[c] * invStd * scale_data[c];
-      scale_data[c] = invStd * scale_data[c];
+      auto inv_std = (float)(1.0f / std::sqrt(variance_data[c] + param.epsilon));
+      bias_data[c] = bias_data[c] - mean_data[c] * inv_std * scale_data[c];
+      scale_data[c] = inv_std * scale_data[c];
 #if 0
           std::cout << "bias and scale out"<< std::endl;
           std::cout << bias_data[c] << " " << scale_data[c] << std::endl;
@@ -98,7 +98,7 @@ TEST(batch_norm_metal, retrive_op) {
 }
 
 TEST(batch_norm_metal, init) {
-  batch_norm_image_compute batch_norm;
+  BatchNormImageCompute batch_norm;
   ASSERT_EQ(batch_norm.precision(), PRECISION(kFloat));
   ASSERT_EQ(batch_norm.target(), TARGET(kMetal));
 }
@@ -183,7 +183,7 @@ TEST(batch_norm_metal, compute) {
                       variance_data[i] = static_cast<float>(i) * 2.08f + 1.5f;
                     }
 
-                    auto x_dev_ptr = x_dev.mutable_data<float, metal_image>(
+                    auto x_dev_ptr = x_dev.mutable_data<float, MetalImage>(
                         x.dims(), {0, 2, 3, 1}, (void*)x_data);
                     auto y_host_ptr = y.mutable_data<float>();
 
@@ -192,7 +192,7 @@ TEST(batch_norm_metal, compute) {
                       Tensor x_from_dev;
                       x_from_dev.Resize(in_out_shape);
                       auto x_from_dev_ptr = x_from_dev.mutable_data<float>();
-                      x_dev_ptr->to_nchw<float>(x_from_dev_ptr);
+                      x_dev_ptr->CopyToNCHW<float>(x_from_dev_ptr);
                       for (int i = 0; i < x_from_dev.dims().production(); i++) {
                         // std::cout << "["<< i <<"]" << x_from_dev_ptr[i] << " : " << x_data[i] <<
                         // std::endl;
@@ -201,10 +201,10 @@ TEST(batch_norm_metal, compute) {
                     }
 
                     // prepare kernel params and run
-                    batch_norm_image_compute batch_norm;
+                    BatchNormImageCompute batch_norm;
                     std::unique_ptr<KernelContext> ctx(new KernelContext);
-                    ctx->As<MetalContext>().InitOnce();
-                    auto mt = (metal_context*)ctx->As<MetalContext>().context();
+                    ctx->As<ContextMetal>().InitOnce();
+                    auto mt = (MetalContext*)ctx->As<ContextMetal>().context();
                     mt->set_metal_path("/Users/liuzheyuan/code/Paddle-Lite/cmake-build-debug/lite/"
                                        "backends/metal/lite.metallib");
                     batch_norm.SetContext(std::move(ctx));
@@ -228,9 +228,9 @@ TEST(batch_norm_metal, compute) {
                     batch_norm.SetParam(param);
                     batch_norm.Launch();
 
-                    auto y_dev_ptr = y_dev.data<float, metal_image>();
+                    auto y_dev_ptr = y_dev.data<float, MetalImage>();
 
-                    y_dev_ptr->to_nchw<float>(y_data);
+                    y_dev_ptr->CopyToNCHW<float>(y_data);
 
                     param.x = &x;
                     param.scale = &scale;

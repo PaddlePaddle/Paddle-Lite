@@ -34,10 +34,9 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class concat_image_compute
-    : public KernelLite<TARGET(kMetal),
-                        PRECISION(kFloat),
-                        DATALAYOUT(kMetalTexture2DArray)> {
+class ConcatImageCompute : public KernelLite<TARGET(kMetal),
+                                             PRECISION(kFloat),
+                                             DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ConcatParam;
 
  public:
@@ -45,15 +44,15 @@ class concat_image_compute
   void Run() override;
 
  private:
-  std::vector<const metal_image*> input_buffers_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  std::vector<const MetalImage*> input_buffers_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
 
-  std::string v = "normal";
+  std::string v_ = "normal";
 };
 
-class concat_image_compute_half
+class ConcatImageComputeHalf
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFP16),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -64,12 +63,12 @@ class concat_image_compute_half
   void Run() override;
 
  private:
-  std::vector<const metal_image*> input_buffers_;
-  metal_image* output_buffer_;
-  std::shared_ptr<metal_buffer> param_buffer_;
-  std::shared_ptr<metal_kernel> kernel_;
+  std::vector<const MetalImage*> input_buffers_;
+  MetalImage* output_buffer_;
+  std::shared_ptr<MetalBuffer> param_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
 
-  std::string v = "normal";
+  std::string v_ = "normal";
 };
 
 }  // namespace metal

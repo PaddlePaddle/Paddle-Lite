@@ -110,7 +110,7 @@ class TensorLite {
                   void *host_ptr = nullptr) {
     target_ = TARGET(kMetal);
     buffer_->ResetLazyMetalImage<T>(target_, dim, transport, host_ptr);
-    return static_cast<metal_image *>(buffer_->data());
+    return static_cast<MetalImage *>(buffer_->data());
   }
 #endif
 

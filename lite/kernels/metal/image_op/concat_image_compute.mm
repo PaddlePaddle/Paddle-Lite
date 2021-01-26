@@ -17,17 +17,16 @@
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/concat_image_compute.h"
 
-using namespace std;
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-void concat_image_compute::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void ConcatImageCompute::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -35,10 +34,10 @@ void concat_image_compute::PrepareForRun() {
   int num = param.x.size();
 
   for (int i = 0; i < num; i++) {
-    auto input_image = param.x[i]->data<float, metal_image>();
+    auto input_image = param.x[i]->data<float, MetalImage>();
     input_buffers_.emplace_back(input_image);
   }
-  output_buffer_ = param.output->mutable_data<float, metal_image>(output_dims);
+  output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
 
   int axis = param.axis;
   auto* axis_tensor = param.axis_tensor;
@@ -47,9 +46,9 @@ void concat_image_compute::PrepareForRun() {
     axis = axis_tensor_data[0];
   }
   if (axis < 0) {
-    axis += output_buffer_->tensorDim_.size();
+    axis += output_buffer_->tensor_dim_.size();
   }
-  auto orank = output_buffer_->tensorDim_.size();
+  auto orank = output_buffer_->tensor_dim_.size();
   assert(num <= 6);
 
   auto transpose = output_buffer_->transpose_;
@@ -67,9 +66,9 @@ void concat_image_compute::PrepareForRun() {
   }
   if (orank == 4) {
     if (axis == 1) {
-      v = "y";
+      v_ = "y";
     } else if (axis == 2) {
-      v = "x";
+      v_ = "x";
     } else {
       if ((output_buffer_->dim_[0] == 1) && (axis == 3)) {
         auto vz = true;
@@ -80,7 +79,7 @@ void concat_image_compute::PrepareForRun() {
           }
         }
         if (vz) {
-          v = "z";
+          v_ = "z";
           for (int i = 0; i < num; i++) {
             vdim[i] = vdim[i] / 4;
           }
@@ -89,9 +88,9 @@ void concat_image_compute::PrepareForRun() {
     }
   } else if (orank == 3) {
     if (axis == 2) {
-      v = "y";
+      v_ = "y";
     } else if (axis == 3) {
-      v = "x";
+      v_ = "x";
     } else if (axis == 1) {
       auto vz = true;
       for (int i = 0; i < num; i++) {
@@ -101,7 +100,7 @@ void concat_image_compute::PrepareForRun() {
         }
       }
       if (vz) {
-        v = "z";
+        v_ = "z";
         for (int i = 0; i < num; i++) {
           vdim[i] = vdim[i] / 4;
         }
@@ -109,7 +108,7 @@ void concat_image_compute::PrepareForRun() {
     }
   } else {
     if (axis == 2) {
-      v = "y";
+      v_ = "y";
     } else if (axis == 3) {
       bool vx = true;
       for (int i = 0; i < num; i++) {
@@ -119,7 +118,7 @@ void concat_image_compute::PrepareForRun() {
         }
       }
       if (vx) {
-        v = "x";
+        v_ = "x";
         for (int i = 0; i < num; i++) {
           vdim[i] = vdim[i] / 4;
         }
@@ -140,43 +139,43 @@ void concat_image_compute::PrepareForRun() {
        (int)(output_buffer_->transpose_[3])},
       {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3], (int)vdim[4], (int)vdim[5]}};
 
-  param_buffer_ = mtl_ctx->create_buffer(*device, &pm, sizeof(pm), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = mtl_ctx->CreateBuffer(*device, &pm, sizeof(pm), METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  string function_name =
-      "concat_" + std::to_string(orank) + "_" + std::to_string(num) + "_" + v + "_float";
-  kernel_ = mtl_ctx->get_kernel(*device, function_name);
+  std::string function_name =
+      "concat_" + std::to_string(orank) + "_" + std::to_string(num) + "_" + v_ + "_float";
+  kernel_ = mtl_ctx->GetKernel(*device, function_name);
 }
 
-void concat_image_compute::Run() {
-  auto output_width = output_buffer_->textureWidth_;
-  auto output_height = output_buffer_->textureHeight_;
-  auto output_array_length = output_buffer_->arrayLength_;
+void ConcatImageCompute::Run() {
+  auto output_width = output_buffer_->texture_width_;
+  auto output_height = output_buffer_->texture_height_;
+  auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                    static_cast<metal_uint>(output_height),
-                                    static_cast<metal_uint>(output_array_length)};
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
 
-    // TODO: check the vector input failed reason
-    std::vector<metal_kernel_arg> args;
+    // TODO: (lzy) check the vector input failed reason
+    std::vector<MetalKernelArgument> args;
     for (auto item : input_buffers_) args.emplace_back(item);
     args.emplace_back(output_buffer_);
     args.emplace_back(param_buffer_);
 
-    kernel_->execute(*queue, global_work_size, 0, args);
-    queue->wait_until_complete();
+    kernel_->Execute(*queue, global_work_size, false, args);
+    queue->WaitUntilComplete();
   }
 }
 
-void concat_image_compute_half::PrepareForRun() {
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto device = mtl_ctx->get_default_device();
+void ConcatImageComputeHalf::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -184,10 +183,10 @@ void concat_image_compute_half::PrepareForRun() {
   int num = param.x.size();
 
   for (int i = 0; i < num; i++) {
-    auto input_image = param.x[i]->data<metal_half, metal_image>();
+    auto input_image = param.x[i]->data<MetalHalf, MetalImage>();
     input_buffers_.emplace_back(input_image);
   }
-  output_buffer_ = param.output->mutable_data<metal_half, metal_image>(output_dims);
+  output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
 
   int axis = param.axis;
   auto* axis_tensor = param.axis_tensor;
@@ -196,9 +195,9 @@ void concat_image_compute_half::PrepareForRun() {
     axis = axis_tensor_data[0];
   }
   if (axis < 0) {
-    axis += output_buffer_->tensorDim_.size();
+    axis += output_buffer_->tensor_dim_.size();
   }
-  auto orank = output_buffer_->tensorDim_.size();
+  auto orank = output_buffer_->tensor_dim_.size();
   assert(num <= 6);
 
   auto transpose = output_buffer_->transpose_;
@@ -216,9 +215,9 @@ void concat_image_compute_half::PrepareForRun() {
   }
   if (orank == 4) {
     if (axis == 1) {
-      v = "y";
+      v_ = "y";
     } else if (axis == 2) {
-      v = "x";
+      v_ = "x";
     } else {
       if ((output_buffer_->dim_[0] == 1) && (axis == 3)) {
         auto vz = true;
@@ -229,7 +228,7 @@ void concat_image_compute_half::PrepareForRun() {
           }
         }
         if (vz) {
-          v = "z";
+          v_ = "z";
           for (int i = 0; i < num; i++) {
             vdim[i] = vdim[i] / 4;
           }
@@ -238,9 +237,9 @@ void concat_image_compute_half::PrepareForRun() {
     }
   } else if (orank == 3) {
     if (axis == 2) {
-      v = "y";
+      v_ = "y";
     } else if (axis == 3) {
-      v = "x";
+      v_ = "x";
     } else if (axis == 1) {
       auto vz = true;
       for (int i = 0; i < num; i++) {
@@ -250,7 +249,7 @@ void concat_image_compute_half::PrepareForRun() {
         }
       }
       if (vz) {
-        v = "z";
+        v_ = "z";
         for (int i = 0; i < num; i++) {
           vdim[i] = vdim[i] / 4;
         }
@@ -258,7 +257,7 @@ void concat_image_compute_half::PrepareForRun() {
     }
   } else {
     if (axis == 2) {
-      v = "y";
+      v_ = "y";
     } else if (axis == 3) {
       bool vx = true;
       for (int i = 0; i < num; i++) {
@@ -268,7 +267,7 @@ void concat_image_compute_half::PrepareForRun() {
         }
       }
       if (vx) {
-        v = "x";
+        v_ = "x";
         for (int i = 0; i < num; i++) {
           vdim[i] = vdim[i] / 4;
         }
@@ -289,36 +288,36 @@ void concat_image_compute_half::PrepareForRun() {
        (int)(output_buffer_->transpose_[3])},
       {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3], (int)vdim[4], (int)vdim[5]}};
 
-  param_buffer_ = mtl_ctx->create_buffer(*device, &pm, sizeof(pm), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = mtl_ctx->CreateBuffer(*device, &pm, sizeof(pm), METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  string function_name =
-      "concat_" + std::to_string(orank) + "_" + std::to_string(num) + "_" + v + "_half";
-  kernel_ = mtl_ctx->get_kernel(*device, function_name);
+  std::string function_name =
+      "concat_" + std::to_string(orank) + "_" + std::to_string(num) + "_" + v_ + "_half";
+  kernel_ = mtl_ctx->GetKernel(*device, function_name);
 }
 
-void concat_image_compute_half::Run() {
-  auto output_width = output_buffer_->textureWidth_;
-  auto output_height = output_buffer_->textureHeight_;
-  auto output_array_length = output_buffer_->arrayLength_;
+void ConcatImageComputeHalf::Run() {
+  auto output_width = output_buffer_->texture_width_;
+  auto output_height = output_buffer_->texture_height_;
+  auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<MetalContext>();
-  auto mtl_ctx = (metal_context*)context.context();
-  auto mtl_dev = mtl_ctx->get_default_device();
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
 
   {
-    auto queue = mtl_ctx->get_default_queue(*mtl_dev);
-    metal_uint3 global_work_size = {static_cast<metal_uint>(output_width),
-                                    static_cast<metal_uint>(output_height),
-                                    static_cast<metal_uint>(output_array_length)};
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
 
-    // TODO: check the vector input failed reason
-    std::vector<metal_kernel_arg> args;
+    // TODO: (lzy) check the vector input failed reason
+    std::vector<MetalKernelArgument> args;
     for (auto item : input_buffers_) args.emplace_back(item);
     args.emplace_back(output_buffer_);
     args.emplace_back(param_buffer_);
 
-    kernel_->execute(*queue, global_work_size, 0, args);
-    queue->wait_until_complete();
+    kernel_->Execute(*queue, global_work_size, false, args);
+    queue->WaitUntilComplete();
   }
 }
 
@@ -331,7 +330,7 @@ REGISTER_LITE_KERNEL(concat,
                      kMetal,
                      kFloat,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::concat_image_compute,
+                     paddle::lite::kernels::metal::ConcatImageCompute,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
@@ -349,7 +348,7 @@ REGISTER_LITE_KERNEL(concat,
                      kMetal,
                      kFP16,
                      kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::concat_image_compute_half,
+                     paddle::lite::kernels::metal::ConcatImageComputeHalf,
                      def)
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                PRECISION(kFP16),
