@@ -191,7 +191,7 @@ class CLRuntime {
     auto priority_level = GPUPriorityLevel::PRIORITY_HIGH;
     std::vector<cl_context_properties> context_properties;
     if (gpu_type_ == GpuType::QUALCOMM_ADRENO &&
-        opencl_version_ >= OpenCLVersion::CL_VER_2_0) {
+        device_info_["CL_DEVICE_VERSION"] >= OpenCLVersion::CL_VER_2_0) {
       GetAdrenoContextProperties(
           &context_properties, perf_mode, priority_level);
     }
@@ -228,8 +228,6 @@ class CLRuntime {
   GpuType ParseGpuTypeFromDeviceName(std::string device_name);
 
   std::map<std::string, size_t> device_info_;
-
-  OpenCLVersion opencl_version_;
 
   GpuType gpu_type_{GpuType::UNKNOWN};
 

@@ -301,11 +301,14 @@ bool CLRuntime::InitializeDevice() {
     }
     return t_str;
   };
-  const std::string device_version = device_->getInfo<CL_DEVICE_VERSION>();
-  LOG(INFO) << "device_version:" << device_version;
-  opencl_version_ = ParseDeviceVersion(device_version);
-  CHECK(opencl_version_ != OpenCLVersion::CL_VER_UNKNOWN)
-      << "The device version[" << device_version << "] is illegal!";
+
+  auto device_version = device_->getInfo<CL_DEVICE_VERSION>();
+  LOG(INFO) << "CL_DEVICE_VERSION:" << device_version;
+  auto opencl_version = ParseDeviceVersion(device_version);
+  if (opencl_version == OpenCLVersion::CL_VER_UNKNOWN) {
+    LOG(ERROR) << "Parse device version[" << device_version << "] failed!";
+  }
+  device_info_["CL_DEVICE_VERSION"] = opencl_version;
 
   LOG(INFO) << "device_type:" << device_type_to_str(device_type);
   device_info_["CL_DEVICE_TYPE"] = device_type;
