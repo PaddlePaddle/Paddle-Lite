@@ -68,8 +68,8 @@ rm -rf $(ls ./models_opt | grep -v .nb)
 
 # step 4. compiling iOS lib
 cd $workspace
-./lite/tools/build_ios.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=OFF --with_cv=ON --with_exception=ON
-./lite/tools/build_ios.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=OFF --arch=armv7 --with_cv=ON  --with_exception=ON
+./lite/tools/build_ios.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --with_exception=$WITH_EXCEPTION
+./lite/tools/build_ios.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV  --with_exception=$WITH_EXCEPTION
 
 # step 5. pack compiling results and optimized models
 result_name=iOS_lib
