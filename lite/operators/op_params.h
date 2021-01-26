@@ -1456,6 +1456,7 @@ struct SqueezeParam : ParamBase {
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
   std::vector<int> axes{};
+  bool inplace{true};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1480,6 +1481,7 @@ struct UnsqueezeParam : ParamBase {
   std::vector<int> axes{};
   const lite::Tensor* axes_tensor{};
   std::vector<const lite::Tensor*> axes_tensor_vct{};
+  bool inplace{true};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -2202,6 +2204,16 @@ struct ScatterNdAddParam : ParamBase {
   lite::Tensor* indexs{};
   lite::Tensor* updates{};
   lite::Tensor* output{};
+};
+
+struct CumsumParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  lite::Tensor* Out{nullptr};
+
+  int axis{-1};
+  bool flatten{false};
+  bool exclusive{false};
+  bool reverse{false};
 };
 
 }  // namespace operators

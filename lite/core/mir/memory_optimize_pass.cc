@@ -123,7 +123,11 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
     std::map<std::string,
              std::pair<std::set<std::string>, std::set<std::string>>>
         inplace_op_nodes = {{"reshape", {{"X"}, {"Out"}}},
-                            {"reshape2", {{"X"}, {"Out"}}}};
+                            {"reshape2", {{"X"}, {"Out"}}},
+                            {"squeeze", {{"X"}, {"Out"}}},
+                            {"squeeze2", {{"X"}, {"Out"}}},
+                            {"unsqueeze", {{"X"}, {"Out"}}},
+                            {"unsqueeze2", {{"X"}, {"Out"}}}};
     auto inplace_op_node = inplace_op_nodes.find(op_type);
     if (inplace_op_node != inplace_op_nodes.end()) {
       bool inplace = false;
