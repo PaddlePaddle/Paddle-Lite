@@ -27,6 +27,7 @@ bool XPUGenerateSequenceOp::CheckShape() const {
   CHECK(param_.axis >= -static_cast<int>(x_rank) &&
         param_.axis < static_cast<int>(x_rank))
       << "axis: " << param_.axis << ", x_dims: " << x_dims;
+
   return true;
 }
 
