@@ -46,8 +46,8 @@ class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
   const MetalImage* input_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
 
-  static std::string KernelFunctionName(const param_t& param,
-                                        bool useAggressiveOptimization = false);
+  static std::string KernelFunctionName(
+      const param_t& param, bool use_aggressive_optimization = false);
 
   static bool IsWinoGrad(std::string function_name);
 
@@ -55,7 +55,6 @@ class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
   void SetupWithMPS();
   void SetupWithoutMPS();
 
-  const float* bias_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> filter_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;
@@ -84,8 +83,8 @@ class Conv2dImageComputeHalf
   const MetalImage* input_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
 
-  static std::string KernelFunctionName(const param_t& param,
-                                        bool useAggressiveOptimization = false);
+  static std::string KernelFunctionName(
+      const param_t& param, bool use_aggressive_optimization = false);
 
   static bool IsWinoGrad(std::string function_name);
 
@@ -93,7 +92,6 @@ class Conv2dImageComputeHalf
   void SetupWithMPS();
   void SetupWithoutMPS();
 
-  const float* bias_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> filter_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;

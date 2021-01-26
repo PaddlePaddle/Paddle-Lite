@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/metal/image_op/depthwise_conv2d_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
-#include "lite/kernels/metal/image_op/depthwise_conv2d_image_compute.h"
 
 using namespace std;
 
@@ -40,7 +40,8 @@ void DepthwiseConv2dImageCompute::PrepareForRun() {
   if (param.activation_param.has_active) {
     if (lite_api::ActivationType::kRelu == param.activation_param.active_type)
       activate_type_ = 1;
-    else if (lite_api::ActivationType::kRelu6 == param.activation_param.active_type) {
+    else if (lite_api::ActivationType::kRelu6 ==
+             param.activation_param.active_type) {
       activate_type_ = 2;
       relu6_thredhold_ = param.activation_param.hard_swish_threshold;
     } else {
@@ -53,12 +54,14 @@ void DepthwiseConv2dImageCompute::PrepareForRun() {
 
   DDim blank_dim = DDimLite({output_dims[1]});
   blank_tensor_.Resize(blank_dim);
-  blank_tensor_.mutable_data<float, MetalImage>(blank_dim, {0, 1, 2, 3}, (void*)blank_host);
+  blank_tensor_.mutable_data<float, MetalImage>(
+      blank_dim, {0, 1, 2, 3}, (void*)blank_host);
   free(blank_host);
   blank_host = nullptr;
 
   bool should_use_mps = false;
-  function_name_ = KernelFunctionName(param, mtl_ctx->use_aggressive_optimization());
+  function_name_ =
+      KernelFunctionName(param, mtl_ctx->use_aggressive_optimization());
 
 #ifdef TARGET_IOS
     if(@available(iOS 11.0, *) {
@@ -83,7 +86,8 @@ void DepthwiseConv2dImageCompute::PrepareForRun() {
   }
 
   if (function_name_ == "") {
-    throw std::logic_error("ERROR: cannot find the name of the depthwise_conv2d");
+    throw std::logic_error(
+        "ERROR: cannot find the name of the depthwise_conv2d");
   }
 
   if (activate_type_ == 2) {
@@ -117,23 +121,30 @@ void DepthwiseConv2dImageCompute::Run() {
                                    static_cast<MetalUint>(output_array_length)};
 
     if (param.bias) {
-      std::vector<MetalKernelArgument> args = {MetalKernelArgument{input_buffer_},
-                                               MetalKernelArgument{bias_buffer_},
-                                               MetalKernelArgument{output_buffer_},
-                                               MetalKernelArgument{params_buffer_},
-                                               MetalKernelArgument{filter_buffer_}};
+      std::vector<MetalKernelArgument> args = {
+          MetalKernelArgument{input_buffer_},
+          MetalKernelArgument{bias_buffer_},
+          MetalKernelArgument{output_buffer_},
+          MetalKernelArgument{params_buffer_},
+          MetalKernelArgument{filter_buffer_}};
       bool quadruple = false;
-      if (IsWinoGrad(function_name_) || function_name_ == "conv_add_relu_1x1_quadruple_half") {
+      if (IsWinoGrad(function_name_) ||
+          function_name_ == "conv_add_relu_1x1_quadruple_half") {
         quadruple = true;
       }
       kernel_->Execute(*queue, global_work_size, quadruple, args);
       queue->WaitUntilComplete();
 
 #if LZY_DEBUG
-      metal_debug::DumpImage("input", input_buffer_, param.x->dims().production());
-      metal_debug::DumpImage("output", output_buffer_, param.output->dims().production());
-      if (param.bias) metal_debug::DumpImage("bias", bias_buffer_, param.bias->dims().production());
-      metal_debug::DumpBuffer("filter", filter_buffer_.get(), param.filter->dims().production());
+      metal_debug::DumpImage(
+          "input", input_buffer_, param.x->dims().production());
+      metal_debug::DumpImage(
+          "output", output_buffer_, param.output->dims().production());
+      if (param.bias)
+        metal_debug::DumpImage(
+            "bias", bias_buffer_, param.bias->dims().production());
+      metal_debug::DumpBuffer(
+          "filter", filter_buffer_.get(), param.filter->dims().production());
 #endif
     } else {
       auto blank_buffer = blank_tensor_.data<float, MetalImage>();
@@ -144,24 +155,30 @@ void DepthwiseConv2dImageCompute::Run() {
                    MetalKernelArgument{filter_buffer_}};
 
       bool quadruple = false;
-      if (IsWinoGrad(function_name_) || function_name_ == "conv_add_relu_1x1_quadruple_half") {
+      if (IsWinoGrad(function_name_) ||
+          function_name_ == "conv_add_relu_1x1_quadruple_half") {
         quadruple = true;
       }
       kernel_->Execute(*queue, global_work_size, quadruple, args);
       queue->WaitUntilComplete();
 
 #if LZY_DEBUG
-      metal_debug::DumpImage("input", input_buffer_, param.x->dims().production());
-      metal_debug::DumpImage("output", output_buffer_, param.output->dims().production());
-      if (param.bias) metal_debug::DumpImage("bias", bias_buffer_, param.bias->dims().production());
-      metal_debug::DumpBuffer("filter", filter_buffer_.get(), param.filter->dims().production());
+      metal_debug::DumpImage(
+          "input", input_buffer_, param.x->dims().production());
+      metal_debug::DumpImage(
+          "output", output_buffer_, param.output->dims().production());
+      if (param.bias)
+        metal_debug::DumpImage(
+            "bias", bias_buffer_, param.bias->dims().production());
+      metal_debug::DumpBuffer(
+          "filter", filter_buffer_.get(), param.filter->dims().production());
 #endif
     }
   }
 }
 
-string DepthwiseConv2dImageCompute::KernelFunctionName(const param_t& param,
-                                                       bool useAggressiveOptimization) {
+string DepthwiseConv2dImageCompute::KernelFunctionName(
+    const param_t& param, bool use_aggressive_optimization) {
   auto filter_width = param.filter->dims()[3];
   auto filter_height = param.filter->dims()[2];
   auto filter_channel = param.filter->dims()[1];
@@ -206,7 +223,8 @@ string DepthwiseConv2dImageCompute::KernelFunctionName(const param_t& param,
 bool DepthwiseConv2dImageCompute::IsWinoGrad(string function_name) {
   std::string suffix = "winograd";
   if (function_name.size() >= suffix.size() &&
-      function_name.compare(function_name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+      function_name.compare(
+          function_name.size() - suffix.size(), suffix.size(), suffix) == 0) {
     return true;
   }
   return false;
@@ -227,9 +245,11 @@ void DepthwiseConv2dImageCompute::SetupWithoutMPS() {
   auto device = mtl_ctx->GetDefaultDevice();
 
   int offsetX =
-      ((int)((*param.dilations)[1]) * (param.filter->dims()[3] - 1) + 1) / 2 - (int)(padLeft);
+      ((int)((*param.dilations)[1]) * (param.filter->dims()[3] - 1) + 1) / 2 -
+      (int)(padLeft);
   int offsetY =
-      ((int)((*param.dilations)[0]) * (param.filter->dims()[2] - 1) + 1) / 2 - (int)(padTop);
+      ((int)((*param.dilations)[0]) * (param.filter->dims()[2] - 1) + 1) / 2 -
+      (int)(padTop);
 
   float offsetZ = 0.0;
   int iC = param.x->dims()[1];
@@ -260,59 +280,67 @@ void DepthwiseConv2dImageCompute::SetupWithoutMPS() {
 
     int addByChannel = 0;
     if (bias_buffer_->tensor_dim_.size() == 1 &&
-        (axis == 1 ||
-         (axis == -1 && bias_buffer_->tensor_dim_[0] == output_buffer_->pad_to_four_dim_[1]))) {
+        (axis == 1 || (axis == -1 &&
+                       bias_buffer_->tensor_dim_[0] ==
+                           output_buffer_->pad_to_four_dim_[1]))) {
       addByChannel = 1;
     }
 
-    ElementwiseAddMetalParam element_params = {params_fast,
-                                               addByChannel,
-                                               params_axis,
-                                               (int)output_buffer_->tensor_dim_.size(),
-                                               {xdim[0], xdim[1], xdim[2], xdim[3]},
-                                               {output_buffer_->transpose_[0],
-                                                output_buffer_->transpose_[1],
-                                                output_buffer_->transpose_[2],
-                                                output_buffer_->transpose_[3]},
-                                               {ydim[0], ydim[1], ydim[2], ydim[3]},
-                                               {bias_buffer_->transpose_[0],
-                                                bias_buffer_->transpose_[1],
-                                                bias_buffer_->transpose_[2],
-                                                bias_buffer_->transpose_[3]}};
+    ElementwiseAddMetalParam element_params = {
+        params_fast,
+        addByChannel,
+        params_axis,
+        (int)output_buffer_->tensor_dim_.size(),
+        {xdim[0], xdim[1], xdim[2], xdim[3]},
+        {output_buffer_->transpose_[0],
+         output_buffer_->transpose_[1],
+         output_buffer_->transpose_[2],
+         output_buffer_->transpose_[3]},
+        {ydim[0], ydim[1], ydim[2], ydim[3]},
+        {bias_buffer_->transpose_[0],
+         bias_buffer_->transpose_[1],
+         bias_buffer_->transpose_[2],
+         bias_buffer_->transpose_[3]}};
 
-    MetalConvParam conv_params{(short)offsetX,
-                               (short)offsetY,
-                               (short)offsetZ,
-                               (unsigned short)(param.strides[1]),
-                               (unsigned short)(param.strides[0]),
-                               (unsigned short)((*param.dilations)[1]),
-                               (unsigned short)((*param.dilations)[0]),
-                               (unsigned short)(param.groups),
-                               (unsigned short)(iC),
-                               (unsigned short)(fC),
-                               (unsigned short)(oC),
-                               (unsigned short)(param.bias ? 1 : 0),
-                               (unsigned short)(param.activation_param.has_active ? 1 : 0),
-                               element_params};
+    MetalConvParam conv_params{
+        (short)offsetX,
+        (short)offsetY,
+        (short)offsetZ,
+        (unsigned short)(param.strides[1]),
+        (unsigned short)(param.strides[0]),
+        (unsigned short)((*param.dilations)[1]),
+        (unsigned short)((*param.dilations)[0]),
+        (unsigned short)(param.groups),
+        (unsigned short)(iC),
+        (unsigned short)(fC),
+        (unsigned short)(oC),
+        (unsigned short)(param.bias ? 1 : 0),
+        (unsigned short)(param.activation_param.has_active ? 1 : 0),
+        element_params};
 
-    params_buffer_ = mtl_ctx->CreateBuffer(
-        *device, &conv_params, sizeof(conv_params), METAL_ACCESS_FLAG::CPUWriteOnly);
+    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                           &conv_params,
+                                           sizeof(conv_params),
+                                           METAL_ACCESS_FLAG::CPUWriteOnly);
   } else {
-    MetalConvParam conv_params{(short)offsetX,
-                               (short)offsetY,
-                               (short)offsetZ,
-                               (unsigned short)(param.strides[1]),
-                               (unsigned short)(param.strides[0]),
-                               (unsigned short)((*param.dilations)[1]),
-                               (unsigned short)((*param.dilations)[0]),
-                               (unsigned short)(param.groups),
-                               (unsigned short)(iC),
-                               (unsigned short)(fC),
-                               (unsigned short)(oC),
-                               (unsigned short)(param.bias ? 1 : 0),
-                               (unsigned short)(param.activation_param.has_active ? 1 : 0)};
-    params_buffer_ = mtl_ctx->CreateBuffer(
-        *device, &conv_params, sizeof(conv_params), METAL_ACCESS_FLAG::CPUWriteOnly);
+    MetalConvParam conv_params{
+        (short)offsetX,
+        (short)offsetY,
+        (short)offsetZ,
+        (unsigned short)(param.strides[1]),
+        (unsigned short)(param.strides[0]),
+        (unsigned short)((*param.dilations)[1]),
+        (unsigned short)((*param.dilations)[0]),
+        (unsigned short)(param.groups),
+        (unsigned short)(iC),
+        (unsigned short)(fC),
+        (unsigned short)(oC),
+        (unsigned short)(param.bias ? 1 : 0),
+        (unsigned short)(param.activation_param.has_active ? 1 : 0)};
+    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                           &conv_params,
+                                           sizeof(conv_params),
+                                           METAL_ACCESS_FLAG::CPUWriteOnly);
   }
   auto filter_buffer = param.filter->data<float>();
 
@@ -323,14 +351,22 @@ void DepthwiseConv2dImageCompute::SetupWithoutMPS() {
   }
 
   if (function_name_ == "conv_add_relu_3x3_half_winograd") {
-    bool padWhenOneC = false;
-    filter_buffer_ = make_shared<MetalBuffer>(
-        *device, param.filter->dims(), METAL_PRECISION_TYPE::HALF, padWhenOneC, false, false);
+    bool pad_when_one_ch = false;
+    filter_buffer_ = make_shared<MetalBuffer>(*device,
+                                              param.filter->dims(),
+                                              METAL_PRECISION_TYPE::HALF,
+                                              pad_when_one_ch,
+                                              false,
+                                              false);
   } else {
-    bool padWhenOneC =
-        !(param.filter->dims()[1] == 1 && param.filter->dims()[0] == param.x->dims()[1]);
-    filter_buffer_ = make_shared<MetalBuffer>(
-        *device, param.filter->dims(), METAL_PRECISION_TYPE::FLOAT, padWhenOneC, true, false);
+    bool pad_when_one_ch = !(param.filter->dims()[1] == 1 &&
+                             param.filter->dims()[0] == param.x->dims()[1]);
+    filter_buffer_ = make_shared<MetalBuffer>(*device,
+                                              param.filter->dims(),
+                                              METAL_PRECISION_TYPE::FLOAT,
+                                              pad_when_one_ch,
+                                              true,
+                                              false);
   }
   filter_buffer_->CopyFromNCHW<float>(filter_buffer);
 }
@@ -346,12 +382,14 @@ void DepthwiseConv2dImageComputeHalf::PrepareForRun() {
   input_buffer_ = param.x->data<MetalHalf, MetalImage>();
   if (param.bias) bias_buffer_ = param.bias->data<MetalHalf, MetalImage>();
 
-  output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+  output_buffer_ =
+      param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
 
   if (param.activation_param.has_active) {
     if (lite_api::ActivationType::kRelu == param.activation_param.active_type)
       activate_type_ = 1;
-    else if (lite_api::ActivationType::kRelu6 == param.activation_param.active_type) {
+    else if (lite_api::ActivationType::kRelu6 ==
+             param.activation_param.active_type) {
       activate_type_ = 2;
       relu6_thredhold_ = param.activation_param.hard_swish_threshold;
     } else {
@@ -359,17 +397,20 @@ void DepthwiseConv2dImageComputeHalf::PrepareForRun() {
     }
   }
 
-  MetalHalf* blank_host = (MetalHalf*)malloc(sizeof(MetalHalf) * output_dims[1]);
+  MetalHalf* blank_host =
+      (MetalHalf*)malloc(sizeof(MetalHalf) * output_dims[1]);
   memset(blank_host, 0, sizeof(MetalHalf) * output_dims[1]);
 
   DDim blank_dim = DDimLite({output_dims[1]});
   blank_tensor_.Resize(blank_dim);
-  blank_tensor_.mutable_data<MetalHalf, MetalImage>(blank_dim, {0, 1, 2, 3}, (void*)blank_host);
+  blank_tensor_.mutable_data<MetalHalf, MetalImage>(
+      blank_dim, {0, 1, 2, 3}, (void*)blank_host);
   free(blank_host);
   blank_host = nullptr;
 
   bool should_use_mps = false;
-  function_name_ = KernelFunctionName(param, mtl_ctx->use_aggressive_optimization());
+  function_name_ =
+      KernelFunctionName(param, mtl_ctx->use_aggressive_optimization());
 
 #ifdef TARGET_IOS
     if(@available(iOS 11.0, *) {
@@ -394,7 +435,8 @@ void DepthwiseConv2dImageComputeHalf::PrepareForRun() {
   }
 
   if (function_name_ == "") {
-    throw std::logic_error("ERROR: cannot find the name of the depthwise_conv2d");
+    throw std::logic_error(
+        "ERROR: cannot find the name of the depthwise_conv2d");
   }
 
   if (activate_type_ == 2) {
@@ -434,18 +476,23 @@ void DepthwiseConv2dImageComputeHalf::Run() {
                    MetalKernelArgument{params_buffer_},
                    MetalKernelArgument{filter_buffer_}};
       bool quadruple = false;
-      if (IsWinoGrad(function_name_) || function_name_ == "conv_add_relu_1x1_quadruple_half") {
+      if (IsWinoGrad(function_name_) ||
+          function_name_ == "conv_add_relu_1x1_quadruple_half") {
         quadruple = true;
       }
       kernel_->Execute(*queue, global_work_size, quadruple, args);
       queue->WaitUntilComplete();
 #if LZY_DEBUG
-      metal_debug::DumpImage("input_half", input_buffer_, param.x->dims().production());
-      metal_debug::DumpImage("output_half", output_buffer_, param.output->dims().production());
+      metal_debug::DumpImage(
+          "input_half", input_buffer_, param.x->dims().production());
+      metal_debug::DumpImage(
+          "output_half", output_buffer_, param.output->dims().production());
       if (param.bias)
-        metal_debug::DumpImage("bias_half", bias_buffer_, param.bias->dims().production());
-      metal_debug::DumpBuffer(
-          "filter_half", filter_buffer_.get(), param.filter->dims().production());
+        metal_debug::DumpImage(
+            "bias_half", bias_buffer_, param.bias->dims().production());
+      metal_debug::DumpBuffer("filter_half",
+                              filter_buffer_.get(),
+                              param.filter->dims().production());
 #endif
     } else {
       auto blank_buffer = blank_tensor_.data<float, MetalImage>();
@@ -456,25 +503,30 @@ void DepthwiseConv2dImageComputeHalf::Run() {
                    MetalKernelArgument{filter_buffer_}};
 
       bool quadruple = false;
-      if (IsWinoGrad(function_name_) || function_name_ == "conv_add_relu_1x1_quadruple_half") {
+      if (IsWinoGrad(function_name_) ||
+          function_name_ == "conv_add_relu_1x1_quadruple_half") {
         quadruple = true;
       }
       kernel_->Execute(*queue, global_work_size, quadruple, args);
       queue->WaitUntilComplete();
 #if LZY_DEBUG
-      metal_debug::DumpImage("input_half", input_buffer_, param.x->dims().production());
-      metal_debug::DumpImage("output_half", output_buffer_, param.output->dims().production());
+      metal_debug::DumpImage(
+          "input_half", input_buffer_, param.x->dims().production());
+      metal_debug::DumpImage(
+          "output_half", output_buffer_, param.output->dims().production());
       if (param.bias)
-        metal_debug::DumpImage("bias_half", bias_buffer_, param.bias->dims().production());
-      metal_debug::DumpBuffer(
-          "filter_half", filter_buffer_.get(), param.filter->dims().production());
+        metal_debug::DumpImage(
+            "bias_half", bias_buffer_, param.bias->dims().production());
+      metal_debug::DumpBuffer("filter_half",
+                              filter_buffer_.get(),
+                              param.filter->dims().production());
 #endif
     }
   }
 }
 
-string DepthwiseConv2dImageComputeHalf::KernelFunctionName(const param_t& param,
-                                                           bool useAggressiveOptimization) {
+string DepthwiseConv2dImageComputeHalf::KernelFunctionName(
+    const param_t& param, bool use_aggressive_optimization) {
   auto filter_width = param.filter->dims()[3];
   auto filter_height = param.filter->dims()[2];
   auto filter_channel = param.filter->dims()[1];
@@ -492,23 +544,25 @@ string DepthwiseConv2dImageComputeHalf::KernelFunctionName(const param_t& param,
     }
   } else if (filter_width == 3 && filter_height == 3) {
     if (filter_channel == 1 && param.filter->dims()[0] == param.x->dims()[1]) {
-      if (useAggressiveOptimization) {
-        bool couldUseWinograd = filter_width == 3 && filter_height == 3 && param.strides[0] == 1 &&
-                                param.strides[1] == 1 && dilations[0] == 1 && dilations[1] == 1 &&
-                                padLeft == 1 && padTop == 1;
-        if (couldUseWinograd) {
+      if (use_aggressive_optimization) {
+        bool could_use_winograd =
+            filter_width == 3 && filter_height == 3 && param.strides[0] == 1 &&
+            param.strides[1] == 1 && dilations[0] == 1 && dilations[1] == 1 &&
+            padLeft == 1 && padTop == 1;
+        if (could_use_winograd) {
           return "depthwise_conv_add_relu_3x3_half_winograd";
         }
       }
       return "depthwise_conv_add_relu_3x3_half";
     } else {
       if (param.groups == 1) {
-        if (useAggressiveOptimization) {
-          bool couldUseWinograd = filter_width == 3 && filter_height == 3 &&
-                                  param.strides[0] == 1 && param.strides[1] == 1 &&
-                                  dilations[0] == 1 && dilations[1] == 1 && padLeft == 1 &&
-                                  padTop == 1;
-          if (couldUseWinograd) {
+        if (use_aggressive_optimization) {
+          bool could_use_winograd = filter_width == 3 && filter_height == 3 &&
+                                    param.strides[0] == 1 &&
+                                    param.strides[1] == 1 &&
+                                    dilations[0] == 1 && dilations[1] == 1 &&
+                                    padLeft == 1 && padTop == 1;
+          if (could_use_winograd) {
             return "conv_add_relu_3x3_half_winograd";
           }
         }
@@ -541,7 +595,8 @@ string DepthwiseConv2dImageComputeHalf::KernelFunctionName(const param_t& param,
 bool DepthwiseConv2dImageComputeHalf::IsWinoGrad(string function_name) {
   std::string suffix = "winograd";
   if (function_name.size() >= suffix.size() &&
-      function_name.compare(function_name.size() - suffix.size(), suffix.size(), suffix) == 0) {
+      function_name.compare(
+          function_name.size() - suffix.size(), suffix.size(), suffix) == 0) {
     return true;
   }
   return false;
@@ -562,9 +617,11 @@ void DepthwiseConv2dImageComputeHalf::SetupWithoutMPS() {
   auto device = mtl_ctx->GetDefaultDevice();
 
   int offsetX =
-      ((int)((*param.dilations)[1]) * (param.filter->dims()[3] - 1) + 1) / 2 - (int)(padLeft);
+      ((int)((*param.dilations)[1]) * (param.filter->dims()[3] - 1) + 1) / 2 -
+      (int)(padLeft);
   int offsetY =
-      ((int)((*param.dilations)[0]) * (param.filter->dims()[2] - 1) + 1) / 2 - (int)(padTop);
+      ((int)((*param.dilations)[0]) * (param.filter->dims()[2] - 1) + 1) / 2 -
+      (int)(padTop);
 
   float offsetZ = 0.0;
   int iC = param.x->dims()[1];
@@ -595,59 +652,67 @@ void DepthwiseConv2dImageComputeHalf::SetupWithoutMPS() {
 
     int addByChannel = 0;
     if (bias_buffer_->tensor_dim_.size() == 1 &&
-        (axis == 1 ||
-         (axis == -1 && bias_buffer_->tensor_dim_[0] == output_buffer_->pad_to_four_dim_[1]))) {
+        (axis == 1 || (axis == -1 &&
+                       bias_buffer_->tensor_dim_[0] ==
+                           output_buffer_->pad_to_four_dim_[1]))) {
       addByChannel = 1;
     }
 
-    ElementwiseAddMetalParam element_params = {params_fast,
-                                               addByChannel,
-                                               params_axis,
-                                               (int)output_buffer_->tensor_dim_.size(),
-                                               {xdim[0], xdim[1], xdim[2], xdim[3]},
-                                               {output_buffer_->transpose_[0],
-                                                output_buffer_->transpose_[1],
-                                                output_buffer_->transpose_[2],
-                                                output_buffer_->transpose_[3]},
-                                               {ydim[0], ydim[1], ydim[2], ydim[3]},
-                                               {bias_buffer_->transpose_[0],
-                                                bias_buffer_->transpose_[1],
-                                                bias_buffer_->transpose_[2],
-                                                bias_buffer_->transpose_[3]}};
+    ElementwiseAddMetalParam element_params = {
+        params_fast,
+        addByChannel,
+        params_axis,
+        (int)output_buffer_->tensor_dim_.size(),
+        {xdim[0], xdim[1], xdim[2], xdim[3]},
+        {output_buffer_->transpose_[0],
+         output_buffer_->transpose_[1],
+         output_buffer_->transpose_[2],
+         output_buffer_->transpose_[3]},
+        {ydim[0], ydim[1], ydim[2], ydim[3]},
+        {bias_buffer_->transpose_[0],
+         bias_buffer_->transpose_[1],
+         bias_buffer_->transpose_[2],
+         bias_buffer_->transpose_[3]}};
 
-    MetalConvParam conv_params{(short)offsetX,
-                               (short)offsetY,
-                               (short)offsetZ,
-                               (unsigned short)(param.strides[1]),
-                               (unsigned short)(param.strides[0]),
-                               (unsigned short)((*param.dilations)[1]),
-                               (unsigned short)((*param.dilations)[0]),
-                               (unsigned short)(param.groups),
-                               (unsigned short)(iC),
-                               (unsigned short)(fC),
-                               (unsigned short)(oC),
-                               (unsigned short)(param.bias ? 1 : 0),
-                               (unsigned short)(param.activation_param.has_active ? 1 : 0),
-                               element_params};
+    MetalConvParam conv_params{
+        (short)offsetX,
+        (short)offsetY,
+        (short)offsetZ,
+        (unsigned short)(param.strides[1]),
+        (unsigned short)(param.strides[0]),
+        (unsigned short)((*param.dilations)[1]),
+        (unsigned short)((*param.dilations)[0]),
+        (unsigned short)(param.groups),
+        (unsigned short)(iC),
+        (unsigned short)(fC),
+        (unsigned short)(oC),
+        (unsigned short)(param.bias ? 1 : 0),
+        (unsigned short)(param.activation_param.has_active ? 1 : 0),
+        element_params};
 
-    params_buffer_ = mtl_ctx->CreateBuffer(
-        *device, &conv_params, sizeof(conv_params), METAL_ACCESS_FLAG::CPUWriteOnly);
+    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                           &conv_params,
+                                           sizeof(conv_params),
+                                           METAL_ACCESS_FLAG::CPUWriteOnly);
   } else {
-    MetalConvParam conv_params{(short)offsetX,
-                               (short)offsetY,
-                               (short)offsetZ,
-                               (unsigned short)(param.strides[1]),
-                               (unsigned short)(param.strides[0]),
-                               (unsigned short)((*param.dilations)[1]),
-                               (unsigned short)((*param.dilations)[0]),
-                               (unsigned short)(param.groups),
-                               (unsigned short)(iC),
-                               (unsigned short)(fC),
-                               (unsigned short)(oC),
-                               (unsigned short)(param.bias ? 1 : 0),
-                               (unsigned short)(param.activation_param.has_active ? 1 : 0)};
-    params_buffer_ = mtl_ctx->CreateBuffer(
-        *device, &conv_params, sizeof(conv_params), METAL_ACCESS_FLAG::CPUWriteOnly);
+    MetalConvParam conv_params{
+        (short)offsetX,
+        (short)offsetY,
+        (short)offsetZ,
+        (unsigned short)(param.strides[1]),
+        (unsigned short)(param.strides[0]),
+        (unsigned short)((*param.dilations)[1]),
+        (unsigned short)((*param.dilations)[0]),
+        (unsigned short)(param.groups),
+        (unsigned short)(iC),
+        (unsigned short)(fC),
+        (unsigned short)(oC),
+        (unsigned short)(param.bias ? 1 : 0),
+        (unsigned short)(param.activation_param.has_active ? 1 : 0)};
+    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                           &conv_params,
+                                           sizeof(conv_params),
+                                           METAL_ACCESS_FLAG::CPUWriteOnly);
   }
   auto filter_buffer = param.filter->data<float>();
 
@@ -658,14 +723,22 @@ void DepthwiseConv2dImageComputeHalf::SetupWithoutMPS() {
   }
 
   if (function_name_ == "conv_add_relu_3x3_half_winograd") {
-    bool padWhenOneC = false;
-    filter_buffer_ = make_shared<MetalBuffer>(
-        *device, param.filter->dims(), METAL_PRECISION_TYPE::HALF, padWhenOneC, false, false);
+    bool pad_when_one_ch = false;
+    filter_buffer_ = make_shared<MetalBuffer>(*device,
+                                              param.filter->dims(),
+                                              METAL_PRECISION_TYPE::HALF,
+                                              pad_when_one_ch,
+                                              false,
+                                              false);
   } else {
-    bool padWhenOneC =
-        !(param.filter->dims()[1] == 1 && param.filter->dims()[0] == param.x->dims()[1]);
-    filter_buffer_ = make_shared<MetalBuffer>(
-        *device, param.filter->dims(), METAL_PRECISION_TYPE::HALF, padWhenOneC, true, false);
+    bool pad_when_one_ch = !(param.filter->dims()[1] == 1 &&
+                             param.filter->dims()[0] == param.x->dims()[1]);
+    filter_buffer_ = make_shared<MetalBuffer>(*device,
+                                              param.filter->dims(),
+                                              METAL_PRECISION_TYPE::HALF,
+                                              pad_when_one_ch,
+                                              true,
+                                              false);
   }
   filter_buffer_->CopyFromNCHW<float>(filter_buffer);
 }
@@ -681,37 +754,45 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::DepthwiseConv2dImageCompute,
                      def)
-.BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal),
-PRECISION(kFloat),
-DATALAYOUT(kMetalTexture2DArray))})
-.BindInput("Bias", {LiteType::GetTensorTy(TARGET(kMetal),
-                                              PRECISION(kFloat),
-                                              DATALAYOUT(kMetalTexture2DArray))})
-.BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost),
-                                                PRECISION(kFloat),
-                                                DATALAYOUT(kNCHW))})
-.BindOutput("Output", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                 PRECISION(kFloat),
-                                                 DATALAYOUT(kMetalTexture2DArray))})
-.Finalize();
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Bias",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-
-REGISTER_LITE_KERNEL(depthwise_conv2d,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::DepthwiseConv2dImageComputeHalf,
-                     def)
-.BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal),
-                                           PRECISION(kFP16),
-                                           DATALAYOUT(kMetalTexture2DArray))})
-.BindInput("Bias", {LiteType::GetTensorTy(TARGET(kMetal),
-                                              PRECISION(kFP16),
-                                              DATALAYOUT(kMetalTexture2DArray))})
-.BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost),
-                                                PRECISION(kFloat),
-                                                DATALAYOUT(kNCHW))})
-.BindOutput("Output", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                 PRECISION(kFP16),
-                                                 DATALAYOUT(kMetalTexture2DArray))})
-.Finalize();
+REGISTER_LITE_KERNEL(
+    depthwise_conv2d,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::DepthwiseConv2dImageComputeHalf,
+    def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Bias",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();

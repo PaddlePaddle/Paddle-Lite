@@ -269,11 +269,6 @@ if(WITH_TESTING)
                         METAL_DEPS ${metal_kernels}
                         ${ops} ${host_kernels} ${x86_kernels}
                         ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 --metal_dir=${CMAKE_BINARY_DIR}/lite/backends/metal/lite.metallib)
-                #lite_cc_test(test_human_segment_metal SRCS test_human_segment_lite_metal.cc
-                #        DEPS mir_passes lite_api_test_helper paddle_api_full paddle_api_light gflags utils
-                #        METAL_DEPS ${metal_kernels}
-                #        ${ops} ${host_kernels} ${x86_kernels}
-                #        ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 --metal_dir=${CMAKE_BINARY_DIR}/lite/backends/metal/lite.metallib)
             endif()
             add_dependencies(test_mobilenetv1_lite_x86 extern_lite_download_mobilenet_v1_tar_gz)
             lite_cc_test(test_mobilenetv2_lite_x86 SRCS test_mobilenetv2_lite_x86.cc

@@ -47,8 +47,8 @@ class DepthwiseConv2dImageCompute
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
 
-  static std::string KernelFunctionName(const param_t& param,
-                                        bool useAggressiveOptimization = false);
+  static std::string KernelFunctionName(
+      const param_t& param, bool use_aggressive_optimization = false);
 
   static bool IsWinoGrad(std::string function_name);
 
@@ -56,7 +56,6 @@ class DepthwiseConv2dImageCompute
   void SetupWithMPS();
   void SetupWithoutMPS();
 
-  const float* bias_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> filter_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;
@@ -85,8 +84,8 @@ class DepthwiseConv2dImageComputeHalf
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
 
-  static std::string KernelFunctionName(const param_t& param,
-                                        bool useAggressiveOptimization = false);
+  static std::string KernelFunctionName(
+      const param_t& param, bool use_aggressive_optimization = false);
 
   static bool IsWinoGrad(std::string function_name);
 
@@ -94,7 +93,6 @@ class DepthwiseConv2dImageComputeHalf
   void SetupWithMPS();
   void SetupWithoutMPS();
 
-  const float* bias_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> filter_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;

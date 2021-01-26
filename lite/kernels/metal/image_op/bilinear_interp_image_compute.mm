@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#include "bilinear_interp_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "bilinear_interp_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
@@ -32,8 +31,8 @@ void BilinearInterpImageCompute::PrepareForRun() {
   auto output_dims = param.Out->dims();
 
   input_buffer_ = param.X->data<float, MetalImage>();
-  output_buffer_ =
-      param.Out->mutable_data<float, MetalImage>(output_dims, input_buffer_->transpose_);
+  output_buffer_ = param.Out->mutable_data<float, MetalImage>(
+      output_dims, input_buffer_->transpose_);
 
   int input_h = static_cast<int>(input_buffer_->pad_to_four_dim_[2]);
   int input_w = static_cast<int>(input_buffer_->pad_to_four_dim_[3]);
@@ -43,7 +42,6 @@ void BilinearInterpImageCompute::PrepareForRun() {
   float delta_h = 0;
   float delta_w = 0;
 
-  // 根据align_corners与图像宽高，决定是否要与左上角的像素对齐（像素减1）
   if (param.align_corners && output_h > 1) {
     delta_h = 1.0;
   }
@@ -56,16 +54,16 @@ void BilinearInterpImageCompute::PrepareForRun() {
   float align_delta = 0;
   bool align_flag = (param.align_mode == 0 && !param.align_corners);
 
-  // 在metal kernel中，align_delta直接参与计算，若align_delta = 0.0，不进行中心对齐；
-  // 若param.align_mode == 0 且param.align_corners == false，则align_delta = 0.5，进行中心对齐
   if (align_flag) {
     align_delta = 0.5;
   }
 
   BilinearInterPMetalParam metal_param{ratio_h, ratio_w, align_delta};
 
-  param_buffer_ = mtl_ctx->CreateBuffer(
-      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                        &metal_param,
+                                        sizeof(metal_param),
+                                        METAL_ACCESS_FLAG::CPUWriteOnly);
 
   std::string function_name = "bilinear_interp_float";
   kernel_ = mtl_ctx->GetKernel(*device, function_name);
@@ -104,8 +102,8 @@ void BilinearInterpImageComputeHalf::PrepareForRun() {
   auto output_dims = param.Out->dims();
 
   input_buffer_ = param.X->data<MetalHalf, MetalImage>();
-  output_buffer_ =
-      param.Out->mutable_data<MetalHalf, MetalImage>(output_dims, input_buffer_->transpose_);
+  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(
+      output_dims, input_buffer_->transpose_);
 
   int input_h = static_cast<int>(input_buffer_->pad_to_four_dim_[2]);
   int input_w = static_cast<int>(input_buffer_->pad_to_four_dim_[3]);
@@ -115,7 +113,6 @@ void BilinearInterpImageComputeHalf::PrepareForRun() {
   float delta_h = 0;
   float delta_w = 0;
 
-  // 根据align_corners与图像宽高，决定是否要与左上角的像素对齐（像素减1）
   if (param.align_corners && output_h > 1) {
     delta_h = 1.0;
   }
@@ -128,16 +125,16 @@ void BilinearInterpImageComputeHalf::PrepareForRun() {
   float align_delta = 0;
   bool align_flag = (param.align_mode == 0 && !param.align_corners);
 
-  // 在metal kernel中，align_delta直接参与计算，若align_delta = 0.0，不进行中心对齐；
-  // 若param.align_mode == 0 且param.align_corners == false，则align_delta = 0.5，进行中心对齐
   if (align_flag) {
     align_delta = 0.5;
   }
 
   BilinearInterPMetalParam metal_param{ratio_h, ratio_w, align_delta};
 
-  param_buffer_ = mtl_ctx->CreateBuffer(
-      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                        &metal_param,
+                                        sizeof(metal_param),
+                                        METAL_ACCESS_FLAG::CPUWriteOnly);
 
   std::string function_name = "bilinear_interp_half";
   kernel_ = mtl_ctx->GetKernel(*device, function_name);
@@ -178,43 +175,53 @@ REGISTER_LITE_KERNEL(bilinear_interp,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::BilinearInterpImageCompute,
                      def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindInput("OutSize", {LiteType::GetTensorTy(TARGET(kHost),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kNCHW))})
-        .BindInput("SizeTensor", {LiteType::GetTensorTy(TARGET(kHost),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kNCHW))})
-        .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost),
-                                                    PRECISION(kFloat),
-                                                   DATALAYOUT(kNCHW))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Scale",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-
-REGISTER_LITE_KERNEL(bilinear_interp,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::BilinearInterpImageComputeHalf,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindInput("OutSize", {LiteType::GetTensorTy(TARGET(kHost),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kNCHW))})
-        .BindInput("SizeTensor", {LiteType::GetTensorTy(TARGET(kHost),
-                                                        PRECISION(kFloat),
-                                                        DATALAYOUT(kNCHW))})
-        .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kNCHW))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    bilinear_interp,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::BilinearInterpImageComputeHalf,
+    def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindInput("Scale",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
