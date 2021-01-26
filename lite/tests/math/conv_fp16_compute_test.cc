@@ -26,27 +26,6 @@
 #include "lite/kernels/arm/conv_compute.h"
 #endif  // LITE_WITH_ARM
 
-#define CONV_PARAM_INIT                                                 \
-  param.strides = strides;                                              \
-  param.paddings = std::make_shared<std::vector<int>>(pads);            \
-  param.dilations = std::make_shared<std::vector<int>>(dilas);          \
-  param.groups = group;                                                 \
-  const float six = 6.f;                                                \
-  if (flag_act > 0) {                                                   \
-    ActivationParam act_param;                                          \
-    act_param.has_active = true;                                        \
-    /* 1-relu, 2-relu6, 4-leakyrelu */                                  \
-    act_param.active_type = (paddle::lite_api::ActivationType)flag_act; \
-    if (flag_act == 1) {                                                \
-      param.fuse_relu = true;                                           \
-    } else if (flag_act == 2) {                                         \
-      act_param.Relu_clipped_coef = six;                                \
-    } else if (flag_act == 4) {                                         \
-      act_param.Leaky_relu_alpha = leakey_relu_scale;                   \
-    }                                                                   \
-    param.activation_param = act_param;                                 \
-  }
-
 #ifdef LITE_WITH_ARM
 void test_conv_fp16(const DDim& input_dim,
                     const DDim& weight_dim,
@@ -77,22 +56,6 @@ void test_conv_fp16(const DDim& input_dim,
   param.paddings = std::make_shared<std::vector<int>>(pads);
   param.dilations = std::make_shared<std::vector<int>>(dilas);
   param.groups = group;
-  /*const float six = 6.f;
-  if (flag_act > 0) {
-    ActivationParam act_param;
-    act_param.has_active = true;
-    act_param.active_type = (paddle::lite_api::ActivationType)
-        flag_act;  // 1-relu, 2-relu6, 4-leakyrelu
-    if (flag_act == 1) {
-      param.fuse_relu = true;
-    } else if (flag_act == 2) {
-      act_param.Relu_clipped_coef = six;
-    } else if (flag_act == 4) {
-      act_param.Leaky_relu_alpha = leakey_relu_scale;
-    }
-    param.activation_param = act_param;
-  }
-  */
   CONV_PARAM_INIT
 
   param.output = new Tensor;
@@ -258,12 +221,6 @@ void test_conv_fp16(const DDim& input_dim,
 
       double gops = 2.0 * dim_out.production() * input_dim[1] * weight_dim[2] *
                     weight_dim[3] / param.groups;
-      // VLOG(4) << "conv fp32: input shape: " << input_dim << ", output shape"
-      //         << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
-      //         << ", min time: " << t0.LapTimes().Min()
-      //         << ", total GOPS: " << 1e-9 * gops
-      //         << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
-      //         << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
       VLOG_PRINT_GOPS(input_dim, dim_out, t0, gops)
 
       if (FLAGS_check_result) {
@@ -278,9 +235,6 @@ void test_conv_fp16(const DDim& input_dim,
         // paddle::lite::data_diff_kernel(
         data_diff(
             basic_ptr, saber_ptr, ptr, tout_basic.numel(), max_ratio, max_diff);
-        // tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
-        // VLOG(4) << "compare result, max diff: " << max_diff
-        //         << ", max ratio: " << max_ratio;
         VLOG_PRINT_DIFF(max_diff, max_ratio)
         if (max_diff > basic_max_diff) {
           int64_t size = tout_basic.numel();
@@ -299,40 +253,11 @@ void test_conv_fp16(const DDim& input_dim,
           check = check && count < std::max(10, static_cast<int>(0.01 * size));
           if (!check) {
             int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
-            /*LOG(WARNING) << "basic result";
-            print_tensor(basic_ptr, size, width);
-            LOG(WARNING) << "lite result";
-            // print_tensor(*param.output);
-            print_tensor(saber_ptr, size, width);
-            LOG(WARNING) << "diff result";
-            print_tensor(ptr, size, width);
-            LOG(FATAL) << "test fp16 conv: input: " << input_dim
-                       << ", output: " << dim_out
-                       << ", weight dim: " << weight_dim
-                       << ", pad: " << pads[0] << ", " << pads[1] << ", "
-                       << pads[2] << ", " << pads[3]
-                       << ", stride: " << strides[0] << ", " << strides[1]
-                       << ", dila_: " << dilas[0] << ", " << dilas[1]
-                       << ", group: " << group
-                       << ", bias: " << (flag_bias ? "true" : "false")
-                       << ", act: " << flag_act << ", threads: " << th
-                       << ", power_mode: " << cls << " failed!!\n";
-            */
-            VLOG_FAIL_INFO(basic_ptr, saber_ptr, ptr, size, width)
+            VLOG_DIFF_INFO(basic_ptr, saber_ptr, ptr, size, width)
             VLOG_FAILED_INFO(input_dim, dim_out)
           }
         }
       }
-      /*VLOG(4) << "test fp16 conv: input: " << input_dim
-              << ", output: " << dim_out << ", weight dim: " << weight_dim
-              << ", pad: " << pads[0] << ", " << pads[1] << ", " << pads[2]
-              << ", " << pads[3] << ", stride: " << strides[0] << ", "
-              << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
-              << ", group: " << group
-              << ", bias: " << (flag_bias ? "true" : "false")
-              << ", act: " << flag_act << ", threads: " << th
-              << ", power_mode: " << cls << " successed!!\n";
-       */
       VLOG_SUCCESSED_INFO(input_dim, dim_out)
     }
   }
@@ -343,7 +268,7 @@ void test_conv_fp16(const DDim& input_dim,
   delete param.bias;
 }
 #else
-void test_conv_fp16(const std::vector<DDim>& input_dims,
+void test_conv_fp16(const DDim& input_dims,
                     const DDim& weight_dim,
                     int group,
                     const std::vector<int>& strides,
@@ -413,17 +338,18 @@ TEST(TestConv3x3s2, test_conv_3x3s2) {
                       for (auto& h : {3, 7, 15, 56, 32}) {
                         DDim in_dim({batch, cin, h, h});
                         const float leakey_relu_scale = 1.0f;
-                        test_conv_fp16(in_dim,
-                                       weights_dim,
-                                       g,
-                                       {1, 1},
-                                       {0, 0, 0, 0},
-                                       {1, 1},
-                                       flag_bias,
-                                       flag_act,
-                                       {4},
-                                       {FLAGS_power_mode},
-                                       leakey_relu_scale);
+                        test_conv_fp16(
+                            in_dim,
+                            weights_dim,
+                            1,
+                            {2, 2},
+                            {pad_top, pad_bottom, pad_left, pad_right},
+                            {1, 1},
+                            flag_bias,
+                            flag_act,
+                            {4},
+                            {FLAGS_power_mode},
+                            leakey_relu_scale);
                       }
                     }
                   }
@@ -457,12 +383,10 @@ TEST(TestConvRand, test_conv_rand) {
                               if (cin % g != 0 || cout % g != 0) {
                                 continue;
                               }
-                              std::vector<DDim> dims;
                               DDim weights_dim({cout, cin / g, kh, kw});
                               for (auto& batch : {1, 2}) {
                                 for (auto& h : {1, 3, 19, 32}) {
-                                  dims.clear();
-                                  dims.push_back(DDim({batch, cin, h, h}));
+                                  DDim in_dim({batch, cin, h, h});
                                   // skip 3x3 depthwise conv
                                   if (g == cin && cin == cout && kw == 3 &&
                                       kh == 3) {
@@ -474,7 +398,7 @@ TEST(TestConvRand, test_conv_rand) {
                                     break;
                                   }
                                   const float leakey_relu_scale = 1.0f;
-                                  test_conv_fp16(dims,
+                                  test_conv_fp16(in_dim,
                                                  weights_dim,
                                                  g,
                                                  {stride, stride},
@@ -514,7 +438,7 @@ TEST(TestConvCustom, test_conv_fp16_custom_size) {
   CHECK_EQ(FLAGS_out_channel % FLAGS_group, 0)
       << "num_output must be divided by group";
   test_conv_fp16(
-      {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
+      DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width}),
       DDim({FLAGS_out_channel,
             FLAGS_in_channel / FLAGS_group,
             FLAGS_kernel_h,

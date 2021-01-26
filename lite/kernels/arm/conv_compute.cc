@@ -35,8 +35,11 @@ namespace arm {
   int oc = w_dims[0];                                                        \
   int kh = w_dims[2];                                                        \
   int kw = w_dims[3];                                                        \
-  int pad = paddings[0];                                                     \
+  int pad_h = paddings[0];                                                   \
+  int pad_w = paddings[2];                                                   \
   int stride = param.strides[0];                                             \
+  int sh = param.strides[1];                                                 \
+  int sw = param.strides[0];                                                 \
   int threads = ctx.threads();                                               \
   int chin = param.x->dims()[1];                                             \
   int hin = param.x->dims()[2];                                              \
@@ -46,9 +49,10 @@ namespace arm {
   int wout = param.output->dims()[3];                                        \
   bool pads_equal =                                                          \
       ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));        \
-  bool pads_all_equal = (pads_equal && paddings[0] == paddings[2]);          \
-  bool ks_equal = (param.strides[0] == param.strides[1]) && (kw == kh);      \
+  bool pads_all_equal = (pads_equal && pad_h == pad_w);                      \
+  bool ks_equal = (sw == sh) && (kw == kh);                                  \
   bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);             \
+  bool kps_equal = (pad_h == pad_w) && ks_equal;                             \
   bool flag_dw_3x3 = (kw == 3) && (kh == 3) && (stride == 1 || stride == 2); \
   bool flag_dw_5x5 = (kw == 5) && (kh == 5) && (stride == 1 || stride == 2); \
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;

@@ -14,6 +14,8 @@
 
 #pragma once
 #include <cmath>
+#include <memory>
+#include <vector>
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
@@ -92,6 +94,27 @@ DDim compute_out_dim(const DDim& dim_in,
   dim_out[3] = wout;
   return dim_out;
 }
+
+#define CONV_PARAM_INIT                                                 \
+  param.strides = strides;                                              \
+  param.paddings = std::make_shared<std::vector<int>>(pads);            \
+  param.dilations = std::make_shared<std::vector<int>>(dilas);          \
+  param.groups = group;                                                 \
+  const float six = 6.f;                                                \
+  if (flag_act > 0) {                                                   \
+    ActivationParam act_param;                                          \
+    act_param.has_active = true;                                        \
+    /* 1-relu, 2-relu6, 4-leakyrelu */                                  \
+    act_param.active_type = (paddle::lite_api::ActivationType)flag_act; \
+    if (flag_act == 1) {                                                \
+      param.fuse_relu = true;                                           \
+    } else if (flag_act == 2) {                                         \
+      act_param.Relu_clipped_coef = six;                                \
+    } else if (flag_act == 4) {                                         \
+      act_param.Leaky_relu_alpha = leakey_relu_scale;                   \
+    }                                                                   \
+    param.activation_param = act_param;                                 \
+  }
 
 #define VLOG_PRINT_DIFF(a, b) \
   VLOG(4) << "compare result, max diff: " << a << ", max ratio: " << b;

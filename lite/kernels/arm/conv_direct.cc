@@ -13,9 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/conv_direct.h"
-#ifdef ENABLE_ARM_FP16
-#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
-#endif
 
 namespace paddle {
 namespace lite {

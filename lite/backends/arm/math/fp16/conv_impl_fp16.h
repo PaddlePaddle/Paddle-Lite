@@ -52,6 +52,9 @@ void conv_im2col_gemm_fp16(const float16_t* din,
                            const operators::ConvParam& param,
                            ARMContext* ctx);
 
+size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
+                                       ARMContext* ctx);
+
 void conv_3x3s2_direct_fp16(const float16_t* i_data,
                             float16_t* o_data,
                             int bs,
@@ -64,23 +67,23 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
                             const float16_t* weights,
                             const float16_t* bias,
                             const operators::ConvParam& param,
-                            ARMContext* ctx)
+                            ARMContext* ctx);
 
-    void im2col_fp16(const float16_t* data_im,
-                     int channels,
-                     int height,
-                     int width,
-                     int kernel_h,
-                     int kernel_w,
-                     int pad_top,
-                     int pad_bottom,
-                     int pad_left,
-                     int pad_right,
-                     int stride_h,
-                     int stride_w,
-                     int dilation_h,
-                     int dilation_w,
-                     float16_t* data_col);
+void im2col_fp16(const float16_t* data_im,
+                 int channels,
+                 int height,
+                 int width,
+                 int kernel_h,
+                 int kernel_w,
+                 int pad_top,
+                 int pad_bottom,
+                 int pad_left,
+                 int pad_right,
+                 int stride_h,
+                 int stride_w,
+                 int dilation_h,
+                 int dilation_w,
+                 float16_t* data_col);
 
 void im2col_common_fp16(const float16_t* data_im,
                         int channels,

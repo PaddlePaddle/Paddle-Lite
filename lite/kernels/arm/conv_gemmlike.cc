@@ -16,10 +16,6 @@
 #include <vector>
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
-#ifdef ENABLE_ARM_FP16
-#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
-#include "lite/backends/arm/math/fp16/gemm_fp16.h"
-#endif
 
 namespace paddle {
 namespace lite {

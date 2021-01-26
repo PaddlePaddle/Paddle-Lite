@@ -47,6 +47,66 @@ inline void trans_gemm_weights_fp16(const Tensor& tin,
   }
 }
 
+inline bool prepack_input_nxw(const float16_t* din,
+                              float16_t* dout,
+                              int cs,
+                              int ce,
+                              int hs,
+                              int he,
+                              int ws,
+                              int we,
+                              int channel,
+                              int width,
+                              int height,
+                              float16_t* zero_ptr) {
+  int n = he - hs;
+  if (n <= 0) {
+    LOG(ERROR) << "hei_n is more than zero";
+    return false;
+  }
+  int w0 = ws < 0 ? 0 : ws;
+  int w1 = we > width ? width : we;
+
+  int size_w = we - ws;
+  int size_wc_len = size_w * channel;
+  int size_c = width * height;
+
+  int valid_w = w1 - w0;
+  size_t valid_w_byte = valid_w * sizeof(float16_t);
+
+  float16_t* out_array[n];
+  out_array[0] = dout;
+  for (int i = 1; i < n; i++) {
+    out_array[i] = out_array[i - 1] + size_wc_len;
+  }
+
+  for (int c = 0; c < channel; ++c) {
+    int j = 0;
+    // valid height
+    for (int i = hs; i < he; i++) {
+      // get address
+      const float16_t* in_array;
+      if (i < 0 || i >= height) {
+        in_array = zero_ptr;
+      } else {
+        in_array = din + i * width;
+      }
+
+      for (int w = ws; w < w0; ++w) {
+        *(out_array[j]++) = 0.f;
+      }
+      lite::TargetWrapperHost::MemcpySync(out_array[j], in_array, valid_w_byte);
+      out_array[j] += valid_w;
+      for (int w = w1; w < we; ++w) {
+        *(out_array[j]++) = 0.f;
+      }
+      j++;
+    }
+    din += size_c;
+  }
+  return true;
+}
+
 // clang-format off
 #ifdef __aarch64__
 #define INIT_C8                       \
@@ -55,6 +115,7 @@ inline void trans_gemm_weights_fp16(const Tensor& tin,
   "ldp  q2, q3, [%[din_ptr]], #32\n"  \
   "prfm pldl1keep, [%[din_ptr]]\n"    \
   "blt 2f\n"
+
 #define PROCESS_C8                    \
   "1: \n"                             \
   "ldp  q4, q5, [%[din_ptr]], #32\n"  \
@@ -67,18 +128,18 @@ inline void trans_gemm_weights_fp16(const Tensor& tin,
   "ldp  q6, q7, [%[din_ptr]], #32\n"
 
 #define TRANS_C8                      \
-  "fadd v0.8h, v0.8h, %[vbias].8h"    \
-  "fadd v1.8h, v1.8h, %[vbias].8h"    \
-  "fadd v2.8h, v2.8h, %[vbias].8h"    \
-  "fadd v3.8h, v3.8h, %[vbias].8h"    \
-  "fadd v4.8h, v4.8h, %[vbias].8h"    \
-  "fadd v5.8h, v5.8h, %[vbias].8h"    \
+  "fadd v0.8h, v0.8h, %[vbias].8h\n"  \
+  "fadd v1.8h, v1.8h, %[vbias].8h\n"  \
+  "fadd v2.8h, v2.8h, %[vbias].8h\n"  \
+  "fadd v3.8h, v3.8h, %[vbias].8h\n"  \
+  "fadd v4.8h, v4.8h, %[vbias].8h\n"  \
+  "fadd v5.8h, v5.8h, %[vbias].8h\n"  \
   /* v8=a0b0a2b2a4b4a6b6 */           \
   "trn1 v8.8h, v0.8h, v1.8h\n"        \
-  "fadd v6.8h, v6.8h, %[vbias].8h"    \
+  "fadd v6.8h, v6.8h, %[vbias].8h\n"  \
   /* v9=a1b1a3b3a5b5a7b7 */           \
   "trn2 v9.8h, v0.8h, v1.8h\n"        \
-  "fadd v7.8h, v7.8h, %[vbias].8h"    \
+  "fadd v7.8h, v7.8h, %[vbias].8h\n"  \
   /* v10=c0d0c2d2c4d4c6d6 */          \
   "trn1 v10.8h, v2.8h, v3.8h\n"       \
   /* v11=c1d1c3d3c5d5c7d7 */          \
@@ -197,16 +258,16 @@ inline void trans_gemm_weights_fp16(const Tensor& tin,
 #endif
 // clang-format on
 
-#define C8_OUT_PARAM              \
-  float* doutc0_ptr = doutc0r0;   \
-  float* doutc1_ptr = doutc1r0;   \
-  float* doutc2_ptr = doutc2r0;   \
-  float* doutc3_ptr = doutc3r0;   \
-  float* doutc4_ptr = doutc4r0;   \
-  float* doutc5_ptr = doutc5r0;   \
-  float* doutc6_ptr = doutc6r0;   \
-  float* doutc7_ptr = doutc7r0;   \
-  const float* din_hei_ptr = din; \
+#define C8_OUT_PARAM                  \
+  float16_t* doutc0_ptr = doutc0r0;   \
+  float16_t* doutc1_ptr = doutc1r0;   \
+  float16_t* doutc2_ptr = doutc2r0;   \
+  float16_t* doutc3_ptr = doutc3r0;   \
+  float16_t* doutc4_ptr = doutc4r0;   \
+  float16_t* doutc5_ptr = doutc5r0;   \
+  float16_t* doutc6_ptr = doutc6r0;   \
+  float16_t* doutc7_ptr = doutc7r0;   \
+  const float16_t* din_hei_ptr = din; \
   int cnt = cnt_col;
 
 #define PTR_ADD      \
@@ -258,20 +319,20 @@ inline void trans_gemm_weights_fp16(const Tensor& tin,
     "v8", "v9", "v10", "v11", "v12",  \
     "v13", "v14", "v15", "v16"
 
-void write_to_oc8_fp16(const float16_t* din,
-                       float16_t* dout,
-                       int cs,
-                       int ce,
-                       int hs,
-                       int he,
-                       int ws,
-                       int we,
-                       int channel,
-                       int height,
-                       int width,
-                       int flag_act,
-                       float16_t alpha,
-                       const float16_t* bias) {
+static void write_to_oc8_fp16(const float16_t* din,
+                              float16_t* dout,
+                              int cs,
+                              int ce,
+                              int hs,
+                              int he,
+                              int ws,
+                              int we,
+                              int channel,
+                              int height,
+                              int width,
+                              int flag_act,
+                              float16_t alpha,
+                              const float16_t* bias) {
   int size_c_out = width * height;
 
   float16_t* doutc0r0 = dout + cs * size_c_out + hs * width + ws;
@@ -291,7 +352,7 @@ void write_to_oc8_fp16(const float16_t* din,
   int win = valid_we - ws;
   int w_in_stride = w_round << 3;
   int cnt_col = win >> 3;
-  int remain = win % 7;
+  int remain = win & 7;
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t vbias = vld1q_f16(bias);
   float16x8_t valpha = vdupq_n_f16(alpha);
@@ -304,16 +365,24 @@ void write_to_oc8_fp16(const float16_t* din,
   float16_t tmp6[8] = {0.f};
   float16_t tmp7[8] = {0.f};
   if (ce > channel) {
-    ptr_acquire_a8<float16_t>(ptr_zero,
-                              doutc1r0,
-                              doutc2r0,
-                              doutc3r0,
-                              doutc4r0,
-                              doutc5r0,
-                              doutc6r0,
-                              doutc7r0,
-                              7,
-                              (channel - cs));
+    switch (7 - (channel - cs)) {
+      case 6:
+        doutc1r0 = ptr_zero;
+      case 5:
+        doutc2r0 = ptr_zero;
+      case 4:
+        doutc3r0 = ptr_zero;
+      case 3:
+        doutc4r0 = ptr_zero;
+      case 2:
+        doutc5r0 = ptr_zero;
+      case 1:
+        doutc6r0 = ptr_zero;
+      case 0:
+        doutc7r0 = ptr_zero;
+      default:
+        break;
+    }
   }
   switch (flag_act) {
     case 0:  // no act
@@ -333,41 +402,16 @@ void write_to_oc8_fp16(const float16_t* din,
       break;
     case 1:  // relu
       for (int i = 0; i < size_h; i++) {
-        float16_t* doutc0_ptr = doutc0r0;
-        float16_t* doutc1_ptr = doutc1r0;
-        float16_t* doutc2_ptr = doutc2r0;
-        float16_t* doutc3_ptr = doutc3r0;
-        float16_t* doutc4_ptr = doutc4r0;
-        float16_t* doutc5_ptr = doutc5r0;
-        float16_t* doutc6_ptr = doutc6r0;
-        float16_t* doutc7_ptr = doutc7r0;
-        const float16_t* din_hei_ptr = din;
-        int cnt = cnt_col;
+        C8_OUT_PARAM
 #ifdef __aarch64__
         asm volatile(
             INIT_C8 PROCESS_C8 TRANS_C8 RELU_C8 STORE_C8 PROCESS_C8_REMAIN
                 TRANS_C8 RELU_C8 STORE_C8_REMAIN ASM_PARAM);
 #else
 #endif
-        doutc0r0 += width;
-        doutc1r0 += width;
-        doutc2r0 += width;
-        doutc3r0 += width;
-        doutc4r0 += width;
-        doutc5r0 += width;
-        doutc6r0 += width;
-        doutc7r0 += width;
+        PTR_ADD
         if (remain) {
-          for (int j = 0; j < remain; j++) {
-            *doutc0_ptr++ = tmp0[j];
-            *doutc1_ptr++ = tmp1[j];
-            *doutc2_ptr++ = tmp2[j];
-            *doutc3_ptr++ = tmp3[j];
-            *doutc4_ptr++ = tmp4[j];
-            *doutc5_ptr++ = tmp5[j];
-            *doutc6_ptr++ = tmp6[j];
-            *doutc7_ptr++ = tmp7[j];
-          }
+          C8_OUT_REMAIN
         }
         din += w_in_stride;
       }

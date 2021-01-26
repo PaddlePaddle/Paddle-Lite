@@ -24,6 +24,7 @@
 #include "lite/core/target_wrapper.h"
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 namespace paddle {
 namespace lite {
