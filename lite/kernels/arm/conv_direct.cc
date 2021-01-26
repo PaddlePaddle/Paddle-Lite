@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/conv_direct.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -20,11 +23,12 @@ namespace kernels {
 namespace arm {
 
 #ifdef LITE_WITH_PROFILE
-template <>
-void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
+// template <>
+// void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::
+//     SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+//   ch->kernel_func_name = kernel_func_name_;
+// }
+PROFILE_INFO(kFloat, kFloat)
 #endif
 
 template <>
@@ -94,11 +98,12 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 }
 
 #ifdef LITE_WITH_PROFILE
-template <>
-void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
+// template <>
+// void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::
+//     SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+//   ch->kernel_func_name = kernel_func_name_;
+// }
+PROFILE_INFO(kInt8, kFloat)
 #endif
 
 template <>
@@ -164,11 +169,12 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 }
 
 #ifdef LITE_WITH_PROFILE
-template <>
-void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::
-    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-  ch->kernel_func_name = kernel_func_name_;
-}
+// template <>
+// void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::
+//     SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+//   ch->kernel_func_name = kernel_func_name_;
+// }
+PROFILE_INFO(kInt8, kInt8)
 #endif
 
 template <>
@@ -233,6 +239,46 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   }
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  // extend workspace
+  ctx.ExtendWorkspace(
+      lite::arm::math::fp16::conv3x3s2_direct_workspace_size(param, &ctx));
+
+  const auto* i_data = param.x->data<float16_t>();
+  const auto* w_data = weights_.data<float16_t>();
+  const auto* b_data = param.bias ? param.bias->data<float16_t>() : nullptr;
+  auto* o_data = param.output->mutable_data<float16_t>();
+
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];  // nchw
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+  lite::arm::math::fp16::conv_3x3s2_direct_fp16(
+      i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
+#ifdef LITE_WITH_PROFILE
+  kernel_func_name_ = "conv_3x3s2_direct_fp16";
+#endif
+}
+#ifdef LITE_WITH_PROFILE
+// template <>
+// void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::
+//     SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+//   ch->kernel_func_name = kernel_func_name_;
+// }
+PROFILE_INFO(kFP16, kFP16)
+#endif
+#endif
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

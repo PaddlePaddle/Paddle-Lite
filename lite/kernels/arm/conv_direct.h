@@ -41,7 +41,11 @@ inline bool direct_conv_trans_weights(
     float out_scale,
     std::vector<float>& merge_scale,  // NOLINT
     float* relu_clipped_coef) {
+#ifdef ENABLE_ARM_FP16
+  constexpr int cblock = 8;
+#else
   constexpr int cblock = 4;
+#endif
   int oc = win->dims()[0];
   int ic = win->dims()[1];
   int kh = win->dims()[2];
@@ -191,6 +195,13 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
   virtual void SetProfileRuntimeKernelInfo(
       paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
+  }
+
+#define PROFILE_INFO(dtype1, dtype2)                                        \
+  template <>                                                               \
+  void DirectConv<PRECISION(dtype1), PRECISION(dtype2)>::                   \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
   }
 
   std::string kernel_func_name_{"NotImplForConvDirect"};
