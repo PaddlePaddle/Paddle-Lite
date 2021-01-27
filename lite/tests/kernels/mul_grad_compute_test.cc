@@ -176,7 +176,7 @@ class MulGradTester {
     std::vector<float> out_delta(out_dims_.production());
 
     float delta = 0.001;
-    float max_grad_delta = 0.005;
+    float max_grad_delta = 0.0055;
     for (int i = 0; i < x_dims_.production(); i++) {
       for (int j = 0; j < x_dims_.production(); j++) {
         if (i == j) {
