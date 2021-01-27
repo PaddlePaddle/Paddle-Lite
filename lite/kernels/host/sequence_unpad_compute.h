@@ -27,7 +27,7 @@ namespace math = paddle::lite::host::math;
 
 template <typename T>
 class SequenceUnpadCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::SequenceUnpadParam;
 
