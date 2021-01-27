@@ -45,6 +45,10 @@
 #include "lite/backends/cuda/math/type_trans.h"
 #endif
 
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#endif
+
 namespace paddle {
 namespace lite {
 namespace profile {
@@ -582,6 +586,8 @@ class PrecisionProfiler {
 #ifdef LITE_WITH_ANDROID
   std::string log_dir_{"/storage/emulated/0/PaddleLite_" + get_date_str() +
                        "/"};
+#elif defined(_MSC_VER)
+  std::string log_dir_{"C:/PaddleLite_" + get_date_str() + "/"};
 #else
   std::string log_dir_{"/tmp/PaddleLite_" + get_date_str() + "/"};
 #endif
