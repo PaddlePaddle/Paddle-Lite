@@ -89,6 +89,9 @@ static bool InferScale(Node* var_node, Node* op_node, float* scale) {
   } else {
     // Obtain the output_scale from one of its previous Ops
     auto prev_op_node = var_node->inlinks.front();
+    if (!prev_op_node) {
+      return false;
+    }
     CHECK(prev_op_node->IsStmt());
     auto& prev_inst = prev_op_node->AsStmt();
     auto prev_op_info = prev_inst.op_info();

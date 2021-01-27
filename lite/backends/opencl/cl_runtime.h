@@ -30,6 +30,15 @@ typedef enum {
 } GpuType;
 
 typedef enum {
+  CL_VER_UNKNOWN = 0,
+  CL_VER_1_0 = 1,
+  CL_VER_1_1 = 2,
+  CL_VER_1_2 = 3,
+  CL_VER_2_0 = 4,
+  CL_VER_2_1 = 5
+} OpenCLVersion;
+
+typedef enum {
   PERF_DEFAULT = 0,
   PERF_LOW = 1,
   PERF_NORMAL = 2,
@@ -78,6 +87,18 @@ class CLRuntime {
     // note(ysh329): entered this func means:
     //  1. opencl_lib_found must be true
     //  2. dlsym_success must be true
+    if (!paddle::lite::CLWrapper::Global()->OpenclLibFound() ||
+        !paddle::lite::CLWrapper::Global()->DlsymSuccess()) {
+      LOG(ERROR) << "Invalid opencl device, OpenclLibFound:"
+                 << paddle::lite::CLWrapper::Global()->OpenclLibFound()
+                 << ", DlsymSuccess:"
+                 << paddle::lite::CLWrapper::Global()->DlsymSuccess();
+      return false;
+    }
+    if (device_info_.count("CL_DEVICE_TYPE") == 0) {
+      LOG(ERROR) << "Invalid opencl device, CL_DEVICE_TYPE is None.";
+      return false;
+    }
 
     bool support_fp16 = support_half();
     is_device_avaliable_for_opencl_ =
@@ -85,12 +106,15 @@ class CLRuntime {
     return is_device_avaliable_for_opencl_;
   }
 
-  void set_auto_tune(lite_api::CLTuneMode tune_mode) {
+  void set_auto_tune(lite_api::CLTuneMode tune_mode, size_t lws_repeats = 4) {
     auto_tune_ = tune_mode;
+    lws_repeats_ = lws_repeats;
     command_queue_ = CreateCommandQueue(context());
   }
 
   lite_api::CLTuneMode auto_tune() { return auto_tune_; }
+
+  size_t lws_repeats() { return lws_repeats_; }
 
   void set_precision(
       lite_api::CLPrecisionType p = lite_api::CL_PRECISION_AUTO) {
@@ -166,7 +190,8 @@ class CLRuntime {
     auto perf_mode = GPUPerfMode::PERF_HIGH;
     auto priority_level = GPUPriorityLevel::PRIORITY_HIGH;
     std::vector<cl_context_properties> context_properties;
-    if (gpu_type_ == GpuType::QUALCOMM_ADRENO) {
+    if (gpu_type_ == GpuType::QUALCOMM_ADRENO &&
+        device_info_["CL_DEVICE_VERSION"] >= OpenCLVersion::CL_VER_2_0) {
       GetAdrenoContextProperties(
           &context_properties, perf_mode, priority_level);
     }
@@ -177,7 +202,7 @@ class CLRuntime {
                                       nullptr,
                                       &status_);
     // use in is opencl valid check, do not exit here when release.
-    CL_CHECK_FATAL(status_);
+    CL_CHECK_ERROR(status_);
     return context;
   }
 
@@ -195,10 +220,11 @@ class CLRuntime {
     auto queue = std::make_shared<cl::CommandQueue>(
         context, device(), properties, &status_);
     // use in is opencl valid check, do not exit here when release.
-    CL_CHECK_FATAL(status_);
+    CL_CHECK_ERROR(status_);
     return queue;
   }
 
+  OpenCLVersion ParseDeviceVersion(const std::string& device_version);
   GpuType ParseGpuTypeFromDeviceName(std::string device_name);
 
   std::map<std::string, size_t> device_info_;
@@ -227,6 +253,7 @@ class CLRuntime {
                                                             // Rapid, 2 -
                                                             // Normal, 3 -
                                                             // Exhaustive
+  size_t lws_repeats_{0};
 
   lite_api::CLPrecisionType precision_{
       lite_api::CL_PRECISION_AUTO};  // 0 - AUTO, 1 - fp32, 2 - fp16

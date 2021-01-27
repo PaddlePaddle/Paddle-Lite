@@ -27,6 +27,7 @@ add_kernel(crf_decoding_compute_host Host extra SRCS crf_decoding_compute.cc DEP
 add_kernel(compare_compute_host Host extra SRCS compare_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(logical_compute_host Host extra SRCS logical_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(ctc_align_compute_host Host extra SRCS ctc_align_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(cumsum_compute_host Host extra SRCS cumsum_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(write_to_array_compute_host Host extra SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(read_from_array_compute_host Host extra SRCS read_from_array_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(assign_compute_host Host extra SRCS assign_compute.cc DEPS ${lite_kernel_deps})
@@ -56,6 +57,8 @@ add_kernel(tensor_array_to_tensor_compute_host Host extra SRCS tensor_array_to_t
 add_kernel(expand_v2_compute_host Host extra SRCS expand_v2_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(strided_slice_compute_host Host extra SRCS strided_slice_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(tile_compute_host Host extra SRCS tile_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(fill_any_like_compute_host Host extra SRCS fill_any_like_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(scatter_nd_add_compute_host Host extra SRCS scatter_nd_add_compute.cc DEPS ${lite_kernel_deps})
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)

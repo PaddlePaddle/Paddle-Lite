@@ -33,7 +33,7 @@ inline std::vector<int64_t> StridedSliceOutDims(
     const size_t size,
     bool infer_shape) {
   std::vector<int64_t> out_dims_vector;
-  for (int i = 0; i < in_dims.size(); i++) {
+  for (size_t i = 0; i < in_dims.size(); i++) {
     out_dims_vector.push_back(in_dims[i]);
   }
   int stride_index;
@@ -190,17 +190,15 @@ void stride_slice(const T* input,
                   std::vector<int64_t> starts_indices,
                   std::vector<int64_t> ends_indices,
                   std::vector<int64_t> strides_indices) {
-  const int LEN = in_dims.size();
-  int dst_step[LEN];
-  for (int i = 0; i < in_dims.size(); ++i) {
-    dst_step[i] = 1;
+  size_t in_dims_size = in_dims.size();
+  std::vector<int> dst_step;
+  std::vector<int> src_step;
+  for (size_t i = 0; i < in_dims_size; ++i) {
+    dst_step.push_back(1);
+    src_step.push_back(1);
   }
-  int src_step[LEN];
-  for (int i = 0; i < in_dims.size(); ++i) {
-    src_step[i] = 1;
-  }
-  int out_num = out_dims[in_dims.size() - 1];
-  for (int i = in_dims.size() - 2; i >= 0; i--) {
+  int out_num = out_dims[in_dims_size - 1];
+  for (int i = in_dims_size - 2; i >= 0; i--) {
     dst_step[i] = out_dims[i + 1] * dst_step[i + 1];
     src_step[i] = in_dims[i + 1] * src_step[i + 1];
     out_num *= out_dims[i];
@@ -209,7 +207,7 @@ void stride_slice(const T* input,
   for (int dst_id = 0; dst_id < out_num; dst_id++) {
     int src_id = 0;
     int index_id = dst_id;
-    for (int j = 0; j < out_dims.size(); j++) {
+    for (size_t j = 0; j < out_dims.size(); j++) {
       int cur_id = index_id / dst_step[j];
       index_id = index_id % dst_step[j];
       src_id +=
@@ -226,20 +224,20 @@ void reverse(const T* input,
              std::vector<bool> reverse_axis) {
   const T* in_ptr = input;
   T* out_ptr = out;
-  const int LEN = in_dims.size();
-  int src_step[LEN];
-  for (int i = 0; i < LEN; i++) {
-    src_step[i] = 1;
+  size_t in_dims_size = in_dims.size();
+  std::vector<int> src_step;
+  for (size_t i = 0; i < in_dims_size; ++i) {
+    src_step.push_back(1);
   }
-  for (int i = LEN - 2; i >= 0; i--) {
+  for (int i = in_dims_size - 2; i >= 0; i--) {
     src_step[i] *= in_dims[i + 1] * src_step[i + 1];
   }
-  for (int i = 0; i < reverse_axis.size(); i++) {
+  for (size_t i = 0; i < reverse_axis.size(); i++) {
     if (reverse_axis[i]) {
       // reverse
       for (int j = 0; j < in_dims[i]; j++) {
         int size = 1;
-        if (i + 1 < LEN) {
+        if (i + 1 < in_dims_size) {
           size = src_step[i + 1];
         }
         const T* in_ptr1 = in_ptr + j * size;
@@ -332,7 +330,7 @@ void StridedSliceCompute<T, PType>::Run() {
       out_dims_origin[decrease_axis[i]] = 0;
     }
 
-    for (int i = 0; i < out_dims_origin.size(); ++i) {
+    for (size_t i = 0; i < out_dims_origin.size(); ++i) {
       if (out_dims_origin[i] != 0) {
         new_out_shape.push_back(out_dims_origin[i]);
       }
@@ -354,7 +352,7 @@ void StridedSliceCompute<T, PType>::Run() {
   auto* in_t = input->template data<T>();
   auto* out_t = param.Out->template mutable_data<T>();
   if (need_reverse) {
-    lite::Tensor* tmp;
+    lite::Tensor* tmp = new lite::Tensor();
     tmp->Resize(out_dims);
     auto* tmp_t = tmp->mutable_data<T>();
     stride_slice(in_t,
