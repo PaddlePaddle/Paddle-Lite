@@ -66,7 +66,7 @@ function publish_inference_lib {
       python$python_version mobilenetv1_full_api.py  --model_dir=$WORKSPACE/build.lite.x86/mobilenet_v1
       python$python_version mobilenetv1_light_api.py  --model_dir=$WORKSPACE/build.lite.x86/mobilenet_v1_x86.nb
       # uninstall
-	  python$python_version -m pip uninstall paddlelite
+	  python$python_version -m pip uninstall -y paddlelite
     else
       # Error message.
       echo "**************************************************************************************"
