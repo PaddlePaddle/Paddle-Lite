@@ -1572,6 +1572,7 @@ struct RoiAlignParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
   lite::Tensor* RoisLod{};
+  lite::Tensor* RoisNum{};
   lite::Tensor* Out{};
   float spatial_scale{1.0};
   int pooled_height{1};
