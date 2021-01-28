@@ -1537,6 +1537,12 @@ struct GatherParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct GatherTreeParam : ParamBase {
+  const lite::Tensor* ids{nullptr};
+  const lite::Tensor* parents{nullptr};
+  lite::Tensor* out{nullptr};
+};
+
 /// ----------------------- assign operators -----------------------
 struct AssignParam : ParamBase {
   // for tensor
