@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
@@ -2225,6 +2226,12 @@ struct CumsumParam : ParamBase {
   bool flatten{false};
   bool exclusive{false};
   bool reverse{false};
+};
+
+struct SumParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  int inplace{0};
 };
 
 }  // namespace operators
