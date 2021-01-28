@@ -557,6 +557,141 @@ void padding1_float(lite::Tensor* input,
   }
 }
 
+void pack_padding8_m256(lite::Tensor* input,
+                        lite::Tensor* output,
+                        const int channel_num,
+                        const std::vector<int>& paddings) {
+  int batch_size = input->dims()[0];
+  int input_channel = input->dims()[1];
+  int input_height = input->dims()[2];
+  int input_width = input->dims()[3];
+
+  CHECK_EQ((input_channel & 7), 0);
+  const float* input_data = input->data<float>();
+
+  CHECK_EQ(paddings.size(), 4UL);
+  int top = paddings[0];
+  int bottom = paddings[1];
+  int left = paddings[2];
+  int right = paddings[3];
+
+  // if (top == 0 && bottom == 0 && left == 0 && right == 0) {
+  //  output->ShareDataWith(*input);
+  //  return;
+  //}
+
+  // input [bs, ic/8, ih, iw, 8]
+  // CHECK_EQ(input->dims().size(), 5UL);
+  // const int batch_size = input->dims()[0];
+  // const int channel_num = input->dims()[1];
+  // const int input_height = input->dims()[2];
+  // const int input_width = input->dims()[3];
+
+  // in
+  const int kernel_size = input_height * input_width;
+  const int pack_step = 8 * kernel_size;
+  const int batch_step = channel_num * pack_step;
+
+  // out
+  int out_height = input_height + top + bottom;
+  int out_width = input_width + left + right;
+
+  // output [bs, ic/8, oh, ow, 8]
+  output->Resize({batch_size, channel_num, out_height, out_width, 8});
+  auto output_data = output->mutable_data<float>();
+
+  int top_size = top * out_width;
+  int bottom_size = bottom * out_width;
+
+  __m256 pad_val = _mm256_set1_ps(0.f);
+
+  for (int bs = 0; bs < batch_size; ++bs) {
+    for (int ic = 0; ic < channel_num; ++ic) {
+      const float* input_ptr = input_data + bs * batch_step + ic * pack_step;
+
+      const float* r0 = (input_ptr);
+      const float* r1 = (input_ptr + kernel_size);
+      const float* r2 = (input_ptr + kernel_size * 2);
+      const float* r3 = (input_ptr + kernel_size * 3);
+      const float* r4 = (input_ptr + kernel_size * 4);
+      const float* r5 = (input_ptr + kernel_size * 5);
+      const float* r6 = (input_ptr + kernel_size * 6);
+      const float* r7 = (input_ptr + kernel_size * 7);
+
+      // #if __AVX__
+      //       int loop_num = kernel_size >> 3;
+      //       int remain = kernel_size & 7;
+      // #else
+      //       int remain = kernel_size;
+      // #endif
+      // fill top
+      for (int y = 0; y < top_size; ++y) {
+        _mm256_storeu_ps(output_data, pad_val);
+        output_data += 8;
+      }
+      // fill center
+      for (int y = 0; y < input_height; ++y) {
+        for (int x = 0; x < left; ++x) {
+          _mm256_storeu_ps(output_data, pad_val);
+          output_data += 8;
+        }
+        // pack and transpose
+        int pos = 0;
+        for (; pos + 7 < input_width; pos += 8) {
+          __m256 _row0 = _mm256_loadu_ps(r0);
+          __m256 _row1 = _mm256_loadu_ps(r1);
+          __m256 _row2 = _mm256_loadu_ps(r2);
+          __m256 _row3 = _mm256_loadu_ps(r3);
+          __m256 _row4 = _mm256_loadu_ps(r4);
+          __m256 _row5 = _mm256_loadu_ps(r5);
+          __m256 _row6 = _mm256_loadu_ps(r6);
+          __m256 _row7 = _mm256_loadu_ps(r7);
+          transpose8_ps(_row0, _row1, _row2, _row3, _row4, _row5, _row6, _row7);
+          _mm256_storeu_ps(output_data, _row0);
+          _mm256_storeu_ps(output_data + 8, _row1);
+          _mm256_storeu_ps(output_data + 16, _row2);
+          _mm256_storeu_ps(output_data + 24, _row3);
+          _mm256_storeu_ps(output_data + 32, _row4);
+          _mm256_storeu_ps(output_data + 40, _row5);
+          _mm256_storeu_ps(output_data + 48, _row6);
+          _mm256_storeu_ps(output_data + 56, _row7);
+          r0 += 8;
+          r1 += 8;
+          r2 += 8;
+          r3 += 8;
+          r4 += 8;
+          r5 += 8;
+          r6 += 8;
+          r7 += 8;
+          output_data += 64;
+        }
+
+        for (; pos < input_width; ++pos) {
+          output_data[0] = *r0++;
+          output_data[1] = *r1++;
+          output_data[2] = *r2++;
+          output_data[3] = *r3++;
+          output_data[4] = *r4++;
+          output_data[5] = *r5++;
+          output_data[6] = *r6++;
+          output_data[7] = *r7++;
+          output_data += 8;
+        }
+
+        for (int x = 0; x < right; ++x) {
+          _mm256_storeu_ps(output_data, pad_val);
+          output_data += 8;
+        }
+      }
+      // fill bottom
+      for (int y = 0; y < bottom_size; ++y) {
+        _mm256_storeu_ps(output_data, pad_val);
+        output_data += 8;
+      }
+    }
+  }
+}
+
 __m256 activation8_m256(__m256 input, const lite_api::ActivationType act_type) {
   if (act_type == lite_api::ActivationType::kRelu) {
     return _mm256_max_ps(input, _mm256_setzero_ps());

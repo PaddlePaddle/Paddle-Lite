@@ -17,6 +17,8 @@
 #include "lite/backends/x86/math/conv_depthwise_pack8.h"
 #include "lite/backends/x86/math/conv_utils.h"
 
+#include <sys/time.h>
+
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -34,14 +36,30 @@ void DepthwiseConv<float>::Run() {
 
   const int pack_size =
       input_channel % 8 == 0 ? 8 : input_channel % 4 == 0 ? 4 : 1;
+  // const int pack_size =
+  //    input_channel % 4 == 0 ? 4 : 1;
   const int pack_num = input_channel / pack_size;
+
+  struct timeval time, tmp_time;
+  gettimeofday(&time, NULL);
+  double start = 1e+6 * time.tv_sec + time.tv_usec;
+
+  double tmp_start, tmp_mid, tmp_end;
 
   // [bs, ic, ih, iw] & pack_size=8 => [bs, ic/8, ih, iw, 8]
   // [bs, ic, ih, iw] & pack_size=4 => [bs, ic/4, ih, iw, 4]
   if (pack_size == 8) {
-    lite::x86::math::pack8_m256(param.x, &input_pack_, pack_num, false);
-    lite::x86::math::padding8_m256(
-        &input_pack_, &input_padding_, *(param.paddings));
+    gettimeofday(&tmp_time, NULL);
+    tmp_start = 1e+6 * tmp_time.tv_sec + tmp_time.tv_usec;
+    // lite::x86::math::pack8_m256(param.x, &input_pack_, pack_num, false);
+    lite::x86::math::pack_padding8_m256(
+        param.x, &input_padding_, pack_num, *(param.paddings));
+    gettimeofday(&tmp_time, NULL);
+    tmp_mid = 1e+6 * tmp_time.tv_sec + tmp_time.tv_usec;
+    // lite::x86::math::padding8_m256(
+    //    &input_pack_, &input_padding_, *(param.paddings));
+    gettimeofday(&tmp_time, NULL);
+    tmp_end = 1e+6 * tmp_time.tv_sec + tmp_time.tv_usec;
   } else if (pack_size == 4) {
     lite::x86::math::pack4_m128(param.x, &input_pack_, pack_num, false);
     lite::x86::math::padding4_m128(
@@ -73,6 +91,9 @@ void DepthwiseConv<float>::Run() {
   // output_trans [bs, oc/4, oh, ow, 4]
   output_pack_.Resize(
       {batch_size, pack_num, output_height, output_width, pack_size});
+
+  gettimeofday(&time, NULL);
+  double mid = 1e+6 * time.tv_sec + time.tv_usec;
 
   // attributes
   const int stride_h = param.strides[0];
@@ -134,12 +155,23 @@ void DepthwiseConv<float>::Run() {
 #endif
   }
 
+  gettimeofday(&time, NULL);
+  double m = 1e+6 * time.tv_sec + time.tv_usec;
+
   // [bs, oh, ow, oc] => [bs, oc, oh, ow]
   if (pack_size == 8) {
     lite::x86::math::unpack8_m256(&output_pack_, param.output);
   } else if (pack_size == 4) {
     lite::x86::math::unpack4_m128(&output_pack_, param.output);
   }
+
+  gettimeofday(&time, NULL);
+  double end = 1e+6 * time.tv_sec + time.tv_usec;
+
+  VLOG(2) << "[time stat] [" << input_channel << "," << param.x->dims()[2]
+          << "," << param.x->dims()[3] << "] " << mid - start << ", " << m - mid
+          << ", " << end - m << "-" << tmp_mid - tmp_start << ", "
+          << tmp_end - tmp_mid;
 }
 
 #ifdef LITE_WITH_PROFILE
