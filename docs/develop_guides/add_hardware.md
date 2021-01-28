@@ -12,7 +12,7 @@
 ## PaddleLite是如何工作的？
 - 如下图所示，PaddleLite整个推理的过程，可以简单分成分析(Analysis phase)和执行(Execution phase)两个阶段，分析阶段包括Paddle模型文件的加载和解析、计算图的转化、图分析和优化、运行时程序的生成和执行等步骤。具体地，
 
-  ![](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/images/architecture.png)
+  ![](https://user-images.githubusercontent.com/9973393/105955490-5830c080-60b1-11eb-9c6d-2b3bafb0ef7a.png)
 
 - **模型文件的加载和解析** Paddle模型由程序（Program）、块（Block）、算子（Operator）和变量（Variable）组成（如下图所示，程序由若干块组成，块由若干算子和变量组成，变量包括中间变量和持久化变量，如卷积的权值），经序列化保存后形成Combined和Non-combined两种形式的模型文件，Non-combined形式的模型由一个网络拓扑结构文件__model__和一系列以变量名命名的参数文件组成，Combined形式的模型由一个网络拓扑结构文件__model__和一个合并后的参数文件__params__组成，其中网络拓扑结构文件是基于[Protocol Buffers](https://github.com/protocolbuffers/protobuf)格式以[Paddle proto 文件](https://github.com/PaddlePaddle/Paddle/blob/c5f0293cf318a8d68b7b6c9bfab58cbd744000f7/paddle/fluid/framework/framework.proto)规则序列化后的文件。现在以Non-combined格式的Paddle模型为例，将网络拓扑结构文件（要求文件名必须是__model__）拖入到[Netron](https://netron.app/)工具即可图形化显示整个网络拓扑结构。
 
