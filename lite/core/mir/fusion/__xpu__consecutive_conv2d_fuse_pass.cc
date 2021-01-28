@@ -37,11 +37,9 @@ namespace fusion {
   auto* bias_##num = VarNode(STR2(bias_##num))                                 \
                          ->assert_is_op_input("__xpu__conv2d", "Bias")         \
                          ->AsIntermediate();                                   \
-  auto* conv_##num =                                                           \
-      OpNode(STR2(conv_##num), "__xpu__conv2d")                                \
-          ->assert_op_attr_satisfied<bool>(                                    \
-              "has_branch", [](const bool& attr) { return attr == false; })    \
-          ->AsIntermediate();                                                  \
+  auto* conv_##num = OpNode(STR2(conv_##num), "__xpu__conv2d")                 \
+                         ->assert_op_attr<bool>("has_branch", false)           \
+                         ->AsIntermediate();                                   \
   auto* conv_out_##num = VarNode(STR2(conv_out_##num))                         \
                              ->assert_is_op_output("__xpu__conv2d", "Output"); \
   auto* conv_out_max_##num =                                                   \
@@ -90,7 +88,7 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
       bias_name.push_back(matched.at(cur_bias_name)->arg()->name);
       filter_max_name.push_back(matched.at(cur_filter_max_name)->arg()->name);
     }
-    auto op_desc = *matched.at("conv_0")->stmt()->op_info();
+    cpp::OpDesc op_desc;
     auto conv_0 = matched.at("conv_0")->stmt()->op();
     auto* scope = conv_0->scope();
     op_desc.mutable_inputs()->clear();
@@ -148,12 +146,10 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
           int copy_pad = *(cur_paddings.begin() + 2 * i);
           cur_paddings.insert(cur_paddings.begin() + 2 * i + 1, copy_pad);
         }
-      } else {
-        if (cur_paddings.size() != 4) {
-          LOG(FATAL)
-              << "Paddings size should be the same or twice as the input size.";
-        }
       }
+      CHECK_EQ(cur_paddings.size(), 4UL)
+          << "Paddings size should be 2 or 4, But received paddings size: "
+          << cur_paddings.size();
       conv_paddings.insert(
           conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
       conv_dilations.insert(

@@ -146,8 +146,6 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     cpp::OpDesc op_desc;
     auto block_0 = matched.at("block0")->stmt()->op();
     auto* scope = block_0->scope();
-    op_desc.mutable_inputs()->clear();
-    op_desc.mutable_outputs()->clear();
     op_desc.SetType("__xpu__block_fuse_op");
     op_desc.SetInput("Input", {matched.at("input")->arg()->name});
     op_desc.SetOutput("Output", {matched.at("block_out1")->arg()->name});
