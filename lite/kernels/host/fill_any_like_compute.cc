@@ -74,5 +74,5 @@ REGISTER_LITE_KERNEL(fill_zeros_like,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindPaddleOpVersion("fill_any_like", 1)
+    .BindPaddleOpVersion("fill_zeros_like", 1)
     .Finalize();

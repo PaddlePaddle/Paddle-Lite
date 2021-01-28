@@ -27,8 +27,18 @@ void ElementwiseActivationFusePass::Apply(
   // initialze fuser params
   std::vector<std::string> elt_types{
       "elementwise_add", "elementwise_sub", "elementwise_mul"};
-  std::vector<std::string> act_types{"relu", "abs", "tanh"};
-
+  std::vector<std::string> act_types{"relu"};
+  bool has_arm = false;
+  for (auto& place : graph->valid_places()) {
+    if (place.target == TARGET(kARM)) {
+      has_arm = true;
+    }
+  }
+  // arm not support tanh and abs act fusion
+  if (!has_arm) {
+    act_types.push_back("abs");
+    act_types.push_back("tanh");
+  }
   // start fuse using params
   for (auto elt_type : elt_types) {
     for (auto act_type : act_types) {
