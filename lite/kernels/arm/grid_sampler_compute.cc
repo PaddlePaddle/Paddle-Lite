@@ -97,23 +97,27 @@ void GridSamplerCompute::Run() {
           break;
         case PMODE::REFLECTION:
           if (align_corners) {
+            float recip_x = 1 / (x_max * 2);
             float32x4_t double_range_x = vdupq_n_f32(x_max * 2);
             float32x4_t grid_x_abs = vabsq_f32(grid_x);
-            float32x4_t extra_x = vdivq_f32(grid_x_abs, (double_range_x));
+            float32x4_t extra_x = vmulq_n_f32(grid_x_abs, recip_x);
             extra_x = vcvtq_f32_s32(vcvtq_s32_f32(extra_x));
             extra_x = vsubq_f32(grid_x_abs, vmulq_f32(extra_x, double_range_x));
             grid_x = vminq_f32(extra_x, vsubq_f32((double_range_x), extra_x));
 
+            float recip_y = 1 / (y_max * 2);
             float32x4_t double_range_y = vdupq_n_f32(y_max * 2);
             float32x4_t grid_y_abs = vabsq_f32(grid_y);
-            float32x4_t extra_y = vdivq_f32(grid_y_abs, (double_range_y));
+            float32x4_t extra_y = vmulq_n_f32(grid_y_abs, recip_y);
             extra_y = vcvtq_f32_s32(vcvtq_s32_f32(extra_y));
             extra_y = vsubq_f32(grid_y_abs, vmulq_f32(extra_y, double_range_y));
             grid_y = vminq_f32(extra_y, vsubq_f32((double_range_y), extra_y));
           } else {
-            float32x4_t double_range_x = vdupq_n_f32((x_max + 1) * 2);
+            float tmp_x = (x_max + 1) * 2;
+            float recip_x = 1 / tmp_x;
+            float32x4_t double_range_x = vdupq_n_f32(tmp_x);
             float32x4_t grid_x_abs = vabsq_f32(vaddq_f32(grid_x, vhalf));
-            float32x4_t extra_x = vdivq_f32(grid_x_abs, (double_range_x));
+            float32x4_t extra_x = vmulq_n_f32(grid_x_abs, recip_x);
             extra_x = vcvtq_f32_s32(vcvtq_s32_f32(extra_x));
             extra_x =
                 vsubq_f32(grid_x_abs, vmulq_f32(extra_x, (double_range_x)));
@@ -121,9 +125,11 @@ void GridSamplerCompute::Run() {
             grid_x = vminq_f32(vmaxq_f32(vsubq_f32(grid_x, vhalf), vzero),
                                vdupq_n_f32(x_max));
 
-            float32x4_t double_range_y = vdupq_n_f32((y_max + 1) * 2);
+            float tmp_y = (y_max + 1) * 2;
+            float recip_y = 1 / tmp_y;
+            float32x4_t double_range_y = vdupq_n_f32(tmp_y);
             float32x4_t grid_y_abs = vabsq_f32(vaddq_f32(grid_y, vhalf));
-            float32x4_t extra_y = vdivq_f32(grid_y_abs, (double_range_y));
+            float32x4_t extra_y = vmulq_n_f32(grid_y_abs, recip_y);
             extra_y = vcvtq_f32_s32(vcvtq_s32_f32(extra_y));
             extra_y =
                 vsubq_f32(grid_y_abs, vmulq_f32(extra_y, (double_range_y)));
