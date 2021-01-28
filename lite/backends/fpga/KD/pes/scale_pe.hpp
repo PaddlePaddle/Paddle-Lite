@@ -90,11 +90,9 @@ class ScalePE : public PE {
         }
       }
       float* scale_data_float = param_.scale->data<float>();
-      for (int i = 0; i < repeat; i++) {
-        for (int j = 0; j < length; j++) {
-          float16 value = float_to_half(scale_data_float[j]);
-          scale_data[i * length + j] = value;
-        }
+      for (int j = 0; j < length; j++) {
+        float16 value = float_to_half(scale_data_float[j]);
+        scale_data[j] = value;
       }
     } else {
       if (param_.bias != nullptr) {
@@ -115,11 +113,9 @@ class ScalePE : public PE {
       }
 
       float16* scale_data_float = param_.scale->data<float16>();
-      for (int i = 0; i < repeat; i++) {
-        for (int j = 0; j < length; j++) {
-          float16 value = scale_data_float[j];
-          scale_data[i * length + j] = value;
-        }
+      for (int j = 0; j < length; j++) {
+        float16 value = scale_data_float[j];
+        scale_data[j] = value;
       }
     }
 

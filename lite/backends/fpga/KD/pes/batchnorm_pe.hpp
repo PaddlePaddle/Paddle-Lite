@@ -33,16 +33,15 @@ class BatchnormPE : public PE {
     ScaleParam& scale_param = scalePE_.param();
     scale_param.input = param_.input;
     scale_param.output = param_.output;
-    Tensor* scale = new Tensor();
-    Tensor* bias = new Tensor();
+
     Shape shape(N, {output->shape().channel()});
 
     auto mean_data = param_.mean->data<float>();
     auto variance_data = param_.variance->data<float>();
     auto scale_data = param_.scale->data<float>();
     auto bias_data = param_.bias->data<float>();
-    auto new_scale_ptr = scale->mutableData<float>(FP32, shape);
-    auto new_bias_ptr = bias->mutableData<float>(FP32, shape);
+    auto new_scale_ptr = scale_->mutableData<zynqmp::float16>(FP16, shape);
+    auto new_bias_ptr = bias_->mutableData<zynqmp::float16>(FP16, shape);
 
     float epsilon = param_.epsilon;
 
@@ -55,21 +54,19 @@ class BatchnormPE : public PE {
       float inv_scale = 1.0 / (std::sqrt(var + epsilon));
       float scale_value = inv_scale * scale_data[c];
       float bias_value = bias_data[c] - scale_value * mean_data[c];
-      new_scale_ptr[c] = scale_value;
-      new_bias_ptr[c] = bias_value;
+      new_scale_ptr[c] = zynqmp::float_to_half(scale_value);
+      new_bias_ptr[c] = zynqmp::float_to_half(bias_value);
     }
 
-    scale->flush();
-    bias->flush();
+    scale_->flush();
+    bias_->flush();
 
-    scale_param.scale = scale;
-    scale_param.bias = bias;
-    scale_param.relu = param_.relu;
+    scale_param.scale = scale_;
+    scale_param.bias = bias_;
+    scale_param.activeParam.type = param_.activeParam.type;
 
     scalePE_.init();
 
-    inplace_.relu_enable = param_.relu.enabled;
-    inplace_.relu_enable = true;
     inplace_.power_enable = false;
     inplace_.normalize_enable = false;
 
@@ -79,13 +76,34 @@ class BatchnormPE : public PE {
   void apply() { scalePE_.apply(); }
 
   bool dispatch() {
-    if (inplace_.relu_enable) {
+    if (param_.activeParam.type == TYPE_RELU) {
+      inplace_.relu_enable = true;
+    } else if (param_.activeParam.type == TYPE_RELU6) {
+      inplace_.relu6_enable = true;
+    } else if (param_.activeParam.type == TYPE_SIGMOID) {
+      inplace_.sigmoid_enable = true;
+    } else if (param_.activeParam.type == TYPE_LEAKY_RELU) {
+      inplace_.leaky_relu_enable = true;
+    }
+
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
+        inplace_.relu6_enable || inplace_.sigmoid_enable) {
       config_inplace(inplace_);
     }
-    bool ret = scalePE_.dispatch();
 
-    inplace_.relu_enable = false;
-    config_inplace(inplace_);
+    ScaleParam& scale_param = scalePE_.param();
+    float16* input = scale_param.input->mutableData<float16>();
+
+    bool ret = scalePE_.dispatch();
+    // bool ret = cpu_compute();
+    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
+        inplace_.relu6_enable || inplace_.sigmoid_enable) {
+      inplace_.relu_enable = false;
+      inplace_.leaky_relu_enable = false;
+      inplace_.relu6_enable = false;
+      inplace_.sigmoid_enable = false;
+      config_inplace(inplace_);
+    }
     return ret;
   }
 
@@ -94,12 +112,16 @@ class BatchnormPE : public PE {
   ~BatchnormPE() {
     scalePE_.param().input = nullptr;
     scalePE_.param().output = nullptr;
+    delete scale_;
+    delete bias_;
   }
 
  private:
   BatchnormParam param_;
   ScalePE scalePE_;
-  InplaceArgs inplace_;
+  InplaceArgs inplace_ = {0};
+  Tensor* scale_ = new Tensor();
+  Tensor* bias_ = new Tensor();
 };
 }  // namespace zynqmp
 }  // namespace paddle

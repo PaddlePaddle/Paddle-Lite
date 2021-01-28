@@ -31,6 +31,8 @@ limitations under the License. */
 namespace paddle {
 namespace zynqmp {
 
+const int MAX_CHANNEL = 16384;
+
 inline int get_aligned_filter_element_num(int chw) {
   return align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
 }
@@ -48,6 +50,7 @@ inline int get_split_num(Tensor* filter) {
              filter->shape().width();
   auto num = filter->shape().num();
   int div_capacity = filter::calc_division_capacity(chw);
+  // int aligned_num = align_to_x(num ,FILTER_NUM_ALIGNMENT);
   int filter_num_alignment = filter::get_filter_num_alignment();
   int aligned_num = align_to_x(num, filter_num_alignment);
   return filter::calc_split_num(aligned_num, div_capacity);
@@ -185,7 +188,7 @@ inline void format_16_bias(Tensor* bias, Tensor* quantized_bias, int channel) {
       quantized_bias->mutableData<float16>(FP16, shape);
 
   float* bias_data = bias->data<float>();
-  // bias aligned to 16 by hw;
+  // bias 按16对齐填充hw
   for (int i = 0; i < repeat; i++) {
     for (int j = 0; j < length; j++) {
       float16 value = float_to_half(bias_data[j]);
@@ -261,6 +264,7 @@ inline void format_filter(Tensor* filter,
                           std::vector<float>& scales,  // NOLINT
                           float max) {
   float max_value = find_max(*filter);
+  // max_value = max; //TODO: global quantization for filter
   Shape& filter_shape = filter->shape();
 
   int mem_size;
@@ -444,6 +448,7 @@ inline void pack_channel_filter(const ConvParam& c_param) {
   int channel_per_pack = filter->shape().channel() * group_per_pack;
 
   float max = find_max(*filter);
+
   Shape& out_shape = out->shape();
 
   for (int i = 0; i < pack_num; i++) {
@@ -534,7 +539,6 @@ inline void pack_channel_filter(const ConvParam& c_param) {
     }
     format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     conv_param->scaleBias.flush();
-
     args.group_num = new_group;
     args.sb_address = conv_param->scaleBias.data<float16>();
     args.kernel.stride_h = param.strides[1];
@@ -566,55 +570,70 @@ inline void split_channel(const ConvParam& c_param) {
   Tensor* output = param.output;
   input->syncToCPU();
 
+  Tensor* filter = param.filter;
+
   int num = ceil(input->shape().channel() * 1.0f / 2047);
+
+  if (output->shape().dimSize() == 2) {
+    num = ceil(input->shape().numel() * 1.0f / 16384);
+  }
+
   int channel = input->shape().channel() / num;
 
-  Shape bs_shape(N, {channel});
-
-  float max = 1.0f;
+  Shape bs_shape(NC, {1, output->shape().channel()});
+  float max = find_max(*param.filter);
 
   for (int i = 0; i < num; i++) {
     BasicConvParam* conv_param = new BasicConvParam();
-
-    // input && output;
     Shape in_shape(
         NCHW, {1, channel, input->shape().height(), input->shape().width()});
-    conv_param->input.shareDataWith(input, in_shape, channel * i);
+    conv_param->input.mutableData<float16>(FP16, in_shape);
     conv_param->output.mutableData<float16>(FP16, output->shape());
 
     // filter transformation;
-    Shape f_shape(NCHW, {param.filter->shape().num(), channel, 1, 1});
+    Shape f_shape(NCHW,
+                  {filter->shape().num(),
+                   channel,
+                   filter->shape().height(),
+                   filter->shape().width()});
 
-    Tensor new_filter;
+    Tensor new_filter_hwc;
 
-    float* dst = new_filter.mutableData<float>(FP32, f_shape);
-    float* src = param.filter->data<float>() + i * channel;
+    auto cal_chw = [](Tensor* t) {
+      Shape& s = t->shape();
+      return s.channel() * s.height() * s.width();
+    };
+
     for (int n = 0; n < f_shape.num(); n++) {
-      memcpy(dst, src, channel * sizeof(float));
-      dst += channel;
-      src += param.filter->shape().channel();
+      float* dst = new_filter_hwc.mutableData<float>(FP32, f_shape) +
+                   n * cal_chw(&new_filter_hwc);
+      float* src = filter->data<float>() + i * channel + n * cal_chw(filter);
+
+      for (int hw = 0; hw < f_shape.height() * f_shape.width(); hw++) {
+        memcpy(dst, src, channel * sizeof(float));
+        dst += channel;
+        src += filter->shape().channel();
+      }
     }
-    new_filter.flush();
+    Tensor new_filter;
+    hwc_to_chw(&new_filter_hwc, &new_filter);
     std::vector<float> scales;
     format_filter(
         &new_filter, &(conv_param->filter), param.groups, scales, max);
 
+    conv_param->filter.flush();
+
     Tensor bias;
     Tensor scale;
 
+    int sb_channel = output->shape().channel();
     float* bias_data = bias.mutableData<float>(FP32, bs_shape);
     float* scale_data = scale.mutableData<float>(FP32, bs_shape);
-    for (int c = 0; c < channel; c++) {
-      scale_data[c] = scales[c];
+    for (int c = 0; c < sb_channel; c++) {
+      scale_data[c] = param.scale()->data<float>()[c] * scales[c];
       bias_data[c] = param.bias()->data<float>()[c] / num;
     }
-    scale.flush();
-    bias.flush();
-    format_scale_bias(&scale,
-                      &bias,
-                      &conv_param->filter,
-                      &conv_param->scaleBias,
-                      param.groups);
+    format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     conv_param->scaleBias.flush();
 
     ConvArgs& args = conv_param->args;
@@ -648,8 +667,10 @@ inline int fill_split_arg(const ConvParam& c_param) {
   Tensor* input = param.input;
   Tensor* output = param.output;
 
-  if (output->shape().dimSize() == 4 && input->shape().channel() > 2047 &&
-      input->shape().width() == 1) {
+  if ((output->shape().dimSize() == 4 && input->shape().channel() > 2047 &&
+       input->shape().width() == 1) ||
+      (output->shape().dimSize() == 2 &&
+       input->shape().numel() > MAX_CHANNEL)) {
     split_channel(c_param);
     return 1;
   } else if (param.groups == 1) {
@@ -681,6 +702,8 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
 }
 
 inline void dwconv_split_channel(DepthwiseConvSplitParam& param) {  // NOLINT
+  // DepthwiseConvSplitParam& param =
+  // const_cast<DepthwiseConvSplitParam&>(c_param);
   Tensor* input = param.input;
   Tensor* output = param.output;
   Tensor* filter = param.filter;
@@ -699,7 +722,6 @@ inline void dwconv_split_channel(DepthwiseConvSplitParam& param) {  // NOLINT
   int channel = input->shape().channel() / num;
   if (channel % 16 != 0) {
     std::cout << "input channel must div by 16" << std::endl;
-    // throw -1;
   }
 
   Shape bs_shape(N, {channel});

@@ -21,6 +21,7 @@ limitations under the License. */
 #include <algorithm>
 #include <cstring>
 #include <map>
+#include <mutex>  // NOLINT
 #include <utility>
 
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
@@ -45,6 +46,8 @@ static inline int do_ioctl(uint64_t req, const void *arg) {
 #endif
 }
 
+static std::mutex mem_mutex;
+
 int open_device() {
   if (fd == -1) {
     fd = open(device_path, O_RDWR);
@@ -66,6 +69,7 @@ void reset_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
+  std::lock_guard<std::mutex> lock(mem_mutex);
 #ifdef PADDLE_OS_LINUX
   void *ptr = reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
@@ -107,13 +111,16 @@ void *fpga_malloc(size_t size) {
 #endif
 }
 
-size_t fpga_get_memory_size(void *ptr) { return memory_map[ptr]; }
-
+size_t fpga_get_memory_size(void *ptr) {
+  std::lock_guard<std::mutex> lock(mem_mutex);
+  return memory_map[ptr];
+}
 size_t fpga_get_memory_size_max() { return memory_size_max; }
 
 size_t fpga_diagnose_memory(int detailed) {
+  std::lock_guard<std::mutex> lock(mem_mutex);
   size_t total = 0;
-  auto iter = memory_map.begin();  // std::map<void *, size_t>::iterator
+  auto iter = memory_map.begin();
   while (iter != memory_map.end()) {
     total += iter->second;
     iter++;
@@ -122,8 +129,9 @@ size_t fpga_diagnose_memory(int detailed) {
 }
 
 void fpga_free(void *ptr) {
+  std::lock_guard<std::mutex> lock(mem_mutex);
   size_t size = 0;
-  auto iter = memory_map.find(ptr);  // std::map<void *, size_t>::iterator
+  auto iter = memory_map.find(ptr);
   if (iter != memory_map.end()) {
     size = iter->second;
     memory_map.erase(iter);
@@ -192,6 +200,10 @@ int compute_fpga_pool(const struct PoolingArgs &args) {
 
 int compute_fpga_ewadd(const struct EWAddArgs &args) {
   return do_ioctl(IOCTL_CONFIG_EW, &args);
+}
+
+int get_version(const struct VersionArgs &args) {
+  return do_ioctl(IOCTL_VERSION, &args);
 }
 
 int get_device_info(const struct DeviceInfoArgs &args) {
@@ -289,6 +301,13 @@ int compute_preprocess(const struct PreprocessArgs &args) {
   return do_ioctl(IOCTL_PREPROCESS, &args);
 }
 
+int fpga_lock(const struct CNNLockArgs &args) {
+  return do_ioctl(IOCTL_LOCK_TRY_LOCKING, &args);
+}
+int fpga_unlock(const struct CNNLockArgs &args) {
+  return do_ioctl(IOCTL_LOCK_UNLOCK, &args);
+}
+
 int16_t fp32_2_fp16(float fp32_num) {
   unsigned long tmp = *(unsigned long *)(&fp32_num);  // NOLINT
   auto t = (int16_t)(((tmp & 0x007fffff) >> 13) | ((tmp & 0x80000000) >> 16) |
@@ -311,6 +330,34 @@ float fp16_2_fp32(int16_t fp16_num) {
   tmp = s << 16 | exp << 23 | frac << 13;
   fp32_num = *(float *)&tmp;  // NOLINT
   return fp32_num;
+}
+
+std::ostream &operator<<(std::ostream &os, const ConvArgs &args) {
+  os << "ConvArgs {\n";
+  os << "  group_num : " << args.group_num << std::endl;
+  os << "  sb_address : " << args.sb_address << std::endl;
+  os << "  dilation : " << args.dilation << std::endl;
+  os << "  filter_num : " << args.filter_num << std::endl;
+  os << "  filter_address : " << args.filter_address << std::endl;
+  os << "  filterr_scale : "
+     << (reinterpret_cast<float *>(args.filter_scale_address))[0] << std::endl;
+  os << "  kernel.stride_h : " << args.kernel.stride_h << std::endl;
+  os << "  kernel.height : " << args.kernel.height << std::endl;
+  os << "  kernel.width : " << args.kernel.width << std::endl;
+
+  os << "  image.address : " << args.image.address << std::endl;
+  os << "  image.scale_address : " << args.image.scale_address << std::endl;
+  os << "  image.scale : "
+     << (reinterpret_cast<float *>(args.image.scale_address))[0] << std::endl;
+  os << "  image.channels : " << args.image.channels << std::endl;
+  os << "  image.width : " << args.image.width << std::endl;
+  os << "  image.height : " << args.image.height << std::endl;
+  os << "  image.pad_width : " << args.image.pad_width << std::endl;
+  os << "  image.pad_height : " << args.image.pad_height << std::endl;
+  os << "  output.address : " << args.output.address << std::endl;
+  os << "}" << std::endl;
+
+  return os;
 }
 
 }  // namespace zynqmp

@@ -82,7 +82,6 @@ class PoolingPE : public PE {
     input->syncToCPU();
 
     Tensor float_input;
-    // Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
@@ -148,9 +147,7 @@ class PoolingPE : public PE {
     float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
-
     int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
-
     float scale_max = 0;
     for (int i = 0; i < output->shape().channel(); i++) {
       float sum = 0;
@@ -178,9 +175,7 @@ class PoolingPE : public PE {
     float_input.copyFrom(input);
 
     float16* data_out = output->data<float16>();
-
     int kernel_hw = param_.kernelSize[0] * param_.kernelSize[1];
-
     float scale_max = 0;
     for (int i = 0; i < output->shape().channel(); i++) {
       float sum = 0;
@@ -198,7 +193,6 @@ class PoolingPE : public PE {
 
   bool dispatch() {
     if (use_cpu_) {
-      // cpu_compute();
       compute();
       return true;
     }
@@ -227,7 +221,6 @@ class PoolingPE : public PE {
       globalPoolArgs.global_pool_factor = float_to_half(0);
       config_global_pool(globalPoolArgs);
     }
-
     return ret;
   }
 

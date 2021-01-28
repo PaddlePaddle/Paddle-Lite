@@ -19,6 +19,7 @@ limitations under the License. */
 
 #include <stdint.h>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <limits>
 
@@ -333,6 +334,7 @@ struct CNNLockArgs {
 #define IOCTL_PREPROCESS _IOW(IOCTL_FPGA_MAGIC, 201, struct PreprocessArgs)
 
 //============================== API =============================
+std::ostream& operator<<(std::ostream& os, const ConvArgs& args);
 
 inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
 int open_device();
@@ -350,6 +352,7 @@ void fpga_copy(void* dst, const void* src, int size);
 int fpga_flush(void* address, size_t size);
 int fpga_invalidate(void* address, size_t size);
 
+int get_version(const struct VersionArgs& args);
 int get_device_info(const struct DeviceInfoArgs& args);
 
 int perform_bypass(const struct BypassArgs& args);
@@ -377,6 +380,7 @@ int compute_preprocess(const struct PreprocessArgs& args);
 
 int16_t fp32_2_fp16(float fp32_num);
 float fp16_2_fp32(int16_t fp16_num);
+
 }  // namespace zynqmp
 }  // namespace paddle
 

@@ -65,7 +65,6 @@ class ConvPE : public PE {
     input->syncToDevice();
     float_input.copyFrom(input);
     float_input.invalidate();
-    float_input.saveToFile("fi", true);
 
     float* out = float_output.mutableData<float>(FP32, output->shape());
 
@@ -126,11 +125,8 @@ class ConvPE : public PE {
       }
     }
     float_output.flush();
-    float_output.saveToFile("fo", true);
     output->copyFrom(&float_output);
     output->invalidate();
-    output->saveToFile("out", true);
-    // exit(-1);
   }
 
   bool init() {
@@ -143,8 +139,8 @@ class ConvPE : public PE {
   void apply() {
     if (param_.deconv == false) {
       split_axis = fill_split_arg(param_);
-
-      split_channel = param_.groups != 1 && param_.splitParams().size() > 1;
+      split_channel = split_axis == 1 ||
+                      (param_.groups != 1 && param_.splitParams().size() > 1);
 
       if (split_axis == 0 && param_.splitParams().size() > 1) {
         ConcatParam& concat_param = concatPE_.param();
@@ -167,18 +163,9 @@ class ConvPE : public PE {
       }
     }
 
-    if (DLEngine::get_instance().isZU3() &&
-        param_.input->shape().dimSize() == 4 &&
-        param_.input->shape().width() == 1 &&
-        param_.input->shape().channel() >= 2048) {
-      use_cpu_ = true;
-    }
-
     if (!use_cpu_) {
       param_.filter->releaseData();
     }
-
-    // exit(-1);
   }
   void cpu_compute() {
     Tensor* input = param_.input;
@@ -189,9 +176,8 @@ class ConvPE : public PE {
     Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
-    // float16* data_out = output->data<float16>();
-    float* out = float_output.mutableData<float>(FP32, output->shape());
 
+    float* out = float_output.mutableData<float>(FP32, output->shape());
     int out_channel = output->shape().channel();
     int in_channel = input->shape().channel();
 
@@ -203,15 +189,6 @@ class ConvPE : public PE {
       float* out_ptr = mi;
 #pragma omp parallel for
       for (int j = 0; j < in_channel; j++) {
-        // float32x4_t x0 = vld1q_f32(image);
-        // float32x4_t x1 = vld1q_f32(filter_ptr);
-
-        // float32x4_t r = vmulq_f32(x0, x1);
-
-        // vst1q_f32(out_ptr, r);
-        // image += 4;
-        // filter_ptr += 4;
-        // out_ptr += 4;
         float value = image_addr[j] * filter_ptr[j];
         mi[j] = value;
       }
@@ -234,6 +211,7 @@ class ConvPE : public PE {
       cpu_compute();
       return true;
     }
+
     inplace_.global_pool_en = false;
     if (param_.activeParam.type == TYPE_RELU) {
       inplace_.relu_enable = true;
@@ -259,7 +237,6 @@ class ConvPE : public PE {
     std::vector<BasicConvParam*>& params = param_.splitParams();
 
     if (split_channel && param_.deconv == false) {
-      // splitPE_.param().input->saveToFile("input_image",true);
       splitPE_.dispatch();
     }
 
@@ -289,23 +266,12 @@ class ConvPE : public PE {
       concatPE_.dispatch();
     }
     if (split_axis == 1 && ret == 0 && size > 1) {
-      // for (int n = 0; n < size - 1; n++) {
       ElementwiseAddParam& add_param = addPE_.param();
       add_param.inputs = {&params[0]->output, &params[1]->output};
       add_param.output = param_.output;
       addPE_.init();
       addPE_.apply();
       addPE_.dispatch();
-
-      // param_.output->printScale();
-
-      // params[0]->input.saveToFile("conv_1.txt");
-      // params[1]->input.saveToFile("conv_2.txt");
-
-      // params[0]->output.saveToFile("ew_o1.txt");
-      // params[1]->output.saveToFile("ew_o2.txt");
-      // std::cout << "\n ================== EW ================== \n";
-      // }
     }
 
     return ret == 0;

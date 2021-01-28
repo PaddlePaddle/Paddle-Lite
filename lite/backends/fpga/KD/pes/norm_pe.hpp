@@ -37,9 +37,7 @@ class NormPE : public PE {
     inplace_args_.relu_enable = false;
     inplace_args_.power_enable = false;
     inplace_args_.normalize_enable = true;
-
     Shape& input_shape = param_.input->shape();
-
     norm_param_args_.channel = input_shape.channel();
     norm_param_args_.hight_width = input_shape.height() * input_shape.width();
 
@@ -107,19 +105,16 @@ class NormPE : public PE {
   }
 
   bool dispatch() {
-    // cpuCompute();
-    // std::cout << "FPGA normalize ---------------------" << std::endl;
+    cpuCompute();
+    // param_.input->syncToDevice();
+    // config_norm_param(norm_param_args_);
+    // inplace_args_.normalize_enable = true;
+    // config_inplace(inplace_args_);
 
-    param_.input->syncToDevice();
-    config_norm_param(norm_param_args_);
-    inplace_args_.normalize_enable = true;
-    config_inplace(inplace_args_);
-
-    perform_bypass(bypass_args_);
-    inplace_args_.normalize_enable = false;
-    config_inplace(inplace_args_);
-    compute_norm(norm_args_);
-
+    // perform_bypass(bypass_args_);
+    // inplace_args_.normalize_enable = false;
+    // config_inplace(inplace_args_);
+    // compute_norm(norm_args_);
     return true;
   }
 

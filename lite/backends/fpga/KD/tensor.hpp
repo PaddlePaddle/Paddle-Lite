@@ -401,6 +401,52 @@ class Tensor {
 
   void releaseData() { placeHolder_.reset(); }
 
+  void readHalfFromFile(std::string path) {
+    std::ifstream file_stream;
+    file_stream.open(path);
+    if (!file_stream) {
+      // std::cout << "file: " << path << " does not exist\n";
+      return;
+    }
+    int num = shape_->numel();
+    invalidate();
+    float max = 0.0f;
+    float16* data = mutableData<float16>();
+    for (int i = 0; i < num; ++i) {
+      float value = 0;
+      file_stream >> value;
+      max = std::max(std::abs(value), max);
+      data[i] = float_to_half(value);
+    }
+    flush();
+    placeHolder_->scale_[0] = max / 127.0f;
+    placeHolder_->scale_[1] = 127.0f / max;
+    // DLOG << "\ttensor file " << path << " loaded!";
+  }
+
+  void readFloatFromFile(std::string path) {
+    std::ifstream file_stream;
+    file_stream.open(path);
+    if (!file_stream) {
+      // std::cout << "file: " << path << " does not exist\n";
+      return;
+    }
+    int num = shape_->numel();
+    invalidate();
+    float max = 0.0f;
+    float* data = mutableData<float>();
+    for (int i = 0; i < num; ++i) {
+      float value = 0;
+      file_stream >> value;
+      max = std::max(std::abs(value), max);
+      data[i] = value;
+    }
+    flush();
+    placeHolder_->scale_[0] = max / 127.0f;
+    placeHolder_->scale_[1] = 127.0f / max;
+    // DLOG << "\ttensor file " << path << " loaded!";
+  }
+
   void readFromFile(std::string path) {
     std::ifstream file_stream;
     file_stream.open(path);

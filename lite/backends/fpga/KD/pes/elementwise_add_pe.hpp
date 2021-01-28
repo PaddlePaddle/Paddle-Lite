@@ -58,7 +58,6 @@ class ElementwiseAddPE : public PE {
   bool dispatch() {
     param_.inputs[0]->syncToDevice();
     param_.inputs[1]->syncToDevice();
-    // InplaceArgs inplace_ = {0};
 
     if (param_.activeParam.type == TYPE_RELU) {
       inplace_.relu_enable = true;
