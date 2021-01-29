@@ -256,6 +256,13 @@ __kernel void conv2d_1x1_opt(
   output2 = activation_type4(output2);
   output3 = activation_type4(output3);
 
+#ifdef SCALE_ACTIVATION
+  output0 = fuse_scale(output0, 1.f, 0.f, 0.f);
+  output1 = fuse_scale(output1, 1.f, 0.f, 0.f);
+  output2 = fuse_scale(output2, 1.f, 0.f, 0.f);
+  output3 = fuse_scale(output3, 1.f, 0.f, 0.f);
+#endif
+
   if (out_w0 < old_w) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);
   }
@@ -418,6 +425,13 @@ __kernel void conv2d_1x1_simple(
   output1 = activation_type4(output1);
   output2 = activation_type4(output2);
   output3 = activation_type4(output3);
+
+#ifdef SCALE_ACTIVATION
+  output0 = fuse_scale(output0, 1.f, 0.f, 0.f);
+  output1 = fuse_scale(output1, 1.f, 0.f, 0.f);
+  output2 = fuse_scale(output2, 1.f, 0.f, 0.f);
+  output3 = fuse_scale(output3, 1.f, 0.f, 0.f);
+#endif
 
   if (out_w0 < old_w) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos0, output0);

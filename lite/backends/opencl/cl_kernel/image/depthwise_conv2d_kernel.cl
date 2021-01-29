@@ -207,6 +207,10 @@ __kernel void depth_conv2d_3x3(
 
   output = activation_type4(output);
 
+#ifdef SCALE_ACTIVATION
+  output = fuse_scale(output, 1.f, 0.f, 0.f);
+#endif
+
   /*
 
   if (output_pos.x == 0 && output_pos.y == 0) {
@@ -361,6 +365,11 @@ __kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
 
   output[0] = activation_type4(output[0]);
   output[1] = activation_type4(output[1]);
+
+#ifdef SCALE_ACTIVATION
+  output[0] = fuse_scale(output[0], 1.f, 0.f, 0.f);
+  output[1] = fuse_scale(output[1], 1.f, 0.f, 0.f);
+#endif
 
   WRITE_IMG_TYPE(
       CL_DTYPE_CHAR, output_image, (int2)(ou_x, ou_nh_id), output[0]);
