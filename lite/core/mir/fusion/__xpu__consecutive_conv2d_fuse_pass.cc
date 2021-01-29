@@ -22,6 +22,33 @@ namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
+/* fuse xpu_conv2d * 3 as xpu_block          */
+/* graph                                     */
+/*                in_Input                   */
+/*                    |                      */
+/*                    |                      */
+/*                __xpu__conv2d              */
+/*                    |                      */
+/*                    |                      */
+/*                __xpu__conv2d              */
+/*                    |                      */
+/*                    |                      */
+/*                __xpu__conv2d              */
+/*                    |                      */
+/*                    |                      */
+/*                out_Output                 */
+/*-------------------------------------------*/
+/* After the pass is applied:                */
+/*                  in_Input                 */
+/*     in_Filter      |     in_FilterMax     */
+/*               \    |    /                 */
+/*                \   |   /                  */
+/*  in_Bias ------- __xpu__block_fuse        */
+/*                    |    \                 */
+/*                    |     \                */
+/*                    |      out_OutputMax   */
+/*              out_Output                   */
+/*                                           */
 
 #define STR1(R) #R
 #define STR2(R) STR1(R)
