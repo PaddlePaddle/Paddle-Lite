@@ -142,6 +142,10 @@ class ConvOpLite : public OpLite {
                    << act_type;
       }
     }
+    if (op_desc.HasAttr("scale_activation_type")) {
+      param_.scale_activation_type =
+          op_desc.GetAttr<std::string>("scale_activation_type");
+    }
 
     if (op_desc.HasAttr("padding_algorithm")) {
       padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
