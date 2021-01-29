@@ -113,16 +113,16 @@ void TestCumsumHelper(Place place,
                       const bool exclusive = false,
                       const bool reverse = false) {
   auto precision = lite_api::PrecisionTypeTrait<T>::Type();
-  std::string def("def");
+  std::string alias("def");
   switch (precision) {
     case lite_api::PrecisionType::kFloat:
-      def = std::string("float32");
+      alias = std::string("float32");
       break;
     case lite_api::PrecisionType::kInt32:
-      def = std::string("int32");
+      alias = std::string("int32");
       break;
     case lite_api::PrecisionType::kInt64:
-      def = std::string("int64");
+      alias = std::string("int64");
       break;
     default:
       LOG(FATAL) << "unsupported precision: "
@@ -130,7 +130,7 @@ void TestCumsumHelper(Place place,
   }
 
   std::unique_ptr<arena::TestCase> tester(new CumsumComputeTester<T>(
-      place, def, DDim(x_dims), axis, flatten, exclusive, reverse));
+      place, alias, DDim(x_dims), axis, flatten, exclusive, reverse));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }

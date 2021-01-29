@@ -14,7 +14,7 @@
 
 #pragma once
 #include <cmath>
-#include "lite/backends/arm/math/fp16/common_preprocss.h"
+#include "lite/backends/arm/math/fp16/common_preprocess.h"
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
@@ -26,12 +26,10 @@ namespace math {
 namespace fp16 {
 typedef __fp16 float16_t;
 const int KBLOCK_FP16 = 2;
-#ifdef __aarch64__
-// for int7/int8 gemm
 const int MBLOCK_FP16 = 8;
+#ifdef __aarch64__
 const int NBLOCK_FP16 = 16;
 #else
-const int MBLOCK_FP16 = 8;
 const int NBLOCK_FP16 = 12;
 #endif  // __aarch64__
 

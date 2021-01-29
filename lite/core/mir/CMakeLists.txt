@@ -22,6 +22,7 @@ lite_cc_library(mir_passes
       fusion/var_conv_2d_activation_fuse_pass.cc
       fusion/conv_bn_fuse_pass.cc
       fusion/conv_conv_fuse_pass.cc
+      fusion/conv_scale_fuse_pass.cc
       fusion/elementwise_add_activation_fuse_pass.cc
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc
@@ -41,14 +42,17 @@ lite_cc_library(mir_passes
       fusion/__xpu__sfa_head_moment_fuse_pass.cc
       fusion/__xpu__softmax_topk_fuse_pass.cc
       fusion/__xpu__multi_encoder_slice_link_fuse_pass.cc
+      fusion/__xpu__generate_sequence_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc
       fusion/instance_norm_activation_fuse_pass.cc
+      fusion/elementwise_add_scale_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
       elimination/remove_tf_redundant_ops_pass.cc
+      elimination/remove_scale1_pass.cc
       adaptive_1x1_pool2d_convert_global_pass.cc
       elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.cc
       static_kernel_pick_pass.cc

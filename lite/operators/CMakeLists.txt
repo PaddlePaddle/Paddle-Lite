@@ -88,6 +88,7 @@ add_operator(sequence_pad_op_lite extra SRCS sequence_pad_op.cc DEPS ${op_DEPS})
 add_operator(sequence_mask_op_lite extra SRCS sequence_mask_op.cc DEPS ${op_DEPS})
 add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
 add_operator(gather_op extra SRCS gather_op.cc DEPS ${op_DEPS})
+add_operator(gather_tree_op extra SRCS gather_tree_op.cc DEPS ${op_DEPS})
 add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEPS})
 add_operator(generate_proposals_op extra SRCS generate_proposals_op.cc DEPS ${op_DEPS})
 add_operator(generate_proposals_v2_op extra SRCS generate_proposals_v2_op.cc DEPS ${op_DEPS})
@@ -139,6 +140,7 @@ add_operator(tensor_array_to_tensor_op extra SRCS tensor_array_to_tensor_op.cc D
 add_operator(fill_any_like_op extra SRCS fill_any_like_op.cc DEPS ${op_DEPS})
 add_operator(fill_zeros_like_op extra SRCS fill_zeros_like_op.cc DEPS ${op_DEPS})
 add_operator(matmul_v2_op extra SRCS matmul_v2_op.cc DEPS ${op_DEPS})
+add_operator(sum_op extra SRCS sum_op.cc DEPS ${op_DEPS})
 add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 add_operator(scatter_nd_add_op extra SRCS scatter_nd_add_op.cc DEPS ${op_DEPS})
 
@@ -206,6 +208,7 @@ add_operator(__xpu__search_attention_op extra SRCS __xpu__search_attention_op.cc
 add_operator(__xpu__mmdnn_op extra SRCS __xpu__mmdnn_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__conv2d_op extra SRCS __xpu__conv2d_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__sfa_head_op extra SRCS __xpu__sfa_head_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__generate_sequence_op extra SRCS __xpu__generate_sequence_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)

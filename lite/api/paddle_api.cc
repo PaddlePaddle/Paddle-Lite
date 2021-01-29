@@ -41,6 +41,9 @@ namespace paddle {
 namespace lite_api {
 
 bool IsOpenCLBackendValid(bool check_fp16_valid) {
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
+#endif
   bool opencl_valid = false;
 
 #ifdef LITE_WITH_OPENCL

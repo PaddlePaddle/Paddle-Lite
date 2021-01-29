@@ -158,6 +158,58 @@ inline void act_acquire(lite_api::ActivationType act,
 }
 
 template <typename dtype>
+inline void ptr_acquire_remain(PTR_ACQUIRE_PARAM(dtype)) {
+  switch (8 - remain) {
+    case 7:
+      ptr_w0 = ptr_zero;
+      break;
+    case 6:
+      ptr_w1 = ptr_zero;
+      break;
+    case 5:
+      ptr_w2 = ptr_zero;
+      break;
+    case 4:
+      ptr_w3 = ptr_zero;
+      break;
+    case 3:
+      ptr_w4 = ptr_zero;
+      break;
+    case 2:
+      ptr_w5 = ptr_zero;
+      break;
+    case 1:
+      ptr_w6 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
+
+template <typename dtype>
+inline void ptr_acquire_norm(PTR_ACQUIRE_PARAM(dtype)) {
+  switch (8 - remain) {
+    case 7:
+      ptr_w1 = ptr_zero;
+    case 6:
+      ptr_w2 = ptr_zero;
+    case 5:
+      ptr_w3 = ptr_zero;
+    case 4:
+      ptr_w4 = ptr_zero;
+    case 3:
+      ptr_w5 = ptr_zero;
+    case 2:
+      ptr_w6 = ptr_zero;
+    case 1:
+      ptr_w7 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
+
+template <typename dtype>
 inline void ptr_acquire_a8(PTR_ACQUIRE_PARAM_A8(dtype)) {
   switch (numa - numb) {
     case 6:

@@ -184,7 +184,17 @@ if(LITE_WITH_IMAGINATION_NNA)
 	include(device/imagination_nna)
 endif()
 
-include(external/flatbuffers)
+# flatbuffer module for loading model
+if(LITE_UPDATE_FBS_HEAD)
+    include(external/flatbuffers)
+else()
+    include_directories("${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build")
+    add_custom_target(fbs_headers ${TARGET}
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/framework_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/param_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
+            )
+endif()
 
 # for opencl
 if (LITE_WITH_OPENCL)

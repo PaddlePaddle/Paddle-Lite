@@ -118,15 +118,11 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   if (flag_1x1gemm_) {
     lite::arm::math::conv1x1s1_gemm(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv1x1s1_gemm";
-#endif
+    KERNEL_FUNC_NAME("conv1x1s1_gemm_fp32")
   } else {
     lite::arm::math::conv_im2col_gemm(
         din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_im2col_gemm";
-#endif
+    KERNEL_FUNC_NAME("conv_im2col_gemm_fp32")
   }
 }
 
@@ -261,60 +257,9 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 #ifdef ENABLE_ARM_FP16
 template <>
 void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
-  auto& param = this->template Param<param_t>();
-  CHECK(this->ctx_);
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  auto x_dims = param.x->dims();
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-  if (last_shape_ == x_dims) {
-    return;
-  }
-
-  int iw = x_dims[3];  // nchw
-  int ih = x_dims[2];
-  int ic = x_dims[1];
-  int ow = o_dims[3];
-  int oh = o_dims[2];
-  int oc = o_dims[1];
-  int kw = w_dims[3];
-  int kh = w_dims[2];
-
-  auto paddings = *param.paddings;
-  auto dilations = *param.dilations;
-
-  int sw = param.strides[1];
-  int sh = param.strides[0];
-  int pw = paddings[2];
-  int ph = paddings[0];
-  int dw = dilations[1];
-  int dh = dilations[0];
-
-  bool pads_equal =
-      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
-
-  int m = oc / param.groups;
-  int k = ic * kh * kw / param.groups;
-  int n = oh * ow;
-
-  bool kps_equal = (pw == ph) && (sw == sh) && (kw == kh);
-  bool ks_equal = (sw == sh) && (kw == kh);
-  //! select conv gemmlike kernel
-  if (kw == 1 && sw == 1 && pw == 0 && kps_equal && pads_equal) {
-    //! 1x1s1p0 gemmlike conv
-    flag_1x1gemm_ = true;
-  } else {
-    //! im2col gemmlike conv
-    flag_1x1gemm_ = false;
-    workspace_size_ = k * n * sizeof(float);
-  }
-  if (!flag_trans_weights_) {
-    lite::arm::math::fp16::trans_gemm_weights_fp16(
-        *(param.filter), weights_, param.groups, &ctx);
-    flag_trans_weights_ = true;
-  }
-  last_shape_ = x_dims;
+  ReInitWhenNeeded();
 }
+
 template <>
 void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto& param = this->Param<param_t>();

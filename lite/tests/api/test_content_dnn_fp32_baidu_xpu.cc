@@ -107,7 +107,7 @@ TEST(CONTENT_DNN, test_content_dnn_fp32_baidu_xpu) {
 
   std::string ref_out_file = FLAGS_data_dir + std::string("/ref_out.txt");
   float out_accuracy = CalMmdnnOutAccuracy(out_rets, ref_out_file);
-  ASSERT_GT(out_accuracy, 0.99f);
+  ASSERT_GT(out_accuracy, 0.985f);
 }
 
 }  // namespace lite

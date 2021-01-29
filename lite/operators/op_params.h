@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
@@ -476,7 +477,8 @@ struct ConvParam : ParamBase {
   std::vector<int> output_padding;
   // for int8
   WITH_INT8_CONFIG
-
+  // for Conv2d+Scale fusion
+  std::string scale_activation_type{""};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -672,6 +674,14 @@ struct ElementwiseParam : ParamBase {
   WITH_INT8_CONFIG
   float x_input_scale{1.0};
   float y_input_scale{1.0};
+  // fuse ScaleParam
+  bool fuse_scale{false};
+  float scale{1.};
+  float bias{0.f};
+  bool bias_after_scale{true};
+  float alpha{6.};
+  std::string activation_type{""};
+
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1556,6 +1566,12 @@ struct GatherParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct GatherTreeParam : ParamBase {
+  const lite::Tensor* ids{nullptr};
+  const lite::Tensor* parents{nullptr};
+  lite::Tensor* out{nullptr};
+};
+
 /// ----------------------- assign operators -----------------------
 struct AssignParam : ParamBase {
   // for tensor
@@ -1572,6 +1588,7 @@ struct RoiAlignParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
   lite::Tensor* RoisLod{};
+  lite::Tensor* RoisNum{};
   lite::Tensor* Out{};
   float spatial_scale{1.0};
   int pooled_height{1};
@@ -2036,6 +2053,16 @@ struct XPUSfaHeadParam : ParamBase {
   std::string op_type{""};
 };
 
+struct XPUGenerateSequenceParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+
+  int axis{-1};
+  bool flatten{false};
+  float value{0};
+  int dtype{-1};
+};
+
 // For DeformableConvolution op
 struct DeformableConvParam : ParamBase {
   lite::Tensor* x{};
@@ -2214,6 +2241,12 @@ struct CumsumParam : ParamBase {
   bool flatten{false};
   bool exclusive{false};
   bool reverse{false};
+};
+
+struct SumParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  int inplace{0};
 };
 
 }  // namespace operators
