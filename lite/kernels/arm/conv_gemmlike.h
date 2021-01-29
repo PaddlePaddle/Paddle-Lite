@@ -114,6 +114,17 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
   }
 
   std::string kernel_func_name_{"NotImplForConvGemm"};
+#define PROFILE_INFO(dtype1, dtype2)                                        \
+  template <>                                                               \
+  void GemmLikeConv<PRECISION(dtype1), PRECISION(dtype2)>::                 \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
+  }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
 
   /// todo, support inplace weights transform

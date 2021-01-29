@@ -19,14 +19,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-#ifdef LITE_WITH_PROFILE
-// template <>
-// void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::
-//     SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-//   ch->kernel_func_name = kernel_func_name_;
-// }
 PROFILE_INFO(kFloat, kFloat)
-#endif
 
 template <>
 void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
@@ -71,9 +64,7 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                             b_data,
                                             param,
                                             &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s1_direct_fp32";
-#endif
+    KERNEL_FUNC_NAME("conv_3x3s1_direct_fp32")
   } else {
     lite::arm::math::conv_3x3s2_direct_fp32(i_data,
                                             o_data,
@@ -88,20 +79,11 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                             b_data,
                                             param,
                                             &ctx);
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s2_direct_fp32";
-#endif
+    KERNEL_FUNC_NAME("conv_3x3s2_direct_fp32")
   }
 }
 
-#ifdef LITE_WITH_PROFILE
-// template <>
-// void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::
-//     SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-//   ch->kernel_func_name = kernel_func_name_;
-// }
 PROFILE_INFO(kInt8, kFloat)
-#endif
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
@@ -141,9 +123,7 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                             param,
                                             &ctx,
                                             w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s1_direct_int8";
-#endif
+    KERNEL_FUNC_NAME("conv_3x3s1_direct_int8")
   } else {
     lite::arm::math::conv_3x3s2_direct_int8(i_data,
                                             o_data,
@@ -159,20 +139,11 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                             param,
                                             &ctx,
                                             w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s2_direct_int8";
-#endif
+    KERNEL_FUNC_NAME("conv_3x3s2_direct_int8")
   }
 }
 
-#ifdef LITE_WITH_PROFILE
-// template <>
-// void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::
-//     SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-//   ch->kernel_func_name = kernel_func_name_;
-// }
 PROFILE_INFO(kInt8, kInt8)
-#endif
 
 template <>
 void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
@@ -212,9 +183,7 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                             param,
                                             &ctx,
                                             w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s1_direct_int8";
-#endif
+    KERNEL_FUNC_NAME("conv_3x3s1_direct_int8")
   } else {
     lite::arm::math::conv_3x3s2_direct_int8(i_data,
                                             o_data,
@@ -230,9 +199,7 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                             param,
                                             &ctx,
                                             w_scale_.data());
-#ifdef LITE_WITH_PROFILE
-    kernel_func_name_ = "conv_3x3s2_direct_int8";
-#endif
+    KERNEL_FUNC_NAME("conv_3x3s2_direct_int8")
   }
 }
 
@@ -263,18 +230,9 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int oc = o_dims[1];
   lite::arm::math::fp16::conv_3x3s2_direct_fp16(
       i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
-#ifdef LITE_WITH_PROFILE
-  kernel_func_name_ = "conv_3x3s2_direct_fp16";
-#endif
+  KERNEL_FUNC_NAME("conv_3x3s2_direct_fp16")
 }
-#ifdef LITE_WITH_PROFILE
-// template <>
-// void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::
-//     SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-//   ch->kernel_func_name = kernel_func_name_;
-// }
 PROFILE_INFO(kFP16, kFP16)
-#endif
 #endif
 }  // namespace arm
 }  // namespace kernels
