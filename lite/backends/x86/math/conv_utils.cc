@@ -561,6 +561,7 @@ void pack_padding8_m256(lite::Tensor* input,
                         lite::Tensor* output,
                         const int channel_num,
                         const std::vector<int>& paddings) {
+  CHECK_EQ(input->dims().size(), 4UL);
   int batch_size = input->dims()[0];
   int input_channel = input->dims()[1];
   int input_height = input->dims()[2];
@@ -574,18 +575,6 @@ void pack_padding8_m256(lite::Tensor* input,
   int bottom = paddings[1];
   int left = paddings[2];
   int right = paddings[3];
-
-  // if (top == 0 && bottom == 0 && left == 0 && right == 0) {
-  //  output->ShareDataWith(*input);
-  //  return;
-  //}
-
-  // input [bs, ic/8, ih, iw, 8]
-  // CHECK_EQ(input->dims().size(), 5UL);
-  // const int batch_size = input->dims()[0];
-  // const int channel_num = input->dims()[1];
-  // const int input_height = input->dims()[2];
-  // const int input_width = input->dims()[3];
 
   // in
   const int kernel_size = input_height * input_width;
@@ -618,12 +607,6 @@ void pack_padding8_m256(lite::Tensor* input,
       const float* r6 = (input_ptr + kernel_size * 6);
       const float* r7 = (input_ptr + kernel_size * 7);
 
-      // #if __AVX__
-      //       int loop_num = kernel_size >> 3;
-      //       int remain = kernel_size & 7;
-      // #else
-      //       int remain = kernel_size;
-      // #endif
       // fill top
       for (int y = 0; y < top_size; ++y) {
         _mm256_storeu_ps(output_data, pad_val);
