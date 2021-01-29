@@ -21,13 +21,13 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <typename T>
-class GatherTreeCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny)> {
+template <typename T, PrecisionType Ptype>
+class GatherNdCompute
+    : public KernelLite<TARGET(kHost), Ptype, DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
-  ~GatherTreeCompute() {}
+  ~GatherNdCompute() {}
 };
 
 }  // namespace host
