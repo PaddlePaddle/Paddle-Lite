@@ -37,7 +37,7 @@ class Timer {
   // unit millisecond
   float getCostTimer() {
     outTime = std::chrono::high_resolution_clock::now();
-    return std::static_cast<float>(
+    return static_cast<float>(
         std::chrono::duration_cast<std::chrono::microseconds>(outTime - inTime)
             .count() /
         1e+3);
