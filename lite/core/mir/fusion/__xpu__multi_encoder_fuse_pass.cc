@@ -76,7 +76,6 @@ class XPUSingleEncoderFuser : public FuseBase {
     if (with_q_scale_) {
       target_op_type = "scale";
     }
-    std::cout << "target_op_type=" << target_op_type << std::endl;
     auto* q_transpose2 = OpNode("q_transpose2", "transpose2")->AsIntermediate();
     auto* q_transpose2_out = VarNode("q_transpose2_out")
                                  ->assert_is_op_output("transpose2", "Out")
