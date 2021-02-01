@@ -257,79 +257,6 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
   return std::shared_ptr<PaddlePredictor>();
 }
 
-ConfigBase::ConfigBase(PowerMode mode, int threads) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Init();
-  lite::DeviceInfo::Global().SetRunMode(mode, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
-}
-
-void ConfigBase::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
-#ifdef LITE_WITH_OPENCL
-  if (paddle::lite_api::IsOpenCLBackendValid()) {
-    opencl_tune_mode_ = tune_mode;
-    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_,
-                                                     lws_repeats);
-#ifdef LITE_WITH_LOG
-    LOG(INFO) << "opencl_tune_mode:"
-              << static_cast<size_t>(
-                     paddle::lite::CLRuntime::Global()->auto_tune());
-#endif
-  }
-#endif
-}
-
-void ConfigBase::set_opencl_precision(CLPrecisionType p) {
-#ifdef LITE_WITH_OPENCL
-  if (paddle::lite_api::IsOpenCLBackendValid()) {
-    opencl_precision_ = p;
-    paddle::lite::CLRuntime::Global()->set_precision(p);
-#ifdef LITE_WITH_LOG
-    LOG(INFO) << "get opencl precision:"
-              << static_cast<size_t>(
-                     paddle::lite::CLRuntime::Global()->get_precision());
-#endif
-  }
-#endif
-}
-
-void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode, threads_);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
-}
-
-void ConfigBase::set_threads(int threads) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetRunMode(mode_, threads);
-  mode_ = lite::DeviceInfo::Global().mode();
-  threads_ = lite::DeviceInfo::Global().threads();
-#endif
-}
-
-#ifdef LITE_WITH_X86
-void ConfigBase::set_x86_math_num_threads(int threads) {
-  x86_math_num_threads_ = threads;
-}
-int ConfigBase::x86_math_num_threads() const { return x86_math_num_threads_; }
-#endif
-
-void ConfigBase::set_subgraph_model_cache_buffers(
-    const std::string &key,
-    const std::vector<char> &cfg,
-    const std::vector<char> &bin) {
-  CHECK(!key.empty());
-  CHECK(!cfg.empty());
-  CHECK(!bin.empty());
-  CHECK_EQ(subgraph_model_cache_buffers_.count(key), 0);
-  subgraph_model_cache_buffers_[key] =
-      std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
-}
-
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
                                size_t program_buffer_size,
                                const char *params_buffer,
@@ -359,144 +286,435 @@ bool CxxModelBuffer::is_empty() const {
   return program_.empty();
 }
 
-const CxxModelBuffer &CxxConfig::get_model_buffer() const {
-  CHECK(model_buffer_) << "Cannot get an empty model buffer.";
-  return *model_buffer_;
-}
+// ConfigBase implementation
+class ConfigBaseImpl {
+ public:
+  bool model_from_memory_{false};
+  std::string model_dir_;
+  int threads_{1};
+  PowerMode mode_{LITE_POWER_NO_BIND};
+  // gpu opencl
+  CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
+  CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
+  // Where to cache the npu/xpu/rknpu/apu offline model to the binary files
+  std::string subgraph_model_cache_dir_{""};
+  // Set the cached npu/xpu/rknpu/apu offline model from the buffers
+  std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
+      subgraph_model_cache_buffers_{};
+  int device_id_{0};
+  int x86_math_num_threads_ = 1;
 
-#ifdef LITE_WITH_MLU
-void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
-  mlu_core_version_ = core_version;
-}
-void CxxConfig::set_mlu_core_number(int core_number) {
-  mlu_core_number_ = core_number;
-}
-void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
-  mlu_input_layout_ = layout;
-}
-void CxxConfig::set_mlu_firstconv_param(const std::vector<float> &mean,
-                                        const std::vector<float> &std) {
-  mlu_first_conv_mean_ = mean;
-  mlu_first_conv_std_ = std;
-}
-lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
-  return mlu_core_version_;
-}
-int CxxConfig::mlu_core_number() const { return mlu_core_number_; }
-DataLayoutType CxxConfig::mlu_input_layout() const { return mlu_input_layout_; }
-std::pair<std::vector<float>, std::vector<float>>
-CxxConfig::mlu_firstconv_param() const {
-  return std::make_pair(mlu_first_conv_mean_, mlu_first_conv_std_);
-}
+  // set Model_dir
+  void set_model_dir(const std::string &x) { model_dir_ = x; }
+  // set Thread
+  void set_threads(int threads) {
+#ifdef LITE_WITH_ARM
+    lite::DeviceInfo::Global().SetRunMode(mode_, threads);
+    mode_ = lite::DeviceInfo::Global().mode();
+    threads_ = lite::DeviceInfo::Global().threads();
 #endif
+  }
+  // set Power_mode
+  void set_power_mode(PowerMode mode) {
+#ifdef LITE_WITH_ARM
+    lite::DeviceInfo::Global().SetRunMode(mode, threads_);
+    mode_ = lite::DeviceInfo::Global().mode();
+    threads_ = lite::DeviceInfo::Global().threads();
+#endif
+  }
+  // set GPU opencl tune
+  void set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
+#ifdef LITE_WITH_OPENCL
+    if (paddle::lite_api::IsOpenCLBackendValid()) {
+      opencl_tune_mode_ = tune_mode;
+      paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_,
+                                                       lws_repeats);
+      LOG(INFO) << "opencl_tune_mode:"
+                << static_cast<size_t>(
+                       paddle::lite::CLRuntime::Global()->auto_tune());
+    }
+#endif
+  }
+  // set GPU opencl precision
+  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO) {
+#ifdef LITE_WITH_OPENCL
+    if (paddle::lite_api::IsOpenCLBackendValid()) {
+      opencl_precision_ = p;
+      paddle::lite::CLRuntime::Global()->set_precision(p);
+      LOG(INFO) << "get opencl precision:"
+                << static_cast<size_t>(
+                       paddle::lite::CLRuntime::Global()->get_precision());
+    }
+#endif
+  }
 
-void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
-#ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::workspace_l3_size_per_thread = l3_size;
+  // set subgraph_model_dir
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
+    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
+  }
+  void set_subgraph_model_cache_buffers(const std::string &key,
+                                        const std::vector<char> &cfg,
+                                        const std::vector<char> &bin) {
+    CHECK(!key.empty());
+    CHECK(!cfg.empty());
+    CHECK(!bin.empty());
+    CHECK_EQ(subgraph_model_cache_buffers_.count(key), 0);
+    subgraph_model_cache_buffers_[key] =
+        std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
+  }
+  // set Device ID
+  void set_device_id(int device_id) { device_id_ = device_id; }
+  // set x86_math_num_threads
+  void set_x86_math_num_threads(int threads) {
+    x86_math_num_threads_ = threads;
+  }
+};
+
+// MpbileConfig implementation
+struct MobileConfig::MobileConfigImpl : ConfigBaseImpl {
+  // model data readed from file or memory buffer in combined format.
+  explicit MobileConfigImpl(PowerMode mode = LITE_POWER_NO_BIND,
+                            int threads = 1) {
+#ifdef LITE_WITH_ARM
+    lite::DeviceInfo::Init();
+    lite::DeviceInfo::Global().SetRunMode(mode, threads);
+    mode_ = lite::DeviceInfo::Global().mode();
+    threads_ = lite::DeviceInfo::Global().threads();
+#endif
+  }
+  std::string lite_model_file_;
+  void set_model_from_file(const std::string &x) { lite_model_file_ = x; }
+  void set_model_from_buffer(const std::string &x) {
+    lite_model_file_ = x;
+    model_from_memory_ = true;
+  }
+  void SetArmL3CacheSize(
+      L3CacheSetMethod method = L3CacheSetMethod::kDeviceL3Cache,
+      int absolute_val = -1) {
+#ifdef LITE_WITH_ARM
+    lite::DeviceInfo::Global().SetArmL3CacheSize(method, absolute_val);
+#endif
+  }
+};
+
+MobileConfig::MobileConfig(PowerMode mode, int threads)
+    : pImpl(new MobileConfigImpl(mode, threads)) {}
+void MobileConfig::set_threads(int threads) { pImpl->set_threads(threads); }
+int MobileConfig::threads() const { return pImpl->threads_; }
+void MobileConfig::set_power_mode(PowerMode mode) {
+  pImpl->set_power_mode(mode);
+}
+PowerMode MobileConfig::power_mode() const { return pImpl->mode_; }
+void MobileConfig::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
+  pImpl->set_opencl_tune(tune_mode, lws_repeats);
+}
+void MobileConfig::set_opencl_precision(CLPrecisionType p) {
+  pImpl->set_opencl_precision(p);
+}
+void MobileConfig::set_subgraph_model_cache_dir(
+    std::string subgraph_model_cache_dir) {
+  pImpl->set_subgraph_model_cache_dir(subgraph_model_cache_dir);
+}
+const std::string &MobileConfig::subgraph_model_cache_dir() const {
+  return pImpl->subgraph_model_cache_dir_;
+}
+void MobileConfig::set_subgraph_model_cache_buffers(
+    const std::string &key,
+    const std::vector<char> &cfg,
+    const std::vector<char> &bin) {
+  return pImpl->set_subgraph_model_cache_buffers(key, cfg, bin);
+}
+const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
+    &MobileConfig::subgraph_model_cache_buffers() const {
+  return pImpl->subgraph_model_cache_buffers_;
+}
+void MobileConfig::set_device_id(int device_id) {
+  pImpl->set_device_id(device_id);
+}
+int MobileConfig::get_device_id() const { return pImpl->device_id_; }
+void MobileConfig::set_model_from_file(const std::string &x) {
+  pImpl->set_model_from_file(x);
+}
+void MobileConfig::set_model_from_buffer(const std::string &x) {
+  return pImpl->set_model_from_buffer(x);
+}
+const std::string &MobileConfig::lite_model_file() const {
+  return pImpl->lite_model_file_;
+}
+bool MobileConfig::is_model_from_memory() const {
+  return pImpl->model_from_memory_;
+}
+void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
+                                     int absolute_val) {
+  pImpl->SetArmL3CacheSize(method, absolute_val);
+}
+
+// CxxConfig implementation
+struct CxxConfig::CxxConfigImpl : ConfigBaseImpl {
+  explicit CxxConfigImpl(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1) {
+#ifdef LITE_WITH_ARM
+    lite::DeviceInfo::Init();
+    lite::DeviceInfo::Global().SetRunMode(mode, threads);
+    mode_ = lite::DeviceInfo::Global().mode();
+    threads_ = lite::DeviceInfo::Global().threads();
+#endif
+  }
+  std::vector<Place> valid_places_;
+  std::string model_file_;
+  std::string param_file_;
+  std::shared_ptr<CxxModelBuffer> model_buffer_{nullptr};
+  std::vector<std::string> passes_internal_{};
+  bool quant_model_{false};  // Enable post_quant_dynamic in opt
+  QuantType quant_type_{QuantType::QUANT_INT16};
+  std::map<int, std::vector<std::shared_ptr<void>>>
+      preferred_inputs_for_warmup_;
+  bool multi_stream_{false};
+  lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
+  int mlu_core_number_{1};
+  DataLayoutType mlu_input_layout_{DATALAYOUT(kNCHW)};
+  std::vector<float> mlu_first_conv_mean_{};
+  std::vector<float> mlu_first_conv_std_{};
+
+  void set_valid_places(const std::vector<Place> &x) { valid_places_ = x; }
+  void set_model_file(const std::string &path) { model_file_ = path; }
+  void set_param_file(const std::string &path) { param_file_ = path; }
+  void set_model_buffer(const char *model_buffer,
+                        size_t model_buffer_size,
+                        const char *param_buffer,
+                        size_t param_buffer_size) {
+    model_from_memory_ = true;
+    model_buffer_.reset(new CxxModelBuffer(
+        model_buffer, model_buffer_size, param_buffer, param_buffer_size));
+  }
+  void set_model_buffer(std::shared_ptr<CxxModelBuffer> model_buffer) {
+    model_buffer_ = model_buffer;
+    model_from_memory_ = true;
+  }
+  void set_passes_internal(
+      const std::vector<std::string> &passes_internal = {}) {
+    passes_internal_ = passes_internal;
+  }
+  void set_multi_stream(bool multi_stream) {
+#ifdef LITE_WITH_CUDA
+    multi_stream_ = multi_stream;
 #else
-  LOG(WARNING) << "The invoking of the function "
+    LOG(FATAL) << "set_multi_stream() is not supported.";
+#endif
+  }
+  void set_quant_model(bool quant_model) { quant_model_ = quant_model; }
+  void set_quant_type(QuantType quant_type) { quant_type_ = quant_type; }
+  template <class T>
+  void set_preferred_inputs_for_warmup(const int group_idx,
+                                       const int tensor_idx,
+                                       const shape_t &shape,
+                                       const lod_t &lod = {},
+                                       const T fill_value = 0,
+                                       const void *data = nullptr) {
+    if (preferred_inputs_for_warmup_.count(group_idx) == 0) {
+      preferred_inputs_for_warmup_[group_idx] =
+          std::vector<std::shared_ptr<void>>{};
+    }
+    auto &input_tensors = preferred_inputs_for_warmup_[group_idx];
+    while (input_tensors.size() < tensor_idx + 1) {
+      std::shared_ptr<void> input_tensor(
+          static_cast<void *>(new lite::Tensor),
+          [](void *x) { delete static_cast<lite::Tensor *>(x); });
+      input_tensors.emplace_back(input_tensor);
+    }
+
+    auto input_tensor =
+        static_cast<lite::Tensor *>(input_tensors[tensor_idx].get());
+    input_tensor->Resize(shape);
+    input_tensor->set_lod(lod);
+    auto input_data = input_tensor->mutable_data<T>();
+    int64_t size = std::accumulate(
+        shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
+    if (data != nullptr) {
+      memcpy(input_data, data, sizeof(T) * size);
+    } else {
+      for (int64_t i = 0; i < size; i++) {
+        input_data[i] = fill_value;
+      }
+    }
+  }
+
+  void set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
+#ifdef LITE_WITH_MLU
+    mlu_core_version_ = core_version;
+#else
+    LOG(FATAL) << "set_mlu_core_version() is not supported.";
+#endif
+  }
+  void set_mlu_core_number(int core_number) {
+#ifdef LITE_WITH_MLU
+    mlu_core_number_ = core_number;
+#else
+    LOG(FATAL) << "set_mlu_core_number() is not supported";
+#endif
+  }
+  void set_mlu_firstconv_param(const std::vector<float> &mean,
+                               const std::vector<float> &std) {
+#ifdef LITE_WITH_MLU
+    mlu_first_conv_mean_ = mean;
+    mlu_first_conv_std_ = std;
+#else
+    LOG(FATAL) << "set_mlu_firstconv_param is not supported";
+#endif
+  }
+  void set_mlu_input_layout(DataLayoutType layout) {
+#ifdef LITE_WITH_MLU
+    mlu_input_layout_ = layout;
+#else
+    LOG(FATAL) << "set_mlu_input_layout is not supported";
+#endif
+  }
+  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00) {
+#ifdef LITE_WITH_XPU
+    lite::TargetWrapperXPU::workspace_l3_size_per_thread = l3_size;
+#else
+    LOG(FATAL) << "The invoking of the function "
                   "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
                   "rebuild it with LITE_WITH_XPU=ON.";
 #endif
-}
-
-void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
+  }
+  void set_xpu_dev_per_thread(int dev_no = 0) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::SetDev(dev_no);
+    lite::TargetWrapperXPU::SetDev(dev_no);
 #else
-  LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
+    LOG(FATAL) << "The invoking of the function 'set_xpu_dev_per_thread' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
 #endif
-}
-
-void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
+  }
+  void set_xpu_multi_encoder_precision(const std::string &precision = "int16") {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::multi_encoder_precision = precision;
+    lite::TargetWrapperXPU::multi_encoder_precision = precision;
 #else
-  LOG(WARNING) << "The invoking of the function "
+    LOG(FATAL) << "The invoking of the function "
                   "'set_xpu_multi_encoder_precision' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
 #endif
-}
-
-template <class T>
-void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
-                                                const int tensor_idx,
-                                                const shape_t &shape,
-                                                const lod_t &lod,
-                                                const T fill_value,
-                                                const void *data) {
-  if (preferred_inputs_for_warmup_.count(group_idx) == 0) {
-    preferred_inputs_for_warmup_[group_idx] =
-        std::vector<std::shared_ptr<void>>{};
   }
-  auto &input_tensors = preferred_inputs_for_warmup_[group_idx];
-  while (input_tensors.size() < tensor_idx + 1) {
-    std::shared_ptr<void> input_tensor(
-        static_cast<void *>(new lite::Tensor),
-        [](void *x) { delete static_cast<lite::Tensor *>(x); });
-    input_tensors.emplace_back(input_tensor);
-  }
+};
 
-  auto input_tensor =
-      static_cast<lite::Tensor *>(input_tensors[tensor_idx].get());
-  input_tensor->Resize(shape);
-  input_tensor->set_lod(lod);
-  auto input_data = input_tensor->mutable_data<T>();
-  int64_t size = std::accumulate(
-      shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
-  if (data != nullptr) {
-    memcpy(input_data, data, sizeof(T) * size);
-  } else {
-    for (int64_t i = 0; i < size; i++) {
-      input_data[i] = fill_value;
-    }
-  }
+CxxConfig::CxxConfig(PowerMode mode, int threads)
+    : pImpl(new CxxConfigImpl(mode, threads)) {}
+void CxxConfig::set_threads(int threads) { pImpl->set_threads(threads); }
+int CxxConfig::threads() const { return pImpl->threads_; }
+void CxxConfig::set_power_mode(PowerMode mode) { pImpl->set_power_mode(mode); }
+PowerMode CxxConfig::power_mode() const { return pImpl->mode_; }
+void CxxConfig::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
+  pImpl->set_opencl_tune(tune_mode, lws_repeats);
 }
-
-#define _SetPreferredInputsForWarmup(dtype)                        \
-  template void CxxConfig::set_preferred_inputs_for_warmup<dtype>( \
-      const int group_idx,                                         \
-      const int tensor_idx,                                        \
-      const shape_t &shape,                                        \
-      const lod_t &lod,                                            \
-      const dtype fill_value,                                      \
-      const void *data);
-
-_SetPreferredInputsForWarmup(float);
-_SetPreferredInputsForWarmup(double);
-_SetPreferredInputsForWarmup(int32_t);
-_SetPreferredInputsForWarmup(int64_t);
-#undef _SetPreferredInputsForWarmup
-
-// set model data in combined format, `set_model_from_file` refers to loading
-// model from file, set_model_from_buffer refers to loading model from memory
-// buffer
-void MobileConfig::set_model_from_file(const std::string &x) {
-  lite_model_file_ = x;
+void CxxConfig::set_opencl_precision(CLPrecisionType p) {
+  pImpl->set_opencl_precision(p);
 }
-void MobileConfig::set_model_from_buffer(const std::string &x) {
-  lite_model_file_ = x;
-  model_from_memory_ = true;
+void CxxConfig::set_subgraph_model_cache_dir(
+    std::string subgraph_model_cache_dir) {
+  pImpl->set_subgraph_model_cache_dir(subgraph_model_cache_dir);
 }
-void MobileConfig::set_model_buffer(const char *model_buffer,
-                                    size_t model_buffer_size,
-                                    const char *param_buffer,
-                                    size_t param_buffer_size) {
-  LOG(WARNING) << "warning: `set_model_buffer` will be abandened in "
-                  "release/v3.0.0, new method `set_model_from_buffer(const "
-                  "std::string &x)` is recommended.";
-  model_buffer_ = std::string(model_buffer, model_buffer + model_buffer_size);
-  param_buffer_ = std::string(param_buffer, param_buffer + param_buffer_size);
-  model_from_memory_ = true;
+const std::string &CxxConfig::subgraph_model_cache_dir() const {
+  return pImpl->subgraph_model_cache_dir_;
 }
-
-// This is the method for allocating workspace_size according to L3Cache size
-void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
-                                     int absolute_val) {
-#ifdef LITE_WITH_ARM
-  lite::DeviceInfo::Global().SetArmL3CacheSize(method, absolute_val);
+void CxxConfig::set_subgraph_model_cache_buffers(const std::string &key,
+                                                 const std::vector<char> &cfg,
+                                                 const std::vector<char> &bin) {
+  return pImpl->set_subgraph_model_cache_buffers(key, cfg, bin);
+}
+const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
+    &CxxConfig::subgraph_model_cache_buffers() const {
+  return pImpl->subgraph_model_cache_buffers_;
+}
+void CxxConfig::set_device_id(int device_id) {
+  pImpl->set_device_id(device_id);
+}
+void CxxConfig::set_model_dir(const std::string &x) { pImpl->set_model_dir(x); }
+const std::string &CxxConfig::model_dir() const { return pImpl->model_dir_; }
+void CxxConfig::set_valid_places(const std::vector<Place> &x) {
+  pImpl->set_valid_places(x);
+}
+void CxxConfig::set_model_file(const std::string &path) {
+  pImpl->set_model_file(path);
+}
+void CxxConfig::set_param_file(const std::string &path) {
+  pImpl->set_param_file(path);
+}
+void CxxConfig::set_model_buffer(const char *model_buffer,
+                                 size_t model_buffer_size,
+                                 const char *param_buffer,
+                                 size_t param_buffer_size) {
+  pImpl->set_model_buffer(
+      model_buffer, model_buffer_size, param_buffer, param_buffer_size);
+}
+void CxxConfig::set_model_buffer(std::shared_ptr<CxxModelBuffer> model_buffer) {
+  pImpl->set_model_buffer(model_buffer);
+}
+const CxxModelBuffer &CxxConfig::get_model_buffer() const {
+  return *(pImpl->model_buffer_);
+}
+void CxxConfig::set_passes_internal(
+    const std::vector<std::string> &passes_internal) {
+  pImpl->set_passes_internal(passes_internal);
+}
+const std::vector<std::string> &CxxConfig::get_passes_internal() const {
+  return pImpl->passes_internal_;
+}
+const std::vector<Place> &CxxConfig::valid_places() const {
+  return pImpl->valid_places_;
+}
+std::string CxxConfig::model_file() const { return pImpl->model_file_; }
+std::string CxxConfig::param_file() const { return pImpl->param_file_; }
+bool CxxConfig::is_model_from_memory() const {
+  return pImpl->model_from_memory_;
+}
+bool CxxConfig::model_from_memory() const { return pImpl->model_from_memory_; }
+void CxxConfig::set_multi_stream(bool multi_stream) {
+  pImpl->set_multi_stream(multi_stream);
+}
+bool CxxConfig::multi_stream() const {
+#ifndef LITE_WITH_CUDA
+  LOG(FATAL) << "Not supported!";
 #endif
+  return pImpl->multi_stream_;
+}
+void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
+  pImpl->set_mlu_core_version(core_version);
+}
+void CxxConfig::set_mlu_core_number(int core_number) {
+  pImpl->set_mlu_core_number(core_number);
+}
+
+void CxxConfig::set_mlu_firstconv_param(const std::vector<float> &mean,
+                                        const std::vector<float> &std) {
+  pImpl->set_mlu_firstconv_param(mean, std);
+}
+void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
+  return pImpl->set_mlu_input_layout(layout);
+}
+lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
+#ifndef LITE_WITH_MLU
+  LOG(FATAL) << "Not supported";
+#endif
+  return pImpl->mlu_core_version_;
+}
+int CxxConfig::mlu_core_number() const {
+#ifndef LITE_WITH_MLU
+  LOG(FATAL) << "Not supported";
+#endif
+  return pImpl->mlu_core_number_;
+}
+DataLayoutType CxxConfig::mlu_input_layout() const {
+#ifndef LITE_WITH_MLU
+  LOG(FATAL) << "Not supported";
+#endif
+  return pImpl->mlu_input_layout_;
+}
+std::pair<std::vector<float>, std::vector<float>>
+CxxConfig::mlu_firstconv_param() const {
+#ifndef LITE_WITH_MLU
+  LOG(FATAL) << "Not supported";
+#endif
+  return std::make_pair(pImpl->mlu_first_conv_mean_,
+                        pImpl->mlu_first_conv_std_);
 }
 
 }  // namespace lite_api

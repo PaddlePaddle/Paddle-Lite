@@ -48,9 +48,7 @@ LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = false);
 struct LITE_API Tensor {
   explicit Tensor(void* raw);
   explicit Tensor(const void* raw);
-
   void Resize(const shape_t& shape);
-
   /// Readonly data.
   template <typename T>
   const T* data() const;
@@ -135,60 +133,6 @@ class LITE_API PaddlePredictor {
   lite_api::PowerMode mode_{lite_api::LITE_POWER_NO_BIND};
 };
 
-/// Base class for all the configs.
-class LITE_API ConfigBase {
-  std::string model_dir_;
-  int threads_{1};
-  PowerMode mode_{LITE_POWER_NO_BIND};
-  // gpu opencl
-  CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
-  CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
-  // Where to cache the npu/xpu/rknpu/apu offline model to the binary files
-  std::string subgraph_model_cache_dir_{""};
-  // Set the cached npu/xpu/rknpu/apu offline model from the buffers
-  std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>
-      subgraph_model_cache_buffers_{};
-  int device_id_{0};
-  int x86_math_num_threads_ = 1;
-
- public:
-  explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
-  // set Model_dir
-  void set_model_dir(const std::string& x) { model_dir_ = x; }
-  const std::string& model_dir() const { return model_dir_; }
-  // set Thread
-  void set_threads(int threads);
-  int threads() const { return threads_; }
-  // set Power_mode
-  void set_power_mode(PowerMode mode);
-  PowerMode power_mode() const { return mode_; }
-  // set GPU opencl tune
-  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
-                       size_t lws_repeats = 4);
-  // set GPU opencl precision
-  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
-  // set subgraph_model_dir
-  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir) {
-    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
-  }
-  const std::string& subgraph_model_cache_dir() const {
-    return subgraph_model_cache_dir_;
-  }
-  void set_subgraph_model_cache_buffers(const std::string& key,
-                                        const std::vector<char>& cfg,
-                                        const std::vector<char>& bin);
-  const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>&
-  subgraph_model_cache_buffers() const {
-    return subgraph_model_cache_buffers_;
-  }
-  // set Device ID
-  void set_device_id(int device_id) { device_id_ = device_id; }
-  int get_device_id() const { return device_id_; }
-  // set x86_math_num_threads
-  void set_x86_math_num_threads(int threads);
-  int x86_math_num_threads() const;
-};
-
 class LITE_API CxxModelBuffer {
  public:
   CxxModelBuffer(const char* program_buffer,
@@ -209,67 +153,67 @@ class LITE_API CxxModelBuffer {
 };
 
 /// CxxConfig is the config for the Full feature predictor.
-class LITE_API CxxConfig : public ConfigBase {
-  std::vector<Place> valid_places_;
-  std::string model_file_;
-  std::string param_file_;
-  std::shared_ptr<CxxModelBuffer> model_buffer_{nullptr};
-  std::vector<std::string> passes_internal_{};
-  bool quant_model_{false};  // Enable post_quant_dynamic in opt
-  QuantType quant_type_{QuantType::QUANT_INT16};
-  std::map<int, std::vector<std::shared_ptr<void>>>
-      preferred_inputs_for_warmup_;
-#ifdef LITE_WITH_CUDA
-  bool multi_stream_{false};
-#endif
-#ifdef LITE_WITH_MLU
-  lite_api::MLUCoreVersion mlu_core_version_{lite_api::MLUCoreVersion::MLU_270};
-  int mlu_core_number_{1};
-  DataLayoutType mlu_input_layout_{DATALAYOUT(kNCHW)};
-  std::vector<float> mlu_first_conv_mean_{};
-  std::vector<float> mlu_first_conv_std_{};
-#endif
-
+class LITE_API CxxConfig {
  public:
-  void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
-  void set_model_file(const std::string& path) { model_file_ = path; }
-  void set_param_file(const std::string& path) { param_file_ = path; }
+  explicit CxxConfig(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
+  ///////////////////////////////////////////////////////////////////////////////////////
+  // Basics
+  // set Thread
+  void set_threads(int threads);
+  int threads() const;
+  // set Power_mode
+  void set_power_mode(PowerMode mode);
+  PowerMode power_mode() const;
+  // set GPU opencl tune
+  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
+                       size_t lws_repeats = 4);
+  // set GPU opencl precision
+  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
+  // set subgraph_model_dir
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir);
+  const std::string& subgraph_model_cache_dir() const;
+  void set_subgraph_model_cache_buffers(const std::string& key,
+                                        const std::vector<char>& cfg,
+                                        const std::vector<char>& bin);
+  const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>&
+  subgraph_model_cache_buffers() const;
+  // set Device ID
+  void set_device_id(int device_id);
+  int get_device_id() const;
+  // set x86_math_num_threads
+  void set_x86_math_num_threads(int threads);
+  int x86_math_num_threads() const;
+  ///////////////////////////////////////////////////////////////////////////////////////
+  // set Model_dir
+  void set_model_dir(const std::string& x);
+  const std::string& model_dir() const;
+  void set_valid_places(const std::vector<Place>& x);
+  void set_model_file(const std::string& path);
+  void set_param_file(const std::string& path);
   void set_model_buffer(const char* model_buffer,
                         size_t model_buffer_size,
                         const char* param_buffer,
-                        size_t param_buffer_size) {
-    model_buffer_.reset(new CxxModelBuffer(
-        model_buffer, model_buffer_size, param_buffer, param_buffer_size));
-  }
-  void set_model_buffer(std::shared_ptr<CxxModelBuffer> model_buffer) {
-    model_buffer_ = model_buffer;
-  }
+                        size_t param_buffer_size);
+  void set_model_buffer(std::shared_ptr<CxxModelBuffer> model_buffer);
   const CxxModelBuffer& get_model_buffer() const;
   // internal inference to choose passes for model optimizing,
   // it's designed for internal developer and not recommanded
   // for comman users.
   void set_passes_internal(
-      const std::vector<std::string>& passes_internal = {}) {
-    passes_internal_ = passes_internal;
-  }
-  const std::vector<std::string>& get_passes_internal() const {
-    return passes_internal_;
-  }
-  const std::vector<Place>& valid_places() const { return valid_places_; }
-  std::string model_file() const { return model_file_; }
-  std::string param_file() const { return param_file_; }
-  bool is_model_from_memory() const { return static_cast<bool>(model_buffer_); }
+      const std::vector<std::string>& passes_internal = {});
+  const std::vector<std::string>& get_passes_internal() const;
+  const std::vector<Place>& valid_places() const;
+  std::string model_file() const;
+  std::string param_file() const;
+  bool is_model_from_memory() const;
   // note: `model_from_memory` has the same effect as `is_model_from_memory`,
   // but is_model_from_memory is recommended and `model_from_memory` will be
   // abandoned in v3.0.
-  bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
+  bool model_from_memory() const;
 
-#ifdef LITE_WITH_CUDA
-  void set_multi_stream(bool multi_stream) { multi_stream_ = multi_stream; }
-  bool multi_stream() const { return multi_stream_; }
-#endif
+  void set_multi_stream(bool multi_stream);
+  bool multi_stream() const;
 
-#ifdef LITE_WITH_MLU
   // set MLU core version, which is used when compiling MLU kernels
   void set_mlu_core_version(lite_api::MLUCoreVersion core_version);
   // set MLU core number, which is used when compiling MLU kernels
@@ -290,7 +234,6 @@ class LITE_API CxxConfig : public ConfigBase {
   DataLayoutType mlu_input_layout() const;
   // std::pair<mean, std>
   std::pair<std::vector<float>, std::vector<float>> mlu_firstconv_param() const;
-#endif
 
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
@@ -312,63 +255,65 @@ class LITE_API CxxConfig : public ConfigBase {
                                        const T fill_value = 0,
                                        const void* data = nullptr);
   const std::map<int, std::vector<std::shared_ptr<void>>>&
-  preferred_inputs_for_warmup() const {
-    return preferred_inputs_for_warmup_;
-  }
+  preferred_inputs_for_warmup() const;
 
-  void set_quant_model(bool quant_model) { quant_model_ = quant_model; }
-  bool quant_model() const { return quant_model_; }
-  void set_quant_type(QuantType quant_type) { quant_type_ = quant_type; }
-  QuantType quant_type() const { return quant_type_; }
+  void set_quant_model(bool quant_model);
+  bool quant_model() const;
+  void set_quant_type(QuantType quant_type);
+  QuantType quant_type() const;
+
+ private:
+  class CxxConfigImpl;
+  std::unique_ptr<CxxConfigImpl> pImpl;
 };
 
-/// MobileConfig is the config for the light weight predictor, it will skip
-/// IR optimization or other unnecessary stages.
-class LITE_API MobileConfig : public ConfigBase {
-  // whether to load data from memory. Model data will be loaded from memory
-  // buffer if model_from_memory_ is true.
-  bool model_from_memory_{false};
-
-  // model data readed from file or memory buffer in combined format.
-  std::string lite_model_file_;
-
-  // NOTE: This is a deprecated variable and will be removed in latter release.
-  std::string model_buffer_;
-  std::string param_buffer_;
-
+/// MobileConfig is the config for light weight predictor (ARM platform)
+class LITE_API MobileConfig {
  public:
-  // set model data in combined format, `set_model_from_file` refers to loading
-  // model from file, set_model_from_buffer refers to loading model from memory
-  // buffer
+  explicit MobileConfig(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
+  ///////////////////////////////////////////////////////////////////////////////////////
+  // Basics
+  // set Thread
+  void set_threads(int threads);
+  int threads() const;
+  // set Power_mode
+  void set_power_mode(PowerMode mode);
+  PowerMode power_mode() const;
+  // set GPU opencl tune
+  void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
+                       size_t lws_repeats = 4);
+  // set GPU opencl precision
+  void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
+  // set subgraph_model_dir
+  void set_subgraph_model_cache_dir(std::string subgraph_model_cache_dir);
+  const std::string& subgraph_model_cache_dir() const;
+  void set_subgraph_model_cache_buffers(const std::string& key,
+                                        const std::vector<char>& cfg,
+                                        const std::vector<char>& bin);
+  const std::map<std::string, std::pair<std::vector<char>, std::vector<char>>>&
+  subgraph_model_cache_buffers() const;
+  // set Device ID
+  void set_device_id(int device_id);
+  int get_device_id() const;
+  // set x86_math_num_threads
+  void set_x86_math_num_threads(int threads);
+  int x86_math_num_threads() const;
+  ///////////////////////////////////////////////////////////////////////////////////////
+
+  // Load model from file or memory
   void set_model_from_file(const std::string& x);
   void set_model_from_buffer(const std::string& x);
-  // return model data in lite_model_file_, which is in combined format.
-  const std::string& lite_model_file() const { return lite_model_file_; }
+  const std::string& lite_model_file() const;
+  bool is_model_from_memory() const;
 
-  // return model_from_memory_, which indicates whether to load model from
-  // memory buffer.
-  bool is_model_from_memory() const { return model_from_memory_; }
-  // note: `model_from_memory` has the same effect as `is_model_from_memory`,
-  // but is_model_from_memory is recommended and `model_from_memory` will be
-  // abandoned in v3.0.
-  bool model_from_memory() const { return model_from_memory_; }
-
-  // NOTE: This is a deprecated API and will be removed in latter release.
-  void set_model_buffer(const char* model_buffer,
-                        size_t model_buffer_size,
-                        const char* param_buffer,
-                        size_t param_buffer_size);
-
-  // NOTE: This is a deprecated API and will be removed in latter release.
-  const std::string& model_buffer() const { return model_buffer_; }
-
-  // NOTE: This is a deprecated API and will be removed in latter release.
-  const std::string& param_buffer() const { return param_buffer_; }
-
-  // This is the method for allocating workspace_size according to L3Cache size
+  // Modify L3Cache
   void SetArmL3CacheSize(
       L3CacheSetMethod method = L3CacheSetMethod::kDeviceL3Cache,
       int absolute_val = -1);
+
+ private:
+  class MobileConfigImpl;
+  std::unique_ptr<MobileConfigImpl> pImpl;
 };
 
 template <typename ConfigT>
