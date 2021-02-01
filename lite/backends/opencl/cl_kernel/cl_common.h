@@ -128,6 +128,13 @@ inline CL_DTYPE activation(CL_DTYPE in
            in / (CL_DTYPE)ACT_SCALE;
 #endif
 
+#ifdef HARD_SIGMOID
+  output =
+      clamp(in * (CL_DTYPE)HARD_SIGMOID_SLOPE + (CL_DTYPE)HARD_SIGMOID_OFFSET,
+            (CL_DTYPE)0.0,
+            (CL_DTYPE)1.0);
+#endif
+
   return output;
 }
 
@@ -167,5 +174,25 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
            in / (CL_DTYPE4)ACT_SCALE;
 #endif
 
+#ifdef HARD_SIGMOID
+  output =
+      clamp(in * (CL_DTYPE4)HARD_SIGMOID_SLOPE + (CL_DTYPE4)HARD_SIGMOID_OFFSET,
+            (CL_DTYPE4)0.0,
+            (CL_DTYPE4)1.0);
+#endif
+
   return output;
+}
+
+// fuse scale for Elementwise ops
+inline CL_DTYPE4 fuse_scale(CL_DTYPE4 in,
+                            __private float scale,
+                            __private float bias,
+                            __private float alpha) {
+  CL_DTYPE4 out =
+      CONVERT_TYPE_TO(scale, CL_DTYPE) * in + CONVERT_TYPE_TO(bias, CL_DTYPE);
+#ifdef FUSE_SCALE_RELU6
+  out = clamp(out, (CL_DTYPE4)(0.f), (CL_DTYPE4)(/*alpha=*/6.f));
+#endif
+  return out;
 }

@@ -31,28 +31,24 @@ void UnstackCompute::Run() {
   if (axis < 0) {
     axis += in_dim.size();
   }
-  int num = param.num;
-
   int height = 1;
   for (int i = 0; i < axis; i++) {
     height = height * in_dim[i];
   }
-
+  int width = param.X->numel() / height;
   std::vector<float*> out_ptrs;
   std::vector<int> width_out;
-
   for (auto out : dout) {
     out->set_lod(param.X->lod());
     out_ptrs.push_back(out->mutable_data<float>(TARGET(kXPU)));
     width_out.push_back(out->numel() / height);
   }
-
-  int r = xdnn::concat_grad(ctx.GetRawContext(),
-                            height,
-                            width_out.data(),
-                            num,
-                            out_ptrs.data(),
-                            param.X->data<float>());
+  int r = xdnn::split<float>(ctx.GetRawContext(),
+                             param.X->data<float>(),
+                             out_ptrs,
+                             {height, width},
+                             width_out,
+                             1);
   CHECK_EQ(r, 0);
 }
 

@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-class GRUCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType Ptype>
+class GRUCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   using param_t = operators::GRUParam;
 

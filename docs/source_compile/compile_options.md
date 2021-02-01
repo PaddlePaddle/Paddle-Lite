@@ -38,6 +38,7 @@
 | LITE_WITH_ARM_CLANG | 使用clang编译ARM平台预测库 | Andriod / ARMLinux |OFF |
 | WITH_ARM_DOTPROD |  编译ARM点积指令优化的预测库 | Andriod / ARMLinux |ON |
 | LITE_WITH_CV |  编译[CV图像加速库](../api_reference/cv.html) | Andirod / ARMLinux |OFF |
+| ANDROID_API_LEVEL | 设置安卓API LEVEL | Android | Default，即ARMv7下为16，ARMv8下为21 |
 | LITE_WITH_OPENMP |  编译时打开OpenMP | ARMLinux / X86 | ON |
 | LITE_WITH_X86 |  编译[X86平台](../demo_guides/x86.html)预测库 | X86 | ON |
 | WITH_AVX |  编译有AVX指令优化的预测库 | X86 |ON IF ${AVX_FOUND} |

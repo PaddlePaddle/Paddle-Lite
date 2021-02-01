@@ -40,6 +40,7 @@ else()
   add_kernel(split_compute_xpu XPU basic SRCS split_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(roi_align_compute_xpu XPU basic SRCS roi_align_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(clip_compute_xpu XPU basic SRCS clip_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(instance_norm_compute_xpu XPU basic SRCS instance_norm_compute.cc DEPS ${lite_kernel_deps})
 
   # extra
   add_kernel(lookup_table_compute_xpu XPU extra SRCS lookup_table_compute.cc DEPS ${lite_kernel_deps})
@@ -73,4 +74,5 @@ else()
   add_kernel(__xpu__conv2d_compute_xpu XPU extra SRCS __xpu__conv2d_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(__xpu__sfa_head_compute_xpu XPU extra SRCS __xpu__sfa_head_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(__xpu__softmax_topk_compute_xpu XPU extra SRCS __xpu__softmax_topk_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(__xpu__generate_sequence_compute_xpu XPU extra SRCS __xpu__generate_sequence_compute.cc DEPS ${lite_kernel_deps})
 endif()
