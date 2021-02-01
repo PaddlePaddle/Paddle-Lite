@@ -40,8 +40,8 @@ class BatchnormPE : public PE {
     auto variance_data = param_.variance->data<float>();
     auto scale_data = param_.scale->data<float>();
     auto bias_data = param_.bias->data<float>();
-    auto new_scale_ptr = scale_->mutableData<zynqmp::float16>(FP16, shape);
-    auto new_bias_ptr = bias_->mutableData<zynqmp::float16>(FP16, shape);
+    auto new_scale_ptr = scale_.mutableData<zynqmp::float16>(FP16, shape);
+    auto new_bias_ptr = bias_.mutableData<zynqmp::float16>(FP16, shape);
 
     float epsilon = param_.epsilon;
 
@@ -58,70 +58,32 @@ class BatchnormPE : public PE {
       new_bias_ptr[c] = zynqmp::float_to_half(bias_value);
     }
 
-    scale_->flush();
-    bias_->flush();
+    scale_.flush();
+    bias_.flush();
 
-    scale_param.scale = scale_;
-    scale_param.bias = bias_;
+    scale_param.scale = &scale_;
+    scale_param.bias = &bias_;
     scale_param.activeParam.type = param_.activeParam.type;
-
     scalePE_.init();
-
-    inplace_.power_enable = false;
-    inplace_.normalize_enable = false;
-
     return true;
   }
 
   void apply() { scalePE_.apply(); }
 
-  bool dispatch() {
-    if (param_.activeParam.type == TYPE_RELU) {
-      inplace_.relu_enable = true;
-    } else if (param_.activeParam.type == TYPE_RELU6) {
-      inplace_.relu6_enable = true;
-    } else if (param_.activeParam.type == TYPE_SIGMOID) {
-      inplace_.sigmoid_enable = true;
-    } else if (param_.activeParam.type == TYPE_LEAKY_RELU) {
-      inplace_.leaky_relu_enable = true;
-    }
-
-    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
-        inplace_.relu6_enable || inplace_.sigmoid_enable) {
-      config_inplace(inplace_);
-    }
-
-    ScaleParam& scale_param = scalePE_.param();
-    float16* input = scale_param.input->mutableData<float16>();
-
-    bool ret = scalePE_.dispatch();
-    // bool ret = cpu_compute();
-    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
-        inplace_.relu6_enable || inplace_.sigmoid_enable) {
-      inplace_.relu_enable = false;
-      inplace_.leaky_relu_enable = false;
-      inplace_.relu6_enable = false;
-      inplace_.sigmoid_enable = false;
-      config_inplace(inplace_);
-    }
-    return ret;
-  }
+  bool dispatch() { return scalePE_.dispatch(); }
 
   BatchnormParam& param() { return param_; }
 
   ~BatchnormPE() {
     scalePE_.param().input = nullptr;
     scalePE_.param().output = nullptr;
-    delete scale_;
-    delete bias_;
   }
 
  private:
   BatchnormParam param_;
   ScalePE scalePE_;
-  InplaceArgs inplace_ = {0};
-  Tensor* scale_ = new Tensor();
-  Tensor* bias_ = new Tensor();
+  Tensor scale_;
+  Tensor bias_;
 };
 }  // namespace zynqmp
 }  // namespace paddle

@@ -114,37 +114,15 @@ class DepthwiseConvPE : public PE {
     args.out_width = param.output->shape().width();
     args.out_height = param.output->shape().height();
     args.sub_conv_num = 1;
+    args.inplace.active_param.type = param_.activeParam.type;
+    args.inplace.active_param.leaky_relu_factor =
+        float_to_half(param_.activeParam.leaky_relu_factor);
     param.args = args;
-    inplace_.power_enable = false;
-    inplace_.normalize_enable = false;
   }
 
   bool dispatch() {
     param_.input->syncToDevice();
-    if (param_.activeParam.type == TYPE_RELU) {
-      inplace_.relu_enable = true;
-    } else if (param_.activeParam.type == TYPE_RELU6) {
-      inplace_.relu6_enable = true;
-    } else if (param_.activeParam.type == TYPE_SIGMOID) {
-      inplace_.sigmoid_enable = true;
-    } else if (param_.activeParam.type == TYPE_LEAKY_RELU) {
-      inplace_.leaky_relu_enable = true;
-    }
-
-    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
-        inplace_.relu6_enable || inplace_.sigmoid_enable) {
-      config_inplace(inplace_);
-    }
-    bool ret = compute_fpga_dwconv(param_.args) == 0;
-    if (inplace_.relu_enable || inplace_.leaky_relu_enable ||
-        inplace_.relu6_enable || inplace_.sigmoid_enable) {
-      inplace_.relu_enable = false;
-      inplace_.leaky_relu_enable = false;
-      inplace_.relu6_enable = false;
-      inplace_.sigmoid_enable = false;
-      config_inplace(inplace_);
-    }
-    return ret;
+    return compute_fpga_dwconv(param_.args) == 0;
   }
 
   DepthwiseConvParam& param() { return param_; }
@@ -152,7 +130,6 @@ class DepthwiseConvPE : public PE {
  private:
   DepthwiseConvParam param_;
   Tensor bias_;
-  InplaceArgs inplace_ = {0};
 };
 
 }  // namespace zynqmp

@@ -87,6 +87,14 @@ class PoolingSplitPE : public PE {
 
       ConcatParam& concat_param = concatPE_.param();
       for (auto pooling_param : splitParams_) {
+        pooling_param->poolingArgs.inplace.active_param.type =
+            param_.activeParam.type;
+        pooling_param->poolingArgs.inplace.active_param.leaky_relu_factor =
+            float_to_half(param_.activeParam.leaky_relu_factor);
+        if (param_.globalPooling) {
+          pooling_param->poolingArgs.global_pool_factor =
+              float_to_half(1.0f / (k_height * k_width));
+        }
         concat_param.inputs.push_back(pooling_param->output);
       }
       concat_param.output = param_.output;
@@ -175,39 +183,12 @@ class PoolingSplitPE : public PE {
     int ret = 0;
     int index = 0;
 
-    InplaceArgs inplace_ = {0};
-    GlobalPoolArgs globalPoolArgs;
-    if (param_.globalPooling) {
-      inplace_.relu_enable = false;
-      inplace_.leaky_relu_enable = false;
-      inplace_.relu6_enable = false;
-      inplace_.sigmoid_enable = false;
-      inplace_.global_pool_en = true;
-      config_inplace(inplace_);
-
-      int kernel_height = param_.kernelSize[1];
-      int kernel_width = param_.kernelSize[0];
-      globalPoolArgs.global_pool_factor =
-          fp32_2_fp16(1.0f / (kernel_height * kernel_width));
-      config_global_pool(globalPoolArgs);
-    }
     for (auto pooling_param : splitParams_) {
       ret |= compute_fpga_pool(pooling_param->poolingArgs);
 
       float* scale_address = pooling_param->poolingArgs.output.scale_address;
       output->scale()[0] = scale_address[0];
       output->scale()[1] = scale_address[1];
-    }
-
-    if (param_.globalPooling) {
-      inplace_.relu_enable = false;
-      inplace_.leaky_relu_enable = false;
-      inplace_.relu6_enable = false;
-      inplace_.sigmoid_enable = false;
-      inplace_.global_pool_en = false;
-      config_inplace(inplace_);
-      globalPoolArgs.global_pool_factor = fp32_2_fp16(1.0f);
-      config_global_pool(globalPoolArgs);
     }
 
     if (splitParams_.size() > 1) {

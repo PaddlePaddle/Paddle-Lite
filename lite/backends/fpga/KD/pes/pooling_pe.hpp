@@ -51,7 +51,8 @@ class PoolingPE : public PE {
     PoolingArgs args = {0};
     args.mode = param_.type;
     if (param_.globalPooling) {
-      args.kernel_reciprocal = fp32_2_fp16(1.0f);
+      // args.kernel_reciprocal = fp32_2_fp16(1.0f);
+      args.kernel_reciprocal = fp32_2_fp16(1.0f / (k_width * k_height));
     } else {
       args.kernel_reciprocal = fp32_2_fp16(1.0f / (k_width * k_height));
     }
@@ -70,6 +71,13 @@ class PoolingPE : public PE {
     args.kernel.stride_w = param_.strides[1];
     args.out_height = output->shape().height();
     args.out_width = output->shape().width();
+    args.inplace.active_param.type = param_.activeParam.type;
+    args.inplace.active_param.leaky_relu_factor =
+        float_to_half(param_.activeParam.leaky_relu_factor);
+    if (param_.globalPooling) {
+      args.global_pool_factor = float_to_half(1.0f / (k_height * k_width));
+    }
+
     param_.poolingArgs = args;
 
     use_cpu_ = output->shape().width() == 1 && output->shape().height() == 1 &&
@@ -196,32 +204,7 @@ class PoolingPE : public PE {
       compute();
       return true;
     }
-    if (param_.globalPooling) {
-      inplace_.relu_enable = false;
-      inplace_.leaky_relu_enable = false;
-      inplace_.relu6_enable = false;
-      inplace_.sigmoid_enable = false;
-      inplace_.global_pool_en = true;
-      config_inplace(inplace_);
-
-      int kernel_height = param_.kernelSize[1];
-      int kernel_width = param_.kernelSize[0];
-      globalPoolArgs.global_pool_factor =
-          float_to_half(1.0f / (kernel_height * kernel_width));
-      config_global_pool(globalPoolArgs);
-    }
-    int ret = (compute_fpga_pool(param_.poolingArgs) == 0);
-    if (param_.globalPooling) {
-      inplace_.relu_enable = false;
-      inplace_.leaky_relu_enable = false;
-      inplace_.relu6_enable = false;
-      inplace_.sigmoid_enable = false;
-      inplace_.global_pool_en = false;
-      config_inplace(inplace_);
-      globalPoolArgs.global_pool_factor = float_to_half(0);
-      config_global_pool(globalPoolArgs);
-    }
-    return ret;
+    return compute_fpga_pool(param_.poolingArgs) == 0;
   }
 
   PoolingParam& param() { return param_; }
@@ -229,8 +212,6 @@ class PoolingPE : public PE {
  private:
   PoolingParam param_;
   bool use_cpu_;
-  InplaceArgs inplace_ = {0};
-  GlobalPoolArgs globalPoolArgs;
 };
 
 }  // namespace zynqmp

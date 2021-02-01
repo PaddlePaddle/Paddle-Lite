@@ -273,22 +273,6 @@ int compute_fpga_dwconv(const struct DWconvArgs &args) {
   return do_ioctl(IOCTL_CONFIG_DWCONV, &args);
 }
 
-int config_activation(const struct ActiveParamterArgs &args) {
-  return do_ioctl(IOCTL_CONFIG_ACTIVATION_PARAMETER, &args);
-}
-
-int config_global_pool(const struct GlobalPoolArgs &args) {
-  return do_ioctl(IOCTL_CONFIG_GLOBAL_POOL_PARAMETER, &args);
-}
-
-int config_inplace(const struct InplaceArgs &args) {
-  return do_ioctl(IOCTL_CONFIG_INPLACE, &args);
-}
-
-int config_norm_param(const struct NormalizeParameterArgs &args) {
-  return do_ioctl(IOCTL_CONFIG_NORMALIZE_PARAMETER, &args);
-}
-
 int compute_norm(const struct NormalizeArgs &args) {
   return do_ioctl(IOCTL_CONFIG_NORMALIZE, &args);
 }
