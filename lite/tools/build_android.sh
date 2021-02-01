@@ -155,6 +155,7 @@ function set_android_api_level {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
+  # Step1. Create directory for compiling.
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
       build_dir=${build_dir}.opencl
@@ -162,19 +163,18 @@ function make_tiny_publish_so {
   if [ "${WITH_npu}" == "ON" ]; then
       build_dir=${build_dir}.npu
   fi
-
-
-  if [ -d $build_dir ]
-  then
+  if [ -d $build_dir ]; then
       rm -rf $build_dir
   fi
   mkdir -p $build_dir
   cd $build_dir
 
+  # Step2. prepare third-party libs: opencl libs.
   if [ "${WITH_OPENCL}" == "ON" ]; then
       prepare_opencl_source_code $workspace $build_dir
   fi
 
+  # Step3. apply cmake to generate makefiles.
   if [ "${WITH_STRIP}" == "ON" ]; then
       WITH_EXTRA=ON
   fi
@@ -205,12 +205,17 @@ function make_tiny_publish_so {
       ${cmake_mutable_options}  \
       -DLITE_ON_TINY_PUBLISH=ON
 
-  # todo: third_party of opencl should be moved into git submodule and cmake later
+  # Step4. Compile libs: cxx_lib, java_lib, opencl_lib
   if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC
+      make opencl_clhpp -j
   fi
-
-  make publish_inference -j$NUM_PROC
+  make tiny_publish_cxx_lib -j$NUM_PROC
+  if [ "${WITH_JAVA}" == "ON" ]; then
+      make publish_inference_java_lib -j$NUM_PROC
+  fi
+  if [ "${WITH_OPENCL}" == "ON" ]; then
+      make publish_inference_opencl -j$NUM_PROC
+  fi
   cd - > /dev/null
 }
 

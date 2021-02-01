@@ -71,10 +71,15 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         add_dependencies(paddle_full_api_shared custom_linker_map)
    endif()
 else()
+    # Compiling steps in tiny_publish format:
+    # 1. compile all source files into .object `PADDLELITE_OBJS`
+    add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+    # 2. produce dynamic lib `libpaddle_light_api_shared.so` from `PADDLELITE_OBJS`
     if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
-        add_library(paddle_light_api_shared SHARED "")
-        target_sources(paddle_light_api_shared PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+        add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
         set(TARGET_COMIPILE_FLAGS "-fdata-sections")
+        set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
+        add_dependencies(paddle_light_api_shared op_list_h kernel_list_h fbs_headers)
         if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc
             set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
             # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
@@ -82,8 +87,7 @@ else()
                 set(TARGET_COMIPILE_FLAGS "")
             endif()
         endif()
-        set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-        add_dependencies(paddle_light_api_shared op_list_h kernel_list_h fbs_headers)
+        # link `paddle_light_api_shared` to third-party libs
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
@@ -97,8 +101,19 @@ else()
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
     endif()
-      add_library(paddle_light_api_static STATIC "")
-      target_sources(paddle_light_api_static PUBLIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+    # 2. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
+    add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+    # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
+    if (LITE_WITH_JAVA AND LITE_WITH_ARM)
+      add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+      set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS ${TARGET_COMIPILE_FLAGS})
+      set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lite/api/android/jni/native)
+      target_sources(paddle_lite_jni PUBLIC android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
+      if (LITE_WITH_NPU)
+          # Need to add HIAI runtime libs (libhiai.so) dependency
+          target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
+      endif()
+    endif()
 endif()
 
 if (WITH_TESTING)
@@ -400,9 +415,9 @@ if (NOT LITE_ON_TINY_PUBLISH)
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     target_link_libraries(paddle_api_full ${cuda_deps})
     get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
+    bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 endif()
 
-bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 #-----------------------------------------------------------------------------------------------------
 
 # These tests needs CLI arguments, and is not supported in ARM CI.
