@@ -76,7 +76,6 @@ class XPUSingleEncoderFuser : public FuseBase {
     if (with_q_scale_) {
       target_op_type = "scale";
     }
-    std::cout << "target_op_type=" << target_op_type << std::endl;
     auto* q_transpose2 = OpNode("q_transpose2", "transpose2")->AsIntermediate();
     auto* q_transpose2_out = VarNode("q_transpose2_out")
                                  ->assert_is_op_output("transpose2", "Out")
@@ -453,8 +452,8 @@ class XPUSingleEncoderFuser : public FuseBase {
 
 class XPUMultiEncoderFuser {
  public:
-  explicit XPUMultiEncoderFuser(const std::set<int>& fc_int31_ids)
-      : fc_int31_ids_(fc_int31_ids) {}
+  explicit XPUMultiEncoderFuser(const std::string& fc_precision)
+      : fc_precision_(fc_precision) {}
 
   bool IsDirectPredecessorOf(Node* op1, Node* op2) {
     for (auto* out : op1->outlinks) {
@@ -547,8 +546,7 @@ class XPUMultiEncoderFuser {
     op_desc.SetAttr<int>("n_layers", all_encoders.size());
     op_desc.SetAttr<std::string>(
         "act_type", first_encoder_op_info->GetAttr<std::string>("act_type"));
-    op_desc.SetAttr<std::string>("precision",
-                                 (fc_int31_ids_.empty() ? "int16" : "int31"));
+    op_desc.SetAttr<std::string>("precision", fc_precision_);
 
     // q/k/v fusion
     bool enable_qkv_fusion = true;
@@ -619,10 +617,20 @@ class XPUMultiEncoderFuser {
             weight_qkv_trans.get(), qkv_len);
         fc_weight_max[i] = max_f;
         VLOG(3) << "QKV fused FC-" << i << ", weight_max:" << max_f;
-        if (fc_int31_ids_.find(i % 6) != fc_int31_ids_.end()) {
+        if (fc_precision_ == "int31") {
           memcpy(weight_q->mutable_data<float>(),
                  weight_qkv_trans.get(),
                  qkv_len * sizeof(float));
+        } else if (fc_precision_ == "int8") {
+          std::unique_ptr<int8_t[]> weight_qkv_trans_int8(new int8_t[qkv_len]);
+          paddle::lite::xpu::math::ConvertFP32ToInt8(
+              weight_qkv_trans.get(),
+              weight_qkv_trans_int8.get(),
+              max_f,
+              qkv_len);
+          memcpy(weight_q->mutable_data<float>(),
+                 weight_qkv_trans_int8.get(),
+                 qkv_len * sizeof(int8_t));
         } else {
           std::unique_ptr<int16_t[]> weight_qkv_trans_int16(
               new int16_t[qkv_len]);
@@ -649,7 +657,7 @@ class XPUMultiEncoderFuser {
           paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
       // i ranges from 0 to 6*encoder_num, so we need to do i%6 to get relative
       // position in the encoder
-      if (fc_int31_ids_.find(i % 6) != fc_int31_ids_.end()) {
+      if (fc_precision_ == "int31") {
         // FCs in encoder use int31
         std::unique_ptr<float[]> weight_trans_fp32(new float[weight_len]);
         paddle::lite::xpu::math::Transpose(weight_on_host,
@@ -660,6 +668,18 @@ class XPUMultiEncoderFuser {
         memcpy(weight_on_host,
                weight_trans_fp32.get(),
                weight_len * sizeof(float));
+      } else if (fc_precision_ == "int8") {
+        std::unique_ptr<int8_t[]> weight_int8(new int8_t[weight_len]);
+        std::unique_ptr<int8_t[]> weight_trans_int8(new int8_t[weight_len]);
+        paddle::lite::xpu::math::ConvertFP32ToInt8(
+            weight_on_host, weight_int8.get(), max_f, weight_len);
+        paddle::lite::xpu::math::Transpose(weight_int8.get(),
+                                           weight_trans_int8.get(),
+                                           weight_dims[0],
+                                           weight_dims[1]);
+        memcpy(weight_on_host,
+               weight_trans_int8.get(),
+               weight_len * sizeof(int8_t));
       } else {
         std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
         std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);
@@ -785,7 +805,7 @@ class XPUMultiEncoderFuser {
   }
 
  private:
-  std::set<int> fc_int31_ids_;
+  std::string fc_precision_;
 };
 
 }  // namespace fusion
@@ -802,7 +822,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     std::vector<std::string> mul_types{"mul", "matmul"};
     std::vector<bool> with_q_scales{true, false};
 
-    std::set<int> fc_int31_ids;
+    std::string fc_precision;
 #ifdef LITE_WITH_XPU
     // TODO(miaotianxiang): core/mir/*_pass.cc are compiled anyway and need to
     // access TargetWrapperXPU::multi_encoder_precision, but this static member
@@ -812,11 +832,18 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     // #ifdef here. Any better idea?
     if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
         lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
-      fc_int31_ids = {0, 1, 2, 3, 4, 5};
+      fc_precision = "int31";
       VLOG(3) << "Use int31 in XPUMultiEncoderOp, "
               << "lite::TargetWrapperXPU::multi_encoder_precision="
               << lite::TargetWrapperXPU::multi_encoder_precision;
+    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
+               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
+      fc_precision = "int8";
+      VLOG(3) << "Use int8 in XPUMultiEncoderOp, "
+              << "lite::TargetWrapperXPU::multi_encoder_precision="
+              << lite::TargetWrapperXPU::multi_encoder_precision;
     } else {
+      fc_precision = "int16";
       VLOG(3) << "Use int16 in XPUMultiEncoderOp, "
               << "lite::TargetWrapperXPU::multi_encoder_precision="
               << lite::TargetWrapperXPU::multi_encoder_precision;
@@ -837,7 +864,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
                     mul_type,
                     with_q_scale);
                 single_encoder_fuser(graph.get());
-                fusion::XPUMultiEncoderFuser multi_encoder_fuser(fc_int31_ids);
+                fusion::XPUMultiEncoderFuser multi_encoder_fuser(fc_precision);
                 multi_encoder_fuser(graph.get());
               }
             }
