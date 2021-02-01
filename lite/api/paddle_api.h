@@ -295,6 +295,9 @@ class LITE_API CxxConfig : public ConfigBase {
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+
+  void set_xpu_conv_autotune(bool autotune = true);
+
   // XPU only, specify the target device ID for the current thread.
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
