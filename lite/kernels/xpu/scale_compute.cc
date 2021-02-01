@@ -27,13 +27,13 @@ void ScaleCompute::Run() {
 
   auto& x_dims = param.x->dims();
 
-  int r = xdnn::scale(ctx.GetRawContext(),    /* context */
-                      x_dims.production(),    /* len */
-                      param.scale,            /* alpha */
-                      param.bias,             /* beta */
+  int r = xdnn::scale(ctx.GetRawContext(),
+                      param.x->data<float>(),                          /* x */
+                      param.output->mutable_data<float>(TARGET(kXPU)), /* y */
+                      x_dims.production(),                             /* len */
                       param.bias_after_scale, /* bias_after_scale */
-                      param.x->data<float>(), /* x */
-                      param.output->mutable_data<float>(TARGET(kXPU)) /* y */);
+                      param.scale,            /* alpha */
+                      param.bias);            /* beta */
   CHECK_EQ(r, 0);
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());

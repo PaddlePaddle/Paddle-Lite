@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/unstack_compute.h"
-#include <vector>
+#include "lite/kernels/xpu/instance_norm_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -22,34 +21,32 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void UnstackCompute::Run() {
+void InstanceNormCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  auto& dout = param.Out;
-  auto in_dim = param.X->dims();
-  int axis = param.axis;
-  if (axis < 0) {
-    axis += in_dim.size();
-  }
-  int height = 1;
-  for (int i = 0; i < axis; i++) {
-    height = height * in_dim[i];
-  }
-  int width = param.X->numel() / height;
-  std::vector<float*> out_ptrs;
-  std::vector<int> width_out;
-  for (auto out : dout) {
-    out->set_lod(param.X->lod());
-    out_ptrs.push_back(out->mutable_data<float>(TARGET(kXPU)));
-    width_out.push_back(out->numel() / height);
-  }
-  int r = xdnn::split<float>(ctx.GetRawContext(),
-                             param.X->data<float>(),
-                             out_ptrs,
-                             {height, width},
-                             width_out,
-                             1);
-  CHECK_EQ(r, 0);
+  auto x_dims = param.x->dims();
+  CHECK_EQ(x_dims.size(), 4);
+  int n = x_dims[0];
+  int c = x_dims[1];
+  int h = x_dims[2];
+  int w = x_dims[3];
+
+  int ret = xdnn::instance_norm<float>(
+      ctx.GetRawContext(),
+      param.x->data<float>(),
+      param.out->mutable_data<float>(TARGET(kXPU)),
+      n,
+      c,
+      h,
+      w,
+      param.epsilon,
+      param.scale->data<float>(),
+      param.bias->data<float>(),
+      param.saved_mean->mutable_data<float>(TARGET(kXPU)),
+      param.saved_variance->mutable_data<float>(TARGET(kXPU)),
+      true);
+
+  CHECK_EQ(ret, 0);
 }
 
 }  // namespace xpu
@@ -57,12 +54,16 @@ void UnstackCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(unstack,
+REGISTER_LITE_KERNEL(instance_norm,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::UnstackCompute,
+                     paddle::lite::kernels::xpu::InstanceNormCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
