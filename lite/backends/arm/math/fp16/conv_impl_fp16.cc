@@ -16,6 +16,7 @@
 #include <arm_neon.h>
 #include <algorithm>
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
+#include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
@@ -36,6 +37,7 @@ namespace fp16 {
 inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
   return static_cast<unsigned>(a) < static_cast<unsigned>(b);
 }
+
 /**
  * \brief normal im2col function for gemm conv
  * @tparam dtype
@@ -48,21 +50,7 @@ inline bool is_a_ge_zero_and_a_lt_b(int a, int b) {
  * @param stride
  * @param data_col
  */
-void im2col_common_fp16(const float16_t* data_im,
-                        int channels,
-                        int height,
-                        int width,
-                        int kernel_h,
-                        int kernel_w,
-                        int pad_top,
-                        int pad_bottom,
-                        int pad_left,
-                        int pad_right,
-                        int stride_h,
-                        int stride_w,
-                        int dilation_h,
-                        int dilation_w,
-                        float16_t* data_col) {
+void im2col_common_fp16(IM2COL_PARAM(float16_t), int stride_h, int stride_w) {
   const int output_h =
       (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) /
           stride_h +
@@ -99,19 +87,7 @@ void im2col_common_fp16(const float16_t* data_im,
   }
 }
 
-void im2col_s1_fp16(const float16_t* data_im,
-                    int channels,
-                    int height,
-                    int width,
-                    int kernel_h,
-                    int kernel_w,
-                    int pad_top,
-                    int pad_bottom,
-                    int pad_left,
-                    int pad_right,
-                    int dilation_h,
-                    int dilation_w,
-                    float16_t* data_col) {
+void im2col_s1_fp16(IM2COL_PARAM(float16_t)) {
   const int output_h =
       (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) + 1;
   const int output_w =
@@ -164,19 +140,7 @@ void im2col_s1_fp16(const float16_t* data_im,
   }
 }
 
-void im2col_s2_fp16(const float16_t* data_im,
-                    int channels,
-                    int height,
-                    int width,
-                    int kernel_h,
-                    int kernel_w,
-                    int pad_top,
-                    int pad_bottom,
-                    int pad_left,
-                    int pad_right,
-                    int dilation_h,
-                    int dilation_w,
-                    float16_t* data_col) {
+void im2col_s2_fp16(IM2COL_PARAM(float16_t)) {
   const int output_h =
       (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) / 2 +
       1;
@@ -243,70 +207,21 @@ void im2col_s2_fp16(const float16_t* data_im,
  * @param stride
  * @param data_col
  */
-void im2col_fp16(const float16_t* data_im,
-                 int channels,
-                 int height,
-                 int width,
-                 int kernel_h,
-                 int kernel_w,
-                 int pad_top,
-                 int pad_bottom,
-                 int pad_left,
-                 int pad_right,
-                 int stride_h,
-                 int stride_w,
-                 int dilation_h,
-                 int dilation_w,
-                 float16_t* data_col) {
+void im2col_fp16(IM2COL_PARAM(float16_t), int stride_h, int stride_w) {
   bool pads_equal = ((pad_top == pad_bottom) && (pad_left == pad_right));
   bool pads_all_equal = (pads_equal && pad_top == pad_left);
   bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);
   bool no_dilation = (dilation_h == 1) && (dilation_w == 1);
   bool kspd = pads_all_equal && ks_equal && no_dilation;
+#define IM2COL_IN_PARAMS                                                     \
+  data_im, channels, height, width, kernel_h, kernel_w, pad_top, pad_bottom, \
+      pad_left, pad_right, dilation_h, dilation_w, data_col
   if (kspd && stride_h == 1) {
-    im2col_s1_fp16(data_im,
-                   channels,
-                   height,
-                   width,
-                   kernel_h,
-                   kernel_w,
-                   pad_top,
-                   pad_bottom,
-                   pad_left,
-                   pad_right,
-                   dilation_h,
-                   dilation_w,
-                   data_col);
+    im2col_s1_fp16(IM2COL_IN_PARAMS);
   } else if (kspd && stride_h == 2) {
-    im2col_s2_fp16(data_im,
-                   channels,
-                   height,
-                   width,
-                   kernel_h,
-                   kernel_w,
-                   pad_top,
-                   pad_bottom,
-                   pad_left,
-                   pad_right,
-                   dilation_h,
-                   dilation_w,
-                   data_col);
+    im2col_s2_fp16(IM2COL_IN_PARAMS);
   } else {
-    im2col_common_fp16(data_im,
-                       channels,
-                       height,
-                       width,
-                       kernel_h,
-                       kernel_w,
-                       pad_top,
-                       pad_bottom,
-                       pad_left,
-                       pad_right,
-                       stride_h,
-                       stride_w,
-                       dilation_h,
-                       dilation_w,
-                       data_col);
+    im2col_common_fp16(IM2COL_IN_PARAMS, stride_h, stride_w);
   }
 }
 
@@ -314,19 +229,7 @@ void im2col_fp16(const float16_t* data_im,
  * \brief convolution function for kernel size 1x1, stride size 1, gemm
  * implementation
  */
-void conv1x1s1_gemm_fp16(const float16_t* i_data,
-                         float16_t* o_data,
-                         int num,
-                         int oc,
-                         int oh,
-                         int ow,
-                         int ic,
-                         int ih,
-                         int win,
-                         const float16_t* weights,
-                         const float16_t* bias,
-                         const operators::ConvParam& param,
-                         ARMContext* ctx) {
+void conv1x1s1_gemm_fp16(GEMM_PARAM(float16_t)) {
   int channel_size_out = ow * oh;
   int channel_size_in = win * ih;
 
@@ -343,7 +246,9 @@ void conv1x1s1_gemm_fp16(const float16_t* i_data,
   int hblock = get_hblock_fp16(ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int weights_size_per_group = m * k;
-  weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  if (n > 1 && m > 1) {
+    weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  }
 
   //! use gemv when the output channel size = 1
   for (int b = 0; b < num; ++b) {
@@ -356,21 +261,59 @@ void conv1x1s1_gemm_fp16(const float16_t* i_data,
       const float16_t* weights_group =
           static_cast<const float16_t*>(weights) + g * weights_size_per_group;
       const float16_t* bias_group = static_cast<const float16_t*>(bias) + g * m;
+      if (n == 1) {
+        gemv_fp16(weights_group,
+                  din_group,
+                  dout_group,
+                  false,
+                  m,
+                  k,
+                  0.f,
+                  flag_bias,
+                  bias_group,
+                  act_param.has_active,
+                  act_param.active_type,
+                  ctx,
+                  act_param.Relu_clipped_coef,
+                  act_param.Leaky_relu_alpha);
+      } else if (m == 1) {
+        float16_t bias_ptr[n];  // NOLINT
+        if (flag_bias) {
+          for (int i = 0; i < n; i++) {
+            bias_ptr[i] = bias_group[0];
+          }
+        }
 
-      gemm_prepack_fp16(false,
-                        m,
-                        n,
-                        k,
-                        weights_group,
-                        din_group,
-                        n,
-                        0.f,
-                        dout_group,
-                        n,
-                        bias_group,
-                        flag_bias,
-                        act_param,
-                        ctx);
+        gemv_fp16(weights_group,
+                  din_group,
+                  dout_group,
+                  true,
+                  n,
+                  k,
+                  0.f,
+                  flag_bias,
+                  bias_ptr,
+                  act_param.has_active,
+                  act_param.active_type,
+                  ctx,
+                  act_param.Relu_clipped_coef,
+                  act_param.Leaky_relu_alpha);
+      } else {
+        gemm_prepack_fp16(false,
+                          m,
+                          n,
+                          k,
+                          weights_group,
+                          din_group,
+                          n,
+                          0.f,
+                          dout_group,
+                          n,
+                          bias_group,
+                          flag_bias,
+                          act_param,
+                          ctx);
+      }
     }
   }
 }
@@ -379,19 +322,7 @@ void conv1x1s1_gemm_fp16(const float16_t* i_data,
  * \brief convolution function for kernel size 3x3, stride size 2, gemm
  * implementation
  */
-void conv_im2col_gemm_fp16(const float16_t* i_data,
-                           float16_t* o_data,
-                           int num,
-                           int oc,
-                           int oh,
-                           int ow,
-                           int ic,
-                           int ih,
-                           int win,
-                           const float16_t* weights,
-                           const float16_t* bias,
-                           const operators::ConvParam& param,
-                           ARMContext* ctx) {
+void conv_im2col_gemm_fp16(GEMM_PARAM(float16_t)) {
   const int group = param.groups;
   auto filter_dims = param.filter->dims();
   const int kernel_h = filter_dims[2];
@@ -409,7 +340,9 @@ void conv_im2col_gemm_fp16(const float16_t* i_data,
   int weights_size_per_group = m * k;
 
   auto act_param = param.activation_param;
-  weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  if (n > 1 && m > 1) {
+    weights_size_per_group = ((m_roundup * k + 15) / 16) * 16;
+  }
 
   float16_t* tmp_work_space =
       ctx->workspace_data<float16_t>() + ctx->llc_size() / sizeof(float16_t);
@@ -435,25 +368,64 @@ void conv_im2col_gemm_fp16(const float16_t* i_data,
                   paddings[1],
                   paddings[2],
                   paddings[3],
-                  param.strides[0],
-                  param.strides[1],
                   dilations[0],
                   dilations[1],
-                  dB);
-      gemm_prepack_fp16(false,
-                        m,
-                        n,
-                        k,
-                        weights_group,
-                        dB,
-                        n,
-                        0.f,
-                        dout_group,
-                        n,
-                        bias_group,
-                        flag_bias,
-                        act_param,
-                        ctx);
+                  dB,
+                  param.strides[0],
+                  param.strides[1]);
+      if (n == 1) {
+        gemv_fp16(weights_group,
+                  dB,
+                  dout_group,
+                  false,
+                  m,
+                  k,
+                  0.f,
+                  flag_bias,
+                  bias_group,
+                  act_param.has_active,
+                  act_param.active_type,
+                  ctx,
+                  act_param.Relu_clipped_coef,
+                  act_param.Leaky_relu_alpha);
+      } else if (m == 1) {
+        float16_t bias_ptr[n];  // NOLINT
+        if (flag_bias) {
+          for (int i = 0; i < n; i++) {
+            bias_ptr[i] = bias_group[0];
+          }
+        }
+
+        gemv_fp16(weights_group,
+                  dB,
+                  dout_group,
+                  true,
+                  n,
+                  k,
+                  0.f,
+                  flag_bias,
+                  bias_ptr,
+                  act_param.has_active,
+                  act_param.active_type,
+                  ctx,
+                  act_param.Relu_clipped_coef,
+                  act_param.Leaky_relu_alpha);
+      } else {
+        gemm_prepack_fp16(false,
+                          m,
+                          n,
+                          k,
+                          weights_group,
+                          dB,
+                          n,
+                          0.f,
+                          dout_group,
+                          n,
+                          bias_group,
+                          flag_bias,
+                          act_param,
+                          ctx);
+      }
     }
   }
 }

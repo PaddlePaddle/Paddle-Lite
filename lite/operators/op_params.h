@@ -477,7 +477,8 @@ struct ConvParam : ParamBase {
   std::vector<int> output_padding;
   // for int8
   WITH_INT8_CONFIG
-
+  // for Conv2d+Scale fusion
+  std::string scale_activation_type{""};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -673,6 +674,14 @@ struct ElementwiseParam : ParamBase {
   WITH_INT8_CONFIG
   float x_input_scale{1.0};
   float y_input_scale{1.0};
+  // fuse ScaleParam
+  bool fuse_scale{false};
+  float scale{1.};
+  float bias{0.f};
+  bool bias_after_scale{true};
+  float alpha{6.};
+  std::string activation_type{""};
+
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {

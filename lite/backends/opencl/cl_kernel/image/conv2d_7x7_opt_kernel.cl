@@ -228,6 +228,14 @@ __kernel void conv2d_7x7_opt(__private const int item_ch,
   output[3] = activation_type4(output[3]);
   output[4] = activation_type4(output[4]);
 
+#ifdef SCALE_ACTIVATION
+  output[0] = fuse_scale(output[0], 1.f, 0.f, 0.f);
+  output[1] = fuse_scale(output[1], 1.f, 0.f, 0.f);
+  output[2] = fuse_scale(output[2], 1.f, 0.f, 0.f);
+  output[3] = fuse_scale(output[3], 1.f, 0.f, 0.f);
+  output[4] = fuse_scale(output[4], 1.f, 0.f, 0.f);
+#endif
+
   WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                  output_image,
                  (int2)(out_w_base_id + out_w_id0, item_h_id),
@@ -474,6 +482,14 @@ __kernel void conv2d_7x7_multi_batch(__private const int item_ch,
   output[2] = activation_type4(output[2]);
   output[3] = activation_type4(output[3]);
   output[4] = activation_type4(output[4]);
+
+#ifdef SCALE_ACTIVATION
+  output[0] = fuse_scale(output[0], 1.f, 0.f, 0.f);
+  output[1] = fuse_scale(output[1], 1.f, 0.f, 0.f);
+  output[2] = fuse_scale(output[2], 1.f, 0.f, 0.f);
+  output[3] = fuse_scale(output[3], 1.f, 0.f, 0.f);
+  output[4] = fuse_scale(output[4], 1.f, 0.f, 0.f);
+#endif
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR,
                  output_image,

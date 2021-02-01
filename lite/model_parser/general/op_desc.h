@@ -115,7 +115,8 @@ class OpDesc : public OpDescAPI {
   template <typename T>
   T GetAttr(const std::string& name) const {
     auto it = attrs().find(name);
-    CHECK(it != attrs().end()) << "No attributes called " << name << " found";
+    CHECK(it != attrs().end()) << "No attributes called " << name
+                               << " found for " << Type();
     auto attr_it = attr_types().find(name);
     CHECK(attr_it != attr_types().end());
     auto pair = std::make_pair(it, attr_it);

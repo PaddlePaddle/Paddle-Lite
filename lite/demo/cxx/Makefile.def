@@ -13,7 +13,7 @@ SYSTEM_INCLUDES = -I$(NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
                   -I$(NDK_ROOT)/sysroot/usr/include \
 
 NDK_VERSION=$(shell echo $(NDK_ROOT) | grep -Eo "[0-9]+[0-9]")
-ifeq ($(NDK_VERSION), 17)
+ifeq ($(shell expr $(NDK_VERSION) \<= 17), 1)
     ifeq ($(ARM_ABI), arm8)
         ifeq ($(SYSTEM), Linux)
             CC = $(NDK_ROOT)/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-g++
