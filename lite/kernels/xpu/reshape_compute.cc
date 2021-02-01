@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "lite/kernels/xpu/reshape_compute.h"
+#include <algorithm>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -31,10 +32,11 @@ void ReshapeCompute::Run() {
     output->ShareDataWith(*x);
     output->Resize(output_dims);
   } else {
-    int r = xdnn::memcpy_device(ctx.GetRawContext(),
-                                param.output->mutable_data<float>(TARGET(kXPU)),
-                                param.x->data<float>(),
-                                param.x->numel() * sizeof(float));
+    int r = xdnn::copy<float>(ctx.GetRawContext(),
+                              param.x->data<float>(),
+                              param.output->mutable_data<float>(TARGET(kXPU)),
+                              param.x->numel());
+
     CHECK_EQ(r, 0);
   }
 }
