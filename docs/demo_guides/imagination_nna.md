@@ -26,6 +26,8 @@ Paddle Lite已支持Imagination NNA的预测部署。
 - pool2d
 - fc
 
+可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/imagination_nna/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/imagination_nna/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+
 ## 参考示例演示
 
 ### 测试设备(Roc1开发板)

@@ -33,20 +33,55 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ### 已支持（或部分支持）的Paddle算子
 
-| | | | |
-|-|-|-|-|
-|sigmoid|relu|tanh|relu_clipped|
-|leaky_relu|softsign|hard_sigmoid|log|
-|sqrt|square|thresholded_relu|batch_norm|
-|less_than|concat|conv2d|depthwise_conv2d|
-|conv2d_transpose|dropout|elementwise_add|elementwise_sub|
-|elementwise_mul|elementwise_div|expand|fusion_elementwise_add_activation|
-|fusion_elementwise_sub_activation|fusion_elementwise_mul_activation|fusion_elementwise_div_activation|increment|
-|instance_norm (需要HiAI DDK330)|layer_norm (需要HiAI DDK330)|fc|bilinear_interp|
-|nearest_interp|matmul|mul|pad2d|
-|pool2d|reduce_mean|reshape|reshape2|
-|scale|shuffle_channel|softmax|split|
-|transpose|transpose2|unsqueeze|unsqueeze2|
+- sigmoid
+- relu
+- tanh
+- relu_clipped
+- relu6
+- leaky_relu
+- softsign
+- hard_sigmoid
+- log
+- sqrt
+- square
+- thresholded_relu
+- batch_norm
+- less_than
+- concat
+- conv2d
+- depthwise_conv2d
+- conv2d_transpose
+- dropout
+- elementwise_add
+- elementwise_sub
+- elementwise_mul
+- elementwise_div
+- expand
+- fusion_elementwise_add_activation
+- fusion_elementwise_sub_activation
+- fusion_elementwise_mul_activation
+- fusion_elementwise_div_activation
+- increment
+- instance_norm (需要HiAI DDK330)
+- fc
+- bilinear_interp
+- nearest_interp
+- layer_norm (需要HiAI DDK330)
+- matmul
+- mul
+- pad2d
+- pool2d
+- reduce_mean
+- reshape
+- reshape2
+- scale
+- shuffle_channel
+- softmax
+- split
+- transpose
+- transpose2
+- unsqueeze
+- unsqueeze2
 
 可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 

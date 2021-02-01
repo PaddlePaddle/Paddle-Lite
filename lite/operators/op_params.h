@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/api/paddle_place.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
@@ -936,6 +937,8 @@ struct MulticlassNmsParam : ParamBase {
   float nms_eta{1.0f};
   int keep_top_k;
   bool normalized{true};
+  const lite::Tensor* rois_num{};
+  lite::Tensor* nms_rois_num{};
 };
 
 /// ----------------------- matrix_nms operators ----------------------
@@ -1279,7 +1282,7 @@ struct IsEmptyParam : ParamBase {
 };
 
 struct ReduceParam : ParamBase {
-  lite::Tensor* X{};
+  const lite::Tensor* X{};
   lite::Tensor* Out{};
   std::vector<int> dim{0};
   bool keep_dim{false};
@@ -1398,7 +1401,31 @@ struct GenerateProposalsParam : ParamBase {
   lite::Tensor* RpnRois{};
   lite::Tensor* RpnRoiProbs{};
   lite::Tensor* RpnRoisLod{};
+  lite::Tensor* RpnRoisNum{};
 };
+
+struct GenerateProposalsV2Param : ParamBase {
+  // inputs
+  const lite::Tensor* Scores{};
+  const lite::Tensor* BboxDeltas{};
+  const lite::Tensor* ImShape{};
+  lite::Tensor* Anchors{};
+  lite::Tensor* Variances{};
+
+  // attrs
+  int pre_nms_topN{6000};
+  int post_nms_topN{1000};
+  float nms_thresh{0.5f};
+  float min_size{0.1f};
+  float eta{1.0f};
+
+  // outputs
+  lite::Tensor* RpnRois{};
+  lite::Tensor* RpnRoiProbs{};
+  lite::Tensor* RpnRoisLod{};
+  lite::Tensor* RpnRoisNum{};
+};
+
 /// ----------------------- squeeze operators ----------------------
 struct SqueezeParam : ParamBase {
   const lite::Tensor* X{};
@@ -1450,7 +1477,7 @@ struct UnsqueezeParam : ParamBase {
 struct ExpandParam : ParamBase {
   const lite::Tensor* X{nullptr};
   const lite::Tensor* ExpandTimes{nullptr};
-  const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
+  std::vector<lite::Tensor*> expand_times_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
 };
@@ -1459,7 +1486,7 @@ struct ExpandParam : ParamBase {
 struct ExpandV2Param : ParamBase {
   const lite::Tensor* X{nullptr};
   const lite::Tensor* Shape{nullptr};
-  const std::vector<lite::Tensor>* expand_shapes_tensor{nullptr};
+  std::vector<lite::Tensor*> expand_shapes_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> shape{};
 };
@@ -1519,6 +1546,7 @@ struct RoiAlignParam : ParamBase {
   lite::Tensor* X{};
   lite::Tensor* ROIs{};
   lite::Tensor* RoisLod{};
+  lite::Tensor* RoisNum{};
   lite::Tensor* Out{};
   float spatial_scale{1.0};
   int pooled_height{1};
@@ -2090,6 +2118,11 @@ struct FlattenContiguousRangeParam : ParamBase {
   int stop_axis;
 };
 
+struct LoDArrayLengthParam : ParamBase {
+  std::vector<lite::Tensor>* x{};
+  lite::Tensor* out{};
+};
+
 struct RnnParam : ParamBase {
   lite::Tensor* Input;
   std::vector<lite::Tensor*> PreState;
@@ -2147,6 +2180,12 @@ struct TileParam : ParamBase {
   std::vector<int> repeat_times{};
   lite::Tensor* RepeatTimes{};
   std::vector<lite::Tensor*> repeat_times_tensor{};
+};
+
+struct SumParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  int inplace{0};
 };
 
 }  // namespace operators

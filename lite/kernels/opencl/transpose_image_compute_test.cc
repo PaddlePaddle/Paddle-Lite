@@ -169,4 +169,6 @@ TEST(transpose2_opencl, compute) {
 }  // namespace lite
 }  // namespace paddle
 
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
 USE_LITE_KERNEL(transpose, kOpenCL, kFP16, kImageDefault, image2d);

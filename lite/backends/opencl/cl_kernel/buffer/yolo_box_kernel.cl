@@ -41,14 +41,14 @@ limitations under the License. */
                      scale,        \
                      bias)         \
 {                                  \
-  box[0] = (l + nati_sigmoid(x_data[box_idx]) * scale + bias) * \
+  box[0] = (l + nati_sigmoid(x_data[box_idx]) * scale + bias) *   \
                  img_width / x_h;                                 \
-  box[1] = (k + nati_sigmoid(x_data[box_idx + x_stride]) *      \
+  box[1] = (k + nati_sigmoid(x_data[box_idx + x_stride]) *        \
                  scale + bias) * img_height / x_h;                \
-  box[2] = native_exp(box_idx + x_stride * 2) *                   \
+  box[2] = native_exp(x_data[box_idx + x_stride * 2]) *           \
                  anchors_data[2 * anchor_idx] *                   \
                  img_width / x_size;                              \
-  box[3] = native_exp(box_idx + x_stride * 3) *                   \
+  box[3] = native_exp(x_data[box_idx + x_stride * 3]) *           \
                  anchors_data[2 * anchor_idx + 1] *               \
                  img_height / x_size;                             \
 }
