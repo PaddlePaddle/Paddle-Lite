@@ -111,7 +111,7 @@ int get_cpu_num() {
 
 size_t get_mem_size() {
 #ifdef LITE_WITH_LINUX
-  // get cpu count from /proc/cpuinfo
+  // get memory size from /proc/meminfo
   FILE* fp = fopen("/proc/meminfo", "rb");
   if (!fp) {
     return 1;
@@ -275,7 +275,7 @@ int get_min_freq_khz(int cpuid) {
   char path[256];
   snprintf(path,
            sizeof(path),
-           "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq",
+           "/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_min_freq",
            cpuid);
   FILE* fp = fopen(path, "rb");
   if (!fp) {
