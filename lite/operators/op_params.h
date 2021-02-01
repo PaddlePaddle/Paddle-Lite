@@ -2174,6 +2174,12 @@ struct TensorArrayToTensorParam : ParamBase {
   bool use_stack{false};
 };
 
+struct SumParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  lite::Tensor* Out{};
+  int inplace{0};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
