@@ -415,18 +415,18 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       if (flag_bias) {
         act_param.has_active = false;
       }
-      lite::arm::math::gemm_prepack_int8(weights_group,
-                                         din_group,
-                                         nullptr,
-                                         coldata_group,
-                                         m,
-                                         n,
-                                         k,
-                                         false,
-                                         false,
-                                         scale_group,
-                                         act_param,
-                                         &ctx);
+      lite::arm::math::gemm_prepack_int8<int32_t>(weights_group,
+                                                  din_group,
+                                                  nullptr,
+                                                  coldata_group,
+                                                  m,
+                                                  n,
+                                                  k,
+                                                  false,
+                                                  false,
+                                                  scale_group,
+                                                  act_param,
+                                                  &ctx);
     }
     if (!flag_1x1s1p1) {
       lite::arm::math::col2im<int>(col_data,
@@ -529,18 +529,18 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
       if (flag_bias) {
         act_param.has_active = false;
       }
-      lite::arm::math::gemm_prepack_int8(weights_group,
-                                         din_group,
-                                         nullptr,
-                                         coldata_group,
-                                         m,
-                                         n,
-                                         k,
-                                         false,
-                                         false,
-                                         scale_group,
-                                         act_param,
-                                         &ctx);
+      lite::arm::math::gemm_prepack_int8<int32_t>(weights_group,
+                                                  din_group,
+                                                  nullptr,
+                                                  coldata_group,
+                                                  m,
+                                                  n,
+                                                  k,
+                                                  false,
+                                                  false,
+                                                  scale_group,
+                                                  act_param,
+                                                  &ctx);
     }
     if (!flag_1x1s1p1) {
       lite::arm::math::col2im<int>(col_data,
@@ -571,6 +571,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                                  &act_param);
   }
 }
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

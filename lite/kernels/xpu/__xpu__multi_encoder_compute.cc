@@ -47,8 +47,28 @@ void XPUMultiEncoderCompute::Run() {
   int batch_size = param.input->dims()[0];
   int seq_len = param.input->dims()[1];
   int r = -1;
+  int last_slice_seq = -1;
+  if ((param.slice_starts.size() > 0 && param.slice_starts[0] == 0) &&
+      (param.slice_ends.size() > 0 && param.slice_ends[0] == 1) &&
+      (param.slice_axes.size() > 0 && param.slice_axes[0] == 1)) {
+    last_slice_seq = 0;
+  }
+  int bias_format = 1;
+  auto mask_shape = param.mask->dims().Vectorize();
+  if (mask_shape ==
+      std::vector<int64_t>({batch_size, param.head_num, seq_len, seq_len})) {
+    bias_format = 0;
+  } else if (mask_shape ==
+             std::vector<int64_t>({batch_size, 1, seq_len, seq_len})) {
+    bias_format = 1;
+  } else if (mask_shape == std::vector<int64_t>({batch_size, 1, 1, seq_len})) {
+    bias_format = 2;
+  } else {
+    LOG(FATAL) << "not supported mask dims(" << param.mask->dims() << ")";
+  }
+
+  ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
   if (param.precision == "int31") {
-    ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
     r = xdnn::bert_encoder_transformer_int31(
         ctx.GetRawContext(),                             /* context */
         batch_size,                                      /* batch_size */
@@ -68,7 +88,9 @@ void XPUMultiEncoderCompute::Run() {
         param.fc_weight_max->data<float>(),              /* fc_weights_max */
         true,                                            /* pretrans_b */
         true,                                            /* use_l3 */
-        act_type_ /* act_type */);
+        act_type_,
+        last_slice_seq,
+        bias_format);
   } else {
     r = xdnn::bert_encoder_transformer_int16<int16_t>(
         ctx.GetRawContext(),                             /* context */
@@ -89,7 +111,9 @@ void XPUMultiEncoderCompute::Run() {
         param.fc_weight_max->data<float>(),              /* fc_weights_max */
         true,                                            /* pretrans_b */
         true,                                            /* use_l3 */
-        act_type_ /* act_type */);
+        act_type_,
+        last_slice_seq,
+        bias_format);
   }
   CHECK_EQ(r, 0);
 }

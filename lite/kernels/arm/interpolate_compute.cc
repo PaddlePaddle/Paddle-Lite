@@ -35,6 +35,7 @@ void BilinearInterpCompute::Run() {
   int out_w = param.out_w;
   int out_h = param.out_h;
   bool align_corners = param.align_corners;
+  int align_mode = param.align_mode;
   std::string interp_method = "Bilinear";
   lite::arm::math::interpolate(X,
                                OutSize,
@@ -45,6 +46,7 @@ void BilinearInterpCompute::Run() {
                                out_w,
                                scale,
                                align_corners,
+                               align_mode,
                                interp_method);
 }
 
@@ -59,6 +61,7 @@ void NearestInterpCompute::Run() {
   int out_w = param.out_w;
   int out_h = param.out_h;
   bool align_corners = param.align_corners;
+  int align_mode = param.align_mode;
   std::string interp_method = "Nearest";
   lite::arm::math::interpolate(X,
                                OutSize,
@@ -69,6 +72,7 @@ void NearestInterpCompute::Run() {
                                out_w,
                                scale,
                                align_corners,
+                               align_mode,
                                interp_method);
 }
 
@@ -93,6 +97,36 @@ REGISTER_LITE_KERNEL(bilinear_interp,
     .Finalize();
 
 REGISTER_LITE_KERNEL(nearest_interp,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::NearestInterpCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(bilinear_interp_v2,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::arm::BilinearInterpCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(nearest_interp_v2,
                      kARM,
                      kFloat,
                      kNCHW,

@@ -446,6 +446,23 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
+    layout,
+    kOpenCL,
+    kAny,
+    kNCHW,
+    paddle::lite::kernels::opencl::LayoutComputeImageDefaultToBufferChw,
+    def)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kImageDefault))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
     layout_once,
     kOpenCL,
     kAny,

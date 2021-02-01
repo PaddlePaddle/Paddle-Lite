@@ -11,35 +11,37 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
 
+#pragma once
+#include <string>
 #include <vector>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
+
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace x86 {
+namespace operators {
 
-template <typename T>
-class ShapeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+class TensorArrayToTensorOpLite : public OpLite {
  public:
-  using param_t = operators::ShapeParam;
+  TensorArrayToTensorOpLite() {}
+  explicit TensorArrayToTensorOpLite(const std::string &op_type)
+      : OpLite(op_type) {}
 
-  void Run() override {
-    auto& param = *param_.get_mutable<operators::ShapeParam>();
-    // auto& context = context_->As<X86Context>();
-    auto out_data = param.Out->template mutable_data<int32_t>();
-    auto in_dims = param.X->dims();
-    for (size_t i = 0; i < in_dims.size(); ++i) {
-      out_data[i] = in_dims[i];
-    }
-  }
+  bool CheckShape() const override;
 
-  virtual ~ShapeCompute() = default;
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "tensorArrayToTensor"; }
+
+ private:
+  mutable TensorArrayToTensorParam param_;
 };
 
-}  // namespace x86
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

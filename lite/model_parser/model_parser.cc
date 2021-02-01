@@ -112,6 +112,15 @@ void LoadCombinedParamsPb(const std::string &path,
                             << " LoadCombinedParamsPb, use LoadParam instead.";
 }
 
+void TensorToStream(std::ostream &os, const lite::Tensor &tensor) {
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+}
+void TensorFromStream(std::istream &is, lite::Tensor *tensor) {
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+}
+void ReadBinaryFile(const std::string &filename, std::string *contents) {
+  LITE_MODEL_INTERFACE_NOT_IMPLEMENTED;
+}
 void LoadModelPb(const std::string &model_dir,
                  const std::string &model_file,
                  const std::string &param_file,
@@ -406,8 +415,16 @@ void SaveModelNaive(const std::string &model_file,
   const std::string prog_path = model_file + ".nb";
   model_parser::BinaryFileWriter writer{prog_path};
 
-  // Save meta_version(uint16) into file
+  // Meta_version(uint16), default value is 2.
   uint16_t meta_version = 2;
+  // You can modify meta_version by register environment variable
+  // 'PADDLE_LITE_MODEL_VERSION1'
+  const char *PADDLE_LITE_EXPERIMENTAL_MODEL =
+      std::getenv("PADDLE_LITE_MODEL_VERSION1");
+  if (PADDLE_LITE_EXPERIMENTAL_MODEL != nullptr) {
+    meta_version = 1;
+  }
+  // Save meta_version(uint16) into file
   writer.Write(&meta_version, sizeof(uint16_t));
 
   // Save lite_version(char[16]) into file
@@ -437,9 +454,30 @@ void SaveModelNaive(const std::string &model_file,
       continue;
     unique_var_names.emplace(var.Name());
   }
-  fbs::ParamSerializer serializer{&writer};
-  // Save params into naive model
-  serializer.ForwardWrite(exec_scope, unique_var_names);
+
+  /* 3. Save paramdesc info into model file */
+  switch (meta_version) {
+    case 1: {
+      /* 3.1 Save combined params to params.fbs */
+      fbs::CombinedParamsDesc params_prog;
+      fbs::deprecated::SetCombinedParamsWithScope(
+          exec_scope, unique_var_names, &params_prog);
+      params_prog.CopyDataToBuffer(&buffer);
+      writer.Write(buffer.data(), buffer.size());
+      break;
+    }
+    case 2: {
+      fbs::ParamSerializer serializer{&writer};
+      // 3.2 Save params into naive model
+      serializer.ForwardWrite(exec_scope, unique_var_names);
+      break;
+    }
+    default: {
+      LOG(FATAL) << "Error: Unsupported opt meta_version, "
+                    "meta_version should be set as 1 or 2.";
+      break;
+    }
+  }
   LOG(INFO) << "Save naive buffer model in " << prog_path << " successfully";
 }
 

@@ -30,20 +30,30 @@ namespace fusion {
 
 class XPUSingleEncoderFuser : public FuseBase {
  public:
-  explicit XPUSingleEncoderFuser(const std::string& act_type = "gelu")
-      : act_type_(act_type) {}
+  explicit XPUSingleEncoderFuser(const std::string& act_type = "gelu",
+                                 const std::string& input_pos = "Y",
+                                 const std::string& qkv_ln_2_out_pos = "Y",
+                                 const std::string& matmul_type = "matmul",
+                                 const std::string& mul_type = "mul",
+                                 bool with_q_scale = true)
+      : act_type_(act_type),
+        input_pos_(input_pos),
+        qkv_ln_2_out_pos_(qkv_ln_2_out_pos),
+        matmul_type_(matmul_type),
+        mul_type_(mul_type),
+        with_q_scale_(with_q_scale) {}
 
   void BuildPattern() override {
     auto* input = VarNode("input")
-                      ->assert_is_op_input("mul", "X")
-                      ->assert_is_op_input("elementwise_add", "Y")
+                      ->assert_is_op_input(mul_type_, "X")
+                      ->assert_is_op_input("elementwise_add", input_pos_)
                       ->AsInput();
 
     auto* q_mul_y =
-        VarNode("q_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
-    auto* q_mul = OpNode("q_mul", "mul");
+        VarNode("q_mul_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
+    auto* q_mul = OpNode("q_mul", mul_type_);
     auto* q_mul_out = VarNode("q_mul_out")
-                          ->assert_is_op_output("mul", "Out")
+                          ->assert_is_op_output(mul_type_, "Out")
                           ->assert_is_op_input("elementwise_add", "X")
                           ->AsIntermediate();
     auto* q_add_y = VarNode("q_add_y")
@@ -62,26 +72,36 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* q_reshape2_xshape = VarNode("q_reshape2_xshape")
                                   ->assert_is_op_output("reshape2", "XShape")
                                   ->AsIntermediate();
+    std::string target_op_type = "matmul";
+    if (with_q_scale_) {
+      target_op_type = "scale";
+    }
+    std::cout << "target_op_type=" << target_op_type << std::endl;
     auto* q_transpose2 = OpNode("q_transpose2", "transpose2")->AsIntermediate();
     auto* q_transpose2_out = VarNode("q_transpose2_out")
                                  ->assert_is_op_output("transpose2", "Out")
-                                 ->assert_is_op_input("scale", "X")
+                                 ->assert_is_op_input(target_op_type, "X")
                                  ->AsIntermediate();
     auto* q_transpose2_xshape =
         VarNode("q_transpose2_xshape")
             ->assert_is_op_output("transpose2", "XShape")
             ->AsIntermediate();
-    auto* q_scale = OpNode("q_scale", "scale")->AsIntermediate();
-    auto* q_scale_out = VarNode("q_scale_out")
-                            ->assert_is_op_output("scale", "Out")
-                            ->assert_is_op_input("matmul", "X")
-                            ->AsIntermediate();
+
+    PMNode* q_scale = nullptr;
+    PMNode* q_scale_out = nullptr;
+    if (with_q_scale_) {
+      q_scale = OpNode("q_scale", "scale")->AsIntermediate();
+      q_scale_out = VarNode("q_scale_out")
+                        ->assert_is_op_output("scale", "Out")
+                        ->assert_is_op_input("matmul", "X")
+                        ->AsIntermediate();
+    }
 
     auto* k_mul_y =
-        VarNode("k_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
-    auto* k_mul = OpNode("k_mul", "mul")->AsIntermediate();
+        VarNode("k_mul_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
+    auto* k_mul = OpNode("k_mul", mul_type_)->AsIntermediate();
     auto* k_mul_out = VarNode("k_mul_out")
-                          ->assert_is_op_output("mul", "Out")
+                          ->assert_is_op_output(mul_type_, "Out")
                           ->assert_is_op_input("elementwise_add", "X")
                           ->AsIntermediate();
     auto* k_add_y = VarNode("k_add_y")
@@ -129,10 +149,10 @@ class XPUSingleEncoderFuser : public FuseBase {
                                ->AsIntermediate();
 
     auto* v_mul_y =
-        VarNode("v_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
-    auto* v_mul = OpNode("v_mul", "mul")->AsIntermediate();
+        VarNode("v_mul_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
+    auto* v_mul = OpNode("v_mul", mul_type_)->AsIntermediate();
     auto* v_mul_out = VarNode("v_mul_out")
-                          ->assert_is_op_output("mul", "Out")
+                          ->assert_is_op_output(mul_type_, "Out")
                           ->assert_is_op_input("elementwise_add", "X")
                           ->AsIntermediate();
     auto* v_add_y = VarNode("v_add_y")
@@ -154,16 +174,16 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* v_transpose2 = OpNode("v_transpose2", "transpose2")->AsIntermediate();
     auto* v_transpose2_out = VarNode("v_transpose2_out")
                                  ->assert_is_op_output("transpose2", "Out")
-                                 ->assert_is_op_input("matmul", "Y")
+                                 ->assert_is_op_input(matmul_type_, "Y")
                                  ->AsIntermediate();
     auto* v_transpose2_xshape =
         VarNode("v_transpose2_xshape")
             ->assert_is_op_output("transpose2", "XShape")
             ->AsIntermediate();
 
-    auto* qkv_matmul = OpNode("qkv_matmul", "matmul")->AsIntermediate();
+    auto* qkv_matmul = OpNode("qkv_matmul", matmul_type_)->AsIntermediate();
     auto* qkv_matmul_out = VarNode("qkv_matmul_out")
-                               ->assert_is_op_output("matmul", "Out")
+                               ->assert_is_op_output(matmul_type_, "Out")
                                ->assert_is_op_input("transpose2", "X")
                                ->AsIntermediate();
     auto* qkv_transpose2 =
@@ -179,16 +199,16 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qkv_reshape2 = OpNode("qkv_reshape2", "reshape2")->AsIntermediate();
     auto* qkv_reshape2_out = VarNode("qkv_reshape2_out")
                                  ->assert_is_op_output("reshape2", "Out")
-                                 ->assert_is_op_input("mul", "X")
+                                 ->assert_is_op_input(mul_type_, "X")
                                  ->AsIntermediate();
     auto* qkv_reshape2_xshape = VarNode("qkv_reshape2_xshape")
                                     ->assert_is_op_output("reshape2", "XShape")
                                     ->AsIntermediate();
     auto* qkv_mul_y =
-        VarNode("qkv_mul_y")->assert_is_op_input("mul", "Y")->AsInput();
-    auto* qkv_mul = OpNode("qkv_mul", "mul")->AsIntermediate();
+        VarNode("qkv_mul_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
+    auto* qkv_mul = OpNode("qkv_mul", mul_type_)->AsIntermediate();
     auto* qkv_mul_out = VarNode("qkv_mul_out")
-                            ->assert_is_op_output("mul", "Out")
+                            ->assert_is_op_output(mul_type_, "Out")
                             ->assert_is_op_input("elementwise_add", "X")
                             ->AsIntermediate();
     auto* qkv_add_y = VarNode("qkv_add_y")
@@ -211,11 +231,12 @@ class XPUSingleEncoderFuser : public FuseBase {
                               ->assert_is_op_input("layer_norm", "Bias")
                               ->AsInput();
     auto* qkv_ln_2 = OpNode("qkv_ln_2", "layer_norm")->AsIntermediate();
-    auto* qkv_ln_2_out = VarNode("qkv_ln_2_out")
-                             ->assert_is_op_output("layer_norm", "Y")
-                             ->assert_is_op_input("mul", "X")
-                             ->assert_is_op_input("elementwise_add", "Y")
-                             ->AsIntermediate();
+    auto* qkv_ln_2_out =
+        VarNode("qkv_ln_2_out")
+            ->assert_is_op_output("layer_norm", "Y")
+            ->assert_is_op_input(mul_type_, "X")
+            ->assert_is_op_input("elementwise_add", qkv_ln_2_out_pos_)
+            ->AsIntermediate();
     auto* qkv_ln_2_mean = VarNode("qkv_ln_2_mean")
                               ->assert_is_op_output("layer_norm", "Mean")
                               ->AsIntermediate();
@@ -224,10 +245,10 @@ class XPUSingleEncoderFuser : public FuseBase {
                              ->AsIntermediate();
 
     auto* qkv_mul_3_y =
-        VarNode("qkv_mul_3_y")->assert_is_op_input("mul", "Y")->AsInput();
-    auto* qkv_mul_3 = OpNode("qkv_mul_3", "mul")->AsIntermediate();
+        VarNode("qkv_mul_3_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
+    auto* qkv_mul_3 = OpNode("qkv_mul_3", mul_type_)->AsIntermediate();
     auto* qkv_mul_3_out = VarNode("qkv_mul_3_out")
-                              ->assert_is_op_output("mul", "Out")
+                              ->assert_is_op_output(mul_type_, "Out")
                               ->assert_is_op_input("elementwise_add", "X")
                               ->AsIntermediate();
     auto* qkv_add_3_y = VarNode("qkv_add_3_y")
@@ -241,13 +262,13 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qkv_act = OpNode("qkv_act", act_type_)->AsIntermediate();
     auto* qkv_act_out = VarNode("qkv_act_out")
                             ->assert_is_op_output(act_type_, "Out")
-                            ->assert_is_op_input("mul", "X")
+                            ->assert_is_op_input(mul_type_, "X")
                             ->AsIntermediate();
     auto* qkv_mul_4_y =
-        VarNode("qkv_mul_4_y")->assert_is_op_input("mul", "Y")->AsInput();
-    auto* qkv_mul_4 = OpNode("qkv_mul_4", "mul")->AsIntermediate();
+        VarNode("qkv_mul_4_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
+    auto* qkv_mul_4 = OpNode("qkv_mul_4", mul_type_)->AsIntermediate();
     auto* qkv_mul_4_out = VarNode("qkv_mul_4_out")
-                              ->assert_is_op_output("mul", "Out")
+                              ->assert_is_op_output(mul_type_, "Out")
                               ->assert_is_op_input("elementwise_add", "X")
                               ->AsIntermediate();
     auto* qkv_add_4_y = VarNode("qkv_add_4_y")
@@ -281,9 +302,14 @@ class XPUSingleEncoderFuser : public FuseBase {
                              ->AsIntermediate();
 
     // TODO(miaotianxiang): use LinksFrom/LinksTo() instead
-    *input >> *q_mul >> *q_mul_out >> *q_add >> *q_add_out >> *q_reshape2 >>
-        *q_reshape2_out >> *q_transpose2 >> *q_transpose2_out >> *q_scale >>
-        *q_scale_out >> *qk_matmul;
+    if (with_q_scale_) {
+      *input >> *q_mul >> *q_mul_out >> *q_add >> *q_add_out >> *q_reshape2 >>
+          *q_reshape2_out >> *q_transpose2 >> *q_transpose2_out >> *q_scale >>
+          *q_scale_out >> *qk_matmul;
+    } else {
+      *input >> *q_mul >> *q_mul_out >> *q_add >> *q_add_out >> *q_reshape2 >>
+          *q_reshape2_out >> *q_transpose2 >> *q_transpose2_out >> *qk_matmul;
+    }
     *q_mul_y >> *q_mul;
     *q_add_y >> *q_add;
     *q_reshape2 >> *q_reshape2_xshape;
@@ -418,6 +444,11 @@ class XPUSingleEncoderFuser : public FuseBase {
 
  private:
   std::string act_type_;
+  std::string input_pos_;
+  std::string qkv_ln_2_out_pos_;
+  std::string matmul_type_;
+  std::string mul_type_;
+  bool with_q_scale_;
 };
 
 class XPUMultiEncoderFuser {
@@ -519,15 +550,8 @@ class XPUMultiEncoderFuser {
     op_desc.SetAttr<std::string>("precision",
                                  (fc_int31_ids_.empty() ? "int16" : "int31"));
 
-    // check q/k/v fusion
-    bool enable_qkv_fusion = false;
-    if (!fc_int31_ids_.empty()) {
-      int head_num = first_encoder_op_info->GetAttr<int>("head_num");
-      int size_per_head = first_encoder_op_info->GetAttr<int>("size_per_head");
-      if (head_num * size_per_head <= 128) {
-        enable_qkv_fusion = true;
-      }
-    }
+    // q/k/v fusion
+    bool enable_qkv_fusion = true;
     op_desc.SetAttr<bool>("enable_qkv_fusion", enable_qkv_fusion);
 
     auto* scope = multi_encoder_stmt->op()->scope();
@@ -594,9 +618,8 @@ class XPUMultiEncoderFuser {
         float max_f = paddle::lite::xpu::math::FindMaxAbs(
             weight_qkv_trans.get(), qkv_len);
         fc_weight_max[i] = max_f;
+        VLOG(3) << "QKV fused FC-" << i << ", weight_max:" << max_f;
         if (fc_int31_ids_.find(i % 6) != fc_int31_ids_.end()) {
-          VLOG(3) << "Use FC-int31 in QKV fused FC-" << i << ", " << i / 6
-                  << "-" << i % 6;
           memcpy(weight_q->mutable_data<float>(),
                  weight_qkv_trans.get(),
                  qkv_len * sizeof(float));
@@ -628,7 +651,6 @@ class XPUMultiEncoderFuser {
       // position in the encoder
       if (fc_int31_ids_.find(i % 6) != fc_int31_ids_.end()) {
         // FCs in encoder use int31
-        VLOG(3) << "Use FC-int31 in FC-" << i << ", " << i / 6 << "-" << i % 6;
         std::unique_ptr<float[]> weight_trans_fp32(new float[weight_len]);
         paddle::lite::xpu::math::Transpose(weight_on_host,
                                            weight_trans_fp32.get(),
@@ -774,6 +796,11 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     // TODO(miaotianxiang): backup graph, recover from failed match
     std::vector<std::string> act_types{"gelu", "relu"};
+    std::vector<std::string> input_poss{"X", "Y"};
+    std::vector<std::string> qkv_ln_2_out_poss{"X", "Y"};
+    std::vector<std::string> matmul_types{"matmul", "matmul_v2"};
+    std::vector<std::string> mul_types{"mul", "matmul"};
+    std::vector<bool> with_q_scales{true, false};
 
     std::set<int> fc_int31_ids;
 #ifdef LITE_WITH_XPU
@@ -797,10 +824,26 @@ class XPUMultiEncoderFusePass : public ProgramPass {
 #endif
 
     for (auto& act_type : act_types) {
-      fusion::XPUSingleEncoderFuser single_encoder_fuser(act_type);
-      single_encoder_fuser(graph.get());
-      fusion::XPUMultiEncoderFuser multi_encoder_fuser(fc_int31_ids);
-      multi_encoder_fuser(graph.get());
+      for (auto& input_pos : input_poss) {
+        for (auto& qkv_ln_2_out_pos : qkv_ln_2_out_poss) {
+          for (auto& matmul_type : matmul_types) {
+            for (auto& mul_type : mul_types) {
+              for (auto with_q_scale : with_q_scales) {
+                fusion::XPUSingleEncoderFuser single_encoder_fuser(
+                    act_type,
+                    input_pos,
+                    qkv_ln_2_out_pos,
+                    matmul_type,
+                    mul_type,
+                    with_q_scale);
+                single_encoder_fuser(graph.get());
+                fusion::XPUMultiEncoderFuser multi_encoder_fuser(fc_int31_ids);
+                multi_encoder_fuser(graph.get());
+              }
+            }
+          }
+        }
+      }
     }
   }
 };

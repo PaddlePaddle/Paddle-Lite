@@ -55,9 +55,9 @@ class GatherComputeTest : public arena::TestCase {
           (index_dims.size() == 2 && index_dims[1] == 1));
     CHECK_EQ(index_dims.size(), 1);
     if (axis_dims_.production() == 1) {
-      auto* axis_data = axis->data<A>();
-      auto* index_data = index->data<R>();
-      auto* input_data = x->data<T>();
+      auto* axis_data = axis->template data<A>();
+      auto* index_data = index->template data<R>();
+      auto* input_data = x->template data<T>();
 
       int index_size = index->numel();
       int input_size = x->numel();
@@ -78,7 +78,7 @@ class GatherComputeTest : public arena::TestCase {
       auto out = scope->NewTensor(out_);
       CHECK(out);
       out->Resize(out_dim_vec);
-      auto* out_data = out->mutable_data<T>();
+      auto* out_data = out->template mutable_data<T>();
 
       int out_index = 0;
       for (int i = 0; i < inner_dim_size; i++) {
@@ -187,9 +187,11 @@ TEST(Gather, precision) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
       for (auto axis_dims : std::vector<std::vector<int64_t>>{{1}, {0}}) {
 #if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL) || defined(LITE_WITH_NPU)
-        axis_dims = {{0}};
-        TestGather<float, int32_t, int32_t>(
-            x_dims, index_dims, axis_dims, place, abs_error, "def");
+        //        axis_dims = {{0}};
+        //        TestGather<float, int32_t, int32_t>(
+        //            x_dims, index_dims, axis_dims, place, abs_error, "def");
+        // FIXME: error: unused variable 'abs_error' [-Werror=unused-variable]
+        abs_error = 1e-5;
 #else
         TestGather<float, int64_t, int64_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "int64int64");

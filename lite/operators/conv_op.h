@@ -120,10 +120,31 @@ class ConvOpLite : public OpLite {
             lite_api::ActivationType::kLeakyRelu;
         param_.activation_param.Leaky_relu_alpha =
             op_desc.GetAttr<float>("leaky_relu_alpha");
+      } else if (act_type == "hard_swish") {
+        param_.activation_param.active_type =
+            lite_api::ActivationType::kHardSwish;
+        param_.activation_param.hard_swish_threshold =
+            op_desc.GetAttr<float>("hard_swish_threshold");
+        param_.activation_param.hard_swish_scale =
+            op_desc.GetAttr<float>("hard_swish_scale");
+        param_.activation_param.hard_swish_offset =
+            op_desc.GetAttr<float>("hard_swish_offset");
+      } else if (act_type == "hard_sigmoid") {
+        param_.activation_param.active_type =
+            lite_api::ActivationType::kHardSigmoid;
+        param_.activation_param.hard_sigmoid_slope =
+            op_desc.GetAttr<float>("slope");
+        param_.activation_param.hard_sigmoid_offset =
+            op_desc.GetAttr<float>("offset");
       } else {
-        CHECK(false)
-            << "The fused conv only supports fuse with relu and leaky relu";
+        LOG(FATAL) << "The fused conv only supports fuse with relu, leaky "
+                      "relu, hard_swish, while the given activation type is "
+                   << act_type;
       }
+    }
+    if (op_desc.HasAttr("scale_activation_type")) {
+      param_.scale_activation_type =
+          op_desc.GetAttr<std::string>("scale_activation_type");
     }
 
     if (op_desc.HasAttr("padding_algorithm")) {
@@ -145,6 +166,16 @@ class ConvOpLite : public OpLite {
             op_info->GetOutputScale(output_scale_name, true)[0];
       }
     }
+
+#ifdef LITE_WITH_FPGA
+    if (op_info != nullptr && op_info->HasAttr("fpga_static_quant")) {
+      param_.enable_int8 = op_info->GetAttr<bool>("fpga_static_quant");
+      auto input_scale_name = "Input0_scale";
+      if (op_info->HasInputScale(input_scale_name, true)) {
+        param_.input_scale = op_info->GetInputScale(input_scale_name, true)[0];
+      }
+    }
+#endif
 
     // 2-pad to 4-pad
     if (paddings.size() == 2L) {
