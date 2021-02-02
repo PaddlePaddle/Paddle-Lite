@@ -124,7 +124,6 @@ void nearest_interp(const float16* src,
         int near_x = static_cast<int>(scale_w_new * w + 0.5);
         const float16* src_n = src + (near_y * w_in + near_x) * c;
         memcpy(dst_p, src_n, c * sizeof(float16));
-
         dst_p += c;
       }
     }
@@ -166,7 +165,6 @@ inline std::vector<int> get_new_shape(
     auto tensor = list_new_shape_tensor[i];
     vec_new_shape.push_back(static_cast<int32_t>(*tensor->data<int32_t>()));
   }
-
   return vec_new_shape;
 }
 

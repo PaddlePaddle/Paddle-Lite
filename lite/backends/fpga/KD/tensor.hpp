@@ -421,14 +421,13 @@ class Tensor {
     flush();
     placeHolder_->scale_[0] = max / 127.0f;
     placeHolder_->scale_[1] = 127.0f / max;
-    // DLOG << "\ttensor file " << path << " loaded!";
   }
 
   void readFloatFromFile(std::string path) {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
-      // std::cout << "file: " << path << " does not exist\n";
+      std::cout << "file: " << path << " does not exist\n";
       return;
     }
     int num = shape_->numel();
@@ -444,7 +443,6 @@ class Tensor {
     flush();
     placeHolder_->scale_[0] = max / 127.0f;
     placeHolder_->scale_[1] = 127.0f / max;
-    // DLOG << "\ttensor file " << path << " loaded!";
   }
 
   void readFromFile(std::string path) {

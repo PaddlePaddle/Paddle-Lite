@@ -38,13 +38,11 @@ class FullyConnectedPE : public PE {
     ConvParam& convParam_ = convPE_.param();
     int num = param_.filter->shape().channel();
     int chw = param_.filter->shape().num();
-
     int in_channel = chw;
 
     Shape in_shape(NCHW, {1, in_channel, 1, 1});
     input_.mutableData<float16>(FP16, in_shape);
 
-    // Tensor* input = param_.input;
     convParam_.input = &input_;
     convParam_.output = param_.output;
 
@@ -79,9 +77,7 @@ class FullyConnectedPE : public PE {
     }
 
     chw_to_hwc(&chw_filter, &conv_filter_);
-    // Resize conv_filter to num, filter,1,1;
     conv_filter_.mutableData<float>(FP32, shape);
-
     convParam_.filter = &conv_filter_;
     convParam_.filter->flush();
 

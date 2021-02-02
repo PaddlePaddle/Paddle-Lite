@@ -29,7 +29,7 @@ calculate sub padding number
 */
 inline int calc_sub_pad(int filter_axis, int pad, int stride) {
   if (stride == 0 || ((filter_axis - pad - 1) < 0)) {
-    // PADDLE_MOBILE_ENFORCE(false, "Wrong deconv parameters");
+    // ENFORCE(false, "Wrong deconv parameters");
   }
   return (filter_axis - pad - 1) / stride;
 }
@@ -70,8 +70,6 @@ filter data in PaddlePaddle is CNHW format.
 this function convert it into NCHW format.
 */
 void inline convert_cnhw_to_nchw(Tensor* cnhw, Tensor* nchw) {
-  // cnhw->saveToFile("cnhw", true);
-  // cnhw->shape().setLayoutType(CNHW);
   Shape& cnhw_shape = cnhw->shape();
   Shape shape(NCHW,
               {cnhw_shape.channel(),
@@ -85,34 +83,20 @@ void inline convert_cnhw_to_nchw(Tensor* cnhw, Tensor* nchw) {
   int nhw = shape.num() * hw;
   int chw = shape.channel() * hw;
 
-  // float* filter_data = param_.filter->data<float>();
   int index = 0;
   for (int c = 0; c < shape.channel(); c++) {
     for (int n = 0; n < shape.num(); n++) {
-      // for (int h = 0; h < shape.height(); h++) {
-      //     for (int w = 0; w < shape.width(); w++) {
-      //         int dst_index =
-      //         index++;
-      //     }
-      // }
-
       float* dst = nchw_data + c * hw + n * chw;
-      // float* src = cnhw_data + n * chw + c * hw;
       float* src = cnhw_data + index;
       memcpy(dst, src, hw * sizeof(float));
-
       index += hw;
     }
   }
-  // nchw->saveToFile("nchw", true);
-
-  // exit(-1);
 }
 
 template <typename T>
 void inline nchw_to_nhwc(Tensor* nchw, Tensor* nhwc) {
   Shape& shape = nchw->shape();
-
   T* x = nchw->data<T>();
   T* y = nhwc->data<T>();
 
@@ -131,8 +115,6 @@ void inline nchw_to_nhwc(Tensor* nchw, Tensor* nhwc) {
         for (int w = 0; w < width; w++) {
           int dst_index = base + offset_height + w * channel + c;
           y[dst_index] = x[index];
-          // std::cout << "dst_index:" << dst_index << " index:" << index <<
-          // std::endl;
           index++;
         }
       }
@@ -143,7 +125,6 @@ void inline nchw_to_nhwc(Tensor* nchw, Tensor* nhwc) {
 template <typename T>
 void inline nhwc_to_nchw(Tensor* nhwc, Tensor* nchw) {
   Shape& shape = nhwc->shape();
-
   T* x = nhwc->data<T>();
   T* y = nchw->data<T>();
 
@@ -161,8 +142,6 @@ void inline nhwc_to_nchw(Tensor* nhwc, Tensor* nchw) {
         for (int c = 0; c < channel; c++) {
           int dst_index = base + c * hw + h * width + w;
           y[dst_index] = x[index];
-          // std::cout << "dst_index:" << dst_index << " index:" << index <<
-          // std::endl;
           index++;
         }
       }
@@ -173,7 +152,6 @@ void inline nhwc_to_nchw(Tensor* nhwc, Tensor* nchw) {
 template <typename T>
 void inline chw_to_hwc2(Tensor* chw, Tensor* hwc) {
   Shape& shape = chw->shape();
-
   T* x = chw->data<T>();
   T* y = hwc->data<T>();
 
@@ -188,8 +166,6 @@ void inline chw_to_hwc2(Tensor* chw, Tensor* hwc) {
       for (int w = 0; w < width; w++) {
         int dst_index = offset_height + w * channel + c;
         y[dst_index] = x[index];
-        // std::cout << "dst_index:" << dst_index << " index:" << index <<
-        // std::endl;
         index++;
       }
     }
@@ -199,7 +175,6 @@ void inline chw_to_hwc2(Tensor* chw, Tensor* hwc) {
 template <typename T>
 void inline hwc_to_chw(Tensor* hwc, Tensor* chw) {
   Shape& shape = chw->shape();
-
   T* x = hwc->data<T>();
   T* y = chw->data<T>();
 
@@ -212,11 +187,8 @@ void inline hwc_to_chw(Tensor* hwc, Tensor* chw) {
   for (int h = 0; h < height; h++) {
     for (int w = 0; w < width; w++) {
       for (int c = 0; c < channel; c++) {
-        // int offset_height = h * wc;
         int dst_index = c * hw + h * width + w;
         y[dst_index] = x[index];
-        // std::cout << "dst_index:" << dst_index << " index:" << index <<
-        // std::endl;
         index++;
       }
     }
@@ -251,41 +223,27 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
   Tensor* input = param->input;
   Tensor* output = param->output;
   int sub_conv_number = param->strides[0];
-
   int kernel_num = filter->shape().num();
   int height = filter->shape().height();
   int width = filter->shape().width();
-
   int sub_num = kernel_num * sub_conv_number;
   int sub_h = height / sub_conv_number;
   int sub_w = width / sub_conv_number;
   int sub_pad = calc_sub_pad(width, param->paddings[0], param->strides[0]);
-
   int omit_size = deconv_get_omit(param->strides[0], width, param->paddings[0]);
-
   int channel = filter->shape().channel();
-
   int sub_output_w = get_sub_out_axis(input->shape().width(), sub_pad, sub_w);
   int sub_output_h = get_sub_out_axis(input->shape().height(), sub_pad, sub_h);
-
   int before_omit_out_w = sub_output_w * sub_conv_number;
   int before_omit_out_h = sub_output_h * sub_conv_number;
   int after_omit_out_w = before_omit_out_w - 2 * omit_size;
   int after_omit_out_h = before_omit_out_h - 2 * omit_size;
 
   float max = find_max(*filter);
-
   float mem_factor = before_omit_out_h * 1.0 / after_omit_out_h;
   output->setMemScale(mem_factor);
   output->mutableData<float16>();
-
-  // Tensor nhwc_filter;
-  // nhwc_filter.mutableData<void>(FP32, filter->shape());
-  // nchw_to_nhwc<float>(filter, &nhwc_filter);
-
-  // float* filter_data = nhwc_filter.data<float>();
   float* filter_data = filter->data<float>();
-
   for (int i = 0; i < sub_conv_number; i++) {
     float16* out_address = nullptr;
     float* out_scale_address = nullptr;
@@ -304,20 +262,16 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
 
     for (int nn = 0; nn < sub_num; ++nn) {
       int ni = nn % kernel_num;
-      int woff = sub_conv_number - 1 - (nn / kernel_num);  //
+      int woff = sub_conv_number - 1 - (nn / kernel_num);
       for (int cc = 0; cc < channel; ++cc) {
         for (int hh = 0; hh < sub_h; ++hh) {
           int hi = hh * sub_conv_number + i;
           for (int ww = 0; ww < sub_w; ++ww) {
-            int wi = ww * sub_conv_number + woff;  // 1 0
-            // int sidx = ((nn * sub_h + hh) * sub_w + ww) * channel;
-            // int kidx = ((ni * height + hi) * width + wi) * channel;
-            // memcpy(sub_filter_data + sidx, filter_data + kidx, channel *
-            // sizeof(float));
+            int wi = ww * sub_conv_number + woff;
             int sidx =
-                ((nn * channel * sub_h + cc * sub_h + hh) * sub_w + ww);  //
+                ((nn * channel * sub_h + cc * sub_h + hh) * sub_w + ww);
             int kidx =
-                ((ni * channel * height + cc * height + hi) * width + wi);  //
+                ((ni * channel * height + cc * height + hi) * width + wi);
             memcpy(sub_filter_data + sidx, filter_data + kidx, sizeof(float));
           }
         }
@@ -325,7 +279,6 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
     }
 
     float_tensor.flush();
-
     std::vector<float> quant_scale;
     format_filter(&float_tensor,
                   &(basic_conv_param->filter),
@@ -335,7 +288,6 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
 
     Tensor scale;
     Tensor bias;
-
     Shape s_shape(NC, {1, sub_num});
     float* scale_data = scale.mutableData<float>(FP32, s_shape);
     float* bias_data = bias.mutableData<float>(FP32, s_shape);
@@ -352,18 +304,13 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
 
     format_bias_scale_new(&bias, &scale, &basic_conv_param->scaleBias);
     basic_conv_param->scaleBias.flush();
-
     ConvArgs& args = basic_conv_param->args;
-
     int offset = (sub_conv_number - 1 - i) *
                  align_to_x(after_omit_out_w * kernel_num, 16);
-
     out_address = output->data<float16>() + offset;
-
     out_scale_address = basic_conv_param->output.scale();
 
     args.group_num = param->groups;
-    // args.relu_enabled = param.relu.enabled;
     args.sb_address = basic_conv_param->scaleBias.data<float16>();
     args.kernel.stride_h = 1;
     args.kernel.stride_w = 1;

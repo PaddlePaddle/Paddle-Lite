@@ -26,7 +26,6 @@ using float16 = zynqmp::float16;
 void BatchNormCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
   param.y->mutable_data<float16>();
-  // auto x_dims = param.x->dims();
 
   zynqmp::BatchnormParam& bn_param = pe_.param();
   bn_param.input = param.x->ZynqTensor();
@@ -43,9 +42,7 @@ void BatchNormCompute::PrepareForRun() {
 }
 
 void BatchNormCompute::Run() {
-  // auto& param = this->Param<param_t>();
   pe_.dispatch();
-
 #ifdef FPGA_PRINT_TENSOR
   zynqmp::BatchnormParam& bn_param = pe_.param();
   Debugger::get_instance().registerOutput("batch_norm", bn_param.Y);

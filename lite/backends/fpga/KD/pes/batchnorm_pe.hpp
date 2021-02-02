@@ -33,16 +33,13 @@ class BatchnormPE : public PE {
     ScaleParam& scale_param = scalePE_.param();
     scale_param.input = param_.input;
     scale_param.output = param_.output;
-
     Shape shape(N, {output->shape().channel()});
-
     auto mean_data = param_.mean->data<float>();
     auto variance_data = param_.variance->data<float>();
     auto scale_data = param_.scale->data<float>();
     auto bias_data = param_.bias->data<float>();
     auto new_scale_ptr = scale_.mutableData<zynqmp::float16>(FP16, shape);
     auto new_bias_ptr = bias_.mutableData<zynqmp::float16>(FP16, shape);
-
     float epsilon = param_.epsilon;
 
     Shape& in_shape = param_.input->shape();
@@ -73,11 +70,6 @@ class BatchnormPE : public PE {
   bool dispatch() { return scalePE_.dispatch(); }
 
   BatchnormParam& param() { return param_; }
-
-  ~BatchnormPE() {
-    scalePE_.param().input = nullptr;
-    scalePE_.param().output = nullptr;
-  }
 
  private:
   BatchnormParam param_;

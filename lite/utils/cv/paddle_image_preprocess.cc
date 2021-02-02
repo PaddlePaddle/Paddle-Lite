@@ -159,7 +159,6 @@ __attribute__((visibility("default"))) void ImagePreprocess::image_to_tensor(
            this->transParam_.ih);
     return;
   }
-
   Image2TensorFpga img2tensor;
   img2tensor.choose(src,
                     dstTensor,

@@ -66,7 +66,7 @@ void Image2TensorFpga::choose(const uint8_t* src,
   if (layout == LayoutType::kNHWC && (srcFormat == BGR || srcFormat == RGB)) {
     impl_ = bgr_to_tensor_hwc;
   } else {
-    printf("this layout: %d or image format: %d not support \n",
+    printf("layout: %d or image format: %d is not supported! \n",
            static_cast<int>(layout),
            srcFormat);
     return;
@@ -91,7 +91,8 @@ void bgr_to_tensor_hwc(const uint8_t* src,
   } else if (srcFormat == ImageFormat::YUV422) {
     channel = 2;
   } else if (srcFormat == ImageFormat::YUV444) {
-    printf("input image format YUV444 does not support! \n");
+    printf("input image format YUV444 is not supported! \n");
+    // (chonwhite) implement this;
   }
   int wc_align_size =
       paddle::zynqmp::align_to_x(srcw * channel, IMAGE_ALIGNMENT);
@@ -115,7 +116,6 @@ void bgr_to_tensor_hwc(const uint8_t* src,
 
   preprocess_args.input_width = srcw;
   preprocess_args.input_height = srch;
-  // resize_args.image_channel = channel;
   preprocess_args.output_width = dstw;
   preprocess_args.output_height = dsth;
   float height_ratio = srch * 1.0f / dsth;
@@ -155,10 +155,8 @@ void bgr_to_tensor_hwc(const uint8_t* src,
 
   int in_size =
       srch * paddle::zynqmp::align_to_x(srcw * channel, IMAGE_ALIGNMENT);
-
   paddle::zynqmp::fpga_flush(preprocess_args.input_image_address,
                              in_size * sizeof(uint8_t));
-
   int ret = paddle::zynqmp::compute_preprocess(preprocess_args);
   if (ret == 0) {
     int output_size =

@@ -285,13 +285,6 @@ int compute_preprocess(const struct PreprocessArgs &args) {
   return do_ioctl(IOCTL_PREPROCESS, &args);
 }
 
-int fpga_lock(const struct CNNLockArgs &args) {
-  return do_ioctl(IOCTL_LOCK_TRY_LOCKING, &args);
-}
-int fpga_unlock(const struct CNNLockArgs &args) {
-  return do_ioctl(IOCTL_LOCK_UNLOCK, &args);
-}
-
 int16_t fp32_2_fp16(float fp32_num) {
   unsigned long tmp = *(unsigned long *)(&fp32_num);  // NOLINT
   auto t = (int16_t)(((tmp & 0x007fffff) >> 13) | ((tmp & 0x80000000) >> 16) |

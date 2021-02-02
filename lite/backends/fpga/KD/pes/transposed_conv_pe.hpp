@@ -94,7 +94,6 @@ class TransposedConvPE : public PE {
       conv_param.strides = {1, 1};
       conv_param.paddings = {ph, pw};
       conv_param.kernelSize = {kernel_height, kernel_width};
-      // conv_param.kernelSize = param_.kernelSize;
       conv_param.dilations = {1, 1};
       conv_param.deconv = false;
       conv_param.activeParam.type = param_.activeParam.type;
@@ -111,16 +110,13 @@ class TransposedConvPE : public PE {
   void pad_input() {
     param_.input->syncToCPU();
     T* input_data = param_.input->data<T>();
-    // param_.input->saveToFile("pad_input", true);
     int channel = param_.input->shape().channel();
     int in_wc = param_.input->shape().width() * channel;
-
     int o_wc = padded_input_.shape().width() * channel;
 
     T* data = padded_input_.data<T>();
     int oh = param_.input->shape().height();
     int ow = param_.input->shape().width();
-
     memset(data, 0, padded_input_.memorySize());
 
     for (int h = 0; h < oh; h++) {
@@ -141,14 +137,12 @@ class TransposedConvPE : public PE {
       pad_input<float16>();
     }
 
-    bool vi = pe_.dispatch();
-    if (sub_filter_ena_ == true && vi == true) {
+    bool ret = pe_.dispatch();
+    if (sub_filter_ena_ == true && ret == true) {
       int off_addr = omit_size_ * param_.output->shape().width() *
                      param_.output->shape().channel();
-
       param_.output->unalignImage();
       param_.output->setOffset(off_addr);
-
       float scale = 0.0;
       for (auto conv_param : param_.splitParams()) {
         scale = std::max(scale, conv_param->output.scale()[0]);
@@ -156,8 +150,7 @@ class TransposedConvPE : public PE {
       param_.output->scale()[0] = scale;
       param_.output->scale()[1] = 1.0f / scale;
     }
-
-    return vi;
+    return ret;
   }
 
   ConvParam& param() { return param_; }
