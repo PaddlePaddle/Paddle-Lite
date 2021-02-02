@@ -352,15 +352,9 @@ const std::string &CxxModelBuffer::get_program() const {
   return program_;
 }
 
-const std::string &CxxModelBuffer::get_params() const {
-  CHECK(!params_.empty());
-  return params_;
-}
+const std::string &CxxModelBuffer::get_params() const { return params_; }
 
-bool CxxModelBuffer::is_empty() const {
-  CHECK(program_.empty() == params_.empty());
-  return program_.empty();
-}
+bool CxxModelBuffer::is_empty() const { return program_.empty(); }
 
 const CxxModelBuffer &CxxConfig::get_model_buffer() const {
   CHECK(model_buffer_) << "Cannot get an empty model buffer.";
