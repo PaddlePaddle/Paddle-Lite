@@ -48,10 +48,11 @@ class WinogradConv : public KernelLite<TARGET(kARM), Ptype> {
   Tensor weights_;
   DDim last_shape_;
   int workspace_size_{0};
-  int last_function_{-1};
+  int last_wino_iw_{-1};
   bool choose_small_{false};
   int wino_iw{8};
 };
+
 template <PrecisionType OutType>
 class WinogradConv<PRECISION(kInt8), OutType>
     : public KernelLite<TARGET(kARM), PRECISION(kInt8)> {
@@ -75,7 +76,7 @@ class WinogradConv<PRECISION(kInt8), OutType>
   Tensor bias_;
   DDim last_shape_;
   int workspace_size_{0};
-  int last_function_{-1};
+  int last_wino_iw_{-1};
   bool choose_small_{true};
   int wino_iw{4};
   std::vector<float> w_scale_;
