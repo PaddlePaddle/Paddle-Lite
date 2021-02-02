@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gflags/gflags.h>
+/*#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/fill_data.h"
 #include "lite/tests/utils/naive_math_impl.h"
+#include "lite/tests/utils/print_info.h"
 #include "lite/tests/utils/tensor_utils.h"
 
 #ifdef LITE_WITH_ARM
@@ -95,6 +96,8 @@ DDim compute_out_dim(const DDim& dim_in,
   dim_out[3] = wout;
   return dim_out;
 }
+*/
+#include "lite/tests/math/conv_ut.h"
 
 #ifdef LITE_WITH_ARM
 void test_conv_fp16(const std::vector<DDim>& input_dims,
@@ -122,6 +125,7 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
     param.bias->Resize({weight_dim[0]});
     param.bias->set_precision(PRECISION(kFP16));
   }
+  /*
   param.strides = strides;
   param.paddings = std::make_shared<std::vector<int>>(pads);
   param.dilations = std::make_shared<std::vector<int>>(dilas);
@@ -141,6 +145,8 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
     }
     param.activation_param = act_param;
   }
+  */
+  act_init(param, strides, pads, dilas, group, flag_act);
 
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFP16));
@@ -295,8 +301,9 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
                     tout_basic.numel(),
                     basic_max_ratio,
                     basic_max_diff);
-          VLOG(4) << "compare result, max diff: " << basic_max_diff
-                  << ", max ratio: " << basic_max_ratio;
+          // VLOG(4) << "compare result, max diff: " << basic_max_diff
+          << ", max ratio: " << basic_max_ratio;
+          print_diff_info(basic_max_diff, basic_max_ratio);
         }
         /// warm up
         for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -312,13 +319,14 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
 
         double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *
                       weight_dim[3] / param.groups;
-        VLOG(4) << "conv fp32: input shape: " << dim_in << ", output shape"
+        /*VLOG(4) << "conv fp32: input shape: " << dim_in << ", output shape"
                 << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
                 << ", min time: " << t0.LapTimes().Min()
                 << ", total GOPS: " << 1e-9 * gops
                 << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
                 << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
-
+        */
+        print_gops_info("conv_fp32", dim_in, t0, gops);
         if (FLAGS_check_result) {
           double max_ratio = 0;
           double max_diff = 0;
@@ -336,8 +344,9 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
                     max_ratio,
                     max_diff);
           // tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
-          VLOG(4) << "compare result, max diff: " << max_diff
-                  << ", max ratio: " << max_ratio;
+          // VLOG(4) << "compare result, max diff: " << max_diff
+          //         << ", max ratio: " << max_ratio;
+          print_diff_info(max_diff, max_ratio);
           if (max_diff > basic_max_diff) {
             int64_t size = tout_basic.numel();
             int count = 0;
@@ -356,14 +365,15 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
                 check && count < std::max(10, static_cast<int>(0.01 * size));
             if (!check) {
               int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
-              LOG(WARNING) << "basic result";
-              print_tensor(basic_ptr, size, width);
+              /*LOG(WARNING) << "basic result";
+              print_data_fp16(basic_ptr, size, width);
               LOG(WARNING) << "lite result";
-              // print_tensor(*param.output);
-              print_tensor(saber_ptr, size, width);
+              print_data_fp16(saber_ptr, size, width);
               LOG(WARNING) << "diff result";
-              print_tensor(ptr, size, width);
-              LOG(FATAL) << "test fp16 conv: input: " << dim_in
+              print_data_fp16(ptr, size, width);
+              */
+              print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
+              /*LOG(FATAL) << "test fp16 conv: input: " << dim_in
                          << ", output: " << dim_out
                          << ", weight dim: " << weight_dim
                          << ", pad: " << pads[0] << ", " << pads[1] << ", "
@@ -374,10 +384,24 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
                          << ", bias: " << (flag_bias ? "true" : "false")
                          << ", act: " << flag_act << ", threads: " << th
                          << ", power_mode: " << cls << " failed!!\n";
+                         */
+              print_conv_success_or_fail_info("conv_fp16",
+                                              false,
+                                              dim_in,
+                                              dim_out,
+                                              weight_dim,
+                                              pads,
+                                              strides,
+                                              dilas,
+                                              group,
+                                              flag_bias,
+                                              flag_act,
+                                              th,
+                                              cls);
             }
           }
         }
-        VLOG(4) << "test fp16 conv: input: " << dim_in
+        /*VLOG(4) << "test fp16 conv: input: " << dim_in
                 << ", output: " << dim_out << ", weight dim: " << weight_dim
                 << ", pad: " << pads[0] << ", " << pads[1] << ", " << pads[2]
                 << ", " << pads[3] << ", stride: " << strides[0] << ", "
@@ -385,7 +409,20 @@ void test_conv_fp16(const std::vector<DDim>& input_dims,
                 << ", group: " << group
                 << ", bias: " << (flag_bias ? "true" : "false")
                 << ", act: " << flag_act << ", threads: " << th
-                << ", power_mode: " << cls << " successed!!\n";
+                << ", power_mode: " << cls << " successed!!\n";*/
+        print_conv_success_or_fail_info("conv_fp16",
+                                        true,
+                                        dim_in,
+                                        dim_out,
+                                        weight_dim,
+                                        pads,
+                                        strides,
+                                        dilas,
+                                        group,
+                                        flag_bias,
+                                        flag_act,
+                                        th,
+                                        cls);
       }
     }
   }

@@ -15,7 +15,7 @@
 #include "lite/tests/math/pool_ut.h"
 
 #ifdef LITE_WITH_ARM
-void test_pool_fp32(const std::vector<DDim>& input_dims,
+void test_pool_fp16(const std::vector<DDim>& input_dims,
                     const std::vector<int>& ksize,
                     const std::vector<int>& strides,
                     const std::vector<int>& pads,
@@ -32,7 +32,7 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
 #endif
   PoolParam param;
   param.x = new Tensor;
-  param.x->set_precision(PRECISION(kFloat));
+  param.x->set_precision(PRECISION(kFP16));
   param.ksize = ksize;
 
   param.strides = strides;
@@ -45,12 +45,12 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
   param.use_quantizer = use_quantizer;
 
   param.output = new Tensor;
-  param.output->set_precision(PRECISION(kFloat));
+  param.output->set_precision(PRECISION(kFP16));
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
-      paddle::lite::kernels::arm::PoolCompute<PRECISION(kFloat),
-                                              PRECISION(kFloat)>
+      paddle::lite::kernels::arm::PoolCompute<PRECISION(kFP16),
+                                              PRECISION(kFP16)>
           pool;
       std::unique_ptr<paddle::lite::KernelContext> ctx1(
           new paddle::lite::KernelContext);
@@ -70,19 +70,34 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
         param.x->Resize(dim_in);
         param.output->Resize(dim_out);
 
-        paddle::lite::fill_tensor_rand(*param.x, -1.f, 1.f);
-        //        paddle::lite::fill_tensor_const(*param.x, 1.f);
-        auto din = param.x->data<float>();
+        Tensor x_fp32;
+        x_fp32.Resize(dim_in);
+        x_fp32.set_precision(PRECISION(kFloat));
+        a_ptr = x_fp32.mutable_data<float>();
+        b_ptr = param.x->mutable_data<float16_t>();
+        fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.x->numel());
+        // fill_data_const<float16_t>(b_ptr, -1.f, param.x->numel());
+        fp16_to_float(param.x->data<float16_t>(), a_ptr, param.x->numel());
+        auto din = param.x->data<float16_t>();
+        auto din_fp32 = x_fp32.data<float>();
 
         Tensor tout_basic;
+        Tensor tout_basic_fp16;
+        Tensor tout_basic_fp32;
         if (FLAGS_check_result) {
           LOG(INFO) << "basic compute";
-          tout_basic.set_precision(PRECISION(kFloat));
+          tout_basic.set_precision(PRECISION(kFP16));
+          tout_basic_fp16.set_precision(PRECISION(kFP16));
+          tout_basic_fp32.set_precision(PRECISION(kFloat));
           tout_basic.Resize(dim_out);
-          fill_tensor_const(tout_basic, 0.f);
-          auto dout_basic = tout_basic.mutable_data<float>();
-          pooling_basic<float, float>(din,
-                                      dout_basic,
+          tout_basic_fp16.Resize(dim_out);
+          tout_basic_fp32.Resize(dim_out);
+          fill_tensor_const(tout_basic_fp32, 0.f);
+          auto dout_basic = tout_basic.mutable_data<float16_t>();
+          auto dout_basic_fp32 = tout_basic_fp32.mutable_data<float>();
+          fill_data_const<float16_t>(dout_basic, 0.f, tout_basic.numel());
+          pooling_basic<float, float>(din_fp32,
+                                      dout_basic_fp32,
                                       dim_in[0],
                                       dim_out[1],
                                       dim_out[2],
@@ -99,6 +114,39 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
                                       ceil_mode,
                                       use_quantizer,
                                       pooling_type);
+          pooling_basic<float16_t, float16_t>(din,
+                                              dout_basic,
+                                              dim_in[0],
+                                              dim_out[1],
+                                              dim_out[2],
+                                              dim_out[3],
+                                              dim_in[1],
+                                              dim_in[2],
+                                              dim_in[3],
+                                              ksize,
+                                              strides,
+                                              pads,
+                                              flag_global,
+                                              exclusive,
+                                              adaptive,
+                                              ceil_mode,
+                                              use_quantizer,
+                                              pooling_type);
+          // fp32 -> fp16
+          auto dout_basic_fp16_ptr = tout_basic_fp16.mutable_data<float16_t>();
+          //   auto diff_ptr = tout_basic_diff.mutable_data<float16_t>();
+          float_to_fp16(
+              dout_basic_fp32, dout_basic_fp16_ptr, tout_basic_fp16.numel());
+          // basic_diff: fp16 - (fp32->fp16)
+          //   data_diff(dout_basic,
+          //             dout_basic_fp16_ptr,
+          //             diff_ptr,
+          //             tout_basic.numel(),
+          //             basic_max_ratio,
+          //             basic_max_diff);
+          // VLOG(4) << "compare result, max diff: " << basic_max_diff
+          //   << ", max ratio: " << basic_max_ratio;
+          //   print_diff_info(basic_max_diff, basic_max_ratio);
         }
         LOG(INFO) << "lite compute";
         /// warm up
@@ -114,51 +162,16 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
         }
 
         double gops = 2.0 * dim_out.production() * ksize[0] * ksize[1];
-        /*LOG(INFO) << "pool fp32: input shape: " << dim_in << ", output shape"
-                  << dim_out << ", running time, avg: " << t0.LapTimes().Avg()
-                  << ", min time: " << t0.LapTimes().Min()
-                  << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
-        */
-        print_gops_info("pool_fp32", dim_in, t0, gops);
+        print_gops_info("pool_fp16", dim_in, t0, gops);
         if (FLAGS_check_result) {
           double max_ratio = 0;
           double max_diff = 0;
           tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
-          // LOG(INFO) << "compare result, max diff: " << max_diff
-          //           << ", max ratio: " << max_ratio;
           print_diff_info(max_diff, max_ratio);
           if (std::abs(max_ratio) > 1e-3f) {
             if (max_diff > 5e-4f) {
-              /*LOG(WARNING) << "din";
-              print_tensor(*param.x);
-              LOG(WARNING) << "basic result";
-              print_tensor(tout_basic);
-              LOG(WARNING) << "lite result";
-              print_tensor(*param.output);
-              Tensor tdiff;
-              tdiff.Resize(tout_basic.dims());
-              tdiff.set_precision(PRECISION(kFloat));
-              tensor_diff(tout_basic, *param.output, tdiff);
-              print_tensor(tdiff);
-              */
               print_tensor_info_common(*param.x, tout_basic, *param.output);
-              /*LOG(FATAL) << "test fp32 pool: input: " << dim_in
-                         << ", output: " << dim_out
-                         << ", kernel dim: " << ksize[0] << ", " << ksize[1]
-                         << ", pad: " << pads[0] << ", " << pads[1] << ", "
-                         << pads[2] << ", " << pads[3]
-                         << ", stride: " << strides[0] << ", " << strides[1]
-                         << ", global_pooling: "
-                         << (flag_global ? "global" : "false")
-                         << ", pooling_type: " << pooling_type
-                         << ", ceil_mode: " << (ceil_mode ? "true" : "false")
-                         << ", exclusive: " << (exclusive ? "true" : "false")
-                         << ", threads: " << th << ", power_mode: " << cls
-                         << " failed!!\n";
-                         */
-              print_pool_success_or_fail_info("pool_fp32",
+              print_pool_success_or_fail_info("pool_fp16",
                                               false,
                                               dim_in,
                                               dim_out,
@@ -174,7 +187,7 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
             }
           }
         }
-        print_pool_success_or_fail_info("pool_fp32",
+        print_pool_success_or_fail_info("pool_fp16",
                                         true,
                                         dim_in,
                                         dim_out,
@@ -187,18 +200,6 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
                                         exclusive,
                                         th,
                                         cls);
-        /*LOG(INFO) << "test fp32 pool: input: " << dim_in
-                  << ", output: " << dim_out << ", kernel dim: " << ksize[0]
-                  << ", " << ksize[1] << ", pad: " << pads[0] << ", " << pads[1]
-                  << ", " << pads[2] << ", " << pads[3]
-                  << ", stride: " << strides[0] << ", " << strides[1]
-                  << ", global_pooling: " << (flag_global ? "global" : "false")
-                  << ", pooling_type: " << pooling_type
-                  << ", ceil_mode: " << (ceil_mode ? "true" : "false")
-                  << ", exclusive: " << (exclusive ? "true" : "false")
-                  << ", threads: " << th << ", power_mode: " << cls
-                  << " successed!!\n";
-        */
       }
     }
   }
@@ -207,7 +208,7 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
   delete param.output;
 }
 #else
-void test_pool_fp32(const std::vector<DDim>& input_dims,
+void test_pool_fp16(const std::vector<DDim>& input_dims,
                     const std::vector<int>& ksize,
                     const std::vector<int>& strides,
                     const std::vector<int>& pads,
@@ -244,7 +245,7 @@ TEST(TestPoolRand, test_pool_rand) {
                                 dims.push_back(DDim({batch, cin, h, h}));
                               }
                             }
-                            test_pool_fp32(
+                            test_pool_fp16(
                                 dims,
                                 {kh, kw},
                                 {stride, stride},
@@ -274,8 +275,8 @@ TEST(TestPoolRand, test_pool_rand) {
 #endif  /// random param conv
 
 #if 1  /// custom
-TEST(TesPoolCustom, test_pool_fp32_custom_size) {
-  test_pool_fp32(
+TEST(TesPoolCustom, test_pool_fp16_custom_size) {
+  test_pool_fp16(
       {DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width})},
       {FLAGS_kernel_h, FLAGS_kernel_w},
       {FLAGS_stride_h, FLAGS_stride_w},
