@@ -30,7 +30,7 @@
 typedef __fp16 float16_t;
 #endif
 #endif  // LITE_WITH_ARM
-typedef __fp16 float16_t;
+
 DEFINE_int32(power_mode,
              3,
              "power mode: "
