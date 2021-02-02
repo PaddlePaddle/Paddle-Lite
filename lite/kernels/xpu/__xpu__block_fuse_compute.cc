@@ -218,7 +218,8 @@ using XPUBlockFp16 = xpu::XPUBlockFuseCompute<float16, PRECISION(kFP16)>;
 REGISTER_LITE_KERNEL(
     __xpu__block_fuse_op, kXPU, kFloat, kNCHW, XPUBlockFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt16))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("FilterMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -229,7 +230,8 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     __xpu__block_fuse_op, kXPU, kFP16, kNCHW, XPUBlockFp16, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt16))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("FilterMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
