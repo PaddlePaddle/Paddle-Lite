@@ -30,13 +30,6 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
   auto o_dims = param.output->dims();
-  for (int i = 0; i < last_shape_.size(); i++) {
-    std::cout << "last_shape" << last_shape_[i];
-  }
-  for (int i = 0; i < last_shape_.size(); i++) {
-    std::cout << "x_dims" << x_dims[i];
-  }
-  std::cout << std::endl;
 
   if (last_shape_ == x_dims) {
     return;
