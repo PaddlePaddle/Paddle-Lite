@@ -268,8 +268,7 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
           int hi = hh * sub_conv_number + i;
           for (int ww = 0; ww < sub_w; ++ww) {
             int wi = ww * sub_conv_number + woff;
-            int sidx =
-                ((nn * channel * sub_h + cc * sub_h + hh) * sub_w + ww);
+            int sidx = ((nn * channel * sub_h + cc * sub_h + hh) * sub_w + ww);
             int kidx =
                 ((ni * channel * height + cc * height + hi) * width + wi);
             memcpy(sub_filter_data + sidx, filter_data + kidx, sizeof(float));

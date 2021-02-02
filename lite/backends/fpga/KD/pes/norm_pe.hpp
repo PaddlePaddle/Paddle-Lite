@@ -62,9 +62,11 @@ class NormPE : public PE {
     bypass_args_.inplace.normalize_param.hight_width =
         input_shape.height() * input_shape.width();
     bypass_args_.inplace.normalize_param.enabled = true;
+
+    cpu_compute_ = true;
   }
 
-  void cpuCompute() {
+  void cpu_compute() {
     Tensor input_float;
     Tensor float_out;
     input_float.mutableData<float>(FP32, param_.input->shape());
@@ -101,12 +103,11 @@ class NormPE : public PE {
   }
 
   bool dispatch() {
-    cpuCompute();
-    // config_norm_param(norm_param_args_);
-    // perform_bypass(bypass_args_);
-    // inplace_args_.normalize_enable = false;
-    // config_inplace(inplace_args_);
-    // compute_norm(norm_args_);
+    if (cpu_compute_) {
+      cpu_compute();
+    }
+    perform_bypass(bypass_args_);
+    compute_norm(norm_args_);
     return true;
   }
 
@@ -117,6 +118,7 @@ class NormPE : public PE {
   Tensor mid_out_;
   BypassArgs bypass_args_;
   NormalizeArgs norm_args_ = {0};
+  bool cpu_compute_ = false;
 };
 
 }  // namespace zynqmp

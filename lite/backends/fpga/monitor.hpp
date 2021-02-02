@@ -61,7 +61,6 @@ class Monitor {
         return true;
       }
       return false;
-      // return true;
     };
 
     auto out_args = op_info->output_names();

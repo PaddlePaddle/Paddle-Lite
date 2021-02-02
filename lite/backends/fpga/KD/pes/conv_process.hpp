@@ -50,7 +50,6 @@ inline int get_split_num(Tensor* filter) {
              filter->shape().width();
   auto num = filter->shape().num();
   int div_capacity = filter::calc_division_capacity(chw);
-  // int aligned_num = align_to_x(num ,FILTER_NUM_ALIGNMENT);
   int filter_num_alignment = filter::get_filter_num_alignment();
   int aligned_num = align_to_x(num, filter_num_alignment);
   return filter::calc_split_num(aligned_num, div_capacity);
@@ -264,9 +263,7 @@ inline void format_filter(Tensor* filter,
                           std::vector<float>& scales,  // NOLINT
                           float max) {
   float max_value = find_max(*filter);
-  // max_value = max; //TODO: global quantization for filter
   Shape& filter_shape = filter->shape();
-
   int mem_size;
   std::vector<float> max_values;
   int8_t* quantized_data = filter::format_filter(filter->data<float>(),
@@ -281,12 +278,10 @@ inline void format_filter(Tensor* filter,
 
   float mem_factor = mem_size * 1.0f / filter->shape().numel();
   quantized_filter->setMemScale(mem_factor);
-
   quantized_filter->setAligned(true);
   int8_t* src = quantized_filter->mutableData<int8_t>(INT8, filter->shape());
   quantized_filter->scale()[0] = max_value / 127.0f;
   quantized_filter->scale()[1] = 127.0f / max_value;
-
   memcpy(src, quantized_data, mem_size);
   quantized_filter->flush();
   fpga_free(quantized_data);
@@ -571,15 +566,11 @@ inline void split_channel(const ConvParam& c_param) {
   input->syncToCPU();
 
   Tensor* filter = param.filter;
-
   int num = ceil(input->shape().channel() * 1.0f / 2047);
-
   if (output->shape().dimSize() == 2) {
     num = ceil(input->shape().numel() * 1.0f / 16384);
   }
-
   int channel = input->shape().channel() / num;
-
   Shape bs_shape(NC, {1, output->shape().channel()});
   float max = find_max(*param.filter);
 
@@ -598,7 +589,6 @@ inline void split_channel(const ConvParam& c_param) {
                    filter->shape().width()});
 
     Tensor new_filter_hwc;
-
     auto cal_chw = [](Tensor* t) {
       Shape& s = t->shape();
       return s.channel() * s.height() * s.width();
@@ -702,8 +692,6 @@ inline bool compute_conv(const ConvParam& c_conv_params) {
 }
 
 inline void dwconv_split_channel(DepthwiseConvSplitParam& param) {  // NOLINT
-  // DepthwiseConvSplitParam& param =
-  // const_cast<DepthwiseConvSplitParam&>(c_param);
   Tensor* input = param.input;
   Tensor* output = param.output;
   Tensor* filter = param.filter;
@@ -732,7 +720,6 @@ inline void dwconv_split_channel(DepthwiseConvSplitParam& param) {  // NOLINT
 
   for (int i = 0; i < num; i++) {
     BasicDWConvParam* dwconv_param = new BasicDWConvParam();
-
     // input && output;
     Shape in_shape(
         NCHW, {1, channel, input->shape().height(), input->shape().width()});
@@ -749,11 +736,9 @@ inline void dwconv_split_channel(DepthwiseConvSplitParam& param) {  // NOLINT
 
     // filter transformation;
     Shape f_shape(NCHW, {channel, 1, h_kernel, w_kernel});
-
     Tensor split_filter;
     float* split_filter_data = split_filter.mutableData<float>(FP32, f_shape);
     int filter_hwc = h_kernel * w_kernel * channel;
-
     memcpy(split_filter_data,
            filter->data<float>() + i * filter_hwc,
            filter_hwc * sizeof(float));
