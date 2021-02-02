@@ -455,12 +455,6 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
 }
 
 bool CLRuntime::InitializeDevice() {
-#ifdef LITE_WITH_LOG
-  VLOG(3) << "device_info_.size():" << device_info_.size();
-  for (auto i : device_info_) {
-    VLOG(3) << ">>> " << i.first << " " << i.second;
-  }
-#endif
   // initialized without valid opencl device
   if (device_info_.size() > 0 && device_info_.size() <= 2) {
     return false;
@@ -640,6 +634,13 @@ bool CLRuntime::InitializeDevice() {
 
   auto driver_version = device_->getInfo<CL_DRIVER_VERSION>();
   LOG(INFO) << "CL_DRIVER_VERSION:" << driver_version;
+
+#ifdef LITE_WITH_LOG
+  VLOG(3) << "device_info_.size():" << device_info_.size();
+  for (auto i : device_info_) {
+    VLOG(3) << ">>> " << i.first << " " << i.second;
+  }
+#endif
 
   return true;
 }
