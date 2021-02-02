@@ -18,7 +18,12 @@ include(lite_utils)
 
 set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(CMAKE_CXX_STANDARD 11)
+
+if(LITE_WITH_XTCL)
+    set(CMAKE_CXX_STANDARD 14)
+else()
+    set(CMAKE_CXX_STANDARD 11)
+endif()
 
 include(system)
 include(cross_compiling/preproject)
@@ -113,7 +118,8 @@ lite_option(CUDA_WITH_FP16      "Compile with cuda half support" OFF)
 lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
 lite_option(LITE_WITH_XCODE     "when debug in xcode, its ON." OFF)
 lite_option(LITE_WITH_ARM82_FP16  "when compile with arm v8.2 fp16, it's ON." OFF)
-lite_option(LITE_WITH_ARM82_INT8  "when compile with arm v8.2 int8, it's ON." OFF)
+lite_option(LITE_WITH_ARM82_INT8_SDOT  "when compile with arm v8.2 int8, it's ON." OFF)
+lite_option(LITE_WITH_CODE_META_INFO  "include git version in the header file." ON)
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX)
@@ -178,7 +184,17 @@ if(LITE_WITH_IMAGINATION_NNA)
 	include(device/imagination_nna)
 endif()
 
-include(external/flatbuffers)
+# flatbuffer module for loading model
+if(LITE_UPDATE_FBS_HEAD)
+    include(external/flatbuffers)
+else()
+    include_directories("${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build")
+    add_custom_target(fbs_headers ${TARGET}
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/framework_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/param_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
+            )
+endif()
 
 # for opencl
 if (LITE_WITH_OPENCL)

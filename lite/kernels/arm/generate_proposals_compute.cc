@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/generate_proposals_compute.h"
+
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
@@ -405,7 +407,7 @@ void GenerateProposalsCompute::Run() {
   int64_t h_bbox = bbox_dim[2];
   int64_t w_bbox = bbox_dim[3];
 
-  rpn_rois->Resize({scores->numel(), 4});
+  rpn_rois->Resize({bbox_deltas->numel(), 4});
   rpn_roi_probs->Resize(std::vector<int64_t>({scores->numel(), 1}));
 
   Tensor bbox_deltas_swap, scores_swap;
@@ -422,6 +424,7 @@ void GenerateProposalsCompute::Run() {
   anchors->Resize(std::vector<int64_t>({anchors->numel() / 4, 4}));
   variances->Resize(std::vector<int64_t>({variances->numel() / 4, 4}));
   std::vector<int64_t> tmp_lod;
+  std::vector<int64_t> tmp_num;
 
   int64_t num_proposals = 0;
   for (int64_t i = 0; i < num; ++i) {
@@ -453,6 +456,7 @@ void GenerateProposalsCompute::Run() {
     num_proposals += proposals.dims()[0];
     lod0.push_back(num_proposals);
     tmp_lod.push_back(num_proposals);
+    tmp_num.push_back(proposals.dims()[0]);
   }
 
   if (param.RpnRoisLod != nullptr) {
@@ -460,6 +464,14 @@ void GenerateProposalsCompute::Run() {
     int64_t *lod_data = param.RpnRoisLod->mutable_data<int64_t>();
     for (int i = 0; i < num; i++) {
       lod_data[i] = tmp_lod[i];
+    }
+  }
+
+  if (param.RpnRoisNum != nullptr) {
+    param.RpnRoisNum->Resize(DDim(std::vector<DDim::value_type>({num})));
+    int64_t *num_data = param.RpnRoisNum->mutable_data<int64_t>();
+    for (int i = 0; i < num; i++) {
+      num_data[i] = tmp_num[i];
     }
   }
 
@@ -503,5 +515,7 @@ REGISTER_LITE_KERNEL(generate_proposals,
     .BindOutput("RpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("RpnRoiProbs", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("RpnRoisLod",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("RpnRoisNum",
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

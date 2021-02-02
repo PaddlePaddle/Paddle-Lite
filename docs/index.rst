@@ -6,6 +6,8 @@
 Welcome to Paddle-Lite's documentation!
 =======================================
 
+*请在页面左下角选择特定版本的文档。*
+
 .. toctree::
   :maxdepth: 1
   :caption: 简介
@@ -44,9 +46,9 @@ Welcome to Paddle-Lite's documentation!
 
   user_guides/x2paddle
   user_guides/model_optimize_tool
-  user_guides/quant_post_static
-  user_guides/quant_post_dynamic
   user_guides/quant_aware
+  user_guides/quant_post_dynamic
+  user_guides/quant_post_static
   user_guides/model_visualization
   user_guides/debug
 

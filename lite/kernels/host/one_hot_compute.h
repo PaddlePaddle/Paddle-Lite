@@ -22,6 +22,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+template <PrecisionType Ptype>
 class OneHotCompute
     : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:

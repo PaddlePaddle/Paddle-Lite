@@ -17,16 +17,15 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
 
 static int randint(int beg, int end) {
-  static unsigned int seed = 0;
-  int rd = rand_r(&seed);
-  int range = end - beg + 1;
-  rd = rd % range;
-  return rd + beg;
+  int res = 0;
+  fill_data_rand<int>(&res, beg, end, 1);
+  return res;
 }
 static constexpr int kROISize = 4;
 

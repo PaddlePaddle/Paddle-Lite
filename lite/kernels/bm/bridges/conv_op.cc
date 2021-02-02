@@ -39,7 +39,13 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto filter_var_name = op_info->Input("Filter").front();
   auto filter = scope->FindVar(filter_var_name)->GetMutable<lite::Tensor>();
   auto filter_dims = filter->dims();
-
+  bool filter_is_const = !graph->HasNode(filter_var_name);
+  const int64_t* filter_shape_data =
+      const_cast<const int64_t*>(&filter_dims.data()[0]);
+  std::vector<int32_t> i_filter_shape_data(filter_dims.size());
+  for (size_t i = 0; i < filter_dims.size(); i++) {
+    i_filter_shape_data[i] = static_cast<int32_t>(filter_shape_data[i]);
+  }
   CHECK_EQ(input_dims.size(), 4);
   CHECK_EQ(output_dims.size(), 4);
   CHECK_EQ(filter_dims.size(), 4);
@@ -68,28 +74,53 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto strides = op_info->GetAttr<std::vector<int>>("strides");
   auto dilations = op_info->GetAttr<std::vector<int>>("dilations");
-  add_conv_layer(graph->GetCompilerHandle(),
-                 const_cast<const int*>(&i_input_shape_data[0]),
-                 input_dims.size(),
-                 static_cast<const char*>(input_var_name.c_str()),
-                 const_cast<const int*>(&i_output_shape_data[0]),
-                 output_dims.size(),
-                 static_cast<const char*>(output_var_name.c_str()),
-                 static_cast<const char*>(unique_op_name.c_str()),
-                 filter_data,
-                 bias_data,
-                 filter_dims.data()[2],
-                 filter_dims.data()[3],
-                 groups,
-                 paddings[0],
-                 paddings[0],
-                 paddings[1],
-                 paddings[1],
-                 strides[0],
-                 strides[1],
-                 dilations[0],
-                 dilations[1],
-                 static_cast<int>(has_bias));
+  if (filter_is_const) {
+    add_conv_layer(graph->GetCompilerHandle(),
+                   const_cast<const int*>(&i_input_shape_data[0]),
+                   input_dims.size(),
+                   static_cast<const char*>(input_var_name.c_str()),
+                   const_cast<const int*>(&i_output_shape_data[0]),
+                   output_dims.size(),
+                   static_cast<const char*>(output_var_name.c_str()),
+                   static_cast<const char*>(unique_op_name.c_str()),
+                   filter_data,
+                   bias_data,
+                   filter_dims.data()[2],
+                   filter_dims.data()[3],
+                   groups,
+                   paddings[0],
+                   paddings[0],
+                   paddings[1],
+                   paddings[1],
+                   strides[0],
+                   strides[1],
+                   dilations[0],
+                   dilations[1],
+                   static_cast<int>(has_bias));
+  } else {
+    add_conv_weight_layer(graph->GetCompilerHandle(),
+                          const_cast<const int*>(&i_input_shape_data[0]),
+                          input_dims.size(),
+                          static_cast<const char*>(input_var_name.c_str()),
+                          const_cast<const int*>(&i_output_shape_data[0]),
+                          output_dims.size(),
+                          static_cast<const char*>(output_var_name.c_str()),
+                          static_cast<const char*>(unique_op_name.c_str()),
+                          const_cast<const int*>(&i_filter_shape_data[0]),
+                          filter_dims.size(),
+                          static_cast<const char*>(filter_var_name.c_str()),
+                          bias_data,
+                          groups,
+                          paddings[0],
+                          paddings[0],
+                          paddings[1],
+                          paddings[1],
+                          strides[0],
+                          strides[1],
+                          dilations[0],
+                          dilations[1],
+                          static_cast<int>(has_bias));
+  }
   graph->AddNode(output_var_name);
   return SUCCESS;
 }

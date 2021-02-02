@@ -16,6 +16,10 @@
 #include <vector>
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#include "lite/backends/arm/math/fp16/gemm_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -284,6 +288,58 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   }
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  ReInitWhenNeeded();
+}
+
+template <>
+void GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  ctx.ExtendWorkspace(workspace_size_);
+  auto weights = param.filter->data<float16_t>();
+  if (flag_trans_weights_) {
+    weights = weights_.data<float16_t>();
+  }
+  const float16_t* bias = param.bias ? param.bias->data<float16_t>() : nullptr;
+  if (flag_trans_bias_) {
+    bias = bias_.data<float16_t>();
+  }
+  auto din = param.x->data<float16_t>();
+  auto dout = param.output->mutable_data<float16_t>();
+
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];  // nchw
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+  if (flag_1x1gemm_) {
+    lite::arm::math::fp16::conv1x1s1_gemm_fp16(
+        din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
+#ifdef LITE_WITH_PROFILE
+    KERNEL_FUNC_NAME("conv1x1s1_gemm_fp16")
+#endif
+  } else {
+    lite::arm::math::fp16::conv_im2col_gemm_fp16(
+        din, dout, bs, oc, oh, ow, ic, ih, iw, weights, bias, param, &ctx);
+#ifdef LITE_WITH_PROFILE
+    KERNEL_FUNC_NAME("conv_im2col_gemm_fp16")
+#endif
+  }
+}
+
+#ifdef LITE_WITH_PROFILE
+PROFILE_INFO(kFP16, kFP16)
+#endif
+#endif
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

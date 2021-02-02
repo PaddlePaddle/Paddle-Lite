@@ -83,6 +83,7 @@ class Optimizer {
     std::vector<std::string> passes_local{
         {"lite_quant_dequant_fuse_pass",             //
          "weight_quantization_preprocess_pass",      //
+         "remove_scale1_pass",                       //
          "adaptive_1x1_pool2d_convert_global_pass",  //
          "lite_conv_elementwise_fuse_pass",          // conv-elemwise-bn
          "lite_conv_bn_fuse_pass",                   //
@@ -106,15 +107,24 @@ class Optimizer {
          "elementwise_mul_constant_eliminate_pass",     //
          "lite_sequence_pool_concat_fuse_pass",         //
          "lite_scale_activation_fuse_pass",             //
+         "lite_elementwise_scale_fuse_pass",            //
+         "lite_instance_norm_activation_fuse_pass",     //
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
          "lite_elementwise_activation_fuse_pass",  //
 #endif
+         "lite_conv_scale_fuse_pass",
          "identity_dropout_eliminate_pass",
          "__xpu__resnet_fuse_pass",
          "__xpu__resnet_d_fuse_pass",
          "__xpu__resnet_cbam_fuse_pass",
          "__xpu__conv2d_fuse_pass",
+         "__xpu__resblock_reduction_fuse_pass",
+         "__xpu__resblock_normal_fuse_pass",
+         "__xpu__conv2d_concat_pool2d_fuse_pass",
+         "__xpu__conv2d_pool2d_fuse_pass",
+         "__xpu__consecutive_conv2d_fuse_pass",
+         "__xpu__consecutive_block_fuse_pass",
          "__xpu__conv2d_link_previous_out_max_pass",
          "__xpu__sfa_head_meanstd_fuse_pass",
          "__xpu__sfa_head_moment_fuse_pass",
@@ -124,6 +134,7 @@ class Optimizer {
          "__xpu__fc_fuse_pass",
          "__xpu__softmax_topk_fuse_pass",
          "__xpu__multi_encoder_slice_link_fuse_pass",
+         "__xpu__generate_sequence_fuse_pass",
          // Only for fully quantized model, infer the output scale and fix the
          // attribute 'enable_int8' for all of the quantized ops.
          "quantized_op_attributes_inference_pass",
@@ -143,7 +154,7 @@ class Optimizer {
 
          "remove_tf_redundant_ops_pass",
          "variable_place_inference_pass",  // inference arg/var's
-
+         "__fpga_kernel_place_correct_pass",
          "mlu_postprocess_pass",
          // info(target/precision/layout/device)
          // using kernel info

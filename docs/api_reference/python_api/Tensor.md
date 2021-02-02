@@ -12,6 +12,7 @@ Tensor是Paddle-Lite的数据组织形式，用于对底层数据进行封装并
 
 ```python
 from paddlelite.lite import *
+import numpy as np
 
 # 1. 设置CxxConfig
 config = CxxConfig()
@@ -28,16 +29,15 @@ predictor = create_paddle_predictor(config)
 
 # 3. 设置输入数据
 input_tensor = predictor.get_input(0)
-input_tensor.resize([1, 3, 224, 224])
-input_tensor.set_float_data([1.] * 3 * 224 * 224)
+input_tensor.from_numpy(np.ones[1, 3, 224, 224].astype("float32"))
 
 # 4. 运行模型
 predictor.run()
 
 # 5. 获取输出数据
 output_tensor = predictor.get_output(0)
-print(output_tensor.shape())
-print(output_tensor.float_data()[:10])
+output_data = output_tensor.numpy()
+print(output_data)
 ```
 
 ### `resize(shape)`
@@ -66,51 +66,45 @@ print(output_tensor.float_data()[:10])
 
 返回类型：`list`
 
+### `numpy()`
 
-
-### `float_data()`
-
-获取Tensor的持有的float型数据。
+获取Tensor的持有的数据。
 
 示例：
 
 ```python
 output_tensor = predictor.get_output(0)
-print(output_tensor.shape())
-print(output_tensor.float_data()[:10])
+output_data = output_tensor.numpy()
+print(output_data)
 ```
 
 参数：
 
 - `None`
 
-返回：`Tensor`持有的float型数据
+返回：`Tensor`持有的数据
 
-返回类型：`list`
+返回类型：`numpy.array`
 
+### `from_numpy(np.array)`
 
-
-### `set_float_data(float_data)`
-
-设置Tensor持有float数据。
+设置Tensor的持有数据。
 
 示例：
 
 ```python
+import numpy as np
 input_tensor = predictor.get_input(0)
-input_tensor.resize([1, 3, 224, 224])
-input_tensor.set_float_data([1.] * 3 * 224 * 224)
+input_tensor.from_numpy(np.ones([1, 3, 224, 224].astype("float32")))
 ```
 
 参数：
 
-- `float_data(list)` - 待设置的float型数据
+- `numpy.array` - 待设置的数据
 
 返回：`None`
 
 返回类型：`None`
-
-
 
 ### `set_lod(lod)`
 
@@ -137,3 +131,43 @@ input_tensor.set_float_data([1.] * 3 * 224 * 224)
 返回：`Tensor`的LoD信息
 
 返回类型：`list[list]`
+
+### `float_data()`
+
+获取Tensor的持有的float型数据。
+
+示例：
+
+```python
+output_tensor = predictor.get_output(0)
+print(output_tensor.shape())
+print(output_tensor.float_data()[:10])
+```
+
+参数：
+
+- `None`
+
+返回：`Tensor`持有的float型数据
+
+返回类型：`list`
+
+### `set_float_data(float_data)`
+
+设置Tensor持有float数据。
+
+示例：
+
+```python
+input_tensor = predictor.get_input(0)
+input_tensor.resize([1, 3, 224, 224])
+input_tensor.set_float_data([1.] * 3 * 224 * 224)
+```
+
+参数：
+
+- `float_data(list)` - 待设置的float型数据
+
+返回：`None`
+
+返回类型：`None`

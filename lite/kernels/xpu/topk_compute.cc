@@ -38,13 +38,13 @@ void TopkCompute::Run() {
   int64_t* indices_int64_device =
       param.Indices->mutable_data<int64_t>(TARGET(kXPU));
 
-  int r = xdnn::topk(ctx.GetRawContext(),
-                     param.X->data<float>(),
-                     param.Out->mutable_data<float>(TARGET(kXPU)),
-                     indices_int32_device,
-                     m,
-                     n,
-                     K);
+  int r = xdnn::sorted_topk(ctx.GetRawContext(),
+                            param.X->data<float>(),
+                            param.Out->mutable_data<float>(TARGET(kXPU)),
+                            indices_int32_device,
+                            m,
+                            n,
+                            K);
   CHECK_EQ(r, 0);
 
   r = xdnn::cast<int, int64_t>(

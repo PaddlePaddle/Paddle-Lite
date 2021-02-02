@@ -73,7 +73,8 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
 
   auto insert_invalid_op_nodes_for_specific_target = [&](
       std::set<std::string> op_node_set, TargetType specific_target) {
-    std::set<std::string> invalid_op_nodes_opencl = {"layout", "fc"};
+    std::set<std::string> invalid_op_nodes_opencl = {
+        "layout", "fc", "yolo_box", "shape", "slice"};
     for (auto& op_node : graph->StmtTopologicalOrder()) {
       if (!op_node->IsStmt()) continue;
       TargetType op_target_type = op_node->AsStmt().place().target;
@@ -122,7 +123,11 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
     std::map<std::string,
              std::pair<std::set<std::string>, std::set<std::string>>>
         inplace_op_nodes = {{"reshape", {{"X"}, {"Out"}}},
-                            {"reshape2", {{"X"}, {"Out"}}}};
+                            {"reshape2", {{"X"}, {"Out"}}},
+                            {"squeeze", {{"X"}, {"Out"}}},
+                            {"squeeze2", {{"X"}, {"Out"}}},
+                            {"unsqueeze", {{"X"}, {"Out"}}},
+                            {"unsqueeze2", {{"X"}, {"Out"}}}};
     auto inplace_op_node = inplace_op_nodes.find(op_type);
     if (inplace_op_node != inplace_op_nodes.end()) {
       bool inplace = false;

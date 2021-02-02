@@ -37,6 +37,7 @@ lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 CL_DE
 endif()
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
+if (LITE_WITH_CODE_META_INFO)
 execute_process(
   COMMAND git describe --tags --exact-match
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -61,7 +62,7 @@ execute_process(
 message(STATUS "tag: ${PADDLE_LITE_TAG}")
 message(STATUS "branch: ${PADDLE_LITE_BRANCH}")
 message(STATUS "commit: ${PADDLE_LITE_COMMIT}")
-
+endif()
 configure_file(version.h.in version.h)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 # A trick to generate the opencl_kernels_source.cc
@@ -79,6 +80,7 @@ add_custom_command(
   "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
   ${LITE_BUILD_TAILOR}
   ${LITE_BUILD_EXTRA}
+  ${LITE_WITH_ARM82_FP16}
   OUTPUT kernels.h # not a real path to the output to force it execute every time.
   )
 # A trick to generate the paddle_use_ops.h

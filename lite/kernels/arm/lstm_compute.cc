@@ -103,9 +103,9 @@ void LSTMComputeRun(const operators::LstmParam& param,
   auto batch_starts = batch_gate->lod()[0];
   size_t num_batch = batch_starts.size() - 1;
 
-  std::string gate_act = param.gate_activation;
-  std::string cell_act = param.cell_activation;
-  std::string cand_act = param.candidate_activation;
+  lite_api::ActivationType gate_act = param.gate_activation;
+  lite_api::ActivationType cell_act = param.cell_activation;
+  lite_api::ActivationType cand_act = param.candidate_activation;
 
   int matrix_width = batch_gate->numel() / in_dims[0];
   for (size_t n = 0; n < num_batch; n++) {

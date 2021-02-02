@@ -93,7 +93,7 @@ def parse_fake_kernels_from_path(list_path):
             with open(path.strip()) as g:
                 c = g.read()
                 kernel_parser = RegisterLiteKernelParser(c)
-                kernel_parser.parse("ON")
+                kernel_parser.parse("ON", "ON")
 
                 for k in kernel_parser.kernels:
                     kernel_name = "{op_type}_{target}_{precision}_{data_layout}_{alias}_class".format(
@@ -147,7 +147,7 @@ def parse_sppported_kernels_from_path(list_path):
             with open(path.strip()) as g:
                 c = g.read()
                 kernel_parser = RegisterLiteKernelParser(c)
-                kernel_parser.parse("ON")
+                kernel_parser.parse("ON", "ON")
 
                 for k in kernel_parser.kernels:
                     index = path.rindex('/')
