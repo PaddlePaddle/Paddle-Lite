@@ -422,9 +422,11 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 #endif
 }
 
-void CxxConfig::set_xpu_conv_autotune(bool autotune) {
+void CxxConfig::set_xpu_conv_autotune(bool autotune,
+                                      const std::string &autotune_file) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::xpu_conv_autotune = autotune;
+  lite::TargetWrapperXPU::conv_autotune = autotune;
+  lite::TargetWrapperXPU::conv_autotune_file = autotune_file;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_conv_autotune' is ignored, please "

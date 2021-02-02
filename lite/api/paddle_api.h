@@ -296,7 +296,8 @@ class LITE_API CxxConfig : public ConfigBase {
   // current thread.
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
 
-  void set_xpu_conv_autotune(bool autotune = true);
+  void set_xpu_conv_autotune(bool autotune = true,
+                             const std::string& autotune_file = "");
 
   // XPU only, specify the target device ID for the current thread.
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
