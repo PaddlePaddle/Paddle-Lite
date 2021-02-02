@@ -10,6 +10,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_runtime.h"
+#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -220,15 +221,24 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
         for (auto& ins : programs_precompiled_binary_) {
           std::string prog_key = ins.first;
           if (prog_key == sn_key_) continue;  // skip sn_key
-          LOG(INFO) << "ins.second[0].size: " << ins.second[0].size();
-          cl::Program program(*context_, device, ins.second, NULL, &status);
+          LOG(INFO) << "ins.second[0].size: " << ins.second[0].size()
+                    << "ins.second.size: " << ins.second.size();
+          if (ins.second[0].size() == 15036) {
+            LOG(INFO) << "ins FC binary size: " << ins.second[0].size();
+            for (auto i = 0; i < ins.second[0].size(); i++) {
+              std::cout << ins.second[0][i];
+            }
+            std::cout << std::endl;
+          }
+          // cl::Program program(*context_, device, ins.second, NULL, &status);
+          cl::Program program = cl::Program(
+              context(), {this->device()}, ins.second, NULL, &status);
           CL_CHECK_FATAL_SOLID(status);
-          status = program.build(device);
-          CHECK(status == CL_SUCCESS)
-              << "Error building OpenCL program[" << prog_key
-              << "] from binary: "
-              << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device[0]);
-          CL_CHECK_FATAL_SOLID(status);
+          auto pos_start = prog_key.find_first_of("-D");
+          std::string option = prog_key.substr(pos_start);
+          LOG(INFO) << "option: " << option;
+          this->BuildProgram(&program, option);
+
           std::unique_ptr<cl::Program> ptr(new cl::Program(program));
           programs_[prog_key] = std::move(ptr);
         }
@@ -265,9 +275,24 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
   cl::Program::Binaries binary;
   binary.resize(1);
   binary[0].resize(bin_size);
-  status = program->getInfo(CL_PROGRAM_BINARIES, binary[0].data());
+  // status = program->getInfo(CL_PROGRAM_BINARIES, binary[0].data());
+  auto buf = binary[0].data();
+  status = clGetProgramInfo(
+      (*program)(), CL_PROGRAM_BINARIES, sizeof(unsigned char*), &buf, nullptr);
   CL_CHECK_FATAL_SOLID(status);
   programs_precompiled_binary_[program_key] = binary;
+  if (bin_size == 15036) {
+    LOG(INFO) << "ref FC binary size: " << binary[0].size();
+    for (auto i = 0; i < bin_size; i++) {
+      std::cout << binary[0][i];
+    }
+    std::cout << std::endl;
+
+    cl::Program program_test =
+        cl::Program(context(), {this->device()}, binary, NULL, &status);
+    CL_CHECK_FATAL_SOLID(status);
+    this->BuildProgram(&program_test, build_option);
+  }
 
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- binary size: " << bin_size;
