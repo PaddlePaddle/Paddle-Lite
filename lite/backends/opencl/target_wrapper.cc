@@ -71,9 +71,13 @@ bool ImageValid(const size_t req_img_w, const size_t req_img_h) {
   auto max_img_w = dev_map["CL_DEVICE_IMAGE2D_MAX_WIDTH"];
   auto max_img_h = dev_map["CL_DEVICE_IMAGE2D_MAX_HEIGHT"];
   if (req_img_w > max_img_w || req_img_h > max_img_h) {
-    LOG(FATAL) << "malloc image is out of max image size(w,h):" << max_img_w
-               << "," << max_img_h << ", need image size(w,h):" << req_img_w
-               << "," << req_img_h;
+    std::string log = "malloc image is out of max image size(w,h):" +
+                      std::to_string(max_img_w) + "," +
+                      std::to_string(max_img_h) + ", need image size(w,h):" +
+                      std::to_string(req_img_w) + "," +
+                      std::to_string(req_img_h);
+    std::cout << log << std::endl;
+    LOG(FATAL) << log;
     valid = false;
   }
   return valid;
