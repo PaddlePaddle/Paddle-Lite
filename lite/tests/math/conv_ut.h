@@ -20,6 +20,8 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
+#include "lite/tests/utils/fill_data.h"
+#include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/print_info.h"
 
 #ifdef LITE_WITH_ARM
@@ -100,17 +102,18 @@ DDim compute_out_dim(const DDim& dim_in,
   return dim_out;
 }
 
-void act_init(ConvParam param,
+void act_init(ConvParam& param,  // NOLINT
               std::vector<int> strides,
               std::vector<int> pads,
               std::vector<int> dilas,
-              int group,
-              int flag_act) {
+              const int group,
+              const int flag_act,
+              const float six,
+              const float leakey_relu_scale) {
   param.strides = strides;
   param.paddings = std::make_shared<std::vector<int>>(pads);
   param.dilations = std::make_shared<std::vector<int>>(dilas);
   param.groups = group;
-  const float six = 6.f;
   if (flag_act > 0) {
     ActivationParam act_param;
     act_param.has_active = true;

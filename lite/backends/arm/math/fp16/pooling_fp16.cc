@@ -186,7 +186,7 @@ void pooling_basic_fp16(const float16_t* din,
   "ldp q0, q1, [%[data_in_channel]], #32\n" \
   "ldp q2, q3, [%[data_in_channel]], #32\n" \
   "prfm  pldl1keep, [%[data_in_channel]]\n" \
-  "bne 4f\n"
+  "blt 4f\n"
 #define GLOBAL_MAX                          \
   "1:\n"                                    \
   "fmax v4.8h, v0.8h, v2.8h\n"              \
@@ -197,6 +197,7 @@ void pooling_basic_fp16(const float16_t* din,
   "subs %w[cnt], %w[cnt], #1 \n"            \
   "fmax %[vmax].8h, %[vmax].8h, v5.8h\n"    \
   "bne 1b\n"
+
 #define GLOBAL_AVG                          \
   "1: \n"                                   \
   "fadd v4.8h, v0.8h, v2.8h\n"              \
@@ -244,8 +245,6 @@ void pooling_global_max_fp16(const float16_t* din,
                              int hin,
                              int win) {
   int size_channel_in = win * hin;
-  auto data_out = static_cast<float16_t*>(dout);
-  auto data_in = static_cast<const float16_t*>(din);
 
   int cnt = size_channel_in >> 5;
   int remain = size_channel_in & 31;
@@ -253,12 +252,12 @@ void pooling_global_max_fp16(const float16_t* din,
   int remain_8 = remain & 7;
 
   for (int n = 0; n < num; ++n) {
-    float16_t* data_out_batch = data_out + n * chout;
-    const float16_t* data_in_batch = data_in + n * chin * size_channel_in;
+    float16_t* data_out_batch = dout + n * chout;
+    const float16_t* data_in_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
     for (int c = 0; c < chout; ++c) {
       const float16_t* data_in_channel = data_in_batch + c * size_channel_in;
-      float16x8_t vmax = vdupq_n_f16(std::numeric_limits<float16_t>::lowest());
+      float16x8_t vmax = vdupq_n_f16(data_in_channel[0]);
       int size_cnt = cnt;
       int size_remain = cnt_8;
 #ifdef __aarch64__
@@ -295,8 +294,6 @@ void pooling_global_avg_fp16(const float16_t* din,
                              int hin,
                              int win) {
   int size_channel_in = win * hin;
-  auto data_out = static_cast<float16_t*>(dout);
-  auto data_in = static_cast<const float16_t*>(din);
 
   int cnt = size_channel_in >> 5;
   int remain = size_channel_in & 31;
@@ -304,8 +301,8 @@ void pooling_global_avg_fp16(const float16_t* din,
   int remain_8 = remain & 7;
 
   for (int n = 0; n < num; ++n) {
-    float16_t* data_out_batch = data_out + n * chout;
-    const float16_t* data_in_batch = data_in + n * chin * size_channel_in;
+    float16_t* data_out_batch = dout + n * chout;
+    const float16_t* data_in_batch = din + n * chin * size_channel_in;
 #pragma omp parallel for
     for (int c = 0; c < chout; c++) {
       const float16_t* data_in_channel =
@@ -324,7 +321,7 @@ void pooling_global_avg_fp16(const float16_t* din,
 #else
 #endif  //  __aarch64__
       data_in_channel -= 8;
-      float16x4_t vsum_tmp = vadd_f16(vget_low_f16(vsum), vget_low_f16(vsum));
+      float16x4_t vsum_tmp = vadd_f16(vget_low_f16(vsum), vget_high_f16(vsum));
       float16x4_t vtmp1 = vpadd_f16(vsum_tmp, vsum_tmp);
       float16x4_t vtmp2 = vpadd_f16(vtmp1, vtmp1);
       for (int i = 0; i < remain_8; i++) {

@@ -18,6 +18,7 @@
 #include <string>
 #include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
+#include "lite/tests/utils/tensor_utils.h"
 
 typedef paddle::lite::DDim DDim;
 typedef paddle::lite::Tensor Tensor;
@@ -25,8 +26,9 @@ using paddle::lite::profile::Timer;
 
 void print_gops_info(std::string op_name,
                      const DDim dim_in,
+                     const DDim dim_out,
                      Timer t0,
-                     doueble gops) {
+                     double gops) {
   VLOG(4) << op_name << ": input shape: " << dim_in << ", output shape"
           << dim_out << ", running time, avg: " << t0.LapTimes().Avg()
           << ", min time: " << t0.LapTimes().Min()
@@ -40,9 +42,14 @@ void print_diff_info(double max_diff, double max_ratio) {
           << ", max ratio: " << max_ratio;
 }
 
-void print_tensor_info_common(Tensor src, Tensor basic, Tensor lite) {
-  LOG(WARNING) << "din";
-  print_tensor(src);
+void print_tensor_info_common(Tensor src,
+                              Tensor basic,
+                              Tensor lite,
+                              bool has_din) {
+  if (has_din) {
+    LOG(WARNING) << "din";
+    print_tensor(src);
+  }
   LOG(WARNING) << "basic result";
   print_tensor(basic);
   LOG(WARNING) << "lite result";
@@ -51,6 +58,7 @@ void print_tensor_info_common(Tensor src, Tensor basic, Tensor lite) {
   tdiff.Resize(basic.dims());
   tdiff.set_precision(PRECISION(kFloat));
   tensor_diff(basic, lite, tdiff);
+  LOG(WARNING) << "diff result";
   print_tensor(tdiff);
 }
 
@@ -86,9 +94,9 @@ inline void print_data_fp16(const float16_t* din, int64_t size, int64_t width) {
   }
   printf("\n");
 }
-void print_tensor_info_fp16(float16_t* basic_ptr,
-                            float16_t* saber_ptr,
-                            float16_t* diff_ptr,
+void print_tensor_info_fp16(const float16_t* basic_ptr,
+                            const float16_t* saber_ptr,
+                            const float16_t* diff_ptr,
                             int size,
                             int width) {
   LOG(WARNING) << "basic result";

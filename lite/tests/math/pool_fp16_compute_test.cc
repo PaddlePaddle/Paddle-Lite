@@ -73,8 +73,8 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
         Tensor x_fp32;
         x_fp32.Resize(dim_in);
         x_fp32.set_precision(PRECISION(kFloat));
-        a_ptr = x_fp32.mutable_data<float>();
-        b_ptr = param.x->mutable_data<float16_t>();
+        float* a_ptr = x_fp32.mutable_data<float>();
+        float16_t* b_ptr = param.x->mutable_data<float16_t>();
         fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.x->numel());
         // fill_data_const<float16_t>(b_ptr, -1.f, param.x->numel());
         fp16_to_float(param.x->data<float16_t>(), a_ptr, param.x->numel());
@@ -85,7 +85,6 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
         Tensor tout_basic_fp16;
         Tensor tout_basic_fp32;
         if (FLAGS_check_result) {
-          LOG(INFO) << "basic compute";
           tout_basic.set_precision(PRECISION(kFP16));
           tout_basic_fp16.set_precision(PRECISION(kFP16));
           tout_basic_fp32.set_precision(PRECISION(kFloat));
@@ -114,41 +113,11 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
                                       ceil_mode,
                                       use_quantizer,
                                       pooling_type);
-          pooling_basic<float16_t, float16_t>(din,
-                                              dout_basic,
-                                              dim_in[0],
-                                              dim_out[1],
-                                              dim_out[2],
-                                              dim_out[3],
-                                              dim_in[1],
-                                              dim_in[2],
-                                              dim_in[3],
-                                              ksize,
-                                              strides,
-                                              pads,
-                                              flag_global,
-                                              exclusive,
-                                              adaptive,
-                                              ceil_mode,
-                                              use_quantizer,
-                                              pooling_type);
           // fp32 -> fp16
           auto dout_basic_fp16_ptr = tout_basic_fp16.mutable_data<float16_t>();
-          //   auto diff_ptr = tout_basic_diff.mutable_data<float16_t>();
           float_to_fp16(
               dout_basic_fp32, dout_basic_fp16_ptr, tout_basic_fp16.numel());
-          // basic_diff: fp16 - (fp32->fp16)
-          //   data_diff(dout_basic,
-          //             dout_basic_fp16_ptr,
-          //             diff_ptr,
-          //             tout_basic.numel(),
-          //             basic_max_ratio,
-          //             basic_max_diff);
-          // VLOG(4) << "compare result, max diff: " << basic_max_diff
-          //   << ", max ratio: " << basic_max_ratio;
-          //   print_diff_info(basic_max_diff, basic_max_ratio);
         }
-        LOG(INFO) << "lite compute";
         /// warm up
         for (int i = 0; i < FLAGS_warmup; ++i) {
           pool.Launch();
@@ -162,15 +131,29 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
         }
 
         double gops = 2.0 * dim_out.production() * ksize[0] * ksize[1];
-        print_gops_info("pool_fp16", dim_in, t0, gops);
+        print_gops_info("pool_fp16", dim_in, dim_out, t0, gops);
         if (FLAGS_check_result) {
           double max_ratio = 0;
           double max_diff = 0;
-          tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
+          auto basic_ptr = tout_basic_fp16.data<float16_t>();
+          auto saber_ptr = param.output->data<float16_t>();
+          Tensor tdiff;
+          tdiff.Resize(tout_basic.dims());
+          tdiff.set_precision(PRECISION(kFP16));
+          auto ptr = tdiff.mutable_data<float16_t>();
+          // paddle::lite::data_diff_kernel(
+          data_diff(basic_ptr,
+                    saber_ptr,
+                    ptr,
+                    tout_basic.numel(),
+                    max_ratio,
+                    max_diff);
           print_diff_info(max_diff, max_ratio);
           if (std::abs(max_ratio) > 1e-3f) {
             if (max_diff > 5e-4f) {
-              print_tensor_info_common(*param.x, tout_basic, *param.output);
+              int64_t size = tout_basic.numel();
+              int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
+              print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
               print_pool_success_or_fail_info("pool_fp16",
                                               false,
                                               dim_in,

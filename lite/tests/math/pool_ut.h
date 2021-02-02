@@ -19,6 +19,7 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
+#include "lite/tests/utils/fill_data.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/print_info.h"
 #include "lite/tests/utils/tensor_utils.h"

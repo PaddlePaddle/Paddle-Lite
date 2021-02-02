@@ -114,50 +114,17 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
         }
 
         double gops = 2.0 * dim_out.production() * ksize[0] * ksize[1];
-        /*LOG(INFO) << "pool fp32: input shape: " << dim_in << ", output shape"
-                  << dim_out << ", running time, avg: " << t0.LapTimes().Avg()
-                  << ", min time: " << t0.LapTimes().Min()
-                  << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
-        */
-        print_gops_info("pool_fp32", dim_in, t0, gops);
+
+        print_gops_info("pool_fp32", dim_in, dim_out, t0, gops);
         if (FLAGS_check_result) {
           double max_ratio = 0;
           double max_diff = 0;
           tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
-          // LOG(INFO) << "compare result, max diff: " << max_diff
-          //           << ", max ratio: " << max_ratio;
           print_diff_info(max_diff, max_ratio);
           if (std::abs(max_ratio) > 1e-3f) {
             if (max_diff > 5e-4f) {
-              /*LOG(WARNING) << "din";
-              print_tensor(*param.x);
-              LOG(WARNING) << "basic result";
-              print_tensor(tout_basic);
-              LOG(WARNING) << "lite result";
-              print_tensor(*param.output);
-              Tensor tdiff;
-              tdiff.Resize(tout_basic.dims());
-              tdiff.set_precision(PRECISION(kFloat));
-              tensor_diff(tout_basic, *param.output, tdiff);
-              print_tensor(tdiff);
-              */
-              print_tensor_info_common(*param.x, tout_basic, *param.output);
-              /*LOG(FATAL) << "test fp32 pool: input: " << dim_in
-                         << ", output: " << dim_out
-                         << ", kernel dim: " << ksize[0] << ", " << ksize[1]
-                         << ", pad: " << pads[0] << ", " << pads[1] << ", "
-                         << pads[2] << ", " << pads[3]
-                         << ", stride: " << strides[0] << ", " << strides[1]
-                         << ", global_pooling: "
-                         << (flag_global ? "global" : "false")
-                         << ", pooling_type: " << pooling_type
-                         << ", ceil_mode: " << (ceil_mode ? "true" : "false")
-                         << ", exclusive: " << (exclusive ? "true" : "false")
-                         << ", threads: " << th << ", power_mode: " << cls
-                         << " failed!!\n";
-                         */
+              print_tensor_info_common(
+                  *param.x, tout_basic, *param.output, true);
               print_pool_success_or_fail_info("pool_fp32",
                                               false,
                                               dim_in,
@@ -187,18 +154,6 @@ void test_pool_fp32(const std::vector<DDim>& input_dims,
                                         exclusive,
                                         th,
                                         cls);
-        /*LOG(INFO) << "test fp32 pool: input: " << dim_in
-                  << ", output: " << dim_out << ", kernel dim: " << ksize[0]
-                  << ", " << ksize[1] << ", pad: " << pads[0] << ", " << pads[1]
-                  << ", " << pads[2] << ", " << pads[3]
-                  << ", stride: " << strides[0] << ", " << strides[1]
-                  << ", global_pooling: " << (flag_global ? "global" : "false")
-                  << ", pooling_type: " << pooling_type
-                  << ", ceil_mode: " << (ceil_mode ? "true" : "false")
-                  << ", exclusive: " << (exclusive ? "true" : "false")
-                  << ", threads: " << th << ", power_mode: " << cls
-                  << " successed!!\n";
-        */
       }
     }
   }
