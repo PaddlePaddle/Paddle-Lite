@@ -134,8 +134,10 @@ std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
   sources.push_back(content);
   auto prog =
       std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
+#ifdef LITE_WITH_LOG
   VLOG(4) << "OpenCL kernel file name: " << file_name;
   VLOG(4) << "Program source size: " << content.size();
+#endif
   CL_CHECK_FATAL_SOLID(status_);
   return std::move(prog);
 }

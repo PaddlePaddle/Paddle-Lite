@@ -208,7 +208,6 @@ function build_opencl {
 
     cmake_opencl ${os} ${abi} ${lang}
     make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
-    make publish_inference -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
 }
 

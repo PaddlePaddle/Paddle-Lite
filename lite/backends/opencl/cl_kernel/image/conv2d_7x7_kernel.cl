@@ -125,5 +125,9 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
 
   output = activation_type4(output);
 
+#ifdef SCALE_ACTIVATION
+  output = fuse_scale(output, 1.f, 0.f, 0.f);
+#endif
+
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output_image, output_pos, output);
 }

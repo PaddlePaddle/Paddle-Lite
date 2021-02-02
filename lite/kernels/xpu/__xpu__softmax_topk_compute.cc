@@ -61,13 +61,13 @@ void SoftmaxTopkCompute::Run() {
                           xdims,
                           axis);
     CHECK_EQ(r, 0);
-    r = xdnn::topk(ctx.GetRawContext(),
-                   softmax_out_xpu_ptr,
-                   param.output->mutable_data<float>(TARGET(kXPU)),
-                   indices_int32_device,
-                   m,
-                   n,
-                   K);
+    r = xdnn::sorted_topk(ctx.GetRawContext(),
+                          softmax_out_xpu_ptr,
+                          param.output->mutable_data<float>(TARGET(kXPU)),
+                          indices_int32_device,
+                          m,
+                          n,
+                          K);
     CHECK_EQ(r, 0);
   }
   int r = xdnn::cast_v2<int, int64_t>(ctx.GetRawContext(),
