@@ -174,7 +174,7 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
                    "and you have Write&Read permission. Jump to build program "
                    "from source.";
     } else {
-      bool ret = this->Deserialize(bin_file, programs_precompiled_binary_);
+      bool ret = this->Deserialize(bin_file, &programs_precompiled_binary_);
       CHECK(ret) << "Deserialize failed.";
 
       // check if the binary file is illegal and valid
