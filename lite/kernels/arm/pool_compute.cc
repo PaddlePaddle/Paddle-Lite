@@ -422,4 +422,4 @@ REGISTER_LITE_KERNEL(pool2d, kARM, kFP16, kNCHW, PoolFp16, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindPaddleOpVersion("pool2d", 1)
     .Finalize();
-#endif
+#endif  // ENABLE_ARM_FP16
