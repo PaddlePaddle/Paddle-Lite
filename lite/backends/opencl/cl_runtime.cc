@@ -146,7 +146,7 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
     }
   }
 #ifdef LITE_WITH_LOG
-  VLOG(4) << "precision_:" << static_cast<size_t>(precision_);
+  VLOG(4) << "precision_: " << CLPrecisionTypeToStr(precision_);
   VLOG(4) << "OpenCL build_option: " << build_option;
 #endif
 

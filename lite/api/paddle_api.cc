@@ -269,21 +269,6 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #endif
 }
 
-void ConfigBase::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
-#ifdef LITE_WITH_OPENCL
-  if (paddle::lite_api::IsOpenCLBackendValid()) {
-    opencl_tune_mode_ = tune_mode;
-    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_,
-                                                     lws_repeats);
-#ifdef LITE_WITH_LOG
-    LOG(INFO) << "opencl_tune_mode:"
-              << static_cast<size_t>(
-                     paddle::lite::CLRuntime::Global()->auto_tune());
-#endif
-  }
-#endif
-}
-
 void ConfigBase::set_opencl_binary_path_name(const std::string &path,
                                              const std::string &name) {
 #ifdef LITE_WITH_OPENCL
@@ -300,15 +285,29 @@ void ConfigBase::set_opencl_binary_path_name(const std::string &path,
 #endif
 }
 
+void ConfigBase::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
+#ifdef LITE_WITH_OPENCL
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    opencl_tune_mode_ = tune_mode;
+    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_,
+                                                     lws_repeats);
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "set opencl_tune_mode: "
+              << CLTuneModeToStr(lite::CLRuntime::Global()->auto_tune());
+#endif
+  }
+#endif
+}
+
 void ConfigBase::set_opencl_precision(CLPrecisionType p) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
     opencl_precision_ = p;
     paddle::lite::CLRuntime::Global()->set_precision(p);
 #ifdef LITE_WITH_LOG
-    LOG(INFO) << "get opencl precision:"
-              << static_cast<size_t>(
-                     paddle::lite::CLRuntime::Global()->get_precision());
+    LOG(INFO) << "set opencl precision: "
+              << CLPrecisionTypeToStr(
+                     lite::CLRuntime::Global()->get_precision());
 #endif
   }
 #endif
