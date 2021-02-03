@@ -184,7 +184,7 @@ bool CLRuntime::CheckFromCache(const std::string& program_key) {
 }
 
 bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
-                                           const std::string& build_options) {
+                                           const std::string& build_option) {
   bool ret = false;
   bool delete_bin_flag = false;
   auto path_name = GetBinaryPathName();
@@ -208,7 +208,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
       VLOG(3) << "map size: " << programs_precompiled_binary_.size();
       for (auto& ins : programs_precompiled_binary_) {
         std::string prog_key = ins.first;
-        VLOG(3) << "map key: " << prog_key
+        VLOG(3) << "\t map key: " << prog_key
                 << "\t map value size: " << ins.second[0].size();
       }
 
@@ -220,10 +220,15 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
         delete_bin_flag = true;
         // Jump to build from source
       } else if (memcmp(((sn_iter->second)[0]).data(),
-                        this->GetSN(build_options).data(),
-                        this->GetSN(build_options).length())) {
-        LOG(INFO) << "SIZE of sn_info: " << ((sn_iter->second)[0]).size();
-        LOG(INFO) << "SIZE of GetSN: " << this->GetSN(build_options).length();
+                        GetSN(build_option).data(),
+                        GetSN(build_option).length())) {
+        LOG(INFO) << "size of sn_info: " << ((sn_iter->second)[0]).size();
+        LOG(INFO) << "size of GetSN: " << GetSN(build_option).length();
+        for (auto i = 0; i < ((sn_iter->second)[0]).size(); i++) {
+          std::cout << (sn_iter->second)[0][i];
+        }
+        std::cout << std::endl;
+        LOG(INFO) << GetSN(build_option);
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is invalid!";
         delete_bin_flag = true;
@@ -244,7 +249,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
           CL_CHECK_FATAL_SOLID(status);
           auto pos_start = prog_key.find_first_of("-D");
           std::string options = prog_key.substr(pos_start);
-          this->BuildProgram(&program, options);
+          BuildProgram(&program, options);
 
           std::unique_ptr<cl::Program> ptr(new cl::Program(program));
           programs_[prog_key] = std::move(ptr);
@@ -279,14 +284,14 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
 
 bool CLRuntime::CheckFromSource(const std::string& file_name,
                                 const std::string& program_key,
-                                const std::string& build_options) {
-  auto ptr = this->CreateProgramFromSource(*context_, file_name);
+                                const std::string& build_option) {
+  auto ptr = CreateProgramFromSource(*context_, file_name);
   auto program = ptr.get();
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- begin build program from source -> " << program_key
           << " --- ";
 #endif
-  this->BuildProgram(program, build_options);
+  BuildProgram(program, build_option);
 
   // Keep built program binary
   cl_int status{CL_SUCCESS};
@@ -302,11 +307,50 @@ bool CLRuntime::CheckFromSource(const std::string& file_name,
   status = program->getInfo(CL_PROGRAM_BINARIES, &buf);
   CL_CHECK_FATAL_SOLID(status);
   programs_precompiled_binary_[program_key] = binary;
-
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- binary size: " << bin_size << " ---";
 #endif
   programs_[program_key] = std::move(ptr);
+
+  if (programs_precompiled_binary_.find(sn_key_) ==
+      programs_precompiled_binary_.end()) {
+    // add identifier
+    std::string sn = GetSN(build_option);
+    std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
+    programs_precompiled_binary_[sn_key_] = {sn_info};
+  }
+
+  return true;
+}
+
+std::unique_ptr<cl::Program> CLRuntime::CreateProgramFromSource(
+    const cl::Context& context, std::string file_name) {
+  auto cl_file = opencl_kernels_files.find(file_name);
+  std::string content(cl_file->second.begin(), cl_file->second.end());
+  cl::Program::Sources sources;
+  sources.push_back(content);
+  auto prog =
+      std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
+#ifdef LITE_WITH_LOG
+  VLOG(4) << "OpenCL kernel file name: " << file_name;
+  VLOG(4) << "Program source size: " << content.size();
+#endif
+  CL_CHECK_FATAL_SOLID(status_);
+  return std::move(prog);
+}
+
+bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
+  status_ = program->build({*device_}, options.c_str());
+  CL_CHECK_ERROR(status_);
+
+  if (status_ != CL_SUCCESS) {
+    if (program->getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device()) ==
+        CL_BUILD_ERROR) {
+      std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(device());
+      LOG(FATAL) << "Program build error: " << log;
+    }
+    return false;
+  }
 
   return true;
 }
@@ -321,12 +365,7 @@ void CLRuntime::SaveProgram() {
   if (IsFileExists(file_name)) {
     return;
   } else {
-    // add identifier for each binary file
-    std::string sn = this->GetSN();
-    std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
-    programs_precompiled_binary_[sn_key_] = {sn_info};
-
-    bool ret = this->Serialize(file_name, programs_precompiled_binary_);
+    bool ret = Serialize(file_name, programs_precompiled_binary_);
     CHECK(ret) << "Serialize failed.";
 
 #ifdef LITE_WITH_LOG
@@ -370,51 +409,18 @@ bool CLRuntime::Deserialize(
 }
 
 std::string CLRuntime::GetSN(const std::string options) {
-  // Identifier info(Serial Number) for each binary file: lite version, model,
+  // Identifier info(Serial Number) for each binary file: lite version,
   // build options, platform info, device version, driver version
   STL::stringstream sn_ss;
   std::string lite_version = lite::version() + "; ";
-  std::string model_name = "place_holder; ";  // todo
   std::string platform_info = platform_->getInfo<CL_PLATFORM_NAME>() + ", " +
                               platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";
   std::string device_version = device_->getInfo<CL_DEVICE_VERSION>() + "; ";
   std::string driver_version = device_->getInfo<CL_DRIVER_VERSION>() + "; ";
-  // sn_ss << lite_version << model_name << options << platform_info
-  //       << device_version << driver_version;
-  sn_ss << lite::version();  // for test only
+  std::string place_holder{"place_holder"};
+  sn_ss << lite_version << options << platform_info << device_version
+        << driver_version << place_holder;
   return sn_ss.str();
-}
-
-std::unique_ptr<cl::Program> CLRuntime::CreateProgramFromSource(
-    const cl::Context& context, std::string file_name) {
-  auto cl_file = opencl_kernels_files.find(file_name);
-  std::string content(cl_file->second.begin(), cl_file->second.end());
-  cl::Program::Sources sources;
-  sources.push_back(content);
-  auto prog =
-      std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
-#ifdef LITE_WITH_LOG
-  VLOG(4) << "OpenCL kernel file name: " << file_name;
-  VLOG(4) << "Program source size: " << content.size();
-#endif
-  CL_CHECK_FATAL_SOLID(status_);
-  return std::move(prog);
-}
-
-bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
-  status_ = program->build({*device_}, options.c_str());
-  CL_CHECK_ERROR(status_);
-
-  if (status_ != CL_SUCCESS) {
-    if (program->getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device()) ==
-        CL_BUILD_ERROR) {
-      std::string log = program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(device());
-      LOG(FATAL) << "Program build error: " << log;
-    }
-    return false;
-  }
-
-  return true;
 }
 
 std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(

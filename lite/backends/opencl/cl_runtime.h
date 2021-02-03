@@ -169,11 +169,11 @@ class CLRuntime {
   bool CheckFromCache(const std::string& program_key);
 
   bool CheckFromPrecompiledBinary(const std::string& program_key,
-                                  const std::string& build_options);
+                                  const std::string& build_option);
 
   bool CheckFromSource(const std::string& file_name,
                        const std::string& program_key,
-                       const std::string& build_options);
+                       const std::string& build_option);
 
   void SaveProgram();
 
@@ -211,7 +211,7 @@ class CLRuntime {
       GPUPerfMode gpu_perf_mode,
       GPUPriorityLevel gpu_priority_level);
 
-  std::string GetSN(const std::string options = "");
+  std::string GetSN(const std::string options);
 
   std::shared_ptr<cl::Context> CreateContext() {
     // note(ysh329): gpu perf mode and priority level of adreno gpu referred
