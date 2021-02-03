@@ -275,24 +275,10 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
   cl::Program::Binaries binary;
   binary.resize(1);
   binary[0].resize(bin_size);
-  // status = program->getInfo(CL_PROGRAM_BINARIES, binary[0].data());
   auto buf = binary[0].data();
-  status = clGetProgramInfo(
-      (*program)(), CL_PROGRAM_BINARIES, sizeof(unsigned char*), &buf, nullptr);
+  status = program->getInfo(CL_PROGRAM_BINARIES, &buf);
   CL_CHECK_FATAL_SOLID(status);
   programs_precompiled_binary_[program_key] = binary;
-  if (bin_size == 15036) {
-    LOG(INFO) << "ref FC binary size: " << binary[0].size();
-    for (auto i = 0; i < bin_size; i++) {
-      std::cout << binary[0][i];
-    }
-    std::cout << std::endl;
-
-    cl::Program program_test =
-        cl::Program(context(), {this->device()}, binary, NULL, &status);
-    CL_CHECK_FATAL_SOLID(status);
-    this->BuildProgram(&program_test, build_option);
-  }
 
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- binary size: " << bin_size;
