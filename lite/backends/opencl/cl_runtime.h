@@ -166,6 +166,15 @@ class CLRuntime {
   std::unique_ptr<cl::Program> CreateProgramFromSource(
       const cl::Context& context, std::string file_name);
 
+  bool CheckFromCache(const std::string& program_key);
+
+  bool CheckFromPrecompiledBinary(const std::string& program_key,
+                                  const std::string& build_options);
+
+  bool CheckFromSource(const std::string& file_name,
+                       const std::string& program_key,
+                       const std::string& build_options);
+
   void SaveProgram();
 
   std::unique_ptr<cl::UserEvent> CreateEvent(const cl::Context& context);
