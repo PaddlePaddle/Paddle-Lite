@@ -1559,6 +1559,12 @@ struct MatMulParam : ParamBase {
   }
 };
 
+struct GatherNdParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* index{nullptr};
+  lite::Tensor* out{nullptr};
+};
+
 struct GatherParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Index{};
