@@ -76,10 +76,6 @@ void XPUFcCompute::Run() {
         ctx.GetRawContext(), param.input->data<float>(), m * k, x_max_);
     CHECK_EQ(r, 0);
 
-    // w_max
-    XPU_CALL(xpu_memcpy(
-        w_max_, w_maxs_, 4 * sizeof(float), XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-
     bool x_trans = false;
     bool w_trans = param.transpose_w;
     int ldx = (x_trans ? m : k);
