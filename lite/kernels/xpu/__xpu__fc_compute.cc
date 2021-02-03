@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/__xpu__fc_compute.h"
+#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -20,6 +21,17 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
+void XPUFcCompute::PrepareForRun() {
+  XPUMalloc(&x_max_);
+  XPUMalloc(&w_max_);
+  XPUMalloc(&y_max_);
+}
+
+void XPUFcCompute::XPUMalloc(float** max_ptr) {
+  XPUScratchPadGuard max_guard =
+      TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
+  *max_ptr = reinterpret_cast<float*>(max_guard->addr_);
+}
 
 void XPUFcCompute::Run() {
   auto& param = this->Param<param_t>();
@@ -53,6 +65,42 @@ void XPUFcCompute::Run() {
                        nullptr, /* max_c ptr */
                        bias,    /* bias */
                        act_type /* act_type */);
+  } else if (param.precision == "int8") {
+    // x_max
+    r = xdnn::findmax<float>(
+        ctx.GetRawContext(), param.input->data<float>(), m * k, x_max_);
+    CHECK_EQ(r, 0);
+
+    // w_max
+    float w_maxs[4] = {param.w_max, 0.0f, 0.0f, 0.0f};
+    XPU_CALL(xpu_memcpy(
+        w_max_, w_maxs, 4 * sizeof(float), XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+
+    bool x_trans = false;
+    bool w_trans = param.transpose_w;
+    int ldx = (x_trans ? m : k);
+    int ldw = (w_trans ? k : n);
+    int ldy = n;
+    r = xdnn::fc_fusion<float, int8_t, float, int8_t>(
+        ctx.GetRawContext(),                                     /* context */
+        param.input->data<float>(),                              /* x */
+        reinterpret_cast<const int8_t*>(param.w->data<float>()), /* w */
+        param.output->mutable_data<float>(TARGET(kXPU)),         /* y */
+        m,                                                       /* m */
+        n,                                                       /* n */
+        k,                                                       /* k */
+        false,                                                   /* x_trans */
+        param.transpose_w,                                       /* w_trans */
+        x_max_,                                                  /* x_max */
+        w_max_,                                                  /* w_max */
+        y_max_,                                                  /* y_max */
+        ldx,                                                     /* ldx */
+        ldw,                                                     /* ldw */
+        ldy,                                                     /* ldy */
+        1.0f,                                                    /* alpha */
+        0.0f,                                                    /* beta */
+        bias,                                                    /* bias */
+        act_type /* act_type */);
   } else {
     r = xdnn::fc_int16(
         ctx.GetRawContext(),                                      /* context */
