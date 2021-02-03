@@ -379,18 +379,6 @@ void pad2d_func(const lite::Tensor* input,
                  _pad_w[1],
                  _pad_value);
   } else if (_mode == 1) {
-    pad_edge(din,
-             dout,
-             on,
-             oc,
-             oh,
-             ow,
-             _pad_h[0],
-             _pad_h[1],
-             _pad_w[0],
-             _pad_w[1],
-             _pad_value);
-  } else if (_mode == 2) {
     pad_reflect(din,
                 dout,
                 on,
@@ -402,6 +390,18 @@ void pad2d_func(const lite::Tensor* input,
                 _pad_w[0],
                 _pad_w[1],
                 _pad_value);
+  } else if (_mode == 2) {
+    pad_edge(din,
+             dout,
+             on,
+             oc,
+             oh,
+             ow,
+             _pad_h[0],
+             _pad_h[1],
+             _pad_w[0],
+             _pad_w[1],
+             _pad_value);
   } else {
     LOG(ERROR) << "ERROR: unknown pad mode " << _mode;
   }
