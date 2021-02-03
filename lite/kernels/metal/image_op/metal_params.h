@@ -158,4 +158,10 @@ struct ElementwiseMetalParam {
   int byChannel;
 };
 
+struct TransposeMetalParam {
+  int iC;
+  int oC;
+  int axis[4];
+};
+
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_

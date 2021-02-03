@@ -234,6 +234,7 @@ void MetalBuffer::CopyFromNCHW(const MetalHalf *src) {
 
 template <>
 void MetalBuffer::CopyToNCHW(MetalHalf *dst) {
+  assert(dst != nullptr);
   if (with_transpose_ && tensor_dim_.size() == 4) {
     auto transpose_pointer =
         (void *)malloc(precision_size_ * tensor_dim_.production());
@@ -327,6 +328,7 @@ void MetalBuffer::CopyToNCHW(MetalHalf *dst) {
 
 template <>
 void MetalBuffer::CopyToNCHW(float *dst) {
+  assert(dst != nullptr);
   if (with_transpose_ && tensor_dim_.size() == 4) {
     auto transpose_pointer =
         (void *)malloc(precision_size_ * tensor_dim_.production());

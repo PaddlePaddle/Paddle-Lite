@@ -122,6 +122,7 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(Place{
           TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
       valid_places.emplace_back(TARGET(kARM));
+      valid_places.emplace_back(TARGET(kHost));
     } else if (target_repr == "x86_metal") {
       valid_places.emplace_back(Place{
           TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
