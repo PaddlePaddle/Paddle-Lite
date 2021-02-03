@@ -19,7 +19,6 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 #include "lite/kernels/metal/image_op/pool_image_compute.h"
 
-
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -53,18 +52,20 @@ void PoolImageCompute::PrepareForRun() {
   if (param.global_pooling) {
     kw = input_dims[3];
     kh = input_dims[2];
-    //    auto sw = input_dims[3];
-    //    auto sh = input_dims[2];
     auto pw = 0;
     auto ph = 0;
   }
 
-  PoolMetalParam pool_params{kw, kh, sw, sh, pw, ph, pool_type, param.exclusive};
+  PoolMetalParam pool_params{
+      kw, kh, sw, sh, pw, ph, pool_type, param.exclusive};
 
-  params_buffer_ = mtl_ctx->CreateBuffer(*device, &pool_params, sizeof(pool_params), METAL_ACCESS_FLAG::CPUWriteOnly);
+  params_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                         &pool_params,
+                                         sizeof(pool_params),
+                                         METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  output_buffer_ =
-      param.output->mutable_data<float, MetalImage>(output_dims, input_buffer_->transpose_);
+  output_buffer_ = param.output->mutable_data<float, MetalImage>(
+      output_dims, input_buffer_->transpose_);
 
   std::string function_name = "pool_float";
   kernel_ = mtl_ctx->GetKernel(*device, function_name);
@@ -86,7 +87,8 @@ void PoolImageCompute::Run() {
     MetalUint output_height = output_buffer_->image().height;
     MetalUint output_array_length = output_buffer_->image().arrayLength;
 
-    MetalUint3 global_work_size = {output_width, output_height, output_array_length};
+    MetalUint3 global_work_size = {
+        output_width, output_height, output_array_length};
 
     auto args = {MetalKernelArgument{input_buffer_},
                  MetalKernelArgument{output_buffer_},
@@ -124,19 +126,20 @@ void PoolImageComputeHalf::PrepareForRun() {
   if (param.global_pooling) {
     kw = input_dims[3];
     kh = input_dims[2];
-    //    auto sw = input_dims[3];
-    //    auto sh = input_dims[2];
     auto pw = 0;
     auto ph = 0;
   }
 
-  PoolMetalParam pool_params{kw, kh, sw, sh, pw, ph, pool_type, param.exclusive};
+  PoolMetalParam pool_params{
+      kw, kh, sw, sh, pw, ph, pool_type, param.exclusive};
 
-  params_buffer_ = mtl_ctx->CreateBuffer(
-      *device, &pool_params, sizeof(pool_params), METAL_ACCESS_FLAG::CPUWriteOnly);
+  params_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                         &pool_params,
+                                         sizeof(pool_params),
+                                         METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  output_buffer_ =
-      param.output->mutable_data<MetalHalf, MetalImage>(output_dims, input_buffer_->transpose_);
+  output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(
+      output_dims, input_buffer_->transpose_);
 
   std::string function_name = "pool_half";
   kernel_ = mtl_ctx->GetKernel(*device, function_name);
@@ -158,7 +161,8 @@ void PoolImageComputeHalf::Run() {
     MetalUint output_height = output_buffer_->image().height;
     MetalUint output_array_length = output_buffer_->image().arrayLength;
 
-    MetalUint3 global_work_size = {output_width, output_height, output_array_length};
+    MetalUint3 global_work_size = {
+        output_width, output_height, output_array_length};
 
     auto args = {MetalKernelArgument{input_buffer_},
                  MetalKernelArgument{output_buffer_},
@@ -183,13 +187,15 @@ REGISTER_LITE_KERNEL(pool2d,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::PoolImageCompute,
                      def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(pool2d,
                      kMetal,
@@ -197,10 +203,12 @@ REGISTER_LITE_KERNEL(pool2d,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::PoolImageComputeHalf,
                      def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();

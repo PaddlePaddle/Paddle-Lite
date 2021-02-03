@@ -21,7 +21,6 @@
 
 #include <algorithm>
 
-// #include <mutex>
 #include "lite/backends/metal/metal_common.h"
 #include "lite/backends/metal/metal_converter.h"
 #include "lite/backends/metal/metal_device.h"
@@ -107,7 +106,6 @@ class MetalBuffer {
   void Convert();
 
  private:
-  //  std::recursive_mutex buffer_lock_;
   size_t size_;
   int offset_ = 0;
 

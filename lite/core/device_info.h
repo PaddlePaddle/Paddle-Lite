@@ -14,7 +14,7 @@
 
 #pragma once
 #ifdef LITE_WITH_METAL
-#import <lite/backends/metal/target_wrapper.h>
+#include "lite/backends/metal/target_wrapper.h"
 #endif
 #include <cstdarg>
 #include <string>
@@ -353,11 +353,9 @@ class Device<TARGET(kMetal)> {
   void* device_{nullptr};
 };
 
-// template class Env<TARGET(kMetal)>;
 template <>
 class Env<TARGET(kMetal)> {
  public:
-  //  typedef TargetWrapper<TARGET(kMetal)> TagetWrapperMetal;
   typedef std::vector<Device<TARGET(kMetal)>> Devs;
 
   static Devs& Global() {

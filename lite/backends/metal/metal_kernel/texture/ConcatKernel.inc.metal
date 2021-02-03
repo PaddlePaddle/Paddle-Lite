@@ -35,12 +35,6 @@
 #endif
 
 #if V == VNORMAL
-//kernel void FUNC(concat, R, N, normal, P)(array<texture2d_array<P, access::read>, N> in [[texture(0)]],
-//                                     texture2d_array<P, access::read> out_x [[texture(N)]],
-//                                     texture2d_array<P, access::write> out [[texture(N+1)]],
-//                                     constant ConcatParam & pm [[buffer(0)]],
-//                                     uint3 gid [[thread_position_in_grid]]) {
-//}
 kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[texture(0)]],
                                       texture2d_array<P, access::read> in1 [[texture(1)]],
 #if N >= 3

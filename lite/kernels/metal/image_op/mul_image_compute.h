@@ -53,7 +53,7 @@ class MulImageCompute : public KernelLite<TARGET(kMetal),
   std::shared_ptr<MetalBuffer> params_buffer_;
 
   std::shared_ptr<MetalKernel> kernel_;
-  DDim inputXMulDim;
+  DDim input_x_mul_dim_;
 
   ReshapeImageCompute reshape_;
   Tensor shape_out_dev;
@@ -79,7 +79,7 @@ class MulImageComputeHalf
   std::shared_ptr<MetalBuffer> params_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
 
-  DDim inputXMulDim;
+  DDim input_x_mul_dim_;
   ReshapeImageComputeHalf reshape_;
   Tensor shape_out_dev;
   bool insert_shape = false;

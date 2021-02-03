@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#include "lite/kernels/metal/image_op/elementwise_mul_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/kernels/metal/image_op/elementwise_mul_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
@@ -54,20 +53,22 @@ void ElementwiseMulImageCompute::PrepareForRun() {
   int params_fast = 0;
   if ((input_buffer_x_->dim_ == input_buffer_y_->dim_) &&
       (input_buffer_x_->transpose_ == input_buffer_y_->transpose_)) {
-    //      print("===> elementwise_mul fast!!!")
     params_fast = 1;
   }
 
-  int addByChannel = 0;
+  int add_by_channel = 0;
   if (input_buffer_y_->tensor_dim_.size() == 1 &&
-      (axis == 1 ||
-       (axis == -1 && input_buffer_y_->tensor_dim_[0] == input_buffer_x_->pad_to_four_dim_[1]))) {
-    addByChannel = 1;
+      (axis == 1 || (axis == -1 &&
+                     input_buffer_y_->tensor_dim_[0] ==
+                         input_buffer_x_->pad_to_four_dim_[1]))) {
+    add_by_channel = 1;
   }
 
-  ElementwiseMetalParam element_params = {addByChannel};
-  params_buffer_ = mtl_ctx->CreateBuffer(
-      *device, &element_params, sizeof(element_params), METAL_ACCESS_FLAG::CPUWriteOnly);
+  ElementwiseMetalParam element_params = {add_by_channel};
+  params_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                         &element_params,
+                                         sizeof(element_params),
+                                         METAL_ACCESS_FLAG::CPUWriteOnly);
 }
 
 void ElementwiseMulImageCompute::Run() {
@@ -86,8 +87,8 @@ void ElementwiseMulImageCompute::Run() {
     auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
 
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                    static_cast<MetalUint>(output_height),
-                                    static_cast<MetalUint>(output_array_length)};
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
 
     auto args = {MetalKernelArgument{input_buffer_x_},
                  MetalKernelArgument{input_buffer_y_},
@@ -128,20 +129,22 @@ void ElementwiseMulImageComputeHalf::PrepareForRun() {
   int params_fast = 0;
   if ((input_buffer_x_->dim_ == input_buffer_y_->dim_) &&
       (input_buffer_x_->transpose_ == input_buffer_y_->transpose_)) {
-    //      print("===> elementwise_mul fast!!!")
     params_fast = 1;
   }
 
-  int addByChannel = 0;
+  int add_by_channel = 0;
   if (input_buffer_y_->tensor_dim_.size() == 1 &&
-      (axis == 1 ||
-       (axis == -1 && input_buffer_y_->tensor_dim_[0] == input_buffer_x_->pad_to_four_dim_[1]))) {
-    addByChannel = 1;
+      (axis == 1 || (axis == -1 &&
+                     input_buffer_y_->tensor_dim_[0] ==
+                         input_buffer_x_->pad_to_four_dim_[1]))) {
+    add_by_channel = 1;
   }
 
-  ElementwiseMetalParam element_params = {addByChannel};
-  params_buffer_ = mtl_ctx->CreateBuffer(
-      *device, &element_params, sizeof(element_params), METAL_ACCESS_FLAG::CPUWriteOnly);
+  ElementwiseMetalParam element_params = {add_by_channel};
+  params_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                         &element_params,
+                                         sizeof(element_params),
+                                         METAL_ACCESS_FLAG::CPUWriteOnly);
 }
 
 void ElementwiseMulImageComputeHalf::Run() {
@@ -160,8 +163,8 @@ void ElementwiseMulImageComputeHalf::Run() {
     auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
 
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                    static_cast<MetalUint>(output_height),
-                                    static_cast<MetalUint>(output_array_length)};
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
 
     auto args = {MetalKernelArgument{input_buffer_x_},
                  MetalKernelArgument{input_buffer_y_},
@@ -189,31 +192,37 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::ElementwiseMulImageCompute,
                      def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindInput("Y", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
-
-REGISTER_LITE_KERNEL(elementwise_mul,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::ElementwiseMulImageComputeHalf,
-                     def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindInput("Y", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+REGISTER_LITE_KERNEL(
+    elementwise_mul,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ElementwiseMulImageComputeHalf,
+    def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();

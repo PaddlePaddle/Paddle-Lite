@@ -16,7 +16,6 @@
 #define LITE_BACKENDS_METAL_METAL_QUEUE_H_
 
 #include <memory>
-// #include <mutex>
 #include <vector>
 
 #if defined(__OBJC__)
@@ -52,7 +51,6 @@ class MetalQueue {
   void* metal_queue_;
 #endif
   MetalDevice* mtl_device_;
-  //  mutable std::recursive_mutex command_buffers_lock_;
 };
 
 }  // namespace lite

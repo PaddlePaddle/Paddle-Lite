@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#include "dropout_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "dropout_image_compute.h"
 #include "metal_params.h"
 
 using namespace std;
@@ -43,7 +42,10 @@ void DropoutImageCompute::PrepareForRun() {
 
   DropoutMetalParam metal_param{scale};
 
-  param_buffer_ = mtl_ctx->CreateBuffer(*device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                        &metal_param,
+                                        sizeof(metal_param),
+                                        METAL_ACCESS_FLAG::CPUWriteOnly);
   output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
 
   string function_name = "dropout";
@@ -62,13 +64,13 @@ void DropoutImageCompute::Run() {
   {
     auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                    static_cast<MetalUint>(output_height),
-                                    static_cast<MetalUint>(output_array_length)};
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
 
     std::vector<std::pair<MetalKernelArgument, int>> args = {
-            (std::pair<MetalKernelArgument, int>){input_buffer_, 0},
-            (std::pair<MetalKernelArgument, int>){output_buffer_, 0},
-            (std::pair<MetalKernelArgument, int>){param_buffer_, 0},
+        (std::pair<MetalKernelArgument, int>){input_buffer_, 0},
+        (std::pair<MetalKernelArgument, int>){output_buffer_, 0},
+        (std::pair<MetalKernelArgument, int>){param_buffer_, 0},
     };
 
     kernel_->Execute(*queue, global_work_size, false, args);
@@ -76,54 +78,54 @@ void DropoutImageCompute::Run() {
   }
 }
 
-    void DropoutImageComputeHalf::PrepareForRun() {
-        auto& context = ctx_->As<ContextMetal>();
-        auto mtl_ctx = (MetalContext*)context.context();
-        auto device = mtl_ctx->GetDefaultDevice();
+void DropoutImageComputeHalf::PrepareForRun() {
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto device = mtl_ctx->GetDefaultDevice();
 
-        const auto& param = this->Param<param_t>();
-        auto output_dims = param.output->dims();
+  const auto& param = this->Param<param_t>();
+  auto output_dims = param.output->dims();
 
-        float prob_data = param.dropout_prob;
-        float scale = 1.0f;
-        if (param.dropout_implementation == "downgrade_in_infer") {
-            scale = 1.0f - prob_data;
-        }
+  float prob_data = param.dropout_prob;
+  float scale = 1.0f;
+  if (param.dropout_implementation == "downgrade_in_infer") {
+    scale = 1.0f - prob_data;
+  }
 
-        input_buffer_ = param.x->data<float, MetalImage>();
+  input_buffer_ = param.x->data<float, MetalImage>();
 
-        DropoutMetalParam metal_param{scale};
+  DropoutMetalParam metal_param{scale};
 
-        param_buffer_ = mtl_ctx->CreateBuffer(*device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
-        output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+  param_buffer_ = mtl_ctx->CreateBuffer(*device,
+                                        &metal_param,
+                                        sizeof(metal_param),
+                                        METAL_ACCESS_FLAG::CPUWriteOnly);
+  output_buffer_ =
+      param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
 
-        string function_name = "dropout_half";
-        kernel_ = mtl_ctx->GetKernel(*device, function_name);
-    }
+  string function_name = "dropout_half";
+  kernel_ = mtl_ctx->GetKernel(*device, function_name);
+}
 
-    void DropoutImageComputeHalf::Run() {
-        auto output_width = output_buffer_->texture_width_;
-        auto output_height = output_buffer_->texture_height_;
-        auto output_array_length = output_buffer_->array_length_;
-
-        auto& context = ctx_->As<ContextMetal>();
-        auto mtl_ctx = (MetalContext*)context.context();
-        auto mtl_dev = mtl_ctx->GetDefaultDevice();
-
-        {
-            auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-            MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                            static_cast<MetalUint>(output_height),
-                                            static_cast<MetalUint>(output_array_length)};
-
-            auto args = {MetalKernelArgument{input_buffer_},
-                         MetalKernelArgument{output_buffer_},
-                         MetalKernelArgument{param_buffer_}};
-
-            kernel_->Execute(*queue, global_work_size, false, args);
-            queue->WaitUntilComplete();
-        }
-    }
+void DropoutImageComputeHalf::Run() {
+  auto output_width = output_buffer_->texture_width_;
+  auto output_height = output_buffer_->texture_height_;
+  auto output_array_length = output_buffer_->array_length_;
+  auto& context = ctx_->As<ContextMetal>();
+  auto mtl_ctx = (MetalContext*)context.context();
+  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  {
+    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                   static_cast<MetalUint>(output_height),
+                                   static_cast<MetalUint>(output_array_length)};
+    auto args = {MetalKernelArgument{input_buffer_},
+                 MetalKernelArgument{output_buffer_},
+                 MetalKernelArgument{param_buffer_}};
+    kernel_->Execute(*queue, global_work_size, false, args);
+    queue->WaitUntilComplete();
+  }
+}
 
 }  // namespace metal
 }  // namespace kernels
@@ -136,15 +138,16 @@ REGISTER_LITE_KERNEL(dropout,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::DropoutImageCompute,
                      def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kHost))})
-        .Finalize();
-
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(dropout,
                      kMetal,
@@ -152,11 +155,13 @@ REGISTER_LITE_KERNEL(dropout,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::DropoutImageComputeHalf,
                      def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                  PRECISION(kFP16),
-                                                  DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kHost))})
-        .Finalize();
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();

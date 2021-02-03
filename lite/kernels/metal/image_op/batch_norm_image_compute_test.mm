@@ -49,18 +49,14 @@ void batch_norm_compute_ref(const operators::BatchNormParam& param) {
         channel_size = x_dims[1];
         inner_size = x_dims.Slice(2, x_dims.size()).production();
         break;
-      // case DATALAYOUT(kNHWC):
-      //   outer_size = x_dims.Slice(0, x_dims.size() - 1).production();
-      //   channel_size = x_dims[x_dims.size() - 1];
-      //   inner_size = 1;
-      //   break;
       default:
         LOG(FATAL) << "Unknown storage order: " << DataLayoutToStr(data_layout);
         break;
     }
 
     for (int c = 0; c < channel_size; c++) {
-      auto inv_std = (float)(1.0f / std::sqrt(variance_data[c] + param.epsilon));
+      auto inv_std =
+          (float)(1.0f / std::sqrt(variance_data[c] + param.epsilon));
       bias_data[c] = bias_data[c] - mean_data[c] * inv_std * scale_data[c];
       scale_data[c] = inv_std * scale_data[c];
 #if 0
@@ -75,10 +71,7 @@ void batch_norm_compute_ref(const operators::BatchNormParam& param) {
     for (int o = 0; o < outer_size; o++) {
       for (int c = 0; c < channel_size; c++) {
         for (int i = 0; i < inner_size; i++) {
-          //          dtype norm_x = (*x_ptr - mean_data[c]) / std::sqrt(variance_data[c] +
-          //          epsilon); *y_ptr = norm_x * scale_data[c] + bias_data[c];
           *y_ptr = *x_ptr * scale_data[c] + bias_data[c];
-          //                    *y_ptr = *x_ptr;
           x_ptr++;
           y_ptr++;
         }
@@ -91,8 +84,11 @@ void batch_norm_compute_ref(const operators::BatchNormParam& param) {
 }
 
 TEST(batch_norm_metal, retrive_op) {
-  auto batch_norm = KernelRegistry::Global().Create(
-      "batch_norm", TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray));
+  auto batch_norm =
+      KernelRegistry::Global().Create("batch_norm",
+                                      TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray));
   ASSERT_FALSE(batch_norm.empty());
   ASSERT_TRUE(batch_norm.front());
 }
@@ -112,7 +108,8 @@ TEST(batch_norm_metal, compute) {
             for (auto use_global_stats : {/*false, */ true}) {
               for (auto epsilon : {/*1e-4f,*/ 1e-5f}) {
                 for (auto momentum : {/*0.9f,*/ 0.99f}) {
-                  for (auto data_layout : {DATALAYOUT(kNCHW) /*, DATALAYOUT(kNHWC)*/}) {
+                  for (auto data_layout :
+                       {DATALAYOUT(kNCHW) /*, DATALAYOUT(kNHWC)*/}) {
                     Tensor x;
                     Tensor x_dev;
                     Tensor scale;
@@ -136,11 +133,9 @@ TEST(batch_norm_metal, compute) {
                       case DATALAYOUT(kNCHW):
                         in_out_shape = {n, c, h, w};
                         break;
-                      // case DATALAYOUT(kNHWC):
-                      //   in_out_shape = {n, h, w, c};
-                      //   break;
                       default:
-                        LOG(FATAL) << "Unknown storage order: " << DataLayoutToStr(data_layout);
+                        LOG(FATAL) << "Unknown storage order: "
+                                   << DataLayoutToStr(data_layout);
                         break;
                     }
                     x.Resize(in_out_shape);
@@ -160,6 +155,7 @@ TEST(batch_norm_metal, compute) {
                     variance_out_ref.Resize({c});
                     saved_mean_ref.Resize({c});
                     saved_variance_ref.Resize({c});
+
                     // initialize the data of input tensors
                     auto* x_data = x.mutable_data<float>();
                     auto* scale_data = scale.mutable_data<float>();
@@ -194,8 +190,6 @@ TEST(batch_norm_metal, compute) {
                       auto x_from_dev_ptr = x_from_dev.mutable_data<float>();
                       x_dev_ptr->CopyToNCHW<float>(x_from_dev_ptr);
                       for (int i = 0; i < x_from_dev.dims().production(); i++) {
-                        // std::cout << "["<< i <<"]" << x_from_dev_ptr[i] << " : " << x_data[i] <<
-                        // std::endl;
                         EXPECT_NEAR(x_from_dev_ptr[i], x_data[i], 1e-5);
                       }
                     }
@@ -205,8 +199,10 @@ TEST(batch_norm_metal, compute) {
                     std::unique_ptr<KernelContext> ctx(new KernelContext);
                     ctx->As<ContextMetal>().InitOnce();
                     auto mt = (MetalContext*)ctx->As<ContextMetal>().context();
-                    mt->set_metal_path("/Users/liuzheyuan/code/Paddle-Lite/cmake-build-debug/lite/"
-                                       "backends/metal/lite.metallib");
+                    mt->set_metal_path(
+                        "/Users/liuzheyuan/code/Paddle-Lite/cmake-build-debug/"
+                        "lite/"
+                        "backends/metal/lite.metallib");
                     batch_norm.SetContext(std::move(ctx));
                     operators::BatchNormParam param;
 
@@ -258,8 +254,8 @@ TEST(batch_norm_metal, compute) {
                                   << "[" << c << "] "
                                   << "[" << h << "] "
                                   << "[" << w << "] "
-                                  << "[" << i << "] " << y_data[i] << " : " << y_ref_data[i]
-                                  << std::endl;
+                                  << "[" << i << "] " << y_data[i] << " : "
+                                  << y_ref_data[i] << std::endl;
                       ASSERT_NEAR(y_data[i], y_ref_data[i], 1e-5);
                     }
 

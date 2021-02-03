@@ -278,17 +278,17 @@ void DepthwiseConv2dImageCompute::SetupWithoutMPS() {
       params_fast = 1;
     }
 
-    int addByChannel = 0;
+    int add_by_channel = 0;
     if (bias_buffer_->tensor_dim_.size() == 1 &&
         (axis == 1 || (axis == -1 &&
                        bias_buffer_->tensor_dim_[0] ==
                            output_buffer_->pad_to_four_dim_[1]))) {
-      addByChannel = 1;
+      add_by_channel = 1;
     }
 
     ElementwiseAddMetalParam element_params = {
         params_fast,
-        addByChannel,
+        add_by_channel,
         params_axis,
         (int)output_buffer_->tensor_dim_.size(),
         {xdim[0], xdim[1], xdim[2], xdim[3]},
@@ -650,17 +650,17 @@ void DepthwiseConv2dImageComputeHalf::SetupWithoutMPS() {
       params_fast = 1;
     }
 
-    int addByChannel = 0;
+    int add_by_channel = 0;
     if (bias_buffer_->tensor_dim_.size() == 1 &&
         (axis == 1 || (axis == -1 &&
                        bias_buffer_->tensor_dim_[0] ==
                            output_buffer_->pad_to_four_dim_[1]))) {
-      addByChannel = 1;
+      add_by_channel = 1;
     }
 
     ElementwiseAddMetalParam element_params = {
         params_fast,
-        addByChannel,
+        add_by_channel,
         params_axis,
         (int)output_buffer_->tensor_dim_.size(),
         {xdim[0], xdim[1], xdim[2], xdim[3]},

@@ -59,7 +59,3 @@ using namespace metal;
 #undef  PRELU_OTHER
 
 #undef P
-
-
-
-

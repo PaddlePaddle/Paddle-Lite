@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/metal/image_op/mul_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/kernels/metal/image_op/mul_image_compute.h"
-
 
 namespace paddle {
 namespace lite {
@@ -44,8 +43,9 @@ void MulImageCompute::PrepareForRun() {
   input_buffer_y_ = param.y->data<float, MetalImage>();
 
   std::vector<int> nhwc = {0, 1, 2, 3};
-  this->inputXMulDim = DDimLite({s1, s2});
-  assert(input_buffer_y_->transpose_ == nhwc && input_buffer_y_->tensor_dim_.size() == 2 &&
+  this->input_x_mul_dim_ = DDimLite({s1, s2});
+  assert(input_buffer_y_->transpose_ == nhwc &&
+         input_buffer_y_->tensor_dim_.size() == 2 &&
          s2 == input_buffer_y_->tensor_dim_[0]);
 
   output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
@@ -57,7 +57,7 @@ void MulImageCompute::PrepareForRun() {
     operators::ReshapeParam reshape_param;
     reshape_param.x = param.x;
 
-    shape_out_dev.Resize(this->inputXMulDim.Vectorize());
+    shape_out_dev.Resize(this->input_x_mul_dim_.Vectorize());
     reshape_param.output = &shape_out_dev;
     reshape_.SetContext(std::move(reshape_ctx));
     reshape_.SetParam(reshape_param);
@@ -83,7 +83,8 @@ void MulImageCompute::Run() {
     MetalUint output_width = output_buffer_->image().width;
     MetalUint output_height = output_buffer_->image().height;
     MetalUint output_array_length = output_buffer_->image().arrayLength;
-    MetalUint3 global_work_size = {output_width, output_height, output_array_length};
+    MetalUint3 global_work_size = {
+        output_width, output_height, output_array_length};
     if (insert_shape) {
       reshape_.Run();
       auto shape_buffer = shape_out_dev.data<float, MetalImage>();
@@ -124,8 +125,9 @@ void MulImageComputeHalf::PrepareForRun() {
   input_buffer_y_ = param.y->data<MetalHalf, MetalImage>();
 
   std::vector<int> nhwc = {0, 1, 2, 3};
-  this->inputXMulDim = DDimLite({s1, s2});
-  assert(input_buffer_y_->transpose_ == nhwc && input_buffer_y_->tensor_dim_.size() == 2 &&
+  this->input_x_mul_dim_ = DDimLite({s1, s2});
+  assert(input_buffer_y_->transpose_ == nhwc &&
+         input_buffer_y_->tensor_dim_.size() == 2 &&
          s2 == input_buffer_y_->tensor_dim_[0]);
 
   output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
@@ -137,7 +139,7 @@ void MulImageComputeHalf::PrepareForRun() {
     operators::ReshapeParam reshape_param;
     reshape_param.x = param.x;
 
-    shape_out_dev.Resize(this->inputXMulDim.Vectorize());
+    shape_out_dev.Resize(this->input_x_mul_dim_.Vectorize());
     reshape_param.output = &shape_out_dev;
     reshape_.SetContext(std::move(reshape_ctx));
     reshape_.SetParam(reshape_param);
@@ -163,7 +165,8 @@ void MulImageComputeHalf::Run() {
     MetalUint output_width = output_buffer_->image().width;
     MetalUint output_height = output_buffer_->image().height;
     MetalUint output_array_length = output_buffer_->image().arrayLength;
-    MetalUint3 global_work_size = {output_width, output_height, output_array_length};
+    MetalUint3 global_work_size = {
+        output_width, output_height, output_array_length};
     if (insert_shape) {
       reshape_.Run();
       auto shape_buffer = shape_out_dev.data<MetalHalf, MetalImage>();
@@ -197,16 +200,19 @@ REGISTER_LITE_KERNEL(mul,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::MulImageCompute,
                      def)
-        .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindInput("Y", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                   PRECISION(kFloat),
-                                                   DATALAYOUT(kMetalTexture2DArray))})
-        .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                                     PRECISION(kFloat),
-                                                     DATALAYOUT(kMetalTexture2DArray))})
-        .Finalize();
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(mul,
                      kMetal,
@@ -214,13 +220,16 @@ REGISTER_LITE_KERNEL(mul,
                      kMetalTexture2DArray,
                      paddle::lite::kernels::metal::MulImageComputeHalf,
                      def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kMetal),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kMetal),
                                        PRECISION(kFP16),
                                        DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kMetal),
-                                           PRECISION(kFP16),
-                                           DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
-                                              PRECISION(kFP16),
-                                              DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
