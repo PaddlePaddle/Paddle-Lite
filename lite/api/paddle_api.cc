@@ -439,6 +439,18 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 #endif
 }
 
+void CxxConfig::set_xpu_conv_autotune(bool autotune,
+                                      const std::string &autotune_file) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::conv_autotune = autotune;
+  lite::TargetWrapperXPU::conv_autotune_file = autotune_file;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_conv_autotune' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
 template <class T>
 void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
                                                 const int tensor_idx,
