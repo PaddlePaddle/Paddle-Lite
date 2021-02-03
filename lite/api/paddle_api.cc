@@ -45,6 +45,9 @@ namespace paddle {
 namespace lite_api {
 
 bool IsOpenCLBackendValid(bool check_fp16_valid) {
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
+#endif
   bool opencl_valid = false;
 
 #ifdef LITE_WITH_OPENCL
@@ -458,6 +461,18 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_multi_encoder_precision' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_conv_autotune(bool autotune,
+                                      const std::string &autotune_file) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::conv_autotune = autotune;
+  lite::TargetWrapperXPU::conv_autotune_file = autotune_file;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_conv_autotune' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
 

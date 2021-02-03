@@ -26,16 +26,11 @@ void UnsqueezeCompute::Run() {
   auto x = param.X;
   auto output = param.Out;
   auto output_dims = output->dims();
-  output->CopyDataFrom(*x);
-  output->Resize(output_dims);
-}
-
-void Unsqueeze2Compute::Run() {
-  auto& param = Param<operators::UnsqueezeParam>();
-  auto x = param.X;
-  auto output = param.Out;
-  auto output_dims = output->dims();
-  output->CopyDataFrom(*x);
+  if (param.inplace) {
+    output->ShareDataWith(*x);
+  } else {
+    output->CopyDataFrom(*x);
+  }
   output->Resize(output_dims);
 }
 
@@ -68,7 +63,7 @@ REGISTER_LITE_KERNEL(unsqueeze2,
                      kHost,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::host::Unsqueeze2Compute,
+                     paddle::lite::kernels::host::UnsqueezeCompute,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(

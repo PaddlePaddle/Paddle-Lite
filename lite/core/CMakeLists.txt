@@ -38,6 +38,7 @@ lite_cc_library(context SRCS context.cc DEPS tensor any device_info eigen3 METAL
 endif()
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
+if (LITE_WITH_CODE_META_INFO)
 execute_process(
   COMMAND git describe --tags --exact-match
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -62,7 +63,7 @@ execute_process(
 message(STATUS "tag: ${PADDLE_LITE_TAG}")
 message(STATUS "branch: ${PADDLE_LITE_BRANCH}")
 message(STATUS "commit: ${PADDLE_LITE_COMMIT}")
-
+endif()
 configure_file(version.h.in version.h)
 #----------------------------------------------- NOT CHANGE -----------------------------------------------
 # A trick to generate the opencl_kernels_source.cc

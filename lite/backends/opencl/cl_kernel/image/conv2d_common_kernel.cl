@@ -157,6 +157,13 @@ __kernel void conv2d_common(__private const int global_size_dim0,
     out2 = activation_type4(out2);
     out3 = activation_type4(out3);
 
+#ifdef SCALE_ACTIVATION
+  out0 = fuse_scale(out0, 1.f, 0.f, 0.f);
+  out1 = fuse_scale(out1, 1.f, 0.f, 0.f);
+  out2 = fuse_scale(out2, 1.f, 0.f, 0.f);
+  out3 = fuse_scale(out3, 1.f, 0.f, 0.f);
+#endif
+
     const int out_x_base = mul24(out_channel_block_idx, output_width);
     int out_x_idx        = out_width_block_idx << 2;
 
