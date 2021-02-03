@@ -35,8 +35,6 @@ class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   void XPUMalloc(float** max_ptr);
 
  private:
-  float w_maxs_[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-
   float* x_max_{nullptr};
   float* w_max_{nullptr};
   float* y_max_{nullptr};
