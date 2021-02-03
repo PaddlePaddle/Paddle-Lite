@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -22,13 +20,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class SliceCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class SumCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::SliceParam;
+  using param_t = operators::SumParam;
 
   virtual void Run();
 
-  virtual ~SliceCompute() = default;
+  virtual ~SumCompute() = default;
 };
 
 }  // namespace xpu
