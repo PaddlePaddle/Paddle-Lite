@@ -13,24 +13,34 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <string>
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace host {
+namespace operators {
 
-template <typename T>
-class GatherTreeCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny)> {
+class GatherNdOp : public OpLite {
  public:
-  void Run() override;
+  GatherNdOp() {}
+  explicit GatherNdOp(const std::string &op_type) : OpLite(op_type) {}
 
-  ~GatherTreeCompute() {}
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "gather_nd"; }
+
+ private:
+  mutable GatherNdParam param_;
 };
 
-}  // namespace host
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
