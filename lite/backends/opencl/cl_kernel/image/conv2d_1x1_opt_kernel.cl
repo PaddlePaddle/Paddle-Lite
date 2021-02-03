@@ -21,7 +21,8 @@ __kernel void conv2d_1x1_opt(
     __private const int input_height, /* of one block */
     __private const int output_width,
     __private const int output_height,
-    __private const int old_w) {
+    __private const int old_w,
+    __read_only image2d_t prelu_alpha) {
 
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
@@ -251,10 +252,36 @@ __kernel void conv2d_1x1_opt(
             READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
+#ifdef PRELU_CH
+  CL_DTYPE4 alpha0 =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
+  CL_DTYPE4 alpha1 = alpha0;
+  CL_DTYPE4 alpha2 = alpha0;
+  CL_DTYPE4 alpha3 = alpha0;
+#elif defined(PRELU_ELE)
+  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
+  CL_DTYPE4 alpha1 = alpha0;
+  CL_DTYPE4 alpha2 = alpha0;
+  CL_DTYPE4 alpha3 = alpha0;
+#else
+  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0.y = alpha0.x;
+  alpha0.z = alpha0.x;
+  alpha0.w = alpha0.x;
+  CL_DTYPE4 alpha1 = alpha0;
+  CL_DTYPE4 alpha2 = alpha0;
+  CL_DTYPE4 alpha3 = alpha0;
+#endif
+  output0 = activation_type4(output0, alpha0);
+  output1 = activation_type4(output1, alpha1);
+  output2 = activation_type4(output2, alpha2);
+  output3 = activation_type4(output3, alpha3);
+#else
   output0 = activation_type4(output0);
   output1 = activation_type4(output1);
   output2 = activation_type4(output2);
   output3 = activation_type4(output3);
+#endif
 
 #ifdef SCALE_ACTIVATION
   output0 = fuse_scale(output0, 1.f, 0.f, 0.f);
@@ -301,7 +328,8 @@ __kernel void conv2d_1x1_simple(
     __private const int input_height, /* of one block */
     __private const int output_width,
     __private const int output_height,
-    __private const int old_w) {
+    __private const int old_w,
+    __read_only image2d_t prelu_alpha) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -421,10 +449,37 @@ __kernel void conv2d_1x1_simple(
             READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
+#ifdef PRELU
+#ifdef PRELU_CH
+  CL_DTYPE4 alpha0 =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
+  CL_DTYPE4 alpha1 = alpha0;
+  CL_DTYPE4 alpha2 = alpha0;
+  CL_DTYPE4 alpha3 = alpha0;
+#elif defined(PRELU_ELE)
+  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
+  CL_DTYPE4 alpha1 = alpha0;
+  CL_DTYPE4 alpha2 = alpha0;
+  CL_DTYPE4 alpha3 = alpha0;
+#else
+  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0.y = alpha0.x;
+  alpha0.z = alpha0.x;
+  alpha0.w = alpha0.x;
+  CL_DTYPE4 alpha1 = alpha0;
+  CL_DTYPE4 alpha2 = alpha0;
+  CL_DTYPE4 alpha3 = alpha0;
+#endif
+  output0 = activation_type4(output0, alpha0);
+  output1 = activation_type4(output1, alpha1);
+  output2 = activation_type4(output2, alpha2);
+  output3 = activation_type4(output3, alpha3);
+#else
   output0 = activation_type4(output0);
   output1 = activation_type4(output1);
   output2 = activation_type4(output2);
   output3 = activation_type4(output3);
+#endif
 
 #ifdef SCALE_ACTIVATION
   output0 = fuse_scale(output0, 1.f, 0.f, 0.f);

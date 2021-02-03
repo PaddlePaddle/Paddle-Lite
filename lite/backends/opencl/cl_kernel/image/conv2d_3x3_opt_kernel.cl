@@ -29,7 +29,8 @@ __kernel void conv2d_3x3_opt(__private const int item_ch,
                              __private const int in_w,
                              __private const int in_h,
                              __private const int out_w,
-                             __private const int out_h) {
+                             __private const int out_h,
+                             __read_only image2d_t prelu_alpha) {
   // item_id
   const int item_ch_id = get_global_id(0);
   const int item_w_id = get_global_id(1);
@@ -216,11 +217,65 @@ __kernel void conv2d_3x3_opt(__private const int item_ch,
     }
   }
 
+#ifdef PRELU
+#ifdef PRELU_CH
+  CL_DTYPE4 alpha[5];
+  alpha[0] =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(item_ch_id, 0));
+  alpha[1] = alpha[0];
+  alpha[2] = alpha[0];
+  alpha[3] = alpha[0];
+  alpha[4] = alpha[0];
+
+#elif defined(PRELU_ELE)
+  CL_DTYPE4 alpha[5];
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                            prelu_alpha,
+                            SAMPLER,
+                            (int2)(out_w_base_id + out_w_id0, item_h_id));
+  if (out_w_id1 < out_w) {
+    alpha[1] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                              prelu_alpha,
+                              SAMPLER,
+                              (int2)(out_w_base_id + out_w_id1, item_h_id));
+  }
+  if (out_w_id2 < out_w) {
+    alpha[2] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                              prelu_alpha,
+                              SAMPLER,
+                              (int2)(out_w_base_id + out_w_id2, item_h_id));
+  }
+  if (out_w_id3 < out_w) {
+    alpha[3] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                              prelu_alpha,
+                              SAMPLER,
+                              (int2)(out_w_base_id + out_w_id3, item_h_id));
+  }
+  if (out_w_id4 < out_w) {
+    alpha[4] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                              prelu_alpha,
+                              SAMPLER,
+                              (int2)(out_w_base_id + out_w_id4, item_h_id));
+  }
+#else
+  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0.y = alpha0.x;
+  alpha0.z = alpha0.x;
+  alpha0.w = alpha0.x;
+  CL_DTYPE4 alpha[5] = {alpha0, alpha0, alpha0, alpha0, alpha0};
+#endif
+  output[0] = activation_type4(output[0], alpha[0]);
+  output[1] = activation_type4(output[1], alpha[1]);
+  output[2] = activation_type4(output[2], alpha[2]);
+  output[3] = activation_type4(output[3], alpha[3]);
+  output[4] = activation_type4(output[4], alpha[4]);
+#else
   output[0] = activation_type4(output[0]);
   output[1] = activation_type4(output[1]);
   output[2] = activation_type4(output[2]);
   output[3] = activation_type4(output[3]);
   output[4] = activation_type4(output[4]);
+#endif
 
 #ifdef SCALE_ACTIVATION
   output[0] = fuse_scale(output[0], 1.f, 0.f, 0.f);
@@ -276,7 +331,8 @@ __kernel void conv2d_3x3_multi_batch(__private const int item_ch,
                                      __private const int in_w,
                                      __private const int in_h,
                                      __private const int out_w,
-                                     __private const int out_h) {
+                                     __private const int out_h,
+                                     __read_only image2d_t prelu_alpha) {
   // item_id
   const int item_ch_id = get_global_id(0);
   const int item_w_id = get_global_id(1);
@@ -464,11 +520,65 @@ __kernel void conv2d_3x3_multi_batch(__private const int item_ch,
     }
   }
 
+#ifdef PRELU
+#ifdef PRELU_CH
+  CL_DTYPE4 alpha[5];
+  alpha[0] =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(item_ch_id, 0));
+  alpha[1] = alpha[0];
+  alpha[2] = alpha[0];
+  alpha[3] = alpha[0];
+  alpha[4] = alpha[0];
+
+#elif defined(PRELU_ELE)
+  CL_DTYPE4 alpha[5];
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                            prelu_alpha,
+                            SAMPLER,
+                            (int2)(out_w_base_id + out_w_id0, item_h_id));
+  if (out_w_id1 < out_w) {
+    alpha[1] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                              prelu_alpha,
+                              SAMPLER,
+                              (int2)(out_w_base_id + out_w_id1, item_h_id));
+  }
+  if (out_w_id2 < out_w) {
+    alpha[2] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                              prelu_alpha,
+                              SAMPLER,
+                              (int2)(out_w_base_id + out_w_id2, item_h_id));
+  }
+  if (out_w_id3 < out_w) {
+    alpha[3] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                              prelu_alpha,
+                              SAMPLER,
+                              (int2)(out_w_base_id + out_w_id3, item_h_id));
+  }
+  if (out_w_id4 < out_w) {
+    alpha[4] = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                              prelu_alpha,
+                              SAMPLER,
+                              (int2)(out_w_base_id + out_w_id4, item_h_id));
+  }
+#else
+  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0.y = alpha0.x;
+  alpha0.z = alpha0.x;
+  alpha0.w = alpha0.x;
+  CL_DTYPE4 alpha[5] = {alpha0, alpha0, alpha0, alpha0, alpha0};
+#endif
+  output[0] = activation_type4(output[0], alpha[0]);
+  output[1] = activation_type4(output[1], alpha[1]);
+  output[2] = activation_type4(output[2], alpha[2]);
+  output[3] = activation_type4(output[3], alpha[3]);
+  output[4] = activation_type4(output[4], alpha[4]);
+#else
   output[0] = activation_type4(output[0]);
   output[1] = activation_type4(output[1]);
   output[2] = activation_type4(output[2]);
   output[3] = activation_type4(output[3]);
   output[4] = activation_type4(output[4]);
+#endif
 
 #ifdef SCALE_ACTIVATION
   output[0] = fuse_scale(output[0], 1.f, 0.f, 0.f);

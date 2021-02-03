@@ -35,7 +35,8 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
                            __private const int output_width,
                            __private const int output_height,
                            __private const int filter_width,
-                           __private const int filter_height) {
+                           __private const int filter_height,
+                           __read_only image2d_t prelu_alpha) {
 
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
@@ -94,7 +95,22 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
+#ifdef PRELU
+#ifdef PRELU_CH
+  CL_DTYPE4 alpha0 =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
+#elif defined(PRELU_ELE)
+  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos);
+#else
+  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0.y = alpha0.x;
+  alpha0.z = alpha0.x;
+  alpha0.w = alpha0.x;
+#endif
+  output = activation_type4(output, alpha0);
+#else
   output = activation_type4(output);
+#endif
 
 #ifdef SCALE_ACTIVATION
   output = fuse_scale(output, 1.f, 0.f, 0.f);
