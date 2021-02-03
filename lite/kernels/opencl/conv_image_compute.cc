@@ -118,7 +118,7 @@ void ConvImageCompute::PrepareForRun() {
   } else if (filter_tensor_c_ == 1 && input_tensor_c_ == output_tensor_c_ &&
              filter_tensor_h_ == 3 && filter_tensor_w_ == 3 && groups_ > 1) {
     // depth_conv2d_3x3s1, depth_conv2d_3x3
-    CHECK(pad_equal && dilation_equal);
+    CHECK(dilation_equal);
     if (stride_equal && stride_h_ == 1 && dilation_h_ == 1) {
       kernel_func_names_.push_back("depth_conv2d_3x3s1");
       impl_ = &ConvImageCompute::DepthwiseConv2d3x3s1;
