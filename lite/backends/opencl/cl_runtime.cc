@@ -10,7 +10,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_runtime.h"
-#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -224,11 +223,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
                         GetSN(build_option).length())) {
         LOG(INFO) << "size of sn_info: " << ((sn_iter->second)[0]).size();
         LOG(INFO) << "size of GetSN: " << GetSN(build_option).length();
-        for (auto i = 0; i < ((sn_iter->second)[0]).size(); i++) {
-          std::cout << (sn_iter->second)[0][i];
-        }
-        std::cout << std::endl;
-        LOG(INFO) << GetSN(build_option);
+        LOG(INFO) << "GetSN: " << GetSN(build_option);
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is invalid!";
         delete_bin_flag = true;
@@ -382,29 +377,18 @@ bool CLRuntime::Serialize(
   std::vector<uint8_t> buffer;
   cache.CopyDataToBuffer(&buffer);
 
-  FILE* fp = fopen(file_name.c_str(), "wb");
-  fwrite(buffer.data(), sizeof(char), buffer.size() * sizeof(uint8_t), fp);
-  fclose(fp);
-  // WriteFile<uint8_t>(file_name, buffer);
-
+  WriteFile<uint8_t>(file_name, buffer);
   return true;
 }
 
 bool CLRuntime::Deserialize(
     const std::string file_name,
     std::map<std::string, cl::Program::Binaries>* map_ptr) {
-  FILE* fp = fopen(file_name.c_str(), "rb");
-  fseek(fp, 0, SEEK_END);
-  size_t file_size = ftell(fp);
-  fseek(fp, 0, SEEK_SET);
-  std::vector<uint8_t> buffer(file_size / sizeof(uint8_t));
-  fread(buffer.data(), sizeof(char), file_size, fp);
-  fclose(fp);
-  // ReadFile<uint8_t>(file_name, &buffer);
+  std::vector<uint8_t> buffer;
+  ReadFile<uint8_t>(file_name, &buffer);
 
   fbs::opencl::Cache cache{buffer};
   *map_ptr = cache.GetBinaryMap();
-
   return true;
 }
 
