@@ -252,6 +252,7 @@ __kernel void conv2d_1x1_opt(
             READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
 #endif
 
+#ifdef PRELU
 #ifdef PRELU_CH
   CL_DTYPE4 alpha0 =
       READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
