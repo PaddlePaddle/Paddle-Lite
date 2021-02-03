@@ -47,31 +47,35 @@ function publish_inference_lib {
   python_version=$1
   # Remove Compiling Cache
   rm -rf build*
-  # Step1. Compiling python installer on mac
-  ./lite/tools/build.sh --with_python=ON --python_version=$python_version
-  # Step2. Checking results: cplus and python inference lib.
-  if [ -d build.lite.x86/inference_lite_lib/cxx/lib ] && [ -d build.lite.x86/inference_lite_lib/python/install/dist ]; then
-    # test python installer
-    cd build.lite.x86
-    python$python_version -m pip install --force-reinstall  inference_lite_lib/python/install/dist/*.whl
-    # download test model
-    prepare_model mobilenet_v1 $mobilenet_v1_url
-    # test opt
-    paddle_lite_opt
-    paddle_lite_opt --model_dir=mobilenet_v1 --optimize_out=mobilenet_v1_arm
-    paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86 --optimize_out=mobilenet_v1_x86
-    # test inference demo
-    cd inference_lite_lib/demo/python
-    python$python_version mobilenetv1_full_api.py  --model_dir=$WORKSPACE/build.lite.x86/mobilenet_v1
-    python$python_version mobilenetv1_light_api.py  --model_dir=$WORKSPACE/build.lite.x86/mobilenet_v1_x86.nb
-  else
-    # Error message.
-    echo "**************************************************************************************"
-    echo -e "* Mac python installer compiling task failed on the following instruction:"
-    echo -e "*     ./lite/tools/build.sh --with_python=ON --python_version=2.7"
-    echo "**************************************************************************************"
-    exit 1
-  fi
+  for python_version in ${PYTHON_VERSION[@]}; do
+    # Step1. Compiling python installer on mac
+    ./lite/tools/build.sh --build_python=ON --python_version=$python_version x86
+    # Step2. Checking results: cplus and python inference lib.
+    if [ -d build.lite.x86/inference_lite_lib/cxx/lib ] && [ -d build.lite.x86/inference_lite_lib/python/install/dist ]; then
+      # test python installer
+      cd build.lite.x86
+      python$python_version -m pip install --force-reinstall  inference_lite_lib/python/install/dist/*.whl
+      # download test model
+      prepare_model mobilenet_v1 $mobilenet_v1_url
+      # test opt
+      paddle_lite_opt
+      paddle_lite_opt --model_dir=mobilenet_v1 --optimize_out=mobilenet_v1_arm
+      paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86 --optimize_out=mobilenet_v1_x86
+      # test inference demo
+      cd inference_lite_lib/demo/python
+      python$python_version mobilenetv1_full_api.py  --model_dir=$WORKSPACE/build.lite.x86/mobilenet_v1
+      python$python_version mobilenetv1_light_api.py  --model_dir=$WORKSPACE/build.lite.x86/mobilenet_v1_x86.nb
+      # uninstall
+	  python$python_version -m pip uninstall -y paddlelite
+    else
+      # Error message.
+      echo "**************************************************************************************"
+      echo -e "* Mac python installer compiling task failed on the following instruction:"
+      echo -e "*     ./lite/tools/build.sh --with_python=ON --python_version=$python_version"
+      echo "**************************************************************************************"
+      exit 1
+    fi
+  done
 }
 
 # Compiling test

@@ -84,9 +84,12 @@ class CLRuntime {
   }
 
   bool OpenCLAvaliableForDevice(bool check_fp16_valid = false) {
-    // note(ysh329): entered this func means:
-    //  1. opencl_lib_found must be true
-    //  2. dlsym_success must be true
+// note(ysh329): entered this func means:
+//  1. opencl_lib_found must be true
+//  2. dlsym_success must be true
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
+#endif
     if (!paddle::lite::CLWrapper::Global()->OpenclLibFound() ||
         !paddle::lite::CLWrapper::Global()->DlsymSuccess()) {
       LOG(ERROR) << "Invalid opencl device, OpenclLibFound:"
@@ -249,14 +252,18 @@ class CLRuntime {
 
   bool is_platform_device_init_success_{false};
 
-  lite_api::CLTuneMode auto_tune_{lite_api::CL_TUNE_NONE};  // 0 - None, 1 -
-                                                            // Rapid, 2 -
-                                                            // Normal, 3 -
-                                                            // Exhaustive
+  // CLTuneMode
+  // 0 - None
+  // 1 - Rapid
+  // 2 - Normal
+  // 3 - Exhaustive
+  lite_api::CLTuneMode auto_tune_{lite_api::CL_TUNE_NONE};
+
   size_t lws_repeats_{0};
 
-  lite_api::CLPrecisionType precision_{
-      lite_api::CL_PRECISION_AUTO};  // 0 - AUTO, 1 - fp32, 2 - fp16
+  // CLPrecisionType
+  // 0 - AUTO, 1 - fp32, 2 - fp16
+  lite_api::CLPrecisionType precision_{lite_api::CL_PRECISION_AUTO};
 };
 
 }  // namespace lite

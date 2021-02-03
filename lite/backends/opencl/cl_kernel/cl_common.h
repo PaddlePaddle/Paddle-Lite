@@ -183,3 +183,16 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 
   return output;
 }
+
+// fuse scale for Elementwise ops
+inline CL_DTYPE4 fuse_scale(CL_DTYPE4 in,
+                            __private float scale,
+                            __private float bias,
+                            __private float alpha) {
+  CL_DTYPE4 out =
+      CONVERT_TYPE_TO(scale, CL_DTYPE) * in + CONVERT_TYPE_TO(bias, CL_DTYPE);
+#ifdef FUSE_SCALE_RELU6
+  out = clamp(out, (CL_DTYPE4)(0.f), (CL_DTYPE4)(/*alpha=*/6.f));
+#endif
+  return out;
+}

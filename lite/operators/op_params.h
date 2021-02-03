@@ -477,7 +477,8 @@ struct ConvParam : ParamBase {
   std::vector<int> output_padding;
   // for int8
   WITH_INT8_CONFIG
-
+  // for Conv2d+Scale fusion
+  std::string scale_activation_type{""};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -673,6 +674,14 @@ struct ElementwiseParam : ParamBase {
   WITH_INT8_CONFIG
   float x_input_scale{1.0};
   float y_input_scale{1.0};
+  // fuse ScaleParam
+  bool fuse_scale{false};
+  float scale{1.};
+  float bias{0.f};
+  bool bias_after_scale{true};
+  float alpha{6.};
+  std::string activation_type{""};
+
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1504,7 +1513,7 @@ struct UnsqueezeParam : ParamBase {
 struct ExpandParam : ParamBase {
   const lite::Tensor* X{nullptr};
   const lite::Tensor* ExpandTimes{nullptr};
-  const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
+  std::vector<lite::Tensor*> expand_times_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
 };
@@ -1513,7 +1522,7 @@ struct ExpandParam : ParamBase {
 struct ExpandV2Param : ParamBase {
   const lite::Tensor* X{nullptr};
   const lite::Tensor* Shape{nullptr};
-  const std::vector<lite::Tensor>* expand_shapes_tensor{nullptr};
+  std::vector<lite::Tensor*> expand_shapes_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> shape{};
 };
@@ -1548,6 +1557,12 @@ struct MatMulParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+};
+
+struct GatherNdParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* index{nullptr};
+  lite::Tensor* out{nullptr};
 };
 
 struct GatherParam : ParamBase {
