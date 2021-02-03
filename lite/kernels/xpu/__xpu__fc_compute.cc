@@ -22,6 +22,9 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 void XPUFcCompute::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  w_maxs_[0] = param.w_max;
+
   XPUMalloc(&x_max_);
   XPUMalloc(&w_max_);
   XPUMalloc(&y_max_);
@@ -72,9 +75,8 @@ void XPUFcCompute::Run() {
     CHECK_EQ(r, 0);
 
     // w_max
-    float w_maxs[4] = {param.w_max, 0.0f, 0.0f, 0.0f};
     XPU_CALL(xpu_memcpy(
-        w_max_, w_maxs, 4 * sizeof(float), XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+        w_max_, w_maxs_, 4 * sizeof(float), XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
     bool x_trans = false;
     bool w_trans = param.transpose_w;
