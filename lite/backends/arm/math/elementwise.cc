@@ -37,17 +37,6 @@ void elementwise_add<int32_t>(const int32_t* dinx,
 }
 
 template <>
-void elementwise_add<int64_t>(const int64_t* dinx,
-                              const int64_t* diny,
-                              int64_t* dout,
-                              int num) {
-  neon_elementwise_range_to_range<
-      MergeConfig<AddConfig<int64_t>,
-                  ActiveConfig<ActiveType::NO_ACTIVE, int64_t>>>(
-      dinx, diny, dout, num);
-}
-
-template <>
 void elementwise_add<float>(const float* dinx,
                             const float* diny,
                             float* dout,
@@ -244,29 +233,6 @@ void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
       neon_elementwise_range_to_one<
           MergeConfig<AddConfig<int32_t>,
                       ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
-          dinx_ptr, diny_ptr, dout_ptr, num);
-    }
-  }
-}
-
-template <>
-void elementwise_add_broadcast<int64_t>(const int64_t* dinx,
-                                        const int64_t* diny,
-                                        int64_t* dout,
-                                        int batch,
-                                        int channels,
-                                        int num) {
-#pragma omp parallel for collapse(2)
-  for (int i = 0; i < batch; ++i) {
-    for (int j = 0; j < channels; ++j) {
-      int offset = (i * channels + j) * num;
-      const auto* dinx_ptr = dinx + offset;
-      const auto* diny_ptr = diny + j;
-      auto* dout_ptr = dout + offset;
-
-      neon_elementwise_range_to_one<
-          MergeConfig<AddConfig<int64_t>,
-                      ActiveConfig<ActiveType::NO_ACTIVE, int64_t>>>(
           dinx_ptr, diny_ptr, dout_ptr, num);
     }
   }
