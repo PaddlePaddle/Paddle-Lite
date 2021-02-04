@@ -80,7 +80,7 @@ void ExpandCompute<T, PType>::Run() {
 
 using expand_float =
     paddle::lite::kernels::host::ExpandCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_float, def)
+REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_float, float32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
@@ -100,8 +100,8 @@ REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_float, def)
     .Finalize();
 
 using expand_int32 =
-    paddle::lite::kernels::host::ExpandCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(expand, kHost, kInt32, kAny, expand_int32, def)
+    paddle::lite::kernels::host::ExpandCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_int32, int32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
