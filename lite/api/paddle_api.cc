@@ -352,15 +352,9 @@ const std::string &CxxModelBuffer::get_program() const {
   return program_;
 }
 
-const std::string &CxxModelBuffer::get_params() const {
-  CHECK(!params_.empty());
-  return params_;
-}
+const std::string &CxxModelBuffer::get_params() const { return params_; }
 
-bool CxxModelBuffer::is_empty() const {
-  CHECK(program_.empty() == params_.empty());
-  return program_.empty();
-}
+bool CxxModelBuffer::is_empty() const { return program_.empty(); }
 
 const CxxModelBuffer &CxxConfig::get_model_buffer() const {
   CHECK(model_buffer_) << "Cannot get an empty model buffer.";
@@ -419,6 +413,18 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_multi_encoder_precision' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_conv_autotune(bool autotune,
+                                      const std::string &autotune_file) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::conv_autotune = autotune;
+  lite::TargetWrapperXPU::conv_autotune_file = autotune_file;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_conv_autotune' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
 

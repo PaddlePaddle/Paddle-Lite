@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,23 +14,22 @@
 
 #pragma once
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace host {
+namespace xpu {
 
-template <typename T>
-class GatherTreeCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny)> {
+class SumCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  void Run() override;
+  using param_t = operators::SumParam;
 
-  ~GatherTreeCompute() {}
+  virtual void Run();
+
+  virtual ~SumCompute() = default;
 };
 
-}  // namespace host
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

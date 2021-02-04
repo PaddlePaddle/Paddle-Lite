@@ -26,16 +26,9 @@ class SliceCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::SliceParam;
 
-  virtual void PrepareForRun();
-
   virtual void Run();
 
   virtual ~SliceCompute() = default;
-
- private:
-  std::vector<int> x_shape_;
-  std::vector<int> x_dim_begin_;
-  std::vector<int> x_dim_end_;
 };
 
 }  // namespace xpu
