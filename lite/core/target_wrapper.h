@@ -89,7 +89,6 @@ inline int memcmp(const void* lhs, const void* rhs, std::size_t count) {
 }
 
 }  // namespace host
-namespace arm = host;
 
 // Memory copy directions.
 enum class IoDirection {
