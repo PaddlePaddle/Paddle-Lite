@@ -100,3 +100,5 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
 
 REGISTER_LITE_OP(__xpu__multi_encoder,
                  paddle::lite::operators::XPUMultiEncoderOp);
+REGISTER_LITE_OP(__xpu__multi_encoder_norm_before,
+                 paddle::lite::operators::XPUMultiEncoderOp);

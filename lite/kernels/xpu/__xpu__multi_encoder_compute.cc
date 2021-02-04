@@ -124,12 +124,101 @@ void XPUMultiEncoderCompute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void XPUMultiEncoderNormBeforeCompute::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+
+  if (param.precision == "int16") {
+    arg_fc_weight_int16_ = prepare_weight<int16_t>(param.fc_weight);
+  } else if (param.precision == "int8") {
+    arg_fc_weight_int8_ = prepare_weight<int8_t>(param.fc_weight);
+  } else if (param.precision == "int31") {
+    arg_fc_weight_fp32_ = prepare_weight<float>(param.fc_weight);
+  }
+  for (auto* fc_bias : param.fc_bias) {
+    arg_fc_bias_.push_back(fc_bias->data<float>());
+  }
+  for (auto* ln_scale : param.ln_scale) {
+    arg_ln_scale_.push_back(ln_scale->data<float>());
+  }
+  for (auto* ln_bias : param.ln_bias) {
+    arg_ln_bias_.push_back(ln_bias->data<float>());
+  }
+
+  encoder_param_.head_num = param.head_num;
+  encoder_param_.size_per_head = param.size_per_head;
+  encoder_param_.n_layers = param.n_layers;
+  encoder_param_.pretrans_b = true;
+  encoder_param_.use_l3 = true;
+  encoder_param_.slice_starts = param.slice_starts;
+  encoder_param_.slice_ends = param.slice_ends;
+  encoder_param_.slice_axes = param.slice_axes;
+  if (param.act_type == "relu") {
+    encoder_param_.act_type = xdnn::Activation_t::RELU;
+  } else if (param.act_type == "gelu") {
+    encoder_param_.act_type = xdnn::Activation_t::GELU;
+  }
+}
+
+void XPUMultiEncoderNormBeforeCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  encoder_param_.batch_size = param.input->dims()[0];
+  encoder_param_.from_seq_len = param.input->dims()[1];
+  encoder_param_.to_seq_len = param.input->dims()[1];
+  std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
+  encoder_param_.mask_shape =
+      std::vector<int>(mask_shape.begin(), mask_shape.end());
+  encoder_param_.slice_starts = param.slice_starts;
+  encoder_param_.slice_ends = param.slice_ends;
+  encoder_param_.slice_axes = param.slice_axes;
+
+  int r = -1;
+
+  ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
+  if (param.precision == "int31") {
+    LOG(FATAL) << "Not support int31 at now";
+  } else if (param.precision == "int8") {
+    LOG(FATAL) << "Not support int8 at now";
+  } else {
+    r = xdnn::transformer_encoder_int16<float, int16_t, float>(
+        ctx.GetRawContext(),                             /* context */
+        param.input->data<float>(),                      /* from_tensor */
+        param.input->data<float>(),                      /* to_tensor */
+        param.mask->data<float>(),                       /* att_mask */
+        param.output->mutable_data<float>(TARGET(kXPU)), /* output */
+        arg_fc_weight_int16_,                            /* fc_weights */
+        arg_fc_bias_,                                    /* fc_biass */
+        arg_ln_scale_,                                   /* ln_scales */
+        arg_ln_bias_,                                    /* ln_biass */
+        param.fc_weight_max->data<float>(),              /* fc_weights_max */
+        encoder_param_);
+  }
+  CHECK_EQ(r, 0);
+}
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(__xpu__multi_encoder,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::XPUMultiEncoderCompute,
+                     def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("FCWeight", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("FCBias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("LNScale", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("LNBias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("FCWeightMax", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__multi_encoder_norm_before,
                      kXPU,
                      kFloat,
                      kNCHW,
