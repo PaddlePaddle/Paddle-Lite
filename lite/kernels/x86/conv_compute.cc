@@ -36,8 +36,12 @@ void Conv2dCompute<float>::PrepareForRun() {
   const int stride_h = param.strides[0];
   const int stride_w = param.strides[1];
 
+  auto dilations = *param.dilations;
+  bool no_dilation = (static_cast<int>(dilations[0]) == 1) &&
+                     (static_cast<int>(dilations[1]) == 1);
+
   if (input_channel == groups && output_channel == groups &&
-      (groups & 3) == 0) {
+      (groups & 3) == 0 && no_dilation) {
     if (kernel_h == 3 && kernel_w == 3 && stride_h == 1 && stride_w == 1) {
       impl_ = new DepthwiseConv<float>;
       VLOG(3) << "invoking conv_depthwise_3x3s1";
