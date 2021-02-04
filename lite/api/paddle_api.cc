@@ -14,7 +14,6 @@
 
 #include "lite/api/paddle_api.h"
 
-#include <functional>
 #include <utility>
 
 #include "lite/core/context.h"
@@ -26,6 +25,7 @@
 #include "lite/backends/cuda/target_wrapper.h"
 #endif
 #ifdef LITE_WITH_XPU
+#include <functional>
 #include "lite/backends/xpu/target_wrapper.h"
 #endif
 
@@ -435,6 +435,7 @@ void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
                                                 const lod_t &lod,
                                                 const T fill_value,
                                                 const void *data) {
+#ifdef LITE_WITH_XPU
   if (preferred_inputs_for_warmup_.count(group_idx) == 0) {
     preferred_inputs_for_warmup_[group_idx] =
         std::vector<std::shared_ptr<void>>{};
@@ -461,6 +462,11 @@ void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
       input_data[i] = fill_value;
     }
   }
+#else
+  LOG(WARNING)
+      << "'set_preferred_inputs_for_warmup' is only for xpu now, please "
+         "rebuild it with LITE_WITH_XPU=ON.";
+#endif
 }
 
 #define _SetPreferredInputsForWarmup(dtype)                        \
