@@ -104,6 +104,10 @@ void LoadCombinedParamsPb(const std::string &path,
     reader.reset(new model_parser::BinaryFileReader(path));
   }
   model_parser::pb::LoDTensorDeserializer loader;
+  if (!paramlist.empty()) {
+    CHECK(reader->length())
+        << "The model needs weights but the weight file is not existed.";
+  }
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = scope->Var(paramlist[i]);
     LoadLoDTensor(&loader, reader.get(), var);

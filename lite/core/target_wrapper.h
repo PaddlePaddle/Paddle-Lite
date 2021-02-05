@@ -75,6 +75,19 @@ inline void memcpy(void* dst, const void* src, size_t size) {
     std::memcpy(dst, src, size);
   }
 }
+
+// Reinterprets the objects pointed to by lhs and rhs as arrays of
+// unsigned char and compares the first count characters of these arrays.
+inline int memcmp(const void* lhs, const void* rhs, std::size_t count) {
+  if (count > 0) {
+    CHECK(lhs) << "Error: the destination of memcpy can not be nullptr.";
+    CHECK(rhs) << "Error: the source of memcpy can not be nullptr.";
+    return std::memcmp(lhs, rhs, count);
+  } else {
+    return 0;
+  }
+}
+
 }  // namespace host
 
 // Memory copy directions.

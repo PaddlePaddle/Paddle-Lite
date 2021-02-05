@@ -403,16 +403,6 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-typedef paddle::lite::kernels::arm::PoolCompute<PRECISION(kFloat),
-                                                PRECISION(kFloat)>
-    PoolFp32;
-REGISTER_LITE_KERNEL(pool2d, kARM, kFloat, kNCHW, PoolFp32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindPaddleOpVersion("pool2d", 1)
-    .Finalize();
-
 #ifdef ENABLE_ARM_FP16
 typedef paddle::lite::kernels::arm::PoolCompute<PRECISION(kFP16),
                                                 PRECISION(kFP16)>
@@ -423,3 +413,12 @@ REGISTER_LITE_KERNEL(pool2d, kARM, kFP16, kNCHW, PoolFp16, def)
     .BindPaddleOpVersion("pool2d", 1)
     .Finalize();
 #endif  // ENABLE_ARM_FP16
+
+typedef paddle::lite::kernels::arm::PoolCompute<PRECISION(kFloat),
+                                                PRECISION(kFloat)>
+    PoolFp32;
+REGISTER_LITE_KERNEL(pool2d, kARM, kFloat, kNCHW, PoolFp32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("pool2d", 1)
+    .Finalize();

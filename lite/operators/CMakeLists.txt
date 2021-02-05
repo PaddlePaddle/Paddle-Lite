@@ -87,6 +87,7 @@ add_operator(sequence_unpad_op_lite extra SRCS sequence_unpad_op.cc DEPS ${op_DE
 add_operator(sequence_pad_op_lite extra SRCS sequence_pad_op.cc DEPS ${op_DEPS})
 add_operator(sequence_mask_op_lite extra SRCS sequence_mask_op.cc DEPS ${op_DEPS})
 add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
+add_operator(gather_nd_op extra SRCS gather_nd_op.cc DEPS ${op_DEPS})
 add_operator(gather_op extra SRCS gather_op.cc DEPS ${op_DEPS})
 add_operator(gather_tree_op extra SRCS gather_tree_op.cc DEPS ${op_DEPS})
 add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEPS})

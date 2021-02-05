@@ -24,26 +24,17 @@ namespace xpu {
 void ReduceMeanCompute::Run() {
   auto& param = Param<operators::ReduceParam>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  const float* input = param.X->data<float>();
   auto x_dims = param.X->dims();
-  int x_rank = x_dims.size();
-  float* output = param.Out->mutable_data<float>(TARGET(kXPU));
-  auto reduce_dim = param.dim;
-
-  std::vector<int> idims;
-  for (int i = 0; i < x_rank; i++) {
-    idims.push_back(x_dims[i]);
+  std::vector<int> x_shape;
+  for (size_t i = 0; i < x_dims.size(); i++) {
+    x_shape.push_back(static_cast<int>(x_dims[i]));
   }
+  int r = xdnn::reduce_mean<float>(ctx.GetRawContext(),
+                                   param.X->data<float>(),
+                                   param.Out->mutable_data<float>(TARGET(kXPU)),
+                                   x_shape,
+                                   param.dim);
 
-  auto type = xdnn::ReduceOp::REDUCE_MEAN;
-  int r = xdnn::reduce(ctx.GetRawContext(),
-                       input,
-                       output,
-                       idims.data(),
-                       x_rank,
-                       reduce_dim.data(),
-                       reduce_dim.size(),
-                       type);
   CHECK_EQ(r, 0);
 }
 

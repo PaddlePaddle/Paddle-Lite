@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <cmath>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
@@ -21,22 +22,62 @@
 namespace paddle {
 namespace lite {
 
-#define ELT(MATHOP)                                                        \
-  for (int n = 0; n < xn; n++) {                                           \
-    for (int c = 0; c < xc; c++) {                                         \
-      for (int h = 0; h < xh; h++) {                                       \
-        for (int w = 0; w < xw; w++) {                                     \
-          int x_offset = n * xc * xh * xw + c * xh * xw + h * xw + w;      \
-          int y_offset = 0;                                                \
-          if (yn != 1) y_offset += n * yc * yh * yw;                       \
-          if (yc != 1) y_offset += c * yh * yw;                            \
-          if (yh != 1) y_offset += h * yw;                                 \
-          if (yw != 1) y_offset += w;                                      \
-          out_data[x_offset] = out_data[x_offset] MATHOP y_data[y_offset]; \
-        }                                                                  \
-      }                                                                    \
-    }                                                                      \
+#define ELT(MATHOP)                                                          \
+  for (int n = 0; n < xn; n++) {                                             \
+    for (int c = 0; c < xc; c++) {                                           \
+      for (int h = 0; h < xh; h++) {                                         \
+        for (int w = 0; w < xw; w++) {                                       \
+          int x_offset = n * xc * xh * xw + c * xh * xw + h * xw + w;        \
+          int y_offset = 0;                                                  \
+          if (yn != 1) y_offset += n * yc * yh * yw;                         \
+          if (yc != 1) y_offset += c * yh * yw;                              \
+          if (yh != 1) y_offset += h * yw;                                   \
+          if (yw != 1) y_offset += w;                                        \
+          out_data[x_offset] = MATHOP(out_data[x_offset], y_data[y_offset]); \
+        }                                                                    \
+      }                                                                      \
+    }                                                                        \
   }
+
+template <class T>
+T add(T a, T b) {
+  return a + b;
+}
+
+template <class T>
+T sub(T a, T b) {
+  return a - b;
+}
+
+template <class T>
+T mul(T a, T b) {
+  return a * b;
+}
+
+template <class T>
+T div(T a, T b) {
+  return a / b;
+}
+
+template <class T>
+T floordiv(T a, T b) {
+  return static_cast<T>(std::trunc(a / b));
+}
+
+template <class T>
+T max(T a, T b) {
+  return std::max(a, b);
+}
+
+template <class T>
+T min(T a, T b) {
+  return std::min(a, b);
+}
+
+template <class T>
+T pow(T a, T b) {
+  return std::pow(a, b);
+}
 
 class ElementwiseComputeTester : public arena::TestCase {
  protected:
@@ -102,64 +143,21 @@ class ElementwiseComputeTester : public arena::TestCase {
     int yw = y_shape[3];
 
     if (elt_type_ == "add") {
-      ELT(+);
+      ELT(add);
     } else if (elt_type_ == "sub") {
-      ELT(-);
+      ELT(sub);
     } else if (elt_type_ == "mul") {
-      ELT(*);
+      ELT(mul);
     } else if (elt_type_ == "div") {
-      ELT(/);
+      ELT(div);
+    } else if (elt_type_ == "floordiv") {
+      ELT(floordiv);
     } else if (elt_type_ == "max") {
-      for (int n = 0; n < xn; n++) {
-        for (int c = 0; c < xc; c++) {
-          for (int h = 0; h < xh; h++) {
-            for (int w = 0; w < xw; w++) {
-              int x_offset = n * xc * xh * xw + c * xh * xw + h * xw + w;
-              int y_offset = 0;
-              if (yn != 1) y_offset += n * yc * yh * yw;
-              if (yc != 1) y_offset += c * yh * yw;
-              if (yh != 1) y_offset += h * yw;
-              if (yw != 1) y_offset += w;
-              out_data[x_offset] =
-                  std::max(out_data[x_offset], y_data[y_offset]);
-            }
-          }
-        }
-      }
+      ELT(max);
     } else if (elt_type_ == "min") {
-      for (int n = 0; n < xn; n++) {
-        for (int c = 0; c < xc; c++) {
-          for (int h = 0; h < xh; h++) {
-            for (int w = 0; w < xw; w++) {
-              int x_offset = n * xc * xh * xw + c * xh * xw + h * xw + w;
-              int y_offset = 0;
-              if (yn != 1) y_offset += n * yc * yh * yw;
-              if (yc != 1) y_offset += c * yh * yw;
-              if (yh != 1) y_offset += h * yw;
-              if (yw != 1) y_offset += w;
-              out_data[x_offset] =
-                  std::min(out_data[x_offset], y_data[y_offset]);
-            }
-          }
-        }
-      }
+      ELT(min);
     } else if (elt_type_ == "pow") {
-      for (int n = 0; n < xn; n++) {
-        for (int c = 0; c < xc; c++) {
-          for (int h = 0; h < xh; h++) {
-            for (int w = 0; w < xw; w++) {
-              int x_offset = n * xc * xh * xw + c * xh * xw + h * xw + w;
-              int y_offset = 0;
-              if (yn != 1) y_offset += n * yc * yh * yw;
-              if (yc != 1) y_offset += c * yh * yw;
-              if (yh != 1) y_offset += h * yw;
-              if (yw != 1) y_offset += w;
-              out_data[x_offset] =
-                  std::pow(out_data[x_offset], y_data[y_offset]);
-            }
-          }
-        }
-      }
+      ELT(pow);
     } else {
       LOG(FATAL) << "unsupported";
     }
@@ -269,10 +267,10 @@ TEST(Elementwise, precision) {
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #else
   return;
 #endif
@@ -281,6 +279,16 @@ TEST(Elementwise, precision) {
   TestEltTypes(place, abs_error);
   TestEltFuseAct(place, abs_error);
 }
+
+#if defined(LITE_WITH_X86)
+TEST(floordiv_x86, precison) {
+  Place place(TARGET(kX86));
+  std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester(
+      place, "float32", "floordiv", {2, 3, 4, 5}, {2, 3, 4, 5}, -1));
+  arena::Arena arena(std::move(tester), place);
+  arena.TestPrecision();
+}
+#endif
 
 }  // namespace lite
 }  // namespace paddle

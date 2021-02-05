@@ -23,24 +23,24 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-inline std::vector<int32_t> get_new_data_from_tensorlist(
+inline std::vector<int64_t> get_new_data_from_tensorlist(
     const std::vector<lite::Tensor*>& list_new_data_tensor) {
   // get tensor
-  std::vector<int32_t> vec_new_data;
+  std::vector<int64_t> vec_new_data;
   for (size_t i = 0; i < list_new_data_tensor.size(); ++i) {
     auto tensor = list_new_data_tensor[i];
     CHECK_EQ(tensor->dims(), DDim({1})) << "shape of dim tensor should be [1]";
-    vec_new_data.push_back(static_cast<int32_t>(*tensor->data<int32_t>()));
+    vec_new_data.push_back(static_cast<int64_t>(*tensor->data<int64_t>()));
   }
   return vec_new_data;
 }
 
-inline std::vector<int32_t> get_new_data_from_tensor(
+inline std::vector<int64_t> get_new_data_from_tensor(
     const lite::Tensor* new_data_tensor) {
-  std::vector<int32_t> vec_new_data;
-  auto* new_data = new_data_tensor->data<int32_t>();
+  std::vector<int64_t> vec_new_data;
+  auto* new_data = new_data_tensor->data<int64_t>();
   vec_new_data =
-      std::vector<int32_t>(new_data, new_data + new_data_tensor->numel());
+      std::vector<int64_t>(new_data, new_data + new_data_tensor->numel());
   return vec_new_data;
 }
 
@@ -55,8 +55,10 @@ void SliceCompute<T, PType>::Run() {
   auto out_dims = out->dims();
 
   std::vector<int> axes = param.axes;
-  std::vector<int32_t> starts = param.starts;
-  std::vector<int32_t> ends = param.ends;
+  std::vector<int32_t> starts_int = param.starts;
+  std::vector<int32_t> ends_int = param.ends;
+  std::vector<int64_t> starts(starts_int.begin(), starts_int.end());
+  std::vector<int64_t> ends(ends_int.begin(), ends_int.end());
   std::vector<int> decrease_axis = param.decrease_axis;
   std::vector<int> infer_flags = param.infer_flags;
 
@@ -86,7 +88,7 @@ void SliceCompute<T, PType>::Run() {
     CHECK_EQ(ends.size(), axes.size())
         << "The size of ends must be equal to the size of axes.";
     out_dims = in_dims;
-    int dim_value, start, end;
+    int64_t dim_value, start, end;
     for (size_t i = 0; i < axes.size(); ++i) {
       dim_value = out_dims[axes[i]];
       if (dim_value > 0) {
@@ -101,8 +103,8 @@ void SliceCompute<T, PType>::Run() {
 
         start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
         end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
-        start = std::max(start, 0);
-        end = std::max(end, 0);
+        start = std::max(start, static_cast<int64_t>(0));
+        end = std::max(end, static_cast<int64_t>(0));
         end = std::min(end, dim_value);
         CHECK_GT(end, start) << "end should greater than start";
         out_dims[axes[i]] = end - start;
@@ -159,8 +161,11 @@ void SliceCompute<T, PType>::Run() {
   auto new_out_dims = out->dims();
   const auto* x_data = in->template data<T>();
   auto* o_data = out->template mutable_data<T>();
+  std::vector<int32_t> starts_final(starts.begin(), starts.end());
+  std::vector<int32_t> ends_final(ends.begin(), ends.end());
   lite::arm::math::slice(
-      x_data, in_dims.data(), axes, starts, ends, o_data, &ctx);
+      x_data, in_dims.data(), axes, starts_final, ends_final, o_data, &ctx);
+  param.Out->Resize(out_dims);
 }
 
 }  // namespace arm
@@ -174,13 +179,13 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_float, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("StartsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
@@ -201,33 +206,33 @@ REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_boolean, bool_slice)
 
 using slice_int32 =
     paddle::lite::kernels::arm::SliceCompute<int, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(slice, kARM, kInt32, kNCHW, slice_int32, def)
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int32, int32_slice)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("StartsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
 using slice_int64 =
     paddle::lite::kernels::arm::SliceCompute<int64_t, PRECISION(kFloat)>;
 
-REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int64, def3)
+REGISTER_LITE_KERNEL(slice, kARM, kFloat, kNCHW, slice_int64, def_int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("StartsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensor",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("StartsTensorList",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindInput("EndsTensorList",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
