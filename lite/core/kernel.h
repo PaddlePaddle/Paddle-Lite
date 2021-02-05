@@ -109,9 +109,9 @@ class KernelBase {
     Run();
 
     if (is_first_epoch_for_profiler_ && (!is_kernel_test_)) {
-      SetProfileRuntimeKernelInfo(profiler_->GetOpCharacter(profile_id_));
       is_first_epoch_for_profiler_ = false;
     }
+    SetProfileRuntimeKernelInfo(profiler_->GetOpCharacter(profile_id_));
 
     if (!is_kernel_test_) {
       profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
