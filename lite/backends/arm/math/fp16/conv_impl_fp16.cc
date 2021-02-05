@@ -441,7 +441,7 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
   auto act_type = act_param.active_type;
   bool has_active = act_param.has_active;
 #define CONV_DEPTHWISE_IN_PARAMS \
-  dout, din, weights, bias, flag_bias, num, ic, ih, iw, oh, ow, ctx
+  o_data, i_data, weights, bias, flag_bias, num, ic, ih, win, oh, ow, ctx
   if (has_active) {
     switch (act_type) {
       case lite_api::ActivationType::kRelu:
