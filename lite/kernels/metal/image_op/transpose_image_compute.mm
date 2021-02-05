@@ -37,9 +37,7 @@ void TransposeImageCompute::PrepareForRun() {
 
   std::vector<int> expected_transpose = {0, 2, 3, 1};
 
-  if (std::equal(input_buffer_->transpose_.begin(),
-                 input_buffer_->transpose_.end(),
-                 expected_transpose.begin())) {
+  if (input_buffer_->transpose_ == expected_transpose) {
     throw std::logic_error("expected transpose is not equal with input_buffer");
   }
 
@@ -116,9 +114,7 @@ void TransposeImageComputeHalf::PrepareForRun() {
 
   std::vector<int> expected_transpose = {0, 2, 3, 1};
 
-  if (std::equal(input_buffer_->transpose_.begin(),
-                 input_buffer_->transpose_.end(),
-                 expected_transpose.begin())) {
+  if (input_buffer_->transpose_ == expected_transpose) {
     throw std::logic_error("expected transpose is not equal with input_buffer");
   }
 
@@ -153,7 +149,7 @@ void TransposeImageComputeHalf::PrepareForRun() {
                                         sizeof(transpose_params),
                                         METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  std::string function_name = "transpose_" + std::to_string(rank);
+  std::string function_name = "transpose_" + std::to_string(rank) + "_half";
   kernel_ = mtl_ctx->GetKernel(*device, function_name);
 }
 

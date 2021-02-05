@@ -33,15 +33,15 @@ static MTLResourceOptions OptionForAccess(METAL_ACCESS_FLAG flag) {
 }
 
 MetalImage::MetalImage(const MetalDevice &device,
-                       const DDim &inDim,
+                       const DDim &in_dim,
                        std::vector<int> in_transpose,
                        const METAL_PRECISION_TYPE precision_type,
                        const METAL_ACCESS_FLAG flag)
     : precision_type_(precision_type), flag_(flag) {
   device_ = device.device();
-  auto four_dim = FourDimFrom(inDim);
+  auto four_dim = FourDimFrom(in_dim);
 
-  tensor_dim_ = inDim;
+  tensor_dim_ = in_dim;
   dim_ = four_dim;
   pad_to_four_dim_ = four_dim;
 
@@ -51,39 +51,11 @@ MetalImage::MetalImage(const MetalDevice &device,
     transpose_ = std::move(in_transpose);
   }
 
+  UpdateDims(in_dim);
   InitTexture(transpose_);
 
   image_ = [device_ newTextureWithDescriptor:desc_];
-  // TODO: Do we need clear the buffer here
-}
-
-__unused void MetalImage::UpdateDim(DDim in_dim) {
-  auto h = 0;
-  auto w = 0;
-  std::vector<int> nhwc{0, 2, 3, 1};
-  std::vector<int> nchw{0, 1, 2, 3};
-  if (transpose_ == nhwc) {
-    h = static_cast<int>(in_dim[1]);
-    w = static_cast<int>(in_dim[2]);
-  } else if (transpose_ == nchw) {
-    assert(in_dim.size() == 4);
-    h = static_cast<int>(in_dim[2]);
-    w = static_cast<int>(in_dim[3]);
-  } else {
-    throw std::logic_error("ERROR: unsupported transpose");
-  }
-  DDim newTensorDim;
-  if (tensor_dim_.size() == 4) {
-    newTensorDim = DDimLite({tensor_dim_[0], tensor_dim_[1], h, w});
-  } else if (tensor_dim_.size() == 3) {
-    newTensorDim = DDimLite({tensor_dim_[0], h, w});
-  } else if (tensor_dim_.size() == 2) {
-    newTensorDim = DDimLite({h, w});
-  } else {
-    throw std::logic_error("ERROR: unsupported tensor dim count");
-  }
-  UpdateDims(newTensorDim);
-  InitTexture(transpose_);
+  // TODO:(lzy) Do we need clear the buffer here
 }
 
 void MetalImage::UpdateDims(const DDim &in_tensor_dim) {
@@ -220,14 +192,18 @@ void MetalImage::CopyFromNCHW(const SP *src) {
     auto nvalue = (float *)malloc(sizeof(float) * rcount);
     if (tensor_dim_.size() > 2) {
       for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < H; ++i1) {
-          for (int i2 = 0; i2 < W; ++i2) {
-            for (int i3 = 0; i3 < C; ++i3) {
+        for (int i1 = 0; i1 < C; ++i1) {
+          for (int i2 = 0; i2 < H; ++i2) {
+            for (int i3 = 0; i3 < W; ++i3) {
               std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i3 * H * W) + (i1 * W) + i2;
-              auto k = ig[0] * C + ig[3];
-              auto jx = ((k / 4) * H * W * 4) + (ig[1] * W * 4) + (ig[2] * 4) +
-                        (k % 4);
+              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
+              std::vector<int> jg = {ig[transpose_[0]],
+                                     ig[transpose_[1]],
+                                     ig[transpose_[2]],
+                                     ig[transpose_[3]]};
+              auto k = jg[0] * dim_[3] + jg[3];
+              auto jx = ((k / 4) * dim_[1] * dim_[2] * 4) +
+                        (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
               nvalue[jx] = src[ix];
             }
           }
@@ -268,14 +244,18 @@ void MetalImage::CopyFromNCHW(const SP *src) {
     auto nvalue = (MetalHalf *)malloc(sizeof(MetalHalf) * rcount);
     if (tensor_dim_.size() > 2) {
       for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < H; ++i1) {
-          for (int i2 = 0; i2 < W; ++i2) {
-            for (int i3 = 0; i3 < C; ++i3) {
+        for (int i1 = 0; i1 < C; ++i1) {
+          for (int i2 = 0; i2 < H; ++i2) {
+            for (int i3 = 0; i3 < W; ++i3) {
               std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i3 * H * W) + (i1 * W) + i2;
-              auto k = ig[0] * C + ig[3];
-              auto jx = ((k / 4) * H * W * 4) + (ig[1] * W * 4) + (ig[2] * 4) +
-                        (k % 4);
+              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
+              std::vector<int> jg = {ig[transpose_[0]],
+                                     ig[transpose_[1]],
+                                     ig[transpose_[2]],
+                                     ig[transpose_[3]]};
+              auto k = jg[0] * dim_[3] + jg[3];
+              auto jx = ((k / 4) * dim_[1] * dim_[2] * 4) +
+                        (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
               nvalue[jx] = MetalFloat2Half(src[ix]);
             }
           }
@@ -316,14 +296,18 @@ void MetalImage::CopyFromNCHW(const SP *src) {
     auto nvalue = (MetalHalf *)malloc(sizeof(MetalHalf) * rcount);
     if (tensor_dim_.size() > 2) {
       for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < H; ++i1) {
-          for (int i2 = 0; i2 < W; ++i2) {
-            for (int i3 = 0; i3 < C; ++i3) {
+        for (int i1 = 0; i1 < C; ++i1) {
+          for (int i2 = 0; i2 < H; ++i2) {
+            for (int i3 = 0; i3 < W; ++i3) {
               std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i3 * H * W) + (i1 * W) + i2;
-              auto k = ig[0] * C + ig[3];
-              auto jx = ((k / 4) * H * W * 4) + (ig[1] * W * 4) + (ig[2] * 4) +
-                        (k % 4);
+              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
+              std::vector<int> jg = {ig[transpose_[0]],
+                                     ig[transpose_[1]],
+                                     ig[transpose_[2]],
+                                     ig[transpose_[3]]};
+              auto k = jg[0] * dim_[3] + jg[3];
+              auto jx = ((k / 4) * dim_[1] * dim_[2] * 4) +
+                        (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
               nvalue[jx] = (src[ix]);
             }
           }
@@ -441,13 +425,20 @@ void MetalImage::CopyToNCHW(P *dst) const {
 
     int index = 0;
     if (tensor_dim_.size() > 2) {
-      for (int s = 0; s < array_length_; s++) {
-        for (int c = 0; c < 4; c++) {
-          for (int h = 0; h < H; h++) {
-            for (int w = 0; w < W; w++) {
-              if ((s * 4 + c) < (C * N)) {
-                dst[index++] = pointer[W * H * 4 * s + h * W * 4 + w * 4 + c];
-              }
+      for (int i0 = 0; i0 < N; ++i0) {
+        for (int i1 = 0; i1 < C; ++i1) {
+          for (int i2 = 0; i2 < H; ++i2) {
+            for (int i3 = 0; i3 < W; ++i3) {
+              std::vector<int> ig = {i0, i1, i2, i3};
+              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
+              std::vector<int> jg = {ig[transpose_[0]],
+                                     ig[transpose_[1]],
+                                     ig[transpose_[2]],
+                                     ig[transpose_[3]]};
+              auto k = jg[0] * dim_[3] + jg[3];
+              auto jx = ((k / 4) * dim_[1] * dim_[2] * 4) +
+                        (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
+              dst[ix] = pointer[jx];
             }
           }
         }
@@ -486,18 +477,25 @@ void MetalImage::CopyToNCHW(P *dst) const {
 
     int index = 0;
     if (tensor_dim_.size() > 2) {
-      for (int s = 0; s < array_length_; s++) {
-        for (int c = 0; c < 4; c++) {
-          for (int h = 0; h < H; h++) {
-            for (int w = 0; w < W; w++) {
-              if ((s * 4 + c) < (C * N)) {
-                dst[index++] = MetalHalf2Float(
-                    pointer[W * H * 4 * s + h * W * 4 + w * 4 + c]);
-              }
+      for (int i0 = 0; i0 < N; ++i0) {
+        for (int i1 = 0; i1 < C; ++i1) {
+          for (int i2 = 0; i2 < H; ++i2) {
+            for (int i3 = 0; i3 < W; ++i3) {
+              std::vector<int> ig = {i0, i1, i2, i3};
+              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
+              std::vector<int> jg = {ig[transpose_[0]],
+                                     ig[transpose_[1]],
+                                     ig[transpose_[2]],
+                                     ig[transpose_[3]]};
+              auto k = jg[0] * dim_[3] + jg[3];
+              auto jx = ((k / 4) * dim_[1] * dim_[2] * 4) +
+                        (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
+              dst[ix] = MetalHalf2Float(pointer[jx]);
             }
           }
         }
       }
+
     } else {
       for (int h = 0; h < H; h++) {
         for (int w = 0; w < W; w++) {
@@ -532,13 +530,20 @@ void MetalImage::CopyToNCHW(P *dst) const {
 
     int index = 0;
     if (tensor_dim_.size() > 2) {
-      for (int s = 0; s < array_length_; s++) {
-        for (int c = 0; c < 4; c++) {
-          for (int h = 0; h < H; h++) {
-            for (int w = 0; w < W; w++) {
-              if ((s * 4 + c) < (C * N)) {
-                dst[index++] = pointer[W * H * 4 * s + h * W * 4 + w * 4 + c];
-              }
+      for (int i0 = 0; i0 < N; ++i0) {
+        for (int i1 = 0; i1 < C; ++i1) {
+          for (int i2 = 0; i2 < H; ++i2) {
+            for (int i3 = 0; i3 < W; ++i3) {
+              std::vector<int> ig = {i0, i1, i2, i3};
+              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
+              std::vector<int> jg = {ig[transpose_[0]],
+                                     ig[transpose_[1]],
+                                     ig[transpose_[2]],
+                                     ig[transpose_[3]]};
+              auto k = jg[0] * dim_[3] + jg[3];
+              auto jx = ((k / 4) * dim_[1] * dim_[2] * 4) +
+                        (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
+              dst[ix] = pointer[jx];
             }
           }
         }

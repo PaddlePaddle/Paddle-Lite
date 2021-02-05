@@ -37,7 +37,7 @@ class MetalImage {
 #endif
 
   MetalImage(const MetalDevice& device,
-             const DDim& inDim,
+             const DDim& in_dim,
              std::vector<int> inTranspose = {0, 2, 3, 1},
              METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::FLOAT,
              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
