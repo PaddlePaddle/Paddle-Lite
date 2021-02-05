@@ -90,9 +90,9 @@ REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_float, float32)
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("expand_times_tensor",
-               {LiteType::GetTensorListTy(TARGET(kHost),
-                                          PRECISION(kInt32),
-                                          DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kFloat),
@@ -111,9 +111,9 @@ REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_int32, int32)
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("expand_times_tensor",
-               {LiteType::GetTensorListTy(TARGET(kHost),
-                                          PRECISION(kInt32),
-                                          DATALAYOUT(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kInt32),
