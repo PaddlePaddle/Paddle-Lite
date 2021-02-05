@@ -211,6 +211,10 @@ const std::string& PrecisionRepr(PrecisionType precision);
 
 const std::string& DataLayoutRepr(DataLayoutType layout);
 
+const std::string& CLTuneModeToStr(CLTuneMode mode);
+
+const std::string& CLPrecisionTypeToStr(CLPrecisionType type);
+
 // Get a set of all the elements represented by the target.
 std::set<TargetType> ExpandValidTargets(TargetType target = TARGET(kAny));
 

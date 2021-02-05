@@ -11,7 +11,7 @@ NUM_PROC=4
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
 
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -35,13 +35,13 @@ fi
 
 function prepare_thirdparty {
     cd $workspace
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
             wget $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
     fi
@@ -208,7 +208,6 @@ function build_opencl {
 
     cmake_opencl ${os} ${abi} ${lang}
     make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
-    make publish_inference -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
 }
 

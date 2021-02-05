@@ -8,6 +8,7 @@ set WITH_PYTHON=ON
 set BUILD_DIR=%source_path%
 set WITH_LOG=ON
 set WITH_PROFILE=OFF
+set WITH_PRECISION_PROFILE=OFF
 set WITH_TESTING=OFF
 set BUILD_FOR_CI=OFF
 set BUILD_PLATFORM=x64
@@ -17,7 +18,7 @@ set WITH_OPENCL=OFF
 set WITH_AVX=ON
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
-set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+set THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 
 set workspace=%source_path%
 set /a cores=%number_of_processors%-2 > null
@@ -30,6 +31,8 @@ if /I "%1"=="with_extra" (
     set WITH_PYTHON=OFF
 ) else if /I  "%1"=="with_profile" (
     set WITH_PROFILE=ON
+) else if /I  "%1"=="with_precision_profile" (
+    set WITH_PRECISION_PROFILE=ON
 ) else if /I  "%1"=="without_log" (
     set WITH_LOG=OFF
 ) else if /I  "%1"=="with_strip" (
@@ -71,6 +74,7 @@ echo "|  WITH_LOG=%WITH_LOG%                                                    
 echo "|  BUILD_EXTRA=%BUILD_EXTRA%                                                                          |"
 echo "|  WITH_PYTHON=%WITH_PYTHON%                                                                          |"
 echo "|  LITE_WITH_PROFILE=%WITH_PROFILE%                                                                   |"
+echo "|  LITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE%                                               |"
 echo "|  WITH_TESTING=%WITH_TESTING%                                                                        |"
 echo "|  WITH_STRIP=%WITH_STRIP%                                                                            |"
 echo "|  OPTMODEL_DIR=%OPTMODEL_DIR%                                                                        |"
@@ -130,6 +134,7 @@ cd "%build_directory%"
             -DWITH_AVX=%WITH_AVX% ^
             -DLITE_WITH_X86=ON  ^
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
+            -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
@@ -152,39 +157,39 @@ if "%BUILD_FOR_CI%"=="ON" (
 ) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
     if "%WITH_OPENCL%"=="ON" (
-        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj 
+        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj
     )
-    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj 
+    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
 ) else (
     call "%vcvarsall_dir%" x86
     if "%WITH_OPENCL%"=="ON" (
-        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj 
+        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj
     )
-    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj 
+    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
 )
 goto:eof
 
-:prepare_thirdparty 
+:prepare_thirdparty
     if  EXIST "%workspace%\third-party" (
-        if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
-            echo "The directory of third_party exists, the third-party-05b862.tar.gz not exists."            
+        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
+            echo "The directory of third_party exists, the third-party-ea5576.tar.gz not exists."
         ) else (
-               echo "The directory of third_party exists, the third-party-05b862.tar.gz exists."
+               echo "The directory of third_party exists, the third-party-ea5576.tar.gz exists."
                call:rm_rebuild_dir "%workspace%\third-party"
-               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
         )
     ) else (
-        if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
-            echo "The directory of third_party not exists, the third-party-05b862.tar.gz not exists."
+        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
+            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz not exists."
             call:download_third_party
-            if EXIST "%workspace%\third-party-05b862.tar.gz" (
-                !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+            if EXIST "%workspace%\third-party-ea5576.tar.gz" (
+                !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
             ) else (
-                echo "------------Can't download the third-party-05b862.tar.gz!------"
+                echo "------------Can't download the third-party-ea5576.tar.gz!------"
             )
         ) else (
-            echo "The directory of third_party not exists, the third-party-05b862.tar.gz exists."
-            !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz exists."
+            !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
         )
 
     )
@@ -192,8 +197,8 @@ goto:eof
 goto:eof
 
 :download_third_party
-powershell.exe (new-object System.Net.WebClient).DownloadFile('https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz', ^
-'%workspace%\third-party-05b862.tar.gz')
+powershell.exe (new-object System.Net.WebClient).DownloadFile('https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-ea5576.tar.gz', ^
+'%workspace%\third-party-ea5576.tar.gz')
 goto:eof
 
 :prepare_opencl_source_code
@@ -215,7 +220,7 @@ goto:eof
 SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat   =======>"
 set tmp_var=!vcvarsall_dir!
 call:remove_space
-set vcvarsall_dir=!tmp_var!   
+set vcvarsall_dir=!tmp_var!
 IF NOT EXIST "%vcvarsall_dir%" (
     echo "------------%vcvarsall_dir% not exist------------"
     goto:eof
@@ -266,7 +271,7 @@ goto:eof
 echo "------------------------------------------------------------------------------------------------------|"
 echo "|  Methods of compiling Paddle-lite Windows library:                                                  |"
 echo "|-----------------------------------------------------------------------------------------------------|"
-echo "|  compile windows library: ( x86 )                                                                   |" 
+echo "|  compile windows library: ( x86 )                                                                   |"
 echo "|      build_windows.bat                                                                              |"
 echo "|  print help information:                                                                            |"
 echo "|      build_windows.bat help                                                                         |"
@@ -282,13 +287,13 @@ echo "|      with_dynamic_crt: Enable building for MSVC Dynamic Runtime. Default
 echo "|      with_static_mkl: Enable Static linking Intel(R) MKL. Default is Dynamic.                       |"
 echo "|      with_opencl: Enable OpenCL for GPU accelerator. Default OFF.                                   |"
 echo "|      without_avx: Enable AVX or SSE for X86 kernels. Default is ON.                                 |"
-echo "|  for example:                                                                                       |"   
+echo "|  for example:                                                                                       |"
 echo "|      build_windows.bat with_log with_profile with_python with_extra                                 |"
 echo "|      build_windows.bat build_x86 with_strip D:\Paddle-Lite\opt_model_dir                            |"
 echo "------------------------------------------------------------------------------------------------------|"
 goto:eof
 
-:test_server 
+:test_server
     rem Due to the missing of x86 kernels, we skip the following tests temporarily.
     rem TODO(xxx) clear the skip list latter
     set skip_list=("test_paddle_api" "test_cxx_api" "test_light_api" "test_apis" "test_model_bin")
@@ -298,13 +303,13 @@ goto:eof
         for %%b in %skip_list% do (
             if "%%a"==%%b (
                 set to_skip=1
-                echo "to skip %%a"     
-            ) 
+                echo "to skip %%a"
+            )
         )
         if !to_skip! EQU 0 (
             echo "Run the test of %%a"
             ctest -C Release -R %%a
 
         )
-    ) 
-goto:eof 
+    )
+goto:eof

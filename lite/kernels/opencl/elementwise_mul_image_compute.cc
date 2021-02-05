@@ -68,11 +68,14 @@ class ElementwiseMulImageCompute
                    << " y_dims:" << bias_dims;
       }
     }
+    if (ele_param_->fuse_scale) {
+      build_options_ +=
+          "-DFUSE_SCALE -DSCALE_SLOPE=" + std::to_string(ele_param_->scale) +
+          "f " + " -DSCALE_BIAS=" + std::to_string(ele_param_->bias) + "f " +
+          " -DSCALE_ALPHA=" + std::to_string(ele_param_->alpha) + "f ";
+    }
 
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    VLOG(4) << "x_dims:" << x_dims;
-    VLOG(4) << "bias_dims:" << bias_dims;
-    VLOG(4) << "bias_dims.size():" << bias_dims.size();
 
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -80,6 +83,15 @@ class ElementwiseMulImageCompute
                                     build_options_,
                                     time_stamp_);
   }
+
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    std::string fuse_scale_str = ele_param_->fuse_scale ? "/fuse_scale" : "";
+    ch->kernel_func_name = kernel_func_name_ + fuse_scale_str;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
 
   void Run() override {
     auto& context = ctx_->As<OpenCLContext>();

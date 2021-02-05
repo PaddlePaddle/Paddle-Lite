@@ -29,6 +29,7 @@ WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
+WITH_PRECISION_PROFILE=OFF
 WITH_LTO=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
@@ -53,8 +54,7 @@ MIN_ANDROID_API_LEVEL_ARMV8=21
 ANDROID_API_LEVEL="Default"
 CMAKE_API_LEVEL_OPTIONS=""
 
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
-
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 readonly workspace=$PWD
 
 function readlinkf() {
@@ -98,13 +98,13 @@ function prepare_opencl_source_code {
 }
 
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
             wget $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
     fi
@@ -282,6 +282,7 @@ function make_full_publish_so {
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+      -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
       -DLITE_WITH_LTO=${WITH_LTO} \
       -DANDROID_STL_TYPE=$android_stl \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
@@ -334,7 +335,7 @@ function make_all_tests {
       -DWITH_TESTING=ON \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DLITE_WITH_LTO=${WITH_LTO} \
-      -DLITE_WITH_PRECISION_PROFILE=OFF \
+      -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_NPU=$BUILD_NPU \
@@ -468,7 +469,6 @@ function make_x86 {
             -DWITH_AVX=${WITH_AVX} \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
-            -DLITE_WITH_PROFILE=OFF \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
@@ -481,6 +481,7 @@ function make_x86 {
             -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_LTO=${WITH_LTO} \
             -DLITE_WITH_XPU=$BUILD_XPU \
             -DLITE_WITH_XTCL=$BUILD_XTCL \
@@ -519,6 +520,8 @@ function print_usage {
     echo -e "--with_log: (OFF|ON); controls whether to print log information, default is ON"
     echo -e "--with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF"
     echo -e "--build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)"
+    echo -e "--with_profile: (OFF|ON); controls whether to support time profile, default is OFF"
+    echo -e "--with_precision_profile: (OFF|ON); controls whether to support precision profile, default is OFF"
     echo -e "--build_train: (OFF|ON); controls whether to publish training operators and kernels, build_train is only for full_publish library now"
     echo -e "--build_python: (OFF|ON); controls whether to publish python api lib (ANDROID and IOS is not supported)"
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
@@ -631,6 +634,10 @@ function main {
                 ;;
             --with_profile=*)
                 WITH_PROFILE="${i#*=}"
+                shift
+                ;;
+            --with_precision_profile=*)
+                WITH_PRECISION_PROFILE="${i#*=}"
                 shift
                 ;;
             --with_lto=*)

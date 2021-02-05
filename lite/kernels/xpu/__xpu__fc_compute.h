@@ -25,9 +25,19 @@ class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::XPUFcParam;
 
+  void PrepareForRun() override;
+
   virtual void Run();
 
   virtual ~XPUFcCompute() = default;
+
+ private:
+  void XPUMalloc(float** max_ptr);
+
+ private:
+  float* x_max_{nullptr};
+  float* w_max_{nullptr};
+  float* y_max_{nullptr};
 };
 
 }  // namespace xpu

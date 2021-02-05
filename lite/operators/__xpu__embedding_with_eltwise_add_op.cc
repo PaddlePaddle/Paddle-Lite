@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/__xpu__embedding_with_eltwise_add_op.h"
+#include <vector>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -28,7 +29,8 @@ bool XPUEmbeddingWithEltwiseAddOp::CheckShape() const {
   int id_rank = id_dims.size();
 
   CHECK_EQ_OR_FALSE(table_dims.size(), 2);
-  CHECK_EQ_OR_FALSE(id_dims[id_rank - 1], 1);
+  // id_dims must be [batch_size, seq_len] or [batch_size, seq_len, 1]
+  CHECK(id_rank == 2 || id_rank == 3) << "unsupported id_rank: " << id_rank;
 
   return true;
 }
@@ -37,11 +39,9 @@ bool XPUEmbeddingWithEltwiseAddOp::InferShapeImpl() const {
   auto& id_dims = param_.Ids[0]->dims();
   auto& table_dims = param_.Tables[0]->dims();
 
-  auto out_dims = id_dims;
-  int id_rank = id_dims.size();
-  out_dims[id_rank - 1] = table_dims[1];
+  std::vector<int64_t> out_shape{id_dims[0], id_dims[1], table_dims[1]};
 
-  param_.Out->Resize(out_dims);
+  param_.Out->Resize(lite::DDim(out_shape));
   param_.Out->set_lod(param_.Ids[0]->lod());
   return true;
 }

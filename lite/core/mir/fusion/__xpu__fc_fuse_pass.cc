@@ -70,6 +70,10 @@ class XPUFcFuser : public FuseBase {
         lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
       precision = "int31";
       VLOG(3) << "Use int31 in XPUFcOp";
+    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
+               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
+      precision = "int8";
+      VLOG(3) << "Use int8 in XPUFcOp";
     }
 #endif
     // convert W from float to int16, and transpose W
@@ -89,6 +93,17 @@ class XPUFcFuser : public FuseBase {
                                          weight_dims[1]);
       memcpy(
           weight_on_host, weight_trans_fp32.get(), weight_len * sizeof(float));
+    } else if (precision == "int8") {
+      std::unique_ptr<int8_t[]> weight_int8(new int8_t[weight_len]);
+      std::unique_ptr<int8_t[]> weight_trans_int8(new int8_t[weight_len]);
+      paddle::lite::xpu::math::ConvertFP32ToInt8(
+          weight_on_host, weight_int8.get(), max_f, weight_len);
+      paddle::lite::xpu::math::Transpose(weight_int8.get(),
+                                         weight_trans_int8.get(),
+                                         weight_dims[0],
+                                         weight_dims[1]);
+      memcpy(
+          weight_on_host, weight_trans_int8.get(), weight_len * sizeof(int8_t));
     } else {
       std::unique_ptr<int16_t[]> weight_int16(new int16_t[weight_len]);
       std::unique_ptr<int16_t[]> weight_trans_int16(new int16_t[weight_len]);

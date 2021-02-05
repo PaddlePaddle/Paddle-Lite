@@ -13,7 +13,11 @@ limitations under the License. */
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/backends/opencl/utils/cache.h"
+#include "lite/core/version.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/io.h"
+#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
@@ -117,6 +121,10 @@ cl::Device& CLRuntime::device() {
   return *device_;
 }
 
+std::map<std::string, std::unique_ptr<cl::Program>>& CLRuntime::program_map() {
+  return programs_;
+}
+
 cl::CommandQueue& CLRuntime::command_queue() {
   if (command_queue_ == nullptr) {
     LOG(FATAL) << "command_queue_ create failed, check whether command queue "
@@ -125,29 +133,8 @@ cl::CommandQueue& CLRuntime::command_queue() {
   return *command_queue_;
 }
 
-std::unique_ptr<cl::Program> CLRuntime::CreateProgram(
-    const cl::Context& context, std::string file_name) {
-  auto cl_file = opencl_kernels_files.find(file_name);
-  std::string content(cl_file->second.begin(), cl_file->second.end());
-  cl::Program::Sources sources;
-  sources.push_back(content);
-  auto prog =
-      std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
-  VLOG(4) << "OpenCL kernel file name: " << file_name;
-  VLOG(4) << "Program source size: " << content.size();
-  CL_CHECK_FATAL_SOLID(status_);
-  return std::move(prog);
-}
-
-std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
-    const cl::Context& context) {
-  auto event =
-      std::unique_ptr<cl::UserEvent>(new cl::UserEvent(context, &status_));
-  CL_CHECK_FATAL_SOLID(status_);
-  return std::move(event);
-}
-
-bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
+cl::Program& CLRuntime::GetProgram(const std::string& file_name,
+                                   const std::string& options) {
   /* -I +CLRuntime::Global()->cl_path() + "/cl_kernel"*/
   std::string build_option = options + " -cl-fast-relaxed-math -cl-mad-enable";
   if (build_option.find("CL_DTYPE_") == std::string::npos) {
@@ -158,10 +145,197 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
     }
   }
 #ifdef LITE_WITH_LOG
-  VLOG(4) << "precision_:" << static_cast<size_t>(precision_);
+  VLOG(4) << "precision_: " << CLPrecisionTypeToStr(precision_);
   VLOG(4) << "OpenCL build_option: " << build_option;
 #endif
-  status_ = program->build({*device_}, build_option.c_str());
+
+  STL::stringstream program_key_ss;
+  program_key_ss << file_name << build_option;
+  std::string program_key = program_key_ss.str();
+
+  // Build flow: cache -> precompiled binary -> source
+  bool ret = CheckFromCache(program_key);
+  if (!ret) {
+    ret = CheckFromPrecompiledBinary(program_key, build_option);
+    if (!ret) {
+      ret = CheckFromSource(file_name, program_key, build_option);
+    }
+  }
+
+  if (ret) {
+    return *(programs_[program_key]);
+  } else {
+    LOG(FATAL) << "GetProgram failed, program_key: " << program_key;
+  }
+}
+
+bool CLRuntime::CheckFromCache(const std::string& program_key) {
+  auto iter = programs_.find(program_key);
+  if (iter != programs_.end()) {
+#ifdef LITE_WITH_LOG
+    VLOG(3) << " --- program -> " << program_key
+            << " has been built in cache --- ";
+#endif
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
+                                           const std::string& build_option) {
+  bool ret = false;
+  bool delete_bin_flag = false;
+  auto path_name = GetBinaryPathName();
+
+  if (programs_.empty() && !(path_name.empty())) {
+    // find binary
+    std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
+    // check whether binary exist
+    if (!IsFileExists(bin_file)) {
+      LOG(WARNING)
+          << "There is no precompiled OpenCL binary[" << bin_file
+          << "] in the given OpenCL binary path. "
+             "Also please make sure the storage directory exist "
+             "and you have Write&Read permission. Jump to build program "
+             "from source.";
+    } else {
+      bool ret = Deserialize(bin_file, &programs_precompiled_binary_);
+      CHECK(ret) << "Deserialize failed.";
+
+      VLOG(3) << "sn_key: " << sn_key_;
+      VLOG(3) << "map size: " << programs_precompiled_binary_.size();
+      for (auto& ins : programs_precompiled_binary_) {
+        std::string prog_key = ins.first;
+        VLOG(3) << "\t map key: " << prog_key
+                << "\t map value size: " << ins.second[0].size();
+      }
+
+      // check if the binary file is illegal and valid
+      auto sn_iter = programs_precompiled_binary_.find(sn_key_);
+      if (sn_iter == programs_precompiled_binary_.end()) {
+        LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
+                     << "] is illegal!";
+        delete_bin_flag = true;
+        // Jump to build from source
+      } else if (memcmp(((sn_iter->second)[0]).data(),
+                        GetSN(build_option).data(),
+                        GetSN(build_option).length())) {
+        LOG(INFO) << "size of sn_info: " << ((sn_iter->second)[0]).size();
+        LOG(INFO) << "size of GetSN: " << GetSN(build_option).length();
+        LOG(INFO) << "GetSN: " << GetSN(build_option);
+        LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
+                     << "] is invalid!";
+        delete_bin_flag = true;
+        // Jump to build from source
+      } else {
+#ifdef LITE_WITH_LOG
+        VLOG(3) << " --- begin read all precompiled programs from binary --- ";
+#endif
+        // loop all programs of the binary file
+        cl_int status{CL_SUCCESS};
+        const std::vector<cl::Device> device{*device_};
+        for (auto& ins : programs_precompiled_binary_) {
+          std::string prog_key = ins.first;
+          if (prog_key == sn_key_) continue;  // skip sn_key
+
+          cl::Program program(
+              *context_, {*device_}, ins.second, nullptr, &status);
+          CL_CHECK_FATAL_SOLID(status);
+          auto pos_start = prog_key.find_first_of("-D");
+          std::string options = prog_key.substr(pos_start);
+          BuildProgram(&program, options);
+
+          std::unique_ptr<cl::Program> ptr(new cl::Program(program));
+          programs_[prog_key] = std::move(ptr);
+        }
+      }
+
+      auto it = programs_.find(program_key);
+      if (it != programs_.end()) {
+#ifdef LITE_WITH_LOG
+        VLOG(3) << " --- program -> " << program_key
+                << " has been built in binary --- ";
+#endif
+        ret = true;
+      } else {
+        // placeholder
+      }
+    }
+
+    if (delete_bin_flag) {
+      if (remove(bin_file.c_str()) != 0) {
+        LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary["
+                   << bin_file << "]!";
+      } else {
+        LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
+                  << "] has been deleted!";
+      }
+    }
+  }
+
+  return ret;
+}
+
+bool CLRuntime::CheckFromSource(const std::string& file_name,
+                                const std::string& program_key,
+                                const std::string& build_option) {
+  auto ptr = CreateProgramFromSource(*context_, file_name);
+  auto program = ptr.get();
+#ifdef LITE_WITH_LOG
+  VLOG(3) << " --- begin build program from source -> " << program_key
+          << " --- ";
+#endif
+  BuildProgram(program, build_option);
+
+  // Keep built program binary
+  cl_int status{CL_SUCCESS};
+  // 1. Query binary (PTX file) size
+  size_t bin_size;
+  status = program->getInfo(CL_PROGRAM_BINARY_SIZES, &bin_size);
+  CL_CHECK_FATAL_SOLID(status);
+  // 2. Read binary (PTX file) to memory buffer
+  cl::Program::Binaries binary;
+  binary.resize(1);
+  binary[0].resize(bin_size);
+  auto buf = binary[0].data();
+  status = program->getInfo(CL_PROGRAM_BINARIES, &buf);
+  CL_CHECK_FATAL_SOLID(status);
+  programs_precompiled_binary_[program_key] = binary;
+#ifdef LITE_WITH_LOG
+  VLOG(3) << " --- binary size: " << bin_size << " ---";
+#endif
+  programs_[program_key] = std::move(ptr);
+
+  if (programs_precompiled_binary_.find(sn_key_) ==
+      programs_precompiled_binary_.end()) {
+    // add identifier
+    std::string sn = GetSN(build_option);
+    std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
+    programs_precompiled_binary_[sn_key_] = {sn_info};
+  }
+
+  return true;
+}
+
+std::unique_ptr<cl::Program> CLRuntime::CreateProgramFromSource(
+    const cl::Context& context, std::string file_name) {
+  auto cl_file = opencl_kernels_files.find(file_name);
+  std::string content(cl_file->second.begin(), cl_file->second.end());
+  cl::Program::Sources sources;
+  sources.push_back(content);
+  auto prog =
+      std::unique_ptr<cl::Program>(new cl::Program(context, sources, &status_));
+#ifdef LITE_WITH_LOG
+  VLOG(4) << "OpenCL kernel file name: " << file_name;
+  VLOG(4) << "Program source size: " << content.size();
+#endif
+  CL_CHECK_FATAL_SOLID(status_);
+  return std::move(prog);
+}
+
+bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
+  status_ = program->build({*device_}, options.c_str());
   CL_CHECK_ERROR(status_);
 
   if (status_ != CL_SUCCESS) {
@@ -176,6 +350,71 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   return true;
 }
 
+void CLRuntime::SaveProgram() {
+  // check whether precompiled binary is ON/OFF
+  if (binary_path_name_.empty()) return;
+
+  // check whether binary exist
+  std::string file_name =
+      binary_path_name_.at(0) + "/" + binary_path_name_.at(1);
+  if (IsFileExists(file_name)) {
+    return;
+  } else {
+    bool ret = Serialize(file_name, programs_precompiled_binary_);
+    CHECK(ret) << "Serialize failed.";
+
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "Programs have been serialized to disk successfully. File: "
+              << file_name;
+#endif
+  }
+}
+
+bool CLRuntime::Serialize(
+    const std::string file_name,
+    const std::map<std::string, cl::Program::Binaries>& map_data) {
+  fbs::opencl::Cache cache{map_data};
+  std::vector<uint8_t> buffer;
+  cache.CopyDataToBuffer(&buffer);
+
+  WriteFile<uint8_t>(file_name, buffer);
+  return true;
+}
+
+bool CLRuntime::Deserialize(
+    const std::string file_name,
+    std::map<std::string, cl::Program::Binaries>* map_ptr) {
+  std::vector<uint8_t> buffer;
+  ReadFile<uint8_t>(file_name, &buffer);
+
+  fbs::opencl::Cache cache{buffer};
+  *map_ptr = cache.GetBinaryMap();
+  return true;
+}
+
+std::string CLRuntime::GetSN(const std::string options) {
+  // Identifier info(Serial Number) for each binary file: lite version,
+  // build options, platform info, device version, driver version
+  STL::stringstream sn_ss;
+  std::string lite_version = lite::version() + "; ";
+  std::string platform_info = platform_->getInfo<CL_PLATFORM_NAME>() + ", " +
+                              platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";
+  std::string device_version = device_->getInfo<CL_DEVICE_VERSION>() + "; ";
+  std::string driver_version = device_->getInfo<CL_DRIVER_VERSION>() + "; ";
+  std::string place_holder{"place_holder"};
+  sn_ss << lite_version << options << platform_info << device_version
+        << driver_version << place_holder;
+  return sn_ss.str();
+}
+
+std::unique_ptr<cl::UserEvent> CLRuntime::CreateEvent(
+    const cl::Context& context) {
+  auto event =
+      std::unique_ptr<cl::UserEvent>(new cl::UserEvent(context, &status_));
+  CL_CHECK_FATAL_SOLID(status_);
+  return std::move(event);
+}
+
 bool CLRuntime::InitializePlatform() {
   std::vector<cl::Platform> all_platforms;
   status_ = cl::Platform::get(&all_platforms);
@@ -187,7 +426,30 @@ bool CLRuntime::InitializePlatform() {
   }
   platform_ = std::make_shared<cl::Platform>();
   *platform_ = all_platforms[0];
+  const std::string extensions = platform_->getInfo<CL_PLATFORM_EXTENSIONS>();
+  LOG(INFO) << "Platform extension: " << extensions;
   return true;
+}
+
+OpenCLVersion CLRuntime::ParseDeviceVersion(const std::string& device_version) {
+  // OpenCL Device version string format:
+  // OpenCL<space><major_version.minor_version><space>
+  // <vendor-specific information>
+  auto words = Split<std::string>(device_version, std::string{" "});
+  if (words[1] == "2.1") {
+    return OpenCLVersion::CL_VER_2_1;
+  } else if (words[1] == "2.0") {
+    return OpenCLVersion::CL_VER_2_0;
+  } else if (words[1] == "1.2") {
+    return OpenCLVersion::CL_VER_1_2;
+  } else if (words[1] == "1.1") {
+    return OpenCLVersion::CL_VER_1_1;
+  } else if (words[1] == "1.0") {
+    return OpenCLVersion::CL_VER_1_0;
+  } else {
+    LOG(ERROR) << "Do not support OpenCL version: " << words[1];
+    return OpenCLVersion::CL_VER_UNKNOWN;
+  }
 }
 
 GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
@@ -215,12 +477,6 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
 }
 
 bool CLRuntime::InitializeDevice() {
-#ifdef LITE_WITH_LOG
-  VLOG(3) << "device_info_.size():" << device_info_.size();
-  for (auto i : device_info_) {
-    VLOG(3) << ">>> " << i.first << " " << i.second;
-  }
-#endif
   // initialized without valid opencl device
   if (device_info_.size() > 0 && device_info_.size() <= 2) {
     return false;
@@ -277,8 +533,14 @@ bool CLRuntime::InitializeDevice() {
     }
     return t_str;
   };
-  const std::string device_version = device_->getInfo<CL_DEVICE_VERSION>();
-  LOG(INFO) << "device_version:" << device_version;
+
+  auto device_version = device_->getInfo<CL_DEVICE_VERSION>();
+  LOG(INFO) << "CL_DEVICE_VERSION:" << device_version;
+  auto opencl_version = ParseDeviceVersion(device_version);
+  if (opencl_version == OpenCLVersion::CL_VER_UNKNOWN) {
+    LOG(ERROR) << "Parse device version[" << device_version << "] failed!";
+  }
+  device_info_["CL_DEVICE_VERSION"] = opencl_version;
 
   LOG(INFO) << "device_type:" << device_type_to_str(device_type);
   device_info_["CL_DEVICE_TYPE"] = device_type;
@@ -394,6 +656,13 @@ bool CLRuntime::InitializeDevice() {
 
   auto driver_version = device_->getInfo<CL_DRIVER_VERSION>();
   LOG(INFO) << "CL_DRIVER_VERSION:" << driver_version;
+
+#ifdef LITE_WITH_LOG
+  VLOG(3) << "device_info_.size():" << device_info_.size();
+  for (auto i : device_info_) {
+    VLOG(3) << ">>> " << i.first << " " << i.second;
+  }
+#endif
 
   return true;
 }

@@ -118,7 +118,7 @@ void ConvImageCompute::PrepareForRun() {
   } else if (filter_tensor_c_ == 1 && input_tensor_c_ == output_tensor_c_ &&
              filter_tensor_h_ == 3 && filter_tensor_w_ == 3 && groups_ > 1) {
     // depth_conv2d_3x3s1, depth_conv2d_3x3
-    CHECK(pad_equal && dilation_equal);
+    CHECK(dilation_equal);
     if (stride_equal && stride_h_ == 1 && dilation_h_ == 1) {
       kernel_func_names_.push_back("depth_conv2d_3x3s1");
       impl_ = &ConvImageCompute::DepthwiseConv2d3x3s1;
@@ -374,6 +374,16 @@ void ConvImageCompute::PrepareForRun() {
     tensor_hold_bias_image_->Resize({1, 1, 1, 4});
     auto* bias_image_data = DATA_GPU(tensor_hold_bias_image_);
     MUTABLE_DATA_GPU(bias_gpu_image_, 1, 1, bias_image_data);
+  }
+
+  // scale options
+  if (conv_param_->scale_activation_type == "") {
+    // do nothing
+  } else if (conv_param_->scale_activation_type == "relu6") {
+    build_options_single += " -DSCALE_ACTIVATION -DFUSE_SCALE_RELU6 ";
+  } else {
+    LOG(FATAL) << "Unsupported scale_activation_type:"
+               << conv_param_->scale_activation_type;
   }
 
   // define image pointer for filter, bias

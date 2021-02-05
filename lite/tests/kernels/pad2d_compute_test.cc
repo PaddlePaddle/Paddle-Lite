@@ -103,19 +103,19 @@ class Pad2dComputeTester : public arena::TestCase {
                       : pad_value;
               break;
             case 1:
-              in_x = std::min(std::max(pad_left, x), in_w + pad_left - 1) -
-                     pad_left;
-              in_y =
-                  std::min(std::max(pad_top, y), in_h + pad_top - 1) - pad_top;
-              dout_batch[y * w + x] = din_batch[in_y * in_w + in_x];
-              break;
-            case 2:
               in_y = y - pad_top;
               in_x = x - pad_left;
               in_y = std::max(in_y, -in_y);
               in_y = std::min(in_y, 2 * in_h - in_y - 2);
               in_x = std::max(in_x, -in_x);
               in_x = std::min(in_x, 2 * in_w - in_x - 2);
+              dout_batch[y * w + x] = din_batch[in_y * in_w + in_x];
+              break;
+            case 2:
+              in_x = std::min(std::max(pad_left, x), in_w + pad_left - 1) -
+                     pad_left;
+              in_y =
+                  std::min(std::max(pad_top, y), in_h + pad_top - 1) - pad_top;
               dout_batch[y * w + x] = din_batch[in_y * in_w + in_x];
               break;
             default:
