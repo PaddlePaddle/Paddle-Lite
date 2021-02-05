@@ -85,7 +85,7 @@ class DepthwiseConvPE : public PE {
       format_dw_filter(param.filter, param.quantizedFilter(), new_scale_data);
 
     } else {
-      // TODO(chonwhite) filter 全为1时，且channal为对齐时
+      // TODO(chonwhite) filter data is filled with ones and channel is aligned
       float16* scale_data = param_.scale()->data<float16>();
       float16* filter_data = param.quantizedFilter()->mutableData<float16>(
           FP16, param.filter->shape());

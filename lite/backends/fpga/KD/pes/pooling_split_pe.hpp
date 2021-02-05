@@ -109,7 +109,6 @@ class PoolingSplitPE : public PE {
     input->syncToCPU();
 
     Tensor float_input;
-    // Tensor float_output;
     float* image_addr = float_input.mutableData<float>(FP32, input->shape());
     float_input.copyFrom(input);
     float16* data_out = output->data<float16>();
@@ -149,7 +148,6 @@ class PoolingSplitPE : public PE {
             for (int w = wstart; w < wend; ++w) {
               const int index = (h * image_width + w) * image_channels + c;
               float value = image_addr[index];
-              // ofs_out << value << std::endl;
               sum += value;
             }
           }

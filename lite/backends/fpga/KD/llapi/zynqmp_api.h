@@ -30,9 +30,6 @@ typedef int16_t half;
 
 #define IMAGE_ALIGNMENT 16           // Aligned to 16
 #define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
-// #define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32  replace
-// by filter.hpp "get_filter_num_alignment()"
-// #define FILTER_ELEMENT_ALIGNMENT 64  // Filter element number aligned to 64
 #define BS_NUM_ALIGNMENT 8
 #define BIAS_NUM_ALIGNMENT 16
 
@@ -263,7 +260,7 @@ struct GlobalPoolArgs {
 };
 
 struct FpgaRegWriteArgs {
-  uint64_t address;  //
+  uint64_t address;
   uint64_t value;
 };
 

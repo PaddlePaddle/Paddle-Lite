@@ -14,7 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-// #include <arm_neon.h>
 #include <algorithm>
 #include <vector>
 
@@ -51,33 +50,27 @@ class TransposedConvPE : public PE {
     } else {
       sub_filter_ena_ = false;
     }
-    // 使用pad input方案
+    // pad inputs on ZU3 devices
     if (DLEngine::get_instance().isZU3()) {
       sub_filter_ena_ = false;
     }
 
     ConvParam& conv_param = pe_.param();
-
     convert_cnhw_to_nchw(param_.filter, &filter_);
     inverse_filter(&filter_);
 
     if (sub_filter_ena_) {
       omit_size_ = deconv_get_omit(stride_width, kernel_width, padding_width);
-
       fill_sub_filters(&param_, &filter_);
-
       conv_param = const_cast<ConvParam&>(param_);
       conv_param.deconv = true;
       conv_param.activeParam.type = param_.activeParam.type;
-
     } else {
-      // fill_transposed_split_arg(param_);
       Shape& input_shape = param_.input->shape();
       int padded_height = input_shape.height() +
                           (input_shape.height() - 1) * (param_.strides[0] - 1);
       int padded_width = input_shape.width() +
                          (input_shape.width() - 1) * (param_.strides[1] - 1);
-
       Shape padded_shape(NCHW,
                          {input_shape.num(),
                           input_shape.channel(),

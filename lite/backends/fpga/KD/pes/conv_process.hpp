@@ -187,7 +187,7 @@ inline void format_16_bias(Tensor* bias, Tensor* quantized_bias, int channel) {
       quantized_bias->mutableData<float16>(FP16, shape);
 
   float* bias_data = bias->data<float>();
-  // bias 按16对齐填充hw
+  // bias aligned to 16 by hw;
   for (int i = 0; i < repeat; i++) {
     for (int j = 0; j < length; j++) {
       float16 value = float_to_half(bias_data[j]);

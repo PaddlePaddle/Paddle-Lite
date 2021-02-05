@@ -21,6 +21,7 @@ limitations under the License. */
 #include "lite/backends/fpga/KD/float16.hpp"
 #include "lite/backends/fpga/KD/pes/conv_process.hpp"
 #include "lite/backends/fpga/KD/tensor.hpp"
+#include "lite/backends/fpga/KD/util.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -29,7 +30,7 @@ calculate sub padding number
 */
 inline int calc_sub_pad(int filter_axis, int pad, int stride) {
   if (stride == 0 || ((filter_axis - pad - 1) < 0)) {
-    // ENFORCE(false, "Wrong deconv parameters");
+    ENFORCE(false, "Wrong deconv parameters");
   }
   return (filter_axis - pad - 1) / stride;
 }
@@ -47,7 +48,7 @@ inline int get_sub_out_axis(int image_axis, int sub_pad, int sub_filter_axis) {
 position. so the omit rows or columns is (stride - )
 */
 inline int deconv_get_omit(int stride, int filter_width, int pad) {
-  // PADDLE_MOBILE_ENFORCE(filter_width > pad, "Wrong deconv parameters");
+  ENFORCE(filter_width > pad, "invalid deconv parameters");
   int idx;
   bool flag = false;
   for (idx = 1; idx <= stride; ++idx) {
@@ -144,29 +145,6 @@ void inline nhwc_to_nchw(Tensor* nhwc, Tensor* nchw) {
           y[dst_index] = x[index];
           index++;
         }
-      }
-    }
-  }
-}
-
-template <typename T>
-void inline chw_to_hwc2(Tensor* chw, Tensor* hwc) {
-  Shape& shape = chw->shape();
-  T* x = chw->data<T>();
-  T* y = hwc->data<T>();
-
-  int channel = shape.channel();
-  int height = shape.height();
-  int width = shape.width();
-  int index = 0;
-  int wc = width * channel;
-  for (int c = 0; c < channel; c++) {
-    for (int h = 0; h < height; h++) {
-      int offset_height = h * wc;
-      for (int w = 0; w < width; w++) {
-        int dst_index = offset_height + w * channel + c;
-        y[dst_index] = x[index];
-        index++;
       }
     }
   }
@@ -326,12 +304,9 @@ void fill_sub_filters(ConvParam* param, Tensor* filter) {
     args.image.height = input->shape().height();
     args.image.pad_width = sub_pad;
     args.image.pad_height = sub_pad;
-
-    // dilations[0] = dilations[1]
     args.dilation = param->dilations[0];
     args.output.address = out_address;
     args.output.scale_address = out_scale_address;
-
     args.deconv.enabled = 1;
     args.deconv.sub_kernel_num = sub_conv_number;
     args.deconv.invalid_col_num = omit_size;

@@ -13,11 +13,14 @@
 // limitations under the License.
 
 #include "lite/utils/cv/image2tensor_fpga.h"
+
 #include <memory.h>
 #include <stdint.h>
 #include <cmath>
 #include <fstream>
 #include <iostream>
+
+#include "lite/utils/logging.h"
 
 namespace paddle {
 namespace lite {
@@ -91,7 +94,7 @@ void bgr_to_tensor_hwc(const uint8_t* src,
   } else if (srcFormat == ImageFormat::YUV422) {
     channel = 2;
   } else if (srcFormat == ImageFormat::YUV444) {
-    printf("input image format YUV444 is not supported! \n");
+    LOG(FATAL) << "input image format YUV444 is not supported!";
     // (chonwhite) implement this;
   }
   int wc_align_size =

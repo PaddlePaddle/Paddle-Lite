@@ -331,7 +331,7 @@ class Tensor {
 
   void saveToFile() {
     std::string path = dimsFileName();
-    // saveToFile(path);
+    saveToFile(path);
   }
 
   void saveToFile(std::string prefix, bool with_shape) {
@@ -405,7 +405,6 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
-      // std::cout << "file: " << path << " does not exist\n";
       return;
     }
     int num = shape_->numel();
@@ -427,7 +426,6 @@ class Tensor {
     std::ifstream file_stream;
     file_stream.open(path);
     if (!file_stream) {
-      std::cout << "file: " << path << " does not exist\n";
       return;
     }
     int num = shape_->numel();

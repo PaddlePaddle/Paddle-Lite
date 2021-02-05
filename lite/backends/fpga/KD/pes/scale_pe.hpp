@@ -59,7 +59,7 @@ class ScalePE : public PE {
       repeat = c_lcm / (channel);
     }
 
-    // FPGA限制 H >2047, W >1023 , WC> 65536 ，需要使用CPU实现
+    // FPGA limit H >2047, W >1023 , WC> 65536
     Shape shape(N, {channel * repeat});
 
     float* filter_data = filter.mutableData<float>(FP32, shape);
