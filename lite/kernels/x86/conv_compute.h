@@ -69,6 +69,24 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     param.output->template mutable_data<T>();
     const int batch_size = static_cast<int>(param.x->dims()[0]);
 
+    const int kh = static_cast<int>(param.filter->dims()[2]);
+    const int kw = static_cast<int>(param.filter->dims()[3]);
+
+    const int sh = static_cast<int>(param.strides[0]);
+    const int sw = static_cast<int>(param.strides[1]);
+
+    auto paddings = *param.paddings;
+    const int ph = paddings[0];
+    const int pw = paddings[2];
+
+    bool kps_equal = (pw == ph) && (sw == sh) && (kw == kh);
+    bool pads_equal =
+        ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+    bool flag_1x1gemm = false;
+    if (kw == 1 && sw == 1 && pw == 0 && kps_equal && pads_equal) {
+      flag_1x1gemm = true;
+    }
+
     std::vector<int64_t> filter_shape_vec(filter.dims().Vectorize());
     std::vector<int64_t> output_shape_vec(param.output->dims().Vectorize());
     size_t data_dim = filter_shape_vec.size() - 2;
@@ -122,7 +140,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
           col.ShareDataWith(in_slice);
           col_matrix.ShareDataWith(col);
           col_matrix.Resize(col_matrix_shape);
-        } else if (data_dim == 2U) {
+        } else if (data_dim == 2U && !flag_1x1gemm) {
           // im2col
           im2col(context,
                  in_slice,

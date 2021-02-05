@@ -32,6 +32,10 @@ lite_cc_library(mir_passes
       fusion/__xpu__resblock_normal_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
       fusion/__xpu__resnet_cbam_fuse_pass.cc
+      fusion/__xpu__conv2d_pool2d_fuse_pass.cc
+      fusion/__xpu__conv2d_concat_pool2d_fuse_pass.cc
+      fusion/__xpu__consecutive_conv2d_fuse_pass.cc
+      fusion/__xpu__consecutive_block_fuse_pass.cc
       fusion/__xpu__multi_encoder_fuse_pass.cc
       fusion/__xpu__embedding_with_eltwise_add_fuse_pass.cc
       fusion/__xpu__fc_fuse_pass.cc

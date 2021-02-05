@@ -137,12 +137,14 @@ template <>
 void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   PARAM_INIT
   /// select conv impl
-  if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation && pads_equal) {
+  if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
+      no_dilation && flag_dw_3x3) {
+    impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
+  } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
+             pads_equal) {
     impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;
-    // VLOG(3) << "Run DirectConvFP6";
   } else {
     impl_ = new GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>;
-    // VLOG(3) << "Run GemmLikeConvInt8";
   }
   impl_->SetContext(std::move(this->ctx_));
   impl_->SetParam(param);
@@ -176,6 +178,14 @@ REGISTER_LITE_KERNEL(conv2d, kARM, kFP16, kNCHW, ConvFp16, def)
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindPaddleOpVersion("conv2d", 1)
+    .Finalize();
+
+REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFP16, kNCHW, ConvFp16, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 

@@ -28,33 +28,6 @@ cl::CommandQueue &CLContext::GetCommandQueue() {
 
 cl::Context &CLContext::GetContext() { return CLRuntime::Global()->context(); }
 
-cl::Program &CLContext::GetProgram(const std::string &file_name,
-                                   const std::string &options) {
-  STL::stringstream program_key_ss;
-  program_key_ss << file_name << options;
-  std::string program_key = program_key_ss.str();
-  auto it = programs_.find(program_key);
-  if (it != programs_.end()) {
-#ifdef LITE_WITH_LOG
-    VLOG(3) << " --- program -> " << program_key << " has been built --- ";
-#endif
-    return *(it->second);
-  }
-
-  auto program = CLRuntime::Global()->CreateProgram(GetContext(), file_name);
-#ifdef LITE_WITH_LOG
-  VLOG(3) << " --- begin build program -> " << program_key << " --- ";
-#endif
-  CLRuntime::Global()->BuildProgram(program.get(), options);
-#ifdef LITE_WITH_LOG
-  VLOG(3) << " --- end build program -> " << program_key << " --- ";
-#endif
-
-  programs_[program_key] = std::move(program);
-
-  return *(programs_[program_key]);
-}
-
 void CLContext::AddKernel(const std::string &kernel_name,
                           const std::string &file_name,
                           const std::string &options,
@@ -63,7 +36,7 @@ void CLContext::AddKernel(const std::string &kernel_name,
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- to get program " << file_name << " --- ";
 #endif
-  auto program = GetProgram(file_name, options);
+  auto program = CLRuntime::Global()->GetProgram(file_name, options);
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- end get program --- ";
   VLOG(3) << " --- to create kernel: " << kernel_name << " --- ";
