@@ -35,8 +35,8 @@ TEST(cl_test, runtime_test) {
   runtime->device();
   runtime->command_queue();
   auto &context = runtime->context();
-  auto program =
-      runtime->CreateProgram(context, "buffer/elementwise_add_kernel.cl");
+  auto program = runtime->CreateProgramFromSource(
+      context, "buffer/elementwise_add_kernel.cl");
   auto event = runtime->CreateEvent(context);
   const std::string build_option("-DCL_DTYPE_float");
   CHECK(runtime->BuildProgram(program.get(), build_option));

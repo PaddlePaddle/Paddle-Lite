@@ -139,6 +139,15 @@ class CLRuntime {
 
   lite_api::CLPrecisionType get_precision() { return precision_; }
 
+  void SetBinaryPathName(const std::string& path, const std::string& name) {
+    binary_path_name_.push_back(path);
+    binary_path_name_.push_back(name);
+  }
+
+  std::vector<std::string> GetBinaryPathName() const {
+    return binary_path_name_;
+  }
+
   bool Init();
 
   cl::Platform& platform();
@@ -147,10 +156,26 @@ class CLRuntime {
 
   cl::Device& device();
 
+  std::map<std::string, std::unique_ptr<cl::Program>>& program_map();
+
   cl::CommandQueue& command_queue();
 
-  std::unique_ptr<cl::Program> CreateProgram(const cl::Context& context,
-                                             std::string file_name);
+  cl::Program& GetProgram(const std::string& file_name,
+                          const std::string& options);
+
+  std::unique_ptr<cl::Program> CreateProgramFromSource(
+      const cl::Context& context, std::string file_name);
+
+  bool CheckFromCache(const std::string& program_key);
+
+  bool CheckFromPrecompiledBinary(const std::string& program_key,
+                                  const std::string& build_option);
+
+  bool CheckFromSource(const std::string& file_name,
+                       const std::string& program_key,
+                       const std::string& build_option);
+
+  void SaveProgram();
 
   std::unique_ptr<cl::UserEvent> CreateEvent(const cl::Context& context);
 
@@ -185,6 +210,8 @@ class CLRuntime {
       std::vector<cl_context_properties>* properties,
       GPUPerfMode gpu_perf_mode,
       GPUPriorityLevel gpu_priority_level);
+
+  std::string GetSN(const std::string options);
 
   std::shared_ptr<cl::Context> CreateContext() {
     // note(ysh329): gpu perf mode and priority level of adreno gpu referred
@@ -230,6 +257,11 @@ class CLRuntime {
   OpenCLVersion ParseDeviceVersion(const std::string& device_version);
   GpuType ParseGpuTypeFromDeviceName(std::string device_name);
 
+  bool Serialize(const std::string file_name,
+                 const std::map<std::string, cl::Program::Binaries>& map_data);
+  bool Deserialize(const std::string file_name,
+                   std::map<std::string, cl::Program::Binaries>* map_ptr);
+
   std::map<std::string, size_t> device_info_;
 
   GpuType gpu_type_{GpuType::UNKNOWN};
@@ -264,6 +296,12 @@ class CLRuntime {
   // CLPrecisionType
   // 0 - AUTO, 1 - fp32, 2 - fp16
   lite_api::CLPrecisionType precision_{lite_api::CL_PRECISION_AUTO};
+
+  std::map<std::string, std::unique_ptr<cl::Program>> programs_;
+  std::map<std::string, cl::Program::Binaries> programs_precompiled_binary_;
+  std::vector<std::string> binary_path_name_;
+  // magic number for precompiled binary
+  const std::string sn_key_{"lite_opencl_precompiled_binary_identifier"};
 };
 
 }  // namespace lite

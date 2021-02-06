@@ -669,7 +669,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     return()
   endif()
 
-  if(NOT IOS)
+  if(NOT IOS AND NOT APPLE)
     file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
       "CREATE ${bundled_tgt_full_name}\n" )
 
