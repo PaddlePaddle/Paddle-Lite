@@ -47,7 +47,7 @@ if (LITE_ON_TINY_PUBLISH OR LITE_WITH_LTO)
   if(ARM_TARGET_LANG STREQUAL "gcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
   else()
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto=full")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto=thin")
   endif()
 endif()
 
