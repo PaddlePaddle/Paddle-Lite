@@ -1460,6 +1460,7 @@ class XPUMultiEncoderNormBeforeFuser {
 
       float max_f =
           paddle::lite::xpu::math::FindMaxAbs(weight_on_host, weight_len);
+      VLOG(3) << "FC-" << i << ", weight_max:" << max_f;
       if (fc_precision_ == "int31") {
         // FCs in encoder use int31
         std::unique_ptr<float[]> weight_trans_fp32(new float[weight_len]);
