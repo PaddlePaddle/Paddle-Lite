@@ -34,6 +34,11 @@ typedef __fp16 float16_t;
       int ih, int win, const dtype *weights, const dtype *bias,                \
       const operators::ConvParam &param, ARMContext *ctx
 
+#define DEPTHWISE_PARAM(dtype)                                            \
+  const dtype *din, dtype *dout, int num, int oc, int oh, int ow, int ic, \
+      int ih, int iw, const dtype *weights, const dtype *bias,            \
+      const operators::ConvParam &param, ARMContext *ctx
+
 void conv1x1s1_gemm_fp16(GEMM_PARAM(float16_t));
 
 void conv_im2col_gemm_fp16(GEMM_PARAM(float16_t));
@@ -41,9 +46,13 @@ void conv_im2col_gemm_fp16(GEMM_PARAM(float16_t));
 void im2col_fp16(IM2COL_PARAM(float16_t), int stride_h, int stride_w);
 
 void im2col_common_fp16(IM2COL_PARAM(float16_t), int stride_h, int stride_w);
+
 void im2col_s1_fp16(IM2COL_PARAM(float16_t));
 
 void im2col_s2_fp16(IM2COL_PARAM(float16_t));
+
+void conv_depthwise_3x3_fp16(DEPTHWISE_PARAM(float16_t));
+
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

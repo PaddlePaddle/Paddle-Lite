@@ -29,14 +29,20 @@ class IoCopyHostToXPUCompute
  public:
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
-    CHECK(param.x->target() == TARGET(kHost) ||
-          param.x->target() == TARGET(kX86) ||
-          param.x->target() == TARGET(kARM));
-    auto mem_size = param.x->memory_size();
-    VLOG(4) << "host to xpu, copy size " << mem_size;
-    auto* data = param.y->mutable_data(TARGET(kXPU), mem_size);
-    TargetWrapperXPU::MemcpySync(
-        data, param.x->raw_data(), mem_size, IoDirection::HtoD);
+    if (param.x->target() == TARGET(kHost) ||
+        param.x->target() == TARGET(kX86) ||
+        param.x->target() == TARGET(kARM)) {
+      auto mem_size = param.x->memory_size();
+      VLOG(4) << "host to xpu, copy size " << mem_size;
+      auto* data = param.y->mutable_data(TARGET(kXPU), mem_size);
+      TargetWrapperXPU::MemcpySync(
+          data, param.x->raw_data(), mem_size, IoDirection::HtoD);
+    } else if (param.x->target() == TARGET(kXPU)) {
+      param.y->ShareDataWith(*(param.x));
+    } else {
+      LOG(FATAL) << "IoCopyHostToXPU can not handle with the input target: "
+                 << static_cast<int>(param.x->target());
+    }
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -45,7 +51,7 @@ class IoCopyHostToXPUCompute
               const std::string& out) -> const Type* {
       CHECK(!inputs.empty());
       auto* type = inputs.at("Input");
-      CHECK(type->target() == TARGET(kHost));
+      // CHECK(type->target() == TARGET(kHost));
 
       auto out_place = type->place();
       out_place.target = TARGET(kXPU);
@@ -72,10 +78,14 @@ class IoCopyXPUToHostCompute
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kXPU));
     auto mem_size = param.x->memory_size();
-    VLOG(4) << "xpu to host, copy size " << mem_size;
-    auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
-    TargetWrapperXPU::MemcpySync(
-        data, param.x->raw_data(), mem_size, IoDirection::DtoH);
+    if (param.y->target() != TARGET(kXPU)) {
+      VLOG(4) << "xpu to host, copy size " << mem_size;
+      auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+      TargetWrapperXPU::MemcpySync(
+          data, param.x->raw_data(), mem_size, IoDirection::DtoH);
+    } else {
+      param.y->ShareDataWith(*(param.x));
+    }
   }
 
   std::string doc() const override { return "Copy IO from XPU to HOST"; }
