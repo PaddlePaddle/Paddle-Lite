@@ -49,7 +49,7 @@ void Conv2dImageCompute::PrepareForRun() {
 
   output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
 
-  float* blank_host = (float*)malloc(sizeof(float) * output_dims[1]);
+  auto* blank_host = (float*)malloc(sizeof(float) * output_dims[1]);
   memset(blank_host, 0, sizeof(float) * output_dims[1]);
 
   DDim blank_dim = DDimLite({output_dims[1]});
@@ -57,7 +57,6 @@ void Conv2dImageCompute::PrepareForRun() {
   blank_tensor_.mutable_data<float, MetalImage>(
       blank_dim, {0, 1, 2, 3}, (void*)blank_host);
   free(blank_host);
-  blank_host = nullptr;
 
   bool should_use_mps = false;
   function_name_ =
@@ -85,7 +84,7 @@ void Conv2dImageCompute::PrepareForRun() {
     should_use_mps = false;
   }
 
-  if (function_name_ == "") {
+  if (function_name_.empty()) {
     throw std::logic_error("ERROR: cannot find the name of the conv2d");
   }
 
@@ -186,7 +185,7 @@ std::string Conv2dImageCompute::KernelFunctionName(
   }
 }
 
-bool Conv2dImageCompute::IsWinoGrad(std::string function_name) {
+bool Conv2dImageCompute::IsWinoGrad(const std::string& function_name) {
   std::string suffix = "winograd";
   if (function_name.size() >= suffix.size() &&
       function_name.compare(
@@ -313,7 +312,7 @@ void Conv2dImageCompute::SetupWithoutMPS() {
   if (IsWinoGrad(function_name_)) {
     DataConverter<float>* converter = new WinogradPointerConverter<float>();
     free(converter);
-    std::logic_error("ERROR: still not finish winograd");
+    throw std::logic_error("ERROR: still not finish winograd");
   }
 
   if (function_name_ == "conv_add_relu_3x3_half_winograd") {
@@ -361,17 +360,12 @@ void Conv2dImageComputeHalf::PrepareForRun() {
     }
   }
 
-  output_buffer_ =
-      param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
-
-  MetalHalf* blank_host =
-      (MetalHalf*)malloc(sizeof(MetalHalf) * output_dims[1]);
+  output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+  auto* blank_host = (MetalHalf*)malloc(sizeof(MetalHalf) * output_dims[1]);
   memset(blank_host, 0, sizeof(MetalHalf) * output_dims[1]);
-
   DDim blank_dim = DDimLite({output_dims[1]});
   blank_tensor_.Resize(blank_dim);
-  blank_tensor_.mutable_data<MetalHalf, MetalImage>(
-      blank_dim, {0, 1, 2, 3}, (void*)blank_host);
+  blank_tensor_.mutable_data<MetalHalf, MetalImage>(blank_dim, {0, 1, 2, 3}, (void*)blank_host);
   free(blank_host);
   blank_host = nullptr;
 
@@ -401,7 +395,7 @@ void Conv2dImageComputeHalf::PrepareForRun() {
     should_use_mps = false;
   }
 
-  if (function_name_ == "") {
+  if (function_name_.empty()) {
     throw std::logic_error("ERROR: cannot find the name of the conv2d");
   }
 
@@ -527,7 +521,7 @@ std::string Conv2dImageComputeHalf::KernelFunctionName(
   }
 }
 
-bool Conv2dImageComputeHalf::IsWinoGrad(std::string function_name) {
+bool Conv2dImageComputeHalf::IsWinoGrad(const std::string& function_name) {
   std::string suffix = "winograd";
   if (function_name.size() >= suffix.size() &&
       function_name.compare(
@@ -654,7 +648,7 @@ void Conv2dImageComputeHalf::SetupWithoutMPS() {
   if (IsWinoGrad(function_name_)) {
     DataConverter<float>* converter = new WinogradPointerConverter<float>();
     free(converter);
-    std::logic_error("ERROR: still not finish winograd");
+    throw std::logic_error("ERROR: still not finish winograd");
   }
 
   if (function_name_ == "conv_add_relu_3x3_half_winograd") {

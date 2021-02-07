@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_KERNELS_METAL_IMAGE_OP_CONV2D_IMAGE_COMPUTE_H_
-#define LITE_KERNELS_METAL_IMAGE_OP_CONV2D_IMAGE_COMPUTE_H_
+#pragma once
 
 #include <memory>
 #include <string>
@@ -33,9 +32,10 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
-                                             PRECISION(kFloat),
-                                             DATALAYOUT(kMetalTexture2DArray)> {
+class Conv2dTransposeImageCompute
+    : public KernelLite<TARGET(kMetal),
+                        PRECISION(kFloat),
+                        DATALAYOUT(kMetalTexture2DArray)> {
   using param_t = operators::ConvParam;
 
  public:
@@ -49,7 +49,8 @@ class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
   static std::string KernelFunctionName(
       const param_t& param, bool use_aggressive_optimization = false);
 
-  static bool IsWinoGrad(const std::string& function_name);
+  static bool HasPrefix(const std::string& function_name,
+                        const std::string& prefix_name);
 
  private:
   void SetupWithMPS();
@@ -63,13 +64,12 @@ class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
 
   Tensor blank_tensor_;
   std::string function_name_;
-  bool use_winograd_;
 
   int16_t activate_type_ = 0;
   int16_t relu6_thredhold_ = 6;
 };
 
-class Conv2dImageComputeHalf
+class Conv2dTransposeImageComputeHalf
     : public KernelLite<TARGET(kMetal),
                         PRECISION(kFP16),
                         DATALAYOUT(kMetalTexture2DArray)> {
@@ -86,7 +86,8 @@ class Conv2dImageComputeHalf
   static std::string KernelFunctionName(
       const param_t& param, bool use_aggressive_optimization = false);
 
-  static bool IsWinoGrad(const std::string& function_name);
+  static bool HasPrefix(const std::string& function_name,
+                        const std::string& prefix);
 
  private:
   void SetupWithMPS();
@@ -110,5 +111,3 @@ class Conv2dImageComputeHalf
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-#endif  // LITE_KERNELS_METAL_IMAGE_OP_CONV2D_IMAGE_COMPUTE_H_

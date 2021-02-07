@@ -187,4 +187,21 @@ struct SplitMetalParam {
   int vdim[4];
 };
 
+struct ConvTransposeAddMetalParam {
+  uint16_t kernelW;
+  uint16_t kernelH;
+  uint16_t strideX;
+  uint16_t strideY;
+  uint16_t paddingX;
+  uint16_t paddingY;
+  uint16_t dilationX;
+  uint16_t dilationY;
+  uint16_t groups;
+  uint16_t iC;
+  uint16_t fC;
+  uint16_t oC;
+  uint16_t hasAddOp;
+  ElementwiseAddMetalParam addParam;
+};
+
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_
