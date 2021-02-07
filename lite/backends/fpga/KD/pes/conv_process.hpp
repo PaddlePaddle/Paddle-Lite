@@ -31,6 +31,8 @@ limitations under the License. */
 namespace paddle {
 namespace zynqmp {
 
+const int MAX_CHANNEL = 16384;
+
 inline int get_aligned_filter_element_num(int chw) {
   return align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
 }
@@ -262,7 +264,6 @@ inline void format_filter(Tensor* filter,
                           float max) {
   float max_value = find_max(*filter);
   Shape& filter_shape = filter->shape();
-
   int mem_size;
   std::vector<float> max_values;
   int8_t* quantized_data = filter::format_filter(filter->data<float>(),
@@ -277,12 +278,10 @@ inline void format_filter(Tensor* filter,
 
   float mem_factor = mem_size * 1.0f / filter->shape().numel();
   quantized_filter->setMemScale(mem_factor);
-
   quantized_filter->setAligned(true);
   int8_t* src = quantized_filter->mutableData<int8_t>(INT8, filter->shape());
   quantized_filter->scale()[0] = max_value / 127.0f;
   quantized_filter->scale()[1] = 127.0f / max_value;
-
   memcpy(src, quantized_data, mem_size);
   quantized_filter->flush();
   fpga_free(quantized_data);
@@ -444,6 +443,7 @@ inline void pack_channel_filter(const ConvParam& c_param) {
   int channel_per_pack = filter->shape().channel() * group_per_pack;
 
   float max = find_max(*filter);
+
   Shape& out_shape = out->shape();
 
   for (int i = 0; i < pack_num; i++) {
@@ -534,7 +534,6 @@ inline void pack_channel_filter(const ConvParam& c_param) {
     }
     format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     conv_param->scaleBias.flush();
-
     args.group_num = new_group;
     args.sb_address = conv_param->scaleBias.data<float16>();
     args.kernel.stride_h = param.strides[1];
@@ -566,55 +565,65 @@ inline void split_channel(const ConvParam& c_param) {
   Tensor* output = param.output;
   input->syncToCPU();
 
+  Tensor* filter = param.filter;
   int num = ceil(input->shape().channel() * 1.0f / 2047);
+  if (output->shape().dimSize() == 2) {
+    num = ceil(input->shape().numel() * 1.0f / 16384);
+  }
   int channel = input->shape().channel() / num;
-
-  Shape bs_shape(N, {channel});
-
-  float max = 1.0f;
+  Shape bs_shape(NC, {1, output->shape().channel()});
+  float max = find_max(*param.filter);
 
   for (int i = 0; i < num; i++) {
     BasicConvParam* conv_param = new BasicConvParam();
-
-    // input && output;
     Shape in_shape(
         NCHW, {1, channel, input->shape().height(), input->shape().width()});
-    conv_param->input.shareDataWith(input, in_shape, channel * i);
+    conv_param->input.mutableData<float16>(FP16, in_shape);
     conv_param->output.mutableData<float16>(FP16, output->shape());
 
     // filter transformation;
-    Shape f_shape(NCHW, {param.filter->shape().num(), channel, 1, 1});
+    Shape f_shape(NCHW,
+                  {filter->shape().num(),
+                   channel,
+                   filter->shape().height(),
+                   filter->shape().width()});
 
-    Tensor new_filter;
+    Tensor new_filter_hwc;
+    auto cal_chw = [](Tensor* t) {
+      Shape& s = t->shape();
+      return s.channel() * s.height() * s.width();
+    };
 
-    float* dst = new_filter.mutableData<float>(FP32, f_shape);
-    float* src = param.filter->data<float>() + i * channel;
     for (int n = 0; n < f_shape.num(); n++) {
-      memcpy(dst, src, channel * sizeof(float));
-      dst += channel;
-      src += param.filter->shape().channel();
+      float* dst = new_filter_hwc.mutableData<float>(FP32, f_shape) +
+                   n * cal_chw(&new_filter_hwc);
+      float* src = filter->data<float>() + i * channel + n * cal_chw(filter);
+
+      for (int hw = 0; hw < f_shape.height() * f_shape.width(); hw++) {
+        memcpy(dst, src, channel * sizeof(float));
+        dst += channel;
+        src += filter->shape().channel();
+      }
     }
-    new_filter.flush();
+    Tensor new_filter;
+    hwc_to_chw(&new_filter_hwc, &new_filter);
     std::vector<float> scales;
     format_filter(
         &new_filter, &(conv_param->filter), param.groups, scales, max);
 
+    conv_param->filter.flush();
+
     Tensor bias;
     Tensor scale;
 
+    int sb_channel = output->shape().channel();
     float* bias_data = bias.mutableData<float>(FP32, bs_shape);
     float* scale_data = scale.mutableData<float>(FP32, bs_shape);
-    for (int c = 0; c < channel; c++) {
-      scale_data[c] = scales[c];
+    for (int c = 0; c < sb_channel; c++) {
+      scale_data[c] = param.scale()->data<float>()[c] * scales[c];
       bias_data[c] = param.bias()->data<float>()[c] / num;
     }
-    scale.flush();
-    bias.flush();
-    format_scale_bias(&scale,
-                      &bias,
-                      &conv_param->filter,
-                      &conv_param->scaleBias,
-                      param.groups);
+    format_bias_scale_new(&bias, &scale, &conv_param->scaleBias);
     conv_param->scaleBias.flush();
 
     ConvArgs& args = conv_param->args;
@@ -648,8 +657,10 @@ inline int fill_split_arg(const ConvParam& c_param) {
   Tensor* input = param.input;
   Tensor* output = param.output;
 
-  if (output->shape().dimSize() == 4 && input->shape().channel() > 2047 &&
-      input->shape().width() == 1) {
+  if ((output->shape().dimSize() == 4 && input->shape().channel() > 2047 &&
+       input->shape().width() == 1) ||
+      (output->shape().dimSize() == 2 &&
+       input->shape().numel() > MAX_CHANNEL)) {
     split_channel(c_param);
     return 1;
   } else if (param.groups == 1) {
@@ -699,7 +710,6 @@ inline void dwconv_split_channel(DepthwiseConvSplitParam& param) {  // NOLINT
   int channel = input->shape().channel() / num;
   if (channel % 16 != 0) {
     std::cout << "input channel must div by 16" << std::endl;
-    // throw -1;
   }
 
   Shape bs_shape(N, {channel});
@@ -710,7 +720,6 @@ inline void dwconv_split_channel(DepthwiseConvSplitParam& param) {  // NOLINT
 
   for (int i = 0; i < num; i++) {
     BasicDWConvParam* dwconv_param = new BasicDWConvParam();
-
     // input && output;
     Shape in_shape(
         NCHW, {1, channel, input->shape().height(), input->shape().width()});
@@ -727,11 +736,9 @@ inline void dwconv_split_channel(DepthwiseConvSplitParam& param) {  // NOLINT
 
     // filter transformation;
     Shape f_shape(NCHW, {channel, 1, h_kernel, w_kernel});
-
     Tensor split_filter;
     float* split_filter_data = split_filter.mutableData<float>(FP32, f_shape);
     int filter_hwc = h_kernel * w_kernel * channel;
-
     memcpy(split_filter_data,
            filter->data<float>() + i * filter_hwc,
            filter_hwc * sizeof(float));

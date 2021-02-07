@@ -59,7 +59,7 @@ class ScalePE : public PE {
       repeat = c_lcm / (channel);
     }
 
-    // FPGA限制 H >2047, W >1023 , WC> 65536 ，需要使用CPU实现
+    // FPGA limit H >2047, W >1023 , WC> 65536
     Shape shape(N, {channel * repeat});
 
     float* filter_data = filter.mutableData<float>(FP32, shape);
@@ -90,11 +90,9 @@ class ScalePE : public PE {
         }
       }
       float* scale_data_float = param_.scale->data<float>();
-      for (int i = 0; i < repeat; i++) {
-        for (int j = 0; j < length; j++) {
-          float16 value = float_to_half(scale_data_float[j]);
-          scale_data[i * length + j] = value;
-        }
+      for (int j = 0; j < length; j++) {
+        float16 value = float_to_half(scale_data_float[j]);
+        scale_data[j] = value;
       }
     } else {
       if (param_.bias != nullptr) {
@@ -115,11 +113,9 @@ class ScalePE : public PE {
       }
 
       float16* scale_data_float = param_.scale->data<float16>();
-      for (int i = 0; i < repeat; i++) {
-        for (int j = 0; j < length; j++) {
-          float16 value = scale_data_float[j];
-          scale_data[i * length + j] = value;
-        }
+      for (int j = 0; j < length; j++) {
+        float16 value = scale_data_float[j];
+        scale_data[j] = value;
       }
     }
 

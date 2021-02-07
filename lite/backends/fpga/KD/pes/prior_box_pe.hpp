@@ -40,7 +40,6 @@ class PriorBoxPE : public PE {
 
  private:
   PriorBoxParam param_;
-  // TODO(chonwhite) use unique_ptr;
   std::unique_ptr<Tensor> cachedBoxes_;
   std::unique_ptr<Tensor> cachedVariances_;
 
