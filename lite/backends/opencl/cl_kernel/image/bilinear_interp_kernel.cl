@@ -37,6 +37,8 @@ __kernel void bilinear_interp(__read_only image2d_t input,
     int out_h = nh % out_dims_h;
     float center_w = (w + align_delta)  * scale_w - align_delta;
     float center_h = (out_h + align_delta) * scale_h - align_delta;
+    center_h = (center_h > 0) ? center_h : 0;
+    center_w = (center_w > 0) ? center_w : 0;
 
     int floor_w = (int)center_w;
     int floor_h = (int)center_h;
