@@ -61,7 +61,6 @@ T div(T a, T b) {
 
 template <class T>
 T floordiv(T a, T b) {
-  LOG(INFO) << "--- k, " << a << ", " << b;
   return static_cast<T>(std::trunc(a / b));
 }
 

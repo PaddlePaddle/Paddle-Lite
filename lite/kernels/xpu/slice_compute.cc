@@ -21,34 +21,34 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void SliceCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+template <class T>
+void SliceCompute<T>::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto x_dims = param.X->dims();
-  std::vector<int> x_shape_;
-  std::vector<int> x_dim_begin_;
-  std::vector<int> x_dim_end_;
-  x_shape_.resize(x_dims.size());
-  x_dim_begin_.resize(x_dims.size());
-  x_dim_end_.resize(x_dims.size());
+  auto x_shape = x_dims.Vectorize();
+  std::vector<int> x_shape_(x_shape.begin(), x_shape.end());
+  std::vector<int> x_dim_begin_(x_dims.size(), 0);
+  std::vector<int> x_dim_end_(x_shape_);
 
-  for (size_t i = 0; i < x_dims.size(); ++i) {
-    x_shape_[i] = static_cast<int>(x_dims[i]);
-    x_dim_begin_[i] = 0;
-    x_dim_end_[i] = x_shape_[i];
-  }
   for (size_t i = 0; i < param.axes.size(); ++i) {
     int axis = param.axes[i];
-    x_dim_begin_[axis] = param.starts[i];
-    x_dim_end_[axis] = param.ends[i];
+    x_dim_begin_[axis] = param.starts[i] < 0
+                             ? param.starts[i] + static_cast<int>(x_dims[axis])
+                             : param.starts[i];
+    int end = param.ends[i] < 0 ? param.ends[i] + static_cast<int>(x_dims[axis])
+                                : param.ends[i];
+    x_dim_end_[axis] = (std::min)(end, static_cast<int>(x_dims[axis]));
   }
-  int r = xdnn::slice(ctx.GetRawContext(),    /* context */
-                      param.X->data<float>(), /* in */
-                      param.Out->mutable_data<float>(TARGET(kXPU)), /* out */
-                      x_shape_,
-                      x_dim_begin_,
-                      x_dim_end_);
+
+  int r =
+      xdnn::slice(ctx.GetRawContext(),         /* context */
+                  param.X->template data<T>(), /* in */
+                  param.Out->template mutable_data<T>(TARGET(kXPU)), /* out */
+                  x_shape_,
+                  x_dim_begin_,
+                  x_dim_end_);
 
   CHECK_EQ(r, 0);
 }
@@ -58,8 +58,26 @@ void SliceCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    slice, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::SliceCompute, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+using SliceFloat32 = paddle::lite::kernels::xpu::SliceCompute<float>;
+REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceFloat32, float32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using SliceInt32 = paddle::lite::kernels::xpu::SliceCompute<int32_t>;
+REGISTER_LITE_KERNEL(slice, kXPU, kFloat, kAny, SliceInt32, int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kAny))})
     .Finalize();
