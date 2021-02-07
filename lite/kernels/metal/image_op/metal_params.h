@@ -178,4 +178,13 @@ struct PriorBoxMetalParam {
   uint32_t minSizeSize;
   uint32_t maxSizeSize;
 };
+
+struct SplitMetalParam {
+  int idim[4];
+  int axis;
+  int offset;
+  int trans[4];
+  int vdim[4];
+};
+
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_
