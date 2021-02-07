@@ -164,4 +164,18 @@ struct TransposeMetalParam {
   int axis[4];
 };
 
+struct PriorBoxMetalParam {
+  float offset;
+  float stepWidth;
+  float stepHeight;
+  float minSize;
+  float maxSize;
+  float imageWidth;
+  float imageHeight;
+  bool clip;
+  uint32_t numPriors;
+  uint32_t aspecRatiosSize;
+  uint32_t minSizeSize;
+  uint32_t maxSizeSize;
+};
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_
