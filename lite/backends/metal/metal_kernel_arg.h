@@ -37,6 +37,7 @@ struct MetalKernelArgument {
       const std::shared_ptr<MetalBuffer>& buf) noexcept {
     var_.set<const MetalBuffer*>(buf.get());
   }
+
   explicit MetalKernelArgument(
       const std::unique_ptr<MetalBuffer>& buf) noexcept {
     var_.set<const MetalBuffer*>(buf.get());

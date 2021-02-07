@@ -40,53 +40,55 @@ class MetalBuffer {
               size_t size,
               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
-  MetalBuffer(const MetalDevice& device, void* mtl_buffer);
+  MetalBuffer(const MetalDevice& device, void* buffer);
 
   MetalBuffer(const MetalDevice& device,
-              DDim inDim,
+              const DDim& in_dim,
               METAL_PRECISION_TYPE precision = METAL_PRECISION_TYPE::FLOAT,
-              bool padWhenOneC = false,
-              bool convertToNHWC = true,
-              bool withTranspose = false,
+              bool pad_when_one_c = false,
+              bool convert_to_NHWC = true,
+              bool with_transpose = false,
               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
   MetalBuffer() = delete;
-
   ~MetalBuffer();
 
   template <typename P>
   P* Convert(DataConverter<P>* converter);
 
   void Read(void* data, size_t size, size_t offset) const;
-  void Read(void* data, size_t size, size_t offset, const MetalQueue& queue);
+  void Read(void* data,
+            size_t size,
+            size_t offset,
+            const MetalQueue& queue) const;
 
   void Write(const void* src,
              size_t size,
              size_t offset,
-             const MetalQueue& queue);
+             const MetalQueue& queue) const;
   void Write(const void* src, size_t size, size_t offset) const;
 
   void Copy(const MetalQueue& queue,
             const MetalBuffer& src,
-            size_t size_,
+            size_t size,
             size_t src_offset,
-            size_t dst_offset);
+            size_t dst_offset) const;
   void Copy(const MetalBuffer& src,
-            size_t size_,
+            size_t size,
             size_t src_offset,
             size_t dst_offset) const;
 
-  template <typename P>
-  void CopyFromNCHW(const P* src) {
+  template <typename SP>
+  void CopyFromNCHW(const SP* src) {
     static_assert(
-        std::is_same<float, P>::value || std::is_same<MetalHalf, P>::value,
+        std::is_same<float, SP>::value || std::is_same<MetalHalf, SP>::value,
         "can support float and half");
   }
 
-  template <typename P>
-  void CopyToNCHW(P* dst) {
+  template <typename DP>
+  void CopyToNCHW(DP* dst) {
     static_assert(
-        std::is_same<float, P>::value || std::is_same<MetalHalf, P>::value,
+        std::is_same<float, DP>::value || std::is_same<MetalHalf, DP>::value,
         "can support float and half");
   }
 
@@ -94,8 +96,8 @@ class MetalBuffer {
   id<MTLBuffer> buffer() const;
   id<MTLBuffer> buffer_{nil};
 #else
-  void* get_buffer() const;
-  void* mtl_buffer_{nullptr};
+  void* buffer() const;
+  void* buffer_{nullptr};
 #endif
   int offset() const;
   void set_offset(int offset);

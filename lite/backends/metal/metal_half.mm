@@ -376,7 +376,8 @@ static const uint8_t shifttable[512] = {
 
 MetalHalf MetalFloat2Half(float f) {
   uint32_t v = *reinterpret_cast<uint32_t *>(&f);
-  return static_cast<MetalHalf>(basetable[(v >> 23) & 0x1ff] + ((v & 0x007fffff) >> shifttable[(v >> 23) & 0x1ff]));
+  return static_cast<MetalHalf>(basetable[(v >> 23) & 0x1ff] +
+                                ((v & 0x007fffff) >> shifttable[(v >> 23) & 0x1ff]));
 }
 
 float MetalHalf2Float(MetalHalf h) {

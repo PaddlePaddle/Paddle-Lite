@@ -1,3 +1,4 @@
+#import <__bit_reference>
 // Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -349,7 +350,7 @@ void MetalImage::CopyFromNCHW(const SP *src) {
   }
 }
 
-void MetalImage::Zero() const {
+ __unused void MetalImage::Zero() const {
   if (image_ == nullptr) return;
 
   int size_p = 1;

@@ -43,6 +43,8 @@ class MetalDevice {
 #endif
   void set_context(MetalContext *context);
   void set_name(const char *name);
+  MetalContext *context() { return context_; }
+  std::string name() { return name_; }
 
  private:
 #if defined(__OBJC__)

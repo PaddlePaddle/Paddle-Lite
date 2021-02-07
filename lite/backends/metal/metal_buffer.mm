@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cassert>
 #include "lite/backends/metal/metal_buffer.h"
-#include "lite/backends/metal/metal_queue.h"
 
 namespace paddle {
 namespace lite {
@@ -32,13 +32,10 @@ static MTLResourceOptions OptionForAccess(METAL_ACCESS_FLAG flag) {
   }
 }
 
-MetalBuffer::MetalBuffer(const MetalDevice &device,
-                         size_t size,
-                         const METAL_ACCESS_FLAG flag)
+MetalBuffer::MetalBuffer(const MetalDevice &device, size_t size, const METAL_ACCESS_FLAG flag)
     : flags_(flag) {
   mtl_device_ = const_cast<MetalDevice *>(&device);
-  buffer_ =
-      [device.device() newBufferWithLength:size options:OptionForAccess(flag)];
+  buffer_ = [device.device() newBufferWithLength:size options:OptionForAccess(flag)];
 }
 
 MetalBuffer::MetalBuffer(const MetalDevice &device,
@@ -47,23 +44,21 @@ MetalBuffer::MetalBuffer(const MetalDevice &device,
                          const METAL_ACCESS_FLAG flag)
     : flags_(flag) {
   mtl_device_ = const_cast<MetalDevice *>(&device);
-  buffer_ = [device.device() newBufferWithBytes:data
-                                         length:size
-                                        options:OptionForAccess(flag)];
+  buffer_ = [device.device() newBufferWithBytes:data length:size options:OptionForAccess(flag)];
 }
 
 MetalBuffer::MetalBuffer(const MetalDevice &device,
-                         DDim in_dim,
+                         const DDim& in_dim,
                          METAL_PRECISION_TYPE precision,
-                         bool padWhenOneC,
-                         bool convertToNHWC,
-                         bool withTranspose,
+                         bool pad_when_one_c,
+                         bool convert_to_nhwc,
+                         bool with_transpose,
                          METAL_ACCESS_FLAG flag)
     : tensor_dim_(in_dim),
       precision_(precision),
-      pad_when_one_channel_(padWhenOneC),
-      convert_to_nhwc_(convertToNHWC),
-      with_transpose_(withTranspose),
+      pad_when_one_channel_(pad_when_one_c),
+      convert_to_nhwc_(convert_to_nhwc),
+      with_transpose_(with_transpose),
       dim_(in_dim),
       flags_(flag) {
   assert(precision_ == METAL_PRECISION_TYPE::FLOAT ||
@@ -98,9 +93,9 @@ MetalBuffer::MetalBuffer(const MetalDevice &device,
 template <>
 void MetalBuffer::CopyFromNCHW(const float *src) {
   assert(src != nullptr);
-
+  auto tensor_length = static_cast<size_t>(tensor_dim_.production() * precision_size_);
   if (precision_ == METAL_PRECISION_TYPE::FLOAT)
-    memcpy(data_, src, tensor_dim_.production() * precision_size_);
+    memcpy(data_, src, tensor_length);
   else if (precision_ == METAL_PRECISION_TYPE::HALF) {
     MetalFloatArray2HalfArray(
         src, (MetalHalf *)data_, static_cast<int>(tensor_dim_.production()));
@@ -110,8 +105,7 @@ void MetalBuffer::CopyFromNCHW(const float *src) {
   }
 
   if (with_transpose_ && tensor_dim_.size() == 4) {
-    auto transpose_pointer =
-        (void *)malloc(precision_size_ * tensor_dim_.production());
+    auto transpose_pointer = malloc(tensor_length);
     auto n = tensor_dim_[0];
     auto hwc = tensor_dim_.production() / n;
 
@@ -147,7 +141,7 @@ void MetalBuffer::CopyFromNCHW(const float *src) {
 
     if (data_ != nullptr) free(data_);
     data_ = transpose_pointer;
-    data_length_ = precision_size_ * dim_.production();
+    data_length_ = static_cast<size_t>(precision_size_ * dim_.production());
   }
 
   if (tensor_dim_.size() == 4) {
@@ -167,19 +161,18 @@ void MetalBuffer::CopyFromNCHW(const float *src) {
 template <>
 void MetalBuffer::CopyFromNCHW(const MetalHalf *src) {
   assert(src != nullptr);
+  auto tensor_length = static_cast<size_t>(tensor_dim_.production() * precision_size_);
   if (precision_ == METAL_PRECISION_TYPE::FLOAT)
-    MetalHalfArray2FloatArray(
-        src, (float *)data_, static_cast<int>(tensor_dim_.production()));
+    MetalHalfArray2FloatArray(src, (float *)data_, static_cast<int>(tensor_dim_.production()));
   else if (precision_ == METAL_PRECISION_TYPE::HALF) {
-    memcpy(data_, src, tensor_dim_.production() * precision_size_);
+    memcpy(data_, src, tensor_length);
   }
   if (convert_to_nhwc_) {
     Convert();
   }
 
   if (with_transpose_ && tensor_dim_.size() == 4) {
-    auto transpose_pointer =
-        (void *)malloc(precision_size_ * tensor_dim_.production());
+    auto transpose_pointer = malloc(tensor_length);
     auto n = tensor_dim_[0];
     auto hwc = tensor_dim_.production() / n;
 
@@ -215,7 +208,7 @@ void MetalBuffer::CopyFromNCHW(const MetalHalf *src) {
 
     if (data_ != nullptr) free(data_);
     data_ = transpose_pointer;
-    data_length_ = precision_size_ * dim_.production();
+    data_length_ = static_cast<size_t>(precision_size_ * dim_.production());
   }
 
   if (tensor_dim_.size() == 4) {
@@ -235,9 +228,9 @@ void MetalBuffer::CopyFromNCHW(const MetalHalf *src) {
 template <>
 void MetalBuffer::CopyToNCHW(MetalHalf *dst) {
   assert(dst != nullptr);
+  auto tensor_length = static_cast<size_t>(precision_size_ * tensor_dim_.production());
   if (with_transpose_ && tensor_dim_.size() == 4) {
-    auto transpose_pointer =
-        (void *)malloc(precision_size_ * tensor_dim_.production());
+    auto transpose_pointer = malloc(tensor_length);
     auto n = tensor_dim_[0];
     auto hwc = tensor_dim_.production() / n;
 
@@ -273,44 +266,40 @@ void MetalBuffer::CopyToNCHW(MetalHalf *dst) {
 
     if (data_ != nullptr) free(data_);
     data_ = transpose_pointer;
-    data_length_ = precision_size_ * dim_.production();
+    data_length_ = static_cast<size_t>(precision_size_ * dim_.production());
   }
 
   if (tensor_dim_.size() == 4) {
     if (c_ == padded_c_ || (c_ == 1 && !pad_when_one_channel_)) {
       if (precision_ == METAL_PRECISION_TYPE::HALF)
-        MetalConverter::NHWC2NCHW<MetalHalf, MetalHalf>(
-            dst,
-            (MetalHalf *)data_,
-            static_cast<int>(tensor_dim_[0]),
-            static_cast<int>(tensor_dim_[1]),
-            static_cast<int>(tensor_dim_[2]),
-            static_cast<int>(tensor_dim_[3]));
+        MetalConverter::NHWC2NCHW<MetalHalf, MetalHalf>(dst,
+                                                        (MetalHalf *)data_,
+                                                        static_cast<int>(tensor_dim_[0]),
+                                                        static_cast<int>(tensor_dim_[1]),
+                                                        static_cast<int>(tensor_dim_[2]),
+                                                        static_cast<int>(tensor_dim_[3]));
       else if (precision_ == METAL_PRECISION_TYPE::FLOAT)
-        MetalConverter::NHWC2NCHW<MetalHalf, float>(
-            dst,
-            (float *)data_,
-            static_cast<int>(tensor_dim_[0]),
-            static_cast<int>(tensor_dim_[1]),
-            static_cast<int>(tensor_dim_[2]),
-            static_cast<int>(tensor_dim_[3]));
+        MetalConverter::NHWC2NCHW<MetalHalf, float>(dst,
+                                                    (float *)data_,
+                                                    static_cast<int>(tensor_dim_[0]),
+                                                    static_cast<int>(tensor_dim_[1]),
+                                                    static_cast<int>(tensor_dim_[2]),
+                                                    static_cast<int>(tensor_dim_[3]));
     } else {
       if (precision_ == METAL_PRECISION_TYPE::HALF)
-        MetalConverter::NHWCExpand2NCHW<MetalHalf, MetalHalf>(
-            dst,
-            (MetalHalf *)data_,
-            static_cast<int>(tensor_dim_[0]),
-            static_cast<int>(tensor_dim_[1]),
-            static_cast<int>(tensor_dim_[2]),
-            static_cast<int>(tensor_dim_[3]));
+        MetalConverter::NHWCExpand2NCHW<MetalHalf, MetalHalf>(dst,
+                                                              (MetalHalf *)data_,
+                                                              static_cast<int>(tensor_dim_[0]),
+                                                              static_cast<int>(tensor_dim_[1]),
+                                                              static_cast<int>(tensor_dim_[2]),
+                                                              static_cast<int>(tensor_dim_[3]));
       else if (precision_ == METAL_PRECISION_TYPE::FLOAT)
-        MetalConverter::NHWCExpand2NCHW<MetalHalf, float>(
-            dst,
-            (float *)data_,
-            static_cast<int>(tensor_dim_[0]),
-            static_cast<int>(tensor_dim_[1]),
-            static_cast<int>(tensor_dim_[2]),
-            static_cast<int>(tensor_dim_[3]));
+        MetalConverter::NHWCExpand2NCHW<MetalHalf, float>(dst,
+                                                          (float *)data_,
+                                                          static_cast<int>(tensor_dim_[0]),
+                                                          static_cast<int>(tensor_dim_[1]),
+                                                          static_cast<int>(tensor_dim_[2]),
+                                                          static_cast<int>(tensor_dim_[3]));
     }
   } else if (tensor_dim_.size() == 1) {
     if (precision_ == METAL_PRECISION_TYPE::FLOAT)
@@ -318,9 +307,7 @@ void MetalBuffer::CopyToNCHW(MetalHalf *dst) {
                                 (MetalHalf *)buffer_.contents,
                                 static_cast<int>(tensor_dim_.production()));
     else if (precision_ == METAL_PRECISION_TYPE::HALF)
-      memcpy((void *)dst,
-             buffer_.contents,
-             tensor_dim_.production() * sizeof(MetalHalf));
+      memcpy((void *)dst, buffer_.contents, tensor_dim_.production() * sizeof(MetalHalf));
   } else {
     throw std::logic_error("ERROR: can only support dim 1 and dim 4");
   }
@@ -329,9 +316,9 @@ void MetalBuffer::CopyToNCHW(MetalHalf *dst) {
 template <>
 void MetalBuffer::CopyToNCHW(float *dst) {
   assert(dst != nullptr);
+  auto tensor_length = static_cast<size_t>(precision_size_ * tensor_dim_.production());
   if (with_transpose_ && tensor_dim_.size() == 4) {
-    auto transpose_pointer =
-        (void *)malloc(precision_size_ * tensor_dim_.production());
+    auto transpose_pointer = malloc(tensor_length);
     auto n = tensor_dim_[0];
     auto hwc = tensor_dim_.production() / n;
 
@@ -372,44 +359,38 @@ void MetalBuffer::CopyToNCHW(float *dst) {
   if (tensor_dim_.size() == 4) {
     if (c_ == padded_c_ || (c_ == 1 && !pad_when_one_channel_)) {
       if (precision_ == METAL_PRECISION_TYPE::HALF)
-        MetalConverter::NHWC2NCHW<float, MetalHalf>(
-            (float *)dst,
-            (MetalHalf *)data_,
-            static_cast<int>(tensor_dim_[0]),
-            static_cast<int>(tensor_dim_[1]),
-            static_cast<int>(tensor_dim_[2]),
-            static_cast<int>(tensor_dim_[3]));
+        MetalConverter::NHWC2NCHW<float, MetalHalf>(dst,
+                                                    (MetalHalf *)data_,
+                                                    static_cast<int>(tensor_dim_[0]),
+                                                    static_cast<int>(tensor_dim_[1]),
+                                                    static_cast<int>(tensor_dim_[2]),
+                                                    static_cast<int>(tensor_dim_[3]));
       else if (precision_ == METAL_PRECISION_TYPE::FLOAT)
-        MetalConverter::NHWC2NCHW<float, float>(
-            (float *)dst,
-            (float *)data_,
-            static_cast<int>(tensor_dim_[0]),
-            static_cast<int>(tensor_dim_[1]),
-            static_cast<int>(tensor_dim_[2]),
-            static_cast<int>(tensor_dim_[3]));
+        MetalConverter::NHWC2NCHW<float, float>(dst,
+                                                (float *)data_,
+                                                static_cast<int>(tensor_dim_[0]),
+                                                static_cast<int>(tensor_dim_[1]),
+                                                static_cast<int>(tensor_dim_[2]),
+                                                static_cast<int>(tensor_dim_[3]));
     } else {
       if (precision_ == METAL_PRECISION_TYPE::HALF)
-        MetalConverter::NHWCExpand2NCHW<float, MetalHalf>(
-            (float *)dst,
-            (MetalHalf *)data_,
-            static_cast<int>(tensor_dim_[0]),
-            static_cast<int>(tensor_dim_[1]),
-            static_cast<int>(tensor_dim_[2]),
-            static_cast<int>(tensor_dim_[3]));
+        MetalConverter::NHWCExpand2NCHW<float, MetalHalf>(dst,
+                                                          (MetalHalf *)data_,
+                                                          static_cast<int>(tensor_dim_[0]),
+                                                          static_cast<int>(tensor_dim_[1]),
+                                                          static_cast<int>(tensor_dim_[2]),
+                                                          static_cast<int>(tensor_dim_[3]));
       else if (precision_ == METAL_PRECISION_TYPE::FLOAT)
-        MetalConverter::NHWCExpand2NCHW<float, float>(
-            (float *)dst,
-            (float *)data_,
-            static_cast<int>(tensor_dim_[0]),
-            static_cast<int>(tensor_dim_[1]),
-            static_cast<int>(tensor_dim_[2]),
-            static_cast<int>(tensor_dim_[3]));
+        MetalConverter::NHWCExpand2NCHW<float, float>(dst,
+                                                      (float *)data_,
+                                                      static_cast<int>(tensor_dim_[0]),
+                                                      static_cast<int>(tensor_dim_[1]),
+                                                      static_cast<int>(tensor_dim_[2]),
+                                                      static_cast<int>(tensor_dim_[3]));
     }
   } else if (tensor_dim_.size() == 1) {
     if (precision_ == METAL_PRECISION_TYPE::FLOAT)
-      memcpy((void *)dst,
-             buffer_.contents,
-             tensor_dim_.production() * sizeof(float));
+      memcpy((void *)dst, buffer_.contents, tensor_dim_.production() * sizeof(float));
     else if (precision_ == METAL_PRECISION_TYPE::HALF)
       MetalHalfArray2FloatArray((MetalHalf *)data_,
                                 (float *)buffer_.contents,
@@ -513,7 +494,7 @@ void MetalBuffer::Read(void *data, size_t size, size_t offset) const {
 void MetalBuffer::Write(const void *src,
                         size_t size,
                         size_t offset,
-                        const MetalQueue &queue) {
+                        const MetalQueue &queue) const {
   Write(src, size, offset);
 }
 
@@ -527,16 +508,16 @@ void MetalBuffer::Write(const void *src, size_t size, size_t offset) const {
 void MetalBuffer::Read(void *data,
                        size_t size,
                        size_t offset,
-                       const MetalQueue &queue) {
+                       const MetalQueue &queue) const {
   Read(data, size, offset);
 }
 
 void MetalBuffer::Copy(const MetalQueue &queue,
                        const MetalBuffer &src,
-                       size_t size_,
+                       size_t size,
                        size_t src_offset,
-                       size_t dst_offset) {
-  Copy(src, size_, src_offset, dst_offset);
+                       size_t dst_offset) const {
+  Copy(src, size, src_offset, dst_offset);
 }
 
 MetalBuffer::MetalBuffer(const MetalDevice &device, void *mtl_buffer) {
@@ -545,14 +526,14 @@ MetalBuffer::MetalBuffer(const MetalDevice &device, void *mtl_buffer) {
 }
 
 void MetalBuffer::Copy(const MetalBuffer &src,
-                       size_t size_,
+                       size_t size,
                        size_t src_offset,
                        size_t dst_offset) const {
   if (buffer_ == nil) return;
-
+  assert(size < (size_ - dst_offset));
   const auto &src_mtl_buffer = src;
   const size_t src_size = src.size_;
-  const size_t copy_size = (size_ == 0 ? std::min(src_size, size_) : size_);
+  const size_t copy_size = (size == 0) ? std::min(src_size, size_): size_;
 
   memcpy((uint8_t *)[buffer_ contents] + dst_offset,
          (uint8_t *)[src_mtl_buffer.buffer() contents] + src_offset,
@@ -561,5 +542,5 @@ void MetalBuffer::Copy(const MetalBuffer &src,
 
 int MetalBuffer::offset() const { return offset_; }
 void MetalBuffer::set_offset(int offset) { offset_ = offset; }
-}
-}
+} // namespace lite
+} // namespace paddle

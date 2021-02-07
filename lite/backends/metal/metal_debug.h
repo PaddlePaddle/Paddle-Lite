@@ -16,6 +16,7 @@
 #define LITE_BACKENDS_METAL_METAL_DEBUG_H_
 
 #include <string>
+
 #include "lite/backends/metal/metal_buffer.h"
 #include "lite/backends/metal/metal_image.h"
 
@@ -30,26 +31,30 @@ class MetalDebug {
     kBoth,
   };
 
-  static void DumpImage(std::string name,
+  static void DumpImage(const std::string& name,
                         MetalImage* image,
                         int length,
                         DumpMode mode = DumpMode::kBoth);
-  static void DumpImage(std::string name,
+
+  static void DumpImage(const std::string& name,
                         const MetalImage* image,
                         int length,
                         DumpMode mode = DumpMode::kBoth);
-  static void DumpBuffer(std::string name,
+
+  static void DumpBuffer(const std::string& name,
                          MetalBuffer* image,
                          int length,
                          DumpMode mode = DumpMode::kBoth);
-  static void DumpBuffer(std::string name,
+
+  static void DumpBuffer(const std::string& name,
                          const MetalBuffer* image,
                          int length,
                          DumpMode mode = DumpMode::kBoth);
-  void DumpNCHWFloat(std::string name,
-                     float* data,
-                     int length,
-                     DumpMode mode = DumpMode::kBoth);
+
+  static void DumpNCHWFloat(const std::string& name,
+                            float* data,
+                            int length,
+                            DumpMode mode = DumpMode::kBoth);
 };
 
 }  // namespace lite

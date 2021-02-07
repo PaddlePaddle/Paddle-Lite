@@ -18,14 +18,12 @@ limitations under the License. */
 namespace paddle {
 namespace lite {
 
-MetalHalf MetalFloat2Half(float f);
-
-float MetalHalf2Float(MetalHalf h);
+inline MetalHalf MetalFloat2Half(float f);
+inline float MetalHalf2Float(MetalHalf h);
 
 void MetalFloatArray2HalfArray(const float *f_array,
                                MetalHalf *h_array,
                                int count);
-
 void MetalHalfArray2FloatArray(const MetalHalf *h_array,
                                float *f_array,
                                int count);

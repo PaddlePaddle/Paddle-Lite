@@ -18,8 +18,8 @@
 namespace paddle {
 namespace lite {
 
-void MetalDebug::DumpImage(std::string name, MetalImage* image, int length, DumpMode mode) {
-  float* buf = (float*)malloc(sizeof(float) * length);
+void MetalDebug::DumpImage(const std::string& name, MetalImage* image, int length, DumpMode mode) {
+  auto buf = (float*)malloc(sizeof(float) * length);
   std::string filename = name + ".txt";
   FILE* fp = fopen(filename.c_str(), "w");
   image->CopyToNCHW<float>(buf);
@@ -29,18 +29,20 @@ void MetalDebug::DumpImage(std::string name, MetalImage* image, int length, Dump
   }
   free(buf);
   fclose(fp);
-  fp = NULL;
 }
 
-void MetalDebug::DumpImage(std::string name,
-                             const MetalImage* image,
-                             int length,
-                             DumpMode mode) {
+void MetalDebug::DumpImage(const std::string& name,
+                           const MetalImage* image,
+                           int length,
+                           DumpMode mode) {
   DumpImage(name, const_cast<MetalImage*>(image), length, mode);
 }
 
-void MetalDebug::DumpBuffer(std::string name, MetalBuffer* buffer, int length, DumpMode mode) {
-  float* buf = (float*)malloc(sizeof(float) * length);
+void MetalDebug::DumpBuffer(const std::string& name,
+                            MetalBuffer* buffer,
+                            int length,
+                            DumpMode mode) {
+  auto buf = (float*)malloc(sizeof(float) * length);
   std::string filename = name + ".txt";
   FILE* fp = fopen(filename.c_str(), "w");
   buffer->CopyToNCHW<float>(buf);
@@ -50,17 +52,16 @@ void MetalDebug::DumpBuffer(std::string name, MetalBuffer* buffer, int length, D
   }
   free(buf);
   fclose(fp);
-  fp = NULL;
 }
 
-void MetalDebug::DumpBuffer(std::string name,
-                              const MetalBuffer* buf,
-                              int length,
-                              DumpMode mode) {
+void MetalDebug::DumpBuffer(const std::string& name,
+                            const MetalBuffer* buf,
+                            int length,
+                            DumpMode mode) {
   DumpBuffer(name, const_cast<MetalBuffer*>(buf), length, mode);
 }
 
-void MetalDebug::DumpNCHWFloat(std::string name, float* data, int length, DumpMode mode) {
+void MetalDebug::DumpNCHWFloat(const std::string& name, float* data, int length, DumpMode mode) {
   std::string filename = name + ".txt";
   FILE* fp = fopen(filename.c_str(), "w");
   for (int i = 0; i < length; ++i) {
@@ -69,8 +70,7 @@ void MetalDebug::DumpNCHWFloat(std::string name, float* data, int length, DumpMo
   }
   free(data);
   fclose(fp);
-  fp = NULL;
 }
 
-}
-}
+}  // namespace lite
+}  // namespace paddle

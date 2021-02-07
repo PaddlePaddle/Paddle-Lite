@@ -15,7 +15,6 @@
 #ifndef LITE_BACKENDS_METAL_METAL_IMAGE_H_
 #define LITE_BACKENDS_METAL_METAL_IMAGE_H_
 
-#include <array>
 #include <vector>
 
 #include "lite/backends/metal/metal_common.h"
@@ -38,7 +37,7 @@ class MetalImage {
 
   MetalImage(const MetalDevice& device,
              const DDim& in_dim,
-             std::vector<int> inTranspose = {0, 2, 3, 1},
+             std::vector<int> in_transpose = {0, 2, 3, 1},
              METAL_PRECISION_TYPE precision_type = METAL_PRECISION_TYPE::FLOAT,
              METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
 
@@ -49,8 +48,7 @@ class MetalImage {
   void CopyToNCHW(DP* dst) const;
 
   static DDim FourDimFrom(DDim in_dim);
-  void Zero() const;
-  __unused void UpdateDim(DDim in_dim);
+  __unused void Zero() const;
 
   // std::recursive_mutex buffer_lock_;
   size_t size_{};
@@ -77,7 +75,7 @@ class MetalImage {
   MTLTextureDescriptor* desc_{nil};
 #else
   void* image_{nullptr};
-  void* device_;
+  void* device_{nullptr};
   void* desc_{nullptr};
 #endif
 };
