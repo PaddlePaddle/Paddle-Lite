@@ -88,6 +88,8 @@ TEST(Increment, precision) {
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif

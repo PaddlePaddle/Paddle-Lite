@@ -46,6 +46,15 @@ struct FloorDivFunctor {
 };
 
 template <typename T>
+struct ModFunctor {
+  inline HOSTDEVICE T operator()(T a, T b) const {
+    T res = a % b;
+    if ((res != 0) && ((res < 0) != (b < 0))) res += b;
+    return res;
+  }
+};
+
+template <typename T>
 class ElementwiseSubCompute
     : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
@@ -115,6 +124,22 @@ class ElementwiseFloorDivCompute
   }
 
   virtual ~ElementwiseFloorDivCompute() = default;
+};
+
+template <typename T>
+class ElementwiseModCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto& context = ctx_->As<X86Context>();
+    param.Out->template mutable_data<T>();
+    ElementwiseComputeEx<ModFunctor<T>, lite::TargetType::kX86, T>(
+        context, param.X, param.Y, param.axis, ModFunctor<T>(), param.Out);
+  }
+
+  virtual ~ElementwiseModCompute() = default;
 };
 
 }  // namespace x86

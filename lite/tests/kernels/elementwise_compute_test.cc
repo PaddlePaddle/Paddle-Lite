@@ -61,6 +61,7 @@ T div(T a, T b) {
 
 template <class T>
 T floordiv(T a, T b) {
+  LOG(INFO) << "--- k, " << a << ", " << b;
   return static_cast<T>(std::trunc(a / b));
 }
 
@@ -79,6 +80,21 @@ T pow(T a, T b) {
   return std::pow(a, b);
 }
 
+template <class T>
+T mod(T a, T b) {
+  T res = a % b;
+  if ((res != 0) && ((res < 0) != (b < 0))) res += b;
+  return res;
+}
+
+template <>
+float mod<float>(float a, float b) {
+  float res = fmod(a, b);
+  if ((res != 0) && ((b < 0) != (res < 0))) res += b;
+  return res;
+}
+
+template <class T = float>
 class ElementwiseComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -125,12 +141,12 @@ class ElementwiseComputeTester : public arena::TestCase {
 
     auto x = scope->FindTensor(x_);
     auto y = scope->FindTensor(y_);
-    auto x_data = x->data<float>();
-    auto y_data = y->data<float>();
+    auto x_data = x->template data<T>();
+    auto y_data = y->template data<T>();
     auto out = scope->NewTensor(out_);
     out->Resize(x_dims_);
-    auto out_data = out->mutable_data<float>();
-    memcpy(out_data, x_data, sizeof(float) * x_dims_.production());
+    auto out_data = out->template mutable_data<T>();
+    memcpy(out_data, x_data, sizeof(T) * x_dims_.production());
 
     int xn = x_shape[0];
     int xc = x_shape[1];
@@ -158,6 +174,8 @@ class ElementwiseComputeTester : public arena::TestCase {
       ELT(min);
     } else if (elt_type_ == "pow") {
       ELT(pow);
+    } else if (elt_type_ == "mod") {
+      ELT(mod);
     } else {
       LOG(FATAL) << "unsupported";
     }
@@ -165,7 +183,7 @@ class ElementwiseComputeTester : public arena::TestCase {
     if (!act_type_.empty()) {
       if (act_type_ == "relu") {
         for (int i = 0; i < x_dims_.production(); i++) {
-          out_data[i] = std::max(0.f, out_data[i]);
+          out_data[i] = std::max(static_cast<T>(0), out_data[i]);
         }
       } else {
         LOG(FATAL) << "unsupported";
@@ -189,24 +207,24 @@ class ElementwiseComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> dx(x_dims_.production());
+    std::vector<T> dx(x_dims_.production());
     for (size_t i = 0; i < dx.size(); i++) {
-      dx[i] = (i % 3) * 1.1f;
-      dx[i] = dx[i] == 0 ? 1.f : dx[i];
+      dx[i] = static_cast<T>((i % 3) * 1.1f);
+      dx[i] = static_cast<T>(dx[i] == static_cast<T>(0) ? 1 : dx[i]);
     }
     SetCommonTensor(x_, x_dims_, dx.data());
 
-    std::vector<float> dy(y_dims_.production());
+    std::vector<T> dy(y_dims_.production());
     for (size_t i = 0; i < dy.size(); i++) {
-      dy[i] = (i % 5) * 1.1f;
-      dy[i] = dy[i] == 0 ? 1.f : dy[i];
+      dy[i] = static_cast<T>((i % 5) * 1.1f);
+      dy[i] = static_cast<T>(dy[i] == static_cast<T>(0) ? 1 : dy[i]);
     }
     SetCommonTensor(y_, y_dims_, dy.data());
   }
 };
 
 // add sub mul div max   +act
-
+template <class T = float>
 void TestElt(Place place,
              float abs_error,
              std::string elt_type,
@@ -220,7 +238,7 @@ void TestElt(Place place,
     return;
   }
 #endif
-  std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester(
+  std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester<T>(
       place, "def", elt_type, x_shape, y_shape, axis, act_type));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
@@ -281,12 +299,29 @@ TEST(Elementwise, precision) {
 }
 
 #if defined(LITE_WITH_X86)
-TEST(floordiv_x86, precison) {
-  Place place(TARGET(kX86));
-  std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester(
-      place, "float32", "floordiv", {2, 3, 4, 5}, {2, 3, 4, 5}, -1));
-  arena::Arena arena(std::move(tester), place);
+template <class T = float>
+void TestEltX86(Place place,
+                float abs_error,
+                std::string elt_type,
+                const std::string& alias = "def",
+                std::vector<int64_t> x_shape = {2, 3, 4, 5},
+                std::vector<int64_t> y_shape = {2, 3, 4, 5},
+                int axis = -1) {
+  std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester<T>(
+      place, alias, elt_type, x_shape, y_shape, axis));
+  arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
+}
+
+TEST(elementwise_x86, precison) {
+  Place place(TARGET(kX86));
+  float abs_error = 1e-5;
+
+  TestEltX86<float>(place, abs_error, "floordiv", "float32");
+  TestEltX86<int32_t>(place, abs_error, "floordiv", "int32");
+  TestEltX86<int64_t>(place, abs_error, "floordiv", "int64");
+  TestEltX86<int32_t>(place, abs_error, "mod", "int32");
+  TestEltX86<int64_t>(place, abs_error, "mod", "int64");
 }
 #endif
 
