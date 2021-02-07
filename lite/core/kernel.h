@@ -108,9 +108,6 @@ class KernelBase {
 
     Run();
 
-    if (is_first_epoch_for_profiler_ && (!is_kernel_test_)) {
-      is_first_epoch_for_profiler_ = false;
-    }
 
     // skip test
     if (!is_kernel_test_) {
@@ -209,7 +206,6 @@ class KernelBase {
 #ifdef LITE_WITH_PROFILE
   profile::Profiler* profiler_{nullptr};
   int profile_id_{-1};
-  bool is_first_epoch_for_profiler_{true};
   bool is_kernel_test_{true};
 #endif
 #ifdef LITE_WITH_OPENCL
