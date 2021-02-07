@@ -108,7 +108,6 @@ class KernelBase {
 
     Run();
 
-
     // skip test
     if (!is_kernel_test_) {
       SetProfileRuntimeKernelInfo(profiler_->GetOpCharacter(profile_id_));
