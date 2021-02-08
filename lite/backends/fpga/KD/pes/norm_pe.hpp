@@ -34,15 +34,7 @@ class NormPE : public PE {
   }
 
   void apply() {
-    inplace_args_.relu_enable = false;
-    inplace_args_.power_enable = false;
-    inplace_args_.normalize_enable = true;
-
     Shape& input_shape = param_.input->shape();
-
-    norm_param_args_.channel = input_shape.channel();
-    norm_param_args_.hight_width = input_shape.height() * input_shape.width();
-
     float16* mid_data =
         mid_out_.mutableData<float16>(FP16, param_.output->shape());
 
@@ -65,18 +57,23 @@ class NormPE : public PE {
     norm_args_.output_image_address = param_.output->data<float>();
     norm_args_.output_scale_address =
         reinterpret_cast<uint32_t*>(param_.output->scale());
+
+    bypass_args_.inplace.normalize_param.channel = input_shape.channel();
+    bypass_args_.inplace.normalize_param.hight_width =
+        input_shape.height() * input_shape.width();
+    bypass_args_.inplace.normalize_param.enabled = true;
+
+    cpu_compute_ = true;
   }
 
-  void cpuCompute() {
+  void cpu_compute() {
     Tensor input_float;
     Tensor float_out;
     input_float.mutableData<float>(FP32, param_.input->shape());
     float_out.mutableData<float>(FP32, param_.output->shape());
 
-    // param_.input->syncToDevice();
     input_float.copyFrom(param_.input);
     input_float.syncToCPU();
-    // input_float.saveToFile("normalize_", true);
 
     int channel = input_float.shape().channel();
     int height = input_float.shape().height();
@@ -102,24 +99,15 @@ class NormPE : public PE {
       }
     }
     float_out.flush();
-    // float_out.saveToFile("normalize_", true);
     param_.output->copyFrom(&float_out);
   }
 
   bool dispatch() {
-    // cpuCompute();
-    // std::cout << "FPGA normalize ---------------------" << std::endl;
-
-    param_.input->syncToDevice();
-    config_norm_param(norm_param_args_);
-    inplace_args_.normalize_enable = true;
-    config_inplace(inplace_args_);
-
+    if (cpu_compute_) {
+      cpu_compute();
+    }
     perform_bypass(bypass_args_);
-    inplace_args_.normalize_enable = false;
-    config_inplace(inplace_args_);
     compute_norm(norm_args_);
-
     return true;
   }
 
@@ -128,11 +116,9 @@ class NormPE : public PE {
  private:
   NormParam param_;
   Tensor mid_out_;
-  InplaceArgs inplace_args_ = {0};
-  NormalizeParameterArgs norm_param_args_ = {0};
   BypassArgs bypass_args_;
-
   NormalizeArgs norm_args_ = {0};
+  bool cpu_compute_ = false;
 };
 
 }  // namespace zynqmp

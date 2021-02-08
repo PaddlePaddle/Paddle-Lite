@@ -331,7 +331,7 @@ class Tensor {
 
   void saveToFile() {
     std::string path = dimsFileName();
-    // saveToFile(path);
+    saveToFile(path);
   }
 
   void saveToFile(std::string prefix, bool with_shape) {
@@ -400,6 +400,48 @@ class Tensor {
   }
 
   void releaseData() { placeHolder_.reset(); }
+
+  void readHalfFromFile(std::string path) {
+    std::ifstream file_stream;
+    file_stream.open(path);
+    if (!file_stream) {
+      return;
+    }
+    int num = shape_->numel();
+    invalidate();
+    float max = 0.0f;
+    float16* data = mutableData<float16>();
+    for (int i = 0; i < num; ++i) {
+      float value = 0;
+      file_stream >> value;
+      max = std::max(std::abs(value), max);
+      data[i] = float_to_half(value);
+    }
+    flush();
+    placeHolder_->scale_[0] = max / 127.0f;
+    placeHolder_->scale_[1] = 127.0f / max;
+  }
+
+  void readFloatFromFile(std::string path) {
+    std::ifstream file_stream;
+    file_stream.open(path);
+    if (!file_stream) {
+      return;
+    }
+    int num = shape_->numel();
+    invalidate();
+    float max = 0.0f;
+    float* data = mutableData<float>();
+    for (int i = 0; i < num; ++i) {
+      float value = 0;
+      file_stream >> value;
+      max = std::max(std::abs(value), max);
+      data[i] = value;
+    }
+    flush();
+    placeHolder_->scale_[0] = max / 127.0f;
+    placeHolder_->scale_[1] = 127.0f / max;
+  }
 
   void readFromFile(std::string path) {
     std::ifstream file_stream;

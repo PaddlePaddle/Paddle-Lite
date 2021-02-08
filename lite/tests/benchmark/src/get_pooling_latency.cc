@@ -121,7 +121,8 @@ int main(int argc, char** argv) {
   param.output = &y;
   param.output->set_precision(PRECISION(kFloat));
 
-  paddle::lite::kernels::arm::PoolCompute pool;
+  paddle::lite::kernels::arm::PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>
+      pool;
   std::unique_ptr<paddle::lite::KernelContext> ctx1(
       new paddle::lite::KernelContext);
   auto& ctx = ctx1->As<paddle::lite::ARMContext>();
