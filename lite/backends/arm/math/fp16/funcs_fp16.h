@@ -25,6 +25,7 @@
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include "lite/backends/arm/math/fp16/pooling_fp16.h"
 #include "lite/backends/arm/math/fp16/softmax_fp16.h"
+#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {

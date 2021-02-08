@@ -19,6 +19,7 @@
 #include "lite/operators/op_params.h"
 #include "lite/tests/utils/fill_data.h"
 #include "lite/tests/utils/naive_math_impl.h"
+#include "lite/tests/utils/print_info.h"
 #include "lite/tests/utils/tensor_utils.h"
 
 #ifdef LITE_WITH_ARM
@@ -149,17 +150,7 @@ void test_softmax_fp16(const DDim in_dim,
         auto dout_basic_fp16 = tout_basic.mutable_data<float16_t>();
         auto dout_basic_fp32 = tout_basic_fp32.mutable_data<float>();
         fill_data_const<float>(dout_basic_fp32, 0.f, tout_basic_fp32.numel());
-        Timer t0;
-        for (int i = 0; i < FLAGS_repeats; ++i) {
-          t0.Start();
-          softmax_compute_ref<float>(din_fp32, dout_basic_fp32, in_dim, axis);
-          t0.Stop();
-        }
-        VLOG(4) << "basic softmax fp32: input shape: " << in_dim
-                << ", axis: " << axis
-                << ", running time, avg: " << t0.LapTimes().Avg()
-                << ", min time: " << t0.LapTimes().Min();
-
+        softmax_compute_ref<float>(din_fp32, dout_basic_fp32, in_dim, axis);
         // fp32->fp16
         float_to_fp16(dout_basic_fp32, dout_basic, tout_basic.numel());
       }
@@ -190,27 +181,19 @@ void test_softmax_fp16(const DDim in_dim,
         auto ptr = tdiff.mutable_data<float16_t>();
         data_diff(
             basic_ptr, saber_ptr, ptr, tout_basic.numel(), max_ratio, max_diff);
-        LOG(INFO) << "compare result, max diff: " << max_diff
-                  << ", max ratio: " << max_ratio;
+        print_diff_info(max_diff, max_ratio);
         if (std::abs(max_ratio) > 1e-3f) {
           if (max_diff > 4e-3f) {
             int64_t size = tout_basic.numel();
             int64_t width = in_dim[3];
-            LOG(WARNING) << "din";
-            print_tensor(din, size, width);
-            LOG(WARNING) << "basic result";
-            print_tensor(basic_ptr, size, width);
-            LOG(WARNING) << "lite result";
-            print_tensor(saber_ptr, size, width);
-            LOG(WARNING) << "diff result";
-            print_tensor(ptr, size, width);
+            print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
             LOG(FATAL) << "test fp16 softmax: input: " << in_dim
                        << ", axis: " << axis << ", threads: " << th
                        << ", power_mode: " << cls << " failed!!\n";
           }
         }
       }
-      LOG(INFO) << "test fp32 softmax: input: " << in_dim << ", axis: " << axis
+      LOG(INFO) << "test fp16 softmax: input: " << in_dim << ", axis: " << axis
                 << ", threads: " << th << ", power_mode: " << cls
                 << " successed!!\n";
     }
