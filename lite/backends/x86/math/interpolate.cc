@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/interpolate.h"
+#include <omp.h>
 #include <string>
 #include <vector>
 #include "lite/backends/x86/math/math_function.h"
