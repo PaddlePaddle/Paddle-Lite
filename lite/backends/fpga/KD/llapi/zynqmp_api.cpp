@@ -67,6 +67,10 @@ void reset_device() {
   do_ioctl(IOCTL_FPGA_RESET, &args);
 }
 
+void set_pool_cap(uint32_t pool_cap) { POOL_CAP = pool_cap; }
+
+uint32_t get_pool_cap() { return POOL_CAP; }
+
 // memory management;
 void *fpga_malloc(size_t size) {
   std::lock_guard<std::mutex> lock(mem_mutex);
@@ -226,13 +230,14 @@ int perform_bypass(const struct BypassArgs &args) {
   int out_type_size =
       args.output_data_type == DATA_TYPE_FP32 ? sizeof(float) : sizeof(int16_t);
 
+  float16 max_val = 0;
   float scales[2];
   struct BypassArgs bypassArgs = args;
   bypassArgs.image.width = 1;
   bypassArgs.image.height = 1;
-  bypassArgs.output.scale_address = scales;
+  bypassArgs.output.scale_address = &max_val;
 
-  float scale = 0;
+  float max = 0.0f;
   for (int i = 0; i < count; ++i) {
     bypassArgs.image.channels = max_size;
     bypassArgs.image.address =
@@ -240,7 +245,7 @@ int perform_bypass(const struct BypassArgs &args) {
     bypassArgs.output.address =
         reinterpret_cast<char *>(output_address + i * max_size * out_type_size);
     ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
-    scale = std::max(scale, scales[0]);
+    max_val = std::max(half_to_float(max_val), max);
 
     if (ret != 0) {
       return ret;
@@ -255,11 +260,9 @@ int perform_bypass(const struct BypassArgs &args) {
     bypassArgs.output.address = reinterpret_cast<char *>(
         output_address + count * max_size * out_type_size);
     ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
-    scale = std::max(scale, scales[0]);
+    max_val = std::max(half_to_float(max_val), max);
   }
-
-  args.output.scale_address[0] = scale;
-  args.output.scale_address[1] = 1.0f / scale;
+  args.output.scale_address[0] = float_to_half(max);
   return ret;
 }
 

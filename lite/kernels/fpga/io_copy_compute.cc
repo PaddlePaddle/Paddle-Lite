@@ -30,6 +30,7 @@ void copy_properties(operators::IoCopyParam& param) {  // NOLINT
   auto out_lod = param.y->mutable_lod();
   *out_lod = param.x->lod();
   param.y->ZynqTensor()->copyScaleFrom(param.x->ZynqTensor());
+  param.y->ZynqTensor()->copyMaxFrom(param.x->ZynqTensor());
 }
 
 /*
@@ -180,8 +181,7 @@ class IoCopyFpgaToHostCHWCompute
           max = value;
         }
       }
-      param.x->ZynqTensor()->scale()[0] = max / 127;
-      param.x->ZynqTensor()->scale()[1] = 127 / max;
+      param.x->ZynqTensor()->max()[0] = max;
     }
 
     int num = 1;

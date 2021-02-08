@@ -114,8 +114,7 @@ void ConvCompute::PrepareForRun() {
 void ConvCompute::Run() {
   auto& param = this->Param<param_t>();
   if (param.enable_int8) {
-    param.x->ZynqTensor()->scale()[0] = param.input_scale;
-    param.x->ZynqTensor()->scale()[1] = 1 / param.input_scale;
+    param.x->ZynqTensor()->max()[0] = float_to_half(127 * param.input_scale);
   }
 
   if (param.x->ZynqTensor()->shape().channel() != 1 &&

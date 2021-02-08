@@ -43,12 +43,12 @@ class NormPE : public PE {
     bypass_args_.input_layout_type = LAYOUT_HWC;
     bypass_args_.output_layout_type = LAYOUT_HWC;
     bypass_args_.image.address = param_.input->data<void>();
-    bypass_args_.image.scale_address = param_.input->scale();
+    bypass_args_.image.scale_address = param_.input->max();
     bypass_args_.image.channels = input_shape.channel();
     bypass_args_.image.height = input_shape.height();
     bypass_args_.image.width = input_shape.width();
     bypass_args_.output.address = mid_out_.data<void>();
-    bypass_args_.output.scale_address = mid_out_.scale();
+    bypass_args_.output.scale_address = mid_out_.max();
 
     norm_args_.input_image_address = mid_data;
     norm_args_.image_width = input_shape.width();
@@ -56,7 +56,7 @@ class NormPE : public PE {
     norm_args_.image_channel = input_shape.channel();
     norm_args_.output_image_address = param_.output->data<float>();
     norm_args_.output_scale_address =
-        reinterpret_cast<uint32_t*>(param_.output->scale());
+        reinterpret_cast<uint32_t*>(param_.output->max());
 
     bypass_args_.inplace.normalize_param.channel = input_shape.channel();
     bypass_args_.inplace.normalize_param.hight_width =

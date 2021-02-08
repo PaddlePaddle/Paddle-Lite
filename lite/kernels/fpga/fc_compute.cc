@@ -50,8 +50,7 @@ void FcCompute::PrepareForRun() {
 void FcCompute::Run() {
   auto& param = this->Param<param_t>();
   if (param.enable_int8) {
-    param.input->ZynqTensor()->scale()[0] = param.input_scale;
-    param.input->ZynqTensor()->scale()[1] = 1 / param.input_scale;
+    param.x->ZynqTensor()->max()[0] = float_to_half(127 * param.input_scale);
   }
   pe_.dispatch();
 

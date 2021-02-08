@@ -21,8 +21,9 @@ enum DataType : int {
   FP32 = 0,
   FP16 = 1,
   INT8 = 2,
-  INT32 = 3,
-  INT64 = 4,
+  INT16 = 3,
+  INT32 = 4,
+  INT64 = 5,
 };
 
 template <typename T>

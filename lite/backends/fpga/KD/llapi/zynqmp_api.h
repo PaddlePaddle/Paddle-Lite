@@ -18,10 +18,13 @@ limitations under the License. */
 #define PADDLE_LITE_SRC_FPGA_KD_ZYNQMP_API_H
 
 #include <stdint.h>
+
 #include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <limits>
+
+#include "lite/backends/fpga/KD/float16.hpp"
 
 namespace paddle {
 namespace zynqmp {
@@ -32,6 +35,8 @@ typedef int16_t half;
 #define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
 #define BS_NUM_ALIGNMENT 8
 #define BIAS_NUM_ALIGNMENT 16
+
+static int POOL_CAP = 4096;
 
 enum DDataType {
   DATA_TYPE_FP32 = 1,
@@ -121,8 +126,8 @@ struct ImageInputArgs {
 };
 
 struct ImageOutputArgs {
-  void* address;         // output result address;
-  float* scale_address;  // output scale address;
+  void* address;           // output result address;
+  float16* scale_address;  // output scale address;
 };
 
 struct DeconvArgs {
@@ -131,6 +136,18 @@ struct DeconvArgs {
                              // will be divided into several sub conv operation
   uint16_t invalid_col_num;  // which will be dumped in the left and right for
                              // each row directly in FPGA
+};
+
+struct StrideArgs {
+  bool wr_enabled;
+  uint32_t wr_offset;
+  bool rd_enabled;
+  uint32_t rd_offset;
+};
+
+struct QuantArgs {
+  uint16_t dynamic_range;
+  uint32_t inv_dynamic_range;
 };
 
 struct ConvArgs {
@@ -146,18 +163,23 @@ struct ConvArgs {
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
   struct InplaceArgs inplace;
+  struct StrideArgs stride;
+  struct QuantArgs quant;
 };
 
 struct DWconvArgs {
   void* bias_address;
   void* filter_address;
+  void* filter_scale_address;
   struct KernelArgs kernel;
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
   uint16_t out_width;
   uint16_t out_height;
   uint16_t sub_conv_num;
+  uint32_t dilation;
   struct InplaceArgs inplace;
+  struct QuantArgs quant;
 };
 
 struct PoolingArgs {
@@ -169,7 +191,7 @@ struct PoolingArgs {
   uint16_t out_width;
   uint16_t out_height;
   struct InplaceArgs inplace;
-  uint16_t global_pool_factor;
+  struct QuantArgs quant;
 };
 
 // elementwise add arguments
@@ -180,6 +202,7 @@ struct EWAddArgs {
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
   struct InplaceArgs inplace;
+  struct QuantArgs quant;
 };
 
 struct BypassArgs {
@@ -255,10 +278,6 @@ struct PowerParameterArgs {
   uint16_t power;
 };
 
-struct GlobalPoolArgs {
-  uint16_t global_pool_factor;
-};
-
 struct FpgaRegWriteArgs {
   uint64_t address;
   uint64_t value;
@@ -322,6 +341,11 @@ struct FpgaResetArgs {
 std::ostream& operator<<(std::ostream& os, const ConvArgs& args);
 
 inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
+inline int align_to_x_floor(int num, int x) { return (num / x) * x; }
+
+void set_pool_cap(uint32_t pool_cap);
+uint32_t get_pool_cap();
+
 int open_device();
 void close_device();
 void reset_device();

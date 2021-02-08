@@ -43,6 +43,7 @@ class ReluPE : public PE {
       }
     }
     param_.output->copyScaleFrom(param_.input);
+    param_.output->copyMaxFrom(param_.input);
     param_.output->flush();
     return true;
   }
