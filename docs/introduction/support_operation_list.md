@@ -4,7 +4,11 @@
 
 ### 基础算子
 
-默认编译的算子，共计78个：
+默认编译的算子，共计78个。
+
+Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植性强的特点，因此，它一般作为各特定平台算子实现的补充。
+
+举例PaddleLite在ARM上部署模型，如果模型中某个算子没有ARM端Kernel，但是有Host端Kerenel，那么模型优化阶段该算子会选择Host端Kerenel，该模型还是可以顺利部署。
 
 | OP Name | Host | X86 | CUDA | ARM | OpenCL | FPGA | 华为NPU | 百度XPU | 瑞芯微NPU | 联发科APU |
 |-:|-|-|-|-|-|-|-|-|-|-|
@@ -39,8 +43,8 @@
 | fetch | Y | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 |
 | fill_constant | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | fill_constant_batch_size_like | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
-| flatten | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 |
-| flatten2 | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 |
+| flatten | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | Y | 　 |
+| flatten2 | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | Y | 　 |
 | fusion_elementwise_add_activation | 　 | 　 | Y | Y | Y | Y | Y | 　 | 　 | 　 |
 | fusion_elementwise_div_activation | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
 | fusion_elementwise_max_activation | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |
@@ -66,12 +70,12 @@
 | relu | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | Y |
 | relu6 | 　 | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 |
 | reshape | Y | Y | 　 | 　 | Y | 　 | Y | Y | 　 | 　 |
-| reshape2 | Y | Y | 　 | 　 | Y | 　 | Y | Y | 　 | 　 |
-| scale | 　 | Y | Y | Y | Y | Y | Y | Y | 　 | 　 |
+| reshape2 | Y | Y | 　 | 　 | Y | 　 | Y | Y | Y | 　 |
+| scale | 　 | Y | Y | Y | Y | Y | Y | Y | Y | 　 |
 | search_fc | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | sequence_topk_avg_pooling | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 |
 | shuffle_channel | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
-| sigmoid | 　 | Y | Y | Y | Y | 　 | Y | 　 | 　 | 　 |
+| sigmoid | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | 　 |
 | slice | 　 | Y | 　 | Y | Y | 　 | 　 | Y | 　 | 　 |
 | softmax | 　 | Y | Y | Y | 　 | 　 | Y | Y | Y | Y |
 | split | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
@@ -82,7 +86,7 @@
 | tanh | 　 | Y | Y | Y | Y | 　 | Y | Y | 　 | 　 |
 | thresholded_relu | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |
 | transpose | 　 | Y | Y | Y | Y | 　 | Y | Y | 　 | 　 |
-| transpose2 | 　 | Y | Y | Y | Y | 　 | Y | Y | 　 | 　 |
+| transpose2 | 　 | Y | Y | Y | Y | 　 | Y | Y | Y | 　 |
 | unsqueeze | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |
 | unsqueeze2 | Y | 　 | 　 | 　 | 　 | 　 | Y | 　 | 　 | 　 |
 | yolo_box | 　 | 　 | Y | Y | 　 | 　 | 　 | Y | 　 | 　 |

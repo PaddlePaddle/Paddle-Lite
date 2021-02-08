@@ -66,3 +66,10 @@ REGISTER_LITE_KERNEL(scale, kARM, kInt32, kNCHW, scale_int32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
+
+using scale_int64 =
+    paddle::lite::kernels::arm::ScaleCompute<int64_t, PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(scale, kARM, kInt64, kNCHW, scale_int64, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .Finalize();

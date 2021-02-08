@@ -91,6 +91,11 @@ void CompareCompute<PType, CompareFunctor>::Run() {
     }
   } else {
     int axis = (param.axis == -1 ? x_dims.size() - y_dims.size() : param.axis);
+    // If Y contains only one data, all_broad_cast mode will be applied.
+    // In this mode, each member in X will compare to the only var in Y.
+    if (param.Y->numel() == 1) {
+      axis = x_dims.size();
+    }
     int outer_num, mid_num, inner_num;
     get_mid_dims(x_dims, y_dims, axis, &outer_num, &mid_num, &inner_num);
     for (int outer_id = 0; outer_id < outer_num; ++outer_id) {
@@ -248,6 +253,22 @@ REGISTER_LITE_KERNEL(greater_than, kHost, kInt64, kAny, greater_than_int64, def)
     .BindInput("Y",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindPaddleOpVersion("greater_than", 1)
+    .Finalize();
+
+using greater_than_int32 = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kInt32),
+    paddle::lite::kernels::host::_GreaterThanFunctor<int32_t>>;
+REGISTER_LITE_KERNEL(greater_than, kHost, kInt32, kAny, greater_than_int32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(
                     TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})

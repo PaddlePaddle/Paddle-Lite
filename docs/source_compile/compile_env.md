@@ -89,7 +89,7 @@ docker rm <container-name>
 - gcc、g++、git、make、wget、python、adb
 - Java environment
 - cmake（建议使用3.10或以上版本）
-- Android NDK (建议ndk-r17c)
+- Android NDK (支持ndk-r17c及之后的所有ndk版本, 注意从ndk-r18开始，ndk交叉编译工具只支持clang, 不支持gcc)
 
 安装软件部分以 Ubuntu 为例，其他 Linux 发行版类似。
 
@@ -111,13 +111,20 @@ wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
 
 # 4. Download Android NDK for linux-x86_64
 #     Note: Skip this step if NDK installed
-#     recommand android-ndk-r17c-darwin-x86_64
+#     support android-ndk-r17c-linux-x86_64 and other later version such as ndk-r18b or ndk-r20b 
 #     ref: https://developer.android.com/ndk/downloads
 cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
 cd /opt && unzip /tmp/android-ndk-r17c-linux-x86_64.zip
 
 # 5. Add environment ${NDK_ROOT} to `~/.bashrc` 
 echo "export NDK_ROOT=/opt/android-ndk-r17c" >> ~/.bashrc
+source ~/.bashrc
+
+# Note: To other ndk version, the step is similar to the above.
+# Take android-ndk-r20b-linux-x86_64 as example:
+cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r20b-linux-x86_64.zip
+cd /opt && unzip /tmp/android-ndk-r20b-linux-x86_64.zip
+echo "export NDK_ROOT=/opt/android-ndk-r20b" >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -185,7 +192,7 @@ sudo make install
 交叉编译环境要求
 - gcc、git、make、curl、unzip、java
 - cmake（Android编译请使用3.10版本，IOS编译请使用3.15版本）
-- 编译Android: Android NDK (建议ndk-r17c)
+- 编译Android: Android NDK (支持ndk-r17c及之后的所有ndk版本)
 - 编译IOS: XCode(Version 10.1)
 
 ```bash
@@ -230,7 +237,7 @@ brew cask install java
 
 ## 4. Windows开发环境
 
-编译环境需求，目前Windows暂不支持GPU编译，仅支持[X86平台](../demo_guides/x86.html#windows)预测库编译。
+编译环境需求，目前Windows仅支持[X86平台](../demo_guides/x86.html#windows)预测库编译。
 
 - Windows 10 专业版
 - *Python 版本 2.7/3.5.1+ (64 bit)*
