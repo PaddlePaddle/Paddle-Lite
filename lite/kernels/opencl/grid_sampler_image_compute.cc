@@ -110,10 +110,10 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
     int out_height = out_dims[2];
     int out_width = out_dims[3];
 
-    auto* x_img = x->data<half_t, cl::Image2D>();
-    auto* grid_img = x->data<half_t, cl::Image2D>();
-    auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape_[0],
-                                                           out_img_shape_[1]);
+    auto* x_img = GET_DATA_GPU(x);
+    auto* grid_img = GET_DATA_GPU(x);
+    auto* out_img =
+        MUTABLE_DATA_GPU(out, out_img_shape_[0], out_img_shape_[1], nullptr);
 
 #ifdef LITE_WITH_LOG
     auto in_dims = x->dims();
