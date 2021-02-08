@@ -403,6 +403,8 @@ void ConvImageCompute::PrepareForRun() {
   SetLocalWorkSize(CLRuntime::Global()->lws_repeats());
 }
 
+#define SHOW_EACH_LWS_TIME
+#undef SHOW_EACH_LWS_TIME
 void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   auto& context = ctx_->As<OpenCLContext>();
   std::stringstream kernel_key;
@@ -411,8 +413,8 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
 
   auto tuned_map_key = GenerateTunedKey();
   cl::NDRange lws_in_map = cl::NullRange;
-  if (context.cl_context()->HasTunedLocalWorkSizeMap(tuned_map_key,
-                                                     &lws_in_map)) {
+  if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
+                                                    &lws_in_map)) {
     local_work_size_ = lws_in_map;
     return;
   }
@@ -433,24 +435,41 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     return;
   }
 
+#ifdef SHOW_EACH_LWS_TIME
+  LOG(INFO) << "====== start =======";
+#endif
   double min_lws_time = DBL_MAX;
   cl::NDRange min_lws = lwss[0];
   for (size_t i = 0; i < lwss.size(); ++i) {
     local_work_size_ = lwss[i];
     double cur_lws_time = 0.0f;
+    // note: useless for skip first run
     for (size_t i = 0; i < repeats; ++i) {
       Run();
       cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
     }
     cur_lws_time /= repeats;
+#ifdef SHOW_EACH_LWS_TIME
+    LOG(INFO) << GenerateTunedKey() << " "
+              << "{" << std::to_string(local_work_size_[0]) << ","
+              << std::to_string(local_work_size_[1]) << ","
+              << std::to_string(local_work_size_[2]) << "} -->" << cur_lws_time;
+#endif
     if (min_lws_time > cur_lws_time) {
       min_lws = lwss[i];
       min_lws_time = cur_lws_time;
     }
   }
+#ifdef SHOW_EACH_LWS_TIME
+  LOG(INFO) << "=======================";
+  LOG(INFO) << "best:" << std::to_string(min_lws[0])
+            << std::to_string(min_lws[1]) << std::to_string(min_lws[2])
+            << " time:" << min_lws_time;
+  LOG(INFO) << "======= finish ========";
+#endif
   local_work_size_ = min_lws;
-  context.cl_context()->SetTunedLocalWorkSizeMap(tuned_map_key,
-                                                 local_work_size_);
+  CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,
+                                                local_work_size_);
 }
 
 std::string ConvImageCompute::GenerateTunedKey() {

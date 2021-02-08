@@ -352,24 +352,36 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
 
 void CLRuntime::SaveProgram() {
   // check whether precompiled binary is ON/OFF
-  if (binary_path_name_.empty()) return;
-
   // check whether binary exist
-  std::string file_name =
+  std::string binary_file =
       binary_path_name_.at(0) + "/" + binary_path_name_.at(1);
-  if (IsFileExists(file_name)) {
-    return;
+  if (IsFileExists(binary_file) || binary_path_name_.empty()) {
+    // do nothing
   } else {
-    bool ret = Serialize(file_name, programs_precompiled_binary_);
-    CHECK(ret) << "Serialize failed.";
-
+    bool ret = Serialize(binary_file, programs_precompiled_binary_);
+    CHECK(ret) << "Serialize failed for opencl binary_file:" << binary_file;
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "Programs have been serialized to disk successfully. File: "
-              << file_name;
+              << binary_file;
+#endif
+  }
+
+  // check tuned
+  std::string tuned_file =
+      tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
+  if (IsFileExists(tuned_file) || tuned_path_name_.empty()) {
+    // do nothing
+  } else {
+    bool ret = Serialize(tuned_file, uned_lwss_map_);
+    CHECK(ret) << "Serialize failed for opencl tuned_file:" << tuned_file;
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "Programs have been serialized to disk successfully. File: "
+              << tuned_file;
 #endif
   }
 }
 
+// binary
 bool CLRuntime::Serialize(
     const std::string file_name,
     const std::map<std::string, cl::Program::Binaries>& map_data) {
@@ -389,6 +401,28 @@ bool CLRuntime::Deserialize(
 
   fbs::opencl::Cache cache{buffer};
   *map_ptr = cache.GetBinaryMap();
+  return true;
+}
+
+// tuned param
+bool CLRuntime::Serialize(const std::string file_name,
+                          const std::map<std::string, cl::NDRange>& map_data) {
+  fbs::opencl::TuneCache cache{map_data};
+  std::vector<uint8_t> buffer;
+  // TODO(ysh329): add impl.
+  //  cache.CopyDataToBuffer(&buffer);
+
+  WriteFile<uint8_t>(file_name, buffer);
+  return true;
+}
+
+bool CLRuntime::Deserialize(const std::string file_name,
+                            std::map<std::string, cl::NDRange>* map_ptr) {
+  std::vector<uint8_t> buffer;
+  ReadFile<uint8_t>(file_name, &buffer);
+  // TODO(ysh329): add impl.
+  // fbs::opencl::TuneCache cache{buffer};
+  //  *map_ptr = cache.GetBinaryMap();
   return true;
 }
 
@@ -725,8 +759,40 @@ void CLRuntime::GetAdrenoContextProperties(
   properties->push_back(0);
 }
 
+bool CLRuntime::HasTunedLocalWorkSizeMap(const std::string& key,
+                                         cl::NDRange* lws) {
+  bool has = false;
+  // step1 check map
+  auto it = tuned_lwss_map_.find(key);
+  if (it != tuned_lwss_map_.end()) {
+    *lws = it->second;
+    has = true;
+  }
+#if 0
+  // step2 check binary file & extend map
+  if (CheckTunedBinaryFile(key, lws)) {
+    has = true;
+  }
+#endif
+  return has;
+}
+
+void CLRuntime::SetTunedLocalWorkSizeMap(const std::string& key,
+                                         const cl::NDRange lws) {
+  auto it = tuned_lwss_map_.find(key);
+  if (it != tuned_lwss_map_.end()) {
+    auto lws_old = it->second;
+    LOG(FATAL) << "===> found lws_old with same key, please add more detailed "
+                  "info to key <==="
+               << "\n lws_old:" << lws_old[0] << "," << lws_old[1] << ","
+               << lws_old[2] << "\n lws_new:" << lws[0] << "," << lws[1] << ","
+               << lws[2];
+  }
+  tuned_lwss_map_.insert(std::pair<std::string, cl::NDRange>(key, lws));
+}
+
 double CLRuntime::GetCommandTime(const cl::Event& event) {
-  command_queue().finish();
+  //  command_queue().finish();
   auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
   return (stop_nanos - start_nanos) / 1000000.0;

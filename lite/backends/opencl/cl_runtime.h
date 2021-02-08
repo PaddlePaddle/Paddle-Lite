@@ -20,6 +20,7 @@ limitations under the License. */
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_utility.h"
 #include "lite/backends/opencl/cl_wrapper.h"
+#include "lite/utils/io.h"
 
 typedef enum {
   UNKNOWN = 0,
@@ -109,9 +110,26 @@ class CLRuntime {
     return is_device_avaliable_for_opencl_;
   }
 
-  void set_auto_tune(lite_api::CLTuneMode tune_mode, size_t lws_repeats = 4) {
+  void set_auto_tune(lite_api::CLTuneMode tune_mode,
+                     const std::string& path,
+                     const std::string& name,
+                     size_t lws_repeats = 4) {
     auto_tune_ = tune_mode;
     lws_repeats_ = lws_repeats;
+    tuned_path_name_[0] = path;
+    tuned_path_name_[1] = name;
+    const std::string tuned_file = path + "/" + name;
+    if (IsFileExists(tuned_file)) {
+#ifdef LITE_WITH_LOG
+      LOG(INFO) << "Load tuned file: " << tuned_file;
+#endif
+      bool status = Deserialize(tuned_file, &tuned_lwss_map_);
+      if (!status) {
+        LOG(ERROR) << "failed to deserialize tuned_file:" << tuned_file;
+      }
+    } else {
+      LOG(INFO) << "Not found tuned file:" << tuned_file;
+    }
     command_queue_ = CreateCommandQueue(context());
   }
 
@@ -197,6 +215,10 @@ class CLRuntime {
 
   double GetSubmitTime(const cl::Event& event);
 
+  bool HasTunedLocalWorkSizeMap(const std::string& key, cl::NDRange* lws);
+
+  void SetTunedLocalWorkSizeMap(const std::string& key, const cl::NDRange lws);
+
  private:
   CLRuntime() { Init(); }
 
@@ -255,12 +277,22 @@ class CLRuntime {
   }
 
   OpenCLVersion ParseDeviceVersion(const std::string& device_version);
+
   GpuType ParseGpuTypeFromDeviceName(std::string device_name);
 
+  // binary
   bool Serialize(const std::string file_name,
                  const std::map<std::string, cl::Program::Binaries>& map_data);
+
   bool Deserialize(const std::string file_name,
                    std::map<std::string, cl::Program::Binaries>* map_ptr);
+
+  // tuned param
+  bool Serialize(const std::string file_name,
+                 const std::map<std::string, cl::NDRange>& map_data);
+
+  bool Deserialize(const std::string file_name,
+                   std::map<std::string, cl::NDRange>* map_ptr);
 
   std::map<std::string, size_t> device_info_;
 
@@ -299,7 +331,9 @@ class CLRuntime {
 
   std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::map<std::string, cl::Program::Binaries> programs_precompiled_binary_;
+  std::map<std::string, cl::NDRange> tuned_lwss_map_;
   std::vector<std::string> binary_path_name_;
+  std::vector<std::string> tuned_path_name_(2);
   // magic number for precompiled binary
   const std::string sn_key_{"lite_opencl_precompiled_binary_identifier"};
 };

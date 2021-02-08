@@ -166,7 +166,6 @@ std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(cl::NDRange gws,
   return lwss;
 }
 
-#if 1
 cl::NDRange CLContext::DefaultLocalWorkSize(
     const cl::NDRange &gws,
     register size_t max_ws,
@@ -196,93 +195,9 @@ cl::NDRange CLContext::DefaultLocalWorkSize(
 
   return reverse ? cl::NDRange{lz, ly, lx} : cl::NDRange{lx, ly, lz};
 }
-#else
-cl::NDRange CLContext::DefaultLocalWorkSize(
-    cl::NDRange global_work_size,
-    size_t max_work_size,
-    int divisor /*=2*/,
-    bool tune_reverse /*=false*/,
-    size_t user_defined_max_work_size /*=0*/) {
-  int gws0 = global_work_size[0];
-  int gws1 = global_work_size[1];
-  int gws2 = global_work_size[2];
-
-  if (tune_reverse) {
-    gws2 = global_work_size[0];
-    gws1 = global_work_size[1];
-    gws0 = global_work_size[2];
-  }
-
-  if (divisor > 1) {
-    max_work_size /= divisor;
-  }
-  if (user_defined_max_work_size > 0 &&
-      user_defined_max_work_size <= max_work_size) {
-    max_work_size = user_defined_max_work_size;
-  }
-
-  while (gws1 > max_work_size && max_work_size > 0) {
-    gws1 = gws1 % 2 == 0 ? gws1 / 2 : 1;
-  }
-  while (gws2 * gws1 > max_work_size && max_work_size > 0) {
-    gws2 = gws2 % 2 == 0 ? gws2 / 2 : 1;
-  }
-  while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
-    gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
-  }
-
-  if (tune_reverse) {
-    return cl::NDRange{static_cast<size_t>(gws2),
-                       static_cast<size_t>(gws1),
-                       static_cast<size_t>(gws0)};
-  } else {
-    return cl::NDRange{static_cast<size_t>(gws0),
-                       static_cast<size_t>(gws1),
-                       static_cast<size_t>(gws2)};
-  }
-}
-#endif
 
 bool CLContext::IsArmMali() {
   return CLRuntime::Global()->GetGpuType() == GpuType::ARM_MALI;
-}
-
-bool CLContext::HasTunedLocalWorkSizeMap(const std::string &key,
-                                         cl::NDRange *lws) {
-  bool has = false;
-  auto it = tuned_lwss_map_.find(key);
-  if (it != tuned_lwss_map_.end()) {
-    *lws = it->second;
-    has = true;
-  }
-  return has;
-}
-
-void CLContext::SetTunedLocalWorkSizeMap(const std::string &key,
-                                         const cl::NDRange lws) {
-  auto it = tuned_lwss_map_.find(key);
-  if (it != tuned_lwss_map_.end()) {
-    auto lws_old = it->second;
-    LOG(FATAL) << "===> found lws_old with same key, please add more detailed "
-                  "info to key <==="
-               << "\n lws_old:" << lws_old[0] << "," << lws_old[1] << ","
-               << lws_old[2] << "\n lws_new:" << lws[0] << "," << lws[1] << ","
-               << lws[2];
-  }
-  tuned_lwss_map_.insert(std::pair<std::string, cl::NDRange>(key, lws));
-}
-
-std::map<std::string, cl::NDRange> CLContext::GetTunedLocalWorkSizeMap() {
-  return tuned_lwss_map_;
-}
-
-cl::NDRange CLContext::GetTunedLocalWorkSizeFromMap(const std::string &key) {
-  cl::NDRange lws = cl::NullRange;
-  auto it = tuned_lwss_map_.find(key);
-  if (it != tuned_lwss_map_.end()) {
-    lws = it->second;
-  }
-  return lws;
 }
 
 }  // namespace lite
