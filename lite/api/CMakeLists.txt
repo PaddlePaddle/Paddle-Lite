@@ -1,4 +1,3 @@
-
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
   lite_cc_library(place SRCS paddle_place.cc DEPS logging)
 else()
@@ -83,6 +82,12 @@ else()
         set(TARGET_COMIPILE_FLAGS "-fdata-sections")
         if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc
             set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
+            # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
+            if(NOT APPLE)
+                SET(CMAKE_AR "gcc-ar")
+                SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
+                SET(CMAKE_CXX_ARCHIVE_FINISH   true)
+            endif()
             # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
             if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
                 set(TARGET_COMIPILE_FLAGS "")
@@ -121,9 +126,6 @@ else()
     # 3. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
     # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
     if(NOT APPLE)
-        SET(CMAKE_AR "gcc-ar")
-        SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
-        SET(CMAKE_CXX_ARCHIVE_FINISH   true)
         add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
     else()
         add_library(paddle_api_light_bundled SHARED ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
