@@ -112,6 +112,7 @@ else()
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
     endif()
+
     # 2. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
     if (LITE_WITH_JAVA AND LITE_WITH_ARM)
       add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
@@ -123,9 +124,10 @@ else()
           target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
       endif()
     endif()
+
     # 3. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
     # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
-    if(NOT APPLE)
+    if(NOT APPLE OR IOS)
         add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
     else()
         add_library(paddle_api_light_bundled SHARED ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
