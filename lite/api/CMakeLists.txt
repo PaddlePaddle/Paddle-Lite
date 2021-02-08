@@ -74,12 +74,12 @@ else()
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
     add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+    add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers)
+
     # 2. produce dynamic lib `libpaddle_light_api_shared.so` from `PADDLELITE_OBJS`
     if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
-        add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+        # compile flags
         set(TARGET_COMIPILE_FLAGS "-fdata-sections")
-        set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-        add_dependencies(paddle_light_api_shared op_list_h kernel_list_h fbs_headers)
         if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc
             set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
             # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
@@ -87,6 +87,11 @@ else()
                 set(TARGET_COMIPILE_FLAGS "")
             endif()
         endif()
+        # set compile flags for PADDLELITE_OBJS
+        set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
+        # produce dynamic lib from PADDLELITE_OBJS
+        add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+        set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
         # link `paddle_light_api_shared` to third-party libs
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
