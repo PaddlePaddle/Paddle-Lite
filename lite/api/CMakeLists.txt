@@ -75,10 +75,11 @@ else()
     # 1. compile all source files into .object `PADDLELITE_OBJS`
     add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
     add_dependencies(PADDLELITE_OBJS op_list_h kernel_list_h fbs_headers)
-
-    # 2. produce dynamic lib `libpaddle_light_api_shared.so` from `PADDLELITE_OBJS`
-    if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux"))
-        # compile flags
+    if (IOS)
+        # only sttaic lib is produced for IOS platform.
+        add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+    else()
+        # 1. enable -flto compiling flag if toochain==gcc
         set(TARGET_COMIPILE_FLAGS "-fdata-sections")
         if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc
             set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
@@ -93,12 +94,13 @@ else()
                 set(TARGET_COMIPILE_FLAGS "")
             endif()
         endif()
-        # set compile flags for PADDLELITE_OBJS
+        #   1.1 enable -flto on PADDLELITE_OBJS
         set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-        # produce dynamic lib from PADDLELITE_OBJS
+
+        # 2. produce dynamic lib from PADDLELITE_OBJS
         add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
         set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
-        # link `paddle_light_api_shared` to third-party libs
+        #   2.1 link `paddle_light_api_shared` to third-party libs
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
@@ -111,26 +113,25 @@ else()
             # Need to add IMG IMAGINATION_NNA runtime libs (libimgdnn.so, libnnasession.so) dependency
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
-    endif()
 
-    # 2. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
-    if (LITE_WITH_JAVA AND LITE_WITH_ARM)
-      add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
+        # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
+        if (LITE_WITH_JAVA)
+          add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
+          set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS ${TARGET_COMIPILE_FLAGS})
+          set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lite/api/android/jni/native)
+          if (LITE_WITH_NPU)
+              # Need to add HIAI runtime libs (libhiai.so) dependency
+              target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
+          endif()
+        endif()
 
-      set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS ${TARGET_COMIPILE_FLAGS})
-      set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lite/api/android/jni/native)
-      if (LITE_WITH_NPU)
-          # Need to add HIAI runtime libs (libhiai.so) dependency
-          target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
-      endif()
-    endif()
-
-    # 3. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
-    # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
-    if(NOT APPLE OR IOS)
-        add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
-    else()
-        add_library(paddle_api_light_bundled SHARED ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+        # 4. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
+        # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
+        if(NOT APPLE)
+            add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+        else()
+            add_library(paddle_api_light_bundled SHARED ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+        endif()
     endif()
 endif()
 
