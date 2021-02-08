@@ -146,12 +146,11 @@ void ConvImageCompute::PrepareForRun() {
 #endif
 #undef DEPTH_CONV_USE_SPL
              ) {
-    // depth_conv2d
-    CHECK(pad_equal && dilation_equal);
-    kernel_func_names_.push_back("depth_conv2d");
+    // common depth_conv2d
+    kernel_func_names_.push_back("depth_conv2d_common");
     kernel_func_paths_.push_back("image/depthwise_conv2d_basic_kernel.cl");
 
-    CLImageConverterNWBlock converter;
+    CLImageConverterDWFilter converter;
     const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
     filter_image_h_ = filter_image_dims[1];
     filter_image_w_ = filter_image_dims[0];
@@ -579,6 +578,10 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
     input_c_block_ = static_cast<const int>((input_tensor_c_ + 3) / 4);
+  } else if (kernel_func_names_[0] == "depth_conv2d_common") {
+    global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
+                                    static_cast<size_t>((w_blk_ + 3) / 4),
+                                    static_cast<size_t>(nh_blk_)};
   } else if (kernel_func_names_[0] == "conv2d_3x3") {
     global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
                                     static_cast<size_t>(w_blk_),
@@ -981,27 +984,29 @@ void ConvImageCompute::DepthwiseConv2d() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(6, *output_image_p_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(7, stride_h_);
+  status_ = kernel_.setArg(7, stride_w_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(8, stride_w_);
+  status_ = kernel_.setArg(8, stride_h_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, offset_);
+  status_ = kernel_.setArg(9, pad_up_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(10, input_c_block_);
+  status_ = kernel_.setArg(10, pad_left_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(11, dilation_h_);
+  status_ = kernel_.setArg(11, dilation_w_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(12, input_tensor_w_);
+  status_ = kernel_.setArg(12, dilation_h_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(13, input_tensor_h_);
+  status_ = kernel_.setArg(13, input_tensor_w_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(14, output_tensor_w_);
+  status_ = kernel_.setArg(14, input_tensor_h_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(15, output_tensor_h_);
+  status_ = kernel_.setArg(15, output_tensor_w_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(16, filter_tensor_w_);
+  status_ = kernel_.setArg(16, output_tensor_h_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(17, filter_tensor_h_);
+  status_ = kernel_.setArg(17, filter_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(18, filter_tensor_h_);
   CL_CHECK_FATAL(status_);
 }
 
