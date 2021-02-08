@@ -15,8 +15,8 @@ limitations under the License. */
 #include <cl_common.h>
 
 
-__kernel void depth_conv2d_common(__private const int global_size_dim0, // out_c / 4
-                                  __private const int global_size_dim1, // out_w / 4
+__kernel void depth_conv2d_common(__private const int global_size_dim0, // (out_c + 1) / 4
+                                  __private const int global_size_dim1, // (out_w + 1) / 4
                                   __private const int global_size_dim2, // out_n * out_h
                                   __read_only image2d_t input,
                                   __read_only image2d_t filter,
@@ -64,12 +64,12 @@ __kernel void depth_conv2d_common(__private const int global_size_dim0, // out_c
   CL_DTYPE4 out3 = 0;
 #endif
 
-  const short in_w_offset0 = mad24(out_w_blk, stride_w << 2, -(pad_left >> 1)); // out_w_blk * stride_w * 4 - pad_left/2
+  const short in_w_offset0 = mad24(out_w_blk, stride_w << 2, -pad_left); // out_w_blk * stride_w * 4 - pad_left
   const short in_w_offset1 = in_w_offset0 + stride_w;
   const short in_w_offset2 = in_w_offset1 + stride_w;
   const short in_w_offset3 = in_w_offset2 + stride_w;
 
-  short in_h_idx = mad24(out_nh % output_height, stride_h, -(pad_up >> 1)); // out_nh % output_height * stride_h - pad_up/2. height index of one input feature map
+  short in_h_idx = mad24(out_nh % output_height, stride_h, -pad_up); // out_nh % output_height * stride_h - pad_up. height index of one input feature map
   const short batch_idx = out_nh / output_height;
   const short in_c_blk = out_c_blk;
 

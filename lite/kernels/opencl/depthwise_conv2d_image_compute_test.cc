@@ -28,9 +28,9 @@ namespace lite {
 
 #define SHADOW_LOG VLOG(4)
 #define FP16_MAX_DIFF (1e0)
-#define FP16_ABS_DIFF (1e-1)
+#define FP16_ABS_DIFF (1e-3)
 #define TEST_DEPTHWISE_CONV_IMAGE_BASIC
-#define TEST_DEPTHWISE_CONV_IMAGE_3X3
+// #define TEST_DEPTHWISE_CONV_IMAGE_3X3
 
 #define LEAKY_RELU_ALPHA (0.1)
 template <typename Dtype1, typename Dtype2>
@@ -222,12 +222,13 @@ int ConvOutputSize(int input_size,
 #ifdef TEST_DEPTHWISE_CONV_IMAGE_BASIC
 // #define LOOP_TEST
 TEST(depthwise_conv2d, compute_basic) {
+  CLRuntime::Global()->set_precision(lite_api::CL_PRECISION_FP32);
   const int fc = 1;
   const int fw = 7;
   const int fh = fw;
-  const int dilation = 1;
-  const int stride = 1;
-  const int pad = 0;
+  const int dilation = 2;
+  const int stride = 2;
+  const int pad = 3;
   const bool bias_flag = false;
   const std::string relu_flag = "leaky_relu";
 #ifdef LOOP_TEST
@@ -236,7 +237,7 @@ TEST(depthwise_conv2d, compute_basic) {
     for (int ih = 3; ih < 15; ih += 1) {    // ih
       for (int iw = 3; iw < 15; iw += 1) {  // iw
 #else
-  const int ic = 5;
+  const int ic = 6;  //
   const int ih = 112;
   const int iw = 112;
 #endif
@@ -348,14 +349,14 @@ TEST(depthwise_conv2d, compute_basic) {
             default_converter->InitImageDimInfoWith(input.dims());
         LOG(INFO) << "input_image_shape = " << input_image_shape[0] << " "
                   << input_image_shape[1];
-        std::vector<half_t> input_image_data(input_image_shape.production() *
-                                             4);  // 4 : RGBA
+        std::vector<float> input_image_data(input_image_shape.production() *
+                                            4);  // 4 : RGBA
         default_converter->NCHWToImage(
             input_v.data(), input_image_data.data(), input.dims());
         auto* input_image =
-            input.mutable_data<half_t, cl::Image2D>(input_image_shape[0],
-                                                    input_image_shape[1],
-                                                    input_image_data.data());
+            input.mutable_data<float, cl::Image2D>(input_image_shape[0],
+                                                   input_image_shape[1],
+                                                   input_image_data.data());
 
         LOG(INFO) << "prepare kernel";
         filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
@@ -366,7 +367,7 @@ TEST(depthwise_conv2d, compute_basic) {
             default_converter->InitImageDimInfoWith(output.dims());
         LOG(INFO) << "output_image_shape = " << output_image_shape[0] << " "
                   << output_image_shape[1];
-        auto* output_image = output.mutable_data<half_t, cl::Image2D>(
+        auto* output_image = output.mutable_data<float, cl::Image2D>(
             output_image_shape[0], output_image_shape[1]);
 
         kernel->Launch();
@@ -403,8 +404,8 @@ TEST(depthwise_conv2d, compute_basic) {
         const size_t cl_image2d_row_pitch{0};
         const size_t cl_image2d_slice_pitch{0};
 
-        std::vector<half_t> output_image_data(output_image_shape.production() *
-                                              4);
+        std::vector<float> output_image_data(output_image_shape.production() *
+                                             4);
         TargetWrapperCL::ImgcpySync(output_image_data.data(),
                                     output_image,
                                     output_image_shape[0],
@@ -423,6 +424,9 @@ TEST(depthwise_conv2d, compute_basic) {
           auto relative_diff =
               COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
           auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
+          LOG(INFO) << "idx: " << i << " abs_diff: " << abs_diff
+                    << " out_ins: " << output_v[i]
+                    << "\t out_ref: " << out_ref_data[i];
           EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                        abs_diff > FP16_ABS_DIFF);
           if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
