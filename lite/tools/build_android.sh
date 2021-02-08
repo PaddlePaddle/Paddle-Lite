@@ -206,15 +206,9 @@ function make_tiny_publish_so {
 
   # Step4. Compile libs: cxx_lib, java_lib, opencl_lib
   if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j
+      make opencl_clhpp -j$NUM_PROC
   fi
-  make tiny_publish_cxx_lib -j$NUM_PROC
-  if [ "${WITH_JAVA}" == "ON" ]; then
-      make publish_inference_java_lib -j$NUM_PROC
-  fi
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make publish_inference_opencl -j$NUM_PROC
-  fi
+  make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
 

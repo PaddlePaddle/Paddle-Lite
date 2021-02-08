@@ -106,19 +106,19 @@ else()
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
     endif()
-    # 2. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
-    add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
-    # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
+    # 2. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
     if (LITE_WITH_JAVA AND LITE_WITH_ARM)
-      add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+      add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
+
       set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS ${TARGET_COMIPILE_FLAGS})
       set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lite/api/android/jni/native)
-      target_sources(paddle_lite_jni PUBLIC android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
       if (LITE_WITH_NPU)
           # Need to add HIAI runtime libs (libhiai.so) dependency
           target_link_libraries(paddle_lite_jni ${npu_builder_libs} ${npu_runtime_libs})
       endif()
     endif()
+    # 3. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
+   add_library(paddle_api_light_bundled STATIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
 endif()
 
 if (WITH_TESTING)
