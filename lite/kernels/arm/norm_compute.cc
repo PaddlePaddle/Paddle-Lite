@@ -38,6 +38,24 @@ void NormCompute::Run() {
   lite::arm::math::norm(x_data, pre_n, n, post_n, param.epsilon, o_data, &ctx);
 }
 
+void PNormCompute::Run() {
+  auto& param = this->Param<operators::PNormParam>();
+  auto x = param.X;
+  auto xdims = x->dims();
+  float porder = param.porder;
+  int axis = param.axis;
+  const auto* x_data = x->data<float>();
+  auto* out_data = param.Out->mutable_data<float>();
+  if (axis < 0) {
+    axis += xdims.size();
+  }
+  int pre = xdims.count(0, axis);
+  int post = xdims.count(axis + 1, xdims.size());
+  int n = xdims[axis];
+  lite::arm::math::p_norm(
+      x_data, pre, n, post, param.epsilon, out_data, porder);
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -48,4 +66,10 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    p_norm, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PNormCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
