@@ -1,3 +1,4 @@
+
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
   lite_cc_library(place SRCS paddle_place.cc DEPS logging)
 else()
@@ -118,7 +119,15 @@ else()
       endif()
     endif()
     # 3. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
-   add_library(paddle_api_light_bundled STATIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+    # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
+    if(NOT APPLE)
+        SET(CMAKE_AR "gcc-ar")
+        SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
+        SET(CMAKE_CXX_ARCHIVE_FINISH   true)
+        add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+    else()
+        add_library(paddle_api_light_bundled SHARED ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+    endif()
 endif()
 
 if (WITH_TESTING)
