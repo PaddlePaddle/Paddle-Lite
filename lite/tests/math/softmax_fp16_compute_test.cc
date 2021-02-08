@@ -17,11 +17,12 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/operators/op_params.h"
+#include "lite/tests/utils/fill_data.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #include "lite/tests/utils/tensor_utils.h"
 
 #ifdef LITE_WITH_ARM
-#include "lite/kernels/arm/pool_compute.h"
+#include "lite/kernels/arm/softmax_compute.h"
 #endif  // LITE_WITH_ARM
 
 DEFINE_int32(power_mode,
@@ -55,7 +56,6 @@ void softmax_compute_ref(const dtype* x_data,
                          const DDim x_dims,
                          int axis) {
   auto x_rank = x_dims.size();
-  int axis = param.axis;
   if (axis < 0) {
     axis += x_rank;
   }
@@ -129,53 +129,40 @@ void test_softmax_fp16(const DDim in_dim,
       Tensor x_fp32;
       x_fp32.Resize(in_dim);
       x_fp32.set_precision(PRECISION(kFloat));
-      a_ptr = x_fp32.mutable_data<float>();
-      b_ptr = param.x->mutable_data<float16_t>();
-      fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.x->numel());
-      // fill_data_const<float16_t>(b_ptr, -1.f, param.x->numel());
+      auto a_ptr = x_fp32.mutable_data<float>();
+      auto b_ptr = param.x->mutable_data<float16_t>();
+      // fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.x->numel());
+      fill_data_const<float16_t>(b_ptr, -1.f, param.x->numel());
       fp16_to_float(param.x->data<float16_t>(), a_ptr, param.x->numel());
       auto din = param.x->data<float16_t>();
       auto din_fp32 = x_fp32.data<float>();
 
       Tensor tout_basic;
-      Tensor tout_basic_fp16;
       if (FLAGS_check_result) {
         Tensor tout_basic_fp32;
         tout_basic_fp32.set_precision(PRECISION(kFloat));
-        tout_basic_fp16.set_precision(PRECISION(kFP16));
         tout_basic.set_precision(PRECISION(kFP16));
         tout_basic_fp32.Resize(in_dim);
-        tout_basic_fp16.Resize(in_dim);
         tout_basic.Resize(in_dim);
 
         auto dout_basic = tout_basic.mutable_data<float16_t>();
         auto dout_basic_fp16 = tout_basic.mutable_data<float16_t>();
         auto dout_basic_fp32 = tout_basic_fp32.mutable_data<float>();
-        fill_data_const<float16_t>(
-            dout_basic_fp16, 0.f, tout_basic_fp16.numel());
         fill_data_const<float>(dout_basic_fp32, 0.f, tout_basic_fp32.numel());
-        softmax_compute_ref<float>(
-            din_fp32, dout_basic_fp32, in_dim, axis_size);
-        softmax_compute_ref<float16_t>(din, dout_basic_fp16, in_dim, axis_size);
+        Timer t0;
+        for (int i = 0; i < FLAGS_repeats; ++i) {
+          t0.Start();
+          softmax_compute_ref<float>(din_fp32, dout_basic_fp32, in_dim, axis);
+          t0.Stop();
+        }
+        VLOG(4) << "basic softmax fp32: input shape: " << in_dim
+                << ", axis: " << axis
+                << ", running time, avg: " << t0.LapTimes().Avg()
+                << ", min time: " << t0.LapTimes().Min();
+
         // fp32->fp16
-        float_to_fp16(dout_basic_fp32, dout_basic, tout_basic_fp16.numel());
-        // basic_diff: fp16 - (fp32->fp16)
-        double basic_max_ratio = 0.0;
-        double basic_max_diff = 0.0;
-        Tensor tout_basic_diff;
-        tout_basic_diff.set_precision(PRECISION(kFP16));
-        tout_basic_diff.Resize(in_dim);
-        auto diff_ptr = tout_basic_diff.mutable_data<float16_t>();
-        data_diff(dout_basic,
-                  dout_basic_fp16,
-                  diff_ptr,
-                  tout_basic.numel(),
-                  basic_max_ratio,
-                  basic_max_diff);
-        VLOG(4) << "compare result, max diff: " << basic_max_diff
-                << ", max ratio: " << basic_max_ratio;
+        float_to_fp16(dout_basic_fp32, dout_basic, tout_basic.numel());
       }
-      LOG(INFO) << "lite compute";
       /// warm up
       for (int i = 0; i < FLAGS_warmup; ++i) {
         softmax.Launch();
@@ -188,14 +175,14 @@ void test_softmax_fp16(const DDim in_dim,
         t0.Stop();
       }
 
-      LOG(INFO) << "softmax fp16: input shape: " << in_dim << ", axis" << axis
-                << ", running time, avg: " << t0.LapTimes().Avg()
-                << ", min time: " << t0.LapTimes().Min();
+      VLOG(4) << "softmax fp16: input shape: " << in_dim << ", axis: " << axis
+              << ", running time, avg: " << t0.LapTimes().Avg()
+              << ", min time: " << t0.LapTimes().Min();
 
       if (FLAGS_check_result) {
         double max_ratio = 0;
         double max_diff = 0;
-        auto basic_ptr = tout_basic_fp16.data<float16_t>();
+        auto basic_ptr = tout_basic.data<float16_t>();
         auto saber_ptr = param.output->data<float16_t>();
         Tensor tdiff;
         tdiff.Resize(tout_basic.dims());
@@ -206,7 +193,7 @@ void test_softmax_fp16(const DDim in_dim,
         LOG(INFO) << "compare result, max diff: " << max_diff
                   << ", max ratio: " << max_ratio;
         if (std::abs(max_ratio) > 1e-3f) {
-          if (max_diff > 5e-4f) {
+          if (max_diff > 4e-3f) {
             int64_t size = tout_basic.numel();
             int64_t width = in_dim[3];
             LOG(WARNING) << "din";
@@ -228,11 +215,11 @@ void test_softmax_fp16(const DDim in_dim,
                 << " successed!!\n";
     }
   }
+
+  delete param.x;
+  delete param.output;
 }
 
-delete param.x;
-delete param.output;
-}
 #else
 void test_softmax_fp16(const DDim in_dim,
                        int axis,
@@ -261,7 +248,7 @@ TEST(TestPoolRand, test_pool_rand) {
 
 #if 1  /// custom
 TEST(TesPoolCustom, test_pool_fp32_custom_size) {
-  test_pool_fp32(
+  test_softmax_fp16(
       DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width}),
       FLAGS_axis,
       {FLAGS_threads},

@@ -96,26 +96,22 @@ void softmax_inner8_axis4_fp16(const float16_t* din,
     float16x8_t vmax = vmaxq_f16(vmax1, vmax2);
 
     // sub, exp and sum
-    float16x8_t vsum0 = expq_ps_fp16(vsubq_f16(vdata0, vmax));
-    float16x8_t vsum1 = expq_ps_fp16(vsubq_f16(vdata1, vmax));
-    float16x8_t vsum2 = expq_ps_fp16(vsubq_f16(vdata2, vmax));
-    float16x8_t vsum3 = expq_ps_fp16(vsubq_f16(vdata3, vmax));
+    float16x8_t vsum0 = expq_ps_f16(vsubq_f16(vdata0, vmax));
+    float16x8_t vsum1 = expq_ps_f16(vsubq_f16(vdata1, vmax));
+    float16x8_t vsum2 = expq_ps_f16(vsubq_f16(vdata2, vmax));
+    float16x8_t vsum3 = expq_ps_f16(vsubq_f16(vdata3, vmax));
 
     float16x8_t vsum_1 = vaddq_f16(vsum0, vsum1);
     float16x8_t vsum_2 = vaddq_f16(vsum2, vsum3);
 
     float16x8_t vsum = vaddq_f16(vsum_1, vsum_2);
 
-    // float16x8_t vinf = divq_ps_fp16(vone, vsum);
+    float16x8_t vinf = divq_ps_f16(vone, vsum);
 
-    // vsum0 = vmulq_f16(vsum0, vinf);
-    // vsum1 = vmulq_f16(vsum1, vinf);
-    // vsum2 = vmulq_f16(vsum2, vinf);
-    // vsum3 = vmulq_f16(vsum3, vinf);
-    vsum0 = vdivq_f16(vsum0, vinf);
-    vsum1 = vdivq_f16(vsum1, vinf);
-    vsum2 = vdivq_f16(vsum2, vinf);
-    vsum3 = vdivq_f16(vsum3, vinf);
+    vsum0 = vmulq_f16(vsum0, vinf);
+    vsum1 = vmulq_f16(vsum1, vinf);
+    vsum2 = vmulq_f16(vsum2, vinf);
+    vsum3 = vmulq_f16(vsum3, vinf);
 
     vst1q_f16(dout_ptr0, vsum0);
     vst1q_f16(dout_ptr1, vsum1);
@@ -159,16 +155,12 @@ void softmax_inner8_axis4_fp16(const float16_t* din,
     float16x4_t vsum = vadd_f16(vsum_1, vsum_2);
 
     float16x4_t vone = vdup_n_f16(1.0f);
-    // float16x4_t vinf = div_ps_f16(vone, vsum);
+    float16x4_t vinf = div_ps_f16(vone, vsum);
 
-    // vsum0 = vmul_f16(vsum0, vinf);
-    // vsum1 = vmul_f16(vsum1, vinf);
-    // vsum2 = vmul_f16(vsum2, vinf);
-    // vsum3 = vmul_f16(vsum3, vinf);
-    vsum0 = vdiv_f16(vsum0, vinf);
-    vsum1 = vdiv_f16(vsum0, vinf);
-    vsum2 = vdiv_f16(vsum0, vinf);
-    vsum3 = vdiv_f16(vsum0, vinf);
+    vsum0 = vmul_f16(vsum0, vinf);
+    vsum1 = vmul_f16(vsum1, vinf);
+    vsum2 = vmul_f16(vsum2, vinf);
+    vsum3 = vmul_f16(vsum3, vinf);
 
     vst1_f16(dout_ptr0, vsum0);
     vst1_f16(dout_ptr1, vsum1);
@@ -200,7 +192,6 @@ void softmax_inner8_axis4_fp16(const float16_t* din,
       sum_data += dout[real_index];
     }
 
-    // float16_t sum_inv = 1.f / sum_data;
     real_index = idx_outer * inner_num + idx_inner;
     // get softmax result
     for (int j = 0; j < axis_size; ++j) {
@@ -210,11 +201,11 @@ void softmax_inner8_axis4_fp16(const float16_t* din,
   }
 }
 
-void softmax_inner8_axis1(const float16_t* din,
-                          float16_t* dout,
-                          const int axis_size,
-                          const int inner_num,
-                          const int outer_num) {
+void softmax_inner8_axis1_fp16(const float16_t* din,
+                               float16_t* dout,
+                               const int axis_size,
+                               const int inner_num,
+                               const int outer_num) {
   int compute_size = inner_num * outer_num;
   int cmp_cnt = compute_size >> 3;
   int remain = compute_size & 7;
@@ -253,13 +244,12 @@ void softmax_inner8_axis1(const float16_t* din,
       dout_ptr += inner_num;
     }
 
-    // float16x8_t vinf = divq_ps_f16(vone, vsum);
+    float16x8_t vinf = divq_ps_f16(vone, vsum);
     dout_ptr = dout + real_index;
     // get softmax result
     for (int j = 0; j < axis_size; ++j) {
       float16x8_t vdata0 = vld1q_f16(dout_ptr);
-      // vdata0 = vmulq_f16(vdata0, vinf);
-      vdata0 = vdivq_f16(vdata0, vinf);
+      vdata0 = vmulq_f16(vdata0, vinf);
       vst1q_f16(dout_ptr, vdata0);
       dout_ptr += inner_num;
     }
@@ -295,13 +285,12 @@ void softmax_inner8_axis1(const float16_t* din,
       vst1_f16(dout_ptr, vdata0);
       dout_ptr += inner_num;
     }
-    // float16x4_t vinf = div_ps_f16(vone, vsum);
+    float16x4_t vinf = div_ps_f16(vget_high_f16(vone), vsum);
     dout_ptr = dout + real_index;
     // get softmax result
     for (int j = 0; j < axis_size; ++j) {
       float16x4_t vdata0 = vld1_f16(dout_ptr);
-      // vdata0 = vmul_f16(vdata0, vinf);
-      vdata0 = vdiv_f16(vdata0, vinf);
+      vdata0 = vmul_f16(vdata0, vinf);
       vst1_f16(dout_ptr, vdata0);
       dout_ptr += inner_num;
     }
@@ -330,20 +319,19 @@ void softmax_inner8_axis1(const float16_t* din,
       sum_data += dout[real_index];
     }
 
-    float16_t sum_inv = 1.f / sum_data;
     real_index = idx_outer * inner_num + idx_inner;
     // get softmax result
     for (int j = 0; j < axis_size; ++j) {
-      dout[real_index] *= sum_inv;
+      dout[real_index] /= sum_data;
       real_index += inner_num;
     }
   }
 }
 
-void softmax_inner1_large_axis(const float16_t* din,
-                               float16_t* dout,
-                               const int outer_size,
-                               const int axis_size) {
+void softmax_inner1_large_axis_fp16(const float16_t* din,
+                                    float16_t* dout,
+                                    const int outer_size,
+                                    const int axis_size) {
   int cmp_cnt = axis_size >> 3;
   int remain = axis_size & 7;
   int out_cnt = (outer_size >> 2) << 2;
@@ -382,7 +370,7 @@ void softmax_inner1_large_axis(const float16_t* din,
       din_max_ptr2 += 8;
       din_max_ptr3 += 8;
     }
-    float16x4_t vhmax1 = vmax_f16(vget_high_f16(vmax0), vget_low_f16(vmax0));
+    float16x4_t vhmax0 = vmax_f16(vget_high_f16(vmax0), vget_low_f16(vmax0));
     float16x4_t vhmax1 = vmax_f16(vget_high_f16(vmax1), vget_low_f16(vmax1));
     float16x4_t vhmax2 = vmax_f16(vget_high_f16(vmax2), vget_low_f16(vmax2));
     float16x4_t vhmax3 = vmax_f16(vget_high_f16(vmax3), vget_low_f16(vmax3));
@@ -421,18 +409,18 @@ void softmax_inner1_large_axis(const float16_t* din,
     vmax2 = vdupq_n_f16(vhlmax2[0]);
     vmax3 = vdupq_n_f16(vhlmax3[0]);
     // sub, exp and sum
-    const float16_t* din_sum_ptr0 = din_ptr;
-    float16_t* dout_sum_ptr0 = dout_ptr;
-    const float16_t* din_sum_ptr1 = din_sum_ptr0 + axis_size;
-    float16_t* dout_sum_ptr1 = dout_sum_ptr0 + axis_size;
-    const float16_t* din_sum_ptr2 = din_sum_ptr1 + axis_size;
-    float16_t* dout_sum_ptr2 = dout_sum_ptr1 + axis_size;
-    const float16_t* din_sum_ptr3 = din_sum_ptr2 + axis_size;
-    float16_t* dout_sum_ptr3 = dout_sum_ptr2 + axis_size;
-    float16x8_t sum0 = vdupq_n_f16(0.f);
-    float16x8_t sum1 = vdupq_n_f16(0.f);
-    float16x8_t sum2 = vdupq_n_f16(0.f);
-    float16x8_t sum3 = vdupq_n_f16(0.f);
+    const float16_t* din_sum_ptr0 = din_ptr0;
+    float16_t* dout_sum_ptr0 = dout_ptr0;
+    const float16_t* din_sum_ptr1 = din_ptr1;
+    float16_t* dout_sum_ptr1 = dout_ptr1;
+    const float16_t* din_sum_ptr2 = din_ptr2;
+    float16_t* dout_sum_ptr2 = dout_ptr2;
+    const float16_t* din_sum_ptr3 = din_ptr3;
+    float16_t* dout_sum_ptr3 = dout_ptr3;
+    float16x8_t vsum0 = vdupq_n_f16(0.f);
+    float16x8_t vsum1 = vdupq_n_f16(0.f);
+    float16x8_t vsum2 = vdupq_n_f16(0.f);
+    float16x8_t vsum3 = vdupq_n_f16(0.f);
 
     for (int j = 0; j < cmp_cnt; j++) {
       float16x8_t vsub_exp0 =
@@ -443,10 +431,10 @@ void softmax_inner1_large_axis(const float16_t* din,
           expq_ps_f16(vsubq_f16(vld1q_f16(din_sum_ptr2), vmax2));
       float16x8_t vsub_exp3 =
           expq_ps_f16(vsubq_f16(vld1q_f16(din_sum_ptr3), vmax3));
-      sum0 = vaddq_f16(sum0, vsub_exp0);
-      sum1 = vaddq_f16(sum1, vsub_exp1);
-      sum2 = vaddq_f16(sum2, vsub_exp2);
-      sum3 = vaddq_f16(sum3, vsub_exp3);
+      vsum0 = vaddq_f16(vsum0, vsub_exp0);
+      vsum1 = vaddq_f16(vsum1, vsub_exp1);
+      vsum2 = vaddq_f16(vsum2, vsub_exp2);
+      vsum3 = vaddq_f16(vsum3, vsub_exp3);
       vst1q_f16(dout_sum_ptr0, vsub_exp0);
       din_sum_ptr0 += 8;
       vst1q_f16(dout_sum_ptr1, vsub_exp1);
@@ -516,37 +504,28 @@ void softmax_inner1_large_axis(const float16_t* din,
       dout_sum_ptr3++;
     }
 
-    // float16_t sum_inv0 = 1.f / sum_data0;
-    float16_t* dout_res_ptr0 = dout_ptr;
-    // float16_t sum_inv1 = 1.f / sum_data1;
-    float16_t* dout_res_ptr1 = dout_res_ptr0 + axis_size;
-    // float16_t sum_inv2 = 1.f / sum_data2;
-    float16_t* dout_res_ptr2 = dout_res_ptr1 + axis_size;
-    // float16_t sum_inv3 = 1.f / sum_data3;
-    float16_t* dout_res_ptr3 = dout_res_ptr2 + axis_size;
-    // float16x8_t vinv0 = vdupq_n_f16(sum_inv0);
-    // float16x8_t vinv1 = vdupq_n_f16(sum_inv1);
-    // float16x8_t vinv2 = vdupq_n_f16(sum_inv2);
-    // float16x8_t vinv3 = vdupq_n_f16(sum_inv3);
-    float16x8_t vinv0 = vdupq_n_f16(sum_data0);
-    float16x8_t vinv1 = vdupq_n_f16(sum_data1);
-    float16x8_t vinv2 = vdupq_n_f16(sum_data2);
-    float16x8_t vinv3 = vdupq_n_f16(sum_data3);
+    float16_t sum_inv0 = 1.f / sum_data0;
+    float16_t* dout_res_ptr0 = dout_ptr0;
+    float16_t sum_inv1 = 1.f / sum_data1;
+    float16_t* dout_res_ptr1 = dout_ptr1;
+    float16_t sum_inv2 = 1.f / sum_data2;
+    float16_t* dout_res_ptr2 = dout_ptr2;
+    float16_t sum_inv3 = 1.f / sum_data3;
+    float16_t* dout_res_ptr3 = dout_ptr3;
+    float16x8_t vinv0 = vdupq_n_f16(sum_inv0);
+    float16x8_t vinv1 = vdupq_n_f16(sum_inv1);
+    float16x8_t vinv2 = vdupq_n_f16(sum_inv2);
+    float16x8_t vinv3 = vdupq_n_f16(sum_inv3);
     // get softmax result
     for (int j = 0; j < cmp_cnt; j++) {
       float16x8_t vout0 = vld1q_f16(dout_res_ptr0);
       float16x8_t vout1 = vld1q_f16(dout_res_ptr1);
       float16x8_t vout2 = vld1q_f16(dout_res_ptr2);
       float16x8_t vout3 = vld1q_f16(dout_res_ptr3);
-      // float16x8_t vres0 = vmulq_f16(vout0, vinv0);
-      // float16x8_t vres1 = vmulq_f16(vout1, vinv1);
-      // float16x8_t vres2 = vmulq_f16(vout2, vinv2);
-      // float16x8_t vres3 = vmulq_f16(vout3, vinv3);
-
-      float16x8_t vres0 = vdivq_f16(vout0, vinv0);
-      float16x8_t vres1 = vdivq_f16(vout1, vinv1);
-      float16x8_t vres2 = vdivq_f16(vout2, vinv2);
-      float16x8_t vres3 = vdivq_f16(vout3, vinv3);
+      float16x8_t vres0 = vmulq_f16(vout0, vinv0);
+      float16x8_t vres1 = vmulq_f16(vout1, vinv1);
+      float16x8_t vres2 = vmulq_f16(vout2, vinv2);
+      float16x8_t vres3 = vmulq_f16(vout3, vinv3);
       vst1q_f16(dout_res_ptr0, vres0);
       vst1q_f16(dout_res_ptr1, vres1);
       vst1q_f16(dout_res_ptr2, vres2);
@@ -577,10 +556,10 @@ void softmax_inner1_large_axis(const float16_t* din,
       index += 4;
     }
     for (int j = index; j < axis_size; j++) {
-      dout_res_ptr0[0] *= sum_inv0;
-      dout_res_ptr1[0] *= sum_inv1;
-      dout_res_ptr2[0] *= sum_inv2;
-      dout_res_ptr3[0] *= sum_inv3;
+      dout_res_ptr0[0] /= sum_data0;
+      dout_res_ptr1[0] /= sum_data1;
+      dout_res_ptr2[0] /= sum_data2;
+      dout_res_ptr3[0] /= sum_data3;
       dout_res_ptr0++;
       dout_res_ptr1++;
       dout_res_ptr2++;
@@ -601,7 +580,7 @@ void softmax_inner1_large_axis(const float16_t* din,
       vmax0 = vmaxq_f16(vmax0, vld1q_f16(din_max_ptr0));
       din_max_ptr0 += 8;
     }
-    float16x4_t vhmax1 = vmax_f16(vget_high_f16(vmax0), vget_low_f16(vmax0));
+    float16x4_t vhmax0 = vmax_f16(vget_high_f16(vmax0), vget_low_f16(vmax0));
     int index = cmp_cnt << 3;
     if (remain >= 4) {
       vhmax0 = vmax_f16(vhmax0, vld1_f16(din_max_ptr0));
@@ -616,14 +595,14 @@ void softmax_inner1_large_axis(const float16_t* din,
     }
     vmax0 = vdupq_n_f16(vhlmax0[0]);
     // sub, exp and sum
-    const float16_t* din_sum_ptr0 = din_ptr;
-    float16_t* dout_sum_ptr0 = dout_ptr;
-    float16x8_t sum0 = vdupq_n_f16(0.f);
+    const float16_t* din_sum_ptr0 = din_ptr0;
+    float16_t* dout_sum_ptr0 = dout_ptr0;
+    float16x8_t vsum0 = vdupq_n_f16(0.f);
 
     for (int j = 0; j < cmp_cnt; j++) {
       float16x8_t vsub_exp0 =
           expq_ps_f16(vsubq_f16(vld1q_f16(din_sum_ptr0), vmax0));
-      sum0 = vaddq_f16(sum0, vsub_exp0);
+      vsum0 = vaddq_f16(vsum0, vsub_exp0);
       vst1q_f16(dout_sum_ptr0, vsub_exp0);
       din_sum_ptr0 += 8;
       dout_sum_ptr0 += 8;
@@ -648,38 +627,35 @@ void softmax_inner1_large_axis(const float16_t* din,
       dout_sum_ptr0++;
     }
 
-    // float16_t sum_inv0 = 1.f / sum_data0;
-    float16_t* dout_res_ptr0 = dout_ptr;
-    // float16x8_t vinv0 = vdupq_n_f16(sum_inv0);
-    float16x8_t vinv0 = vdupq_n_f16(sum_data0);
+    float16_t vsum_inv0 = 1.f / sum_data0;
+    float16_t* dout_res_ptr0 = dout_ptr0;
+    float16x8_t vinv0 = vdupq_n_f16(vsum_inv0);
     // get softmax result
     for (int j = 0; j < cmp_cnt; j++) {
       float16x8_t vout0 = vld1q_f16(dout_res_ptr0);
-      // float16x8_t vres0 = vmulq_f16(vout0, vinv0);
-      float16x8_t vres0 = vdivq_f16(vout0, vinv0);
+      float16x8_t vres0 = vmulq_f16(vout0, vinv0);
       vst1q_f16(dout_res_ptr0, vres0);
       dout_res_ptr0 += 8;
     }
     index = cmp_cnt << 3;
     if (remain >= 4) {
       float16x4_t vout0 = vld1_f16(dout_res_ptr0);
-      // float16x4_t vres0 = vmul_f16(vout0, vget_high_f16(vinv0));
-      float16x4_t vres0 = vdiv_f16(vout0, vget_high_f16(vinv0));
+      float16x4_t vres0 = vmul_f16(vout0, vget_high_f16(vinv0));
       vst1_f16(dout_res_ptr0, vres0);
       dout_res_ptr0 += 4;
       index += 4;
     }
     for (int j = index; j < axis_size; j++) {
-      dout_res_ptr0[0] *= sum_inv0;
+      dout_res_ptr0[0] /= sum_data0;
       dout_res_ptr0++;
     }
   }
 }
 
-void softmax_inner1_small_axis(const float16_t* din,
-                               float16_t* dout,
-                               const int outer_size,
-                               const int axis_size) {
+void softmax_inner1_small_axis_fp16(const float16_t* din,
+                                    float16_t* dout,
+                                    const int outer_size,
+                                    const int axis_size) {
 #pragma omp parallel for
   for (int i = 0; i < outer_size; ++i) {
     const float16_t* din_ptr = din + i * axis_size;
