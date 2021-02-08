@@ -35,6 +35,7 @@ namespace operators {
 
 bool TileOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.RepeatTimes);
   return true;
 }
 
