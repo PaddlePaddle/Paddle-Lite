@@ -121,7 +121,7 @@ REGISTER_LITE_KERNEL(softmax, kARM, kFP16, kNCHW, SoftmaxFp16, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-#endif
+#endif  // ENABLE_ARM_FP16
 
 typedef paddle::lite::kernels::arm::SoftmaxCompute<PRECISION(kFloat),
                                                    PRECISION(kFloat)>
