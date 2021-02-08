@@ -89,3 +89,13 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
+REGISTER_LITE_KERNEL(matmul_v2,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::MatMulCompute,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
