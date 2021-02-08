@@ -34,36 +34,6 @@ inline void fill_data_rand(Dtype* dio, Dtype vstart, Dtype vend, size_t size) {
 
 #ifdef ENABLE_ARM_FP16
 typedef __fp16 float16_t;
-inline void data_diff(const float16_t* src1_truth,
-                      const float16_t* src2,
-                      float16_t* dst,
-                      int size,
-                      double& max_ratio,   // NOLINT
-                      double& max_diff) {  // NOLINT
-  const double eps = 1e-6f;
-  max_diff = fabs(src1_truth[0] - src2[0]);
-  dst[0] = max_diff;
-  max_ratio = fabs(max_diff) / (std::abs(src1_truth[0]) + eps);
-  for (int i = 1; i < size; ++i) {
-    double diff = fabs(src1_truth[i] - src2[i]);
-    dst[i] = diff;
-    max_diff = max_diff < diff ? diff : max_diff;
-    double ratio = fabs(diff) / (std::abs(src1_truth[i]) + eps);
-    if (max_ratio < ratio) {
-      max_ratio = ratio;
-    }
-  }
-}
-
-inline void print_tensor(const float16_t* din, int64_t size, int64_t width) {
-  for (int i = 0; i < size; ++i) {
-    printf("%.6f ", din[i]);
-    if ((i + 1) % width == 0) {
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
 
 inline float16_t convert_half(float val) {
   // float -> uint64
@@ -98,13 +68,21 @@ inline float convert_full(float16_t val) {
 
 inline void float_to_fp16(const float* src, float16_t* dst, size_t size) {
   for (size_t i = 0; i < size; i++) {
-    dst[i] = convert_half(src[i]);
+    if (std::abs(src[i]) <= 5e-4f) {
+      dst[i] = src[i];
+    } else {
+      dst[i] = convert_half(src[i]);
+    }
   }
 }
 
 inline void fp16_to_float(const float16_t* src, float* dst, size_t size) {
   for (size_t i = 0; i < size; i++) {
-    dst[i] = convert_full(src[i]);
+    if (std::abs(src[i]) <= 5e-4f) {
+      dst[i] = src[i];
+    } else {
+      dst[i] = convert_full(src[i]);
+    }
   }
 }
 #endif  // ENABLE_ARM_FP16

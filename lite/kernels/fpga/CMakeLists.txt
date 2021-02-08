@@ -2,7 +2,7 @@ if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_PYTHON) AND (NOT LITE_W
     return()
 endif()
 
-set(fpga_deps fpga_target_wrapper kernel_fpga fbs_headers)
+set(fpga_deps fpga_target_wrapper kernel_fpga)
 
 
 add_kernel(activation_compute_fpga FPGA basic SRCS activation_compute.cc DEPS ${fpga_deps})
@@ -13,6 +13,7 @@ add_kernel(cast_compute_fpga FPGA basic SRCS cast_compute.cc DEPS ${fpga_deps})
 add_kernel(concat_compute_fpga FPGA basic SRCS concat_compute.cc DEPS ${fpga_deps})
 
 add_kernel(conv_compute_fpga FPGA basic SRCS conv_compute.cc DEPS ${fpga_deps})
+add_kernel(conv_transpose_compute_fpga FPGA basic SRCS conv_transpose_compute.cc DEPS ${fpga_deps})
 # add_kernel(density_prior_box_compute_fpga FPGA basic SRCS density_prior_box_compute.cc DEPS ${fpga_deps})
 add_kernel(dropout_compute_fpga FPGA basic SRCS dropout_compute.cc DEPS ${fpga_deps})
 add_kernel(elementwise_compute_fpga FPGA basic SRCS elementwise_compute.cc DEPS ${fpga_deps})
@@ -32,7 +33,7 @@ add_kernel(prior_box_compute_fpga FPGA basic SRCS prior_box_compute.cc DEPS ${fp
 add_kernel(reshape_compute_fpga FPGA basic SRCS reshape_compute.cc DEPS ${fpga_deps} reshape_op)
 # add_kernel(sequence_pool_compute_fpga FPGA basic SRCS sequence_pool_compute.cc DEPS ${fpga_deps})
 add_kernel(scale_compute_fpga FPGA basic SRCS scale_compute.cc DEPS ${fpga_deps})
-add_kernel(softmax_compute_fpga FPGA basic SRCS softmax_compute.cc DEPS ${fpga_deps})
+# add_kernel(softmax_compute_fpga FPGA basic SRCS softmax_compute.cc DEPS ${fpga_deps})
 add_kernel(split_compute_fpga FPGA basic SRCS split_compute.cc DEPS ${fpga_deps})
 add_kernel(transpose_compute_fpga FPGA basic SRCS transpose_compute.cc DEPS ${fpga_deps})
 
@@ -43,6 +44,9 @@ add_kernel(feed_compute_fpga FPGA basic SRCS feed_compute.cc DEPS ${fpga_deps})
 add_kernel(fetch_compute_fpga FPGA basic SRCS fetch_compute.cc DEPS ${fpga_deps})
 
 add_kernel(yolo_box_compute_fpga FPGA basic SRCS yolo_box_compute.cc DEPS ${fpga_deps})
+add_kernel(batch_norm_compute_fpga FPGA basic SRCS batch_norm_compute.cc DEPS ${fpga_deps})
+add_kernel(slice_compute_fpga FPGA basic SRCS slice_compute.cc DEPS ${fpga_deps})
+add_kernel(density_prior_box_compute_fpga FPGA basic SRCS density_prior_box_compute.cc DEPS ${fpga_deps} math_arm)
 
 # add_kernel(while_compute_fpga FPGA extra SRCS while_compute.cc DEPS ${fpga_deps})
 # add_kernel(write_to_array_compute_fpga FPGA extra SRCS write_to_array_compute.cc DEPS ${fpga_deps})

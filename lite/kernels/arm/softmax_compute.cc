@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/softmax_compute.h"
 #include "lite/backends/arm/math/funcs.h"
 #ifdef ENABLE_ARM_FP16
-#include "lite/backends/arm/math/fp16/softmax_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 
 namespace paddle {
