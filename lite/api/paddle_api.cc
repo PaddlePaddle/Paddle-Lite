@@ -110,6 +110,7 @@ template const int64_t *Tensor::data<int64_t>() const;
 template const int32_t *Tensor::data<int32_t>() const;
 template const int16_t *Tensor::data<int16_t>() const;
 template const int8_t *Tensor::data<int8_t>() const;
+template const uint16_t *Tensor::data<uint16_t>() const;
 template const uint8_t *Tensor::data<uint8_t>() const;
 template const bool *Tensor::data<bool>() const;
 template const void *Tensor::data<void>() const;
@@ -120,6 +121,7 @@ template int64_t *Tensor::mutable_data(TargetType type) const;
 template int *Tensor::mutable_data(TargetType type) const;
 template int16_t *Tensor::mutable_data(TargetType type) const;
 template int8_t *Tensor::mutable_data(TargetType type) const;
+template uint16_t *Tensor::mutable_data(TargetType type) const;
 template uint8_t *Tensor::mutable_data(TargetType type) const;
 template bool *Tensor::mutable_data(TargetType type) const;
 

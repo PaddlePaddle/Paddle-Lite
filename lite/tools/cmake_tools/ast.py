@@ -226,7 +226,7 @@ class RegisterLiteKernelParser(SyntaxParser):
                end = self.str.find("#endif  // ENABLE_ARM_FP16", self.cur_pos)
                if end != -1:
                    arm_fp16_command += arm_fp16_command + list(range(start, end + 1))
-                   self.cur_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
+                   self.cur_pos = end + len("#endif  // ENABLE_ARM_FP16") -1
                else:
                    break
             else:
@@ -246,7 +246,7 @@ class RegisterLiteKernelParser(SyntaxParser):
                 if with_extra != "ON" and start in extra_command:
                     self.cur_pos = start + len(self.KEYWORD) -1
                     continue
-                # if enable_arm_fp16 == "OFF", extra kernels will not be parsed
+                # if enable_arm_fp16 == "OFF", arm_fp16 kernels will not be parsed
                 if enable_arm_fp16 != "ON" and start in arm_fp16_command:
                     self.cur_pos = start + len(self.KEYWORD) -1
                     continue

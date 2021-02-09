@@ -127,7 +127,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       sequence_softmax.cc
       norm.cc
       topk.cc
-      increment.cc
       pad2d.cc
       negative.cc
       beam_search.cc
