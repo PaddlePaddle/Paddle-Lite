@@ -351,12 +351,11 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
 }
 
 void CLRuntime::SaveProgram() {
-  // check whether precompiled binary is ON/OFF
-  // check whether binary exist
+  if (binary_path_name_.empty()) return;
   std::string binary_file =
       binary_path_name_.at(0) + "/" + binary_path_name_.at(1);
-  if (IsFileExists(binary_file) || binary_path_name_.empty()) {
-    // do nothing
+  if (IsFileExists(binary_file)) {
+    LOG(INFO) << "OpenCL Program existed:" << binary_file;
   } else {
     bool ret = Serialize(binary_file, programs_precompiled_binary_);
     CHECK(ret) << "Serialize failed for opencl binary_file:" << binary_file;
@@ -365,17 +364,19 @@ void CLRuntime::SaveProgram() {
               << binary_file;
 #endif
   }
+}
 
-  // check tuned
+void CLRuntime::SaveTuned() {
+  if (tuned_path_name_.empty() || auto_tune() == lite_api::CL_TUNE_NONE) return;
   std::string tuned_file =
       tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
-  if (IsFileExists(tuned_file) || tuned_path_name_.empty()) {
-    // do nothing
+  if (IsFileExists(tuned_file)) {
+    LOG(INFO) << "OpenCL Tuned file existed:" << tuned_file;
   } else {
-    bool ret = Serialize(tuned_file, uned_lwss_map_);
+    bool ret = Serialize(tuned_file, tuned_lwss_map_);
     CHECK(ret) << "Serialize failed for opencl tuned_file:" << tuned_file;
 #ifdef LITE_WITH_LOG
-    LOG(INFO) << "Programs have been serialized to disk successfully. File: "
+    LOG(INFO) << "Tuned file have been serialized to disk successfully: "
               << tuned_file;
 #endif
   }
@@ -396,7 +397,7 @@ bool CLRuntime::Serialize(
 bool CLRuntime::Deserialize(
     const std::string file_name,
     std::map<std::string, cl::Program::Binaries>* map_ptr) {
-  std::vector<uint8_t> buffer;
+  std::vector<uint8_t> buffer{1};
   ReadFile<uint8_t>(file_name, &buffer);
 
   fbs::opencl::Cache cache{buffer};
@@ -407,22 +408,31 @@ bool CLRuntime::Deserialize(
 // tuned param
 bool CLRuntime::Serialize(const std::string file_name,
                           const std::map<std::string, cl::NDRange>& map_data) {
+// TODO(ysh329): add impl.
+#if 0
   fbs::opencl::TuneCache cache{map_data};
   std::vector<uint8_t> buffer;
   // TODO(ysh329): add impl.
   //  cache.CopyDataToBuffer(&buffer);
 
   WriteFile<uint8_t>(file_name, buffer);
+#else
+  std::vector<uint8_t> buffer(3);
+  WriteFile<uint8_t>(file_name, buffer);
+#endif
   return true;
 }
 
 bool CLRuntime::Deserialize(const std::string file_name,
                             std::map<std::string, cl::NDRange>* map_ptr) {
+// TODO(ysh329): add impl.
+#if 0
   std::vector<uint8_t> buffer;
   ReadFile<uint8_t>(file_name, &buffer);
   // TODO(ysh329): add impl.
   // fbs::opencl::TuneCache cache{buffer};
   //  *map_ptr = cache.GetBinaryMap();
+#endif
   return true;
 }
 
@@ -762,18 +772,11 @@ void CLRuntime::GetAdrenoContextProperties(
 bool CLRuntime::HasTunedLocalWorkSizeMap(const std::string& key,
                                          cl::NDRange* lws) {
   bool has = false;
-  // step1 check map
   auto it = tuned_lwss_map_.find(key);
   if (it != tuned_lwss_map_.end()) {
     *lws = it->second;
     has = true;
   }
-#if 0
-  // step2 check binary file & extend map
-  if (CheckTunedBinaryFile(key, lws)) {
-    has = true;
-  }
-#endif
   return has;
 }
 

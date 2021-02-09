@@ -116,10 +116,12 @@ class CLRuntime {
                      size_t lws_repeats = 4) {
     auto_tune_ = tune_mode;
     lws_repeats_ = lws_repeats;
-    tuned_path_name_[0] = path;
-    tuned_path_name_[1] = name;
+    if (tuned_path_name_.empty()) {
+      tuned_path_name_.push_back(path);
+      tuned_path_name_.push_back(name);
+    }
     const std::string tuned_file = path + "/" + name;
-    if (IsFileExists(tuned_file)) {
+    if (IsFileExists(tuned_file) && auto_tune() != lite_api::CL_TUNE_NONE) {
 #ifdef LITE_WITH_LOG
       LOG(INFO) << "Load tuned file: " << tuned_file;
 #endif
@@ -194,6 +196,8 @@ class CLRuntime {
                        const std::string& build_option);
 
   void SaveProgram();
+
+  void SaveTuned();
 
   std::unique_ptr<cl::UserEvent> CreateEvent(const cl::Context& context);
 
@@ -333,7 +337,7 @@ class CLRuntime {
   std::map<std::string, cl::Program::Binaries> programs_precompiled_binary_;
   std::map<std::string, cl::NDRange> tuned_lwss_map_;
   std::vector<std::string> binary_path_name_;
-  std::vector<std::string> tuned_path_name_(2);
+  std::vector<std::string> tuned_path_name_;
   // magic number for precompiled binary
   const std::string sn_key_{"lite_opencl_precompiled_binary_identifier"};
 };

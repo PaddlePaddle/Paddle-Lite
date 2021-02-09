@@ -165,7 +165,9 @@ void RunModel(std::string model_dir,
     // CL_TUNE_RAPID: 1
     // CL_TUNE_NORMAL: 2
     // CL_TUNE_EXHAUSTIVE: 3
-    config.set_opencl_tune(CL_TUNE_NONE);
+    const std::string tuned_path = "/data/local/tmp/";
+    const std::string tuned_name = "lite_opencl_tuned.bin";
+    config.set_opencl_tune(CL_TUNE_NORMAL, tuned_path, tuned_name);
 
     // opencl precision option
     // CL_PRECISION_AUTO: 0, first fp16 if valid, default

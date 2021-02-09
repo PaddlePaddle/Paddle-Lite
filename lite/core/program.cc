@@ -306,6 +306,7 @@ void RuntimeProgram::Run() {
   }
 #ifdef LITE_WITH_OPENCL
   CLRuntime::Global()->SaveProgram();
+  CLRuntime::Global()->SaveTuned();
 #endif
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
