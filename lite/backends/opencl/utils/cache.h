@@ -17,6 +17,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/utils/cache_generated.h"
 
 namespace paddle {
@@ -40,6 +41,23 @@ class Cache {
   void SyncFromFbs(const paddle::lite::fbs::opencl::proto::Cache* desc);
   flatbuffers::DetachedBuffer SyncToFbs() const;
   std::map<std::string, std::vector<std::vector<uint8_t>>> binary_map_;
+};
+
+// TODO(ysh329): add impl.
+class TuneCache {
+ public:
+  explicit TuneCache(const std::map<std::string, cl::NDRange>& map)
+      : binary_map_{map} {}
+  explicit TuneCache(const std::vector<uint8_t>& buffer);
+  // void CopyDataToBuffer(std::vector<uint8_t>& buffer) const;
+  const std::map<std::string, cl::NDRange>& GetBinaryMap() const {
+    return binary_map_;
+  }
+
+ private:
+  //  void SyncFromFbs(const paddle::lite::fbs::opencl::proto::TuneCache* desc);
+  flatbuffers::DetachedBuffer SyncToFbs() const;
+  std::map<std::string, cl::NDRange> binary_map_;
 };
 
 }  // namespace opencl

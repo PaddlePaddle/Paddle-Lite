@@ -21,6 +21,7 @@ namespace lite {
 namespace fbs {
 namespace opencl {
 
+// Cache: for binary
 Cache::Cache(const std::vector<uint8_t>& buffer) {
   flatbuffers::Verifier verifier(
       reinterpret_cast<const uint8_t*>(buffer.data()), buffer.size());
