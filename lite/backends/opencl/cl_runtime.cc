@@ -397,7 +397,7 @@ bool CLRuntime::Serialize(
 bool CLRuntime::Deserialize(
     const std::string file_name,
     std::map<std::string, cl::Program::Binaries>* map_ptr) {
-  std::vector<uint8_t> buffer{1};
+  std::vector<uint8_t> buffer;
   ReadFile<uint8_t>(file_name, &buffer);
 
   fbs::opencl::Cache cache{buffer};
