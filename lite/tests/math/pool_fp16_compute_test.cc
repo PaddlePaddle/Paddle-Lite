@@ -141,7 +141,7 @@ void test_pool_fp16(const std::vector<DDim>& input_dims,
           tdiff.Resize(tout_basic.dims());
           tdiff.set_precision(PRECISION(kFP16));
           auto ptr = tdiff.mutable_data<float16_t>();
-          // paddle::lite::data_diff_kernel(
+
           data_diff(basic_ptr,
                     saber_ptr,
                     ptr,
