@@ -94,6 +94,7 @@ inline void print_data_fp16(const float16_t* din, int64_t size, int64_t width) {
   }
   printf("\n");
 }
+
 void print_tensor_info_fp16(const float16_t* basic_ptr,
                             const float16_t* saber_ptr,
                             const float16_t* diff_ptr,
