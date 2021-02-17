@@ -54,6 +54,10 @@ namespace fusion {
 
 class XPUConv2dPool2dFuser : public FuseBase {
  public:
+  explicit XPUConv2dPool2dFuser(bool with_conv_bias) {
+    with_conv_bias_ = with_conv_bias;
+  }
+
   void BuildPattern() override {
     auto* input = VarNode("input")
                       ->assert_is_op_input("__xpu__conv2d", "Input")
@@ -62,17 +66,17 @@ class XPUConv2dPool2dFuser : public FuseBase {
                        ->assert_is_op_input("__xpu__conv2d", "Filter")
                        ->assert_is_persistable_var()
                        ->AsInput();
-    auto* weight_max = VarNode("weight_max")
-                           ->assert_is_op_input("__xpu__conv2d", "FilterMax")
-                           ->assert_is_persistable_var()
-                           ->AsInput();
-    auto* bias = VarNode("bias")
-                     ->assert_is_persistable_var()
-                     ->assert_is_op_input("__xpu__conv2d", "Bias")
-                     ->AsInput();
+    PMNode* bias = nullptr;
+    if (with_conv_bias_) {
+      bias = VarNode("bias")
+                 ->assert_is_persistable_var()
+                 ->assert_is_op_input("__xpu__conv2d", "Bias")
+                 ->AsInput();
+    }
     auto* xpu_conv =
         OpNode("xpu_conv", "__xpu__conv2d")
             ->assert_op_attr<bool>("has_branch", false)
+            ->assert_op_attr<bool>("has_bias", with_conv_bias_)
             ->assert_op_attr_satisfied<int>(
                 "act_type",
                 [](const int& attr) {
@@ -109,16 +113,14 @@ class XPUConv2dPool2dFuser : public FuseBase {
 
     *input >> *xpu_conv >> *conv_out >> *pool2d >> *pool2d_out;
     *weight >> *xpu_conv;
-    *weight_max >> *xpu_conv;
-    *bias >> *xpu_conv;
+    if (with_conv_bias_) {
+      *bias >> *xpu_conv;
+    }
     *xpu_conv >> *conv_out_max;
   }
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     std::vector<std::string> conv_name{"xpu_conv"};
     std::vector<std::string> filter_name{matched.at("weight")->arg()->name};
-    std::vector<std::string> bias_name = {matched.at("bias")->arg()->name};
-    std::vector<std::string> filter_max_name{
-        matched.at("weight_max")->arg()->name};
 
     cpp::OpDesc op_desc;
     auto conv = matched.at("xpu_conv")->stmt()->op();
@@ -126,16 +128,18 @@ class XPUConv2dPool2dFuser : public FuseBase {
     op_desc.mutable_inputs()->clear();
     op_desc.mutable_outputs()->clear();
     auto output_name = matched.at("pool2d_out")->arg()->name;
+    if (with_conv_bias_) {
+      op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
+    }
     std::string max_output_name = output_name + "_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     scope->NewTensor(max_output_name);
+
     op_desc.SetType("__xpu__block_fuse_op");
     op_desc.SetInput("Input", {matched.at("input")->arg()->name});
     op_desc.SetInput("Filter", {filter_name});
-    op_desc.SetInput("Bias", {bias_name});
-    op_desc.SetInput("FilterMax", {filter_max_name});
     op_desc.SetOutput("Output", {output_name});
     op_desc.SetOutput("OutputMax", {max_output_name});
 
@@ -143,6 +147,7 @@ class XPUConv2dPool2dFuser : public FuseBase {
     std::vector<int> place_y{9, 9};
     std::vector<int> place_z{10, 10};
     std::vector<int> block_lod{1, 1};
+    std::vector<int> conv_bias{with_conv_bias_};
     int pooling_type = -1;
     if (matched.at("pool2d")->stmt()->op_info()->GetAttr<std::string>(
             "pooling_type") == "avg") {
@@ -251,6 +256,8 @@ class XPUConv2dPool2dFuser : public FuseBase {
     op_desc.SetAttr("act_type", act_type);
     op_desc.SetAttr("act_param", act_param);
     op_desc.SetAttr("block_lod", block_lod);
+    op_desc.SetAttr("conv_bias", conv_bias);
+    op_desc.SetAttr<bool>("has_bias", with_conv_bias_);
 
     auto& valid_places = conv->valid_places();
     auto block_op = LiteOpRegistry::Global().Create(op_desc.Type());
@@ -259,11 +266,15 @@ class XPUConv2dPool2dFuser : public FuseBase {
 
     IR_NODE_LINK_TO(matched.at("input"), new_op_node);
     IR_NODE_LINK_TO(matched.at("weight"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("weight_max"), new_op_node);
-    IR_NODE_LINK_TO(matched.at("bias"), new_op_node);
+    if (with_conv_bias_) {
+      IR_NODE_LINK_TO(matched.at("bias"), new_op_node);
+    }
     IR_NODE_LINK_TO(new_op_node, matched.at("pool2d_out"));
     IR_NODE_LINK_TO(new_op_node, max_output_node);
   }
+
+ private:
+  bool with_conv_bias_;
 };
 
 }  // namespace fusion
@@ -271,8 +282,10 @@ class XPUConv2dPool2dFuser : public FuseBase {
 class XPUConv2dPool2dFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    fusion::XPUConv2dPool2dFuser fuser;
-    fuser(graph.get());
+    for (auto with_conv_bias : {true, false}) {
+      fusion::XPUConv2dPool2dFuser fuser(with_conv_bias);
+      fuser(graph.get());
+    }
   }
 };
 

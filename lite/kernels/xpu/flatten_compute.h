@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -22,20 +20,14 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T, PrecisionType PType>
-class XPUConv2dCompute : public KernelLite<TARGET(kXPU), PType> {
+class FlattenContiguousRangeCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::XPUConv2dParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::FlattenContiguousRangeParam;
 
   void Run() override;
 
- private:
-  XPUScratchPadGuard quant_filter_guard;
-  T* quant_filter;
-  XPUScratchPadGuard filter_max_guard;
-  float* filter_max;
+  virtual ~FlattenContiguousRangeCompute() = default;
 };
 
 }  // namespace xpu

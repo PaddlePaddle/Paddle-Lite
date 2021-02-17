@@ -99,7 +99,6 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter").front()));
-  CHECK(scope->FindVar(op_desc.Input("FilterMax").front()));
   CHECK(scope->FindVar(op_desc.Output("Output").front()));
   CHECK(scope->FindVar(op_desc.Output("OutputMax").front()));
 
@@ -107,8 +106,6 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
   param_.Filter =
       scope->FindVar(op_desc.Input("Filter").front())->GetMutable<Tensor>();
-  param_.FilterMax =
-      scope->FindVar(op_desc.Input("FilterMax").front())->GetMutable<Tensor>();
   param_.Output =
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
   param_.OutputMax =
@@ -123,6 +120,7 @@ bool XPUConv2dOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.act_param = op_desc.GetAttr<float>("act_param");
   param_.filter_dims = op_desc.GetAttr<std::vector<int>>("filter_dims");
   param_.has_branch = op_desc.GetAttr<bool>("has_branch");
+  param_.has_bias = op_desc.GetAttr<bool>("has_bias");
 
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();

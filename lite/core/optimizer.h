@@ -127,7 +127,7 @@ class Optimizer {
          "__xpu__conv2d_pool2d_fuse_pass",
          "__xpu__consecutive_conv2d_fuse_pass",
          "__xpu__consecutive_block_fuse_pass",
-         "__xpu__conv2d_link_previous_out_max_pass",
+         "__xpu__link_previous_out_max_pass",
          "__xpu__sfa_head_meanstd_fuse_pass",
          "__xpu__sfa_head_moment_fuse_pass",
          "__xpu__mmdnn_fuse_pass",

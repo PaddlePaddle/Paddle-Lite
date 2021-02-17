@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/__xpu__block_fuse_compute.h"
+#include "lite/backends/xpu/math.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -21,8 +22,36 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T, PrecisionType PType>
-void XPUBlockFuseCompute<T, PType>::PrepareForRun() {
+template <typename T>
+bool QuantBlockFilter(const float* filter_on_host,
+                      T* quant_res,
+                      float max,
+                      int64_t len) {
+  return false;
+}
+
+template <>
+bool QuantBlockFilter<int16_t>(const float* filter_on_host,
+                               int16_t* quant_res,
+                               float max,
+                               int64_t len) {
+  paddle::lite::xpu::math::ConvertFP32ToInt16(
+      filter_on_host, quant_res, max, len);
+  return true;
+}
+
+template <>
+bool QuantBlockFilter<int8_t>(const float* filter_on_host,
+                              int8_t* quant_res,
+                              float max,
+                              int64_t len) {
+  paddle::lite::xpu::math::ConvertFP32ToInt8(
+      filter_on_host, quant_res, max, len);
+  return true;
+}
+
+template <typename TM, typename TW, PrecisionType PType>
+void XPUBlockFuseCompute<TM, TW, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   auto op_type = param.op_type;
 
@@ -38,16 +67,34 @@ void XPUBlockFuseCompute<T, PType>::PrepareForRun() {
   auto& act_type = param.act_type;
   auto& act_param = param.act_param;
   auto& block_lod = param.block_lod;
-  auto filter_ptr = param.filter->template data<int16_t>();
-  auto bias_ptr = param.bias ? param.bias->template data<float>() : nullptr;
-  auto max_filter_ptr = param.max_filter->template data<float>();
+  auto& conv_bias = param.conv_bias;
+  size_t conv_num = 0;
+
+  for (auto i = 0; i < op_type.size(); i++) {
+    conv_num += op_type[i] == 0 ? 1 : 0;
+  }
+  // filter
+  auto cpu_filter_ptr = param.filter->template data<float>();
+  auto filter_len = param.filter->numel();
+  // max
+  filter_max_guard =
+      TargetWrapperXPU::MallocScratchPad(4 * conv_num * sizeof(float), false);
+  filter_max = reinterpret_cast<float*>(filter_max_guard->addr_);
+  // quant_filter
+  quant_filter_guard =
+      TargetWrapperXPU::MallocScratchPad(filter_len * sizeof(TW), false);
+  quant_filter = reinterpret_cast<TW*>(quant_filter_guard->addr_);
+  // bias
+  auto bias_ptr = param.has_bias ? param.bias->template data<float>() : nullptr;
+  auto xpu_filter_max = filter_max;
+  auto xpu_quant_filter = quant_filter;
 
   int op_count = 0;
   int f_count = 0, s_count = 0, p_count = 0, d_count = 0, g_count = 0;
-  int act_count = 0;
+  int act_count = 0, bias_count = 0;
   for (int block_idx = 0; block_idx < block_lod.size(); block_idx++) {
     int cur_block_op_num = block_lod[block_idx];
-    xdnn::fusion_block<float, int16_t, int16_t, T> cur_block;
+    xdnn::fusion_block<float, TW, TW, TM> cur_block;
     for (int op_idx = 0; op_idx < cur_block_op_num; op_idx++) {
       switch (op_type[op_count]) {
         case 0: {
@@ -58,11 +105,31 @@ void XPUBlockFuseCompute<T, PType>::PrepareForRun() {
           } else if (act_type[act_count] == 15) {
             act.hard_sigmoid_slope = act_param[act_count];
           }
+          int cur_filter_len = filter_dims[f_count] * filter_dims[f_count + 1] *
+                               filter_dims[f_count + 2] *
+                               filter_dims[f_count + 3];
+          float max_f = paddle::lite::xpu::math::FindMaxAbs(cpu_filter_ptr,
+                                                            cur_filter_len);
+          std::vector<float> max_f_v(4, max_f);
+          XPU_CALL(xpu_memcpy(xpu_filter_max,
+                              max_f_v.data(),
+                              4 * sizeof(float),
+                              XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+
+          std::vector<TW> quant_filter_cpu(cur_filter_len, 0);
+          bool ret = QuantBlockFilter<TW>(
+              cpu_filter_ptr, quant_filter_cpu.data(), max_f, cur_filter_len);
+          CHECK_EQ(ret, true);
+          XPU_CALL(xpu_memcpy(xpu_quant_filter,
+                              quant_filter_cpu.data(),
+                              cur_filter_len * sizeof(TW),
+                              XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+
           int r = cur_block.add_conv_layer(
               place_x[op_count],
               place_y[op_count],
               place_z[op_count],
-              filter_ptr,
+              xpu_quant_filter,
               filter_dims[f_count + 1] * groups[g_count],
               filter_dims[f_count],
               {filter_dims[f_count + 2], filter_dims[f_count + 3]},
@@ -73,16 +140,17 @@ void XPUBlockFuseCompute<T, PType>::PrepareForRun() {
                paddings[p_count + 3]},
               {dilations[d_count], dilations[d_count + 1]},
               groups[g_count],
-              max_filter_ptr,
+              xpu_filter_max,
               true,
               bias_ptr,
               act);
           CHECK_EQ(r, 0);
-          filter_ptr = filter_ptr +
-                       filter_dims[f_count] * filter_dims[f_count + 1] *
-                           filter_dims[f_count + 2] * filter_dims[f_count + 3];
-          max_filter_ptr = max_filter_ptr + 4;
-          bias_ptr = bias_ptr + filter_dims[f_count];
+          cpu_filter_ptr += cur_filter_len;
+          xpu_quant_filter += cur_filter_len;
+          xpu_filter_max += 4;
+          if (conv_bias[bias_count] != 0) {
+            bias_ptr = bias_ptr + filter_dims[f_count];
+          }
           f_count += 4;
           s_count += 2;
           g_count += 1;
@@ -90,6 +158,7 @@ void XPUBlockFuseCompute<T, PType>::PrepareForRun() {
           d_count += 2;
           op_count += 1;
           act_count += 1;
+          bias_count += 1;
           break;
         }
         case 1: {
@@ -162,8 +231,8 @@ void XPUBlockFuseCompute<T, PType>::PrepareForRun() {
   }
 }
 
-template <typename T, PrecisionType PType>
-void XPUBlockFuseCompute<T, PType>::Run() {
+template <typename TM, typename TW, PrecisionType PType>
+void XPUBlockFuseCompute<TM, TW, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& input_dims = param.input->dims();
@@ -189,7 +258,7 @@ void XPUBlockFuseCompute<T, PType>::Run() {
   float* output_max =
       param.output_max->template mutable_data<float>(TARGET(kXPU));
 
-  int r = xdnn::run_fusion_block_list<float, int16_t, int16_t, T>(
+  int r = xdnn::run_fusion_block_list<float, TW, TW, TM>(
       ctx.GetRawContext(),
       param.input->template data<float>(),
       output->template mutable_data<float>(TARGET(kXPU)),
@@ -211,17 +280,19 @@ void XPUBlockFuseCompute<T, PType>::Run() {
 }  // namespace paddle
 
 namespace xpu = paddle::lite::kernels::xpu;
-using XPUBlockFp32 = xpu::XPUBlockFuseCompute<float, PRECISION(kFloat)>;
+using XPUBlockFp32 =
+    xpu::XPUBlockFuseCompute<float, int16_t, PRECISION(kFloat)>;
 
-using XPUBlockFp16 = xpu::XPUBlockFuseCompute<float16, PRECISION(kFP16)>;
+using XPUBlockFp16 =
+    xpu::XPUBlockFuseCompute<float16, int16_t, PRECISION(kFP16)>;
+
+using XPUBlockInt8 = xpu::XPUBlockFuseCompute<float, int8_t, PRECISION(kInt8)>;
 
 REGISTER_LITE_KERNEL(
     __xpu__block_fuse_op, kXPU, kFloat, kNCHW, XPUBlockFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Filter",
-               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt16))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("FilterMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -230,10 +301,18 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     __xpu__block_fuse_op, kXPU, kFP16, kNCHW, XPUBlockFp16, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Filter",
-               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt16))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("FilterMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    __xpu__block_fuse_op, kXPU, kInt8, kNCHW, XPUBlockInt8, def)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})

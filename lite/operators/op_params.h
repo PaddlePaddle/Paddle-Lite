@@ -1868,9 +1868,8 @@ struct XPUSoftmaxTopkParam : ParamBase {
 struct XPUBlockFuseParam : ParamBase {
   const lite::Tensor* input{};
   const lite::Tensor* filter;
-  const lite::Tensor* max_filter;
-  const lite::Tensor* bias;
-  const lite::Tensor* input_max{};
+  const lite::Tensor* bias{nullptr};
+  const lite::Tensor* input_max{nullptr};
   lite::Tensor* output{};
   lite::Tensor* output_max{};
   std::vector<int> op_type;
@@ -1884,7 +1883,9 @@ struct XPUBlockFuseParam : ParamBase {
   std::vector<int> groups;
   std::vector<int> act_type;
   std::vector<float> act_param;
+  std::vector<int> conv_bias;
   std::vector<int> block_lod;
+  bool has_bias{false};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -2074,6 +2075,7 @@ struct XPUConv2dParam : ParamBase {
   std::shared_ptr<std::vector<int>> dilations;
   int groups{1};
   bool has_branch{false};
+  bool has_bias{false};
 };
 
 struct XPUSfaHeadParam : ParamBase {
