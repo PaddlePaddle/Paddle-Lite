@@ -13,7 +13,6 @@
 // limitations under the License.
 #pragma once
 
-#include <omp.h>
 #include <Eigen/Core>
 #include <string>
 #include <vector>
@@ -127,9 +126,6 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
         im2col;
     auto blas =
         paddle::lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
-#ifdef PADDLE_WITH_MKLML
-#pragma omp parallel for
-#endif
     for (int i = 0; i < batch_size; i++) {
       lite::Tensor in_batch = param.x->template Slice<T>(i, i + 1);
       in_batch.Resize(input_shape);

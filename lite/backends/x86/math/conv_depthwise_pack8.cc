@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/conv_depthwise_pack8.h"
-#include <omp.h>
 #include <vector>
 #include "lite/backends/x86/math/conv_utils.h"
 
@@ -61,8 +60,12 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
   int total_count = batch_size * channel_num;
 
 #ifdef PADDLE_WITH_MKLML
-#pragma omp parallel for collapse(2)
-#endif
+#if !defined(WIN32)
+#pragma omp parallel for collapse(1)
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
   for (int idx = 0; idx < total_count; ++idx) {
     __m256 _bias0 =
         bias ? _mm256_loadu_ps(bias->data<float>() + (idx % channel_num) * 8)
@@ -85,7 +88,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
     __m256 _k21 = _mm256_loadu_ps(k0 + 56);
     __m256 _k22 = _mm256_loadu_ps(k0 + 64);
 
-    float* output_data = output_buffer + 8 * output_height * output_width;
+    float* output_data = output_buffer + 8 * output_height * output_width * idx;
     for (int i = 0; i < output_height; ++i) {
       int j = 0;
       for (; j + 7 < output_width; j += 8) {

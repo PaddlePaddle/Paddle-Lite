@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/interpolate.h"
-#include <omp.h>
 #include <string>
 #include <vector>
 #include "lite/backends/x86/math/math_function.h"
@@ -93,8 +92,12 @@ void bilinear_interp(const float* input_data,
   int total_count = n * c;
 
 #ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
 #pragma omp parallel for collapse(3)
-#endif
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
   for (int i = 0; i < total_count; i++) {
     for (int h = 0; h < out_h; h++) {
       for (int w = 0; w < out_w; w++) {
@@ -125,8 +128,12 @@ void nearest_interp(const float* input_data,
   int total_count = n * c;
   if (align_corners) {
 #ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
 #pragma omp parallel for collapse(3)
-#endif
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
     for (int i = 0; i < total_count; ++i) {
       for (int h = 0; h < out_h; ++h) {
         for (int w = 0; w < out_w; ++w) {
@@ -141,8 +148,12 @@ void nearest_interp(const float* input_data,
     }
   } else {
 #ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
 #pragma omp parallel for collapse(3)
-#endif
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
     for (int i = 0; i < total_count; ++i) {
       for (int h = 0; h < out_h; ++h) {
         for (int w = 0; w < out_w; ++w) {
