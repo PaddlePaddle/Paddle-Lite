@@ -41,6 +41,7 @@ add_kernel(transpose_metal_image APPLE_METAL basic SRCS image_op/transpose_image
 add_kernel(prior_box_metal_image APPLE_METAL basic SRCS image_op/prior_box_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(split_metal_image APPLE_METAL basic SRCS image_op/split_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(conv2d_transpose_metal_image APPLE_METAL basic SRCS image_op/conv2d_transpose_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(box_coder_metal_image APPLE_METAL basic SRCS image_op/box_coder_image_compute.mm DEPS metal_target_wrapper)
 
 
 add_library(METAL_BASE STATIC IMPORTED )
