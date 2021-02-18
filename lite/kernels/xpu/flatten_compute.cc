@@ -28,10 +28,8 @@ void FlattenContiguousRangeCompute::Run() {
   auto out = param.out;
   auto out_dims = out->dims();
   auto out_lod = out->lod();
-  // out->CopyDataFrom(*x);
-  out->Resize(out_dims);
-  out->set_lod(out_lod);
   out->ShareDataWith(*x);
+  out->Resize(out_dims);
 }
 
 }  // namespace xpu
