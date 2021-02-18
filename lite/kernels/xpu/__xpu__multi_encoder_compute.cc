@@ -222,7 +222,7 @@ REGISTER_LITE_KERNEL(__xpu__multi_encoder_norm_before,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUMultiEncoderCompute,
+                     paddle::lite::kernels::xpu:: XPUMultiEncoderNormBeforeCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("FCWeight", {LiteType::GetTensorTy(TARGET(kXPU))})
