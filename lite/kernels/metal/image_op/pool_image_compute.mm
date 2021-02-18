@@ -18,6 +18,7 @@
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 #include "lite/kernels/metal/image_op/pool_image_compute.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -96,6 +97,9 @@ void PoolImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("pool", output_buffer_);
+#endif
 }
 
 void PoolImageComputeHalf::PrepareForRun() {
@@ -170,9 +174,9 @@ void PoolImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
-#if 0
-      metal_debug::DumpImage("input_half", input_buffer_, param.x->dims().production());
-      metal_debug::DumpImage("output_half", output_buffer_, param.output->dims().production());
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("pool", output_buffer_);
 #endif
 }
 

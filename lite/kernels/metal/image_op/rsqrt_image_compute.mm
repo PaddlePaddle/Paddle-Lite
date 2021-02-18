@@ -17,6 +17,7 @@
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/rsqrt_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 
 namespace paddle {
@@ -58,6 +59,10 @@ void RsqrtImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("rsqrt", output_buffer_);
+#endif
 }
 
 void RsqrtImageComputeHalf::PrepareForRun() {
@@ -94,10 +99,9 @@ void RsqrtImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
-#if 0
-  const auto& param = this->Param<param_t>();
-  metal_debug::DumpImage("input_buffer_", input_buffer_, param.x->dims().production());
-  metal_debug::DumpImage("output_buffer_", output_buffer_, param.output->dims().production());
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("rsqrt", output_buffer_);
 #endif
 }
 

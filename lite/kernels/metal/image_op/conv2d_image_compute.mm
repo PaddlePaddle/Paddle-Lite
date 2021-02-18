@@ -15,6 +15,7 @@
 #include "lite/kernels/metal/image_op/conv2d_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 #define LZY_DEBUG 0
 
@@ -43,7 +44,7 @@ void Conv2dImageCompute::PrepareForRun() {
       relu6_thredhold_ =
           static_cast<short>(param.activation_param.hard_swish_threshold);
     } else {
-      throw std::logic_error("cannot support the activate type");
+      throw std::logic_error("ERROR: cannot support the activate type");
     }
   }
 
@@ -150,10 +151,13 @@ void Conv2dImageCompute::Run() {
       queue->WaitUntilComplete();
     }
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("conv2d", output_buffer_);
+#endif
 }
 
 std::string Conv2dImageCompute::KernelFunctionName(
-    const param_t& param, bool use_aggressive_optimization) {
+        const param_t& param, bool use_aggressive_optimization) {
   auto filter_width = param.filter->dims()[3];
   auto filter_height = param.filter->dims()[2];
   auto filter_channel = param.filter->dims()[1];
@@ -462,6 +466,9 @@ void Conv2dImageComputeHalf::Run() {
       queue->WaitUntilComplete();
     }
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("conv2d", output_buffer_);
+#endif
 }
 
 std::string Conv2dImageComputeHalf::KernelFunctionName(

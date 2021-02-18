@@ -33,7 +33,7 @@ static MTLResourceOptions OptionForAccess(METAL_ACCESS_FLAG flag) {
 }
 
 MetalBuffer::MetalBuffer(const MetalDevice &device, size_t size, const METAL_ACCESS_FLAG flag)
-    : flags_(flag) {
+    : flags_(flag), type_(TYPE::kCommonBuffer), data_length_(size) {
   mtl_device_ = const_cast<MetalDevice *>(&device);
   buffer_ = [device.device() newBufferWithLength:size options:OptionForAccess(flag)];
 }
@@ -42,7 +42,7 @@ MetalBuffer::MetalBuffer(const MetalDevice &device,
                          void *data,
                          size_t size,
                          const METAL_ACCESS_FLAG flag)
-    : flags_(flag) {
+    : flags_(flag), type_(TYPE::kCommonBuffer), data_length_(size) {
   mtl_device_ = const_cast<MetalDevice *>(&device);
   buffer_ = [device.device() newBufferWithBytes:data length:size options:OptionForAccess(flag)];
 }
@@ -60,7 +60,8 @@ MetalBuffer::MetalBuffer(const MetalDevice &device,
       convert_to_nhwc_(convert_to_nhwc),
       with_transpose_(with_transpose),
       dim_(in_dim),
-      flags_(flag) {
+      flags_(flag),
+      type_(TYPE::kTensorBuffer) {
   assert(precision_ == METAL_PRECISION_TYPE::FLOAT ||
          precision_ == METAL_PRECISION_TYPE::HALF);
 

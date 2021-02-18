@@ -15,6 +15,7 @@
 #include "lite/kernels/metal/image_op/fc_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/backends/metal/metal_debug.h"
 
 using namespace std;
 
@@ -103,6 +104,10 @@ void FCImageCompute::Run() {
     }
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("fc", output_buffer_);
+#endif
 }
 
 void FCImageComputeHalf::PrepareForRun() {
@@ -186,6 +191,10 @@ void FCImageComputeHalf::Run() {
     }
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("fc", output_buffer_);
+#endif
 }
 
 }

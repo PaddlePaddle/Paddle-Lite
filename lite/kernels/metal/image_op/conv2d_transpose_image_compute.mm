@@ -14,8 +14,8 @@
 
 #include "lite/kernels/metal/image_op/conv2d_transpose_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
-#define LZY_DEBUG 0
 
 namespace paddle {
 namespace lite {
@@ -90,6 +90,9 @@ void Conv2dTransposeImageCompute::Run() {
     program_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("conv2d_transpose", output_buffer_);
+#endif
 }
 
 std::string Conv2dTransposeImageCompute::KernelFunctionName(const param_t& param,
@@ -299,6 +302,9 @@ void Conv2dTransposeImageComputeHalf::Run() {
       queue->WaitUntilComplete();
     }
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("conv2d_transpose", output_buffer_);
+#endif
 }
 
 std::string Conv2dTransposeImageComputeHalf::KernelFunctionName(const param_t& param,

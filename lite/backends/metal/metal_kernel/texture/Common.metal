@@ -193,6 +193,13 @@ struct ExpandParam {
     ushort w;
 };
 
+struct B2TParam {
+    int32_t n;
+    int32_t c;
+    int32_t h;
+    int32_t w;
+};
+
 inline half4 getBiasHalf(uint3 gid, constant ElementwiseAddParam &addParam, texture2d_array<half, access::sample> biasTexture) {
     half4 output;
     if (addParam.fast == 1) {

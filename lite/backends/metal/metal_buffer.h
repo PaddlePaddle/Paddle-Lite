@@ -31,6 +31,7 @@ namespace lite {
 
 class MetalBuffer {
  public:
+  enum class TYPE { kCommonBuffer, kTensorBuffer };
   MetalBuffer(const MetalDevice& device,
               size_t size,
               METAL_ACCESS_FLAG flag = METAL_ACCESS_FLAG::CPUReadWrite);
@@ -102,12 +103,15 @@ class MetalBuffer {
   int offset() const;
   void set_offset(int offset);
 
+  MetalBuffer::TYPE type() { return type_; }
+  DDim tensor_dim() { return tensor_dim_; }
+  size_t data_length() { return data_length_; }
+
  private:
   template <typename P>
   void ExpandNHWC();
   void Convert();
 
- private:
   size_t size_;
   int offset_ = 0;
 
@@ -128,6 +132,7 @@ class MetalBuffer {
   bool with_transpose_;
   METAL_PRECISION_TYPE precision_;
   METAL_ACCESS_FLAG flags_;
+  TYPE type_;
 };
 
 }  // namespace lite

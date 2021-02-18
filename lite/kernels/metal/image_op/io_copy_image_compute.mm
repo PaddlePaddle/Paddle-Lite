@@ -42,13 +42,7 @@ class IoCopyHostToMetalTexture
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
-      std::string function_name = "";
-      if (std::is_same<float, float>::value) {
-        function_name = "buffer_to_texture_array_n_channel_kernel";
-      } else if (std::is_same<float, MetalHalf>::value) {
-        function_name = "buffer_to_texture_array_n_channel_kernel_half";
-      }
-
+      std::string function_name = "buffer_to_texture_array_n_channel_kernel";
       kernel_ = mtl_ctx->GetKernel(*device, function_name);
     }
   }
@@ -61,22 +55,19 @@ class IoCopyHostToMetalTexture
     auto src = param.x->template data<float>();
     auto input_dims = param.x->dims();
     auto output_dims = param.y->dims();
-    auto mem_size = param.x->dims().production() * sizeof(float);
-    auto src_buffer_ = mtl_ctx->CreateBuffer(
-        *device, const_cast<float*>(src), mem_size, METAL_ACCESS_FLAG::CPUWriteOnly);
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
+      auto mem_size = param.x->dims().production() * sizeof(float);
+      auto src_buffer_ = mtl_ctx->CreateBuffer(
+              *device, const_cast<float*>(src), mem_size, METAL_ACCESS_FLAG::CPUWriteOnly);
+
       auto output_width = output_buffer_->texture_width_;
       auto output_height = output_buffer_->texture_height_;
       auto output_array_length = output_buffer_->array_length_;
 
-      auto& context = ctx_->As<ContextMetal>();
-      auto mtl_ctx = (MetalContext*)context.context();
-      auto mtl_dev = mtl_ctx->GetDefaultDevice();
-
       {
-        auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+        auto queue = mtl_ctx->GetDefaultQueue(*device);
         MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                         static_cast<MetalUint>(output_height),
                                         static_cast<MetalUint>(output_array_length)};
@@ -171,13 +162,8 @@ class IoCopyHostToMetalTextureHalf
       auto output_width = output_buffer_->texture_width_;
       auto output_height = output_buffer_->texture_height_;
       auto output_array_length = output_buffer_->array_length_;
-
-      auto& context = ctx_->As<ContextMetal>();
-      auto mtl_ctx = (MetalContext*)context.context();
-      auto mtl_dev = mtl_ctx->GetDefaultDevice();
-
       {
-        auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+        auto queue = mtl_ctx->GetDefaultQueue(*device);
         MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                         static_cast<MetalUint>(output_height),
                                         static_cast<MetalUint>(output_array_length)};
@@ -263,22 +249,18 @@ class IoCopyHostToMetalTextureHalf2Half
     auto src = param.x->template data<MetalHalf>();
     auto input_dims = param.x->dims();
     auto output_dims = param.y->dims();
-    auto mem_size = param.x->dims().production() * sizeof(MetalHalf);
-    auto src_buffer_ = mtl_ctx->CreateBuffer(
-        *device, const_cast<MetalHalf*>(src), mem_size, METAL_ACCESS_FLAG::CPUReadWrite);
 
     if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
         (input_dims.size() == 3 && input_dims[0] <= 4)) {
+      auto mem_size = param.x->dims().production() * sizeof(MetalHalf);
+      auto src_buffer_ = mtl_ctx->CreateBuffer(
+              *device, const_cast<MetalHalf*>(src), mem_size, METAL_ACCESS_FLAG::CPUReadWrite);
       auto output_width = output_buffer_->texture_width_;
       auto output_height = output_buffer_->texture_height_;
       auto output_array_length = output_buffer_->array_length_;
 
-      auto& context = ctx_->As<ContextMetal>();
-      auto mtl_ctx = (MetalContext*)context.context();
-      auto mtl_dev = mtl_ctx->GetDefaultDevice();
-
       {
-        auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+        auto queue = mtl_ctx->GetDefaultQueue(*device);
         MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                         static_cast<MetalUint>(output_height),
                                         static_cast<MetalUint>(output_array_length)};

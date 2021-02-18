@@ -31,8 +31,8 @@ void BilinearInterpImageCompute::PrepareForRun() {
   auto output_dims = param.Out->dims();
 
   input_buffer_ = param.X->data<float, MetalImage>();
-  output_buffer_ = param.Out->mutable_data<float, MetalImage>(
-      output_dims, input_buffer_->transpose_);
+  output_buffer_ =
+      param.Out->mutable_data<float, MetalImage>(output_dims, input_buffer_->transpose_);
 
   int input_h = static_cast<int>(input_buffer_->pad_to_four_dim_[2]);
   int input_w = static_cast<int>(input_buffer_->pad_to_four_dim_[3]);
@@ -60,10 +60,8 @@ void BilinearInterpImageCompute::PrepareForRun() {
 
   BilinearInterPMetalParam metal_param{ratio_h, ratio_w, align_delta};
 
-  param_buffer_ = mtl_ctx->CreateBuffer(*device,
-                                        &metal_param,
-                                        sizeof(metal_param),
-                                        METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = mtl_ctx->CreateBuffer(
+      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   std::string function_name = "bilinear_interp_float";
   kernel_ = mtl_ctx->GetKernel(*device, function_name);
@@ -91,6 +89,9 @@ void BilinearInterpImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("bilinear_interp", output_buffer_);
+#endif
 }
 
 void BilinearInterpImageComputeHalf::PrepareForRun() {
@@ -102,8 +103,8 @@ void BilinearInterpImageComputeHalf::PrepareForRun() {
   auto output_dims = param.Out->dims();
 
   input_buffer_ = param.X->data<MetalHalf, MetalImage>();
-  output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(
-      output_dims, input_buffer_->transpose_);
+  output_buffer_ =
+      param.Out->mutable_data<MetalHalf, MetalImage>(output_dims, input_buffer_->transpose_);
 
   int input_h = static_cast<int>(input_buffer_->pad_to_four_dim_[2]);
   int input_w = static_cast<int>(input_buffer_->pad_to_four_dim_[3]);
@@ -131,10 +132,8 @@ void BilinearInterpImageComputeHalf::PrepareForRun() {
 
   BilinearInterPMetalParam metal_param{ratio_h, ratio_w, align_delta};
 
-  param_buffer_ = mtl_ctx->CreateBuffer(*device,
-                                        &metal_param,
-                                        sizeof(metal_param),
-                                        METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = mtl_ctx->CreateBuffer(
+      *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   std::string function_name = "bilinear_interp_half";
   kernel_ = mtl_ctx->GetKernel(*device, function_name);
@@ -162,6 +161,9 @@ void BilinearInterpImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("bilinear_interp", output_buffer_);
+#endif
 }
 
 }  // namespace metal

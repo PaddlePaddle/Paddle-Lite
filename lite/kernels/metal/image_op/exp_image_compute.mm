@@ -17,6 +17,7 @@
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/exp_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -57,6 +58,10 @@ void ExpImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("exp", output_buffer_);
+#endif
 }
 
 void ExpImageComputeHalf::PrepareForRun() {
@@ -93,10 +98,9 @@ void ExpImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
-#if 0
-  const auto& param = this->Param<param_t>();
-  metal_debug::DumpImage("input_buffer_", input_buffer_, param.x->dims().production());
-  metal_debug::DumpImage("output_buffer_", output_buffer_, param.output->dims().production());
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("exp", output_buffer_);
 #endif
 }
 

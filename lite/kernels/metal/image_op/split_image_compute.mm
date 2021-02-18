@@ -16,6 +16,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/split_image_compute.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -149,6 +150,12 @@ void SplitImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  for (int i = 0; i < output_buffers_.size(); ++i) {
+    MetalDebug::SaveOutput("split", output_buffers_[i]);
+  }
+#endif
 }
 
 void SplitImageComputeHalf::PrepareForRun() {
@@ -279,6 +286,12 @@ void SplitImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  for (int i = 0; i < output_buffers_.size(); ++i) {
+    MetalDebug::SaveOutput("split", output_buffers_[i]);
+  }
+#endif
 }
 
 }  // namespace metal

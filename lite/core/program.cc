@@ -279,7 +279,7 @@ void RuntimeProgram::Run() {
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
-#ifndef LITE_WITH_FPGA
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
     if (inst.is_feed_fetch_op()) continue;
 #endif
 #ifdef LITE_WITH_NVTX

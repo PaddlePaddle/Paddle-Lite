@@ -15,6 +15,7 @@
 #include "lite/kernels/metal/image_op/depthwise_conv2d_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 using namespace std;
 
@@ -134,18 +135,6 @@ void DepthwiseConv2dImageCompute::Run() {
       }
       kernel_->Execute(*queue, global_work_size, quadruple, args);
       queue->WaitUntilComplete();
-
-#if LZY_DEBUG
-      metal_debug::DumpImage(
-          "input", input_buffer_, param.x->dims().production());
-      metal_debug::DumpImage(
-          "output", output_buffer_, param.output->dims().production());
-      if (param.bias)
-        metal_debug::DumpImage(
-            "bias", bias_buffer_, param.bias->dims().production());
-      metal_debug::DumpBuffer(
-          "filter", filter_buffer_.get(), param.filter->dims().production());
-#endif
     } else {
       auto blank_buffer = blank_tensor_.data<float, MetalImage>();
       auto args = {MetalKernelArgument{input_buffer_},
@@ -161,20 +150,11 @@ void DepthwiseConv2dImageCompute::Run() {
       }
       kernel_->Execute(*queue, global_work_size, quadruple, args);
       queue->WaitUntilComplete();
-
-#if LZY_DEBUG
-      metal_debug::DumpImage(
-          "input", input_buffer_, param.x->dims().production());
-      metal_debug::DumpImage(
-          "output", output_buffer_, param.output->dims().production());
-      if (param.bias)
-        metal_debug::DumpImage(
-            "bias", bias_buffer_, param.bias->dims().production());
-      metal_debug::DumpBuffer(
-          "filter", filter_buffer_.get(), param.filter->dims().production());
-#endif
     }
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("depthwise_conv2d", output_buffer_);
+#endif
 }
 
 string DepthwiseConv2dImageCompute::KernelFunctionName(
@@ -482,18 +462,6 @@ void DepthwiseConv2dImageComputeHalf::Run() {
       }
       kernel_->Execute(*queue, global_work_size, quadruple, args);
       queue->WaitUntilComplete();
-#if LZY_DEBUG
-      metal_debug::DumpImage(
-          "input_half", input_buffer_, param.x->dims().production());
-      metal_debug::DumpImage(
-          "output_half", output_buffer_, param.output->dims().production());
-      if (param.bias)
-        metal_debug::DumpImage(
-            "bias_half", bias_buffer_, param.bias->dims().production());
-      metal_debug::DumpBuffer("filter_half",
-                              filter_buffer_.get(),
-                              param.filter->dims().production());
-#endif
     } else {
       auto blank_buffer = blank_tensor_.data<float, MetalImage>();
       auto args = {MetalKernelArgument{input_buffer_},
@@ -509,20 +477,12 @@ void DepthwiseConv2dImageComputeHalf::Run() {
       }
       kernel_->Execute(*queue, global_work_size, quadruple, args);
       queue->WaitUntilComplete();
-#if LZY_DEBUG
-      metal_debug::DumpImage(
-          "input_half", input_buffer_, param.x->dims().production());
-      metal_debug::DumpImage(
-          "output_half", output_buffer_, param.output->dims().production());
-      if (param.bias)
-        metal_debug::DumpImage(
-            "bias_half", bias_buffer_, param.bias->dims().production());
-      metal_debug::DumpBuffer("filter_half",
-                              filter_buffer_.get(),
-                              param.filter->dims().production());
-#endif
     }
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("depthwise_conv2d", output_buffer_);
+#endif
 }
 
 string DepthwiseConv2dImageComputeHalf::KernelFunctionName(

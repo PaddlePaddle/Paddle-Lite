@@ -17,6 +17,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -97,6 +98,10 @@ void TransposeImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("transpose", output_buffer_);
+#endif
 }
 
 void TransposeImageComputeHalf::PrepareForRun() {
@@ -174,6 +179,10 @@ void TransposeImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("transpose", output_buffer_);
+#endif
 }
 
 }  // namespace metal

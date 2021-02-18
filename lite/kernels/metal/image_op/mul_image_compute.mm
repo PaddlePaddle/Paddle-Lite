@@ -15,6 +15,7 @@
 #include "lite/kernels/metal/image_op/mul_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -101,6 +102,10 @@ void MulImageCompute::Run() {
     }
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("mul", output_buffer_);
+#endif
 }
 
 void MulImageComputeHalf::PrepareForRun() {
@@ -182,10 +187,9 @@ void MulImageComputeHalf::Run() {
     }
     queue->WaitUntilComplete();
   }
-#if 0
-  metal_debug::DumpImage("input_buffer_x_half", input_buffer_x_, param.x->dims().production());
-  metal_debug::DumpImage("input_buffer_y_half", input_buffer_y_, param.y->dims().production());
-  metal_debug::DumpImage("output_buffer_", output_buffer_, param.output->dims().production());
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("mul", output_buffer_);
 #endif
 }
 

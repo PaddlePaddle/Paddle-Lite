@@ -16,6 +16,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/concat_image_compute.h"
+#include "lite/backends/metal/metal_debug.h"
 
 
 namespace paddle {
@@ -170,6 +171,9 @@ void ConcatImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("concat", output_buffer_);
+#endif
 }
 
 void ConcatImageComputeHalf::PrepareForRun() {
@@ -319,6 +323,10 @@ void ConcatImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("concat", output_buffer_);
+#endif
 }
 
 }  // namespace metal

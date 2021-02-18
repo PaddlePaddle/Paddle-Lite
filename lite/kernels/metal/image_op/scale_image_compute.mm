@@ -17,6 +17,7 @@
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/scale_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 
 namespace paddle {
@@ -71,6 +72,10 @@ void ScaleImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("scale", output_buffer_);
+#endif
 }
 
 void ScaleImageComputeHalf::PrepareForRun() {
@@ -121,6 +126,10 @@ void ScaleImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("scale", output_buffer_);
+#endif
 }
 
 }  // namespace metal

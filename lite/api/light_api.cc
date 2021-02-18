@@ -65,6 +65,7 @@ void LightPredictor::Build(const std::string& model_dir,
   PrepareFeedFetch();
 }
 
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
 Tensor* LightPredictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -74,6 +75,17 @@ Tensor* LightPredictor::GetInput(size_t offset) {
                 << " in exec_scope";
   return in_var->GetMutable<lite::Tensor>();
 }
+#else
+Tensor* LightPredictor::GetInput(size_t offset) {
+  auto* _feed_list = program_->exec_scope()->FindVar("feed");
+  CHECK(_feed_list) << "no feed variable in exec_scope";
+  auto* feed_list = _feed_list->GetMutable<std::vector<lite::Tensor>>();
+  if (offset >= feed_list->size()) {
+    feed_list->resize(offset + 1);
+  }
+  return &feed_list->at(offset);
+}
+#endif
 
 // get input by name
 Tensor* LightPredictor::GetInputByName(const std::string& name) {

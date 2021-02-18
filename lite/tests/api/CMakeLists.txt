@@ -31,6 +31,7 @@ function(lite_cc_test_with_model_and_data TARGET)
         RKNPU_DEPS ${rknpu_kernels} ${rknpu_bridges}
         BM_DEPS ${bm_kernels} ${bm_bridges}
         MLU_DEPS ${mlu_kernels} ${mlu_bridges}
+        METAL_DEPS ${metal_kernels}
         ARGS ${ARGS} SERIAL)
     if(DEFINED args_MODEL)
         add_dependencies(${TARGET} extern_lite_download_${args_MODEL}_tar_gz)
@@ -92,4 +93,8 @@ endif()
 
 if(LITE_WITH_IMAGINATION_NNA)
     lite_cc_test_with_model_and_data(test_mobilenet_v1_int8_imagination_nna MODEL mobilenet_v1_int8_for_imagination_nna DATA ILSVRC2012_small)
+endif()
+
+if(LITE_WITH_METAL)
+    lite_cc_test_with_model_and_data(test_mobilenet_v1_fp32_metal MODEL mobilenet_v1 DATA ILSVRC2012_small)
 endif()

@@ -16,6 +16,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/prior_box_image_compute.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -131,6 +132,10 @@ void PriorBoxImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("prior_box", output_buffer_);
+#endif
 }
 
 void PriorBoxImageComputeHalf::PrepareForRun() {
@@ -244,6 +249,10 @@ void PriorBoxImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("prior_box", output_buffer_);
+#endif
 }
 
 }  // namespace metal

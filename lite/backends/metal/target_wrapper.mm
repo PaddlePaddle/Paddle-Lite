@@ -14,7 +14,6 @@
 
 
 #include <cassert>
-#include "lite/core/tensor.h"
 #include "lite/backends/metal/target_wrapper.h"
 
 namespace paddle {

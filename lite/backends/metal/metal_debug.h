@@ -15,10 +15,15 @@
 #ifndef LITE_BACKENDS_METAL_METAL_DEBUG_H_
 #define LITE_BACKENDS_METAL_METAL_DEBUG_H_
 
+#include <map>
+#include <memory>
 #include <string>
 
 #include "lite/backends/metal/metal_buffer.h"
 #include "lite/backends/metal/metal_image.h"
+#include "lite/utils/macros.h"
+
+#define LITE_METAL_SAVE_TENSOR 0
 
 namespace paddle {
 namespace lite {
@@ -31,19 +36,46 @@ class MetalDebug {
     kBoth,
   };
 
+  static bool enable() { return enable_; }
+  static void set_enable(bool flag) { enable_ = flag; }
+
+  static void SaveOutput(std::string name,
+                         MetalImage* image,
+                         DumpMode mode = DumpMode::kBoth) {
+    if (op_stats_.count(name) > 0) {
+      op_stats_[name] += 1;
+      auto name_plus_index = name + std::to_string(op_stats_[name]);
+      DumpImage(name_plus_index, image, mode);
+    }
+  }
+
+  static void SaveOutput(std::string name,
+                         const MetalImage* image,
+                         DumpMode mode = DumpMode::kBoth) {
+    SaveOutput(name, const_cast<MetalImage*>(image), mode);
+  }
+
+  static void SaveOutput(std::string name,
+                         std::shared_ptr<MetalImage> image,
+                         DumpMode mode = DumpMode::kBoth) {
+    SaveOutput(name, image.get(), mode);
+  }
+
+ private:
   static void DumpImage(const std::string& name,
                         MetalImage* image,
-                        int length,
                         DumpMode mode = DumpMode::kBoth);
 
   static void DumpImage(const std::string& name,
                         const MetalImage* image,
-                        int length,
+                        DumpMode mode = DumpMode::kBoth);
+
+  static void DumpImage(const std::string& name,
+                        std::shared_ptr<MetalImage> image,
                         DumpMode mode = DumpMode::kBoth);
 
   static void DumpBuffer(const std::string& name,
                          MetalBuffer* image,
-                         int length,
                          DumpMode mode = DumpMode::kBoth);
 
   static void DumpBuffer(const std::string& name,
@@ -51,10 +83,19 @@ class MetalDebug {
                          int length,
                          DumpMode mode = DumpMode::kBoth);
 
+  static void DumpBuffer(const std::string& name,
+                         std::shared_ptr<MetalBuffer> buffer,
+                         int length,
+                         DumpMode mode = DumpMode::kBoth);
+
   static void DumpNCHWFloat(const std::string& name,
                             float* data,
                             int length,
                             DumpMode mode = DumpMode::kBoth);
+
+ private:
+  static LITE_THREAD_LOCAL std::map<std::string, int> op_stats_;
+  static LITE_THREAD_LOCAL bool enable_;
 };
 
 }  // namespace lite

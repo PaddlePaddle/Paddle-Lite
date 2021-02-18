@@ -15,7 +15,8 @@
 #include "dropout_image_compute.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "metal_params.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 using namespace std;
 
@@ -76,6 +77,9 @@ void DropoutImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("dropout", output_buffer_);
+#endif
 }
 
 void DropoutImageComputeHalf::PrepareForRun() {
@@ -125,6 +129,9 @@ void DropoutImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("dropout", output_buffer_);
+#endif
 }
 
 }  // namespace metal

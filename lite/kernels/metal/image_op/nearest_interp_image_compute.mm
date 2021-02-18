@@ -16,6 +16,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
+#include "lite/backends/metal/metal_debug.h"
 
 using namespace std;
 
@@ -93,6 +94,10 @@ void NearestInterpImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("nearest_interp", output_buffer_);
+#endif
 }
 
 void NearestInterpImageComputeHalf::PrepareForRun() {
@@ -164,6 +169,10 @@ void NearestInterpImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
+#if LITE_METAL_SAVE_TENSOR
+  MetalDebug::SaveOutput("nearest_interp", output_buffer_);
+#endif
 }
 
 }  // namespace metal
