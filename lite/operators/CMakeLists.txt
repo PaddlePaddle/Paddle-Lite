@@ -144,6 +144,7 @@ add_operator(matmul_v2_op extra SRCS matmul_v2_op.cc DEPS ${op_DEPS})
 add_operator(sum_op extra SRCS sum_op.cc DEPS ${op_DEPS})
 add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 add_operator(scatter_nd_add_op extra SRCS scatter_nd_add_op.cc DEPS ${op_DEPS})
+add_operator(tril_triu_op extra SRCS tril_triu_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
