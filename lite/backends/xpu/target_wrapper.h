@@ -105,6 +105,7 @@ class TargetWrapper<TARGET(kXPU)> {
   }
 
   static std::string multi_encoder_precision;  // NOLINT
+  static std::string multi_decoder_precision;  // NOLINT
   static int workspace_l3_size_per_thread;
   static bool conv_autotune;
   static std::string conv_autotune_file;  // NOLINT

@@ -47,6 +47,7 @@ lite_cc_library(mir_passes
       fusion/__xpu__softmax_topk_fuse_pass.cc
       fusion/__xpu__multi_encoder_slice_link_fuse_pass.cc
       fusion/__xpu__generate_sequence_fuse_pass.cc
+      fusion/__xpu__multi_decoder_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc

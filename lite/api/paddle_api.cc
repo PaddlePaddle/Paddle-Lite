@@ -433,6 +433,16 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 #endif
 }
 
+void CxxConfig::set_xpu_multi_decoder_precision(const std::string &precision) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::multi_decoder_precision = precision;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_multi_decoder_precision' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
 void CxxConfig::set_xpu_conv_autotune(bool autotune,
                                       const std::string &autotune_file) {
 #ifdef LITE_WITH_XPU
