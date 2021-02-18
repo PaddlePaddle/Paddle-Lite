@@ -40,7 +40,6 @@
 #include "lite/backends/arm/math/gemm_s8.h"
 #include "lite/backends/arm/math/gemv_arm_int8.h"
 #include "lite/backends/arm/math/im2sequence.h"
-#include "lite/backends/arm/math/increment.h"
 #include "lite/backends/arm/math/interpolate.h"
 #include "lite/backends/arm/math/layout.h"
 #include "lite/backends/arm/math/lrn.h"

@@ -82,11 +82,11 @@ class LrnImageCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
-    auto* x_img = x->data<half_t, cl::Image2D>();
+    auto* x_img = GET_DATA_GPU(x);
     // VLOG(4) << "x_image: " << x_img;
 
-    auto* out_img = out->mutable_data<half_t, cl::Image2D>(
-        out_image_shape["width"], out_image_shape["height"]);
+    auto* out_img = MUTABLE_DATA_GPU(
+        out, out_image_shape["width"], out_image_shape["height"], nullptr);
 
 #ifdef LITE_WITH_LOG
     // VLOG(4) << "out_image" << out_img;

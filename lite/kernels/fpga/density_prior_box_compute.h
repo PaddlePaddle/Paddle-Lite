@@ -13,26 +13,25 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-template <typename T>
-void increment(const T* input,
-               const int n,
-               const float step,
-               T* out,
-               Context<TARGET(kARM)>* ctx) {
-  for (int i = 0; i < n; i++) {
-    out[i] = input[i] + static_cast<T>(step);
-  }
-}
+namespace kernels {
+namespace fpga {
 
-}  // namespace math
-}  // namespace arm
+class DensityPriorBoxCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::DensityPriorBoxParam;
+
+  void Run() override;
+
+  virtual ~DensityPriorBoxCompute() = default;
+};
+
+}  // namespace fpga
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -14,25 +14,31 @@
 
 #pragma once
 #include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
+#include "lite/backends/fpga/KD/float16.hpp"
+#include "lite/backends/fpga/KD/pes/slice_pe.hpp"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace fpga {
 
-class IncrementCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class SliceCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
  public:
+  using param_t = operators::SliceParam;
+
+  void PrepareForRun() override;
   void Run() override;
 
-  ~IncrementCompute() {}
+  ~SliceCompute() {}
 
  private:
+  zynqmp::SlicePE pe_;
 };
 
-}  // namespace arm
+}  // namespace fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
