@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <stdio.h>
+#include <string>
 
 #include "lite/backends/fpga/KD/llapi/filter.h"
 #include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
