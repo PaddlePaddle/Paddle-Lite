@@ -60,8 +60,8 @@ REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_float, def)
     .Finalize();
 
 using range_int64 =
-    paddle::lite::kernels::host::RangeCompute<int64_t, PRECISION(kInt64)>;
-REGISTER_LITE_KERNEL(range, kHost, kInt64, kAny, range_int64, def)
+    paddle::lite::kernels::host::RangeCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int64, int64)
     .BindInput("Start",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt64),
