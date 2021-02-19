@@ -140,7 +140,7 @@ class ConvOpLite : public OpLite {
         param_.activation_param.active_type = lite_api::ActivationType::kPRelu;
         param_.activation_param.Prelu_mode =
             op_desc.GetAttr<std::string>("prelu_mode");
-        auto prelu_alpha_name = op_desc.Input("prelu_alpha").front();
+        auto prelu_alpha_name = op_desc.Input("Prelu_alpha").front();
         auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
         param_.activation_param.Prelu_alpha =
             const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>()));

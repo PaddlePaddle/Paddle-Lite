@@ -110,7 +110,7 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
   } else if (act_type_ == "prelu") {
     auto prelu_mode = act_op_desc.GetAttr<std::string>("mode");
     op_desc.SetAttr("prelu_mode", prelu_mode);
-    op_desc.SetInput("prelu_alpha", {matched.at("alpha")->arg()->name});
+    op_desc.SetInput("Prelu_alpha", {matched.at("alpha")->arg()->name});
   }
   return op_desc;
 }

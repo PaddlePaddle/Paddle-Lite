@@ -223,18 +223,15 @@ __kernel void conv2d_5x5_opt(__private const int item_ch,
     }
   }
 
-#ifdef PRELU
+CL_DTYPE4 alpha[5];
 #ifdef PRELU_CH
-  CL_DTYPE4 alpha[5];
-  alpha[0] =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(item_ch_id, 0));
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(item_ch_id, 0));
   alpha[1] = alpha[0];
   alpha[2] = alpha[0];
   alpha[3] = alpha[0];
   alpha[4] = alpha[0];
 
 #elif defined(PRELU_ELE)
-  CL_DTYPE4 alpha[5];
   alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
                             prelu_alpha,
                             SAMPLER,
@@ -263,25 +260,17 @@ __kernel void conv2d_5x5_opt(__private const int item_ch,
                               SAMPLER,
                               (int2)(out_w_base_id + out_w_id4, item_h_id));
   }
-#else
-  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
-  alpha0.y = alpha0.x;
-  alpha0.z = alpha0.x;
-  alpha0.w = alpha0.x;
-  CL_DTYPE4 alpha[5] = {alpha0, alpha0, alpha0, alpha0, alpha0};
+#elif defined(PRELU_ALL)
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha[0].y = alpha[0].x; alpha[0].z = alpha[0].x; alpha[0].w = alpha[0].x;
+  alpha[1] = alpha[0]; alpha[2] = alpha[0];
+  alpha[3] = alpha[0]; alpha[4] = alpha[0];
 #endif
   output[0] = activation_type4(output[0], alpha[0]);
   output[1] = activation_type4(output[1], alpha[1]);
   output[2] = activation_type4(output[2], alpha[2]);
   output[3] = activation_type4(output[3], alpha[3]);
   output[4] = activation_type4(output[4], alpha[4]);
-#else
-  output[0] = activation_type4(output[0]);
-  output[1] = activation_type4(output[1]);
-  output[2] = activation_type4(output[2]);
-  output[3] = activation_type4(output[3]);
-  output[4] = activation_type4(output[4]);
-#endif
 
 #ifdef SCALE_ACTIVATION
   output[0] = fuse_scale(output[0], 1.f, 0.f, 0.f);
@@ -533,18 +522,15 @@ __kernel void conv2d_5x5_multi_batch(__private const int item_ch,
     }
   }
 
-#ifdef PRELU
+CL_DTYPE4 alpha[5];
 #ifdef PRELU_CH
-  CL_DTYPE4 alpha[5];
-  alpha[0] =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(item_ch_id, 0));
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(item_ch_id, 0));
   alpha[1] = alpha[0];
   alpha[2] = alpha[0];
   alpha[3] = alpha[0];
   alpha[4] = alpha[0];
 
 #elif defined(PRELU_ELE)
-  CL_DTYPE4 alpha[5];
   alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
                             prelu_alpha,
                             SAMPLER,
@@ -573,25 +559,17 @@ __kernel void conv2d_5x5_multi_batch(__private const int item_ch,
                               SAMPLER,
                               (int2)(out_w_base_id + out_w_id4, item_h_id));
   }
-#else
-  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
-  alpha0.y = alpha0.x;
-  alpha0.z = alpha0.x;
-  alpha0.w = alpha0.x;
-  CL_DTYPE4 alpha[5] = {alpha0, alpha0, alpha0, alpha0, alpha0};
+#elif defined(PRELU_ALL)
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha[0].y = alpha[0].x; alpha[0].z = alpha[0].x; alpha[0].w = alpha[0].x;
+  alpha[1] = alpha[0]; alpha[2] = alpha[0];
+  alpha[3] = alpha[0]; alpha[4] = alpha[0];
 #endif
   output[0] = activation_type4(output[0], alpha[0]);
   output[1] = activation_type4(output[1], alpha[1]);
   output[2] = activation_type4(output[2], alpha[2]);
   output[3] = activation_type4(output[3], alpha[3]);
   output[4] = activation_type4(output[4], alpha[4]);
-#else
-  output[0] = activation_type4(output[0]);
-  output[1] = activation_type4(output[1]);
-  output[2] = activation_type4(output[2]);
-  output[3] = activation_type4(output[3]);
-  output[4] = activation_type4(output[4]);
-#endif
 
 #ifdef SCALE_ACTIVATION
   output[0] = fuse_scale(output[0], 1.f, 0.f, 0.f);

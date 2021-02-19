@@ -206,22 +206,18 @@ __kernel void depth_conv2d_3x3(
     output += inputs[i] * filters[i];
   }
 
-#ifdef PRELU
+CL_DTYPE4 alpha0;
 #ifdef PRELU_CH
-  CL_DTYPE4 alpha0 =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
 #elif defined(PRELU_ELE)
-  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos);
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos);
 #else
-  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
   alpha0.y = alpha0.x;
   alpha0.z = alpha0.x;
   alpha0.w = alpha0.x;
 #endif
   output = activation_type4(output, alpha0);
-#else
-  output = activation_type4(output);
-#endif
 
 #ifdef SCALE_ACTIVATION
   output = fuse_scale(output, 1.f, 0.f, 0.f);
@@ -380,14 +376,11 @@ __kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
   output[0] = mad(inputs[10], filters[8], output[0]);
   output[1] = mad(inputs[11], filters[8], output[1]);
 
-#ifdef PRELU
+CL_DTYPE4 alpha[2];
 #ifdef PRELU_CH
-  CL_DTYPE4 alpha[2];
-  alpha[0] =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ou_ch_blk_id, 0));
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ou_ch_blk_id, 0));
   alpha[1] = alpha[0];
 #elif defined(PRELU_ELE)
-  CL_DTYPE4 alpha[2];
   alpha[0] =
       READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ou_x, ou_nh_id));
   if (ou_col_id + 1 < ou_w) {
@@ -395,18 +388,15 @@ __kernel void depth_conv2d_3x3s1(__private const int ou_ch_blk,
         READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(ou_x + 1, ou_nh_id));
   }
 #else
-  CL_DTYPE4 alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
-  alpha0.y = alpha0.x;
-  alpha0.z = alpha0.x;
-  alpha0.w = alpha0.x;
-  CL_DTYPE4 alpha[2] = {alpha0, alpha0};
+  alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha[0].y = alpha[0].x;
+  alpha[0].z = alpha[0].x;
+  alpha[0].w = alpha[0].x;
+  alpha[1] = alpha[0];
+  
 #endif
   output[0] = activation_type4(output[0], alpha[0]);
   output[1] = activation_type4(output[1], alpha[1]);
-#else
-  output[0] = activation_type4(output[0]);
-  output[1] = activation_type4(output[1]);
-#endif
 
 #ifdef SCALE_ACTIVATION
   output[0] = fuse_scale(output[0], 1.f, 0.f, 0.f);

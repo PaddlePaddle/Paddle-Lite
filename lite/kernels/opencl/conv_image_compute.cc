@@ -1210,7 +1210,7 @@ REGISTER_LITE_KERNEL(conv2d,
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -1230,7 +1230,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -1251,7 +1251,7 @@ REGISTER_LITE_KERNEL(conv2d,
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -1271,7 +1271,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
