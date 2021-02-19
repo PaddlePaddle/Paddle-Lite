@@ -817,6 +817,11 @@ class XPUMultiEncoderFuser {
   std::string fc_precision_;
 };
 
+// TODO(mayang02): merge XPUSingleEncoderNormBeforeFuser and
+// XPUSingleEncoderFuser.
+// The main difference lies in the location of layer_norm.
+// In XPUSingleEncoderNormBeforeFuser, the last layer_norm is advanced to
+// QKV-FC.
 class XPUSingleEncoderNormBeforeFuser : public FuseBase {
  public:
   explicit XPUSingleEncoderNormBeforeFuser(
@@ -1223,6 +1228,7 @@ class XPUSingleEncoderNormBeforeFuser : public FuseBase {
 
     std::vector<std::string> froms = {
         "qk_mask",
+        "q_mul_y",
         "k_mul_y",
         "v_mul_y",
         "qkv_mul_y",
@@ -1234,8 +1240,6 @@ class XPUSingleEncoderNormBeforeFuser : public FuseBase {
         "qkv_add_y",
         "qkv_add_3_y",
         "qkv_add_4_y",
-        "ln_before_scale",
-        "ln_before_bias",
         "qkv_ln_2_scale",
         "qkv_ln_2_bias",
     };
