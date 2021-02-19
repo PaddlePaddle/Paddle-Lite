@@ -218,12 +218,13 @@ REGISTER_LITE_KERNEL(__xpu__multi_encoder,
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(__xpu__multi_encoder_norm_before,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::XPUMultiEncoderCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    __xpu__multi_encoder_norm_before,
+    kXPU,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::xpu::XPUMultiEncoderNormBeforeCompute,
+    def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("FCWeight", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("FCBias", {LiteType::GetTensorTy(TARGET(kXPU))})
