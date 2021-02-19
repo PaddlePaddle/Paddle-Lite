@@ -53,7 +53,7 @@ class XPUSingleDecoderFuser : public FuseBase {
     auto* pre_ln_bias = VarNode("pre_ln_bias")
                             ->assert_is_op_input("layer_norm", "Bias")
                             ->AsInput();
-    auto* pre_ln = OpNode("pre_ln", "layer_norm")->AsIntermediate();
+    auto* pre_ln = OpNode("pre_ln", "layer_norm");
     auto* pre_ln_out = VarNode("pre_ln_out")
                            ->assert_is_op_output("layer_norm", "Y")
                            ->assert_is_op_input(mul_type_, "X")
@@ -153,7 +153,7 @@ class XPUSingleDecoderFuser : public FuseBase {
     auto* k_concat_out = VarNode("k_concat_out")
                              ->assert_is_op_output("concat", "Out")
                              ->assert_is_op_input("matmul", "Y")
-                             ->AsIntermediate();
+                             ->AsOutput();
 
     PMNode* qk_matmul = nullptr;
     if (with_q_scale_) {
@@ -211,7 +211,7 @@ class XPUSingleDecoderFuser : public FuseBase {
     auto* v_concat_out = VarNode("v_concat_out")
                              ->assert_is_op_output("concat", "Out")
                              ->assert_is_op_input(matmul_type_, "Y")
-                             ->AsIntermediate();
+                             ->AsOutput();
 
     auto* qkv_matmul = OpNode("qkv_matmul", matmul_type_)->AsIntermediate();
     auto* qkv_matmul_out = VarNode("qkv_matmul_out")
@@ -342,9 +342,7 @@ class XPUSingleDecoderFuser : public FuseBase {
                                    ->AsIntermediate();
 
     auto* sec_v =
-        VarNode("sec_v")
-            ->assert_is_op_input(matmul_type_, "X")  // NOTE: is X of matmul
-            ->AsInput();
+        VarNode("sec_v")->assert_is_op_input(matmul_type_, "Y")->AsInput();
     auto* sec_qkv_matmul =
         OpNode("sec_qkv_matmul", matmul_type_)->AsIntermediate();
     auto* sec_qkv_matmul_out = VarNode("sec_qkv_matmul_out")
@@ -536,7 +534,7 @@ class XPUSingleDecoderFuser : public FuseBase {
         *sec_qkv_transpose2 >> *sec_qkv_transpose2_out >> *sec_qkv_reshape2 >>
         *sec_qkv_reshape2_out;
     *sec_v >> *sec_qkv_matmul;
-    *sec_qkv_transpose2_out >> *sec_qkv_transpose2_xshape;
+    *sec_qkv_transpose2 >> *sec_qkv_transpose2_xshape;
     *sec_qkv_reshape2 >> *sec_qkv_reshape2_xshape;
     *sec_qkv_reshape2_out >> *sec_qkv_mul >> *sec_qkv_mul_out >> *sec_qkv_add >>
         *sec_qkv_add_out >> *sec_qkv_add_2 >> *sec_qkv_add_2_out;
@@ -613,7 +611,17 @@ class XPUSingleDecoderFuser : public FuseBase {
                          matched.at("sec_qkv_ln_2_bias")->arg()->name,
                      });
     op_desc.SetOutput("Outputs",
-                      {matched.at("sec_qkv_add_5_out")->arg()->name});
+                      {
+                          matched.at("sec_qkv_add_5_out")->arg()->name,
+                      });
+    op_desc.SetOutput("KCacheOutputs",
+                      {
+                          matched.at("k_concat_out")->arg()->name,
+                      });
+    op_desc.SetOutput("VCacheOutputs",
+                      {
+                          matched.at("v_concat_out")->arg()->name,
+                      });
     // XXX: keep these to fool SubgraphOp::AttachImpl()
     op_desc.SetAttr<int>("sub_block", 0);
     op_desc.SetAttr<std::vector<std::string>>("input_data_names", {});
@@ -652,6 +660,8 @@ class XPUSingleDecoderFuser : public FuseBase {
       IR_NODE_LINK_TO(matched.at(from), matched.at("pre_ln"));
     }
     IR_OP_VAR_LINK(matched.at("pre_ln"), matched.at("sec_qkv_add_5_out"));
+    IR_OP_VAR_LINK(matched.at("pre_ln"), matched.at("k_concat_out"));
+    IR_OP_VAR_LINK(matched.at("pre_ln"), matched.at("v_concat_out"));
   }
 
  private:
@@ -709,6 +719,8 @@ class XPUMultiDecoderFuser {
     std::vector<std::string> arg_names{
         "KCache", "VCache", "FCWeight", "FCBias", "LNScale", "LNBias"};
     std::map<std::string, std::vector<std::string>> arg_map;
+    std::vector<std::string> cache_out_names{"KCacheOutputs", "VCacheOutputs"};
+    std::map<std::string, std::vector<std::string>> cache_out_map;
     for (size_t i = 0; i < all_decoders.size(); ++i) {
       Node* cur_decoder = all_decoders[i];
       auto* op_info = cur_decoder->stmt()->op_info();
@@ -718,6 +730,15 @@ class XPUMultiDecoderFuser {
           auto* arg_node = graph->RetrieveArgument(name);
           DirectedLink(arg_node, first_decoder);
           arg_map[arg_name].push_back(name);
+        }
+      }
+
+      for (auto cache_out_name : cache_out_names) {
+        auto real_names = op_info->Output(cache_out_name);
+        for (auto name : real_names) {
+          auto* cur_cache_out_node = graph->RetrieveArgument(name);
+          DirectedLink(first_decoder, cur_cache_out_node);
+          cache_out_map[cache_out_name].push_back(name);
         }
       }
 
@@ -749,6 +770,9 @@ class XPUMultiDecoderFuser {
     }
     op_desc.SetInput("Mask", {mask_name});
     op_desc.SetOutput("Output", {out_name});
+    for (auto kv : cache_out_map) {
+      op_desc.SetOutput(kv.first, kv.second);
+    }
     op_desc.SetAttr<int>("xpu", 1);
     auto* first_decoder_op_info = multi_decoder_stmt->op_info();
     op_desc.SetAttr<int>("head_num",
