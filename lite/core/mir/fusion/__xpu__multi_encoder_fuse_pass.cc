@@ -89,9 +89,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     PMNode* q_scale = nullptr;
     PMNode* q_scale_out = nullptr;
     if (with_q_scale_) {
-      q_scale = OpNode("q_scale", "scale")
-                    ->assert_op_attr<float>("scale", 0.125)
-                    ->AsIntermediate();
+      q_scale = OpNode("q_scale", "scale")->AsIntermediate();
       q_scale_out = VarNode("q_scale_out")
                         ->assert_is_op_output("scale", "Out")
                         ->assert_is_op_input("matmul", "X")
@@ -131,14 +129,7 @@ class XPUSingleEncoderFuser : public FuseBase {
             ->assert_is_op_output("transpose2", "XShape")
             ->AsIntermediate();
 
-    PMNode* qk_matmul = nullptr;
-    if (with_q_scale_) {
-      qk_matmul = OpNode("qk_matmul", "matmul")->AsIntermediate();
-    } else {
-      qk_matmul = OpNode("qk_matmul", "matmul")
-                      ->assert_op_attr<float>("alpha", 0.125)
-                      ->AsIntermediate();
-    }
+    auto* qk_matmul = OpNode("qk_matmul", "matmul")->AsIntermediate();
     auto* qk_matmul_out = VarNode("qk_matmul_out")
                               ->assert_is_op_output("matmul", "Out")
                               ->assert_is_op_input("elementwise_add", "X")
