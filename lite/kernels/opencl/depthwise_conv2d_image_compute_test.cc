@@ -22,15 +22,18 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/test_helper.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
 
 #define SHADOW_LOG VLOG(4)
-#define FP16_MAX_DIFF (1e0)
-#define FP16_ABS_DIFF (1e-3)
+#define FP16_RELATIVE_DIFF (5e-2)
+#define FP16_ABS_DIFF (5e-2)
+#define FP32_RELATIVE_DIFF (1e-3)
+#define FP32_ABS_DIFF (5e-4)
 #define TEST_DEPTHWISE_CONV_IMAGE_BASIC
-// #define TEST_DEPTHWISE_CONV_IMAGE_3X3
+#define TEST_DEPTHWISE_CONV_IMAGE_3X3
 
 #define LEAKY_RELU_ALPHA (0.1)
 template <typename Dtype1, typename Dtype2>
@@ -102,14 +105,6 @@ static void conv_basic(const Dtype1* din,
                       ic * kernel_h * kernel_w + kh * kernel_w + kw;
 
                   dst_data_ref[out_idx] += src_data[iidx] * weights_data[widx];
-                  /*
-                  if (out_idx == 0) {
-                     VLOG(5) << "src[" << iidx << "]: " << src_data[iidx]
-                             << "\tweights[" << widx << "]: "
-                             << weights_data[widx]
-                             << "\tdst[" << out_idx << "]: "
-                             << dst_data_ref[out_idx];
-                  */
                 }
               }
             }
@@ -128,8 +123,11 @@ static void conv_basic(const Dtype1* din,
                   dst_data_ref[out_idx] > (Dtype2)0
                       ? dst_data_ref[out_idx]
                       : (Dtype2)(dst_data_ref[out_idx] * leaky_relu_alpha);
+            } else if (flag_relu == "") {
+              continue;  // no act
             } else {
-              VLOG(4) << "this act type: " << flag_relu << " does not support";
+              LOG(FATAL) << "this act type: " << flag_relu
+                         << " does not support";
             }
           }
         }
@@ -221,30 +219,36 @@ int ConvOutputSize(int input_size,
 
 #ifdef TEST_DEPTHWISE_CONV_IMAGE_BASIC
 // #define LOOP_TEST
-TEST(depthwise_conv2d, compute_basic) {
-  CLRuntime::Global()->set_precision(lite_api::CL_PRECISION_FP32);
+void test_precision(const lite_api::CLPrecisionType p) {
+  CLRuntime::Global()->set_precision(p);
+  const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
   const int fc = 1;
   const int fw = 7;
   const int fh = fw;
-  const int dilation = 2;
-  const int stride = 2;
-  const int pad = 3;
-  const bool bias_flag = false;
-  const std::string relu_flag = "leaky_relu";
+  const int dilation_h = 1;
+  const int dilation_w = 2;
+  const int stride_h = 2;
+  const int stride_w = 3;
+  const int pad_h = 0;
+  const int pad_w = 3;
+  const bool bias_flag = true;
+  const std::string act_flag = "leaky_relu";
 #ifdef LOOP_TEST
   // for (int batch_size = 1; batch_size < 2; ++batch_size) {
-  for (int oc = 4; oc < 10; oc += 1) {      // oc = ic
-    for (int ih = 3; ih < 15; ih += 1) {    // ih
-      for (int iw = 3; iw < 15; iw += 1) {  // iw
+  for (int ic = 4; ic < 10; ic += 1) {
+    for (int ih = 3; ih < 15; ih += 1) {
+      for (int iw = 3; iw < 15; iw += 1) {
 #else
-  const int ic = 6;  //
+  const int ic = 6;
   const int ih = 112;
   const int iw = 112;
 #endif
         const int fb = ic;
         const int oc = ic;
-        const int oh = ConvOutputSize(ih, fh, dilation, pad, pad, stride);
-        const int ow = ConvOutputSize(iw, fw, dilation, pad, pad, stride);
+        const int oh =
+            ConvOutputSize(ih, fh, dilation_h, pad_h, pad_h, stride_h);
+        const int ow =
+            ConvOutputSize(iw, fw, dilation_w, pad_w, pad_w, stride_w);
         if (oh <= 0 || ow <= 0) {
 #ifdef LOOP_TEST
           continue;
@@ -271,28 +275,28 @@ TEST(depthwise_conv2d, compute_basic) {
         param.filter = &filter;
         param.output = &output;
         param.groups = oc;
-        std::vector<int> paddings = {pad, pad, pad, pad};
+        std::vector<int> paddings = {pad_h, pad_h, pad_w, pad_w};
         param.paddings = std::make_shared<std::vector<int>>(paddings);
-        param.strides = std::vector<int>{stride, stride};
-        std::vector<int> dilations = {dilation, dilation};
+        param.strides = std::vector<int>{stride_h, stride_w};
+        std::vector<int> dilations = {dilation_h, dilation_w};
         param.dilations = std::make_shared<std::vector<int>>(dilations);
         param.bias = bias_flag ? &bias : nullptr;
 
-        if (relu_flag == "relu") {
-          param.fuse_relu = true;  // relu only
+        if (act_flag == "relu") {
+          param.fuse_relu = true;
           param.activation_param.has_active = true;
           param.activation_param.active_type = lite_api::ActivationType::kRelu;
-        } else if (relu_flag == "relu6") {
+        } else if (act_flag == "relu6") {
           param.activation_param.Relu_clipped_coef = 6.f;
           param.activation_param.has_active = true;
           param.activation_param.active_type = lite_api::ActivationType::kRelu6;
-        } else if (relu_flag == "leaky_relu") {
+        } else if (act_flag == "leaky_relu") {
           param.activation_param.active_type =
               lite_api::ActivationType::kLeakyRelu;
           param.activation_param.has_active = true;
           param.activation_param.Leaky_relu_alpha = LEAKY_RELU_ALPHA;
         } else {
-          param.fuse_relu = false;  // relu only
+          param.fuse_relu = false;
           param.activation_param.has_active = false;
         }
 
@@ -312,35 +316,19 @@ TEST(depthwise_conv2d, compute_basic) {
             lite::DDim{std::vector<int64_t>({fb, fc, fh, fw})};
         const DDim& output_dim =
             lite::DDim{std::vector<int64_t>({1, oc, oh, ow})};
-        // element wise bias
+        // channel wise bias
         const DDim bias_dim = DDim(std::vector<DDim::value_type>{oc});
         input.Resize(input_dim);
         filter.Resize(filter_dim);
         output.Resize(output_dim);
 
-        std::default_random_engine engine;
-        std::uniform_real_distribution<float> gen(-5, 5);
         std::vector<float> input_v(input_dim.production());
         std::vector<float> filter_v(filter_dim.production());
         std::vector<float> output_v(output_dim.production());
-        // int idx = 0;
-        for (auto& i : input_v) {
-          i = gen(engine);
-          // i = idx++;
-        }
-        // idx = 0;
-        for (auto& f : filter_v) {
-          f = gen(engine);
-          // f = idx++;
-        }
+        fill_data_rand(input_v.data(), -1.f, 1.f, input_dim.production());
+        fill_data_rand(filter_v.data(), -1.f, 1.f, filter_dim.production());
+        fill_data_const(output_v.data(), 0.f, output_dim.production());
         std::vector<float> bias_v;
-        if (bias_flag) {
-          bias.Resize(bias_dim);
-          bias_v.resize(bias_dim.production());
-          for (auto& b : bias_v) {
-            b = gen(engine);
-          }
-        }
 
         LOG(INFO) << "prepare input";
         CLImageConverterDefault* default_converter =
@@ -349,26 +337,33 @@ TEST(depthwise_conv2d, compute_basic) {
             default_converter->InitImageDimInfoWith(input.dims());
         LOG(INFO) << "input_image_shape = " << input_image_shape[0] << " "
                   << input_image_shape[1];
-        std::vector<float> input_image_data(input_image_shape.production() *
-                                            4);  // 4 : RGBA
+        const size_t dtype_size = fp16_flag ? sizeof(half_t) : sizeof(float);
+        std::vector<char> input_image_data(input_image_shape.production() * 4 *
+                                           dtype_size);  // 4 : RGBA
         default_converter->NCHWToImage(
             input_v.data(), input_image_data.data(), input.dims());
-        auto* input_image =
-            input.mutable_data<float, cl::Image2D>(input_image_shape[0],
-                                                   input_image_shape[1],
-                                                   input_image_data.data());
+        MUTABLE_DATA_GPU(&input,
+                         input_image_shape[0],
+                         input_image_shape[1],
+                         input_image_data.data());
 
         LOG(INFO) << "prepare kernel";
         filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                        filter_dim);
+        if (bias_flag) {
+          bias.Resize(bias_dim);
+          bias_v.resize(bias_dim.production());
+          fill_data_rand(bias_v.data(), -1.f, 1.f, bias_dim.production());
+          bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(), bias_dim);
+        }
 
         LOG(INFO) << "launch";
         DDim output_image_shape =
             default_converter->InitImageDimInfoWith(output.dims());
         LOG(INFO) << "output_image_shape = " << output_image_shape[0] << " "
                   << output_image_shape[1];
-        auto* output_image = output.mutable_data<float, cl::Image2D>(
-            output_image_shape[0], output_image_shape[1]);
+        auto* output_image = MUTABLE_DATA_GPU(
+            &output, output_image_shape[0], output_image_shape[1], nullptr);
 
         kernel->Launch();
 
@@ -392,20 +387,21 @@ TEST(depthwise_conv2d, compute_basic) {
                                  param.groups,
                                  fw,
                                  fh,
-                                 stride,
-                                 stride,
-                                 dilation,
-                                 dilation,
-                                 pad,
-                                 pad,
+                                 stride_w,
+                                 stride_h,
+                                 dilation_w,
+                                 dilation_h,
+                                 pad_w,
+                                 pad_h,
                                  bias_flag,
-                                 relu_flag);
+                                 act_flag);
 
         const size_t cl_image2d_row_pitch{0};
         const size_t cl_image2d_slice_pitch{0};
 
-        std::vector<float> output_image_data(output_image_shape.production() *
-                                             4);
+        std::vector<char> output_image_data(output_image_shape.production() *
+                                            4 * dtype_size);  // 4 : RGBA
+        std::vector<half_t> output_v_fp16(output_dim.production());
         TargetWrapperCL::ImgcpySync(output_image_data.data(),
                                     output_image,
                                     output_image_shape[0],
@@ -420,21 +416,28 @@ TEST(depthwise_conv2d, compute_basic) {
                                        output.dims());
 
         LOG(INFO) << "output_data vs output_ref_data";
+        auto relative_diff_thres =
+            fp16_flag ? FP16_RELATIVE_DIFF : FP32_RELATIVE_DIFF;
+        auto abs_diff_thres = fp16_flag ? FP16_ABS_DIFF : FP32_ABS_DIFF;
+        uint32_t diff_cnt = 0;
         for (int i = 0; i < output.dims().production(); i++) {
           auto relative_diff =
               COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
           auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
-          LOG(INFO) << "idx: " << i << " abs_diff: " << abs_diff
-                    << " out_ins: " << output_v[i]
-                    << "\t out_ref: " << out_ref_data[i];
-          EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
-                       abs_diff > FP16_ABS_DIFF);
-          if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
-            LOG(FATAL) << "error idx:" << i << " output_v[" << i
-                       << "]:" << output_v[i] << " "
-                                                 "out_ref_data["
-                       << i << "]:" << out_ref_data[i];
+          EXPECT_FALSE(relative_diff > relative_diff_thres &&
+                       abs_diff > abs_diff_thres);
+          if (relative_diff > relative_diff_thres &&
+              abs_diff > abs_diff_thres) {
+            LOG(WARNING) << "err idx: " << i << " abs_diff: " << abs_diff
+                         << "\t relative_diff: " << relative_diff
+                         << "\t out_ins: " << output_v[i]
+                         << "\t out_ref: " << out_ref_data[i];
+            diff_cnt++;
           }
+        }
+        if (diff_cnt != 0) {
+          LOG(FATAL) << "Err num " << diff_cnt << "/"
+                     << output_dim.production();
         }
 #ifdef LOOP_TEST
       }
@@ -443,6 +446,14 @@ TEST(depthwise_conv2d, compute_basic) {
 #else
 // nothing to do.
 #endif
+  LOG(INFO) << "\n\t[  PASSED  ] " << lite_api::CLPrecisionTypeToStr(p);
+}
+
+TEST(depthwise_conv2d, compute_basic) {
+  for (auto ins : {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+                   lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
+    test_precision(ins);
+  }
 }
 #endif
 
@@ -538,7 +549,7 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
             lite::DDim{std::vector<int64_t>({fb, fc, fh, fw})};
         const DDim& output_dim =
             lite::DDim{std::vector<int64_t>({1, oc, oh, ow})};
-        // element wise bias
+        // channel wise bias
         const DDim bias_dim = DDim(std::vector<DDim::value_type>{oc});
         input.Resize(input_dim);
         filter.Resize(filter_dim);
@@ -583,6 +594,9 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
         LOG(INFO) << "prepare kernel";
         filter.Assign<float, lite::DDim, TARGET(kARM)>(filter_v.data(),
                                                        filter_dim);
+        if (bias_flag) {
+          bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_v.data(), bias_dim);
+        }
 
         LOG(INFO) << "launch";
         DDim output_image_shape =
@@ -646,9 +660,9 @@ TEST(depthwise_conv2d, compute_image2d_3x3) {
           auto relative_diff =
               COMPUTE_RELATIVE_DIFF(output_v[i], out_ref_data[i]);
           auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
-          EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
+          EXPECT_FALSE(relative_diff > FP16_RELATIVE_DIFF &&
                        abs_diff > FP16_ABS_DIFF);
-          if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
+          if (relative_diff > FP16_RELATIVE_DIFF && abs_diff > FP16_ABS_DIFF) {
             LOG(FATAL) << "error idx:" << i << " output_v[" << i
                        << "]:" << output_v[i] << " "
                                                  "out_ref_data["

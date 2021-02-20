@@ -988,9 +988,9 @@ void ConvImageCompute::DepthwiseConv2d() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(8, stride_h_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, pad_up_);
+  status_ = kernel_.setArg(9, (pad_up_ + pad_down_) / 2);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(10, pad_left_);
+  status_ = kernel_.setArg(10, (pad_left_ + pad_right_) / 2);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(11, dilation_w_);
   CL_CHECK_FATAL(status_);
@@ -1077,10 +1077,11 @@ void ConvImageCompute::PrintConvInfo() {
       has_bias_ && conv_param_->output->dims() == conv_param_->bias->dims();
 
   VLOG(4) << "input_image_shape: " << input_image_w_ << "," << input_image_h_;
-  //  VLOG(4) << "input_image: " << input_image_p_;
   VLOG(4) << "input_dims: " << conv_param_->x->dims();
   VLOG(4) << "filter_dims: " << conv_param_->filter->dims();
-  //  VLOG(4) << "filter_image: " << filter_image;
+  if (has_bias_) {
+    VLOG(4) << "bias_dims: " << conv_param_->bias->dims();
+  }
   VLOG(4) << "output_dims: " << conv_param_->output->dims();
   VLOG(4) << "out_image_shape: " << output_image_w_ << ", " << output_image_h_;
   VLOG(4) << "paddings: " << pad_left_ << "," << pad_up_;

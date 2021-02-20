@@ -24,8 +24,8 @@ __kernel void depth_conv2d_common(__private const int global_size_dim0, // (out_
                                   __write_only image2d_t output,
                                   __private const int stride_w,
                                   __private const int stride_h,
-                                  __private const int pad_up,
-                                  __private const int pad_left,
+                                  __private const int pad_h,
+                                  __private const int pad_w,
                                   __private const int dilation_w,
                                   __private const int dilation_h,
                                   __private const int input_width,
@@ -35,9 +35,9 @@ __kernel void depth_conv2d_common(__private const int global_size_dim0, // (out_
                                   __private const int filter_width,
                                   __private const int filter_height) {
 
-  const short out_c_blk = get_global_id(0); // [0, (C+3)/4)
-  const short out_w_blk = get_global_id(1); // [0, (W+3)/4)
-  const short out_nh = get_global_id(2);    // [0, N*H)
+  const int out_c_blk = get_global_id(0); // [0, (C+3)/4)
+  const int out_w_blk = get_global_id(1); // [0, (W+3)/4)
+  const int out_nh = get_global_id(2);    // [0, N*H)
 
   if (out_c_blk >= global_size_dim0 || out_w_blk >= global_size_dim1
       || out_nh >= global_size_dim2) {
@@ -64,25 +64,25 @@ __kernel void depth_conv2d_common(__private const int global_size_dim0, // (out_
   CL_DTYPE4 out3 = 0;
 #endif
 
-  const short in_w_offset0 = mad24(out_w_blk, stride_w << 2, -pad_left); // out_w_blk * stride_w * 4 - pad_left
-  const short in_w_offset1 = in_w_offset0 + stride_w;
-  const short in_w_offset2 = in_w_offset1 + stride_w;
-  const short in_w_offset3 = in_w_offset2 + stride_w;
+  const int in_w_offset0 = mad24(out_w_blk, stride_w << 2, -pad_w); // out_w_blk * stride_w * 4 - pad_w
+  const int in_w_offset1 = in_w_offset0 + stride_w;
+  const int in_w_offset2 = in_w_offset1 + stride_w;
+  const int in_w_offset3 = in_w_offset2 + stride_w;
 
-  short in_h_idx = mad24(out_nh % output_height, stride_h, -pad_up); // out_nh % output_height * stride_h - pad_up. height index of one input feature map
-  const short batch_idx = out_nh / output_height;
-  const short in_c_blk = out_c_blk;
+  int in_h_idx = mad24(out_nh % output_height, stride_h, -pad_h); // out_nh % output_height * stride_h - pad_h. height index of one input feature map
+  const int batch_idx = out_nh / output_height;
+  const int in_c_blk = out_c_blk;
 
-  const short in_x_base = mul24(in_c_blk, input_width); // in_c_blk * input_width
-  for (short kh = 0; kh < filter_height; kh++) {
-    short in_pos_y = select(in_h_idx + batch_idx * input_height, -1, (in_h_idx < 0 || in_h_idx >= input_height));
+  const int in_x_base = mul24(in_c_blk, input_width); // in_c_blk * input_width
+  for (int kh = 0; kh < filter_height; kh++) {
+    int in_pos_y = select(in_h_idx + batch_idx * input_height, -1, (in_h_idx < 0 || in_h_idx >= input_height));
     in_h_idx += dilation_h;
-    for (short kw = 0; kw < filter_width; kw++) {
+    for (int kw = 0; kw < filter_width; kw++) {
       CL_DTYPE4 in0, in1, in2, in3;
 
-      short base = mul24(kw, dilation_w);
-      short in_w_idx = in_w_offset0 + base; // width index of one input feature map
-      short in_pos_x = select(in_x_base + in_w_idx, -1, (in_w_idx < 0 || in_w_idx >= input_width));
+      int base = mul24(kw, dilation_w);
+      int in_w_idx = in_w_offset0 + base; // width index of one input feature map
+      int in_pos_x = select(in_x_base + in_w_idx, -1, (in_w_idx < 0 || in_w_idx >= input_width));
       in0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_pos_x, in_pos_y));
 
       in_w_idx = in_w_offset1 + base;
@@ -97,7 +97,7 @@ __kernel void depth_conv2d_common(__private const int global_size_dim0, // (out_
       in_pos_x = select(in_x_base + in_w_idx, -1, (in_w_idx < 0 || in_w_idx >= input_width));
       in3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_pos_x, in_pos_y));
 
-      short filter_idx = mad24(kh, filter_width, kw);
+      int filter_idx = mad24(kh, filter_width, kw);
       CL_DTYPE4 weights = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(filter_idx, in_c_blk));
 
       out0 = mad(in0, weights, out0);
@@ -119,9 +119,9 @@ __kernel void depth_conv2d_common(__private const int global_size_dim0, // (out_
   out3 = fuse_scale(out3, 1.f, 0.f, 0.f);
 #endif
 
-  const short out_w_blk4 = out_w_blk << 2; // [0, W)
-  const short remain = output_width - out_w_blk4;
-  const short out_pos_x = mad24(out_c_blk, output_width, out_w_blk4);
+  const int out_w_blk4 = out_w_blk << 2; // [0, W)
+  const int remain = output_width - out_w_blk4;
+  const int out_pos_x = mad24(out_c_blk, output_width, out_w_blk4);
   if (remain >= 4) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_pos_x,     out_nh), out0);
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_pos_x + 1, out_nh), out1);
