@@ -31,6 +31,9 @@ void TransposeCompute::Run() {
   const auto x_dims = x->dims();
   std::vector<int> x_shape_host(ndims, 0);
 
+  param.output->mutable_data<float>(TARGET(kXPU));
+  if (x->numel() == 0) return;
+
   for (int i = 0; i < ndims; ++i) {
     x_shape_host[i] = x_dims[i];
   }

@@ -29,6 +29,9 @@ void ReshapeCompute<T>::Run() {
   auto output = param.output;
   auto output_dims = output->dims();
 
+  param.output->template mutable_data<T>(TARGET(kXPU));
+  if (x->numel() == 0) return;
+
   if (param.inplace) {
     output->ShareDataWith(*x);
     output->Resize(output_dims);
