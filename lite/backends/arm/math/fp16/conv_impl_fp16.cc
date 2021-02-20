@@ -230,7 +230,7 @@ void im2col_fp16(IM2COL_PARAM(float16_t), int stride_h, int stride_w) {
  * \brief convolution function for kernel size 1x1, stride size 1, gemm
  * implementation
  */
-void conv1x1s1_gemm_fp16(GEMM_PARAM(float16_t)) {
+void conv1x1s1_gemm_fp16(CONV_PARAM(float16_t)) {
   int channel_size_out = ow * oh;
   int channel_size_in = win * ih;
 
@@ -323,7 +323,7 @@ void conv1x1s1_gemm_fp16(GEMM_PARAM(float16_t)) {
  * \brief convolution function for kernel size 3x3, stride size 2, gemm
  * implementation
  */
-void conv_im2col_gemm_fp16(GEMM_PARAM(float16_t)) {
+void conv_im2col_gemm_fp16(CONV_PARAM(float16_t)) {
   const int group = param.groups;
   auto filter_dims = param.filter->dims();
   const int kernel_h = filter_dims[2];
@@ -431,7 +431,7 @@ void conv_im2col_gemm_fp16(GEMM_PARAM(float16_t)) {
   }
 }
 
-void conv_depthwise_3x3_fp16(DEPTHWISE_PARAM(float16_t)) {
+void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
   auto paddings = *param.paddings;
   int pad_h = paddings[0];
   int pad_w = paddings[2];
@@ -440,61 +440,19 @@ void conv_depthwise_3x3_fp16(DEPTHWISE_PARAM(float16_t)) {
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   bool has_active = act_param.has_active;
+#define CONV_DEPTHWISE_IN_PARAMS \
+  o_data, i_data, weights, bias, flag_bias, num, ic, ih, win, oh, ow, ctx
   if (has_active) {
     switch (act_type) {
       case lite_api::ActivationType::kRelu:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
-          conv_depthwise_3x3s1p1_bias_relu_fp16_fp16(dout,
-                                                     din,
-                                                     weights,
-                                                     bias,
-                                                     flag_bias,
-                                                     num,
-                                                     ic,
-                                                     ih,
-                                                     iw,
-                                                     oh,
-                                                     ow,
-                                                     ctx);
+          conv_depthwise_3x3s1p1_bias_relu_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-          conv_depthwise_3x3s1p0_bias_relu_fp16_fp16(dout,
-                                                     din,
-                                                     weights,
-                                                     bias,
-                                                     flag_bias,
-                                                     num,
-                                                     ic,
-                                                     ih,
-                                                     iw,
-                                                     oh,
-                                                     ow,
-                                                     ctx);
+          conv_depthwise_3x3s1p0_bias_relu_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 2 && pad_h == 1 && pad_w == 1) {
-          conv_depthwise_3x3s2p1_bias_relu_fp16_fp16(dout,
-                                                     din,
-                                                     weights,
-                                                     bias,
-                                                     flag_bias,
-                                                     num,
-                                                     ic,
-                                                     ih,
-                                                     iw,
-                                                     oh,
-                                                     ow,
-                                                     ctx);
+          conv_depthwise_3x3s2p1_bias_relu_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 2 && pad_h == 0 && pad_w == 0) {
-          conv_depthwise_3x3s2p0_bias_relu_fp16_fp16(dout,
-                                                     din,
-                                                     weights,
-                                                     bias,
-                                                     flag_bias,
-                                                     num,
-                                                     ic,
-                                                     ih,
-                                                     iw,
-                                                     oh,
-                                                     ow,
-                                                     ctx);
+          conv_depthwise_3x3s2p0_bias_relu_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
         } else {
           LOG(FATAL) << "fp16 3x3 depthwise conv stride " << stride
                      << "and pad_h " << pad_h << "pad_w " << pad_w
@@ -508,17 +466,13 @@ void conv_depthwise_3x3_fp16(DEPTHWISE_PARAM(float16_t)) {
     }
   } else {
     if (stride == 1 && pad_h == 1 && pad_w == 1) {
-      conv_depthwise_3x3s1p1_bias_fp16_fp16(
-          dout, din, weights, bias, flag_bias, num, ic, ih, iw, oh, ow, ctx);
+      conv_depthwise_3x3s1p1_bias_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
     } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-      conv_depthwise_3x3s1p0_bias_fp16_fp16(
-          dout, din, weights, bias, flag_bias, num, ic, ih, iw, oh, ow, ctx);
+      conv_depthwise_3x3s1p0_bias_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
     } else if (stride == 2 && pad_h == 1 && pad_w == 1) {
-      conv_depthwise_3x3s2p1_bias_fp16_fp16(
-          dout, din, weights, bias, flag_bias, num, ic, ih, iw, oh, ow, ctx);
+      conv_depthwise_3x3s2p1_bias_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
     } else if (stride == 2 && pad_h == 0 && pad_w == 0) {
-      conv_depthwise_3x3s2p0_bias_fp16_fp16(
-          dout, din, weights, bias, flag_bias, num, ic, ih, iw, oh, ow, ctx);
+      conv_depthwise_3x3s2p0_bias_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
     } else {
       LOG(FATAL) << "fp16 3x3 depthwise conv stride " << stride << "and pad_h "
                  << pad_h << "pad_w " << pad_w << "is not supported!";
