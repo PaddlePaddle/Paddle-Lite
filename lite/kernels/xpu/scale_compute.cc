@@ -45,14 +45,20 @@ void ScaleCompute<T>::Run() {
 template <>
 void ScaleCompute<int>::Run() {
   auto& param = this->template Param<param_t>();
-
   const int* x_data = param.x->template data<int>();
   int* out_data = param.output->template mutable_data<int>();
   int64_t size = param.x->numel();
   int scale = static_cast<int>(param.scale);
+  int bias = static_cast<int>(param.bias);
 
-  for (int64_t i = 0; i < size; i++) {
-    out_data[i] = x_data[i] * scale;
+  if (param.bias_after_scale) {
+    for (int64_t i = 0; i < size; i++) {
+      out_data[i] = x_data[i] * scale + bias;
+    }
+  } else {
+    for (int64_t i = 0; i < size; i++) {
+      out_data[i] = (x_data[i] + bias) * scale;
+    }
   }
 }
 
@@ -77,6 +83,7 @@ REGISTER_LITE_KERNEL(scale,
                      kNCHW,
                      paddle::lite::kernels::xpu::ScaleCompute<int>,
                      int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();

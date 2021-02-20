@@ -142,6 +142,26 @@ class ElementwiseModCompute
   virtual ~ElementwiseModCompute() = default;
 };
 
+#ifdef LITE_WITH_XPU
+template <typename T>
+class ElementwiseMulComputeXPU
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ElementwiseParam;
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto& context = ctx_->As<X86Context>();
+    param.Out->template mutable_data<T>();
+    paddle::lite::kernels::x86::ElementwiseComputeEx<MulFunctor<T>,
+                                                     lite::TargetType::kX86,
+                                                     T>(
+        context, param.X, param.Y, param.axis, MulFunctor<T>(), param.Out);
+  }
+
+  virtual ~ElementwiseMulComputeXPU() = default;
+};
+#endif
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite

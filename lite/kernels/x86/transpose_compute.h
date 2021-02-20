@@ -102,6 +102,7 @@ class Transpose2Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~Transpose2Compute() = default;
 };
 
+#ifdef LITE_WITH_XPU
 template <typename T>
 class TransposeComputeXPU : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
@@ -120,6 +121,7 @@ class TransposeComputeXPU : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 
   virtual ~TransposeComputeXPU() = default;
 };
+#endif
 
 }  // namespace x86
 }  // namespace kernels

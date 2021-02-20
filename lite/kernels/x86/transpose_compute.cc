@@ -35,6 +35,7 @@ REGISTER_LITE_KERNEL(transpose2,
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
 
+#ifdef LITE_WITH_XPU
 REGISTER_LITE_KERNEL(transpose2,
                      kXPU,
                      kFloat,
@@ -45,3 +46,4 @@ REGISTER_LITE_KERNEL(transpose2,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
+#endif
