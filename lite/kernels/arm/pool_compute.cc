@@ -19,7 +19,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #ifdef ENABLE_ARM_FP16
-#include "lite/backends/arm/math/fp16/pooling_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 namespace paddle {
 namespace lite {
