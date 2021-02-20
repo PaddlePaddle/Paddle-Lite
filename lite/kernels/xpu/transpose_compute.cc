@@ -53,16 +53,17 @@ REGISTER_LITE_KERNEL(transpose,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::xpu::TransposeCompute,
-                     def)
+                     float32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(transpose2,
                      kXPU,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::xpu::TransposeCompute,
-                     def)
+                     float32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kXPU))})

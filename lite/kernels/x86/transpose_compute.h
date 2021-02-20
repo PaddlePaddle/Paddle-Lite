@@ -36,27 +36,27 @@ inline void TransCompute(const int dim,
                          const std::vector<int>& axis) {
   switch (dim) {
     case 1:
-      paddle::lite::x86::math::Transpose<lite::TargetType::kX86, T, 1> trans1;
+      paddle::lite::x86::math::Transpose<Target, T, 1> trans1;
       trans1(context, in, out, axis);
       break;
     case 2:
-      paddle::lite::x86::math::Transpose<lite::TargetType::kX86, T, 2> trans2;
+      paddle::lite::x86::math::Transpose<Target, T, 2> trans2;
       trans2(context, in, out, axis);
       break;
     case 3:
-      paddle::lite::x86::math::Transpose<lite::TargetType::kX86, T, 3> trans3;
+      paddle::lite::x86::math::Transpose<Target, T, 3> trans3;
       trans3(context, in, out, axis);
       break;
     case 4:
-      paddle::lite::x86::math::Transpose<lite::TargetType::kX86, T, 4> trans4;
+      paddle::lite::x86::math::Transpose<Target, T, 4> trans4;
       trans4(context, in, out, axis);
       break;
     case 5:
-      paddle::lite::x86::math::Transpose<lite::TargetType::kX86, T, 5> trans5;
+      paddle::lite::x86::math::Transpose<Target, T, 5> trans5;
       trans5(context, in, out, axis);
       break;
     case 6:
-      paddle::lite::x86::math::Transpose<lite::TargetType::kX86, T, 6> trans6;
+      paddle::lite::x86::math::Transpose<Target, T, 6> trans6;
       trans6(context, in, out, axis);
       break;
     default:
@@ -100,6 +100,25 @@ class Transpose2Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   }
 
   virtual ~Transpose2Compute() = default;
+};
+
+template <typename T>
+class TransposeComputeXPU : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::TransposeParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto* x = param.x;
+    auto* out = param.output;
+    out->template mutable_data<T>();
+    int ndims = param.axis.size();
+    auto& context = ctx_->As<X86Context>();
+    TransCompute<lite::TargetType::kX86, T>(
+        ndims, context, *x, out, param.axis);
+  }
+
+  virtual ~TransposeComputeXPU() = default;
 };
 
 }  // namespace x86
