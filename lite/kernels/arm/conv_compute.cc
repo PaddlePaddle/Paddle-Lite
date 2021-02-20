@@ -20,6 +20,9 @@
 #include "lite/kernels/arm/conv_direct.h"
 #include "lite/kernels/arm/conv_gemmlike.h"
 #include "lite/kernels/arm/conv_winograd.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -211,6 +214,27 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   bool kps_equal = (pw == ph) && (sh == sw) && (kw == kh);
   bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
   bool flag_dw_3x3 = (kw == 3 && kh == 3 && (sw == 1 || sw == 2));
+  // fp32 -> fp16
+  if (param.filter->precision() == PrecisionType::kFloat) {
+    Tensor tmp_tensor;
+    tmp_tensor.CopyDataFrom(*param.filter);
+    param.filter->clear();
+    param.filter->set_precision(PRECISION(kFP16));
+    const float* src_data = tmp_tensor.data<float>();
+    float16_t* weight_data = param.filter->mutable_data<float16_t>();
+    lite::arm::math::fp16::fp32_to_fp16(
+        src_data, weight_data, param.filter->numel());
+  }
+  if (param.bias && param.bias->precision() == PrecisionType::kFloat) {
+    Tensor tmp_tensor;
+    tmp_tensor.CopyDataFrom(*param.bias);
+    param.bias->clear();
+    param.bias->set_precision(PRECISION(kFP16));
+    const float* src_data = tmp_tensor.data<float>();
+    float16_t* bias_data = param.bias->mutable_data<float16_t>();
+    lite::arm::math::fp16::fp32_to_fp16(
+        src_data, bias_data, param.bias->numel());
+  }
 
   if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
       no_dilation && flag_dw_3x3) {
