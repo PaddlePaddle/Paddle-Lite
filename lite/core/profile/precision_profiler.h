@@ -60,7 +60,7 @@ static const std::string get_date_str() {
   std::time_t time_t = timestamp / 1000000;
   auto gmtime = std::gmtime(&time_t);
   char buffer[32];
-  strftime(buffer, 32, "%Y-%m-%d_%T_", gmtime);
+  strftime(buffer, 32, "%Y-%m-%d_%H-%M-%S_", gmtime);
   char microseconds[8];
   snprintf(microseconds, sizeof(microseconds), "%06ld", timestamp % 1000000);
 
