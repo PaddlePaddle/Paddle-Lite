@@ -34,16 +34,18 @@ class XPUMultiDecoderCompute
   virtual void Run();
 
  private:
-  std::vector<const float *> arg_k_cache_;
-  std::vector<const float *> arg_v_cache_;
+  std::vector<const float *> arg_k_cache_in_;
+  std::vector<const float *> arg_v_cache_in_;
   std::vector<const int8_t *> arg_fc_weight_int8_;
   std::vector<const int16_t *> arg_fc_weight_int16_;
   std::vector<const float *> arg_fc_weight_fp32_;
   std::vector<const float *> arg_fc_bias_;
   std::vector<const float *> arg_ln_scale_;
   std::vector<const float *> arg_ln_bias_;
+  std::vector<float *> arg_k_cache_out_;
+  std::vector<float *> arg_v_cache_out_;
   // TODO(mayang02): use xdnn::DecoderParam.
-  xdnn::EncoderParam decoder_param_;
+  xdnn::DecoderParam decoder_param_;
 };
 
 }  // namespace xpu

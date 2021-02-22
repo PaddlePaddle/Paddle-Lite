@@ -39,12 +39,6 @@ void XPUMultiDecoderCompute::PrepareForRun() {
   } else if (param.precision == "int31") {
     arg_fc_weight_fp32_ = prepare_weight<float>(param.fc_weight);
   }
-  for (auto* k_cache : param.k_cache) {
-    arg_k_cache_.push_back(k_cache->data<float>());
-  }
-  for (auto* v_cache : param.v_cache) {
-    arg_v_cache_.push_back(v_cache->data<float>());
-  }
   for (auto* fc_bias : param.fc_bias) {
     arg_fc_bias_.push_back(fc_bias->data<float>());
   }
@@ -72,17 +66,45 @@ void XPUMultiDecoderCompute::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
 
   decoder_param_.batch_size = param.input->dims()[0];
-  decoder_param_.from_seq_len = param.input->dims()[1];
-  decoder_param_.to_seq_len = param.input->dims()[1];
+  decoder_param_.dec_seq_len = param.input->dims()[1];
+  decoder_param_.cache_seq_len = param.k_cache_in[0]->dims()[2];
+  decoder_param_.enc_seq_len = param.k_cache_in[1]->dims()[2];
   std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
   decoder_param_.mask_shape =
       std::vector<int>(mask_shape.begin(), mask_shape.end());
+
+  for (auto* k_cache : param.k_cache_in) {
+    arg_k_cache_in_.push_back(k_cache->data<float>());
+  }
+  for (auto* v_cache : param.v_cache_in) {
+    arg_v_cache_in_.push_back(v_cache->data<float>());
+  }
+  for (auto* k_cache : param.k_cache_out) {
+    arg_k_cache_out_.push_back(k_cache->mutable_data<float>(TARGET(kXPU)));
+  }
+  for (auto* v_cache : param.v_cache_out) {
+    arg_v_cache_out_.push_back(v_cache->mutable_data<float>(TARGET(kXPU)));
+  }
 
   int r = -1;
 
   ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
   if (param.precision == "int16") {
-    VLOG(3) << "TODO: add xpu api interface";
+    r = xdnn::transformer_decoder_int16<float, int16_t, float>(
+        ctx.GetRawContext(),                             /* context */
+        param.input->data<float>(),                      /* dec_input */
+        param.mask->data<float>(),                       /* attn_mask */
+        param.output->mutable_data<float>(TARGET(kXPU)), /* output */
+        arg_k_cache_in_,                                 /* caches_k_in */
+        arg_v_cache_in_,                                 /* caches_v_in */
+        arg_k_cache_out_,                                /* caches_k_out */
+        arg_v_cache_out_,                                /* caches_v_out */
+        arg_fc_weight_int16_,                            /* fc_weights */
+        arg_fc_bias_,                                    /* fc_biass */
+        arg_ln_scale_,                                   /* ln_scales */
+        arg_ln_bias_,                                    /* ln_biass */
+        param.fc_weight_max->data<float>(),              /* fc_weights_max */
+        decoder_param_ /* param */);
   }
   CHECK_EQ(r, 0);
 }

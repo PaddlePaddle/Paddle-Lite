@@ -43,18 +43,29 @@ bool XPUMultiDecoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.output = scope->FindVar(op_desc.Output("Output").front())
                       ->GetMutable<lite::Tensor>();
 
-  param_.k_cache.clear();
+  param_.k_cache_in.clear();
   for (auto& name : op_desc.Input("KCache")) {
     auto t =
         const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
-    param_.k_cache.push_back(t);
+    param_.k_cache_in.push_back(t);
   }
-
-  param_.v_cache.clear();
+  param_.v_cache_in.clear();
   for (auto& name : op_desc.Input("VCache")) {
     auto t =
         const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
-    param_.v_cache.push_back(t);
+    param_.v_cache_in.push_back(t);
+  }
+  param_.k_cache_out.clear();
+  for (auto& name : op_desc.Output("KCacheOutputs")) {
+    auto t =
+        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+    param_.k_cache_out.push_back(t);
+  }
+  param_.v_cache_out.clear();
+  for (auto& name : op_desc.Output("VCacheOutputs")) {
+    auto t =
+        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+    param_.k_cache_out.push_back(t);
   }
 
   param_.fc_weight.clear();
