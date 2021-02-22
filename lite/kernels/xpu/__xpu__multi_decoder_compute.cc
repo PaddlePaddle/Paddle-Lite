@@ -130,4 +130,6 @@ REGISTER_LITE_KERNEL(__xpu__multi_decoder,
     .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("FCWeightMax", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("KCacheOutputs", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("VCacheOutputs", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

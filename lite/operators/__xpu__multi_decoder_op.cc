@@ -28,6 +28,20 @@ bool XPUMultiDecoderOp::CheckShape() const {
 bool XPUMultiDecoderOp::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
   param_.output->Resize(input_shape);
+
+  int batch_size = input_shape[0];
+  int dec_seq_len = param_.input->dims()[1];
+  int cache_in_seq_len = param_.k_cache_in[0]->dims()[2];
+  int cache_out_seq_len = dec_seq_len + cache_in_seq_len;
+  for (auto out_tensor : param_.k_cache_out) {
+    out_tensor->Resize(
+        {batch_size, param_.head_num, cache_out_seq_len, param_.size_per_head});
+  }
+  for (auto out_tensor : param_.v_cache_out) {
+    out_tensor->Resize(
+        {batch_size, param_.head_num, cache_out_seq_len, param_.size_per_head});
+  }
+
   return true;
 }
 
@@ -65,7 +79,7 @@ bool XPUMultiDecoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   for (auto& name : op_desc.Output("VCacheOutputs")) {
     auto t =
         const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
-    param_.k_cache_out.push_back(t);
+    param_.v_cache_out.push_back(t);
   }
 
   param_.fc_weight.clear();
