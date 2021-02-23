@@ -54,14 +54,17 @@ bool RetinanetDetectionOutputOpLite::InferShapeImpl() const {
 
 bool RetinanetDetectionOutputOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                                 lite::Scope *scope) {
+  param_.bboxes.clear();
   for (auto arg_name : op_desc.Input("BBoxes")) {
     param_.bboxes.push_back(
         scope->FindVar(arg_name)->GetMutable<lite::Tensor>());
   }
+  param_.scores.clear();
   for (auto arg_name : op_desc.Input("Scores")) {
     param_.scores.push_back(
         scope->FindVar(arg_name)->GetMutable<lite::Tensor>());
   }
+  param_.anchors.clear();
   for (auto arg_name : op_desc.Input("Anchors")) {
     param_.anchors.push_back(
         scope->FindVar(arg_name)->GetMutable<lite::Tensor>());
