@@ -18,7 +18,6 @@
 #include <memory>
 
 #include "lite/core/kernel.h"
-#include "lite/core/tensor.h"
 #include "lite/operators/op_params.h"
 
 #ifdef LITE_WITH_PROFILE

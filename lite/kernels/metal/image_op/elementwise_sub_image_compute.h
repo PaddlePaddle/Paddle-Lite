@@ -25,6 +25,7 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#import "reshape_image_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -46,6 +47,11 @@ class ElementwiseSubImageCompute
   const MetalImage* input_buffer_y_;
   std::shared_ptr<MetalBuffer> params_buffer_;
   MetalImage* output_buffer_;
+
+  DDim input_x_mul_dim_;
+  ReshapeImageCompute reshape_;
+  Tensor shape_out_dev;
+  bool insert_shape = false;
 };
 
 class ElementwiseSubImageComputeHalf
@@ -63,6 +69,10 @@ class ElementwiseSubImageComputeHalf
   const MetalImage* input_buffer_y_;
   std::shared_ptr<MetalBuffer> params_buffer_;
   MetalImage* output_buffer_;
+  DDim input_x_mul_dim_;
+  ReshapeImageComputeHalf reshape_;
+  Tensor shape_out_dev;
+  bool insert_shape = false;
 };
 
 }  // namespace metal

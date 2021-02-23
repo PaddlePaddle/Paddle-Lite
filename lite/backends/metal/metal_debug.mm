@@ -109,7 +109,7 @@ void MetalDebug::DumpBuffer(const std::string& name,
 }
 
 
-LITE_THREAD_LOCAL std::map<std::string, int> MetalDebug::op_stats_ = {{"feed", 0}};
+LITE_THREAD_LOCAL std::map<std::string, int> MetalDebug::op_stats_ = {};
 LITE_THREAD_LOCAL bool MetalDebug::enable_ = false;
 
 }  // namespace lite

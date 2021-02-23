@@ -29,7 +29,7 @@ void ReshapeImageCompute::PrepareForRun() {
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
-  transpose_ = {0, 1, 2, 3};
+  transpose_ = param.shape_vct;
 
   output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
   input_buffer_ = param.x->data<float, MetalImage>();

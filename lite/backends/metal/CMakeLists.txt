@@ -26,12 +26,10 @@ ELSE()
 ENDIF()
 
 
-
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lite.metallib COMMAND xcrun -sdk ${SDK_NAME} metal ${LITE_METAL_KERNELS_SRC} ${TARGET_OPTION} -o ${CMAKE_CURRENT_BINARY_DIR}/lite.metallib
  COMMENT "Built target lite.metallib")
 add_custom_target (LiteMetalLIB DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/lite.metallib COMMENT "Generating lite.metallib")
 
-#lite_cc_library(metal_target_wrapper SRCS context.mm target_wrapper.mm MNNMetalContext.mm DEPS device_info ${METAL_LIBRARY} ${utils_DEPS})
 add_library(
         metal_target_wrapper
         context.mm
@@ -46,6 +44,6 @@ add_library(
         target_wrapper.mm
         metal_debug.mm )
 
-target_link_libraries(metal_target_wrapper ${METAL_LIBRARY} ${utils_DEPS} ${FOUNDATION_LIBRARY})
+target_link_libraries(metal_target_wrapper ${METAL_LIBRARY} ${FOUNDATION_LIBRARY})
 
 add_dependencies(metal_target_wrapper LiteMetalLIB)

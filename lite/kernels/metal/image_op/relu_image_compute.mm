@@ -109,6 +109,9 @@ void Relu6ImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+#if LITE_METAL_SAVE_TENSOR
+    MetalDebug::SaveOutput("relu6", output_buffer_);
+#endif
 }
 
 void ReluImageComputeHalf::PrepareForRun() {
@@ -195,6 +198,9 @@ void Relu6ImageComputeHalf::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+#if LITE_METAL_SAVE_TENSOR
+    MetalDebug::SaveOutput("relu6", output_buffer_);
+#endif
 }
 
 }  // namespace metal

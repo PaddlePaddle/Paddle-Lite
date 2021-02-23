@@ -97,8 +97,9 @@ void PoolImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
 #if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("pool", output_buffer_);
+  MetalDebug::SaveOutput("pool2d", output_buffer_);
 #endif
 }
 
@@ -176,7 +177,7 @@ void PoolImageComputeHalf::Run() {
   }
 
 #if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("pool", output_buffer_);
+  MetalDebug::SaveOutput("pool2d", output_buffer_);
 #endif
 }
 

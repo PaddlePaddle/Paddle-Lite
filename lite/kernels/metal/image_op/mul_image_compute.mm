@@ -146,6 +146,7 @@ void MulImageComputeHalf::PrepareForRun() {
 
     shape_out_dev.Resize(this->input_x_mul_dim_.Vectorize());
     reshape_param.output = &shape_out_dev;
+    reshape_param.shape_vct = {0, 1, 2, 3};
     reshape_.SetContext(std::move(reshape_ctx));
     reshape_.SetParam(reshape_param);
     reshape_.PrepareForRun();

@@ -68,7 +68,7 @@ void BoxCoderImageCompute::Run() {
   }
 
 #if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("transpose", output_buffer_);
+  MetalDebug::SaveOutput("box_coder", output_buffer_);
 #endif
 }
 
@@ -115,7 +115,7 @@ void BoxCoderImageComputeHalf::Run() {
   }
 
 #if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("transpose", output_buffer_);
+  MetalDebug::SaveOutput("box_coder", output_buffer_);
 #endif
 }
 

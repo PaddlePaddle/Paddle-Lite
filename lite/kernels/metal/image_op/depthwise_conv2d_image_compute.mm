@@ -24,8 +24,6 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-#define LZY_DEBUG 0
-
 void DepthwiseConv2dImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
   auto mtl_ctx = (MetalContext*)context.context();

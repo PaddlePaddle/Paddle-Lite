@@ -30,7 +30,7 @@ kernel void elementwise_add(texture2d_array<float, access::read> inputX [[textur
     if (pm.fast == 1) {
         ry = inputY.read(gid.xy, gid.z);
     } else if (pm.addByChannel == 1) {
-        ry = inputY.read(uint2(0, 0), gid.z);
+        ry = inputY.read(uint2(gid.z, 0), 0);
     } else {
         int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4], t_abcd[4];
         int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
@@ -66,7 +66,7 @@ kernel void elementwise_add_half(texture2d_array<half, access::read> inputX [[te
     if (pm.fast == 1) {
         ry = inputY.read(gid.xy, gid.z);
     } else if (pm.addByChannel == 1) {
-        ry = inputY.read(uint2(0, 0), gid.z);
+        ry = inputY.read(uint2(gid.z, 0), 0);
     } else {
         int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4], t_abcd[4];
         int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
@@ -100,7 +100,7 @@ kernel void elementwise_sub(texture2d_array<float, access::read> inputX [[textur
     float4 rx, ry;
     rx = inputX.read(gid.xy, gid.z);
     if (pm.byChannel == 1) {
-        ry = inputY.read(uint2(0, 0), gid.z);
+        ry = inputY.read(uint2(gid.z, 0), 0);
     } else {
         ry = inputY.read(gid.xy, gid.z);
     }
@@ -119,7 +119,7 @@ kernel void elementwise_sub_half(texture2d_array<half, access::read> inputX [[te
     half4 rx, ry;
     rx = inputX.read(gid.xy, gid.z);
     if (pm.byChannel == 1) {
-        ry = inputY.read(uint2(0, 0), gid.z);
+        ry = inputY.read(uint2(gid.z, 0), 0);
     } else {
         ry = inputY.read(gid.xy, gid.z);
     }

@@ -115,8 +115,9 @@ void ElementwiseAddImageCompute::Run() {
     kernel->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
 #if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("eadd", output_buffer_);
+  MetalDebug::SaveOutput("elementwise_add", output_buffer_);
 #endif
 }
 
@@ -211,7 +212,7 @@ void ElementwiseAddImageComputeHalf::Run() {
     queue->WaitUntilComplete();
   }
 #if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("eadd", output_buffer_);
+  MetalDebug::SaveOutput("elementwise_add", output_buffer_);
 #endif
 }
 

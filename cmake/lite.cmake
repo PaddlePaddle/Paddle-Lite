@@ -504,7 +504,7 @@ function(add_kernel TARGET device level)
             endforeach()
             return()
         endif()
-    set(metal_kernels "${metal_kernels};${TARGET}" CACHE INTERNAL "")
+        set(metal_kernels "${metal_kernels};${TARGET}" CACHE INTERNAL "")
     endif()
 
     if ("${device}" STREQUAL "CUDA")

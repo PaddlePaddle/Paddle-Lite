@@ -17,8 +17,6 @@
 #include "lite/kernels/metal/image_op/metal_params.h"
 #include "lite/backends/metal/metal_debug.h"
 
-#define LZY_DEBUG 0
-
 namespace paddle {
 namespace lite {
 namespace kernels {

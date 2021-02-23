@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/elementwise_mul_image_compute.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
-#include "lite/backends/metal/metal_debug.h"
 
 using namespace std;
 
@@ -37,39 +37,63 @@ void ElementwiseMulImageCompute::PrepareForRun() {
   output_buffer_ = param.Out->mutable_data<float, MetalImage>(output_dims);
   input_buffer_x_ = param.X->data<float, MetalImage>();
   input_buffer_y_ = param.Y->data<float, MetalImage>();
-
-  std::vector<int> xdim, ydim, xtrans, ytrans;
-  for (int i = 0; i < 4; i++) {
-    xdim.push_back((int)input_buffer_x_->dim_[i]);
-    ydim.push_back((int)input_buffer_y_->dim_[i]);
-  }
-
-  auto axis = param.axis;
-  int params_axis = 0;
-  if (axis == -1) {
-    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size());
+  input_x_mul_dim_= DDim({input_buffer_y_->tensor_dim_[0], input_buffer_y_->tensor_dim_[1], 1, 1});
+  auto valid = true;
+  int by_channel = 0;
+  if (input_buffer_x_->tensor_dim_.size() == 4) {
+    if (input_buffer_y_->tensor_dim_.size() == 4) {
+      if (input_buffer_y_->tensor_dim_[0] == 1 && input_buffer_y_->tensor_dim_[2] == 1 &&
+          input_buffer_y_->tensor_dim_[3] == 1 &&
+          input_buffer_x_->tensor_dim_[1] == input_buffer_y_->tensor_dim_[1]) {
+        by_channel = 1;
+      } else {
+        for (int i = 0; i < 4; i++) {
+          if (input_buffer_x_->tensor_dim_[i] != input_buffer_y_->tensor_dim_[i]) {
+            valid = false;
+            break;
+          }
+        }
+      }
+    } else if (input_buffer_y_->tensor_dim_.size() == 3) {
+      if (param.axis == 1 || param.axis == -1) {
+        if (input_buffer_y_->tensor_dim_[1] == 1 && input_buffer_y_->tensor_dim_[2] == 1 &&
+            input_buffer_y_->tensor_dim_[0] == input_buffer_x_->tensor_dim_[1]) {
+          by_channel = 1;
+        }
+      }
+    } else if (input_buffer_y_->tensor_dim_.size() == 2) {
+      if (param.axis == 0) {
+        by_channel = 1;
+        if (input_buffer_x_->transpose_ != input_buffer_y_->transpose_) {
+          insert_shape = true;
+          std::unique_ptr<KernelContext> reshape_ctx(new KernelContext);
+          reshape_ctx->As<ContextMetal>().InitOnce();
+          operators::ReshapeParam reshape_param;
+          reshape_param.x = param.Y;
+          shape_out_dev.Resize(this->input_x_mul_dim_.Vectorize());
+          reshape_param.output = &shape_out_dev;
+          reshape_param.shape_vct = input_buffer_x_->transpose_;
+          reshape_.SetContext(std::move(reshape_ctx));
+          reshape_.SetParam(reshape_param);
+          reshape_.PrepareForRun();
+        }
+      }
+    } else if (input_buffer_y_->tensor_dim_.size() == 1) {
+      by_channel = 1;
+    } else {
+      valid = false;
+    }
   } else {
-    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size()) + axis;
+    valid = false;
   }
-  int params_fast = 0;
-  if ((input_buffer_x_->dim_ == input_buffer_y_->dim_) &&
-      (input_buffer_x_->transpose_ == input_buffer_y_->transpose_)) {
-    params_fast = 1;
-  }
-
-  int add_by_channel = 0;
-  if (input_buffer_y_->tensor_dim_.size() == 1 &&
-      (axis == 1 || (axis == -1 &&
-                     input_buffer_y_->tensor_dim_[0] ==
-                         input_buffer_x_->pad_to_four_dim_[1]))) {
-    add_by_channel = 1;
+  if (!valid) {
+    throw std::logic_error("ERROR: elementwise_mul only supports : 1. input shapes are the same. "
+                           "2. multiply by channel.");
   }
 
-  ElementwiseMetalParam element_params = {add_by_channel};
-  params_buffer_ = mtl_ctx->CreateBuffer(*device,
-                                         &element_params,
-                                         sizeof(element_params),
-                                         METAL_ACCESS_FLAG::CPUWriteOnly);
+  ElementwiseMetalParam element_params = {by_channel};
+  params_buffer_ = mtl_ctx->CreateBuffer(
+      *device, &element_params, sizeof(element_params), METAL_ACCESS_FLAG::CPUWriteOnly);
 }
 
 void ElementwiseMulImageCompute::Run() {
@@ -91,16 +115,27 @@ void ElementwiseMulImageCompute::Run() {
                                    static_cast<MetalUint>(output_height),
                                    static_cast<MetalUint>(output_array_length)};
 
-    auto args = {MetalKernelArgument{input_buffer_x_},
-                 MetalKernelArgument{input_buffer_y_},
-                 MetalKernelArgument{output_buffer_},
-                 MetalKernelArgument{params_buffer_}};
+    if (insert_shape) {
+      reshape_.Run();
+      auto shape_buffer = shape_out_dev.data<MetalHalf, MetalImage>();
+      auto args = {MetalKernelArgument{input_buffer_x_},
+                   MetalKernelArgument{shape_buffer},
+                   MetalKernelArgument{output_buffer_},
+                   MetalKernelArgument{params_buffer_}};
+      kernel->Execute(*queue, global_work_size, false, args);
+    } else {
+      auto args = {MetalKernelArgument{input_buffer_x_},
+                   MetalKernelArgument{input_buffer_y_},
+                   MetalKernelArgument{output_buffer_},
+                   MetalKernelArgument{params_buffer_}};
 
-    kernel->Execute(*queue, global_work_size, false, args);
+      kernel->Execute(*queue, global_work_size, false, args);
+    }
     queue->WaitUntilComplete();
   }
+
 #if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("emul", output_buffer_);
+  MetalDebug::SaveOutput("elementwise_mul", output_buffer_);
 #endif
 }
 
@@ -116,39 +151,63 @@ void ElementwiseMulImageComputeHalf::PrepareForRun() {
   output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
   input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
   input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
-
-  std::vector<int> xdim, ydim, xtrans, ytrans;
-  for (int i = 0; i < 4; i++) {
-    xdim.push_back((int)input_buffer_x_->dim_[i]);
-    ydim.push_back((int)input_buffer_y_->dim_[i]);
-  }
-
-  auto axis = param.axis;
-  int params_axis = 0;
-  if (axis == -1) {
-    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size());
+  input_x_mul_dim_= DDim({input_buffer_y_->tensor_dim_[0], input_buffer_y_->tensor_dim_[1], 1, 1});
+  auto valid = true;
+  int by_channel = 0;
+  if (input_buffer_x_->tensor_dim_.size() == 4) {
+    if (input_buffer_y_->tensor_dim_.size() == 4) {
+      if (input_buffer_y_->tensor_dim_[0] == 1 && input_buffer_y_->tensor_dim_[2] == 1 &&
+          input_buffer_y_->tensor_dim_[3] == 1 &&
+          input_buffer_x_->tensor_dim_[1] == input_buffer_y_->tensor_dim_[1]) {
+        by_channel = 1;
+      } else {
+        for (int i = 0; i < 4; i++) {
+          if (input_buffer_x_->tensor_dim_[i] != input_buffer_y_->tensor_dim_[i]) {
+            valid = false;
+            break;
+          }
+        }
+      }
+    } else if (input_buffer_y_->tensor_dim_.size() == 3) {
+      if (param.axis == 1 || param.axis == -1) {
+        if (input_buffer_y_->tensor_dim_[1] == 1 && input_buffer_y_->tensor_dim_[2] == 1 &&
+            input_buffer_y_->tensor_dim_[0] == input_buffer_x_->tensor_dim_[1]) {
+          by_channel = 1;
+        }
+      }
+    } else if (input_buffer_y_->tensor_dim_.size() == 2) {
+      if (param.axis == 0) {
+        by_channel = 1;
+        if (input_buffer_x_->transpose_ != input_buffer_y_->transpose_) {
+          insert_shape = true;
+          std::unique_ptr<KernelContext> reshape_ctx(new KernelContext);
+          reshape_ctx->As<ContextMetal>().InitOnce();
+          operators::ReshapeParam reshape_param;
+          reshape_param.x = param.Y;
+          shape_out_dev.Resize(this->input_x_mul_dim_.Vectorize());
+          reshape_param.output = &shape_out_dev;
+          reshape_param.shape_vct = input_buffer_x_->transpose_;
+          reshape_.SetContext(std::move(reshape_ctx));
+          reshape_.SetParam(reshape_param);
+          reshape_.PrepareForRun();
+        }
+      }
+    } else if (input_buffer_y_->tensor_dim_.size() == 1) {
+      by_channel = 1;
+    } else {
+      valid = false;
+    }
   } else {
-    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size()) + axis;
+    valid = false;
   }
-  int params_fast = 0;
-  if ((input_buffer_x_->dim_ == input_buffer_y_->dim_) &&
-      (input_buffer_x_->transpose_ == input_buffer_y_->transpose_)) {
-    params_fast = 1;
-  }
-
-  int add_by_channel = 0;
-  if (input_buffer_y_->tensor_dim_.size() == 1 &&
-      (axis == 1 || (axis == -1 &&
-                     input_buffer_y_->tensor_dim_[0] ==
-                         input_buffer_x_->pad_to_four_dim_[1]))) {
-    add_by_channel = 1;
+  if (!valid) {
+    throw std::logic_error("ERROR: elementwise_mul only supports : 1. input shapes are the same. "
+                           "2. multiply by channel.");
   }
 
-  ElementwiseMetalParam element_params = {add_by_channel};
-  params_buffer_ = mtl_ctx->CreateBuffer(*device,
-                                         &element_params,
-                                         sizeof(element_params),
-                                         METAL_ACCESS_FLAG::CPUWriteOnly);
+  ElementwiseMetalParam element_params = {by_channel};
+  params_buffer_ = mtl_ctx->CreateBuffer(
+      *device, &element_params, sizeof(element_params), METAL_ACCESS_FLAG::CPUWriteOnly);
 }
 
 void ElementwiseMulImageComputeHalf::Run() {
@@ -180,7 +239,7 @@ void ElementwiseMulImageComputeHalf::Run() {
   }
 
 #if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("emul", output_buffer_);
+  MetalDebug::SaveOutput("elementwise_mul", output_buffer_);
 #endif
 }
 
@@ -196,9 +255,9 @@ REGISTER_LITE_KERNEL(elementwise_mul,
                      paddle::lite::kernels::metal::ElementwiseMulImageCompute,
                      def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+           {LiteType::GetTensorTy(TARGET(kMetal),
+                                  PRECISION(kFloat),
+                                  DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Y",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFloat),
@@ -217,9 +276,9 @@ REGISTER_LITE_KERNEL(
     paddle::lite::kernels::metal::ElementwiseMulImageComputeHalf,
     def)
     .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kMetal),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kMetalTexture2DArray))})
+           {LiteType::GetTensorTy(TARGET(kMetal),
+                                  PRECISION(kFP16),
+                                  DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Y",
                {LiteType::GetTensorTy(TARGET(kMetal),
                                       PRECISION(kFP16),

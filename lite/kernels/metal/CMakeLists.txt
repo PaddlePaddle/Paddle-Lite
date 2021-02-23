@@ -7,7 +7,7 @@ find_library(METAL_LIBRARY Metal REQUIRED)
 #####################
 # image kernel      #
 #####################
-add_kernel(batch_norm_metal_image APPLE_METAL basic SRCS image_op/batch_norm_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(batch_norm_metal_image APPLE_METAL basic SRCS image_op/batch_norm_image_compute.mm METAL_DEPS metal_target_wrapper)
 add_kernel(relu_metal_image APPLE_METAL basic SRCS image_op/relu_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(pool_metal_image APPLE_METAL basic SRCS image_op/pool_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(mul_metal_image APPLE_METAL basic SRCS image_op/mul_image_compute.mm DEPS metal_target_wrapper)
@@ -35,7 +35,7 @@ add_kernel(hard_swish_metal_image APPLE_METAL basic SRCS image_op/hard_swish_ima
 add_kernel(instance_norm_metal_image APPLE_METAL basic SRCS image_op/instance_norm_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(lrn_metal_image APPLE_METAL basic SRCS image_op/lrn_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(pixel_shuffle_metal_image APPLE_METAL basic SRCS image_op/pixel_shuffle_image_compute.mm DEPS metal_target_wrapper)
-add_kernel(rsqrt_metal_image APPLE_METAL basic SRCS image_op/rsqrt_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(rsqrt_metal_image APPLE_METAL basic SRCS image_op/rsqrt_image_compute.mm METAL_DEPS metal_target_wrapper)
 add_kernel(tanh_metal_image APPLE_METAL basic SRCS image_op/tanh_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(transpose_metal_image APPLE_METAL basic SRCS image_op/transpose_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(prior_box_metal_image APPLE_METAL basic SRCS image_op/prior_box_image_compute.mm DEPS metal_target_wrapper)

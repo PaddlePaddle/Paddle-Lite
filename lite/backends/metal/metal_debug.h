@@ -23,7 +23,7 @@
 #include "lite/backends/metal/metal_image.h"
 #include "lite/utils/macros.h"
 
-#define LITE_METAL_SAVE_TENSOR 0
+#define LITE_METAL_SAVE_TENSOR 1
 
 namespace paddle {
 namespace lite {
@@ -44,7 +44,11 @@ class MetalDebug {
                          DumpMode mode = DumpMode::kBoth) {
     if (op_stats_.count(name) > 0) {
       op_stats_[name] += 1;
-      auto name_plus_index = name + std::to_string(op_stats_[name]);
+      auto name_plus_index = name + "_" + std::to_string(op_stats_[name]);
+      DumpImage(name_plus_index, image, mode);
+    } else {
+      op_stats_[name] = 1;
+      auto name_plus_index = name + "_" + std::to_string(op_stats_[name]);
       DumpImage(name_plus_index, image, mode);
     }
   }
@@ -61,7 +65,6 @@ class MetalDebug {
     SaveOutput(name, image.get(), mode);
   }
 
- private:
   static void DumpImage(const std::string& name,
                         MetalImage* image,
                         DumpMode mode = DumpMode::kBoth);
