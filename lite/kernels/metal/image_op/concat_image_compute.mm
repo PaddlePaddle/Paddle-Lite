@@ -166,6 +166,7 @@ void ConcatImageCompute::Run() {
     std::vector<MetalKernelArgument> args;
     for (auto item : input_buffers_) args.emplace_back(item);
     args.emplace_back(output_buffer_);
+    if(v_ == "normal") args.emplace_back(output_buffer_);
     args.emplace_back(param_buffer_);
 
     kernel_->Execute(*queue, global_work_size, false, args);
@@ -175,6 +176,7 @@ void ConcatImageCompute::Run() {
 #if LITE_METAL_SAVE_TENSOR
   MetalDebug::SaveOutput("concat", output_buffer_);
 #endif
+  return;
 }
 
 void ConcatImageComputeHalf::PrepareForRun() {
@@ -319,6 +321,7 @@ void ConcatImageComputeHalf::Run() {
     std::vector<MetalKernelArgument> args;
     for (auto item : input_buffers_) args.emplace_back(item);
     args.emplace_back(output_buffer_);
+    if(v_ == "normal") args.emplace_back(output_buffer_);
     args.emplace_back(param_buffer_);
 
     kernel_->Execute(*queue, global_work_size, false, args);
