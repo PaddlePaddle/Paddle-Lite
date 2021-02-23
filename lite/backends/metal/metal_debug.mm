@@ -111,6 +111,7 @@ void MetalDebug::DumpBuffer(const std::string& name,
 
 LITE_THREAD_LOCAL std::map<std::string, int> MetalDebug::op_stats_ = {};
 LITE_THREAD_LOCAL bool MetalDebug::enable_ = false;
+LITE_THREAD_LOCAL int MetalDebug::layer_count_ = 0;
 
 }  // namespace lite
 }  // namespace paddle

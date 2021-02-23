@@ -42,23 +42,17 @@ void NearestInterpImageCompute::PrepareForRun() {
   int output_h = static_cast<int>(output_buffer_->pad_to_four_dim_[2]);
   int output_w = static_cast<int>(output_buffer_->pad_to_four_dim_[3]);
 
-  float delta_h = 0;
-  float delta_w = 0;
-
-  if (param.align_corners && output_h > 1) {
-    delta_h = 1.0;
-  }
-  if (param.align_corners && output_w > 1) {
-    delta_w = 1.0;
-  }
-  float ratio_h = ((float)(input_h)-delta_h) / ((float)(output_h)-delta_h);
-  float ratio_w = ((float)(input_w)-delta_w) / ((float)(output_w)-delta_w);
-
-  float align_delta = 0;
-  bool align_flag = (param.align_mode == 0 && !param.align_corners);
-
-  if (align_flag) {
-    align_delta = 0.5;
+  float ratio_w = 1.0f;
+  float ratio_h = 1.0f;
+  float align_delta = 0.0f;
+  if (param.align_corners) {
+      ratio_w = (float (input_w) - 1.0f) / (float(output_w) - 1.0f);
+      ratio_h = (float (input_h) - 1.0f) / (float(output_h) - 1.0f);
+      align_delta = 0.5f;
+  } else {
+      ratio_w = float (input_w) / float(output_w);
+      ratio_h = float (input_h) / float(output_h);
+      align_delta = 0.0;
   }
 
   NearestInterpMetalParam metal_param{ratio_h, ratio_w, align_delta};
@@ -117,24 +111,19 @@ void NearestInterpImageComputeHalf::PrepareForRun() {
   int output_h = static_cast<int>(output_buffer_->pad_to_four_dim_[2]);
   int output_w = static_cast<int>(output_buffer_->pad_to_four_dim_[3]);
 
-  float delta_h = 0;
-  float delta_w = 0;
-
-  if (param.align_corners && output_h > 1) {
-    delta_h = 1.0;
+  float ratio_w = 1.0f;
+  float ratio_h = 1.0f;
+  float align_delta = 0.0f;
+  if (param.align_corners) {
+      ratio_w = (float (input_w) - 1.0f) / (float(output_w) - 1.0f);
+      ratio_h = (float (input_h) - 1.0f) / (float(output_h) - 1.0f);
+      align_delta = 0.5f;
+  } else {
+      ratio_w = float (input_w) / float(output_w);
+      ratio_h = float (input_h) / float(output_h);
+      align_delta = 0.0;
   }
-  if (param.align_corners && output_w > 1) {
-    delta_w = 1.0;
-  }
-  float ratio_h = ((float)(input_h)-delta_h) / ((float)(output_h)-delta_h);
-  float ratio_w = ((float)(input_w)-delta_w) / ((float)(output_w)-delta_w);
 
-  float align_delta = 0;
-  bool align_flag = (param.align_mode == 0 && !param.align_corners);
-
-  if (align_flag) {
-    align_delta = 0.5;
-  }
 
   BilinearInterPMetalParam metal_param{ratio_h, ratio_w, align_delta};
 

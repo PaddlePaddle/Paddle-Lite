@@ -171,6 +171,7 @@ void ConcatImageCompute::Run() {
     kernel_->Execute(*queue, global_work_size, false, args);
     queue->WaitUntilComplete();
   }
+
 #if LITE_METAL_SAVE_TENSOR
   MetalDebug::SaveOutput("concat", output_buffer_);
 #endif
