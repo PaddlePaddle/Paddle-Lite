@@ -208,6 +208,7 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
   auto strides_size = param_.strides.size();
   if (op_desc.HasInput("StartsTensorList") &&
       !op_desc.Input("StartsTensorList").empty()) {
+    param_.StartsTensorList.clear();
     auto inputs = op_desc.Input("StartsTensorList");
     for (auto var : inputs) {
       param_.StartsTensorList.push_back(
@@ -216,6 +217,7 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
   }
   if (op_desc.HasInput("EndsTensorList") &&
       !op_desc.Input("EndsTensorList").empty()) {
+    param_.EndsTensorList.clear();
     auto inputs = op_desc.Input("EndsTensorList");
     for (auto var : inputs) {
       param_.EndsTensorList.push_back(
@@ -224,6 +226,7 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
   }
   if (op_desc.HasInput("StridesTensorList") &&
       !op_desc.Input("StridesTensorList").empty()) {
+    param_.StridesTensorList.clear();
     auto inputs = op_desc.Input("StridesTensorList");
     for (auto var : inputs) {
       param_.StridesTensorList.push_back(
