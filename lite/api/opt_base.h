@@ -64,6 +64,7 @@ class LITE_API OptBase {
                    const std::string &param_path = "",
                    const std::string &model_type = "",
                    const std::string &valid_places = "",
+                   const bool enable_fp16 = false,
                    const std::string &optimized_out_path = "");
   // fuctions of printing info
   // 1. help info

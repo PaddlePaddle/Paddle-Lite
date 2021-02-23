@@ -65,11 +65,15 @@ DEFINE_string(quant_type,
               "QUANT_INT16",
               "Set the quant_type for post_quant_dynamic, "
               "and it should be QUANT_INT8 or QUANT_INT16 for now.");
-DEFINE_bool(record_tailoring_info,
+DEFINE_bool(enable_fp16,
             false,
-            "Record kernels and operators information of the optimized model "
-            "for tailoring compiling, information are stored into optimized "
-            "model path as hidden files");
+            "Use quant_fp16_pass method to quantize the model weights.")
+    DEFINE_bool(
+        record_tailoring_info,
+        false,
+        "Record kernels and operators information of the optimized model "
+        "for tailoring compiling, information are stored into optimized "
+        "model path as hidden files");
 DEFINE_string(optimize_out, "", "path of the output optimized model");
 DEFINE_string(valid_targets,
               "arm",
@@ -90,11 +94,15 @@ void DisplayKernels() {
   LOG(INFO) << ::paddle::lite::KernelRegistry::Global().DebugString();
 }
 
-std::vector<Place> ParserValidPlaces() {
+std::vector<Place> ParserValidPlaces(bool enable_fp16) {
   std::vector<Place> valid_places;
   auto target_reprs = lite::Split(FLAGS_valid_targets, ",");
   for (auto& target_repr : target_reprs) {
     if (target_repr == "arm") {
+      if (enable_fp16) {
+        valid_places.emplace_back(
+            Place{TARGET(kARM), PRECISION(kFP16), DATALAYOUT(kNCHW)});
+      }
       valid_places.emplace_back(
           Place{TARGET(kARM), PRECISION(kFloat), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(
@@ -311,6 +319,8 @@ void PrintHelpInfo() {
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
+      "  Arguments of enable_fp16 in opt: \n"
+      "        `--enable_fp16(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
@@ -346,7 +356,7 @@ void ParseInputCommand() {
     PrintOpsInfo();
     exit(1);
   } else if (FLAGS_print_supported_ops) {
-    auto valid_places = paddle::lite_api::ParserValidPlaces();
+    auto valid_places = paddle::lite_api::ParserValidPlaces(FLAGS_enable_fp16);
     // get valid_targets string
     std::vector<TargetType> target_types = {};
     for (size_t i = 0; i < valid_places.size(); i++) {
@@ -373,7 +383,7 @@ void ParseInputCommand() {
 // test whether this model is supported
 void CheckIfModelSupported() {
   // 1. parse valid places and valid targets
-  auto valid_places = paddle::lite_api::ParserValidPlaces();
+  auto valid_places = paddle::lite_api::ParserValidPlaces(FLAGS_enable_fp16);
   // set valid_ops
   auto valid_ops = supported_ops_target[static_cast<int>(TARGET(kHost))];
   auto valid_unktype_ops = supported_ops_target[static_cast<int>(TARGET(kUnk))];
@@ -452,7 +462,8 @@ void Main() {
     exit(0);
   }
 
-  auto valid_places = ParserValidPlaces();
+  auto valid_places = ParserValidPlaces(FLAGS_enable_fp16);
+
   if (FLAGS_model_set_dir == "") {
     RunOptimize(FLAGS_model_dir,
                 FLAGS_model_file,

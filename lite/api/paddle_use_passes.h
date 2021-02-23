@@ -68,6 +68,7 @@ USE_MIR_PASS(mlu_subgraph_pass);
 USE_MIR_PASS(mlu_postprocess_pass);
 USE_MIR_PASS(weight_quantization_preprocess_pass);
 USE_MIR_PASS(post_quant_dynamic_pass);
+USE_MIR_PASS(quant_FP16_pass);
 USE_MIR_PASS(apu_subgraph_pass);
 USE_MIR_PASS(quantized_op_attributes_inference_pass);
 USE_MIR_PASS(restrict_quantized_op_with_same_input_output_scale_pass);
