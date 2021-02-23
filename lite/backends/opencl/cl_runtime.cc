@@ -14,6 +14,7 @@ limitations under the License. */
 #include <utility>
 #include <vector>
 #include "lite/backends/opencl/utils/cache.h"
+#include "lite/core/target_wrapper.h"
 #include "lite/core/version.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/io.h"
@@ -200,7 +201,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
              "and you have Write&Read permission. Jump to build program "
              "from source.";
     } else {
-      bool ret = Deserialize(bin_file, &programs_precompiled_binary_);
+      ret = Deserialize(bin_file, &programs_precompiled_binary_);
       CHECK(ret) << "Deserialize failed.";
 
       VLOG(3) << "sn_key: " << sn_key_;
@@ -218,9 +219,9 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
                      << "] is illegal!";
         delete_bin_flag = true;
         // Jump to build from source
-      } else if (memcmp(((sn_iter->second)[0]).data(),
-                        GetSN(build_option).data(),
-                        GetSN(build_option).length())) {
+      } else if (host::memcmp(((sn_iter->second)[0]).data(),
+                              GetSN(build_option).data(),
+                              GetSN(build_option).length())) {
         LOG(INFO) << "size of sn_info: " << ((sn_iter->second)[0]).size();
         LOG(INFO) << "size of GetSN: " << GetSN(build_option).length();
         LOG(INFO) << "GetSN: " << GetSN(build_option);
