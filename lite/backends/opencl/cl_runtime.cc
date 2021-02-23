@@ -188,10 +188,19 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
   bool ret = false;
   bool delete_bin_flag = false;
   auto path_name = GetBinaryPathName();
+  // find binary
+  std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
+  auto remove_file = [](const std::string& bin_file) {
+    if (remove(bin_file.c_str()) != 0) {
+      LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary["
+                 << bin_file << "]!";
+    } else {
+      LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
+                << "] has been deleted!";
+    }
+  };
 
   if (programs_.empty() && !(path_name.empty())) {
-    // find binary
-    std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
     // check whether binary exist
     if (!IsFileExists(bin_file)) {
       LOG(WARNING)
@@ -258,21 +267,23 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
         VLOG(3) << " --- program -> " << program_key
                 << " has been built in binary --- ";
 #endif
+        gotten_bin_flag_ = true;
         ret = true;
       } else {
-        // placeholder
+        delete_bin_flag = true;
+        // Jump to build from source
       }
     }
 
     if (delete_bin_flag) {
-      if (remove(bin_file.c_str()) != 0) {
-        LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary["
-                   << bin_file << "]!";
-      } else {
-        LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
-                  << "] has been deleted!";
-      }
+      remove_file(bin_file);
     }
+  } else if (gotten_bin_flag_ && !programs_.empty() && !(path_name.empty())) {
+    // This case happened when model has updated. Bin file should be updated
+    // accordingly.
+    delete_bin_flag = true;
+    gotten_bin_flag_ = false;
+    remove_file(bin_file);
   }
 
   return ret;
