@@ -69,6 +69,9 @@ void RuntimeProgram::SaveToProgram(
       var_names.erase(std::unique(var_names.begin(), var_names.end()),
                       var_names.end());
       for (auto& var_name : var_names) {
+        if (var_name == "_generated_var_0") {
+          continue;
+        }
         if (already_added_vars.count(var_name)) continue;
         auto* v = block_desc->AddVar<cpp::VarDesc>();
         v->SetName(var_name);
