@@ -100,3 +100,26 @@ REGISTER_LITE_KERNEL(range, kHost, kInt32, kAny, range_int32, def)
                                        PRECISION(kInt32),
                                        DATALAYOUT(kAny))})
     .Finalize();
+
+#ifdef LITE_BUILD_EXTRA
+using range_int32_f =
+    paddle::lite::kernels::host::RangeCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int32_f, int32)
+    .BindInput("Start",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("End",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Step",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+#endif  // LITE_BUILD_EXTRA
