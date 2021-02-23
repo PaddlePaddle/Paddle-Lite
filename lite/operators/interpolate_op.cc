@@ -97,6 +97,7 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   }
 
   if (op_desc.HasInput("SizeTensor")) {
+    param_.SizeTensor.clear();
     auto size_tensor = op_desc.Input("SizeTensor");
     for (auto var : size_tensor) {
       param_.SizeTensor.push_back(

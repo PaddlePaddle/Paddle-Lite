@@ -85,9 +85,9 @@ inline void fill_packed_biasc4(float* dout, const float* bias, int size) {
 * input weights: [chout, chin/ group, kh, kw] --> outputs weights: [chout / n,
 * chin/ group, kh, kw, n]
 */
-template <typename dtype>
-static bool conv_trans_weights_numc(const dtype* din,
-                                    dtype* dout,
+template <typename Dtype>
+static bool conv_trans_weights_numc(const Dtype* din,
+                                    Dtype* dout,
                                     int chout,
                                     int chin,
                                     int n,
@@ -101,9 +101,11 @@ static bool conv_trans_weights_numc(const dtype* din,
   int win_stride = chin * kernel_size;
   int wout_stride = n * win_stride;
   int co = 0;
+  Dtype ptr_zero[win_stride];  // NOLINT
+  memset(ptr_zero, 0, win_stride * sizeof(Dtype));
   for (; co < c_loop; ++co) {
-    dtype* dout_c = dout + co * wout_stride;
-    const dtype* din_array[n];
+    Dtype* dout_c = dout + co * wout_stride;
+    const Dtype* din_array[n];
     din_array[0] = din + co * wout_stride;
     for (int i = 1; i < n; i++) {
       din_array[i] = din_array[i - 1] + win_stride;
@@ -118,8 +120,8 @@ static bool conv_trans_weights_numc(const dtype* din,
   }
   // pad final chout
   if (chout_round > c_loop) {
-    dtype* dout_c = dout + c_loop * wout_stride;
-    const dtype* din_array[n];
+    Dtype* dout_c = dout + c_loop * wout_stride;
+    const Dtype* din_array[n];
     din_array[0] = din + c_loop * wout_stride;
     for (int i = 1; i < n; i++) {
       din_array[i] = din_array[i - 1] + win_stride;
@@ -127,7 +129,7 @@ static bool conv_trans_weights_numc(const dtype* din,
     // deal remain
     int cremain = chout_round * n - chout;
     for (int i = 1; i <= cremain; i++) {
-      din_array[n - i] = din_array[0];
+      din_array[n - i] = ptr_zero;
     }
     for (int ci = 0; ci < chin; ++ci) {
       for (int k = 0; k < kernel_size; ++k) {
