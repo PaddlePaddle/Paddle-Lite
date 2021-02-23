@@ -26,36 +26,14 @@ void increment(const T* input, const int n, const T step, T* out) {
   }
 }
 
-void IncrementCompute::Run() {
-  auto& param = this->Param<operators::IncrementParam>();
-
+template <typename T, PrecisionType PType>
+void IncrementCompute<T, PType>::Run() {
+  auto& param = this->template Param<operators::IncrementParam>();
   int total_num = param.X->numel();
-  switch (param.X->precision()) {
-    case PRECISION(kFloat): {
-      const auto* x_data = param.X->data<float>();
-      auto* o_data = param.Out->mutable_data<float>();
-      float step = static_cast<float>(param.step);
-      increment(x_data, total_num, step, o_data);
-      break;
-    }
-    case PRECISION(kInt64): {
-      const auto* x_data = param.X->data<int64_t>();
-      auto* o_data = param.Out->mutable_data<int64_t>();
-      int64_t step = static_cast<int64_t>(param.step);
-      increment(x_data, total_num, step, o_data);
-      break;
-    }
-    case PRECISION(kInt32): {
-      const auto* x_data = param.X->data<int32_t>();
-      auto* o_data = param.Out->mutable_data<int32_t>();
-      int32_t step = static_cast<int32_t>(param.step);
-      increment(x_data, total_num, step, o_data);
-      break;
-    }
-    default:
-      LOG(FATAL) << "unsupport input type "
-                 << PrecisionToStr(param.X->precision());
-  }
+  const auto* x_data = param.X->template data<T>();
+  auto* o_data = param.Out->template mutable_data<T>();
+  T step = static_cast<T>(param.step);
+  increment<T>(x_data, total_num, step, o_data);
 }
 
 }  // namespace host
@@ -63,12 +41,35 @@ void IncrementCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(increment,
-                     kHost,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::host::IncrementCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+using increment_float32 =
+    paddle::lite::kernels::host::IncrementCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(increment, kHost, kFloat, kAny, increment_float32, float32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+    .Finalize();
+
+using increment_int32 =
+    paddle::lite::kernels::host::IncrementCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(increment, kHost, kFloat, kAny, increment_int32, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .Finalize();
+
+using increment_int64 =
+    paddle::lite::kernels::host::IncrementCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(increment, kHost, kFloat, kAny, increment_int64, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
     .Finalize();

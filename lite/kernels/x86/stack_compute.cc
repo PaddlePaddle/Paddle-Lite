@@ -16,9 +16,15 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
-using stack_float =
+using stack_float32 =
     paddle::lite::kernels::host::StackCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(stack, kX86, kFloat, kNCHW, stack_float, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+REGISTER_LITE_KERNEL(stack, kX86, kFloat, kAny, stack_float32, float32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kX86),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(TARGET(kX86),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
     .Finalize();

@@ -15,6 +15,7 @@
 #include "lite/kernels/xpu/stack_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/host/stack_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -64,8 +65,40 @@ void StackCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    stack, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::StackCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+REGISTER_LITE_KERNEL(stack,
+                     kXPU,
+                     kFloat,
+                     kAny,
+                     paddle::lite::kernels::xpu::StackCompute,
+                     float32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using stack_int32 =
+    paddle::lite::kernels::host::StackCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kXPU, kFloat, kAny, stack_int32, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .Finalize();
+
+using stack_int64 =
+    paddle::lite::kernels::host::StackCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kXPU, kFloat, kAny, stack_int64, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
     .Finalize();

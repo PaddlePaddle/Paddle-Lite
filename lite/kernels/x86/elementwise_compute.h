@@ -150,7 +150,8 @@ class ElementwiseMulComputeXPU
   using param_t = operators::ElementwiseParam;
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    auto& context = ctx_->As<X86Context>();
+    // auto& context = ctx_->As<X86Context>();
+    X86Context context;
     param.Out->template mutable_data<T>();
     paddle::lite::kernels::x86::ElementwiseComputeEx<MulFunctor<T>,
                                                      lite::TargetType::kX86,

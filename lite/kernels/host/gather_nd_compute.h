@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <typename T, PrecisionType Ptype>
+template <typename T, typename IndexType, PrecisionType Ptype>
 class GatherNdCompute
     : public KernelLite<TARGET(kHost), Ptype, DATALAYOUT(kAny)> {
  public:

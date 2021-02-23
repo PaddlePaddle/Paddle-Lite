@@ -21,7 +21,9 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class IncrementCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+template <typename T, PrecisionType PType>
+class IncrementCompute
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
 

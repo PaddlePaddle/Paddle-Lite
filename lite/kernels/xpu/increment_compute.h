@@ -13,30 +13,23 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-class StackCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny)> {
+template <typename T, PrecisionType PType>
+class IncrementCompute
+    : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::StackParam;
+  void Run() override;
 
-  virtual void PrepareForRun();
-
-  virtual void Run();
-
-  virtual ~StackCompute() = default;
+  ~IncrementCompute() {}
 
  private:
-  XPUScratchPadGuard x_ptr_guard_;
-  std::vector<const float*> x_ptr_cpu_;
 };
 
 }  // namespace xpu

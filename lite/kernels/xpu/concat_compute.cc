@@ -33,13 +33,18 @@ void ConcatCompute::Run() {
   std::vector<const float*> x_list;
   std::vector<std::vector<int>> xdims_list;
   for (int i = 0; i < ins.size(); i++) {
-    xdims_list.push_back(std::vector<int>());
-    for (int j = 0; j < ins[i]->dims().size(); j++) {
-      xdims_list[i].push_back(ins[i]->dims()[j]);
+    if (ins[i] && ins[i]->numel() > 0) {
+      int size = ins[i]->dims().size();
+      std::vector<int> tmp_dims(size);
+      for (int j = 0; j < size; j++) {
+        tmp_dims[j] = ins[i]->dims()[j];
+      }
+      xdims_list.push_back(tmp_dims);
+      x_list.push_back(ins[i]->data<float>());
     }
-    x_list.push_back(ins[i]->data<float>());
   }
 
+  CHECK_GT(xdims_list.size(), 0) << "No tensor need concat";
   int r = xdnn::concat<float>(ctx.GetRawContext(),
                               x_list,
                               out->mutable_data<float>(TARGET(kXPU)),
