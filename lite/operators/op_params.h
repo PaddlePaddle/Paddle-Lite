@@ -664,6 +664,14 @@ struct TransposeParam : ParamBase {
   }
 };
 
+struct TrilTriuParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  lite::Tensor* out{nullptr};
+
+  int diagonal{0};
+  bool lower{true};
+};
+
 /// ----------------------- element wise operators ----------------------
 struct ElementwiseParam : ParamBase {
   const lite::Tensor* X{};
@@ -978,6 +986,7 @@ struct MatrixNmsParam : ParamBase {
   const lite::Tensor* scores{};
   lite::Tensor* out{};
   lite::Tensor* index{};
+  lite::Tensor* rois_num{};
   int background_label{0};
   float score_threshold{};
   float post_threshold{0.0f};

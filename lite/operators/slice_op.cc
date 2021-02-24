@@ -124,6 +124,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.StartsTensorList.clear();
   if (opdesc.HasInput("StartsTensorList") &&
       !opdesc.Input("StartsTensorList").empty()) {
+    param_.StartsTensorList.clear();
     auto StartsTensorList = opdesc.Input("StartsTensorList");
     for (auto var : StartsTensorList) {
       param_.StartsTensorList.push_back(
@@ -136,6 +137,7 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.EndsTensorList.clear();
   if (opdesc.HasInput("EndsTensorList") &&
       !opdesc.Input("EndsTensorList").empty()) {
+    param_.EndsTensorList.clear();
     auto EndsTensorList = opdesc.Input("EndsTensorList");
     for (auto var : EndsTensorList) {
       param_.EndsTensorList.push_back(
