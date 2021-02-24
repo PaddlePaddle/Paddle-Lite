@@ -260,6 +260,10 @@ RuntimeProgram::RuntimeProgram(
 }
 
 void RuntimeProgram::Run() {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::LockXPU();
+#endif
+
 #ifdef LITE_WITH_PRECISION_PROFILE
   auto inst_precision_profiler = paddle::lite::profile::PrecisionProfiler();
   std::string precision_profiler_summary =
@@ -314,6 +318,9 @@ void RuntimeProgram::Run() {
   LOG(INFO) << "\n"
             << precision_profiler_summary
             << inst_precision_profiler.GetSummaryTail();
+#endif
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::UnLockXPU();
 #endif
 }
 
