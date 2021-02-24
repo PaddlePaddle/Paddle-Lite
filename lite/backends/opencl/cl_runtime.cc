@@ -278,7 +278,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
     if (delete_bin_flag) {
       remove_file(bin_file);
     }
-  } else if (gotten_bin_flag_ && !programs_.empty() && !(path_name.empty())) {
+  } else if (gotten_bin_flag_) {
     // This case happened when model has updated. Bin file should be updated
     // accordingly.
     delete_bin_flag = true;
