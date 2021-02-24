@@ -231,6 +231,13 @@ softmax              arm/float/NCHW                 NotImpl                  0.0
 [I  2/23 18:48:24.833 ...10223/lite/backends/opencl/cl_runtime.cc:33 ~CLRuntime] is_cl_runtime_initialized_:1
 ```
 
+### Profiler 架构设计
+
+- Op 层信息：`struct Instruction::SetProfileRuntimeOpInfo`方法中会调用`OpLite->GetOpRuntimeInfo(profile::OpCharacter*)`，由各个从`OpLite`派生出的子类Op重写如`./lite/operator/conv_op.h`中的`class ConvOpLite : public OpLite`重写了`GetOpRuntimeInfo`方法实现了对 Conv Op 信息获取；
+- Kernel 层信息：`class KernelBase::SetProfileRuntimeKernelInfo(profile::OpCharacter* ch)`方法为虚函数，实际执行会调用由`KernelBase`派生的最终子类，如`class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)>`，`class KernelLite`由`KernelBase`派生而来，实现多态机制下的 Kernel 信息获取，如具体的底层 Kernel名。
+
+通过在 Op 层将`OpLite*`成员以`void*`的形式挂载到`profile::OpCharacter`，并传递给 Kernel 层，实现获取所有的 Op 层与 Kernel 层信息。
+
 ## Debug工具
 
 **Lite Model Debug Tool** 是用来检查Paddle-Lite框架与Paddle-Fluid框架运行时tensor(包括variable与weight)之间diff信息的基础工具。
