@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import argparse
 from paddlelite.lite import *
+import numpy as np
 
 # Command arguments
 parser = argparse.ArgumentParser()
@@ -48,16 +49,16 @@ def RunModel(args):
 
     # 3. Set input data
     input_tensor = predictor.get_input(0)
-    input_tensor.resize([1, 3, 224, 224])
-    input_tensor.set_float_data([1.] * 3 * 224 * 224)
+    input_tensor.from_numpy(np.ones((1, 3, 224, 224)).astype("float32"))
+
 
     # 4. Run model
     predictor.run()
 
     # 5. Get output data
     output_tensor = predictor.get_output(0)
-    print(output_tensor.shape())
-    print(output_tensor.float_data()[:10])
+    output_data = output_tensor.numpy()
+    print(output_data)
 
 if __name__ == '__main__':
     args = parser.parse_args()
