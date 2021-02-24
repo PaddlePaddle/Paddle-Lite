@@ -225,4 +225,7 @@ adb shell "export GLOG_v=4; \
 ## 4. 常见问题
 
 1. opencl计算过程中大多以`cl::Image2D`的数据排布进行计算，不同gpu支持的最大`cl::Image2D`的宽度和高度有限制，模型输入的数据格式是buffer形式的`NCHW`数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的`cl::Image2D`最大宽度和高度均为16384），可以通过公式`image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4`计算当前层NCHW排布的Tensor所需的`cl::Image2D`的宽度和高度；
-2. 部署时需考虑不支持opencl的情况，可预先使用API`bool ::IsOpenCLBackendValid()`判断，对于不支持的情况加载CPU模型，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
+2. 部署时需考虑不支持opencl的情况，可预先使用API`bool ::IsOpenCLBackendValid()`判断，对于不支持的情况加载CPU模型，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
+3. 对性能不满足需求的场景，可以考虑使用调优API`config.set_opencl_tune(CL_TUNE_NORMAL)`，首次会有一定的初始化耗时，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
+4. 对精度要求较高的场景，可以考虑通过API`config.set_opencl_precision(CL_PRECISION_FP32)`强制使用FP32精度，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)；
+5. 对首次加载耗时慢的问题，可以考虑使用API`config.set_opencl_binary_path_name(bin_path, bin_name)`，在二次加载Predictor时，省去编译耗时极大提高二次及以后第一次推理耗时，详见[./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)。
