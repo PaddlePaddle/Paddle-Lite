@@ -188,6 +188,8 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
   bool ret = false;
   bool delete_bin_flag = false;
   auto path_name = GetBinaryPathName();
+  if (path_name.size() != 2) return ret;
+
   // find binary
   std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
   auto remove_file = [](const std::string& bin_file) {
