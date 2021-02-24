@@ -270,25 +270,52 @@ void ConvImageCompute::PrepareForRun() {
     impl_ = &ConvImageCompute::Conv2d7x7opt;
 #endif
 #undef CONV_7x7_OPT
-  } else if (groups_ == 1) {
+  } else {
     // conv2d_common
     kernel_func_names_.push_back("conv2d_common");
     kernel_func_paths_.push_back("image/conv2d_common_kernel.cl");
     impl_ = &ConvImageCompute::Conv2dCommon;
-
     CLImageConverterNBlock converter;
-    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    filter_image_h_ = filter_image_dims[1];
-    filter_image_w_ = filter_image_dims[0];
-    tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
-    auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
 
-    converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
-    MUTABLE_DATA_GPU(
-        filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
+    if (groups_ == 1) {
+      const DDim& filter_image_dims =
+          converter.InitImageDimInfoWith(filter_dims);
+      filter_image_h_ = filter_image_dims[1];
+      filter_image_w_ = filter_image_dims[0];
+      tensor_hold_filter_image_->Resize(
+          {1, filter_image_w_, filter_image_h_, 4});
+      auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
 
-  } else {
-    LOG(FATAL) << "conv image compute not support this condition yet! ";
+      converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+      MUTABLE_DATA_GPU(filter_gpu_image_,
+                       filter_image_w_,
+                       filter_image_h_,
+                       filter_image_data);
+    } else {
+      std::vector<float> pad_filter_data(filter_dims.production() * groups_);
+      const DDim& new_dim = DDim{std::vector<int64_t>({filter_dims[0],
+                                                       filter_dims[1] * groups_,
+                                                       filter_dims[2],
+                                                       filter_dims[3]})};
+      const DDim& filter_image_dims = converter.InitImageDimInfoWith(new_dim);
+      filter_image_h_ = filter_image_dims[1];
+      filter_image_w_ = filter_image_dims[0];
+      tensor_hold_filter_image_->Resize(
+          {1, filter_image_w_, filter_image_h_, 4});
+      auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+      converter.GroupPadding(filter_cpu,
+                             pad_filter_data.data(),
+                             groups_,
+                             output_tensor_c_,
+                             input_tensor_c_,
+                             filter_tensor_h_,
+                             filter_tensor_w_);
+      converter.NCHWToImage(pad_filter_data.data(), filter_image_data, new_dim);
+      MUTABLE_DATA_GPU(filter_gpu_image_,
+                       filter_image_w_,
+                       filter_image_h_,
+                       filter_image_data);
+    }
   }
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
           << " kernel_func_paths_[0]:" << kernel_func_paths_[0];

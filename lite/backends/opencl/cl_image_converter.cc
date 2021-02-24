@@ -502,6 +502,7 @@ void CLImageConverterWinoTransWeight::ImageToNCHW(void *image,
                                                   float *tensor,
                                                   const DDim &image_dim,
                                                   const DDim &tensor_dim) {}
+
 DDim CLImageConverterNBlock::InitImageDimInfoWith(const DDim &tensor_dim) {
   CHECK(tensor_dim.size() == 4) << " Tensor dim is not 4.";
   size_t N, C, H, W;
@@ -562,6 +563,46 @@ void CLImageConverterNBlock::ImageToNCHW(void *image,
                                          float *tensor,
                                          const DDim &image_dim,
                                          const DDim &tensor_dim) {}
+void CLImageConverterNBlock::GroupPadding(const float *src,
+                                          float *dst,
+                                          int group,
+                                          int output_c,
+                                          int input_c,
+                                          int filter_h,
+                                          int filter_w) {
+  int inc_per_group = input_c / group;
+  int outc_per_group = output_c / group;
+
+  for (int o = 0; o < output_c; o++) {
+    for (int i = 0; i < input_c; i++) {
+      for (int h = 0; h < filter_h; h++) {
+        for (int w = 0; w < filter_w; w++) {
+          int dst_idx = o * input_c * filter_h * filter_w +
+                        i * filter_h * filter_w + h * filter_w + w;
+
+          int group_id = o / outc_per_group;
+          int valid_i_l = group_id * inc_per_group;
+          int valid_i_u = valid_i_l + inc_per_group;
+          if (i < valid_i_l || i >= valid_i_u) {
+            dst[dst_idx] = 0;
+          } else {
+            int g_idx = group_id;
+            int o_idx = o % outc_per_group;
+            int i_idx = i % inc_per_group;
+            int h_idx = h;
+            int w_idx = w;
+            int src_idx;
+            src_idx =
+                g_idx * outc_per_group * inc_per_group * filter_h * filter_w +
+                o_idx * inc_per_group * filter_h * filter_w +
+                i_idx * filter_h * filter_w + h_idx * filter_w + w_idx;
+            dst[dst_idx] = src[src_idx];
+          }
+        }
+      }
+    }
+  }
+}
 
 DDim CLImageConverterDWFilter::InitImageDimInfoWith(const DDim &tensor_dim) {
   CHECK(tensor_dim.size() == 4) << " Tensor dim is not 4.";

@@ -141,6 +141,13 @@ class CLImageConverterNBlock : public CLImageConverterBase {
                    float *tensor,
                    const DDim &image_dim,
                    const DDim &tensor_dim) override;
+  void GroupPadding(const float *src,
+                    float *dst,
+                    int group,
+                    int output_c,
+                    int input_c,
+                    int filter_h,
+                    int filter_w);
 };
 
 class CLImageConverterDWFilter : public CLImageConverterBase {

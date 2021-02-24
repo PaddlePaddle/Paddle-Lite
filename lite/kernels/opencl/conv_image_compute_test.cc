@@ -1520,8 +1520,8 @@ TEST(conv2d, compute_image2d_7x7) {
 // #define LOOP_TEST
 TEST(conv2d, compute_image2d_common) {
   // conv infos
-  const int ksize_x = 7;
-  const int ksize_y = 1;
+  const int ksize_x = 3;
+  const int ksize_y = 3;
   int loop_cnt = 0;
 
 #ifdef LOOP_TEST
@@ -1538,8 +1538,8 @@ TEST(conv2d, compute_image2d_common) {
           for (bool bias_flag : {true, false}) {
             for (std::string relu_flag : {"", "relu"}) {
 #else
-  const int pad_left = 3;
-  const int pad_up = 0;
+  const int pad_left = 1;
+  const int pad_up = 1;
   const int dilation = 1;
 
 #if 0  // small scale with group, but result of cpu reference is wrong
@@ -1552,7 +1552,7 @@ const int stride = 2;
                 const int oc = 2;
 #else  // big scale with group
   const int stride = 1;
-  const int group = 1;
+  const int group = 2;
   const int batch_size = 1;
   const int ic = 64 / 1;
   const int ih = 54 / 1;
@@ -1565,7 +1565,7 @@ const int stride = 2;
 #endif
               int filter_channel = ic;
               if (group > 1) {
-                filter_channel = 1;
+                filter_channel = filter_channel / group;
               }
 
               const int oh =
