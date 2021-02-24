@@ -47,6 +47,10 @@ bool MatrixNmsOpLite::AttachImpl(const cpp::OpDesc& opdesc,
   auto scores_name = opdesc.Input("Scores").front();
   auto out_name = opdesc.Output("Out").front();
   auto index_name = opdesc.Output("Index").front();
+  if (opdesc.HasOutput("RoisNum")) {
+    auto rois_num_name = opdesc.Output("RoisNum").front();
+    param_.rois_num = GetMutableVar<lite::Tensor>(scope, rois_num_name);
+  }
   param_.bboxes = GetVar<lite::Tensor>(scope, bboxes_name);
   param_.scores = GetVar<lite::Tensor>(scope, scores_name);
   param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
