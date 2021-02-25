@@ -13,25 +13,23 @@
 // limitations under the License.
 
 #pragma once
-
+#include <algorithm>
 #include "lite/core/kernel.h"
-
+#include "lite/core/op_registry.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace xpu {
+namespace host {
 
-template <class T>
-class ReshapeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class TileCompute : public KernelLite<TARGET(kHost), PType> {
  public:
-  using param_t = operators::ReshapeParam;
+  void Run() override;
 
-  virtual void Run();
-
-  virtual ~ReshapeCompute() = default;
+  virtual ~TileCompute() = default;
 };
 
-}  // namespace xpu
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

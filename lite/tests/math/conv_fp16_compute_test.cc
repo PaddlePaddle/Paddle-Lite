@@ -296,7 +296,7 @@ TEST(TestConv3x3DwFp16, test_conv3x3_depthwise) {
               DDim weights_dim({c, 1, 3, 3});
               for (auto& batch : {1}) {
                 for (auto& h : {12, 13, 14, 15, 16, 17, 18, 33}) {
-                  DDim dim_in({batch, cin, h, h});
+                  DDim dim_in({batch, c, h, h});
                   const float leakey_relu_scale = 1.0f;
                   test_conv_fp16(dim_in,
                                  weights_dim,

@@ -31,6 +31,10 @@ void LightPredictor::Build(const std::string& lite_model_file,
   // For weight quantization of post training, load the int8/16 weights
   // for optimized model, and dequant it to fp32.
   DequantizeWeight();
+#ifdef ENABLE_ARM_FP16
+  // fp16 Weight convert
+  WeightFP32ToFP16();
+#endif
   BuildRuntimeProgram(program_desc_);
   PrepareFeedFetch();
   program_desc_.reset();
@@ -252,7 +256,7 @@ void LightPredictor::DequantizeWeight() {
 #ifdef ENABLE_ARM_FP16
 typedef __fp16 float16_t;
 void LightPredictor::WeightFP32ToFP16() {
-  Tensor tmp_tensor;
+  std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
   std::vector<std::string> fp16_ops{"conv2d"};
   for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
     auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
@@ -263,10 +267,14 @@ void LightPredictor::WeightFP32ToFP16() {
       if (iter != fp16_ops.end()) {
         auto input_names = op_desc->input_vars();
         for (auto& input_name : input_names) {
-          if (input_name.find("weights") || input_name.find("bias")) {
+          std::string input_weight_name = input_name + "_fp16";
+          if (op_desc->HasAttr(input_weight_name)) {  // the input is fp16
+            Tensor tmp_tensor;
             auto input_tensor =
                 scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
             tmp_tensor.CopyDataFrom(*input_tensor);
+            input_tensor->clear();
+            input_tensor->set_precision(PRECISION(kFP16));
 
             float16_t* fp_data = input_tensor->mutable_data<float16_t>();
             const float* in_data = tmp_tensor.data<float>();

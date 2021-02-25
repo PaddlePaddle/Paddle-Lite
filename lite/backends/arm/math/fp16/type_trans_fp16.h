@@ -14,24 +14,23 @@
 
 #pragma once
 
-#include "lite/core/kernel.h"
+#include <stdint.h>
+#include <vector>
+#include "lite/core/target_wrapper.h"
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace arm {
+namespace math {
+namespace fp16 {
+typedef __fp16 float16_t;
 
-template <class T>
-class ReshapeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ReshapeParam;
+void fp16_to_fp32(const float16_t* in, float* out, int size);
 
-  virtual void Run();
-
-  virtual ~ReshapeCompute() = default;
-};
-
-}  // namespace xpu
-}  // namespace kernels
+void fp32_to_fp16(const float* in, float16_t* out, int size);
+}  // namespace fp16
+}  // namespace math
+}  // namespace arm
 }  // namespace lite
 }  // namespace paddle
