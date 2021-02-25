@@ -5514,7 +5514,7 @@ const int8_t* inptrs[16];
         );
         int8_t* outptr_row = outptr + y * 16;
         int x = 0;
-        for (; x < x_len - 15; x += 16) {
+        for (; x < x_len - 11; x += 12) {
             int8_t *out0 = outptr_row;
             asm volatile (
             "ld1 {v0.16b}, [%[inptr0]] \n" // v0 = a0a1a2a3a4a5a6a7a8a9a10a11a12a13a14a15
@@ -5639,7 +5639,7 @@ const int8_t* inptrs[16];
             );
             for(int i=0;i<16;i++)
             {
-              inptrs[i] = inptrs[i] + 16;
+              inptrs[i] = inptrs[i] + 12;
             }
             outptr_row += stride_out;
         }
