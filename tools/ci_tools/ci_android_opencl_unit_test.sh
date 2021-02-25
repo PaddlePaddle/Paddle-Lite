@@ -103,8 +103,9 @@ function test_arm_android {
   unit_test=$1
   adb_devices=$2
   adb_work_dir=$3
-  adb push $unit_test /data/local/tmp/$adb_work_dir
-  adb shell "cd /data/local/tmp/$adb_work_dir && ./$unit_test"
+  unit_test_path=$(find ./lite -name $unit_test)
+  adb -s $adb_devices push $unit_test_path /data/local/tmp/$adb_work_dir
+  adb -s $adb_devices shell "cd /data/local/tmp/$adb_work_dir && ./$unit_test"
 }
 
 function build_test_android_opencl {
