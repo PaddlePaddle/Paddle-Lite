@@ -6,6 +6,7 @@ set -e
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 TESTS_FILE="./lite_tests.txt"
+NUM_PROC=4
 
 skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
             "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" \
