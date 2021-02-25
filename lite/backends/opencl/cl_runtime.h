@@ -302,6 +302,7 @@ class CLRuntime {
   std::vector<std::string> binary_path_name_;
   // magic number for precompiled binary
   const std::string sn_key_{"lite_opencl_precompiled_binary_identifier"};
+  bool gotten_bin_flag_{false};
 };
 
 }  // namespace lite
