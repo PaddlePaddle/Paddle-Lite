@@ -102,6 +102,7 @@ REGISTER_LITE_KERNEL(range, kHost, kInt32, kAny, range_int32, def)
     .Finalize();
 
 #ifdef LITE_BUILD_EXTRA
+// float kernel has higher score when picking kernel.
 using range_int32_f =
     paddle::lite::kernels::host::RangeCompute<int, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int32_f, int32)
