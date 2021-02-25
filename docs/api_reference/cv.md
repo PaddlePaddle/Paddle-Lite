@@ -86,28 +86,28 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 
 + `Convert` 功能的API接口
     ```cpp
-    // 方法一
-    void ImagePreprocess::imageCovert(const uint8_t* src, uint8_t* dst);
+    // 方法一d
+    void ImagePreprocess::image_convert(const uint8_t* src, uint8_t* dst);
     // 方法二
-    void ImagePreprocess::imageCovert(const uint8_t* src,
+    void ImagePreprocess::image_convert(const uint8_t* src,
     uint8_t* dst, ImageFormat srcFormat, ImageFormat dstFormat);
     // 方法三
-    void ImagePreprocess::imageCovert(const uint8_t* src,
+    void ImagePreprocess::image_convert(const uint8_t* src,
     uint8_t* dst, ImageFormat srcFormat, ImageFormat dstFormat,
     int srcw, int srch);
     ```
 
-    + 第一个 `imageCovert` 接口，缺省参数来源于 `ImagePreprocess` 类的成员变量。故在初始化 `ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
+    + 第一个 `image_convert` 接口，缺省参数来源于 `ImagePreprocess` 类的成员变量。故在初始化 `ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`srcFormat_`
         - param dstFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
         - param srcw: `ImagePreprocess` 类的成员变量`transParam_`结构体中的`iw`变量
         - param srch: `ImagePreprocess` 类的成员变量`transParam_`结构体中的`ih`变量
     
-    - 第二个`imageCovert` 接口，缺省参数来源于 `ImagePreprocess` 类的成员变量。故在初始化 `ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
+    - 第二个`image_convert` 接口，缺省参数来源于 `ImagePreprocess` 类的成员变量。故在初始化 `ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcw: `ImagePreprocess` 类的成员变量`transParam_`结构体中的`iw`变量
         - param srch: `ImagePreprocess` 类的成员变量`transParam_`结构体中的`ih`变量
 
-    - 第二个`imageCovert` 接口, 可以直接使用
+    - 第二个`image_convert` 接口, 可以直接使用
     
 ### 缩放 Resize
 
@@ -117,19 +117,19 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 + `Resize` 功能的API接口
     ```cpp
     // 方法一
-    void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst);
+    void ImagePreprocess::image_resize(const uint8_t* src, uint8_t* dst);
     // 方法二
-    void ImagePreprocess::imageResize(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, int dstw, int dsth);
+    void ImagePreprocess::image_resize(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, int dstw, int dsth);
     ```
 
-    + 第一个`imageResize` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
+    + 第一个`image_resize` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
         - param srcw：`ImagePreprocess` 类的成员变量`transParam_.iw`
         - param srch：`ImagePreprocess` 类的成员变量`transParam_.ih`
         - param dstw：`ImagePreprocess` 类的成员变量`transParam_.ow`
         - param dsth：`ImagePreprocess` 类的成员变量`transParam_.ow`
     
-    - 第二个`imageResize` 接口，可以直接使用
+    - 第二个`image_resize` 接口，可以直接使用
 
 ### 旋转 Rotate
 
@@ -139,18 +139,18 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 + `Rotate` 功能的API接口
     ```cpp
     // 方法一
-    void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst);
+    void ImagePreprocess::image_rotate(const uint8_t* src, uint8_t* dst);
     // 方法二
-    void ImagePreprocess::imageRotate(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, float degree);
+    void ImagePreprocess::image_rotate(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, float degree);
     ```
 
-    + 第一个`imageRotate` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
+    + 第一个`image_rotate` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
         - param srcw：`ImagePreprocess` 类的成员变量`transParam_.ow`
         - param srch：`ImagePreprocess` 类的成员变量`transParam_.oh`
         - param degree：`ImagePreprocess` 类的成员变量`transParam_.rotate_param`
     
-    - 第二个`imageRotate` 接口，可以直接使用
+    - 第二个`image_rotate` 接口，可以直接使用
 
 ### 翻转 Flip
 
@@ -160,18 +160,39 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 + `Flip` 功能的API接口
     ```cpp
     // 方法一
-    void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst);
+    void ImagePreprocess::image_flip(const uint8_t* src, uint8_t* dst);
     // 方法二
-    void ImagePreprocess::imageFlip(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, FlipParam flip_param);
+    void ImagePreprocess::image_flip(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, FlipParam flip_param);
     ```
 
-    + 第一个`imageFlip` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
+    + 第一个`image_flip` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
         - param srcw：`ImagePreprocess` 类的成员变量`transParam_.ow`
         - param srch：`ImagePreprocess` 类的成员变量`transParam_.oh`
         - param flip_param：`ImagePreprocess` 类的成员变量`transParam_.flip_param`
     
-    - 第二个`imageFlip` 接口，可以直接使用
+    - 第二个`image_flip` 接口，可以直接使用
+
+### 裁剪 Crop
+
+`Crop` 功能支持颜色空间：GRAY、RGB（BGR）和RGBA（BGRA）
+
++ `Crop` 功能的API接口
+    ```cpp
+    // 方法一
+    void ImagePreprocess::image_crop(const uint8_t* src, uint8_t* dst, ImageFormat srcFormat, ImageFormat srcFormat, int srcw, int srch, FlipParam flip_param);
+    ```
+
+    + `image_crop` 接口可以直接使用, 各参数含义如下：
+        - param src： 输入图像数组
+        - param dst 输出图像数组
+        - param srcFormat：输入图像颜色格式
+        - param srcw：输入图像的宽度
+        - param srch：输入图像的高度
+        - param left_x：裁剪坐标的X轴数值
+        - param left_y：裁剪坐标的Y轴数值
+        - param dstw：输出图像的宽度
+        - param dsth：输出图像的高度
 
 ### Image2Tensor
 
@@ -182,17 +203,17 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 + `Image2Tensor` 功能的API接口
     ```cpp
     // 方法一
-    void ImagePreprocess::image2Tensor(const uint8_t* src, Tensor* dstTensor, LayoutType layout, float* means, float* scales);
+    void ImagePreprocess::image_to_tensor(const uint8_t* src, Tensor* dstTensor, LayoutType layout, float* means, float* scales);
     // 方法二
-    void ImagePreprocess::image2Tensor(const uint8_t* src, Tensor* dstTensor, ImageFormat srcFormat,  srcw, int srch, LayoutType layout, float* means, float* scales;
+    void ImagePreprocess::image_to_tensor(const uint8_t* src, Tensor* dstTensor, ImageFormat srcFormat,  srcw, int srch, LayoutType layout, float* means, float* scales;
     ```
 
-    + 第一个`image2Tensor` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
+    + 第一个`image_to_tensor` 接口，缺省参数来源于`ImagePreprocess` 类的成员变量。故在初始化`ImagePreprocess` 类的对象时，必须要给以下成员变量赋值：
         - param srcFormat：`ImagePreprocess` 类的成员变量`dstFormat_`
         - param srcw：`ImagePreprocess` 类的成员变量`transParam_.ow`
         - param srch：`ImagePreprocess` 类的成员变量`transParam_.oh`
     
-    - 第二个`image2Tensor` 接口，可以直接使用
+    - 第二个`image_to_tensor` 接口，可以直接使用
 
 
 
@@ -213,6 +234,8 @@ dstw = 540;
 flip_param = FlipParam::X;
 degree = 90;
 layout = LayoutType::NHWC
+left_x = 1
+left_y = 1
 // 方法一: 
 TransParam tparam;
 tparam.ih = srch;
@@ -226,48 +249,55 @@ ImagePreprocess image_preprocess(srcFormat, dstFormat, tparam);
 ImagePreprocess image_preprocess();
 ```
 
-### imageConvert Demo
+### 颜色空间转换 Demo
 
 ```cpp
 // 方法一: 
-image_preprocess.imageCovert(src, lite_dst);
+image_preprocess.image_convert(src, lite_dst);
 // 方法二: 
-image_preprocess.imageCovert(src, lite_dst, (ImageFormat)srcFormat, (ImageFormat)dstFormat);
+image_preprocess.image_convert(src, lite_dst, (ImageFormat)srcFormat, (ImageFormat)dstFormat);
 ```
 
-### imageResize Demo
+### 图像缩放 Demo
 
 ```cpp
 // 方法一: 
-image_preprocess.imageResize(lite_dst, resize_tmp);
+image_preprocess.image_resize(lite_dst, resize_tmp);
 // 方法二: 
-image_preprocess.imageResize(lite_dst,resize_tmp, (ImageFormat)dstFormat, srcw,
+image_preprocess.image_resize(lite_dst,resize_tmp, (ImageFormat)dstFormat, srcw,
 srch, dstw, dsth);
 ```
 
-### imageRotate Demo
+### 图像旋转 Demo
 
 ```cpp
 // 方法一: 
-image_preprocess.imageRotate(resize_tmp, tv_out_ratote);
+image_preprocess.image_rotate(resize_tmp, tv_out_ratote);
 // 方法二: 
-image_preprocess.imageRotate(resize_tmp,tv_out_ratote, (ImageFormat)dstFormat, dstw, dsth, degree);
+image_preprocess.image_rotate(resize_tmp,tv_out_ratote, (ImageFormat)dstFormat, dstw, dsth, degree);
 ```
 
-### imageFlip Demo
+### 图像翻转 Demo
 
 ```cpp
 // 方法一: 
-image_preprocess.imageFlip(tv_out_ratote, tv_out_flip);
+image_preprocess.image_flip(tv_out_ratote, tv_out_flip);
 // 方法二: 
-image_preprocess.imageFlip(tv_out_ratote, tv_out_flip, (ImageFormat)dstFormat， dstw, dsth, flip_param);
+image_preprocess.image_flip(tv_out_ratote, tv_out_flip, (ImageFormat)dstFormat， dstw, dsth, flip_param);
 ```
 
-### image2Tensor Demo
+### 图像裁剪 Demo
 
 ```cpp
 // 方法一: 
-image_preprocess.image2Tensor(tv_out_flip, &dst_tensor, layout, means, scales);
+image_preprocess.image_crop(src, dst, (ImageFormat)srcFormat， srcw, srch, left_x, left_y, dstw, dsth);
+```
+
+### 图像数据转换为Tensor存储 Demo
+
+```cpp
+// 方法一: 
+image_preprocess.image_to_tensor(tv_out_flip, &dst_tensor, layout, means, scales);
 // 方法二: 
-image_preprocess.image2Tensor(tv_out_flip, &dst_tensor,(ImageFormat)dstFormat, dstw, dsth, layout, means, scales);
+image_preprocess.image_to_tensor(tv_out_flip, &dst_tensor,(ImageFormat)dstFormat, dstw, dsth, layout, means, scales);
 ```
