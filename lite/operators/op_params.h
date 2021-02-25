@@ -2174,6 +2174,14 @@ struct TensorArrayToTensorParam : ParamBase {
   bool use_stack{false};
 };
 
+struct TileParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> repeat_times{};
+  lite::Tensor* RepeatTimes{};
+  std::vector<lite::Tensor*> repeat_times_tensor{};
+};
+
 struct SumParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
