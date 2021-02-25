@@ -12,16 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>  // NOLINT(build/c++11)
 #include <cmath>
 #include <iostream>
 #include <vector>
-#if defined(_MSC_VER)
-#include <Windows.h>
-#undef min
-#undef max
-#else
-#include <sys/time.h>
-#endif
 #include "paddle_api.h"  // NOLINT
 /////////////////////////////////////////////////////////////////////////
 // If this demo is linked to static library:libpaddle_api_light_bundled.a
@@ -32,6 +26,23 @@
 // #include "paddle_use_ops.h"      // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
+
+class Timer {
+ private:
+  std::chrono::high_resolution_clock::time_point inTime, outTime;
+
+ public:
+  void startTimer() { inTime = std::chrono::high_resolution_clock::now(); }
+
+  // unit millisecond
+  float getCostTimer() {
+    outTime = std::chrono::high_resolution_clock::now();
+    return static_cast<float>(
+        std::chrono::duration_cast<std::chrono::microseconds>(outTime - inTime)
+            .count() /
+        1e+3);
+  }
+};
 
 int64_t ShapeProduction(const shape_t& shape) {
   int64_t res = 1;
@@ -119,23 +130,6 @@ double compute_standard_deviation(const T* in,
   return sqrt(variance);
 }
 
-inline uint64_t GetCurrentUS() {
-  uint64_t time;
-#if defined(_MSC_VER)
-  LARGE_INTEGER now, freq;
-  QueryPerformanceCounter(&now);
-  QueryPerformanceFrequency(&freq);
-  uint64_t sec = now.QuadPart / freq.QuadPart;
-  uint64_t usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
-  time = sec * 1000000 + usec;
-#else
-  struct timeval tv;
-  gettimeofday(&tv, nullptr);
-  time = static_cast<uint64_t>(tv.tv_sec) * 1000000 + tv.tv_usec;
-#endif
-  return time;
-}
-
 void RunModel(std::string model_dir,
               const std::vector<shape_t>& input_shapes,
               size_t repeats,
@@ -155,10 +149,23 @@ void RunModel(std::string model_dir,
       ::IsOpenCLBackendValid(false /*check_fp16_valid = false*/);
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
-  /*  Uncomment code below to enable OpenCL
+  //  Uncomment code below to enable OpenCL
+  /*
   if (is_opencl_backend_valid) {
-    // give opencl nb model dir
-    config.set_model_from_file(model_dir);
+    // Set opencl kernel binary.
+    // Large addtitional prepare time is cost due to algorithm selecting and
+    // building kernel from source code.
+    // Prepare time can be reduced dramitically after building algorithm file
+    // and OpenCL kernel binary on the first running.
+    // The 1st running time will be a bit longer due to the compiling time if
+    // you don't call `set_opencl binary_path_name` explicitly.
+    // So call `set_opencl binary_path_name` explicitly is strongly recommended.
+
+    // Make sure you have write permission of the binary path.
+    // We strongly recommend each model has a unique binary name.
+    const std::string bin_path = "./";
+    const std::string bin_name = "lite_opencl_kernel.bin";
+    config.set_opencl_binary_path_name(bin_path, bin_name);
 
     // opencl tune option
     // CL_TUNE_NONE: 0
@@ -201,23 +208,28 @@ void RunModel(std::string model_dir,
   }
 
   // 4. Run predictor
+  Timer timeInstance;
   double first_duration{-1};
   for (size_t widx = 0; widx < warmup; ++widx) {
-    auto start = GetCurrentUS();
-    predictor->Run();
-    first_duration = (GetCurrentUS() - start) / 1000.0;
+    if (widx == 0) {
+      timeInstance.startTimer();
+      predictor->Run();
+      first_duration = timeInstance.getCostTimer();
+    } else {
+      predictor->Run();
+    }
   }
 
-  double sum_duration = 0.0;  // millisecond;
+  double sum_duration = 0.0;
   double max_duration = 1e-5;
   double min_duration = 1e5;
   double avg_duration = -1;
   for (size_t ridx = 0; ridx < repeats; ++ridx) {
-    auto start = GetCurrentUS();
+    timeInstance.startTimer();
 
     predictor->Run();
 
-    auto duration = (GetCurrentUS() - start) / 1000.0;
+    double duration = timeInstance.getCostTimer();
     sum_duration += duration;
     max_duration = duration > max_duration ? duration : max_duration;
     min_duration = duration < min_duration ? duration : min_duration;

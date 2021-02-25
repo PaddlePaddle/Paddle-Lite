@@ -13,26 +13,35 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <cmath>
+#include "lite/backends/arm/math/fp16/common_preprocess.h"
+#include "lite/core/context.h"
+#include "lite/core/device_info.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
-
-class IncrementCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  void Run() override;
-
-  ~IncrementCompute() {}
-
- private:
-};
-
+namespace math {
+namespace fp16 {
+typedef __fp16 float16_t;
+void gemv_fp16(const float16_t *A,
+               const float16_t *x,
+               float16_t *y,
+               bool transA,
+               int M,
+               int N,
+               float16_t beta,
+               bool is_bias,
+               const float16_t *bias,
+               bool flag_act,
+               lite_api::ActivationType act,
+               ARMContext *ctx,
+               float16_t six = 6.f,
+               float16_t alpha = 1.f);
+}  // namespace fp16
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

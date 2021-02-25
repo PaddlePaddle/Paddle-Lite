@@ -121,6 +121,10 @@ class Optimizer {
          "__xpu__conv2d_fuse_pass",
          "__xpu__resblock_reduction_fuse_pass",
          "__xpu__resblock_normal_fuse_pass",
+         "__xpu__conv2d_concat_pool2d_fuse_pass",
+         "__xpu__conv2d_pool2d_fuse_pass",
+         "__xpu__consecutive_conv2d_fuse_pass",
+         "__xpu__consecutive_block_fuse_pass",
          "__xpu__conv2d_link_previous_out_max_pass",
          "__xpu__sfa_head_meanstd_fuse_pass",
          "__xpu__sfa_head_moment_fuse_pass",
@@ -188,6 +192,15 @@ class Optimizer {
          "memory_optimize_pass"
 #endif
         }};
+
+    // It's just a workaround to avoid repeated op fusion if the filter weights
+    // are shared among sub-blocks
+    if (graphs_.size() > 1) {
+      passes_local.erase(std::remove(passes_local.begin(),
+                                     passes_local.end(),
+                                     "lite_conv_bn_fuse_pass"),
+                         passes_local.end());
+    }
 
     // multi_stream_analysis_pass must be in the front of
     // runtime_context_assign_pass

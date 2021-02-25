@@ -68,3 +68,19 @@ REGISTER_LITE_KERNEL(yolo_box,
     .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(yolo_box,
+                     kFPGA,
+                     kFP16,
+                     kNHWC,
+                     paddle::lite::kernels::fpga::YoloBoxCompute,
+                     def_float_size)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kFPGA),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kNHWC))})
+    .BindInput("ImgSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Boxes", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Scores", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();

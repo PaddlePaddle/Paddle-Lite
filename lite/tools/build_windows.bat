@@ -18,7 +18,7 @@ set WITH_OPENCL=OFF
 set WITH_AVX=ON
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
-set THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+set THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 
 set workspace=%source_path%
 set /a cores=%number_of_processors%-2 > null
@@ -171,25 +171,25 @@ goto:eof
 
 :prepare_thirdparty
     if  EXIST "%workspace%\third-party" (
-        if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
-            echo "The directory of third_party exists, the third-party-05b862.tar.gz not exists."
+        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
+            echo "The directory of third_party exists, the third-party-ea5576.tar.gz not exists."
         ) else (
-               echo "The directory of third_party exists, the third-party-05b862.tar.gz exists."
+               echo "The directory of third_party exists, the third-party-ea5576.tar.gz exists."
                call:rm_rebuild_dir "%workspace%\third-party"
-               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
         )
     ) else (
-        if NOT EXIST "%workspace%\third-party-05b862.tar.gz" (
-            echo "The directory of third_party not exists, the third-party-05b862.tar.gz not exists."
+        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
+            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz not exists."
             call:download_third_party
-            if EXIST "%workspace%\third-party-05b862.tar.gz" (
-                !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+            if EXIST "%workspace%\third-party-ea5576.tar.gz" (
+                !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
             ) else (
-                echo "------------Can't download the third-party-05b862.tar.gz!------"
+                echo "------------Can't download the third-party-ea5576.tar.gz!------"
             )
         ) else (
-            echo "The directory of third_party not exists, the third-party-05b862.tar.gz exists."
-            !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-05b862.tar.gz %workspace%
+            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz exists."
+            !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
         )
 
     )
@@ -197,8 +197,8 @@ goto:eof
 goto:eof
 
 :download_third_party
-powershell.exe (new-object System.Net.WebClient).DownloadFile('https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz', ^
-'%workspace%\third-party-05b862.tar.gz')
+powershell.exe (new-object System.Net.WebClient).DownloadFile('https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-ea5576.tar.gz', ^
+'%workspace%\third-party-ea5576.tar.gz')
 goto:eof
 
 :prepare_opencl_source_code

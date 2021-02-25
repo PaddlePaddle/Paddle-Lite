@@ -274,6 +274,18 @@ void ElementwiseAddCompute<T, PType>::Run() {
       paddle::lite::kernels::host::naive_add<T>);
 }
 
+template <>
+void ElementwiseAddCompute<int64_t, PRECISION(kInt64)>::Run() {
+  elementwise_compute_template<operators::ElementwiseParam,
+                               int64_t,
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
+      this,
+      lite::arm::math::elementwise_add_broadcast<int64_t>,
+      lite::arm::math::elementwise_add<int64_t>,
+      paddle::lite::kernels::host::naive_add<int64_t>);
+}
+
 void ElementwiseAddActivationCompute::Run() {
   auto& param = Param<operators::FusionElementwiseActivationParam>();
   bool act_supported = false;
@@ -527,6 +539,16 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using elementwise_add_int64_t =
+    paddle::lite::kernels::arm::ElementwiseAddCompute<int64_t,
+                                                      PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(
+    elementwise_add, kARM, kInt64, kNCHW, elementwise_add_int64_t, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

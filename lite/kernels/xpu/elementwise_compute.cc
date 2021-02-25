@@ -26,298 +26,132 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-inline DDim TrimTrailingSingularDims(const DDim& dims) {
-  // Remove trailing dimensions of size 1 for y
-  auto actual_dims_size = dims.size();
-  for (; actual_dims_size != 0; --actual_dims_size) {
-    if (dims[actual_dims_size - 1] != 1) break;
-  }
-
-  std::vector<int64_t> trim_dims;
-  trim_dims.resize(actual_dims_size);
-  for (int i = 0; i < actual_dims_size; ++i) {
-    trim_dims[i] = dims[i];
-  }
-  if (trim_dims.size() == 0) {
-    return DDim();
-  }
-  DDim actual_dims = DDim(trim_dims);
-  return actual_dims;
-}
-
-inline void GetMidDims(const DDim& x_dims,
-                       const DDim& y_dims,
-                       const int axis,
-                       int* pre,
-                       int* n,
-                       int* post,
-                       int* mid_flag = NULL) {
-  *pre = 1;
-  *n = 1;
-  *post = 1;
-  if (mid_flag != NULL) {
-    *mid_flag = 0;
-    int mid = 0;
-    for (int i = 0; i < axis; ++i) {
-      (*pre) *= x_dims[i];
-    }
-    for (int i = 0; i < y_dims.size(); ++i) {
-      if (x_dims[i + axis] != y_dims[i]) {
-        // only support single y_dims[i] = 1 now.
-        CHECK_EQ(*mid_flag, 0) << "Broadcast support y_dims with single 1.";
-        CHECK_EQ(y_dims[i], 1) << "Broadcast dimension mismatch.";
-        // m*n*k m*1*k
-        for (int j = 0; j < i; ++j) {
-          (*pre) *= y_dims[j];
-        }
-        *n = std::max(x_dims[i + axis], y_dims[i]);
-        *mid_flag = 1;
-        mid = i;
-        break;
-      }
-      (*n) *= y_dims[i];
-    }
-    if (*mid_flag) {
-      for (int i = mid + 1; i < x_dims.size(); ++i) {
-        (*post) *= x_dims[i];
-      }
-    } else {
-      for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
-        (*post) *= x_dims[i];
-      }
-    }
-  } else {
-    for (int i = 0; i < axis; ++i) {
-      (*pre) *= x_dims[i];
-    }
-
-    for (int i = 0; i < y_dims.size(); ++i) {
-      CHECK_EQ(x_dims[i + axis], y_dims[i]) << "Broadcast dimension mismatch.";
-      (*n) *= y_dims[i];
-    }
-
-    for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
-      (*post) *= x_dims[i];
-    }
-  }
-}
-
 void ElementwiseAddCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  auto& x_dims = param.X->dims();
-  auto& y_dims = param.Y->dims();
-  int axis = param.axis;
+  auto& x_dim = param.X->dims();
+  auto& y_dim = param.Y->dims();
 
-  auto y_dims_untrimed = y_dims;
-  axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  auto y_dims_after_trailing = TrimTrailingSingularDims(y_dims_untrimed);
-  axis = (y_dims_after_trailing.size() == 0) ? x_dims.size() : axis;
-  int pre, n, post;
-  GetMidDims(x_dims, y_dims_after_trailing, axis, &pre, &n, &post);
-  int len = pre * n * post;
-  float* y_broadcast = nullptr;
-
-  if (post == 1) {
-    int r =
-        xdnn::matrix_vector_add(ctx.GetRawContext(),
-                                param.X->data<float>(),
-                                param.Y->data<float>(),
-                                param.Out->mutable_data<float>(TARGET(kXPU)),
-                                pre,
-                                n);
-    CHECK_EQ(r, 0);
-    return;
+  std::vector<int> x_shape(param.Out->dims().size(), 1);
+  std::vector<int> y_shape(param.Out->dims().size(), 1);
+  int axis = (param.axis == -1
+                  ? std::abs(static_cast<int>(x_dim.size() - y_dim.size()))
+                  : param.axis);
+  CHECK_LE(y_dim.size(), x_dim.size());
+  for (size_t i = 0; i < x_dim.size(); i++) {
+    x_shape[i] = static_cast<int>(x_dim[i]);
   }
-  if (pre != 1 || post != 1) {
-    XPUScratchPadGuard y_broadcast_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(len * sizeof(float),
-                                           false /* use_l3 */);
-    y_broadcast = reinterpret_cast<float*>(y_broadcast_xpu_guard_->addr_);
-
-    int r = xdnn::broadcast_ew(ctx.GetRawContext(),
-                               param.Y->data<float>(),
-                               y_broadcast,
-                               pre,
-                               n,
-                               post,
-                               xdnn::ElementwiseOp::ASSIGN);
-    CHECK_EQ(r, 0);
-    r = xdnn::elementwise_add(
-        ctx.GetRawContext(),                          /* context */
-        param.X->data<float>(),                       /* x */
-        y_broadcast,                                  /* y */
-        param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-        len);
-    CHECK_EQ(r, 0);
-    return;
+  for (size_t i = 0; i < y_dim.size(); ++i) {
+    y_shape[i + axis] = static_cast<int>(y_dim[i]);
   }
-  int r = xdnn::elementwise_add(
-      ctx.GetRawContext(),                          /* context */
-      param.X->data<float>(),                       /* x */
-      param.Y->data<float>(),                       /* y */
-      param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-      len);
-  CHECK_EQ(r, 0);
+
+  int ret =
+      xdnn::broadcast_add<float>(ctx.GetRawContext(),
+                                 param.X->data<float>(),
+                                 param.Y->data<float>(),
+                                 param.Out->mutable_data<float>(TARGET(kXPU)),
+                                 x_shape,
+                                 y_shape);
+
+  CHECK_EQ(ret, 0);
+  return;
 }
 
 void ElementwiseMulCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  auto& x_dims = param.X->dims();
-  auto& y_dims = param.Y->dims();
-  int axis = param.axis;
+  auto& x_dim = param.X->dims();
+  auto& y_dim = param.Y->dims();
 
-  auto y_dims_untrimed = y_dims;
-  axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  auto y_dims_after_trailing = TrimTrailingSingularDims(y_dims_untrimed);
-  axis = (y_dims_after_trailing.size() == 0) ? x_dims.size() : axis;
-  int pre, n, post;
-  GetMidDims(x_dims, y_dims_after_trailing, axis, &pre, &n, &post);
-  int len = pre * n * post;
-  float* y_broadcast = nullptr;
-
-  if (post == 1) {
-    int r =
-        xdnn::matrix_vector_mul(ctx.GetRawContext(),
-                                param.X->data<float>(),
-                                param.Y->data<float>(),
-                                param.Out->mutable_data<float>(TARGET(kXPU)),
-                                pre,
-                                n);
-    CHECK_EQ(r, 0);
-    return;
+  std::vector<int> x_shape(param.Out->dims().size(), 1);
+  std::vector<int> y_shape(param.Out->dims().size(), 1);
+  int axis = (param.axis == -1
+                  ? std::abs(static_cast<int>(x_dim.size() - y_dim.size()))
+                  : param.axis);
+  CHECK_LE(y_dim.size(), x_dim.size());
+  for (size_t i = 0; i < x_dim.size(); i++) {
+    x_shape[i] = static_cast<int>(x_dim[i]);
   }
-  if (pre != 1 || post != 1) {
-    XPUScratchPadGuard y_broadcast_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(len * sizeof(float),
-                                           false /* use_l3 */);
-    y_broadcast = reinterpret_cast<float*>(y_broadcast_xpu_guard_->addr_);
-
-    int r = xdnn::broadcast_ew(ctx.GetRawContext(),
-                               param.Y->data<float>(),
-                               y_broadcast,
-                               pre,
-                               n,
-                               post,
-                               xdnn::ElementwiseOp::ASSIGN);
-    CHECK_EQ(r, 0);
-    r = xdnn::elementwise_mul(
-        ctx.GetRawContext(),                          /* context */
-        param.X->data<float>(),                       /* x */
-        y_broadcast,                                  /* y */
-        param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-        len);
-    CHECK_EQ(r, 0);
-    return;
+  for (size_t i = 0; i < y_dim.size(); ++i) {
+    y_shape[i + axis] = static_cast<int>(y_dim[i]);
   }
-  int r = xdnn::elementwise_mul(
-      ctx.GetRawContext(),                          /* context */
-      param.X->data<float>(),                       /* x */
-      param.Y->data<float>(),                       /* y */
-      param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-      len);
-  CHECK_EQ(r, 0);
+
+  int ret =
+      xdnn::broadcast_mul<float>(ctx.GetRawContext(),
+                                 param.X->data<float>(),
+                                 param.Y->data<float>(),
+                                 param.Out->mutable_data<float>(TARGET(kXPU)),
+                                 x_shape,
+                                 y_shape);
+
+  CHECK_EQ(ret, 0);
+  return;
 }
 
 void ElementwiseSubCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  auto& x_dims = param.X->dims();
-  auto& y_dims = param.Y->dims();
-  int axis = param.axis;
+  auto& x_dim = param.X->dims();
+  auto& y_dim = param.Y->dims();
 
-  auto y_dims_untrimed = y_dims;
-  axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  auto y_dims_after_trailing = TrimTrailingSingularDims(y_dims_untrimed);
-  axis = (y_dims_after_trailing.size() == 0) ? x_dims.size() : axis;
-  int pre, n, post;
-  GetMidDims(x_dims, y_dims_after_trailing, axis, &pre, &n, &post);
-  int len = pre * n * post;
-  float* y_broadcast = nullptr;
-
-  if (len != param.Y->numel()) {
-    XPUScratchPadGuard y_broadcast_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(len * sizeof(float),
-                                           false /* use_l3 */);
-    y_broadcast = reinterpret_cast<float*>(y_broadcast_xpu_guard_->addr_);
-
-    int r = xdnn::broadcast_ew(ctx.GetRawContext(),
-                               param.Y->data<float>(),
-                               y_broadcast,
-                               pre,
-                               n,
-                               post,
-                               xdnn::ElementwiseOp::ASSIGN);
-    CHECK_EQ(r, 0);
-    r = xdnn::elementwise_sub(
-        ctx.GetRawContext(),                          /* context */
-        param.X->data<float>(),                       /* x */
-        y_broadcast,                                  /* y */
-        param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-        len);
-    CHECK_EQ(r, 0);
-    return;
+  std::vector<int> x_shape(param.Out->dims().size(), 1);
+  std::vector<int> y_shape(param.Out->dims().size(), 1);
+  int axis = (param.axis == -1
+                  ? std::abs(static_cast<int>(x_dim.size() - y_dim.size()))
+                  : param.axis);
+  CHECK_LE(y_dim.size(), x_dim.size());
+  for (size_t i = 0; i < x_dim.size(); i++) {
+    x_shape[i] = static_cast<int>(x_dim[i]);
   }
-  int r = xdnn::elementwise_sub(
-      ctx.GetRawContext(),                          /* context */
-      param.X->data<float>(),                       /* x */
-      param.Y->data<float>(),                       /* y */
-      param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-      len);
-  CHECK_EQ(r, 0);
+  for (size_t i = 0; i < y_dim.size(); ++i) {
+    y_shape[i + axis] = static_cast<int>(y_dim[i]);
+  }
+
+  int ret =
+      xdnn::broadcast_sub<float>(ctx.GetRawContext(),
+                                 param.X->data<float>(),
+                                 param.Y->data<float>(),
+                                 param.Out->mutable_data<float>(TARGET(kXPU)),
+                                 x_shape,
+                                 y_shape);
+
+  CHECK_EQ(ret, 0);
+  return;
 }
 
 void ElementwiseDivCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  auto& x_dims = param.X->dims();
-  auto& y_dims = param.Y->dims();
-  int axis = param.axis;
+  auto& x_dim = param.X->dims();
+  auto& y_dim = param.Y->dims();
 
-  auto y_dims_untrimed = y_dims;
-  axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  auto y_dims_after_trailing = TrimTrailingSingularDims(y_dims_untrimed);
-  axis = (y_dims_after_trailing.size() == 0) ? x_dims.size() : axis;
-  int pre, n, post;
-  GetMidDims(x_dims, y_dims_after_trailing, axis, &pre, &n, &post);
-  int len = pre * n * post;
-  float* y_broadcast = nullptr;
-
-  if (len != param.Y->numel()) {
-    XPUScratchPadGuard y_broadcast_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(len * sizeof(float),
-                                           false /* use_l3 */);
-    y_broadcast = reinterpret_cast<float*>(y_broadcast_xpu_guard_->addr_);
-
-    int r = xdnn::broadcast_ew(ctx.GetRawContext(),
-                               param.Y->data<float>(),
-                               y_broadcast,
-                               pre,
-                               n,
-                               post,
-                               xdnn::ElementwiseOp::ASSIGN);
-    CHECK_EQ(r, 0);
-    r = xdnn::elementwise_div(
-        ctx.GetRawContext(),                          /* context */
-        param.X->data<float>(),                       /* x */
-        y_broadcast,                                  /* y */
-        param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-        len);
-    CHECK_EQ(r, 0);
-    return;
+  std::vector<int> x_shape(param.Out->dims().size(), 1);
+  std::vector<int> y_shape(param.Out->dims().size(), 1);
+  int axis = (param.axis == -1
+                  ? std::abs(static_cast<int>(x_dim.size() - y_dim.size()))
+                  : param.axis);
+  CHECK_LE(y_dim.size(), x_dim.size());
+  for (size_t i = 0; i < x_dim.size(); i++) {
+    x_shape[i] = static_cast<int>(x_dim[i]);
   }
-  int r = xdnn::elementwise_div(
-      ctx.GetRawContext(),                          /* context */
-      param.X->data<float>(),                       /* x */
-      param.Y->data<float>(),                       /* y */
-      param.Out->mutable_data<float>(TARGET(kXPU)), /* z */
-      len);
-  CHECK_EQ(r, 0);
+  for (size_t i = 0; i < y_dim.size(); ++i) {
+    y_shape[i + axis] = static_cast<int>(y_dim[i]);
+  }
+
+  int ret =
+      xdnn::broadcast_div<float>(ctx.GetRawContext(),
+                                 param.X->data<float>(),
+                                 param.Y->data<float>(),
+                                 param.Out->mutable_data<float>(TARGET(kXPU)),
+                                 x_shape,
+                                 y_shape);
+
+  CHECK_EQ(ret, 0);
+  return;
 }
 
 }  // namespace xpu

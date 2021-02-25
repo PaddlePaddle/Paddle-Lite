@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include "lite/core/target_wrapper.h"
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 namespace paddle {
 namespace lite {
@@ -84,23 +85,18 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
       flag_1x1gemm_ = false;
       workspace_size_ = k * n * sizeof(float);
     }
+    if (!flag_trans_weights_ && n > 1 && m > 1) {
 #ifdef ENABLE_ARM_FP16
-    if (!flag_trans_weights_) {
       lite::arm::math::fp16::trans_gemm_weights_fp16(
           *(param.filter), weights_, param.groups, &ctx);
-      flag_trans_weights_ = true;
-    } else {
-      flag_trans_weights_ = false;
-    }
 #else
-    if (!flag_trans_weights_ && n > 1 && m > 1) {
       lite::arm::math::trans_gemm_weights<Ptype>(
           *(param.filter), weights_, param.groups, &ctx);
+#endif
       flag_trans_weights_ = true;
     } else if (n == 1 || m == 1) {
       flag_trans_weights_ = false;
     }
-#endif
     last_shape_ = x_dims;
   }
   virtual void PrepareForRun();
@@ -113,6 +109,17 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
   }
 
   std::string kernel_func_name_{"NotImplForConvGemm"};
+#define PROFILE_INFO(dtype1, dtype2)                                        \
+  template <>                                                               \
+  void GemmLikeConv<PRECISION(dtype1), PRECISION(dtype2)>::                 \
+      SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
+    ch->kernel_func_name = kernel_func_name_;                               \
+  }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
 
   /// todo, support inplace weights transform

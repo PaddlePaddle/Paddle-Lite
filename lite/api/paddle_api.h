@@ -142,6 +142,8 @@ class LITE_API ConfigBase {
   PowerMode mode_{LITE_POWER_NO_BIND};
   // gpu opencl
   CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
+  std::string opencl_bin_path_{""};
+  std::string opencl_bin_name_{""};
   CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
   // Where to cache the npu/xpu/rknpu/apu offline model to the binary files
   std::string subgraph_model_cache_dir_{""};
@@ -162,6 +164,17 @@ class LITE_API ConfigBase {
   // set Power_mode
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
+  /// \brief Set path and file name of generated OpenCL compiled kernel binary.
+  ///
+  /// If you use GPU of specific soc, using OpenCL binary will speed up the
+  /// initialization.
+  ///
+  /// \param path  Path that OpenCL compiled kernel binay file stores in. Make
+  /// sure the path exist and you have Read&Write permission.
+  /// \param name  File name of OpenCL compiled kernel binay.
+  /// \return void
+  void set_opencl_binary_path_name(const std::string& path,
+                                   const std::string& name);
   // set GPU opencl tune
   void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
                        size_t lws_repeats = 4);
@@ -295,6 +308,10 @@ class LITE_API CxxConfig : public ConfigBase {
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+
+  void set_xpu_conv_autotune(bool autotune = true,
+                             const std::string& autotune_file = "");
+
   // XPU only, specify the target device ID for the current thread.
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread

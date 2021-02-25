@@ -13,7 +13,7 @@ SYSTEM_INCLUDES = -I$(NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
                   -I$(NDK_ROOT)/sysroot/usr/include \
 
 NDK_VERSION=$(shell echo $(NDK_ROOT) | grep -Eo "[0-9]+[0-9]")
-ifeq ($(NDK_VERSION), 17)
+ifeq ($(shell expr $(NDK_VERSION) \<= 17), 1)
     ifeq ($(ARM_ABI), arm8)
         ifeq ($(SYSTEM), Linux)
             CC = $(NDK_ROOT)/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-g++
@@ -23,8 +23,11 @@ ifeq ($(NDK_VERSION), 17)
         CXX_FLAGS = -funwind-tables -no-canonical-prefixes -D__ANDROID_API__=21 -fexceptions -frtti -std=c++11 -fopenmp -O3 -DNDEBUG -fPIE
         CXXFLAGS_LINK = $(CXX_FLAGS) -pie -Wl,--gc-sections
         SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-21/arch-arm64
+        # when use ndk r16 or other older version, please use the followed SYSROOT_LINK setting.
+        # SYSROOT_LINK = --sysroot=$(NDK_ROOT)/platforms/android-26/arch-arm64
         SYSTEM_LIBS = $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_static.a \
-                      $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a
+                      $(NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++abi.a \
+                      $(NDK_ROOT)/platforms/android-21/arch-arm64/usr/lib/libstdc++.so
         INCLUDES = $(SYSTEM_INCLUDES) -I$(NDK_ROOT)/sysroot/usr/include/aarch64-linux-android
     else
         ifeq ($(SYSTEM), Linux)

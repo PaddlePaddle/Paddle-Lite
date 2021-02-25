@@ -35,6 +35,7 @@ bool SumOpLite::InferShapeImpl() const {
 
 bool SumOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto X_names = opdesc.Input("X");
+  param_.X.clear();
   for (auto input_name : X_names) {
     auto input_var = scope->FindVar(input_name);
     CHECK(input_var);

@@ -36,12 +36,12 @@ void DepthwiseConv<float>::Run() {
       input_channel % 8 == 0 ? 8 : input_channel % 4 == 0 ? 4 : 1;
   const int pack_num = input_channel / pack_size;
 
-  // [bs, ic, ih, iw] & pack_size=8 => [bs, ic/8, ih, iw, 8]
-  // [bs, ic, ih, iw] & pack_size=4 => [bs, ic/4, ih, iw, 4]
   if (pack_size == 8) {
-    lite::x86::math::pack8_m256(param.x, &input_pack_, pack_num, false);
-    lite::x86::math::padding8_m256(
-        &input_pack_, &input_padding_, *(param.paddings));
+    // lite::x86::math::pack8_m256(param.x, &input_pack_, pack_num, false);
+    // lite::x86::math::padding8_m256(
+    //    &input_pack_, &input_padding_, *(param.paddings));
+    lite::x86::math::pack_padding8_m256(
+        param.x, &input_padding_, pack_num, *(param.paddings));
   } else if (pack_size == 4) {
     lite::x86::math::pack4_m128(param.x, &input_pack_, pack_num, false);
     lite::x86::math::padding4_m128(
