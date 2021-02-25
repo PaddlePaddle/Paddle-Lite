@@ -11,7 +11,7 @@
 ```shell
 # 1. 下载Paddle-Lite源码 并切换到release分支
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-cd Paddle-Lite && git checkout release/v2.6
+cd Paddle-Lite && git checkout 2.8-rc
 
 # (可选) 删除此目录，编译脚本会自动从国内CDN下载第三方库文件
 # rm -rf third-party

@@ -138,6 +138,7 @@ add_operator(matmul_v2_op extra SRCS matmul_v2_op.cc DEPS ${op_DEPS})
 add_operator(select_input_op extra SRCS select_input_op.cc DEPS ${op_DEPS})
 add_operator(tensor_array_to_tensor_op extra SRCS tensor_array_to_tensor_op.cc DEPS ${op_DEPS})
 add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
+add_operator(tile_op extra SRCS tile_op.cc DEPS ${op_DEPS})
 add_operator(sum_op extra SRCS sum_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
