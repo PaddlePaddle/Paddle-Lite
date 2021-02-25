@@ -65,15 +65,12 @@ DEFINE_string(quant_type,
               "QUANT_INT16",
               "Set the quant_type for post_quant_dynamic, "
               "and it should be QUANT_INT8 or QUANT_INT16 for now.");
-DEFINE_bool(enable_fp16,
-            false,
-            "Use quant_fp16_pass method to quantize the model weights.")
-    DEFINE_bool(
-        record_tailoring_info,
-        false,
-        "Record kernels and operators information of the optimized model "
-        "for tailoring compiling, information are stored into optimized "
-        "model path as hidden files");
+DEFINE_bool(enable_fp16, false, "Set kernel_type run in FP16.") DEFINE_bool(
+    record_tailoring_info,
+    false,
+    "Record kernels and operators information of the optimized model "
+    "for tailoring compiling, information are stored into optimized "
+    "model path as hidden files");
 DEFINE_string(optimize_out, "", "path of the output optimized model");
 DEFINE_string(valid_targets,
               "arm",

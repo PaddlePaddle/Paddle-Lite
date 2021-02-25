@@ -69,7 +69,7 @@ void OutputOptModel(const std::string& load_model_dir,
   } else {  // arm_cpu
     if (FLAGS_use_fp16) {
       config.set_valid_places({
-          lace{TARGET(kARM), PRECISION(kFP16)},
+          Place{TARGET(kARM), PRECISION(kFP16)},
           Place{TARGET(kARM), PRECISION(kFloat)},
       });
     } else {
