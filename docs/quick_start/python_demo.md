@@ -1,6 +1,6 @@
 # Python 完整示例
 
-Python仅支持服务器端预测，目前支持 Windows / MacOs / Ubuntu /ArmLinux。
+Python仅支持服务器端预测，目前支持 Windows / macOS / Ubuntu /ArmLinux。
 
 本章节包含2部分内容：(1) [Python 示例程序](python_demo.html#id1)；(2) [Python 应用开发说明](python_demo.html#id6)。
 

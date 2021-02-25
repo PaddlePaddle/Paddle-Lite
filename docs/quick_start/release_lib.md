@@ -73,11 +73,11 @@
 |:-------:|:-----:|
 |Ubuntu (Linux)|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/Ubuntu Linux/inference_lite_lib.x86.linux.tar.gz)|
 
-## MacOs
+## macOS
 
 |Operating System|下载|
 |:-------:|:-----:|
-|MacOs|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/MacOs/inference_lite_lib.x86.macOS.tar.gz)|
+|macOS|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/MacOs/inference_lite_lib.x86.macOS.tar.gz)|
 
 
 ## opt 工具
@@ -85,7 +85,7 @@
 | 运行系统 |      下载       |
 | :---------: |  :--------------: |
 |    Linux    | [release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/opt/opt) |
-|    MacOs   | [release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/opt/opt_mac) |
+|    macOS   | [release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/opt/opt_mac) |
 
 ## 安装Paddle-Lite python 库方法
 
