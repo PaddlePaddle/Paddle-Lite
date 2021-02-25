@@ -202,7 +202,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
     }
   };
 
-  if (programs_.empty() && !(path_name.empty())) {
+  if (programs_.empty()) {
     // check whether binary exist
     if (!IsFileExists(bin_file)) {
       LOG(WARNING)
@@ -303,31 +303,33 @@ bool CLRuntime::CheckFromSource(const std::string& file_name,
   BuildProgram(program, build_option);
 
   // Keep built program binary
-  cl_int status{CL_SUCCESS};
-  // 1. Query binary (PTX file) size
-  size_t bin_size;
-  status = program->getInfo(CL_PROGRAM_BINARY_SIZES, &bin_size);
-  CL_CHECK_FATAL_SOLID(status);
-  // 2. Read binary (PTX file) to memory buffer
-  cl::Program::Binaries binary;
-  binary.resize(1);
-  binary[0].resize(bin_size);
-  auto buf = binary[0].data();
-  status = program->getInfo(CL_PROGRAM_BINARIES, &buf);
-  CL_CHECK_FATAL_SOLID(status);
-  programs_precompiled_binary_[program_key] = binary;
+  if (binary_path_name_.size() == 2) {
+    cl_int status{CL_SUCCESS};
+    // 1. Query binary (PTX file) size
+    size_t bin_size;
+    status = program->getInfo(CL_PROGRAM_BINARY_SIZES, &bin_size);
+    CL_CHECK_FATAL_SOLID(status);
+    // 2. Read binary (PTX file) to memory buffer
+    cl::Program::Binaries binary;
+    binary.resize(1);
+    binary[0].resize(bin_size);
+    auto buf = binary[0].data();
+    status = program->getInfo(CL_PROGRAM_BINARIES, &buf);
+    CL_CHECK_FATAL_SOLID(status);
+    programs_precompiled_binary_[program_key] = binary;
 #ifdef LITE_WITH_LOG
-  VLOG(3) << " --- binary size: " << bin_size << " ---";
+    VLOG(3) << " --- binary size: " << bin_size << " ---";
 #endif
-  programs_[program_key] = std::move(ptr);
-
-  if (programs_precompiled_binary_.find(sn_key_) ==
-      programs_precompiled_binary_.end()) {
-    // add identifier
-    std::string sn = GetSN(build_option);
-    std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
-    programs_precompiled_binary_[sn_key_] = {sn_info};
+    if (programs_precompiled_binary_.find(sn_key_) ==
+        programs_precompiled_binary_.end()) {
+      // add identifier
+      std::string sn = GetSN(build_option);
+      std::vector<unsigned char> sn_info(sn.data(), sn.data() + sn.size());
+      programs_precompiled_binary_[sn_key_] = {sn_info};
+    }
   }
+
+  programs_[program_key] = std::move(ptr);
 
   return true;
 }
