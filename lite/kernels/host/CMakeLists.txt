@@ -59,6 +59,7 @@ add_kernel(select_input_compute_host Host extra SRCS select_input_compute.cc DEP
 add_kernel(tensor_array_to_tensor_compute_host Host extra SRCS tensor_array_to_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(expand_v2_compute_host Host extra SRCS expand_v2_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(strided_slice_compute_host Host extra SRCS strided_slice_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(tile_compute_host Host extra SRCS tile_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(fill_any_like_compute_host Host extra SRCS fill_any_like_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(scatter_nd_add_compute_host Host extra SRCS scatter_nd_add_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(tril_triu_compute_host Host extra SRCS tril_triu_compute.cc DEPS ${lite_kernel_deps})
