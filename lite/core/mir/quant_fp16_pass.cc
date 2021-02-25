@@ -36,10 +36,10 @@ void QuantDataFP32toFP16(OpInfo* op_info,
   tmp_tensor.CopyDataFrom(*weight);
   weight->clear();
   weight->set_precision(PRECISION(kFP16));
-  float16_t* weight_data = weight->mutable_data<float16_t>();
+  __fp16* weight_data = weight->mutable_data<__fp16>();
   const float* src = tmp_tensor.data<float>();
   for (int i = 0; i < weight_dims.production(); i++) {
-    weight_data[i] = static_cast<float16_t>(src[i]);
+    weight_data[i] = static_cast<__fp16>(src[i]);
   }
   op_info->SetAttr<std::string>("quantization_type", "fp32_to_fp16");
   op_info->SetAttr("quantize_weight_bits", quant_bits);
@@ -83,5 +83,5 @@ void QuantFP16Pass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(quant_fp16_pass, paddle::lite::mir::QuantDataFP32toFP16)
+REGISTER_MIR_PASS(quant_fp16_pass, paddle::lite::mir::QuantFP16Pass)
     .BindTargets({TARGET(kARM), TARGET(kX86)});
