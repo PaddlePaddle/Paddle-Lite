@@ -7,6 +7,22 @@ SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 TESTS_FILE="./lite_tests.txt"
 
+skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
+            "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" \
+            "test_paddle_api" "test_cxx_api" "test_gen_code" \
+            "test_mobilenetv1_int8" "test_subgraph_pass" \
+            "test_grid_sampler_image_opencl" "test_lrn_image_opencl" \
+            "test_pad2d_image_opencl" "test_transformer_with_mask_fp32_arm" \
+            "test_mobilenetv1_int16" "test_mobilenetv1_opt_quant" \
+            "test_fast_rcnn" "test_inception_v4_fp32_arm" "test_mobilenet_v1_fp32_arm" \
+             "test_mobilenet_v2_fp32_arm" "test_mobilenet_v3_small_x1_0_fp32_arm" \
+             "test_mobilenet_v3_large_x1_0_fp32_arm" "test_resnet50_fp32_arm" \
+             "test_squeezenet_fp32_arm" "test_mobilenet_v1_int8_arm" \
+             "test_mobilenet_v2_int8_arm" "test_resnet50_int8_arm" \
+             "test_mobilenet_v1_int8_dygraph_arm" "test_ocr_lstm_int8_arm" \
+             "test_lac_crf_fp32_arm" "test_nlp_lstm_int8_arm")
+
+
 ####################################################################################################
 # 1. functions of prepare workspace before compiling
 ####################################################################################################
@@ -100,13 +116,23 @@ function build_test_android_opencl {
 
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir && mkdir $adb_workdir"
   for _test in $(cat $TESTS_FILE); do
+      local to_skip=0
+      for skip_name in ${skip_list[@]}; do
+          if [ $skip_name = $_test ]; then
+              echo "to skip " $skip_name
+              to_skip=1
+          fi
+      done
+
       # tell if this test is marked with `opencl`
-      if [[ $_test == *$opencl_test_mark* ]]; then
+      if [[ $_test == *$opencl_test_mark* ]] && [[ $to_skip -eq 0 ]]; then
           test_arm_android $_test ${adb_devices[0]} $adb_workdir
       fi
   done
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"
 }
 
+# $1 adb_device index. eg. 1
+# $2 workspace name on adb.  eg. work_tmp1
 build_test_android_opencl armv7 gcc $1 $2
 build_test_android_opencl armv8 gcc $1 $2
