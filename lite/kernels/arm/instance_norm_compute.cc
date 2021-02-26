@@ -27,8 +27,10 @@ void InstanceNormCompute::PrepareForRun() {}
 void InstanceNormCompute::Run() {
   auto& param = this->Param<param_t>();
   const float* in = param.x->data<float>();
-  const float* scale = param.scale->data<float>();
-  const float* bias = param.bias->data<float>();
+  const float* scale =
+      param.scale == nullptr ? nullptr : param.scale->data<float>();
+  const float* bias =
+      param.bias == nullptr ? nullptr : param.bias->data<float>();
   float* out = param.out->mutable_data<float>();
   float* saved_mean = param.saved_mean->mutable_data<float>();
   float* saved_variance = param.saved_variance->mutable_data<float>();
@@ -124,8 +126,9 @@ void InstanceNormCompute::Run() {
     const float* in_p = in + i * spatial_size;
     float* out_p = out + i * spatial_size;
     int j = spatial_size;
-    const float sstd_val = scale[i % c] * saved_variance[i];
-    const float bias_val = bias[i % c];
+    const float sstd_val =
+        scale == nullptr ? saved_variance[i] : scale[i % c] * saved_variance[i];
+    const float bias_val = bias == nullptr ? 0. : bias[i % c];
     const float mean_val = saved_mean[i];
     const float32x4_t vsstd = vdupq_n_f32(sstd_val);
     const float32x4_t vbias = vdupq_n_f32(bias_val);

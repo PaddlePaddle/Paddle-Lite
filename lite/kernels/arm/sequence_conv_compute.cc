@@ -39,7 +39,32 @@ void local_naive_transpose(const Dtype* din, Dtype* dout, int m, int n) {
     }
   }
 }
-
+void data_padding(const float* data_in,
+                  int up_pad,
+                  int down_pad,
+                  int width,
+                  int hidden_dim,
+                  int kernel_size,
+                  float* out,
+                  int stride) {
+  int len = hidden_dim;
+  for (int i = 0; i <= (width + up_pad + down_pad) - kernel_size; i += stride) {
+    for (int k = 0; k < kernel_size; k++) {
+      int start = i + k * stride - up_pad;
+      if (start < 0) {
+        len = hidden_dim;
+        while (len-- > 0) *(out++) = 0;
+      } else if (start < width) {
+        int in_s = start * hidden_dim;
+        len = hidden_dim;
+        while (len-- > 0) *(out++) = data_in[in_s++];
+      } else {
+        len = hidden_dim;
+        while (len-- > 0) *(out++) = 0;
+      }
+    }
+  }
+}
 void SequenceConvCompute::PrepareForRun() {}
 
 void SequenceConvCompute::Run() {
@@ -55,16 +80,14 @@ void SequenceConvCompute::Run() {
   float* out_data = param.Out->mutable_data<float>();
   int pad_start = param.contextStart;
   int kernel_size = param.contextLength;
+  int stride = param.contextStride;
   int kernel_num = param.Filter->dims()[1];
   int up_pad = std::max(0, -pad_start);
   int down_pad = std::max(0, pad_start + kernel_size - 1);
   auto hidden_dim = static_cast<int64_t>(param.X->dims()[1]);
   auto sequence_len = static_cast<int64_t>(param.X->dims()[0]);
   auto lod = param.X->lod();
-
-  // Im2Col
   lite::Tensor col;
-  lite::Tensor tmp;
   col.Resize({sequence_len, kernel_size * hidden_dim});
   auto* col_data = col.mutable_data<float>();
   auto lod_level_0 = lod[0];
@@ -77,42 +100,19 @@ void SequenceConvCompute::Run() {
     input_row_end = static_cast<int>(lod_level_0[i + 1]);
 
     if (input_row_begin < input_row_end) {
-      // do im2col
       auto* sub_in_data = in_data + input_row_begin * hidden_dim;
       auto* sub_col_data =
           col_data + input_row_begin * kernel_size * hidden_dim;
-      tmp.Resize({kernel_size * hidden_dim, input_row_end - input_row_begin});
-      auto* tmp_data = tmp.mutable_data<float>();
-      // Image Col: [input_channels, filter_height, filter_width, output_height,
-      // output_width]
-      // sequence Col: [1, kernel_size, hidden_dim, sequence_len, 1]
-      paddle::lite::arm::math::im2col(
-          sub_in_data,
-          1,
-          input_row_end - input_row_begin,
-          hidden_dim,  // C H W -> 1, seq_len, hidden_dim
-          kernel_size,
-          hidden_dim,  // kernel_h, kernel_w
-          up_pad,
-          down_pad,
-          0,
-          0,  // pad_top, pad_bottom, pad_left, pad_right
-          1,
-          1,
-          1,
-          1,  // stride_h, stride_w, dilation_h, dilation_w
-          tmp_data);
-      int cols = kernel_size * hidden_dim;
-      int rows = input_row_end - input_row_begin;
-      if (cols % 4 == 0 && rows % 4 == 0) {
-        paddle::lite::arm::math::local_transpose(
-            tmp_data, sub_col_data, cols, rows);
-      } else {
-        local_naive_transpose(tmp_data, sub_col_data, cols, rows);
-      }
+      data_padding(sub_in_data,
+                   up_pad,
+                   down_pad,
+                   input_row_end - input_row_begin,
+                   hidden_dim,
+                   kernel_size,
+                   sub_col_data,
+                   stride);
     }
   }
-
   // SGDMM C := alpha * A * B + beta * C
   // matmul: col * filter_data
   // [sequence_len, kernel_size * hidden_dim] * [kernel_size * hidden_dim,

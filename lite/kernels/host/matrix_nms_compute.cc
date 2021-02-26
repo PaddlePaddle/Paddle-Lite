@@ -47,10 +47,10 @@ static T JaccardOverlap(const T* box1, const T* box2, const bool normalized) {
       box2[3] < box1[1]) {
     return static_cast<T>(0.);
   } else {
-    const T inter_xmin = std::max(box1[0], box2[0]);
-    const T inter_ymin = std::max(box1[1], box2[1]);
-    const T inter_xmax = std::min(box1[2], box2[2]);
-    const T inter_ymax = std::min(box1[3], box2[3]);
+    const T inter_xmin = (std::max)(box1[0], box2[0]);
+    const T inter_ymin = (std::max)(box1[1], box2[1]);
+    const T inter_xmax = (std::min)(box1[2], box2[2]);
+    const T inter_ymax = (std::min)(box1[3], box2[3]);
     T norm = normalized ? static_cast<T>(0.) : static_cast<T>(1.);
     T inter_w = inter_xmax - inter_xmin + norm;
     T inter_h = inter_ymax - inter_ymin + norm;
@@ -133,7 +133,7 @@ void NMSMatrix(const Tensor& bbox,
       auto idx_b = perm[j];
       auto iou = JaccardOverlap<T>(
           bbox_ptr + idx_a * box_size, bbox_ptr + idx_b * box_size, normalized);
-      max_iou = std::max(max_iou, iou);
+      max_iou = (std::max)(max_iou, iou);
       iou_matrix[i * (i - 1) / 2 + j] = iou;
     }
     iou_max[i] = max_iou;
@@ -151,7 +151,7 @@ void NMSMatrix(const Tensor& bbox,
       auto max_iou = iou_max[j];
       auto iou = iou_matrix[i * (i - 1) / 2 + j];
       auto decay = decay_fn(iou, max_iou, sigma);
-      min_decay = std::min(min_decay, decay);
+      min_decay = (std::min)(min_decay, decay);
     }
     auto ds = min_decay * score_ptr[perm[i]];
     if (ds <= post_threshold) continue;
@@ -256,7 +256,7 @@ void MatrixNmsCompute::Run() {
   auto* scores = param.scores;
   auto* outs = param.out;
   auto* index = param.index;
-
+  auto* rois_num = param.rois_num;
   auto background_label = param.background_label;
   auto nms_top_k = param.nms_top_k;
   auto keep_top_k = param.keep_top_k;
@@ -277,8 +277,10 @@ void MatrixNmsCompute::Run() {
   std::vector<int64_t> offsets = {0};
   std::vector<float> detections;
   std::vector<int> indices;
+  std::vector<int> num_per_batch;
   detections.reserve(out_dim * num_boxes * batch_size);
   indices.reserve(num_boxes * batch_size);
+  num_per_batch.reserve(batch_size);
   for (int i = 0; i < batch_size; ++i) {
     scores_slice = scores->Slice<float>(i, i + 1);
     scores_slice.Resize({score_dims[1], score_dims[2]});
@@ -299,6 +301,7 @@ void MatrixNmsCompute::Run() {
                                   use_gaussian,
                                   gaussian_sigma);
     offsets.push_back(offsets.back() + num_out);
+    num_per_batch.emplace_back(num_out);
   }
 
   int64_t num_kept = offsets.back();
@@ -315,6 +318,12 @@ void MatrixNmsCompute::Run() {
     std::copy(indices.begin(), indices.end(), index->mutable_data<int>());
   }
 
+  if (rois_num != nullptr) {
+    rois_num->Resize({batch_size});
+    std::copy(num_per_batch.begin(),
+              num_per_batch.end(),
+              rois_num->mutable_data<int>());
+  }
   LoD lod;
   lod.emplace_back(std::vector<uint64_t>(offsets.begin(), offsets.end()));
   outs->set_lod(lod);
@@ -337,4 +346,7 @@ REGISTER_LITE_KERNEL(matrix_nms,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Index",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("RoisNum",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindPaddleOpVersion("matrix_nms", 1)
     .Finalize();

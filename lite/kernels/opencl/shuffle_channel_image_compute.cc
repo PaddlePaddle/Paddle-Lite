@@ -60,11 +60,13 @@ class ShuffleChannelComputeImage2D
     int group = param.group;
     int group_size = channels / group;
 
-    auto* x_img = param.X->data<half_t, cl::Image2D>();
+    auto* x_img = GET_DATA_GPU(param.X);
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
-    auto* out_img = param.Out->mutable_data<half_t, cl::Image2D>(
-        out_image_shape["width"], out_image_shape["height"]);
+    auto* out_img = MUTABLE_DATA_GPU(param.Out,
+                                     out_image_shape["width"],
+                                     out_image_shape["height"],
+                                     nullptr);
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
@@ -112,7 +114,7 @@ class ShuffleChannelComputeImage2D
 
  private:
   std::string kernel_func_name_{"shuffle_channel"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

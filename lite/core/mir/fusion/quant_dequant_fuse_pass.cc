@@ -15,6 +15,7 @@
 #include "lite/core/mir/fusion/quant_dequant_fuse_pass.h"
 #include <list>
 #include <memory>
+#include <utility>
 #include <vector>
 #include "lite/api/paddle_place.h"
 #include "lite/core/mir/fusion/quant_dequant_op_fuser.h"
@@ -48,10 +49,20 @@ void QuantDequantFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // process quant_dequant_node
   std::vector<std::string> quant_dequant_op_types = {
       "fake_quantize_dequantize_abs_max",
-      "fake_quantize_dequantize_moving_average_abs_max"};
+      "fake_quantize_dequantize_moving_average_abs_max",
+      "fake_channel_wise_quantize_dequantize_abs_max"};
   for (auto& op_type : quant_dequant_op_types) {
-    fusion::DeleteQuantDequantOpFuser dqd_fuser(op_type);
+    fusion::QuantDequantOpFuser dqd_fuser(op_type);
     dqd_fuser(graph.get());
+  }
+
+  // process dynamic quant op
+  std::vector<std::pair<std::string, std::string>> op_argnames;
+  op_argnames.emplace_back(std::make_pair("lstm", "Weight"));
+  op_argnames.emplace_back(std::make_pair("gru", "Weight"));
+  for (auto pair : op_argnames) {
+    fusion::DynamicQuantOpFuser dq_fuser(pair.first, pair.second);
+    dq_fuser(graph.get());
   }
 }
 

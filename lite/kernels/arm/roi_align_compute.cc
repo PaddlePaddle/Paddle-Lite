@@ -146,6 +146,17 @@ void RoiAlignCompute::Run() {
         roi_batch_id_data[i] = n;
       }
     }
+  } else if (param.RoisNum != nullptr) {
+    auto* rois_num_t = param.RoisNum;
+    auto rois_batch_size = rois_num_t->numel();
+    auto* rois_num_data = rois_num_t->data<int>();
+    int start = 0;
+    for (int n = 0; n < rois_batch_size; ++n) {
+      for (int i = start; i < start + rois_num_data[n]; ++i) {
+        roi_batch_id_data[i] = n;
+      }
+      start += rois_num_data[n];
+    }
   } else {
     auto rois_lod = rois->lod().back();
     int rois_batch_size = rois_lod.size() - 1;
@@ -241,5 +252,8 @@ REGISTER_LITE_KERNEL(roi_align,
     .BindInput("ROIs", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("RoisLod",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("RoisNum",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindPaddleOpVersion("roi_align", 1)
     .Finalize();

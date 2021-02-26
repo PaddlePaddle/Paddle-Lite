@@ -104,19 +104,17 @@ void CRFDecoding(const int seq_len,
         /* Obtain the content of weights from un-aligned address.*/
         __m256 w_content = _mm256_loadu_ps(w + trans_offset);
         __m256 score_v = _mm256_add_ps(alpha_content, w_content);
-        __m256 mask = _mm256_cmp_ps(score_v, max_score, _CMP_GT_OS);
+        __m256i mask =
+            _mm256_castps_si256(_mm256_cmp_ps(score_v, max_score, _CMP_GT_OS));
 /* According to the mask value, update the index of the max_score.*/
 #ifdef __AVX2__
-        max_j = _mm256_or_si256(
-            _mm256_andnot_si256((__m256i)mask, max_j),
-            _mm256_and_si256((__m256i)mask, _mm256_set1_epi32(i)));
+        max_j = _mm256_or_si256(_mm256_andnot_si256(mask, max_j),
+                                _mm256_and_si256(mask, _mm256_set1_epi32(i)));
 #else
         __m128i lo_max_j = _mm256_extractf128_si256(max_j, 0);
         __m128i hi_max_j = _mm256_extractf128_si256(max_j, 1);
-        __m128i lo_mask =
-            _mm256_extractf128_si256(*(__m256i*)&mask, 0);  // NOLINT
-        __m128i hi_mask =
-            _mm256_extractf128_si256(*(__m256i*)&mask, 1);  // NOLINT
+        __m128i lo_mask = _mm256_extractf128_si256(mask, 0);  // NOLINT
+        __m128i hi_mask = _mm256_extractf128_si256(mask, 1);  // NOLINT
         lo_max_j = _mm_andnot_si128(lo_mask, lo_max_j);
         hi_max_j = _mm_andnot_si128(hi_mask, hi_max_j);
         lo_mask = _mm_and_si128(lo_mask, _mm_set1_epi32(i));

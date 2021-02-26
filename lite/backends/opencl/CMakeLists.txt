@@ -2,10 +2,12 @@ if (NOT LITE_WITH_OPENCL)
     return()
 endif()
 
+add_subdirectory(utils)
+
 lite_cc_library(opencl_kernels_source_cc SRCS opencl_kernels_source.cc)
 lite_cc_library(cl_wrapper SRCS cl_wrapper.cc)
 lite_cc_library(cl_utility SRCS cl_utility.cc DEPS cl_wrapper)
-lite_cc_library(cl_runtime SRCS cl_runtime.cc DEPS cl_utility opencl_kernels_source_cc)
+lite_cc_library(cl_runtime SRCS cl_runtime.cc DEPS cl_cache cl_utility opencl_kernels_source_cc)
 lite_cc_library(cl_context SRCS cl_context.cc DEPS cl_runtime)
 lite_cc_library(cl_half SRCS cl_half.cc)
 lite_cc_library(cl_image_converter SRCS cl_image_converter.cc DEPS tensor cl_half)

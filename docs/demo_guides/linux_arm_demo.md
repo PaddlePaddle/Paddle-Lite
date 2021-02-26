@@ -46,7 +46,7 @@ demo结果如下:
 <img width="836" alt="image" src="https://user-images.githubusercontent.com/50474132/82852558-da228580-9f35-11ea-837c-e4d71066da57.png">
 
 ## 使用C++接口预测
-Linux(ARM) demo 示例基于C++ API 开发，调用Paddle-Lite C++ API包括以下五步。更详细的API 描述参考： [Paddle-Lite C++ API](https://paddle-lite.readthedocs.io/zh/latest/api_reference/cxx_api_doc.html)。
+Linux(ARM) demo 示例基于C++ API 开发，调用Paddle-Lite C++ API包括以下五步。更详细的API 描述参考： [Paddle-Lite C++ API](../api_reference/cxx_api_doc)。
 
 ```c++
 #include <iostream>
@@ -88,4 +88,4 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 1. Python预测库编译参考[编译Linux](../source_compile/compile_linux)，建议在开发版上编译。
 2. [Paddle-Lite Python API](../api_reference/python_api_doc)。
-3. 代码参考，[Python完整示例](python_demo)
+3. 代码参考，[Python完整示例](../quick_start/python_demo)

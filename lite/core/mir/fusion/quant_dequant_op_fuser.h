@@ -47,9 +47,6 @@ class DeleteQuantOpFuser : public FuseBase {
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
-
- private:
   std::string quant_op_type_{};
 };
 
@@ -61,9 +58,6 @@ class DequantOpFuser : public FuseBase {
       : quantized_op_type_(quantized_op_type) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
-
- private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
 
  private:
   std::string quantized_op_type_{};
@@ -80,28 +74,45 @@ class ChannelWiseDequantOpFuser : public FuseBase {
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
-
- private:
   std::string quantized_op_type_{};
 };
 
-/* The pattern like "fake_quantize_dequantize_op + quantized_op" can be
- * deteted by this fuser. The fuser modifies the input scale for the
- * quantized_op and deletes the fake_quant_dequant_op.
+/* The pattern like "input_var + fake_quantize_dequantize_op +
+ * quant_dequant_var + quantized_op" can be deteted by this fuser.
+ * The fuser sets the input scale for the quantized_op and
+ * deletes the fake_quant_dequant_op. If the input_var is weight,
+ * The fuser also quantizes the input_var.
 */
-class DeleteQuantDequantOpFuser : public FuseBase {
+class QuantDequantOpFuser : public FuseBase {
  public:
-  explicit DeleteQuantDequantOpFuser(const std::string& quant_dequant_op_type)
+  explicit QuantDequantOpFuser(const std::string& quant_dequant_op_type)
       : quant_dequant_op_type_(quant_dequant_op_type) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
-  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  std::string quant_dequant_op_type_{};
+};
+
+/* DynamicQuantOpFuser is applied for LSTM and GRU for now.
+ * This fuser collects the weight scale and convert the weight from fp32
+ * to int8.
+*/
+
+class DynamicQuantOpFuser : public FuseBase {
+ public:
+  explicit DynamicQuantOpFuser(const std::string& op_type,
+                               const std::string& input_argname) {
+    op_type_ = op_type;
+    input_argname_ = input_argname;
+  }
+
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
-  std::string quant_dequant_op_type_{};
+  std::string op_type_{};
+  std::string input_argname_{};
 };
 
 }  // namespace fusion

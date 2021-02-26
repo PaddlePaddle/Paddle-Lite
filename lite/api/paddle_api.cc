@@ -25,6 +25,7 @@
 #include "lite/backends/cuda/target_wrapper.h"
 #endif
 #ifdef LITE_WITH_XPU
+#include <functional>
 #include "lite/backends/xpu/target_wrapper.h"
 #endif
 
@@ -39,7 +40,10 @@
 namespace paddle {
 namespace lite_api {
 
-bool IsOpenCLBackendValid() {
+bool IsOpenCLBackendValid(bool check_fp16_valid) {
+#ifdef LITE_WITH_LOG
+  LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
+#endif
   bool opencl_valid = false;
 
 #ifdef LITE_WITH_OPENCL
@@ -54,12 +58,12 @@ bool IsOpenCLBackendValid() {
   LOG(INFO) << "dlsym_success:" << dlsym_success;
 #endif
   if (dlsym_success == false) return false;
-
-  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice();
-#endif
+  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice(
+      check_fp16_valid);
 
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "opencl_valid:" << opencl_valid;
+#endif
 #endif
   return opencl_valid;
 }
@@ -106,6 +110,7 @@ template const int64_t *Tensor::data<int64_t>() const;
 template const int32_t *Tensor::data<int32_t>() const;
 template const int16_t *Tensor::data<int16_t>() const;
 template const int8_t *Tensor::data<int8_t>() const;
+template const uint16_t *Tensor::data<uint16_t>() const;
 template const uint8_t *Tensor::data<uint8_t>() const;
 template const bool *Tensor::data<bool>() const;
 template const void *Tensor::data<void>() const;
@@ -116,6 +121,7 @@ template int64_t *Tensor::mutable_data(TargetType type) const;
 template int *Tensor::mutable_data(TargetType type) const;
 template int16_t *Tensor::mutable_data(TargetType type) const;
 template int8_t *Tensor::mutable_data(TargetType type) const;
+template uint16_t *Tensor::mutable_data(TargetType type) const;
 template uint8_t *Tensor::mutable_data(TargetType type) const;
 template bool *Tensor::mutable_data(TargetType type) const;
 
@@ -149,7 +155,10 @@ template <typename T>
 void Tensor::CopyToCpu(T *data) const {
   const T *src_data = tensor(raw_tensor_)->data<T>();
   int64_t num = tensor(raw_tensor_)->numel();
-  CHECK(num > 0) << "You should call Resize interface first";
+  if (num == 0) {
+    LOG(WARNING) << "Tensor does not hold data.";
+    return;
+  }
   auto type = tensor(raw_tensor_)->target();
   if (type == TargetType::kHost || type == TargetType::kARM) {
     lite::TargetWrapperHost::MemcpySync(
@@ -262,13 +271,45 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #endif
 }
 
-void ConfigBase::set_opencl_tune(bool enable_tune) {
+void ConfigBase::set_opencl_binary_path_name(const std::string &path,
+                                             const std::string &name) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
-    enable_opencl_tune_ = enable_tune;
-    paddle::lite::CLRuntime::Global()->set_auto_tune(enable_opencl_tune_);
+    opencl_bin_path_ = path;
+    opencl_bin_name_ = name;
+    lite::CLRuntime::Global()->SetBinaryPathName(path, name);
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "opencl binary path and file name:"
+              << (lite::CLRuntime::Global()->GetBinaryPathName())[0] << "/"
+              << (lite::CLRuntime::Global()->GetBinaryPathName())[1];
+#endif
+  }
+#endif
+}
+
+void ConfigBase::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
 #ifdef LITE_WITH_OPENCL
-    LOG(INFO) << "auto_tune:" << paddle::lite::CLRuntime::Global()->auto_tune();
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    opencl_tune_mode_ = tune_mode;
+    paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_,
+                                                     lws_repeats);
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "set opencl_tune_mode: "
+              << CLTuneModeToStr(lite::CLRuntime::Global()->auto_tune());
+#endif
+  }
+#endif
+}
+
+void ConfigBase::set_opencl_precision(CLPrecisionType p) {
+#ifdef LITE_WITH_OPENCL
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    opencl_precision_ = p;
+    paddle::lite::CLRuntime::Global()->set_precision(p);
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "set opencl precision: "
+              << CLPrecisionTypeToStr(
+                     lite::CLRuntime::Global()->get_precision());
 #endif
   }
 #endif
@@ -290,6 +331,25 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+#ifdef LITE_WITH_X86
+void ConfigBase::set_x86_math_num_threads(int threads) {
+  x86_math_num_threads_ = threads;
+}
+int ConfigBase::x86_math_num_threads() const { return x86_math_num_threads_; }
+#endif
+
+void ConfigBase::set_subgraph_model_cache_buffers(
+    const std::string &key,
+    const std::vector<char> &cfg,
+    const std::vector<char> &bin) {
+  CHECK(!key.empty());
+  CHECK(!cfg.empty());
+  CHECK(!bin.empty());
+  CHECK_EQ(subgraph_model_cache_buffers_.count(key), 0);
+  subgraph_model_cache_buffers_[key] =
+      std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
+}
+
 CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
                                size_t program_buffer_size,
                                const char *params_buffer,
@@ -309,15 +369,9 @@ const std::string &CxxModelBuffer::get_program() const {
   return program_;
 }
 
-const std::string &CxxModelBuffer::get_params() const {
-  CHECK(!params_.empty());
-  return params_;
-}
+const std::string &CxxModelBuffer::get_params() const { return params_; }
 
-bool CxxModelBuffer::is_empty() const {
-  CHECK(program_.empty() == params_.empty());
-  return program_.empty();
-}
+bool CxxModelBuffer::is_empty() const { return program_.empty(); }
 
 const CxxModelBuffer &CxxConfig::get_model_buffer() const {
   CHECK(model_buffer_) << "Cannot get an empty model buffer.";
@@ -378,6 +432,74 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
+
+void CxxConfig::set_xpu_conv_autotune(bool autotune,
+                                      const std::string &autotune_file) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::conv_autotune = autotune;
+  lite::TargetWrapperXPU::conv_autotune_file = autotune_file;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_conv_autotune' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+template <class T>
+void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
+                                                const int tensor_idx,
+                                                const shape_t &shape,
+                                                const lod_t &lod,
+                                                const T fill_value,
+                                                const void *data) {
+#ifdef LITE_WITH_XPU
+  if (preferred_inputs_for_warmup_.count(group_idx) == 0) {
+    preferred_inputs_for_warmup_[group_idx] =
+        std::vector<std::shared_ptr<void>>{};
+  }
+  auto &input_tensors = preferred_inputs_for_warmup_[group_idx];
+  while (input_tensors.size() < tensor_idx + 1) {
+    std::shared_ptr<void> input_tensor(
+        static_cast<void *>(new lite::Tensor),
+        [](void *x) { delete static_cast<lite::Tensor *>(x); });
+    input_tensors.emplace_back(input_tensor);
+  }
+
+  auto input_tensor =
+      static_cast<lite::Tensor *>(input_tensors[tensor_idx].get());
+  input_tensor->Resize(shape);
+  input_tensor->set_lod(lod);
+  auto input_data = input_tensor->mutable_data<T>();
+  int64_t size = std::accumulate(
+      shape.begin(), shape.end(), 1, std::multiplies<int64_t>());
+  if (data != nullptr) {
+    memcpy(input_data, data, sizeof(T) * size);
+  } else {
+    for (int64_t i = 0; i < size; i++) {
+      input_data[i] = fill_value;
+    }
+  }
+#else
+  LOG(WARNING)
+      << "'set_preferred_inputs_for_warmup' is only for xpu now, please "
+         "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+#define _SetPreferredInputsForWarmup(dtype)                        \
+  template void CxxConfig::set_preferred_inputs_for_warmup<dtype>( \
+      const int group_idx,                                         \
+      const int tensor_idx,                                        \
+      const shape_t &shape,                                        \
+      const lod_t &lod,                                            \
+      const dtype fill_value,                                      \
+      const void *data);
+
+_SetPreferredInputsForWarmup(float);
+_SetPreferredInputsForWarmup(double);
+_SetPreferredInputsForWarmup(int32_t);
+_SetPreferredInputsForWarmup(int64_t);
+#undef _SetPreferredInputsForWarmup
 
 // set model data in combined format, `set_model_from_file` refers to loading
 // model from file, set_model_from_buffer refers to loading model from memory

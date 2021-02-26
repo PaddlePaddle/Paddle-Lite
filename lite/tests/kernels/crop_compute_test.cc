@@ -20,108 +20,198 @@
 namespace paddle {
 namespace lite {
 
+template <class T>
+void slice_ref(const T* input,
+               const std::vector<int64_t>& in_dims,
+               const std::vector<int>& axes,
+               const std::vector<int>& starts,
+               const std::vector<int>& ends,
+               T* out) {
+  auto out_dims = in_dims;
+  std::vector<int> real_starts(in_dims.size(), 0);
+  std::vector<int> real_ends(in_dims.size(), 0);
+  std::vector<int> real_step(in_dims.size(), 0);
+  for (size_t i = 0; i < in_dims.size(); i++) {
+    real_ends[i] = in_dims[i];
+  }
+  for (size_t i = 0; i < axes.size(); i++) {
+    int dim_value = in_dims[axes[i]];
+    if (dim_value > 0) {
+      int start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
+      int end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
+      start = std::max(start, 0);
+      end = std::max(end, 0);
+      end = std::min(end, dim_value);
+      out_dims[axes[i]] = end - start;
+      real_starts[axes[i]] = start;
+      real_ends[axes[i]] = end;
+    }
+  }
+  const int LEN = in_dims.size();
+  std::vector<int> dst_step(LEN);
+  for (size_t i = 0; i < in_dims.size(); ++i) {
+    dst_step[i] = 1;
+  }
+  std::vector<int> src_step(LEN);
+  for (size_t i = 0; i < in_dims.size(); ++i) {
+    src_step[i] = 1;
+  }
+  int out_num = out_dims[in_dims.size() - 1];
+  for (int i = in_dims.size() - 2; i >= 0; i--) {
+    dst_step[i] = out_dims[i + 1] * dst_step[i + 1];
+    src_step[i] = in_dims[i + 1] * src_step[i + 1];
+    out_num *= out_dims[i];
+  }
+
+  for (int dst_id = 0; dst_id < out_num; dst_id++) {
+    int src_id = 0;
+    int index_id = dst_id;
+    for (size_t j = 0; j < out_dims.size(); j++) {
+      int cur_id = index_id / dst_step[j];
+      index_id = index_id % dst_step[j];
+      src_id += (cur_id + real_starts[j]) * src_step[j];
+    }
+    out[dst_id] = input[src_id];
+  }
+}
+
+template <class T>
 class CropComputeTester : public arena::TestCase {
  protected:
-  // common attributes for this op.
-  std::string input_ = "X";
-  std::string output_ = "Out";
-
-  DDim dims_{{1, 32, 113, 113}};
-  std::vector<int> offsets_;
-  std::vector<int> shape_;
+  std::string x_ = "X";
+  std::string y_;
+  std::string offsets_;
+  std::string out_ = "Out";
+  std::vector<int> attr_shape_;
+  std::vector<int> attr_offsets_;
+  DDim x_dims_;
 
  public:
   CropComputeTester(const Place& place,
                     const std::string& alias,
-                    std::vector<int> offsets,
-                    std::vector<int> shape)
-      : TestCase(place, alias), offsets_(offsets), shape_(shape) {}
+                    const std::vector<int>& shape,
+                    const std::vector<int>& offset,
+                    const DDim& x_dims,
+                    bool has_y = false,
+                    bool has_offsets = false)
+      : TestCase(place, alias),
+        attr_shape_(shape),
+        attr_offsets_(offset),
+        x_dims_(x_dims) {
+    if (has_y) y_ = "Y";
+    if (has_offsets) offsets_ = "Offsets";
+  }
 
   void RunBaseline(Scope* scope) override {
-    LOG(INFO) << "into runbase";
-    auto* out = scope->NewTensor(output_);
-    LOG(INFO) << "1";
-    CHECK(out);
-    LOG(INFO) << "2";
-    CHECK_EQ(shape_.size(), 4) << "shape size is" << shape_.size();
-    lite::DDim output_shape(dims_);
-    LOG(INFO) << "2.1";
-    output_shape[0] = dims_[0];
-    LOG(INFO) << "2.2";
-    output_shape[1] = shape_[1];
-    LOG(INFO) << "2.3";
-    output_shape[2] = shape_[2];
-    output_shape[3] = shape_[3];
-    LOG(INFO) << "2.4";
-    out->Resize(output_shape);
-    LOG(INFO) << "3";
+    auto* out = scope->NewTensor(out_);
+    auto* x = scope->FindTensor(x_);
+    std::vector<int64_t> out_shape(attr_shape_.begin(), attr_shape_.end());
+    out->Resize(out_shape);
+    auto* out_data = out->template mutable_data<T>();
+    auto x_shape = x->dims().Vectorize();
+    auto* x_data = x->template data<T>();
 
-    auto* x = scope->FindTensor(input_);
-    LOG(INFO) << "into middle";
-    CHECK_EQ(shape_.size(), 4) << "shape size is" << shape_.size();
-    int c_off = offsets_[1];
-    int h_off = offsets_[2];
-    int w_off = offsets_[3];
-    int c_end = shape_[1] + c_off;
-    int h_end = shape_[2] + h_off;
-    int w_end = shape_[3] + w_off;
-
-    int num = dims_[0];
-    int in_c = dims_[1];
-    int in_h = dims_[2];
-    int in_w = dims_[3];
-    const float* ptr_in = x->data<float>();
-    float* ptr_out = out->mutable_data<float>();
-    for (int i = 0; i < num; ++i) {
-      int offset_n = i * in_c * in_h * in_w;
-      for (int j = c_off; j < c_end; ++j) {
-        int offset_c = offset_n + j * in_h * in_w;
-        for (int k = h_off; k < h_end; ++k) {
-          int offset_h = offset_c + k * in_w;
-          for (int l = w_off; l < w_end; ++l) {
-            ptr_out[0] = ptr_in[offset_h + l];
-            ptr_out++;
-          }
-        }
-      }
+    std::vector<int> starts = attr_offsets_;
+    std::vector<int> ends;
+    std::vector<int> axes;
+    for (size_t i = 0; i < starts.size(); i++) {
+      ends.push_back(starts[i] + attr_shape_[i]);
+      axes.push_back(i);
     }
-    LOG(INFO) << "get out of runbase";
+
+    slice_ref(x_data, x_shape, axes, starts, ends, out_data);
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
     op_desc->SetType("crop");
-    op_desc->SetInput("X", {input_});
-    op_desc->SetOutput("Out", {output_});
-    op_desc->SetAttr("offsets", offsets_);
-    op_desc->SetAttr("shape", shape_);
+    op_desc->SetInput("X", {x_});
+    if (!y_.empty()) op_desc->SetInput("Y", {y_});
+    if (!offsets_.empty()) op_desc->SetInput("Offsets", {offsets_});
+    op_desc->SetOutput("Out", {out_});
+    op_desc->SetAttr("shape", attr_shape_);
+    op_desc->SetAttr("offsets", attr_offsets_);
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1;
+    std::vector<T> x_data(x_dims_.production());
+    for (int64_t i = 0; i < x_dims_.production(); i++) {
+      x_data[i] = i;
     }
-    SetCommonTensor(input_, dims_, data.data());
+    SetCommonTensor(x_, x_dims_, x_data.data());
+
+    if (!y_.empty()) {
+      SetCommonTensor(y_,
+                      DDim({static_cast<int64_t>(attr_shape_.size())}),
+                      attr_shape_.data());
+    }
+
+    if (!offsets_.empty()) {
+      SetCommonTensor(offsets_,
+                      DDim({static_cast<int64_t>(attr_offsets_.size())}),
+                      attr_offsets_.data());
+    }
   }
 };
 
-void TestCrop(const Place& place) {
-  std::vector<int> offset = {0, 0, 1, 1};
-  std::vector<int> shape = {-1, 32, 112, 112};
-  std::unique_ptr<arena::TestCase> tester(
-      new CropComputeTester(place, "def", offset, shape));
-  arena::Arena arena(std::move(tester), place, 2e-5);
+template <class T = float>
+void TestCrop(Place place, float abs_error = 1e-5) {
+  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+
+  // test 1D
+  std::unique_ptr<arena::TestCase> tester_1d(
+      new CropComputeTester<T>(place, "def", {1}, {3}, DDim({4})));
+  arena::Arena arena_1d(std::move(tester_1d), place, abs_error);
+  arena_1d.TestPrecision();
+
+  // test 4D
+  std::unique_ptr<arena::TestCase> tester_4d(new CropComputeTester<T>(
+      place, "def", {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5})));
+  arena::Arena arena_4d(std::move(tester_4d), place, abs_error);
+  arena_4d.TestPrecision();
+}
+
+template <class T = float>
+void TestCropY(Place place, float abs_error = 1e-5) {
+  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  std::unique_ptr<arena::TestCase> tester(new CropComputeTester<T>(
+      place, "def", {1, 1, 2, 3}, {1, 0, 2, 1}, DDim({2, 3, 4, 5}), true));
+  arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
 
-TEST(Crop, precision) {
-#ifdef LITE_WITH_X86
-  Place place(TARGET(kX86));
+template <class T = float>
+void TestCropOffsets(Place place, float abs_error = 1e-5) {
+  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  std::unique_ptr<arena::TestCase> tester(
+      new CropComputeTester<T>(place,
+                               "def",
+                               {1, 1, 2, 3},
+                               {1, 0, 2, 1},
+                               DDim({2, 3, 4, 5}),
+                               false,
+                               true));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
+
+TEST(crop, precision) {
+  Place place;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  TestCrop(place);
+
+  TestCrop<float>(place);
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+  TestCrop<int>(place);
+#endif
+#ifndef LITE_WITH_ARM
+  TestCropY<float>(place);
+  TestCropOffsets<float>(place);
 #endif
 }
 

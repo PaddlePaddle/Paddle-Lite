@@ -85,10 +85,10 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
     auto out_image_shape = InitImageDimInfoWith(out_dims);
-    auto* x_img = x->data<half_t, cl::Image2D>();
+    auto* x_img = GET_DATA_GPU(x);
 
-    auto* out_img = out->mutable_data<half_t, cl::Image2D>(
-        out_image_shape["width"], out_image_shape["height"]);
+    auto* out_img = MUTABLE_DATA_GPU(
+        out, out_image_shape["width"], out_image_shape["height"], nullptr);
 
 #ifdef LITE_WITH_LOG
     VLOG(4) << "out_image_shape[w,h]: " << out_image_shape["width"] << " "
@@ -103,11 +103,11 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
     int arg_idx = 0;
-    auto default_work_size =
-        DefaultWorkSize(out_dims,
-                        DDim(std::vector<DDim::value_type>{
-                            static_cast<int64_t>(out_image_shape["width"]),
-                            static_cast<int64_t>(out_image_shape["height"])}));
+    auto default_work_size = DefaultGlobalWorkSize(
+        out_dims,
+        DDim(std::vector<DDim::value_type>{
+            static_cast<int64_t>(out_image_shape["width"]),
+            static_cast<int64_t>(out_image_shape["height"])}));
 #ifdef LITE_WITH_LOG
     VLOG(4) << "default_work_size: " << default_work_size[0] << ", "
             << default_work_size[1] << ", " << default_work_size[2];
@@ -171,7 +171,7 @@ class Pad2dCompute : public KernelLite<TARGET(kOpenCL),
  protected:
   param_t* pad2d_param_{nullptr};
   std::string kernel_func_name_{};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

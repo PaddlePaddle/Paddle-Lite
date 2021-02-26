@@ -34,20 +34,17 @@ class CLContext {
     }
     kernels_.clear();
     kernel_offset_.clear();
-    for (auto &p : programs_) {
+    for (auto &p : CLRuntime::Global()->program_map()) {
       // Note(ysh329): Dont't need `clReleaseProgram`
       p.second.reset();
     }
-    programs_.clear();
+    CLRuntime::Global()->program_map().clear();
     LOG(INFO) << "release cl::Program, cl::Kernel finished.";
   }
 
   cl::CommandQueue &GetCommandQueue();
 
   cl::Context &GetContext();
-
-  cl::Program &GetProgram(const std::string &file_name,
-                          const std::string &options);
 
   void AddKernel(const std::string &kernel_name,
                  const std::string &file_name,
@@ -58,26 +55,30 @@ class CLContext {
 
   cl::Kernel &GetKernel(const std::string &name);
 
-  cl::NDRange DefaultWorkSize(const CLImage &image);
+  cl::NDRange DefaultGlobalWorkSize(const CLImage &image);
 
-  cl::NDRange LocalWorkSize(cl::NDRange global_work_size, size_t max_work_size);
+  cl::NDRange DefaultLocalWorkSize(cl::NDRange global_work_size,
+                                   size_t max_work_size,
+                                   int divitor = 2,
+                                   bool tune_reverse = false,
+                                   size_t user_defined_max_work_size = 0);
 
-  cl::NDRange LocalWorkSizeTune(cl::NDRange global_work_size,
-                                size_t max_work_size,
-                                int divitor = 2);
-
-  cl::NDRange LocalWorkSizeTuneReverse(cl::NDRange global_work_size,
-                                       size_t max_work_size,
-                                       int divitor = 2);
-
+  std::vector<cl::NDRange> GenerateLocalWorkSizes(cl::NDRange global_work_size,
+                                                  size_t max_work_size);
   bool IsArmMali();
-  //  cl::NDRange LocalWorkSizeConv1x1(cl::NDRange global_work_size,
-  //                                   size_t max_work_size);
+
+  bool HasTunedLocalWorkSizeMap(const std::string &key, cl::NDRange *lws);
+
+  void SetTunedLocalWorkSizeMap(const std::string &key, const cl::NDRange lws);
+
+  std::map<std::string, cl::NDRange> GetTunedLocalWorkSizeMap();
+
+  cl::NDRange GetTunedLocalWorkSizeFromMap(const std::string &key);
 
  private:
-  std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::vector<std::shared_ptr<cl::Kernel>> kernels_;
   std::map<std::string, int> kernel_offset_;
+  std::map<std::string, cl::NDRange> tuned_lwss_map_;
 };
 
 }  // namespace lite

@@ -25,7 +25,21 @@ void ExpandCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::ExpandParam>();
   const auto* x = param.X;
   auto* out = param.Out;
-  std::vector<int> expand_times = param.expand_times;
+
+  std::vector<int> expand_times;
+  if (param.ExpandTimes != nullptr) {
+    auto expand_times_data = param.ExpandTimes->template data<int>();
+    for (int64_t i = 0; i < param.ExpandTimes->numel(); i++) {
+      expand_times.push_back(expand_times_data[i]);
+    }
+  } else if (!param.expand_times_tensor.empty()) {
+    for (size_t i = 0; i < param.expand_times_tensor.size(); i++) {
+      expand_times.push_back(
+          param.expand_times_tensor[i]->template data<int>()[0]);
+    }
+  } else {
+    expand_times = param.expand_times;
+  }
 
   const T* src = x->template data<T>();
   T* dst = out->template mutable_data<T>();
@@ -66,13 +80,42 @@ void ExpandCompute<T, PType>::Run() {
 
 using expand_float =
     paddle::lite::kernels::host::ExpandCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_float, def)
+REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_float, float32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
                                       DATALAYOUT(kAny))})
+    .BindInput("ExpandTimes",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("expand_times_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using expand_int32 =
+    paddle::lite::kernels::host::ExpandCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_int32, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("ExpandTimes",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("expand_times_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt32),
                                        DATALAYOUT(kAny))})
     .Finalize();

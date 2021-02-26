@@ -16,8 +16,6 @@
 #if !defined(_WIN32)
 #include <sys/time.h>
 #else
-#define NOMINMAX  // msvc max/min macro conflict with std::min/max
-#include <windows.h>
 #include "lite/backends/x86/port.h"
 #endif
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
@@ -45,7 +43,7 @@ DEFINE_string(model_filename,
               "",
               "the filename of model file. When the model is combined formate, "
               "please set model_file.");
-DEFINE_string(param_filename,
+DEFINE_string(params_filename,
               "",
               "the filename of param file, set param_file when the model is "
               "combined formate.");
@@ -85,14 +83,14 @@ inline double GetCurrentUS() {
 void OutputOptModel(const std::string& save_optimized_model_dir) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
-  if (!FLAGS_model_filename.empty() && !FLAGS_param_filename.empty()) {
+  if (!FLAGS_model_filename.empty() && !FLAGS_params_filename.empty()) {
     config.set_model_file(FLAGS_model_dir + "/" + FLAGS_model_filename);
-    config.set_param_file(FLAGS_model_dir + "/" + FLAGS_param_filename);
+    config.set_param_file(FLAGS_model_dir + "/" + FLAGS_params_filename);
   }
   std::vector<Place> vaild_places = {
-      Place{TARGET(kARM), PRECISION(kFloat)},
       Place{TARGET(kARM), PRECISION(kInt32)},
       Place{TARGET(kARM), PRECISION(kInt64)},
+      Place{TARGET(kARM), PRECISION(kFloat)},
   };
   config.set_valid_places(vaild_places);
   auto predictor = lite_api::CreatePaddlePredictor(config);
@@ -219,7 +217,7 @@ void print_usage() {
       "  --model_filename (The filename of model file. When the model is\n "
       "    combined formate, please set model_file. Otherwise, it is not\n"
       "    necessary to set it.) type: string \n"
-      "  --param_filename (The filename of param file, set param_file when\n"
+      "  --params_filename (The filename of param file, set param_file when\n"
       "    the model is combined formate. Otherwise, it is not necessary\n"
       "    to set it.) type: string \n"
       "  --input_shape (Set input shapes according to the model, separated by\n"
@@ -236,7 +234,7 @@ void print_usage() {
       "  --warmup (Warmup times) type: int32 default: 0 \n"
       "Note that: \n"
       "  If load the optimized model, set optimized_model_path. Otherwise, \n"
-      "    set model_dir, model_filename and param_filename according to \n"
+      "    set model_dir, model_filename and params_filename according to \n"
       "    the model. \n";
   LOG(INFO) << help_info;
 }

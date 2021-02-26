@@ -13,6 +13,12 @@
 # limitations under the License.
 # this module will record kernels in unvalid_places into all_kernel_faked.cc
 
+"""
+Name: create_fake_kernel_registry.py
+Usage: to generate `all_kernel_faked.cc`, `all_kernel_faked.cc` is used for
+       recording different platform kernels into opt tool.
+"""
+
 from __future__ import print_function
 import sys
 import logging
@@ -87,7 +93,7 @@ def parse_fake_kernels_from_path(list_path):
             with open(path.strip()) as g:
                 c = g.read()
                 kernel_parser = RegisterLiteKernelParser(c)
-                kernel_parser.parse("ON")
+                kernel_parser.parse("ON", "ON")
 
                 for k in kernel_parser.kernels:
                     kernel_name = "{op_type}_{target}_{precision}_{data_layout}_{alias}_class".format(
@@ -126,6 +132,9 @@ def parse_fake_kernels_from_path(list_path):
                     for output in k.outputs:
                         io = '    .BindOutput("%s", {%s})' % (output.name, output.type)
                         out_lines.append(io)
+                    for op_versions in k.op_versions:
+                        io = '    .BindPaddleOpVersion("%s", %s)' % (op_versions.name, op_versions.version)
+                        out_lines.append(io)
                     out_lines.append("    .Finalize();")
                     out_lines.append("")
                     out_lines.append(gen_use_kernel_statement(k.op_type, k.target, k.precision, k.data_layout, k.alias))
@@ -138,7 +147,7 @@ def parse_sppported_kernels_from_path(list_path):
             with open(path.strip()) as g:
                 c = g.read()
                 kernel_parser = RegisterLiteKernelParser(c)
-                kernel_parser.parse("ON")
+                kernel_parser.parse("ON", "ON")
 
                 for k in kernel_parser.kernels:
                     index = path.rindex('/')

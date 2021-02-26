@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/api/paddle_place.h"
 #include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
@@ -107,12 +108,9 @@ class KernelBase {
 
     Run();
 
-    if (is_first_epoch_for_profiler_ && (!is_kernel_test_)) {
-      SetProfileRuntimeKernelInfo(profiler_->GetOpCharacter(profile_id_));
-      is_first_epoch_for_profiler_ = false;
-    }
-
+    // skip test
     if (!is_kernel_test_) {
+      SetProfileRuntimeKernelInfo(profiler_->GetOpCharacter(profile_id_));
       profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
     }
 
@@ -207,11 +205,12 @@ class KernelBase {
 #ifdef LITE_WITH_PROFILE
   profile::Profiler* profiler_{nullptr};
   int profile_id_{-1};
-  bool is_first_epoch_for_profiler_{true};
   bool is_kernel_test_{true};
+#endif
 #ifdef LITE_WITH_OPENCL
   cl::Event event_;
-#endif
+  bool fp16_support_{paddle::lite::CLRuntime::Global()->get_precision() ==
+                     lite_api::CL_PRECISION_FP16};
 #endif
 };
 

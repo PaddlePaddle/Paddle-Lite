@@ -191,6 +191,10 @@ if (LITE_WITH_PROFILE)
     add_definitions("-DLITE_WITH_PROFILE")
 endif()
 
+if (LITE_WITH_XCODE)
+    add_definitions("-DLITE_WITH_XCODE")
+endif()
+
 if (LITE_WITH_PRECISION_PROFILE)
     add_definitions("-DLITE_WITH_PRECISION_PROFILE")
 endif()
@@ -226,3 +230,7 @@ endif(LITE_BUILD_EXTRA)
 if (LITE_WITH_PYTHON)
   add_definitions("-DLITE_WITH_PYTHON")
 endif(LITE_WITH_PYTHON)
+
+if (LITE_WITH_ARM82_FP16)
+  add_definitions("-DLITE_WITH_ARM82_FP16")
+endif(LITE_WITH_ARM82_FP16)

@@ -12,6 +12,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
 ### 已支持的设备
 
 - 海信F50，Roc1开发板（基于T7510的微型电脑主板）
+- 酷派X10（暂未提供demo）
 
 ### 已支持的Paddle模型
 
@@ -24,6 +25,8 @@ Paddle Lite已支持Imagination NNA的预测部署。
 - depthwise_conv2d
 - pool2d
 - fc
+
+可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/imagination_nna/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/imagination_nna/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
 ## 参考示例演示
 
@@ -59,7 +62,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/imagination_nna/PaddleLite-linux-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/imagination/PaddleLite-linux-demo.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-linux-demo
@@ -94,10 +97,10 @@ Paddle Lite已支持Imagination NNA的预测部署。
             - libssl.so.1.1
             - libz.so.1.2.11
             - libgomp.so.1 # gnuomp库
-            - libimgcustom.so # Imagination NNA DDK库
-            - libimgdnn.so
-            - libnnasession.so
-            - nna_config # Imagination NNA配置
+            - libimgcustom.so # Imagination NNA的部分layer的软件实现，PaddleLite暂时没有用到
+            - libimgdnn.so # Imagination NNA的DNN组网、编译和执行接口库
+            - libnnasession.so # Imagination NNA的推理runtime库
+            - nna_config # Imagination NNA硬件和模型编译（mapping）配置文件，运行测试程序时，一定要放在可执行程序的同级目录下
             - libpaddle_light_api_shared.so # 用于最终移动端部署的预编译PaddleLite库（tiny publish模式下编译生成的库）
             - libpaddle_full_api_shared.so # 用于直接加载Paddle模型进行测试和Debug的预编译PaddleLite库（full publish模式下编译生成的库）
   ```

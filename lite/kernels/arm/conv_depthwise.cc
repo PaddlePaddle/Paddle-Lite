@@ -15,11 +15,17 @@
 #include "lite/kernels/arm/conv_depthwise.h"
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+
+template <>
+void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {}
 
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
@@ -84,6 +90,54 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 }
 
 template <>
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
+  auto& param = this->template Param<param_t>();
+  auto x_dims = param.x->dims();
+  if (last_shape_ == x_dims) {
+    return;
+  }
+
+  auto paddings = *param.paddings;
+  auto strides = param.strides;
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  auto w_dims = param.filter->dims();
+  auto kw = w_dims[3];
+  auto act_param = param.activation_param;
+  bool has_act = act_param.has_active;
+  lite_api::ActivationType act_type = act_param.active_type;
+  // no activation and relu activation is supported now
+  bool support_act_type =
+      (has_act == false) ||
+      (has_act == true && act_type == lite_api::ActivationType::kRelu);
+  bool support_pad_type =
+      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
+      (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
+  bool support_stride_type = (strides[0] == 1 && strides[1] == 1);
+  bool support_width_type = iw > 9 ? true : false;
+  /// select dw conv kernel
+  if (kw == 3) {
+    // trans weights
+    if (!support_act_type || !support_pad_type || !support_stride_type ||
+        !support_width_type) {
+      if (flag_trans_weights_) return;
+      int cround = ROUNDUP(w_dims[0], 8);
+      auto kh = w_dims[2];
+      auto kw = w_dims[3];
+      auto oc = w_dims[0];
+      weights_.Resize({cround / 8, 1, kh * kw, 8});
+      auto wptr = param.filter->data<int8_t>();
+      auto wptr_new = weights_.mutable_data<int8_t>();
+      lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
+      flag_trans_weights_ = true;
+    } else {
+      flag_trans_weights_ = false;
+    }
+  }
+  last_shape_ = x_dims;
+}
+
+template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
@@ -106,41 +160,13 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     }
   }
 
-  auto paddings = *param.paddings;
-  auto strides = param.strides;
-  auto x_dims = param.x->dims();
-  int iw = x_dims[3];
-  int ih = x_dims[2];
-  auto act_param = param.activation_param;
-  bool has_act = act_param.has_active;
-  lite_api::ActivationType act_type = act_param.active_type;
-  // no activation and relu activation is supported now
-  bool support_act_type =
-      (has_act == false) ||
-      (has_act == true && act_type == lite_api::ActivationType::kRelu);
-  bool support_pad_type =
-      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
-      (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
-  bool support_stride_type = (strides[0] == 1 && strides[1] == 1);
-  bool support_width_type = iw > 9 ? true : false;
-  /// select dw conv kernel
   if (kw == 3) {
-    // trans weights
+    ReInitWhenNeeded();
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_fp32;
 #ifdef LITE_WITH_PROFILE
     kernel_func_name_ = "conv_depthwise_3x3_int8_fp32";
 #endif
-    if (!support_act_type || !support_pad_type || !support_stride_type ||
-        !support_width_type) {
-      int cround = ROUNDUP(w_dims[0], 8);
-      weights_.Resize({cround / 8, 1, kh * kw, 8});
-      auto wptr = param.filter->data<int8_t>();
-      auto wptr_new = weights_.mutable_data<int8_t>();
-      lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
-      flag_trans_weights_ = true;
-    } else {
-      flag_trans_weights_ = false;
-    }
+
   } else if (kw == 5) {
     // trans weights
     impl_ = lite::arm::math::conv_depthwise_5x5_int8_fp32;
@@ -156,6 +182,55 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   } else {
     LOG(FATAL) << "this type dw conv not impl";
   }
+  last_shape_ = param.x->dims();
+}
+
+template <>
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::ReInitWhenNeeded() {
+  auto& param = this->template Param<param_t>();
+  auto x_dims = param.x->dims();
+  if (last_shape_ == x_dims) {
+    return;
+  }
+
+  auto paddings = *param.paddings;
+  auto strides = param.strides;
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  auto w_dims = param.filter->dims();
+  auto kw = w_dims[3];
+  auto act_param = param.activation_param;
+  bool has_act = act_param.has_active;
+  lite_api::ActivationType act_type = act_param.active_type;
+  // no activation and relu activation is supported now
+  bool support_act_type =
+      (has_act == false) ||
+      (has_act == true && act_type == lite_api::ActivationType::kRelu);
+  bool support_pad_type =
+      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
+      (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
+  bool support_stride_type = (strides[0] == 1 && strides[1] == 1);
+  bool support_width_type = iw > 9 ? true : false;
+  /// select dw conv kernel
+  if (kw == 3) {
+    // trans weights
+    if (!support_act_type || !support_pad_type || !support_stride_type ||
+        !support_width_type) {
+      if (flag_trans_weights_) return;
+      int cround = ROUNDUP(w_dims[0], 8);
+      auto kh = w_dims[2];
+      auto kw = w_dims[3];
+      auto oc = w_dims[0];
+      weights_.Resize({cround / 8, 1, kh * kw, 8});
+      auto wptr = param.filter->data<int8_t>();
+      auto wptr_new = weights_.mutable_data<int8_t>();
+      lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
+      flag_trans_weights_ = true;
+    } else {
+      flag_trans_weights_ = false;
+    }
+  }
+  last_shape_ = x_dims;
 }
 
 template <>
@@ -198,42 +273,13 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
         param.activation_param.Relu_clipped_coef / param.output_scale;
   }
 
-  auto paddings = *param.paddings;
-  auto strides = param.strides;
-  auto x_dims = param.x->dims();
-  int iw = x_dims[3];
-  int ih = x_dims[2];
-  auto act_param = param.activation_param;
-
-  bool has_act = act_param.has_active;
-  lite_api::ActivationType act_type = act_param.active_type;
-  // no activation and relu activation is supported now
-  bool support_act_type =
-      (has_act == false) ||
-      (has_act == true && act_type == lite_api::ActivationType::kRelu);
-  bool support_pad_type =
-      (paddings[0] == paddings[1]) && (paddings[2] == paddings[3]) &&
-      (paddings[0] == paddings[2]) && (paddings[0] == 0 || paddings[0] == 1);
-  bool support_stride_type = (strides[0] == 1 && strides[1] == 1);
-  bool support_width_type = iw > 9 ? true : false;
-  /// select dw conv kernel
   if (kw == 3) {
-    // trans weights
+    ReInitWhenNeeded();
+
     impl_ = lite::arm::math::conv_depthwise_3x3_int8_int8;
 #ifdef LITE_WITH_PROFILE
     kernel_func_name_ = "conv_depthwise_3x3_int8_int8";
 #endif
-    if (!support_act_type || !support_pad_type || !support_stride_type ||
-        !support_width_type) {
-      int cround = ROUNDUP(w_dims[0], 8);
-      weights_.Resize({cround / 8, 1, kh * kw, 8});
-      auto wptr = param.filter->data<int8_t>();
-      auto wptr_new = weights_.mutable_data<int8_t>();
-      lite::arm::math::conv_trans_weights_numc(wptr, wptr_new, oc, 1, 8, 9);
-      flag_trans_weights_ = true;
-    } else {
-      flag_trans_weights_ = false;
-    }
   } else if (kw == 5) {
     // trans weights
     impl_ = lite::arm::math::conv_depthwise_5x5_int8_int8;
@@ -249,7 +295,34 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   } else {
     LOG(FATAL) << "this type dw conv not impl";
   }
+  last_shape_ = param.x->dims();
 }
+
+#ifdef ENABLE_ARM_FP16
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {}
+
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto w_dims = param.filter->dims();
+  auto kw = w_dims[3];
+  auto channel = w_dims[0];
+  auto hin = param.x->dims()[2];
+  auto win = param.x->dims()[3];
+  auto paddings = *param.paddings;
+  if (kw == 3) {
+    flag_trans_weights_ = false;
+#ifdef LITE_WITH_PROFILE
+    kernel_func_name_ = "conv_depthwise_3x3_fp16";
+#endif
+  } else {
+    LOG(FATAL) << "DepthwiseConv FP16 Only Support 3x3 s1!";
+  }
+}
+#endif
 
 #ifdef LITE_WITH_PROFILE
 template <>
@@ -401,6 +474,44 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
         w_scale_.data());
 }
 
+#ifdef ENABLE_ARM_FP16
+#ifdef LITE_WITH_PROFILE
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::
+    SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+  ch->kernel_func_name = kernel_func_name_;
+}
+#endif
+
+template <>
+void DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  const auto* i_data = param.x->data<float16_t>();
+  const auto* w_data = param.filter->data<float16_t>();
+  const auto* b_data = param.bias ? param.bias->data<float16_t>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float16_t>();
+  }
+  auto* o_data = param.output->mutable_data<float16_t>();
+
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+
+  lite::arm::math::fp16::conv_depthwise_3x3_fp16(
+      i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
+}
+#endif
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

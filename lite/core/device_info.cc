@@ -161,6 +161,9 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
         case 0xd03:
           arch_type = kA53;
           break;
+        case 0xd04:
+          arch_type = kA35;
+          break;
         case 0xd05:
           arch_type = kA55;
           break;
@@ -836,6 +839,18 @@ bool DeviceInfo::SetCPUInfoByName() {
     SetCacheInfo(0, 2, 64 * 1024, 32 * 1024);
     SetCacheInfo(1, 2, 512 * 1024, 128 * 1024);
     SetCacheInfo(2, 1, 4096 * 1024);
+    SetFP16Info(1, 1);
+    SetDotInfo(1, 1);
+    return true;
+  } else if (dev_name_.find("KIRIN810") != std::string::npos) {  // Kirin 810
+    core_num_ = 8;
+    core_ids_ = {0, 1, 2, 3, 4, 5, 6, 7};
+    big_core_ids_ = {6, 7};
+    little_core_ids_ = {0, 1, 2, 3, 4, 5};
+    cluster_ids_ = {1, 1, 1, 1, 0, 0, 0, 0};
+    SetArchInfo(2, kA76, kA55);
+    SetCacheInfo(0, 2, 64 * 1024, 32 * 1024);
+    SetCacheInfo(1, 2, 512 * 1024, 128 * 1024);
     SetFP16Info(1, 1);
     SetDotInfo(1, 1);
     return true;

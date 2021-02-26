@@ -313,7 +313,6 @@ void TestPoolPaddings(Place place, float abs_error = 2e-5) {
   for (auto pooling_type : {"max", "avg"}) {
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {0, 0}, {2, 2});
-#if !defined(LITE_WITH_XPU)
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {1, 1}, {2, 2});
     TestPoolHelper(place,
@@ -337,7 +336,6 @@ void TestPoolPaddings(Place place, float abs_error = 2e-5) {
                    {1, 1},
                    {1, 0, 0, 1},
                    {2, 2});
-#endif
   }
 }
 
@@ -351,7 +349,6 @@ void TestPoolKsize(Place place, float abs_error = 2e-5) {
                      {1, 1},
                      {0, 0},
                      {ksize, ksize});
-#if !defined(LITE_WITH_XPU)
       TestPoolHelper(place,
                      abs_error,
                      {2, 3, 6, 7},
@@ -359,16 +356,12 @@ void TestPoolKsize(Place place, float abs_error = 2e-5) {
                      {2, 2},
                      {1, 1},
                      {ksize, ksize});
-#endif
     }
   }
 }
 
 void TestPoolCeilMode(Place place, float abs_error = 2e-5) {
   for (auto pooling_type : {"max", "avg"}) {
-#if defined(LITE_WITH_XPU)
-    if (pooling_type == std::string("max")) continue;
-#endif
     TestPoolHelper(place,
                    abs_error,
                    {2, 3, 6, 6},
@@ -391,8 +384,8 @@ TEST(Pool, precision) {
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
-#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)  // NOLINT
-  place = TARGET(kXPU);
+// #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)  // NOLINT
+//   place = TARGET(kXPU);
 #else
   return;
 #endif

@@ -27,22 +27,39 @@ bool CropOpLite::CheckShape() const {
 }
 
 bool CropOpLite::InferShapeImpl() const {
-  // nchw
-  auto x_dims = param_.X->dims();
-  lite::DDim output_shape(x_dims);
-  output_shape[0] = x_dims[0];
-  output_shape[1] = param_.shape[1];
-  output_shape[2] = param_.shape[2];
-  output_shape[3] = param_.shape[3];
-  param_.Out->Resize(output_shape);
+  std::vector<int64_t> shape;
+  if (param_.Y != nullptr) {
+    auto shape_data = param_.Y->template data<int>();
+    for (int64_t i = 0; i < param_.Y->numel(); i++) {
+      shape.push_back(shape_data[i]);
+    }
+  } else {
+    shape = std::vector<int64_t>(param_.shape.begin(), param_.shape.end());
+    if (shape[0] == -1) {
+      auto x_dims = param_.X->dims();
+      shape[0] = x_dims[0];
+    }
+  }
+  param_.Out->Resize(shape);
   return true;
 }
 
-// TODO(Superjomn) replace framework::OpDesc with a lite one.
 bool CropOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  param_.X = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
-  param_.Out =
-      scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
+  param_.X = scope->FindTensor(op_desc.Input("X").front());
+  if (op_desc.HasInput("Y")) {
+    auto names = op_desc.Input("Y");
+    if (!names.empty()) {
+      param_.Y = scope->FindTensor(names.front());
+    }
+  }
+  if (op_desc.HasInput("Offsets")) {
+    auto names = op_desc.Input("Offsets");
+    if (!names.empty()) {
+      param_.Offsets = scope->FindTensor(names.front());
+    }
+  }
+  param_.Out = scope->FindMutableTensor(op_desc.Output("Out").front());
+
   param_.offsets = op_desc.GetAttr<std::vector<int>>("offsets");
   param_.shape = op_desc.GetAttr<std::vector<int>>("shape");
   return true;

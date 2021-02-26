@@ -19,6 +19,7 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/tests/cv/cv_basic.h"
+#include "lite/tests/utils/fill_data.h"
 #include "lite/utils/cv/paddle_image_preprocess.h"
 #include "time.h"  // NOLINT
 
@@ -38,6 +39,8 @@ DEFINE_int32(dstw, 540, "output width");
 DEFINE_int32(angle, 90, "rotate angel");
 DEFINE_int32(flip_num, 0, "flip x");
 DEFINE_int32(layout, 1, "layout nchw");
+DEFINE_string(in_txt, "", "input text");
+DEFINE_string(out_txt, "", "output text");
 
 typedef paddle::lite::utils::cv::ImageFormat ImageFormat;
 typedef paddle::lite::utils::cv::FlipParam FlipParam;
@@ -50,10 +53,7 @@ typedef paddle::lite::Tensor Tensor;
 using paddle::lite::profile::Timer;
 
 void fill_tensor_host_rand(uint8_t* dio, int64_t size) {
-  uint seed = 256;
-  for (int64_t i = 0; i < size; ++i) {
-    dio[i] = rand_r(&seed) % 256;  // -128;
-  }
+  fill_data_rand<uint8_t>(dio, 0, 256, size);
 }
 
 void print_int8(uint8_t* ptr, int size, int width) {
@@ -176,8 +176,25 @@ void test_img(const std::vector<int>& cluster_id,
         size = srch * srcw;
       }
       uint8_t* src = new uint8_t[size];
-      fill_tensor_host_rand(src, size);
+      bool flag_in = true;
+      bool flag_out = true;
 
+      if (FLAGS_in_txt == "") {
+        flag_in = false;
+      }
+      if (FLAGS_out_txt == "") {
+        flag_out = false;
+      }
+      printf("flag_in: %d, flag_out: %d \n", flag_in, flag_out);
+      if (flag_in) {
+        FILE* fp_r = fopen(FLAGS_in_txt.c_str(), "r");
+        for (int i = 0; i < size; i++) {
+          fscanf(fp_r, "%u\n", &src[i]);
+        }
+        fclose(fp_r);
+      } else {
+        fill_tensor_host_rand(src, size);
+      }
       int out_size = srch * srcw;
       int resize = dstw * dsth;
       if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
@@ -361,7 +378,14 @@ void test_img(const std::vector<int>& cluster_id,
       LOG(INFO) << "image trans total avg time : " << t1.LapTimes().Avg()
                 << ", min time: " << t1.LapTimes().Min()
                 << ", max time: " << t1.LapTimes().Max();
-
+      if (flag_out) {
+        FILE* fp1 = fopen(FLAGS_out_txt.c_str(), "w");
+        const float* ptr = tensor.data<float>();
+        for (int i = 0; i < tensor.numel(); i++) {
+          fprintf(fp1, "%f\n", ptr[i]);
+        }
+        fclose(fp1);
+      }
       double max_ratio = 0;
       double max_diff = 0;
       const double eps = 1e-6f;
@@ -723,6 +747,9 @@ void test_rotate(const std::vector<int>& cluster_id,
         CHECK_EQ(rst, true) << "compute result error";
       }
       LOG(INFO) << "image rotate end";
+      delete[] src;
+      delete[] basic_dst;
+      delete[] lite_dst;
     }
   }
 }
@@ -811,8 +838,8 @@ void test_flip(const std::vector<int>& cluster_id,
       } else if (srcFormat == ImageFormat::GRAY) {
         size = srch * srcw;
       }
-      uint8_t* src = new uint8_t[size];
-      fill_tensor_host_rand(src, size);
+      uint8_t* src = new uint8_t[2 * size];
+      fill_tensor_host_rand(src, 2 * size);
 
       int out_size = srch * srcw;
       if (dstFormat == ImageFormat::NV12 || dstFormat == ImageFormat::NV21) {
@@ -826,8 +853,8 @@ void test_flip(const std::vector<int>& cluster_id,
       } else if (dstFormat == ImageFormat::GRAY) {
         out_size = srch * srcw;
       }
-      uint8_t* basic_dst = new uint8_t[out_size];
-      uint8_t* lite_dst = new uint8_t[out_size];
+      uint8_t* basic_dst = new uint8_t[2 * out_size];
+      uint8_t* lite_dst = new uint8_t[2 * out_size];
       if (FLAGS_check_result) {
         image_flip_basic(
             src, basic_dst, (ImageFormat)dstFormat, srcw, srch, flip);
@@ -890,6 +917,9 @@ void test_flip(const std::vector<int>& cluster_id,
         CHECK_EQ(rst, true) << "compute result error";
       }
       LOG(INFO) << "image flip end";
+      delete[] src;
+      delete[] basic_dst;
+      delete[] lite_dst;
     }
   }
 }
@@ -1062,6 +1092,9 @@ void test_resize(const std::vector<int>& cluster_id,
         CHECK_EQ(rst, true) << "compute result error";
       }
       LOG(INFO) << "image Resize end";
+      delete[] src;
+      delete[] basic_dst;
+      delete[] lite_dst;
     }
   }
 }
@@ -1241,6 +1274,9 @@ void test_convert(const std::vector<int>& cluster_id,
         CHECK_EQ(rst, true) << "compute result error";
       }
       LOG(INFO) << "image convert end";
+      delete[] src;
+      delete[] basic_dst;
+      delete[] lite_dst;
     }
   }
 }
@@ -1335,8 +1371,8 @@ TEST(TestImageConvertRand, test_func_image_resize_preprocess) {
 #if 1
 TEST(TestImageConvertRand, test_func_image_trans_preprocess) {
   if (FLAGS_basic_test) {
-    for (auto w : {1, 8, 16, 112, 224, 1080}) {
-      for (auto h : {1, 16, 112, 224}) {
+    for (auto w : {8, 16, 112, 224, 1080}) {
+      for (auto h : {16, 112, 224}) {
         for (auto rotate : {90, 180, 270}) {
           for (auto flip : {-1, 0, 1}) {
             for (auto srcFormat : {0, 1, 2, 3}) {

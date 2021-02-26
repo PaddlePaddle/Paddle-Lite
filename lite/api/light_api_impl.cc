@@ -22,6 +22,11 @@
 #include "lite/api/paddle_use_ops.h"
 #endif
 
+#if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
+    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
+#include "lite/backends/x86/mklml.h"
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -55,11 +60,33 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 
+#ifdef LITE_WITH_RKNPU
+  // Store the model-level configuration into scope for kernels, and use
+  // exe_scope to store the execution-level configuration
+  Context<TargetType::kRKNPU>::SetSubgraphModelCacheDir(
+      raw_predictor_->scope(), config.subgraph_model_cache_dir());
+  Context<TargetType::kRKNPU>::SetSubgraphModelCacheBuffers(
+      raw_predictor_->scope(), config.subgraph_model_cache_buffers());
+#endif
+
 #ifdef LITE_WITH_HUAWEI_ASCEND_NPU
   Context<TargetType::kHuaweiAscendNPU>::SetHuaweiAscendDeviceID(
       config.get_device_id());
   Context<TargetType::kHuaweiAscendNPU>::SetSubgraphModelCacheDir(
       config.subgraph_model_cache_dir());
+#endif
+#if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
+    !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
+  int num_threads = config.x86_math_num_threads();
+  int real_num_threads = num_threads > 1 ? num_threads : 1;
+#ifdef LITE_WITH_STATIC_MKL
+  MKL_Set_Num_Threads(real_num_threads);
+#else
+  x86::MKL_Set_Num_Threads(real_num_threads);
+#endif
+  VLOG(3) << "x86_math_num_threads() is set successfully and the "
+             "number of threads is:"
+          << real_num_threads;
 #endif
 }
 

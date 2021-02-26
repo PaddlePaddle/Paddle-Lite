@@ -162,25 +162,34 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
 - 下载xpu_toolchain for amd64 or arm64(FT-2000+/64)；
 
   ```shell
-  $ wget <URL_to_download_xpu_toolchain>
-  $ tar -xvf output.tar.gz
-  $ mv output xpu_toolchain
+  $ # Compiling environment: x86_64, centos6.3, gcc8.2
+  $ wget -O xpu_toolchain.tar.gz https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-centos6.3-x86_64-gcc8.2.0-latest.tar.gz
+  $ # Compiling environment：arm64(phytium), ubuntu18.04.4, gcc-linaro-5.4.1-2017.01-x86_64_aarch64-linux-gnu
+  $ # wget -O xpu_toolchain.tar.gz https://paddlelite-demo.bj.bcebos.com/devices/baidu/xpu_toolchain-ubuntu18.04.4-cross_compiling-aarch64-gcc5.4-latest.tar.gz
+  $ tar -xvf xpu_toolchain.tar.gz
   ```
 
 - 编译full_publish for amd64 or arm64(FT-2000+/64)；
 
   ```shell
-  For amd64，如果报找不到cxx11::符号的编译错误，请将gcc切换到4.8版本。
-  $ ./lite/tools/build.sh --build_xpu=ON --xpu_sdk_root=./xpu_toolchain x86
+  $ # For amd64，如果报找不到cxx11::符号的编译错误，请将gcc切换到4.8版本。
+  $ ./lite/tools/build.sh --build_xpu=ON --xpu_sdk_root=./xpu_toolchain --build_extra=ON x86
 
-  For arm64(FT-2000+/64)
+  $ # For arm64(FT-2000+/64)
   $ ./lite/tools/build.sh --arm_os=armlinux --arm_abi=armv8 --arm_lang=gcc --build_extra=ON --build_xpu=ON --xpu_sdk_root=./xpu_toolchain --with_log=ON full_publish
   ```
 
-- 将编译生成的build.lite.x86/inference_lite_lib/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/amd64/include目录；
-- 将编译生成的build.lite.x86/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/amd64/lib/libpaddle_full_api_shared.so文件；
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.xpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.xpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件。
+- 替换库文件和头文件 (for amd64)
+  - 将编译生成的 build.lite.x86/inference_lite_lib/cxx/include 替换 PaddleLite-linux-demo/libs/PaddleLite/amd64/include目录 ；
+  - 将编译生成的 build.lite.x86/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so 替换 PaddleLite-linux-demo/libs/PaddleLite/amd64/lib/libpaddle_full_api_shared.so 文件；
+  - 将 xpu_toolchain/XTDK/runtime/shlib/libxpurt.so 替换 PaddleLite-linux-demo/libs/PaddleLite/amd64/lib/libxpurt.so
+  - 将 xpu_toolchain/XTDK/shlib/libxpuapi.so 替换 PaddleLite-linux-demo/libs/PaddleLite/amd64/lib/libxpuapi.so
+
+- 替换库文件和头文件 (for arm64)
+  - 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.xpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
+  - 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.xpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件。
+  - 将 xpu_toolchain/XTDK/runtime/shlib/libxpurt.so 替换 PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libxpurt.so
+  - 将 xpu_toolchain/XTDK/shlib/libxpuapi.so 替换 PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libxpuapi.so
 
 ## 其它说明
 

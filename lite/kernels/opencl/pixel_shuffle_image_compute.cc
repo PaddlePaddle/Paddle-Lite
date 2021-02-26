@@ -87,10 +87,11 @@ class PixelShuffleComputeImage2D
   }
 
   void Run() override {
-    auto* x_img = pixel_shuffle_param_->x->data<half_t, cl::Image2D>();
-    auto* out_img =
-        pixel_shuffle_param_->output->mutable_data<half_t, cl::Image2D>(
-            out_img_shape_[0], out_img_shape_[1]);
+    auto* x_img = GET_DATA_GPU(pixel_shuffle_param_->x);
+    auto* out_img = MUTABLE_DATA_GPU(pixel_shuffle_param_->output,
+                                     out_img_shape_[0],
+                                     out_img_shape_[1],
+                                     nullptr);
 
     auto x_dims = pixel_shuffle_param_->x->dims();
 
@@ -155,7 +156,7 @@ class PixelShuffleComputeImage2D
 #endif
  private:
   std::string kernel_func_name_{"pixel_shuffle"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 
   param_t* pixel_shuffle_param_{nullptr};

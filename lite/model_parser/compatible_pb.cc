@@ -19,10 +19,13 @@
 #include "lite/model_parser/flatbuffers/program_desc.h"
 #include "lite/model_parser/naive_buffer/block_desc.h"
 #include "lite/model_parser/naive_buffer/op_desc.h"
+#include "lite/model_parser/naive_buffer/op_version_map.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
+
 #include "lite/model_parser/pb/block_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
+#include "lite/model_parser/pb/op_version_map.h"
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
 #endif
@@ -93,14 +96,6 @@ void TransformVarDescAnyToCpp<naive_buffer::VarDesc>(
   cpp_desc->SetName(any_desc.Name());
   cpp_desc->SetType(any_desc.GetType());
   cpp_desc->SetPersistable(any_desc.Persistable());
-  // todo : SetDataType function is commented out temporarily
-  // because of Compatibility issues. The Compatibility issue
-  // should be fixed later and the code below should be applied
-  // later. @DannyIsFunny
-  /*  if (any_desc.Name() != "feed" && any_desc.Name() != "fetch") {
-      cpp_desc->SetDataType(any_desc.GetDataType());
-      cpp_desc->SetShape(any_desc.GetShape());
-    }*/
 }
 #endif
 /// For OpDesc transform
@@ -306,6 +301,11 @@ void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
       cpp_desc->SetVersion(desc.Version());                                   \
     }                                                                         \
                                                                               \
+    if (desc.HasOpVersionMap()) {                                             \
+      NT::OpVersionMap any_op_version_map(                                    \
+          desc.GetOpVersionMap<PNT::proto::OpVersionMap>());                  \
+      cpp_desc->SetOpVersionMap(any_op_version_map.GetOpVersionMap());        \
+    }                                                                         \
     cpp_desc->ClearBlocks();                                                  \
     for (size_t i = 0; i < desc.BlocksSize(); ++i) {                          \
       NT::BlockDesc any_block_desc(desc.GetBlock<PNT::proto::BlockT>(i));     \

@@ -2,7 +2,12 @@
 set -ex
 
 # global variables with default value
-NEUWARE_HOME="${NEUWARE_HOME}"
+if [   $NEUWARE_HOME   ];
+then
+  NEUWARE_HOME="${NEUWARE_HOME}"
+else
+  NEUWARE_HOME="/usr/local/neuware/"
+fi
 TARGET_NAME="all"    # default target
 BUILD_EXTRA=ON                      # ON(with sequence ops)/OFF
 WITH_TESTING=ON                     # ON/OFF
@@ -24,17 +29,17 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
 
 readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 readonly workspace=$(pwd)
 
 function prepare_thirdparty {
     if [ ! -d $workspace/third-party ]; then
         rm -rf $workspace/third-party
     fi
-    if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
         wget $THIRDPARTY_TAR
     fi
-    tar xvf third-party-05b862.tar.gz
+    tar xvf third-party-ea5576.tar.gz
 }
 
 # for code gen, a source file is generated after a test, but is dependended by some targets in cmake.

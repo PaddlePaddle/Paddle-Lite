@@ -45,7 +45,9 @@ class CLWrapper final {
                                         cl_uint,
                                         const cl_device_id *,
                                         const char *,
-                                        void (*pfn_notify)(cl_program, void *),
+                                        void(CL_CALLBACK *)(  // NOLINT
+                                            cl_program,
+                                            void *),
                                         void *);
   using clEnqueueNDRangeKernelType = cl_int (*)(cl_command_queue,
                                                 cl_kernel,
@@ -221,6 +223,9 @@ class CLWrapper final {
   using clGetImageInfoType =
       cl_int (*)(cl_mem, cl_image_info, size_t, void *, size_t *);
 
+  using clGetMemObjectInfoType =
+      cl_int (*)(cl_mem, cl_mem_info, size_t, void *, size_t *);
+
   using clEnqueueCopyBufferType = cl_int (*)(cl_command_queue,
                                              cl_mem,
                                              cl_mem,
@@ -252,291 +257,385 @@ class CLWrapper final {
                                             cl_event *);
 
   clGetPlatformIDsType clGetPlatformIDs() {
-    CHECK(clGetPlatformIDs_ != nullptr) << "Cannot load clGetPlatformIDs!";
+    if (clGetPlatformIDs_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetPlatformIDs!";
+    }
     return clGetPlatformIDs_;
   }
 
   clGetPlatformInfoType clGetPlatformInfo() {
-    CHECK(clGetPlatformInfo_ != nullptr) << "Cannot load clGetPlatformInfo!";
+    if (clGetPlatformInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetPlatformInfo!";
+    }
     return clGetPlatformInfo_;
   }
 
   clBuildProgramType clBuildProgram() {
-    CHECK(clBuildProgram_ != nullptr) << "Cannot load clBuildProgram!";
+    if (clBuildProgram_ == nullptr) {
+      LOG(ERROR) << "Cannot load clBuildProgram!";
+    }
     return clBuildProgram_;
   }
 
   clEnqueueNDRangeKernelType clEnqueueNDRangeKernel() {
-    CHECK(clEnqueueNDRangeKernel_ != nullptr)
-        << "Cannot load clEnqueueNDRangeKernel!";
+    if (clEnqueueNDRangeKernel_ == nullptr) {
+      LOG(ERROR) << "Cannot load clEnqueueNDRangeKernel!";
+    }
     return clEnqueueNDRangeKernel_;
   }
 
   clSetKernelArgType clSetKernelArg() {
-    CHECK(clSetKernelArg_ != nullptr) << "Cannot load clSetKernelArg!";
+    if (clSetKernelArg_ == nullptr) {
+      LOG(ERROR) << "Cannot load clSetKernelArg!";
+    }
     return clSetKernelArg_;
   }
 
   clRetainMemObjectType clRetainMemObject() {
-    CHECK(clRetainMemObject_ != nullptr) << "Cannot load clRetainMemObject!";
+    if (clRetainMemObject_ == nullptr) {
+      LOG(ERROR) << "Cannot load clRetainMemObject!";
+    }
     return clRetainMemObject_;
   }
 
   clReleaseMemObjectType clReleaseMemObject() {
-    CHECK(clReleaseMemObject_ != nullptr) << "Cannot load clReleaseMemObject!";
+    if (clReleaseMemObject_ == nullptr) {
+      LOG(ERROR) << "Cannot load clReleaseMemObject!";
+    }
     return clReleaseMemObject_;
   }
 
   clEnqueueUnmapMemObjectType clEnqueueUnmapMemObject() {
-    CHECK(clEnqueueUnmapMemObject_ != nullptr)
-        << "Cannot load clEnqueueUnmapMemObject!";
+    if (clEnqueueUnmapMemObject_ == nullptr) {
+      LOG(ERROR) << "Cannot load clEnqueueUnmapMemObject!";
+    }
     return clEnqueueUnmapMemObject_;
   }
 
   clRetainCommandQueueType clRetainCommandQueue() {
-    CHECK(clRetainCommandQueue_ != nullptr)
-        << "Cannot load clRetainCommandQueue!";
+    if (clRetainCommandQueue_ == nullptr) {
+      LOG(ERROR) << "Cannot load clRetainCommandQueue!";
+    }
     return clRetainCommandQueue_;
   }
 
   clCreateContextType clCreateContext() {
-    CHECK(clCreateContext_ != nullptr) << "Cannot load clCreateContext!";
+    if (clCreateContext_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateContext!";
+    }
     return clCreateContext_;
   }
 
   clCreateContextFromTypeType clCreateContextFromType() {
-    CHECK(clCreateContextFromType_ != nullptr)
-        << "Cannot load clCreateContextFromType!";
+    if (clCreateContextFromType_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateContextFromType!";
+    }
     return clCreateContextFromType_;
   }
 
   clReleaseContextType clReleaseContext() {
-    CHECK(clReleaseContext_ != nullptr) << "Cannot load clReleaseContext!";
+    if (clReleaseContext_ == nullptr) {
+      LOG(ERROR) << "Cannot load clReleaseContext!";
+    }
     return clReleaseContext_;
   }
 
   clWaitForEventsType clWaitForEvents() {
-    CHECK(clWaitForEvents_ != nullptr) << "Cannot load clWaitForEvents!";
+    if (clWaitForEvents_ == nullptr) {
+      LOG(ERROR) << "Cannot load clWaitForEvents!";
+    }
     return clWaitForEvents_;
   }
 
   clReleaseEventType clReleaseEvent() {
-    CHECK(clReleaseEvent_ != nullptr) << "Cannot load clReleaseEvent!";
+    if (clReleaseEvent_ == nullptr) {
+      LOG(ERROR) << "Cannot load clReleaseEvent!";
+    }
     return clReleaseEvent_;
   }
 
   clEnqueueWriteBufferType clEnqueueWriteBuffer() {
-    CHECK(clEnqueueWriteBuffer_ != nullptr)
-        << "Cannot loadcl clEnqueueWriteBuffer!";
+    if (clEnqueueWriteBuffer_ == nullptr) {
+      LOG(ERROR) << "Cannot loadcl clEnqueueWriteBuffer!";
+    }
     return clEnqueueWriteBuffer_;
   }
 
   clEnqueueReadBufferType clEnqueueReadBuffer() {
-    CHECK(clEnqueueReadBuffer_ != nullptr)
-        << "Cannot load clEnqueueReadBuffer!";
+    if (clEnqueueReadBuffer_ == nullptr) {
+      LOG(ERROR) << "Cannot load clEnqueueReadBuffer!";
+    }
     return clEnqueueReadBuffer_;
   }
 
   clEnqueueReadImageType clEnqueueReadImage() {
-    CHECK(clEnqueueReadImage_ != nullptr) << "Cannot load clEnqueueReadImage!";
+    if (clEnqueueReadImage_ == nullptr) {
+      LOG(ERROR) << "Cannot load clEnqueueReadImage!";
+    }
     return clEnqueueReadImage_;
   }
 
   clGetProgramBuildInfoType clGetProgramBuildInfo() {
-    CHECK(clGetProgramBuildInfo_ != nullptr)
-        << "Cannot load clGetProgramBuildInfo!";
+    if (clGetProgramBuildInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetProgramBuildInfo!";
+    }
     return clGetProgramBuildInfo_;
   }
 
   clRetainProgramType clRetainProgram() {
-    CHECK(clRetainProgram_ != nullptr) << "Cannot load clRetainProgram!";
+    if (clRetainProgram_ == nullptr) {
+      LOG(ERROR) << "Cannot load clRetainProgram!";
+    }
     return clRetainProgram_;
   }
 
   clEnqueueMapBufferType clEnqueueMapBuffer() {
-    CHECK(clEnqueueMapBuffer_ != nullptr) << "Cannot load clEnqueueMapBuffer!";
+    if (clEnqueueMapBuffer_ == nullptr) {
+      LOG(ERROR) << "Cannot load clEnqueueMapBuffer!";
+    }
     return clEnqueueMapBuffer_;
   }
 
   clEnqueueMapImageType clEnqueueMapImage() {
-    CHECK(clEnqueueMapImage_ != nullptr) << "Cannot load clEnqueueMapImage!";
+    if (clEnqueueMapImage_ == nullptr) {
+      LOG(ERROR) << "Cannot load clEnqueueMapImage!";
+    }
     return clEnqueueMapImage_;
   }
 
   clCreateCommandQueueType clCreateCommandQueue() {
-    CHECK(clCreateCommandQueue_ != nullptr)
-        << "Cannot load clCreateCommandQueue!";
+    if (clCreateCommandQueue_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateCommandQueue!";
+    }
     return clCreateCommandQueue_;
   }
 
   clGetCommandQueueInfoType clGetCommandQueueInfo() {
-    CHECK(clGetCommandQueueInfo_ != nullptr)
-        << "Cannot load clGetCommandQueueInfo!";
+    if (clGetCommandQueueInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetCommandQueueInfo!";
+    }
     return clGetCommandQueueInfo_;
   }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
   clCreateCommandQueueWithPropertiesType clCreateCommandQueueWithProperties() {
-    CHECK(clCreateCommandQueueWithProperties_ != nullptr)
-        << "Cannot load clCreateCommandQueueWithProperties!";
+    if (clCreateCommandQueueWithProperties_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateCommandQueueWithProperties!";
+    }
     return clCreateCommandQueueWithProperties_;
   }
 
 #endif
 
   clReleaseCommandQueueType clReleaseCommandQueue() {
-    CHECK(clReleaseCommandQueue_ != nullptr)
-        << "Cannot load clReleaseCommandQueue!";
+    if (clReleaseCommandQueue_ == nullptr) {
+      LOG(ERROR) << "Cannot load clReleaseCommandQueue!";
+    }
     return clReleaseCommandQueue_;
   }
 
   clCreateProgramWithBinaryType clCreateProgramWithBinary() {
-    CHECK(clCreateProgramWithBinary_ != nullptr)
-        << "Cannot load clCreateProgramWithBinary!";
+    if (clCreateProgramWithBinary_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateProgramWithBinary!";
+    }
     return clCreateProgramWithBinary_;
   }
 
   clRetainContextType clRetainContext() {
-    CHECK(clRetainContext_ != nullptr) << "Cannot load clRetainContext!";
+    if (clRetainContext_ == nullptr) {
+      LOG(ERROR) << "Cannot load clRetainContext!";
+    }
     return clRetainContext_;
   }
 
   clGetContextInfoType clGetContextInfo() {
-    CHECK(clGetContextInfo_ != nullptr) << "Cannot load clGetContextInfo!";
+    if (clGetContextInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetContextInfo!";
+    }
     return clGetContextInfo_;
   }
 
   clReleaseProgramType clReleaseProgram() {
-    CHECK(clReleaseProgram_ != nullptr) << "Cannot load clReleaseProgram!";
+    if (clReleaseProgram_ == nullptr) {
+      LOG(ERROR) << "Cannot load clReleaseProgram!";
+    }
     return clReleaseProgram_;
   }
 
   clFlushType clFlush() {
-    CHECK(clFlush_ != nullptr) << "Cannot load clFlush!";
+    if (clFlush_ == nullptr) {
+      LOG(ERROR) << "Cannot load clFlush!";
+    }
     return clFlush_;
   }
 
   clFinishType clFinish() {
-    CHECK(clFinish_ != nullptr) << "Cannot load clFinish!";
+    if (clFinish_ == nullptr) {
+      LOG(ERROR) << "Cannot load clFinish!";
+    }
     return clFinish_;
   }
 
   clGetProgramInfoType clGetProgramInfo() {
-    CHECK(clGetProgramInfo_ != nullptr) << "Cannot load clGetProgramInfo!";
+    if (clGetProgramInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetProgramInfo!";
+    }
     return clGetProgramInfo_;
   }
 
   clCreateKernelType clCreateKernel() {
-    CHECK(clCreateKernel_ != nullptr) << "Cannot load clCreateKernel!";
+    if (clCreateKernel_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateKernel!";
+    }
     return clCreateKernel_;
   }
 
   clRetainKernelType clRetainKernel() {
-    CHECK(clRetainKernel_ != nullptr) << "Cannot load clRetainKernel!";
+    if (clRetainKernel_ == nullptr) {
+      LOG(ERROR) << "Cannot load clRetainKernel!";
+    }
     return clRetainKernel_;
   }
 
   clCreateBufferType clCreateBuffer() {
-    CHECK(clCreateBuffer_ != nullptr) << "Cannot load clCreateBuffer!";
+    if (clCreateBuffer_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateBuffer!";
+    }
     return clCreateBuffer_;
   }
 
   clCreateImage2DType clCreateImage2D() {
-    CHECK(clCreateImage2D_ != nullptr) << "Cannot load clCreateImage2D!";
+    if (clCreateImage2D_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateImage2D!";
+    }
     return clCreateImage2D_;
   }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 
   clCreateImageType clCreateImage() {
-    CHECK(clCreateImage_ != nullptr) << "Cannot load clCreateImage!";
+    if (clCreateImage_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateImage!";
+    }
     return clCreateImage_;
   }
 
 #endif
 
   clCreateUserEventType clCreateUserEvent() {
-    CHECK(clCreateUserEvent_ != nullptr) << "Cannot load clCreateUserEvent!";
+    if (clCreateUserEvent_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateUserEvent!";
+    }
     return clCreateUserEvent_;
   }
 
   clCreateProgramWithSourceType clCreateProgramWithSource() {
-    CHECK(clCreateProgramWithSource_ != nullptr)
-        << "Cannot load clCreateProgramWithSource!";
+    if (clCreateProgramWithSource_ == nullptr) {
+      LOG(ERROR) << "Cannot load clCreateProgramWithSource!";
+    }
     return clCreateProgramWithSource_;
   }
 
   clReleaseKernelType clReleaseKernel() {
-    CHECK(clReleaseKernel_ != nullptr) << "Cannot load clReleaseKernel!";
+    if (clReleaseKernel_ == nullptr) {
+      LOG(ERROR) << "Cannot load clReleaseKernel!";
+    }
     return clReleaseKernel_;
   }
 
   clGetDeviceInfoType clGetDeviceInfo() {
-    CHECK(clGetDeviceInfo_ != nullptr) << "Cannot load clGetDeviceInfo!";
+    if (clGetDeviceInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetDeviceInfo!";
+    }
     return clGetDeviceInfo_;
   }
 
   clGetDeviceIDsType clGetDeviceIDs() {
-    CHECK(clGetDeviceIDs_ != nullptr) << "Cannot load clGetDeviceIDs!";
+    if (clGetDeviceIDs_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetDeviceIDs!";
+    }
     return clGetDeviceIDs_;
   }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 
   clRetainDeviceType clRetainDevice() {
-    CHECK(clRetainDevice_ != nullptr) << "Cannot load clRetainDevice!";
+    if (clRetainDevice_ == nullptr) {
+      LOG(ERROR) << "Cannot load clRetainDevice!";
+    }
     return clRetainDevice_;
   }
 
   clReleaseDeviceType clReleaseDevice() {
-    CHECK(clReleaseDevice_ != nullptr) << "Cannot load clReleaseDevice!";
+    if (clReleaseDevice_ == nullptr) {
+      LOG(ERROR) << "Cannot load clReleaseDevice!";
+    }
     return clReleaseDevice_;
   }
 
 #endif
 
   clRetainEventType clRetainEvent() {
-    CHECK(clRetainEvent_ != nullptr) << "Cannot load clRetainEvent!";
+    if (clRetainEvent_ == nullptr) {
+      LOG(ERROR) << "Cannot load clRetainEvent!";
+    }
     return clRetainEvent_;
   }
 
   clGetKernelWorkGroupInfoType clGetKernelWorkGroupInfo() {
-    CHECK(clGetKernelWorkGroupInfo_ != nullptr)
-        << "Cannot load clGetKernelWorkGroupInfo!";
+    if (clGetKernelWorkGroupInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetKernelWorkGroupInfo!";
+    }
     return clGetKernelWorkGroupInfo_;
   }
 
   clGetEventInfoType clGetEventInfo() {
-    CHECK(clGetEventInfo_ != nullptr) << "Cannot load clGetEventInfo!";
+    if (clGetEventInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetEventInfo!";
+    }
     return clGetEventInfo_;
   }
 
   clGetEventProfilingInfoType clGetEventProfilingInfo() {
-    CHECK(clGetEventProfilingInfo_ != nullptr)
-        << "Cannot load clGetEventProfilingInfo!";
+    if (clGetEventProfilingInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetEventProfilingInfo!";
+    }
     return clGetEventProfilingInfo_;
   }
 
   clGetImageInfoType clGetImageInfo() {
-    CHECK(clGetImageInfo_ != nullptr) << "Cannot load clGetImageInfo!";
+    if (clGetImageInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetImageInfo!";
+    }
     return clGetImageInfo_;
   }
 
+  clGetMemObjectInfoType clGetMemObjectInfo() {
+    if (clGetMemObjectInfo_ == nullptr) {
+      LOG(ERROR) << "Cannot load clGetMemObjectInfo!";
+    }
+    return clGetMemObjectInfo_;
+  }
+
   clEnqueueCopyBufferType clEnqueueCopyBuffer() {
-    CHECK(clEnqueueCopyBuffer_ != nullptr)
-        << "Cannot load clEnqueueCopyBuffer!";
+    if (clEnqueueCopyBuffer_ == nullptr) {
+      LOG(ERROR) << "Cannot load clEnqueueCopyBuffer!";
+    }
     return clEnqueueCopyBuffer_;
   }
 
   clEnqueueWriteImageType clEnqueueWriteImage() {
-    CHECK(clEnqueueWriteImage_ != nullptr)
-        << "Cannot load clEnqueueWriteImage!";
+    if (clEnqueueWriteImage_ == nullptr) {
+      LOG(ERROR) << "Cannot load clEnqueueWriteImage!";
+    }
     return clEnqueueWriteImage_;
   }
 
   clEnqueueCopyImageType clEnqueueCopyImage() {
-    CHECK(clEnqueueCopyImage_ != nullptr) << "Cannot load clEnqueueCopyImage!";
+    if (clEnqueueCopyImage_ == nullptr) {
+      LOG(ERROR) << "Cannot load clEnqueueCopyImage!";
+    }
     return clEnqueueCopyImage_;
   }
 
@@ -551,6 +650,7 @@ class CLWrapper final {
   bool InitHandle();
   bool InitFunctions();
   bool opencl_lib_found_{true};
+  bool is_first_init_{true};
   bool dlsym_success_{true};
   void *handle_{nullptr};
 
@@ -608,6 +708,7 @@ class CLWrapper final {
   clGetEventInfoType clGetEventInfo_{nullptr};
   clGetEventProfilingInfoType clGetEventProfilingInfo_{nullptr};
   clGetImageInfoType clGetImageInfo_{nullptr};
+  clGetMemObjectInfoType clGetMemObjectInfo_{nullptr};
   clEnqueueCopyBufferType clEnqueueCopyBuffer_{nullptr};
   clEnqueueWriteImageType clEnqueueWriteImage_{nullptr};
   clEnqueueCopyImageType clEnqueueCopyImage_{nullptr};

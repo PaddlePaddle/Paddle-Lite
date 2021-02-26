@@ -11,7 +11,7 @@
 ```shell
 # 1. 下载Paddle-Lite源码 并切换到release分支
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-cd Paddle-Lite && git checkout release/v2.6
+cd Paddle-Lite && git checkout 2.8-rc
 
 # (可选) 删除此目录，编译脚本会自动从国内CDN下载第三方库文件
 # rm -rf third-party
@@ -57,6 +57,8 @@ inference_lite_lib.armlinux.armv8
 
 - 默认编译方法: (armv8, gcc)                                           
 ```shell
+# 默认配置是4线程编译，如果您的设备配置较低（树莓派3B等），可能遇到未知编译错误,
+# 建议通过 ```export LITE_BUILD_THREADS=1``` 设置为单线程编译
 ./lite/tools/build_linux.sh
 ```
 

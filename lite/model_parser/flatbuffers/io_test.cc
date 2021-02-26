@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/model_parser/model_parser.h"
 
 namespace paddle {
 namespace lite {
@@ -42,50 +43,91 @@ void set_tensor(paddle::lite::Tensor* tensor,
 
 #ifdef LITE_WITH_FLATBUFFERS_DESC
 TEST(CombinedParamsDesc, Scope) {
+  const std::string path{"io_test.params.fbs"};
   /* --------- Save scope ---------- */
   Scope scope;
-  std::vector<std::string> params_name({"var_0", "var_1", "var_2"});
+  std::vector<std::string> param_names({"var_0", "var_1", "var_2"});
   // variable 0
-  Variable* var_0 = scope.Var(params_name[0]);
+  Variable* var_0 = scope.Var(param_names[0]);
   Tensor* tensor_0 = var_0->GetMutable<Tensor>();
   set_tensor<float>(tensor_0, std::vector<int64_t>({3, 2}));
   // variable 1
-  Variable* var_1 = scope.Var(params_name[1]);
+  Variable* var_1 = scope.Var(param_names[1]);
   Tensor* tensor_1 = var_1->GetMutable<Tensor>();
   set_tensor<int8_t>(tensor_1, std::vector<int64_t>({10, 1}));
   // variable 3
-  Variable* var_2 = scope.Var(params_name[2]);
+  Variable* var_2 = scope.Var(param_names[2]);
   Tensor* tensor_2 = var_2->GetMutable<Tensor>();
   set_tensor<int16_t>(tensor_2, std::vector<int64_t>({16, 1}));
+
+  std::set<std::string> params_set(param_names.begin(), param_names.end());
+
+  {
+    model_parser::BinaryFileWriter writer{path};
+    fbs::ParamSerializer serializer{&writer};
+    serializer.ForwardWrite(scope, params_set);
+  }
+
   // Set combined parameters
   fbs::CombinedParamsDesc combined_param;
-  std::set<std::string> params_set(params_name.begin(), params_name.end());
-  SetCombinedParamsWithScope(scope, params_set, &combined_param);
+  deprecated::SetCombinedParamsWithScope(scope, params_set, &combined_param);
 
-  /* --------- Check scope ---------- */
-  auto check_params = [&](const CombinedParamsDescReadAPI& desc) {
-    Scope scope_l;
-    SetScopeWithCombinedParams(&scope_l, desc);
+  auto check_params = [&](const lite::Scope& scope) {
     // variable 0
-    Variable* var_l0 = scope_l.FindVar(params_name[0]);
+    Variable* var_l0 = scope.FindVar(param_names[0]);
     CHECK(var_l0);
     const Tensor& tensor_l0 = var_l0->Get<Tensor>();
     CHECK(TensorCompareWith(*tensor_0, tensor_l0));
     // variable 1
-    Variable* var_l1 = scope_l.FindVar(params_name[1]);
+    Variable* var_l1 = scope.FindVar(param_names[1]);
     CHECK(var_l1);
     const Tensor& tensor_l1 = var_l1->Get<Tensor>();
     CHECK(TensorCompareWith(*tensor_1, tensor_l1));
     // variable 2
-    Variable* var_l2 = scope_l.FindVar(params_name[2]);
+    Variable* var_l2 = scope.FindVar(param_names[2]);
     CHECK(var_l2);
     const Tensor& tensor_l2 = var_l2->Get<Tensor>();
     CHECK(TensorCompareWith(*tensor_2, tensor_l2));
   };
-  check_params(combined_param);
+
+  model_parser::Buffer buffer;
+
+  /* --------- Scope ---------- */
+  Scope scope_0;
+  deprecated::SetScopeWithCombinedParams(&scope_0, combined_param);
+  check_params(scope_0);
 
   /* --------- View scope ---------- */
-  check_params(CombinedParamsDescView(combined_param.data()));
+  Scope scope_1;
+  combined_param.CopyDataToBuffer(&buffer);
+  CombinedParamsDescView combined_param_view(std::move(buffer));
+  deprecated::SetScopeWithCombinedParams(&scope_1, combined_param_view);
+  check_params(scope_1);
+
+  /* --------- Stream scope ---------- */
+  {
+    Scope scope_2;
+    LOG(INFO) << "Load params from file...";
+    model_parser::BinaryFileReader reader(path);
+    fbs::ParamDeserializer deserializer(&reader);
+    deserializer.ForwardRead(&scope_2);
+    check_params(scope_2);
+  }
+
+  {
+    Scope scope_3;
+    LOG(INFO) << "Load params from string buffer...";
+    model_parser::BinaryFileReader file_reader(path);
+    model_parser::Buffer buf(file_reader.length());
+    file_reader.Read(buf.data(), file_reader.length());
+
+    std::string str{static_cast<const char*>(buf.data()), buf.size()};
+
+    model_parser::StringBufferReader reader(str);
+    fbs::ParamDeserializer deserializer(&reader);
+    deserializer.ForwardRead(&scope_3);
+    check_params(scope_3);
+  }
 }
 #endif  // LITE_WITH_FLATBUFFERS_DESC
 

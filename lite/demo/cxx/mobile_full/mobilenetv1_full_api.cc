@@ -18,6 +18,11 @@
 #include "paddle_api.h"         // NOLINT
 #include "paddle_use_passes.h"  // NOLINT
 
+/////////////////////////////////////////////////////////////////////////
+// If this demo is linked to static library:libpaddle_api_full_bundled.a
+// , you should include `paddle_use_ops.h` and `paddle_use_kernels.h` to
+// avoid linking errors such as `unsupport ops or kernels`.
+/////////////////////////////////////////////////////////////////////////
 #if defined(_WIN32)
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
@@ -56,9 +61,12 @@ void RunModel() {
   config.set_threads(FLAGS_threads);
 #ifdef DEMO_WITH_OPENCL
   std::vector<Place> valid_places{
+      Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNHWC)},
-      Place{TARGET(kARM), PRECISION(kFloat)}};
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+      Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)},
+      Place{TARGET(kARM)}};
 #else
   std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kFloat)}};
 #endif

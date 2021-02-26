@@ -92,9 +92,9 @@ TEST(pool2d_image2d, compute) {
   param.output = &out;
   param.global_pooling = false;
   param.pooling_type = "avg";
-  std::vector<int> paddings = {0, 0, 0, 0};
+  std::vector<int> paddings = {1, 1, 1, 1};
   param.strides = std::vector<int>{1, 1};
-  param.ksize = std::vector<int>{7, 7};
+  param.ksize = std::vector<int>{3, 3};
   param.paddings = std::make_shared<std::vector<int>>(paddings);
 
   std::unique_ptr<KernelContext> context(new KernelContext);
@@ -106,8 +106,8 @@ TEST(pool2d_image2d, compute) {
       &(pool_context->As<OpenCLContext>()));
   kernel->SetContext(std::move(pool_context));
 
-  const DDim in_dim = DDim(std::vector<DDim::value_type>{4, 11, 107, 107});
-  const DDim out_dim = DDim(std::vector<DDim::value_type>{4, 11, 101, 101});
+  const DDim in_dim = DDim(std::vector<DDim::value_type>{1, 384, 25, 25});
+  const DDim out_dim = DDim(std::vector<DDim::value_type>{1, 384, 25, 25});
   x.Resize(in_dim);
   out.Resize(out_dim);
 
@@ -140,7 +140,7 @@ TEST(pool2d_image2d, compute) {
   CLRuntime::Global()->command_queue().finish();
 
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
-  pool_avg(0, 0, 1, 1, 7, 7, input_v.data(), in_dim, out_ref.get(), out_dim);
+  pool_avg(1, 1, 1, 1, 3, 3, input_v.data(), in_dim, out_ref.get(), out_dim);
 
   const size_t cl_image2d_row_pitch{0};
   const size_t cl_image2d_slice_pitch{0};

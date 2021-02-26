@@ -98,11 +98,15 @@ class SoftmaxComputeTest : public arena::TestCase {
 
 TEST(Softmax, precision) {
   LOG(INFO) << "test softmax op";
-  float abs_error = 2e-5;
+  float abs_error = 4e-5;
   Place place;
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 4e-3;  // Using fp16 in NPU
+// #elif defined(LITE_WITH_OPENCL)
+//   place = Place(TARGET(kOpenCL), PRECISION(kFP16),
+//   DATALAYOUT(kImageDefault));
+//   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 4e-3;  // precision_mode default is force_fp16
@@ -120,6 +124,10 @@ TEST(Softmax, precision) {
       if (axis != -1 && axis != ndims - 1)
         continue;  // -1 and dims.size() - 1 are only supported by XPU
 #endif
+      // #if defined(LITE_WITH_OPENCL)
+      //       if (axis == 0)
+      //         continue;  // -1 and dims.size() - 1 are only supported by XPU
+      // #endif
       std::unique_ptr<arena::TestCase> tester(
           new SoftmaxComputeTest(place, "def", DDim(x_dims), axis));
       arena::Arena arena(std::move(tester), place, abs_error);

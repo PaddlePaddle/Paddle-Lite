@@ -69,12 +69,14 @@ class ElementwiseAddImageCompute
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
 
   std::string kernel_func_name_{"elementwise_add"};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
   cl::Kernel kernel_;
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  std::unique_ptr<Tensor> y_weights_image_{
+      nullptr};  // when param->Y from model weights
 };
 
 }  // namespace opencl

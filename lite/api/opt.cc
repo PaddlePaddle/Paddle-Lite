@@ -74,7 +74,7 @@ DEFINE_string(optimize_out, "", "path of the output optimized model");
 DEFINE_string(valid_targets,
               "arm",
               "The targets this model optimized for, should be one of (arm, "
-              "opencl, x86), splitted by space");
+              "opencl, x86, x86_opencl), splitted by space");
 DEFINE_bool(print_supported_ops,
             false,
             "Print supported operators on the inputed target");
@@ -113,8 +113,21 @@ std::vector<Place> ParserValidPlaces() {
       valid_places.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
     } else if (target_repr == "x86") {
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
+      valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
+    } else if (target_repr == "x86_opencl") {
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
+      valid_places.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
@@ -228,7 +241,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kImaginationNNA",
                                       "kAny",
                                       "kUnk"};
-  int maximum_optype_length = 0;
+  size_t maximum_optype_length = 0;
   for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
     maximum_optype_length = it->first.size() > maximum_optype_length
                                 ? it->first.size()
@@ -291,7 +304,8 @@ void PrintHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "`--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "ascend_npu|"
       "imagination_nna)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
@@ -301,12 +315,14 @@ void PrintHelpInfo() {
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "ascend_npu|"
       "imagination_nna)"
       "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
+      "ascend_npu|"
       "imagination_nna)"
       "`"
       "  Display operators in the input model\n";

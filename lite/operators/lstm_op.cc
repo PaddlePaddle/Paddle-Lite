@@ -18,7 +18,23 @@
 namespace paddle {
 namespace lite {
 namespace operators {
-
+inline lite_api::ActivationType GetActivationType(const std::string &type) {
+  if (type == "sigmoid") {
+    return lite_api::ActivationType::kSigmoid;
+  } else if (type == "sigmoid_v2") {
+    return lite_api::ActivationType::kSigmoid_v2;
+  } else if (type == "relu") {
+    return lite_api::ActivationType::kRelu;
+  } else if (type == "tanh") {
+    return lite_api::ActivationType::kTanh;
+  } else if (type == "tanh_v2") {
+    return lite_api::ActivationType::kTanh_v2;
+  } else if (type == "identity" || type == "") {
+    return lite_api::ActivationType::kIndentity;
+  }
+  LOG(FATAL) << "The input type is not supported: " << type;
+  return lite_api::ActivationType::kIndentity;
+}
 bool LstmOp::CheckShape() const {
   CHECK_OR_FALSE(param_.Input);
   CHECK_OR_FALSE(param_.Weight);
@@ -93,10 +109,24 @@ bool LstmOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   }
   param_.use_peepholes = opdesc.GetAttr<bool>("use_peepholes");
   param_.is_reverse = opdesc.GetAttr<bool>("is_reverse");
-  param_.gate_activation = opdesc.GetAttr<std::string>("gate_activation");
-  param_.cell_activation = opdesc.GetAttr<std::string>("cell_activation");
+  param_.gate_activation =
+      GetActivationType(opdesc.GetAttr<std::string>("gate_activation"));
+  param_.cell_activation =
+      GetActivationType(opdesc.GetAttr<std::string>("cell_activation"));
   param_.candidate_activation =
-      opdesc.GetAttr<std::string>("candidate_activation");
+      GetActivationType(opdesc.GetAttr<std::string>("candidate_activation"));
+
+  // For int8
+  const OpInfo *op_info = dynamic_cast<const OpInfo *>(&opdesc);
+  if (op_info != nullptr && op_info->HasAttr("enable_int8") &&
+      op_info->GetAttr<bool>("enable_int8")) {
+    param_.enable_int8 = true;
+    param_.bit_length = opdesc.GetAttr<int>("bit_length");
+    std::string weight_scale_name = "Weight0_scale";
+    if (op_info->HasInputScale(weight_scale_name, true)) {
+      param_.weight_scale = op_info->GetInputScale(weight_scale_name, true);
+    }
+  }
 
   return true;
 }

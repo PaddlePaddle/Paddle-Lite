@@ -25,20 +25,25 @@ namespace operators {
 
 bool InstanceNormOp::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.scale);
-  CHECK_OR_FALSE(param_.bias);
   CHECK_OR_FALSE(param_.out);
   CHECK_OR_FALSE(param_.saved_mean);
   CHECK_OR_FALSE(param_.saved_variance);
+
   auto x_dims = param_.x->dims();
-  auto scale_dims = param_.scale->dims();
-  auto bias_dims = param_.bias->dims();
   CHECK(x_dims.size() >= 2 && x_dims.size() <= 5)
       << "Input X must have 2 to 5 dimensions.";
-  CHECK_EQ(scale_dims.size(), 1UL) << "Input Scale must have 1 dimensions.";
-  CHECK_EQ(bias_dims.size(), 1UL) << "Input Bias must have 1 dimensions.";
-  CHECK_GT(param_.epsilon, 0.f) << "epsilon should be greater than 0.f";
-  CHECK_LT(param_.epsilon, 0.01f) << "epsilon should be less than 0.01f";
+  if (param_.scale != nullptr) {
+    auto scale_dims = param_.scale->dims();
+    CHECK_EQ(scale_dims.size(), 1UL) << "Input Scale must have 1 dimensions.";
+    CHECK_EQ(scale_dims[0], x_dims[1]) << "ShapeError: the shape of scale must "
+                                       << "equal to the channel of input.";
+  }
+  if (param_.bias != nullptr) {
+    auto bias_dims = param_.bias->dims();
+    CHECK_EQ(bias_dims.size(), 1UL) << "Input Bias must have 1 dimensions.";
+    CHECK_EQ(bias_dims[0], x_dims[1]) << "ShapeError: the shape of bias must "
+                                      << "equal to the channel of input.";
+  }
   return true;
 }
 
@@ -54,19 +59,27 @@ bool InstanceNormOp::InferShapeImpl() const {
 
 bool InstanceNormOp::AttachImpl(const cpp::OpDesc& op_desc,
                                 lite::Scope* scope) {
-  param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
-  param_.scale =
-      scope->FindVar(op_desc.Input("Scale").front())->GetMutable<Tensor>();
-  param_.bias =
-      scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();
-  param_.saved_mean =
-      scope->FindVar(op_desc.Output("SavedMean").front())->GetMutable<Tensor>();
-  param_.saved_variance =
-      scope->FindVar(op_desc.Output("SavedVariance").front())
-          ->GetMutable<Tensor>();
-  param_.out =
-      scope->FindVar(op_desc.Output("Y").front())->GetMutable<Tensor>();
+  AttachInput(op_desc, scope, "X", false /*is_dispensable*/, &param_.x);
+  AttachInput(op_desc, scope, "Scale", true, &param_.scale);
+  AttachInput(op_desc, scope, "Bias", true, &param_.bias);
+  AttachOutput(op_desc, scope, "SavedMean", false, &param_.saved_mean);
+  AttachOutput(op_desc, scope, "SavedVariance", false, &param_.saved_variance);
+  AttachOutput(op_desc, scope, "Y", false, &param_.out);
   param_.epsilon = op_desc.GetAttr<float>("epsilon");
+  if (op_desc.HasAttr("activation_type")) {
+    auto act_type = op_desc.GetAttr<std::string>("activation_type");
+    param_.activation_type = act_type;
+    if (act_type == "relu") {
+      param_.fuse_relu = true;
+    } else if (act_type == "relu6") {
+      param_.alpha = op_desc.GetAttr<float>("alpha");  // 6.f
+    } else if (act_type == "leaky_relu") {
+      param_.alpha = op_desc.GetAttr<float>("alpha");
+    } else {
+      LOG(FATAL) << "unsupported Activation type: " << act_type
+                 << " fuse not support";
+    }
+  }
   return true;
 }
 

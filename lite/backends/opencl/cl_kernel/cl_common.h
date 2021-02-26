@@ -28,8 +28,13 @@ limitations under the License. */
 #ifdef CL_DTYPE_float
 #define CL_DTYPE float
 #define CL_DTYPE_CHAR f
+#ifdef CL_DTYPE_FLOAT_FORCE
+#define CL_COMPUTE_DTYPE float
+#define CL_COMPUTE_DTYPE_CHAR f
+#else
 #define CL_COMPUTE_DTYPE half
 #define CL_COMPUTE_DTYPE_CHAR h
+#endif
 #endif
 
 #ifdef CL_DTYPE_half
@@ -71,6 +76,18 @@ __constant sampler_t SAMPLER =
   _READ_IMG_TYPE(type_char, img, sampler, pos)
 
 /////////////////////////////////
+// select macro
+// NOTE: a, b must both are vector type
+/////////////////////////////////
+#ifdef CL_DTYPE_float
+#define SELECT(a, b, mask) select(a, b, (uint4)((mask) << 31))
+#endif
+
+#ifdef CL_DTYPE_half
+#define SELECT(a, b, mask) select(a, b, (ushort4)((mask) << 15))
+#endif
+
+/////////////////////////////////
 // activation / activation_type4
 /////////////////////////////////
 inline CL_DTYPE activation(CL_DTYPE in
@@ -93,9 +110,31 @@ inline CL_DTYPE activation(CL_DTYPE in
 #endif
 
 #ifdef LEAKY_RELU
-  output =
-      select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in, (CL_DTYPE)in, (ushort)(in >= 0));
+#ifdef CL_DTYPE_float
+  output = select((CL_DTYPE)(LEAKY_RELU_ALPHA)*in,
+                  in,
+                  (int)(isgreaterequal(in, 0)));  // NOLINT
 #endif
+
+#ifdef CL_DTYPE_half
+  output = select(
+      (CL_DTYPE)(LEAKY_RELU_ALPHA)*in, in, (ushort)(isgreaterequal(in, 0)));
+#endif
+#endif
+
+#ifdef HARD_SWISH
+  output = fmin(fmax(in + (CL_DTYPE)ACT_OFFSET, (CL_DTYPE)0),
+                (CL_DTYPE)ACT_THRESHOLD) *
+           in / (CL_DTYPE)ACT_SCALE;
+#endif
+
+#ifdef HARD_SIGMOID
+  output =
+      clamp(in * (CL_DTYPE)HARD_SIGMOID_SLOPE + (CL_DTYPE)HARD_SIGMOID_OFFSET,
+            (CL_DTYPE)0.0,
+            (CL_DTYPE)1.0);
+#endif
+
   return output;
 }
 
@@ -107,7 +146,7 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
                                   ) {
   CL_DTYPE4 output = in;
 #ifdef PRELU
-  output = select(prelu_alpha * in, in, in >= (CL_DTYPE4)0.0);
+  output = select(prelu_alpha * in, in, isgreaterequal(in, (CL_DTYPE4)0));
 #endif
 
 #ifdef RELU
@@ -120,14 +159,40 @@ inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
 #endif
 
 #ifdef LEAKY_RELU
-  // note: `(ushort4)(in >= 0)` causes error: invalid conversion
-  // between ext-vector type 'ushort4' and 'short
-  // __attribute__((ext_vector_type(4)))'
-  // thus, using `(ushort4)(in.x >= 0, in.y >= 0, in.z >= 0, in.w >= 0)`
-  // instead.
-  output = select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in,
-                  (CL_DTYPE4)in,
-                  (ushort4)(in.x >= 0, in.y >= 0, in.z >= 0, in.w >= 0));
+  output = select(
+      (CL_DTYPE4)(LEAKY_RELU_ALPHA)*in, in, isgreaterequal(in, (CL_DTYPE4)0));
+// same as bellow:
+// output = select((CL_DTYPE4)(LEAKY_RELU_ALPHA)*in,
+//                 in,
+//                 (ushort4)((in.x >= 0) << 15, (in.y >= 0) << 15, (in.z >= 0)
+//                 << 15, (in.w >= 0) << 15));
 #endif
+
+#ifdef HARD_SWISH
+  output = fmin(fmax(in + (CL_DTYPE4)ACT_OFFSET, (CL_DTYPE4)0),
+                (CL_DTYPE4)ACT_THRESHOLD) *
+           in / (CL_DTYPE4)ACT_SCALE;
+#endif
+
+#ifdef HARD_SIGMOID
+  output =
+      clamp(in * (CL_DTYPE4)HARD_SIGMOID_SLOPE + (CL_DTYPE4)HARD_SIGMOID_OFFSET,
+            (CL_DTYPE4)0.0,
+            (CL_DTYPE4)1.0);
+#endif
+
   return output;
+}
+
+// fuse scale for Elementwise ops
+inline CL_DTYPE4 fuse_scale(CL_DTYPE4 in,
+                            __private float scale,
+                            __private float bias,
+                            __private float alpha) {
+  CL_DTYPE4 out =
+      CONVERT_TYPE_TO(scale, CL_DTYPE) * in + CONVERT_TYPE_TO(bias, CL_DTYPE);
+#ifdef FUSE_SCALE_RELU6
+  out = clamp(out, (CL_DTYPE4)(0.f), (CL_DTYPE4)(/*alpha=*/6.f));
+#endif
+  return out;
 }

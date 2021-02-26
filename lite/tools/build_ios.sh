@@ -1,5 +1,6 @@
 #!/bin/bash
 set +x
+set -e
 
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
@@ -120,7 +121,7 @@ function print_usage {
 function main {
     if [ -z "$1" ]; then
         make_ios $ARCH
-        exit -1
+        exit 0
     fi
 
     # Parse command line.

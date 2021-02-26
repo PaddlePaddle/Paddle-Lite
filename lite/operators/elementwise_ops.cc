@@ -88,7 +88,6 @@ bool ElementwiseOp::InferShapeImpl() const {
 
 bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   AttachParam(&param_);
-
   auto X_name = opdesc.Input("X").front();
   auto Y_name = opdesc.Input("Y").front();
   auto Out_name = opdesc.Output("Out").front();
@@ -97,6 +96,13 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.Y = GetVar<lite::Tensor>(scope, Y_name);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out_name);
   param_.axis = opdesc.GetAttr<int>("axis");
+  if (opdesc.HasAttr("fuse_scale")) {
+    param_.fuse_scale = opdesc.GetAttr<bool>("fuse_scale");
+    param_.scale = opdesc.GetAttr<float>("scale");
+    param_.alpha = opdesc.GetAttr<float>("alpha");
+    param_.bias = opdesc.GetAttr<float>("bias");
+  }
+
   return true;
 }
 
@@ -143,7 +149,9 @@ REGISTER_LITE_OP(elementwise_add, paddle::lite::operators::ElementwiseOp);
 
 REGISTER_LITE_OP(elementwise_mul, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_max, paddle::lite::operators::ElementwiseOp);
+REGISTER_LITE_OP(elementwise_min, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_div, paddle::lite::operators::ElementwiseOp);
+REGISTER_LITE_OP(elementwise_floordiv, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_mod, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_pow, paddle::lite::operators::ElementwiseOp);
 

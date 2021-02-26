@@ -39,3 +39,17 @@ if(ARMLINUX_ARCH_ABI STREQUAL "armv7hf")
     set(CMAKE_C_COMPILER "arm-linux-gnueabihf-gcc")
     set(CMAKE_CXX_COMPILER "arm-linux-gnueabihf-g++")
 endif()
+
+set(HOST_C_COMPILER $ENV{CC})
+set(HOST_CXX_COMPILER $ENV{CXX})
+
+if(NOT ${HOST_C_COMPILER})
+    set(CMAKE_C_COMPILER ${HOST_C_COMPILER})
+endif()
+
+if(NOT ${HOST_CXX_COMPILER})
+    set(CMAKE_CXX_COMPILER ${HOST_CXX_COMPILER})
+endif()
+
+message(STATUS "armlinux CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+message(STATUS "armlinux CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")

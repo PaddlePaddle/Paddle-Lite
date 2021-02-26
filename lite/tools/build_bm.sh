@@ -4,9 +4,11 @@ set -ex
 # global variables with default value
 BM_SDK_ROOT="$(pwd)/third-party/bmlibs/bm_sc3_libs"     # BM SDK
 TARGET_NAME="BM1682"     # default target
-BUILD_EXTRA=OFF                     # ON(with sequence ops)/OFF
+BUILD_EXTRA=OFF                  # ON(with sequence ops)/OFF
 WITH_TESTING=ON                  # ON/OFF
 BM_DYNAMIC_COMPILE=OFF
+BM_SAVE_UMODEL=OFF
+BM_SAVE_BMODEL=OFF
 
 function print_usage {
     echo -e "\nUSAGE:"
@@ -26,17 +28,17 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
 
 readonly NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-1}
 
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 readonly workspace=$(pwd)
 
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
             wget $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
     fi
@@ -91,6 +93,8 @@ function build_bm {
         -DLITE_ON_TINY_PUBLISH=OFF \
         -DWITH_TESTING=${WITH_TESTING} \
         -DBM_DYNAMIC_COMPILE=${BM_DYNAMIC_COMPILE} \
+        -DBM_SAVE_UMODEL=${BM_SAVE_UMODEL} \
+        -DBM_SAVE_BMODEL=${BM_SAVE_BMODEL} \
         -DBM_SDK_ROOT=${BM_SDK_ROOT}
 
     make publish_inference -j$NUM_CORES_FOR_COMPILE
@@ -113,6 +117,14 @@ function main {
                 ;;
             --dynamic=*)
                 BM_DYNAMIC_COMPILE=${i#*=} 
+                shift
+                ;;
+            --save_bmodel=*)
+                BM_SAVE_BMODEL=${i#*=} 
+                shift
+                ;;
+            --save_umodel=*)
+                BM_SAVE_UMODEL=${i#*=} 
                 shift
                 ;;
             *)

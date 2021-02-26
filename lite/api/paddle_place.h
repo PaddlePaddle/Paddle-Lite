@@ -95,6 +95,19 @@ typedef enum {
   LITE_POWER_RAND_LOW = 5
 } PowerMode;
 
+typedef enum {
+  CL_TUNE_NONE = 0,
+  CL_TUNE_RAPID = 1,
+  CL_TUNE_NORMAL = 2,
+  CL_TUNE_EXHAUSTIVE = 3
+} CLTuneMode;
+
+typedef enum {
+  CL_PRECISION_AUTO = 0,
+  CL_PRECISION_FP32 = 1,
+  CL_PRECISION_FP16 = 2
+} CLPrecisionType;
+
 typedef enum { MLU_220 = 0, MLU_270 = 1 } MLUCoreVersion;
 
 enum class ActivationType : int {
@@ -113,7 +126,10 @@ enum class ActivationType : int {
   kThresholdedRelu = 12,
   kElu = 13,
   kHardSigmoid = 14,
-  NUM = 15,
+  kLog = 15,
+  kSigmoid_v2 = 16,
+  kTanh_v2 = 17,
+  NUM = 18,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
@@ -132,8 +148,10 @@ static size_t PrecisionTypeLength(PrecisionType type) {
       return 8;
     case PrecisionType::kFP16:
       return 2;
+    case PrecisionType::kInt16:
+      return 2;
     default:
-      return 4;
+      return 0;
   }
 }
 
@@ -189,6 +207,10 @@ const std::string& TargetRepr(TargetType target);
 const std::string& PrecisionRepr(PrecisionType precision);
 
 const std::string& DataLayoutRepr(DataLayoutType layout);
+
+const std::string& CLTuneModeToStr(CLTuneMode mode);
+
+const std::string& CLPrecisionTypeToStr(CLPrecisionType type);
 
 // Get a set of all the elements represented by the target.
 std::set<TargetType> ExpandValidTargets(TargetType target = TARGET(kAny));

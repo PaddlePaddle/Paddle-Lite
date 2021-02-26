@@ -33,17 +33,37 @@ void gemm_s8(bool is_transA,
              const float* scale,
              const operators::ActivationParam act_param,
              ARMContext* ctx) {
+  if (N == 1) {
+    gemv_int8(A, B, C, false, M, K, scale, is_bias, bias, act_param, ctx);
+
+    return;
+  }
+  if (M == 1) {
+    float bias_ptr[N];   // NOLINT
+    float scale_ptr[N];  // NOLINT
+    if (is_bias) {
+      for (int i = 0; i < N; i++) {
+        bias_ptr[i] = bias[0];
+      }
+    }
+    for (int i = 0; i < N; i++) {
+      scale_ptr[i] = scale[0];
+    }
+    gemv_int8(
+        B, A, C, true, N, K, scale_ptr, is_bias, bias_ptr, act_param, ctx);
+    return;
+  }
+
   int hblock = get_hblock_int8(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
-  auto packed_A = static_cast<int8_t*>(
-      TargetMalloc(TargetType::kARM, m_roundup * K * sizeof(int8_t)));
-
+  ctx->ExtendWorkspace(m_roundup * K * sizeof(int8_t));
+  auto packed_A = static_cast<int8_t*>(ctx->workspace_data<int8_t>()) +
+                  ctx->llc_size() / sizeof(int8_t);
   int lda = is_transA ? M : K;
   prepackA_int8(packed_A, A, lda, 0, M, 0, K, is_transA, ctx);
 
-  gemm_prepack_int8(
+  gemm_prepack_int8<Dtype>(
       packed_A, B, bias, C, M, N, K, is_bias, is_transB, scale, act_param, ctx);
-  TargetFree(TargetType::kARM, packed_A);
 }
 
 template void gemm_s8<float>(bool is_transA,

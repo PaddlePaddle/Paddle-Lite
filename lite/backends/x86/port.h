@@ -41,7 +41,9 @@
 #include <windows.h>
 #include <winsock.h>
 #include <numeric>  // std::accumulate in msvc
-#ifndef S_ISDIR     // windows port for sys/stat.h
+#undef min
+#undef max
+#ifndef S_ISDIR  // windows port for sys/stat.h
 #define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif  // S_ISDIR
 
@@ -58,30 +60,23 @@ static void *dlsym(void *handle, const char *symbol_name) {
 static void *dlopen(const char *filename, int flag) {
   std::string file_name(filename);
   HMODULE hModule = LoadLibrary(file_name.c_str());
+#ifndef LITE_WITH_OPENCL
   if (!hModule) {
     throw std::runtime_error(file_name + " not found.");
   }
+#endif
   return reinterpret_cast<void *>(hModule);
 }
 
 #ifdef LITE_WITH_LOG
 extern struct timeval;
 static int gettimeofday(struct timeval *tp, void *tzp) {
-  time_t clock;
-  struct tm tm;
-  SYSTEMTIME wtm;
-
-  GetLocalTime(&wtm);
-  tm.tm_year = wtm.wYear - 1900;
-  tm.tm_mon = wtm.wMonth - 1;
-  tm.tm_mday = wtm.wDay;
-  tm.tm_hour = wtm.wHour;
-  tm.tm_min = wtm.wMinute;
-  tm.tm_sec = wtm.wSecond;
-  tm.tm_isdst = -1;
-  clock = mktime(&tm);
-  tp->tv_sec = clock;
-  tp->tv_usec = wtm.wMilliseconds * 1000;
+  LARGE_INTEGER now, freq;
+  QueryPerformanceCounter(&now);
+  QueryPerformanceFrequency(&freq);
+  tp->tv_sec = now.QuadPart / freq.QuadPart;
+  tp->tv_usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
+  // uint64_t elapsed_time = sec * 1000000 + usec;
 
   return (0);
 }

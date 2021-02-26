@@ -143,6 +143,7 @@ class VariablePlaceInferencePass : public DebugPass {
             << "Can not find the input argument for var " << var_name;
         VLOG(4) << " - input arg name:" << arg_name << " var name:" << var_name;
         const auto* decl_type = kernel.GetInputDeclType(arg_name);
+        CHECK(decl_type);
         if (!(*var_type)) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
           if (var.is_weight) {
@@ -169,7 +170,7 @@ class VariablePlaceInferencePass : public DebugPass {
         VLOG(4) << " - output arg name:" << arg_name
                 << " var name:" << var_name;
         const auto* decl_type = kernel.GetOutputDeclType(arg_name);
-        if (!(*var_type)) {
+        if (!(*var_type) || var.is_weight) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
           if (var.is_weight) {
             SetWeightType(out_node, *decl_type, with_targets);

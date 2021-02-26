@@ -39,6 +39,25 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
     return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
   };
 
+  auto has_x86_opencl = [&]() -> bool {
+    bool has_x86{false};
+    bool has_opencl{false};
+    for (auto& op_node : graph->StmtTopologicalOrder()) {
+      if (!op_node->IsStmt()) continue;
+      TargetType op_target_type = op_node->AsStmt().place().target;
+      if (has_opencl && has_x86) {
+        return true;
+      }
+      if (op_target_type == TARGET(kOpenCL)) {
+        has_opencl = true;
+      }
+      if (op_target_type == TARGET(kX86)) {
+        has_x86 = true;
+      }
+    }
+    return has_x86 && has_opencl;
+  };
+
   // The all of input and output variables of the Ops will not be reused.
   std::set<std::string> invalid_op_nodes = {"while",
                                             "conditional_block",
@@ -54,7 +73,8 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
 
   auto insert_invalid_op_nodes_for_specific_target = [&](
       std::set<std::string> op_node_set, TargetType specific_target) {
-    std::set<std::string> invalid_op_nodes_opencl = {"layout", "fc"};
+    std::set<std::string> invalid_op_nodes_opencl = {
+        "layout", "fc", "yolo_box", "shape", "slice"};
     for (auto& op_node : graph->StmtTopologicalOrder()) {
       if (!op_node->IsStmt()) continue;
       TargetType op_target_type = op_node->AsStmt().place().target;
@@ -67,6 +87,11 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       // else if // you can add more targets
     }
   };
+
+  if (has_x86_opencl()) {
+    LOG(INFO) << "skip x86 opencl target for reuse memory pass";
+    return;
+  }
 
   VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
   insert_invalid_op_nodes_for_specific_target(invalid_op_nodes,
@@ -98,7 +123,11 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
     std::map<std::string,
              std::pair<std::set<std::string>, std::set<std::string>>>
         inplace_op_nodes = {{"reshape", {{"X"}, {"Out"}}},
-                            {"reshape2", {{"X"}, {"Out"}}}};
+                            {"reshape2", {{"X"}, {"Out"}}},
+                            {"squeeze", {{"X"}, {"Out"}}},
+                            {"squeeze2", {{"X"}, {"Out"}}},
+                            {"unsqueeze", {{"X"}, {"Out"}}},
+                            {"unsqueeze2", {{"X"}, {"Out"}}}};
     auto inplace_op_node = inplace_op_nodes.find(op_type);
     if (inplace_op_node != inplace_op_nodes.end()) {
       bool inplace = false;

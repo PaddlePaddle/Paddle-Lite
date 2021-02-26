@@ -20,6 +20,13 @@
 #include <vector>
 
 #include "paddle_api.h"  // NOLINT
+/////////////////////////////////////////////////////////////////////////
+// If this demo is linked to static library:libpaddle_api_light_bundled.a
+// , you should include `paddle_use_ops.h` and `paddle_use_kernels.h` to
+// avoid linking errors such as `unsupport ops or kernels`.
+/////////////////////////////////////////////////////////////////////////
+// #include "paddle_use_kernels.h"  // NOLINT
+// #include "paddle_use_ops.h"      // NOLINT
 
 using namespace paddle::lite_api;  // NOLINT
 
@@ -130,15 +137,41 @@ void RunModel(std::string model_dir,
   //    lib](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/demo_guides/opencl.md);
   //  second, [convert and use opencl nb
   //    model](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/user_guides/opt/opt_bin.md).
-  //
-  /*  Uncomment code below to enable OpenCL
-  bool is_opencl_backend_valid = ::IsOpenCLBackendValid();
-  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid <<
-  std::endl;
+
+  bool is_opencl_backend_valid =
+      ::IsOpenCLBackendValid(/*check_fp16_valid = false*/);
+  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
+            << std::endl;
+  //  Uncomment code below to enable OpenCL
+  /*
   if (is_opencl_backend_valid) {
-    // give opencl nb model dir
-    config.set_model_from_file(model_dir);
-    config.set_opencl_tune(false); // default is false
+    // Set opencl kernel binary.
+    // Large addtitional prepare time is cost due to algorithm selecting and
+    // building kernel from source code.
+    // Prepare time can be reduced dramitically after building algorithm file
+    // and OpenCL kernel binary on the first running.
+    // The 1st running time will be a bit longer due to the compiling time if
+    // you don't call `set_opencl binary_path_name` explicitly.
+    // So call `set_opencl binary_path_name` explicitly is strongly recommended.
+
+    // Make sure you have write permission of the binary path.
+    // We strongly recommend each model has a unique binary name.
+    const std::string bin_path = "/data/local/tmp/";
+    const std::string bin_name = "lite_opencl_kernel.bin";
+    config.set_opencl_binary_path_name(bin_path, bin_name);
+
+    // opencl tune option
+    // CL_TUNE_NONE: 0
+    // CL_TUNE_RAPID: 1
+    // CL_TUNE_NORMAL: 2
+    // CL_TUNE_EXHAUSTIVE: 3
+    config.set_opencl_tune(CL_TUNE_NONE);
+
+    // opencl precision option
+    // CL_PRECISION_AUTO: 0, first fp16 if valid, default
+    // CL_PRECISION_FP32: 1, force fp32
+    // CL_PRECISION_FP16: 2, force fp16
+    config.set_opencl_precision(CL_PRECISION_FP16);
   } else {
     std::cout << "Unsupport opencl nb model." << std::endl;
     exit(1);
@@ -173,8 +206,15 @@ void RunModel(std::string model_dir,
   }
 
   // 4. Run predictor
+  double first_duration{-1};
   for (size_t widx = 0; widx < warmup; ++widx) {
-    predictor->Run();
+    if (widx == 0) {
+      auto start = GetCurrentUS();
+      predictor->Run();
+      first_duration = (GetCurrentUS() - start) / 1000.0;
+    } else {
+      predictor->Run();
+    }
   }
 
   double sum_duration = 0.0;  // millisecond;
@@ -192,6 +232,9 @@ void RunModel(std::string model_dir,
     min_duration = duration < min_duration ? duration : min_duration;
     std::cout << "run_idx:" << ridx + 1 << " / " << repeats << ": " << duration
               << " ms" << std::endl;
+    if (first_duration < 0) {
+      first_duration = duration;
+    }
   }
   avg_duration = sum_duration / static_cast<float>(repeats);
   std::cout << "\n======= benchmark summary =======\n"
@@ -199,6 +242,8 @@ void RunModel(std::string model_dir,
             << "model_dir:" << model_dir << "\n"
             << "warmup:" << warmup << "\n"
             << "repeats:" << repeats << "\n"
+            << "*** time info(ms) ***\n"
+            << "1st_duration:" << first_duration << "\n"
             << "max_duration:" << max_duration << "\n"
             << "min_duration:" << min_duration << "\n"
             << "avg_duration:" << avg_duration << "\n";

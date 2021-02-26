@@ -22,6 +22,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/arena/framework.h"
 #include "lite/core/op_registry.h"
+#include "lite/tests/utils/fill_data.h"
 
 template <class T>
 bool is_fp_close(T v1, T v2, T rel_tol = 1e-4, T abs_tol = 1e-5) {
@@ -85,11 +86,9 @@ void BroadcastCPURef(const T* x,
 }
 
 int randint(int beg, int end) {
-  static unsigned int seed = 0;
-  int rd = rand_r(&seed);
-  int range = end - beg + 1;
-  rd = rd % range;
-  return rd + beg;
+  int res = 0;
+  fill_data_rand<int>(&res, beg, end, 1);
+  return res;
 }
 
 bool randbool() { return randint(0, 1000000) < 50000; }
@@ -168,13 +167,13 @@ class ElementwiseComputeTester : public arena::TestCase {
   void PrepareData() override {
     std::vector<T> dx(x_dims_.production());
     for (size_t i = 0; i < dx.size(); i++) {
-      dx[i] = i;
+      dx[i] = 1;
     }
     SetCommonTensor(x_, x_dims_, dx.data());
 
     std::vector<T> dy(y_dims_.production());
     for (size_t i = 0; i < dy.size(); i++) {
-      dy[i] = 2 * i + 1;
+      dy[i] = 1;
     }
     SetCommonTensor(y_, y_dims_, dy.data());
   }
@@ -204,10 +203,12 @@ bool RunOnRandomArgs(const Place& place,
   std::vector<int> y_dim_cut;
 
   int axis = -1;
-  bool cut_dimension = randbool();
+  static bool cut_dimension = true;
+  cut_dimension = !cut_dimension;
   if (cut_dimension) {
     // generate x_dim_cut and y_dim_cut by remove dimension
-    bool use_axis = randbool();
+    static bool use_axis = true;
+    use_axis = !use_axis;
     if (use_axis) {
       x_dim_cut = x_dim_full;
       // we will cut y only, and set tail of y to be 1
@@ -224,6 +225,12 @@ bool RunOnRandomArgs(const Place& place,
       }
       for (int i = dim_size - tail1_num; i < dim_size; ++i) {
         y_dim_full[i] = 1;
+      }
+      static bool swap_x_and_y = true;
+      swap_x_and_y = !swap_x_and_y;
+      if (swap_x_and_y) {
+        std::swap(x_dim_cut, y_dim_cut);
+        std::swap(x_dim_full, y_dim_full);
       }
     } else {
       // we will cut x or y
@@ -301,7 +308,7 @@ bool RunOnRandomArgs(const Place& place,
 #ifdef LITE_WITH_ARM
 
 TEST(elementwise_broadcast, compute_fp32) {
-  const int TEST_RETEAT_NUM = 5;
+  const int TEST_RETEAT_NUM = 10;
   for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
     EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
         TARGET(kARM), "def", "add", "", [](float l, float r) {
@@ -323,7 +330,7 @@ TEST(elementwise_broadcast, compute_fp32) {
 }
 
 TEST(elementwise_broadcast, compute_i32) {
-  const int TEST_RETEAT_NUM = 5;
+  const int TEST_RETEAT_NUM = 10;
   for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
     EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
         paddle::lite::Place(TARGET(kARM), PRECISION(kInt32)),

@@ -31,36 +31,35 @@ void ConvBNFuser::BuildPattern() {
   auto* conv = OpNode("conv2d", conv_type_)->assert_is_op(conv_type_);
   auto* conv_out = VarNode("conv_out")
                        ->assert_is_op_output(conv_type_, "Output")
-                       ->assert_is_op_input("batch_norm", "X")
+                       ->assert_is_op_input(bn_type_, "X")
                        ->AsIntermediate();
 
   auto* bn_scale = VarNode("bn_scale")
-                       ->assert_is_op_input("batch_norm", "Scale")
+                       ->assert_is_op_input(bn_type_, "Scale")
                        ->AsIntermediate();
   auto* bn_bias =
-      VarNode("bn_bias")->assert_is_op_input("batch_norm", "Bias")->AsInput();
+      VarNode("bn_bias")->assert_is_op_input(bn_type_, "Bias")->AsInput();
   auto* bn_mean = VarNode("bn_mean")
-                      ->assert_is_op_input("batch_norm", "Mean")
+                      ->assert_is_op_input(bn_type_, "Mean")
                       ->AsIntermediate();
   auto* bn_var = VarNode("bn_variance")
-                     ->assert_is_op_input("batch_norm", "Variance")
+                     ->assert_is_op_input(bn_type_, "Variance")
                      ->AsIntermediate();
-  auto* bn =
-      OpNode("bn", "batch_norm")->assert_is_op("batch_norm")->AsIntermediate();
+  auto* bn = OpNode("bn", bn_type_)->assert_is_op(bn_type_)->AsIntermediate();
 
   auto* bn_out =
-      VarNode("bn_out")->assert_is_op_output("batch_norm", "Y")->AsOutput();
+      VarNode("bn_out")->assert_is_op_output(bn_type_, "Y")->AsOutput();
   auto* bn_mean_out = VarNode("bn_mean_out")
-                          ->assert_is_op_output("batch_norm", "MeanOut")
+                          ->assert_is_op_output(bn_type_, "MeanOut")
                           ->AsIntermediate();
   auto* bn_var_out = VarNode("bn_var_out")
-                         ->assert_is_op_output("batch_norm", "VarianceOut")
+                         ->assert_is_op_output(bn_type_, "VarianceOut")
                          ->AsIntermediate();
   auto* bn_saved_mean = VarNode("bn_saved_mean")
-                            ->assert_is_op_output("batch_norm", "SavedMean")
+                            ->assert_is_op_output(bn_type_, "SavedMean")
                             ->AsIntermediate();
   auto* bn_saved_var = VarNode("bn_saved_var")
-                           ->assert_is_op_output("batch_norm", "SavedVariance")
+                           ->assert_is_op_output(bn_type_, "SavedVariance")
                            ->AsIntermediate();
 
   if (conv_has_bias_) {

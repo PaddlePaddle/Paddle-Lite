@@ -24,34 +24,24 @@ namespace xpu {
 void ReduceSumCompute::Run() {
   auto& param = Param<operators::ReduceParam>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  const float* input = param.x->data<float>();
-  float* output = param.output->mutable_data<float>(TARGET(kXPU));
-  bool reduce_all = param.reduce_all;
-
-  if (reduce_all) {
-    int input_len = param.x->numel();
-    int r = xdnn::sum(ctx.GetRawContext(), input, output, input_len);
+  if (param.reduce_all) {
+    int r = xdnn::sum(ctx.GetRawContext(),
+                      param.X->data<float>(),
+                      param.Out->mutable_data<float>(TARGET(kXPU)),
+                      static_cast<int>(param.X->numel()));
     CHECK_EQ(r, 0);
   } else {
-    auto x_dims = param.x->dims();
-    int x_rank = x_dims.size();
-    auto reduce_dim = param.dim;
-    auto rdim = reduce_dim.size();
-
-    std::vector<int> idims;
-    for (int i = 0; i < x_rank; i++) {
-      idims.push_back(x_dims[i]);
+    auto x_dims = param.X->dims();
+    std::vector<int> x_shape;
+    for (size_t i = 0; i < x_dims.size(); i++) {
+      x_shape.push_back(static_cast<int>(x_dims[i]));
     }
-
-    auto type = xdnn::ReduceOp::REDUCE_SUM;
-    int r = xdnn::reduce(ctx.GetRawContext(),
-                         input,
-                         output,
-                         idims.data(),
-                         x_rank,
-                         reduce_dim.data(),
-                         rdim,
-                         type);
+    int r =
+        xdnn::reduce_sum<float>(ctx.GetRawContext(),
+                                param.X->data<float>(),
+                                param.Out->mutable_data<float>(TARGET(kXPU)),
+                                x_shape,
+                                param.dim);
     CHECK_EQ(r, 0);
   }
 }

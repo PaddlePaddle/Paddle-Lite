@@ -58,6 +58,15 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void ReInitWhenNeeded() override {
     grid_param_ = param_.get_mutable<param_t>();
+    bool align_corners = grid_param_->align_corners;
+    std::string padding_mode = grid_param_->padding_mode;
+    std::string mode = grid_param_->mode;
+    if (align_corners != true || padding_mode != "zeros" ||
+        mode != "bilinear") {
+      LOG(FATAL) << "Unsupported grid samper with align_corners:"
+                 << align_corners << ", padding_mode:" << padding_mode
+                 << ", mode:" << mode;
+    }
     auto x_dims = grid_param_->x->dims();
     if ((!first_epoch_for_reinit_ && x_dims != last_x_dims_) ||
         first_epoch_for_reinit_) {
@@ -76,10 +85,10 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void GetGlobalWorkSize() {
     auto default_work_size =
-        DefaultWorkSize(grid_param_->out->dims(),
-                        DDim(std::vector<DDim::value_type>{
-                            static_cast<int64_t>(out_img_shape_[0]),
-                            static_cast<int64_t>(out_img_shape_[1])}));
+        DefaultGlobalWorkSize(grid_param_->out->dims(),
+                              DDim(std::vector<DDim::value_type>{
+                                  static_cast<int64_t>(out_img_shape_[0]),
+                                  static_cast<int64_t>(out_img_shape_[1])}));
     global_work_size_ =
         cl::NDRange{static_cast<cl::size_type>(default_work_size[0]),
                     static_cast<cl::size_type>(default_work_size[1]),
@@ -94,17 +103,17 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     auto* x = grid_param_->x;
-    auto* grid = grid_param_->grid;
+    //  auto* grid = grid_param_->grid;
     auto* out = grid_param_->out;
 
     auto out_dims = out->dims();
     int out_height = out_dims[2];
     int out_width = out_dims[3];
 
-    auto* x_img = x->data<half_t, cl::Image2D>();
-    auto* grid_img = x->data<half_t, cl::Image2D>();
-    auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape_[0],
-                                                           out_img_shape_[1]);
+    auto* x_img = GET_DATA_GPU(x);
+    auto* grid_img = GET_DATA_GPU(x);
+    auto* out_img =
+        MUTABLE_DATA_GPU(out, out_img_shape_[0], out_img_shape_[1], nullptr);
 
 #ifdef LITE_WITH_LOG
     auto in_dims = x->dims();
@@ -163,7 +172,7 @@ class GridSamplerImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::Kernel kernel_;
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-  std::string build_options_{"-DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 

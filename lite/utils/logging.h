@@ -29,23 +29,16 @@
 #else
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
+#undef min
+#undef max
 extern struct timeval;
 static int gettimeofday(struct timeval* tp, void* tzp) {
-  time_t clock;
-  struct tm tm;
-  SYSTEMTIME wtm;
-
-  GetLocalTime(&wtm);
-  tm.tm_year = wtm.wYear - 1900;
-  tm.tm_mon = wtm.wMonth - 1;
-  tm.tm_mday = wtm.wDay;
-  tm.tm_hour = wtm.wHour;
-  tm.tm_min = wtm.wMinute;
-  tm.tm_sec = wtm.wSecond;
-  tm.tm_isdst = -1;
-  clock = mktime(&tm);
-  tp->tv_sec = clock;
-  tp->tv_usec = wtm.wMilliseconds * 1000;
+  LARGE_INTEGER now, freq;
+  QueryPerformanceCounter(&now);
+  QueryPerformanceFrequency(&freq);
+  tp->tv_sec = now.QuadPart / freq.QuadPart;
+  tp->tv_usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
+  // uint64_t elapsed_time = sec * 1000000 + usec;
 
   return (0);
 }
@@ -117,6 +110,17 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 namespace paddle {
 namespace lite {
 
+#ifdef LITE_WITH_EXCEPTION
+struct PaddleLiteException : public std::exception {
+  const std::string exception_prefix = "Paddle-Lite C++ Exception: \n";
+  std::string message;
+  explicit PaddleLiteException(const char* detail) {
+    message = exception_prefix + std::string(detail);
+  }
+  const char* what() const noexcept { return message.c_str(); }
+};
+#endif
+
 #ifdef LITE_WITH_LOG
 void gen_log(STL::ostream& log_stream_,
              const char* file,
@@ -184,7 +188,7 @@ class LogMessageFatal : public LogMessage {
     fprintf(stderr, "%s", log_stream_.str().c_str());
 
 #ifdef LITE_WITH_EXCEPTION
-    throw std::exception();
+    throw PaddleLiteException(log_stream_.str().c_str());
 #else
 #ifndef LITE_ON_TINY_PUBLISH
     abort();

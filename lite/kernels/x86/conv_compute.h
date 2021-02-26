@@ -17,12 +17,15 @@
 #include <string>
 #include <vector>
 #include "lite/backends/x86/math/blas.h"
+#include "lite/backends/x86/math/conv_bias.h"
+#ifdef LITE_WITH_AVX
+#include "lite/backends/x86/math/conv_utils.h"
+#endif
 #include "lite/backends/x86/math/im2col.h"
 #include "lite/backends/x86/math/vol2col.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "lite/fluid/eigen.h"
 #include "lite/operators/conv_op.h"
 
 namespace paddle {
@@ -47,13 +50,42 @@ inline bool IsExpand(const std::vector<int64_t>& filter_dim,
 template <typename T>
 class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ConvParam;
-  void Run() override {
+  virtual void PrepareForRun();
+
+  virtual void ReInitWhenNeeded() {
+    if (impl_) {
+      impl_->ReInitWhenNeeded();
+    }
+  }
+
+  virtual void Run() {
+    if (impl_) {
+      return impl_->Run();
+    }
+    // To-do(qili93): remove below lines of code after all kernels implemented
     auto& context = ctx_->As<X86Context>();
     auto& param = *param_.get_mutable<operators::ConvParam>();
     lite::Tensor filter = *param.filter;
     param.output->template mutable_data<T>();
     const int batch_size = static_cast<int>(param.x->dims()[0]);
+
+    const int kh = static_cast<int>(param.filter->dims()[2]);
+    const int kw = static_cast<int>(param.filter->dims()[3]);
+
+    const int sh = static_cast<int>(param.strides[0]);
+    const int sw = static_cast<int>(param.strides[1]);
+
+    auto paddings = *param.paddings;
+    const int ph = paddings[0];
+    const int pw = paddings[2];
+
+    bool kps_equal = (pw == ph) && (sw == sh) && (kw == kh);
+    bool pads_equal =
+        ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
+    bool flag_1x1gemm = false;
+    if (kw == 1 && sw == 1 && pw == 0 && kps_equal && pads_equal) {
+      flag_1x1gemm = true;
+    }
 
     std::vector<int64_t> filter_shape_vec(filter.dims().Vectorize());
     std::vector<int64_t> output_shape_vec(param.output->dims().Vectorize());
@@ -108,7 +140,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
           col.ShareDataWith(in_slice);
           col_matrix.ShareDataWith(col);
           col_matrix.Resize(col_matrix_shape);
-        } else if (data_dim == 2U) {
+        } else if (data_dim == 2U && !flag_1x1gemm) {
           // im2col
           im2col(context,
                  in_slice,
@@ -145,9 +177,61 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
                     T(0.0));
       }
     }
+
+    // for bias
+    if (param.bias) {
+      const int output_channel = static_cast<int>(param.output->dims()[1]);
+      const int output_number =
+          param.output->dims().production() /
+          (param.output->dims()[0] * param.output->dims()[1]);
+      auto* bias_data = param.bias->template data<T>();
+      auto* out_data = param.output->template mutable_data<T>();
+      auto act_param = param.activation_param;
+      if (act_param.has_active) {
+        if (act_param.active_type == lite_api::ActivationType::kRelu) {
+          lite::x86::math::bias_add_relu_broadcast(out_data,
+                                                   bias_data,
+                                                   out_data,
+                                                   batch_size,
+                                                   output_channel,
+                                                   output_number);
+        } else if (act_param.active_type == lite_api::ActivationType::kRelu6) {
+          lite::x86::math::bias_add_relu6_broadcast(out_data,
+                                                    bias_data,
+                                                    out_data,
+                                                    batch_size,
+                                                    output_channel,
+                                                    output_number);
+        } else {
+          LOG(FATAL) << "[X86] unsupported Activation type";
+        }
+      } else {
+        lite::x86::math::bias_add_broadcast(out_data,
+                                            bias_data,
+                                            out_data,
+                                            batch_size,
+                                            output_channel,
+                                            output_number);
+      }
+    }
   }
 
-  virtual ~Conv2dCompute() = default;
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = "NotImplForConv";
+  }
+#endif
+
+  ~Conv2dCompute() {
+    if (impl_ != nullptr) {
+      delete impl_;
+    }
+  }
+
+ private:
+  using param_t = operators::ConvParam;
+  KernelLite<TARGET(kX86), PRECISION(kFloat)>* impl_{nullptr};
 };
 
 }  // namespace x86

@@ -85,9 +85,9 @@ inline void fill_packed_biasc4(float* dout, const float* bias, int size) {
 * input weights: [chout, chin/ group, kh, kw] --> outputs weights: [chout / n,
 * chin/ group, kh, kw, n]
 */
-template <typename dtype>
-static bool conv_trans_weights_numc(const dtype* din,
-                                    dtype* dout,
+template <typename Dtype>
+static bool conv_trans_weights_numc(const Dtype* din,
+                                    Dtype* dout,
                                     int chout,
                                     int chin,
                                     int n,
@@ -101,9 +101,11 @@ static bool conv_trans_weights_numc(const dtype* din,
   int win_stride = chin * kernel_size;
   int wout_stride = n * win_stride;
   int co = 0;
+  Dtype ptr_zero[win_stride];  // NOLINT
+  memset(ptr_zero, 0, win_stride * sizeof(Dtype));
   for (; co < c_loop; ++co) {
-    dtype* dout_c = dout + co * wout_stride;
-    const dtype* din_array[n];
+    Dtype* dout_c = dout + co * wout_stride;
+    const Dtype* din_array[n];
     din_array[0] = din + co * wout_stride;
     for (int i = 1; i < n; i++) {
       din_array[i] = din_array[i - 1] + win_stride;
@@ -118,8 +120,8 @@ static bool conv_trans_weights_numc(const dtype* din,
   }
   // pad final chout
   if (chout_round > c_loop) {
-    dtype* dout_c = dout + c_loop * wout_stride;
-    const dtype* din_array[n];
+    Dtype* dout_c = dout + c_loop * wout_stride;
+    const Dtype* din_array[n];
     din_array[0] = din + c_loop * wout_stride;
     for (int i = 1; i < n; i++) {
       din_array[i] = din_array[i - 1] + win_stride;
@@ -127,7 +129,7 @@ static bool conv_trans_weights_numc(const dtype* din,
     // deal remain
     int cremain = chout_round * n - chout;
     for (int i = 1; i <= cremain; i++) {
-      din_array[n - i] = din_array[0];
+      din_array[n - i] = ptr_zero;
     }
     for (int ci = 0; ci < chin; ++ci) {
       for (int k = 0; k < kernel_size; ++k) {
@@ -337,7 +339,7 @@ static bool prepack_input_nxw(const dtype* din,
       for (int w = ws; w < w0; ++w) {
         *(out_array[j]++) = 0.f;
       }
-      memcpy(out_array[j], in_array, valid_w_byte);
+      lite::TargetWrapperHost::MemcpySync(out_array[j], in_array, valid_w_byte);
       out_array[j] += valid_w;
       for (int w = w1; w < we; ++w) {
         *(out_array[j]++) = 0.f;
@@ -1409,9 +1411,11 @@ inline bool write_to_output_c2_fp32(const float* din,
 // clang-format off
 #ifdef __aarch64__
 #define NCHWC4_TRANS_FP32_COMPUTE                                   \
+  "cmp %w[cnt], #1 \n"                                              \
   "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */ \
   "ldp q2, q3, [%[ptr_din]], #32  \n" /* load r02, r03 to q2, q3 */ \
   "movi v20.4s, #0                \n" /* for relu */                \
+  "blt 2f\n"                                                        \
   "1:                             \n" /* main loop*/                \
   "trn1   v8.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
   "trn2   v9.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
@@ -1451,18 +1455,38 @@ inline bool write_to_output_c2_fp32(const float* din,
   "bif  v19.16b, v7.16b, v11.16b \n"    /* choose*/
 
 #define NCHWC4_TRANS_FP32_STORE                          \
+  "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/ \
   "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/    \
   "str    q17, [%[doutc2r0]], #16 \n" /* store c2r0*/    \
   "str    q18, [%[doutc1r0]], #16 \n" /* store c1r0*/    \
   "str    q19, [%[doutc3r0]], #16 \n" /* store c3r0*/    \
-                                                         \
-  "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/ \
   "bne    1b                      \n" /* jump to main loop*/
+#define NCHWC4_TRANS_FP32_REMAIN                         \
+  "2: \n"                                                \
+  "cmp %w[remain], #1\n"                                 \
+  "blt 3f\n"                                             \
+  "trn1   v8.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
+  "trn2   v9.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
+  "trn1   v10.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/             \
+  "trn2   v11.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/             \
+  "trn1   v16.2d, v8.2d, v10.2d   \n" /* trans q8, q10*/            \
+  "trn2   v17.2d, v8.2d, v10.2d   \n" /* trans q8, q10*/            \
+  "trn1   v18.2d, v9.2d, v11.2d   \n" /* trans q9, q11*/            \
+  "trn2   v19.2d, v9.2d, v11.2d   \n" /* trans q9, q11*/            \
+
+#define NCHWC4_TRANS_FP32_RSTORE                         \
+  "str    q16, [%[tmp0]] \n" /* store c0r0*/             \
+  "str    q17, [%[tmp2]] \n" /* store c2r0*/             \
+  "str    q18, [%[tmp1]] \n" /* store c1r0*/             \
+  "str    q19, [%[tmp3]] \n" /* store c3r0*/             \
+  "3: \n"
 #else
 #define NCHWC4_TRANS_FP32_COMPUTE                                     \
+  "cmp %[cnt], #1 \n"                                                \
   "vld1.32 {d0-d3}, [%[ptr_din]]!                 @load data \n"      \
   "vld1.32 {d4-d7}, [%[ptr_din]]!         @load data \n"              \
   "vmov.u32 q15, #0                       @ dump zero\n"              \
+  "blt 2f\n"                                                          \
   "1:                                     @ main loop\n"              \
   "vtrn.32 q0, q1                         @ trans data:c00c01c20c21 " \
   "\n"                                                                \
@@ -1499,226 +1523,32 @@ inline bool write_to_output_c2_fp32(const float* din,
   "vbif q3, q12, q8 @ choose \n"
 
 #define NCHWC4_TRANS_FP32_STORE                                        \
+  "subs   %[cnt], %[cnt], #1    @ loop count - 1\n"                    \
   "vst1.32  {d0-d1}, [%[doutc0r0]]!     @ store result, add pointer\n" \
   "vst1.32  {d2-d3}, [%[doutc1r0]]!     @ store result, add pointer\n" \
   "vst1.32  {d4-d5}, [%[doutc2r0]]!     @ store result, add pointer\n" \
   "vst1.32  {d6-d7}, [%[doutc3r0]]!     @ store result, add pointer\n" \
-                                                                       \
-  "subs   %[cnt], %[cnt], #1    @ loop count - 1\n"                    \
-                                                                       \
   "vld1.32 {d0-d3}, [%[ptr_din]]!        @load data \n"                \
   "vld1.32 {d4-d7}, [%[ptr_din]]!        @load data \n"                \
                                                                        \
   "bne    1b                            @ jump to main loop\n"
+#define NCHWC4_TRANS_FP32_REMAIN                         \
+  "2: \n"                                                \
+  "cmp %[remain], #1\n"                                 \
+  "blt 3f\n"                                             \
+  "vtrn.32 q0, q1                       @ trans data:c00c01c20c21 \n" \
+  "vtrn.32 q2, q3                       @ trans data:c02c03c22c23 \n" \
+                                                                      \
+  "vswp   d1, d4                          @ swap data\n"              \
+  "vswp   d3, d6                          @ swap data\n"
+#define NCHWC4_TRANS_FP32_RSTORE                                   \
+  "vst1.32  {d0-d1}, [%[tmp0]]      @ store result, add pointer\n" \
+  "vst1.32  {d2-d3}, [%[tmp1]]      @ store result, add pointer\n" \
+  "vst1.32  {d4-d5}, [%[tmp2]]      @ store result, add pointer\n" \
+  "vst1.32  {d6-d7}, [%[tmp3]]      @ store result, add pointer\n" \
+  "3: \n"
 #endif
-// clang-format on
-inline void act_switch_c4_fp32(const float* din_ptr,
-                               float* doutc0_ptr,
-                               float* doutc1_ptr,
-                               float* doutc2_ptr,
-                               float* doutc3_ptr,
-                               int cnt_loop,
-                               const operators::ActivationParam* act_param) {
-  if (act_param != nullptr && act_param->has_active) {
-    float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
-    float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
-    switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
-#ifdef __aarch64__
-        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
-                         NCHWC4_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [doutc1r0] "+r"(doutc1_ptr),
-                       [doutc2r0] "+r"(doutc2_ptr),
-                       [doutc3r0] "+r"(doutc3_ptr),
-                       [cnt] "+r"(cnt_loop),
-                       [ptr_din] "+r"(din_ptr)
-                     :
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v12",
-                       "v13",
-                       "v14",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v20");
-#else
-        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
-                         NCHWC4_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [doutc1r0] "+r"(doutc1_ptr),
-                       [doutc2r0] "+r"(doutc2_ptr),
-                       [doutc3r0] "+r"(doutc3_ptr),
-                       [ptr_din] "+r"(din_ptr),
-                       [cnt] "+r"(cnt_loop)
-                     :
-                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
-#endif
-        break;
-      case lite_api::ActivationType::kRelu6:
-/* 0 <= din <= 6 */
-#ifdef __aarch64__
-        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
-                         NCHWC4_TRANS_FP32_RELU6 NCHWC4_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [doutc1r0] "+r"(doutc1_ptr),
-                       [doutc2r0] "+r"(doutc2_ptr),
-                       [doutc3r0] "+r"(doutc3_ptr),
-                       [cnt] "+r"(cnt_loop),
-                       [ptr_din] "+r"(din_ptr)
-                     : [six] "w"(six)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v12",
-                       "v13",
-                       "v14",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v20");
-#else
-        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
-                         NCHWC4_TRANS_FP32_RELU6 NCHWC4_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [doutc1r0] "+r"(doutc1_ptr),
-                       [doutc2r0] "+r"(doutc2_ptr),
-                       [doutc3r0] "+r"(doutc3_ptr),
-                       [ptr_din] "+r"(din_ptr),
-                       [cnt] "+r"(cnt_loop)
-                     : [six] "w"(six)
-                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
-#endif
-        break;
-      case lite_api::ActivationType::kLeakyRelu:
-/*din = din >= 0 ? din : din * scale*/
-#ifdef __aarch64__
-        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_LEAKY_RELU
-                         NCHWC4_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [doutc1r0] "+r"(doutc1_ptr),
-                       [doutc2r0] "+r"(doutc2_ptr),
-                       [doutc3r0] "+r"(doutc3_ptr),
-                       [cnt] "+r"(cnt_loop),
-                       [ptr_din] "+r"(din_ptr)
-                     : [scale] "w"(scale)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v12",
-                       "v13",
-                       "v14",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v20");
-#else
-        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_LEAKY_RELU
-                         NCHWC4_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [doutc1r0] "+r"(doutc1_ptr),
-                       [doutc2r0] "+r"(doutc2_ptr),
-                       [doutc3r0] "+r"(doutc3_ptr),
-                       [ptr_din] "+r"(din_ptr),
-                       [cnt] "+r"(cnt_loop)
-                     : [scale] "w"(scale)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q15");
-#endif
-        break;
-      default:
-        LOG(FATAL) << "this act_type: "
-                   << static_cast<int>(act_param->active_type)
-                   << " fuse not support";
-    }
-  } else {
-#ifdef __aarch64__
-    asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_STORE
-                 : [doutc0r0] "+r"(doutc0_ptr),
-                   [doutc1r0] "+r"(doutc1_ptr),
-                   [doutc2r0] "+r"(doutc2_ptr),
-                   [doutc3r0] "+r"(doutc3_ptr),
-                   [cnt] "+r"(cnt_loop),
-                   [ptr_din] "+r"(din_ptr)
-                 :
-                 : "cc",
-                   "memory",
-                   "v0",
-                   "v1",
-                   "v2",
-                   "v3",
-                   "v8",
-                   "v9",
-                   "v10",
-                   "v11",
-                   "v16",
-                   "v17",
-                   "v18",
-                   "v19");
-#else
-    asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_STORE
-                 : [doutc0r0] "+r"(doutc0_ptr),
-                   [doutc1r0] "+r"(doutc1_ptr),
-                   [doutc2r0] "+r"(doutc2_ptr),
-                   [doutc3r0] "+r"(doutc3_ptr),
-                   [ptr_din] "+r"(din_ptr),
-                   [cnt] "+r"(cnt_loop)
-                 :
-                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
-#endif
-  }
-}
+
 /*wirte result in outputs
 * input din: [n, c / 4, h, w * 4], output dout: [n, c, h, w]
 */
@@ -1760,111 +1590,366 @@ inline bool write_to_output_c4_fp32(const float* din,
   int valid_we = we > width ? width : we;
   int cnt = (valid_we - ws) / w4;
   int remain = valid_we - ws - cnt * w4;
-
-  for (int i = 0; i < size_h; i++) {
-    int size_w = i * width;
-    float* doutc0_ptr = doutc0r0 + size_w;  // doutc0r0 + width;
-    float* doutc1_ptr = doutc1r0 + size_w;
-    float* doutc2_ptr = doutc2r0 + size_w;
-    float* doutc3_ptr = doutc3r0 + size_w;
-    if (ce > channel) {
-      switch (ce - channel) {
-        case 3:
-          doutc1_ptr = trash_ptr;
-        case 2:
-          doutc2_ptr = trash_ptr;
-        case 1:
-          doutc3_ptr = trash_ptr;
-        default:
-          break;
-      }
-    }
-    const float* din_hei_ptr = ptr_din + i * w_round * ch_n;
-    if (cnt > 0) {
-      int cnt_loop = cnt;
-      act_switch_c4_fp32(din_hei_ptr,
-                         doutc0_ptr,
-                         doutc1_ptr,
-                         doutc2_ptr,
-                         doutc3_ptr,
-                         cnt_loop,
-                         act_param);
-    }
-    if (remain > 0) {
-      int offset = i * w_round * c4 + c4 * w4 * cnt;
-      din_hei_ptr = ptr_din + offset;
-      doutc0_ptr += w4 * cnt;
-      doutc1_ptr += w4 * cnt;
-      doutc2_ptr += w4 * cnt;
-      doutc3_ptr += w4 * cnt;
-      int j = 0;
-      if (act_param != nullptr && act_param->has_active) {
-        float six = act_param->Relu_clipped_coef;
-        float scale = act_param->Leaky_relu_alpha;
-        switch (act_param->active_type) {
+  int w_stride = w_round * ch_n;
+  float tmp0[4] = {0.f};
+  float tmp1[4] = {0.f};
+  float tmp2[4] = {0.f};
+  float tmp3[4] = {0.f};
+  if (act_param != nullptr && act_param->has_active) {
+    float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
+    float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
+    switch (act_param->active_type) {
           case lite_api::ActivationType::kRelu:
-            for (; j < remain; ++j) {
-              *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
-              *(doutc1_ptr++) = LITEMAX(din_hei_ptr[1], 0.f);
-              *(doutc2_ptr++) = LITEMAX(din_hei_ptr[2], 0.f);
-              *(doutc3_ptr++) = LITEMAX(din_hei_ptr[3], 0.f);
-              din_hei_ptr += 4;
+            for (int i = 0; i < size_h; i++) {
+              int size_w = i * width;
+              float* doutc0_ptr = doutc0r0;
+              float* doutc1_ptr = doutc1r0;
+              float* doutc2_ptr = doutc2r0;
+              float* doutc3_ptr = doutc3r0;
+              if (ce > channel) {
+                switch (ce - channel) {
+                  case 3:
+                    doutc1_ptr = trash_ptr;
+                  case 2:
+                    doutc2_ptr = trash_ptr;
+                  case 1:
+                    doutc3_ptr = trash_ptr;
+                  default:
+                    break;
+                }
+              }
+              const float* din_ptr = ptr_din;
+              int cnt_col = cnt;
+#ifdef __aarch64__
+      asm volatile(
+        NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU NCHWC4_TRANS_FP32_STORE
+        NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_RELU NCHWC4_TRANS_FP32_RSTORE
+                  : [doutc0r0] "+r"(doutc0_ptr),
+                    [doutc1r0] "+r"(doutc1_ptr),
+                    [doutc2r0] "+r"(doutc2_ptr),
+                    [doutc3r0] "+r"(doutc3_ptr),
+                    [cnt] "+r"(cnt_col),
+                    [ptr_din] "+r"(din_ptr)
+                  : [remain] "r"(remain),
+                    [tmp0] "r"(tmp0),
+                    [tmp1] "r"(tmp1),
+                    [tmp2] "r"(tmp2),
+                    [tmp3] "r"(tmp3)
+                  : "cc",
+                    "memory",
+                    "v0",
+                    "v1",
+                    "v2",
+                    "v3",
+                    "v8",
+                    "v9",
+                    "v10",
+                    "v11",
+                    "v16",
+                    "v17",
+                    "v18",
+                    "v19");
+#else
+      asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU NCHWC4_TRANS_FP32_STORE
+                 NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_RELU NCHWC4_TRANS_FP32_RSTORE
+                 : [doutc0r0] "+r"(doutc0_ptr),
+                   [doutc1r0] "+r"(doutc1_ptr),
+                   [doutc2r0] "+r"(doutc2_ptr),
+                   [doutc3r0] "+r"(doutc3_ptr),
+                   [ptr_din] "+r"(din_ptr),
+                   [cnt] "+r"(cnt_col)
+                 : [remain] "r"(remain),
+                   [tmp0] "r"(tmp0),
+                   [tmp1] "r"(tmp1),
+                   [tmp2] "r"(tmp2),
+                   [tmp3] "r"(tmp3)
+                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
+#endif
+              if (remain > 0) {
+                for (int i = 0; i < remain; i++) {
+                  *(doutc0_ptr++) = tmp0[i];
+                  *(doutc1_ptr++) = tmp1[i];
+                  *(doutc2_ptr++) = tmp2[i];
+                  *(doutc3_ptr++) = tmp3[i];
+                }
+              }
+              doutc0r0 += width;
+              doutc1r0 += width;
+              doutc2r0 += width;
+              doutc3r0 += width;
+              ptr_din += w_stride;
             }
             break;
           case lite_api::ActivationType::kRelu6:
-            /* 0 <= din <= 6 */
-            for (; j < remain; ++j) {
-              float tmp1 = LITEMAX(din_hei_ptr[0], 0.f);
-              float tmp2 = LITEMAX(din_hei_ptr[1], 0.f);
-              float tmp3 = LITEMAX(din_hei_ptr[2], 0.f);
-              float tmp4 = LITEMAX(din_hei_ptr[3], 0.f);
-              *(doutc0_ptr++) = LITEMIN(tmp1, six);
-              *(doutc1_ptr++) = LITEMIN(tmp2, six);
-              *(doutc2_ptr++) = LITEMIN(tmp3, six);
-              *(doutc3_ptr++) = LITEMIN(tmp4, six);
-              din_hei_ptr += 4;
+            for (int i = 0; i < size_h; i++) {
+              int size_w = i * width;
+              float* doutc0_ptr = doutc0r0;
+              float* doutc1_ptr = doutc1r0;
+              float* doutc2_ptr = doutc2r0;
+              float* doutc3_ptr = doutc3r0;
+              if (ce > channel) {
+                switch (ce - channel) {
+                  case 3:
+                    doutc1_ptr = trash_ptr;
+                  case 2:
+                    doutc2_ptr = trash_ptr;
+                  case 1:
+                    doutc3_ptr = trash_ptr;
+                  default:
+                    break;
+                }
+              }
+              const float* din_ptr = ptr_din;
+              int cnt_col = cnt;
+#ifdef __aarch64__
+      asm volatile(
+        NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU NCHWC4_TRANS_FP32_RELU6 NCHWC4_TRANS_FP32_STORE
+        NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_RELU NCHWC4_TRANS_FP32_RELU6 NCHWC4_TRANS_FP32_RSTORE
+                  : [doutc0r0] "+r"(doutc0_ptr),
+                    [doutc1r0] "+r"(doutc1_ptr),
+                    [doutc2r0] "+r"(doutc2_ptr),
+                    [doutc3r0] "+r"(doutc3_ptr),
+                    [cnt] "+r"(cnt_col),
+                    [ptr_din] "+r"(din_ptr)
+                  : [remain] "r"(remain),
+                    [six] "w"(six),
+                    [tmp0] "r"(tmp0),
+                    [tmp1] "r"(tmp1),
+                    [tmp2] "r"(tmp2),
+                    [tmp3] "r"(tmp3)
+                  : "cc",
+                    "memory",
+                    "v0",
+                    "v1",
+                    "v2",
+                    "v3",
+                    "v8",
+                    "v9",
+                    "v10",
+                    "v11",
+                    "v16",
+                    "v17",
+                    "v18",
+                    "v19");
+#else
+      asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU NCHWC4_TRANS_FP32_RELU6 NCHWC4_TRANS_FP32_STORE
+                 NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_RELU NCHWC4_TRANS_FP32_RELU6 NCHWC4_TRANS_FP32_RSTORE
+                 : [doutc0r0] "+r"(doutc0_ptr),
+                   [doutc1r0] "+r"(doutc1_ptr),
+                   [doutc2r0] "+r"(doutc2_ptr),
+                   [doutc3r0] "+r"(doutc3_ptr),
+                   [ptr_din] "+r"(din_ptr),
+                   [cnt] "+r"(cnt_col)
+                 : [remain] "r"(remain),
+                   [six] "w"(six),
+                   [tmp0] "r"(tmp0),
+                   [tmp1] "r"(tmp1),
+                   [tmp2] "r"(tmp2),
+                   [tmp3] "r"(tmp3)
+                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
+#endif
+              if (remain > 0) {
+                for (int i = 0; i < remain; i++) {
+                  *(doutc0_ptr++) = tmp0[i];
+                  *(doutc1_ptr++) = tmp1[i];
+                  *(doutc2_ptr++) = tmp2[i];
+                  *(doutc3_ptr++) = tmp3[i];
+                }
+              }
+              doutc0r0 += width;
+              doutc1r0 += width;
+              doutc2r0 += width;
+              doutc3r0 += width;
+              ptr_din += w_stride;
             }
             break;
           case lite_api::ActivationType::kLeakyRelu:
-            /*din = din >= 0 ? din : din * scale*/
-            for (; j < remain; ++j) {
-              if (din_hei_ptr[0] >= 0) {
-                *(doutc0_ptr++) = din_hei_ptr[0];
-              } else {
-                *(doutc0_ptr++) = din_hei_ptr[0] * scale;
+            for (int i = 0; i < size_h; i++) {
+              int size_w = i * width;
+              float* doutc0_ptr = doutc0r0;
+              float* doutc1_ptr = doutc1r0;
+              float* doutc2_ptr = doutc2r0;
+              float* doutc3_ptr = doutc3r0;
+              if (ce > channel) {
+                switch (ce - channel) {
+                  case 3:
+                    doutc1_ptr = trash_ptr;
+                  case 2:
+                    doutc2_ptr = trash_ptr;
+                  case 1:
+                    doutc3_ptr = trash_ptr;
+                  default:
+                    break;
+                }
               }
-              if (din_hei_ptr[1] >= 0) {
-                *(doutc1_ptr++) = din_hei_ptr[1];
-              } else {
-                *(doutc1_ptr++) = din_hei_ptr[1] * scale;
+              const float* din_ptr = ptr_din;
+              int cnt_col = cnt;
+#ifdef __aarch64__
+      asm volatile(
+        NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_LEAKY_RELU NCHWC4_TRANS_FP32_STORE
+        NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_LEAKY_RELU NCHWC4_TRANS_FP32_RSTORE
+                  : [doutc0r0] "+r"(doutc0_ptr),
+                    [doutc1r0] "+r"(doutc1_ptr),
+                    [doutc2r0] "+r"(doutc2_ptr),
+                    [doutc3r0] "+r"(doutc3_ptr),
+                    [cnt] "+r"(cnt_col),
+                    [ptr_din] "+r"(din_ptr)
+                  : [remain] "r"(remain),
+                    [scale] "w"(scale),
+                    [tmp0] "r"(tmp0),
+                    [tmp1] "r"(tmp1),
+                    [tmp2] "r"(tmp2),
+                    [tmp3] "r"(tmp3)
+                  : "cc",
+                    "memory",
+                    "v0",
+                    "v1",
+                    "v2",
+                    "v3",
+                    "v4",
+                    "v5",
+                    "v6",
+                    "v7",
+                    "v8",
+                    "v9",
+                    "v10",
+                    "v11",
+                    "v16",
+                    "v17",
+                    "v18",
+                    "v19",
+                    "v20");
+#else
+      asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_LEAKY_RELU NCHWC4_TRANS_FP32_STORE
+                 NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_LEAKY_RELU NCHWC4_TRANS_FP32_RSTORE
+                 : [doutc0r0] "+r"(doutc0_ptr),
+                   [doutc1r0] "+r"(doutc1_ptr),
+                   [doutc2r0] "+r"(doutc2_ptr),
+                   [doutc3r0] "+r"(doutc3_ptr),
+                   [ptr_din] "+r"(din_ptr),
+                   [cnt] "+r"(cnt_col)
+                 : [remain] "r"(remain),
+                   [scale] "w"(scale),
+                   [tmp0] "r"(tmp0),
+                   [tmp1] "r"(tmp1),
+                   [tmp2] "r"(tmp2),
+                   [tmp3] "r"(tmp3)
+                  : "cc",
+                       "memory",
+                       "q0",
+                       "q1",
+                       "q2",
+                       "q3",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q15");
+#endif
+              if (remain > 0) {
+                for (int i = 0; i < remain; i++) {
+                  *(doutc0_ptr++) = tmp0[i];
+                  *(doutc1_ptr++) = tmp1[i];
+                  *(doutc2_ptr++) = tmp2[i];
+                  *(doutc3_ptr++) = tmp3[i];
+                }
               }
-              if (din_hei_ptr[2] >= 0) {
-                *(doutc2_ptr++) = din_hei_ptr[2];
-              } else {
-                *(doutc2_ptr++) = din_hei_ptr[2] * scale;
-              }
-              if (din_hei_ptr[3] >= 0) {
-                *(doutc3_ptr++) = din_hei_ptr[3];
-              } else {
-                *(doutc3_ptr++) = din_hei_ptr[3] * scale;
-              }
-              din_hei_ptr += 4;
+              doutc0r0 += width;
+              doutc1r0 += width;
+              doutc2r0 += width;
+              doutc3r0 += width;
+              ptr_din += w_stride;
             }
             break;
           default:
             LOG(FATAL) << "this act_type: "
                        << static_cast<int>(act_param->active_type)
                        << " fuse not support";
-        }
-      } else {
-        for (; j < remain; ++j) {
-          *(doutc0_ptr++) = din_hei_ptr[0];
-          *(doutc1_ptr++) = din_hei_ptr[1];
-          *(doutc2_ptr++) = din_hei_ptr[2];
-          *(doutc3_ptr++) = din_hei_ptr[3];
-          din_hei_ptr += 4;
+    }
+  } else {
+    // no act
+    for (int i = 0; i < size_h; i++) {
+      int size_w = i * width;
+      float* doutc0_ptr = doutc0r0;
+      float* doutc1_ptr = doutc1r0;
+      float* doutc2_ptr = doutc2r0;
+      float* doutc3_ptr = doutc3r0;
+      if (ce > channel) {
+        switch (ce - channel) {
+          case 3:
+            doutc1_ptr = trash_ptr;
+          case 2:
+            doutc2_ptr = trash_ptr;
+          case 1:
+            doutc3_ptr = trash_ptr;
+          default:
+            break;
         }
       }
+      const float* din_ptr = ptr_din;
+      int cnt_col = cnt;
+#ifdef __aarch64__
+      asm volatile(
+        NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_STORE
+        NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_RSTORE
+                  : [doutc0r0] "+r"(doutc0_ptr),
+                    [doutc1r0] "+r"(doutc1_ptr),
+                    [doutc2r0] "+r"(doutc2_ptr),
+                    [doutc3r0] "+r"(doutc3_ptr),
+                    [cnt] "+r"(cnt_col),
+                    [ptr_din] "+r"(din_ptr)
+                  : [remain] "r"(remain),
+                    [tmp0] "r"(tmp0),
+                    [tmp1] "r"(tmp1),
+                    [tmp2] "r"(tmp2),
+                    [tmp3] "r"(tmp3)
+                  : "cc",
+                    "memory",
+                    "v0",
+                    "v1",
+                    "v2",
+                    "v3",
+                    "v8",
+                    "v9",
+                    "v10",
+                    "v11",
+                    "v16",
+                    "v17",
+                    "v18",
+                    "v19");
+#else
+    asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_STORE
+                 NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_RSTORE
+                 : [doutc0r0] "+r"(doutc0_ptr),
+                   [doutc1r0] "+r"(doutc1_ptr),
+                   [doutc2r0] "+r"(doutc2_ptr),
+                   [doutc3r0] "+r"(doutc3_ptr),
+                   [ptr_din] "+r"(din_ptr),
+                   [cnt] "+r"(cnt_col)
+                 : [remain] "r"(remain),
+                   [tmp0] "r"(tmp0),
+                   [tmp1] "r"(tmp1),
+                   [tmp2] "r"(tmp2),
+                   [tmp3] "r"(tmp3)
+                 : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
+#endif
+      if (remain > 0) {
+        for (int i = 0; i < remain; i++) {
+          *(doutc0_ptr++) = tmp0[i];
+          *(doutc1_ptr++) = tmp1[i];
+          *(doutc2_ptr++) = tmp2[i];
+          *(doutc3_ptr++) = tmp3[i];
+        }
+      }
+      doutc0r0 += width;
+      doutc1r0 += width;
+      doutc2r0 += width;
+      doutc3r0 += width;
+      ptr_din += w_stride;
     }
   }
   return true;
@@ -4073,7 +4158,7 @@ static bool write_to_output_numc(const dtype* din,
       const dtype* din_ptr = din + h * size_c_in;
       for (int i = 0; i < ch_n; i++) {
         dtype* dout_ptr = out_array[i] + h * width;
-        memcpy(dout_ptr, din_ptr, valid_w_byte);
+        lite::TargetWrapperHost::MemcpySync(dout_ptr, din_ptr, valid_w_byte);
         din_ptr += size_w;
       }
     }

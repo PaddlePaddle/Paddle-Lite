@@ -53,14 +53,12 @@ class NearestInterpComputeImageDefault
     auto& param = *param_.get_mutable<param_t>();
     const auto& x_dims = param.X->dims();
     const auto& y_dims = param.Out->dims();
-    auto* x_img =
-        param.X->data<half_t,
-                      cl::Image2D>();  // use half_t represents half float
+    auto* x_img = GET_DATA_GPU(param.X);
     auto out_image_shape = InitImageDimInfoWith(y_dims);
-    auto* out_img = param.Out->mutable_data<half_t, cl::Image2D>(  // use half_t
-        // represents half float
-        out_image_shape["width"],
-        out_image_shape["height"]);
+    auto* out_img = MUTABLE_DATA_GPU(param.Out,
+                                     out_image_shape["width"],
+                                     out_image_shape["height"],
+                                     nullptr);
 
     float scale_h = y_dims[2] / x_dims[2];
     float scale_w = y_dims[3] / x_dims[3];
@@ -104,11 +102,11 @@ class NearestInterpComputeImageDefault
             << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
 #endif
 
-    const std::vector<size_t>& default_work_size =
-        DefaultWorkSize(y_dims,
-                        DDim(std::vector<DDim::value_type>{
-                            static_cast<int64_t>(out_image_shape["width"]),
-                            static_cast<int64_t>(out_image_shape["height"])}));
+    const std::vector<size_t>& default_work_size = DefaultGlobalWorkSize(
+        y_dims,
+        DDim(std::vector<DDim::value_type>{
+            static_cast<int64_t>(out_image_shape["width"]),
+            static_cast<int64_t>(out_image_shape["height"])}));
     auto global_work_size =
         cl::NDRange{static_cast<cl::size_type>(default_work_size.data()[0]),
                     static_cast<cl::size_type>(default_work_size.data()[1]),
@@ -134,7 +132,7 @@ class NearestInterpComputeImageDefault
 
  private:
   std::string kernel_func_name_{"nearest_interp"};
-  std::string build_options_{" -DCL_DTYPE_half"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
 };
 
@@ -154,6 +152,33 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    nearest_interp_v2,
+    kOpenCL,
+    kFP16,
+    kImageDefault,
+    paddle::lite::kernels::opencl::NearestInterpComputeImageDefault,
+    ImageDefault)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

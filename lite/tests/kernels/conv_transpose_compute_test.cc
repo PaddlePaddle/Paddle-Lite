@@ -39,6 +39,7 @@ class ConvTransposeComputeTester : public arena::TestCase {
   std::vector<int> dilations_{1, 1};
   std::string padding_algorithm_ = "";
   std::vector<int> output_size_{};
+  std::vector<int> output_padding_{};
   std::string bias_ = "";
   bool fuse_relu_ = false;
 
@@ -54,6 +55,7 @@ class ConvTransposeComputeTester : public arena::TestCase {
                              std::vector<int> dilations = {1, 1},
                              std::string padding_algorithm = "",
                              std::vector<int> output_size = {},
+                             std::vector<int> output_padding = {},
                              std::string bias = "",
                              bool fuse_relu = false)
       : TestCase(place, alias),
@@ -66,6 +68,7 @@ class ConvTransposeComputeTester : public arena::TestCase {
         dilations_(dilations),
         padding_algorithm_(padding_algorithm),
         output_size_(output_size),
+        output_padding_(output_padding),
         bias_(bias),
         fuse_relu_(fuse_relu) {}
 
@@ -102,6 +105,12 @@ class ConvTransposeComputeTester : public arena::TestCase {
       int output_size = (dims_[i + 2] - 1) * strides_[i] - paddings_[i * 2] -
                         paddings_[i * 2 + 1] + dkernel;
       output_shape.push_back(output_size);
+    }
+
+    if (!output_padding_.empty()) {
+      for (size_t i = 0; i < output_padding_.size(); ++i) {
+        output_shape[i + 2] += output_padding_[i];
+      }
     }
 
     if (!output_size_.empty()) {
@@ -165,9 +174,13 @@ class ConvTransposeComputeTester : public arena::TestCase {
     if (!padding_algorithm_.empty()) {
       op_desc->SetAttr("padding_algorithm", padding_algorithm_);
     }
+    if (!output_padding_.empty()) {
+      op_desc->SetAttr("output_padding", output_padding_);
+    }
     if (!output_size_.empty()) {
       op_desc->SetAttr("output_size", output_size_);
     }
+
     op_desc->SetAttr("fuse_relu", fuse_relu_);
   }
 
@@ -291,6 +304,28 @@ void TestConvTransposeOutputSize(Place place, float abs_error = 2e-5) {
   }
 }
 
+void TestConvTransposeOutputPadding(Place place, float abs_error = 2e-5) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{5, 6, 12, 12}}) {
+    for (auto output_padding : std::vector<std::vector<int>>{{0, 0}, {1, 1}}) {
+      std::unique_ptr<arena::TestCase> tester(
+          new ConvTransposeComputeTester(place,
+                                         "def",
+                                         DDim(dims),
+                                         3,
+                                         {3, 3},
+                                         {2, 2},
+                                         {0, 0},
+                                         1,
+                                         {1, 1},
+                                         "",
+                                         {},
+                                         output_padding));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision();
+    }
+  }
+}
+
 void TestConvTransposeBiasRelu(Place place, float abs_error = 2e-5) {
   for (auto dims : std::vector<std::vector<int64_t>>{{5, 6, 11, 12}}) {
     for (auto bias : std::vector<std::string>{"", "bias"}) {
@@ -308,6 +343,7 @@ void TestConvTransposeBiasRelu(Place place, float abs_error = 2e-5) {
                                            {1, 1},
                                            "",
                                            {},
+                                           {},
                                            bias,
                                            fuse_relu));
         arena::Arena arena(std::move(tester), place, abs_error);
@@ -323,6 +359,10 @@ TEST(Conv_transpose, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 5e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+  TestConvTransposeOutputPadding(place, abs_error);
+  return;
 #else
   return;
 #endif
@@ -334,6 +374,7 @@ TEST(Conv_transpose, precision) {
   TestConvTransposeDilations(place, abs_error);
   TestConvTransposePaddingAlgorithm(place, abs_error);
   TestConvTransposeOutputSize(place, abs_error);
+  TestConvTransposeOutputPadding(place, abs_error);
   TestConvTransposeBiasRelu(place, abs_error);
 }
 

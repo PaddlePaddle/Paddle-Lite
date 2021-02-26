@@ -108,4 +108,5 @@ REGISTER_LITE_KERNEL(lookup_table_v2,
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kInt64))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kCUDA), PRECISION(kFloat))})
+    .BindPaddleOpVersion("lookup_table_v2", 1)
     .Finalize();

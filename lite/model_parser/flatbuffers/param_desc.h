@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/model_parser/base/io.h"
 #include "lite/model_parser/base/param_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 #include "lite/model_parser/flatbuffers/param_generated.h"
@@ -31,7 +32,18 @@ namespace fbs {
 
 class ParamDescView : public ParamDescReadAPI {
  public:
-  explicit ParamDescView(proto::ParamDesc const* desc) : desc_(desc) {
+  explicit ParamDescView(model_parser::Buffer* buf) {
+    CHECK(buf) << "The pointer in buf can not be nullptr";
+    flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf->data()),
+                                   buf->size());
+    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::ParamDesc>(nullptr))
+        << "Param verification failed.";
+    desc_ =
+        flatbuffers::GetRoot<paddle::lite::fbs::proto::ParamDesc>(buf->data());
+    Init();
+  }
+  explicit ParamDescView(proto::ParamDesc const* desc) : desc_(desc) { Init(); }
+  void Init() {
     CHECK(desc_);
     CHECK(desc_->variable_type() ==
           proto::ParamDesc_::VariableDesc_LoDTensorDesc);
@@ -73,24 +85,22 @@ class ParamDescView : public ParamDescReadAPI {
 class CombinedParamsDescView : public CombinedParamsDescReadAPI {
  public:
   CombinedParamsDescView() = default;
-  explicit CombinedParamsDescView(const std::vector<char>& buf) { Init(buf); }
-  explicit CombinedParamsDescView(std::vector<char>&& buf) {
-    Init(std::forward<std::vector<char>>(buf));
+  explicit CombinedParamsDescView(model_parser::Buffer&& buf) {
+    Init(std::forward<model_parser::Buffer>(buf));
   }
 
-  void Init(const std::vector<char>& buf) {
-    CHECK(buf.data());
-    buf_ = buf;
-    InitParams();
-  }
-
-  void Init(std::vector<char>&& buf) {
+  void Init(model_parser::Buffer&& buf) {
     CHECK(buf.data());
     buf_ = std::move(buf);
     InitParams();
   }
 
   void InitParams() {
+    flatbuffers::Verifier verifier(static_cast<const uint8_t*>(buf_.data()),
+                                   buf_.size());
+    CHECK(verifier.VerifyBuffer<paddle::lite::fbs::proto::CombinedParamsDesc>(
+        nullptr))
+        << "CombinedParamsDesc verification failed.";
     desc_ = proto::GetCombinedParamsDesc(buf_.data());
     CHECK(desc_);
     CHECK(desc_->params());
@@ -110,7 +120,7 @@ class CombinedParamsDescView : public CombinedParamsDescReadAPI {
 
  private:
   std::vector<ParamDescView> params_;
-  std::vector<char> buf_;
+  model_parser::Buffer buf_;
   proto::CombinedParamsDesc const* desc_;
 };
 
@@ -154,10 +164,27 @@ class ParamDesc : public ParamDescAPI {
 
   void SetData(const void* data, size_t byte_size) {
     lod_tensor_->data.resize(byte_size);
-    std::memcpy(lod_tensor_->data.data(), data, byte_size);
+    model_parser::memcpy(lod_tensor_->data.data(), data, byte_size);
   }
 
   const proto::ParamDescT* raw_desc() const { return desc_; }
+
+  void CopyDataToBuffer(model_parser::Buffer* buffer) {
+    CHECK(buffer);
+    SyncBuffer();
+    buffer->ResetLazy(buf_.size());
+    model_parser::memcpy(buffer->data(), buf_.data(), buf_.size());
+  }
+
+  void SyncBuffer() {
+    fbb_.Reset();
+    flatbuffers::Offset<proto::ParamDesc> desc =
+        proto::ParamDesc::Pack(fbb_, desc_);
+    fbb_.Finish(desc);
+    buf_ = fbb_.Release();
+  }
+
+  size_t GetBufferMinAlignment() { return fbb_.GetBufferMinAlignment(); }
 
   ~ParamDesc() {
     if (owned_) {
@@ -169,13 +196,15 @@ class ParamDesc : public ParamDescAPI {
   bool owned_{false};
   proto::ParamDescT* desc_{nullptr};
   proto::ParamDesc_::LoDTensorDescT* lod_tensor_{nullptr};
+  flatbuffers::DetachedBuffer buf_;
+  flatbuffers::FlatBufferBuilder fbb_;
 };
 
 class CombinedParamsDesc : public CombinedParamsDescAPI {
  public:
   CombinedParamsDesc() = default;
 
-  explicit CombinedParamsDesc(const std::vector<char>& buf) {
+  explicit CombinedParamsDesc(const Buffer& buf) {
     const auto* raw_buf = proto::GetCombinedParamsDesc(buf.data());
     raw_buf->UnPackTo(&desc_);
     SyncParams();
@@ -194,13 +223,14 @@ class CombinedParamsDesc : public CombinedParamsDescAPI {
     return params_[params_.size() - 1].get();
   }
 
-  std::vector<char> data() {
+  void CopyDataToBuffer(model_parser::Buffer* buffer) {
+    CHECK(buffer);
     SyncBuffer();
-    std::vector<char> cache;
-    cache.resize(buf_.size());
-    std::memcpy(cache.data(), buf_.data(), buf_.size());
-    return cache;
+    buffer->ResetLazy(buf_.size());
+    model_parser::memcpy(buffer->data(), buf_.data(), buf_.size());
   }
+
+  size_t GetBufferMinAlignment() { return fbb_.GetBufferMinAlignment(); }
 
  private:
   void SyncParams() {

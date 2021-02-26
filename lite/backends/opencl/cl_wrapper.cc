@@ -13,7 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/opencl/cl_wrapper.h"
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#define RTLD_LAZY 0x00001
+#else
 #include <dlfcn.h>
+#endif  // _MSC_VER
 #include <string>
 #include <vector>
 
@@ -26,14 +31,29 @@ CLWrapper *CLWrapper::Global() {
 }
 
 CLWrapper::CLWrapper() {
+  if (!is_first_init_ && !opencl_lib_found_) {
+    LOG(INFO) << "This isn't first init for CLWrapper, opencl library not "
+                 "found previously";
+    return;
+  }
   opencl_lib_found_ = InitHandle();
-  CHECK(opencl_lib_found_) << "Fail to initialize the OpenCL library!";
+  if (!opencl_lib_found_) {
+    LOG(INFO) << "Failed to find and initialize Opencl library";
+    return;
+  }
+  is_first_init_ = false;
   dlsym_success_ = InitFunctions();
 }
 
 bool CLWrapper::InitHandle() {
   const std::vector<std::string> paths = {
+#if defined(__MACOSX) || defined(__APPLE__)
     "libOpenCL.so",
+    "/System/Library/Frameworks/OpenCL.framework/OpenCL",
+#elif defined(__ANDROID__)
+    "libOpenCL.so",
+    "libGLES_mali.so",
+    "libmali.so",
 #if defined(__aarch64__)
     // Qualcomm Adreno with Android
     "/system/vendor/lib64/libOpenCL.so",
@@ -41,8 +61,6 @@ bool CLWrapper::InitHandle() {
     // Arm Mali with Android
     "/system/vendor/lib64/egl/libGLES_mali.so",
     "/system/lib64/egl/libGLES_mali.so",
-    // Arm Linux
-    "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
 #else
     // Qualcomm Adreno with Android
     "/system/vendor/lib/libOpenCL.so",
@@ -50,8 +68,19 @@ bool CLWrapper::InitHandle() {
     // Arm Mali with Android
     "/system/vendor/lib/egl/libGLES_mali.so",
     "/system/lib/egl/libGLES_mali.so",
-    // Arm Linux
+#endif  // __aarch64__
+#elif defined(__linux__)
+    "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
     "/usr/lib/arm-linux-gnueabihf/libOpenCL.so",
+    // Linux OS for intel
+    // https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
+    "/opt/intel/opencl/linux/compiler/lib/intel64_lin/libOpenCL.so",
+#elif defined(_WIN64)
+    "C:/Windows/System32/OpenCL.dll",
+    "C:/Windows/SysWOW64/OpenCL.dll",
+#elif defined(_WIN32)
+    "C:/Windows/SysWOW64/OpenCL.dll",
+    "C:/Windows/System32/OpenCL.dll",
 #endif
   };
   std::string target_lib = "Unknown";
@@ -71,7 +100,10 @@ bool CLWrapper::InitHandle() {
 }
 
 bool CLWrapper::InitFunctions() {
-  CHECK(handle_ != nullptr) << "The library handle can't be null!";
+  if (handle_ == nullptr) {
+    LOG(ERROR) << "The library handle can't be null!";
+    return false;
+  }
   bool dlsym_success = true;
 
 #define PADDLE_DLSYM(cl_func)                                        \
@@ -139,6 +171,7 @@ bool CLWrapper::InitFunctions() {
   PADDLE_DLSYM(clGetEventInfo);
   PADDLE_DLSYM(clGetEventProfilingInfo);
   PADDLE_DLSYM(clGetImageInfo);
+  PADDLE_DLSYM(clGetMemObjectInfo);
   PADDLE_DLSYM(clEnqueueCopyBuffer);
   PADDLE_DLSYM(clEnqueueWriteImage);
   PADDLE_DLSYM(clEnqueueCopyImage);
@@ -695,6 +728,16 @@ CL_API_ENTRY cl_int CL_API_CALL clGetImageInfo(cl_mem image,
     CL_API_SUFFIX__VERSION_1_0 {
   return paddle::lite::CLWrapper::Global()->clGetImageInfo()(
       image, param_name, param_value_size, param_value, param_value_size_ret);
+}
+
+CL_API_ENTRY cl_int CL_API_CALL clGetMemObjectInfo(cl_mem memobj,
+                                                   cl_mem_info param_name,
+                                                   size_t param_value_size,
+                                                   void *param_value,
+                                                   size_t *param_value_size_ret)
+    CL_API_SUFFIX__VERSION_1_0 {
+  return paddle::lite::CLWrapper::Global()->clGetMemObjectInfo()(
+      memobj, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
 CL_API_ENTRY cl_int CL_API_CALL

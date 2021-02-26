@@ -39,22 +39,22 @@ bool HasInputArg(const OpInfo* op_info,
 }
 
 xtcl::DataType CvtPrecisionType(PrecisionType in_type) {
-  xtcl::DataType out_type = ::xtcl::Float(32);
+  xtcl::DataType out_type = ::xtcl::DataType::Float(32);
   switch (in_type) {
     case PRECISION(kFloat):
-      out_type = ::xtcl::Float(32);
+      out_type = ::xtcl::DataType::Float(32);
       break;
     case PRECISION(kInt8):
-      out_type = ::xtcl::Int(8);
+      out_type = ::xtcl::DataType::Int(8);
       break;
     case PRECISION(kInt16):
-      out_type = ::xtcl::Int(16);
+      out_type = ::xtcl::DataType::Int(16);
       break;
     case PRECISION(kInt32):
-      out_type = ::xtcl::Int(32);
+      out_type = ::xtcl::DataType::Int(32);
       break;
     case PRECISION(kInt64):
-      out_type = ::xtcl::Int(64);
+      out_type = ::xtcl::DataType::Int(64);
       break;
     default:
       LOG(FATAL) << "[XPU] Can not convert precision type("

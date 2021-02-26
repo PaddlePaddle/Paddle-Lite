@@ -91,13 +91,21 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
     } else {
       bool out_type_int8 = true;
+      // Quantized lstm has fp32 output
+      if (instruct.op_type() == "lstm" || instruct.op_type() == "gru") {
+        out_type_int8 = false;
+      }
       // Only if all ops linked to this op output has enable_int8 attr,
       // then the op output type is int8, or fp32.
+      // Note, the quantized op linked to lstm and gru should output fp32
+      // tensor.
       for (auto* out_n : node.outlinks) {
         CHECK(out_n->IsArg());
         for (auto* tmp_op : out_n->outlinks) {
           CHECK(tmp_op->IsStmt());
-          if (!tmp_op->AsStmt().op_info()->HasAttr("enable_int8")) {
+          auto* tmp_op_info = tmp_op->AsStmt().op_info();
+          if (!tmp_op_info->HasAttr("enable_int8") ||
+              tmp_op_info->Type() == "lstm" || tmp_op_info->Type() == "gru") {
             out_type_int8 = false;
             break;
           }

@@ -15,7 +15,11 @@
 #include "lite/core/profile/basic_profiler.h"
 #include <map>
 #include <string>
-
+#ifdef LITE_WITH_XCODE
+const char* FLAGS_time_profile_file = "time_profile.txt";
+const char* FLAGS_time_profile_summary_file = "time_profile_summary.txt";
+const char* FLAGS_time_profile_unit = "ms";
+#else
 DEFINE_string(time_profile_file,
               "time_profile.txt",
               "Lite time profile information dump file");
@@ -27,7 +31,7 @@ DEFINE_string(time_profile_summary_file,
 DEFINE_string(time_profile_unit,
               "ms",
               "Unit of time in profile infomation, ms or us");
-
+#endif
 namespace paddle {
 namespace lite {
 namespace profile {
@@ -104,8 +108,8 @@ void BasicTimer::Log(TimerInfo* timer_info, uint64_t timespan) {
   CHECK(timer_info);
   timer_info->count_++;
   timer_info->total_ += timespan;
-  timer_info->max_ = std::max(timer_info->max_, timespan);
-  timer_info->min_ = std::min(timer_info->min_, timespan);
+  timer_info->max_ = (std::max)(timer_info->max_, timespan);
+  timer_info->min_ = (std::min)(timer_info->min_, timespan);
 }
 
 std::string BasicTimer::basic_repr_header() {
@@ -181,8 +185,8 @@ std::string BasicProfiler<TimerT>::summary_repr() const {
 
     total += kernel_timer.total_;
     op_timer.total_ += kernel_timer.total_;
-    op_timer.max_ = std::max(kernel_timer.max_, op_timer.max_);
-    op_timer.min_ = std::min(kernel_timer.min_, op_timer.min_);
+    op_timer.max_ = (std::max)(kernel_timer.max_, op_timer.max_);
+    op_timer.min_ = (std::min)(kernel_timer.min_, op_timer.min_);
     op_timer.count_ += kernel_timer.count_;
   }
 

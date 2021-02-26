@@ -18,6 +18,9 @@
 #include <string>
 #include <vector>
 
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#endif
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
@@ -39,15 +42,11 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
                                            DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::ConvParam;
-  using kernel_t = void (ConvImageCompute::*)(bool);
+  using kernel_t = void (ConvImageCompute::*)();
 
   void PrepareForRun() override;
-
   void ReInitWhenNeeded() override;
-
   void Run() override;
-
-  double Tune(int times = 5);
 
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
@@ -61,17 +60,20 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
 
  private:
   void PrintConvInfo();
-  void GetGlobalWorkSize();
-  void Conv2d1x1opt(bool enable_tune = false);
-  void Conv2d3x3(bool enable_tune = false);
-  void Conv2d3x3opt(bool enable_tune = false);
-  void Conv2d5x5(bool enable_tune = false);
-  void Conv2d5x5opt(bool enable_tune = false);
-  void Conv2d7x7(bool enable_tune = false);
-  void Conv2d7x7opt(bool enable_tune = false);
-  void DepthwiseConv2d3x3s1(bool enable_tune = false);
-  void DepthwiseConv2d3x3(bool enable_tune = false);
-  void DepthwiseConv2d(bool enable_tune = false);
+  void SetGlobalWorkSize();
+  void SetLocalWorkSize(size_t repeats = 4);
+  std::string GenerateTunedKey();
+  void Conv2d1x1opt();
+  void Conv2d3x3();
+  void Conv2d3x3opt();
+  void Conv2d5x5();
+  void Conv2d5x5opt();
+  void Conv2d7x7();
+  void Conv2d7x7opt();
+  void DepthwiseConv2d3x3s1();
+  void DepthwiseConv2d3x3();
+  void DepthwiseConv2d();
+  void Conv2dCommon();
 
   param_t* conv_param_{nullptr};
 
@@ -152,7 +154,6 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::NDRange local_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
-  bool use_tune_{false};
 };
 
 }  // namespace opencl

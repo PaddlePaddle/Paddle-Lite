@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Name: ast.py
+Usage: parser kernel registries from .cc source files into python struct `KernelRegistry`,
+       we will generate `all_kernel_faked.cc` by calling this module. 
+"""
 import logging
 
 class SyntaxParser(object):
@@ -166,6 +171,7 @@ class KernelRegistry:
         self.alias = ''
         self.inputs = []
         self.outputs = []
+        self.op_versions = []
 
     def __repr__(self):
         str = "Kernel({op_type}, {target}, {precision}, {data_layout}, {alias}):".format(
@@ -191,9 +197,10 @@ class RegisterLiteKernelParser(SyntaxParser):
 
         self.kernels = []
 
-    def parse(self, with_extra):
+    def parse(self, with_extra, enable_arm_fp16):
         find_registry_command = False
         extra_command = []
+        arm_fp16_command = []
         # Get the code location of extra kernels registry
         # extra kernels registries are surrounded by
         # "#ifdef LITE_BUILD_EXTRA" and "#endif // LITE_BUILD_EXTRA"
@@ -205,6 +212,21 @@ class RegisterLiteKernelParser(SyntaxParser):
                if end != -1:
                    extra_command += extra_command + list(range(start, end + 1))
                    self.cur_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
+               else:
+                   break
+            else:
+                break
+        # Get the code location of arm_fp16 kernels registry
+        # arm_fp16 kernels registries are surrounded by
+        # "#ifdef ENABLE_ARM_FP16" and "#endif"
+        while self.cur_pos < len(self.str):
+            start = self.str.find("#ifdef ENABLE_ARM_FP16", self.cur_pos)
+            if start != -1:
+               self.cur_pos = start
+               end = self.str.find("#endif  // ENABLE_ARM_FP16", self.cur_pos)
+               if end != -1:
+                   arm_fp16_command += arm_fp16_command + list(range(start, end + 1))
+                   self.cur_pos = end + len("#endif  // ENABLE_ARM_FP16") -1
                else:
                    break
             else:
@@ -222,6 +244,10 @@ class RegisterLiteKernelParser(SyntaxParser):
                     continue
                 # if with_extra == "OFF", extra kernels will not be parsed
                 if with_extra != "ON" and start in extra_command:
+                    self.cur_pos = start + len(self.KEYWORD) -1
+                    continue
+                # if enable_arm_fp16 == "OFF", arm_fp16 kernels will not be parsed
+                if enable_arm_fp16 != "ON" and start in arm_fp16_command:
                     self.cur_pos = start + len(self.KEYWORD) -1
                     continue
                 self.cur_pos = start
@@ -306,13 +332,22 @@ class RegisterLiteKernelParser(SyntaxParser):
             self.eat_right_parentheses()
             self.eat_spaces()
 
-
+        def eat_op_version(io):
+            self.eat_left_parentheses()
+            self.eat_str()
+            io.name = self.token
+            self.eat_comma()
+            self.eat_spaces()
+            self.eat_word()
+            io.version = self.token
+            self.eat_right_parentheses()
+            self.eat_spaces()
         # eat input and output
         while self.cur_pos < len(self.str):
             self.eat_point()
             self.eat_spaces()
             self.eat_word()
-            assert self.token in ('BindInput', 'BindOutput', 'SetVersion', 'Finalize')
+            assert self.token in ('BindInput', 'BindOutput', 'SetVersion', 'BindPaddleOpVersion', 'Finalize')
             io = IO()
 
             if self.token == 'BindInput':
@@ -327,6 +362,11 @@ class RegisterLiteKernelParser(SyntaxParser):
                 self.version = self.token
                 self.eat_right_parentheses()
                 self.eat_spaces()
+            # skip `BindPaddleOpVersion` command during parsing kernel registry 
+            elif self.token == 'BindPaddleOpVersion':
+                # eg BindPaddleOpVersion("fill_constant", 1)
+                eat_op_version(io)
+                k.op_versions.append(io)
             else:
                 self.eat_left_parentheses()
                 self.eat_right_parentheses()
@@ -379,6 +419,3 @@ if __name__ == '__main__':
         kernel_parser = RegisterLiteKernelParser(c)
 
         kernel_parser.parse()
-
-#        for k in kernel_parser.kernels:
-#            print k

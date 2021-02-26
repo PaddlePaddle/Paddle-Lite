@@ -45,6 +45,11 @@ T naive_max(T a, T b) {
 }
 
 template <class T>
+T naive_min(T a, T b) {
+  return a > b ? a : b;
+}
+
+template <class T>
 T naive_div(T a, T b) {
   return a / b;
 }
@@ -110,6 +115,7 @@ enum class BroadcastType {
 template <class DimValue_t>
 BroadcastType get_broadcast_type(DimValue_t *x_dims,
                                  DimValue_t *y_dims,
+                                 DimValue_t *z_dims,
                                  int dim_size) {
   if (memcmp(x_dims, y_dims, sizeof(DimValue_t) * dim_size) == 0) {
     return BroadcastType::SAME_DIM;
@@ -124,6 +130,14 @@ BroadcastType get_broadcast_type(DimValue_t *x_dims,
 
   int pos = dim_size - 1;
   while (pos >= 0 && x_dims[pos] == y_dims[pos] && x_dims[pos] == 1) {
+    if (z_dims[pos] != 1) {
+      LOG(FATAL) << "Unsupported broadcast type detected.";
+      // Note: This is the 4th type of broadcast, It is not implemented to
+      // reduce code complexity
+      // e.g.
+      // X.shape=[10,1],Y.shape=[10,1],Z.shape=[10,5] will match this pattern
+      return BroadcastType::DIM_NOT_MATCH;
+    }
     --pos;
   }
   if (x_dims[pos] == y_dims[pos]) {
@@ -145,15 +159,51 @@ struct BatchElementWiseArgMemPointer {
   Elem_t *z_data = nullptr;
 };
 
+struct StaticBatchElementWiseArg {
+  StaticBatchElementWiseArg(
+      int64_t elem_num_per_batch,
+      int64_t batch_num,
+      BroadcastType bcast_type,
+      std::vector<BatchElementWiseArgMemPointer<void>> cached_offset)
+      : elem_num_per_batch_(elem_num_per_batch),
+        batch_num_(batch_num),
+        bcast_type_(bcast_type),
+        cached_ptr_v(cached_offset) {}
+  BroadcastType BcastType() const { return bcast_type_; }
+  int64_t ElemNumPerBatch() const { return batch_num_; }
+  int64_t BatchNum() const { return elem_num_per_batch_; }
+
+  BatchElementWiseArgMemPointer<void> AllAtBatch(int64_t batch_id) {
+    return cached_ptr_v[batch_id];
+  }
+
+  const void *XAtBatch(int64_t batch_id) const {
+    return cached_ptr_v[batch_id].x_data;
+  }
+  const void *YAtBatch(int64_t batch_id) const {
+    return cached_ptr_v[batch_id].y_data;
+  }
+  void *ZAtBatch(int64_t batch_id) const {
+    return cached_ptr_v[batch_id].z_data;
+  }
+
+ private:
+  int64_t elem_num_per_batch_;
+  int64_t batch_num_;
+  BroadcastType bcast_type_;
+  std::vector<BatchElementWiseArgMemPointer<void>> cached_ptr_v;
+};
+
 template <class Elem_t, class DimValue_t>
 struct BatchElementWiseArg {
   BroadcastType BcastType() const { return broadcast_type_; }
   int64_t ElemNumPerBatch() const { return continuous_length_; }
   int64_t BatchNum() const { return z_num_ / continuous_length_; }
 
-  BatchElementWiseArgMemPointer<Elem_t> AllAtBatch(int64_t elem_id) {
+  BatchElementWiseArgMemPointer<Elem_t> AllAtBatch(int64_t batch_id) {
     BatchElementWiseArgMemPointer<Elem_t> ret = {x_data_, y_data_, z_data_};
     int64_t ind = 0;
+    int64_t elem_id = batch_id * continuous_length_;
     for (int64_t i = 0; i < dim_size_; ++i) {
       ind = elem_id / element_id_stride_[i];
       ret.x_data += bcast_x_stride_[i] * ind;
@@ -213,6 +263,11 @@ struct BatchElementWiseArg {
               int dim_size,
               BroadcastType broadcast_type = BroadcastType::UNKNOWN);
 
+  /**
+   * Convert to a static offset, which could be used later
+   */
+  StaticBatchElementWiseArg ToStaticArg();
+
  private:
   const Elem_t *x_data_ = nullptr;
   const Elem_t *y_data_ = nullptr;
@@ -271,8 +326,8 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
     BroadcastType broadcast_type) {
   // arg checking
   if (broadcast_type == BroadcastType::UNKNOWN) {
-    LOG(INFO) << "No broadcast type input";
-    broadcast_type = get_broadcast_type(x_dims, y_dims, dim_size);
+    VLOG(4) << "No broadcast type input";
+    broadcast_type = get_broadcast_type(x_dims, y_dims, z_dims, dim_size);
   }
   if (broadcast_type == BroadcastType::UNKNOWN ||
       broadcast_type == BroadcastType::DIM_NOT_MATCH) {
@@ -281,7 +336,7 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
   }
   if (broadcast_type == BroadcastType::SAME_DIM) {
     broadcast_type = BroadcastType::BOTH_CONTINUOUS;
-    LOG(INFO) << "Same dim detected";
+    VLOG(4) << "Same dim detected";
     // SAME_DIM should not be treated as broadcast. For SAME_DIM is a special
     // case of BOTH_CONTINUOUS, we could still process it.
   }
@@ -369,6 +424,18 @@ void BatchElementWiseArg<Elem_t, DimValue_t>::Update(
   bcast_y_stride_ = std::move(bcast_y_stride);
   z_stride_ = std::vector<DimValue_t>(z_stride, z_stride + dim_size);
   element_id_stride_ = std::move(element_id_stride);
+}
+template <class Elem_t, class DimValue_t>
+StaticBatchElementWiseArg
+BatchElementWiseArg<Elem_t, DimValue_t>::ToStaticArg() {
+  std::vector<BatchElementWiseArgMemPointer<void>> offset(BatchNum());
+  for (int i = 0; i < BatchNum(); ++i) {
+    offset[i].x_data = XAtBatch(i);
+    offset[i].y_data = YAtBatch(i);
+    offset[i].z_data = ZAtBatch(i);
+  }
+  StaticBatchElementWiseArg ret(
+      ElemNumPerBatch(), BatchNum(), BcastType(), offset);
 }
 
 template <class T>
@@ -492,13 +559,25 @@ void fix_x_y_dims(const Tensor *X,
     }
   } else {
     if (X->dims().size() != Out->dims().size()) {
-      LOG(FATAL) << "X and OUT dim size mismatch";
-    }
-    for (int i = 0; i < out_dim_size; ++i) {
-      x_dims[i] = X->dims()[i];
-    }
-    for (int i = axis; i < out_dim_size; ++i) {
-      y_dims[i + axis] = Y->dims()[i];
+      if (Y->dims().size() != Out->dims().size()) {
+        LOG(FATAL) << "X/Y and OUT dim size mismatch";
+      } else {
+        VLOG(4) << "Arguments broke API reference, for X.dims().size() is "
+                   "smaller and axis is set";
+        for (int i = 0; i < out_dim_size; ++i) {
+          y_dims[i] = Y->dims()[i];
+        }
+        for (int i = 0; i < X->dims().size(); ++i) {
+          x_dims[i + axis] = X->dims()[i];
+        }
+      }
+    } else {
+      for (int i = 0; i < out_dim_size; ++i) {
+        x_dims[i] = X->dims()[i];
+      }
+      for (int i = 0; i < Y->dims().size(); ++i) {
+        y_dims[i + axis] = Y->dims()[i];
+      }
     }
   }
 }
