@@ -43,7 +43,7 @@ void IncrementCompute<T, PType>::Run() {
 
 using increment_float32 =
     paddle::lite::kernels::host::IncrementCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(increment, kHost, kFloat, kAny, increment_float32, float32)
+REGISTER_LITE_KERNEL(increment, kHost, kFloat, kAny, increment_float32, def)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny), -1)})

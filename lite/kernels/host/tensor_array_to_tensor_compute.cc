@@ -28,7 +28,7 @@ void TensorArrayToTensorCompute::Run() {
   auto X = *param.X;
   int axis = param.axis;
   size_t n = X.size();
-  auto OutIndex_data = OutIndex->mutable_data<float>();
+  auto OutIndex_data = OutIndex->mutable_data<int32_t>();
 
   std::vector<Tensor*> inputs;
   for (int i = 0; i < n; i++) {
@@ -39,10 +39,33 @@ void TensorArrayToTensorCompute::Run() {
 
   bool use_stack = param.use_stack;
   auto out = param.Out;
-  if (use_stack) {
-    lite::host::math::stack_func<float>(inputs, axis, out);
-  } else {
-    lite::host::math::concat_func<float>(inputs, axis, out);
+  if (inputs.size() > 0) {
+    auto precision = inputs[0]->precision();
+    if (use_stack) {
+      switch (precision) {
+        case PRECISION(kFloat):
+          lite::host::math::stack_func<float>(inputs, axis, out);
+          break;
+        case PRECISION(kInt64):
+          lite::host::math::stack_func<int64_t>(inputs, axis, out);
+          break;
+        default:
+          LOG(ERROR) << "Unsupported type " << PrecisionToStr(precision);
+          break;
+      }
+    } else {
+      switch (precision) {
+        case PRECISION(kFloat):
+          lite::host::math::concat_func<float>(inputs, axis, out);
+          break;
+        case PRECISION(kInt64):
+          lite::host::math::concat_func<int64_t>(inputs, axis, out);
+          break;
+        default:
+          LOG(ERROR) << "Unsupported type " << PrecisionToStr(precision);
+          break;
+      }
+    }
   }
   param.X->clear();
 }

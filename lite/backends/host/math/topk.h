@@ -13,25 +13,18 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/operators/assign_value_op.h"
+
+#include <cstdint>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace host {
+namespace math {
 
-class AssignValueCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  using param_t = operators::AssignValueParam;
+void topk(
+    const float* din, float* out_val, int64_t* out_ind, int m, int n, int k);
 
-  void Run() override;
-
-  virtual ~AssignValueCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace math
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle

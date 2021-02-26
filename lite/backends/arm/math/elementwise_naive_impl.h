@@ -68,6 +68,11 @@ static inline T __attribute__((__always_inline__)) naive_pow(T l, T r) {
   return std::pow(l, r);
 }
 
+template <typename T>
+static inline T __attribute__((__always_inline__)) naive_floordiv(T l, T r) {
+  return std::trunc(l / r);
+}
+
 template <typename T, T naive_op(T, T)>
 static void naive_elementwise_op(const T* dinx,
                                  const T* diny,

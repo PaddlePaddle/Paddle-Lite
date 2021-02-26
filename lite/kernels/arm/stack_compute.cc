@@ -13,19 +13,42 @@
 // limitations under the License.
 
 #include "lite/kernels/host/stack_compute.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
-using stack_float =
+using stack_float32 =
     paddle::lite::kernels::host::StackCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(stack, kARM, kFloat, kNCHW, stack_float, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+REGISTER_LITE_KERNEL(stack, kARM, kFloat, kAny, stack_float32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
 using stack_int32 =
-    paddle::lite::kernels::host::StackCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(stack, kARM, kInt32, kNCHW, stack_int32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    paddle::lite::kernels::host::StackCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kARM, kFloat, kAny, stack_int32, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using stack_int64 =
+    paddle::lite::kernels::host::StackCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kARM, kFloat, kAny, stack_int64, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
     .Finalize();

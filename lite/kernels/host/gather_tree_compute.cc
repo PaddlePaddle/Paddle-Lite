@@ -51,8 +51,9 @@ void GatherTreeCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using GatherTreeInt32 = paddle::lite::kernels::host::GatherTreeCompute<int32_t>;
-REGISTER_LITE_KERNEL(gather_tree, kHost, kFloat, kAny, GatherTreeInt32, int32)
+using gather_tree_int32 =
+    paddle::lite::kernels::host::GatherTreeCompute<int32_t>;
+REGISTER_LITE_KERNEL(gather_tree, kHost, kFloat, kAny, gather_tree_int32, int32)
     .BindInput("Ids",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
@@ -67,8 +68,9 @@ REGISTER_LITE_KERNEL(gather_tree, kHost, kFloat, kAny, GatherTreeInt32, int32)
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-using GatherTreeInt64 = paddle::lite::kernels::host::GatherTreeCompute<int64_t>;
-REGISTER_LITE_KERNEL(gather_tree, kHost, kFloat, kAny, GatherTreeInt64, int64)
+using gather_tree_int64 =
+    paddle::lite::kernels::host::GatherTreeCompute<int64_t>;
+REGISTER_LITE_KERNEL(gather_tree, kHost, kFloat, kAny, gather_tree_int64, int64)
     .BindInput("Ids",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt64),

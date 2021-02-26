@@ -65,6 +65,11 @@ T naive_pow(T a, T b) {
 }
 
 template <class T>
+T naive_floordiv(T a, T b) {
+  return std::trunc(a / b);
+}
+
+template <class T>
 using BinaryOpFn = T(T, T);
 
 template <class T>

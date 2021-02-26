@@ -14,12 +14,41 @@
 
 #include "lite/kernels/host/increment_compute.h"
 
-REGISTER_LITE_KERNEL(increment,
-                     kARM,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::host::IncrementCompute,
-                     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+using increment_float32 =
+    paddle::lite::kernels::host::IncrementCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(increment, kARM, kFloat, kAny, increment_float32, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using increment_int32 =
+    paddle::lite::kernels::host::IncrementCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(increment, kARM, kFloat, kAny, increment_int32, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using increment_int64 =
+    paddle::lite::kernels::host::IncrementCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(increment, kARM, kFloat, kAny, increment_int64, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
     .Finalize();

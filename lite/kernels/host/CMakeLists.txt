@@ -48,7 +48,8 @@ add_kernel(crop_tensor_compute_host Host extra SRCS crop_tensor_compute.cc DEPS 
 add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(flatten_contiguous_range_compute_host Host extra SRCS flatten_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_host)
-add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_host)
+add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps})
+#add_kernel(activation_compute_host Host extra SRCS activation_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(box_coder_compute_host Host basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(gather_compute_host Host extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(gather_nd_compute_host Host extra SRCS gather_nd_compute.cc DEPS ${lite_kernel_deps})
@@ -61,6 +62,8 @@ add_kernel(expand_v2_compute_host Host extra SRCS expand_v2_compute.cc DEPS ${li
 add_kernel(strided_slice_compute_host Host extra SRCS strided_slice_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(fill_any_like_compute_host Host extra SRCS fill_any_like_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(scatter_nd_add_compute_host Host extra SRCS scatter_nd_add_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(assign_value_compute_host Host extra SRCS assign_value_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(topk_compute_host Host extra SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_host)
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)

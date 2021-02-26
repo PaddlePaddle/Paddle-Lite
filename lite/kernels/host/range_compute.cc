@@ -38,9 +38,9 @@ void RangeCompute<T, PType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using range_float =
+using range_float32 =
     paddle::lite::kernels::host::RangeCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_float, def)
+REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_float32, def)
     .BindInput("Start",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kFloat),
@@ -81,8 +81,8 @@ REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int64, int64)
     .Finalize();
 
 using range_int32 =
-    paddle::lite::kernels::host::RangeCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(range, kHost, kInt32, kAny, range_int32, def)
+    paddle::lite::kernels::host::RangeCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int32, int32)
     .BindInput("Start",
                {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),

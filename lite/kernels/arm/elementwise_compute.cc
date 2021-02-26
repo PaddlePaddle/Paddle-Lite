@@ -517,6 +517,18 @@ void ElementwisePowCompute<T, PType>::Run() {
       paddle::lite::kernels::host::naive_pow<T>);
 }
 
+template <typename T, PrecisionType PType>
+void ElementwiseFloorDivCompute<T, PType>::Run() {
+  elementwise_compute_template<operators::ElementwiseParam,
+                               T,
+                               OprandSwapable::YES,
+                               arm_math::NullNeonConfig>(
+      this,
+      lite::arm::math::elementwise_floordiv_broadcast<T>,
+      lite::arm::math::elementwise_floordiv<T>,
+      paddle::lite::kernels::host::naive_floordiv<T>);
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -766,4 +778,46 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using elementwise_floordiv_float32 =
+    paddle::lite::kernels::arm::ElementwiseFloorDivCompute<float,
+                                                           PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(elementwise_floordiv,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     elementwise_floordiv_float32,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+using elementwise_floordiv_int32 =
+    paddle::lite::kernels::arm::ElementwiseFloorDivCompute<int32_t,
+                                                           PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(elementwise_floordiv,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     elementwise_floordiv_int32,
+                     int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+
+using elementwise_floordiv_int64 =
+    paddle::lite::kernels::arm::ElementwiseFloorDivCompute<int64_t,
+                                                           PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(elementwise_floordiv,
+                     kARM,
+                     kFloat,
+                     kNCHW,
+                     elementwise_floordiv_int64,
+                     int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
