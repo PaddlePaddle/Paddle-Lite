@@ -2948,18 +2948,6 @@ void loadb_trans(
   x_block *= NBLOCK;                                                        \
   x_block = x_block < NBLOCK ? NBLOCK : x_block;
 
-#define X_BLOCK_COMPUTE_A53(l2_cache, MBLOCK, NBLOCK, M, N, K)               \
-  int x_block =                                                              \
-      ((l2_cache * 9 / 10) - (MBLOCK * K)) / (sizeof(float) * (K + MBLOCK)); \
-  x_block /= NBLOCK;                                                         \
-  x_block = (x_block == 0) ? 1 : x_block;                                    \
-  x_block *= NBLOCK;                                                         \
-  int x_num = (N + (x_block - 1)) / x_block;                                 \
-  x_block = (N + x_num - 1) / x_num;                                         \
-  x_block = (x_block + NBLOCK - 1) / NBLOCK;                                 \
-  x_block *= NBLOCK;                                                         \
-  x_block = x_block < NBLOCK ? NBLOCK : x_block;
-
 #ifdef __aarch64__
 void sgemm_prepacked_8x12(bool is_transB,
                           int M,
@@ -3800,7 +3788,7 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
       alpha[3] = local_alpha;
     }
   }
-  X_BLOCK_COMPUTE_A53(l2_cache, MBLOCK, NBLOCK, M, N, K)
+  X_BLOCK_COMPUTE((l2_cache * 9 / 10), MBLOCK, NBLOCK, M, N, K)
 
   // unroll 2 loop
   int tail_pre = (K & (KBLOCK - 1));
@@ -6015,7 +6003,7 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
   size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   auto* workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
-  X_BLOCK_COMPUTE_A53(l2_cache, MBLOCK_OTH, NBLOCK, M, N, K)
+  X_BLOCK_COMPUTE((l2_cache * 9 / 10), MBLOCK_OTH, NBLOCK, M, N, K)
 
   int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
   int tail_pre = (K & (KBLOCK - 1));
