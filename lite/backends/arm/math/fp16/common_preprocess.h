@@ -52,6 +52,7 @@ typedef __fp16 float16_t;
   int x_block =                                                       \
       (llc_size - (MBLOCK * K)) / (sizeof(float16_t) * (K + MBLOCK)); \
   x_block /= NBLOCK;                                                  \
+  x_block = (x_block == 0) ? 1 : x_block;                             \
   x_block *= NBLOCK;                                                  \
   int x_num = (N + (x_block - 1)) / x_block;                          \
   x_block = (N + x_num - 1) / x_num;                                  \
