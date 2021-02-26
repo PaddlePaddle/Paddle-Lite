@@ -60,7 +60,7 @@ void DensityPriorBoxCompute::Run() {
 #ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for reduction(+ : num_priors)
 #endif
-  for (size_t i = 0; i < densities.size(); ++i) {
+  for (int i = 0; i < densities.size(); ++i) {
     num_priors += (fixed_ratios.size()) * (pow(densities[i], 2));
   }
 
