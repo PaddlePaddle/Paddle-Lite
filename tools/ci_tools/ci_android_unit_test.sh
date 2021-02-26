@@ -22,6 +22,11 @@ skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
             "test_mobilenet_v1_int8_dygraph_arm" "test_ocr_lstm_int8_arm" \
             "test_lac_crf_fp32_arm" "test_nlp_lstm_int8_arm")
 
+# if operating in mac env, we should expand the maximum file num
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
+   ulimit -n 1024
+fi
 
 ####################################################################################################
 # 1. functions of prepare workspace before compiling
@@ -96,7 +101,7 @@ function build_android {
   cd - > /dev/null
 }
 
-function test_arm_android {
+function test_arm_unit_test {
   unit_test=$1
   adb_devices=$2
   adb_work_dir=$3
@@ -130,7 +135,7 @@ function build_test_android {
       done
 
       if [[ $to_skip -eq 0 ]]; then
-          test_arm_android $_test ${adb_devices[0]} $adb_workdir
+          test_arm_unit_test $_test ${adb_devices[0]} $adb_workdir
       fi
   done
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"

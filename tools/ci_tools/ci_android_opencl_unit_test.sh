@@ -23,6 +23,11 @@ skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
              "test_mobilenet_v1_int8_dygraph_arm" "test_ocr_lstm_int8_arm" \
              "test_lac_crf_fp32_arm" "test_nlp_lstm_int8_arm")
 
+# if operating in mac env, we should expand the maximum file num
+os_name=`uname -s`
+if [ ${os_name} == "Darwin" ]; then
+   ulimit -n 1024
+fi
 
 ####################################################################################################
 # 1. functions of prepare workspace before compiling
