@@ -30,8 +30,12 @@ void encode_center_size(const int64_t row,  // N
                         const std::vector<float> variance,
                         float* output) {
 #ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
 #pragma omp parallel for collapse(2)
-#endif
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
   for (int64_t i = 0; i < row; ++i) {
     for (int64_t j = 0; j < col; ++j) {
       size_t offset = i * col * len + j * len;
@@ -67,8 +71,12 @@ void encode_center_size(const int64_t row,  // N
 
   if (prior_box_var_data) {
 #ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
 #pragma omp parallel for collapse(3)
-#endif
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
     for (int64_t i = 0; i < row; ++i) {
       for (int64_t j = 0; j < col; ++j) {
         for (int64_t k = 0; k < len; ++k) {
@@ -80,8 +88,12 @@ void encode_center_size(const int64_t row,  // N
     }
   } else if (!(variance.empty())) {
 #ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
 #pragma omp parallel for collapse(3)
-#endif
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
     for (int64_t i = 0; i < row; ++i) {
       for (int64_t j = 0; j < col; ++j) {
         for (int64_t k = 0; k < len; ++k) {
@@ -105,8 +117,12 @@ void decode_center_size(const int axis,
                         const std::vector<float> variance,
                         float* output) {
 #ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
 #pragma omp parallel for collapse(2)
-#endif
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
   for (int64_t i = 0; i < row; ++i) {
     for (int64_t j = 0; j < col; ++j) {
       float var_data[4] = {1., 1., 1., 1.};

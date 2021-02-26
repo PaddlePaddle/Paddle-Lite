@@ -19,7 +19,6 @@
  */
 #pragma once
 
-#include <sys/time.h>
 #include <time.h>
 
 #include <cmath>
@@ -50,19 +49,19 @@ namespace lite {
 namespace profile {
 
 static const std::string get_date_str() {
-  struct tm tm_time;
-  time_t timestamp = time(NULL);
-  localtime_r(&timestamp, &tm_time);
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
+  auto timestamp =
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::high_resolution_clock::now().time_since_epoch())
+          .count();
+  std::time_t time_t = timestamp / 1000000;
+  auto gmtime = std::gmtime(&time_t);
+  char buffer[32];
+  strftime(buffer, 32, "%Y-%m-%d_%H-%M-%S_", gmtime);
+  char microseconds[8];
+  snprintf(microseconds, sizeof(microseconds), "%06ld", timestamp % 1000000);
 
   // print date / time
-  std::string date_str =
-      std::to_string(1900 + tm_time.tm_year) +
-      std::to_string(1 + tm_time.tm_mon) + std::to_string(tm_time.tm_mday) +
-      '_' + std::to_string(tm_time.tm_hour) + std::to_string(tm_time.tm_min) +
-      std::to_string(tm_time.tm_sec) + '_' + std::to_string(tv.tv_usec / 1000);
-  return date_str;
+  return std::string(buffer) + microseconds;
 }
 
 inline std::string generate_valid_tensor_name(const std::string& name) {
