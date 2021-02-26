@@ -398,7 +398,7 @@ void Program::PrepareWorkspace(
       VLOG(4) << "Var " << var_name << " in block " << block_idx;
       VLOG(4) << " - type " << static_cast<int>(var_type);
 
-#ifdef LITE_WITH_XPU
+#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
       if (!var_desc->Persistable()) {
 #endif
         // Collect precision info into var_type_map_
@@ -414,7 +414,7 @@ void Program::PrepareWorkspace(
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
         }
-#ifdef LITE_WITH_XPU
+#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
       }
 #endif
 

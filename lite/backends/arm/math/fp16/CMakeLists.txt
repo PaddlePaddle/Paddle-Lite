@@ -9,4 +9,5 @@ cc_library(math_arm_fp16 SRCS
     conv3x3s1_depthwise_relu_fp16.cc
     conv3x3s2_depthwise_relu_fp16.cc
     softmax_fp16.cc
+    type_trans_fp16.cc
     DEPS ${lite_kernel_deps} context tensor)

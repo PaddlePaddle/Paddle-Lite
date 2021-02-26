@@ -28,6 +28,10 @@ List of devices attached
 执行以下命令，完成Benchmark：
 
 ```shell
+# Test v2.8 branch
+wget -c https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/benchmark_2.8/run_benchmark.sh
+sh run_benchmark.sh
+
 # Test v2.6 branch
 wget -c https://paddle-inference-dist.bj.bcebos.com/PaddleLite/benchmark_2.6/run_benchmark.sh
 sh run_benchmark.sh
@@ -133,9 +137,9 @@ sh benchmark.sh ./benchmark_bin_v8 ./benchmark_models result_armv8.txt true
 
 **查看测试结果**
 
-在当前目录的`result_armv7.txt`和`result_armv8.txt`文件，查看测试结果。
+在当前目录的`result_armv7.txt`和`result_armv8.txt`文件，查看测试结果，举例如下。
 
-> 不同手机，不同版本，测试模型的性能数据不同。
+> 注意：不同手机，不同版本，测试模型的性能数据不同。
 
 ```shell
 run benchmark armv8
