@@ -126,7 +126,7 @@ template uint8_t *Tensor::mutable_data(TargetType type) const;
 template bool *Tensor::mutable_data(TargetType type) const;
 #ifdef ENABLE_ARM_FP16
 template const __fp16 *Tensor::data<__fp16>() const;
-template float *__fp16 ::mutable_data(TargetType type) const;
+template _fp16 *Tensor::mutable_data(TargetType type) const;
 #endif
 
 template <typename T, TargetType type>
