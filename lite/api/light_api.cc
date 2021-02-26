@@ -15,6 +15,9 @@
 #include "lite/api/light_api.h"
 #include <algorithm>
 #include <map>
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -278,9 +281,8 @@ void LightPredictor::WeightFP32ToFP16() {
 
             float16_t* fp_data = input_tensor->mutable_data<float16_t>();
             const float* in_data = tmp_tensor.data<float>();
-            for (int n = 0; n < input_tensor->numel(); n++) {
-              fp_data[i] = static_cast<float16_t>(in_data[i]);
-            }
+            lite::arm::math::fp16::fp32_to_fp16(
+                in_data, fp_data, input_tensor->numel());
           }
         }
       }
