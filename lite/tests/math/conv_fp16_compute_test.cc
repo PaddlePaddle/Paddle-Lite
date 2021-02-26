@@ -272,7 +272,7 @@ void test_conv_fp16(const DDim dim_in,
   delete param.bias;
 }
 #else
-void test_conv_fp16(const std::vector<DDim>& input_dims,
+void test_conv_fp16(const DDim dim_in,
                     const DDim& weight_dim,
                     int group,
                     const std::vector<int>& strides,
@@ -292,15 +292,13 @@ TEST(TestConv3x3DwFp16, test_conv3x3_depthwise) {
       for (auto& pad : {0, 1}) {
         for (auto& flag_bias : {false, true}) {
           for (auto& flag_act : {0, 1}) {
-            std::vector<DDim> dims;
             for (auto& c : {4, 7, 8, 10, 11, 16}) {
               DDim weights_dim({c, 1, 3, 3});
               for (auto& batch : {1}) {
                 for (auto& h : {12, 13, 14, 15, 16, 17, 18, 33}) {
-                  dims.clear();
-                  dims.push_back(DDim({batch, c, h, h}));
+                  DDim dim_in({batch, c, h, h});
                   const float leakey_relu_scale = 1.0f;
-                  test_conv_fp16(dims,
+                  test_conv_fp16(dim_in,
                                  weights_dim,
                                  c,
                                  {stride, stride},
@@ -336,15 +334,13 @@ TEST(TestConv3x3s2, test_conv_3x3s2) {
                     if (cin == 1 && cout == 1) {
                       continue;
                     }
-                    std::vector<DDim> dims;
                     DDim weights_dim({cout, cin, 3, 3});
                     for (auto& batch : {1, 2}) {
                       for (auto& h : {3, 7, 15, 56, 32}) {
-                        dims.clear();
-                        dims.push_back(DDim({batch, cin, h, h}));
+                        DDim dim_in({batch, cin, h, h});
                         const float leakey_relu_scale = 1.0f;
                         test_conv_fp16(
-                            in_dim,
+                            dim_in,
                             weights_dim,
                             1,
                             {2, 2},
