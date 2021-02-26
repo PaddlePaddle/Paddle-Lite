@@ -473,7 +473,6 @@ void Instruction::Run() {
 #endif
   CHECK(op_) << "op null";
   CHECK(kernel_) << "kernel null";
-  LOG(INFO) << "op " << op_->op_info()->Type();
 
   if (first_epoch_) {
     first_epoch_ = false;
@@ -485,7 +484,6 @@ void Instruction::Run() {
   }
 
   op_->InferShape();
-  LOG(INFO) << "kernel " << kernel_->summary();
   kernel_->Launch();
   has_run_ = true;
 

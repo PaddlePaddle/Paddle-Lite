@@ -42,18 +42,17 @@ bool ReduceAllOp::CheckShape() const {
 bool ReduceAllOp::InferShapeImpl() const {
   auto dims = param_.dim;
   auto x_dims = param_.X->dims();
-  bool reduce_all = false;
+  bool reduce_all = param_.reduce_all;
   bool keep_dim = param_.keep_dim;
   auto x_rank = x_dims.size();
-  if (dims.size() != 0) {
+  if (!dims.empty()) {
     for (size_t i = 0; i < dims.size(); i++) {
       if (dims[i] < 0) {
         dims[i] = x_rank + dims[i];
       }
     }
-  }
-  std::stable_sort(dims.begin(), dims.end());
-  if (dims.size() == 0) {
+    std::stable_sort(dims.begin(), dims.end());
+  } else {
     reduce_all = true;
   }
   std::vector<int64_t> out_dims;
@@ -80,12 +79,12 @@ bool ReduceAllOp::InferShapeImpl() const {
       out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
                      out_dims.end());
     }
-    param_.Out->Resize(DDim(out_dims));
     if (dims[0] != 0) {
       // Only pass LoD when not reducing on the first dim.
       *param_.Out->mutable_lod() = param_.X->lod();
     }
   }
+  param_.Out->Resize(DDim(out_dims));
   return true;
 }
 
@@ -95,6 +94,11 @@ bool ReduceAllOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.Out =
       scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
   param_.dim = opdesc.GetAttr<std::vector<int>>("dim");
+  if (opdesc.HasAttr("reduce_all")) {
+    param_.reduce_all = opdesc.GetAttr<bool>("reduce_all");
+  } else {
+    param_.reduce_all = false;
+  }
   if (opdesc.HasAttr("keep_dim")) {
     param_.keep_dim = opdesc.GetAttr<bool>("keep_dim");
   } else {

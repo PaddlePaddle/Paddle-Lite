@@ -28,6 +28,7 @@ void ReduceAllCompute::Run() {
   int x_rank = x_dims.size();
   bool* output = param.Out->mutable_data<bool>();
   auto dim = param.dim;
+  bool reduce_all = param.reduce_all;
 
   if (!dim.empty()) {
     for (size_t i = 0; i < dim.size(); i++) {
@@ -35,6 +36,8 @@ void ReduceAllCompute::Run() {
         dim[i] += x_rank;
       }
     }
+  } else {
+    reduce_all = true;
   }
 
   size_t new_dims[] = {1, 1, 1, 1};
@@ -45,7 +48,7 @@ void ReduceAllCompute::Run() {
   int c_in = new_dims[1];
   int h_in = new_dims[2];
   int w_in = new_dims[3];
-  if (dim.size() == 0) {
+  if (reduce_all) {
     lite::host::math::reduce_all_all(input, output, n_in, c_in, h_in, w_in);
   } else if (dim.size() == 1) {
     switch (dim[0]) {

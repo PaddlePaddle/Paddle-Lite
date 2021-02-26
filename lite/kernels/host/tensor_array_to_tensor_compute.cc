@@ -33,8 +33,10 @@ void TensorArrayToTensorCompute::Run() {
   std::vector<Tensor*> inputs;
   for (int i = 0; i < n; i++) {
     auto& input_dims_i = X[i].dims();
-    OutIndex_data[i] = input_dims_i[axis];
-    inputs.push_back(&X[i]);
+    if (input_dims_i.size() > 0 && input_dims_i.production() > 0) {
+      OutIndex_data[inputs.size()] = input_dims_i[axis];
+      inputs.push_back(&X[i]);
+    }
   }
 
   bool use_stack = param.use_stack;

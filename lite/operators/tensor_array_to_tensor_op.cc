@@ -29,7 +29,10 @@ bool TensorArrayToTensorOpLite::CheckShape() const {
 bool TensorArrayToTensorOpLite::InferShapeImpl() const {
   std::vector<Tensor *> inputs;
   for (int i = 0; i < param_.X->size(); i++) {
-    inputs.push_back(&(*param_.X)[i]);
+    auto &input_dims_i = (*param_.X)[i].dims();
+    if (input_dims_i.size() > 0 && input_dims_i.production() > 0) {
+      inputs.push_back(&(*param_.X)[i]);
+    }
   }
   const size_t n = inputs.size();
   int axis = param_.axis;

@@ -19,13 +19,9 @@ else()
   add_kernel(softmax_compute_xpu XPU basic SRCS softmax_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(scale_compute_xpu XPU basic SRCS scale_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(dropout_compute_xpu XPU basic SRCS dropout_compute.cc DEPS ${lite_kernel_deps})
-  #
   add_kernel(matmul_compute_xpu XPU basic SRCS matmul_compute.cc DEPS ${lite_kernel_deps})
-  #
   add_kernel(stack_compute_xpu XPU basic SRCS stack_compute.cc DEPS ${lite_kernel_deps} stack_compute_host)
-  #
   add_kernel(slice_compute_xpu XPU basic SRCS slice_compute.cc DEPS ${lite_kernel_deps})
-  #
   add_kernel(cast_compute_xpu XPU basic SRCS cast_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(sequence_topk_avg_pooling_compute_xpu XPU basic SRCS sequence_topk_avg_pooling_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(concat_compute_xpu XPU basic SRCS concat_compute.cc DEPS ${lite_kernel_deps})
@@ -33,7 +29,6 @@ else()
   add_kernel(reshape_compute_xpu XPU basic SRCS reshape_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(reduce_mean_compute_xpu XPU basic SRCS reduce_mean_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(reduce_sum_compute_xpu XPU basic SRCS reduce_sum_compute.cc DEPS ${lite_kernel_deps})
-  #
   add_kernel(fill_constant_compute_xpu XPU basic SRCS fill_constant_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(transpose_compute_xpu XPU basic SRCS transpose_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(density_prior_box_compute_xpu XPU basic SRCS density_prior_box_compute.cc DEPS ${lite_kernel_deps})
@@ -49,9 +44,7 @@ else()
   add_kernel(sum_compute_xpu XPU basic SRCS sum_compute.cc DEPS ${lite_kernel_deps})
 
   # extra
-  #
   add_kernel(lookup_table_compute_xpu XPU extra SRCS lookup_table_compute.cc DEPS ${lite_kernel_deps})
-  #
   add_kernel(layer_norm_compute_xpu XPU extra SRCS layer_norm_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(sequence_reverse_compute_xpu XPU extra SRCS sequence_reverse_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(sequence_concat_compute_xpu XPU extra SRCS sequence_concat_compute.cc DEPS ${lite_kernel_deps})

@@ -34,6 +34,7 @@ inline void TransCompute(const int dim,
                          const lite::Tensor& in,
                          lite::Tensor* out,
                          const std::vector<int>& axis) {
+  if (in.numel() <= 0) return;
   switch (dim) {
     case 1:
       paddle::lite::x86::math::Transpose<Target, T, 1> trans1;
@@ -75,8 +76,7 @@ class TransposeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* out = param.output;
     out->template mutable_data<T>();
     int ndims = param.axis.size();
-    // auto& context = ctx_->As<X86Context>();
-    X86Context context;
+    auto& context = ctx_->As<X86Context>();
     TransCompute<lite::TargetType::kX86, T>(
         ndims, context, *x, out, param.axis);
   }
@@ -95,36 +95,13 @@ class Transpose2Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto* out = param.output;
     out->template mutable_data<T>();
     int ndims = param.axis.size();
-    // auto& context = ctx_->As<X86Context>();
-    X86Context context;
+    auto& context = ctx_->As<X86Context>();
     TransCompute<lite::TargetType::kX86, T>(
         ndims, context, *x, out, param.axis);
   }
 
   virtual ~Transpose2Compute() = default;
 };
-
-#ifdef LITE_WITH_XPU
-template <typename T>
-class TransposeComputeXPU : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::TransposeParam;
-
-  void Run() override {
-    auto& param = *param_.get_mutable<param_t>();
-    auto* x = param.x;
-    auto* out = param.output;
-    out->template mutable_data<T>();
-    int ndims = param.axis.size();
-    // auto& context = ctx_->As<X86Context>();
-    X86Context context;
-    TransCompute<lite::TargetType::kX86, T>(
-        ndims, context, *x, out, param.axis);
-  }
-
-  virtual ~TransposeComputeXPU() = default;
-};
-#endif
 
 }  // namespace x86
 }  // namespace kernels

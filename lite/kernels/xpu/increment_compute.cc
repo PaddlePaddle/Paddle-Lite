@@ -24,7 +24,6 @@ template <class T>
 void increment(const T* input, const int n, const T step, T* out) {
   for (int i = 0; i < n; i++) {
     out[i] = input[i] + step;
-    LOG(INFO) << "index:  " << out[i];
   }
 }
 
