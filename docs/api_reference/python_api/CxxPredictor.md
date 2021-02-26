@@ -10,6 +10,18 @@ class CxxPredictor
 
 ```python
 from paddlelite.lite import *
+import numpy as np
+import argparse
+
+# Command arguments
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--model_file", default="", type=str, help="Model file")
+parser.add_argument(
+    "--param_file", default="", type=str, help="Combined model param file")
+parser.add_argument(
+    "--model_dir", default="", type=str, help="Non-combined Model dir path")
+args = parser.parse_args()
 
 # 1. 设置CxxConfig
 config = CxxConfig()
@@ -18,7 +30,7 @@ if args.model_file != '' and args.param_file != '':
     config.set_param_file(args.param_file)
 else:
     config.set_model_dir(args.model_dir)
-places = [Place(TargetType.ARM, PrecisionType.FP32)]
+places = [Place(TargetType.X86, PrecisionType.FP32)]
 config.set_valid_places(places)
 
 # 2. 创建CxxPredictor
@@ -26,16 +38,15 @@ predictor = create_paddle_predictor(config)
 
 # 3. 设置输入数据
 input_tensor = predictor.get_input(0)
-input_tensor.resize([1, 3, 224, 224])
-input_tensor.set_float_data([1.] * 3 * 224 * 224)
+input_tensor.from_numpy(np.ones((1, 3, 224, 224)).astype("float32"))
 
 # 4. 运行模型
 predictor.run()
 
 # 5. 获取输出数据
 output_tensor = predictor.get_output(0)
-print(output_tensor.shape())
-print(output_tensor.float_data()[:10])
+output_data = output_tensor.numpy()
+print(output_data)
 ```
 
 ### `get_input(index)`
