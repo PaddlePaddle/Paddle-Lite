@@ -121,10 +121,11 @@ class CLRuntime {
       tuned_path_name_.push_back(name);
     }
     const std::string tuned_file = path + "/" + name;
-    if (IsFileExists(tuned_file) && auto_tune() != lite_api::CL_TUNE_NONE) {
-#ifdef LITE_WITH_LOG
+    LOG(INFO) << "tuned_file.size():" << tuned_file.size()
+              << ", tuned_file:" << tuned_file;
+    if (tuned_file.size() > 2 && IsFileExists(tuned_file) &&
+        auto_tune() != lite_api::CL_TUNE_NONE) {
       LOG(INFO) << "Load tuned file: " << tuned_file;
-#endif
       bool status = Deserialize(tuned_file, &tuned_lwss_map_);
       if (!status) {
         LOG(ERROR) << "failed to deserialize tuned_file:" << tuned_file;

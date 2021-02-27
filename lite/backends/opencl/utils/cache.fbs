@@ -15,4 +15,6 @@ table Cache {
   binary_map:[paddle.lite.fbs.opencl.proto.Cache_.BinaryPair] (required);
 }
 
+
 root_type paddle.lite.fbs.opencl.proto.Cache;
+

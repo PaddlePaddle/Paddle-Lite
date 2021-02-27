@@ -19,6 +19,7 @@
 #include <vector>
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/utils/cache_generated.h"
+#include "lite/backends/opencl/utils/tune_cache_generated.h"
 
 namespace paddle {
 namespace lite {
@@ -43,21 +44,20 @@ class Cache {
   std::map<std::string, std::vector<std::vector<uint8_t>>> binary_map_;
 };
 
-// TODO(ysh329): add impl.
 class TuneCache {
  public:
-  explicit TuneCache(const std::map<std::string, cl::NDRange>& map)
-      : binary_map_{map} {}
-  explicit TuneCache(const std::vector<uint8_t>& buffer);
-  // void CopyDataToBuffer(std::vector<uint8_t>& buffer) const;
-  const std::map<std::string, cl::NDRange>& GetBinaryMap() const {
-    return binary_map_;
+  explicit TuneCache(const std::map<std::string, std::vector<int>>& map)
+      : tune_map_{map} {}
+  explicit TuneCache(const std::vector<int>& buffer);
+  void CopyDataToBuffer(std::vector<int>* buffer) const;
+  const std::map<std::string, std::vector<int>>& GetBinaryMap() const {
+    return tune_map_;
   }
 
  private:
-  //  void SyncFromFbs(const paddle::lite::fbs::opencl::proto::TuneCache* desc);
+  void SyncFromFbs(const paddle::lite::fbs::opencl::proto::TuneCache* desc);
   flatbuffers::DetachedBuffer SyncToFbs() const;
-  std::map<std::string, cl::NDRange> binary_map_;
+  std::map<std::string, std::vector<int>> tune_map_;
 };
 
 }  // namespace opencl

@@ -370,7 +370,9 @@ void CLRuntime::SaveTuned() {
   if (tuned_path_name_.empty() || auto_tune() == lite_api::CL_TUNE_NONE) return;
   std::string tuned_file =
       tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
-  if (IsFileExists(tuned_file)) {
+  if (tuned_file == "/") {
+    LOG(INFO) << "invalid tuned_file:" << tuned_file;
+  } else if (IsFileExists(tuned_file)) {
     LOG(INFO) << "OpenCL Tuned file existed:" << tuned_file;
   } else {
     bool ret = Serialize(tuned_file, tuned_lwss_map_);
@@ -408,31 +410,46 @@ bool CLRuntime::Deserialize(
 // tuned param
 bool CLRuntime::Serialize(const std::string file_name,
                           const std::map<std::string, cl::NDRange>& map_data) {
-// TODO(ysh329): add impl.
-#if 0
-  fbs::opencl::TuneCache cache{map_data};
-  std::vector<uint8_t> buffer;
-  // TODO(ysh329): add impl.
-  //  cache.CopyDataToBuffer(&buffer);
-
-  WriteFile<uint8_t>(file_name, buffer);
-#else
-  std::vector<uint8_t> buffer(3);
-  WriteFile<uint8_t>(file_name, buffer);
+  std::map<std::string, std::vector<int>> map_data_cpy;
+  for (auto& kv : map_data) {
+#ifdef LITE_WITH_LOG
+    VLOG(3) << std::to_string(static_cast<int>(kv.second[0])) << ","
+            << std::to_string(static_cast<int>(kv.second[1])) << ","
+            << std::to_string(static_cast<int>(kv.second[2]));
 #endif
+    map_data_cpy.insert(std::pair<std::string, std::vector<int>>(
+        kv.first,
+        {static_cast<int>(kv.second[0]),
+         static_cast<int>(kv.second[1]),
+         static_cast<int>(kv.second[2])}));
+  }
+
+  fbs::opencl::TuneCache cache{map_data_cpy};
+  std::vector<int> buffer;
+  cache.CopyDataToBuffer(&buffer);
+
+  WriteFile<int>(file_name, buffer);
   return true;
 }
 
 bool CLRuntime::Deserialize(const std::string file_name,
                             std::map<std::string, cl::NDRange>* map_ptr) {
-// TODO(ysh329): add impl.
-#if 0
-  std::vector<uint8_t> buffer;
-  ReadFile<uint8_t>(file_name, &buffer);
-  // TODO(ysh329): add impl.
-  // fbs::opencl::TuneCache cache{buffer};
-  //  *map_ptr = cache.GetBinaryMap();
+  std::vector<int> buffer;
+  ReadFile<int>(file_name, &buffer);
+
+  fbs::opencl::TuneCache cache{buffer};
+  std::map<std::string, std::vector<int>> tmp_map = cache.GetBinaryMap();
+  for (auto& kv : tmp_map) {
+    cl::NDRange range{static_cast<cl::size_type>(kv.second[0]),
+                      static_cast<cl::size_type>(kv.second[1]),
+                      static_cast<cl::size_type>(kv.second[2])};
+#ifdef LITE_WITH_LOG
+    VLOG(3) << std::to_string(kv.second[0]) << ","
+            << std::to_string(kv.second[1]) << ","
+            << std::to_string(kv.second[2]);
 #endif
+    map_ptr->insert(std::pair<std::string, cl::NDRange>(kv.first, range));
+  }
   return true;
 }
 
@@ -795,7 +812,7 @@ void CLRuntime::SetTunedLocalWorkSizeMap(const std::string& key,
 }
 
 double CLRuntime::GetCommandTime(const cl::Event& event) {
-  //  command_queue().finish();
+  event.wait();
   auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
   return (stop_nanos - start_nanos) / 1000000.0;

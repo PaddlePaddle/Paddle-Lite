@@ -1,0 +1,14 @@
+namespace paddle.lite.fbs.opencl.proto.TuneCache_;
+
+table TunePair {
+  key:string (required, key);
+  value:[int];
+}
+
+namespace paddle.lite.fbs.opencl.proto;
+
+table TuneCache {
+  tune_map:[paddle.lite.fbs.opencl.proto.TuneCache_.TunePair] (required);
+}
+
+root_type paddle.lite.fbs.opencl.proto.TuneCache;
