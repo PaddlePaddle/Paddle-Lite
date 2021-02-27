@@ -41,6 +41,7 @@ class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override;
 
  private:
   const MetalImage* input_buffer_;
@@ -58,7 +59,6 @@ class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> filter_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;
-  std::shared_ptr<MetalKernel> program_;
   const MetalImage* bias_buffer_;
 
   Tensor blank_tensor_;
@@ -67,6 +67,11 @@ class Conv2dImageCompute : public KernelLite<TARGET(kMetal),
 
   int16_t activate_type_ = 0;
   int16_t relu6_thredhold_ = 6;
+
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 class Conv2dImageComputeHalf
@@ -78,6 +83,7 @@ class Conv2dImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_;
@@ -95,7 +101,6 @@ class Conv2dImageComputeHalf
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> filter_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;
-  std::shared_ptr<MetalKernel> program_;
   const MetalImage* bias_buffer_;
 
   Tensor blank_tensor_;
@@ -104,6 +109,11 @@ class Conv2dImageComputeHalf
 
   int16_t activate_type_ = 0;
   int16_t relu6_thredhold_ = 6;
+
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 }  // namespace metal

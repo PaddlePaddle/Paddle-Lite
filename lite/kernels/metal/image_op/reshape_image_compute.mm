@@ -24,12 +24,11 @@ namespace metal {
 
 void ReshapeImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
-  transpose_ = param.shape_vct;
 
   output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
   input_buffer_ = param.x->data<float, MetalImage>();
@@ -39,7 +38,7 @@ void ReshapeImageCompute::PrepareForRun() {
 
   std::string func_name = "reshape_" + std::to_string(irank) + "_" +
                           std::to_string(orank) + "_float";
-  kernel_ = mtl_ctx->GetKernel(*device, func_name);
+  kernel_ = metal_context_->GetKernel(*device, func_name);
 
   std::vector<int> it = input_buffer_->transpose_;
   std::vector<int> ot = output_buffer_->transpose_;
@@ -59,53 +58,39 @@ void ReshapeImageCompute::PrepareForRun() {
                                    {od[0], od[1], od[2], od[3]},
                                    {ot[0], ot[1], ot[2], ot[3]}};
 
-  params_buffer_ = mtl_ctx->CreateBuffer(*device,
+  params_buffer_ = metal_context_->CreateBuffer(*device,
                                          &reshape_params,
                                          sizeof(reshape_params),
                                          METAL_ACCESS_FLAG::CPUWriteOnly);
+  queue_ = metal_context_->GetDefaultQueue(*device);
+
 }
 
 void ReshapeImageCompute::Run() {
   const auto& param = this->Param<param_t>();
-  auto output = param.output;
   auto output_width = output_buffer_->texture_width_;
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
 
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
-
-    std::vector<std::pair<MetalKernelArgument, int>> args = {
-        (std::pair<MetalKernelArgument, int>){input_buffer_, 0},
-        (std::pair<MetalKernelArgument, int>){output_buffer_, 0},
-        (std::pair<MetalKernelArgument, int>){params_buffer_, 0},
-    };
-
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("reshape", output_buffer_);
-#endif
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 void ReshapeImageComputeHalf::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
-  transpose_ = {0, 1, 2, 3};
 
   output_buffer_ =
       param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
@@ -116,7 +101,7 @@ void ReshapeImageComputeHalf::PrepareForRun() {
 
   std::string func_name = "reshape_" + std::to_string(irank) + "_" +
                           std::to_string(orank) + "_half";
-  kernel_ = mtl_ctx->GetKernel(*device, func_name);
+  kernel_ = metal_context_->GetKernel(*device, func_name);
 
   std::vector<int> it = input_buffer_->transpose_;
   std::vector<int> ot = output_buffer_->transpose_;
@@ -136,41 +121,30 @@ void ReshapeImageComputeHalf::PrepareForRun() {
                                    {od[0], od[1], od[2], od[3]},
                                    {ot[0], ot[1], ot[2], ot[3]}};
 
-  params_buffer_ = mtl_ctx->CreateBuffer(*device,
+  params_buffer_ = metal_context_->CreateBuffer(*device,
                                          &reshape_params,
                                          sizeof(reshape_params),
                                          METAL_ACCESS_FLAG::CPUWriteOnly);
+  queue_ = metal_context_->GetDefaultQueue(*device);
+
 }
 
 void ReshapeImageComputeHalf::Run() {
   const auto& param = this->Param<param_t>();
-  auto output = param.output;
   auto output_width = output_buffer_->texture_width_;
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
 
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
-
-    auto args = {MetalKernelArgument{input_buffer_},
-                 MetalKernelArgument{output_buffer_},
-                 MetalKernelArgument{params_buffer_}};
-
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("reshape", output_buffer_);
-#endif
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 }  // namespace metal

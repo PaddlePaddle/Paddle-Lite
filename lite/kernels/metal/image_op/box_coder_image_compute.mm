@@ -26,8 +26,8 @@ namespace metal {
 
 void BoxCoderImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.proposals->dims();
@@ -40,8 +40,10 @@ void BoxCoderImageCompute::PrepareForRun() {
   target_box_buffer_ = param.target_box->data<float, MetalImage>();
   output_buffer_ = param.proposals->mutable_data<float, MetalImage>(output_dims);
 
+  queue_ = metal_context_->GetDefaultQueue(*device);
   std::string function_name = "boxcoder_float";
-  kernel_ = mtl_ctx->GetKernel(*device, function_name);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
+
 }
 
 void BoxCoderImageCompute::Run() {
@@ -50,32 +52,25 @@ void BoxCoderImageCompute::Run() {
   auto output_array_length = output_buffer_->array_length_;
 
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-    auto args = {MetalKernelArgument{prior_box_buffer_},
-                 MetalKernelArgument{prior_box_var_buffer_},
-                 MetalKernelArgument{target_box_buffer_},
-                 MetalKernelArgument{output_buffer_}};
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
+  [encoder->metal_command_encoder_ setTexture:(prior_box_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(prior_box_var_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(target_box_buffer_->image()) atIndex:(2)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(3)];
 
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("box_coder", output_buffer_);
-#endif
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 void BoxCoderImageComputeHalf::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.proposals->dims();
@@ -87,7 +82,9 @@ void BoxCoderImageComputeHalf::PrepareForRun() {
   output_buffer_ = param.proposals->mutable_data<MetalHalf, MetalImage>(output_dims);
 
   std::string function_name = "boxcoder_half";
-  kernel_ = mtl_ctx->GetKernel(*device, function_name);
+  queue_ = metal_context_->GetDefaultQueue(*device);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
+
 }
 
 void BoxCoderImageComputeHalf::Run() {
@@ -96,27 +93,20 @@ void BoxCoderImageComputeHalf::Run() {
   auto output_array_length = output_buffer_->array_length_;
 
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto mtl_dev = metal_context_->GetDefaultDevice();
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-    auto args = {MetalKernelArgument{prior_box_buffer_},
-                 MetalKernelArgument{prior_box_var_buffer_},
-                 MetalKernelArgument{target_box_buffer_},
-                 MetalKernelArgument{output_buffer_}};
+  [encoder->metal_command_encoder_ setTexture:(prior_box_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(prior_box_var_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(target_box_buffer_->image()) atIndex:(2)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(3)];
 
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("box_coder", output_buffer_);
-#endif
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 }  // namespace metal

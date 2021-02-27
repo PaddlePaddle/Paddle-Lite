@@ -73,6 +73,16 @@ MetalDevice* MetalContext::GetDeviceByID(int id) {
   }
 }
 
+void MetalContext::CreateCommandBuffer(RuntimeProgram* program) {
+  assert(program);
+  auto device = GetDefaultDevice();
+  auto queue = device->GetDefaultQueue();
+
+  // TODO: (lzy) check memory leak
+  program_ = program;
+  cmd_buf_ = queue->CreateCommandBuffer(program);
+}
+
 const MetalDevice* MetalContext::GetDefaultDevice() {
   if (!got_devices_) {
     PrepareDevices();
@@ -99,6 +109,8 @@ std::shared_ptr<MetalQueue> MetalContext::GetDefaultQueue(
   return device.GetDefaultQueue();
 }
 
+
+// TODO: (lzy) extract the load library
 std::shared_ptr<MetalKernel> MetalContext::GetKernel(
     const MetalDevice& device,
     const std::string function_name,
@@ -119,7 +131,7 @@ std::shared_ptr<MetalKernel> MetalContext::GetKernel(
     return std::shared_ptr<MetalKernel>{};
   }
 
-  MetalKernel::MetalKernelProgram program;
+  MetalKernelProgram program;
   const auto func_name = [NSString stringWithUTF8String:function_name.c_str()];
   program.function_ = [library newFunctionWithName:func_name];
   if (!program.function_) {

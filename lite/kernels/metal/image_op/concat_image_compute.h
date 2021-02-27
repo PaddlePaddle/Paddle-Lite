@@ -42,12 +42,16 @@ class ConcatImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   std::vector<const MetalImage*> input_buffers_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 
   std::string v_ = "normal";
 };
@@ -61,12 +65,16 @@ class ConcatImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   std::vector<const MetalImage*> input_buffers_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 
   std::string v_ = "normal";
 };

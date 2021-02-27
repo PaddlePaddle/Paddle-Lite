@@ -27,8 +27,8 @@ namespace metal {
 
 void ElementwiseAddImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
@@ -82,10 +82,14 @@ void ElementwiseAddImageCompute::PrepareForRun() {
        input_buffer_y_->transpose_[2],
        input_buffer_y_->transpose_[3]}};
 
-  params_buffer_ = mtl_ctx->CreateBuffer(*device,
+  params_buffer_ = metal_context_->CreateBuffer(*device,
                                          &element_params,
                                          sizeof(element_params),
                                          METAL_ACCESS_FLAG::CPUWriteOnly);
+  std::string function_name = "elementwise_add";
+  queue_ = metal_context_->GetDefaultQueue(*device);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
+
 }
 
 void ElementwiseAddImageCompute::Run() {
@@ -94,37 +98,23 @@ void ElementwiseAddImageCompute::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-  {
-    string function_name = "elementwise_add";
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_x_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
 
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
-
-    auto args = {MetalKernelArgument{input_buffer_x_},
-                 MetalKernelArgument{input_buffer_y_},
-                 MetalKernelArgument{output_buffer_},
-                 MetalKernelArgument{params_buffer_}};
-
-    kernel->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("elementwise_add", output_buffer_);
-#endif
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 void ElementwiseAddImageComputeHalf::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
@@ -178,10 +168,14 @@ void ElementwiseAddImageComputeHalf::PrepareForRun() {
        input_buffer_y_->transpose_[2],
        input_buffer_y_->transpose_[3]}};
 
-  params_buffer_ = mtl_ctx->CreateBuffer(*device,
+  params_buffer_ = metal_context_->CreateBuffer(*device,
                                          &element_params,
                                          sizeof(element_params),
                                          METAL_ACCESS_FLAG::CPUWriteOnly);
+  std::string function_name = "elementwise_add_half";
+  queue_ = metal_context_->GetDefaultQueue(*device);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
+
 }
 
 void ElementwiseAddImageComputeHalf::Run() {
@@ -191,29 +185,20 @@ void ElementwiseAddImageComputeHalf::Run() {
   auto output_array_length = output_buffer_->array_length_;
 
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto mtl_dev = metal_context_->GetDefaultDevice();
 
-  {
-    string function_name = "elementwise_add_half";
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_x_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_y_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
 
-    auto args = {MetalKernelArgument{input_buffer_x_},
-                 MetalKernelArgument{input_buffer_y_},
-                 MetalKernelArgument{output_buffer_},
-                 MetalKernelArgument{params_buffer_}};
-
-    kernel->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("elementwise_add", output_buffer_);
-#endif
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 }  // namespace metal

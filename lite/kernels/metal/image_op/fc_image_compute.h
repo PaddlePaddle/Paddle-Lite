@@ -40,6 +40,7 @@ class FCImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_;
@@ -49,6 +50,10 @@ class FCImageCompute : public KernelLite<TARGET(kMetal),
 
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
+
   Tensor shape_out_dev_;
   ReshapeImageCompute reshape_;
 
@@ -64,6 +69,7 @@ class FCImageComputeHalf : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_;
@@ -72,6 +78,10 @@ class FCImageComputeHalf : public KernelLite<TARGET(kMetal),
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
+
   Tensor shape_out_dev_;
   ReshapeImageComputeHalf reshape_;
   DDim input_x_mul_dim_;

@@ -39,12 +39,17 @@ class FeedImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   std::shared_ptr<MetalBuffer> input_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
+  const MetalDevice* device_;
 };
 
 class FeedImageComputeHalf
@@ -56,12 +61,17 @@ class FeedImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   std::shared_ptr<MetalBuffer> input_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
+  const MetalDevice* device_;
 };
 
 }  // namespace metal

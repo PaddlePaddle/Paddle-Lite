@@ -58,6 +58,10 @@ class KernelBase {
   /// Run the kernel. Before Run, both the param_ and context_ should be valid.
   virtual void Run() = 0;
 
+#ifdef LITE_WITH_METAL
+  virtual void SaveOutput() {}
+#endif
+
 #ifdef LITE_WITH_PROFILE
   void SetProfiler(profile::Profiler* profiler, int id) {
     profiler_ = profiler;

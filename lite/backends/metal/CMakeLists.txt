@@ -42,7 +42,7 @@ add_library(
         metal_half.mm
         metal_converter.mm
         target_wrapper.mm
-        metal_debug.mm )
+        metal_debug.mm)
 
 target_link_libraries(metal_target_wrapper ${METAL_LIBRARY} ${FOUNDATION_LIBRARY})
 

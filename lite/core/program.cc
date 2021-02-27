@@ -259,6 +259,15 @@ RuntimeProgram::RuntimeProgram(
   Init();
 }
 
+#ifdef LITE_WITH_METAL
+void RuntimeProgram::SaveOutput() {
+  auto& insts = instructions_[kRootBlockIdx];
+  for (auto& inst : insts) {
+    inst.SaveOutput();
+  }
+}
+#endif
+
 void RuntimeProgram::Run() {
 #ifdef LITE_WITH_PRECISION_PROFILE
   auto inst_precision_profiler = paddle::lite::profile::PrecisionProfiler();
@@ -273,6 +282,10 @@ void RuntimeProgram::Run() {
     annotation_one_loop.generate(register_layer_names_.back(),
                                  lite::Color::Engine);
   }
+#endif
+
+#ifdef LITE_WITH_METAL
+  TargetWrapperMetal::CreateCommandBuffer(this);
 #endif
 
   int idx = -1;
@@ -304,6 +317,11 @@ void RuntimeProgram::Run() {
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
+
+#ifdef LITE_WITH_METAL
+  TargetWrapperMetal::WaitForCompleted();
+#endif
+
 #ifdef LITE_WITH_OPENCL
   CLRuntime::Global()->SaveProgram();
 #endif
@@ -459,6 +477,12 @@ void Program::PrepareWorkspace(
     sub_tensor->CopyDataFrom(*tensor);
   }
 }
+
+#ifdef LITE_WITH_METAL
+void Instruction::SaveOutput() {
+  if (kernel_) kernel_->SaveOutput();
+}
+#endif
 
 void Instruction::Run() {
 #ifdef LITE_WITH_PROFILE

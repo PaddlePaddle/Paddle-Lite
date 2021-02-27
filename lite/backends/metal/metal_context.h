@@ -27,6 +27,7 @@
 
 namespace paddle {
 namespace lite {
+class RuntimeProgram;
 
 class MetalContext {
  public:
@@ -35,6 +36,8 @@ class MetalContext {
   int GetDevicesNum();
   MetalDevice* GetDeviceByID(int id);
   const MetalDevice* GetDefaultDevice();
+
+  void CreateCommandBuffer(RuntimeProgram* program);
 
   void set_metal_path(std::string path);
   void set_use_aggressive_optimization(bool flag);
@@ -68,11 +71,16 @@ class MetalContext {
   MetalDevice* best_metal_device_{nullptr};
   mutable std::vector<std::shared_ptr<MetalDevice>> devices_ = {};
 
+  //  std::unique_ptr<MetalCommandBuffer> cmd_buf(){ return
+  //  std::move(cmd_buf_);}
+  std::unique_ptr<MetalCommandBuffer> cmd_buf_;
+
  private:
   bool got_devices_{false};
   std::string metal_path_;
   bool use_aggressive_optimization_{false};
   bool use_mps_{false};
+  RuntimeProgram* program_ = nullptr;
 };
 }  // namespace lite
 }  // namespace paddle

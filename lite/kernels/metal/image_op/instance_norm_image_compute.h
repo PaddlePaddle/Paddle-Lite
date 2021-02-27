@@ -40,6 +40,7 @@ class InstanceNormImageCompute
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_;
@@ -63,6 +64,10 @@ class InstanceNormImageCompute
 
   float epsilon_;
   float momentum;
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 class InstanceNormImageComputeHalf
@@ -74,6 +79,7 @@ class InstanceNormImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_;
@@ -93,6 +99,10 @@ class InstanceNormImageComputeHalf
   std::shared_ptr<MetalBuffer> params_buffer_;
   float epsilon_;
   float momentum;
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 }  // namespace metal

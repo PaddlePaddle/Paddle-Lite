@@ -24,8 +24,8 @@ namespace metal {
 
 void Conv2dTransposeImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -53,7 +53,7 @@ void Conv2dTransposeImageCompute::PrepareForRun() {
   blank_tensor_.mutable_data<float, MetalImage>(blank_dim, {0, 1, 2, 3}, (void*)blank_host);
   free(blank_host);
 
-  function_name_ = KernelFunctionName(param, mtl_ctx->use_aggressive_optimization());
+  function_name_ = KernelFunctionName(param, metal_context_->use_aggressive_optimization());
   if (function_name_.empty()) {
     throw std::logic_error("ERROR: cannot find the kernel name of this conv2d_transpose");
   }
@@ -64,7 +64,9 @@ void Conv2dTransposeImageCompute::PrepareForRun() {
   }
 
   SetupWithoutMPS();
-  program_ = mtl_ctx->GetKernel(*device, function_name_);
+  kernel_ = metal_context_->GetKernel(*device, function_name_);
+  queue_ = metal_context_->GetDefaultQueue(*device);
+
 }
 
 void Conv2dTransposeImageCompute::Run() {
@@ -73,26 +75,17 @@ void Conv2dTransposeImageCompute::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
+  [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
 
-    std::vector<MetalKernelArgument> args{MetalKernelArgument{input_buffer_},
-                                          MetalKernelArgument{output_buffer_},
-                                          MetalKernelArgument{params_buffer_},
-                                          MetalKernelArgument{filter_buffer_}};
-    program_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("conv2d_transpose", output_buffer_);
-#endif
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 std::string Conv2dTransposeImageCompute::KernelFunctionName(const param_t& param,
@@ -129,8 +122,8 @@ void Conv2dTransposeImageCompute::SetupWithoutMPS() {
   assert((*param.paddings)[0] == (*param.paddings)[1]);
 
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   auto filterWidth = param.filter->dims()[3];
   auto filterHeight = param.filter->dims()[2];
@@ -208,7 +201,7 @@ void Conv2dTransposeImageCompute::SetupWithoutMPS() {
                                            hasAdd,
                                            addParam};
 
-  params_buffer_ = mtl_ctx->CreateBuffer(
+  params_buffer_ = metal_context_->CreateBuffer(
       *device, &metalParam, sizeof(metalParam), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   if (HasPrefix(function_name_, "conv_transpose2x2")) {
@@ -222,8 +215,8 @@ void Conv2dTransposeImageCompute::SetupWithoutMPS() {
 
 void Conv2dTransposeImageComputeHalf::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -251,7 +244,7 @@ void Conv2dTransposeImageComputeHalf::PrepareForRun() {
   blank_tensor_.mutable_data<float, MetalImage>(blank_dim, {0, 1, 2, 3}, (void*)blank_host);
   free(blank_host);
 
-  function_name_ = KernelFunctionName(param, mtl_ctx->use_aggressive_optimization());
+  function_name_ = KernelFunctionName(param, metal_context_->use_aggressive_optimization());
   if (function_name_.empty()) {
     throw std::logic_error("ERROR: cannot find the kernel name of this conv2d_transpose");
   }
@@ -262,7 +255,8 @@ void Conv2dTransposeImageComputeHalf::PrepareForRun() {
   }
 
   SetupWithoutMPS();
-  program_ = mtl_ctx->GetKernel(*device, function_name_);
+  kernel_ = metal_context_->GetKernel(*device, function_name_);
+  queue_ = metal_context_->GetDefaultQueue(*device);
 }
 
 void Conv2dTransposeImageComputeHalf::Run() {
@@ -271,40 +265,30 @@ void Conv2dTransposeImageComputeHalf::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
-
   {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                    static_cast<MetalUint>(output_height),
                                    static_cast<MetalUint>(output_array_length)};
 
     if (param.bias) {
-      std::vector<MetalKernelArgument> args = {MetalKernelArgument{input_buffer_},
-                                               MetalKernelArgument{output_buffer_},
-                                               MetalKernelArgument{bias_buffer_},
-                                               MetalKernelArgument{params_buffer_},
-                                               MetalKernelArgument{filter_buffer_}};
 
-      program_->Execute(*queue, global_work_size, false, args);
-      queue->WaitUntilComplete();
+      [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+      [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image()) atIndex:(2)];
+      [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
+      [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
+
+      kernel_->Execute(*encoder, global_work_size, false);
     } else {
-      auto blank_buffer = blank_tensor_.data<MetalHalf, MetalImage>();
+      [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+      [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
+      [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
 
-      std::vector<MetalKernelArgument> args{MetalKernelArgument(input_buffer_),
-                                            MetalKernelArgument(output_buffer_),
-                                            MetalKernelArgument(params_buffer_),
-                                            MetalKernelArgument(filter_buffer_)};
-
-      program_->Execute(*queue, global_work_size, false, args);
-      queue->WaitUntilComplete();
+      kernel_->Execute(*encoder, global_work_size, false);
     }
   }
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("conv2d_transpose", output_buffer_);
-#endif
 }
 
 std::string Conv2dTransposeImageComputeHalf::KernelFunctionName(const param_t& param,
@@ -341,8 +325,8 @@ void Conv2dTransposeImageComputeHalf::SetupWithoutMPS() {
   assert((*param.paddings)[0] == (*param.paddings)[1]);
 
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   int offsetX = static_cast<int>(
       ((int)((*param.dilations)[1]) * (param.filter->dims()[3] - 1) + 1) / 2 - padLeft);
@@ -433,7 +417,7 @@ void Conv2dTransposeImageComputeHalf::SetupWithoutMPS() {
                                                        hasAdd,
                                                        element_params};
 
-    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+    params_buffer_ = metal_context_->CreateBuffer(*device,
                                            &conv_transpose_param,
                                            sizeof(conv_transpose_param),
                                            METAL_ACCESS_FLAG::CPUWriteOnly);
@@ -451,7 +435,7 @@ void Conv2dTransposeImageComputeHalf::SetupWithoutMPS() {
                                                        filterC,
                                                        outputC,
                                                        hasAdd};
-    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+    params_buffer_ = metal_context_->CreateBuffer(*device,
                                            &conv_transpose_param,
                                            sizeof(conv_transpose_param),
                                            METAL_ACCESS_FLAG::CPUWriteOnly);

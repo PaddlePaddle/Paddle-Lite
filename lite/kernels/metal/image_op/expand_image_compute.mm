@@ -28,8 +28,8 @@ namespace metal {
 
 void ExpandImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
@@ -38,7 +38,9 @@ void ExpandImageCompute::PrepareForRun() {
   output_buffer_ = param.Out->mutable_data<float, MetalImage>(output_dims);
 
   string function_name = "expand";
-  kernel_ = mtl_ctx->GetKernel(*device, function_name);
+
+  queue_ = metal_context_->GetDefaultQueue(*device);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
 }
 
 void ExpandImageCompute::Run() {
@@ -46,29 +48,21 @@ void ExpandImageCompute::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                    static_cast<MetalUint>(output_height),
-                                    static_cast<MetalUint>(output_array_length)};
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
 
-    auto args = {MetalKernelArgument{input_buffer_}, MetalKernelArgument{output_buffer_}};
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("expand", output_buffer_);
-#endif
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 void ExpandImageComputeHalf::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.Out->dims();
@@ -76,8 +70,9 @@ void ExpandImageComputeHalf::PrepareForRun() {
   input_buffer_ = param.X->data<MetalHalf, MetalImage>();
   output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(output_dims);
 
-  string function_name = "expand_half";
-  kernel_ = mtl_ctx->GetKernel(*device, function_name);
+  std::string function_name = "expand_half";
+  queue_ = metal_context_->GetDefaultQueue(*device);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
 }
 
 void ExpandImageComputeHalf::Run() {
@@ -85,24 +80,15 @@ void ExpandImageComputeHalf::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                    static_cast<MetalUint>(output_height),
-                                    static_cast<MetalUint>(output_array_length)};
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
 
-    auto args = {MetalKernelArgument{input_buffer_}, MetalKernelArgument{output_buffer_}};
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("expand", output_buffer_);
-#endif
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 }  // namespace metal

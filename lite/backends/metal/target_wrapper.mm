@@ -29,6 +29,13 @@ void* TargetWrapperMetal::Malloc(size_t size) {
   return (void*)buffer;
 }
 
+void TargetWrapperMetal::WaitForCompleted() {
+  if (ctx_.cmd_buf_->have_command_) {
+    [ctx_.cmd_buf_->metal_command_buffer_ commit];
+    [ctx_.cmd_buf_->metal_command_buffer_ waitUntilCompleted];
+  }
+}
+
 template <>
 void* TargetWrapperMetal::MallocImage<float>(const DDim dim,
                                              std::vector<int> transpose,

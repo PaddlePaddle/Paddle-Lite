@@ -189,7 +189,11 @@ bool ParseArguments(metal_encoder_t encoder,
   ArgumentsStats stats = ArgumentsStats();
   for (size_t i = 0; i < argc; i++) {
     const auto &arg = args[i];
-    if (auto buf_ptr = arg.var_.get_if<const MetalBuffer *>()) {
+    if (auto img_ptr = arg.var_.get_if<const MetalImage *>()) {
+      ParseArgument(stats, encoder, img_ptr);
+      stats.image_arguments_num_++;
+      stats.total_argument_num_++;
+    } else if (auto buf_ptr = arg.var_.get_if<const MetalBuffer *>()) {
       ParseArgument(stats, encoder, buf_ptr);
       stats.buffer_arguments_num_++;
       stats.total_argument_num_++;
@@ -204,21 +208,17 @@ bool ParseArguments(metal_encoder_t encoder,
       ParseArgument(stats, encoder, *vec_buf_sptrs);
       stats.buffer_arguments_num_ += vec_buf_sptrs->size();
       stats.total_argument_num_ += vec_buf_sptrs->size();
-    } else if (auto img_ptr = arg.var_.get_if<const MetalImage *>()) {
-      ParseArgument(stats, encoder, img_ptr);
-      stats.image_arguments_num_++;
-      stats.total_argument_num_++;
-    } else if (auto vec_img_ptrs =
-                   arg.var_.get_if<const std::vector<MetalImage *> *>()) {
-      ParseArgument(stats, encoder, *vec_img_ptrs);
-      stats.image_arguments_num_ += vec_img_ptrs->size();
-      stats.total_argument_num_ += vec_img_ptrs->size();
     } else if (auto vec_img_sptrs =
                    arg.var_.get_if<
                        const std::vector<std::shared_ptr<MetalImage>> *>()) {
       ParseArgument(stats, encoder, *vec_img_sptrs);
       stats.image_arguments_num_ += vec_img_sptrs->size();
       stats.total_argument_num_ += vec_img_sptrs->size();
+    } else if (auto vec_img_ptrs =
+                   arg.var_.get_if<const std::vector<MetalImage *> *>()) {
+      ParseArgument(stats, encoder, *vec_img_ptrs);
+      stats.image_arguments_num_ += vec_img_ptrs->size();
+      stats.total_argument_num_ += vec_img_ptrs->size();
     } else {
       // TODO(lzy): Stuff.
       return false;
@@ -284,8 +284,11 @@ bool ParseArguments(
   for (size_t i = 0; i < argc; i++) {
     const auto &arg = args[i].first;
     auto offset = args[i].second;
-
-    if (auto buf_ptr = arg.var_.get_if<const MetalBuffer *>()) {
+    if (auto img_ptr = arg.var_.get_if<const MetalImage *>()) {
+      ParseArgument(stats, encoder, img_ptr);
+      stats.image_arguments_num_++;
+      stats.total_argument_num_++;
+    } else if (auto buf_ptr = arg.var_.get_if<const MetalBuffer *>()) {
       ParseArgument(stats, encoder, offset, buf_ptr);
       stats.buffer_arguments_num_++;
       stats.total_argument_num_++;
@@ -300,10 +303,6 @@ bool ParseArguments(
       ParseArgument(stats, encoder, *vec_buf_sptrs);
       stats.buffer_arguments_num_ += vec_buf_sptrs->size();
       stats.total_argument_num_ += vec_buf_sptrs->size();
-    } else if (auto img_ptr = arg.var_.get_if<const MetalImage *>()) {
-      ParseArgument(stats, encoder, img_ptr);
-      stats.image_arguments_num_++;
-      stats.total_argument_num_++;
     } else if (auto vec_img_ptrs =
                    arg.var_.get_if<const std::vector<MetalImage *> *>()) {
       ParseArgument(stats, encoder, *vec_img_ptrs);

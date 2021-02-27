@@ -41,12 +41,17 @@ class ElementwiseAddImageCompute
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_x_;
   const MetalImage* input_buffer_y_;
   std::shared_ptr<MetalBuffer> params_buffer_;
   MetalImage* output_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 class ElementwiseAddImageComputeHalf
@@ -58,12 +63,17 @@ class ElementwiseAddImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_x_;
   const MetalImage* input_buffer_y_;
   std::shared_ptr<MetalBuffer> params_buffer_;
   MetalImage* output_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 }  // namespace metal

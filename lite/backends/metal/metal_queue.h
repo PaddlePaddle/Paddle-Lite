@@ -27,20 +27,40 @@
 namespace paddle {
 namespace lite {
 
+class MetalKernel;
+class MetalKernelProgram;
+class RuntimeProgram;
+
+struct MetalCommandBuffer {
+#if defined(__OBJC__)
+  id<MTLCommandBuffer> metal_command_buffer_{nil};
+#else
+  void* metal_command_buffer_{nullptr};
+#endif
+  bool have_command_{false};
+};
+
+struct MetalEncoder {
+  MetalEncoder(MetalCommandBuffer* buffer, MetalKernelProgram* program);
+  virtual ~MetalEncoder();
+
+#if defined(__OBJC__)
+  id<MTLCommandBuffer> metal_command_buffer_{nil};
+  id<MTLComputeCommandEncoder> metal_command_encoder_{nil};
+#else
+  void* metal_command_buffer_{nullptr};
+  void* metal_command_encoder_{nullptr};
+#endif
+};
+
 class MetalQueue {
  public:
 #if defined(__OBJC__)
   MetalQueue(const MetalDevice* device, id<MTLCommandQueue> queue);
 #endif
 
-  void WaitUntilComplete() const;
-  void WaitUntilDispatch() const;
-
-#if defined(__OBJC__)
-  id<MTLCommandBuffer> CreateCommandBuffer() const;
-#else
-  void* CreateCommandBuffer() const;
-#endif
+  std::unique_ptr<MetalCommandBuffer> CreateCommandBuffer(
+      RuntimeProgram* program);
 
  private:
 #if defined(__OBJC__)

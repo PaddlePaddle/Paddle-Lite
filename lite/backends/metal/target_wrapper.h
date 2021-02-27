@@ -35,6 +35,14 @@ class TargetWrapper<TARGET(kMetal)> {
     return dev_id;
   }
 
+  static void CreateCommandBuffer(RuntimeProgram* program) {
+    assert(program);
+    ctx_.CreateCommandBuffer(program);
+    return;
+  }
+
+  static void WaitForCompleted();
+
   static void set_metal_path(std::string path) { ctx_.set_metal_path(path); }
 
   static void set_metal_use_aggressive_optimization(bool flag) {

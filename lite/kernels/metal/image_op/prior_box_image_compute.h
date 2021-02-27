@@ -40,15 +40,19 @@ class PriorBoxImageCompute
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalBuffer> new_aspect_ratio_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
   MetalImage* variances_buffer_;
   const MetalImage* image_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 class PriorBoxImageComputeHalf
@@ -60,15 +64,19 @@ class PriorBoxImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalBuffer> new_aspect_ratio_buffer_;
-  std::shared_ptr<MetalKernel> kernel_;
   MetalImage* variances_buffer_;
   const MetalImage* image_buffer_;
+  std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 }  // namespace metal

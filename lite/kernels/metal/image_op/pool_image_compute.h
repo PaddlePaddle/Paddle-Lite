@@ -40,6 +40,7 @@ class PoolImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_;
@@ -47,6 +48,9 @@ class PoolImageCompute : public KernelLite<TARGET(kMetal),
 
   std::shared_ptr<MetalBuffer> params_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 class PoolImageComputeHalf
@@ -58,6 +62,7 @@ class PoolImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
+  void SaveOutput() override{};
 
  private:
   const MetalImage* input_buffer_;
@@ -65,6 +70,9 @@ class PoolImageComputeHalf
 
   std::shared_ptr<MetalBuffer> params_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
+  std::shared_ptr<MetalQueue> queue_;
+  std::shared_ptr<MetalEncoder> encoder_;
+  MetalContext* metal_context_;
 };
 
 }  // namespace metal

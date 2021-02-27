@@ -42,7 +42,7 @@ class MetalDebug {
   static void SaveOutput(std::string name,
                          MetalImage* image,
                          DumpMode mode = DumpMode::kBoth) {
-    if (name == "feed" || name == "fetch" || name == "reshape") return;
+    if (name == "feed" || name == "fetch") return;
     layer_count_++;
     if (op_stats_.count(name) > 0) {
       op_stats_[name] += 1;

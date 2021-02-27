@@ -26,8 +26,8 @@ namespace metal {
 
 void ConcatImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -38,9 +38,10 @@ void ConcatImageCompute::PrepareForRun() {
     auto input_image = param.x[i]->data<float, MetalImage>();
     input_buffers_.emplace_back(input_image);
   }
+
   output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
 
-  int axis = param.axis;
+  int axis = 4 - output_buffer_->tensor_dim_.size() + param.axis;
   auto* axis_tensor = param.axis_tensor;
   if (axis_tensor != nullptr) {
     auto* axis_tensor_data = axis_tensor->data<int>();
@@ -128,10 +129,10 @@ void ConcatImageCompute::PrepareForRun() {
   }
 
   ConcatMetalParam pm{
-      {(int)param.output->dims()[0],
-       (int)param.output->dims()[1],
-       (int)param.output->dims()[2],
-       (int)param.output->dims()[3]},
+      {(int)output_buffer_->dim_[0],
+       (int)output_buffer_->dim_[1],
+       (int)output_buffer_->dim_[2],
+       (int)output_buffer_->dim_[3]},
       static_cast<int>(axis),
       0,
       {(int)(output_buffer_->transpose_[0]),
@@ -140,11 +141,12 @@ void ConcatImageCompute::PrepareForRun() {
        (int)(output_buffer_->transpose_[3])},
       {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3], (int)vdim[4], (int)vdim[5]}};
 
-  param_buffer_ = mtl_ctx->CreateBuffer(*device, &pm, sizeof(pm), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = metal_context_->CreateBuffer(*device, &pm, sizeof(pm), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   std::string function_name =
       "concat_" + std::to_string(orank) + "_" + std::to_string(num) + "_" + v_ + "_float";
-  kernel_ = mtl_ctx->GetKernel(*device, function_name);
+  queue_ = metal_context_->GetDefaultQueue(*device);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
 }
 
 void ConcatImageCompute::Run() {
@@ -153,36 +155,32 @@ void ConcatImageCompute::Run() {
   auto output_array_length = output_buffer_->array_length_;
 
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto mtl_dev = metal_context_->GetDefaultDevice();
 
   {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                    static_cast<MetalUint>(output_height),
                                    static_cast<MetalUint>(output_array_length)};
 
-    // TODO: (lzy) check the vector input failed reason
-    std::vector<MetalKernelArgument> args;
-    for (auto item : input_buffers_) args.emplace_back(item);
-    args.emplace_back(output_buffer_);
-    if(v_ == "normal") args.emplace_back(output_buffer_);
-    args.emplace_back(param_buffer_);
+    int image_index = 0;
+    for (auto item : input_buffers_)
+      [encoder->metal_command_encoder_ setTexture:(item->image()) atIndex:(image_index++)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(image_index++)];
+    if(v_ == "normal")
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(image_index)];
+    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(0)];
 
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
+    kernel_->Execute(*encoder, global_work_size, false);
   }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("concat", output_buffer_);
-#endif
   return;
 }
 
 void ConcatImageComputeHalf::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -295,11 +293,13 @@ void ConcatImageComputeHalf::PrepareForRun() {
        (int)(output_buffer_->transpose_[3])},
       {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3], (int)vdim[4], (int)vdim[5]}};
 
-  param_buffer_ = mtl_ctx->CreateBuffer(*device, &pm, sizeof(pm), METAL_ACCESS_FLAG::CPUWriteOnly);
+  param_buffer_ = metal_context_->CreateBuffer(*device, &pm, sizeof(pm), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   std::string function_name =
       "concat_" + std::to_string(orank) + "_" + std::to_string(num) + "_" + v_ + "_half";
-  kernel_ = mtl_ctx->GetKernel(*device, function_name);
+  queue_ = metal_context_->GetDefaultQueue(*device);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
+
 }
 
 void ConcatImageComputeHalf::Run() {
@@ -307,30 +307,22 @@ void ConcatImageComputeHalf::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
-
   {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                    static_cast<MetalUint>(output_height),
                                    static_cast<MetalUint>(output_array_length)};
 
-    // TODO: (lzy) check the vector input failed reason
-    std::vector<MetalKernelArgument> args;
-    for (auto item : input_buffers_) args.emplace_back(item);
-    args.emplace_back(output_buffer_);
-    if(v_ == "normal") args.emplace_back(output_buffer_);
-    args.emplace_back(param_buffer_);
+    int image_index = 0;
+    for (auto item : input_buffers_)
+      [encoder->metal_command_encoder_ setTexture:(item->image()) atIndex:(image_index++)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(image_index++)];
+    if(v_ == "normal")
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(image_index)];
+    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(0)];
 
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
+    kernel_->Execute(*encoder, global_work_size, false);
   }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("concat", output_buffer_);
-#endif
 }
 
 }  // namespace metal

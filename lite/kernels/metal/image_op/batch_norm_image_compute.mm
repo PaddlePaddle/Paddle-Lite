@@ -26,8 +26,8 @@ namespace metal {
 
 void BatchNormImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.x->dims();
@@ -53,8 +53,8 @@ void BatchNormImageCompute::PrepareForRun() {
 
   auto count = scale_dims.production();
 
-  scale_buffer_ = mtl_ctx->CreateBuffer(*device, scale_size * sizeof(float));
-  bias_buffer_ = mtl_ctx->CreateBuffer(*device, bias_size * sizeof(float));
+  scale_buffer_ = metal_context_->CreateBuffer(*device, scale_size * sizeof(float));
+  bias_buffer_ = metal_context_->CreateBuffer(*device, bias_size * sizeof(float));
   auto bias_dev_ptr = (float*)(bias_buffer_->buffer().contents);
   auto scale_dev_ptr = (float*)(scale_buffer_->buffer().contents);
 
@@ -68,6 +68,11 @@ void BatchNormImageCompute::PrepareForRun() {
     memcpy(bias_dev_ptr + i * scale_dims[0], bias_dev_ptr, count * sizeof(float));
     memcpy(scale_dev_ptr + i * scale_dims[0], scale_dev_ptr, count * sizeof(float));
   }
+
+  std::string function_name = "batchnorm";
+  queue_ = metal_context_->GetDefaultQueue(*device);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
+
 }
 
 void BatchNormImageCompute::Run() {
@@ -78,37 +83,25 @@ void BatchNormImageCompute::Run() {
   auto output_height = output_dims[2];
   auto output_array_length = (output_dims[0] * output_dims[1] + 3) / 4;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
-
   {
-    std::string function_name = "batchnorm";
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
-
+    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                    static_cast<MetalUint>(output_height),
                                    static_cast<MetalUint>(output_array_length)};
 
-    auto args = {MetalKernelArgument(input_buffer_),
-                 MetalKernelArgument(output_buffer_),
-                 MetalKernelArgument(scale_buffer_),
-                 MetalKernelArgument(bias_buffer_)};
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setBuffer:(scale_buffer_->buffer()) offset:(0) atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:(bias_buffer_->buffer()) offset:(0) atIndex:(1)];
 
-    kernel->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
+    kernel_->Execute(*encoder, global_work_size, false);
   }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("batch_norm", output_buffer_);
-#endif
 }
 
 void BatchNormImageComputeHalf::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.x->dims();
@@ -134,8 +127,8 @@ void BatchNormImageComputeHalf::PrepareForRun() {
 
   auto count = scale_dims.production();
 
-  scale_buffer_ = mtl_ctx->CreateBuffer(*device, scale_size * sizeof(MetalHalf));
-  bias_buffer_ = mtl_ctx->CreateBuffer(*device, bias_size * sizeof(MetalHalf));
+  scale_buffer_ = metal_context_->CreateBuffer(*device, scale_size * sizeof(MetalHalf));
+  bias_buffer_ = metal_context_->CreateBuffer(*device, bias_size * sizeof(MetalHalf));
   auto bias_dev_ptr = (MetalHalf*)(bias_buffer_->buffer().contents);
   auto scale_dev_ptr = (MetalHalf*)(scale_buffer_->buffer().contents);
 
@@ -150,6 +143,10 @@ void BatchNormImageComputeHalf::PrepareForRun() {
     memcpy(bias_dev_ptr + i * scale_dims[0], bias_dev_ptr, count * sizeof(MetalHalf));
     memcpy(scale_dev_ptr + i * scale_dims[0], scale_dev_ptr, count * sizeof(MetalHalf));
   }
+
+  std::string function_name = "batchnorm_half";
+  queue_ = metal_context_->GetDefaultQueue(*device);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
 }
 
 void BatchNormImageComputeHalf::Run() {
@@ -160,31 +157,19 @@ void BatchNormImageComputeHalf::Run() {
   auto output_height = output_dims[2];
   auto output_array_length = (output_dims[0] * output_dims[1] + 3) / 4;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
-
   {
-    std::string function_name = "batchnorm_half";
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    auto kernel = mtl_ctx->GetKernel(*mtl_dev, function_name);
-
+    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                    static_cast<MetalUint>(output_height),
                                    static_cast<MetalUint>(output_array_length)};
 
-    auto args = {MetalKernelArgument{input_buffer_},
-                 MetalKernelArgument{output_buffer_},
-                 MetalKernelArgument{scale_buffer_},
-                 MetalKernelArgument{bias_buffer_}};
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setBuffer:(scale_buffer_->buffer()) offset:(0) atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:(bias_buffer_->buffer()) offset:(0) atIndex:(1)];
 
-    kernel->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
+    kernel_->Execute(*encoder, global_work_size, false);
   }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("batch_norm", output_buffer_);
-#endif
 }
 
 }  // namespace metal

@@ -191,7 +191,7 @@ void MetalImage::CopyFromNCHW(const SP *src) {
   if (precision_type_ == METAL_PRECISION_TYPE::FLOAT &&
       std::is_same<SP, float>::value) {
     auto nvalue = (float *)malloc(sizeof(float) * rcount);
-    if (tensor_dim_.size() > 2) {
+    if (tensor_dim_.size() == 4) {
       for (int i0 = 0; i0 < N; ++i0) {
         for (int i1 = 0; i1 < C; ++i1) {
           for (int i2 = 0; i2 < H; ++i2) {
@@ -209,6 +209,16 @@ void MetalImage::CopyFromNCHW(const SP *src) {
             }
           }
         }
+      }
+    } else if(tensor_dim_.size() == 3) {
+        for (int i0 = 0; i0 < C; ++i0) {
+          for (int i1 = 0; i1 < H; ++i1) {
+              for (int i2 = 0; i2 < W; ++i2) {
+                  auto ix = (i0 * W * H) + (i1 * W) + i2;
+                  auto jx = ((i0 / 4) * texture_width_ * 4 * H) + (i1 * texture_width_ * 4) + i2;
+                  nvalue[jx] = src[ix];
+              }
+          }
       }
     } else {
       for (int i1 = 0; i1 < H; ++i1) {
@@ -243,7 +253,7 @@ void MetalImage::CopyFromNCHW(const SP *src) {
   } else if (precision_type_ == METAL_PRECISION_TYPE::HALF &&
              std::is_same<SP, float>::value) {
     auto nvalue = (MetalHalf *)malloc(sizeof(MetalHalf) * rcount);
-    if (tensor_dim_.size() > 2) {
+    if (tensor_dim_.size() == 4) {
       for (int i0 = 0; i0 < N; ++i0) {
         for (int i1 = 0; i1 < C; ++i1) {
           for (int i2 = 0; i2 < H; ++i2) {
@@ -259,6 +269,16 @@ void MetalImage::CopyFromNCHW(const SP *src) {
                         (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
               nvalue[jx] = MetalFloat2Half(src[ix]);
             }
+          }
+        }
+      }
+    } else if(tensor_dim_.size() == 3) {
+      for (int i0 = 0; i0 < C; ++i0) {
+        for (int i1 = 0; i1 < H; ++i1) {
+          for (int i2 = 0; i2 < W; ++i2) {
+            auto ix = (i0 * W * H) + (i1 * W) + i2;
+            auto jx = ((i0 / 4) * texture_width_ * 4 * H) + (i1 * texture_width_ * 4) + i2;
+            nvalue[jx] = MetalFloat2Half(src[ix]);
           }
         }
       }
@@ -295,7 +315,7 @@ void MetalImage::CopyFromNCHW(const SP *src) {
   } else if (precision_type_ == METAL_PRECISION_TYPE::HALF &&
              std::is_same<SP, MetalHalf>::value) {
     auto nvalue = (MetalHalf *)malloc(sizeof(MetalHalf) * rcount);
-    if (tensor_dim_.size() > 2) {
+    if (tensor_dim_.size() == 4) {
       for (int i0 = 0; i0 < N; ++i0) {
         for (int i1 = 0; i1 < C; ++i1) {
           for (int i2 = 0; i2 < H; ++i2) {
@@ -311,6 +331,16 @@ void MetalImage::CopyFromNCHW(const SP *src) {
                         (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
               nvalue[jx] = (src[ix]);
             }
+          }
+        }
+      }
+    } else if(tensor_dim_.size() == 3) {
+      for (int i0 = 0; i0 < C; ++i0) {
+        for (int i1 = 0; i1 < H; ++i1) {
+          for (int i2 = 0; i2 < W; ++i2) {
+            auto ix = (i0 * W * H) + (i1 * W) + i2;
+            auto jx = ((i0 / 4) * texture_width_ * 4 * H) + (i1 * texture_width_ * 4) + i2;
+            nvalue[jx] = src[ix];
           }
         }
       }
@@ -425,7 +455,7 @@ void MetalImage::CopyToNCHW(P *dst) const {
     }
 
     int index = 0;
-    if (tensor_dim_.size() > 2) {
+    if (tensor_dim_.size() == 4) {
       for (int i0 = 0; i0 < N; ++i0) {
         for (int i1 = 0; i1 < C; ++i1) {
           for (int i2 = 0; i2 < H; ++i2) {
@@ -444,7 +474,20 @@ void MetalImage::CopyToNCHW(P *dst) const {
           }
         }
       }
-    } else {
+    } else if(tensor_dim_.size() == 3) {
+        for (int i3 = 0; i3 < 4; ++i3) {
+          for (int i0 = 0; i0 < (C / 4 + 1); ++i0) {
+              for (int i1 = 0; i1 < H; ++i1) {
+                  for (int i2 = 0; i2 < W; ++i2) {
+                      auto jx = (i0 * texture_width_ * 4 * H) + (i1 * 4 * texture_width_ ) + i2 * 4 + i3;
+                      if(index < C*H*W)
+                      dst[index++] = pointer[jx];
+                      }
+                  }
+              }
+          }
+      }
+    else {
       for (int h = 0; h < H; h++) {
         for (int w = 0; w < W; w++) {
           dst[index++] = pointer[texture_width_ * 4 * h + w];
@@ -477,7 +520,7 @@ void MetalImage::CopyToNCHW(P *dst) const {
     }
 
     int index = 0;
-    if (tensor_dim_.size() > 2) {
+    if (tensor_dim_.size() == 4) {
       for (int i0 = 0; i0 < N; ++i0) {
         for (int i1 = 0; i1 < C; ++i1) {
           for (int i2 = 0; i2 < H; ++i2) {
@@ -497,6 +540,18 @@ void MetalImage::CopyToNCHW(P *dst) const {
         }
       }
 
+    } else if(tensor_dim_.size() == 3) {
+      for (int i3 = 0; i3 < 4; ++i3) {
+        for (int i0 = 0; i0 < (C / 4 + 1); ++i0) {
+          for (int i1 = 0; i1 < H; ++i1) {
+            for (int i2 = 0; i2 < W; ++i2) {
+              auto jx = (i0 * texture_width_ * 4 * H) + (i1 * 4 * texture_width_ ) + i2 * 4 + i3;
+              if(index < C*H*W)
+                dst[index++] = MetalHalf2Float(pointer[jx]);
+            }
+          }
+        }
+      }
     } else {
       for (int h = 0; h < H; h++) {
         for (int w = 0; w < W; w++) {
@@ -530,7 +585,7 @@ void MetalImage::CopyToNCHW(P *dst) const {
     }
 
     int index = 0;
-    if (tensor_dim_.size() > 2) {
+    if (tensor_dim_.size() == 4) {
       for (int i0 = 0; i0 < N; ++i0) {
         for (int i1 = 0; i1 < C; ++i1) {
           for (int i2 = 0; i2 < H; ++i2) {
@@ -545,6 +600,18 @@ void MetalImage::CopyToNCHW(P *dst) const {
               auto jx = ((k / 4) * dim_[1] * dim_[2] * 4) +
                         (jg[1] * dim_[2] * 4) + (jg[2] * 4) + (k % 4);
               dst[ix] = pointer[jx];
+            }
+          }
+        }
+      }
+    } else if(tensor_dim_.size() == 3) {
+      for (int i3 = 0; i3 < 4; ++i3) {
+        for (int i0 = 0; i0 < (C / 4 + 1); ++i0) {
+          for (int i1 = 0; i1 < H; ++i1) {
+            for (int i2 = 0; i2 < W; ++i2) {
+              auto jx = (i0 * texture_width_ * 4 * H) + (i1 * 4 * texture_width_ ) + i2 * 4 + i3;
+              if(index < C*H*W)
+                dst[index++] = MetalHalf2Float(pointer[jx]);
             }
           }
         }

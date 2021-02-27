@@ -25,8 +25,8 @@ namespace metal {
 
 void PriorBoxImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto box_dims = param.boxes->dims();
@@ -72,7 +72,7 @@ void PriorBoxImageCompute::PrepareForRun() {
 
   auto aspect_ratios_size = (uint32_t)(output_aspect_ratios.size());
 
-  new_aspect_ratio_buffer_ = mtl_ctx->CreateBuffer(*device,
+  new_aspect_ratio_buffer_ = metal_context_->CreateBuffer(*device,
                                                    output_aspect_ratios.data(),
                                                    aspect_ratios_size * sizeof(float),
                                                    METAL_ACCESS_FLAG::CPUWriteOnly);
@@ -98,11 +98,13 @@ void PriorBoxImageCompute::PrepareForRun() {
                                         min_sizes_size,
                                         max_sizes_size};
 
-  new_aspect_ratio_buffer_ = mtl_ctx->CreateBuffer(
+  new_aspect_ratio_buffer_ = metal_context_->CreateBuffer(
       *device, &prior_box_param, sizeof(prior_box_param), METAL_ACCESS_FLAG::CPUWriteOnly);
   std::string function_name = "prior_box";
   if (param.min_max_aspect_ratios_order) function_name = "prior_box_MinMaxAspectRatiosOrder";
-  kernel_ = mtl_ctx->GetKernel(*device, function_name);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
+  queue_ = metal_context_->GetDefaultQueue(*device);
+
 }
 
 void PriorBoxImageCompute::Run() {
@@ -111,37 +113,27 @@ void PriorBoxImageCompute::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
-
-    std::vector<std::pair<MetalKernelArgument, int>> args = {
-        std::pair<MetalKernelArgument, int>{input_buffer_, 0},
-        std::pair<MetalKernelArgument, int>{image_buffer_, 0},
-        std::pair<MetalKernelArgument, int>{new_aspect_ratio_buffer_, 0},
-        std::pair<MetalKernelArgument, int>{param_buffer_, 0},
-        std::pair<MetalKernelArgument, int>{output_buffer_, 0},
-        std::pair<MetalKernelArgument, int>{param.variances_.data(),
-                                            sizeof(float) * param.variances_.size()}};
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("prior_box", output_buffer_);
-#endif
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(image_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(new_aspect_ratio_buffer_->buffer())
+                                      offset:(0)atIndex:(0)];
+  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+  [encoder->metal_command_encoder_ setBytes:(param.variances_.data())
+                                     length:(sizeof(float) * param.variances_.size())
+                                    atIndex:(2)];
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 void PriorBoxImageComputeHalf::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto box_dims = param.boxes->dims();
@@ -190,7 +182,7 @@ void PriorBoxImageComputeHalf::PrepareForRun() {
   std::vector<MetalHalf> output_aspect_ratio_half(aspect_ratios_size);
   MetalFloatArray2HalfArray(
       output_aspect_ratio.data(), output_aspect_ratio_half.data(), aspect_ratios_size);
-  new_aspect_ratio_buffer_ = mtl_ctx->CreateBuffer(*device,
+  new_aspect_ratio_buffer_ = metal_context_->CreateBuffer(*device,
                                                    output_aspect_ratio_half.data(),
                                                    aspect_ratios_size * sizeof(MetalHalf),
                                                    METAL_ACCESS_FLAG::CPUWriteOnly);
@@ -216,11 +208,13 @@ void PriorBoxImageComputeHalf::PrepareForRun() {
                                         min_sizes_size,
                                         max_sizes_size};
 
-  new_aspect_ratio_buffer_ = mtl_ctx->CreateBuffer(
+  new_aspect_ratio_buffer_ = metal_context_->CreateBuffer(
       *device, &prior_box_param, sizeof(prior_box_param), METAL_ACCESS_FLAG::CPUWriteOnly);
   std::string function_name = "prior_box_half";
   if (param.min_max_aspect_ratios_order) function_name = "prior_box_MinMaxAspectRatiosOrder_half";
-  kernel_ = mtl_ctx->GetKernel(*device, function_name);
+  kernel_ = metal_context_->GetKernel(*device, function_name);
+  queue_ = metal_context_->GetDefaultQueue(*device);
+
 }
 
 void PriorBoxImageComputeHalf::Run() {
@@ -229,30 +223,21 @@ void PriorBoxImageComputeHalf::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
-
-    auto args = {std::pair<MetalKernelArgument, int>{input_buffer_, 0},
-                 std::pair<MetalKernelArgument, int>{image_buffer_, 0},
-                 std::pair<MetalKernelArgument, int>{new_aspect_ratio_buffer_, 0},
-                 std::pair<MetalKernelArgument, int>{param_buffer_, 0},
-                 std::pair<MetalKernelArgument, int>{output_buffer_, 0},
-                 std::pair<MetalKernelArgument, int>{param.variances_.data(),
-                                                     sizeof(float) * param.variances_.size()}};
-    kernel_->Execute(*queue, global_work_size, false, args);
-    queue->WaitUntilComplete();
-  }
-
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("prior_box", output_buffer_);
-#endif
+  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+  [encoder->metal_command_encoder_ setTexture:(image_buffer_->image()) atIndex:(1)];
+  [encoder->metal_command_encoder_ setBuffer:(new_aspect_ratio_buffer_->buffer())
+                                      offset:(0)atIndex:(0)];
+  [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0)atIndex:(1)];
+  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+  [encoder->metal_command_encoder_ setBytes:(param.variances_.data())
+                                     length:(sizeof(float) * param.variances_.size())
+                                    atIndex:(2)];
+  kernel_->Execute(*encoder, global_work_size, false);
 }
 
 }  // namespace metal

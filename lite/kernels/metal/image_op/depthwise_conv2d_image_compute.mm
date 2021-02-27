@@ -26,8 +26,8 @@ namespace metal {
 
 void DepthwiseConv2dImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -60,12 +60,12 @@ void DepthwiseConv2dImageCompute::PrepareForRun() {
 
   bool should_use_mps = false;
   function_name_ =
-      KernelFunctionName(param, mtl_ctx->use_aggressive_optimization());
+      KernelFunctionName(param, metal_context_->use_aggressive_optimization());
 
 #ifdef TARGET_IOS
     if(@available(iOS 11.0, *) {
 #endif
-    if (mtl_ctx->use_mps() || mtl_ctx->use_aggressive_optimization()) {
+    if (metal_context_->use_mps() || metal_context_->use_aggressive_optimization()) {
       if (input_dims[1] >= 3 && output_buffer_->tensor_dim_[1] >= 3) {
         // should_use_mps = true; //TODO: (lzy) add MPS support
       }
@@ -94,7 +94,8 @@ void DepthwiseConv2dImageCompute::PrepareForRun() {
     if (index != -1) function_name_.replace(index, 4, "relu6");
   }
 
-  kernel_ = mtl_ctx->GetKernel(*device, function_name_.c_str());
+  kernel_ = metal_context_->GetKernel(*device, function_name_.c_str());
+  queue_ = metal_context_->GetDefaultQueue(*device);
 
   if (should_use_mps) {
     SetupWithMPS();
@@ -109,50 +110,42 @@ void DepthwiseConv2dImageCompute::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
-
   {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
+    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
                                    static_cast<MetalUint>(output_height),
                                    static_cast<MetalUint>(output_array_length)};
 
     if (param.bias) {
-      std::vector<MetalKernelArgument> args = {
-          MetalKernelArgument{input_buffer_},
-          MetalKernelArgument{bias_buffer_},
-          MetalKernelArgument{output_buffer_},
-          MetalKernelArgument{params_buffer_},
-          MetalKernelArgument{filter_buffer_}};
-      bool quadruple = false;
-      if (IsWinoGrad(function_name_) ||
-          function_name_ == "conv_add_relu_1x1_quadruple_half") {
-        quadruple = true;
-      }
-      kernel_->Execute(*queue, global_work_size, quadruple, args);
-      queue->WaitUntilComplete();
-    } else {
-      auto blank_buffer = blank_tensor_.data<float, MetalImage>();
-      auto args = {MetalKernelArgument{input_buffer_},
-                   MetalKernelArgument{blank_buffer},
-                   MetalKernelArgument{output_buffer_},
-                   MetalKernelArgument{params_buffer_},
-                   MetalKernelArgument{filter_buffer_}};
+      [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+      [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image()) atIndex:(1)];
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+      [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
+      [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
 
       bool quadruple = false;
       if (IsWinoGrad(function_name_) ||
           function_name_ == "conv_add_relu_1x1_quadruple_half") {
         quadruple = true;
       }
-      kernel_->Execute(*queue, global_work_size, quadruple, args);
-      queue->WaitUntilComplete();
+      kernel_->Execute(*encoder, global_work_size, quadruple);
+      // queue_->WaitUntilComplete(*encoder_);
+    } else {
+      auto blank_buffer = blank_tensor_.data<float, MetalImage>();
+      [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+      [encoder->metal_command_encoder_ setTexture:(blank_buffer->image()) atIndex:(1)];
+      [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+      [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
+      [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
+
+      bool quadruple = false;
+      if (IsWinoGrad(function_name_) ||
+          function_name_ == "conv_add_relu_1x1_quadruple_half") {
+        quadruple = true;
+      }
+      kernel_->Execute(*encoder, global_work_size, quadruple);
     }
   }
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("depthwise_conv2d", output_buffer_);
-#endif
 }
 
 string DepthwiseConv2dImageCompute::KernelFunctionName(
@@ -219,8 +212,8 @@ void DepthwiseConv2dImageCompute::SetupWithoutMPS() {
   assert((*param.paddings)[0] == (*param.paddings)[1]);
 
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   int offsetX =
       ((int)((*param.dilations)[1]) * (param.filter->dims()[3] - 1) + 1) / 2 -
@@ -296,7 +289,7 @@ void DepthwiseConv2dImageCompute::SetupWithoutMPS() {
         (unsigned short)(param.activation_param.has_active ? 1 : 0),
         element_params};
 
-    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+    params_buffer_ = metal_context_->CreateBuffer(*device,
                                            &conv_params,
                                            sizeof(conv_params),
                                            METAL_ACCESS_FLAG::CPUWriteOnly);
@@ -315,7 +308,7 @@ void DepthwiseConv2dImageCompute::SetupWithoutMPS() {
         (unsigned short)(oC),
         (unsigned short)(param.bias ? 1 : 0),
         (unsigned short)(param.activation_param.has_active ? 1 : 0)};
-    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+    params_buffer_ = metal_context_->CreateBuffer(*device,
                                            &conv_params,
                                            sizeof(conv_params),
                                            METAL_ACCESS_FLAG::CPUWriteOnly);
@@ -351,8 +344,8 @@ void DepthwiseConv2dImageCompute::SetupWithoutMPS() {
 
 void DepthwiseConv2dImageComputeHalf::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
@@ -388,12 +381,12 @@ void DepthwiseConv2dImageComputeHalf::PrepareForRun() {
 
   bool should_use_mps = false;
   function_name_ =
-      KernelFunctionName(param, mtl_ctx->use_aggressive_optimization());
+      KernelFunctionName(param, metal_context_->use_aggressive_optimization());
 
 #ifdef TARGET_IOS
     if(@available(iOS 11.0, *) {
 #endif
-    if (mtl_ctx->use_mps() || mtl_ctx->use_aggressive_optimization()) {
+    if (metal_context_->use_mps() || metal_context_->use_aggressive_optimization()) {
       if (input_dims[1] >= 3 && output_buffer_->tensor_dim_[1] >= 3) {
         should_use_mps = true;
       }
@@ -422,7 +415,8 @@ void DepthwiseConv2dImageComputeHalf::PrepareForRun() {
     if (index != -1) function_name_.replace(index, 4, "relu6");
   }
 
-  kernel_ = mtl_ctx->GetKernel(*device, function_name_.c_str());
+  kernel_ = metal_context_->GetKernel(*device, function_name_.c_str());
+  queue_ = metal_context_->GetDefaultQueue(*device);
 
   if (should_use_mps) {
     SetupWithMPS();
@@ -437,50 +431,37 @@ void DepthwiseConv2dImageComputeHalf::Run() {
   auto output_height = output_buffer_->texture_height_;
   auto output_array_length = output_buffer_->array_length_;
 
-  auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto mtl_dev = mtl_ctx->GetDefaultDevice();
+  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+  MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
+                                 static_cast<MetalUint>(output_height),
+                                 static_cast<MetalUint>(output_array_length)};
 
-  {
-    auto queue = mtl_ctx->GetDefaultQueue(*mtl_dev);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-                                   static_cast<MetalUint>(output_height),
-                                   static_cast<MetalUint>(output_array_length)};
+  if (param.bias) {
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+    [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0)atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0)atIndex:(1)];
 
-    if (param.bias) {
-      auto args = {MetalKernelArgument{input_buffer_},
-                   MetalKernelArgument{bias_buffer_},
-                   MetalKernelArgument{output_buffer_},
-                   MetalKernelArgument{params_buffer_},
-                   MetalKernelArgument{filter_buffer_}};
-      bool quadruple = false;
-      if (IsWinoGrad(function_name_) ||
-          function_name_ == "conv_add_relu_1x1_quadruple_half") {
-        quadruple = true;
-      }
-      kernel_->Execute(*queue, global_work_size, quadruple, args);
-      queue->WaitUntilComplete();
-    } else {
-      auto blank_buffer = blank_tensor_.data<float, MetalImage>();
-      auto args = {MetalKernelArgument{input_buffer_},
-                   MetalKernelArgument{blank_buffer},
-                   MetalKernelArgument{output_buffer_},
-                   MetalKernelArgument{params_buffer_},
-                   MetalKernelArgument{filter_buffer_}};
-
-      bool quadruple = false;
-      if (IsWinoGrad(function_name_) ||
-          function_name_ == "conv_add_relu_1x1_quadruple_half") {
-        quadruple = true;
-      }
-      kernel_->Execute(*queue, global_work_size, quadruple, args);
-      queue->WaitUntilComplete();
+    bool quadruple = false;
+    if (IsWinoGrad(function_name_) || function_name_ == "conv_add_relu_1x1_quadruple_half") {
+      quadruple = true;
     }
-  }
+    kernel_->Execute(*encoder, global_work_size, quadruple);
+  } else {
+    auto blank_buffer = blank_tensor_.data<float, MetalImage>();
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(blank_buffer->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+    [encoder->metal_command_encoder_ setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
+    [encoder->metal_command_encoder_ setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
 
-#if LITE_METAL_SAVE_TENSOR
-  MetalDebug::SaveOutput("depthwise_conv2d", output_buffer_);
-#endif
+    bool quadruple = false;
+    if (IsWinoGrad(function_name_) || function_name_ == "conv_add_relu_1x1_quadruple_half") {
+      quadruple = true;
+    }
+    kernel_->Execute(*encoder, global_work_size, quadruple);
+  }
 }
 
 string DepthwiseConv2dImageComputeHalf::KernelFunctionName(
@@ -571,8 +552,8 @@ void DepthwiseConv2dImageComputeHalf::SetupWithoutMPS() {
   assert((*param.paddings)[0] == (*param.paddings)[1]);
 
   auto& context = ctx_->As<ContextMetal>();
-  auto mtl_ctx = (MetalContext*)context.context();
-  auto device = mtl_ctx->GetDefaultDevice();
+  metal_context_ = (MetalContext*)context.context();
+  auto device = metal_context_->GetDefaultDevice();
 
   int offsetX =
       ((int)((*param.dilations)[1]) * (param.filter->dims()[3] - 1) + 1) / 2 -
@@ -648,7 +629,7 @@ void DepthwiseConv2dImageComputeHalf::SetupWithoutMPS() {
         (unsigned short)(param.activation_param.has_active ? 1 : 0),
         element_params};
 
-    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+    params_buffer_ = metal_context_->CreateBuffer(*device,
                                            &conv_params,
                                            sizeof(conv_params),
                                            METAL_ACCESS_FLAG::CPUWriteOnly);
@@ -667,7 +648,7 @@ void DepthwiseConv2dImageComputeHalf::SetupWithoutMPS() {
         (unsigned short)(oC),
         (unsigned short)(param.bias ? 1 : 0),
         (unsigned short)(param.activation_param.has_active ? 1 : 0)};
-    params_buffer_ = mtl_ctx->CreateBuffer(*device,
+    params_buffer_ = metal_context_->CreateBuffer(*device,
                                            &conv_params,
                                            sizeof(conv_params),
                                            METAL_ACCESS_FLAG::CPUWriteOnly);
