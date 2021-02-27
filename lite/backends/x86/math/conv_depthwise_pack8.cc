@@ -59,7 +59,6 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
 
   int total_count = batch_size * channel_num;
 
-  // #pragma omp parallel for collapse(1)
   for (int idx = 0; idx < total_count; ++idx) {
     __m256 _bias0 =
         bias ? _mm256_loadu_ps(bias->data<float>() + (idx % channel_num) * 8)
