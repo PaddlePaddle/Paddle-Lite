@@ -829,7 +829,7 @@ void CLRuntime::SetTunedLocalWorkSizeMap(const std::string& key,
 }
 
 double CLRuntime::GetCommandTime(const cl::Event& event) {
-  if (auto_tune() != lite_api::CL_TUNE_NONE) event.wait();
+  if (auto_tune() == lite_api::CL_TUNE_NONE) event.wait();
   auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
   return (stop_nanos - start_nanos) / 1000000.0;
