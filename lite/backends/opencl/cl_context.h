@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include "lite/backends/opencl/cl_image.h"
@@ -64,8 +65,8 @@ class CLContext {
       const bool &tune_reverse = false,
       const size_t &user_defined_max_work_size = 0);
 
-  std::vector<cl::NDRange> GenerateLocalWorkSizes(cl::NDRange global_work_size,
-                                                  size_t max_work_size);
+  std::set<cl::NDRange> GenerateLocalWorkSizes(cl::NDRange global_work_size,
+                                               size_t max_work_size);
   bool IsArmMali();
 
  private:

@@ -106,63 +106,40 @@ cl::NDRange CLContext::DefaultGlobalWorkSize(const CLImage &image) {
   }
 }
 
-std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(cl::NDRange gws,
-                                                           size_t max_ws) {
+std::set<cl::NDRange> CLContext::GenerateLocalWorkSizes(cl::NDRange gws,
+                                                        size_t max_ws) {
   size_t tune_type = CLRuntime::Global()->auto_tune();
 
   cl::NDRange tmp_lws =
       DefaultLocalWorkSize(gws, max_ws, /*divisor=*/2, /*tune_reverse=*/false);
   cl::NDRange last_lws = cl::NDRange{
       static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
+  std::set<cl::NDRange> lwss{tmp_lws};
 
-  std::vector<cl::NDRange> lwss{tmp_lws};
-  VLOG(1) << "tune_type:" << tune_type;
-  // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
+  auto gen_lws = [&](const std::set<bool> &tune_reverses,
+                     const std::set<size_t> &divisors) {
+    for (bool tune_reverse : tune_reverses) {
+      for (size_t divisor : divisors) {
+        tmp_lws = DefaultLocalWorkSize(gws, max_ws, divisor, tune_reverse);
+        lwss.emplace(tmp_lws);
+      }
+    }
+  };
+
+  std::set<bool> tune_reverses{true, false};
+  std::set<size_t> divisors;
   if (tune_type == lite_api::CL_TUNE_NONE) {
-    // 0 - None: nothing to do
+    // do nothing
   } else if (tune_type == lite_api::CL_TUNE_RAPID) {
-    // 1 - Rapid
-    for (auto tune_reverse : {true, false}) {
-      for (size_t divisor = 1; divisor < /*max_divisor=*/17; divisor *= 2) {
-        tmp_lws = DefaultLocalWorkSize(gws, max_ws, divisor, tune_reverse);
-        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
-            last_lws[2] == tmp_lws[2]) {
-          // skip tuned lws
-          continue;
-        }
-        lwss.emplace_back(tmp_lws);
-      }
-    }
+    divisors = {1, 2, 4, 8};
   } else if (tune_type == lite_api::CL_TUNE_NORMAL) {
-    // 2 - Normal
-    for (auto tune_reverse : {true, false}) {
-      for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor += 2) {
-        tmp_lws = DefaultLocalWorkSize(gws, max_ws, divisor, tune_reverse);
-        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
-            last_lws[2] == tmp_lws[2]) {
-          // skip tuned lws
-          continue;
-        }
-        lwss.emplace_back(tmp_lws);
-      }
-    }
+    divisors = {1, 3, 5, 7, 9, 11, 13};
   } else if (tune_type == lite_api::CL_TUNE_EXHAUSTIVE) {
-    // 3 - Exhaustive
-    for (auto tune_reverse : {true, false}) {
-      for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
-        tmp_lws = DefaultLocalWorkSize(gws, max_ws, divisor, tune_reverse);
-        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
-            last_lws[2] == tmp_lws[2]) {
-          // skip tuned lws
-          continue;
-        }
-        lwss.emplace_back(tmp_lws);
-      }
-    }
+    divisors = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
   } else {
     LOG(FATAL) << "Unsupported opencl tune type:" << tune_type;
   }
-
+  gen_lws(tune_reverses, divisors);
   return lwss;
 }
 

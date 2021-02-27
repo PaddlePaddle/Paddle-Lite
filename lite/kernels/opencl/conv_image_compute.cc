@@ -423,10 +423,10 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                    CL_KERNEL_WORK_GROUP_SIZE,
                                    &max_work_group_size);
-  std::vector<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
+  std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
       global_work_size_, max_work_group_size);
   CHECK(lwss.size() > 0) << "Possible local work sizes should bigger than zero";
-  local_work_size_ = lwss[0];
+  local_work_size_ = *lwss.begin();
   if (max_work_group_size <= 0 || !use_lws_ ||
       CLRuntime::Global()->auto_tune() <= 0) {
     if (!use_lws_) {
@@ -439,9 +439,9 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   LOG(INFO) << "====== start =======";
 #endif
   double min_lws_time = DBL_MAX;
-  cl::NDRange min_lws = lwss[0];
-  for (size_t i = 0; i < lwss.size(); ++i) {
-    local_work_size_ = lwss[i];
+  cl::NDRange min_lws = *lwss.begin();
+  for (cl::NDRange cur_lws : lwss) {
+    local_work_size_ = cur_lws;
     double cur_lws_time = 0.0f;
     // note: useless for skip first run
     for (size_t i = 0; i < repeats; ++i) {
@@ -456,7 +456,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
               << std::to_string(local_work_size_[2]) << "} -->" << cur_lws_time;
 #endif
     if (min_lws_time > cur_lws_time) {
-      min_lws = lwss[i];
+      min_lws = cur_lws;
       min_lws_time = cur_lws_time;
     }
   }
