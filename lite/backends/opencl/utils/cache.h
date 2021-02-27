@@ -17,7 +17,6 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/utils/cache_generated.h"
 #include "lite/backends/opencl/utils/tune_cache_generated.h"
 
