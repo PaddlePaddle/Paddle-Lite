@@ -47,10 +47,14 @@ class LookupTableCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       if (padding_idx != -1 && ids[i] == padding_idx) {
         memset(output + i * row_width, 0, row_width * sizeof(T));
       } else {
-        CHECK_LT(ids[i], row_number);
+        // CHECK_LT(ids[i], row_number);
+        int64_t idx = ids[i];
+        if (idx >= row_number) {
+          idx = row_number - 1;
+        }
         CHECK_GE(ids[i], 0);
         memcpy(output + i * row_width,
-               table + ids[i] * row_width,
+               table + idx * row_width,
                row_width * sizeof(T));
       }
     }
