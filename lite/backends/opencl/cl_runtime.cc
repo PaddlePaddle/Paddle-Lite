@@ -377,10 +377,8 @@ void CLRuntime::SaveTuned() {
   } else {
     bool ret = Serialize(tuned_file, tuned_lwss_map_);
     CHECK(ret) << "Serialize failed for opencl tuned_file:" << tuned_file;
-#ifdef LITE_WITH_LOG
     LOG(INFO) << "Tuned file have been serialized to disk successfully: "
               << tuned_file;
-#endif
   }
 }
 
