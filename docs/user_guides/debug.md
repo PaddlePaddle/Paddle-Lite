@@ -28,6 +28,19 @@ Profiler 在 Lite 里分为性能 Profiler 和 精度 Profiler：
 
 其它平台，参照文档对各平台的编译方式进行编译。
 
+也可以不手动修改根目录下的`CMakeLists.txt`，通过显式设置编译选项方式，编译出支持性能或精度 profiler 预测库。
+如下编译示例展示了编译支持性能 profiler 的预测库的方法：
+
+```
+# 编译 Android 预测库：
+./lite/tools/build_android.sh --with_opencl=ON --with_extra=ON --with_profile=ON full_publish
+# 编译 macOS x86 预测库：
+./lite/tools/build.sh --with_opencl=ON --with_extra=ON --with_profile=ON x86`
+# 编译 Windows x86 预测库：
+.\lite\tools\build_windows.bat with_extra with_profile
+```
+
+
 ### 精度 Profiler
 
 对每个output tensor除了有维度/设备/数据排布/精度信息外，还3个数值来表示，用于快速核验：
