@@ -854,7 +854,7 @@ class XPUSingleEncoderNormBeforeFuser : public FuseBase {
 
     auto* q_mul_y =
         VarNode("q_mul_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
-    auto* q_mul = OpNode("q_mul", mul_type_);
+    auto* q_mul = OpNode("q_mul", mul_type_)->AsIntermediate();
     auto* q_mul_out = VarNode("q_mul_out")
                           ->assert_is_op_output(mul_type_, "Out")
                           ->assert_is_op_input("elementwise_add", "X")
@@ -1550,6 +1550,8 @@ class XPUMultiEncoderNormBeforeFuser {
     memcpy(max_filter_tensor->mutable_data<float>(),
            &fc_weight_max[0],
            sizeof(float) * fc_weight_max.size());
+    max_filter_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_filter_tensor->set_persistable(true);
     op_desc.SetInput("FCWeightMax", {max_name});
 
     auto multi_encoder_op = LiteOpRegistry::Global().Create(op_desc.Type());

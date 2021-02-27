@@ -174,7 +174,6 @@ void XPUMultiEncoderNormBeforeCompute::Run() {
   encoder_param_.slice_axes = param.slice_axes;
 
   int r = -1;
-
   ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
   if (param.precision == "int31") {
     LOG(FATAL) << "Not support int31 at now";
