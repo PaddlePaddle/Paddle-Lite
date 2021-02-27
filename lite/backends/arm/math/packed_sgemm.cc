@@ -1960,12 +1960,11 @@ void prepackA_trans_4x8(float* outptr,
 }
 
 #endif  // __aarch64__
-
-/**
-* \brief input data is transpose
-* for arm-v7a, transform data to block x k x 8 layout
-* for arm-v8a, transform data to block x k x 12 layout or block x k x 8 layout
-*/
+        /**
+        * \brief input data is transpose
+        * for arm-v7a, transform data to block x k x 8 layout
+        * for arm-v8a, transform data to block x k x 12 layout or block x k x 8 layout
+        */
 #ifdef __aarch64__
 void loadb(
     float *out, const float *in, int ldin, int k0, int kmax, int n0, int nmax) {
@@ -2938,6 +2937,17 @@ void loadb_trans(
 
 #endif  // __aarch64__
 
+#define X_BLOCK_COMPUTE(l2_cache, MBLOCK, NBLOCK, M, N, K)                  \
+  int x_block = (l2_cache - (MBLOCK * K)) / (sizeof(float) * (K + MBLOCK)); \
+  x_block /= NBLOCK;                                                        \
+  x_block = (x_block == 0) ? 1 : x_block;                                   \
+  x_block *= NBLOCK;                                                        \
+  int x_num = (N + (x_block - 1)) / x_block;                                \
+  x_block = (N + x_num - 1) / x_num;                                        \
+  x_block = (x_block + NBLOCK - 1) / NBLOCK;                                \
+  x_block *= NBLOCK;                                                        \
+  x_block = x_block < NBLOCK ? NBLOCK : x_block;
+
 #ifdef __aarch64__
 void sgemm_prepacked_8x12(bool is_transB,
                           int M,
@@ -2979,15 +2989,7 @@ void sgemm_prepacked_8x12(bool is_transB,
       alpha[3] = local_alpha;
     }
   }
-  //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block = (l2_cache - (MBLOCK * K)) / (sizeof(float) * (K + MBLOCK));
-  x_block /= NBLOCK;
-  x_block *= NBLOCK;
-  int x_num = (N + (x_block - 1)) / x_block;
-  x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + NBLOCK - 1) / NBLOCK;
-  x_block *= NBLOCK;
-  x_block = x_block < NBLOCK ? NBLOCK : x_block;
+  X_BLOCK_COMPUTE(l2_cache, MBLOCK, NBLOCK, M, N, K)
 
   // unroll 2 loop
   int tail_pre = (K & (KBLOCK - 1));
@@ -3786,16 +3788,7 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
       alpha[3] = local_alpha;
     }
   }
-  //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block = (l2_cache * 9 / 10 - (MBLOCK * K * sizeof(float))) /
-                (sizeof(float) * (K + MBLOCK));
-  x_block /= NBLOCK;
-  x_block *= NBLOCK;
-  int x_num = (N + (x_block - 1)) / x_block;
-  x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + NBLOCK - 1) / NBLOCK;
-  x_block *= NBLOCK;
-  x_block = x_block < NBLOCK ? NBLOCK : x_block;
+  X_BLOCK_COMPUTE((l2_cache * 9 / 10), MBLOCK, NBLOCK, M, N, K)
 
   // unroll 2 loop
   int tail_pre = (K & (KBLOCK - 1));
@@ -4730,15 +4723,7 @@ void sgemm_prepacked_4x8(bool is_transB,
   }
   float32x4_t valpha = vld1q_f32(alpha);
   float32x4_t vzero = vdupq_n_f32(0.f);
-  //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block = (l2_cache - (m_block * K)) / (sizeof(float) * (K + m_block));
-  x_block /= n_block;
-  x_block *= n_block;
-  int x_num = (N + (x_block - 1)) / x_block;
-  x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + n_block - 1) / n_block;
-  x_block *= n_block;
-  x_block = x_block < n_block ? n_block : x_block;
+  X_BLOCK_COMPUTE(l2_cache, m_block, n_block, M, N, K)
 
   int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
   int tail_pre = (K & (KBLOCK - 1));
@@ -5142,15 +5127,7 @@ void sgemm_prepacked_4x4(bool is_transB,
   }
   const int n_block = 4;
   const int m_block = 4;
-  //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block = (l2_cache - (m_block * K)) / (sizeof(float) * (K + m_block));
-  x_block /= n_block;
-  x_block *= n_block;
-  int x_num = (N + (x_block - 1)) / x_block;
-  x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + n_block - 1) / n_block;
-  x_block *= n_block;
-  x_block = x_block < n_block ? n_block : x_block;
+  X_BLOCK_COMPUTE(l2_cache, m_block, n_block, M, N, K)
 
   // unroll 2 loop
   int tail_pre = (K & (KBLOCK - 1));
@@ -5497,15 +5474,7 @@ void sgemm_prepacked_6x8(bool is_transB,
     }
   }
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block =
-      (l2_cache - (MBLOCK_OTH * K)) / (sizeof(float) * (K + MBLOCK_OTH));
-  x_block /= NBLOCK;
-  x_block *= NBLOCK;
-  int x_num = (N + (x_block - 1)) / x_block;
-  x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + NBLOCK - 1) / NBLOCK;
-  x_block *= NBLOCK;
-  x_block = x_block < NBLOCK ? NBLOCK : x_block;
+  X_BLOCK_COMPUTE(l2_cache, MBLOCK_OTH, NBLOCK, M, N, K)
 
   int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
   int tail_pre = (K & (KBLOCK - 1));
@@ -6034,16 +6003,7 @@ void sgemm_prepacked_6x8_a53(bool is_transB,
   size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   auto* workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
-  //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block = (l2_cache * 9 / 10 - (MBLOCK_OTH * K * sizeof(float))) /
-                (sizeof(float) * (K + MBLOCK_OTH));
-  x_block /= NBLOCK;
-  x_block *= NBLOCK;
-  int x_num = (N + (x_block - 1)) / x_block;
-  x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + NBLOCK - 1) / NBLOCK;
-  x_block *= NBLOCK;
-  x_block = x_block < NBLOCK ? NBLOCK : x_block;
+  X_BLOCK_COMPUTE((l2_cache * 9 / 10), MBLOCK_OTH, NBLOCK, M, N, K)
 
   int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
   int tail_pre = (K & (KBLOCK - 1));
@@ -6514,16 +6474,7 @@ void sgemm_prepacked_4x8(bool is_transB,
       alpha[3] = local_alpha;
     }
   }
-  //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
-  int x_block =
-      (l2_cache - (MBLOCK_A73 * K)) / (sizeof(float) * (K + MBLOCK_A73));
-  x_block /= NBLOCK;
-  x_block *= NBLOCK;
-  int x_num = (N + (x_block - 1)) / x_block;
-  x_block = (N + x_num - 1) / x_num;
-  x_block = (x_block + NBLOCK - 1) / NBLOCK;
-  x_block *= NBLOCK;
-  x_block = x_block < NBLOCK ? NBLOCK : x_block;
+  X_BLOCK_COMPUTE(l2_cache, MBLOCK_A73, NBLOCK, M, N, K)
 
   int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;
   int tail_pre = (K & (KBLOCK - 1));

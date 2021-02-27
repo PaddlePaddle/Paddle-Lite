@@ -27,3 +27,18 @@ REGISTER_LITE_KERNEL(slice,
     .BindInput("EndsTensorList", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(slice,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::SliceCompute<int>,
+                     int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindInput("StartsTensor", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("EndsTensor", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("StartsTensorList", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("EndsTensorList", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .Finalize();
