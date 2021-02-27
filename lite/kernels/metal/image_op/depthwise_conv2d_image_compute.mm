@@ -129,7 +129,6 @@ void DepthwiseConv2dImageCompute::Run() {
         quadruple = true;
       }
       kernel_->Execute(*encoder, global_work_size, quadruple);
-      // queue_->WaitUntilComplete(*encoder_);
     } else {
       auto blank_buffer = blank_tensor_.data<float, MetalImage>();
       [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];

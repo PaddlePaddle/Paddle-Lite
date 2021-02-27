@@ -80,7 +80,6 @@ class IoCopyHostToMetalTexture
 
         auto args = {MetalKernelArgument{src_buffer_}, MetalKernelArgument{output_buffer_}};
         kernel_->Execute(*encoder, global_work_size, false);
-        // queue_->WaitUntilComplete(*encoder_);
       }
     } else {
       output_buffer_->CopyFromNCHW<float>(src);

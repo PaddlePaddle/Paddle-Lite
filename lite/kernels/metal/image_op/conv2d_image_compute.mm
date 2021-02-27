@@ -468,7 +468,6 @@ void Conv2dImageComputeHalf::Run() {
         quadruple = true;
       }
       kernel_->Execute(*encoder, global_work_size, quadruple);
-      // queue_->WaitUntilComplete(*encoder_);
     }
   }
 }

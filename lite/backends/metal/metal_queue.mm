@@ -42,9 +42,6 @@ std::unique_ptr<MetalCommandBuffer> MetalQueue::CreateCommandBuffer(RuntimeProgr
   return ret;
 }
 
-void MetalQueue::WaitUntilComplete(MetalEncoder& encoder) const {
-  [encoder.metal_command_buffer_ waitUntilCompleted];
-}
 
 MetalEncoder::MetalEncoder(MetalCommandBuffer* buffer, MetalKernelProgram* program){
     this->metal_command_buffer_ = buffer->metal_command_buffer_;
