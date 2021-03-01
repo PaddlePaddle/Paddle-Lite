@@ -27,7 +27,6 @@ void FlattenContiguousRangeCompute::Run() {
   auto x = param.x;
   auto out = param.out;
   auto out_dims = out->dims();
-  auto out_lod = out->lod();
   out->ShareDataWith(*x);
   out->Resize(out_dims);
 }
