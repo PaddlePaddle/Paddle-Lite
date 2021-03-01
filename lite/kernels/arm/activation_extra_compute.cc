@@ -152,6 +152,17 @@ void AbsCompute::Run() {
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
+void GeluCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  bool approximate = param.gelu_approximate;
+  lite::arm::math::act_gelu<float>(
+      x_data, output_data, x_dims.production(), approximate, ctx.threads());
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
@@ -233,6 +244,12 @@ REGISTER_LITE_KERNEL(reciprocal,
     .Finalize();
 REGISTER_LITE_KERNEL(
     abs, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::AbsCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    gelu, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::GeluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
