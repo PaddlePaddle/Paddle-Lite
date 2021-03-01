@@ -1950,6 +1950,61 @@ void elementwise_div_broadcast<float>(const float* dinx,
 }
 
 template <>
+void elementwise_floor_div<int32_t>(const int32_t* dinx,
+                                    const int32_t* diny,
+                                    int32_t* dout,
+                                    int num) {
+  naive_elementwise_op<int32_t, naive_floor_div<int32_t>>(
+      dinx, diny, dout, num);
+}
+
+template <>
+void elementwise_floor_div<int64_t>(const int64_t* dinx,
+                                    const int64_t* diny,
+                                    int64_t* dout,
+                                    int num) {
+  for (int i = 0; i < num; i++) {
+    *dout = static_cast<int64_t>(std::trunc(*dinx / *diny));
+    dout++;
+    dinx++;
+    diny++;
+  }
+}
+
+template <>
+void elementwise_floor_div_broadcast<int32_t>(const int32_t* dinx,
+                                              const int32_t* diny,
+                                              int32_t* dout,
+                                              int batch,
+                                              int channels,
+                                              int num) {
+  naive_elementwise_op_broadcast<int32_t, naive_floor_div<int32_t>>(
+      dinx, diny, dout, batch, channels, num);
+}
+
+template <>
+void elementwise_floor_div_broadcast<int64_t>(const int64_t* dinx,
+                                              const int64_t* diny,
+                                              int64_t* dout,
+                                              int batch,
+                                              int channels,
+                                              int num) {
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int64_t* din_ptr = dinx + offset;
+      const int64_t diny_data = diny[j];
+      int64_t* dout_ptr = dout + offset;
+      for (int p = 0; p < num; p++) {
+        *dout_ptr = static_cast<int64_t>(std::trunc(*din_ptr / diny_data));
+        dout_ptr++;
+        din_ptr++;
+      }
+    }
+  }
+}
+
+template <>
 void elementwise_div_relu<float>(const float* dinx,
                                  const float* diny,
                                  float* dout,
