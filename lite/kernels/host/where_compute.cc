@@ -33,7 +33,7 @@ void where_kernel(const operators::WhereParam& param) {
   auto numel = dims.production();
   const T* x_data = x->template data<T>();
   const T* y_data = y->template data<T>();
-  const bool* cond_data = input->data<bool>();
+  const bool* cond_data = condition->template data<bool>();
   T* out_data = out->template mutable_data<T>();
   for (int i = 0; i < numel; i++) {
     out_data[i] = cond_data[i] ? x_data[i] : y_data[i];
@@ -60,7 +60,7 @@ void WhereCompute::Run() {
       break;
     default:
       LOG(FATAL) << "Where does not implement for the "
-                 << "input type:" << static_cast<int>(param.input->precision());
+                 << "input type:" << static_cast<int>(param.x->precision());
   }
 }
 
@@ -74,6 +74,6 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("Condition",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();

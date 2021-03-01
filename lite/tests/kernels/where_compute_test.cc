@@ -31,22 +31,6 @@ class WhereComputeTester : public arena::TestCase {
   DDim x_dims_{{3, 5, 4, 4}};
 
  public:
-  template <typename T>
-  void where_kernel(const operators::WhereParam& param) {
-    auto* x = param.x;
-    auto* y = param.y;
-    auto* condition = param.condition;
-    auto* out = param.out;
-    auto dims = x->dims();
-    auto numel = dims.production();
-    const T* x_data = x->template data<T>();
-    const T* y_data = y->template data<T>();
-    const bool* cond_data = input->data<bool>();
-    T* out_data = out->template mutable_data<T>();
-    for (int i = 0; i < numel; i++) {
-      out_data[i] = cond_data[i] ? x_data[i] : y_data[i];
-    }
-  }
   WhereComputeTester(const Place& place, const std::string& alias, DDim x_dims)
       : TestCase(place, alias), x_dims_(x_dims) {}
 
@@ -57,26 +41,50 @@ class WhereComputeTester : public arena::TestCase {
     auto* out = scope->NewTensor(out_);
 
     out->Resize(x->dims());
-    switch (param.x->precision()) {
-      case PRECISION(kFloat):
-        where_kernel<float>(param);
-        break;
-      case PRECISION(kInt32):
-        where_kernel<int32_t>(param);
-        break;
-      case PRECISION(kInt64):
-        where_kernel<int64_t>(param);
-        break;
-      case PRECISION(kInt8):
-        where_kernel<int8_t>(param);
-        break;
-      case PRECISION(kBool):
-        where_kernel<bool>(param);
-        break;
-      default:
-        LOG(FATAL) << "Where does not implement for the "
-                   << "input type:"
-                   << static_cast<int>(param.input->precision());
+    auto numel = x_dims_.production();
+    if (x->precision() == PRECISION(kFloat)) {
+      const float* x_data = x->template data<float>();
+      const float* y_data = y->template data<float>();
+      const bool* cond_data = condition->template data<bool>();
+      float* out_data = out->template mutable_data<float>();
+      for (int i = 0; i < numel; i++) {
+        out_data[i] = cond_data[i] ? x_data[i] : y_data[i];
+      }
+    } else if (x->precision() == PRECISION(kInt32)) {
+      const int* x_data1 = x->template data<int>();
+      const int* y_data1 = y->template data<int>();
+      const bool* cond_data1 = condition->template data<bool>();
+      int* out_data1 = out->template mutable_data<int>();
+      for (int i = 0; i < numel; i++) {
+        out_data1[i] = cond_data1[i] ? x_data1[i] : y_data1[i];
+      }
+    } else if (x->precision() == PRECISION(kInt64)) {
+      const int64_t* x_data2 = x->template data<int64_t>();
+      const int64_t* y_data2 = y->template data<int64_t>();
+      const bool* cond_data2 = condition->template data<bool>();
+      int64_t* out_data2 = out->template mutable_data<int64_t>();
+      for (int i = 0; i < numel; i++) {
+        out_data2[i] = cond_data2[i] ? x_data2[i] : y_data2[i];
+      }
+    } else if (x->precision() == PRECISION(kInt8)) {
+      const int8_t* x_data3 = x->template data<int8_t>();
+      const int8_t* y_data3 = y->template data<int8_t>();
+      const bool* cond_data3 = condition->template data<bool>();
+      int8_t* out_data3 = out->template mutable_data<int8_t>();
+      for (int i = 0; i < numel; i++) {
+        out_data3[i] = cond_data3[i] ? x_data3[i] : y_data3[i];
+      }
+    } else if (x->precision() == PRECISION(kBool)) {
+      const bool* x_data4 = x->template data<bool>();
+      const bool* y_data4 = y->template data<bool>();
+      const bool* cond_data4 = condition->template data<bool>();
+      bool* out_data4 = out->template mutable_data<bool>();
+      for (int i = 0; i < numel; i++) {
+        out_data4[i] = cond_data4[i] ? x_data4[i] : y_data4[i];
+      }
+    } else {
+      LOG(FATAL) << "Where does not implement for the "
+                 << "input type:" << static_cast<int>(x->precision());
     }
   }
 
@@ -95,12 +103,11 @@ class WhereComputeTester : public arena::TestCase {
     fill_data_rand(dy.data(), -1.f, 1.f, x_dims_.production());
     SetCommonTensor(x_, x_dims_, dx.data());
     SetCommonTensor(y_, x_dims_, dy.data());
-    condition_->Resize(x_dims_);
-    condition_->set_precision(PRECISION(kFloat));
-    auto data = condition_->mutable_data<bool>();
+    std::vector<bool> dc(x_dims_.production());
     for (int i = 0; i < x_dims_.production(); i++) {
-      data[i] = (i % 2) ? true : false;
+      dc[i] = (i % 2) ? true : false;
     }
+    SetCommonTensor(condition_, x_dims_, dc);
   }
 };
 
@@ -112,7 +119,7 @@ void TestWhere(Place place, float abs_error) {
   arena.TestPrecision();
 }
 
-TEST(WriteToArray, precision) {
+TEST(where, precision) {
   Place place;
   float abs_error = 1e-5;
 #ifdef LITE_WITH_ARM
