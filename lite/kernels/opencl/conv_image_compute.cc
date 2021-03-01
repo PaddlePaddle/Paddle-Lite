@@ -302,6 +302,14 @@ void ConvImageCompute::PrepareForRun() {
           << static_cast<int>(conv_param_->activation_param.active_type)
           << " conv_param_->activation_param.has_active:"
           << conv_param_->activation_param.has_active;
+  // alpha_image_p_ init
+  alpha_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+  std::unique_ptr<Tensor> tensor_hold_alpha_image =
+      std::unique_ptr<Tensor>(new Tensor);
+  tensor_hold_alpha_image->Resize({1, 1, 1, 4});
+  auto* alpha_image_data = DATA_GPU(tensor_hold_alpha_image);
+  MUTABLE_DATA_GPU(alpha_gpu_image_, 1, 1, alpha_image_data);
+  alpha_image_p_ = DATA_GPU(alpha_gpu_image_);
   if (conv_param_->activation_param.has_active) {
     if (conv_param_->activation_param.active_type ==
         lite_api::ActivationType::kRelu) {
@@ -345,12 +353,9 @@ void ConvImageCompute::PrepareForRun() {
       } else {
         build_options_single += " -DPRELU_ALL";
       }
-      alpha_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
       CLImageConverterFolder alpha_converter;
       const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
           conv_param_->activation_param.Prelu_alpha->dims());
-      std::unique_ptr<Tensor> tensor_hold_alpha_image =
-          std::unique_ptr<Tensor>(new Tensor);
       tensor_hold_alpha_image->Resize(
           {1, alpha_image_dims[0], alpha_image_dims[1], 4});
       auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image);
