@@ -139,9 +139,6 @@ CL_DTYPE4 alpha0;
   //}
 #endif
   output = activation_type4(output, alpha0);
-#else
-  output = activation_type4(output);
-#endif
 
 #ifdef SCALE_ACTIVATION
   output = fuse_scale(output, 1.f, 0.f, 0.f);
