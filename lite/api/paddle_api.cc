@@ -77,6 +77,7 @@ const lite::Tensor *ctensor(void *x) {
 
 void Tensor::Resize(const shape_t &shape) {
   tensor(raw_tensor_)->Resize(shape);
+LOG(INFO) << "HI";
 }
 
 bool Tensor::IsInitialized() const {
