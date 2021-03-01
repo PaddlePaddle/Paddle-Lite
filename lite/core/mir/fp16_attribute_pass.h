@@ -25,19 +25,17 @@ namespace paddle {
 namespace lite {
 namespace mir {
 /*
- * Use quant_fp16_pass method to quantize the model.
- * In optimization stage, if the data type of weights is fp32, quantize the
- * weights to fp16. So the size of the quantized weights is reduced 2x.
- * In inference stage, If use_fp16 is off, the quantized weights are dequantized
- * to fp32 and run
- * all ops to get output. Else using the quantized weights to infer.
+ * Use fp16_attribute_pass method to set fp16_ops attirbute in model.
+ * if op has is_weight, then add weight_name_fp16 attirbute;
+ * Then running model, Accroding to weight_name_fp16 attirbute, op's weight
+ * transform FP32 to FP16 percision type.
  */
-class QuantFP16Pass : public ProgramPass {
+class FP16AttributePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
-  std::vector<std::string> quant_ops_{"conv2d"};
+  std::vector<std::string> fp16_ops_{"conv2d"};
 };
 
 }  // namespace mir

@@ -20,11 +20,11 @@
 #include <utility>
 #include <vector>
 #include "lite/core/mir/elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.h"
+#include "lite/core/mir/fp16_attribute_pass.h"
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
 #include "lite/core/mir/pass_utils.h"
 #include "lite/core/mir/post_quant_dynamic_pass.h"
-#include "lite/core/mir/quant_fp16_pass.h"
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/core/mir/static_kernel_pick_pass.h"
 #include "lite/core/mir/type_target_cast_pass.h"
@@ -211,7 +211,7 @@ class Optimizer {
     const std::string msa_depend_pass{"runtime_context_assign_pass"};
     const std::string pqd_pass{"post_quant_dynamic_pass"};
     const std::string pqd_depend_pass{"lite_quant_dequant_fuse_pass"};
-    const std::string fp16_pass{"quant_fp16_pass"};
+    const std::string fp16_pass{"fp16_attribute_pass"};
     for (const std::string& pass : passes) {
       if (pass == msa_pass) {
         auto iter = std::find(

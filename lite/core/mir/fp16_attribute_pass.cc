@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/quant_fp16_pass.h"
+#include "lite/core/mir/fp16_attribute_pass.h"
 #include <algorithm>
 #include <cmath>
 #include <memory>
@@ -24,13 +24,13 @@
 namespace paddle {
 namespace lite {
 namespace mir {
-void QuantFP16Pass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void FP16AttributePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<mir::Node*> nodes;
   for (auto* node : graph->StmtTopologicalOrder()) {
     if (node->IsStmt()) {
       const std::string op_type = node->stmt()->op_type();
-      auto iter = std::find(quant_ops_.begin(), quant_ops_.end(), op_type);
-      if (iter != quant_ops_.end()) {
+      auto iter = std::find(fp16_ops_.begin(), fp16_ops_.end(), op_type);
+      if (iter != fp16_ops_.end()) {
         nodes.push_back(node);
       }
     }
@@ -62,5 +62,5 @@ void QuantFP16Pass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(quant_fp16_pass, paddle::lite::mir::QuantFP16Pass)
+REGISTER_MIR_PASS(fp16_attribute_pass, paddle::lite::mir::FP16AttributePass)
     .BindTargets({TARGET(kARM), TARGET(kX86)});

@@ -78,7 +78,7 @@ lite_cc_library(mir_passes
       quantized_op_attributes_inference_pass.cc
       restrict_quantized_op_with_same_input_output_scale_pass.cc
       post_quant_dynamic_pass.cc
-      quant_fp16_pass.cc
+      fp16_attribute_pass.cc
   DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
 # lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS
