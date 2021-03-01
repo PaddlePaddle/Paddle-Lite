@@ -63,6 +63,7 @@ bool IsOpenCLBackendValid(bool check_fp16_valid) {
 
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "opencl_valid:" << opencl_valid;
+  LOG(INFO) << "Hi, are you ok?";
 #endif
 #endif
   return opencl_valid;
