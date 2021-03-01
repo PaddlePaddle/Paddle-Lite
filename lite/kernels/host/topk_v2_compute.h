@@ -15,13 +15,14 @@
 #pragma once
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/operators/topk_v2_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
 
-class TopkV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class TopkV2Compute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   void Run() override;
 
