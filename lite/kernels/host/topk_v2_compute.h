@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class TopkV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class TopkV2Compute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   void Run() override;
 

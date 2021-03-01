@@ -25,7 +25,6 @@ bool comp_func(std::pair<float, int> a, std::pair<float, int> b) {
 }
 
 void TopkV2Compute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = Param<operators::TopkParam>();
   const float* x_data = param.X->data<float>();
   float* out_val = param.Out->mutable_data<float>();
