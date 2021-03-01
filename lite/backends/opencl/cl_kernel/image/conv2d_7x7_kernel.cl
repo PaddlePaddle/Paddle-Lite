@@ -125,15 +125,18 @@ __kernel void conv2d_7x7(__private const int global_size_dim0,
 #endif
 
 CL_DTYPE4 alpha0;
-#ifdef PRELU_CH
+#ifdef PRELU_CH //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
-#elif defined(PRELU_ELE)
+  //}
+#elif defined(PRELU_ELE) //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos);
-#elif defined(PRELU_ALL)
+  //}
+#elif defined(PRELU_ALL) //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
   alpha0.y = alpha0.x;
   alpha0.z = alpha0.x;
   alpha0.w = alpha0.x;
+  //}
 #endif
   output = activation_type4(output, alpha0);
 #else

@@ -253,17 +253,19 @@ __kernel void conv2d_1x1_opt(
 #endif
 
 CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
-#ifdef PRELU_CH
+#ifdef PRELU_CH //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
   alpha1 = alpha0;
   alpha2 = alpha0;
   alpha3 = alpha0;
-#elif defined(PRELU_ELE)
+  //}
+#elif defined(PRELU_ELE) //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
   alpha1 = alpha0;
   alpha2 = alpha0;
   alpha3 = alpha0;
-#elif defined(PRELU_ALL)
+  //}
+#elif defined(PRELU_ALL) //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
   alpha0.y = alpha0.x;
   alpha0.z = alpha0.x;
@@ -271,6 +273,7 @@ CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
   alpha1 = alpha0;
   alpha2 = alpha0;
   alpha3 = alpha0;
+  //}
 #endif
   output0 = activation_type4(output0, alpha0);
   output1 = activation_type4(output1, alpha1);
@@ -444,17 +447,19 @@ __kernel void conv2d_1x1_simple(
 #endif
 
 CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
-#ifdef PRELU_CH
+#ifdef PRELU_CH //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
   alpha1 = alpha0;
   alpha2 = alpha0;
   alpha3 = alpha0;
-#elif defined(PRELU_ELE)
+  //}
+#elif defined(PRELU_ELE) //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
   alpha1 = alpha0;
   alpha2 = alpha0;
   alpha3 = alpha0;
-#elif defined(PRELU_ALL)
+  //}
+#elif defined(PRELU_ALL) //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
   alpha0.y = alpha0.x;
   alpha0.z = alpha0.x;
@@ -462,6 +467,7 @@ CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
   alpha1 = alpha0;
   alpha2 = alpha0;
   alpha3 = alpha0;
+  //}
 #endif
   output0 = activation_type4(output0, alpha0);
   output1 = activation_type4(output1, alpha1);

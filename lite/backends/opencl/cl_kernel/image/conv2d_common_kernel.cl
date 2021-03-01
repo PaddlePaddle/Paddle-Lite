@@ -153,12 +153,13 @@ __kernel void conv2d_common(__private const int global_size_dim0,
         }
     }
 CL_DTYPE4 alpha0, alpha1, alpha2, alpha3;
-#ifdef PRELU_CH
+#ifdef PRELU_CH //{
     alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_channel_block_idx, 0));
     alpha1 = alpha0;
     alpha2 = alpha0;
     alpha3 = alpha0;
-#elif defined(PRELU_ELE)
+  //}
+#elif defined(PRELU_ELE) //{
     alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                                 prelu_alpha,
                                 SAMPLER,
@@ -181,7 +182,8 @@ CL_DTYPE4 alpha0, alpha1, alpha2, alpha3;
                                 SAMPLER,
                                 (int2)(out_w_base_id + out_w_id3, output_bh_idx));
     }
-#elif defined(PRELU_ALL)
+  //}
+#elif defined(PRELU_ALL) //{
     alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
     alpha0.y = alpha0.x;
     alpha0.z = alpha0.x;
@@ -189,6 +191,7 @@ CL_DTYPE4 alpha0, alpha1, alpha2, alpha3;
     alpha1 = alpha0;
     alpha2 = alpha0;
     alpha3 = alpha0;
+    //}
 #endif
     out0 = activation_type4(out0, alpha0);
     out1 = activation_type4(out1, alpha1);

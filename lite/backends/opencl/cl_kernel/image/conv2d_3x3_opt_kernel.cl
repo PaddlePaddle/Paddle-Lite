@@ -218,14 +218,14 @@ __kernel void conv2d_3x3_opt(__private const int item_ch,
   }
 
 CL_DTYPE4 alpha[5];
-#ifdef PRELU_CH
+#ifdef PRELU_CH //{
   alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(item_ch_id, 0));
   alpha[1] = alpha[0];
   alpha[2] = alpha[0];
   alpha[3] = alpha[0];
   alpha[4] = alpha[0];
-
-#elif defined(PRELU_ELE)
+  //}
+#elif defined(PRELU_ELE) //{
   alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
                             prelu_alpha,
                             SAMPLER,
@@ -254,11 +254,13 @@ CL_DTYPE4 alpha[5];
                               SAMPLER,
                               (int2)(out_w_base_id + out_w_id4, item_h_id));
   }
-#elif defined(PRELU_ALL)
+  //}
+#elif defined(PRELU_ALL) //{
   alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
   alpha[0].y = alpha[0].x; alpha[0].z = alpha[0].x; alpha[0].w = alpha[0].x;
   alpha[1] = alpha[0]; alpha[2] = alpha[0];
   alpha[3] = alpha[0]; alpha[4] = alpha[0];
+  //}
 #endif
   output[0] = activation_type4(output[0], alpha[0]);
   output[1] = activation_type4(output[1], alpha[1]);
@@ -510,14 +512,14 @@ __kernel void conv2d_3x3_multi_batch(__private const int item_ch,
   }
 
 CL_DTYPE4 alpha[5];
-#ifdef PRELU_CH
+#ifdef PRELU_CH //{
   alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(item_ch_id, 0));
   alpha[1] = alpha[0];
   alpha[2] = alpha[0];
   alpha[3] = alpha[0];
   alpha[4] = alpha[0];
-
-#elif defined(PRELU_ELE)
+  //}
+#elif defined(PRELU_ELE) //{
   alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR,
                             prelu_alpha,
                             SAMPLER,
@@ -546,11 +548,13 @@ CL_DTYPE4 alpha[5];
                               SAMPLER,
                               (int2)(out_w_base_id + out_w_id4, item_h_id));
   }
-#elif defined(PRELU_ALL)
+  //}
+#elif defined(PRELU_ALL) //{
   alpha[0] = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
   alpha[0].y = alpha[0].x; alpha[0].z = alpha[0].x; alpha[0].w = alpha[0].x;
   alpha[1] = alpha[0]; alpha[2] = alpha[0];
   alpha[3] = alpha[0]; alpha[4] = alpha[0];
+  //}
 #endif
   output[0] = activation_type4(output[0], alpha[0]);
   output[1] = activation_type4(output[1], alpha[1]);
