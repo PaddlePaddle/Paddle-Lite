@@ -298,6 +298,13 @@ template <typename T>
 void elementwise_pow_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 
+template <typename T>
+void elementwise_floordiv(const T* dinx, const T* diny, T* dout, int num);
+
+template <typename T>
+void elementwise_floordiv_broadcast(
+    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
