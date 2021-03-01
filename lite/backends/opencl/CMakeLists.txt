@@ -2,6 +2,8 @@ if (NOT LITE_WITH_OPENCL)
     return()
 endif()
 
+add_subdirectory(utils)
+
 lite_cc_library(opencl_kernels_source_cc SRCS opencl_kernels_source.cc)
 lite_cc_library(cl_wrapper SRCS cl_wrapper.cc)
 lite_cc_library(cl_utility SRCS cl_utility.cc DEPS cl_wrapper)
