@@ -24,7 +24,7 @@ namespace kernels {
 namespace arm {
 
 // Transpose
-class TransposeCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class TransposeCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  public:
   using param_t = operators::TransposeParam;
   void PrepareForRun() override;
