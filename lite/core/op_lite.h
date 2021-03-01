@@ -72,7 +72,7 @@ class OpLite : public Registry {
   virtual bool Run();
   // Indicate whether the Op runs only once or not
   virtual bool run_once() const { return false; }
-  std::string Type() { return op_type_; }
+  std::string Type() const { return op_type_; }
 #ifdef LITE_WITH_PROFILE
   virtual void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {}
 #endif
