@@ -42,7 +42,7 @@ bool TopkV2Op::InferShapeImpl() const {
   } else {
     k = param_.K;
   }
-  CHECK_GE(param_.axis, k) << "input of topk_v2 op must have >=" k
+  CHECK_GE(param_.axis, k) << "input of topk_v2 op must have >=" << k
                            << " columns in axis of " << param_.axis;
   out_dims[param_.axis] = k;
   auto out = param_.Out;
@@ -65,7 +65,7 @@ bool TopkV2Op::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.Out = scope->FindMutableTensor(output0);
   param_.Indices = scope->FindMutableTensor(output1);
   if (op_desc.HasInput("K") && op_desc.Input("K").size() > 0) {
-    param_.KTensor = scope->FindTensor(op_desc.Input("K").infront());
+    param_.KTensor = scope->FindTensor(op_desc.Input("K").front());
     param_.k_is_tensor = true;
   } else {
     param_.K = op_desc.GetAttr<int>("k");

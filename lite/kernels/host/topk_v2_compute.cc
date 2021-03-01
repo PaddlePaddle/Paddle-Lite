@@ -19,7 +19,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 bool comp_func(std::pair<float, int> a, std::pair<float, int> b) {
   return (a.first > b.first);
 }
@@ -40,16 +40,10 @@ void TopkV2Compute::Run() {
   if (param.k_is_tensor) {
     k = param.KTensor->data<int>()[0];
   }
-  int outer_size = x_dims.Count(0, axis);
+  int outer_size = x_dims.count(0, axis);
   int axis_size = x_dims[axis];
-  int inner_size = x_dims.Count(axis + 1, dim_size);
+  int inner_size = x_dims.count(axis + 1, dim_size);
   int sum_size = axis_size * inner_size;
-  LOG(INFO) << "axis: " << param.axis << ", k: " << k;
-  LOG(INFO) << "inner_size: " << inner_size << ", axis_size: " << axis_size
-            << ", outer_size: " << outer_size;
-  for (int i = 0; i < dim_size; i++) {
-    LOG(INFO) << x_dims[i];
-  }
   for (int n = 0; n < outer_size; n++) {
     const float* in_data = x_data + n * sum_size;
     float* out_data = out_val + n * sum_size;
@@ -61,20 +55,24 @@ void TopkV2Compute::Run() {
       }
       std::partial_sort(vec.begin(), vec.begin() + k, vec.end(), comp_func);
       for (int j = 0; j < k; j++) {
-        out_data[j * outer_size + i] = vec[j].frist;
+        out_data[j * outer_size + i] = vec[j].first;
         out_ind_data[j * outer_size + i] = vec[j].second;
       }
     }
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    top_k, kHost, kFloat, kNCHW, paddle::lite::kernels::arm::TopkCompute, def)
+REGISTER_LITE_KERNEL(top_k_v2,
+                     kHost,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::host::TopkV2Compute,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("K", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})

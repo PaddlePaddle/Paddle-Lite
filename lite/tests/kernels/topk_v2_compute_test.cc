@@ -32,7 +32,6 @@ class TopkV2ComputeTester : public arena::TestCase {
   // common attributes for this op.
   std::string x_ = "x";
   std::string out_ = "out";
-  std::string K_ = "K";
   std::string indices_ = "indices";
   DDim x_dims_{{3, 5, 4, 4}};
   int axis_ = -1;
@@ -61,32 +60,33 @@ class TopkV2ComputeTester : public arena::TestCase {
 
     auto* x = scope->FindTensor(x_);
     const auto* x_data = x->template data<T1>();
-    int inner_size = x_dims_.Count(axis_ + 1, x_dims_.size());
+    int inner_size = x_dims_.count(axis_ + 1, x_dims_.size());
     int axis_size = x_dims_[axis_];
-    int outer_size = x_dims_.Count(0, axis_);
+    int outer_size = x_dims_.count(0, axis_);
+    int sum_size = axis_size * inner_size;
 
     for (int n = 0; n < outer_size; n++) {
       const float* in_data = x_data + n * sum_size;
-      float* out_data = out_val + n * sum_size;
-      int64_t* out_ind_data = out_ind + n * sum_size;
+      float* out_val_data1 = out_val_data + n * sum_size;
+      int64_t* out_ind_data1 = out_ind_data + n * sum_size;
       for (int i = 0; i < inner_size; i++) {
         std::vector<std::pair<float, int>> vec;
         for (int j = 0; j < axis_size; j++) {
           vec.push_back(std::make_pair(in_data[j * outer_size + i], j));
         }
-        std::partial_sort(vec.begin(), vec.begin() + k, vec.end(), comp_func);
-        for (int j = 0; j < k; j++) {
-          out_data[j * outer_size + i] = vec[j].frist;
-          out_ind_data[j * outer_size + i] = vec[j].second;
+        std::partial_sort(
+            vec.begin(), vec.begin() + k_, vec.end(), comp_func<T1, T2>);
+        for (int j = 0; j < k_; j++) {
+          out_val_data1[j * outer_size + i] = vec[j].first;
+          out_ind_data1[j * outer_size + i] = vec[j].second;
         }
       }
     }
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
-    op_desc->SetType("top_k");
+    op_desc->SetType("top_k_v2");
     op_desc->SetInput("X", {x_});
-    op_desc->SetInput("K", {K_});
     op_desc->SetOutput("Out", {out_});
     op_desc->SetOutput("Indices", {indices_});
     op_desc->SetAttr("k", k_);
@@ -118,7 +118,7 @@ void test_topk_v2(Place place, float abs_error) {
 TEST(Topk, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+#if defined(LITE_WITH_ARM)
   place = TARGET(kHost);
   test_topk_v2<float, int64_t>(place, abs_error);
 #else

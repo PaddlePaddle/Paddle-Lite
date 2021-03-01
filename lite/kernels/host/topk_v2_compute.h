@@ -19,7 +19,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 class TopkV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
@@ -28,7 +28,7 @@ class TopkV2Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~TopkV2Compute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
