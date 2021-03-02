@@ -291,6 +291,9 @@ class ActivationComputeTester : public arena::TestCase {
     if (act_type_ == RELU6) {
       op_desc->SetAttr("threshold", threshold_);
     }
+    if (act_type_ == GELU) {
+      op_desc->SetAttr("approximate", false);
+    }
   }
 
   void PrepareData() override {
