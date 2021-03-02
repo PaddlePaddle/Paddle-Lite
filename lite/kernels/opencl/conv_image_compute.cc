@@ -1062,7 +1062,7 @@ void ConvImageCompute::DepthwiseConv2d() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(18, filter_tensor_h_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(18, *alpha_image_p_);
+  status_ = kernel_.setArg(19, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 
