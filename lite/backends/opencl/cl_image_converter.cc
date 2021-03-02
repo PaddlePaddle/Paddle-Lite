@@ -623,6 +623,7 @@ void CLImageConverterDWFilter::ImageToNCHW(void *image,
                                            const DDim &image_dim,
                                            const DDim &tensor_dim) {}
 
+/*
 DDim CLImageConverterConv2dTransposeTransWeight::InitImageDimInfoWith(
     const DDim &tensor_dim) {
   size_t new_dims[] = {1, 1, 1, 1};
@@ -689,6 +690,7 @@ void CLImageConverterConv2dTransposeTransWeight::ImageToNCHW(
     float *tensor,
     const DDim &image_dim,
     const DDim &tensor_dim) {}
+*/
 
 }  // namespace lite
 }  // namespace paddle

@@ -18,6 +18,9 @@
 #include <string>
 #include <vector>
 
+#if defined(_MSC_VER)
+#include "lite/backends/x86/port.h"
+#endif
 #include "lite/backends/opencl/cl_half.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
@@ -47,8 +50,6 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
 
   void Run() override;
 
-  double Tune(int times = 5);
-
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_names_[0];
@@ -60,11 +61,12 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
  private:
-  void Conv2dTranspose(bool enable_tune = false);
-  void Conv2dTranspose3x3s2(bool enable_tune = false);
-  void DepthwiseConv2dTranspose(bool enable_tune = false);
+  void Conv2dTranspose();
+  void DepthwiseConv2dTranspose();
+#ifdef LITE_WITH_LOG
   void PrintConvInfo();
-  void GetGlobalWorkSize();
+#endif
+  void SetGlobalWorkSize();
 
   param_t* conv_param_{nullptr};
 
@@ -78,13 +80,6 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
   std::unique_ptr<Tensor> bias_gpu_image_{nullptr};
   std::unique_ptr<Tensor> tensor_hold_filter_image_{nullptr};
   std::unique_ptr<Tensor> tensor_hold_bias_image_{nullptr};
-  cl::NDRange global_work_size_ = cl::NDRange{
-      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-
-  // opencl kernel args
-  int c_blk_ = 1;
-  int w_blk_ = 1;
-  int nh_blk_ = 1;
 
   const cl::Image2D* input_image_p_{nullptr};
   const cl::Image2D* filter_image_p_{nullptr};
@@ -112,7 +107,6 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
   int input_tensor_w_{-1};
   int input_image_h_{-1};
   int input_image_w_{-1};
-  int input_c_block_{-1};
 
   int output_tensor_n_{-1};
   int output_tensor_c_{-1};
@@ -128,18 +122,13 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
   int filter_image_h_{-1};
   int filter_image_w_{-1};
 
-  int default_c_blk_ = 1;
-  int default_w_blk_ = 1;
-  int default_nh_blk_ = 1;
-
   DDim last_input_dims_{};
   bool is_first_epoch_for_run_{true};
 
   cl::Kernel kernel_;
-  cl::NDRange local_work_size_ = cl::NDRange{
+  cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-  bool use_lws_{true};
-  bool use_tune_{false};
+  cl::NDRange local_work_size_ = cl::NullRange;
 };
 
 }  // namespace opencl
