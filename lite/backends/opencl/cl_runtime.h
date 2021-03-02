@@ -113,28 +113,7 @@ class CLRuntime {
   void set_auto_tune(lite_api::CLTuneMode tune_mode,
                      const std::string& path,
                      const std::string& name,
-                     size_t lws_repeats = 4) {
-    auto_tune_ = tune_mode;
-    lws_repeats_ = lws_repeats;
-    if (tuned_path_name_.empty()) {
-      tuned_path_name_.push_back(path);
-      tuned_path_name_.push_back(name);
-    }
-    const std::string tuned_file = path + "/" + name;
-    LOG(INFO) << "tuned_file.size():" << tuned_file.size()
-              << ", tuned_file:" << tuned_file;
-    if (tuned_file.size() > 2 && IsFileExists(tuned_file) &&
-        auto_tune() != lite_api::CL_TUNE_NONE) {
-      LOG(INFO) << "Load tuned file: " << tuned_file;
-      bool status = Deserialize(tuned_file, &tuned_lwss_map_);
-      if (!status) {
-        LOG(ERROR) << "failed to deserialize tuned_file:" << tuned_file;
-      }
-    } else {
-      LOG(INFO) << "Not found tuned file:" << tuned_file;
-    }
-    command_queue_ = CreateCommandQueue(context());
-  }
+                     size_t lws_repeats = 4);
 
   lite_api::CLTuneMode auto_tune() { return auto_tune_; }
 

@@ -803,6 +803,32 @@ void CLRuntime::GetAdrenoContextProperties(
   properties->push_back(0);
 }
 
+void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
+                              const std::string& path,
+                              const std::string& name,
+                              size_t lws_repeats) {
+  auto_tune_ = tune_mode;
+  lws_repeats_ = lws_repeats;
+  if (tuned_path_name_.empty()) {
+    tuned_path_name_.push_back(path);
+    tuned_path_name_.push_back(name);
+  }
+  const std::string tuned_file = path + "/" + name;
+  LOG(INFO) << "tuned_file.size():" << tuned_file.size()
+            << ", tuned_file:" << tuned_file;
+  if (tuned_file.size() > 2 && IsFileExists(tuned_file) &&
+      auto_tune() != lite_api::CL_TUNE_NONE) {
+    LOG(INFO) << "Load tuned file: " << tuned_file;
+    bool status = Deserialize(tuned_file, &tuned_lwss_map_);
+    if (!status) {
+      LOG(ERROR) << "failed to deserialize tuned_file:" << tuned_file;
+    }
+  } else {
+    LOG(INFO) << "Not found tuned file:" << tuned_file;
+  }
+  command_queue_ = CreateCommandQueue(context());
+}
+
 bool CLRuntime::HasTunedLocalWorkSizeMap(const std::string& key,
                                          cl::NDRange* lws) {
   bool has = false;
@@ -829,21 +855,24 @@ void CLRuntime::SetTunedLocalWorkSizeMap(const std::string& key,
 }
 
 double CLRuntime::GetCommandTime(const cl::Event& event) {
-  if (auto_tune() == lite_api::CL_TUNE_NONE) event.wait();
+  // due to one command queue, no need for `event.wait();`,
+  // and `event.wait()` affect performance of auto-tune.
   auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
   return (stop_nanos - start_nanos) / 1000000.0;
 }
 
 double CLRuntime::GetQueuedTime(const cl::Event& event) {
-  event.wait();
+  // due to one command queue, no need for `event.wait();`,
+  // and `event.wait()` affect performance of auto-tune.
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) /
          1000000.0;
 }
 
 double CLRuntime::GetSubmitTime(const cl::Event& event) {
-  event.wait();
+  // due to one command queue, no need for `event.wait();`,
+  // and `event.wait()` affect performance of auto-tune.
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) /
          1000000.0;
