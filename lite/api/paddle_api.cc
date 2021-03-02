@@ -14,7 +14,6 @@
 
 #include "lite/api/paddle_api.h"
 
-#include <functional>
 #include <utility>
 
 #include "lite/core/context.h"
@@ -26,6 +25,7 @@
 #include "lite/backends/cuda/target_wrapper.h"
 #endif
 #ifdef LITE_WITH_XPU
+#include <functional>
 #include "lite/backends/xpu/target_wrapper.h"
 #endif
 
@@ -110,6 +110,7 @@ template const int64_t *Tensor::data<int64_t>() const;
 template const int32_t *Tensor::data<int32_t>() const;
 template const int16_t *Tensor::data<int16_t>() const;
 template const int8_t *Tensor::data<int8_t>() const;
+template const uint16_t *Tensor::data<uint16_t>() const;
 template const uint8_t *Tensor::data<uint8_t>() const;
 template const bool *Tensor::data<bool>() const;
 template const void *Tensor::data<void>() const;
@@ -120,6 +121,7 @@ template int64_t *Tensor::mutable_data(TargetType type) const;
 template int *Tensor::mutable_data(TargetType type) const;
 template int16_t *Tensor::mutable_data(TargetType type) const;
 template int8_t *Tensor::mutable_data(TargetType type) const;
+template uint16_t *Tensor::mutable_data(TargetType type) const;
 template uint8_t *Tensor::mutable_data(TargetType type) const;
 template bool *Tensor::mutable_data(TargetType type) const;
 
@@ -269,6 +271,22 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
 #endif
 }
 
+void ConfigBase::set_opencl_binary_path_name(const std::string &path,
+                                             const std::string &name) {
+#ifdef LITE_WITH_OPENCL
+  if (paddle::lite_api::IsOpenCLBackendValid()) {
+    opencl_bin_path_ = path;
+    opencl_bin_name_ = name;
+    lite::CLRuntime::Global()->SetBinaryPathName(path, name);
+#ifdef LITE_WITH_LOG
+    LOG(INFO) << "opencl binary path and file name:"
+              << (lite::CLRuntime::Global()->GetBinaryPathName())[0] << "/"
+              << (lite::CLRuntime::Global()->GetBinaryPathName())[1];
+#endif
+  }
+#endif
+}
+
 void ConfigBase::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
 #ifdef LITE_WITH_OPENCL
   if (paddle::lite_api::IsOpenCLBackendValid()) {
@@ -276,9 +294,8 @@ void ConfigBase::set_opencl_tune(CLTuneMode tune_mode, size_t lws_repeats) {
     paddle::lite::CLRuntime::Global()->set_auto_tune(opencl_tune_mode_,
                                                      lws_repeats);
 #ifdef LITE_WITH_LOG
-    LOG(INFO) << "opencl_tune_mode:"
-              << static_cast<size_t>(
-                     paddle::lite::CLRuntime::Global()->auto_tune());
+    LOG(INFO) << "set opencl_tune_mode: "
+              << CLTuneModeToStr(lite::CLRuntime::Global()->auto_tune());
 #endif
   }
 #endif
@@ -290,9 +307,9 @@ void ConfigBase::set_opencl_precision(CLPrecisionType p) {
     opencl_precision_ = p;
     paddle::lite::CLRuntime::Global()->set_precision(p);
 #ifdef LITE_WITH_LOG
-    LOG(INFO) << "get opencl precision:"
-              << static_cast<size_t>(
-                     paddle::lite::CLRuntime::Global()->get_precision());
+    LOG(INFO) << "set opencl precision: "
+              << CLPrecisionTypeToStr(
+                     lite::CLRuntime::Global()->get_precision());
 #endif
   }
 #endif
@@ -352,15 +369,9 @@ const std::string &CxxModelBuffer::get_program() const {
   return program_;
 }
 
-const std::string &CxxModelBuffer::get_params() const {
-  CHECK(!params_.empty());
-  return params_;
-}
+const std::string &CxxModelBuffer::get_params() const { return params_; }
 
-bool CxxModelBuffer::is_empty() const {
-  CHECK(program_.empty() == params_.empty());
-  return program_.empty();
-}
+bool CxxModelBuffer::is_empty() const { return program_.empty(); }
 
 const CxxModelBuffer &CxxConfig::get_model_buffer() const {
   CHECK(model_buffer_) << "Cannot get an empty model buffer.";
@@ -441,6 +452,7 @@ void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
                                                 const lod_t &lod,
                                                 const T fill_value,
                                                 const void *data) {
+#ifdef LITE_WITH_XPU
   if (preferred_inputs_for_warmup_.count(group_idx) == 0) {
     preferred_inputs_for_warmup_[group_idx] =
         std::vector<std::shared_ptr<void>>{};
@@ -467,6 +479,11 @@ void CxxConfig::set_preferred_inputs_for_warmup(const int group_idx,
       input_data[i] = fill_value;
     }
   }
+#else
+  LOG(WARNING)
+      << "'set_preferred_inputs_for_warmup' is only for xpu now, please "
+         "rebuild it with LITE_WITH_XPU=ON.";
+#endif
 }
 
 #define _SetPreferredInputsForWarmup(dtype)                        \

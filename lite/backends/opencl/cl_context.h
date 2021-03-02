@@ -34,20 +34,17 @@ class CLContext {
     }
     kernels_.clear();
     kernel_offset_.clear();
-    for (auto &p : programs_) {
+    for (auto &p : CLRuntime::Global()->program_map()) {
       // Note(ysh329): Dont't need `clReleaseProgram`
       p.second.reset();
     }
-    programs_.clear();
+    CLRuntime::Global()->program_map().clear();
     LOG(INFO) << "release cl::Program, cl::Kernel finished.";
   }
 
   cl::CommandQueue &GetCommandQueue();
 
   cl::Context &GetContext();
-
-  cl::Program &GetProgram(const std::string &file_name,
-                          const std::string &options);
 
   void AddKernel(const std::string &kernel_name,
                  const std::string &file_name,
@@ -79,7 +76,6 @@ class CLContext {
   cl::NDRange GetTunedLocalWorkSizeFromMap(const std::string &key);
 
  private:
-  std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::vector<std::shared_ptr<cl::Kernel>> kernels_;
   std::map<std::string, int> kernel_offset_;
   std::map<std::string, cl::NDRange> tuned_lwss_map_;

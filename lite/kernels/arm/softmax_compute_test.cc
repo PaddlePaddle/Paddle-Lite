@@ -71,13 +71,13 @@ void softmax_compute_ref(const operators::SoftmaxParam& param) {
 }
 
 TEST(softmax_arm, init) {
-  SoftmaxCompute softmax;
+  SoftmaxCompute<PRECISION(kFloat), PRECISION(kFloat)> softmax;
   ASSERT_EQ(softmax.precision(), PRECISION(kFloat));
   ASSERT_EQ(softmax.target(), TARGET(kARM));
 }
 
 TEST(softmax_arm, compute) {
-  SoftmaxCompute softmax;
+  SoftmaxCompute<PRECISION(kFloat), PRECISION(kFloat)> softmax;
   operators::SoftmaxParam param;
 
   lite::Tensor x;

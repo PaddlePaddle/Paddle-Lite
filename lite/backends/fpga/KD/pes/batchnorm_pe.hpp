@@ -33,17 +33,13 @@ class BatchnormPE : public PE {
     ScaleParam& scale_param = scalePE_.param();
     scale_param.input = param_.input;
     scale_param.output = param_.output;
-    Tensor* scale = new Tensor();
-    Tensor* bias = new Tensor();
     Shape shape(N, {output->shape().channel()});
-
     auto mean_data = param_.mean->data<float>();
     auto variance_data = param_.variance->data<float>();
     auto scale_data = param_.scale->data<float>();
     auto bias_data = param_.bias->data<float>();
-    auto new_scale_ptr = scale->mutableData<float>(FP32, shape);
-    auto new_bias_ptr = bias->mutableData<float>(FP32, shape);
-
+    auto new_scale_ptr = scale_.mutableData<zynqmp::float16>(FP16, shape);
+    auto new_bias_ptr = bias_.mutableData<zynqmp::float16>(FP16, shape);
     float epsilon = param_.epsilon;
 
     Shape& in_shape = param_.input->shape();
@@ -55,51 +51,31 @@ class BatchnormPE : public PE {
       float inv_scale = 1.0 / (std::sqrt(var + epsilon));
       float scale_value = inv_scale * scale_data[c];
       float bias_value = bias_data[c] - scale_value * mean_data[c];
-      new_scale_ptr[c] = scale_value;
-      new_bias_ptr[c] = bias_value;
+      new_scale_ptr[c] = zynqmp::float_to_half(scale_value);
+      new_bias_ptr[c] = zynqmp::float_to_half(bias_value);
     }
 
-    scale->flush();
-    bias->flush();
+    scale_.flush();
+    bias_.flush();
 
-    scale_param.scale = scale;
-    scale_param.bias = bias;
-    scale_param.relu = param_.relu;
-
+    scale_param.scale = &scale_;
+    scale_param.bias = &bias_;
+    scale_param.activeParam.type = param_.activeParam.type;
     scalePE_.init();
-
-    inplace_.relu_enable = param_.relu.enabled;
-    inplace_.relu_enable = true;
-    inplace_.power_enable = false;
-    inplace_.normalize_enable = false;
-
     return true;
   }
 
   void apply() { scalePE_.apply(); }
 
-  bool dispatch() {
-    if (inplace_.relu_enable) {
-      config_inplace(inplace_);
-    }
-    bool ret = scalePE_.dispatch();
-
-    inplace_.relu_enable = false;
-    config_inplace(inplace_);
-    return ret;
-  }
+  bool dispatch() { return scalePE_.dispatch(); }
 
   BatchnormParam& param() { return param_; }
-
-  ~BatchnormPE() {
-    scalePE_.param().input = nullptr;
-    scalePE_.param().output = nullptr;
-  }
 
  private:
   BatchnormParam param_;
   ScalePE scalePE_;
-  InplaceArgs inplace_;
+  Tensor scale_;
+  Tensor bias_;
 };
 }  // namespace zynqmp
 }  // namespace paddle

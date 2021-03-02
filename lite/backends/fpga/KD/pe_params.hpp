@@ -39,6 +39,12 @@ struct PEParam {
   ActiveParam activeParam;
 };
 
+struct BypassParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  Tensor* output = nullptr;
+};
+
 struct InputParam : PEParam {
  public:
   Tensor* input = nullptr;
@@ -217,6 +223,17 @@ struct SplitParam : PEParam {
   std::vector<Tensor*> outputs;
   int axis = 1;
   int num = 1;
+};
+
+struct SliceParam : PEParam {
+ public:
+  Tensor* input = nullptr;
+  Tensor* output = nullptr;
+  std::vector<int> axes;
+  std::vector<int32_t> starts;
+  std::vector<int32_t> ends;
+  std::vector<int> decrease_axis;
+  std::vector<int> infer_flags;
 };
 
 struct NormParam : PEParam {

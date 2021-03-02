@@ -12,15 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/increment.h"
-#include <arm_neon.h>
-#include <cmath>
-#include "lite/utils/cp_logging.h"
+#pragma once
+#include "lite/backends/fpga/KD/pes/batchnorm_pe.hpp"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {}  // namespace math
-}  // namespace arm
+namespace kernels {
+namespace fpga {
+using float16 = zynqmp::float16;
+
+class BatchNormCompute
+    : public KernelLite<TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)> {
+ public:
+  using param_t = operators::BatchNormParam;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  virtual ~BatchNormCompute() = default;
+
+ private:
+  zynqmp::BatchnormPE pe_;
+};
+
+}  // namespace fpga
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

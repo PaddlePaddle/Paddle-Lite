@@ -667,6 +667,14 @@ struct TransposeParam : ParamBase {
   }
 };
 
+struct TrilTriuParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  lite::Tensor* out{nullptr};
+
+  int diagonal{0};
+  bool lower{true};
+};
+
 /// ----------------------- element wise operators ----------------------
 struct ElementwiseParam : ParamBase {
   const lite::Tensor* X{};
@@ -981,6 +989,7 @@ struct MatrixNmsParam : ParamBase {
   const lite::Tensor* scores{};
   lite::Tensor* out{};
   lite::Tensor* index{};
+  lite::Tensor* rois_num{};
   int background_label{0};
   float score_threshold{};
   float post_threshold{0.0f};
@@ -2235,6 +2244,14 @@ struct StridedSliceParam : ParamBase {
   lite::Tensor* StridesTensor{nullptr};
 };
 
+struct TileParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> repeat_times{};
+  lite::Tensor* RepeatTimes{};
+  std::vector<lite::Tensor*> repeat_times_tensor{};
+};
+
 struct ScatterNdAddParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* indexs{};
@@ -2258,6 +2275,16 @@ struct SumParam : ParamBase {
   int inplace{0};
 };
 
+struct PNormParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  float porder{2.f};
+  int axis{-1};
+  float epsilon{1.0e-12f};
+  bool keepdim{false};
+  bool asvector{false};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
