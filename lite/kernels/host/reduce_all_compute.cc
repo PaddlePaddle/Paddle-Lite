@@ -44,7 +44,7 @@ void ReduceAllCompute::Run() {
 
   std::set<int> dims_set(dim.begin(), dim.end());
   bool full_dim = true;
-  for (auto i = 0; i < x_dims.size(); i++) {
+  for (int i = 0; i < static_cast<int>(x_dims.size()); i++) {
     if (dims_set.find(i) == dims_set.end()) {
       full_dim = false;
       break;
@@ -54,7 +54,7 @@ void ReduceAllCompute::Run() {
 
   if (reduce_all) {
     *output = true;
-    for (int i = 0; i < param.X->numel(); i++) {
+    for (int64_t i = 0; i < param.X->numel(); i++) {
       *output = (*output) & input[i];
     }
   } else {
