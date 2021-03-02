@@ -260,9 +260,13 @@ void TestEltDims(Place place, float abs_error) {
 
 void TestEltTypes(Place place, float abs_error) {
   for (auto elt_type : std::vector<std::string>{
-           "add", "sub", "mul", "div", "max", "min", "pow", "floordiv"}) {
+           "add", "sub", "mul", "div", "max", "min", "pow"}) {
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
+  }
+  for (auto elt_type : std::vector<std::string>{"floordiv"}) {
+    TestElt<int32_t>(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+    TestElt<int64_t>(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
   }
 }
 
