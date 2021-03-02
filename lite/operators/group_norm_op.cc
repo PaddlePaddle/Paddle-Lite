@@ -33,6 +33,9 @@ bool GroupNormOp::CheckShape() const {
   auto x_dims = param_.x->dims();
   auto scale_dims = param_.scale->dims();
   auto bias_dims = param_.bias->dims();
+  if (param_.channels == -1) {
+    param_.channels = x_dims[1];
+  }
   CHECK(x_dims.size() >= 2 && x_dims.size() <= 5)
       << "Input X must have 2 to 5 dimensions.";
   CHECK_EQ(scale_dims.size(), 1UL) << "Input Scale must have 1 dimensions.";
@@ -84,7 +87,7 @@ bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   if (op_desc.HasAttr("channels")) {
     param_.channels = op_desc.GetAttr<int>("channels");
   } else {
-    param_.channels = param_.x->dims()[1];
+    param_.channels = -1;
   }
 
   return true;
