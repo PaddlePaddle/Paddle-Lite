@@ -19,6 +19,7 @@ limitations under the License. */
 
 #include <stdint.h>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <limits>
 
@@ -29,9 +30,6 @@ typedef int16_t half;
 
 #define IMAGE_ALIGNMENT 16           // Aligned to 16
 #define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
-// #define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32  replace
-// by filter.hpp "get_filter_num_alignment()"
-// #define FILTER_ELEMENT_ALIGNMENT 64  // Filter element number aligned to 64
 #define BS_NUM_ALIGNMENT 8
 #define BIAS_NUM_ALIGNMENT 16
 
@@ -86,10 +84,20 @@ struct MemoryBarrierArgs {
   uint16_t dummy;
 };
 
-struct BNArgs {
+struct ActiveParamterArgs {
+  enum ActiveType type;
+  uint16_t leaky_relu_factor;
+};
+
+struct NormalizeParameterArgs {
+  uint32_t channel;
+  uint32_t hight_width;
   bool enabled;
-  void* bias_address;
-  void* scale_address;
+};
+
+struct InplaceArgs {
+  struct ActiveParamterArgs active_param;
+  struct NormalizeParameterArgs normalize_param;
 };
 
 /**
@@ -126,7 +134,6 @@ struct DeconvArgs {
 };
 
 struct ConvArgs {
-  bool relu_enabled;
   void* sb_address;  // scale and bias are interlaced;
   void* filter_address;
   void* filter_scale_address;
@@ -138,10 +145,10 @@ struct ConvArgs {
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
+  struct InplaceArgs inplace;
 };
 
 struct DWconvArgs {
-  bool relu_enabled;
   void* bias_address;
   void* filter_address;
   struct KernelArgs kernel;
@@ -150,6 +157,7 @@ struct DWconvArgs {
   uint16_t out_width;
   uint16_t out_height;
   uint16_t sub_conv_num;
+  struct InplaceArgs inplace;
 };
 
 struct PoolingArgs {
@@ -160,17 +168,18 @@ struct PoolingArgs {
   struct ImageOutputArgs output;
   uint16_t out_width;
   uint16_t out_height;
+  struct InplaceArgs inplace;
+  uint16_t global_pool_factor;
 };
 
 // elementwise add arguments
 struct EWAddArgs {
-  bool relu_enabled;
-
   uint32_t const0;  // output0 = const0 x input0 + const1 x input1;
   uint32_t const1;
   struct ImageInputArgs image0;
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
+  struct InplaceArgs inplace;
 };
 
 struct BypassArgs {
@@ -180,6 +189,7 @@ struct BypassArgs {
   enum DLayoutType output_layout_type;
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
+  struct InplaceArgs inplace;
 };
 
 struct ScaleArgs {
@@ -190,6 +200,7 @@ struct ScaleArgs {
 
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
+  struct InplaceArgs inplace;
 };
 
 struct NormalizeArgs {
@@ -199,6 +210,7 @@ struct NormalizeArgs {
   uint32_t image_height;
   uint32_t image_channel;
   uint32_t* output_scale_address;
+  struct InplaceArgs inplace;
 };
 
 struct PreprocessArgs {
@@ -243,32 +255,12 @@ struct PowerParameterArgs {
   uint16_t power;
 };
 
-struct NormalizeParameterArgs {
-  uint32_t channel;
-  uint32_t hight_width;
-};
-
-struct ActiveParamterArgs {
-  enum ActiveType type;
-  uint16_t leaky_relu_factor;
-};
-
 struct GlobalPoolArgs {
   uint16_t global_pool_factor;
 };
 
-struct InplaceArgs {
-  bool leaky_relu_enable;
-  bool relu_enable;
-  bool sigmoid_enable;
-  bool relu6_enable;
-  bool power_enable;
-  bool normalize_enable;
-  bool global_pool_en;
-};
-
 struct FpgaRegWriteArgs {
-  uint64_t address;  //
+  uint64_t address;
   uint64_t value;
 };
 
@@ -279,10 +271,6 @@ struct FpgaRegReadArgs {
 
 struct FpgaResetArgs {
   uint32_t dummy;
-};
-
-struct CNNLockArgs {
-  uint32_t reserved;
 };
 
 #define IOCTL_FPGA_MAGIC (('F' + 'P' + 'G' + 'A') / 4)
@@ -326,13 +314,12 @@ struct CNNLockArgs {
 #define IOCTL_DEVICE_INFO _IOW(IOCTL_FPGA_MAGIC, 100, struct DeviceInfoArgs)
 
 #define IOCTL_SEPARATOR_2 110
-#define IOCTL_LOCK_TRY_LOCKING _IOW(IOCTL_FPGA_MAGIC, 111, struct CNNLockArgs)
-#define IOCTL_LOCK_UNLOCK _IOW(IOCTL_FPGA_MAGIC, 112, struct CNNLockArgs)
 
 #define IOCTL_SEPARATOR_3 200
 #define IOCTL_PREPROCESS _IOW(IOCTL_FPGA_MAGIC, 201, struct PreprocessArgs)
 
 //============================== API =============================
+std::ostream& operator<<(std::ostream& os, const ConvArgs& args);
 
 inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
 int open_device();
@@ -350,6 +337,7 @@ void fpga_copy(void* dst, const void* src, int size);
 int fpga_flush(void* address, size_t size);
 int fpga_invalidate(void* address, size_t size);
 
+int get_version(const struct VersionArgs& args);
 int get_device_info(const struct DeviceInfoArgs& args);
 
 int perform_bypass(const struct BypassArgs& args);
@@ -360,14 +348,9 @@ int compute_fpga_scale(const struct ScaleArgs& args);
 int compute_fpga_concat(const struct ConcatArgs& args);
 int compute_fpga_resize(const struct ResizeArgs& args);
 
-int config_activation(const struct ActiveParamterArgs& args);
 int config_global_pool(const struct GlobalPoolArgs& args);
-int config_power(const struct PowerArgs& args);
 int compute_fpga_dwconv(const struct DWconvArgs& args);
-int config_norm_param(const struct NormalizeParameterArgs& args);
 int compute_norm(const struct NormalizeArgs& args);
-
-int config_inplace(const struct InplaceArgs& args);
 
 int flush_cache(void* addr, int size);
 int invalidate_cache(void* addr, int size);
@@ -377,6 +360,7 @@ int compute_preprocess(const struct PreprocessArgs& args);
 
 int16_t fp32_2_fp16(float fp32_num);
 float fp16_2_fp32(int16_t fp16_num);
+
 }  // namespace zynqmp
 }  // namespace paddle
 

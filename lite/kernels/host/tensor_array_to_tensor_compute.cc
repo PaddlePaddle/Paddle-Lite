@@ -44,6 +44,7 @@ void TensorArrayToTensorCompute::Run() {
   } else {
     lite::host::math::concat_func<float>(inputs, axis, out);
   }
+  param.X->clear();
 }
 
 }  // namespace host
@@ -58,6 +59,8 @@ REGISTER_LITE_KERNEL(tensor_array_to_tensor,
                      paddle::lite::kernels::host::TensorArrayToTensorCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorListTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("OutIndex", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+    .BindOutput("OutIndex",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();

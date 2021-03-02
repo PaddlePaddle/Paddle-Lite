@@ -256,7 +256,7 @@ void MatrixNmsCompute::Run() {
   auto* scores = param.scores;
   auto* outs = param.out;
   auto* index = param.index;
-
+  auto* rois_num = param.rois_num;
   auto background_label = param.background_label;
   auto nms_top_k = param.nms_top_k;
   auto keep_top_k = param.keep_top_k;
@@ -277,8 +277,10 @@ void MatrixNmsCompute::Run() {
   std::vector<int64_t> offsets = {0};
   std::vector<float> detections;
   std::vector<int> indices;
+  std::vector<int> num_per_batch;
   detections.reserve(out_dim * num_boxes * batch_size);
   indices.reserve(num_boxes * batch_size);
+  num_per_batch.reserve(batch_size);
   for (int i = 0; i < batch_size; ++i) {
     scores_slice = scores->Slice<float>(i, i + 1);
     scores_slice.Resize({score_dims[1], score_dims[2]});
@@ -299,6 +301,7 @@ void MatrixNmsCompute::Run() {
                                   use_gaussian,
                                   gaussian_sigma);
     offsets.push_back(offsets.back() + num_out);
+    num_per_batch.emplace_back(num_out);
   }
 
   int64_t num_kept = offsets.back();
@@ -315,6 +318,12 @@ void MatrixNmsCompute::Run() {
     std::copy(indices.begin(), indices.end(), index->mutable_data<int>());
   }
 
+  if (rois_num != nullptr) {
+    rois_num->Resize({batch_size});
+    std::copy(num_per_batch.begin(),
+              num_per_batch.end(),
+              rois_num->mutable_data<int>());
+  }
   LoD lod;
   lod.emplace_back(std::vector<uint64_t>(offsets.begin(), offsets.end()));
   outs->set_lod(lod);
@@ -336,6 +345,8 @@ REGISTER_LITE_KERNEL(matrix_nms,
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Index",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("RoisNum",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindPaddleOpVersion("matrix_nms", 1)
     .Finalize();

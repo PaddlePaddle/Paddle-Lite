@@ -87,6 +87,7 @@ add_operator(sequence_unpad_op_lite extra SRCS sequence_unpad_op.cc DEPS ${op_DE
 add_operator(sequence_pad_op_lite extra SRCS sequence_pad_op.cc DEPS ${op_DEPS})
 add_operator(sequence_mask_op_lite extra SRCS sequence_mask_op.cc DEPS ${op_DEPS})
 add_operator(im2sequence_op extra SRCS im2sequence_op.cc DEPS ${op_DEPS})
+add_operator(gather_nd_op extra SRCS gather_nd_op.cc DEPS ${op_DEPS})
 add_operator(gather_op extra SRCS gather_op.cc DEPS ${op_DEPS})
 add_operator(gather_tree_op extra SRCS gather_tree_op.cc DEPS ${op_DEPS})
 add_operator(anchor_generator_op extra SRCS anchor_generator_op.cc DEPS ${op_DEPS})
@@ -142,7 +143,9 @@ add_operator(fill_zeros_like_op extra SRCS fill_zeros_like_op.cc DEPS ${op_DEPS}
 add_operator(matmul_v2_op extra SRCS matmul_v2_op.cc DEPS ${op_DEPS})
 add_operator(sum_op extra SRCS sum_op.cc DEPS ${op_DEPS})
 add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
+add_operator(tile_op extra SRCS tile_op.cc DEPS ${op_DEPS})
 add_operator(scatter_nd_add_op extra SRCS scatter_nd_add_op.cc DEPS ${op_DEPS})
+add_operator(tril_triu_op extra SRCS tril_triu_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})

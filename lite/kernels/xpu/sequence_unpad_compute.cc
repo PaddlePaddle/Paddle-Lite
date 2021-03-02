@@ -15,6 +15,7 @@
 #include "lite/kernels/xpu/sequence_unpad_compute.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/host/sequence_unpad_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -95,4 +96,23 @@ REGISTER_LITE_KERNEL(sequence_unpad,
     .BindInput("Length",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+// fake xpu kernel
+using SequenceUnpadInt64 =
+    paddle::lite::kernels::host::SequenceUnpadCompute<int64_t>;
+REGISTER_LITE_KERNEL(
+    sequence_unpad, kXPU, kFloat, kAny, SequenceUnpadInt64, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Length",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
     .Finalize();

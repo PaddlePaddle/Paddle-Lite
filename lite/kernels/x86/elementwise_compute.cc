@@ -46,3 +46,61 @@ REGISTER_LITE_KERNEL(elementwise_mul,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(
+    elementwise_floordiv,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::ElementwiseFloorDivCompute<float>,
+    float32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    elementwise_floordiv,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::ElementwiseFloorDivCompute<int32_t>,
+    int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    elementwise_floordiv,
+    kX86,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::x86::ElementwiseFloorDivCompute<int64_t>,
+    int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mod,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::ElementwiseModCompute<int32_t>,
+                     int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mod,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::ElementwiseModCompute<int64_t>,
+                     int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .Finalize();

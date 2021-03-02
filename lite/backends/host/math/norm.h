@@ -13,26 +13,23 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <cmath>
+#include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace host {
+namespace math {
 
-class IncrementCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  void Run() override;
-
-  ~IncrementCompute() {}
-
- private:
-};
-
-}  // namespace arm
-}  // namespace kernels
+void p_norm(const float* input,
+            const int pre_n,
+            const int n,
+            const int post_n,
+            const float epsilon,
+            float* out,
+            const int porder);
+}  // namespace math
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle

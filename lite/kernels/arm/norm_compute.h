@@ -36,6 +36,13 @@ class NormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  private:
 };
 
+class PNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~PNormCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

@@ -52,6 +52,9 @@ class ElementwiseMulPE : public PE {
     args.image.pad_height = 0;
     args.output.address = output->data<void>();
     args.output.scale_address = output->scale();
+    args.inplace.active_param.type = param_.activeParam.type;
+    args.inplace.active_param.leaky_relu_factor =
+        float_to_half(param_.activeParam.leaky_relu_factor);
   }
 
   void updateInput(Tensor* t, int index) {
