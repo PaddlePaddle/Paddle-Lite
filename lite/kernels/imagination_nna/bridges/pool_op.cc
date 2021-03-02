@@ -31,9 +31,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " + op_type + "...";
 
-  CHECK(op_info->HasAttr("enable_int8") &&
-        op_info->GetAttr<bool>("enable_int8"));
-
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
