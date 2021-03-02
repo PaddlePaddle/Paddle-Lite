@@ -140,9 +140,8 @@ function build_test_android {
           test_arm_unit_test $_test ${adb_devices[0]} $adb_workdir
       fi
   done
+  test_arm_api ${adb_devices[0]} $adb_work_dir
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"
-
-  test_arm_api $adb_devices $adb_work_dir
 }
 
 # $1 adb_device index. eg. 1
