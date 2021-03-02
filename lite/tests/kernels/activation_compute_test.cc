@@ -659,6 +659,8 @@ TEST(Activation_gelu, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #else
   return;
 #endif
