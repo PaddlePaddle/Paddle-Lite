@@ -42,8 +42,9 @@ bool TopkV2Op::InferShapeImpl() const {
   } else {
     k = param_.K;
   }
-  CHECK_GE(param_.axis, k) << "input of topk_v2 op must have >=" << k
-                           << " columns in axis of " << param_.axis;
+  CHECK_GE(out_dims[param_.axis], k) << "input of topk_v2 op must have >=" << k
+                                     << " columns in axis of "
+                                     << out_dims[param_.axis];
   out_dims[param_.axis] = k;
   auto out = param_.Out;
   out->Resize(out_dims);

@@ -63,12 +63,11 @@ class TopkV2ComputeTester : public arena::TestCase {
     int inner_size = x_dims_.count(axis_ + 1, x_dims_.size());
     int axis_size = x_dims_[axis_];
     int outer_size = x_dims_.count(0, axis_);
-    int sum_size = axis_size * inner_size;
-
+    int out_sum_size = k * inner_size;
     for (int n = 0; n < outer_size; n++) {
       const float* in_data = x_data + n * sum_size;
-      float* out_val_data1 = out_val_data + n * sum_size;
-      int64_t* out_ind_data1 = out_ind_data + n * sum_size;
+      float* out_val_data1 = out_val_data + n * out_sum_size;
+      int64_t* out_ind_data1 = out_ind_data + n * out_sum_size;
       for (int i = 0; i < inner_size; i++) {
         std::vector<std::pair<float, int>> vec;
         for (int j = 0; j < axis_size; j++) {
