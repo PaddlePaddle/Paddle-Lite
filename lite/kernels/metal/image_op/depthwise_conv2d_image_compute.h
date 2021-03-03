@@ -26,6 +26,7 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -41,7 +42,9 @@ class DepthwiseConv2dImageCompute
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("depthwise_conv2d", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;
@@ -81,7 +84,9 @@ class DepthwiseConv2dImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("depthwise_conv2d", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;

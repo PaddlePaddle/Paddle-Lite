@@ -24,6 +24,7 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -38,7 +39,7 @@ class LrnImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override { MetalDebug::SaveOutput("lrn", output_buffer_); };
 
  private:
   const MetalImage* input_buffer_;
@@ -59,7 +60,7 @@ class LrnImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override { MetalDebug::SaveOutput("lrn", output_buffer_); };
 
  private:
   const MetalImage* input_buffer_;

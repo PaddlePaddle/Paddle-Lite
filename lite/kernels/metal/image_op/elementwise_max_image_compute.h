@@ -25,6 +25,7 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -40,7 +41,9 @@ class ElementwiseMaxImageCompute
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("elementwise_max", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_x_;
@@ -62,7 +65,9 @@ class ElementwiseMaxImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("elementwise_max", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_x_;

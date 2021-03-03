@@ -27,6 +27,7 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/core/dim.h"
 
 namespace paddle {
@@ -43,7 +44,7 @@ class MulImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override { MetalDebug::SaveOutput("mul", output_buffer_); };
 
  private:
   const MetalImage* input_buffer_x_;
@@ -74,7 +75,7 @@ class MulImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override { MetalDebug::SaveOutput("mul", output_buffer_); };
 
  private:
   const MetalImage* input_buffer_x_;

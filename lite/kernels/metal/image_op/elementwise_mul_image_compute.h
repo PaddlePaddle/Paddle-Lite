@@ -25,6 +25,7 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 #include "lite/kernels/metal/image_op/reshape_image_compute.h"
 
 namespace paddle {
@@ -41,7 +42,9 @@ class ElementwiseMulImageCompute
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("elementwise_mul", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_x_;
@@ -67,7 +70,9 @@ class ElementwiseMulImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("elementwise_mul", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_x_;

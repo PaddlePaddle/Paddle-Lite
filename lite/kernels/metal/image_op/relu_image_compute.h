@@ -25,6 +25,7 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -39,7 +40,9 @@ class ReluImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("relu", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;
@@ -58,7 +61,9 @@ class Relu6ImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("relu6", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;
@@ -79,7 +84,9 @@ class ReluImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("relu", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;
@@ -99,7 +106,9 @@ class Relu6ImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("relu6", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;

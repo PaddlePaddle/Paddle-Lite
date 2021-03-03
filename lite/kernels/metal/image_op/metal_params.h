@@ -50,6 +50,13 @@ struct SoftmaxMetalParam {
   int K;
 };
 
+struct SoftmaxMetalParam2 {
+  int N;
+  int C;
+  int H;
+  int W;
+};
+
 struct ScaleMetalParam {
   float scale;
   float abias;

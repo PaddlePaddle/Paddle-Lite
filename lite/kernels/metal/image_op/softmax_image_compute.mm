@@ -39,23 +39,47 @@ void SoftmaxImageCompute::PrepareForRun() {
     axis += input_dims.size();
   }
   // TODO: (lzy) add other axis
-  if (axis != 1) throw std::logic_error("ERROR, can only support axis = 1");
+//  if (axis != 1) throw std::logic_error("ERROR, can only support axis = 1");
 
   input_buffer_ = param.x->data<float, MetalImage>();
 
-  SoftmaxMetalParam metal_param{(int)input_dims[0], (int)input_dims[1]};
+//  SoftmaxMetalParam metal_param{(int)input_dims[0], (int)input_dims[1]};
+  SoftmaxMetalParam2 metal_param{(int)input_buffer_->pad_to_four_dim_[0],
+                                 (int)input_buffer_->pad_to_four_dim_[1],
+                                 (int)input_buffer_->pad_to_four_dim_[2],
+                                 (int)input_buffer_->pad_to_four_dim_[3],
+                                 };
 
   param_buffer_ = metal_context_->CreateBuffer(
       *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
   output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
 
-  std::string function_name = "softmax2_float";
-  if (input_dims.size() < 3)
-    function_name = "softmax_float";
-  else if ((input_dims.size() == 4 && input_dims[1] < 4) ||
-           (input_dims.size() == 3 && input_dims[0] == 4)) {
-    function_name = "softmax2_float";
+  std::string function_name = "";
+  if ( input_dims.size() == 4 ){
+      if ( axis == 1) {
+          function_name = "softmax_c_d3_common_float";
+      } else if (axis == 2) {
+          function_name = "softmax_h_d3_common_float";
+      } else if (axis == 3) {
+          function_name = "softmax_w_d3_common_float";
+      }
+  }   if ( input_dims.size() == 3 ){
+        if ( axis == 0) {
+            function_name = "softmax_c_d3_common_float";
+        } else if (axis == 1) {
+            function_name = "softmax_h_d3_common_float";
+        } else if (axis == 2) {
+            function_name = "softmax_w_d3_common_float";
+        }
+    } else if ( input_dims.size() == 2 || input_dims.size() == 1){
+      if ( axis == 0) {
+          function_name = "softmax_h_2d_common_float";
+      } else if (axis == 1) {
+          function_name = "softmax_w_2d_common_float";
+      }
+  } else {
+      throw std::logic_error("ERROR: softmax still not support the axis");
   }
 
   queue_ = metal_context_->GetDefaultQueue(*device);
@@ -92,8 +116,6 @@ void SoftmaxImageComputeHalf::PrepareForRun() {
   if (axis < 0) {
     axis += input_dims.size();
   }
-  // TODO: (lzy) add other axis
-  if (axis != 1) throw std::logic_error("ERROR, can only support axis = 1");
 
   input_buffer_ = param.x->data<MetalHalf, MetalImage>();
   output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
@@ -103,14 +125,31 @@ void SoftmaxImageComputeHalf::PrepareForRun() {
   param_buffer_ = metal_context_->CreateBuffer(
       *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
-  std::string function_name = "softmax2_half";
-  if (input_dims.size() < 3)
-    function_name = "softmax_half";
-  else if ((input_dims.size() == 4 && input_dims[1] < 4) ||
-           (input_dims.size() == 3 && input_dims[0] == 4)) {
-    function_name = "softmax2_half";
+  std::string function_name = "";
+  if ( input_dims.size() == 4 ){
+    if ( axis == 1) {
+      function_name = "softmax_c_d3_common_float";
+    } else if (axis == 2) {
+      function_name = "softmax_h_d3_common_float";
+    } else if (axis == 3) {
+      function_name = "softmax_w_d3_common_float";
+    }
+  }   if ( input_dims.size() == 3 ){
+    if ( axis == 0) {
+      function_name = "softmax_c_d3_common_half";
+    } else if (axis == 1) {
+      function_name = "softmax_h_d3_common_half";
+    } else if (axis == 2) {
+      function_name = "softmax_w_d3_common_half";
+    }
+  } else if ( input_dims.size() == 2 || input_dims.size() == 1){
+    if ( axis == 0 ) {
+      function_name = "softmax_h_2d_common_half";
+    } else if (axis == 1 ) {
+      function_name = "softmax_w_2d_common_half";
+    }
   } else {
-    throw std::logic_error("still not support the format");
+    throw std::logic_error("ERROR: softmax still not support the axis");
   }
 
   queue_ = metal_context_->GetDefaultQueue(*device);

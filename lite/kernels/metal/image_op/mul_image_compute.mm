@@ -57,7 +57,7 @@ void MulImageCompute::PrepareForRun() {
     reshape_ctx->As<ContextMetal>().InitOnce();
     operators::ReshapeParam reshape_param;
     reshape_param.x = param.x;
-
+    reshape_param.excepted_transpose_ = nhwc;
     shape_out_dev.Resize(this->input_x_mul_dim_.Vectorize());
     reshape_param.output = &shape_out_dev;
     reshape_.SetContext(std::move(reshape_ctx));
@@ -132,10 +132,9 @@ void MulImageComputeHalf::PrepareForRun() {
     reshape_ctx->As<ContextMetal>().InitOnce();
     operators::ReshapeParam reshape_param;
     reshape_param.x = param.x;
-
     shape_out_dev.Resize(this->input_x_mul_dim_.Vectorize());
     reshape_param.output = &shape_out_dev;
-    reshape_param.shape_vct = {0, 1, 2, 3};
+    reshape_param.shape_vct = nhwc;
     reshape_.SetContext(std::move(reshape_ctx));
     reshape_.SetParam(reshape_param);
     reshape_.PrepareForRun();

@@ -28,6 +28,7 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -42,7 +43,11 @@ class SplitImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    for (auto item : output_buffers_) {
+      MetalDebug::SaveOutput("split", item);
+    }
+  };
 
  private:
   std::vector<MetalImage*> output_buffers_{};
@@ -65,7 +70,11 @@ class SplitImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    for (auto item : output_buffers_) {
+      MetalDebug::SaveOutput("split", item);
+    }
+  };
 
  private:
   std::vector<MetalImage*> output_buffers_{};

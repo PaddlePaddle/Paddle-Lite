@@ -45,7 +45,6 @@ void PixelShuffleImageCompute::PrepareForRun() {
   string function_name = "pixel_shuffle";
   kernel_ = metal_context_->GetKernel(*device, function_name);
   queue_ = metal_context_->GetDefaultQueue(*device);
-
 }
 
 void PixelShuffleImageCompute::Run() {

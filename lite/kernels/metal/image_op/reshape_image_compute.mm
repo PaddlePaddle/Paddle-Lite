@@ -29,8 +29,9 @@ void ReshapeImageCompute::PrepareForRun() {
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
+  auto transpose = param.excepted_transpose_;
 
-  output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims);
+  output_buffer_ = param.output->mutable_data<float, MetalImage>(output_dims, transpose);
   input_buffer_ = param.x->data<float, MetalImage>();
 
   int irank = input_buffer_->tensor_dim_.size();
@@ -91,9 +92,13 @@ void ReshapeImageComputeHalf::PrepareForRun() {
 
   const auto& param = this->Param<param_t>();
   auto output_dims = param.output->dims();
+  auto transpose = param.excepted_transpose_;
 
-  output_buffer_ =
-      param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+  if (transpose.empty()){
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
+  } else {
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims, transpose);
+  }
   input_buffer_ = param.x->data<MetalHalf, MetalImage>();
 
   int irank = input_buffer_->tensor_dim_.size();

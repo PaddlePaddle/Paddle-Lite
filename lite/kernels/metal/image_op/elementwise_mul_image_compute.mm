@@ -72,7 +72,7 @@ void ElementwiseMulImageCompute::PrepareForRun() {
           reshape_param.x = param.Y;
           shape_out_dev.Resize(this->input_x_mul_dim_.Vectorize());
           reshape_param.output = &shape_out_dev;
-          reshape_param.shape_vct = input_buffer_x_->transpose_;
+          reshape_param.excepted_transpose_ = input_buffer_x_->transpose_;
           reshape_.SetContext(std::move(reshape_ctx));
           reshape_.SetParam(reshape_param);
           reshape_.PrepareForRun();
@@ -176,7 +176,7 @@ void ElementwiseMulImageComputeHalf::PrepareForRun() {
           reshape_param.x = param.Y;
           shape_out_dev.Resize(this->input_x_mul_dim_.Vectorize());
           reshape_param.output = &shape_out_dev;
-          reshape_param.shape_vct = input_buffer_x_->transpose_;
+          reshape_param.excepted_transpose_ = input_buffer_x_->transpose_;
           reshape_.SetContext(std::move(reshape_ctx));
           reshape_.SetParam(reshape_param);
           reshape_.PrepareForRun();

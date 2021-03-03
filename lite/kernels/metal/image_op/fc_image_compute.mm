@@ -59,7 +59,7 @@ void FCImageCompute::PrepareForRun() {
     reshape_ctx->As<ContextMetal>().InitOnce();
     operators::ReshapeParam reshape_param;
     reshape_param.x = param.input;
-
+    reshape_param.excepted_transpose_ = nhwc;
     shape_out_dev_.Resize(input_x_mul_dim_.Vectorize());
     reshape_param.output = &shape_out_dev_;
     reshape_.SetContext(std::move(reshape_ctx));
@@ -141,7 +141,7 @@ void FCImageComputeHalf::PrepareForRun() {
     reshape_ctx->As<ContextMetal>().InitOnce();
     operators::ReshapeParam reshape_param;
     reshape_param.x = param.input;
-
+    reshape_param.excepted_transpose_ = nhwc;
     shape_out_dev_.Resize(input_x_mul_dim_.Vectorize());
     reshape_param.output = &shape_out_dev_;
     reshape_.SetContext(std::move(reshape_ctx));

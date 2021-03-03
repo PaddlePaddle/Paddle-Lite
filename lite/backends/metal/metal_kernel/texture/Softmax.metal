@@ -20,6 +20,13 @@ struct SoftmaxParam {
     int K;
 };
 
+struct SoftmaxParam2 {
+    int N;
+    int C;
+    int H;
+    int W;
+};
+
 #define P float
 #include "Softmax.inc.metal"
 #undef P

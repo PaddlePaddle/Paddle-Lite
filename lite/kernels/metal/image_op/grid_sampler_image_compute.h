@@ -25,6 +25,8 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
+#include "lite/kernels/metal/image_op/reshape_image_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -40,16 +42,24 @@ class GridSamplerImageCompute
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("grid_sampler", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;
+  const MetalImage* grid_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
   std::shared_ptr<MetalQueue> queue_;
   std::shared_ptr<MetalEncoder> encoder_;
   MetalContext* metal_context_;
+
+  DDim input_x_mul_dim_;
+  ReshapeImageCompute reshape_;
+  Tensor shape_out_dev;
+  bool insert_shape = false;
 };
 
 class GridSamplerImageComputeHalf
@@ -61,16 +71,24 @@ class GridSamplerImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("grid_sampler", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;
+  const MetalImage* grid_buffer_;
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> param_buffer_;
   std::shared_ptr<MetalKernel> kernel_;
   std::shared_ptr<MetalQueue> queue_;
   std::shared_ptr<MetalEncoder> encoder_;
   MetalContext* metal_context_;
+
+  DDim input_x_mul_dim_;
+  ReshapeImageComputeHalf reshape_;
+  Tensor shape_out_dev;
+  bool insert_shape = false;
 };
 
 }  // namespace metal

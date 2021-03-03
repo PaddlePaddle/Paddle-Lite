@@ -67,7 +67,9 @@ class ReshapeImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("reshape", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;

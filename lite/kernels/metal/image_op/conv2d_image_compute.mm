@@ -196,10 +196,6 @@ void Conv2dImageCompute::SetupWithMPS() {
   // TODO: (lzy) add MPS support
 }
 
-void Conv2dImageCompute::SaveOutput() {
-    MetalDebug::SaveOutput("conv2d", output_buffer_);
-}
-
 void Conv2dImageCompute::SetupWithoutMPS() {
   const auto& param = this->Param<param_t>();
   auto padLeft = (*param.paddings)[2];

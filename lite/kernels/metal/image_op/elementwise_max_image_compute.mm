@@ -38,34 +38,32 @@ void ElementwiseMaxImageCompute::PrepareForRun() {
   input_buffer_x_ = param.X->data<float, MetalImage>();
   input_buffer_y_ = param.Y->data<float, MetalImage>();
 
-  std::vector<int> xdim, ydim, xtrans, ytrans;
-  for (int i = 0; i < 4; i++) {
-    xdim.push_back((int)input_buffer_x_->dim_[i]);
-    ydim.push_back((int)input_buffer_y_->dim_[i]);
+  bool valid = false;
+  int by_channel = 0;
+  if (input_buffer_x_->tensor_dim_.size() == 4 && input_buffer_y_->tensor_dim_.size() == 4 &&
+      param.axis == -1 && input_buffer_y_->tensor_dim_[2] == 1 &&
+      input_buffer_y_->tensor_dim_[3] == 1) {
+    by_channel = 1;
+    valid = true;
+  } else if (input_buffer_x_->tensor_dim_.size() == input_buffer_y_->tensor_dim_.size()) {
+    valid = true;
+    for (int i = 0; i < input_buffer_x_->tensor_dim_.size(); i++) {
+      if (input_buffer_x_->tensor_dim_[i] != input_buffer_y_->tensor_dim_[i]) {
+        valid = false;
+        break;
+      }
+    }
+    if (valid) {
+      by_channel = 0;
+    }
+  }
+  if (!valid) {
+    throw std::logic_error("ERROR: elementwise_sub only supports : 1. input shapes are the same. "
+                           "2. multiply by channel.");
   }
 
-  auto axis = param.axis;
-  int params_axis = 0;
-  if (axis == -1) {
-    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size());
-  } else {
-    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size()) + axis;
-  }
-  int params_fast = 0;
-  if ((input_buffer_x_->dim_ == input_buffer_y_->dim_) &&
-      (input_buffer_x_->transpose_ == input_buffer_y_->transpose_)) {
-    params_fast = 1;
-  }
 
-  int add_by_channel = 0;
-  if (input_buffer_y_->tensor_dim_.size() == 1 &&
-      (axis == 1 || (axis == -1 &&
-                     input_buffer_y_->tensor_dim_[0] ==
-                         input_buffer_x_->pad_to_four_dim_[1]))) {
-    add_by_channel = 1;
-  }
-
-  ElementwiseMetalParam element_params = {add_by_channel};
+  ElementwiseMetalParam element_params = {by_channel};
 
   params_buffer_ = metal_context_->CreateBuffer(*device,
                                          &element_params,
@@ -109,34 +107,31 @@ void ElementwiseMaxImageComputeHalf::PrepareForRun() {
   input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
   input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
 
-  std::vector<int> xdim, ydim, xtrans, ytrans;
-  for (int i = 0; i < 4; i++) {
-    xdim.push_back((int)input_buffer_x_->dim_[i]);
-    ydim.push_back((int)input_buffer_y_->dim_[i]);
+  bool valid = false;
+  int by_channel = 0;
+  if (input_buffer_x_->tensor_dim_.size() == 4 && input_buffer_y_->tensor_dim_.size() == 4 &&
+      param.axis == -1 && input_buffer_y_->tensor_dim_[2] == 1 &&
+      input_buffer_y_->tensor_dim_[3] == 1) {
+    by_channel = 1;
+    valid = true;
+  } else if (input_buffer_x_->tensor_dim_.size() == input_buffer_y_->tensor_dim_.size()) {
+    valid = true;
+    for (int i = 0; i < input_buffer_x_->tensor_dim_.size(); i++) {
+      if (input_buffer_x_->tensor_dim_[i] != input_buffer_y_->tensor_dim_[i]) {
+        valid = false;
+        break;
+      }
+    }
+    if (valid) {
+      by_channel = 0;
+    }
+  }
+  if (!valid) {
+    throw std::logic_error("ERROR: elementwise_sub only supports : 1. input shapes are the same. "
+                           "2. multiply by channel.");
   }
 
-  auto axis = param.axis;
-  int params_axis = 0;
-  if (axis == -1) {
-    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size());
-  } else {
-    params_axis = 4 - (int)(output_buffer_->tensor_dim_.size()) + axis;
-  }
-  int params_fast = 0;
-  if ((input_buffer_x_->dim_ == input_buffer_y_->dim_) &&
-      (input_buffer_x_->transpose_ == input_buffer_y_->transpose_)) {
-    params_fast = 1;
-  }
-
-  int add_by_channel = 0;
-  if (input_buffer_y_->tensor_dim_.size() == 1 &&
-      (axis == 1 || (axis == -1 &&
-                     input_buffer_y_->tensor_dim_[0] ==
-                         input_buffer_x_->pad_to_four_dim_[1]))) {
-    add_by_channel = 1;
-  }
-
-  ElementwiseMetalParam element_params = {add_by_channel};
+  ElementwiseMetalParam element_params = {by_channel};
 
   params_buffer_ = metal_context_->CreateBuffer(*device,
                                          &element_params,

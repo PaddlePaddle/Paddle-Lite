@@ -69,8 +69,6 @@ void TanhImageComputeHalf::PrepareForRun() {
   std::string function_name = "tanh_half";
   queue_ = metal_context_->GetDefaultQueue(*device);
   kernel_ = metal_context_->GetKernel(*device, function_name);
-
-
 }
 
 void TanhImageComputeHalf::Run() {

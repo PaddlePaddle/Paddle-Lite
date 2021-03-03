@@ -35,7 +35,22 @@ void GridSamplerImageCompute::PrepareForRun() {
   auto output_dims = param.out->dims();
 
   input_buffer_ = param.x->data<float, MetalImage>();
+  grid_buffer_ = param.x->data<float, MetalImage>();
   output_buffer_ = param.out->mutable_data<float, MetalImage>(output_dims);
+  std::vector<int> excepted_transpose = {1, 2, 3, 4};
+  if (grid_buffer_->transpose_ != excepted_transpose) {
+    insert_shape = true;
+    std::unique_ptr<KernelContext> reshape_ctx(new KernelContext);
+    reshape_ctx->As<ContextMetal>().InitOnce();
+    operators::ReshapeParam reshape_param;
+    reshape_param.x = param.x;
+    reshape_param.excepted_transpose_ = excepted_transpose;
+    shape_out_dev.Resize(grid_buffer_->tensor_dim_);
+    reshape_param.output = &shape_out_dev;
+    reshape_.SetContext(std::move(reshape_ctx));
+    reshape_.SetParam(reshape_param);
+    reshape_.PrepareForRun();
+  }
 
   string function_name = "grid_sampler";
   queue_ = metal_context_->GetDefaultQueue(*device);
@@ -52,8 +67,18 @@ void GridSamplerImageCompute::Run() {
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  if( insert_shape ) {
+    reshape_.Run();
+    auto shape_buffer = shape_out_dev.data<float, MetalImage>();
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(shape_buffer->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+  } else {
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(grid_buffer_->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+  }
+
   kernel_->Execute(*encoder, global_work_size, false);
 }
 
@@ -67,6 +92,20 @@ void GridSamplerImageComputeHalf::PrepareForRun() {
 
   input_buffer_ = param.x->data<MetalHalf, MetalImage>();
   output_buffer_ = param.out->mutable_data<MetalHalf, MetalImage>(output_dims);
+  std::vector<int> excepted_transpose = {1, 2, 3, 4};
+  if (grid_buffer_->transpose_ != excepted_transpose) {
+    insert_shape = true;
+    std::unique_ptr<KernelContext> reshape_ctx(new KernelContext);
+    reshape_ctx->As<ContextMetal>().InitOnce();
+    operators::ReshapeParam reshape_param;
+    reshape_param.x = param.x;
+    reshape_param.excepted_transpose_ = excepted_transpose;
+    shape_out_dev.Resize(grid_buffer_->tensor_dim_);
+    reshape_param.output = &shape_out_dev;
+    reshape_.SetContext(std::move(reshape_ctx));
+    reshape_.SetParam(reshape_param);
+    reshape_.PrepareForRun();
+  }
 
   string function_name = "grid_sampler_half";
   queue_ = metal_context_->GetDefaultQueue(*device);
@@ -83,8 +122,18 @@ void GridSamplerImageComputeHalf::Run() {
                                  static_cast<MetalUint>(output_height),
                                  static_cast<MetalUint>(output_array_length)};
 
-  [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-  [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(1)];
+  if( insert_shape ) {
+    reshape_.Run();
+    auto shape_buffer = shape_out_dev.data<MetalHalf, MetalImage>();
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(shape_buffer->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+  } else {
+    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder->metal_command_encoder_ setTexture:(grid_buffer_->image()) atIndex:(1)];
+    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
+  }
+
   kernel_->Execute(*encoder, global_work_size, false);
 }
 
@@ -102,6 +151,9 @@ REGISTER_LITE_KERNEL(grid_sampler,
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                    PRECISION(kFloat),
                                                    DATALAYOUT(kMetalTexture2DArray))})
+        .BindInput("Grid", {LiteType::GetTensorTy(TARGET(kMetal),
+                                           PRECISION(kFloat),
+                                           DATALAYOUT(kMetalTexture2DArray))})
         .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
                                                      PRECISION(kFloat),
                                                      DATALAYOUT(kMetalTexture2DArray))})
@@ -117,6 +169,9 @@ REGISTER_LITE_KERNEL(grid_sampler,
         .BindInput("X", {LiteType::GetTensorTy(TARGET(kMetal),
                                                PRECISION(kFP16),
                                                DATALAYOUT(kMetalTexture2DArray))})
+        .BindInput("Grid", {LiteType::GetTensorTy(TARGET(kMetal),
+                                                      PRECISION(kFloat),
+                                                      DATALAYOUT(kMetalTexture2DArray))})
         .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal),
                                                   PRECISION(kFP16),
                                                   DATALAYOUT(kMetalTexture2DArray))})

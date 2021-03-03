@@ -66,7 +66,9 @@ class SoftmaxImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("softmax", output_buffer_);
+  };
 
  private:
   const MetalImage* input_buffer_;
