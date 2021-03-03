@@ -96,6 +96,9 @@ void act_thresholded_relu(
 template <typename T>
 void act_elu(const T* din, T* dout, int size, float alpha, int threads);
 
+template <typename T>
+void act_gelu(const T* din, T* dout, int size, bool approximate, int threads);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
