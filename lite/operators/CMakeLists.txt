@@ -178,6 +178,7 @@ add_operator(where_index_op extra SRCS where_index_op.cc DEPS ${op_DEPS})
 add_operator(one_hot_op extra SRCS one_hot_op.cc DEPS ${op_DEPS})
 add_operator(one_hot_v2_op extra SRCS one_hot_v2_op.cc DEPS ${op_DEPS})
 add_operator(strided_slice_op extra SRCS strided_slice_op.cc DEPS ${op_DEPS})
+add_operator(where_op extra SRCS where_op.cc DEPS ${op_DEPS})
 
 # for content-dnn specific
 add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc DEPS ${op_DEPS})
