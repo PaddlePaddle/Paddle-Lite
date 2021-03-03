@@ -2137,6 +2137,13 @@ struct WhereIndexParam : ParamBase {
   lite::Tensor* output{nullptr};
 };
 
+struct WhereParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  const lite::Tensor* condition{nullptr};
+  lite::Tensor* out{nullptr};
+};
+
 struct ClipParam : ParamBase {
   Tensor* x{};
   Tensor* min_tensor{};
