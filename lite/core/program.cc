@@ -312,8 +312,10 @@ void RuntimeProgram::Run() {
 
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
-    precision_profiler_summary +=
-        inst_precision_profiler.GetInstPrecision(&inst);
+    if (inst.op()->Type() != "while") {
+      precision_profiler_summary +=
+          inst_precision_profiler.GetInstPrecision(&inst);
+    }
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
@@ -322,9 +324,6 @@ void RuntimeProgram::Run() {
   TargetWrapperMetal::WaitForCompleted();
 #endif
 
-#ifdef LITE_WITH_OPENCL
-  CLRuntime::Global()->SaveProgram();
-#endif
 #ifdef LITE_WITH_PROFILE
   LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
 #endif
@@ -416,7 +415,7 @@ void Program::PrepareWorkspace(
       VLOG(4) << "Var " << var_name << " in block " << block_idx;
       VLOG(4) << " - type " << static_cast<int>(var_type);
 
-#ifdef LITE_WITH_XPU
+#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
       if (!var_desc->Persistable()) {
 #endif
         // Collect precision info into var_type_map_
@@ -432,7 +431,7 @@ void Program::PrepareWorkspace(
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
         }
-#ifdef LITE_WITH_XPU
+#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
       }
 #endif
 
@@ -511,7 +510,8 @@ void Instruction::Run() {
 #ifdef LITE_WITH_PROFILE
   if (first_epoch_for_profiler_) {
     kernel_->SetIsKernelTest(false);
-    SetProfileRuntimeOpInfo(profiler_->GetOpCharacter(profile_id_));
+    auto* op_ch = profiler_->GetOpCharacter(profile_id_);
+    SetProfileRuntimeOpInfo(op_ch);
     first_epoch_for_profiler_ = false;
   }
 #endif

@@ -19,7 +19,6 @@
  */
 #pragma once
 
-#include <sys/time.h>
 #include <time.h>
 
 #include <cmath>
@@ -54,19 +53,19 @@ namespace lite {
 namespace profile {
 
 static const std::string get_date_str() {
-  struct tm tm_time;
-  time_t timestamp = time(NULL);
-  localtime_r(&timestamp, &tm_time);
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
+  auto timestamp =
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::high_resolution_clock::now().time_since_epoch())
+          .count();
+  std::time_t time_t = timestamp / 1000000;
+  auto gmtime = std::gmtime(&time_t);
+  char buffer[32];
+  strftime(buffer, 32, "%Y-%m-%d_%H-%M-%S_", gmtime);
+  char microseconds[8];
+  snprintf(microseconds, sizeof(microseconds), "%06ld", timestamp % 1000000);
 
   // print date / time
-  std::string date_str =
-      std::to_string(1900 + tm_time.tm_year) +
-      std::to_string(1 + tm_time.tm_mon) + std::to_string(tm_time.tm_mday) +
-      '_' + std::to_string(tm_time.tm_hour) + std::to_string(tm_time.tm_min) +
-      std::to_string(tm_time.tm_sec) + '_' + std::to_string(tv.tv_usec / 1000);
-  return date_str;
+  return std::string(buffer) + microseconds;
 }
 
 inline std::string generate_valid_tensor_name(const std::string& name) {
@@ -240,14 +239,15 @@ class PrecisionProfiler {
   }
 
   void compute_tensor_precision_info(const Tensor* in,
-                                     TargetType target_type,
-                                     PrecisionType precision_type,
                                      DataLayoutType layout_type,
                                      double* mean,
                                      double* std_dev,
                                      double* ave_grow_rate,
                                      std::string name = "inst",
                                      bool write_result_to_file = false) {
+    TargetType target_type = in->target();
+    PrecisionType precision_type = in->precision();
+
     std::string unsupported_error_log =
         "Unsupported precision profile for kernel registered on" +
         TargetToStr(target_type) + "/" + PrecisionToStr(precision_type) + "/" +
@@ -265,13 +265,12 @@ class PrecisionProfiler {
           write_result_to_file&& write_tensorfile<float>(in, name, log_dir_);
           return;
         }
-        case PRECISION(kAny): {
-          auto ptr = in->data<float>();
-          *mean = compute_mean<float>(ptr, in->numel());
-          *std_dev =
-              compute_standard_deviation<float>(ptr, in->numel(), true, *mean);
-          *ave_grow_rate = compute_average_grow_rate<float>(ptr, in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name, log_dir_);
+        case PRECISION(kBool): {
+          auto ptr = in->data<bool>();
+          *mean = -333333333333;
+          *std_dev = -33333333333;
+          *ave_grow_rate = -33333333333;
+          write_result_to_file&& write_tensorfile<bool>(in, name, log_dir_);
           return;
         }
         case PRECISION(kInt8): {
@@ -297,13 +296,16 @@ class PrecisionProfiler {
           *mean = compute_mean<int64_t>(ptr, in->numel());
           *std_dev = compute_standard_deviation<int64_t>(
               ptr, in->numel(), true, *mean);
+          write_result_to_file&& write_tensorfile<int64_t>(in, name, log_dir_);
           return;
         }
         default:
           *mean = -333333333333;
           *std_dev = -33333333333;
           *ave_grow_rate = -33333333333;
-          LOG(ERROR) << unsupported_error_log;
+          LOG(INFO)
+              << "Unsupported precision profile for kernel registered on" +
+                     PrecisionToStr(precision_type);
           return;
       }
 #ifdef LITE_WITH_OPENCL
@@ -511,10 +513,8 @@ class PrecisionProfiler {
           std::string ave_grow_rate_str{"unused"};
           std::string new_out_name = rename_out_for_mem_reuse_pass(out_name);
 
-          if (!is_unused(tout)) {
+          if (tout->IsInitialized()) {
             compute_tensor_precision_info(tout,
-                                          type->target(),
-                                          type->precision(),
                                           type->layout(),
                                           &mean,
                                           &std_dev,
@@ -524,6 +524,8 @@ class PrecisionProfiler {
             mean_str = std::to_string(mean);
             std_dev_str = std::to_string(std_dev);
             ave_grow_rate_str = std::to_string(ave_grow_rate);
+          } else {
+            LOG(INFO) << out_name << " is not inited.";
           }
           std::string kernel_info = op_name + ":" + kernel_place;
           std::string output_arg_info = new_out_name + ":" +
@@ -549,10 +551,8 @@ class PrecisionProfiler {
             std::string ave_grow_rate_str{"unused"};
             std::string new_out_name = rename_out_for_mem_reuse_pass(out_name);
 
-            if (!is_unused(tout)) {
+            if (tout->IsInitialized()) {
               compute_tensor_precision_info(tout,
-                                            type->target(),
-                                            type->precision(),
                                             type->layout(),
                                             &mean,
                                             &std_dev,
@@ -562,6 +562,8 @@ class PrecisionProfiler {
               mean_str = std::to_string(mean);
               std_dev_str = std::to_string(std_dev);
               ave_grow_rate_str = std::to_string(ave_grow_rate);
+            } else {
+              LOG(INFO) << out_name << " is not inited.";
             }
             std::string kernel_info = op_name + ":" + kernel_place;
             std::string output_arg_info = new_out_name + ":" +

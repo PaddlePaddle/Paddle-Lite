@@ -145,9 +145,6 @@ void RunModel(std::string model_dir,
   //  Uncomment code below to enable OpenCL
   /*
   if (is_opencl_backend_valid) {
-    // give opencl nb model dir
-    config.set_model_from_file(model_dir);
-
     // Set opencl kernel binary.
     // Large addtitional prepare time is cost due to algorithm selecting and
     // building kernel from source code.
@@ -156,6 +153,9 @@ void RunModel(std::string model_dir,
     // The 1st running time will be a bit longer due to the compiling time if
     // you don't call `set_opencl binary_path_name` explicitly.
     // So call `set_opencl binary_path_name` explicitly is strongly recommended.
+
+    // Make sure you have write permission of the binary path.
+    // We strongly recommend each model has a unique binary name.
     const std::string bin_path = "/data/local/tmp/";
     const std::string bin_name = "lite_opencl_kernel.bin";
     config.set_opencl_binary_path_name(bin_path, bin_name);
@@ -165,7 +165,9 @@ void RunModel(std::string model_dir,
     // CL_TUNE_RAPID: 1
     // CL_TUNE_NORMAL: 2
     // CL_TUNE_EXHAUSTIVE: 3
-    config.set_opencl_tune(CL_TUNE_NONE);
+    const std::string tuned_path = "/data/local/tmp/";
+    const std::string tuned_name = "lite_opencl_tuned.bin";
+    config.set_opencl_tune(CL_TUNE_NORMAL, tuned_path, tuned_name);
 
     // opencl precision option
     // CL_PRECISION_AUTO: 0, first fp16 if valid, default

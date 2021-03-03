@@ -413,6 +413,8 @@ struct ActivationParam : ParamBase {
   float Elu_alpha{1.0f};
   // relu6
   float threshold{6.0f};
+  // gelu
+  bool gelu_approximate{false};
 
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
@@ -666,6 +668,14 @@ struct TransposeParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+};
+
+struct TrilTriuParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  lite::Tensor* out{nullptr};
+
+  int diagonal{0};
+  bool lower{true};
 };
 
 /// ----------------------- element wise operators ----------------------
@@ -982,6 +992,7 @@ struct MatrixNmsParam : ParamBase {
   const lite::Tensor* scores{};
   lite::Tensor* out{};
   lite::Tensor* index{};
+  lite::Tensor* rois_num{};
   int background_label{0};
   float score_threshold{};
   float post_threshold{0.0f};
@@ -1288,6 +1299,11 @@ struct SequenceReverseParam : ParamBase {
 struct SequenceConcatParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
+};
+
+struct MeshgridParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor*> Out{};
 };
 
 struct AttentionPaddingMaskParam : ParamBase {
@@ -2130,6 +2146,13 @@ struct WhereIndexParam : ParamBase {
   lite::Tensor* output{nullptr};
 };
 
+struct WhereParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  const lite::Tensor* condition{nullptr};
+  lite::Tensor* out{nullptr};
+};
+
 struct ClipParam : ParamBase {
   Tensor* x{};
   Tensor* min_tensor{};
@@ -2236,6 +2259,14 @@ struct StridedSliceParam : ParamBase {
   lite::Tensor* StridesTensor{nullptr};
 };
 
+struct TileParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> repeat_times{};
+  lite::Tensor* RepeatTimes{};
+  std::vector<lite::Tensor*> repeat_times_tensor{};
+};
+
 struct ScatterNdAddParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* indexs{};
@@ -2259,6 +2290,16 @@ struct SumParam : ParamBase {
   int inplace{0};
 };
 
+struct PNormParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  float porder{2.f};
+  int axis{-1};
+  float epsilon{1.0e-12f};
+  bool keepdim{false};
+  bool asvector{false};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

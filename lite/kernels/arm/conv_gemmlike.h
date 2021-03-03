@@ -24,6 +24,7 @@
 #include "lite/core/target_wrapper.h"
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
 namespace paddle {
 namespace lite {
@@ -108,16 +109,19 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
   }
 
   std::string kernel_func_name_{"NotImplForConvGemm"};
-
-#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name
-
 #define PROFILE_INFO(dtype1, dtype2)                                        \
   template <>                                                               \
   void GemmLikeConv<PRECISION(dtype1), PRECISION(dtype2)>::                 \
       SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
     ch->kernel_func_name = kernel_func_name_;                               \
   }
+
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name
+#else
+#define PROFILE_INFO(dtype1, dtype2)
+#define KERNEL_FUNC_NAME(kernel_func_name)
 #endif
+
   /// todo, support inplace weights transform
  protected:
   using param_t = operators::ConvParam;
