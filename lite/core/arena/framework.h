@@ -184,8 +184,7 @@ class TestCase {
   // Copy the host tensors according to its target, layout, precision etc.
   void PrepareInputTargetCopy(const Type* type,
                               Tensor* inst_tensor,
-                              const Tensor* base_tensor,
-                              const std::string arg = "Input");
+                              const Tensor* base_tensor);
 
   // Create output tensors and variables.
   void PrepareOutputsForInstruction() {

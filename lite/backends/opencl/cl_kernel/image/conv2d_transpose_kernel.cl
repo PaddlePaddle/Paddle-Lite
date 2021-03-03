@@ -35,8 +35,12 @@ __kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c +
   const int out_w_idx = get_global_id(1); // [0, W)
   const int out_nh_idx = get_global_id(2); // [0, N*H)
 
-  if (out_c_blk_idx == 0 && out_w_idx == 0 && out_nh_idx == 0) {
-      printf("in conv2d_transpose cl kernel");
+  CL_DTYPE4 d = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(0, 0));
+  float4 f = (float4)(d.x, d.y, d.z, d.w);
+  if (out_c_blk_idx == 0 && out_w_idx == 1 && out_nh_idx == 1) {
+    printf("in conv2d_transpose cl kernel\n");
+    // printf("%v4hlf \n", f);
+    printf("%d\n", input_c_blks);
   }
 
   if (out_c_blk_idx >= global_size_dim0 || out_w_idx >= global_size_dim1
@@ -80,6 +84,13 @@ __kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c +
         weights1 = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_1, kernel_y));
         weights2 = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_2, kernel_y));
         weights3 = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_3, kernel_y));
+
+        if (out_c_blk_idx == 0 && out_w_idx == 1 && out_nh_idx == 1 && ic == 0 && k_x == 0 && k_y == 0) {
+        //   printf("wo=%v4hlf \n", weights0);
+        //   printf("w1=%v4hlf \n", weights1);
+        //   printf("w2=%v4hlf \n", weights2);
+        //   printf("w3=%v4hlf \n", weights3);
+        }
 
         int in_idx = mul24(ic, input_shape.x); // ic * input_image2d_width
         int in_width_value0 = in_width0;

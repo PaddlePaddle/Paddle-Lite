@@ -123,19 +123,6 @@ class CLImageConverterDWBlock : public CLImageConverterBase {
                    const DDim &tensor_dim) override;
 };
 
-/*
-class CLImageConverterConv2dTransposeTransWeight : public CLImageConverterBase {
- public:
-  DDim InitImageDimInfoWith(const DDim &tensor_dim) override;
-  void NCHWToImage(void *tensor,
-                   half_t *image,
-                   const DDim &tensor_dim) override;
-  void ImageToNCHW(half_t *image,
-                   float *tensor,
-                   const DDim &image_dim,
-                   const DDim &tensor_dim) override;
-}; */
-
 class CLImageConverterWinoTransWeight : public CLImageConverterBase {
  public:
   DDim InitImageDimInfoWith(const DDim &tensor_dim) override;

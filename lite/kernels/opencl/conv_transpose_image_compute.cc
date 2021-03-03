@@ -128,6 +128,10 @@ void ConvTransposeImageCompute::PrepareForRun() {
   // define image pointer for filter, bias
   filter_image_p_ = DATA_GPU(filter_gpu_image_);
   bias_image_p_ = DATA_GPU(bias_gpu_image_);
+  size_t w, h;
+  filter_image_p_->getImageInfo(CL_IMAGE_WIDTH, &w);
+  filter_image_p_->getImageInfo(CL_IMAGE_HEIGHT, &h);
+  LOG(INFO) << "filter image shape: " << w << "," << h;
 
   // relu options
   VLOG(3) << "relu_fused_:" << relu_fused_
@@ -237,7 +241,13 @@ void ConvTransposeImageCompute::ReInitWhenNeeded() {
     input_image_p_ = DATA_GPU(conv_param_->x);
     output_image_p_ = MUTABLE_DATA_GPU(
         conv_param_->output, output_image_w_, output_image_h_, nullptr);
-
+    size_t w, h;
+    input_image_p_->getImageInfo(CL_IMAGE_WIDTH, &w);
+    input_image_p_->getImageInfo(CL_IMAGE_HEIGHT, &h);
+    LOG(INFO) << "input image shape: " << w << "," << h;
+    output_image_p_->getImageInfo(CL_IMAGE_WIDTH, &w);
+    output_image_p_->getImageInfo(CL_IMAGE_HEIGHT, &h);
+    LOG(INFO) << "output image shape: " << w << "," << h;
     SetGlobalWorkSize();
   }
 }

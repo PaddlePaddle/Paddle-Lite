@@ -89,88 +89,36 @@ void TestCase::CreateInstruction() {
 
 void TestCase::PrepareInputTargetCopy(const Type* type,
                                       Tensor* inst_tensor,
-                                      const Tensor* base_tensor,
-                                      const std::string arg) {
-#ifdef LITE_WITH_OPENCL
-  const auto op_type = instruction_->kernel()->op_type();
-  if (arg == "Filter") {
-    if (op_type == "conv2d") {
-      LOG(FATAL) << "not impl";
-    } else if (op_type == "depthwise_conv2d") {
-      LOG(FATAL) << "not impl";
-    } else if (op_type == "conv2d_transpose") {
-      LOG(INFO) << "in framework ";
-      const auto* filter_cpu = base_tensor->data<float>();
-      std::vector<float> filter_cpu_trans(base_tensor->numel());
-      // Convert filter layout from IOHW to OIHW
-      auto IOHW = base_tensor->dims();
-      IOHW2OIHW<float, int64_t>(filter_cpu,
-                                filter_cpu_trans.data(),
-                                IOHW[1],
-                                IOHW[0],
-                                IOHW[2],
-                                IOHW[3]);
-
-      lite::Tensor input_image_cpu_tensor;
-      CLImageConverterNBlock converter;
-      const DDim& input_image_dims = converter.InitImageDimInfoWith(IOHW);
-      input_image_cpu_tensor.Resize(
-          {1, input_image_dims[0], input_image_dims[1], 4});
-      auto* input_image_cpu_data = MUTABLE_DATA_CPU(&input_image_cpu_tensor);
-      converter.NCHWToImage(
-          filter_cpu_trans.data(), input_image_cpu_data, IOHW);
-      MUTABLE_DATA_GPU(inst_tensor,
-                       input_image_dims[0],
-                       input_image_dims[1],
-                       input_image_cpu_data);
-    }
-  } else if (arg == "Bias") {
-    LOG(FATAL) << "not impl";
-  }
-#endif
-
+                                      const Tensor* base_tensor) {
   auto target_type = type->target();
   switch (target_type) {
     case TARGET(kOpenCL): {
 #ifdef LITE_WITH_OPENCL
-      const auto op_type = instruction_->kernel()->op_type();
-      LOG(INFO) << "LAYOUT: " << DataLayoutToStr(type->layout())
-                << "\t arg: " << arg << "\t type_name: " << type->name()
-                << "\t op_type: " << op_type;
-
       switch (type->layout()) {
         case DATALAYOUT(kImageDefault): {
-          if (arg == "Input") {
-            lite::Tensor input_image_cpu_tensor;
-            const DDim& input_image_dims =
-                converter_.InitImageDimInfoWith(base_tensor->dims());
-            input_image_cpu_tensor.Resize(
-                {1, input_image_dims[0], input_image_dims[1], 4});
-            half_t* input_image_cpu_data =
-                input_image_cpu_tensor.mutable_data<half_t>();
-            converter_.NCHWToImage(
-                static_cast<float*>(const_cast<void*>(base_tensor->raw_data())),
-                input_image_cpu_data,
-                base_tensor->dims());
-            inst_tensor->mutable_data<half_t, cl::Image2D>(
-                input_image_dims[0], input_image_dims[1], input_image_cpu_data);
-          } else {
-            LOG(FATAL) << "Not supported param[" << arg << "] for opencl.";
-          }
+          lite::Tensor input_image_cpu_tensor;
+          const DDim& input_image_dims =
+              converter_.InitImageDimInfoWith(base_tensor->dims());
+          input_image_cpu_tensor.Resize(
+              {1, input_image_dims[0], input_image_dims[1], 4});
+          half_t* input_image_cpu_data =
+              input_image_cpu_tensor.mutable_data<half_t>();
+          converter_.NCHWToImage(
+              static_cast<float*>(const_cast<void*>(base_tensor->raw_data())),
+              input_image_cpu_data,
+              base_tensor->dims());
+          inst_tensor->mutable_data<half_t, cl::Image2D>(
+              input_image_dims[0], input_image_dims[1], input_image_cpu_data);
           break;
         }
         case DATALAYOUT(kNCHW): {
           // buffer
-          if (arg == "Input") {
-            TargetWrapperCL::MemcpySync(
-                inst_tensor->mutable_data(type->target(),
-                                          base_tensor->memory_size()),
-                base_tensor->raw_data(),
-                base_tensor->memory_size(),
-                IoDirection::HtoD);
-          } else {
-            LOG(FATAL) << "Not supported param[" << arg << "] for opencl.";
-          }
+          TargetWrapperCL::MemcpySync(
+              inst_tensor->mutable_data(type->target(),
+                                        base_tensor->memory_size()),
+              base_tensor->raw_data(),
+              base_tensor->memory_size(),
+              IoDirection::HtoD);
           break;
         }
         case DATALAYOUT(kAny): {
@@ -196,51 +144,33 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
 }
 
 void TestCase::PrepareInputsForInstruction() {
-  LOG(INFO) << "RUN ";
-  std::vector<std::string> args;
-  bool target_not_compatible = false;
-  for (auto& arg_name : op_desc().InputArgumentNames()) {
-    args.push_back(arg_name);
-    do {
-      const auto& arg = args.back();
-      for (auto& var : op_desc().Input(arg)) {
-        const auto* type = instruction_->kernel()->GetInputDeclType(arg);
-        CHECK(base_scope_->FindVar(var));
-        LOG(INFO) << "arg: " << arg;
-        LOG(INFO) << "var: " << var;
-        LOG(INFO) << "type: " << *type;
-        /// Create a tensor or tensor_array in the instruction's scope,
-        /// alloc memory and then copy data there.
-        if (type->IsTensor() &&
-            (!TargetCompatibleTo(*Type::GetTensorTy(TARGET(kHost)), *type) ||
-             target_not_compatible)) {
-          const Tensor* base_tensor = base_scope_->FindTensor(var);
-          auto* inst_tensor = inst_scope_->FindMutableTensor(var);
-          CHECK(!base_tensor->dims().empty())
-              << "The dims of input tensor is empty yet";
-          PrepareInputTargetCopy(type, inst_tensor, base_tensor, arg);
-          args.pop_back();
-          target_not_compatible = true;
-        } else if (type->IsTensorList() &&
-                   (!TargetCompatibleTo(*Type::GetTensorListTy(TARGET(kHost)),
-                                        *type) ||
-                    target_not_compatible)) {
-          const auto* base_tensor_list = base_scope_->FindTensorList(var);
-          auto* inst_tensor_list = inst_scope_->FindMutableTensorList(var);
-          CHECK_EQ(base_tensor_list->size(), inst_tensor_list->size());
-          for (size_t i = 0; i < base_tensor_list->size(); i++) {
-            CHECK(!base_tensor_list->at(i).dims().empty())
-                << "The dims of input tensor[" << i << "] is empty yet";
-            PrepareInputTargetCopy(type,
-                                   &(inst_tensor_list->at(i)),
-                                   &base_tensor_list->at(i),
-                                   arg);
-          }
-          args.pop_back();
-          target_not_compatible = true;
+  for (auto& arg : op_desc().InputArgumentNames()) {
+    for (auto& var : op_desc().Input(arg)) {
+      const auto* type = instruction_->kernel()->GetInputDeclType(arg);
+      CHECK(base_scope_->FindVar(var));
+      /// Create a tensor or tensor_array in the instruction's scope,
+      /// alloc memory and then copy data there.
+      if (type->IsTensor() &&
+          !TargetCompatibleTo(*Type::GetTensorTy(TARGET(kHost)), *type)) {
+        const Tensor* base_tensor = base_scope_->FindTensor(var);
+        auto* inst_tensor = inst_scope_->FindMutableTensor(var);
+        CHECK(!base_tensor->dims().empty())
+            << "The dims of input tensor is empty yet";
+        PrepareInputTargetCopy(type, inst_tensor, base_tensor);
+      } else if (type->IsTensorList() &&
+                 !TargetCompatibleTo(*Type::GetTensorListTy(TARGET(kHost)),
+                                     *type)) {
+        const auto* base_tensor_list = base_scope_->FindTensorList(var);
+        auto* inst_tensor_list = inst_scope_->FindMutableTensorList(var);
+        CHECK_EQ(base_tensor_list->size(), inst_tensor_list->size());
+        for (size_t i = 0; i < base_tensor_list->size(); i++) {
+          CHECK(!base_tensor_list->at(i).dims().empty())
+              << "The dims of input tensor[" << i << "] is empty yet";
+          PrepareInputTargetCopy(
+              type, &(inst_tensor_list->at(i)), &base_tensor_list->at(i));
         }
       }
-    } while (target_not_compatible && !args.empty());
+    }
   }
 }
 
@@ -294,7 +224,6 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
             CL_IMAGE_WIDTH, &out_image_shape[0]);
         static_cast<const cl::Image2D*>(out_image)->getImageInfo(
             CL_IMAGE_HEIGHT, &out_image_shape[1]);
-        LOG(INFO) << "out image shape: " << out_image_shape;
         std::unique_ptr<half_t> out_image_data(
             new half_t(out_image_shape.production() * 4));
         TargetWrapperCL::ImgcpySync(out_image_data.get(),
