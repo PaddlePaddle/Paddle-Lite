@@ -51,12 +51,12 @@ void TopkV2Compute::Run() {
     for (int i = 0; i < inner_size; i++) {
       std::vector<std::pair<float, int>> vec;
       for (int j = 0; j < axis_size; j++) {
-        vec.push_back(std::make_pair(in_data[j * outer_size + i], j));
+        vec.push_back(std::make_pair(in_data[j * inner_size + i], j));
       }
       std::partial_sort(vec.begin(), vec.begin() + k, vec.end(), comp_func);
       for (int j = 0; j < k; j++) {
-        out_data[j * outer_size + i] = vec[j].first;
-        out_ind_data[j * outer_size + i] = vec[j].second;
+        out_data[j * inner_size + i] = vec[j].first;
+        out_ind_data[j * inner_size + i] = vec[j].second;
       }
     }
   }
