@@ -28,6 +28,7 @@
 #endif
 
 #include "lite/backends/metal/metal_context.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
@@ -42,7 +43,9 @@ class ConcatImageCompute : public KernelLite<TARGET(kMetal),
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("concat", output_buffer_);
+  };
 
  private:
   std::vector<const MetalImage*> input_buffers_;
@@ -65,7 +68,9 @@ class ConcatImageComputeHalf
  public:
   void PrepareForRun() override;
   void Run() override;
-  void SaveOutput() override{};
+  void SaveOutput() override {
+    MetalDebug::SaveOutput("concat", output_buffer_);
+  };
 
  private:
   std::vector<const MetalImage*> input_buffers_;

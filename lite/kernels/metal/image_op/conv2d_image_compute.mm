@@ -118,13 +118,6 @@ void Conv2dImageCompute::Run() {
                                    static_cast<MetalUint>(output_array_length)};
 
     if (param.bias) {
-//      std::vector<MetalKernelArgument> args{
-//          MetalKernelArgument{input_buffer_},
-//          MetalKernelArgument{bias_buffer_},
-//          MetalKernelArgument{output_buffer_},
-//          MetalKernelArgument{params_buffer_},
-//          MetalKernelArgument{filter_buffer_}};
-
         [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
         [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image()) atIndex:(1)];
         [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
@@ -139,12 +132,6 @@ void Conv2dImageCompute::Run() {
       kernel_->Execute(*encoder, global_work_size, quadruple);
     } else {
       auto blank_buffer = blank_tensor_.data<float, MetalImage>();
-//      std::vector<MetalKernelArgument> args{
-//          MetalKernelArgument{input_buffer_},
-//          MetalKernelArgument{blank_buffer},
-//          MetalKernelArgument{output_buffer_},
-//          MetalKernelArgument{params_buffer_},
-//          MetalKernelArgument{filter_buffer_}};
 
         [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
         [encoder->metal_command_encoder_ setTexture:(blank_buffer->image()) atIndex:(1)];
@@ -210,7 +197,7 @@ void Conv2dImageCompute::SetupWithMPS() {
 }
 
 void Conv2dImageCompute::SaveOutput() {
-    //MetalDebug::SaveOutput("conv2d", output_buffer_);
+    MetalDebug::SaveOutput("conv2d", output_buffer_);
 }
 
 void Conv2dImageCompute::SetupWithoutMPS() {

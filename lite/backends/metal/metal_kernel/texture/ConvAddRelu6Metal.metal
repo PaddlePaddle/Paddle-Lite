@@ -64,52 +64,6 @@ kernel void conv_add_relu6_1x1(texture2d_array<float, access::sample> inTexture 
     outTexture.write(relu, gid.xy, gid.z);
 }
 
-kernel void conv_add_relu6_1x1_bac(texture2d_array<float, access::sample> inTexture [[texture(0)]],
-                         texture2d_array<float, access::sample> biasTexture [[texture(1)]],
-                         texture2d_array<float, access::write> outTexture [[texture(2)]],
-                         constant MetalConvParam &param [[buffer(0)]],
-                         const device float4 *weights [[buffer(1)]],
-                         uint3 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() ||
-        gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size()) {
-        return;
-    }
-
-    ushort2 stride = ushort2(param.strideX, param.strideY);
-    ushort2 posInInput = ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
-
-    constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
-    const uint kernelHXW = 1;
-
-    uint input_arr_size = inTexture.get_array_size();
-    uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
-
-    float4 output = float4(0.0, 0.0, 0.0, 0.0);
-    if (param.hasAddOp) {
-        constant ElementwiseAddParam &addParam = param.addParam;
-        output = getBias(gid, addParam, biasTexture);
-    }
-
-    float4 input;
-    for (uint i = 0; i < input_arr_size; ++i) {
-        input = inTexture.sample(sample, float2(posInInput.x, posInInput.y), i);
-        float4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size  + i];
-        output.x += dot(input, weight_x);
-
-        float4 weight_y = weights[weithTo + 1 * kernelHXW * input_arr_size  + i];
-        output.y += dot(input, weight_y);
-
-        float4 weight_z = weights[weithTo + 2 * kernelHXW * input_arr_size  + i];
-        output.z += dot(input, weight_z);
-
-        float4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size + i];
-        output.w += dot(input, weight_w);
-    }
-    float4 relu = param.hasReluOp ? fmin(fmax((float4)output, 0.0), 6.0):output;
-    outTexture.write(relu, gid.xy, gid.z);
-}
-
 kernel void conv_add_relu6_3x3(texture2d_array<float, access::sample> inTexture [[texture(0)]],
                          texture2d_array<float, access::sample> biasTexture [[texture(1)]],
                          texture2d_array<float, access::write> outTexture [[texture(2)]],

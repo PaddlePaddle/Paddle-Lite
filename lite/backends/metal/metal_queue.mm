@@ -17,6 +17,7 @@
 #include "lite/core/dim.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/core/program.h"
+#include "lite/backends/metal/metal_debug.h"
 
 namespace paddle {
 namespace lite {
