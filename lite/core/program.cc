@@ -296,8 +296,10 @@ void RuntimeProgram::Run() {
     inst.Run();
 #ifdef LITE_WITH_PRECISION_PROFILE
 #ifndef LITE_WITH_FPGA
-    precision_profiler_summary +=
-        inst_precision_profiler.GetInstPrecision(&inst);
+    if (inst.op()->Type() != "while") {
+      precision_profiler_summary +=
+          inst_precision_profiler.GetInstPrecision(&inst);
+    }
 #endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
@@ -481,7 +483,8 @@ void Instruction::Run() {
 #ifdef LITE_WITH_PROFILE
   if (first_epoch_for_profiler_) {
     kernel_->SetIsKernelTest(false);
-    SetProfileRuntimeOpInfo(profiler_->GetOpCharacter(profile_id_));
+    auto* op_ch = profiler_->GetOpCharacter(profile_id_);
+    SetProfileRuntimeOpInfo(op_ch);
     first_epoch_for_profiler_ = false;
   }
 #endif
