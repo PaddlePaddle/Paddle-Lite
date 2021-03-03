@@ -162,11 +162,11 @@ void bilinear_interp(const float* input_data,
         __m256 _a = _mm256_loadu_ps(alphap);
 
         __m256 _s0p0p3 = _mm256_set_ps(
-            *s0p3, *s0p3_1, *s0p2, *s0p2_1, *s0p1, *s0p1_1, *s0p0, *s0p0_1);
+            *s0p3_1, *s0p3, *s0p2_1, *s0p2, *s0p1_1, *s0p1, *s0p0_1, *s0p0);
 
         __m256 _ms0 = _mm256_mul_ps(_s0p0p3, _a);
         __m256 _s1p0p3 = _mm256_set_ps(
-            *s1p3, *s1p3_1, *s1p2, *s1p2_1, *s1p1, *s1p1_1, *s1p0, *s1p0_1);
+            *s1p3_1, *s1p3, *s1p2_1, *s1p2, *s1p1_1, *s1p1, *s1p0_1, *s1p0);
         __m256 _ms1 = _mm256_mul_ps(_s1p0p3, _a);
 
         __m256 _rows0 = _mm256_hadd_ps(_ms0, _ms0);
@@ -197,27 +197,13 @@ void bilinear_interp(const float* input_data,
         alphap += 2;
       }
 
-      const float buffer0[2] = {*(src + sy * w_in + w_in - 1),
-                                *(src + sy * w_in + w_in - 1)};
-      const float buffer1[2] = {*(src + (sy + 1) * w_in + w_in - 1),
-                                *(src + (sy + 1) * w_in + w_in - 1)};
+      float param0 = *(src + sy * w_in + w_in - 1);
+      float param1 = *(src + (sy + 1) * w_in + w_in - 1);
+      const float buffer0[2] = {param0, param0};
+      const float buffer1[2] = {param1, param1};
 #ifdef __AVX__
-      __m256 _s0p0p3 = _mm256_set_ps(buffer0[0],
-                                     buffer0[1],
-                                     buffer0[0],
-                                     buffer0[1],
-                                     buffer0[0],
-                                     buffer0[1],
-                                     buffer0[0],
-                                     buffer0[1]);
-      __m256 _s1p0p3 = _mm256_set_ps(buffer1[0],
-                                     buffer1[1],
-                                     buffer1[0],
-                                     buffer1[1],
-                                     buffer1[0],
-                                     buffer1[1],
-                                     buffer1[0],
-                                     buffer1[1]);
+      __m256 _s0p0p3 = _mm256_set1_ps(param0);
+      __m256 _s1p0p3 = _mm256_set1_ps(param1);
       for (; dx + 3 < w_out; dx += 4) {
         __m256 _a = _mm256_loadu_ps(alphap);
 
@@ -299,7 +285,7 @@ void bilinear_interp(const float* input_data,
         *dp++ = *rows0p++ * b0 + *rows1p++ * b1;
       }
       betap += 2;
-    }  // end w_bound loop
+    }  // end h_bound loop
 
     // h_bound - h_out loop
     for (int dy = h_bound; dy < h_out; dy++) {
@@ -311,8 +297,8 @@ void bilinear_interp(const float* input_data,
       float* rows1p = rows1;
 
       int dx = 0;
-// w_bound loop
 #ifdef __AVX__
+      // w_bound loop
       for (; dx + 3 < w_bound; dx += 4) {
         int x0 = xofs[dx];
         int x1 = xofs[dx + 1];
@@ -342,10 +328,10 @@ void bilinear_interp(const float* input_data,
         __m256 _a = _mm256_loadu_ps(alphap);
 
         __m256 _s0p0p3 = _mm256_set_ps(
-            *s0p3, *s0p3_1, *s0p2, *s0p2_1, *s0p1, *s0p1_1, *s0p0, *s0p0_1);
+            *s0p3_1, *s0p3, *s0p2_1, *s0p2, *s0p1_1, *s0p1, *s0p0_1, *s0p0);
         __m256 _ms0 = _mm256_mul_ps(_s0p0p3, _a);
         __m256 _s1p0p3 = _mm256_set_ps(
-            *s1p3, *s1p3_1, *s1p2, *s1p2_1, *s1p1, *s1p1_1, *s1p0, *s1p0_1);
+            *s1p3_1, *s1p3, *s1p2_1, *s1p2, *s1p1_1, *s1p1, *s1p0_1, *s1p0);
         __m256 _ms1 = _mm256_mul_ps(_s1p0p3, _a);
 
         __m256 _rows0 = _mm256_hadd_ps(_ms0, _ms0);
@@ -374,26 +360,12 @@ void bilinear_interp(const float* input_data,
         alphap += 2;
       }
 
-      const float buffer1[2] = {*(src + sy * w_in + w_in - 1),
-                                *(src + sy * w_in + w_in - 1)};
+      float param = *(src + sy * w_in + w_in - 1);
+      const float buffer1[2] = {param, param};
 
 #ifdef __AVX__
-      __m256 _s0p0p3 = _mm256_set_ps(buffer1[0],
-                                     buffer1[1],
-                                     buffer1[0],
-                                     buffer1[1],
-                                     buffer1[0],
-                                     buffer1[1],
-                                     buffer1[0],
-                                     buffer1[1]);
-      __m256 _s1p0p3 = _mm256_set_ps(buffer1[0],
-                                     buffer1[1],
-                                     buffer1[0],
-                                     buffer1[1],
-                                     buffer1[0],
-                                     buffer1[1],
-                                     buffer1[0],
-                                     buffer1[1]);
+      __m256 _s0p0p3 = _mm256_set1_ps(param);
+      __m256 _s1p0p3 = _mm256_set1_ps(param);
 
       // w_bound - w_out loop
       for (; dx + 3 < w_out; dx += 4) {
@@ -473,7 +445,7 @@ void bilinear_interp(const float* input_data,
       }
 
       betap += 2;
-    }
+    }  // end h_bound - h_out loop
     lite::host::free(rowsbuf0);
     lite::host::free(rowsbuf1);
   }
