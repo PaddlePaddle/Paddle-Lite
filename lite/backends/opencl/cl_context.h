@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include "lite/backends/opencl/cl_image.h"
@@ -57,23 +58,16 @@ class CLContext {
 
   cl::NDRange DefaultGlobalWorkSize(const CLImage &image);
 
-  cl::NDRange DefaultLocalWorkSize(cl::NDRange global_work_size,
-                                   size_t max_work_size,
-                                   int divitor = 2,
-                                   bool tune_reverse = false,
-                                   size_t user_defined_max_work_size = 0);
+  cl::NDRange DefaultLocalWorkSize(
+      const cl::NDRange &global_work_size,
+      register size_t max_work_size,
+      const int &divitor = 2,
+      const bool &tune_reverse = false,
+      const size_t &user_defined_max_work_size = 0);
 
-  std::vector<cl::NDRange> GenerateLocalWorkSizes(cl::NDRange global_work_size,
-                                                  size_t max_work_size);
+  std::set<cl::NDRange> GenerateLocalWorkSizes(cl::NDRange global_work_size,
+                                               size_t max_work_size);
   bool IsArmMali();
-
-  bool HasTunedLocalWorkSizeMap(const std::string &key, cl::NDRange *lws);
-
-  void SetTunedLocalWorkSizeMap(const std::string &key, const cl::NDRange lws);
-
-  std::map<std::string, cl::NDRange> GetTunedLocalWorkSizeMap();
-
-  cl::NDRange GetTunedLocalWorkSizeFromMap(const std::string &key);
 
  private:
   std::vector<std::shared_ptr<cl::Kernel>> kernels_;
