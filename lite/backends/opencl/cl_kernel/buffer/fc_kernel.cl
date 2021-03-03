@@ -54,7 +54,8 @@ void fc_gemm_naive(__global const CL_DTYPE* a,
   }
 
 #ifdef RELU
-  c[row * N + col] = activation(c0);
+  CL_DTYPE alpha;
+  c[row * N + col] = activation(c0, alpha);
 #else
   c[row * N + col] = c0;
 #endif
@@ -91,7 +92,8 @@ void gemm_batch_naive(__global const CL_DTYPE* a,
     c0 += a0 * b0;
   }
 
-  cur_c[row * N + col] = activation(c0);
+  CL_DTYPE alpha;
+  cur_c[row * N + col] = activation(c0, alpha);
 }
 
 
@@ -235,7 +237,8 @@ void fc_gemv_naive(__global const CL_DTYPE* a,
     }
 
 #ifdef RELU
-  c[col] = activation(c0);
+  CL_DTYPE alpha;
+  c[col] = activation(c0, alpha);
 #else
   c[col] = c0;
 #endif
@@ -254,6 +257,7 @@ void fc_gemv_1x4(__global const CL_DTYPE* a,
                  const int M, const int N, const int K) {
     const int col = get_global_id(0) << 2; // gws[0]: [0, N >> 2) height of B == N
 
+    half alpha;
     if (col + 3 < N) {
         half4 c0 = 0.0f;
         if (bias) {
@@ -310,11 +314,11 @@ void fc_gemv_1x4(__global const CL_DTYPE* a,
         } else {
             switch (col % 4) {
                 case 3:
-                    c[col + 2] = activation(c0.z);
+                    c[col + 2] = activation(c0.z, alpha);
                 case 2:
-                    c[col + 1] = activation(c0.y);
+                    c[col + 1] = activation(c0.y, alpha);
                 case 1:
-                    c[col] = activation(c0.x);
+                    c[col] = activation(c0.x, alpha);
             }
         }
 #else
@@ -341,7 +345,7 @@ void fc_gemv_1x4(__global const CL_DTYPE* a,
                c0 += a0 * b0;
            }
 #ifdef RELU
-           c[col + col_offset] = activation(c0);
+           c[col + col_offset] = activation(c0, alpha);
 #else
            c[col + col_offset] = c0;
 #endif

@@ -90,12 +90,7 @@ __constant sampler_t SAMPLER =
 /////////////////////////////////
 // activation / activation_type4
 /////////////////////////////////
-inline CL_DTYPE activation(CL_DTYPE in
-#ifdef PRELU
-                           ,
-                           CL_DTYPE prelu_alpha
-#endif
-                           ) {
+inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
   CL_DTYPE output = in;
 #ifdef PRELU
   output = select(prelu_alpha * in, in, in >= (CL_DTYPE)0);
@@ -138,12 +133,7 @@ inline CL_DTYPE activation(CL_DTYPE in
   return output;
 }
 
-inline CL_DTYPE4 activation_type4(CL_DTYPE4 in
-#ifdef PRELU
-                                  ,
-                                  CL_DTYPE4 prelu_alpha
-#endif
-                                  ) {
+inline CL_DTYPE4 activation_type4(CL_DTYPE4 in, CL_DTYPE4 prelu_alpha) {
   CL_DTYPE4 output = in;
 #ifdef PRELU
   output = select(prelu_alpha * in, in, isgreaterequal(in, (CL_DTYPE4)0));
