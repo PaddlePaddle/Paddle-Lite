@@ -1261,6 +1261,11 @@ struct SequenceConcatParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct MeshgridParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor*> Out{};
+};
+
 struct AttentionPaddingMaskParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
