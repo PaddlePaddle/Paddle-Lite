@@ -18,6 +18,7 @@
 #endif
 // "supported_kernel_op_info.h", "all_kernel_faked.cc" and "kernel_src_map.h"
 // are created automatically during opt's compiling period
+#include <algorithm>
 #include <iomanip>
 #include "all_kernel_faked.cc"  // NOLINT
 #include "kernel_src_map.h"     // NOLINT
@@ -243,27 +244,29 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kUnk"};
   size_t maximum_optype_length = 0;
   for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
-    maximum_optype_length = it->first.size() > maximum_optype_length
-                                ? it->first.size()
-                                : maximum_optype_length;
+    maximum_optype_length = std::max(it->first.size(), maximum_optype_length);
   }
   std::cout << std::setiosflags(std::ios::internal);
   std::cout << std::setw(maximum_optype_length) << "OP_name";
   for (size_t i = 0; i < targets.size(); i++) {
-    std::cout << std::setw(10) << targets[i].substr(1);
+    size_t max_len = std::max(static_cast<size_t>(10), targets[i].size() + 1);
+    std::cout << std::setw(max_len) << targets[i].substr(1);
   }
   std::cout << std::endl;
+
   if (valid_ops.empty()) {
     for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
       std::cout << std::setw(maximum_optype_length) << it->first;
       auto ops_valid_places = it->second;
       for (size_t i = 0; i < targets.size(); i++) {
+        size_t max_len =
+            std::max(static_cast<size_t>(10), targets[i].size() + 1);
         if (std::find(ops_valid_places.begin(),
                       ops_valid_places.end(),
                       targets[i]) != ops_valid_places.end()) {
-          std::cout << std::setw(10) << "Y";
+          std::cout << std::setw(max_len) << "Y";
         } else {
-          std::cout << std::setw(10) << " ";
+          std::cout << std::setw(max_len) << " ";
         }
       }
       std::cout << std::endl;
@@ -278,12 +281,14 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
       // Print OP info.
       auto ops_valid_places = supported_ops.at(*op);
       for (size_t i = 0; i < targets.size(); i++) {
+        size_t max_len =
+            std::max(static_cast<size_t>(10), targets[i].size() + 1);
         if (std::find(ops_valid_places.begin(),
                       ops_valid_places.end(),
                       targets[i]) != ops_valid_places.end()) {
-          std::cout << std::setw(10) << "Y";
+          std::cout << std::setw(max_len) << "Y";
         } else {
-          std::cout << std::setw(10) << " ";
+          std::cout << std::setw(max_len) << " ";
         }
       }
       std::cout << std::endl;
