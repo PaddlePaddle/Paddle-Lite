@@ -72,7 +72,7 @@ void ElementwiseAddImageCompute::PrepareForRun() {
         MUTABLE_DATA_GPU(
             y_weights_image_, y_image_dims[0], y_image_dims[1], y_cpu_image);
       }
-    } else if (axis == x->dims().size() - 3) {
+    } else if (axis == x->dims().size() - 3 || axis == -1) {
       kernel_func_name_ = "channel_add";  // y: ImageFolder
       if (y->persistable()) {
         y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
@@ -183,7 +183,7 @@ void ElementwiseAddImageCompute::Run() {
     status = kernel.setArg(4, output_w);
     CL_CHECK_FATAL(status);
   } else if (y_dims.size() == 1) {
-    if (axis == x_dims.size() - 1 || axis == x_dims.size() - 3) {
+    if (axis == x_dims.size() - 1 || axis == x_dims.size() - 3 || axis == -1) {
       const int tensor_w = x_dims[x_dims.size() - 1];
 #ifdef LITE_WITH_LOG
       VLOG(4) << "tensor_w:" << tensor_w;
