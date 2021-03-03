@@ -106,154 +106,75 @@ cl::NDRange CLContext::DefaultGlobalWorkSize(const CLImage &image) {
   }
 }
 
-std::vector<cl::NDRange> CLContext::GenerateLocalWorkSizes(
-    cl::NDRange global_work_size, size_t max_work_size) {
-  size_t generate_lws_type = CLRuntime::Global()->auto_tune();
+std::set<cl::NDRange> CLContext::GenerateLocalWorkSizes(cl::NDRange gws,
+                                                        size_t max_ws) {
+  size_t tune_type = CLRuntime::Global()->auto_tune();
 
-  cl::NDRange tmp_lws = DefaultLocalWorkSize(
-      global_work_size, max_work_size, /*divisor=*/2, /*tune_reverse=*/false);
+  cl::NDRange tmp_lws =
+      DefaultLocalWorkSize(gws, max_ws, /*divisor=*/2, /*tune_reverse=*/false);
   cl::NDRange last_lws = cl::NDRange{
       static_cast<size_t>(0), static_cast<size_t>(0), static_cast<size_t>(0)};
+  std::set<cl::NDRange> lwss{tmp_lws};
 
-  std::vector<cl::NDRange> lwss{tmp_lws};
-  VLOG(1) << "generate_lws_type:" << generate_lws_type;
-  // 0 - None, 1 - Rapid, 2 - Normal, 3 - Exhaustive
-  if (generate_lws_type == lite_api::CL_TUNE_NONE) {
-    // 0 - None: nothing to do
-  } else if (generate_lws_type == lite_api::CL_TUNE_RAPID) {
-    // 1 - Rapid
-    for (auto tune_reverse : {true, false}) {
-      for (size_t divisor = 1; divisor < /*max_divisor=*/17; divisor *= 2) {
-        tmp_lws = DefaultLocalWorkSize(
-            global_work_size, max_work_size, divisor, tune_reverse);
-        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
-            last_lws[2] == tmp_lws[2]) {
-          // skip tuned lws
-          continue;
-        }
-        lwss.emplace_back(tmp_lws);
+  auto gen_lws = [&](const std::set<bool> &tune_reverses,
+                     const std::set<size_t> &divisors) {
+    for (bool tune_reverse : tune_reverses) {
+      for (size_t divisor : divisors) {
+        tmp_lws = DefaultLocalWorkSize(gws, max_ws, divisor, tune_reverse);
+        lwss.emplace(tmp_lws);
       }
     }
-  } else if (generate_lws_type == lite_api::CL_TUNE_NORMAL) {
-    // 2 - Normal
-    for (auto tune_reverse : {true, false}) {
-      for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor += 2) {
-        tmp_lws = DefaultLocalWorkSize(
-            global_work_size, max_work_size, divisor, tune_reverse);
-        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
-            last_lws[2] == tmp_lws[2]) {
-          // skip tuned lws
-          continue;
-        }
-        lwss.emplace_back(tmp_lws);
-      }
-    }
-  } else if (generate_lws_type == lite_api::CL_TUNE_EXHAUSTIVE) {
-    // 3 - Exhaustive
-    for (auto tune_reverse : {true, false}) {
-      for (size_t divisor = 1; divisor < /*max_divisor=*/15; divisor++) {
-        tmp_lws = DefaultLocalWorkSize(
-            global_work_size, max_work_size, divisor, tune_reverse);
-        if (last_lws[0] == tmp_lws[0] && last_lws[1] == tmp_lws[1] &&
-            last_lws[2] == tmp_lws[2]) {
-          // skip tuned lws
-          continue;
-        }
-        lwss.emplace_back(tmp_lws);
-      }
-    }
+  };
+
+  std::set<bool> tune_reverses{true, false};
+  std::set<size_t> divisors;
+  if (tune_type == lite_api::CL_TUNE_NONE) {
+    // do nothing
+  } else if (tune_type == lite_api::CL_TUNE_RAPID) {
+    divisors = {1, 2, 4, 8};
+  } else if (tune_type == lite_api::CL_TUNE_NORMAL) {
+    divisors = {1, 3, 5, 7, 9, 11, 13};
+  } else if (tune_type == lite_api::CL_TUNE_EXHAUSTIVE) {
+    divisors = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
   } else {
-    LOG(FATAL) << "Unsupported opencl tune type:" << generate_lws_type;
+    LOG(FATAL) << "Unsupported opencl tune type:" << tune_type;
   }
-
+  gen_lws(tune_reverses, divisors);
   return lwss;
 }
 
 cl::NDRange CLContext::DefaultLocalWorkSize(
-    cl::NDRange global_work_size,
-    size_t max_work_size,
-    int divisor /*=2*/,
-    bool tune_reverse /*=false*/,
-    size_t user_defined_max_work_size /*=0*/) {
-  int gws0 = global_work_size[0];
-  int gws1 = global_work_size[1];
-  int gws2 = global_work_size[2];
+    const cl::NDRange &gws,
+    register size_t max_ws,
+    const int &divisor /*=2*/,
+    const bool &reverse /*=false*/,
+    const size_t &user_def_max_ws /*=0*/) {
+  register size_t lx = reverse ? gws[2] : gws[0];
+  register size_t ly = gws[1];
+  register size_t lz = reverse ? gws[0] : gws[2];
 
-  if (tune_reverse) {
-    gws2 = global_work_size[0];
-    gws1 = global_work_size[1];
-    gws0 = global_work_size[2];
-  }
+  max_ws = (user_def_max_ws > 0 && user_def_max_ws <= max_ws) ? user_def_max_ws
+                                                              : max_ws;
+  max_ws = divisor > 1 ? max_ws / divisor : max_ws;
 
-  if (divisor > 1) {
-    max_work_size /= divisor;
-  }
-  if (user_defined_max_work_size > 0 &&
-      user_defined_max_work_size <= max_work_size) {
-    max_work_size = user_defined_max_work_size;
-  }
-
-  while (gws1 > max_work_size && max_work_size > 0) {
-    gws1 = gws1 % 2 == 0 ? gws1 / 2 : 1;
-  }
-  while (gws2 * gws1 > max_work_size && max_work_size > 0) {
-    gws2 = gws2 % 2 == 0 ? gws2 / 2 : 1;
-  }
-  while (gws0 * gws1 * gws2 > max_work_size && max_work_size > 0) {
-    gws0 = gws0 % 2 == 0 ? gws0 / 2 : 1;
+  if (max_ws > 0) {
+    while (ly > max_ws) {
+      // replace mod with bit operate
+      ly = (ly & 0x01) ? 1 : ly >> 1;
+    }
+    while (ly * lz > max_ws) {
+      lz = (lz & 0x01) ? 1 : lz >> 1;
+    }
+    while (ly * lz * lx > max_ws) {
+      lx = (lx & 0x01) ? 1 : lx >> 1;
+    }
   }
 
-  if (tune_reverse) {
-    return cl::NDRange{static_cast<size_t>(gws2),
-                       static_cast<size_t>(gws1),
-                       static_cast<size_t>(gws0)};
-  } else {
-    return cl::NDRange{static_cast<size_t>(gws0),
-                       static_cast<size_t>(gws1),
-                       static_cast<size_t>(gws2)};
-  }
+  return reverse ? cl::NDRange{lz, ly, lx} : cl::NDRange{lx, ly, lz};
 }
 
 bool CLContext::IsArmMali() {
   return CLRuntime::Global()->GetGpuType() == GpuType::ARM_MALI;
-}
-
-bool CLContext::HasTunedLocalWorkSizeMap(const std::string &key,
-                                         cl::NDRange *lws) {
-  bool has = false;
-  auto it = tuned_lwss_map_.find(key);
-  if (it != tuned_lwss_map_.end()) {
-    *lws = it->second;
-    has = true;
-  }
-  return has;
-}
-
-void CLContext::SetTunedLocalWorkSizeMap(const std::string &key,
-                                         const cl::NDRange lws) {
-  auto it = tuned_lwss_map_.find(key);
-  if (it != tuned_lwss_map_.end()) {
-    auto lws_old = it->second;
-    LOG(FATAL) << "===> found lws_old with same key, please add more detailed "
-                  "info to key <==="
-               << "\n lws_old:" << lws_old[0] << "," << lws_old[1] << ","
-               << lws_old[2] << "\n lws_new:" << lws[0] << "," << lws[1] << ","
-               << lws[2];
-  }
-  tuned_lwss_map_.insert(std::pair<std::string, cl::NDRange>(key, lws));
-}
-
-std::map<std::string, cl::NDRange> CLContext::GetTunedLocalWorkSizeMap() {
-  return tuned_lwss_map_;
-}
-
-cl::NDRange CLContext::GetTunedLocalWorkSizeFromMap(const std::string &key) {
-  cl::NDRange lws = cl::NullRange;
-  auto it = tuned_lwss_map_.find(key);
-  if (it != tuned_lwss_map_.end()) {
-    lws = it->second;
-  }
-  return lws;
 }
 
 }  // namespace lite

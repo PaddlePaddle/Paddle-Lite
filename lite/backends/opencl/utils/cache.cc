@@ -70,6 +70,47 @@ flatbuffers::DetachedBuffer Cache::SyncToFbs() const {
   return fbb.Release();
 }
 
+// Tuned Cache: for Tuned file
+TuneCache::TuneCache(const std::vector<int>& buffer) {
+  SyncFromFbs(proto::GetTuneCache(buffer.data()));
+}
+
+void TuneCache::CopyDataToBuffer(std::vector<int>* buffer) const {
+  CHECK(buffer);
+  flatbuffers::DetachedBuffer buf{SyncToFbs()};
+  buffer->resize(buf.size());
+  // To avoid additional dependencies, standard library components are used
+  // here.
+  std::memcpy(buffer->data(), buf.data(), buf.size());
+}
+
+void TuneCache::SyncFromFbs(
+    const paddle::lite::fbs::opencl::proto::TuneCache* desc) {
+  CHECK(desc);
+  const auto* tune_map_desc = desc->tune_map();
+  CHECK(tune_map_desc);
+  for (const auto& pair : *tune_map_desc) {
+    std::vector<int> xyz_vec(3);
+    const auto& value = *(pair->value());
+    const size_t size = value.size() * sizeof(int);
+    // To avoid additional dependencies, standard library components are used
+    // here.
+    std::memcpy(xyz_vec.data(), value.data(), size);
+    tune_map_.insert({pair->key()->str(), std::move(xyz_vec)});
+  }
+}
+
+flatbuffers::DetachedBuffer TuneCache::SyncToFbs() const {
+  flatbuffers::FlatBufferBuilder fbb;
+  std::vector<flatbuffers::Offset<proto::TuneCache_::TunePair>> tune_map;
+  for (const auto& pair : tune_map_) {
+    tune_map.emplace_back(proto::TuneCache_::CreateTunePairDirect(
+        fbb, pair.first.c_str(), &pair.second));
+  }
+  fbb.Finish(proto::CreateTuneCacheDirect(fbb, &tune_map));
+  return fbb.Release();
+}
+
 }  // namespace opencl
 }  // namespace fbs
 }  // namespace lite
