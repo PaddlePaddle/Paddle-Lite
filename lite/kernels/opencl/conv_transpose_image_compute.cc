@@ -238,54 +238,7 @@ void ConvTransposeImageCompute::ReInitWhenNeeded() {
     output_image_p_ = MUTABLE_DATA_GPU(
         conv_param_->output, output_image_w_, output_image_h_, nullptr);
 
-    const int pad_w = maptofactor(pad_left_ + pad_right_, 2);
-    const int pad_h = maptofactor(pad_up_ + pad_down_, 2);
-    const int align_w = stride_w_ - 1 - pad_w;
-    const int align_h = stride_h_ - 1 - pad_h;
-    cl_int2 pad_shape = {pad_w, pad_h};
-    cl_int2 align_shape = {align_w, align_h};
-
-    cl_int2 input_imageshape = {input_image_w_, input_image_h_};
-    cl_int2 output_imageshape = {output_image_w_, output_image_h_};
-    cl_int2 filter_imageshape = {filter_image_w_, filter_image_h_};
-    cl_int2 stride_shape = {stride_w_, stride_h_};
-
-    auto kernel = &kernel_;
     SetGlobalWorkSize();
-
-    uint32_t idx = 0;
-    cl_int status;
-    for (auto i = 0; i < global_work_size_.dimensions(); i++) {
-      status =
-          kernel->setArg(idx++, static_cast<int32_t>(global_work_size_[i]));
-      CL_CHECK_FATAL(status);
-    }
-    kernel->setArg(idx++, *input_image_p_);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++, *filter_image_p_);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++, *bias_image_p_);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++, *output_image_p_);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++, input_imageshape);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++, output_imageshape);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++, stride_shape);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++, align_shape);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++, pad_shape);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++, filter_imageshape);
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++,
-                   static_cast<int32_t>(filter_tensor_w_ * filter_tensor_h_));
-    CL_CHECK_FATAL(status);
-    kernel->setArg(idx++,
-                   static_cast<int32_t>(maptofactor(input_tensor_c_, 4)));
-    CL_CHECK_FATAL(status);
   }
 }
 
@@ -307,13 +260,60 @@ void ConvTransposeImageCompute::Run() {
 
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-  cl_int status = EnqueueNDRangeKernel(context,
-                                       kernel_,
-                                       cl::NullRange,
-                                       global_work_size_,
-                                       local_work_size_,
-                                       nullptr,
-                                       event_);
+
+  const int pad_w = maptofactor(pad_left_ + pad_right_, 2);
+  const int pad_h = maptofactor(pad_up_ + pad_down_, 2);
+  const int align_w = stride_w_ - 1 - pad_w;
+  const int align_h = stride_h_ - 1 - pad_h;
+  cl_int2 pad_shape = {pad_w, pad_h};
+  cl_int2 align_shape = {align_w, align_h};
+
+  cl_int2 input_imageshape = {input_image_w_, input_image_h_};
+  cl_int2 output_imageshape = {output_image_w_, output_image_h_};
+  cl_int2 filter_imageshape = {filter_image_w_, filter_image_h_};
+  cl_int2 stride_shape = {stride_w_, stride_h_};
+
+  auto kernel = &kernel_;
+
+  uint32_t idx = 0;
+  cl_int status;
+  for (auto i = 0; i < global_work_size_.dimensions(); i++) {
+    status = kernel->setArg(idx++, static_cast<int32_t>(global_work_size_[i]));
+    CL_CHECK_FATAL(status);
+  }
+  kernel->setArg(idx++, *input_image_p_);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, *filter_image_p_);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, *bias_image_p_);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, *output_image_p_);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, input_imageshape);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, output_imageshape);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, stride_shape);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, align_shape);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, pad_shape);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, filter_imageshape);
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++,
+                 static_cast<int32_t>(filter_tensor_w_ * filter_tensor_h_));
+  CL_CHECK_FATAL(status);
+  kernel->setArg(idx++, static_cast<int32_t>(maptofactor(input_tensor_c_, 4)));
+  CL_CHECK_FATAL(status);
+
+  status = EnqueueNDRangeKernel(context,
+                                kernel_,
+                                cl::NullRange,
+                                global_work_size_,
+                                local_work_size_,
+                                nullptr,
+                                event_);
   CL_CHECK_FATAL(status);
   LOG(INFO) << "cl kernel done!";
 }

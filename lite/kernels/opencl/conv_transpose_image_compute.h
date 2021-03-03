@@ -42,7 +42,7 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
                                                     DATALAYOUT(kImageDefault)> {
  public:
   using param_t = operators::ConvParam;
-  using kernel_t = void (ConvTransposeImageCompute::*)(bool);
+  using kernel_t = void (ConvTransposeImageCompute::*)();
 
   void PrepareForRun() override;
 

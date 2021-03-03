@@ -35,6 +35,10 @@ __kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c +
   const int out_w_idx = get_global_id(1); // [0, W)
   const int out_nh_idx = get_global_id(2); // [0, N*H)
 
+  if (out_c_blk_idx == 0 && out_w_idx == 0 && out_nh_idx == 0) {
+      printf("in conv2d_transpose cl kernel");
+  }
+
   if (out_c_blk_idx >= global_size_dim0 || out_w_idx >= global_size_dim1
       || out_nh_idx >= global_size_dim2) {
     return;
