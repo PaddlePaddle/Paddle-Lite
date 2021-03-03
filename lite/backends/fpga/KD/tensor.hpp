@@ -379,7 +379,7 @@ class Tensor {
 
     std::ofstream ofs;
     ofs.open(path);
-    ofs << "type:" << dataType_ << " scale: " << half_to_float(max()[0])
+    ofs << "type:" << dataType_ << " max: " << half_to_float(max()[0])
         << " id:" << id_ << std::endl;
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;

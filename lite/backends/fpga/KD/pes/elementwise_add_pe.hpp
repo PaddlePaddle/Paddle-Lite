@@ -71,7 +71,6 @@ class ElementwiseAddPE : public PE {
   bool dispatch() {
     param_.inputs[0]->syncToDevice();
     param_.inputs[1]->syncToDevice();
-
     input_max_ =
         float_to_half(std::max(half_to_float(param_.inputs[0]->max()[0]),
                                half_to_float(param_.inputs[1]->max()[0])));

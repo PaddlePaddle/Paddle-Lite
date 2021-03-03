@@ -23,6 +23,7 @@ limitations under the License. */
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <string>
 
 #include "lite/backends/fpga/KD/float16.hpp"
 
@@ -48,7 +49,7 @@ enum DLayoutType {
   LAYOUT_HWC = 0,
 };
 
-enum ActiveType {
+enum ActivationType {
   TYPE_NONE = 0,
   TYPE_RELU = 1,
   TYPE_RELU6 = 2,
@@ -61,12 +62,12 @@ struct DeviceInfoArgs {
   uint32_t version;
   uint16_t device_type;
   uint32_t column;
+  uint32_t pool_cap;
   uint32_t reserved1;
   uint32_t reserved2;
   uint32_t reserved3;
   uint32_t reserved4;
   uint32_t reserved5;
-  uint32_t reserved6;
 };
 
 struct VersionArgs {
@@ -89,8 +90,8 @@ struct MemoryBarrierArgs {
   uint16_t dummy;
 };
 
-struct ActiveParamterArgs {
-  enum ActiveType type;
+struct ActivationArgs {
+  enum ActivationType type;
   uint16_t leaky_relu_factor;
 };
 
@@ -101,7 +102,8 @@ struct NormalizeParameterArgs {
 };
 
 struct InplaceArgs {
-  struct ActiveParamterArgs active_param;
+  // bool                          findmax_restart;
+  struct ActivationArgs active_param;
   struct NormalizeParameterArgs normalize_param;
 };
 
@@ -139,10 +141,10 @@ struct DeconvArgs {
 };
 
 struct StrideArgs {
-  bool wr_enabled;
   uint32_t wr_offset;
-  bool rd_enabled;
   uint32_t rd_offset;
+  bool wr_enabled;
+  bool rd_enabled;
 };
 
 struct QuantArgs {
@@ -160,11 +162,11 @@ struct ConvArgs {
 
   struct DeconvArgs deconv;
   struct KernelArgs kernel;
+  struct StrideArgs stride;
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
-  struct InplaceArgs inplace;
-  struct StrideArgs stride;
   struct QuantArgs quant;
+  struct InplaceArgs inplace;
 };
 
 struct DWconvArgs {
@@ -184,7 +186,7 @@ struct DWconvArgs {
 
 struct PoolingArgs {
   uint16_t mode;
-  uint16_t kernel_reciprocal;
+  uint32_t kernel_reciprocal;
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
@@ -269,7 +271,7 @@ struct ResizeArgs {
   uint32_t output_height;
   uint32_t height_ratio;
   uint32_t width_ratio;
-  uint32_t* output_scale_address;
+  uint16_t* output_scale_address;
 };
 
 struct PowerParameterArgs {
@@ -323,8 +325,6 @@ struct FpgaResetArgs {
   _IOW(IOCTL_FPGA_MAGIC, 42, struct NormalizeParameterArgs)
 #define IOCTL_CONFIG_ACTIVATION_PARAMETER \
   _IOW(IOCTL_FPGA_MAGIC, 43, struct ActiveParamterArgs)
-#define IOCTL_CONFIG_GLOBAL_POOL_PARAMETER \
-  _IOW(IOCTL_FPGA_MAGIC, 44, struct GlobalPoolArgs)
 
 #define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 50, struct FpgaRegReadArgs)
 #define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 51, struct FpgaRegWriteArgs)

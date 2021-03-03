@@ -34,12 +34,10 @@ void PoolCompute::PrepareForRun() {
   zynqmp::PoolingParam& pool_param = pe_.param();
   pool_param.input = param.x->ZynqTensor();
   pool_param.output = param.output->ZynqTensor();
-
-  // pool_param.activeParam.type = zynqmp::TYPE_NONE;
+  pool_param.activeParam.type = zynqmp::TYPE_NONE;
 
   pool_param.type = param.pooling_type == "max" ? zynqmp::PoolingType::MAX
                                                 : zynqmp::PoolingType::AVERAGE;
-
   pool_param.globalPooling = param.global_pooling;
   pool_param.kernelSize = param.ksize;
   pool_param.strides = param.strides;

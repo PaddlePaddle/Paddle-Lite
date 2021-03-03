@@ -45,7 +45,6 @@ class FullyConnectedPE : public PE {
 
     convParam_.input = &input_;
     convParam_.output = param_.output;
-
     convParam_.activeParam.type = param_.activeParam.type;
     convParam_.groups = 1;
     convParam_.strides = {1, 1};

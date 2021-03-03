@@ -12,19 +12,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
+
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <algorithm>
+#include <bitset>
 #include <cstring>
 #include <map>
 #include <mutex>  // NOLINT
 #include <utility>
-
-#include "lite/backends/fpga/KD/llapi/zynqmp_api.h"
 
 namespace paddle {
 namespace zynqmp {
@@ -262,6 +264,8 @@ int perform_bypass(const struct BypassArgs &args) {
     ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
     max_val = std::max(half_to_float(max_val), max);
   }
+
+  std::string s = std::bitset<16>(max_val).to_string();  // string conversion
   args.output.scale_address[0] = float_to_half(max);
   return ret;
 }
@@ -327,8 +331,9 @@ std::ostream &operator<<(std::ostream &os, const ConvArgs &args) {
 
   os << "  image.address : " << args.image.address << std::endl;
   os << "  image.scale_address : " << args.image.scale_address << std::endl;
-  os << "  image.scale : "
-     << (reinterpret_cast<float *>(args.image.scale_address))[0] << std::endl;
+  os << "  image.scale : " << half_to_float((reinterpret_cast<float16 *>(
+                                  args.image.scale_address))[0])
+     << std::endl;
   os << "  image.channels : " << args.image.channels << std::endl;
   os << "  image.width : " << args.image.width << std::endl;
   os << "  image.height : " << args.image.height << std::endl;

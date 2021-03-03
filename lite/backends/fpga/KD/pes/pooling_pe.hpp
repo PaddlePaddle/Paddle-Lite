@@ -62,17 +62,7 @@ class PoolingPE : public PE {
 
     PoolingArgs args = {0};
     args.mode = param_.type;
-    args.image.address = input->data<float16>();
     args.image.channels = input->shape().channel();
-
-    args.image.height = input->shape().height();
-    args.image.width = input->shape().width();
-    args.output.address = output->mutableData<float16>();
-    args.kernel.height = k_height;
-    args.kernel.width = k_width;
-    args.out_height = output->shape().height();
-    args.out_width = output->shape().width();
-
     args.image.pad_height = param_.paddings[0];
     args.image.pad_width = param_.paddings[1];
     args.image.scale_address = input->max();
@@ -104,7 +94,6 @@ class PoolingPE : public PE {
       args.out_width = 1;
       args.image.address = input->data<float16>();
       args.output.address = mid_out_.data<void>();
-
       param_.poolingArgs = args;
 
       args.kernel_reciprocal = *(reinterpret_cast<uint32_t*>(&kh_reciprocal));
@@ -116,7 +105,6 @@ class PoolingPE : public PE {
       args.out_width = 1;
       args.image.address = mid_data;
       args.output.address = output->mutableData<float16>();
-
       param_divide_.poolingArgs = args;
     } else {
       args.kernel_reciprocal =
@@ -132,6 +120,7 @@ class PoolingPE : public PE {
 
       param_.poolingArgs = args;
     }
+    use_cpu_ = true;
   }
 
   void compute() {
@@ -191,7 +180,7 @@ class PoolingPE : public PE {
         }
       }
     }
-    output->max()[0] = max;
+    output->max()[0] = float_to_half(max);
     output->flush();
   }
 

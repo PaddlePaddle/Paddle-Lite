@@ -28,7 +28,9 @@ using float16 = zynqmp::float16;
 
 void FcCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-
+  if (param.enable_int8) {
+    input_max_ = zynqmp::float_to_half(127 * param.input_scale);
+  }
   // ====================================================
   zynqmp::FullyConnectedParam& fc_param = pe_.param();
 
@@ -50,7 +52,7 @@ void FcCompute::PrepareForRun() {
 void FcCompute::Run() {
   auto& param = this->Param<param_t>();
   if (param.enable_int8) {
-    param.x->ZynqTensor()->max()[0] = float_to_half(127 * param.input_scale);
+    param.input->ZynqTensor()->max()[0] = input_max_;
   }
   pe_.dispatch();
 

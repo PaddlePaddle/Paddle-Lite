@@ -31,7 +31,7 @@ struct ReLUParam {
 };
 
 struct ActiveParam {
-  enum ActiveType type = TYPE_NONE;
+  enum ActivationType type = TYPE_NONE;
   float leaky_relu_factor;
 };
 
