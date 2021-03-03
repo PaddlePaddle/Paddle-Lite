@@ -291,6 +291,9 @@ class ActivationComputeTester : public arena::TestCase {
     if (act_type_ == RELU6) {
       op_desc->SetAttr("threshold", threshold_);
     }
+    if (act_type_ == GELU) {
+      op_desc->SetAttr("approximate", false);
+    }
   }
 
   void PrepareData() override {
@@ -659,6 +662,8 @@ TEST(Activation_gelu, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #else
   return;
 #endif

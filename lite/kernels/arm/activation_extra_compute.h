@@ -130,6 +130,15 @@ class AbsCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~AbsCompute() = default;
 };
 
+class GeluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~GeluCompute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
