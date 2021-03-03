@@ -901,6 +901,35 @@ void act_elu<float>(
     ptr_out++;
   }
 }
+
+// when using approximation
+// $out = \\frac{1}{2}x(1+tanh(\\sqrt{\\frac{2}{\\pi}}(x+0.044715x^{3}))$
+// or else
+// $out = \\frac{1 + erf(\\frac{x}{\\sqrt{2}})}{2} x$
+template <>
+void act_gelu<float>(
+    const float* din, float* dout, int size, bool approximate, int threads) {
+  if (approximate) {
+    const float pi = std::atan(1) * 4;
+    const float sqrt_2_div_pi = std::sqrt(2 / pi);
+    for (int i = 0; i < size; i++) {
+      float x = *din;
+      *dout = 0.5 * x *
+              (1 + std::tanh(sqrt_2_div_pi * (x + 0.044715 * std::pow(x, 3))));
+      ++din;
+      ++dout;
+    }
+  } else {
+    const float sqrt_2 = std::sqrt(2.0);
+    for (int i = 0; i < size; i++) {
+      float x = *din;
+      *dout = 0.5 * x * (1 + std::erf(x / sqrt_2));
+      ++din;
+      ++dout;
+    }
+  }
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

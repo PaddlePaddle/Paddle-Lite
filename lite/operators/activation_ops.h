@@ -92,6 +92,9 @@ class ActivationOp : public OpLite {
       case lite_api::ActivationType::kElu:
         ch->macs = param_.X->numel();
         break;
+      case lite_api::ActivationType::kGelu:
+        ch->macs = param_.X->numel();
+        break;
       default:
         LOG(FATAL) << "This Type of Activation:"
                    << static_cast<int>(param_.active_type)
