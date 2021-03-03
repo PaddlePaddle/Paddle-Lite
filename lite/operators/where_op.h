@@ -16,48 +16,23 @@
 #include <string>
 #include <vector>
 #include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class NormOp : public OpLite {
+class WhereOp : public OpLite {
  public:
-  NormOp() {}
-  explicit NormOp(const std::string &op_type) : OpLite(op_type) {}
-
+  WhereOp() {}
+  explicit WhereOp(const std::string &op_type) : OpLite(op_type) {}
   bool CheckShape() const override;
-
   bool InferShapeImpl() const override;
-
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "norm"; }
+  std::string DebugString() const override { return "where_op"; }
 
  private:
-  mutable NormParam param_;
-};
-
-class PNormOpLite : public OpLite {
- public:
-  PNormOpLite() {}
-  explicit PNormOpLite(const std::string &op_type) : OpLite(op_type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "p_norm"; }
-
- private:
-  mutable PNormParam param_;
+  mutable WhereParam param_;
 };
 
 }  // namespace operators

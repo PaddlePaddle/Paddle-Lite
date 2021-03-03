@@ -13,37 +13,25 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
+#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/operators/where_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class NormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class WhereCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
-  using param_t = operators::NormParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::WhereParam;
 
   void Run() override;
 
-  ~NormCompute() {}
-
- private:
+  virtual ~WhereCompute() = default;
 };
 
-class PNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
-
-  virtual ~PNormCompute() = default;
-};
-
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

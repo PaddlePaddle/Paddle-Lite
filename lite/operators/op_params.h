@@ -409,6 +409,8 @@ struct ActivationParam : ParamBase {
   float Elu_alpha{1.0f};
   // relu6
   float threshold{6.0f};
+  // gelu
+  bool gelu_approximate{false};
 
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
@@ -1298,6 +1300,11 @@ struct SequenceConcatParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct MeshgridParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor*> Out{};
+};
+
 struct AttentionPaddingMaskParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Y{};
@@ -2138,6 +2145,13 @@ struct WhereIndexParam : ParamBase {
   lite::Tensor* output{nullptr};
 };
 
+struct WhereParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  const lite::Tensor* condition{nullptr};
+  lite::Tensor* out{nullptr};
+};
+
 struct ClipParam : ParamBase {
   Tensor* x{};
   Tensor* min_tensor{};
@@ -2275,6 +2289,16 @@ struct SumParam : ParamBase {
   int inplace{0};
 };
 
+struct PNormParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  float porder{2.f};
+  int axis{-1};
+  float epsilon{1.0e-12f};
+  bool keepdim{false};
+  bool asvector{false};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

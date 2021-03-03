@@ -30,6 +30,9 @@ CLRuntime* CLRuntime::Global() {
 }
 
 CLRuntime::~CLRuntime() {
+  SaveProgram();
+  SaveTuned();
+
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
 #endif
@@ -367,25 +370,38 @@ bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
 }
 
 void CLRuntime::SaveProgram() {
-  // check whether precompiled binary is ON/OFF
   if (binary_path_name_.empty()) return;
-
-  // check whether binary exist
-  std::string file_name =
+  std::string binary_file =
       binary_path_name_.at(0) + "/" + binary_path_name_.at(1);
-  if (IsFileExists(file_name)) {
-    return;
+  if (IsFileExists(binary_file)) {
+    LOG(INFO) << "OpenCL Program existed:" << binary_file;
   } else {
-    bool ret = Serialize(file_name, programs_precompiled_binary_);
-    CHECK(ret) << "Serialize failed.";
-
+    bool ret = Serialize(binary_file, programs_precompiled_binary_);
+    CHECK(ret) << "Serialize failed for opencl binary_file:" << binary_file;
 #ifdef LITE_WITH_LOG
     LOG(INFO) << "Programs have been serialized to disk successfully. File: "
-              << file_name;
+              << binary_file;
 #endif
   }
 }
 
+void CLRuntime::SaveTuned() {
+  if (tuned_path_name_.empty() || auto_tune() == lite_api::CL_TUNE_NONE) return;
+  std::string tuned_file =
+      tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
+  if (tuned_file == "/") {
+    LOG(INFO) << "invalid tuned_file:" << tuned_file;
+  } else if (IsFileExists(tuned_file)) {
+    LOG(INFO) << "OpenCL Tuned file existed:" << tuned_file;
+  } else {
+    bool ret = Serialize(tuned_file, tuned_lwss_map_);
+    CHECK(ret) << "Serialize failed for opencl tuned_file:" << tuned_file;
+    LOG(INFO) << "Tuned file have been serialized to disk successfully: "
+              << tuned_file;
+  }
+}
+
+// binary
 bool CLRuntime::Serialize(
     const std::string file_name,
     const std::map<std::string, cl::Program::Binaries>& map_data) {
@@ -405,6 +421,52 @@ bool CLRuntime::Deserialize(
 
   fbs::opencl::Cache cache{buffer};
   *map_ptr = cache.GetBinaryMap();
+  return true;
+}
+
+// tuned param
+bool CLRuntime::Serialize(const std::string file_name,
+                          const std::map<std::string, cl::NDRange>& map_data) {
+  std::map<std::string, std::vector<int>> map_data_cpy;
+  for (auto& kv : map_data) {
+#ifdef LITE_WITH_LOG
+    VLOG(3) << std::to_string(static_cast<int>(kv.second[0])) << ","
+            << std::to_string(static_cast<int>(kv.second[1])) << ","
+            << std::to_string(static_cast<int>(kv.second[2]));
+#endif
+    map_data_cpy.insert(std::pair<std::string, std::vector<int>>(
+        kv.first,
+        {static_cast<int>(kv.second[0]),
+         static_cast<int>(kv.second[1]),
+         static_cast<int>(kv.second[2])}));
+  }
+
+  fbs::opencl::TuneCache cache{map_data_cpy};
+  std::vector<int> buffer;
+  cache.CopyDataToBuffer(&buffer);
+
+  WriteFile<int>(file_name, buffer);
+  return true;
+}
+
+bool CLRuntime::Deserialize(const std::string file_name,
+                            std::map<std::string, cl::NDRange>* map_ptr) {
+  std::vector<int> buffer;
+  ReadFile<int>(file_name, &buffer);
+
+  fbs::opencl::TuneCache cache{buffer};
+  std::map<std::string, std::vector<int>> tmp_map = cache.GetBinaryMap();
+  for (auto& kv : tmp_map) {
+    cl::NDRange range{static_cast<cl::size_type>(kv.second[0]),
+                      static_cast<cl::size_type>(kv.second[1]),
+                      static_cast<cl::size_type>(kv.second[2])};
+#ifdef LITE_WITH_LOG
+    VLOG(3) << std::to_string(kv.second[0]) << ","
+            << std::to_string(kv.second[1]) << ","
+            << std::to_string(kv.second[2]);
+#endif
+    map_ptr->insert(std::pair<std::string, cl::NDRange>(kv.first, range));
+  }
   return true;
 }
 
@@ -741,22 +803,76 @@ void CLRuntime::GetAdrenoContextProperties(
   properties->push_back(0);
 }
 
+void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
+                              const std::string& path,
+                              const std::string& name,
+                              size_t lws_repeats) {
+  auto_tune_ = tune_mode;
+  lws_repeats_ = lws_repeats;
+  if (tuned_path_name_.empty()) {
+    tuned_path_name_.push_back(path);
+    tuned_path_name_.push_back(name);
+  }
+  const std::string tuned_file = path + "/" + name;
+  LOG(INFO) << "tuned_file.size():" << tuned_file.size()
+            << ", tuned_file:" << tuned_file;
+  if (tuned_file.size() > 2 && IsFileExists(tuned_file) &&
+      auto_tune() != lite_api::CL_TUNE_NONE) {
+    LOG(INFO) << "Load tuned file: " << tuned_file;
+    bool status = Deserialize(tuned_file, &tuned_lwss_map_);
+    if (!status) {
+      LOG(ERROR) << "failed to deserialize tuned_file:" << tuned_file;
+    }
+  } else {
+    LOG(INFO) << "Not found tuned file:" << tuned_file;
+  }
+  command_queue_ = CreateCommandQueue(context());
+}
+
+bool CLRuntime::HasTunedLocalWorkSizeMap(const std::string& key,
+                                         cl::NDRange* lws) {
+  bool has = false;
+  auto it = tuned_lwss_map_.find(key);
+  if (it != tuned_lwss_map_.end()) {
+    *lws = it->second;
+    has = true;
+  }
+  return has;
+}
+
+void CLRuntime::SetTunedLocalWorkSizeMap(const std::string& key,
+                                         const cl::NDRange lws) {
+  auto it = tuned_lwss_map_.find(key);
+  if (it != tuned_lwss_map_.end()) {
+    auto lws_old = it->second;
+    LOG(FATAL) << "===> found lws_old with same key, please add more detailed "
+                  "info to key <==="
+               << "\n lws_old:" << lws_old[0] << "," << lws_old[1] << ","
+               << lws_old[2] << "\n lws_new:" << lws[0] << "," << lws[1] << ","
+               << lws[2];
+  }
+  tuned_lwss_map_.insert(std::pair<std::string, cl::NDRange>(key, lws));
+}
+
 double CLRuntime::GetCommandTime(const cl::Event& event) {
-  command_queue().finish();
+  // due to one command queue, no need for `event.wait();`,
+  // and `event.wait()` affect performance of auto-tune.
   auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
   return (stop_nanos - start_nanos) / 1000000.0;
 }
 
 double CLRuntime::GetQueuedTime(const cl::Event& event) {
-  command_queue().finish();
+  // due to one command queue, no need for `event.wait();`,
+  // and `event.wait()` affect performance of auto-tune.
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) /
          1000000.0;
 }
 
 double CLRuntime::GetSubmitTime(const cl::Event& event) {
-  command_queue().finish();
+  // due to one command queue, no need for `event.wait();`,
+  // and `event.wait()` affect performance of auto-tune.
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) /
          1000000.0;

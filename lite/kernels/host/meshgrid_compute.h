@@ -13,37 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class NormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::NormParam;
-
-  void PrepareForRun() override;
-
-  void Run() override;
-
-  ~NormCompute() {}
-
- private:
-};
-
-class PNormCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class MeshgridCompute
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
-  virtual ~PNormCompute() = default;
+  virtual ~MeshgridCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
