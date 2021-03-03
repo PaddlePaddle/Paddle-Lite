@@ -191,4 +191,3 @@ auto output = predictor->GetOutput(0);
 //获取结果数据
 float *data = output->mutable_data<float>();
 ```
-
