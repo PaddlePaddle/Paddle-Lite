@@ -12,7 +12,10 @@ SYSTEM_INCLUDES = -I$(NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
                   -I$(NDK_ROOT)/sources/android/support/include \
                   -I$(NDK_ROOT)/sysroot/usr/include \
 
-NDK_VERSION=$(shell echo $(NDK_ROOT) | grep -Eo "[0-9]+[0-9]")
+NDK_NAME=$(shell echo $(NDK_ROOT) | grep -Eo "android-ndk-r[0-9]{2}")
+NDK_VERSION=$(shell echo $(NDK_NAME) | grep -Eo "[0-9]{2}")
+$(info NDK_NAME: $(NDK_NAME))
+$(info NDK_VERSION: $(NDK_VERSION))
 ifeq ($(shell expr $(NDK_VERSION) \<= 17), 1)
     ifeq ($(ARM_ABI), arm8)
         ifeq ($(SYSTEM), Linux)
