@@ -1119,9 +1119,12 @@ struct WhileParam : ParamBase {
 
 struct TopkParam : ParamBase {
   const lite::Tensor* X{};
+  const lite::Tensor* KTensor{};
   lite::Tensor* Out{};
   lite::Tensor* Indices{};
+  bool k_is_tensor{false};
   int K{1};
+  int axis{-1};
 };
 
 struct IncrementParam : ParamBase {
