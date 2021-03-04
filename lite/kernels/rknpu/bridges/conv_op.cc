@@ -57,10 +57,9 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
   std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
-  bool fuse_relu = false;
-  fuse_relu = op_info->GetAttr<bool>("fuse_relu");
+  auto fuse_relu = op_info->GetAttr<bool>("fuse_relu");
   if (fuse_relu) {
-    VLOG(3) << "!!!the op has RELU ";
+    VLOG(3) << "[RK-NPU] this Conv_op has RELU ";
   }
   CHECK_EQ(strides.size(), 2L);
   CHECK_EQ(dilations.size(), 2L);
