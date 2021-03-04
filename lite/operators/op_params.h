@@ -2011,6 +2011,16 @@ struct XPUSfaHeadParam : ParamBase {
   std::string op_type{""};
 };
 
+struct XPUGenerateSequenceParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+
+  int axis{-1};
+  bool flatten{false};
+  float value{0};
+  int dtype{-1};
+};
+
 // For DeformableConvolution op
 struct DeformableConvParam : ParamBase {
   lite::Tensor* x{};
@@ -2186,6 +2196,16 @@ struct SumParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
   int inplace{0};
+};
+
+struct CumsumParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  lite::Tensor* Out{nullptr};
+
+  int axis{-1};
+  bool flatten{false};
+  bool exclusive{false};
+  bool reverse{false};
 };
 
 }  // namespace operators
