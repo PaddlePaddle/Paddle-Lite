@@ -108,6 +108,14 @@ bool FcOpLite::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     param_.padding_weights = false;
   }
 
+  if (param_.activation_type == "prelu") {
+    param_.Prelu_mode = op_desc.GetAttr<std::string>("prelu_mode");
+    auto prelu_alpha_name = op_desc.Input("Alpha").front();
+    auto prelu_alpha_var = scope->FindVar(prelu_alpha_name);
+    param_.Prelu_alpha =
+        const_cast<lite::Tensor*>(&(prelu_alpha_var->Get<lite::Tensor>()));
+  }
+
   // For Int8
   const OpInfo* op_info = dynamic_cast<const OpInfo*>(&op_desc);
   if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
