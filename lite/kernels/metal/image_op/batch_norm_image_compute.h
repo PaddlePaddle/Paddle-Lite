@@ -50,15 +50,12 @@ class BatchNormImageCompute
   MetalImage* output_buffer_;
   std::shared_ptr<MetalBuffer> params_buffer_;
 
-  int output_tensor_n_{-1};
-
-  std::shared_ptr<MetalBuffer> bias_buffer_;
   std::shared_ptr<MetalBuffer> mean_buffer_;
-  std::shared_ptr<MetalBuffer> scale_buffer_;
   std::shared_ptr<MetalBuffer> variance_buffer_;
 
-  float epsilon_;
-  float momentum_;
+  std::shared_ptr<MetalBuffer> bias_buffer_;
+  std::shared_ptr<MetalBuffer> scale_buffer_;
+
   std::shared_ptr<MetalKernel> kernel_;
   std::shared_ptr<MetalQueue> queue_;
   std::shared_ptr<MetalEncoder> encoder_;

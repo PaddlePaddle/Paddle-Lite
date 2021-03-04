@@ -186,6 +186,29 @@ class Buffer {
       dim_ = dim;
     }
   }
+
+  template <typename T>
+  void ResetLazyMetalBuffer(TargetType target,
+                            const DDim& dim,
+                            bool transpose,
+                            bool to_nhwc,
+                            bool pad_when_one_c,
+                            void* host_ptr = nullptr) {
+    if (target != target_ || host_ptr != nullptr || dim_ != dim ||
+        transpose_ != transpose || to_nhwc_ != to_nhwc ||
+        pad_when_one_c_ != pad_when_one_c) {
+      CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
+      Free();
+      data_ = TargetWrapperMetal::MallocBuffer<T>(
+          dim, transpose, to_nhwc, pad_when_one_c, host_ptr);
+      target_ = target;
+      metal_use_image2d_ = false;
+      dim_ = dim;
+      transpose_ = transpose;
+      to_nhwc_ = to_nhwc;
+      pad_when_one_c_ = pad_when_one_c;
+    }
+  }
 #endif
 
   void Free() {
@@ -225,6 +248,11 @@ class Buffer {
 
   bool metal_use_image2d_{false};  // only used for Metal Image2D
   DDim dim_;
+
+  bool transpose_{false};
+  bool to_nhwc_{true};
+  bool pad_when_one_c_{false};
+  std::vector<int> image_transpose_;
 
   void* data_{nullptr};
   bool own_data_{true};

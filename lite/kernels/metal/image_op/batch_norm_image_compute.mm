@@ -22,20 +22,16 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-#define ALIGEN_C4_SIZE(n, c, h, w) ((n * c + 3) / 4 * h * w) * 4
-
 void BatchNormImageCompute::PrepareForRun() {
   auto& context = ctx_->As<ContextMetal>();
   metal_context_ = (MetalContext*)context.context();
   auto device = metal_context_->GetDefaultDevice();
 
   const auto& param = this->Param<param_t>();
-  auto output_dims = param.x->dims();
+  auto output_dims = param.y->dims();
   auto input_dims = param.x->dims();
   auto scale_dims = param.scale->dims();
   auto bias_dims = param.bias->dims();
-
-  output_tensor_n_ = static_cast<int>(output_dims[0]);
 
   output_buffer_ = param.y->mutable_data<float, MetalImage>(param.y->dims());
   input_buffer_ = param.x->data<float, MetalImage>();
@@ -45,34 +41,30 @@ void BatchNormImageCompute::PrepareForRun() {
   auto mean_raw_buffer = param.mean->data<float>();
   auto variance_ptr = param.variance->data<float>();
 
-  auto bias_host_ptr = const_cast<float*>(bias_raw_buffer);
-  auto scale_host_ptr = const_cast<float*>(scale_raw_buffer);
-
-  auto scale_size = ALIGEN_C4_SIZE(output_tensor_n_, scale_dims[0], 1, 1);
-  auto bias_size = ALIGEN_C4_SIZE(output_tensor_n_, bias_dims[0], 1, 1);
-
   auto count = scale_dims.production();
+  scale_buffer_ =
+      std::make_shared<MetalBuffer>(*device, scale_dims, METAL_PRECISION_TYPE::FLOAT, true);
+  bias_buffer_ =
+      std::make_shared<MetalBuffer>(*device, bias_dims, METAL_PRECISION_TYPE::FLOAT, true);
 
-  scale_buffer_ = metal_context_->CreateBuffer(*device, scale_size * sizeof(float));
-  bias_buffer_ = metal_context_->CreateBuffer(*device, bias_size * sizeof(float));
-  auto bias_dev_ptr = (float*)(bias_buffer_->buffer().contents);
-  auto scale_dev_ptr = (float*)(scale_buffer_->buffer().contents);
+  float* scale_buffer = (float*)malloc(count * sizeof(float));
+  float* bias_buffer = (float*)malloc(count * sizeof(float));
 
   for (int i = 0; i < count; i++) {
     auto inv_std = 1.0f / std::sqrt(variance_ptr[i] + param.epsilon);
-    bias_dev_ptr[i] = bias_host_ptr[i] - mean_raw_buffer[i] * inv_std * scale_host_ptr[i];
-    scale_dev_ptr[i] = inv_std * scale_host_ptr[i];
+    bias_buffer[i] = bias_raw_buffer[i] - mean_raw_buffer[i] * inv_std * scale_raw_buffer[i];
+    scale_buffer[i] = inv_std * scale_raw_buffer[i];
   }
 
-  for (int i = 1; i < (scale_size / scale_dims[0]); i++) {
-    memcpy(bias_dev_ptr + i * scale_dims[0], bias_dev_ptr, count * sizeof(float));
-    memcpy(scale_dev_ptr + i * scale_dims[0], scale_dev_ptr, count * sizeof(float));
-  }
+  scale_buffer_->CopyFromNCHW<float>(scale_buffer);
+  bias_buffer_->CopyFromNCHW<float>(bias_buffer);
+
+  free(scale_buffer);
+  free(bias_buffer);
 
   std::string function_name = "batchnorm";
   queue_ = metal_context_->GetDefaultQueue(*device);
   kernel_ = metal_context_->GetKernel(*device, function_name);
-
 }
 
 void BatchNormImageCompute::Run() {
@@ -109,8 +101,6 @@ void BatchNormImageComputeHalf::PrepareForRun() {
   auto scale_dims = param.scale->dims();
   auto bias_dims = param.bias->dims();
 
-  output_tensor_n_ = static_cast<int>(output_dims[0]);
-
   output_buffer_ = param.y->mutable_data<MetalHalf, MetalImage>(param.y->dims());
   input_buffer_ = param.x->data<MetalHalf, MetalImage>();
 
@@ -119,30 +109,25 @@ void BatchNormImageComputeHalf::PrepareForRun() {
   auto mean_raw_buffer = param.mean->data<float>();
   auto variance_ptr = param.variance->data<float>();
 
-  auto bias_host_ptr = const_cast<float*>(bias_raw_buffer);
-  auto scale_host_ptr = const_cast<float*>(scale_raw_buffer);
-
-  auto scale_size = ALIGEN_C4_SIZE(output_tensor_n_, scale_dims[0], 1, 1);
-  auto bias_size = ALIGEN_C4_SIZE(output_tensor_n_, bias_dims[0], 1, 1);
-
   auto count = scale_dims.production();
+  scale_buffer_ =
+      std::make_shared<MetalBuffer>(*device, scale_dims, METAL_PRECISION_TYPE::HALF, true);
+  bias_buffer_ =
+      std::make_shared<MetalBuffer>(*device, bias_dims, METAL_PRECISION_TYPE::HALF, true);
 
-  scale_buffer_ = metal_context_->CreateBuffer(*device, scale_size * sizeof(MetalHalf));
-  bias_buffer_ = metal_context_->CreateBuffer(*device, bias_size * sizeof(MetalHalf));
-  auto bias_dev_ptr = (MetalHalf*)(bias_buffer_->buffer().contents);
-  auto scale_dev_ptr = (MetalHalf*)(scale_buffer_->buffer().contents);
+  MetalHalf* scale_buffer = (MetalHalf*)malloc(count * sizeof(MetalHalf));
+  MetalHalf* bias_buffer = (MetalHalf*)malloc(count * sizeof(MetalHalf));
 
   for (int i = 0; i < count; i++) {
     auto inv_std = 1.0f / std::sqrt(variance_ptr[i] + param.epsilon);
-    bias_dev_ptr[i] =
-        MetalFloat2Half(bias_host_ptr[i] - mean_raw_buffer[i] * inv_std * scale_host_ptr[i]);
-    scale_dev_ptr[i] = MetalFloat2Half(inv_std * scale_host_ptr[i]);
+    bias_buffer[i] = MetalFloat2Half(bias_raw_buffer[i] - mean_raw_buffer[i] * inv_std * scale_raw_buffer[i]);
+    scale_buffer[i] = MetalFloat2Half(inv_std * scale_raw_buffer[i]);
   }
 
-  for (int i = 1; i < (scale_size / scale_dims[0]); i++) {
-    memcpy(bias_dev_ptr + i * scale_dims[0], bias_dev_ptr, count * sizeof(MetalHalf));
-    memcpy(scale_dev_ptr + i * scale_dims[0], scale_dev_ptr, count * sizeof(MetalHalf));
-  }
+  scale_buffer_->CopyFromNCHW<MetalHalf>(scale_buffer);
+  bias_buffer_->CopyFromNCHW<MetalHalf>(bias_buffer);
+  free(scale_buffer);
+  free(bias_buffer);
 
   std::string function_name = "batchnorm_half";
   queue_ = metal_context_->GetDefaultQueue(*device);

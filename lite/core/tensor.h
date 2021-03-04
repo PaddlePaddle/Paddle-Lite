@@ -104,13 +104,39 @@ class TensorLite {
 #endif
 
 #ifdef LITE_WITH_METAL
-  template <typename T, typename R = T>
-  R *mutable_data(const DDim &dim,
-                  std::vector<int> transport = {0, 2, 3, 1},
-                  void *host_ptr = nullptr) {
+  template <class T>
+  struct IsImage {
+    enum { value = std::is_same<T, MetalImage>::value };
+  };
+
+  template <class T>
+  struct IsBuffer {
+    enum { value = std::is_same<T, MetalBuffer>::value };
+  };
+
+  template <typename T, typename R>
+  typename std::enable_if<IsImage<R>::value, R>::type *mutable_data(
+      const DDim &dim,
+      std::vector<int> transport = {0, 2, 3, 1},
+      void *host_ptr = nullptr) {
     target_ = TARGET(kMetal);
     buffer_->ResetLazyMetalImage<T>(target_, dim, transport, host_ptr);
+    dims_ = dim;
     return static_cast<MetalImage *>(buffer_->data());
+  }
+
+  template <typename T, typename R>
+  typename std::enable_if<IsBuffer<R>::value, R>::type *mutable_data(
+      const DDim &dim,
+      bool transpose = false,
+      bool to_nhwc = true,
+      bool pad_when_one_c = false,
+      void *host_ptr = nullptr) {
+    target_ = TARGET(kMetal);
+    buffer_->ResetLazyMetalBuffer<T>(
+        target_, dim, transpose, to_nhwc, pad_when_one_c, host_ptr);
+    dims_ = dim;
+    return static_cast<MetalBuffer *>(buffer_->data());
   }
 #endif
 

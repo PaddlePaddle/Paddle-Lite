@@ -56,6 +56,13 @@ class TargetWrapper<TARGET(kMetal)> {
                            std::vector<int> transport,
                            void* host_ptr = nullptr);
 
+  template <typename T>
+  static void* MallocBuffer(const DDim dim,
+                            bool transpose,
+                            bool to_nhwc,
+                            bool pad_when_one_c,
+                            void* host_ptr);
+
   static void FreeImage(void* image);
 
   static void* Malloc(size_t size);

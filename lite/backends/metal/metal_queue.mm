@@ -34,7 +34,9 @@ std::unique_ptr<MetalCommandBuffer> MetalQueue::CreateCommandBuffer(RuntimeProgr
 //        [cmd_buffer release];
 //        cmd_buffer = nil;
 #if LITE_METAL_SAVE_TENSOR
+  if( program != nullptr ) {
     program->SaveOutput();
+  }
 #endif
   }];
   auto cmd_buf = new MetalCommandBuffer();

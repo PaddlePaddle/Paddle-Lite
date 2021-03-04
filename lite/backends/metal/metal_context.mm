@@ -73,14 +73,20 @@ MetalDevice* MetalContext::GetDeviceByID(int id) {
   }
 }
 
-void MetalContext::CreateCommandBuffer(RuntimeProgram* program) {
-  assert(program);
+void MetalContext::CreateCommandBuffer(RuntimeProgram* program ) {
   auto device = GetDefaultDevice();
   auto queue = device->GetDefaultQueue();
 
   // TODO: (lzy) check memory leak
   program_ = program;
   cmd_buf_ = queue->CreateCommandBuffer(program);
+}
+
+void MetalContext::WaitUntilCompleted(){
+  if (cmd_buf_->have_command_) {
+    [cmd_buf_->metal_command_buffer_ commit];
+    [cmd_buf_->metal_command_buffer_ waitUntilCompleted];
+  }
 }
 
 const MetalDevice* MetalContext::GetDefaultDevice() {

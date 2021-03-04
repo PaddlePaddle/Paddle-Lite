@@ -40,7 +40,6 @@ template <>
 void* TargetWrapperMetal::MallocImage<float>(const DDim dim,
                                              std::vector<int> transpose,
                                              void* host_ptr) {
-  void* ptr{};
   auto device = ctx_.GetDefaultDevice();
   auto image = new MetalImage(*device, dim, transpose, METAL_PRECISION_TYPE::FLOAT);
   if (host_ptr) image->CopyFromNCHW<float>((float*)host_ptr);
@@ -58,6 +57,26 @@ void* TargetWrapperMetal::MallocImage<MetalHalf>(const DDim dim,
   return (void*)image;
 }
 
+template <>
+void* TargetWrapperMetal::MallocBuffer<float>(
+    const DDim dim, bool transpose, bool to_nhwc, bool pad_when_one_c, void* host_ptr) {
+  auto device = ctx_.GetDefaultDevice();
+  auto buffer = new MetalBuffer(
+      *device, dim, METAL_PRECISION_TYPE::FLOAT, pad_when_one_c, to_nhwc, transpose);
+  if (host_ptr) buffer->CopyFromNCHW<float>((float*)host_ptr);
+  return (void*)buffer;
+}
+
+template <>
+void* TargetWrapperMetal::MallocBuffer<MetalHalf>(
+    const DDim dim, bool transpose, bool to_nhwc, bool pad_when_one_c, void* host_ptr) {
+  auto device = ctx_.GetDefaultDevice();
+  auto buffer =
+      new MetalBuffer(*device, dim, METAL_PRECISION_TYPE::HALF, pad_when_one_c, to_nhwc, transpose);
+  if (host_ptr) buffer->CopyFromNCHW<MetalHalf>((MetalHalf*)host_ptr);
+  return (void*)buffer;
+}
+
 void TargetWrapperMetal::FreeImage(void* image) {
   if (image != nullptr) {
     delete (MetalImage*)image;
@@ -66,9 +85,9 @@ void TargetWrapperMetal::FreeImage(void* image) {
 }
 
 void TargetWrapperMetal::Free(void* ptr) {
-  if (ptr != NULL) {
+  if (ptr != nullptr) {
     delete (MetalBuffer*)ptr;
-    ptr = NULL;
+    ptr = nullptr;
   }
   return;
 }

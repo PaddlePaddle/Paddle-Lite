@@ -37,7 +37,8 @@ class MetalContext {
   MetalDevice* GetDeviceByID(int id);
   const MetalDevice* GetDefaultDevice();
 
-  void CreateCommandBuffer(RuntimeProgram* program);
+  void CreateCommandBuffer(RuntimeProgram* program = nullptr);
+  void WaitUntilCompleted();
 
   void set_metal_path(std::string path);
   void set_use_aggressive_optimization(bool flag);
