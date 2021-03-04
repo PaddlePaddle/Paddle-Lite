@@ -147,6 +147,7 @@ add_operator(tile_op extra SRCS tile_op.cc DEPS ${op_DEPS})
 add_operator(scatter_nd_add_op extra SRCS scatter_nd_add_op.cc DEPS ${op_DEPS})
 add_operator(tril_triu_op extra SRCS tril_triu_op.cc DEPS ${op_DEPS})
 add_operator(meshgrid_op_lite extra SRCS meshgrid_op.cc DEPS ${op_DEPS})
+add_operator(argsort_op extra SRCS argsort_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})

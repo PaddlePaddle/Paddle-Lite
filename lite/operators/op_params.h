@@ -2299,6 +2299,16 @@ struct PNormParam : ParamBase {
   bool keepdim{false};
   bool asvector{false};
 };
+
+struct ArgsortParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Indices{};
+
+  int axis{-1};
+  bool descending{false};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
