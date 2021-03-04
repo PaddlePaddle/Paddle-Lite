@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,26 @@
 // limitations under the License.
 
 #pragma once
-
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace xpu {
+namespace host {
 
-template <class T>
-class ReshapeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <class T, PrecisionType PType>
+class CumsumCompute
+    : public KernelLite<TARGET(kHost), PType, DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::ReshapeParam;
+  using param_t = operators::CumsumParam;
 
-  virtual void Run();
+  void Run() override;
 
-  virtual ~ReshapeCompute() = default;
+  virtual ~CumsumCompute() = default;
 };
 
-}  // namespace xpu
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

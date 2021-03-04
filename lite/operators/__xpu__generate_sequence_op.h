@@ -13,25 +13,33 @@
 // limitations under the License.
 
 #pragma once
-
-#include "lite/core/kernel.h"
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace operators {
 
-template <class T>
-class ReshapeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class XPUGenerateSequenceOp : public OpLite {
  public:
-  using param_t = operators::ReshapeParam;
+  XPUGenerateSequenceOp() {}
 
-  virtual void Run();
+  explicit XPUGenerateSequenceOp(const std::string &op_type)
+      : OpLite(op_type) {}
 
-  virtual ~ReshapeCompute() = default;
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "XPUGenerateSequence"; }
+
+ private:
+  mutable XPUGenerateSequenceParam param_;
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

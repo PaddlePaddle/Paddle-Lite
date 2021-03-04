@@ -53,6 +53,20 @@ void XPUMultiEncoderCompute::Run() {
       (param.slice_axes.size() > 0 && param.slice_axes[0] == 1)) {
     last_slice_seq = 0;
   }
+  int bias_format = 1;
+  auto mask_shape = param.mask->dims().Vectorize();
+  if (mask_shape ==
+      std::vector<int64_t>({batch_size, param.head_num, seq_len, seq_len})) {
+    bias_format = 0;
+  } else if (mask_shape ==
+             std::vector<int64_t>({batch_size, 1, seq_len, seq_len})) {
+    bias_format = 1;
+  } else if (mask_shape == std::vector<int64_t>({batch_size, 1, 1, seq_len})) {
+    bias_format = 2;
+  } else {
+    LOG(FATAL) << "not supported mask dims(" << param.mask->dims() << ")";
+  }
+
   ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
   if (param.precision == "int31") {
     r = xdnn::bert_encoder_transformer_int31(
@@ -75,7 +89,8 @@ void XPUMultiEncoderCompute::Run() {
         true,                                            /* pretrans_b */
         true,                                            /* use_l3 */
         act_type_,
-        last_slice_seq);
+        last_slice_seq,
+        bias_format);
   } else {
     r = xdnn::bert_encoder_transformer_int16<int16_t>(
         ctx.GetRawContext(),                             /* context */
@@ -97,7 +112,8 @@ void XPUMultiEncoderCompute::Run() {
         true,                                            /* pretrans_b */
         true,                                            /* use_l3 */
         act_type_,
-        last_slice_seq);
+        last_slice_seq,
+        bias_format);
   }
   CHECK_EQ(r, 0);
 }

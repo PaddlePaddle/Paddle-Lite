@@ -85,3 +85,4 @@ USE_MIR_PASS(__xpu__sfa_head_meanstd_fuse_pass);
 USE_MIR_PASS(__xpu__sfa_head_moment_fuse_pass);
 USE_MIR_PASS(__xpu__softmax_topk_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_slice_link_fuse_pass);
+USE_MIR_PASS(__xpu__generate_sequence_fuse_pass);

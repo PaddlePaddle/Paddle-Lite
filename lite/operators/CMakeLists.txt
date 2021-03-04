@@ -123,6 +123,7 @@ add_operator(collect_fpn_proposals_op_lite extra SRCS collect_fpn_proposals_op.c
 add_operator(distribute_fpn_proposals_op_lite extra SRCS distribute_fpn_proposals_op.cc DEPS ${op_DEPS})
 add_operator(crf_decoding_op_lite extra SRCS crf_decoding_op.cc DEPS ${op_DEPS})
 add_operator(ctc_align_op_lite extra SRCS ctc_align_op.cc DEPS ${op_DEPS})
+add_operator(cumsum_op_lite extra SRCS cumsum_op.cc DEPS ${op_DEPS})
 add_operator(max_pool_with_index_op extra SRCS max_pool_with_index_op.cc DEPS ${op_DEPS})
 add_operator(pixel_shuffle_op extra SRCS pixel_shuffle_op.cc DEPS ${op_DEPS})
 add_operator(clip_op extra SRCS clip_op.cc DEPS ${op_DEPS})
@@ -205,6 +206,7 @@ add_operator(__xpu__search_attention_op extra SRCS __xpu__search_attention_op.cc
 add_operator(__xpu__mmdnn_op extra SRCS __xpu__mmdnn_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__conv2d_op extra SRCS __xpu__conv2d_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__sfa_head_op extra SRCS __xpu__sfa_head_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__generate_sequence_op extra SRCS __xpu__generate_sequence_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)

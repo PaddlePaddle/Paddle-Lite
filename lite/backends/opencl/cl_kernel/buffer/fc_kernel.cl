@@ -54,7 +54,8 @@ void fc_gemm_naive(__global const CL_DTYPE* a,
   }
 
 #ifdef RELU
-  c[row * N + col] = activation(c0);
+  CL_DTYPE alpha;
+  c[row * N + col] = activation(c0, alpha);
 #else
   c[row * N + col] = c0;
 #endif
@@ -91,7 +92,8 @@ void gemm_batch_naive(__global const CL_DTYPE* a,
     c0 += a0 * b0;
   }
 
-  cur_c[row * N + col] = activation(c0);
+  CL_DTYPE alpha;
+  cur_c[row * N + col] = activation(c0, alpha);
 }
 
 
@@ -235,7 +237,8 @@ void fc_gemv_naive(__global const CL_DTYPE* a,
     }
 
 #ifdef RELU
-  c[col] = activation(c0);
+  CL_DTYPE alpha;
+  c[col] = activation(c0, alpha);
 #else
   c[col] = c0;
 #endif
@@ -255,6 +258,7 @@ void fc_gemv_1x4(__global const float* a,
                  __global const float* alpha) {
     const int col = get_global_id(0) << 2; // gws[0]: [0, N >> 2) height of B == N
 
+    half alpha;
     if (col + 3 < N) {
         half4 c0 = 0.0f;
         if (bias) {

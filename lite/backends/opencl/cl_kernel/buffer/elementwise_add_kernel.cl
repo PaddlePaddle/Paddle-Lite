@@ -37,7 +37,8 @@ __kernel void elementwise_add(__global const CL_DTYPE* x_data,
   for (int n = 0; n < num; ++n) { // n: [0, h*w)
     *dout_ptr = *din_ptr + diny_data;
 #ifdef RELU
-    *dout_ptr = activation(*dout_ptr);
+    CL_DTYPE alpha;
+    *dout_ptr = activation(*dout_ptr, alpha);
 #endif
     ++dout_ptr;
     ++din_ptr;
