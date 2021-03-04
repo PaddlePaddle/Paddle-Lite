@@ -110,7 +110,7 @@ __kernel void conv2d_transpose(
     }
   }
 
-  out0 = activation_type4(out0);
+  out0 = activation_type4(out0, 0.f);
 
 #ifdef SCALE_ACTIVATION
   out0 = fuse_scale(out0, 1.f, 0.f, 0.f);
