@@ -110,3 +110,4 @@ bool ReduceMaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 }  // namespace paddle
 
 REGISTER_LITE_OP(reduce_max, paddle::lite::operators::ReduceMaxOp);
+REGISTER_LITE_OP(reduce_min, paddle::lite::operators::ReduceMaxOp);
