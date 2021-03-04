@@ -117,6 +117,7 @@ struct FcParam : ParamBase {
   lite::Tensor* input{nullptr};
   lite::Tensor* w{nullptr};
   lite::Tensor* bias{nullptr};
+  lite::Tensor* Prelu_alpha{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   // original dims of input weight
@@ -124,6 +125,8 @@ struct FcParam : ParamBase {
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
+  std::string Prelu_mode{
+      "channel"};  // prelu param, can be "all", "channel" or "element"
   // for int8
   WITH_INT8_CONFIG
   ///////////////////////////////////////////////////////////////////////////////////

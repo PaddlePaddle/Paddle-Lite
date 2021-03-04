@@ -107,6 +107,7 @@ class Optimizer {
          "lite_sequence_pool_concat_fuse_pass",         //
          "lite_scale_activation_fuse_pass",             //
          "lite_instance_norm_activation_fuse_pass",     //
+         "lite_fc_prelu_fuse_pass",                     //
 #if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
     (defined LITE_WITH_ARM)
          "lite_elementwise_activation_fuse_pass",  //
