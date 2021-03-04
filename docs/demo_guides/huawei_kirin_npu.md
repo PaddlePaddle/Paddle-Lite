@@ -307,9 +307,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   
   备注：由于HiAI DDK的so库均基于c++_shared构建，建议将android stl设置为c++_shared，更多选项还可以通过 "./lite/tools/build_android.sh help" 查看。
   
-- 替换头文件后记得./build.sh
-  - 如果采用tiny_publish编译的方式，需要设置build.sh脚本中USE_FULL_API=FALSE
-  - 如果采用full_publish编译的方式，需要设置build.sh的脚本中USE_FULL_API=TRUE
+- 替换头文件后需要重新编译示例程序
 
 ## 如何支持CPU+华为Kirin NPU异构计算？
 
