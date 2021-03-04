@@ -14,13 +14,9 @@
 
 #include <gtest/gtest.h>
 
-#include <iostream>
-#include <random>
-
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/tensor.h"
 #include "lite/kernels/opencl/test_helper.h"
 #include "lite/tests/utils/fill_data.h"
 #include "lite/tests/utils/naive_math_impl.h"

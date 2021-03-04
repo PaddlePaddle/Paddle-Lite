@@ -18,13 +18,8 @@
 #include <string>
 #include <vector>
 
-#if defined(_MSC_VER)
-#include "lite/backends/x86/port.h"
-#endif
 #include "lite/backends/opencl/cl_half.h"
-#include "lite/backends/opencl/cl_include.h"
 #include "lite/core/kernel.h"
-#include "lite/core/tensor.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
 #ifdef LITE_WITH_PROFILE

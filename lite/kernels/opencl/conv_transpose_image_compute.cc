@@ -13,10 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/opencl/conv_transpose_image_compute.h"
-
-#include <cfloat>
-#include <iomanip>
-#include <sstream>
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/core/op_registry.h"
 
