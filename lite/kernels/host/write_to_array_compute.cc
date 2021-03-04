@@ -23,7 +23,8 @@ void WriteToArrayCompute::Run() {
   auto& param = this->template Param<operators::WriteToArrayParam>();
   CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
 
-  int id = param.I->data<int64_t>()[0];
+  // int id = param.I->data<int64_t>()[0];
+  int id = param.Out->size();
   if (param.Out->size() < id + 1) {
     param.Out->resize(id + 1);
   }
