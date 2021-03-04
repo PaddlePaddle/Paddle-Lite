@@ -2331,6 +2331,15 @@ struct RoiPerspectiveTransformParam : ParamBase {
   int transformed_width{1};
 };
 
+struct ArgsortParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Indices{};
+
+  int axis{-1};
+  bool descending{false};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
