@@ -60,13 +60,15 @@ void ConvTransposeImageCompute::PrepareForRun() {
    *********************************************/
   auto* filter_cpu = conv_param_->filter->mutable_data<float>();
   std::vector<float> filter_cpu_trans(conv_param_->filter->numel());
+  DDimLite filter_trans_dims{
+      {filter_dims[1], filter_dims[0], filter_dims[2], filter_dims[3]}};
   // Convert filter layout from IOHW to OIHW
   IOHW2OIHW<float, int64_t>(filter_cpu,
                             filter_cpu_trans.data(),
-                            o_dims[1],
-                            x_dims[1],
-                            filter_tensor_h_,
-                            filter_tensor_w_);
+                            filter_trans_dims[0],
+                            filter_trans_dims[1],
+                            filter_trans_dims[2],
+                            filter_trans_dims[3]);
 
   filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
@@ -77,14 +79,16 @@ void ConvTransposeImageCompute::PrepareForRun() {
     kernel_func_names_.push_back(kernel_name);
 
     CLImageConverterNBlock converter;
-    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
+
+    const DDim& filter_image_dims =
+        converter.InitImageDimInfoWith(filter_trans_dims);
     filter_image_w_ = filter_image_dims[0];
     filter_image_h_ = filter_image_dims[1];
     tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
     auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
 
     converter.NCHWToImage(
-        filter_cpu_trans.data(), filter_image_data, filter_dims);
+        filter_cpu_trans.data(), filter_image_data, filter_trans_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else {
@@ -271,17 +275,19 @@ void ConvTransposeImageCompute::Run() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
 
-  const int pad_w = maptofactor(pad_left_ + pad_right_, 2);
-  const int pad_h = maptofactor(pad_up_ + pad_down_, 2);
+  const int pad_w = filter_tensor_w_ - 1 -
+                    pad_left_;  // maptofactor(pad_left_ + pad_right_, 2);
+  const int pad_h =
+      filter_tensor_h_ - 1 - pad_up_;  // maptofactor(pad_up_ + pad_down_, 2);
   const int align_w = stride_w_ - 1 - pad_w;
   const int align_h = stride_h_ - 1 - pad_h;
-  cl_int2 pad_shape = {pad_w, pad_h};
-  cl_int2 align_shape = {align_w, align_h};
+  cl_int2 pad_wh = {pad_w, pad_h};
+  cl_int2 align_wh = {align_w, align_h};
 
-  cl_int2 input_imageshape = {input_image_w_, input_image_h_};
-  cl_int2 output_imageshape = {output_image_w_, output_image_h_};
-  cl_int2 filter_imageshape = {filter_image_w_, filter_image_h_};
-  cl_int2 stride_shape = {stride_w_, stride_h_};
+  cl_int2 input_wh = {input_tensor_w_, input_tensor_h_};
+  cl_int2 output_wh = {output_tensor_w_, output_tensor_h_};
+  cl_int2 filter_wh = {filter_tensor_w_, filter_tensor_h_};
+  cl_int2 stride_wh = {stride_w_, stride_h_};
 
   auto kernel = &kernel_;
 
@@ -299,17 +305,17 @@ void ConvTransposeImageCompute::Run() {
   CL_CHECK_FATAL(status);
   kernel->setArg(idx++, *output_image_p_);
   CL_CHECK_FATAL(status);
-  kernel->setArg(idx++, input_imageshape);
+  kernel->setArg(idx++, input_wh);
   CL_CHECK_FATAL(status);
-  kernel->setArg(idx++, output_imageshape);
+  kernel->setArg(idx++, output_wh);
   CL_CHECK_FATAL(status);
-  kernel->setArg(idx++, stride_shape);
+  kernel->setArg(idx++, stride_wh);
   CL_CHECK_FATAL(status);
-  kernel->setArg(idx++, align_shape);
+  kernel->setArg(idx++, align_wh);
   CL_CHECK_FATAL(status);
-  kernel->setArg(idx++, pad_shape);
+  kernel->setArg(idx++, pad_wh);
   CL_CHECK_FATAL(status);
-  kernel->setArg(idx++, filter_imageshape);
+  kernel->setArg(idx++, filter_wh);
   CL_CHECK_FATAL(status);
   kernel->setArg(idx++,
                  static_cast<int32_t>(filter_tensor_w_ * filter_tensor_h_));
@@ -338,7 +344,6 @@ void ConvTransposeImageCompute::PrintConvInfo() {
   }
   VLOG(4) << "output_dims: " << conv_param_->output->dims();
   VLOG(4) << "out_image_shape: " << output_image_w_ << ", " << output_image_h_;
-  VLOG(4) << "paddings: " << pad_left_ << "," << pad_up_;
   VLOG(4) << "has bias: " << has_bias_;
   VLOG(4) << "strides: " << stride_h_ << "," << stride_w_;
   VLOG(4) << "offset: ";
@@ -349,39 +354,18 @@ void ConvTransposeImageCompute::PrintConvInfo() {
   VLOG(4) << "groups_:" << groups_;
 
   LOG(INFO) << "================================";
-  LOG(INFO) << "stride_h_:" << stride_h_;
-  LOG(INFO) << "stride_w_:" << stride_w_;
-
-  LOG(INFO) << "dilation_h_:" << dilation_h_;
-  LOG(INFO) << "dilation_w_:" << dilation_w_;
-
   LOG(INFO) << "pad_up_:" << pad_up_;
   LOG(INFO) << "pad_down_:" << pad_down_;
   LOG(INFO) << "pad_left_:" << pad_left_;
   LOG(INFO) << "pad_right_:" << pad_right_;
 
-  LOG(INFO) << "groups_:" << groups_;
   LOG(INFO) << "relu_fused_:" << relu_fused_;
-  LOG(INFO) << "has_bias_:" << has_bias_;
-
-  LOG(INFO) << "input_tensor_n_:" << input_tensor_n_;
-  LOG(INFO) << "input_tensor_c_:" << input_tensor_c_;
-  LOG(INFO) << "input_tensor_h_:" << input_tensor_h_;
-  LOG(INFO) << "input_tensor_w_:" << input_tensor_w_;
   LOG(INFO) << "input_image_h_:" << input_image_h_;
   LOG(INFO) << "input_image_w_:" << input_image_w_;
 
-  LOG(INFO) << "output_tensor_n_:" << output_tensor_n_;
-  LOG(INFO) << "output_tensor_c_:" << output_tensor_c_;
-  LOG(INFO) << "output_tensor_h_:" << output_tensor_h_;
-  LOG(INFO) << "output_tensor_w_:" << output_tensor_w_;
   LOG(INFO) << "output_image_h_:" << output_image_h_;
   LOG(INFO) << "output_image_w_:" << output_image_w_;
 
-  LOG(INFO) << "filter_tensor_n_:" << filter_tensor_n_;
-  LOG(INFO) << "filter_tensor_c_:" << filter_tensor_c_;
-  LOG(INFO) << "filter_tensor_h_:" << filter_tensor_h_;
-  LOG(INFO) << "filter_tensor_w_:" << filter_tensor_w_;
   LOG(INFO) << "filter_image_h_:" << filter_image_h_;
   LOG(INFO) << "filter_image_w_:" << filter_image_w_;
 }

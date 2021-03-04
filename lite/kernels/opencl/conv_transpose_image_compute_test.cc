@@ -55,13 +55,13 @@ DDim ConvTransposeOutputSize(const DDim& dim_in,
 void test_precision(const lite_api::CLPrecisionType p) {
   CLRuntime::Global()->set_precision(p);
   const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
-  const int fc = 3;
-  const int fw = 4;
+  const int fc = 1;
+  const int fw = 2;
   const int fh = fw;
   const int dilation_h = 1;
   const int dilation_w = 1;
-  const int stride_h = 1;
-  const int stride_w = 1;
+  const int stride_h = 2;
+  const int stride_w = 2;
   const int pad_up = 0;
   const int pad_down = 0;
   const int pad_left = 0;
@@ -74,9 +74,9 @@ void test_precision(const lite_api::CLPrecisionType p) {
     for (int ih = 3; ih < 15; ih += 1) {
       for (int iw = 3; iw < 15; iw += 1) {
 #else
-  const int ic = 6;
-  const int ih = 12;
-  const int iw = 12;
+  const int ic = 1;
+  const int ih = 2;
+  const int iw = 2;
 #endif
         const int fb = ic;
 
@@ -151,8 +151,13 @@ void test_precision(const lite_api::CLPrecisionType p) {
         std::vector<float> input_v(input_dim.production());
         std::vector<float> filter_v(filter_dim.production());
         std::vector<float> output_v(output_dim.production());
-        fill_data_rand(input_v.data(), -1.f, 1.f, input_dim.production());
-        fill_data_rand(filter_v.data(), -1.f, 1.f, filter_dim.production());
+        // fill_data_rand(input_v.data(), -1.f, 1.f, input_dim.production());
+        // fill_data_rand(filter_v.data(), -1.f, 1.f, filter_dim.production());
+        fill_data_const(input_v.data(), 1.f, input_dim.production());
+        int cnt = 0;
+        for (auto& ins : filter_v) {
+          ins = cnt++;
+        }
         fill_data_const(output_v.data(), 0.f, output_dim.production());
         std::vector<float> bias_v;
 
@@ -253,8 +258,9 @@ void test_precision(const lite_api::CLPrecisionType p) {
           auto abs_diff = COMPUTE_ABS_DIFF(output_v[i], out_ref_data[i]);
           EXPECT_FALSE(relative_diff > relative_diff_thres &&
                        abs_diff > abs_diff_thres);
-          if (relative_diff > relative_diff_thres &&
-              abs_diff > abs_diff_thres) {
+          // if (relative_diff > relative_diff_thres &&
+          //     abs_diff > abs_diff_thres)
+          {
             LOG(WARNING) << "err idx: " << i << " abs_diff: " << abs_diff
                          << "\t relative_diff: " << relative_diff
                          << "\t out_ins: " << output_v[i]

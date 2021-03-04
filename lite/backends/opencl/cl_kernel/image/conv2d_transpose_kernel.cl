@@ -31,24 +31,26 @@ __kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c +
                                __private const int kernel_size,
                                __private const int input_c_blks) {
 
-  const int out_c_blk_idx = get_global_id(0); // [0, (C+3)/4)
-  const int out_w_idx = get_global_id(1); // [0, W)
-  const int out_nh_idx = get_global_id(2); // [0, N*H)
+  const int out_c_blk_idx = get_global_id(0); // [0, (C+3)/4)  0,1
+  const int out_w_idx = get_global_id(1); // [0, W)  0,1,...8
+  const int out_nh_idx = get_global_id(2); // [0, N*H)  0,1,...,8
 
-  CL_DTYPE4 d = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(0, 0));
-  float4 f = (float4)(d.x, d.y, d.z, d.w);
-  if (out_c_blk_idx == 0 && out_w_idx == 1 && out_nh_idx == 1) {
-    printf("in conv2d_transpose cl kernel\n");
-    // printf("%v4hlf \n", f);
-    printf("%d\n", input_c_blks);
-  }
+//   CL_DTYPE4 d = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(0, 0));
+//   float4 f = (float4)(d.x, d.y, d.z, d.w);
+//   if (out_c_blk_idx == 0 && out_w_idx == 1 && out_nh_idx == 1) {
+//     printf("in conv2d_transpose cl kernel\n");
+//     // printf("%v4hlf \n", f);
+//     printf("filter: %f, %f, %f, %f \n", f.x, f.y, f.z, f.w);
+//     printf("input shape.x: %d\n", input_shape.x);
+//     printf("output shape.x: %d\n", output_shape.x);
+//   }
 
   if (out_c_blk_idx >= global_size_dim0 || out_w_idx >= global_size_dim1
       || out_nh_idx >= global_size_dim2) {
     return;
   }
 
-  int2 out_pos = (int2)(out_c_blk_idx * global_size_dim1 + out_w_idx, out_nh_idx);
+  int2 out_pos = (int2)(out_c_blk_idx * output_shape.x + out_w_idx, out_nh_idx);
 
 #ifdef BIASE_CH
   CL_DTYPE4 out0 =
@@ -85,13 +87,6 @@ __kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c +
         weights2 = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_2, kernel_y));
         weights3 = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_3, kernel_y));
 
-        if (out_c_blk_idx == 0 && out_w_idx == 1 && out_nh_idx == 1 && ic == 0 && k_x == 0 && k_y == 0) {
-        //   printf("wo=%v4hlf \n", weights0);
-        //   printf("w1=%v4hlf \n", weights1);
-        //   printf("w2=%v4hlf \n", weights2);
-        //   printf("w3=%v4hlf \n", weights3);
-        }
-
         int in_idx = mul24(ic, input_shape.x); // ic * input_image2d_width
         int in_width_value0 = in_width0;
         in_width_value0 =
@@ -103,6 +98,13 @@ __kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c +
         out0 = mad(in0.z, weights2, out0);
         out0 = mad(in0.w, weights3, out0);
         in_width0++;
+        if (out_c_blk_idx == 0 && out_w_idx == 0 && out_nh_idx == 0) {
+          printf("weight0(%d,%d)=%f,%f,%f,%f in0.x=%f \n", kernel_x_0, kernel_y, weights0.x, weights0.y, weights0.z, weights0.w, in0.x);
+          printf("weight1(%d,%d)=%f,%f,%f,%f in0.y=%f \n", kernel_x_1, kernel_y, weights1.x, weights1.y, weights1.z, weights1.w, in0.y);
+          printf("weight2(%d,%d)=%f,%f,%f,%f in0.z=%f \n", kernel_x_2, kernel_y, weights2.x, weights2.y, weights2.z, weights2.w, in0.z);
+          printf("weight3(%d,%d)=%f,%f,%f,%f in0.w=%f \n", kernel_x_3, kernel_y, weights3.x, weights3.y, weights3.z, weights3.w, in0.w);
+          printf("out0=%f,%f,%f,%f \n", out0.x, out0.y, out0.z, out0.w);
+        }
       }
     }
   }
@@ -114,6 +116,11 @@ __kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c +
 #endif
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, out_pos, out0);
+  if (out_c_blk_idx == 0 && out_w_idx == 1 && out_nh_idx == 1) {
+    printf("in conv2d_transpose cl kernel\n");
+    printf("%f, %f, %f, %f \n", out0.x, out0.y, out0.z, out0.w);
+    printf("global_size_dim1: %d \n", global_size_dim1);
+  }
 }
 
 /*
