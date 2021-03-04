@@ -64,6 +64,9 @@ lite_cc_library(fuse_instance_norm_activation
 lite_cc_library(fuse_fc_prelu
         SRCS fc_prelu_fuser.cc
         DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_fc_prelu
+        SRCS fc_prelu_fuser.cc
+        DEPS pattern_matcher_high_api)
 
 set(mir_fusers
     fuse_reshape2_matmul
