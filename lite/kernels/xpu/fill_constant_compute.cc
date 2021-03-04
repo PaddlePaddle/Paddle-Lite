@@ -44,6 +44,14 @@ void FillConstantCompute::Run() {
                                   static_cast<int32_t>(param.value));
       break;
     }
+    case 3: {
+      auto data = param.out->mutable_data<int64_t>(TARGET(kXPU));
+      r = xdnn::constant<int64_t>(ctx.GetRawContext(),
+                                  data,
+                                  write_size,
+                                  static_cast<int64_t>(param.value));
+      break;
+    }
     case 5: {
       auto data = param.out->mutable_data<float>(TARGET(kXPU));
       r = xdnn::constant<float>(ctx.GetRawContext(),
@@ -54,7 +62,8 @@ void FillConstantCompute::Run() {
     }
     default: {
       LOG(FATAL) << "Attribute dtype in fill_constant op "
-                    "must be 1[int16] or 2[int32] or 5[fp32] for xpu: "
+                    "must be 1[int16] or 3[int64] or 2[int32] or 5[fp32] "
+                    "for xpu: "
                  << param.dtype;
       break;
     }
@@ -78,5 +87,5 @@ REGISTER_LITE_KERNEL(fill_constant,
     .BindInput("ShapeTensorList",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
-    .BindPaddleOpVersion("fill_constant", 1)
+    .BindPaddleOpVersion("fill_constant", 2)
     .Finalize();
