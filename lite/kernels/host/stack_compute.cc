@@ -78,3 +78,14 @@ REGISTER_LITE_KERNEL(stack, kHost, kInt32, kAny, stack_int32, def)
                 {LiteType::GetTensorTy(
                     TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
     .Finalize();
+
+using stack_int64 =
+    paddle::lite::kernels::host::StackCompute<int64_t, PRECISION(kInt64)>;
+REGISTER_LITE_KERNEL(stack, kHost, kInt64, kAny, stack_int64, def)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .BindOutput("Y",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+    .Finalize();
