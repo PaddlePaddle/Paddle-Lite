@@ -58,7 +58,7 @@ void UnaryLogicalCompute<Functor>::Run() {
   const size_t count = param.X->numel();
   bool* z = param.Out->template mutable_data<bool>();
   const auto x = param.X->template data<bool>();
-  for (int i = 0; i < count; ++i) {
+  for (size_t i = 0; i < count; ++i) {
     z[i] = Functor()(x[i]);
   }
 }

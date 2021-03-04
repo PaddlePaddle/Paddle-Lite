@@ -31,7 +31,6 @@ void ReduceAllCompute::Run() {
   bool* output = param.Out->mutable_data<bool>();
 
   std::vector<int> dim = param.dim;
-  bool keep_dim = param.keep_dim;
   bool reduce_all = param.reduce_all;
 
   if (!dim.empty()) {
@@ -58,8 +57,6 @@ void ReduceAllCompute::Run() {
       *output = (*output) & input[i];
     }
   } else {
-    CHECK_LE(x_dims.size(), 6) << "The input dims should be less than 7";
-
     // TODO(zhiqiang, juncai): update according to Paddle
     size_t new_dims[] = {1, 1, 1, 1};
     for (size_t j = 0; j < x_dims.size(); ++j) {

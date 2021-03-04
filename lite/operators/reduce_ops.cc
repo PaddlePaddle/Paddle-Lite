@@ -31,7 +31,7 @@ bool ReduceOp::CheckShape() const {
 
 bool ReduceOp::InferShapeImpl() const {
   const auto &x_dims = param_.X->dims();
-  auto x_rank = x_dims.size();
+  size_t x_rank = x_dims.size();
   auto dims = param_.dim;
   bool reduce_all = param_.reduce_all;
   bool keep_dim = param_.keep_dim;
@@ -46,7 +46,7 @@ bool ReduceOp::InferShapeImpl() const {
 
   std::set<int> dims_set(dims.begin(), dims.end());
   bool full_dim = true;
-  for (auto i = 0; i < x_rank; i++) {
+  for (size_t i = 0; i < x_rank; i++) {
     if (dims_set.find(i) == dims_set.end()) {
       full_dim = false;
       break;
