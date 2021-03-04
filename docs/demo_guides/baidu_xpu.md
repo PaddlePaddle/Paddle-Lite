@@ -191,6 +191,7 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
   - 将 xpu_toolchain/XTDK/runtime/shlib/libxpurt.so 替换 PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libxpurt.so
   - 将 xpu_toolchain/XTDK/shlib/libxpuapi.so 替换 PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libxpuapi.so
 
+  备注：替换头文件后需要重新编译示例程序
 ## 其它说明
 
 - 如需更进一步的了解相关产品的信息，请联系欧阳剑ouyangjian@baidu.com；
