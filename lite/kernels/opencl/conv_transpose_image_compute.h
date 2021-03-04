@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,15 +62,14 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
 
  private:
   void Conv2dTranspose();
-  void DepthwiseConv2dTranspose();
 #ifdef LITE_WITH_LOG
   void PrintConvInfo();
 #endif
   void SetGlobalWorkSize();
+  void SetArgs();
 
   param_t* conv_param_{nullptr};
 
-  kernel_t impl_;
   std::vector<std::string> kernel_func_names_{};
   std::vector<std::string> kernel_func_paths_{};
   std::vector<std::string> build_options_{};
@@ -128,7 +127,7 @@ class ConvTransposeImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::Kernel kernel_;
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-  cl::NDRange local_work_size_ = cl::NullRange;
+  cl::NDRange local_work_size_{cl::NullRange};
 };
 
 }  // namespace opencl

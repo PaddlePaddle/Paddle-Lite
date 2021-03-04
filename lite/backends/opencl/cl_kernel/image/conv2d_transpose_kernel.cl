@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,29 +14,29 @@ limitations under the License. */
 
 #include "cl_common.h"
 
-
-__kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c + 1) / 4
-                               __private const int global_size_dim1, // out_w
-                               __private const int global_size_dim2, // out_n * out_h
-                               __read_only image2d_t input,
-                               __read_only image2d_t filter,
-                               __read_only image2d_t bias,
-                               __write_only image2d_t output,
-                               __private const int2 input_shape,
-                               __private const int2 output_shape,
-                               __private const int2 stride_shape,
-                               __private const int2 align_shape,
-                               __private const int2 padding_shape,
-                               __private const int2 kernel_shape,
-                               __private const int kernel_size,
-                               __private const int input_c_blks) {
+__kernel void conv2d_transpose(
+    __private const int global_size_dim0,  // (out_c + 1) / 4
+    __private const int global_size_dim1,  // out_w
+    __private const int global_size_dim2,  // out_n * out_h
+    __read_only image2d_t input,
+    __read_only image2d_t filter,
+    __read_only image2d_t bias,
+    __write_only image2d_t output,
+    __private const int2 input_shape,
+    __private const int2 output_shape,
+    __private const int2 stride_shape,
+    __private const int2 align_shape,
+    __private const int2 padding_shape,
+    __private const int2 kernel_shape,
+    __private const int kernel_size,
+    __private const int input_c_blks) {
 
   const int out_c_blk_idx = get_global_id(0);
   const int out_w_idx = get_global_id(1);
   const int out_nh_idx = get_global_id(2);
 
-  if (out_c_blk_idx >= global_size_dim0 || out_w_idx >= global_size_dim1
-      || out_nh_idx >= global_size_dim2) {
+  if (out_c_blk_idx >= global_size_dim0 || out_w_idx >= global_size_dim1 ||
+      out_nh_idx >= global_size_dim2) {
     return;
   }
 
@@ -54,8 +54,12 @@ __kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c +
 
   int kernel_start_x = max(0, (out_w_idx + align_shape.x) / stride_shape.x);
   int kernel_start_y = max(0, (out_h_idx + align_shape.y) / stride_shape.y);
-  int deal_kernel_width  = kernel_shape.x - mad24(kernel_start_x, stride_shape.x, padding_shape.x) + out_w_idx - 1;
-  int deal_kernel_height = kernel_shape.y - mad24(kernel_start_y, stride_shape.y, padding_shape.y) + out_h_idx - 1;
+  int deal_kernel_width =
+      kernel_shape.x - mad24(kernel_start_x, stride_shape.x, padding_shape.x) +
+      out_w_idx - 1;
+  int deal_kernel_height =
+      kernel_shape.y - mad24(kernel_start_y, stride_shape.y, padding_shape.y) +
+      out_h_idx - 1;
 
   int kernel_x_0, kernel_x_1, kernel_x_2, kernel_x_3, kernel_y;
   int kernel_y_base = mul24(out_c_blk_idx, kernel_size);
@@ -66,22 +70,36 @@ __kernel void conv2d_transpose(__private const int global_size_dim0, // (out_c +
     kernel_x_1 = kernel_x_0 + 1;
     kernel_x_2 = kernel_x_0 + 2;
     kernel_x_3 = kernel_x_0 + 3;
-    int in_idx = mul24(ic, input_shape.x); // ic * input_image2d_width
-    for (int k_y = deal_kernel_height, idx_h = kernel_start_y; k_y >= 0; k_y -= stride_shape.y, idx_h++) {
-      int in_idy = mad24(out_n_idx, input_shape.y, idx_h); // out_n_idx * input_image2d_height + idx_h, height idx of input image2d
-      int in_nh_value = select(in_idy, -1, idx_h < 0 || idx_h >= input_shape.y); // height idx of input image2d
+    int in_idx = mul24(ic, input_shape.x);
+    for (int k_y = deal_kernel_height, idx_h = kernel_start_y;
+         k_y >= 0; k_y -= stride_shape.y, idx_h++) {
+      int in_y_idx = mad24(
+          out_n_idx, input_shape.y, idx_h);  // height idx of input image2d
+      int in_nh_value =
+          select(in_y_idx, -1, idx_h < 0 || idx_h >= input_shape.y);
       int in_width0 = kernel_start_x;
       for (int k_x = deal_kernel_width; k_x >= 0; k_x -= stride_shape.x) {
-        kernel_y = mad24(k_y, kernel_shape.x, k_x + kernel_y_base); // (k_y * k_w + k_x) + k_y_base
-        weights0 = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_0, kernel_y));
-        weights1 = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_1, kernel_y));
-        weights2 = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_2, kernel_y));
-        weights3 = READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_3, kernel_y));
+        kernel_y = mad24(k_y,
+                         kernel_shape.x,
+                         k_x + kernel_y_base);  // (k_y * k_w + k_x) + k_y_base
+        weights0 = READ_IMG_TYPE(
+            CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_0, kernel_y));
+        weights1 = READ_IMG_TYPE(
+            CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_1, kernel_y));
+        weights2 = READ_IMG_TYPE(
+            CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_2, kernel_y));
+        weights3 = READ_IMG_TYPE(
+            CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_3, kernel_y));
 
         int in_width_value0 = in_width0;
         in_width_value0 =
-                select(in_idx + in_width_value0, -1, (in_width_value0 < 0 || in_width_value0 >= input_shape.x));
-        in0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_width_value0, in_nh_value));
+            select(in_idx + in_width_value0,
+                   -1,
+                   (in_width_value0 < 0 || in_width_value0 >= input_shape.x));
+        in0 = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                            input,
+                            SAMPLER,
+                            (int2)(in_width_value0, in_nh_value));
 
         out0 = mad(in0.x, weights0, out0);
         out0 = mad(in0.y, weights1, out0);

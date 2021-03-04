@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ void ConvTransposeImageCompute::PrepareForRun() {
   const bool is_mali = context.cl_context()->IsArmMali();
 
   conv_param_ = param_.get_mutable<param_t>();
-  auto x_dims = conv_param_->x->dims();
-  auto o_dims = conv_param_->output->dims();
   auto filter_dims = conv_param_->filter->dims();
   filter_tensor_c_ = filter_dims[1];
   filter_tensor_h_ = filter_dims[2];
@@ -79,7 +77,6 @@ void ConvTransposeImageCompute::PrepareForRun() {
     kernel_func_names_.push_back(kernel_name);
 
     CLImageConverterNBlock converter;
-
     const DDim& filter_image_dims =
         converter.InitImageDimInfoWith(filter_trans_dims);
     filter_image_w_ = filter_image_dims[0];
@@ -132,10 +129,6 @@ void ConvTransposeImageCompute::PrepareForRun() {
   // define image pointer for filter, bias
   filter_image_p_ = DATA_GPU(filter_gpu_image_);
   bias_image_p_ = DATA_GPU(bias_gpu_image_);
-  size_t w, h;
-  filter_image_p_->getImageInfo(CL_IMAGE_WIDTH, &w);
-  filter_image_p_->getImageInfo(CL_IMAGE_HEIGHT, &h);
-  LOG(INFO) << "filter image shape: " << w << "," << h;
 
   // relu options
   VLOG(3) << "relu_fused_:" << relu_fused_
@@ -245,13 +238,7 @@ void ConvTransposeImageCompute::ReInitWhenNeeded() {
     input_image_p_ = DATA_GPU(conv_param_->x);
     output_image_p_ = MUTABLE_DATA_GPU(
         conv_param_->output, output_image_w_, output_image_h_, nullptr);
-    size_t w, h;
-    input_image_p_->getImageInfo(CL_IMAGE_WIDTH, &w);
-    input_image_p_->getImageInfo(CL_IMAGE_HEIGHT, &h);
-    LOG(INFO) << "input image shape: " << w << "," << h;
-    output_image_p_->getImageInfo(CL_IMAGE_WIDTH, &w);
-    output_image_p_->getImageInfo(CL_IMAGE_HEIGHT, &h);
-    LOG(INFO) << "output image shape: " << w << "," << h;
+
     SetGlobalWorkSize();
   }
 }
@@ -267,18 +254,9 @@ void ConvTransposeImageCompute::SetGlobalWorkSize() {
                                   static_cast<size_t>(gws[2])};
 }
 
-void ConvTransposeImageCompute::Run() {
-#ifdef LITE_WITH_LOG
-  PrintConvInfo();
-#endif
-
-  auto& context = ctx_->As<OpenCLContext>();
-  CHECK(context.cl_context() != nullptr);
-
-  const int pad_w = filter_tensor_w_ - 1 -
-                    pad_left_;  // maptofactor(pad_left_ + pad_right_, 2);
-  const int pad_h =
-      filter_tensor_h_ - 1 - pad_up_;  // maptofactor(pad_up_ + pad_down_, 2);
+void ConvTransposeImageCompute::SetArgs() {
+  const int pad_w = filter_tensor_w_ - 1 - pad_left_;
+  const int pad_h = filter_tensor_h_ - 1 - pad_up_;
   const int align_w = stride_w_ - 1 - pad_w;
   const int align_h = stride_h_ - 1 - pad_h;
   cl_int2 pad_wh = {pad_w, pad_h};
@@ -322,52 +300,56 @@ void ConvTransposeImageCompute::Run() {
   CL_CHECK_FATAL(status);
   kernel->setArg(idx++, static_cast<int32_t>(maptofactor(input_tensor_c_, 4)));
   CL_CHECK_FATAL(status);
+}
 
-  status = EnqueueNDRangeKernel(context,
-                                kernel_,
-                                cl::NullRange,
-                                global_work_size_,
-                                local_work_size_,
-                                nullptr,
-                                event_);
+void ConvTransposeImageCompute::Run() {
+#ifdef LITE_WITH_LOG
+  PrintConvInfo();
+#endif
+
+  auto& context = ctx_->As<OpenCLContext>();
+  CHECK(context.cl_context() != nullptr);
+
+  SetArgs();
+
+  cl_int status = EnqueueNDRangeKernel(context,
+                                       kernel_,
+                                       cl::NullRange,
+                                       global_work_size_,
+                                       local_work_size_,
+                                       nullptr,
+                                       event_);
   CL_CHECK_FATAL(status);
-  LOG(INFO) << "cl kernel done!";
 }
 
 #ifdef LITE_WITH_LOG
 void ConvTransposeImageCompute::PrintConvInfo() {
-  VLOG(4) << "input_image_shape: " << input_image_w_ << "," << input_image_h_;
   VLOG(4) << "input_dims: " << conv_param_->x->dims();
   VLOG(4) << "filter_dims: " << conv_param_->filter->dims();
   if (has_bias_) {
     VLOG(4) << "bias_dims: " << conv_param_->bias->dims();
   }
   VLOG(4) << "output_dims: " << conv_param_->output->dims();
+  VLOG(4) << "input_image_shape: " << input_image_w_ << "," << input_image_h_;
+  VLOG(4) << "filter_image_shape: " << filter_image_w_ << ","
+          << filter_image_h_;
   VLOG(4) << "out_image_shape: " << output_image_w_ << ", " << output_image_h_;
-  VLOG(4) << "has bias: " << has_bias_;
-  VLOG(4) << "strides: " << stride_h_ << "," << stride_w_;
-  VLOG(4) << "offset: ";
-  VLOG(4) << "dilations.size : " << conv_param_->dilations->size();
-  VLOG(4) << "dilations: " << dilation_h_ << ", " << dilation_w_;
+  size_t w, h;
+  output_image_p_->getImageInfo(CL_IMAGE_WIDTH, &w);
+  output_image_p_->getImageInfo(CL_IMAGE_HEIGHT, &h);
+  VLOG(4) << "out_image_shape getImageInfo: " << w << ", " << h;
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
+  VLOG(4) << "================================";
+  VLOG(4) << "has bias: " << has_bias_;
+  VLOG(4) << "relu_fused_:" << relu_fused_;
+  VLOG(4) << "strides: " << stride_h_ << "," << stride_w_;
+  VLOG(4) << "dilations: " << dilation_h_ << ", " << dilation_w_;
   VLOG(4) << "groups_:" << groups_;
-
-  LOG(INFO) << "================================";
-  LOG(INFO) << "pad_up_:" << pad_up_;
-  LOG(INFO) << "pad_down_:" << pad_down_;
-  LOG(INFO) << "pad_left_:" << pad_left_;
-  LOG(INFO) << "pad_right_:" << pad_right_;
-
-  LOG(INFO) << "relu_fused_:" << relu_fused_;
-  LOG(INFO) << "input_image_h_:" << input_image_h_;
-  LOG(INFO) << "input_image_w_:" << input_image_w_;
-
-  LOG(INFO) << "output_image_h_:" << output_image_h_;
-  LOG(INFO) << "output_image_w_:" << output_image_w_;
-
-  LOG(INFO) << "filter_image_h_:" << filter_image_h_;
-  LOG(INFO) << "filter_image_w_:" << filter_image_w_;
+  VLOG(4) << "pad_up_:" << pad_up_;
+  VLOG(4) << "pad_down_:" << pad_down_;
+  VLOG(4) << "pad_left_:" << pad_left_;
+  VLOG(4) << "pad_right_:" << pad_right_;
 }
 #endif
 
