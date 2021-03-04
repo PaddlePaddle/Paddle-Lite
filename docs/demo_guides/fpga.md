@@ -2,19 +2,73 @@
 
 Paddle Lite支持基于arm的FPGA zu3/zu5/zu9的模型预测，提供armv8的交叉编译
 
-Lite基于FPGA运行模型需要相应的FPGA驱动，目前只支持百度[Edgeboard开发板](https://ai.baidu.com/tech/hardware/deepkit)
+PaddleLite通过调用底层驱动实现对FPGA硬件的调度，目前只支持百度[Edgeboard开发板](https://ai.baidu.com/tech/hardware/deepkit)
+
+![](https://paddlelite-data.bj.bcebos.com/doc_images/FPGA_demo/soft_arch.png)
+
 
 ## Lite实现FPGA简介
 
 Lite支持FPGA作为后端硬件进行模型推理，其主要特性如下：
 
+-  PaddleLite FPGA版本支持原生 fluid 模型，无须使用opt工具进行格式转化。
 - Lite中FPGA的kernel（feed、fetch除外）均以FP16、NHWC的格式作为输入输出格式，所有的weights和bias仍为FP32、NCHW的格式，feed的输入和fetch的输出均为FP32、NCHW格式的数据，在提升计算速度的同时能做到用户对数据格式无感知
-
 - 对于FPGA暂不支持的kernel，均会切回arm端运行，实现arm+FPGA混合布署运行
-
 - 目前FPGA成本功耗都较低，Lite基于FPGA的模型性能远远好于arm端，可作为边缘设备首选硬件
 
-## 编译
+
+
+## 已验证Paddle模型
+
+分类网络：
+
+* MobileNet 系列
+   - MobileNetV1
+   - MobileNetV2
+* ResNet 系列
+	- ResNet18
+	- ResNet34
+	- ResNet50
+	- ResNet101
+	- ResNet152
+	- Res2Net50
+	- SE-ResNet
+* ResNext 系列
+	- ResNext50
+	- ResNext101
+	- SE-ResNext
+* Inception 系列
+	- InceptionV3
+	- InceptionV4
+	
+
+检测网络:
+
+* SSD系列主干
+	- Mobilenet-SSD
+	- VGG-SSD
+	- ResNet-SSD
+
+* YOLO-V3 系列主干
+	- Darknet50
+	- MobileNet-V1
+	- ResNet
+	- tiny_yolo
+
+分割网络:
+MobileNet-deeplabV3 : coming soon
+
+
+关键点网络：
+HRNet : coming soon
+
+
+## 准备工作
+
+Edgeboard可以通过uart 串口线进行连接，也可以通过ssh进行连接，初次使用请参考[文档](https://ai.baidu.com/ai-doc/HWCE/Gkda62qno#edgeboard%E4%BC%A0%E8%BE%93%E6%96%87%E4%BB%B6%E6%96%B9%E5%BC%8F) 
+Edgeboard 自带Samba服务器，可通过samba协议访问板上文件系统，进行数据拷贝。
+
+## PaddleLite编译
 
 需要提前准备带有FPGAdrv.ko的FPGA开发板（如edgeboard开发板）和Lite代码
 
@@ -23,60 +77,77 @@ CMAKE编译选项：
 - 设置`LITE_WITH_FPGA=ON`和`LITE_WITH_ARM=ON`
 
 其他编译选项与ARM编译相同，可以参考[“Paddle Lite在Docker下的ARM编译”](../source_compile/compile_linux)。
+Lite提供FPGA编译脚本，位于lite/tools/build_FPGA.sh，在Lite根目录执行该脚本即可编译
 
 示例如下：
 ```shell
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DLITE_WITH_OPENMP=ON   \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=OFF \
-        -DLITE_WITH_FPGA=ON \
-        -DARM_TARGET_OS=armlinux 
+    sh ./lite/tools/build_fpga.sh
     make publish_inference -j2
 ```
-Lite提供FPGA编译脚本，位于lite/tools/build_FPGA.sh，在Lite根目录执行该脚本即可编译
+
+也可从Edgeboard[官网](https://ai.baidu.com/ai-doc/HWCE/Yk3b95s8o)下载最新的二进制更新库
+
+## 应用编译
+Edgeboard 自带 gcc, CMake, OpenCV 等工具和库，可直接在板子上进行编译，也可以在 Docker中进行交叉编译。
 
 ## 运行示例
 
-- **运行文件准备**
 
-下面以Resnet50模型为例，介绍如何使用edgeboard开发板实现模型运行
+我们提供了不同的示例工程
+[示例工程下载链接](https://ai.baidu.com/ai-doc/HWCE/Yk3b95s8o)
+
+
+以分类模型示例工程为例，工程目录结构如下
 
 ```bash
-#连接开发板，并利用screen命令启动 [本机执行]
+├── CMakeLists.txt // cmake 工程配置文件。
+├── include //头文件
+|   ├── commom.h   
+├── configs // 配置文件目录
+│   ├── Inceptionv2
+│   │   └─ zebra.json //Inceptionv2配置文件（万分类-预置斑马识别）
+│   ├── Inceptionv3
+│   │   └─ zebra.json //Inceptionv3配置文件（千分类-预置斑马识别）
+│   ├── mobilenetv1
+│   │   └─ zebra.json //mobilenetv1配置文件（千分类-预置斑马识别）
+│   └── resnet50
+│       └─ drink.json //resnet50配置文件（三分类-预置矿泉水识别）
+├── lib //(动态库放入系统内/usr/local/lib/paddle_lite/目录，此处为空文件夹)
+├── models // 模型文件目录
+│   ├── Inceptionv2
+│   ├── Inceptionv3
+│   ├── mobilenetv1
+│   └── resnet50
+│── src
+│   ├── json.hpp // json 解析库
+│   ├── video_detection.cpp // 视频推理示例
+|   ├── image_detection.cpp // 图片推理示例
+└── README.md
+```
+- **编译和执行示例工程**
+
+```bash
+# 连接开发板，并利用screen命令启动 [本机执行]
 screen /dev/cu.SLAB_USBtoUART 115200
-#查看开发板ip并ssh登录到开发板，假设开发板ip为192.0.1.1 [本机执行]
+# 查看开发板ip并ssh登录到开发板，假设开发板ip为192.0.1.1 [本机执行]
 ssh root@192.0.1.1
 
-#在开发板上建立目录workspace，拷贝FPGA驱动FPGAdrv.ko到workspace目录 [开发板执行]
-mkdir workspace && scp $DRIVER_PATH/FPGAdrv.ko workspace
+# 进入classification工程目录
+cd /home/root/workspace/PaddleLiteSample/classification   
+# 如果没有build目录，创建一个
+mkdir build
+# 打开build目录
+cd build
+# 调用cmake 创建 Makefile 
+cmake ..
+# 编译工程。
+make
 
-#将Lite中编译好的测试程序拷贝到开发板workspace目录 [本机执行]
-scp $LITE_ROOT/build_FPGA/lite/api/test_resnet50_FPGA root@$EDGEBOARD_IP:workspace/
-#把Resnet50的模型和参数scp到开发板workspace目录 [本机执行]
-scp -r $LITE_ROOT/build_FPGA/lite/third_party/install/resnet50/ root@$EDGEBOARD_IP:workspace/
+# 执行示例
+./image_classify ../configs/resnet50/drink.json          
 
-#在运行模型前需要加载FPGA驱动 [开发板执行]
-insmod FPGAdrv.ko
-#给测试程序添加可运行权限 [开发板执行]
-chmod +x test_resnet50_FPGA
 ```
 
-- **使用FPGA进行模型预测**
-
-```bash
-#以下命令均在开发板上运行
-#直接运行单测程序
-./test_resnet50_FPGA --model_dir=resnet50
-#如果需要测试性能，可以用repeats参数设置模型运行次数（如1000），同时可以设置预热次数（如10）来让硬件事先运行到稳定水平
-./test_resnet50_FPGA --model_dir=resnet50 --repeats=1000 --warmup=10
-```
 
 ## 如何在Code中使用
 
@@ -86,22 +157,37 @@ chmod +x test_resnet50_FPGA
 - fpga不需要device的初始化和运行模式设置
 
 代码示例：
+
 ```cpp
-lite::Predictor predictor;
-std::vector<Place> valid_places(
-      {Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},Place{TARGET(kARM)});
+//构造places, FPGA使用以下几个places。
+std::vector<Place> valid_places({
+    Place{TARGET(kFPGA), PRECISION(kFP16), DATALAYOUT(kNHWC)},
+    Place{TARGET(kHost), PRECISION(kFloat)},
+    Place{TARGET(kARM), PRECISION(kFloat)},
+});
+//构造模型加载参数
+paddle::lite_api::CxxConfig config;
 
-predictor.Build(model_dir, "", "", valid_places);
-
-auto* input_tensor = predictor.GetInput(0);
-input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
-auto* data = input_tensor->mutable_data<float>();
-auto item_size = input_tensor->dims().production();
-//假设设置输入数据全为1
-for (int i = 0; i < item_size; i++) {
-  data[i] = 1;
+if (combined_model) {
+	//设置组合模型路径（两个文件）
+    config.set_model_file(model_dir + "/model");
+    config.set_param_file(model_dir + "/params");
+} else {
+	//设置模型目录路径，适用于一堆文件的模型
+    config.set_model_dir(model_dir);
 }
 
-predictor.Run();
-auto* out = predictor.GetOutput(0);
+auto predictor = paddle::lite_api::CreatePaddlePredictor(config);
+
+input->Resize({1, 3, height, width});
+//获取tensor数据指针
+auto* in_data = input->mutable_data<float>();
+//图片读入相应数组当中
+read_image(value, in_data);
+//推理
+predictor->Run();
+//获取结果tensor，有多个结果时，可根据相应下标获取
+auto output = predictor->GetOutput(0);
+//获取结果数据
+float *data = output->mutable_data<float>();
 ```
