@@ -2302,6 +2302,14 @@ struct PNormParam : ParamBase {
   bool keepdim{false};
   bool asvector{false};
 };
+
+struct LinspaceParam : ParamBase {
+  const lite::Tensor* Start{};
+  const lite::Tensor* Stop{};
+  const lite::Tensor* Num{};
+  lite::Tensor* Out{};
+  int dtype{};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
