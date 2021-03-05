@@ -258,7 +258,6 @@ void fc_gemv_1x4(__global const float* a,
                  __global const float* alpha) {
     const int col = get_global_id(0) << 2; // gws[0]: [0, N >> 2) height of B == N
 
-    half alpha;
     if (col + 3 < N) {
         half4 c0 = 0.0f;
         if (bias) {
