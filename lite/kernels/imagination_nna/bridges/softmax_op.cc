@@ -29,9 +29,6 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " + op_type + "...";
 
-  CHECK(op_info->HasAttr("enable_int8") &&
-        op_info->GetAttr<bool>("enable_int8"));
-
   // Get input and output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -45,10 +42,8 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     axis += x_rank;
   }
 
-  if (op_info->HasAttr("enable_int8")) {
-    CHECK(op_info->HasOutputScale(out_scale_name, true));
+  if (op_info->HasOutputScale(out_scale_name, true)) {
     float output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
-
     // X node
     std::shared_ptr<Node> x_node = nullptr;
     if (graph->Has(x_name)) {
@@ -65,7 +60,7 @@ int SoftmaxConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
     graph->Add(out_name, softmax_out_tensor, IMGDNN_TYPE_Q_U8);
   } else {
-    LOG(FATAL) << "[NNA] Softmax: has no enable_int8 attribute.";
+    LOG(FATAL) << "[NNA] Softmax: is not quantized.";
   }
 
   return REBUILD_WHEN_SHAPE_CHANGED;

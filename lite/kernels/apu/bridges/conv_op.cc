@@ -35,9 +35,6 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   int neuron_errCode;
   VLOG(3) << "[APU] Converting [" << op_type << "]";
 
-  CHECK(op_info->HasAttr("enable_int8") &&
-        op_info->GetAttr<bool>("enable_int8"));
-
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
   auto input_scale_name = "Input0_scale";
@@ -53,6 +50,10 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto output_scale_name = "Output0_scale";
   auto output = scope->FindMutableTensor(output_name);
   auto output_dims = output->dims();
+
+  CHECK(op_info->HasInputScale(input_scale_name, true) &&
+        op_info->HasInputScale(filter_scale_name, true) &&
+        op_info->HasOutputScale(output_scale_name, true));
 
   auto bs = input_dims[0];
   auto ic = input_dims[1];
@@ -100,11 +101,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                       input_dims,
                                       filter_dims);
 
-  CHECK(op_info->HasInputScale(input_scale_name, true));
   auto input_scale = op_info->GetInputScale(input_scale_name, true)[0];
-  CHECK(op_info->HasInputScale(filter_scale_name, true));
   auto filter_scale = op_info->GetInputScale(filter_scale_name, true);
-  CHECK(op_info->HasOutputScale(output_scale_name, true));
   auto output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
   auto orig_output_scale = op_info->GetOutputScale(output_scale_name, true)[0];
 
