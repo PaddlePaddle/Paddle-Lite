@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 #include "lite/core/mir/elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.h"
+#include "lite/core/mir/fp16_attribute_pass.h"
 #include "lite/core/mir/generate_program_pass.h"
 #include "lite/core/mir/pass_manager.h"
 #include "lite/core/mir/pass_utils.h"
@@ -211,6 +212,7 @@ class Optimizer {
     const std::string msa_depend_pass{"runtime_context_assign_pass"};
     const std::string pqd_pass{"post_quant_dynamic_pass"};
     const std::string pqd_depend_pass{"lite_quant_dequant_fuse_pass"};
+    const std::string fp16_pass{"fp16_attribute_pass"};
     for (const std::string& pass : passes) {
       if (pass == msa_pass) {
         auto iter = std::find(
@@ -224,6 +226,14 @@ class Optimizer {
         passes_local.insert(iter + 1, pqd_pass);
       } else {
         passes_local.push_back(pass);
+      }
+    }
+    for (auto place : valid_places) {
+      if (place.target == TARGET(kARM)) {
+        if (place.precision == PRECISION(kFP16)) {
+          passes_local.push_back(fp16_pass);
+          break;
+        }
       }
     }
 
