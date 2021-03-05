@@ -71,9 +71,20 @@ void WhereCompute::Run() {
 
 REGISTER_LITE_KERNEL(
     where, kHost, kAny, kAny, paddle::lite::kernels::host::WhereCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindInput("Condition",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kBool),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
