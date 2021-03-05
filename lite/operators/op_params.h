@@ -2221,6 +2221,16 @@ struct CumsumParam : ParamBase {
   bool reverse{false};
 };
 
+struct PNormParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  float porder{2.f};
+  int axis{-1};
+  float epsilon{1.0e-12f};
+  bool keepdim{false};
+  bool asvector{false};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
