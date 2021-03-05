@@ -170,16 +170,6 @@ void ConvTransposeImageCompute::PrepareForRun() {
     }
   }
 
-  // scale options
-  if (conv_param_->scale_activation_type == "") {
-    // do nothing
-  } else if (conv_param_->scale_activation_type == "relu6") {
-    build_options_single += " -DSCALE_ACTIVATION -DFUSE_SCALE_RELU6 ";
-  } else {
-    LOG(FATAL) << "Unsupported scale_activation_type:"
-               << conv_param_->scale_activation_type;
-  }
-
   kernel_func_paths_.push_back("image/conv2d_transpose_kernel.cl");
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
           << " kernel_func_paths_[0]:" << kernel_func_paths_[0];
