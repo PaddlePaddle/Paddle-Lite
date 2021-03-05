@@ -19,16 +19,16 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <typename T, typename IndexT = int32_t>
+template <typename DataT, typename IndexT = int32_t>
 void GatherNd(const Tensor& x, const Tensor& index, Tensor* out) {
   auto index_dims = index.dims();
   auto index_dims_size = index_dims.size();
   auto x_dims = x.dims();
   auto x_dims_size = x_dims.size();
 
-  const T* x_data = x.data<T>();
+  const DataT* x_data = x.data<DataT>();
   const IndexT* index_data = index.data<IndexT>();
-  T* out_data = out->template mutable_data<T>();
+  DataT* out_data = out->template mutable_data<DataT>();
 
   int64_t gather_time = 1;
   for (size_t i = 0; i < index_dims_size - 1; i++) {
@@ -40,7 +40,7 @@ void GatherNd(const Tensor& x, const Tensor& index, Tensor* out) {
   for (size_t i = end_size; i < x_dims_size; i++) {
     gather_size *= x_dims[i];
   }
-  const size_t gather_bytes = gather_size * sizeof(T);
+  const size_t gather_bytes = gather_size * sizeof(DataT);
 
   for (int64_t i = 0; i < gather_time; i++) {
     int64_t x_index = 0;
@@ -55,26 +55,53 @@ void GatherNd(const Tensor& x, const Tensor& index, Tensor* out) {
   return;
 }
 
-template <typename T, PrecisionType Ptype>
-void GatherNdCompute<T, Ptype>::Run() {
+void GatherNdCompute::Run() {
   auto& param = this->template Param<operators::GatherNdParam>();
   auto* x = param.x;
   auto* index = param.index;
   auto* out = param.out;
 
+#define SELECT_GATHERND(index_data_type)                      \
+  switch (x->precision()) {                                   \
+    case PRECISION(kFloat):                                   \
+      GatherNd<float, index_data_type>(*x, *index, out);      \
+      break;                                                  \
+    case PRECISION(kFP64):                                    \
+      GatherNd<double, index_data_type>(*x, *index, out);     \
+      break;                                                  \
+    case PRECISION(kInt64):                                   \
+      GatherNd<int64_t, index_data_type>(*x, *index, out);    \
+      break;                                                  \
+    case PRECISION(kInt32):                                   \
+      GatherNd<int64_t, index_data_type>(*x, *index, out);    \
+      break;                                                  \
+    case PRECISION(kUInt8):                                   \
+      GatherNd<uint8_t, index_data_type>(*x, *index, out);    \
+      break;                                                  \
+    case PRECISION(kBool):                                    \
+      GatherNd<bool, index_data_type>(*x, *index, out);       \
+      break;                                                  \
+    default:                                                  \
+      LOG(FATAL) << "unsupported input(x) type: "             \
+                 << lite_api::PrecisionToStr(x->precision()); \
+      break;                                                  \
+  }
+
   switch (index->precision()) {
-    case PRECISION(kInt32):
-      GatherNd<T, int32_t>(*x, *index, out);
+    case PRECISION(kInt32): {
+      SELECT_GATHERND(int32_t)
       break;
-    case PRECISION(kInt64):
-      GatherNd<T, int64_t>(*x, *index, out);
+    }
+    case PRECISION(kInt64): {
+      SELECT_GATHERND(int64_t)
       break;
-    default:
+    }
+    default: {
       LOG(FATAL) << "unsupported index type: "
                  << lite_api::PrecisionToStr(index->precision());
-      break;
+    }
   }
-  return;
+#undef SELECT_GATHERND
 }
 
 }  // namespace host
@@ -82,12 +109,11 @@ void GatherNdCompute<T, Ptype>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using GatherNdFloat32 =
-    paddle::lite::kernels::host::GatherNdCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(gather_nd, kHost, kFloat, kAny, GatherNdFloat32, float32)
+using GatherNdCompute_ = paddle::lite::kernels::host::GatherNdCompute;
+REGISTER_LITE_KERNEL(gather_nd, kHost, kAny, kAny, GatherNdCompute_, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kAny))})
     .BindInput("Index",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -95,6 +121,6 @@ REGISTER_LITE_KERNEL(gather_nd, kHost, kFloat, kAny, GatherNdFloat32, float32)
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
+                                       PRECISION(kAny),
                                        DATALAYOUT(kAny))})
     .Finalize();

@@ -21,9 +21,8 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <typename T, PrecisionType Ptype>
 class GatherNdCompute
-    : public KernelLite<TARGET(kHost), Ptype, DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
