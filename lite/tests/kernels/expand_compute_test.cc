@@ -62,7 +62,7 @@ class ExpandComputeTester : public arena::TestCase {
     for (int i = out_shape.size() - 2; i >= 0; --i) {
       out_stride[i] = out_shape[i + 1] * out_stride[i + 1];
     }
-    for (size_t out_id = 0; out_id < out_shape.production(); ++out_id) {
+    for (int64_t out_id = 0; out_id < out_shape.production(); ++out_id) {
       int in_id = 0;
       for (int i = expand_times_.size() - 1; i >= 0; --i) {
         int in_j = (out_id / out_stride[i]) % in_shape[i];
@@ -80,7 +80,7 @@ class ExpandComputeTester : public arena::TestCase {
     }
     if (has_expand_times_tensor) {
       std::vector<std::string> expand_times_tensor_;
-      for (auto i = 0; i < expand_times_.size(); i++) {
+      for (size_t i = 0; i < expand_times_.size(); i++) {
         expand_times_tensor_.push_back("expand_times_tensor_" +
                                        paddle::lite::to_string(i));
         op_desc->SetInput("expand_times_tensor", expand_times_tensor_);
@@ -102,7 +102,7 @@ class ExpandComputeTester : public arena::TestCase {
                       expand_times_.data());
     }
     if (has_expand_times_tensor) {
-      for (int i = 0; i < expand_times_.size(); ++i) {
+      for (size_t i = 0; i < expand_times_.size(); ++i) {
         SetCommonTensor("expand_times_tensor_" + paddle::lite::to_string(i),
                         DDim({1}),
                         &expand_times_[i]);
@@ -115,7 +115,7 @@ template <class T,
           bool has_expandtimes = false,
           bool has_expand_times_tensor = false>
 void test_expand_3dim(Place place, float abs_error) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  std::string alias{"def"};
   for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1}),
                                         std::vector<int>({2, 2, 2}),
                                         std::vector<int>({3, 1, 2})}) {
@@ -139,7 +139,7 @@ template <class T,
           bool has_expandtimes = false,
           bool has_expand_times_tensor = false>
 void test_expand_4dim(Place place, float abs_error) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+  std::string alias{"def"};
   for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1, 4}),
                                         std::vector<int>({2, 2, 2, 2}),
                                         std::vector<int>({3, 1, 2, 1})}) {
