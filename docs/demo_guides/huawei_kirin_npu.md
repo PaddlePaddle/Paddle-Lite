@@ -274,28 +274,40 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 - 编译并生成PaddleLite+HuaweiKirinNPU for armv8 and armv7的部署库
 
-  ```shell
-  For armv8
-  tiny_publish
-  $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330
-  full_publish
-  $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330 full_publish
+  - For armv8
+    - tiny_publish编译
+      ```shell
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330
 
-  For armv7
-  tiny_publish
-  $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330
-  full_publish
-  $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330 full_publish
+      将tiny_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件；
+      ```
+    
+    - full_publish编译
+      ```shell
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330 full_publish
 
+      将full_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_full_api_shared.so文件；
+      ```
+    将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
+
+  - For armv7
+    - tiny_publish编译
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330
+
+      将tiny_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件；
+      ```
+    - full_publish编译
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=./hiai_ddk_lib_330 full_publish
+
+      将full_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_full_api_shared.so文件。
+      ```
+    将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/include目录；
+  
   备注：由于HiAI DDK的so库均基于c++_shared构建，建议将android stl设置为c++_shared，更多选项还可以通过 "./lite/tools/build_android.sh help" 查看。
-  ```
-
-- 将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
-- 将tiny_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.npu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_full_api_shared.so文件；
-- 将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/include目录；
-- 将tiny_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.npu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_full_api_shared.so文件。
+  
+- 替换头文件后需要重新编译示例程序
 
 ## 如何支持CPU+华为Kirin NPU异构计算？
 
