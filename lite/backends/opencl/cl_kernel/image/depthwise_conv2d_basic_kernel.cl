@@ -33,7 +33,8 @@ __kernel void depth_conv2d_common(__private const int global_size_dim0, // (out_
                                   __private const int output_width,
                                   __private const int output_height,
                                   __private const int filter_width,
-                                  __private const int filter_height) {
+                                  __private const int filter_height,
+                                  __read_only image2d_t prelu_alpha) {
 
   const int out_c_blk = get_global_id(0); // [0, (C+3)/4)
   const int out_w_blk = get_global_id(1); // [0, (W+3)/4)
@@ -107,10 +108,51 @@ __kernel void depth_conv2d_common(__private const int global_size_dim0, // (out_
     }
   }
 
-  out0 = activation_type4(out0);
-  out1 = activation_type4(out1);
-  out2 = activation_type4(out2);
-  out3 = activation_type4(out3);
+CL_DTYPE4 alpha0, alpha1, alpha2, alpha3;
+#ifdef PRELU_CH //{
+    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_channel_block_idx, 0));
+    alpha1 = alpha0;
+    alpha2 = alpha0;
+    alpha3 = alpha0;
+  //}
+#elif defined(PRELU_ELE) //{
+    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                prelu_alpha,
+                                SAMPLER,
+                                (int2)(out_w_base_id + out_w_id0, output_bh_idx));
+    if (out_w_id1 < output_width) {
+        alpha1 = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                prelu_alpha,
+                                SAMPLER,
+                                (int2)(out_w_base_id + out_w_id1, output_bh_idx));
+    }
+    if (out_w_id2 < output_width) {
+        alpha2 = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                prelu_alpha,
+                                SAMPLER,
+                                (int2)(out_w_base_id + out_w_id2, output_bh_idx));
+    }
+    if (out_w_id3 < output_width) {
+        alpha3 = READ_IMG_TYPE(CL_DTYPE_CHAR,
+                                prelu_alpha,
+                                SAMPLER,
+                                (int2)(out_w_base_id + out_w_id3, output_bh_idx));
+    }
+  //}
+#elif defined(PRELU_ALL) //{
+    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+    alpha0.y = alpha0.x;
+    alpha0.z = alpha0.x;
+    alpha0.w = alpha0.x;
+    alpha1 = alpha0;
+    alpha2 = alpha0;
+    alpha3 = alpha0;
+    //}
+#endif
+    out0 = activation_type4(out0, alpha0);
+    out1 = activation_type4(out1, alpha1);
+    out2 = activation_type4(out2, alpha2);
+    out3 = activation_type4(out3, alpha3);
 
 #ifdef SCALE_ACTIVATION
   out0 = fuse_scale(out0, 1.f, 0.f, 0.f);
@@ -156,7 +198,8 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
                            __private const int output_width,
                            __private const int output_height,
                            __private const int filter_width,
-                           __private const int filter_height) {
+                           __private const int filter_height,
+                           __read_only image2d_t prelu_alpha) {
 
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
@@ -210,7 +253,21 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
     }
   }
 
-  output = activation_type4(output);
+CL_DTYPE4 alpha0;
+#ifdef PRELU_CH //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
+  //}
+#elif defined(PRELU_ELE) //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos);
+  //}
+#else //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0.y = alpha0.x;
+  alpha0.z = alpha0.x;
+  alpha0.w = alpha0.x;
+  //}
+#endif
+  output = activation_type4(output, alpha0);
 
 #ifdef SCALE_ACTIVATION
   output = fuse_scale(output, 1.f, 0.f, 0.f);

@@ -30,3 +30,16 @@
 ## 2.6
 
 [v2.6 project](https://github.com/PaddlePaddle/Paddle-Lite/milestones/v2.6)
+
+## 2.7
+[v2.7 project](https://github.com/PaddlePaddle/Paddle-Lite/milestones/v2.7)
+
+## 2.8
+- 框架升级
+    - opt 工具功能增强：+量化模型压缩功能
+    - 版本间的兼容性增减：+算子版本控制方法
+    - 编译系统优化：减少编译耗时
+    - 文档易用性增强
+- 硬件平台增强：昆仑 XPU、RK NPU、ARM OPENCL
+- 性能增强：ARM模型性能提升
+- 支持Paddle2.0： 支持更多Paddle2.0模型和算子

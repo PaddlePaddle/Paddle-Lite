@@ -33,6 +33,9 @@ bool GroupNormOp::CheckShape() const {
   auto x_dims = param_.x->dims();
   auto scale_dims = param_.scale->dims();
   auto bias_dims = param_.bias->dims();
+  if (param_.channels == -1) {
+    param_.channels = x_dims[1];
+  }
   CHECK(x_dims.size() >= 2 && x_dims.size() <= 5)
       << "Input X must have 2 to 5 dimensions.";
   CHECK_EQ(scale_dims.size(), 1UL) << "Input Scale must have 1 dimensions.";
@@ -62,16 +65,31 @@ bool GroupNormOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       scope->FindVar(op_desc.Input("Scale").front())->GetMutable<Tensor>();
   param_.bias =
       scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();
-  param_.saved_mean =
-      scope->FindVar(op_desc.Output("SavedMean").front())->GetMutable<Tensor>();
-  param_.saved_variance =
-      scope->FindVar(op_desc.Output("SavedVariance").front())
-          ->GetMutable<Tensor>();
+  if (op_desc.HasOutput("SavedMean")) {
+    param_.saved_mean = scope->FindVar(op_desc.Output("SavedMean").front())
+                            ->GetMutable<Tensor>();
+  } else if (op_desc.HasOutput("Mean")) {
+    param_.saved_mean =
+        scope->FindVar(op_desc.Output("Mean").front())->GetMutable<Tensor>();
+  }
+  if (op_desc.HasOutput("SavedVariance")) {
+    param_.saved_variance =
+        scope->FindVar(op_desc.Output("SavedVariance").front())
+            ->GetMutable<Tensor>();
+  } else if (op_desc.HasOutput("Variance")) {
+    param_.saved_variance = scope->FindVar(op_desc.Output("Variance").front())
+                                ->GetMutable<Tensor>();
+  }
   param_.out =
       scope->FindVar(op_desc.Output("Y").front())->GetMutable<Tensor>();
   param_.epsilon = op_desc.GetAttr<float>("epsilon");
   param_.groups = op_desc.GetAttr<int>("groups");
-  param_.channels = op_desc.GetAttr<int>("channels");
+  if (op_desc.HasAttr("channels")) {
+    param_.channels = op_desc.GetAttr<int>("channels");
+  } else {
+    param_.channels = -1;
+  }
+
   return true;
 }
 

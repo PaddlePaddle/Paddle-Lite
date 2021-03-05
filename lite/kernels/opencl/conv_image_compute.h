@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -85,6 +86,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
 
   std::unique_ptr<Tensor> filter_gpu_image_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> alpha_gpu_image_{nullptr};
   std::unique_ptr<Tensor> tensor_hold_filter_image_{nullptr};
   std::unique_ptr<Tensor> tensor_hold_bias_image_{nullptr};
   cl::NDRange global_work_size_ = cl::NDRange{
@@ -98,6 +100,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   const cl::Image2D* input_image_p_{nullptr};
   const cl::Image2D* filter_image_p_{nullptr};
   const cl::Image2D* bias_image_p_{nullptr};
+  const cl::Image2D* alpha_image_p_{nullptr};
   const cl::Image2D* output_image_p_{nullptr};
 
   int stride_h_{-1};

@@ -33,6 +33,7 @@ add_kernel(read_from_array_compute_host Host extra SRCS read_from_array_compute.
 add_kernel(assign_compute_host Host extra SRCS assign_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(retinanet_detection_output_compute_host Host extra SRCS retinanet_detection_output_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(where_index_compute_host Host extra SRCS where_index_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(where_compute_host Host extra SRCS where_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(print_compute_host Host extra SRCS print_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(while_compute_host Host extra SRCS while_compute.cc DEPS ${lite_kernel_deps} program)
 add_kernel(conditional_block_compute_host Host extra SRCS conditional_block_compute.cc DEPS ${lite_kernel_deps} program)
@@ -63,6 +64,9 @@ add_kernel(tile_compute_host Host extra SRCS tile_compute.cc DEPS ${lite_kernel_
 add_kernel(fill_any_like_compute_host Host extra SRCS fill_any_like_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(scatter_nd_add_compute_host Host extra SRCS scatter_nd_add_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(tril_triu_compute_host Host extra SRCS tril_triu_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(topk_v2_compute_host Host extra SRCS topk_v2_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(meshgrid_compute_host Host extra SRCS meshgrid_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(linspace_compute_host Host extra SRCS linspace_compute.cc DEPS ${lite_kernel_deps})
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)
