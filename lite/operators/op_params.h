@@ -1892,6 +1892,7 @@ struct XPUMultiEncoderParam : ParamBase {
   std::string act_type{};
   std::string precision{};
   bool enable_qkv_fusion{false};
+  bool norm_before{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
