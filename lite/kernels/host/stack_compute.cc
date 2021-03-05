@@ -35,8 +35,8 @@ void StackCompute<T, PType>::Run() {
 
   int pre = 1, post = 1;
   auto &dim = x[0]->dims();
-  for (auto i = 0; i < axis; ++i) pre *= dim[i];
-  for (auto i = axis; i < dim.size(); ++i) post *= dim[i];
+  for (int i = 0; i < axis; ++i) pre *= dim[i];
+  for (size_t i = axis; i < dim.size(); ++i) post *= dim[i];
 
   auto x_data_arr = x_datas.data();
 
