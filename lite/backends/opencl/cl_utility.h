@@ -21,7 +21,7 @@ limitations under the License. */
 namespace paddle {
 namespace lite {
 
-const char* opencl_error_to_str(cl_int error);
+const char *opencl_error_to_str(cl_int error);
 
 #define CL_CHECK_ERROR(err_code__)                                   \
   if (err_code__ != CL_SUCCESS) {                                    \
@@ -82,8 +82,22 @@ const char* opencl_error_to_str(cl_int error);
 
 #define MUTABLE_DATA_CPU(tensor_ins_p)                                  \
   (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) \
-      ? static_cast<void*>((tensor_ins_p)->mutable_data<half_t>())      \
-      : static_cast<void*>((tensor_ins_p)->mutable_data<float>())
+      ? static_cast<void *>((tensor_ins_p)->mutable_data<half_t>())     \
+      : static_cast<void *>((tensor_ins_p)->mutable_data<float>())
+
+template <typename T, typename Dim>
+inline void IOHW2OIHW(const T *src, T *dst, Dim O, Dim I, Dim H, Dim W) {
+  for (Dim i = 0; i < I; i++) {
+    for (Dim o = 0; o < O; o++) {
+      for (Dim h = 0; h < H; h++) {
+        for (Dim w = 0; w < W; w++) {
+          dst[o * I * H * W + i * H * W + h * W + w] =
+              src[i * O * H * W + o * H * W + h * W + w];
+        }
+      }
+    }
+  }
+};
 
 }  // namespace lite
 }  // namespace paddle
