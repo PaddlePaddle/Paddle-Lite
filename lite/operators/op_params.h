@@ -1122,9 +1122,12 @@ struct WhileParam : ParamBase {
 
 struct TopkParam : ParamBase {
   const lite::Tensor* X{};
+  const lite::Tensor* KTensor{};
   lite::Tensor* Out{};
   lite::Tensor* Indices{};
+  bool k_is_tensor{false};
   int K{1};
+  int axis{-1};
 };
 
 struct IncrementParam : ParamBase {
@@ -2079,6 +2082,13 @@ struct RetinanetDetectionOutputParam : ParamBase {
 struct WhereIndexParam : ParamBase {
   const lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
+};
+
+struct WhereParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  const lite::Tensor* condition{nullptr};
+  lite::Tensor* out{nullptr};
 };
 
 struct ClipParam : ParamBase {

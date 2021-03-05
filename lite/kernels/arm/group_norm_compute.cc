@@ -177,4 +177,6 @@ REGISTER_LITE_KERNEL(group_norm,
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Mean", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Variance", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
