@@ -237,7 +237,7 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
     ch->kernel_func_name = kernel_func_name_;                               \
   }
 
-#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name
+#define KERNEL_FUNC_NAME(kernel_func_name) kernel_func_name_ = kernel_func_name;
 
 #else
 #define PROFILE_INFO(dtype1, dtype2)

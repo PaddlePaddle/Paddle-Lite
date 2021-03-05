@@ -117,6 +117,7 @@ struct FcParam : ParamBase {
   lite::Tensor* input{nullptr};
   lite::Tensor* w{nullptr};
   lite::Tensor* bias{nullptr};
+  lite::Tensor* Prelu_alpha{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   // original dims of input weight
@@ -124,6 +125,8 @@ struct FcParam : ParamBase {
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
+  std::string Prelu_mode{
+      "channel"};  // prelu param, can be "all", "channel" or "element"
   // for int8
   WITH_INT8_CONFIG
   ///////////////////////////////////////////////////////////////////////////////////
@@ -409,6 +412,8 @@ struct ActivationParam : ParamBase {
   float Elu_alpha{1.0f};
   // relu6
   float threshold{6.0f};
+  // gelu
+  bool gelu_approximate{false};
 
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
@@ -1162,9 +1167,12 @@ struct WhileParam : ParamBase {
 
 struct TopkParam : ParamBase {
   const lite::Tensor* X{};
+  const lite::Tensor* KTensor{};
   lite::Tensor* Out{};
   lite::Tensor* Indices{};
+  bool k_is_tensor{false};
   int K{1};
+  int axis{-1};
 };
 
 struct IncrementParam : ParamBase {
@@ -1293,6 +1301,11 @@ struct SequenceReverseParam : ParamBase {
 struct SequenceConcatParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
+};
+
+struct MeshgridParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor*> Out{};
 };
 
 struct AttentionPaddingMaskParam : ParamBase {
@@ -2135,6 +2148,13 @@ struct WhereIndexParam : ParamBase {
   lite::Tensor* output{nullptr};
 };
 
+struct WhereParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  const lite::Tensor* condition{nullptr};
+  lite::Tensor* out{nullptr};
+};
+
 struct ClipParam : ParamBase {
   Tensor* x{};
   Tensor* min_tensor{};
@@ -2281,6 +2301,14 @@ struct PNormParam : ParamBase {
   float epsilon{1.0e-12f};
   bool keepdim{false};
   bool asvector{false};
+};
+
+struct LinspaceParam : ParamBase {
+  const lite::Tensor* Start{};
+  const lite::Tensor* Stop{};
+  const lite::Tensor* Num{};
+  lite::Tensor* Out{};
+  int dtype{};
 };
 }  // namespace operators
 }  // namespace lite

@@ -83,6 +83,11 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   } else if (opdesc.Type() == "relu6") {
     param_.active_type = lite_api::ActivationType::kRelu6;
     param_.threshold = opdesc.GetAttr<float>("threshold");
+  } else if (opdesc.Type() == "gelu") {
+    param_.active_type = lite_api::ActivationType::kGelu;
+    if (opdesc.HasAttr("approximate")) {
+      param_.gelu_approximate = opdesc.GetAttr<bool>("approximate");
+    }
   }
 
   VLOG(4) << "opdesc.Type():" << opdesc.Type();

@@ -14,6 +14,7 @@
 
 #include "lite/operators/reduce_ops.h"
 #include <algorithm>
+#include <set>
 #include "lite/core/op_registry.h"
 namespace paddle {
 namespace lite {
@@ -30,8 +31,11 @@ bool ReduceOp::CheckShape() const {
 
 bool ReduceOp::InferShapeImpl() const {
   const auto &x_dims = param_.X->dims();
-  auto x_rank = x_dims.size();
+  size_t x_rank = x_dims.size();
   auto dims = param_.dim;
+  bool reduce_all = param_.reduce_all;
+  bool keep_dim = param_.keep_dim;
+
   for (size_t i = 0; i < dims.size(); ++i) {
     if (dims[i] < 0) {
       dims[i] = x_rank + dims[i];
@@ -39,8 +43,16 @@ bool ReduceOp::InferShapeImpl() const {
     CHECK_LT(dims[i], x_rank)
         << "The dim should be in the range [-rank(input), rank(input).";
   }
-  bool reduce_all = param_.reduce_all;
-  bool keep_dim = param_.keep_dim;
+
+  std::set<int> dims_set(dims.begin(), dims.end());
+  bool full_dim = true;
+  for (size_t i = 0; i < x_rank; i++) {
+    if (dims_set.find(i) == dims_set.end()) {
+      full_dim = false;
+      break;
+    }
+  }
+  reduce_all = (reduce_all || full_dim);
 
   if (reduce_all) {
     if (keep_dim)

@@ -121,8 +121,8 @@ class GroupNormComputeTest : public arena::TestCase {
     op_desc->SetInput("Bias", {bias_});
     op_desc->SetInput("Scale", {scale_});
     op_desc->SetOutput("Y", {y_});
-    op_desc->SetOutput("SavedMean", {saved_mean_});
-    op_desc->SetOutput("SavedVariance", {saved_variance_});
+    op_desc->SetOutput("Mean", {saved_mean_});
+    op_desc->SetOutput("Variance", {saved_variance_});
     op_desc->SetAttr("epsilon", epsilon_);
     op_desc->SetAttr("groups", groups_);
     op_desc->SetAttr("channels", channels_);
