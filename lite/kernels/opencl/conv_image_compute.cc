@@ -300,6 +300,14 @@ void ConvImageCompute::PrepareForRun() {
           << static_cast<int>(conv_param_->activation_param.active_type)
           << " conv_param_->activation_param.has_active:"
           << conv_param_->activation_param.has_active;
+  // alpha_image_p_ init
+  alpha_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+  std::unique_ptr<Tensor> tensor_hold_alpha_image =
+      std::unique_ptr<Tensor>(new Tensor);
+  tensor_hold_alpha_image->Resize({1, 1, 1, 4});
+  auto* alpha_image_data = DATA_GPU(tensor_hold_alpha_image);
+  MUTABLE_DATA_GPU(alpha_gpu_image_, 1, 1, alpha_image_data);
+  alpha_image_p_ = DATA_GPU(alpha_gpu_image_);
   if (conv_param_->activation_param.has_active) {
     if (conv_param_->activation_param.active_type ==
         lite_api::ActivationType::kRelu) {
@@ -332,6 +340,34 @@ void ConvImageCompute::PrepareForRun() {
           std::to_string(conv_param_->activation_param.hard_sigmoid_offset);
       build_options_single += " -DHARD_SIGMOID -DHARD_SIGMOID_SLOPE=" + slope +
                               "f" + " -DHARD_SIGMOID_OFFSET=" + offset + "f";
+    } else if (conv_param_->activation_param.active_type ==
+               lite_api::ActivationType::kPRelu) {
+      std::string prelu_mode = conv_param_->activation_param.Prelu_mode;
+      build_options_single += " -DPRELU";
+      if (prelu_mode == "channel") {
+        build_options_single += " -DPRELU_CH";
+      } else if (prelu_mode == "element") {
+        build_options_single += " -DPRELU_ELE";
+      } else {
+        build_options_single += " -DPRELU_ALL";
+      }
+      CLImageConverterFolder alpha_converter;
+      const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
+          conv_param_->activation_param.Prelu_alpha->dims());
+      tensor_hold_alpha_image->Resize(
+          {1, alpha_image_dims[0], alpha_image_dims[1], 4});
+      auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image);
+      auto* alpha_cpu_data =
+          conv_param_->activation_param.Prelu_alpha->mutable_data<float>();
+      alpha_converter.NCHWToImage(
+          alpha_cpu_data,
+          alpha_image_data,
+          conv_param_->activation_param.Prelu_alpha->dims());
+      MUTABLE_DATA_GPU(alpha_gpu_image_,
+                       alpha_image_dims[0],
+                       alpha_image_dims[1],
+                       alpha_image_data);
+      alpha_image_p_ = DATA_GPU(alpha_gpu_image_);
     } else {
       LOG(FATAL) << "Unsupported activation type:"
                  << static_cast<int>(conv_param_->activation_param.active_type);
@@ -401,6 +437,8 @@ void ConvImageCompute::PrepareForRun() {
   SetLocalWorkSize(CLRuntime::Global()->lws_repeats());
 }
 
+#define SHOW_EACH_LWS_TIME
+#undef SHOW_EACH_LWS_TIME
 void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   auto& context = ctx_->As<OpenCLContext>();
   std::stringstream kernel_key;
@@ -409,8 +447,8 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
 
   auto tuned_map_key = GenerateTunedKey();
   cl::NDRange lws_in_map = cl::NullRange;
-  if (context.cl_context()->HasTunedLocalWorkSizeMap(tuned_map_key,
-                                                     &lws_in_map)) {
+  if (CLRuntime::Global()->HasTunedLocalWorkSizeMap(tuned_map_key,
+                                                    &lws_in_map)) {
     local_work_size_ = lws_in_map;
     return;
   }
@@ -419,10 +457,10 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                    CL_KERNEL_WORK_GROUP_SIZE,
                                    &max_work_group_size);
-  std::vector<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
+  std::set<cl::NDRange> lwss = context.cl_context()->GenerateLocalWorkSizes(
       global_work_size_, max_work_group_size);
   CHECK(lwss.size() > 0) << "Possible local work sizes should bigger than zero";
-  local_work_size_ = lwss[0];
+  local_work_size_ = *lwss.begin();
   if (max_work_group_size <= 0 || !use_lws_ ||
       CLRuntime::Global()->auto_tune() <= 0) {
     if (!use_lws_) {
@@ -431,24 +469,41 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     return;
   }
 
+#ifdef SHOW_EACH_LWS_TIME
+  LOG(INFO) << "====== start =======";
+#endif
   double min_lws_time = DBL_MAX;
-  cl::NDRange min_lws = lwss[0];
-  for (size_t i = 0; i < lwss.size(); ++i) {
-    local_work_size_ = lwss[i];
+  cl::NDRange min_lws = *lwss.begin();
+  for (cl::NDRange cur_lws : lwss) {
+    local_work_size_ = cur_lws;
     double cur_lws_time = 0.0f;
+    // note: useless for skip first run
     for (size_t i = 0; i < repeats; ++i) {
       Run();
       cur_lws_time += CLRuntime::Global()->GetCommandTime(event_);
     }
     cur_lws_time /= repeats;
+#ifdef SHOW_EACH_LWS_TIME
+    LOG(INFO) << GenerateTunedKey() << " "
+              << "{" << std::to_string(local_work_size_[0]) << ","
+              << std::to_string(local_work_size_[1]) << ","
+              << std::to_string(local_work_size_[2]) << "} -->" << cur_lws_time;
+#endif
     if (min_lws_time > cur_lws_time) {
-      min_lws = lwss[i];
+      min_lws = cur_lws;
       min_lws_time = cur_lws_time;
     }
   }
+#ifdef SHOW_EACH_LWS_TIME
+  LOG(INFO) << "=======================";
+  LOG(INFO) << "best:" << std::to_string(min_lws[0])
+            << std::to_string(min_lws[1]) << std::to_string(min_lws[2])
+            << " time:" << min_lws_time;
+  LOG(INFO) << "======= finish ========";
+#endif
   local_work_size_ = min_lws;
-  context.cl_context()->SetTunedLocalWorkSizeMap(tuned_map_key,
-                                                 local_work_size_);
+  CLRuntime::Global()->SetTunedLocalWorkSizeMap(tuned_map_key,
+                                                local_work_size_);
 }
 
 std::string ConvImageCompute::GenerateTunedKey() {
@@ -677,6 +732,8 @@ void ConvImageCompute::Conv2d1x1opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(16, default_w_blk_);
   CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(17, *alpha_image_p_);
+  CL_CHECK_FATAL(status_);
 }
 
 void ConvImageCompute::Conv2d3x3() {
@@ -723,6 +780,8 @@ void ConvImageCompute::Conv2d3x3() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(20, input_tensor_c_);
   CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(21, *alpha_image_p_);
+  CL_CHECK_FATAL(status_);
 }
 
 void ConvImageCompute::Conv2d3x3opt() {
@@ -758,6 +817,8 @@ void ConvImageCompute::Conv2d3x3opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(15, output_tensor_h_);
   CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, *alpha_image_p_);
+  CL_CHECK_FATAL(status_);
 }
 
 void ConvImageCompute::Conv2d5x5() {
@@ -791,6 +852,8 @@ void ConvImageCompute::Conv2d5x5() {
   status_ = kernel_.setArg(13, output_tensor_w_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(14, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 
@@ -827,6 +890,8 @@ void ConvImageCompute::Conv2d5x5opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(15, output_tensor_h_);
   CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, *alpha_image_p_);
+  CL_CHECK_FATAL(status_);
 }
 
 void ConvImageCompute::Conv2d7x7() {
@@ -860,6 +925,8 @@ void ConvImageCompute::Conv2d7x7() {
   status_ = kernel_.setArg(12, output_tensor_w_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(13, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 
@@ -896,6 +963,8 @@ void ConvImageCompute::Conv2d7x7opt() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(15, output_tensor_h_);
   CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, *alpha_image_p_);
+  CL_CHECK_FATAL(status_);
 }
 
 void ConvImageCompute::DepthwiseConv2d3x3s1() {
@@ -928,6 +997,8 @@ void ConvImageCompute::DepthwiseConv2d3x3s1() {
   status_ = kernel_.setArg(13, output_tensor_w_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(14, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 
@@ -964,6 +1035,8 @@ void ConvImageCompute::DepthwiseConv2d3x3() {
   status_ = kernel_.setArg(14, output_tensor_w_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(15, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 
@@ -1006,6 +1079,8 @@ void ConvImageCompute::DepthwiseConv2d() {
   status_ = kernel_.setArg(17, filter_tensor_w_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(18, filter_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(19, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 
@@ -1050,6 +1125,8 @@ void ConvImageCompute::Conv2dCommon() {
   status_ = kernel_.setArg(18, dilation_w_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(19, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(20, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 
@@ -1162,6 +1239,7 @@ REGISTER_LITE_KERNEL(conv2d,
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -1181,6 +1259,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -1201,6 +1280,7 @@ REGISTER_LITE_KERNEL(conv2d,
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
@@ -1220,6 +1300,7 @@ REGISTER_LITE_KERNEL(depthwise_conv2d,
                                       DATALAYOUT(kImageDefault))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Output",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

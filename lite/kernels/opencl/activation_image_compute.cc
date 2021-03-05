@@ -60,33 +60,60 @@ class ActivationComputeImageDefault
           tensor_hold_alpha_image_ = std::unique_ptr<Tensor>(new Tensor);
           kernel_func_name_ = "prelu_channel";
           auto& out_dims = act_param_->Out->dims();
-          width_ = out_dims[3];
+          if (out_dims.size() == 4) {
+            width_ = out_dims[3];
+            CLImageConverterFolder alpha_converter;
+            const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
+                act_param_->Prelu_alpha->dims());
+            tensor_hold_alpha_image_->Resize(
+                {1, alpha_image_dims[0], alpha_image_dims[1], 4});
 
-          CLImageConverterFolder alpha_converter;
-          const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
-              act_param_->Prelu_alpha->dims());
-          tensor_hold_alpha_image_->Resize(
-              {1, alpha_image_dims[0], alpha_image_dims[1], 4});
+            auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
+            auto* alpha_cpu_data =
+                act_param_->Prelu_alpha->mutable_data<float>();
+            alpha_converter.NCHWToImage(alpha_cpu_data,
+                                        alpha_image_data,
+                                        act_param_->Prelu_alpha->dims());
 
-          auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
-          auto* alpha_cpu_data = act_param_->Prelu_alpha->mutable_data<float>();
-          alpha_converter.NCHWToImage(alpha_cpu_data,
-                                      alpha_image_data,
-                                      act_param_->Prelu_alpha->dims());
+            MUTABLE_DATA_GPU(alpha_gpu_image_,
+                             alpha_image_dims[0],
+                             alpha_image_dims[1],
+                             alpha_image_data);
+          } else if (out_dims.size() == 2) {
+            width_ = 1;
+            CLImageConverterDefault alpha_converter;
+            const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
+                act_param_->Prelu_alpha->dims());
+            tensor_hold_alpha_image_->Resize(
+                {1, alpha_image_dims[0], alpha_image_dims[1], 4});
 
-          MUTABLE_DATA_GPU(alpha_gpu_image_,
-                           alpha_image_dims[0],
-                           alpha_image_dims[1],
-                           alpha_image_data);
+            auto* alpha_image_data = MUTABLE_DATA_CPU(tensor_hold_alpha_image_);
+            auto* alpha_cpu_data =
+                act_param_->Prelu_alpha->mutable_data<float>();
+            alpha_converter.NCHWToImage(alpha_cpu_data,
+                                        alpha_image_data,
+                                        act_param_->Prelu_alpha->dims());
+
+            MUTABLE_DATA_GPU(alpha_gpu_image_,
+                             alpha_image_dims[0],
+                             alpha_image_dims[1],
+                             alpha_image_data);
+          } else {
+            LOG(FATAL) << "unsupport dims.size(): " << out_dims.size();
+          }
         } else {
           alpha_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
           tensor_hold_alpha_image_ = std::unique_ptr<Tensor>(new Tensor);
           kernel_func_name_ = "prelu_element";
           auto& in_dim = act_param_->X->dims();
-          height_ = in_dim[2];
+          if (in_dim.size() > 3) {
+            height_ = in_dim[2];
+          } else {
+            height_ = 1;
+          }
           scale_ = act_param_->Leaky_relu_alpha;
 
-          CLImageConverterFolder alpha_converter;
+          CLImageConverterDefault alpha_converter;
           const DDim& alpha_image_dims = alpha_converter.InitImageDimInfoWith(
               act_param_->Prelu_alpha->dims());
           tensor_hold_alpha_image_->Resize(

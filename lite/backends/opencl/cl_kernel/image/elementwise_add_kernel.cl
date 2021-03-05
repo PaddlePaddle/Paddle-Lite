@@ -33,7 +33,8 @@ __kernel void elementwise_add(__read_only image2d_t input,
      CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);
 #endif
      CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords);
-     CL_DTYPE4 output = activation_type4(in + biase);
+     CL_DTYPE4 alpha;
+     CL_DTYPE4 output = activation_type4(in + biase, alpha);
 
      WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage,coords,output);
  }

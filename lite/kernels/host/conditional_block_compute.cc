@@ -58,13 +58,13 @@ REGISTER_LITE_KERNEL(conditional_block,
                      paddle::lite::kernels::host::ConditionalBlockCompute,
                      def)
     .BindInput("Input",
-               {LiteType::GetTensorListTy(
+               {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindInput("Cond",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
     .BindOutput("Out",
-                {LiteType::GetTensorListTy(
+                {LiteType::GetTensorTy(
                     TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
     .BindOutput("Scope",
                 {LiteType::GetTensorTy(

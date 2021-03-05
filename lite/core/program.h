@@ -158,7 +158,9 @@ struct Instruction {
   }
 
   void SetProfileRuntimeOpInfo(paddle::lite::profile::OpCharacter* ch) {
+    CHECK(ch != nullptr) << "OpCharacter should not be nullptr.";
     auto* op_lite = static_cast<paddle::lite::OpLite*>(ch->op_lite);
+    CHECK(op_lite != nullptr) << "op_lite should not be nullptr.";
     op_lite->GetOpRuntimeInfo(ch);
   }
 #endif

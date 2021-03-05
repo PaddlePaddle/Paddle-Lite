@@ -86,7 +86,7 @@ void GemmLikeConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   }
 }
 
-PROFILE_INFO(kFloat, kFloat)
+PROFILE_INFO(kFloat, kFloat);
 
 template <>
 void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
@@ -126,7 +126,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   }
 }
 
-PROFILE_INFO(kInt8, kFloat)
+PROFILE_INFO(kInt8, kFloat);
 
 template <>
 void GemmLikeConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {

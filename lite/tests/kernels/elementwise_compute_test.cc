@@ -264,6 +264,15 @@ void TestEltTypes(Place place, float abs_error) {
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
   }
+
+  if (place.target == TARGET(kARM)) {
+    Place arm_int32_place(TARGET(kARM), PRECISION(kInt32));
+    TestElt<int32_t>(
+        arm_int32_place, abs_error, "floordiv", {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+    Place arm_int64_place(TARGET(kARM), PRECISION(kInt64));
+    TestElt<int64_t>(
+        arm_int64_place, abs_error, "floordiv", {2, 3, 4, 5}, {3}, 1);
+  }
 }
 
 void TestEltFuseAct(Place place, float abs_error) {
