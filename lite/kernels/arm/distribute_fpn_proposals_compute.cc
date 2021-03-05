@@ -174,9 +174,12 @@ REGISTER_LITE_KERNEL(distribute_fpn_proposals,
                      paddle::lite::kernels::arm::DistributeFpnProposalsCompute,
                      def)
     .BindInput("FpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("RoisNum", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("RoisNum",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("MultiFpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("RestoreIndex", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("MultiLevelRoIsNum",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("RestoreIndex",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindPaddleOpVersion("distribute_fpn_proposals", 1)
     .Finalize();
