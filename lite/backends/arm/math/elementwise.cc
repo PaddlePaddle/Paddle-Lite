@@ -509,6 +509,16 @@ void elementwise_sub<int32_t>(const int32_t* dinx,
 }
 
 template <>
+void elementwise_sub<int64_t>(const int64_t* dinx,
+                              const int64_t* diny,
+                              int64_t* dout,
+                              int num) {
+  for (int i = 0; i < num; i++) {
+    dout[i] = dinx[i] - diny[i];
+  }
+}
+
+template <>
 void elementwise_sub<float>(const float* dinx,
                             const float* diny,
                             float* dout,
@@ -627,6 +637,29 @@ void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
           MergeConfig<SubConfig<int32_t>,
                       ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
           dinx_ptr, diny_ptr, dout_ptr, num);
+    }
+  }
+}
+
+template <>
+void elementwise_sub_broadcast<int64_t>(const int64_t* dinx,
+                                        const int64_t* diny,
+                                        int64_t* dout,
+                                        int batch,
+                                        int channels,
+                                        int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const int64_t* dinx_ptr = dinx + offset;
+      const int64_t diny_data = diny[j];
+      int64_t* dout_ptr = dout + offset;
+      for (int k = 0; k < num; ++k) {
+        *dout_ptr = *dinx_ptr - diny_data;
+        dout_ptr++;
+        dinx_ptr++;
+      }
     }
   }
 }
