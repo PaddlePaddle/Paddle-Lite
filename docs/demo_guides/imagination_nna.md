@@ -181,17 +181,24 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 - 编译并生成PaddleLite+ImaginationNNA for armv8的部署库
 
-  ```shell
-  For Roc1
-  tiny_publish
-  $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_imagination_nna=ON --imagination_nna_sdk_root=./imagination_nna_sdk
-  full_publish
-  $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_imagination_nna=ON --imagination_nna_sdk_root=./imagination_nna_sdk full_publish
-  ```
+  - For Roc1
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_imagination_nna=ON --imagination_nna_sdk_root=./imagination_nna_sdk
 
-- 将编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
-- 将tiny_publish模式下编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.armlinux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件。
+      将tiny_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
+      ```
+      
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_imagination_nna=ON --imagination_nna_sdk_root=./imagination_nna_sdk full_publish
+
+      将full_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件;
+      ```
+
+  - 将编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nna/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
+
+- 替换头文件后需要重新编译示例程序
 
 ## 其它说明
 
