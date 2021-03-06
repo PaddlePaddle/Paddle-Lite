@@ -63,7 +63,7 @@ void DepthwiseConv2dImageCompute::PrepareForRun() {
       KernelFunctionName(param, metal_context_->use_aggressive_optimization());
 
 #ifdef TARGET_IOS
-    if(@available(iOS 11.0, *) {
+    if(@available(iOS 11.0, *)) {
 #endif
     if (metal_context_->use_mps() || metal_context_->use_aggressive_optimization()) {
       if (input_dims[1] >= 3 && output_buffer_->tensor_dim_[1] >= 3) {
@@ -383,7 +383,7 @@ void DepthwiseConv2dImageComputeHalf::PrepareForRun() {
       KernelFunctionName(param, metal_context_->use_aggressive_optimization());
 
 #ifdef TARGET_IOS
-    if(@available(iOS 11.0, *) {
+    if(@available(iOS 11.0, *)) {
 #endif
     if (metal_context_->use_mps() || metal_context_->use_aggressive_optimization()) {
       if (input_dims[1] >= 3 && output_buffer_->tensor_dim_[1] >= 3) {

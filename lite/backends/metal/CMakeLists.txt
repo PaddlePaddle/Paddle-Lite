@@ -1,34 +1,33 @@
-if(NOT LITE_WITH_METAL)
+if (NOT LITE_WITH_METAL)
     return()
-endif()
+endif ()
 
-FILE(GLOB LITE_METAL_KERNELS_SRC ${CMAKE_CURRENT_LIST_DIR}/metal_kernel/*.metal
-    ${CMAKE_CURRENT_LIST_DIR}/metal_kernel/buffer/*.metal
-    ${CMAKE_CURRENT_LIST_DIR}/metal_kernel/texture/*.metal
-)
-find_library(METAL_LIBRARY Metal REQUIRED)
-find_library(FOUNDATION_LIBRARY Foundation)
 
-#add_library(METAL_BASE FRAMEWORK IMPORTED)
-#set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
+FILE(GLOB LITE_METAL_KERNELS_SRC ${CMAKE_SOURCE_DIR}/lite/backends/metal/metal_kernel/*.metal
+        ${CMAKE_SOURCE_DIR}/lite/backends/metal/metal_kernel/buffer/*.metal
+        ${CMAKE_SOURCE_DIR}/lite/backends/metal/metal_kernel/texture/*.metal
+        )
 
-#if(NOT Metal_FOUND)
-#    message(FATAL_ERROR "Could not find Metal! ${METAL_LIBRARY}...${METAL_BASE}")
-#endif()
-
-IF(DEFINED SDK_VERSION)
+IF (DEFINED SDK_VERSION)
     #Defined by iOS toolchain
     SET(SDK_NAME "iphoneos")
-    SET(TARGET_OPTION "-target air64-apple-ios${DEPLOYMENT_TARGET}")
-ELSE()
+    SET(TARGET_OPTION "-mios-version-min=${DEPLOYMENT_TARGET}")
+ELSE ()
     SET(SDK_NAME "macosx")
     SET(TARGET_OPTION "")
-ENDIF()
+ENDIF ()
 
+add_custom_target(LiteMetalLIB
+        DEPENDS ${CMAKE_BINARY_DIR}/lite.metallib
+        COMMENT "Generating lite.metallib")
 
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lite.metallib COMMAND xcrun -sdk ${SDK_NAME} metal ${LITE_METAL_KERNELS_SRC} ${TARGET_OPTION} -o ${CMAKE_CURRENT_BINARY_DIR}/lite.metallib
- COMMENT "Built target lite.metallib")
-add_custom_target (LiteMetalLIB DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/lite.metallib COMMENT "Generating lite.metallib")
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/lite.metallib
+        COMMAND xcrun -sdk ${SDK_NAME} metal ${TARGET_OPTION} ${LITE_METAL_KERNELS_SRC} -o ${CMAKE_BINARY_DIR}/lite.metallib
+        DEPENDS ${LITE_METAL_KERNELS_SRC}
+        COMMENT "Built target lite.metallib")
+
+find_library(METAL_LIBRARY Metal REQUIRED)
+find_library(FOUNDATION_LIBRARY Foundation)
 
 add_library(
         metal_target_wrapper
