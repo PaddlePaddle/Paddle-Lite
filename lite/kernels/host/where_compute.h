@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class WhereCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+class WhereCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::WhereParam;
 
