@@ -51,7 +51,6 @@ add_kernel(flatten_contiguous_range_compute_host Host extra SRCS flatten_compute
 add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(box_coder_compute_host Host basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_host)
-add_kernel(gather_compute_host Host extra SRCS gather_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(gather_tree_compute_host Host extra SRCS gather_tree_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(pad3d_compute_host Host extra SRCS pad3d_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(expand_v2_compute_host Host extra SRCS expand_v2_compute.cc DEPS ${lite_kernel_deps})
