@@ -65,15 +65,6 @@ void DepthwiseConv<float>::Run() {
     lite::x86::math::pack4_m128(param.filter, &filter_pack_, pack_num, true);
   }
 
-  // output [bs, oc, oh, ow]
-  CHECK_EQ(param.output->dims().size(), 4UL);
-  int output_height = param.output->dims()[2];
-  int output_width = param.output->dims()[3];
-  // output_trans [bs, oc/8, oh, ow, 8]
-  // output_trans [bs, oc/4, oh, ow, 4]
-  output_pack_.Resize(
-      {batch_size, pack_num, output_height, output_width, pack_size});
-
   // attributes
   const int stride_h = param.strides[0];
   const int stride_w = param.strides[1];
@@ -85,8 +76,21 @@ void DepthwiseConv<float>::Run() {
   bool has_act = act_param.has_active;
   auto act_type = act_param.active_type;
 
+  // output [bs, oc, oh, ow]
+  CHECK_EQ(param.output->dims().size(), 4UL);
+  const int in_h = input_padding_.dims()[2], in_w = input_padding_.dims()[3];
+  const int kernel_extend_h = dilation_h * (kernel_h - 1) + 1;
+  const int kernel_extend_w = dilation_w * (kernel_w - 1) + 1;
+  int output_height = (in_h - kernel_extend_h) / stride_h + 1;
+  int output_width = (in_w - kernel_extend_w) / stride_w + 1;
+  // output_trans [bs, oc/8, oh, ow, 8]
+  // output_trans [bs, oc/4, oh, ow, 4]
+  output_pack_.Resize(
+      {batch_size, pack_num, output_height, output_width, pack_size});
+
   if (pack_size == 8) {
-    if (kernel_h == 3 && kernel_w == 3 && stride_h == 1 && stride_w == 1) {
+    if (kernel_h == 3 && kernel_w == 3 && stride_h == 1 && stride_w == 1 &&
+        dilation_h == 1 && dilation_w == 1) {
       lite::x86::math::conv_depthwise_3x3s1_m256(&input_padding_,
                                                  &output_pack_,
                                                  &filter_pack_,
@@ -97,7 +101,7 @@ void DepthwiseConv<float>::Run() {
       kernel_func_name_ = "conv_depthwise_3x3s1_m256";
 #endif
     } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
-               stride_w == 2) {
+               stride_w == 2 && dilation_h == 1 && dilation_w == 1) {
       lite::x86::math::conv_depthwise_3x3s2_m256(&input_padding_,
                                                  &output_pack_,
                                                  &filter_pack_,
@@ -112,6 +116,10 @@ void DepthwiseConv<float>::Run() {
                                            &output_pack_,
                                            &filter_pack_,
                                            param.bias,
+                                           stride_h,
+                                           stride_w,
+                                           dilation_h,
+                                           dilation_w,
                                            has_act,
                                            act_type);
 #ifdef LITE_WITH_PROFILE
