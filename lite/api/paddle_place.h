@@ -129,7 +129,8 @@ enum class ActivationType : int {
   kLog = 15,
   kSigmoid_v2 = 16,
   kTanh_v2 = 17,
-  NUM = 18,
+  kGelu = 18,
+  NUM = 19,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {

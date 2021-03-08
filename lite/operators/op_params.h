@@ -412,6 +412,8 @@ struct ActivationParam : ParamBase {
   float Elu_alpha{1.0f};
   // relu6
   float threshold{6.0f};
+  // gelu
+  bool gelu_approximate{false};
 
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
