@@ -12,33 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/reshape_fuse_pass.h"
+#pragma once
+
 #include <memory>
-#include <vector>
-#include "lite/core/mir/fusion/reshape_fuser.h"
-#include "lite/core/mir/pass_registry.h"
+#include <string>
+#include "lite/core/mir/pattern_matcher_high_api.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
+namespace fusion {
 
-void ReshapeFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::vector<std::string> reshape_type_cases{
-      "reshape", "reshape2", "squeeze", "squeeze2", "unsqueeze", "unsqueeze2"};
-  for (auto type_ : reshape_type_cases) {
-    fusion::ReshapeFuser reshape_fuser(type_);
-    reshape_fuser(graph.get());
-  }
+class InplaceFuser : public FuseBase {
+ public:
+  explicit InplaceFuser(const std::string& type) : type_(type) {}
 
-  for (auto type_ : reshape_type_cases) {
-    fusion::Reshape2OutFuser reshape2Out_fuser(type_);
-    reshape2Out_fuser(graph.get());
-  }
-}
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
+ private:
+  std::string type_;
+};
+
+class Inplace2OutFuser : public FuseBase {
+ public:
+  explicit Inplace2OutFuser(const std::string& type) : type_(type) {}
+
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  std::string type_;
+};
+}  // namespace fusion
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(lite_reshape_fuse_pass, paddle::lite::mir::ReshapeFusePass)
-    .BindTargets({TARGET(kAny)});
