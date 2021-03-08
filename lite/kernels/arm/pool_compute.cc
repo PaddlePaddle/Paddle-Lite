@@ -367,22 +367,22 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 0 &&
              pads_equal && kps_equal) {
     if (pooling_type == "max") {
-      lite::arm::math::fp16::pooling3x3s2p0_max(
+      lite::arm::math::fp16::pooling3x3s2p0_max_fp16(
           POOL_IN_PARAM, paddings[1], paddings[3]);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::fp16::pooling3x3s2p0_avg(
+      lite::arm::math::fp16::pooling3x3s2p0_avg_fp16(
           POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
       return;
     }
   } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 1 &&
              pads_equal && kps_equal) {
     if (pooling_type == "max") {
-      lite::arm::math::fp16::pooling3x3s2p1_max(
+      lite::arm::math::fp16::pooling3x3s2p1_max_fp16(
           POOL_IN_PARAM, paddings[1], paddings[3]);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::fp16::pooling3x3s2p1_avg(
+      lite::arm::math::fp16::pooling3x3s2p1_avg_fp16(
           POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
       return;
     }
