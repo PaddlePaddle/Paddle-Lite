@@ -137,6 +137,7 @@ TEST(TRANSFORMER_FP32_MODEL, test_transformer_nlp2_fp32_arm) {
 
   float acc = static_cast<float>(right_num) / sample_nums;
   LOG(INFO) << "accuracy:" << acc;
+
   ASSERT_GE(acc, 1.0);
 }
 
