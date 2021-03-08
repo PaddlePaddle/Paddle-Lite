@@ -23,7 +23,8 @@ namespace lite {
 namespace mir {
 
 void ReshapeFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::vector<std::string> reshape_type_cases{"reshape", "reshape2"};
+  std::vector<std::string> reshape_type_cases{
+      "reshape", "reshape2", "squeeze", "squeeze2", "unsqueeze", "unsqueeze2"};
   for (auto type_ : reshape_type_cases) {
     fusion::ReshapeFuser reshape_fuser(type_);
     reshape_fuser(graph.get());
