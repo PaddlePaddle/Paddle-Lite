@@ -50,6 +50,17 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   int pad_w1 = pad[3];
   int oc_pad = (oc + 3) / 4 * 4;
   int ic_pad = (ic + 3) / 4 * 4;
+
+  // select best wino_unit
+  int wino_unit = ow * oh / (tile_block * threads);
+  if (wino_unit < 16) {
+    wino_iw = 4;
+  } else if (wino_unit < 36) {
+    wino_iw = 6;
+  } else {
+    wino_iw = 8;
+  }
+
   const int new_input_size =
       (ic + 3) / 4 * 4 * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1);
   const int temp_size =
@@ -57,29 +68,11 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
        8 * wino_iw * wino_iw) *
       threads;
   workspace_size_ = (temp_size + new_input_size) * sizeof(float);
-
-  // select best wino_unit
-  int wino_unit = ow * oh / (tile_block * threads);
-  if (wino_unit < 16) {
-    wino_iw = 4;
-    if (last_function_ == 0) {
-      return;
-    }
-    last_function_ = 0;
-  } else if (wino_unit < 36) {
-    wino_iw = 6;
-    if (last_function_ == 1) {
-      return;
-    }
-    last_function_ = 1;
+  if (wino_iw != last_wino_iw_) {
+    last_wino_iw_ = wino_iw;
   } else {
-    wino_iw = 8;
-    if (last_function_ == 2) {
-      return;
-    }
-    last_function_ = 2;
+    return;
   }
-  last_function_ = -1;
 
   //! update trans weights impl
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
@@ -288,6 +281,22 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
   int pad_w1 = pad[3];
   int oc_pad = (oc + 7) / 8 * 8;
   int ic_pad = (ic + 7) / 8 * 8;
+
+  //! update trans weights impl
+  // choose_small_ = ow * oh / (tile_block * threads) < 36 ? true : false;
+  // select best wino_unit
+  int wino_unit = ow * oh / (tile_block * threads);
+  if (wino_unit < 16) {
+    wino_iw = 4;
+    for (auto& ws : w_scale_) {
+      ws *= 0.25f;
+    }
+  } else {
+    wino_iw = 6;
+    for (auto& ws : w_scale_) {
+      ws /= 576;
+    }
+  }
   const int new_input_size =
       ic_pad * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1) +
       oc_pad * oh * ow * sizeof(int32_t);
@@ -306,30 +315,11 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
                         tmp_remain_trans_out_size_byte;
   workspace_size_ = (temp_size + new_input_size) * 2;
 
-  //! update trans weights impl
-  // choose_small_ = ow * oh / (tile_block * threads) < 36 ? true : false;
-  // select best wino_unit
-  int wino_unit = ow * oh / (tile_block * threads);
-  if (wino_unit < 16) {
-    wino_iw = 4;
-    if (last_function_ == 0) {
-      return;
-    }
-    last_function_ = 0;
-    for (auto& ws : w_scale_) {
-      ws *= 0.25f;
-    }
+  if (wino_iw != last_wino_iw_) {
+    last_wino_iw_ = wino_iw;
   } else {
-    wino_iw = 6;
-    if (last_function_ == 1) {
-      return;
-    }
-    last_function_ = 1;
-    for (auto& ws : w_scale_) {
-      ws /= 576;
-    }
+    return;
   }
-  last_function_ = -1;
 
   weights_.Resize({1, 1, 1, wino_iw * wino_iw * oc_pad * ic_pad});
   void* trans_tmp_ptr = malloc(sizeof(int32_t) * wino_iw * wino_iw * oc * ic);
