@@ -2286,6 +2286,11 @@ struct CumsumParam : ParamBase {
   bool reverse{false};
 };
 
+struct PolygonBoxTransformParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
 struct SumParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
