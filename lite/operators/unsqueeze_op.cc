@@ -117,6 +117,9 @@ bool UnsqueezeOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   }
   CHECK(param_.X) << "Input(X) of UnsqueezeOp should not be null.";
   CHECK(param_.Out) << "Output(Out) of UnsqueezeOp should not be null.";
+  if (opdesc.HasAttr("inplace")) {
+    param_.inplace = opdesc.GetAttr<bool>("inplace");
+  }
   return true;
 }
 
