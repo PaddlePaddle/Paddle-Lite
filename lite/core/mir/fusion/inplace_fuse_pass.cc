@@ -12,21 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
+#include "lite/core/mir/fusion/inplace_fuse_pass.h"
 #include <memory>
-#include <string>
-#include "lite/core/mir/pass.h"
+#include <vector>
+#include "lite/core/mir/fusion/inplace_fuser.h"
+#include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-class ReshapeFusePass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-};
+void InplaceFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  std::vector<std::string> inplace_type_cases{
+      "reshape", "reshape2", "squeeze", "squeeze2", "unsqueeze", "unsqueeze2"};
+  for (auto type_ : inplace_type_cases) {
+    fusion::InplaceFuser inplace_fuser(type_);
+    inplace_fuser(graph.get());
+  }
+
+  for (auto type_ : inplace_type_cases) {
+    fusion::Inplace2OutFuser inplace2Out_fuser(type_);
+    inplace2Out_fuser(graph.get());
+  }
+}
 
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_MIR_PASS(lite_inplace_fuse_pass, paddle::lite::mir::InplaceFusePass)
+    .BindTargets({TARGET(kAny)});

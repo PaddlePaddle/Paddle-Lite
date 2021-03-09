@@ -189,7 +189,7 @@ class Optimizer {
 
          "runtime_context_assign_pass",
          "argument_type_display_pass",
-         "lite_reshape_fuse_pass",
+         "lite_inplace_fuse_pass",
 #if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
          "memory_optimize_pass"
 #endif
