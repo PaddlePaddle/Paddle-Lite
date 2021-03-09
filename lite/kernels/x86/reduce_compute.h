@@ -38,6 +38,13 @@ struct MeanFunctor {
   }
 };
 
+struct MaxFunctor {
+  template <typename X, typename Y, typename Dim>
+  void operator()(X* x, Y* y, const Dim& dim) {
+    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->maximum(dim);
+  }
+};
+
 #define HANDLE_DIM(NDIM, RDIM, FUNCTOR)                                \
   if (ndim == NDIM && rdim == RDIM) {                                  \
     paddle::lite::kernels::x86::                                       \
@@ -118,6 +125,44 @@ class ReduceMeanCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   }
 
   virtual ~ReduceMeanCompute() = default;
+};
+
+template <typename T>
+class ReduceMaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ReduceParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ReduceParam>();
+    auto* input = param.X;
+    auto* Out = param.Out;
+    param.Out->template mutable_data<T>();
+
+    const auto& dims = param.dim;
+    bool keep_dim = param.keep_dim;
+
+    if (dims.size() == 0) {
+      // Flatten and reduce 1-D tensor
+      auto x = lite::fluid::EigenVector<T>::Flatten(*input);
+      auto out = lite::fluid::EigenScalar<T>::From(Out);
+      auto reduce_dim = Eigen::array<int, 1>({{0}});
+      MaxFunctor functor;
+      functor(&x, &out, reduce_dim);
+    } else {
+      int ndim = input->dims().size();
+      int rdim = dims.size();
+      HANDLE_DIM(4, 3, MaxFunctor);
+      HANDLE_DIM(4, 2, MaxFunctor);
+      HANDLE_DIM(4, 1, MaxFunctor);
+      HANDLE_DIM(3, 2, MaxFunctor);
+      HANDLE_DIM(3, 1, MaxFunctor);
+      HANDLE_DIM(2, 2, MaxFunctor);
+      HANDLE_DIM(2, 1, MaxFunctor);
+      HANDLE_DIM(1, 1, MaxFunctor);
+    }
+  }
+
+  virtual ~ReduceMaxCompute() = default;
 };
 
 }  // namespace x86
