@@ -1120,7 +1120,8 @@ function test_arm_android {
                  "test_squeezenet_fp32_arm" "test_mobilenet_v1_int8_arm" \
                  "test_mobilenet_v2_int8_arm" "test_resnet50_int8_arm" \
                  "test_mobilenet_v1_int8_dygraph_arm" "test_ocr_lstm_int8_arm" \
-                 "test_lac_crf_fp32_arm" "test_nlp_lstm_int8_arm")
+                 "test_lac_crf_fp32_arm" "test_nlp_lstm_int8_arm" \
+                 "test_transformer_nlp2_fp32_arm")
     for skip_name in ${skip_list[@]} ; do
         [[ $skip_name =~ (^|[[:space:]])$test_name($|[[:space:]]) ]] && echo "skip $test_name" && return
     done

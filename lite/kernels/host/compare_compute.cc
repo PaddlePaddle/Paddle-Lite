@@ -182,9 +182,9 @@ REGISTER_LITE_KERNEL(not_equal, kHost, kFloat, kAny, not_equal_float, def)
     .Finalize();
 
 using not_equal_int32 = paddle::lite::kernels::host::CompareCompute<
-    PRECISION(kInt32),
+    PRECISION(kFloat),
     paddle::lite::kernels::host::_NotEqualFunctor<int32_t>>;
-REGISTER_LITE_KERNEL(not_equal, kHost, kInt32, kAny, not_equal_int32, def)
+REGISTER_LITE_KERNEL(not_equal, kHost, kFloat, kAny, not_equal_int32, int32)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
@@ -198,9 +198,9 @@ REGISTER_LITE_KERNEL(not_equal, kHost, kInt32, kAny, not_equal_int32, def)
     .Finalize();
 
 using not_equal_int64 = paddle::lite::kernels::host::CompareCompute<
-    PRECISION(kInt64),
+    PRECISION(kFloat),
     paddle::lite::kernels::host::_NotEqualFunctor<int64_t>>;
-REGISTER_LITE_KERNEL(not_equal, kHost, kInt64, kAny, not_equal_int64, def)
+REGISTER_LITE_KERNEL(not_equal, kHost, kFloat, kAny, not_equal_int64, int64)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
