@@ -48,6 +48,13 @@ void MetalContext::PrepareDevices() {
   }
 
   best_metal_device_ = devices_[0].get();
+  got_devices_ = true;
+  if(mtl_devices != nil){
+      [mtl_devices release];
+      mtl_devices = nil;
+  }
+
+  std::cout << "haha5" << std::endl;
 }
 
 int MetalContext::GetDevicesNum() {
@@ -77,7 +84,6 @@ void MetalContext::CreateCommandBuffer(RuntimeProgram* program ) {
   auto device = GetDefaultDevice();
   auto queue = device->GetDefaultQueue();
 
-  // TODO: (lzy) check memory leak
   program_ = program;
   cmd_buf_ = queue->CreateCommandBuffer(program);
 }
@@ -138,8 +144,8 @@ std::shared_ptr<MetalKernel> MetalContext::GetKernel(
   }
 
   MetalKernelProgram program;
-  const auto func_name = [NSString stringWithUTF8String:function_name.c_str()];
-  program.function_ = [library newFunctionWithName:func_name];
+
+  program.function_ = [library newFunctionWithName:[NSString stringWithUTF8String:function_name.c_str()]];
   if (!program.function_) {
     auto err_str = error != nullptr ? [[error localizedDescription] UTF8String]
                                     : "unknown error";
@@ -147,10 +153,11 @@ std::shared_ptr<MetalKernel> MetalContext::GetKernel(
                << "from library error: " << err_str << "\n";
     return std::shared_ptr<MetalKernel>{};
   }
-
+  [program.function_ autorelease];
   program.pipeline_state_ =
       [device.device() newComputePipelineStateWithFunction:program.function_
                                                      error:&error];
+
   if (!program.pipeline_state_) {
     auto err_str = error != nullptr ? [[error localizedDescription] UTF8String]
                                     : "unknown error";
@@ -158,8 +165,15 @@ std::shared_ptr<MetalKernel> MetalContext::GetKernel(
                << err_str << "\n";
     return std::shared_ptr<MetalKernel>{};
   }
+  [program.pipeline_state_ autorelease];
 
-  auto ret = std::make_shared<MetalKernel>(program);
+  if (nil != library){
+    [library release];
+    library = nil;
+  }
+
+  auto ret = std::make_shared<MetalKernel>(std::move(program));
+
   return ret;
 }
 

@@ -31,22 +31,22 @@ namespace lite {
 class MetalQueue;
 class MetalEncoder;
 
-#if defined(__OBJC__)
 struct MetalKernelProgram {
+#if defined(__OBJC__)
   id<MTLFunction> function_{nil};
   id<MTLComputePipelineState> pipeline_state_{nil};
-};
 #else
-struct MetalKernelProgram {
   void* function_{nullptr};
   void* pipeline_state_{nullptr};
-};
 #endif
+
+  virtual ~MetalKernelProgram();
+};
 
 class MetalKernel {
  public:
   MetalKernelProgram program_;
-  explicit MetalKernel(const MetalKernelProgram kernel);
+  explicit MetalKernel(const MetalKernelProgram& kernel);
   ~MetalKernel() = default;
 
  public:

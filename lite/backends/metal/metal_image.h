@@ -65,17 +65,17 @@ class MetalImage {
 
  private:
   void UpdateDims(const DDim& in_tensor_dim);
-  void InitTexture(std::vector<int> in_transpose);
+  void InitTexture();
   const METAL_PRECISION_TYPE precision_type_;
   const METAL_ACCESS_FLAG flag_;
 
+  const MetalDevice* device_;
+
 #if defined(__OBJC__)
   id<MTLTexture> image_{nil};
-  id<MTLDevice> device_{nil};
   MTLTextureDescriptor* desc_{nil};
 #else
   void* image_{nullptr};
-  void* device_{nullptr};
   void* desc_{nullptr};
 #endif
 };

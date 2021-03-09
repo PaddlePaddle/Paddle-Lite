@@ -231,9 +231,16 @@ class IoCopykMetalTextureToHostHalf
     : public KernelLite<TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)> {
  public:
   void Run() override {
+    auto& context = ctx_->As<ContextMetal>();
+    metal_context_ = (MetalContext*)context.context();
+    auto device = metal_context_->GetDefaultDevice();
+    [metal_context_->cmd_buf_->metal_command_buffer_ commit];
+    [metal_context_->cmd_buf_->metal_command_buffer_ waitUntilCompleted];
+    metal_context_->cmd_buf_->have_command_ = false;
     auto& param = this->Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kMetal));
     auto src = param.x->template data<float, MetalImage>();
+
 
     auto mem_size = param.x->dims().production() * sizeof(float);
     auto data = param.y->template mutable_data<float>(TARGET(kHost), mem_size);
@@ -241,7 +248,7 @@ class IoCopykMetalTextureToHostHalf
   }
 
   std::string doc() const override { return "Copy IO from kMetal to HOST"; }
-
+    MetalContext* metal_context_;
   float d2h_duration_{0};
 };
 

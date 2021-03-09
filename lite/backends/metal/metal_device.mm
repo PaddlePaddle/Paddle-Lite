@@ -41,6 +41,19 @@ std::shared_ptr<MetalQueue> MetalDevice::GetDefaultQueue() const {
   }
 }
 
+MetalDevice::~MetalDevice(){
+    if (device_ != nil){
+        [device_ release];
+        device_ = nil;
+    }
+
+    for(auto item : queues_) {
+      [item->queue() release];
+      queues_.pop_back();
+    }
+    queues_.clear();
+}
+
 id<MTLDevice> MetalDevice::device() const { return device_; }
 void MetalDevice::set_device(id<MTLDevice> device) { device_ = device; }
 void MetalDevice::set_context(MetalContext *context) { context_ = context; }

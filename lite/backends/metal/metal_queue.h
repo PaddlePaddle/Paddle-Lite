@@ -38,6 +38,8 @@ struct MetalCommandBuffer {
   void* metal_command_buffer_{nullptr};
 #endif
   bool have_command_{false};
+
+  virtual ~MetalCommandBuffer();
 };
 
 struct MetalEncoder {
@@ -62,13 +64,19 @@ class MetalQueue {
   std::unique_ptr<MetalCommandBuffer> CreateCommandBuffer(
       RuntimeProgram* program);
 
+#if defined(__OBJC__)
+  id<MTLCommandQueue> queue() { return queue_; }
+#else
+  void* queue() { return queue_; }
+#endif
+
  private:
 #if defined(__OBJC__)
   mutable std::vector<id<MTLCommandBuffer>> command_buffers_;
-  id<MTLCommandQueue> metal_queue_;
+  id<MTLCommandQueue> queue_;
 #else
   mutable std::vector<void*> command_buffers_;
-  void* metal_queue_;
+  void* queue_;
 #endif
   MetalDevice* mtl_device_;
 };

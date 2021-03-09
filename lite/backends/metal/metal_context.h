@@ -72,8 +72,6 @@ class MetalContext {
   MetalDevice* best_metal_device_{nullptr};
   mutable std::vector<std::shared_ptr<MetalDevice>> devices_ = {};
 
-  //  std::unique_ptr<MetalCommandBuffer> cmd_buf(){ return
-  //  std::move(cmd_buf_);}
   std::unique_ptr<MetalCommandBuffer> cmd_buf_;
 
  private:

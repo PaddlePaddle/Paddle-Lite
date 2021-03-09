@@ -367,14 +367,16 @@ void DepthwiseConv2dImageComputeHalf::PrepareForRun() {
     }
   }
 
-  MetalHalf* blank_host =
-      (MetalHalf*)malloc(sizeof(MetalHalf) * output_dims[1]);
-  memset(blank_host, 0, sizeof(MetalHalf) * output_dims[1]);
+  float* blank_host =
+      (float*)malloc(sizeof(float) * output_dims[1]);
+  memset(blank_host, 0, sizeof(float) * output_dims[1]);
 
   DDim blank_dim = DDimLite({output_dims[1]});
   blank_tensor_.Resize(blank_dim);
-  blank_tensor_.mutable_data<MetalHalf, MetalImage>(
-      blank_dim, {0, 1, 2, 3}, (void*)blank_host);
+  auto p = blank_tensor_.mutable_data<MetalHalf, MetalImage>(
+      blank_dim );
+  p->CopyFromNCHW<float>(blank_host);
+
   free(blank_host);
   blank_host = nullptr;
 

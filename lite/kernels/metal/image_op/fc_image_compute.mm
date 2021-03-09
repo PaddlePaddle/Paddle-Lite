@@ -163,10 +163,11 @@ void FCImageComputeHalf::Run() {
   MetalUint output_width = output_buffer_->image().width;
   MetalUint output_height = output_buffer_->image().height;
   MetalUint output_array_length = output_buffer_->image().arrayLength;
-  auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
+
   MetalUint3 global_work_size = {output_width, output_height, output_array_length};
   if (insert_shape) {
     reshape_.Run();
+    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     auto shape_buffer = shape_out_dev_.data<float, MetalImage>();
     [encoder->metal_command_encoder_ setTexture:(shape_buffer->image()) atIndex:(0)];
     [encoder->metal_command_encoder_ setTexture:(weight_buffer_->image()) atIndex:(1)];
@@ -175,6 +176,7 @@ void FCImageComputeHalf::Run() {
 
     kernel_->Execute(*encoder, global_work_size, false);
   } else {
+    auto encoder = std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
     [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
     [encoder->metal_command_encoder_ setTexture:(weight_buffer_->image()) atIndex:(1)];
     [encoder->metal_command_encoder_ setTexture:(bias_buffer_->image()) atIndex:(2)];

@@ -50,7 +50,6 @@ template <>
 void* TargetWrapperMetal::MallocImage<MetalHalf>(const DDim dim,
                                                   std::vector<int> transpose,
                                                   void* host_ptr) {
-  void* ptr{};
   auto device = ctx_.GetDefaultDevice();
   auto image = new MetalImage(*device, dim, transpose, METAL_PRECISION_TYPE::HALF);
   if (host_ptr) image->CopyFromNCHW<MetalHalf>((MetalHalf*)host_ptr);

@@ -39,7 +39,7 @@ MetalImage::MetalImage(const MetalDevice &device,
                        const METAL_PRECISION_TYPE precision_type,
                        const METAL_ACCESS_FLAG flag)
     : precision_type_(precision_type), flag_(flag) {
-  device_ = device.device();
+  device_ = &device;
   auto four_dim = FourDimFrom(in_dim);
 
   tensor_dim_ = in_dim;
@@ -53,9 +53,8 @@ MetalImage::MetalImage(const MetalDevice &device,
   }
 
   UpdateDims(in_dim);
-  InitTexture(transpose_);
+  InitTexture();
 
-  image_ = [device_ newTextureWithDescriptor:desc_];
   // TODO:(lzy) Do we need clear the buffer here
 }
 
@@ -71,8 +70,8 @@ void MetalImage::UpdateDims(const DDim &in_tensor_dim) {
   dim_ = DDimLite(new_dim);
 }
 
-void MetalImage::InitTexture(std::vector<int> in_transpose) {
-  transpose_ = std::move(in_transpose);
+void MetalImage::InitTexture() {
+
   std::vector<DDim::value_type> new_dim = {};
   for_each(transpose_.begin(), transpose_.end(), [&](int i) -> void {
     new_dim.emplace_back(pad_to_four_dim_[i]);
@@ -138,8 +137,11 @@ void MetalImage::InitTexture(std::vector<int> in_transpose) {
   }
 
   desc_.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
-  desc_.storageMode = MTLStorageModeShared;
-  image_ = nil;
+//  desc_.storageMode = MTLStorageModeShared;
+
+  image_ = [device_->device() newTextureWithDescriptor:desc_];
+  [desc_ release];
+  desc_ = nil;
 }
 
 DDim MetalImage::FourDimFrom(DDim in_dim) {
@@ -337,32 +339,33 @@ void MetalImage::CopyFromNCHW(const SP *src) {
         }
       }
     } else if (tensor_dim_.size() == 3) {
-      for (int i0 = 0; i0 < C; ++i0) {
-        for (int i1 = 0; i1 < H; ++i1) {
-          for (int i2 = 0; i2 < W; ++i2) {
-            auto ix = (i0 * W * H) + (i1 * W) + i2;
-            auto jx = ((i0 / 4) * texture_width_ * 4 * H) + (i1 * texture_width_ * 4) + i2;
-            nvalue[jx] = src[ix];
-          }
-        }
-      }
-    } else {
-      for (int i0 = 0; i0 < N; ++i0) {
-        for (int i1 = 0; i1 < C; ++i1) {
-          for (int i2 = 0; i2 < H; ++i2) {
-            for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {i0, i1, i2, i3};
-              auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
-              std::vector<int> jg = {
-                  ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
-              auto k = jg[1];
-              auto jx =
-                  ((k / 4) * dim_[2] * dim_[3] * 4) + (jg[1] * dim_[3] * 4) + (jg[3] * 4) + (k % 4);
-              nvalue[jx] = src[ix];
+        for (int i0 = 0; i0 < N; ++i0) {
+            for (int i1 = 0; i1 < C; ++i1) {
+                for (int i2 = 0; i2 < H; ++i2) {
+                    for (int i3 = 0; i3 < W; ++i3) {
+                        std::vector<int> ig = {i0, i1, i2, i3};
+                        auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
+                        std::vector<int> jg = {
+                                ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
+                        auto k = jg[1];
+                        auto jx =
+                                ((k / 4) * dim_[2] * dim_[3] * 4) + (jg[1] * dim_[3] * 4) + (jg[3] * 4) + (k % 4);
+                        nvalue[jx] = src[ix];
+                    }
+                }
             }
-          }
         }
-      }
+
+    } else {
+        for (int i0 = 0; i0 < C; ++i0) {
+            for (int i1 = 0; i1 < H; ++i1) {
+                for (int i2 = 0; i2 < W; ++i2) {
+                    auto ix = (i0 * W * H) + (i1 * W) + i2;
+                    auto jx = ((i0 / 4) * texture_width_ * 4 * H) + (i1 * texture_width_ * 4) + i2;
+                    nvalue[jx] = src[ix];
+                }
+            }
+        }
     }
 
     auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
@@ -547,7 +550,7 @@ void MetalImage::CopyToNCHW(P *dst) const {
         for (int i1 = 0; i1 < C; ++i1) {
           for (int i2 = 0; i2 < H; ++i2) {
             for (int i3 = 0; i3 < W; ++i3) {
-              std::vector<int> ig = {i0, i1, i2, i3};
+              std::vector<int> ig = {ig };
               auto ix = (i0 * C * H * W) + (i1 * H * W) + (i2 * W) + i3;
               std::vector<int> jg = {
                   ig[transpose_[0]], ig[transpose_[1]], ig[transpose_[2]], ig[transpose_[3]]};
@@ -634,12 +637,12 @@ void MetalImage::CopyToNCHW(P *dst) const {
 }
 
 MetalImage::~MetalImage() {
-  image_ = nil;
-  device_ = nil;
-  if (desc_ != nil) {
-    [desc_ release];
-    desc_ = nil;
+  if ( nil != image_){
+    [image_ release];
+    image_ = nil;
   }
+
+  device_ = nullptr;
 }
 
 template void MetalImage::CopyFromNCHW(const float *src);

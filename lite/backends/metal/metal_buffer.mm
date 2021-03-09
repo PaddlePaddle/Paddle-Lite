@@ -480,9 +480,15 @@ void MetalBuffer::Convert() {
 id<MTLBuffer> MetalBuffer::buffer() const { return buffer_; }
 
 MetalBuffer::~MetalBuffer() {
-  buffer_ = nil;
-  if (data_) free(data_);
-  data_ = nullptr;
+  if(buffer_ != nil){
+    [buffer_ release];
+    buffer_ = nil;
+  }
+
+  if (data_) {
+    free(data_);
+    data_ = nullptr;
+  }
 }
 
 void MetalBuffer::Read(void *data, size_t size, size_t offset) const {

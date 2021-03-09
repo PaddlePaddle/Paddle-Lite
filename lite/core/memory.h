@@ -143,6 +143,9 @@ class Buffer {
 #ifdef LITE_WITH_OPENCL
       cl_use_image2d_ = false;
 #endif
+#ifdef LITE_WITH_METAL
+      metal_use_image2d_ = false;
+#endif
     }
   }
 
@@ -183,6 +186,7 @@ class Buffer {
       data_ = TargetWrapperMetal::MallocImage<T>(dim, transpose, host_ptr);
       target_ = target;
       metal_use_image2d_ = true;
+      space_ = sizeof(T) * dim.production();
       dim_ = dim;
     }
   }
@@ -203,6 +207,7 @@ class Buffer {
           dim, transpose, to_nhwc, pad_when_one_c, host_ptr);
       target_ = target;
       metal_use_image2d_ = false;
+      space_ = sizeof(T) * dim.production();
       dim_ = dim;
       transpose_ = transpose;
       to_nhwc_ = to_nhwc;

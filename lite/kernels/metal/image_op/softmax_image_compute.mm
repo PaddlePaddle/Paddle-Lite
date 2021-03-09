@@ -38,8 +38,6 @@ void SoftmaxImageCompute::PrepareForRun() {
   if (axis < 0) {
     axis += input_dims.size();
   }
-  // TODO: (lzy) add other axis
-//  if (axis != 1) throw std::logic_error("ERROR, can only support axis = 1");
 
   input_buffer_ = param.x->data<float, MetalImage>();
 
@@ -120,8 +118,12 @@ void SoftmaxImageComputeHalf::PrepareForRun() {
   input_buffer_ = param.x->data<MetalHalf, MetalImage>();
   output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(output_dims);
 
-  SoftmaxMetalParam metal_param{(int)input_dims[0], (int)input_dims[1]};
-
+  //SoftmaxMetalParam metal_param{(int)input_dims[0], (int)input_dims[1]};
+  SoftmaxMetalParam2 metal_param{(int)input_buffer_->pad_to_four_dim_[0],
+                                 (int)input_buffer_->pad_to_four_dim_[1],
+                                 (int)input_buffer_->pad_to_four_dim_[2],
+                                 (int)input_buffer_->pad_to_four_dim_[3],
+  };
   param_buffer_ = metal_context_->CreateBuffer(
       *device, &metal_param, sizeof(metal_param), METAL_ACCESS_FLAG::CPUWriteOnly);
 
