@@ -712,6 +712,10 @@ void conv_depthwise_m256(lite::Tensor* input,
                          lite::Tensor* output,
                          lite::Tensor* filter,
                          lite::Tensor* bias,
+                         const int stride_h,
+                         const int stride_w,
+                         const int dilation_h,
+                         const int dilation_w,
                          const bool has_act,
                          const lite_api::ActivationType act_type) {
   // input [bs, ic/8, ih, iw, 8]
@@ -740,10 +744,6 @@ void conv_depthwise_m256(lite::Tensor* input,
 
   const int filter_kernel_size = kernel_h * kernel_w;
   const int filter_channel_step = kernel_h * kernel_w * 8;
-
-  // to-do(qili93) - support diliaitons not equal to 1
-  const int dilation_h = 1;
-  const int dilation_w = 1;
 
   // kernel offsets
   std::vector<int> _space_ofs(filter_kernel_size);
