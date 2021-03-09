@@ -1441,6 +1441,7 @@ struct SqueezeParam : ParamBase {
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
   std::vector<int> axes{};
+  bool inplace{false};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1465,6 +1466,7 @@ struct UnsqueezeParam : ParamBase {
   std::vector<int> axes{};
   const lite::Tensor* axes_tensor{};
   std::vector<const lite::Tensor*> axes_tensor_vct{};
+  bool inplace{false};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {

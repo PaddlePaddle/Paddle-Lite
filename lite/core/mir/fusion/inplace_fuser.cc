@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/fusion/reshape_fuser.h"
+#include "lite/core/mir/fusion/inplace_fuser.h"
 #include <memory>
 #include <vector>
 
@@ -21,35 +21,35 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-void ReshapeFuser::BuildPattern() {
+void InplaceFuser::BuildPattern() {
   auto* x = VarNode("x");
-  auto* reshape = OpNode("reshape", type_);
-  auto* reshape_out = VarNode("Out");
+  auto* inplace = OpNode("inplace", type_);
+  auto* inplace_out = VarNode("Out");
   auto* out1 = OpNode("out1");
 
-  *x >> *reshape >> *reshape_out >> *out1;
+  *x >> *inplace >> *inplace_out >> *out1;
 }
 
-void ReshapeFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
-  auto op_desc = const_cast<OpInfo*>(matched.at("reshape")->stmt()->op_info());
+void InplaceFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
+  auto op_desc = const_cast<OpInfo*>(matched.at("inplace")->stmt()->op_info());
   op_desc->SetAttr<bool>("inplace", true);
 }
 
-void Reshape2OutFuser::BuildPattern() {
+void Inplace2OutFuser::BuildPattern() {
   auto* x = VarNode("x");
-  auto* reshape =
-      OpNode("reshape", type_)->assert_op_attr<bool>("inplace", true);
-  auto* reshape_out = VarNode("Out");
+  auto* inplace =
+      OpNode("inplace", type_)->assert_op_attr<bool>("inplace", true);
+  auto* inplace_out = VarNode("Out");
   auto* out1 = OpNode("out1");
   auto* out2 = OpNode("out2");
 
-  *x >> *reshape >> *reshape_out >> *out1;
-  *reshape_out >> *out2;
+  *x >> *inplace >> *inplace_out >> *out1;
+  *inplace_out >> *out2;
 }
 
-void Reshape2OutFuser::InsertNewNode(SSAGraph* graph,
+void Inplace2OutFuser::InsertNewNode(SSAGraph* graph,
                                      const key2nodes_t& matched) {
-  auto op_desc = const_cast<OpInfo*>(matched.at("reshape")->stmt()->op_info());
+  auto op_desc = const_cast<OpInfo*>(matched.at("inplace")->stmt()->op_info());
   op_desc->SetAttr<bool>("inplace", false);
 }
 
