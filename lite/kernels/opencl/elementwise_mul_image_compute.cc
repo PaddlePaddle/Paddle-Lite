@@ -151,6 +151,7 @@ class ElementwiseMulImageCompute
       if (bias_dim_size == 1) {
         // kernel_func_name_ = "channel_mul_d1";
         const int tensor_w = x_dims[x_dims.size() - 1];
+        const int opt = bias_dims[0] == 1;
         cl_int status = kernel.setArg(0, *x_img);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(1, *y_img);
@@ -158,6 +159,8 @@ class ElementwiseMulImageCompute
         status = kernel.setArg(2, *out_img);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(3, tensor_w);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(4, opt);
         CL_CHECK_FATAL(status);
       } else if (bias_dim_size == 2) {
         // kernel_func_name_ = "channel_mul_d2";
