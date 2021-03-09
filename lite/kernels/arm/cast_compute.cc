@@ -35,6 +35,14 @@ void CastCompute::Run() {
   if (param.X->precision() == PrecisionType::kFloat) {
     param.in_dtype = 5;
   }
+
+#define PROCESS_CAST(in_type, out_type)                        \
+  const in_type* x_data_begin = param.X->data<in_type>();      \
+  const in_type* x_data_end = x_data_begin + param.X->numel(); \
+  out_type* out_data = param.Out->mutable_data<out_type>();    \
+  std::transform(                                              \
+      x_data_begin, x_data_end, out_data, TransOp<in_type, out_type>);
+
   // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
   // SIZE_T = 19;UINT8 = 20;INT8 = 21;
   if (param.in_dtype == param.out_dtype && param.in_dtype == 5) {
@@ -78,6 +86,8 @@ void CastCompute::Run() {
     const bool* x_data_end = x_data_begin + param.X->numel();
     int32_t* out_data = param.Out->mutable_data<int32_t>();
     std::transform(x_data_begin, x_data_end, out_data, TransOp<bool, int32_t>);
+  } else if (param.in_dtype == 0 && param.out_dtype == 3) {  // bool->int64
+    PROCESS_CAST(bool, int64_t)
   } else if (param.in_dtype == 3 && param.out_dtype == 5) {  // int64->fp32
     const int64_t* x_data_begin = param.X->data<int64_t>();
     const int64_t* x_data_end = x_data_begin + param.X->numel();
@@ -94,6 +104,8 @@ void CastCompute::Run() {
     const float* x_data_end = x_data_begin + param.X->numel();
     int32_t* out_data = param.Out->mutable_data<int32_t>();
     std::transform(x_data_begin, x_data_end, out_data, TransOp<float, int32_t>);
+  } else if (param.in_dtype == 5 && param.out_dtype == 3) {  // float32 -> INT64
+    PROCESS_CAST(float, int64_t)
   } else if (param.in_dtype == 5 &&
              param.out_dtype == 20) {  // float32 -> uint8
     const float* x_data_begin = param.X->data<float>();
@@ -121,6 +133,8 @@ void CastCompute::Run() {
     LOG(FATAL) << "other has not been implemented transform with dtype"
                << param.in_dtype << " X, dtype" << param.out_dtype << " Out";
   }
+
+#undef PROCESS_CAST
 }
 
 }  // namespace arm
