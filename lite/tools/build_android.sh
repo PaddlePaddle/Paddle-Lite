@@ -1,7 +1,6 @@
 #!/bin/bash
-set +x
 set -e
-
+set +x
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
@@ -54,7 +53,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
 # url that stores third-party zip file to accelerate third-paty lib installation
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for android compiling.
@@ -113,13 +112,13 @@ function prepare_opencl_source_code {
 # 3.3 prepare third_party libraries for compiling
 # here we store third_party libraries into Paddle-Lite/third-party
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
             wget $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
     fi
@@ -155,6 +154,7 @@ function set_android_api_level {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
+  # Step1. Create directory for compiling.
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
       build_dir=${build_dir}.opencl
@@ -162,19 +162,18 @@ function make_tiny_publish_so {
   if [ "${WITH_npu}" == "ON" ]; then
       build_dir=${build_dir}.npu
   fi
-
-
-  if [ -d $build_dir ]
-  then
+  if [ -d $build_dir ]; then
       rm -rf $build_dir
   fi
   mkdir -p $build_dir
   cd $build_dir
 
+  # Step2. prepare third-party libs: opencl libs.
   if [ "${WITH_OPENCL}" == "ON" ]; then
       prepare_opencl_source_code $workspace $build_dir
   fi
 
+  # Step3. apply cmake to generate makefiles.
   if [ "${WITH_STRIP}" == "ON" ]; then
       WITH_EXTRA=ON
   fi
@@ -205,11 +204,10 @@ function make_tiny_publish_so {
       ${cmake_mutable_options}  \
       -DLITE_ON_TINY_PUBLISH=ON
 
-  # todo: third_party of opencl should be moved into git submodule and cmake later
+  # Step4. Compile libs: cxx_lib, java_lib, opencl_lib
   if [ "${WITH_OPENCL}" == "ON" ]; then
       make opencl_clhpp -j$NUM_PROC
   fi
-
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
