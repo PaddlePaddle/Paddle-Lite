@@ -217,26 +217,40 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
 - 编译并生成PaddleLite+MediaTekAPU for armv8 and armv7的部署库
 
-  ```shell
-  For armv8
-  tiny_publish
-  $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
-  full_publish
-  $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk full_publish
+  - For armv8
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
 
-  For armv7
-  tiny_publish
-  $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
-  full_publish
-  $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk full_publish
-  ```
+      将tiny_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件；
+      ```
 
-- 将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
-- 将tiny_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_full_api_shared.so文件；
-- 将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/include目录；
-- 将tiny_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_full_api_shared.so文件。
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk full_publish
+
+      将full_publish模式下编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/lib/libpaddle_full_api_shared.so文件；
+      ```
+    
+    将编译生成的build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/arm64-v8a/include目录；
+
+  - For armv7
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk
+
+      将tiny_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_light_api_shared.so文件；
+      ```
+    
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_mediatek_apu=ON --mediatek_apu_sdk_root=./apu_ddk full_publish
+
+      将full_publish模式下编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/lib/libpaddle_full_api_shared.so文件。
+      ```
+    将编译生成的build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.apu/cxx/include替换PaddleLite-android-demo/libs/PaddleLite/armeabi-v7a/include目录；
+
+- 替换头文件后需要重新编译示例程序
 
 ## 其它说明
 
