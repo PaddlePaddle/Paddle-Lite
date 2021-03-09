@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-class ExpandCompute
+class GatherNdCompute
     : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
-  virtual ~ExpandCompute() = default;
+  ~GatherNdCompute() {}
 };
 
 }  // namespace host

@@ -1532,11 +1532,23 @@ struct MatMulParam : ParamBase {
   }
 };
 
+struct GatherNdParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* index{nullptr};
+  lite::Tensor* out{nullptr};
+};
+
 struct GatherParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Index{};
   const lite::Tensor* Axis{nullptr};
   lite::Tensor* Out{};
+};
+
+struct GatherTreeParam : ParamBase {
+  const lite::Tensor* ids{nullptr};
+  const lite::Tensor* parents{nullptr};
+  lite::Tensor* out{nullptr};
 };
 
 /// ----------------------- assign operators -----------------------

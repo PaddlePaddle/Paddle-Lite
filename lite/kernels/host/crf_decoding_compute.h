@@ -69,7 +69,7 @@ void Decode(const Tensor& emission_weights,
 
   T max_score = -(std::numeric_limits<T>::max)();
   int max_i = 0;
-  for (size_t i = 0; i < tag_num; ++i) {
+  for (int64_t i = 0; i < tag_num; ++i) {
     T score = alpha_value[(seq_len - 1) * tag_num + i] + w[tag_num + i];
     if (score > max_score) {
       max_score = score;
