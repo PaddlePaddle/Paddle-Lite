@@ -146,6 +146,7 @@ void DistributeFpnProposalsCompute::Run() {
   if (param.multi_rois_num.size() > 0) {
     int batch_size = fpn_rois_lod.size() - 1;
     for (int i = 0; i < num_level; ++i) {
+      param.multi_rois_num[i]->Resize({batch_size});
       int* rois_num_data = param.multi_rois_num[i]->mutable_data<int>();
       for (int j = 0; j < batch_size; ++j) {
         rois_num_data[j] = static_cast<int>(multi_fpn_rois_lod0[i][j + 1] -
