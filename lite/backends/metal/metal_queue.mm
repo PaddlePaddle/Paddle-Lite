@@ -52,10 +52,6 @@ MetalEncoder::MetalEncoder(MetalCommandBuffer* buffer, MetalKernelProgram* progr
 
 MetalEncoder::~MetalEncoder() {
   metal_command_buffer_ = nil;
-  if (metal_command_encoder_ != nil){
-    [metal_command_encoder_ release];
-    metal_command_encoder_ = nil;
-  }
 }
 
 MetalCommandBuffer::~MetalCommandBuffer() {

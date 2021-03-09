@@ -46,7 +46,7 @@ struct MetalKernelProgram {
 class MetalKernel {
  public:
   MetalKernelProgram program_;
-  explicit MetalKernel(const MetalKernelProgram& kernel);
+  explicit MetalKernel(const MetalKernelProgram kernel);
   ~MetalKernel() = default;
 
  public:

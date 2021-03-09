@@ -42,11 +42,6 @@ std::shared_ptr<MetalQueue> MetalDevice::GetDefaultQueue() const {
 }
 
 MetalDevice::~MetalDevice(){
-    if (device_ != nil){
-        [device_ release];
-        device_ = nil;
-    }
-
     for(auto item : queues_) {
       [item->queue() release];
       queues_.pop_back();

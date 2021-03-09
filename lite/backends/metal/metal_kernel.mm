@@ -18,7 +18,7 @@
 namespace paddle {
 namespace lite {
 
-MetalKernel::MetalKernel(const MetalKernelProgram& kernel) : program_(kernel) {}
+MetalKernel::MetalKernel(const MetalKernelProgram kernel) : program_(kernel) {}
 
 void MetalKernel::Execute(const MetalEncoder& encoder,
                           const MetalUint3& global_work_size,
@@ -73,10 +73,6 @@ void MetalKernel::Execute(const MetalEncoder& encoder,
 }
 
 MetalKernelProgram::~MetalKernelProgram(){
-//    if (function_ != nil)
-//        [function_ release];
-//    if (pipeline_state_ != nil)
-//        [pipeline_state_ release];
 }
 }
 }

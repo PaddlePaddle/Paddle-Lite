@@ -53,8 +53,6 @@ void MetalContext::PrepareDevices() {
       [mtl_devices release];
       mtl_devices = nil;
   }
-
-  std::cout << "haha5" << std::endl;
 }
 
 int MetalContext::GetDevicesNum() {
@@ -172,7 +170,7 @@ std::shared_ptr<MetalKernel> MetalContext::GetKernel(
     library = nil;
   }
 
-  auto ret = std::make_shared<MetalKernel>(std::move(program));
+  auto ret = std::make_shared<MetalKernel>(program);
 
   return ret;
 }
