@@ -276,7 +276,7 @@ if(NOT APPLE)
   include(flags)
 endif()
 
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG -fsanitize=address -static-libasan  -Wall")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG -fsanitize=address -static-libasan  -Wall")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG ")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG ")
 
 add_subdirectory(lite)

@@ -17,7 +17,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   DEPS paddle_api paddle_api_light  paddle_api_full)
     add_dependencies(paddle_full_api_shared op_list_h kernel_list_h framework_proto op_registry fbs_headers)
     target_link_libraries(paddle_full_api_shared framework_proto op_registry)
-    target_link_libraries(paddle_full_api_shared -fsanitize=address -static-libasan -Wall)
     if(LITE_WITH_X86)
         add_dependencies(paddle_full_api_shared xxhash)
         target_link_libraries(paddle_full_api_shared xxhash)
