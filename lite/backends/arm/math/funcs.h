@@ -54,6 +54,7 @@
 #include "lite/backends/arm/math/quantize.h"
 #include "lite/backends/arm/math/reduce_max.h"
 #include "lite/backends/arm/math/reduce_mean.h"
+#include "lite/backends/arm/math/reduce_min.h"
 #include "lite/backends/arm/math/reduce_prod.h"
 #include "lite/backends/arm/math/reduce_sum.h"
 #include "lite/backends/arm/math/scale.h"

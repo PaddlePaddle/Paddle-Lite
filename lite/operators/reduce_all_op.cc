@@ -14,6 +14,7 @@
 
 #include "lite/operators/reduce_all_op.h"
 #include <algorithm>
+#include <set>
 #include <string>
 #include <vector>
 #include "lite/core/op_registry.h"
@@ -40,50 +41,55 @@ bool ReduceAllOp::CheckShape() const {
 }
 
 bool ReduceAllOp::InferShapeImpl() const {
+  const auto &x_dims = param_.X->dims();
+  size_t x_rank = x_dims.size();
   auto dims = param_.dim;
-  auto x_dims = param_.X->dims();
-  bool reduce_all = false;
+  bool reduce_all = param_.reduce_all;
   bool keep_dim = param_.keep_dim;
-  auto x_rank = x_dims.size();
-  if (dims.size() != 0) {
-    for (size_t i = 0; i < dims.size(); i++) {
-      if (dims[i] < 0) {
-        dims[i] = x_rank + dims[i];
-      }
+
+  for (size_t i = 0; i < dims.size(); ++i) {
+    if (dims[i] < 0) {
+      dims[i] = x_rank + dims[i];
+    }
+    CHECK_LT(dims[i], x_rank)
+        << "The dim should be in the range [-rank(input), rank(input).";
+  }
+
+  std::set<int> dims_set(dims.begin(), dims.end());
+  bool full_dim = true;
+  for (size_t i = 0; i < x_rank; i++) {
+    if (dims_set.find(i) == dims_set.end()) {
+      full_dim = false;
+      break;
     }
   }
-  std::stable_sort(dims.begin(), dims.end());
-  if (dims.size() == 0) {
-    reduce_all = true;
-  }
-  std::vector<int64_t> out_dims;
+  reduce_all = (reduce_all || full_dim);
+
   if (reduce_all) {
-    if (keep_dim) {
-      out_dims.push_back(x_rank);
-      out_dims.push_back(1);
-    } else {
-      out_dims.push_back(1);
-    }
+    if (keep_dim)
+      param_.Out->Resize(std::vector<int64_t>(x_rank, 1));
+    else
+      param_.Out->Resize(std::vector<int64_t>{1});
   } else {
-    for (size_t i = 0; i < x_dims.size(); i++) {
-      out_dims.push_back(x_dims[i]);
-    }
-    if (keep_dim) {
-      for (size_t i = 0; i < dims.size(); ++i) {
-        out_dims[dims[i]] = 1;
+    size_t out_rank = keep_dim ? x_rank : x_rank - dims.size();
+    std::vector<DDim::value_type> out_dims(out_rank);
+    std::stable_sort(dims.begin(), dims.end());
+    int dim_index = 0;
+    int out_index = 0;
+    for (size_t i = 0; i < x_rank; ++i) {
+      if (dim_index < dims.size() &&
+          dims[dim_index] == static_cast<DDim::value_type>(i)) {
+        if (keep_dim) {
+          out_dims[out_index++] = 1;
+        }
+        dim_index++;
+      } else {
+        out_dims[out_index++] = x_dims[i];
       }
-    } else {
-      const int64_t kDelFlag = -2;
-      for (size_t i = 0; i < dims.size(); ++i) {
-        out_dims[dims[i]] = kDelFlag;
-      }
-      out_dims.erase(remove(out_dims.begin(), out_dims.end(), kDelFlag),
-                     out_dims.end());
     }
-    param_.Out->Resize(DDim(out_dims));
+    param_.Out->Resize(out_dims);
     if (dims[0] != 0) {
-      // Only pass LoD when not reducing on the first dim.
-      *param_.Out->mutable_lod() = param_.X->lod();
+      param_.Out->set_lod(param_.X->lod());
     }
   }
   return true;
@@ -99,6 +105,11 @@ bool ReduceAllOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     param_.keep_dim = opdesc.GetAttr<bool>("keep_dim");
   } else {
     param_.keep_dim = false;
+  }
+  if (opdesc.HasAttr("reduce_all")) {
+    param_.reduce_all = opdesc.GetAttr<bool>("reduce_all");
+  } else {
+    param_.reduce_all = false;
   }
   CHECK(param_.X);
   CHECK(param_.Out);

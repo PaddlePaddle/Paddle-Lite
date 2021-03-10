@@ -16,35 +16,17 @@
 
 #include <memory>
 #include <string>
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include "lite/core/mir/pass.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
-namespace fusion {
 
-class ReshapeFuser : public FuseBase {
+class InplaceFusePass : public ProgramPass {
  public:
-  explicit ReshapeFuser(const std::string& type) : type_(type) {}
-
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
-
- private:
-  std::string type_;
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
-class Reshape2OutFuser : public FuseBase {
- public:
-  explicit Reshape2OutFuser(const std::string& type) : type_(type) {}
-
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
-
- private:
-  std::string type_;
-};
-}  // namespace fusion
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle

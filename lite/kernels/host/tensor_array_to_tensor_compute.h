@@ -23,7 +23,7 @@ namespace kernels {
 namespace host {
 
 class TensorArrayToTensorCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::TensorArrayToTensorParam;
 

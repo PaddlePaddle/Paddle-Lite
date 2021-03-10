@@ -117,6 +117,7 @@ struct FcParam : ParamBase {
   lite::Tensor* input{nullptr};
   lite::Tensor* w{nullptr};
   lite::Tensor* bias{nullptr};
+  lite::Tensor* Prelu_alpha{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   // original dims of input weight
@@ -124,6 +125,8 @@ struct FcParam : ParamBase {
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
+  std::string Prelu_mode{
+      "channel"};  // prelu param, can be "all", "channel" or "element"
   // for int8
   WITH_INT8_CONFIG
   ///////////////////////////////////////////////////////////////////////////////////
@@ -1168,9 +1171,12 @@ struct WhileParam : ParamBase {
 
 struct TopkParam : ParamBase {
   const lite::Tensor* X{};
+  const lite::Tensor* KTensor{};
   lite::Tensor* Out{};
   lite::Tensor* Indices{};
+  bool k_is_tensor{false};
   int K{1};
+  int axis{-1};
 };
 
 struct IncrementParam : ParamBase {
@@ -1486,7 +1492,7 @@ struct SqueezeParam : ParamBase {
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
   std::vector<int> axes{};
-  bool inplace{true};
+  bool inplace{false};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1511,7 +1517,7 @@ struct UnsqueezeParam : ParamBase {
   std::vector<int> axes{};
   const lite::Tensor* axes_tensor{};
   std::vector<const lite::Tensor*> axes_tensor_vct{};
-  bool inplace{true};
+  bool inplace{false};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -2284,6 +2290,11 @@ struct CumsumParam : ParamBase {
   bool reverse{false};
 };
 
+struct PolygonBoxTransformParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
 struct SumParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
@@ -2299,6 +2310,14 @@ struct PNormParam : ParamBase {
   float epsilon{1.0e-12f};
   bool keepdim{false};
   bool asvector{false};
+};
+
+struct LinspaceParam : ParamBase {
+  const lite::Tensor* Start{};
+  const lite::Tensor* Stop{};
+  const lite::Tensor* Num{};
+  lite::Tensor* Out{};
+  int dtype{};
 };
 }  // namespace operators
 }  // namespace lite

@@ -49,8 +49,8 @@ lite_cc_library(fuse_scale_activation
 lite_cc_library(fuse_conv_scale
         SRCS conv_scale_fuser.cc
         DEPS pattern_matcher_high_api)
-lite_cc_library(fuse_reshape
-        SRCS reshape_fuser.cc
+lite_cc_library(fuse_inplace
+        SRCS inplace_fuser.cc
         DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_match_matrix_activation
         SRCS match_matrix_activation_fuser.cc
@@ -66,6 +66,9 @@ lite_cc_library(fuse_instance_norm_activation
         DEPS pattern_matcher_high_api)
 lite_cc_library(fuse_elementwise_add_scale
         SRCS elementwise_add_scale_fuser.cc
+        DEPS pattern_matcher_high_api)
+lite_cc_library(fuse_fc_prelu
+        SRCS fc_prelu_fuser.cc
         DEPS pattern_matcher_high_api)
 
 set(mir_fusers
@@ -85,12 +88,13 @@ set(mir_fusers
     fuse_interpolate
     fuse_sequence_pool_concat
     fuse_scale_activation
-    fuse_reshape
+    fuse_inplace
     fuse_match_matrix_activation
     fuse_scales
     fuse_sequence_reverse_embedding
     fuse_instance_norm_activation
     fuse_elementwise_add_scale
+    fuse_fc_prelu
     fuse_conv_scale
     CACHE INTERNAL "fusers")
 

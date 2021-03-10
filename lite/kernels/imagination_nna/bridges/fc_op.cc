@@ -29,9 +29,6 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[NNA] Converting " + op_type + "...";
 
-  CHECK(op_info->HasAttr("enable_int8"));
-  CHECK(op_info->GetAttr<bool>("enable_int8"));
-
   auto input_name = op_info->Input("Input").front();
   auto input_scale_name = "Input0_scale";
   auto input = scope->FindTensor(input_name);
@@ -48,6 +45,10 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindTensor(out_name);
   auto out_dims = out->dims();
 
+  CHECK(op_info->HasInputScale(input_scale_name, true) &&
+        op_info->HasInputScale(weight_scale_name, true) &&
+        op_info->HasOutputScale(out_scale_name, true));
+
   // notes : m, input row
   //         k, input col
   //         n, weight col
@@ -63,12 +64,9 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   VLOG(3) << "[NNA] input dims: " << input_dims << " w dims: " << w_dims
           << " m: " << m << " k: " << k << " n: " << n;
 
-  CHECK(op_info->HasInputScale(input_scale_name, true));
   float input_scale = op_info->GetInputScale(input_scale_name, true)[0];
-  CHECK(op_info->HasInputScale(weight_scale_name, true));
   std::vector<float> weight_scale =
       op_info->GetInputScale(weight_scale_name, true);
-  CHECK(op_info->HasOutputScale(out_scale_name, true));
   float output_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   // Create input node and reshape it to (m, k, 1, 1)

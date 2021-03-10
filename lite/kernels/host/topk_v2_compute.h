@@ -13,20 +13,23 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
-#include <string>
-#include "lite/core/mir/pass.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+#include "lite/operators/topk_v2_op.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
+namespace kernels {
+namespace host {
 
-class ReshapeFusePass : public ProgramPass {
+class TopkV2Compute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  void Run() override;
+
+  virtual ~TopkV2Compute() = default;
 };
 
-}  // namespace mir
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

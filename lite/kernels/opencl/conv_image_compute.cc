@@ -422,11 +422,8 @@ void ConvImageCompute::PrepareForRun() {
   }
 
   // define image pointer for filter, bias
-  input_image_p_ = DATA_GPU(conv_param_->x);
   filter_image_p_ = DATA_GPU(filter_gpu_image_);
   bias_image_p_ = DATA_GPU(bias_gpu_image_);
-  output_image_p_ = MUTABLE_DATA_GPU(
-      conv_param_->output, output_image_w_, output_image_h_, nullptr);
 
   build_options_.push_back(build_options_single);
   for (size_t i = 0; i < kernel_func_names_.size(); i++) {

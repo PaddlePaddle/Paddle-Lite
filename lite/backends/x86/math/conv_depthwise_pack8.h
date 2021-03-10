@@ -39,6 +39,10 @@ void conv_depthwise_m256(lite::Tensor* input,
                          lite::Tensor* output,
                          lite::Tensor* filter,
                          lite::Tensor* bias,
+                         const int stride_h,
+                         const int stride_w,
+                         const int dilation_h,
+                         const int dilation_w,
                          const bool has_act,
                          const lite_api::ActivationType act_type);
 
