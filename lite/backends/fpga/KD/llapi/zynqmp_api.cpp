@@ -247,8 +247,7 @@ int perform_bypass(const struct BypassArgs &args) {
     bypassArgs.output.address =
         reinterpret_cast<char *>(output_address + i * max_size * out_type_size);
     ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
-    max_val = std::max(half_to_float(max_val), max);
-
+    max = std::max(half_to_float(max_val), max);
     if (ret != 0) {
       return ret;
     }
@@ -262,10 +261,10 @@ int perform_bypass(const struct BypassArgs &args) {
     bypassArgs.output.address = reinterpret_cast<char *>(
         output_address + count * max_size * out_type_size);
     ret = do_ioctl(IOCTL_CONFIG_BYPASS, &bypassArgs);
-    max_val = std::max(half_to_float(max_val), max);
+    max = std::max(half_to_float(max_val), max);
   }
 
-  std::string s = std::bitset<16>(max_val).to_string();  // string conversion
+  max_val = float_to_half(max);
   args.output.scale_address[0] = float_to_half(max);
   return ret;
 }
@@ -342,6 +341,49 @@ std::ostream &operator<<(std::ostream &os, const ConvArgs &args) {
   os << "  output.address : " << args.output.address << std::endl;
   os << "}" << std::endl;
 
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const DWconvArgs &args) {
+  os << "DWconvArgs {\n";
+  os << "  bias_address : " << args.bias_address << std::endl;
+  os << "  filter_address : " << args.filter_address << std::endl;
+  os << "  filter_scale : "
+     << (reinterpret_cast<float *>(args.filter_scale_address))[0] << std::endl;
+  os << "  kernel.stride_h : " << args.kernel.stride_h << std::endl;
+  os << "  kernel.height : " << args.kernel.height << std::endl;
+  os << "  kernel.width : " << args.kernel.width << std::endl;
+
+  os << "  image.address : " << args.image.address << std::endl;
+  os << "  image.scale_address : " << args.image.scale_address << std::endl;
+  os << "  image.scale : " << half_to_float((reinterpret_cast<float16 *>(
+                                  args.image.scale_address))[0])
+     << std::endl;
+  os << "  image.channels : " << args.image.channels << std::endl;
+  os << "  image.width : " << args.image.width << std::endl;
+  os << "  image.height : " << args.image.height << std::endl;
+  os << "  image.pad_width : " << args.image.pad_width << std::endl;
+  os << "  image.pad_height : " << args.image.pad_height << std::endl;
+  os << "  output.address : " << args.output.address << std::endl;
+  os << "  out_width : " << args.out_width << std::endl;
+  os << "  out_height : " << args.out_height << std::endl;
+  os << "  sub_conv_num : " << args.sub_conv_num << std::endl;
+  os << "  dilation : " << args.dilation << std::endl;
+  os << "  InplaceArgs{" << std::endl;
+  os << "    activationType:" << args.inplace.active_param.type << std::endl;
+  os << "    leaky_relu_factor:" << args.inplace.active_param.leaky_relu_factor
+     << std::endl;
+  os << "    norm.channel : " << args.inplace.normalize_param.channel
+     << std::endl;
+  os << "    norm.height_width : " << args.inplace.normalize_param.hight_width
+     << std::endl;
+  os << "    norm.enabled : " << args.inplace.normalize_param.enabled
+     << std::endl;
+  os << "  }" << std::endl;
+  os << "  quant.dynamic_range : " << half_to_float(args.quant.dynamic_range)
+     << std::endl;
+  os << "  quant.inv_dynamic_range : " << args.quant.inv_dynamic_range
+     << std::endl;
   return os;
 }
 

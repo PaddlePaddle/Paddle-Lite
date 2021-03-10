@@ -63,6 +63,8 @@ class DepthwiseConvPE : public PE {
     Shape shape(N, {2 * channel * align_repeat_});
 
     float16* b_data = scale_bias_.mutableData<float16>(FP16, shape);
+    memset(b_data, 0, scale_bias_.memorySize());
+
     if (param_.bias()->dataType() == FP32) {
       float* new_bias_data = param_.bias()->data<float>();
       for (int i = 0; i < align_repeat_; i++) {
@@ -106,7 +108,6 @@ class DepthwiseConvPE : public PE {
         }
       }
     }
-
     scale_bias_.flush();
 
     int filter_dynamic_range = 0;
@@ -158,12 +159,15 @@ class DepthwiseConvPE : public PE {
         *(reinterpret_cast<uint16_t*>(&dynamic_range_fp16));
     args.quant.inv_dynamic_range =
         *(reinterpret_cast<uint32_t*>(&inv_dynamic_range));
-    param.args = args;
+
+    param_.args = args;
   }
 
   bool dispatch() {
     param_.input->syncToDevice();
-    if (param_.re_assign == true) {
+
+    DWconvArgs& args = param_.args;
+    if (param_.re_assign) {
       float16* scale_data = scale_bias_.data<float16>();
       int channel = param_.output->shape().channel();
       for (int i = 0; i < align_repeat_; i++) {

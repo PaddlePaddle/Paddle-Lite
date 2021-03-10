@@ -66,9 +66,12 @@ inline int CellSize(DataType type) {
       return sizeof(int32_t);
     case INT8:
       return sizeof(int8_t);
+    case INT16:
+      return sizeof(int16_t);
     case INT64:
       return sizeof(int64_t);
     default:
+      exit(-1);
       return 0;
   }
   return 0;

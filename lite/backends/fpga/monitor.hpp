@@ -60,7 +60,7 @@ class Monitor {
           tensor_names.end()) {
         return true;
       }
-      return true;
+      return false;
     };
 
     auto out_args = op_info->output_names();

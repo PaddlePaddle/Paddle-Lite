@@ -120,7 +120,6 @@ class PoolingPE : public PE {
 
       param_.poolingArgs = args;
     }
-    use_cpu_ = true;
   }
 
   void compute() {

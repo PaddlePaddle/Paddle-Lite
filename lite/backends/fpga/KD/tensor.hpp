@@ -284,6 +284,10 @@ class Tensor {
     this->invalidate();
     perform_bypass(args);
     this->invalidate();
+
+    if (dataType_ == FP32) {
+      copyMaxFrom(src);
+    }
   }
 
   void flush() { fpga_flush(placeHolder_->data(), placeHolder_->memorySize()); }
@@ -380,7 +384,7 @@ class Tensor {
     std::ofstream ofs;
     ofs.open(path);
     ofs << "type:" << dataType_ << " max: " << half_to_float(max()[0])
-        << " id:" << id_ << std::endl;
+        << "scale: " << scale()[0] << " id:" << id_ << std::endl;
     for (int i = 0; i < shape_->numel(); i++) {
       float value = 0;
       switch (dataType_) {

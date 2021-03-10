@@ -319,12 +319,12 @@ inline void format_dw_filter(Tensor* filter,
   quantized_filter->setMemScale(mem_factor);
 
   quantized_filter->setAligned(true);
-  int16_t* src = quantized_filter->mutableData<int16_t>(INT16, filter->shape());
+  int16_t* dst = quantized_filter->mutableData<int16_t>(INT16, filter->shape());
 
   quantized_filter->scale()[0] = dequant_scale;
   quantized_filter->scale()[1] = quant_scale;
 
-  memcpy(src, quantized_data, mem_size);
+  memcpy(dst, quantized_data, mem_size);
   quantized_filter->flush();
   fpga_free(quantized_data);
 }
@@ -457,6 +457,7 @@ inline void split_filter_num(const ConvParam& c_param) {
         *(reinterpret_cast<uint16_t*>(&dynamic_range_fp16));
     args.quant.inv_dynamic_range =
         *(reinterpret_cast<uint32_t*>(&inv_dynamic_range));
+
     param.splitParams().push_back(conv_param);
   }
 }
@@ -524,6 +525,7 @@ inline void pack_channel_filter(const ConvParam& c_param) {
           {1, out_shape.height(), out_shape.width(), filter_current_pack});
       out_address = conv_param->output.mutableData<float16>(FP16, shape);
     }
+    out_scale_address = &conv_param->output_max;
     Shape f_shape(NCHW,
                   {filter_current_pack,
                    filter->shape().channel(),

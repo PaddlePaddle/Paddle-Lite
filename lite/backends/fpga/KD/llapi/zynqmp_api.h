@@ -339,6 +339,7 @@ struct FpgaResetArgs {
 
 //============================== API =============================
 std::ostream& operator<<(std::ostream& os, const ConvArgs& args);
+std::ostream& operator<<(std::ostream& os, const DWconvArgs& args);
 
 inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
 inline int align_to_x_floor(int num, int x) { return (num / x) * x; }

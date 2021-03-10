@@ -93,7 +93,7 @@ class ConcatPE : public PE {
       input->unalignImage();
       max_val = std::max(max_val, half_to_float(input->max()[0]));
     }
-    output->max()[0] = max_val;
+    output->max()[0] = float_to_half(max_val);
 
     if (output_shape.dimSize() == 3) {
       concat3D();
