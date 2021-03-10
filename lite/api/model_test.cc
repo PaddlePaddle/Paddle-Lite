@@ -1,304 +1,434 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-#include <sstream>
+#include <iostream>
 #include <string>
 #include <vector>
-#include "lite/api/paddle_api.h"
-#include "lite/api/test_helper.h"
-#include "lite/core/device_info.h"
-#include "lite/core/profile/timer.h"
-#include "lite/utils/cp_logging.h"
-#include "lite/utils/string.h"
-#ifdef LITE_WITH_PROFILE
-#include "lite/core/profile/basic_profiler.h"
-#endif  // LITE_WITH_PROFILE
-#include <gflags/gflags.h>
+#include <sstream>
+#include "paddle_api.h" // NOLINT
+#include <numeric>
+#include <string.h>
+#include "lite/backends/arm/math/funcs.h"
+using namespace paddle::lite_api;
+inline float32x4_t log_ps(float32x4_t x) {
+  float32x4_t one = vdupq_n_f32(1);
 
-using paddle::lite::profile::Timer;
+  x = vmaxq_f32(x, vdupq_n_f32(0));  // force flush to zero on denormal values
+  uint32x4_t invalid_mask = vcleq_f32(x, vdupq_n_f32(0));
 
-DEFINE_string(input_shape,
-              "1,3,224,224",
-              "input shapes, separated by colon and comma");
-DEFINE_bool(use_optimize_nb,
-            false,
-            "optimized & naive buffer model for mobile devices");
-DEFINE_string(backend,
-              "arm_cpu",
-              "choose backend for valid_places: arm_cpu | opencl. Compile "
-              "OpenCL version if you choose opencl");
-DEFINE_string(arg_name, "", "the arg name");
-DEFINE_string(in_txt, "", "input text");
-DEFINE_string(out_txt, "", "output text");
+  int32x4_t ux = vreinterpretq_s32_f32(x);
 
-namespace paddle {
-namespace lite_api {
+  int32x4_t emm0 = vshrq_n_s32(ux, 23);
 
-void OutputOptModel(const std::string& load_model_dir,
-                    const std::string& save_optimized_model_dir,
-                    const std::vector<std::vector<int64_t>>& input_shapes) {
-  lite_api::CxxConfig config;
-  config.set_model_dir(load_model_dir);
-#ifdef LITE_WITH_X86
-  config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                           Place{TARGET(kX86), PRECISION(kInt64)},
-                           Place{TARGET(kHost), PRECISION(kFloat)}});
+  // keep only the fractional part
+  ux = vandq_s32(ux, vdupq_n_s32(c_inv_mant_mask));
+  ux = vorrq_s32(ux, vreinterpretq_s32_f32(vdupq_n_f32(0.5f)));
+  x = vreinterpretq_f32_s32(ux);
+
+  emm0 = vsubq_s32(emm0, vdupq_n_s32(0x7f));
+  float32x4_t e = vcvtq_f32_s32(emm0);
+
+  e = vaddq_f32(e, one);
+
+  // part2:
+  // if( x < SQRTHF ) {
+  //   e -= 1;
+  //   x = x + x - 1.0;
+  // } else {
+  //   x = x - 1.0;
+  // }
+  //
+  uint32x4_t mask = vcltq_f32(x, vdupq_n_f32(c_cephes_SQRTHF));
+  float32x4_t tmp =
+      vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(x), mask));
+  x = vsubq_f32(x, one);
+  e = vsubq_f32(
+      e, vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(one), mask)));
+  x = vaddq_f32(x, tmp);
+
+  float32x4_t z = vmulq_f32(x, x);
+
+  float32x4_t y = vdupq_n_f32(c_cephes_log_p0);
+  y = vmulq_f32(y, x);
+  y = vaddq_f32(y, vdupq_n_f32(c_cephes_log_p1));
+  y = vmulq_f32(y, x);
+  y = vaddq_f32(y, vdupq_n_f32(c_cephes_log_p2));
+  y = vmulq_f32(y, x);
+  y = vaddq_f32(y, vdupq_n_f32(c_cephes_log_p3));
+  y = vmulq_f32(y, x);
+  y = vaddq_f32(y, vdupq_n_f32(c_cephes_log_p4));
+  y = vmulq_f32(y, x);
+  y = vaddq_f32(y, vdupq_n_f32(c_cephes_log_p5));
+  y = vmulq_f32(y, x);
+  y = vaddq_f32(y, vdupq_n_f32(c_cephes_log_p6));
+  y = vmulq_f32(y, x);
+  y = vaddq_f32(y, vdupq_n_f32(c_cephes_log_p7));
+  y = vmulq_f32(y, x);
+  y = vaddq_f32(y, vdupq_n_f32(c_cephes_log_p8));
+  y = vmulq_f32(y, x);
+
+  y = vmulq_f32(y, z);
+
+  tmp = vmulq_f32(e, vdupq_n_f32(c_cephes_log_q1));
+  y = vaddq_f32(y, tmp);
+
+  tmp = vmulq_f32(z, vdupq_n_f32(0.5f));
+  y = vsubq_f32(y, tmp);
+
+  tmp = vmulq_f32(e, vdupq_n_f32(c_cephes_log_q2));
+  x = vaddq_f32(x, y);
+  x = vaddq_f32(x, tmp);
+  x = vreinterpretq_f32_u32(vorrq_u32(
+      vreinterpretq_u32_f32(x), invalid_mask));  // negative arg will be NAN
+  return x;
+}
+void act_log(const float* din, float* dout, int size, int threads) {
+  int nums_per_thread = size / threads;
+  int remain = size - threads * nums_per_thread;
+  int neon_loop_cnt_dim4 = nums_per_thread >> 2;
+  int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
+
+  float32x4_t vzero = vdupq_n_f32(0.f);
+#pragma omp parallel for
+  for (int i = 0; i < threads; ++i) {
+    float32x4_t exp_vec = vdupq_n_f32(0.0f);
+    const float* ptr_in_thread = din + i * nums_per_thread;
+    float* ptr_out_thread = dout + i * nums_per_thread;
+    for (int k = 0; k < neon_loop_cnt_dim4; ++k) {
+      exp_vec = log_ps(vld1q_f32(ptr_in_thread));
+      vst1q_f32(ptr_out_thread, exp_vec);
+      ptr_out_thread += 4;
+      ptr_in_thread += 4;
+    }
+    for (int j = 0; j < neon_loop_remain_dim4; ++j) {
+      ptr_out_thread[0] = logf(ptr_in_thread[0]);
+      ptr_in_thread++;
+      ptr_out_thread++;
+    }
+  }
+  float* ptr_out = dout + threads * nums_per_thread;
+  const float* ptr_in = din + threads * nums_per_thread;
+  for (int j = 0; j < remain; ++j) {
+    ptr_out[0] = logf(ptr_in[0]);
+    ptr_in++;
+    ptr_out++;
+  }
+}
+void Predict(std::shared_ptr<PaddlePredictor> &_predictor, const std::vector<std::int64_t> &parsed_input, std::string &output);
+
+int64_t ShapeProduction(const shape_t &shape)
+{
+    int64_t res = 1;
+    for (auto i : shape)
+        res *= i;
+    return res;
+}
+
+std::string trim(const std::string& str) {
+    std::string ret;
+    int i = 0;
+    while (i < str.length() && (str[i] == ' ' || str[i] == '\t')) {
+        i++;
+    }
+    int j = str.length() - 1;
+    while (j >= 0 && (str[j] == ' ' || str[j] == '\t')) {
+        j--;
+    }
+    if (i <= j) {
+        ret = str.substr(i, j - i + 1);
+    } else {
+        ret = "";
+    }
+    return ret;
+}
+
+
+std::int64_t to_int64(std::string input) {
+    std::stringstream ss;
+    ss << input;
+    int x;
+    ss >> x;
+    std::int64_t m = static_cast<std::int64_t>(x);
+	std::cout<<"x:"<<m<<std::endl;
+    return m;
+}
+
+void string_split(
+        const std::string& str,
+        std::vector<std::int64_t>& substr_list) {
+    substr_list.clear();
+    if (str.size() == 0) {
+        return;
+    }
+    if (str.size() > 0) {
+        std::string::size_type start_index = 0;
+        std::string::size_type cur_index = str.find(" ", start_index);
+        while (cur_index != std::string::npos) {
+            substr_list.push_back(to_int64(str.substr(start_index, cur_index - start_index)));
+            start_index = cur_index + 1;
+            cur_index = str.find(" ", start_index);
+        }
+        substr_list.push_back(to_int64(str.substr(start_index, str.size() - start_index)));
+    }
+}
+
+void RunModel(std::string model_dir)
+{
+//	char *s = (char*)malloc(12);
+  //  strcpy(s, "Hello world!");
+//    printf("string is: %s\n", s);
+//    free(s);
+    //exit(0);
+    //return;
+    float indata[2] = {2.2, 3.3};
+    float outdata[2] = {0, 0};
+    act_log(indata, outdata, 2,1);
+#if 0
+    CxxConfig cxx_config;
+    model_dir = "./models";
+    cxx_config.set_model_file(model_dir + "/" + "__model__");
+    cxx_config.set_param_file(model_dir + "/" + "__params__");
+    cxx_config.set_threads(1);
+    std::vector<Place> valid_places{Place{TARGET(kARM), PRECISION(kInt64)}};
+    valid_places.insert(valid_places.begin(), Place{TARGET(kARM), PRECISION(kInt32)});
+    valid_places.insert(valid_places.begin(), Place{TARGET(kARM), PRECISION(kFloat)});
+    valid_places.insert(valid_places.begin(), Place{TARGET(kARM), PRECISION(kInt64)});
+    cxx_config.set_valid_places(valid_places);
+    std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor(cxx_config);
+ #else
+    model_dir = "/home/firefly/myq/trans/trans.nb";
+  MobileConfig config;
+    config.set_model_from_file(model_dir);
+      std::shared_ptr<PaddlePredictor> predictor =
+            CreatePaddlePredictor<MobileConfig>(config);
+#endif
+    std::string output;
+    std::string input;
+#if 1    
+    //std::vector<std::int64_t> parsed_input = {8098, 963, 7089, 4601, 6620, 4945, 5305, 9694, 7223, 6761, 1};
+    std::vector<std::int64_t> parsed_input = {93, 7453, 10430, 4693, 6307, 4284, 4693, 7262, 1};
+    std::cout << "passss:size:"<<parsed_input.size()<< std::endl;
+    Predict(predictor, parsed_input, output);
+    std::cout << output << std::endl;
 #else
-  if (FLAGS_backend == "opencl") {
-    config.set_valid_places({
-        Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
-        Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
-        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
-        TARGET(kARM),  // enable kARM CPU kernel when no opencl kernel
-    });
-  } else {  // arm_cpu
-    config.set_valid_places({
-        Place{TARGET(kARM), PRECISION(kFloat)},
-    });
-  }
-#endif
-  auto predictor = lite_api::CreatePaddlePredictor(config);
+   while (std::getline(std::cin, input))
+    {
+         //input = trim("8098, 963, 7089, 4601, 6620, 4945, 5305, 9694, 7223, 6761, 1");//trim(input);
+         input = trim(input);
+         std::cout<<"input:"<<input<<std::endl;
+         std::vector<std::int64_t> parsed_input;
+         string_split(input, parsed_input);
 
-  // delete old optimized model
-  int ret = system(
-      paddle::lite::string_format("rm -rf %s", save_optimized_model_dir.c_str())
-          .c_str());
-  if (ret == 0) {
-    LOG(INFO) << "delete old optimized model " << save_optimized_model_dir;
-  }
-  predictor->SaveOptimizedModel(save_optimized_model_dir,
-                                LiteModelType::kNaiveBuffer);
-  LOG(INFO) << "Load model from " << load_model_dir;
-  LOG(INFO) << "Save optimized model to " << save_optimized_model_dir;
+         std::cout << input << std::endl;
+         for (int i = 0; i < parsed_input.size(); ++i) {
+             if (i != parsed_input.size() - 1) {
+                 std::cout << parsed_input[i] << " ";
+             } else {
+                 std::cout << parsed_input[i] << std::endl;
+             }
+         }
+    std::cout << "passss:size:"<<parsed_input.size()<< std::endl;
+         Predict(predictor, parsed_input, output);
+         std::cout << output << std::endl;
+    }
+#endif
 }
 
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-void Run(const std::vector<std::vector<int64_t>>& input_shapes,
-         const std::string& model_dir,
-         const PowerMode power_mode,
-         const int thread_num,
-         const int repeat,
-         const int warmup_times = 0) {
-  lite_api::MobileConfig config;
-  config.set_model_from_file(model_dir + ".nb");
-  config.set_power_mode(power_mode);
-  config.set_threads(thread_num);
+void Predict(std::shared_ptr<PaddlePredictor> &_predictor,  const std::vector<std::int64_t> &parsed_input, std::string &output)
+{
+    // 构造数据
+    // query:   我来自中国,北京.
+    // subword: 我 来自 中国 _ ,_ 北京 _ ._
+    // ids: 93 7453 10430 4693 6307 4284 4693 7262 1
+    // batch_size=1, seq_len=9
+    // std::vector<std::int64_t> parsed_input = {93, 7453, 10430, 4693, 6307, 4284, 4693, 7262, 1};
+    // std::vector<std::int64_t> parsed_input = {8098, 963, 7089, 4601, 6620, 4945, 5305, 9694, 7223, 6761, 1};
+    int batch_size = 1, max_seq_len = parsed_input.size();
+    std::vector<int64_t> seq_lens = {parsed_input.size()};
+    int64_t eos_id = 1, _n_head = 8;
 
-  auto predictor = lite_api::CreatePaddlePredictor(config);
-  bool flag_in = true;
-  bool flag_out = true;
-  if (FLAGS_in_txt == "") {
-    flag_in = false;
-  }
-  if (FLAGS_out_txt == "") {
-    flag_out = false;
-  }
-  printf("flag_in: %d, flag_out: %d \n", flag_in, flag_out);
+    // 第1个输入: src_word [(batch_size, seq_len), "int64", 2]
+    std::unique_ptr<Tensor> src_word(std::move(_predictor->GetInput(0)));
+    src_word->Resize({batch_size, max_seq_len});
+    //std::vector<std::vector<size_t>> src_word_lod = {};
+    //src_word->SetLoD(src_word_lod);
+    auto src_word_data_ptr = src_word->mutable_data<int64_t>();
+    // std::cout<<"------------------0"<<std::endl;
+    for (int i = 0; i < parsed_input.size(); ++i)
+    {
+        src_word_data_ptr[i] = parsed_input[i];
+        // std::cerr << parsed_input[i] << std::endl;
+    }
 
-  for (int j = 0; j < input_shapes.size(); ++j) {
-    auto input_tensor = predictor->GetInput(j);
-    input_tensor->Resize(input_shapes[j]);
-    auto input_data = input_tensor->mutable_data<float>();
-    int input_num = 1;
-    for (int i = 0; i < input_shapes[j].size(); ++i) {
-      input_num *= input_shapes[j][i];
+    // 第2个输入: src_pos [(batch_size, seq_len), "int64"]
+    std::unique_ptr<Tensor> src_pos(std::move(_predictor->GetInput(1)));
+    src_pos->Resize({batch_size, max_seq_len});
+    std::vector<int64_t> src_pos_data(batch_size * max_seq_len, 0);
+    for (int i = 0; i < batch_size; ++i)
+    {
+        std::iota(src_pos_data.begin() + i * max_seq_len, src_pos_data.begin() + i * max_seq_len + seq_lens[i], 0);
     }
-    FILE* fp_r = nullptr;
-    if (flag_in) {
-      fp_r = fopen(FLAGS_in_txt.c_str(), "r");
+    auto src_pos_data_ptr = src_pos->mutable_data<int64_t>();
+    std::cout<<"------------------1"<<std::endl;
+    for (int i = 0; i < src_pos_data.size(); ++i)
+    {
+        src_pos_data_ptr[i] = src_pos_data[i];
+        std::cerr << src_pos_data_ptr[i] << std::endl;
     }
-    for (int i = 0; i < input_num; ++i) {
-      if (flag_in) {
-        fscanf(fp_r, "%f\n", &input_data[i]);
-      } else {
-        input_data[i] = 1.f;
-      }
-    }
-    if (flag_in) {
-      fclose(fp_r);
-    }
-  }
 
-  for (int i = 0; i < warmup_times; ++i) {
-    predictor->Run();
-  }
-
-  Timer ti;
-  for (int j = 0; j < repeat; ++j) {
-    ti.Start();
-    predictor->Run();
-    float t = ti.Stop();
-    LOG(INFO) << "iter: " << j << ", time: " << t << " ms";
-  }
-
-  LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << model_dir
-            << ", power_mode: " << static_cast<int>(power_mode)
-            << ", threads num " << thread_num << ", warmup: " << warmup_times
-            << ", repeats: " << repeat << ", avg time: " << ti.LapTimes().Avg()
-            << " ms"
-            << ", min time: " << ti.LapTimes().Min() << " ms"
-            << ", max time: " << ti.LapTimes().Max() << " ms.";
-
-  // output summary
-  size_t output_tensor_num = predictor->GetOutputNames().size();
-  LOG(INFO) << "output tensor num:" << output_tensor_num;
-
-  for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
-    auto output_tensor = predictor->GetOutput(tidx);
-    LOG(INFO) << "============= output tensor " << tidx << " =============";
-    auto tensor_shape = output_tensor->shape();
-    std::string tensor_shape_str{""};
-    int output_tensor_numel = 1;
-    for (int i = 0; i < tensor_shape.size(); ++i) {
-      output_tensor_numel *= tensor_shape[i];
-      tensor_shape_str += std::to_string(tensor_shape[i]);
-      tensor_shape_str += (i < tensor_shape.size() - 1) ? "x" : "";
+    // 第3个输入: src_slf_attn_bias -> [(batch_size, n_head, seq_len, seq_len), "float32"]
+    std::unique_ptr<Tensor> src_slf_attn_bias(std::move(_predictor->GetInput(2)));
+    src_slf_attn_bias->Resize({batch_size, _n_head, max_seq_len, max_seq_len});
+    //std::vector<std::vector<size_t>> src_bias_lod = {};
+    //src_slf_attn_bias->SetLoD(src_bias_lod);
+    std::vector<float> src_slf_attn_bias_data;
+    if (batch_size == 1)
+    {
+        src_slf_attn_bias_data.resize(batch_size * _n_head * max_seq_len * max_seq_len, 0);
     }
-    auto out_data = output_tensor->data<float>();
-    auto out_mean =
-        paddle::lite::compute_mean<float>(out_data, output_tensor_numel);
-    auto out_std_dev = paddle::lite::compute_standard_deviation<float>(
-        out_data, output_tensor_numel, true, out_mean);
-    FILE* fp1 = nullptr;
-    if (flag_out) {
-      fp1 = fopen(FLAGS_out_txt.c_str(), "w");
+    else
+    {
+        exit(1);
     }
-    double sum1 = 0.f;
-    for (int i = 0; i < output_tensor_numel; ++i) {
-      if (flag_out) {
-        fprintf(fp1, "%f\n", out_data[i]);
-      }
-      sum1 += out_data[i];
+    auto src_slf_attn_bias_data_ptr = src_slf_attn_bias->mutable_data<float>();
+    // std::cout<<"------------------2"<<std::endl;
+    for (int i = 0; i < ShapeProduction(src_slf_attn_bias->shape()); ++i)
+    {
+        src_slf_attn_bias_data_ptr[i] = 0.f;
     }
-    if (flag_out) {
-      fclose(fp1);
-    }
-    printf("out mean: %f \n", sum1 / output_tensor_numel);
 
-    LOG(INFO) << "output tensor " << tidx << " dims:" << tensor_shape_str;
-    LOG(INFO) << "output tensor " << tidx
-              << " elements num:" << output_tensor_numel;
-    LOG(INFO) << "output tensor " << tidx
-              << " standard deviation:" << out_std_dev;
-    LOG(INFO) << "output tensor " << tidx << " mean value:" << out_mean << "\n";
+    // 第4个输入: trg_word ->  [(batch_size, seq_len), "int64", 2]
+    std::unique_ptr<Tensor> trg_word(std::move(_predictor->GetInput(3)));
+    trg_word->Resize({batch_size, 1});
+    std::vector<size_t> trg_word_lod(0, 1);
+    trg_word->SetLoD({{0, 1}, {0, 1}});
 
-    // print result
-    for (int i = 0; i < output_tensor_numel; ++i) {
-      VLOG(2) << "output_tensor->data<float>()[" << i
-              << "]:" << output_tensor->data<float>()[i];
+    auto trg_word_data_ptr = trg_word->mutable_data<int64_t>();
+    // std::cout<<"------------------3"<<std::endl;
+    for (int i = 0; i < ShapeProduction(trg_word->shape()); ++i)
+    {
+        trg_word_data_ptr[i] = 0;
     }
-  }
 
-  // please turn off memory_optimize_pass to use this feature.
-  if (FLAGS_arg_name != "") {
-    auto arg_tensor = predictor->GetTensor(FLAGS_arg_name);
-    auto arg_shape = arg_tensor->shape();
-    int arg_num = 1;
-    std::ostringstream os;
-    os << "{";
-    for (int i = 0; i < arg_shape.size(); ++i) {
-      arg_num *= arg_shape[i];
-      os << arg_shape[i] << ",";
+    // 第5个输入: init_score -> [(batch_size, 1), "float32", 2]
+    std::unique_ptr<Tensor> init_score(std::move(_predictor->GetInput(4)));
+    init_score->Resize({1, 1});
+    init_score->SetLoD({{0, 1}, {0, 1}});
+    // std::cout<<"------------------4"<<std::endl;
+    // std::cout<<"------------------4 num:"<<batch_size *1;
+    auto init_score_data_ptr = init_score->mutable_data<float>();
+    for (int i = 0; i < ShapeProduction(init_score->shape()); ++i)
+    {
+        init_score_data_ptr[i] = 0;
     }
-    os << "}";
-    float sum = 0.;
-    std::ofstream out(FLAGS_arg_name + ".txt");
-    for (size_t i = 0; i < arg_num; ++i) {
-      sum += arg_tensor->data<float>()[i];
-      out << paddle::lite::to_string(arg_tensor->data<float>()[i]) << "\n";
+
+    // 第6个输入: init_idx -> [(batch_size, ), "int32"]
+    std::unique_ptr<Tensor> init_idx(std::move(_predictor->GetInput(5)));
+    init_idx->Resize({batch_size});
+    auto init_idx_data_ptr = init_idx->mutable_data<int>();
+    // std::cout<<"------------------5"<<std::endl;
+    for (int i = 0; i < ShapeProduction(init_idx->shape()); ++i)
+    {
+        init_idx_data_ptr[i] = 0;
     }
-    LOG(INFO) << FLAGS_arg_name << " shape is " << os.str()
-              << ", mean value is " << sum * 1. / arg_num;
-  }
+
+    // 第7个输入: trg_src_attn_bias -> [(batch_size, n_head, seq_len, seq_len), "float32"]
+    std::unique_ptr<Tensor> trg_src_attn_bias(std::move(_predictor->GetInput(6)));
+    trg_src_attn_bias->Resize({batch_size, _n_head, 1, max_seq_len});
+    auto trg_src_attn_bias_data_ptr = trg_src_attn_bias->mutable_data<float>();
+    for (int i = 0; i < ShapeProduction(trg_src_attn_bias->shape()); ++i)
+    {
+        trg_src_attn_bias_data_ptr[i] = 332;
+    }
+
+    // std::cout<<"-----------------------begin"<<std::endl;
+    _predictor->Run();
+    // std::cout<<"-----------------------end"<<std::endl;
+    // 解析翻译结果
+    std::unique_ptr<const Tensor> seq_ids(std::move(_predictor->GetOutput(0)));
+    auto out_lod = seq_ids->lod();
+    // std::cerr << "out_lod[0]=" << std::endl;
+    // for (size_t i = 0; i < out_lod[0].size(); ++i) {
+    //     std::cerr << out_lod[0][i] << " ";
+    // }
+    // std::cerr << std::endl;
+
+    // std::cerr << "out_lod[1]=" << std::endl;
+    // for (size_t i = 0; i < out_lod[1].size(); ++i) {
+    //     std::cerr << out_lod[1][i] << " ";
+    // }
+    // std::cerr << std::endl;
+
+    // lod [[0, 3, 6], [0, 12, 24, 40, 54, 67, 82]]
+    // lod[0]: there are 2 source sentences, beam width is 3.
+    // lod[1]: the first source sentence has 3 hyps; the lengths are 12, 12, 16
+    //         the second source sentence has 3 hyps; the lengths are 14, 13, 15
+
+    // 取所有翻译结果
+    std::vector<std::vector<std::vector<int64_t>>> beam_search_res;
+
+    // 遍历每个源语句
+    for (size_t i = 0; i < out_lod[0].size() - 1; ++i)
+    {
+        size_t start = out_lod[0][i];   // 0
+        size_t end = out_lod[0][i + 1]; // 3
+        std::vector<std::vector<int64_t>> hyps;
+        // 遍历该源语句的所有结果
+        for (size_t j = 0; j < end - start; ++j)
+        {                                               // j < 3
+            size_t sub_start = out_lod[1][start + j];   // 翻译结果的起始位置 0
+            size_t sub_end = out_lod[1][start + j + 1]; // 翻译结果的结束位置 12
+            auto data = seq_ids->mutable_data<int64_t>();
+            std::vector<int64_t> hyp;
+            for (size_t k = sub_start; k < sub_end && data[k] != eos_id; k++)
+            {
+                hyp.push_back(data[k]);
+            }
+            hyps.push_back(std::move(hyp));
+        }
+        beam_search_res.push_back(std::move(hyps));
+    }
+
+    std::vector<std::string> trans_output;
+    std::string cur_word;
+    // 取 top 1
+    for (size_t src_id = 0; src_id < beam_search_res.size(); ++src_id)
+    {
+        std::string output_str;
+        if (beam_search_res[src_id].size() > 0)
+        {
+            // 0 表示取第1个结果
+            for (size_t trg_id = 0; trg_id < beam_search_res[src_id][0].size(); ++trg_id)
+            {
+                cur_word = std::to_string(beam_search_res[src_id][0][trg_id]);
+                output_str = output_str + cur_word + " ";
+            }
+        }
+        trans_output.push_back(output_str);
+    }
+
+    // for (size_t i = 0; i < trans_output.size(); ++i)
+    // {
+    //     std::cout << trans_output[i] << std::endl;
+    // }
+
+    output = trans_output[0];
+
+    // 输出翻译结果
+    // auto seq_ids_data = seq_ids->data<int64_t>();
+    // for (size_t i = 0; i < ShapeProduction(seq_ids->shape()); ++i) {
+    //     std::cerr << seq_ids_data[i] << " ";
+    // }
 }
-#endif
 
-}  // namespace lite_api
-}  // namespace paddle
-
-int main(int argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-  if (FLAGS_model_dir == "") {
-    LOG(INFO) << "usage: "
-              << "--model_dir /path/to/your/model";
-    exit(0);
-  }
-
-  std::string save_optimized_model_dir = "";
-  if (FLAGS_use_optimize_nb) {
-    save_optimized_model_dir = FLAGS_model_dir;
-  } else {
-    save_optimized_model_dir = FLAGS_model_dir + "opt2";
-  }
-
-  auto split_string =
-      [](const std::string& str_in) -> std::vector<std::string> {
-    std::vector<std::string> str_out;
-    std::string tmp_str = str_in;
-    while (!tmp_str.empty()) {
-      size_t next_offset = tmp_str.find(":");
-      str_out.push_back(tmp_str.substr(0, next_offset));
-      if (next_offset == std::string::npos) {
-        break;
-      } else {
-        tmp_str = tmp_str.substr(next_offset + 1);
-      }
+int main(int argc, char **argv)
+{
+#if 0
+    if (argc != 2)
+    {
+        std::cerr << "usage: " << argv[0] << " [config]" << std::endl;
+        exit(1);
     }
-    return str_out;
-  };
-
-  auto get_shape = [](const std::string& str_shape) -> std::vector<int64_t> {
-    std::vector<int64_t> shape;
-    std::string tmp_str = str_shape;
-    while (!tmp_str.empty()) {
-      int dim = atoi(tmp_str.data());
-      shape.push_back(dim);
-      size_t next_offset = tmp_str.find(",");
-      if (next_offset == std::string::npos) {
-        break;
-      } else {
-        tmp_str = tmp_str.substr(next_offset + 1);
-      }
-    }
-    return shape;
-  };
-
-  LOG(INFO) << "input shapes: " << FLAGS_input_shape;
-  std::vector<std::string> str_input_shapes = split_string(FLAGS_input_shape);
-  std::vector<std::vector<int64_t>> input_shapes;
-  for (size_t i = 0; i < str_input_shapes.size(); ++i) {
-    LOG(INFO) << "input shape: " << str_input_shapes[i];
-    input_shapes.push_back(get_shape(str_input_shapes[i]));
-  }
-
-  if (!FLAGS_use_optimize_nb) {
-    // Output optimized model
-    paddle::lite_api::OutputOptModel(
-        FLAGS_model_dir, save_optimized_model_dir, input_shapes);
-  }
-
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-  // Run inference using optimized model
-  paddle::lite_api::Run(
-      input_shapes,
-      save_optimized_model_dir,
-      static_cast<paddle::lite_api::PowerMode>(FLAGS_power_mode),
-      FLAGS_threads,
-      FLAGS_repeats,
-      FLAGS_warmup);
+    RunModel(argv[1]);
+#else
+    RunModel(argv[1]);
 #endif
-  return 0;
+    return 0;
 }
