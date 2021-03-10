@@ -80,6 +80,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.act_type = op_desc.GetAttr<std::string>("act_type");
   param_.precision = op_desc.GetAttr<std::string>("precision");
   param_.enable_qkv_fusion = op_desc.GetAttr<bool>("enable_qkv_fusion");
+  param_.norm_before = op_desc.GetAttr<bool>("norm_before");
 
   if (op_desc.HasAttr("slice_axes")) {
     param_.slice_axes = op_desc.GetAttr<std::vector<int>>("slice_axes");
