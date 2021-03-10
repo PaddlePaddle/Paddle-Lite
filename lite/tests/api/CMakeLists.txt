@@ -77,6 +77,7 @@ if(LITE_WITH_NPU)
 endif()
 
 if(LITE_WITH_XPU AND NOT LITE_WITH_XTCL)
+    lite_cc_test_with_model_and_data(test_bert_base_chinese_fp32_baidu_xpu MODEL bert_base_chinese DATA bert_base_chinese_data)
     lite_cc_test_with_model_and_data(test_bert_fp32_baidu_xpu MODEL bert DATA bert_data)
     lite_cc_test_with_model_and_data(test_content_dnn_fp32_baidu_xpu MODEL content_dnn_model DATA content_dnn_data)
     lite_cc_test_with_model_and_data(test_ernie_fp32_baidu_xpu MODEL ernie DATA bert_data)
