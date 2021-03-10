@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "lite/operators/elementwise_ops.h"
+
 #include <algorithm>
 #include <cmath>
+
 #include "lite/core/op_registry.h"
 namespace paddle {
 namespace lite {
@@ -145,6 +147,7 @@ REGISTER_LITE_OP(elementwise_mul, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_max, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_min, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_div, paddle::lite::operators::ElementwiseOp);
+REGISTER_LITE_OP(elementwise_floordiv, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_mod, paddle::lite::operators::ElementwiseOp);
 REGISTER_LITE_OP(elementwise_pow, paddle::lite::operators::ElementwiseOp);
 
