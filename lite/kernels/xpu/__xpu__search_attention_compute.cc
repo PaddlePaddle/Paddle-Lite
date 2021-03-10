@@ -22,16 +22,15 @@ namespace kernels {
 namespace xpu {
 
 void XPUMmdnnSearchAttentionCompute::PrepareForRun() {
-  offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
-  pad_begin_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
-  w_max_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(8 * sizeof(float), false /* use_l3 */);
-  buffer_at_l3_guard_ = TargetWrapperXPU::MallocScratchPad(
-      5 * L3_SLOT_SIZE * sizeof(float), false /* use_l3 */);
-  buffer_at_gm_guard_ = TargetWrapperXPU::MallocScratchPad(
-      5 * GM_SLOT_SIZE * sizeof(float), false /* use_l3 */);
+  offset_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
+  pad_begin_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
+  w_max_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
+  buffer_at_l3_guard_ =
+      TargetWrapperXPU::MallocScratchPad(5 * L3_SLOT_SIZE * sizeof(float));
+  buffer_at_gm_guard_ =
+      TargetWrapperXPU::MallocScratchPad(5 * GM_SLOT_SIZE * sizeof(float));
 
   offset_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
   pad_begin_cpu.reset(new int[XPU_MAX_LOD_SIZE]);

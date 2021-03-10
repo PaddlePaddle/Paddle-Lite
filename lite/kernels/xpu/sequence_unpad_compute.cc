@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void SequenceUnpadCompute::PrepareForRun() {
-  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  lod_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
   lod_cpu_.reserve(XPU_MAX_LOD_SIZE);
 }
 

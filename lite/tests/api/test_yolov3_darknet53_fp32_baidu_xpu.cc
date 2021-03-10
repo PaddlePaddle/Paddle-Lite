@@ -114,7 +114,8 @@ TEST(yolov3_darknet53, test_yolov3_darknet53_fp32_baidu_xpu) {
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
-  config.set_xpu_workspace_l3_size_per_thread();
+  config.set_xpu_l3_cache_method(16773120, false);
+
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string cpu_out_dir =

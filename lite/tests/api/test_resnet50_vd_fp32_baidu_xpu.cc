@@ -96,7 +96,7 @@ TEST(Resnet50_vd, test_resnet50_vd_fp32_baidu_xpu) {
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
-  config.set_xpu_workspace_l3_size_per_thread();
+  config.set_xpu_l3_cache_method(16773120, false);
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string labels_dir = FLAGS_data_dir + std::string("/val_list.txt");

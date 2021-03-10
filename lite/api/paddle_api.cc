@@ -413,12 +413,19 @@ CxxConfig::mlu_firstconv_param() const {
 }
 #endif
 
-void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
+void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::workspace_l3_size_per_thread = l3_size;
+  if (locked) {
+    lite::TargetWrapperXPU::shared_l3_size =
+        lite::TargetWrapperXPU::shared_l3_size > l3_size
+            ? lite::TargetWrapperXPU::shared_l3_size
+            : l3_size;
+  } else {
+    lite::TargetWrapperXPU::local_l3_size = l3_size;
+  }
 #else
   LOG(WARNING) << "The invoking of the function "
-                  "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
+                  "'set_xpu_l3_cache_method' is ignored, please "
                   "rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
