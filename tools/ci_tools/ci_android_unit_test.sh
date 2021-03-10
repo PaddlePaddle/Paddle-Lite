@@ -22,7 +22,8 @@ skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
             "test_mobilenet_v1_int8_dygraph_arm" "test_ocr_lstm_int8_arm" \
             "get_conv_latency" "get_batchnorm_latency" "get_pooling_latency" \
             "get_fc_latency" "get_activation_latency" "test_generated_code" \
-            "test_lac_crf_fp32_arm" "test_nlp_lstm_int8_arm")
+            "test_lac_crf_fp32_arm" "test_nlp_lstm_int8_arm" \
+            "test_transformer_nlp2_fp32_arm")
 
 # if operating in mac env, we should expand the maximum file num
 os_name=`uname -s`

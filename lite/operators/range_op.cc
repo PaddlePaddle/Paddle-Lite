@@ -59,6 +59,12 @@ bool RangeOpLite::InferShapeImpl() const {
               param_.Step->data<int>()[0],
               &size);
       break;
+    case PRECISION(kInt64):
+      GetSize(param_.Start->data<int64_t>()[0],
+              param_.End->data<int64_t>()[0],
+              param_.Step->data<int64_t>()[0],
+              &size);
+      break;
     default:
       LOG(FATAL) << "not supported precision type of range: "
                  << lite_api::PrecisionToStr(param_.Start->precision());
