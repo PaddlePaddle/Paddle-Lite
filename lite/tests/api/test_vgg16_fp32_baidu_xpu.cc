@@ -34,9 +34,10 @@ DEFINE_int32(warmup_num, 1, "warmup rounds");
 namespace paddle {
 namespace lite {
 
-TEST(resnet50, test_resnet50_fp32_baidu_xpu) {
+TEST(VGG16, test_vgg16_fp32_baidu_xpu) {
   lite_api::CxxConfig config;
-  config.set_model_dir(FLAGS_model_dir);
+  config.set_model_file(FLAGS_model_dir + "/inference.pdmodel");
+  config.set_param_file(FLAGS_model_dir + "/inference.pdiparams");
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
@@ -82,9 +83,9 @@ TEST(resnet50, test_resnet50_fp32_baidu_xpu) {
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GT(out_accuracy, 0.74f);
+  ASSERT_GT(out_accuracy, 0.72f);
   float latency = cost_time / (FLAGS_images_num / FLAGS_batch) / 1000.0;
-  ASSERT_LT(latency, 20.f);
+  ASSERT_LT(latency, 90.f);
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
