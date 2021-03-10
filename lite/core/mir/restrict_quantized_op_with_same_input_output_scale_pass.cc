@@ -164,4 +164,4 @@ void RestrictQuantizedOpWithSameInputOutputScalePass::Apply(
 REGISTER_MIR_PASS(
     restrict_quantized_op_with_same_input_output_scale_pass,
     paddle::lite::mir::RestrictQuantizedOpWithSameInputOutputScalePass)
-    .BindTargets({TARGET(kRKNPU)});
+    .BindTargets({TARGET(kRKNPU), TARGET(kNNAdapter)});

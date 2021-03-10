@@ -62,6 +62,11 @@ class ImaginationNNASubgraphPass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 };
 
+class NNAdapterSubgraphPass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+};
+
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle

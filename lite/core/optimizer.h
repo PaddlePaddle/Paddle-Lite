@@ -144,6 +144,7 @@ class Optimizer {
          "npu_subgraph_pass",
          "huawei_ascend_npu_subgraph_pass",
          "imagination_nna_subgraph_pass",
+         "nnadapter_subgraph_pass",
          "xpu_subgraph_pass",
          "bm_subgraph_pass",
          "apu_subgraph_pass",

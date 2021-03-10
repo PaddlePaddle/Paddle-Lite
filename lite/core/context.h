@@ -65,6 +65,7 @@ using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
 using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
 using ImaginationNNAContext = Context<TargetType::kImaginationNNA>;
+using NNAdapterContext = Context<TargetType::kNNAdapter>;
 
 template <>
 class Context<TargetType::kHost> {
@@ -250,6 +251,70 @@ class Context<TargetType::kImaginationNNA> {
   void CopySharedTo(ImaginationNNAContext* ctx) {}
 
   std::string name() const { return "ImaginationNNAContext"; }
+};
+#endif
+
+#ifdef LITE_WITH_NNADAPTER
+template <>
+class Context<TargetType::kNNAdapter> {
+ public:
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+  void CopySharedTo(NNAdapterContext* ctx) {}
+
+  NNAdapterContext& operator=(const NNAdapterContext& ctx) {}
+  std::string name() const { return "NNAdapterContext"; }
+
+  static void SetSubgraphModelCacheDir(Scope* scope,
+                                       std::string subgraph_model_cache_dir) {
+    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = subgraph_model_cache_dir;
+  }
+
+  static std::string SubgraphModelCacheDir(Scope* scope) {
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+
+  static void SetSubgraphModelCacheBuffers(
+      Scope* scope,
+      const std::map<std::string,
+                     std::pair<std::vector<char>, std::vector<char>>>&
+          subgraph_model_cache_buffers) {
+    for (auto& subgraph_model_cache_buffer : subgraph_model_cache_buffers) {
+      auto& key = subgraph_model_cache_buffer.first;
+      auto var = scope->Var("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
+      CHECK(var);
+      auto data =
+          var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
+      CHECK(data);
+      *data = subgraph_model_cache_buffer.second;
+    }
+  }
+
+  static bool SubgraphModelCacheBuffers(Scope* scope,
+                                        const std::string& key,
+                                        std::vector<char>* cfg,
+                                        std::vector<char>* bin) {
+    CHECK(cfg);
+    CHECK(bin);
+    cfg->clear();
+    bin->clear();
+    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_BUFFERS_" + key);
+    if (!var) return false;
+    auto data =
+        var->GetMutable<std::pair<std::vector<char>, std::vector<char>>>();
+    *cfg = data->first;
+    *bin = data->second;
+    // Reset to reduce memory consumption
+    std::vector<char>().swap(data->first);
+    std::vector<char>().swap(data->second);
+    return true;
+  }
 };
 #endif
 

@@ -47,6 +47,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   APU_DEPS ${apu_kernels}
                   RKNPU_DEPS ${rknpu_kernels}
                   IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+                  NNADAPTER_DEPS ${nnadapter_kernels}
                   HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
                   )
 
@@ -135,6 +136,11 @@ if(LITE_WITH_IMAGINATION_NNA)
     set(cxx_api_deps ${cxx_api_deps} ${imagination_nna_deps})
 endif()
 
+if(LITE_WITH_NNADAPTER)
+    set(light_api_deps ${light_api_deps} ${nnadapter_deps})
+    set(cxx_api_deps ${cxx_api_deps} ${nnadapter_deps})
+endif()
+
 if(LITE_WITH_HUAWEI_ASCEND_NPU)
     set(light_api_deps ${light_api_deps} ${huawei_ascend_npu_deps})
     set(cxx_api_deps ${cxx_api_deps} ${huawei_ascend_npu_deps})
@@ -155,6 +161,7 @@ list(LENGTH bm_kernels num_bm_kernels)
 list(LENGTH mlu_kernels num_mlu_kernels)
 list(LENGTH huawei_ascend_npu_kernels num_huawei_ascend_npu_kernels)
 list(LENGTH imagination_nna_kernels num_imagination_nna_kernels)
+list(LENGTH nnadapter_kernels num_nnadapter_kernels)
 
 message(STATUS "Collected ${num_ops} ops")
 message(STATUS "Collected ${num_x86_kernels} X86 kernels")
@@ -171,6 +178,7 @@ message(STATUS "Collected ${num_bm_kernels} BM kernels")
 message(STATUS "Collected ${num_mlu_kernels} MLU kernels")
 message(STATUS "Collected ${num_huawei_ascend_npu_kernels} HUAWEI_ASCEND_NPU kernels")
 message(STATUS "Collected ${num_imagination_nna_kernels} IMAGINATION_NNA kernels")
+message(STATUS "Collected ${num_nnadapter_kernels} NNADAPTER kernels")
 
 # for full api
 if (NOT LITE_ON_TINY_PUBLISH)
@@ -189,6 +197,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
                         RKNPU_DEPS ${rknpu_kernels}
                         BM_DEPS ${bm_kernels}
                         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+                        NNADAPTER_DEPS ${nnadapter_kernels}
                         CL_DEPS ${opencl_kernels}
                         FPGA_DEPS ${fpga_kernels}
                         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
@@ -216,6 +225,7 @@ lite_cc_library(light_api SRCS light_api.cc
         FPGA_DEPS ${fpga_kernels}
         BM_DEPS ${bm_kernels}
         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+        NNADAPTER_DEPS ${nnadapter_kernels}
         MLU_DEPS ${mlu_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
 
@@ -394,6 +404,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         CL_DEPS ${opencl_kernels}
         FPGA_DEPS ${fpga_kernels}
         IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+        NNADAPTER_DEPS ${nnadapter_kernels}
         BM_DEPS ${bm_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     # The final inference library for just MobileConfig.
