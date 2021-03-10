@@ -108,6 +108,7 @@ class TargetWrapper<TARGET(kXPU)> {
                                                   void* shared_l3_ptr);
   static XPUScratchPadGuard shared_l3_guard_;
   static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
+  static std::mutex mutex_l3_;
 };
 
 }  // namespace lite

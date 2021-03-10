@@ -71,10 +71,9 @@ XPUScratchPadGuard TargetWrapperXPU::SetSharedL3ScratchPad(size_t size,
 
 void TargetWrapperXPU::MallocL3Cache() {
   TargetWrapperXPU::GetRawContext();
-  static std::mutex _mutex_dev;
   // Malloc Static Shared L3 Cache
   if (shared_l3_guard_ == nullptr && shared_l3_size > 0) {
-    std::lock_guard<std::mutex> lock(_mutex_dev);
+    mutex_l3_.lock();
     if (shared_l3_guard_ == nullptr) {
       void* shared_l3_ptr = nullptr;
       XPU_CALL(xpu_malloc(reinterpret_cast<void**>(&shared_l3_ptr),
@@ -82,29 +81,28 @@ void TargetWrapperXPU::MallocL3Cache() {
                           XPU_MEM_L3));
       shared_l3_guard_ = SetSharedL3ScratchPad(shared_l3_size, shared_l3_ptr);
     }
+    mutex_l3_.unlock();
   }
   if (local_l3_size != 0) {
-    LOG(INFO) << "Try To Malloc Local L3 Cache Size is" << local_l3_size;
+    VLOG(3) << "Try To Malloc Local L3 Cache Size is" << local_l3_size;
     void* local_l3_ptr = nullptr;
     int ret = xpu_malloc(
         reinterpret_cast<void**>(&local_l3_ptr), local_l3_size, XPU_MEM_L3);
     if (ret != 0) {
-      LOG(INFO) << "No Enough L3 Cache For Current Predictor.";
+      VLOG(3) << "No Enough L3 Cache For Current Predictor.";
     } else {
       ret = tls_raw_ctx_->_l3_mgr.set(local_l3_ptr, local_l3_size);
       if (ret != 0) {
         LOG(WARNING) << "XPU L3 Mgr Init Fail, Please Check Configuration.";
         XPU_CALL(xpu_free(local_l3_ptr));
       } else {
-        LOG(INFO) << "Success!";
+        VLOG(3) << "Success!";
       }
     }
-  } else {
-    CHECK(shared_l3_guard_ != nullptr)
-        << "XPU Shared L3 Cache Should Not Be NULL";
+  } else if (shared_l3_guard_ != nullptr) {
     CHECK(shared_l3_guard_->size_ == shared_l3_size)
         << "XPU Shared L3 Cache Size Should Not Be Changed.";
-    std::lock_guard<std::mutex> lock(_mutex_dev);
+    mutex_l3_.lock();
     XPU_CALL(
         tls_raw_ctx_->_l3_mgr.set(shared_l3_guard_->addr_, shared_l3_size));
   }
@@ -117,8 +115,9 @@ void TargetWrapperXPU::FreeL3Cache() {
       XPU_CALL(xpu_wait());
       XPU_CALL(xpu_free(xpu_l3_ptr))
     }
-  } else {
+  } else if (shared_l3_guard_ != nullptr) {
     XPU_CALL(xpu_wait());
+    mutex_l3_.unlock();
   }
   XPU_CALL(tls_raw_ctx_->_l3_mgr.set(nullptr, 0));
 }
@@ -131,6 +130,7 @@ LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;  // NOLINT
 LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
 size_t TargetWrapperXPU::shared_l3_size{0};
 XPUScratchPadGuard TargetWrapperXPU::shared_l3_guard_;
+std::mutex TargetWrapperXPU::mutex_l3_;
 
 }  // namespace lite
 }  // namespace paddle
