@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/fill_zeros_like_op.h"
+#pragma once
+#include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
+namespace kernels {
+namespace host {
 
-bool FillZerosLikeOp::InferShapeImpl() const {
-  param_.Out->Resize(param_.X->dims());
-  param_.Out->set_lod(param_.X->lod());
-  return true;
-}
+template <class T>
+class FillZerosLikeCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::FillAnyLikeParam;
 
-bool FillZerosLikeOp::AttachImpl(const cpp::OpDesc& opdesc,
-                                 lite::Scope* scope) {
-  param_.X = scope->FindTensor(opdesc.Input("X").front());
-  param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
-  return true;
-}
+  void Run() override;
 
-}  // namespace operators
+  ~FillZerosLikeCompute() {}
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_LITE_OP(fill_zeros_like, paddle::lite::operators::FillZerosLikeOp);

@@ -32,6 +32,7 @@ void FillAnyLikeCompute::FillAnyData() {
 void FillAnyLikeCompute::Run() {
   auto& param = *param_.get_mutable<param_t>();
   switch (param.dtype) {
+    case -1:
     case static_cast<int32_t>(lite::core::FluidType::FP32):
       FillAnyData<float>();
       break;
@@ -55,6 +56,9 @@ void FillAnyLikeCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+// fill_any_like is not upgraded in Paddle2.0. BindPaddleOpVersion is reserved
+// to keep compatible with existing opt models, but it is better to be removed
+// later.
 REGISTER_LITE_KERNEL(fill_any_like,
                      kHost,
                      kAny,
@@ -66,6 +70,14 @@ REGISTER_LITE_KERNEL(fill_any_like,
     .BindPaddleOpVersion("fill_any_like", 1)
     .Finalize();
 
+// 1. fill_zeros_like is not upgraded in Paddle2.0. BindPaddleOpVersion is
+// reserved to keep compatible with existing opt models, but it is better to be
+// removed later.
+// 2. fill_zeros_like does not have attr value and dtype in Paddle, so it's
+// wrong to use FillAnyLikeCompute. This register is reserved to keep compatible
+// with existing opt models. New register is in
+// lite/kernels/host/fill_zeros_like_compute.cc. This register may be removed
+// later.
 REGISTER_LITE_KERNEL(fill_zeros_like,
                      kHost,
                      kAny,
