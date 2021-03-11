@@ -1,5 +1,83 @@
 #include <cl_common.h>
 
+
+__kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t output, __global half4 *weight,
+                            /* __global half4 *bias, */ int4 input_shape, int4 output_shape, int4 kernel_stride, int4 pad,
+                            int2 dilation) {
+  const int BlockH = 1;
+  const int BlockW = 1;
+  const int BlockC = 1;
+
+  int N = input_shape.x;
+  int IH = input_shape.y, IW = input_shape.z, CI_SLICES = input_shape.w; // CI_TILE = 4, CI_SLICES = CI / 4
+  int OH = output_shape.y, OW = output_shape.z, CO_SLICES = output_shape.w; // CO_TILE = 4, CO_SLICES = CO / 4
+  int KH = kernel_stride.x, KW = kernel_stride.y;
+  int strideH = kernel_stride.z, strideW = kernel_stride.w;
+  int padTop = pad.x, padBottom = pad.y, padLeft = pad.z, padRight = pad.w;
+  int dilationH = dilation.x, dilationW = dilation.y;
+
+  int n_oh = get_global_id(0); // [0, nh)
+  int ow = get_global_id(1) * BlockW; // [0, OW]
+  int co_slice = get_global_id(2) * BlockC; // [0, CO/4]
+  int OH_SLICES = (OH + 3) / BlockH; // OH
+  int n = n_oh / OH_SLICES; // [0, N]
+  int oh = (n_oh % OH_SLICES) * BlockH; // [0, OH]
+  if (n >= N || oh >= OH || ow >= OW || co_slice >= CO_SLICES) {
+    return;
+  }
+
+  int oh0 = oh + 0;
+  int n_oh0 = n * OH + oh0;
+  int ow0 = ow + 0;
+  int co_slice0 = co_slice + 0;
+
+  half4 out_h0_w0_c0 = (half4)(0.0f, 0.0f, 0.0f, 0.0f);
+
+  __global half4 *weight_ptr = weight + co_slice * KH * KW * CI_SLICES * 4;
+
+  for (int kh = 0; kh < KH; ++kh) {
+    int ih0 = kh * dilationH + oh0 * strideH - padTop;
+    int y_idx0 = (ih0 >= 0 && ih0 < IH) ? n * IH + ih0 : -1; // input image2d height idx
+
+    for (int kw = 0; kw < KW; ++kw) {
+      int iw0 = kw * dilationW + ow0 * strideW - padLeft;
+      // int x_idx0 = iw0; // input image2d width idx
+      int x_idx0 = (iw0 >= 0 && iw0 < IW) ? iw0 : -1;
+
+      for (int ci_slice = 0; ci_slice < CI_SLICES; ci_slice++) {
+        half4 in_h0_w0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx0, y_idx0));
+        x_idx0 += IW;
+
+        out_h0_w0_c0 += weight_ptr[0] * in_h0_w0.x; // c == 0
+        out_h0_w0_c0 += weight_ptr[1] * in_h0_w0.y; // c == 1
+        out_h0_w0_c0 += weight_ptr[2] * in_h0_w0.z; // c == 2
+        out_h0_w0_c0 += weight_ptr[3] * in_h0_w0.w; // c == 3
+
+        // if (((co_slice0 * OW + ow0) == 0) && (n_oh == 0)) {
+        //   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), out_h0_w0_c0);
+        // }
+        weight_ptr += 4;
+      }
+    }
+  }
+
+#ifdef BIASE_CH
+  out_h0_w0_c0 += bias[co_slice0];
+#endif
+
+  out_h0_w0_c0 = activation_type4(out_h0_w0_c0, 0.f);
+
+#ifdef SCALE_ACTIVATION
+  out_h0_w0_c0 = fuse_scale(out_h0_w0_c0, 1.f, 0.f, 0.f);
+#endif
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), out_h0_w0_c0);
+  // if (n_oh == 0 && ow == 0 && co_slice == 0) {
+  //   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), out_h0_w0_c0);
+  // }
+}
+
+
 __kernel void conv2d_1x1_opt(
     __private const int global_size_dim0,
     __private const int global_size_dim1,
@@ -305,31 +383,27 @@ CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
 }
 
 __kernel void conv2d_1x1_simple(
-    __private const int global_size_dim0,
-    __private const int global_size_dim1,
-    __private const int global_size_dim2,
+    __private const int global_size_dim0, // (W+3)/4
+    __private const int global_size_dim1, // (C+3)/4
+    __private const int global_size_dim2, // N*H
     __read_only image2d_t input_image,
     __read_only image2d_t filter,
     __read_only image2d_t bias,
-#ifdef BATCH_NORM
-    __read_only image2d_t new_scale,
-    __read_only image2d_t new_biase,
-#endif
     __write_only image2d_t output_image,
     __private const int stride,
     __private const int offset,
-    __private const int input_c,
+    __private const int input_c, // input_c_blk
     __private const int input_c_origin,
     __private const int dilation,
     __private const int input_width,  /* of one block */
     __private const int input_height, /* of one block */
     __private const int output_width,
     __private const int output_height,
-    __private const int old_w,
+    __private const int old_w, // out_w
     __read_only image2d_t prelu_alpha) {
-  const int out_c = get_global_id(0);
-  const int out_w = get_global_id(1);
-  const int out_nh = get_global_id(2);
+  const int out_c = get_global_id(0); // [0, (C+3)/4)
+  const int out_w = get_global_id(1); // [0, (W+3)/4)
+  const int out_nh = get_global_id(2);// [0, N*H)
 
   int out_w0 = out_w;
   int out_w1 = out_w + global_size_dim1;
@@ -366,12 +440,6 @@ __kernel void conv2d_1x1_simple(
   CL_DTYPE4 output1 = output0;
   CL_DTYPE4 output2 = output0;
   CL_DTYPE4 output3 = output0;
-#elif defined(BIASE_ELE)
-  CL_DTYPE4 output0 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, output_pos0);
-  CL_DTYPE4 output1 = output0;
-  CL_DTYPE4 output2 = output0;
-  CL_DTYPE4 output3 = output0;
-
 #else
   CL_DTYPE4 output0 = 0.0f;
   CL_DTYPE4 output1 = 0.0f;
@@ -427,24 +495,6 @@ __kernel void conv2d_1x1_simple(
     output3 = mad(input3.z, weight2, output3);
     output3 = mad(input3.w, weight3, output3);
   }
-
-#ifdef BATCH_NORM
-  output0 = output0 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
-
-  output1 = output1 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
-
-  output2 = output2 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
-
-  output3 = output3 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
-#endif
 
 CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
 #ifdef PRELU_CH //{

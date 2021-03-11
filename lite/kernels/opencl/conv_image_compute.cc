@@ -32,6 +32,7 @@ void ConvImageCompute::PrepareForRun() {
 
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
+  const bool is_mali = context.cl_context()->IsArmMali();
 
   auto filter_dims = conv_param_->filter->dims();
   filter_tensor_n_ = filter_dims[0];
@@ -89,6 +90,7 @@ void ConvImageCompute::PrepareForRun() {
    *********************************************/
   auto* filter_cpu = conv_param_->filter->mutable_data<float>();
   filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+  filter_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
 
@@ -101,17 +103,62 @@ void ConvImageCompute::PrepareForRun() {
     }
     kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
 
-    CLImageConverterNWBlock converter;
-    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
-    filter_image_h_ = filter_image_dims[1];
-    filter_image_w_ = filter_image_dims[0];
-    tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
-    auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+    if (is_mali) {
+      LOG(INFO) << "IN MALI";
+      kernel_func_names_.at(0) = "Conv2D_H1W1C1";
 
-    converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
-    MUTABLE_DATA_GPU(
-        filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
+      CLImageConverterNBlock converter;
 
+      auto tensor_hold_filter_buffer = std::unique_ptr<Tensor>(new Tensor);
+      auto filter_new_dims = filter_dims;
+      filter_new_dims[1] = maptofactor(filter_dims[0], 4) * 4;
+      tensor_hold_filter_buffer->Resize(filter_new_dims);
+      auto* filter_buffer_data =
+          tensor_hold_filter_buffer->mutable_data<half_t>();
+      converter.NCHWToImage(filter_cpu, filter_buffer_data, filter_dims);
+      filter_gpu_buffer_->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
+          tensor_hold_filter_buffer->data<half_t>(), filter_new_dims);
+
+      // auto tensor_hold_filter_buffer = std::unique_ptr<Tensor>(new Tensor);
+      // auto filter_new_dims = filter_dims;
+      // filter_new_dims[1] = maptofactor(filter_dims[0], 4) * 4;
+      // tensor_hold_filter_buffer->Resize(filter_new_dims);
+      // tensor_hold_filter_buffer->mutable_data<half_t>();
+      // LOG(INFO) << "1111";
+      // OIHW2OHWC4(filter_cpu, tensor_hold_filter_buffer->raw_data(),
+      // filter_dims[0], filter_dims[1], filter_dims[2], filter_dims[3]);
+      // for (auto i = 0; i < filter_new_dims.production(); i++) {
+      //   LOG(INFO) << "filter buffer data: " <<
+      //   Half2Float(*(tensor_hold_filter_buffer->data<half_t>() + i));
+      // }
+      // // FloatArray2HalfArray(filter_cpu, reinterpret_cast<half_t
+      // *>(tensor_hold_filter_buffer->raw_data()), filter_dims.production());
+      // LOG(INFO) << "2222";
+      // // filter_gpu_buffer_->Resize(filter_dims);
+      // // auto* dst = filter_gpu_buffer_->mutable_data<half_t, cl::Buffer>();
+      // // lite::TargetWrapperCL::MemcpySync(dst,
+      // tensor_hold_filter_buffer->raw_data(), filter_dims.production() *
+      // sizeof(half_t), IoDirection::HtoD);
+      // filter_gpu_buffer_->Assign<half_t, lite::DDim,
+      // TARGET(kOpenCL)>(tensor_hold_filter_buffer->data<half_t>(),
+      // filter_new_dims);
+      // LOG(INFO) << "3333";
+    } else {
+      CLImageConverterNWBlock converter;
+      const DDim& filter_image_dims =
+          converter.InitImageDimInfoWith(filter_dims);
+      filter_image_h_ = filter_image_dims[1];
+      filter_image_w_ = filter_image_dims[0];
+      tensor_hold_filter_image_->Resize(
+          {1, filter_image_w_, filter_image_h_, 4});
+      auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+
+      converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+      MUTABLE_DATA_GPU(filter_gpu_image_,
+                       filter_image_w_,
+                       filter_image_h_,
+                       filter_image_data);
+    }
     impl_ = &ConvImageCompute::Conv2d1x1opt;
 #define DEPTH_CONV_USE_SPL
 #ifdef DEPTH_CONV_USE_SPL
@@ -379,7 +426,21 @@ void ConvImageCompute::PrepareForRun() {
   // bias options
   const bool is_element_wise_bias =
       has_bias_ && conv_param_->output->dims() == conv_param_->bias->dims();
-  if (has_bias_) {
+  if (has_bias_ && is_mali && kernel_func_names_[0] == "Conv2D_H1W1C1") {
+    bias_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
+    auto bias_dims = conv_param_->bias->dims();
+    auto tensor_hold_bias_buffer = std::unique_ptr<Tensor>(new Tensor);
+    tensor_hold_bias_buffer->Resize(bias_dims);
+    tensor_hold_bias_buffer->mutable_data<half_t>();
+    FloatArray2HalfArray(
+        conv_param_->bias->mutable_data<float>(),
+        reinterpret_cast<half_t*>(tensor_hold_bias_buffer->raw_data()),
+        bias_dims.production());
+    bias_gpu_buffer_->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
+        tensor_hold_bias_buffer->data<half_t>(), bias_dims);
+    LOG(INFO) << "BIAS DONE";
+  } else if (is_mali && kernel_func_names_[0] == "Conv2D_H1W1C1") {
+  } else if (has_bias_ && !is_mali) {
     bias_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
     build_options_single +=
         is_element_wise_bias ? " -DBIASE_ELE" : " -DBIASE_CH";
@@ -403,7 +464,7 @@ void ConvImageCompute::PrepareForRun() {
                      bias_image_dims[1],
                      bias_image_data);
     // convert cpu buffer bias --> gpu image --- end ----
-  } else {
+  } else if (!has_bias_ && !is_mali) {
     bias_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
     CLImageConverterFolder bias_converter;
     tensor_hold_bias_image_->Resize({1, 1, 1, 4});
@@ -422,9 +483,11 @@ void ConvImageCompute::PrepareForRun() {
   }
 
   // define image pointer for filter, bias
-  filter_image_p_ = DATA_GPU(filter_gpu_image_);
-  bias_image_p_ = DATA_GPU(bias_gpu_image_);
-
+  LOG(INFO) << "DATA_GPU";
+  if (!is_mali) {
+    filter_image_p_ = DATA_GPU(filter_gpu_image_);
+    bias_image_p_ = DATA_GPU(bias_gpu_image_);
+  }
   build_options_.push_back(build_options_single);
   for (size_t i = 0; i < kernel_func_names_.size(); i++) {
     context.cl_context()->AddKernel(kernel_func_names_[i],
@@ -432,6 +495,7 @@ void ConvImageCompute::PrepareForRun() {
                                     build_options_[i],
                                     time_stamp_);
   }
+  LOG(INFO) << "add kernel done";
   SetLocalWorkSize(CLRuntime::Global()->lws_repeats());
 }
 
@@ -594,8 +658,12 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                   static_cast<size_t>(w_blk_),
                                   static_cast<size_t>(nh_blk_)};
 
-  if (kernel_func_names_[0] == "conv2d_1x1_simple" ||
-      kernel_func_names_[0] == "conv2d_1x1_opt") {
+  if (kernel_func_names_[0] == "Conv2D_H1W1C1") {
+    global_work_size_ = cl::NDRange{static_cast<size_t>(nh_blk_),
+                                    static_cast<size_t>(w_blk_),
+                                    static_cast<size_t>(c_blk_)};
+  } else if (kernel_func_names_[0] == "conv2d_1x1_simple" ||
+             kernel_func_names_[0] == "conv2d_1x1_opt") {
     w_blk_ = maptofactor(default_w_blk_, 4);
     c_blk_ = default_c_blk_;
     nh_blk_ = default_nh_blk_;
@@ -696,42 +764,87 @@ void ConvImageCompute::SetGlobalWorkSize() {
 }
 
 void ConvImageCompute::Conv2d1x1opt() {
-  status_ = kernel_.setArg(0, c_blk_);
+  LOG(INFO) << "set args";
+  cl_int4 input_shape = {input_tensor_n_,
+                         input_tensor_h_,
+                         input_tensor_w_,
+                         maptofactor(input_tensor_c_, 4)};
+  cl_int4 output_shape = {output_tensor_n_,
+                          output_tensor_h_,
+                          output_tensor_w_,
+                          maptofactor(output_tensor_c_, 4)};
+  cl_int4 kernel_stride = {
+      filter_tensor_h_, filter_tensor_w_, stride_h_, stride_w_};
+  cl_int4 pad = {pad_up_, pad_down_, pad_left_, pad_right_};
+  cl_int2 dilation = {dilation_h_, dilation_w_};
+
+  int cnt = 0;
+  LOG(INFO) << "set input image";
+  status_ = kernel_.setArg(cnt++, *input_image_p_);
+  LOG(INFO) << "set input image done";
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(1, w_blk_);
+  status_ = kernel_.setArg(cnt++, *output_image_p_);
+  LOG(INFO) << "set output image done";
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(2, nh_blk_);
+  status_ = kernel_.setArg(
+      cnt++, *(filter_gpu_buffer_->mutable_data<half_t, cl::Buffer>()));
+  LOG(INFO) << "set filter buffer done";
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(3, *input_image_p_);
+  // status_ = kernel_.setArg(cnt++, *(bias_gpu_buffer_->mutable_data<half_t,
+  // cl::Buffer>()));
+  // LOG(INFO) << "set bias buffer done";
+  // CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(cnt++, input_shape);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(4, *filter_image_p_);
+  status_ = kernel_.setArg(cnt++, output_shape);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(5, *bias_image_p_);
+  status_ = kernel_.setArg(cnt++, kernel_stride);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(6, *output_image_p_);
+  status_ = kernel_.setArg(cnt++, pad);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(7, stride_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(8, offset_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, input_c_block_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(10, input_tensor_c_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(11, dilation_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(12, input_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(13, input_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(14, output_tensor_w_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(15, output_tensor_h_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(16, default_w_blk_);
-  CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(17, *alpha_image_p_);
-  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(cnt++, dilation);
+
+  LOG(INFO) << "set args done";
+
+  /*
+    status_ = kernel_.setArg(0, c_blk_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(1, w_blk_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(2, nh_blk_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(3, *input_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(4, *filter_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(5, *bias_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(6, *output_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(7, stride_h_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(8, offset_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(9, input_c_block_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(10, input_tensor_c_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(11, dilation_h_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(12, input_tensor_w_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(13, input_tensor_h_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(14, output_tensor_w_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(15, output_tensor_h_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(16, default_w_blk_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(17, *alpha_image_p_);
+    CL_CHECK_FATAL(status_);
+
+    */
 }
 
 void ConvImageCompute::Conv2d3x3() {
@@ -1143,6 +1256,7 @@ void ConvImageCompute::Run() {
                                  local_work_size_,
                                  nullptr,
                                  event_);
+  LOG(INFO) << "kernel run done";
   CL_CHECK_FATAL(status_);
 }
 
