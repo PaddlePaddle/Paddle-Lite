@@ -642,7 +642,7 @@ void MetalImage::CopyToNCHW(P *dst) const {
 
 MetalImage::~MetalImage() {
   if ( nil != image_){
-#if (!__has_feature(objc_arc)) 
+#if (!__has_feature(objc_arc))
     [image_ release];
 #endif
     image_ = nil;
