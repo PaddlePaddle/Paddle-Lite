@@ -34,7 +34,7 @@ class GroupNormComputeTest : public arena::TestCase {
   DDim dims_{{4, 5, 19, 19}};
   float epsilon_ = 1e-5f;
   int groups_ = 1;
-  int channels_ = dims_[1];
+  int channels_ = 5;
   std::string data_layout_str_ = "NCHW";
 
  public:
