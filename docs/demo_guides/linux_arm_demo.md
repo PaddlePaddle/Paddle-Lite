@@ -37,7 +37,7 @@ sh download_models_and_libs.sh       # 2. 执行脚本下载依赖项 （需要�
 
 下载完成后会出现提示： `Download successful!`
 
-3、执行用例
+3、执行用例(保证linux_arm环境准备完成，参考[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo) 要求-ARMLinux小节)
 ```shell
 cd object_detection_demo    # 1. 终端中进入
 sh run.sh                   # 2. 执行脚本编译并执行物体检测demo，输出预测数据和运行时间
