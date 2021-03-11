@@ -94,6 +94,21 @@ void ElementwiseAddImageCompute::PrepareForRun() {
       kernel_func_name_ = "channel_add";  // for opt
       if (y->persistable()) {
         LOG(INFO) << "with y->persistable";
+        y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
+        std::unique_ptr<Tensor> tensor_hold_y_image_ =
+            std::unique_ptr<Tensor>(new Tensor);
+        CLImageConverterFolder folder_converter;
+        const DDim& y_image_dims =
+            folder_converter.InitImageDimInfoWith(y->dims());
+        tensor_hold_y_image_->Resize({1, y_image_dims[0], y_image_dims[1], 4});
+
+        auto* y_cpu_image = MUTABLE_DATA_CPU(tensor_hold_y_image_);
+        auto* y_cpu_nchw =
+            static_cast<float*>(const_cast<void*>(y->raw_data()));
+        folder_converter.NCHWToImage(y_cpu_nchw, y_cpu_image, y->dims());
+
+        MUTABLE_DATA_GPU(
+            y_weights_image_, y_image_dims[0], y_image_dims[1], y_cpu_image);
       }
     } else {
       LOG(FATAL) << "ElementwiseAddImage doesn't support axis:" << axis
