@@ -330,6 +330,8 @@ TEST(elementwise_x86, precison) {
   TestEltX86<int64_t>(place, abs_error, "floordiv", "int64");
   TestEltX86<int32_t>(place, abs_error, "mod", "int32");
   TestEltX86<int64_t>(place, abs_error, "mod", "int64");
+  TestEltX86<float>(place, abs_error, "max", "float32");
+  TestEltX86<float>(place, abs_error, "min", "float32");
 }
 #endif
 
