@@ -21,9 +21,9 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 | box_coder | 　 | 　 | 　 | Y | Y | 　 | 　 | 　 | 　 | 　 |　 |
 | calib | 　 | 　 | Y | Y | 　 | Y | 　 | 　 | 　 | 　 |　 |
 | cast | 　 | Y | 　 | Y | 　 | 　 | 　 | Y | 　 | 　 |　 |
-| concat | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | 　Y |　 |
+| concat | 　 | Y | Y | Y | Y | 　 | Y | 　 | Y | Y |　|
 | conv2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　Y |
-| conv2d_transpose | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　Y |　 |
+| conv2d_transpose | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | Y |　 |
 | density_prior_box | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |
 | depthwise_conv2d | 　 | Y | Y | Y | Y | Y | Y | Y | Y | Y |　Y |
 | depthwise_conv2d_transpose | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |
@@ -45,7 +45,7 @@ Host端Kernel是算子在任意CPU上纯C/C++的具体实现，具有可移植�
 | fill_constant_batch_size_like | Y | Y | 　 | 　 | 　 | 　 | 　 | 　 | 　 | 　 |　 |
 | flatten | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | Y | 　 |　 |
 | flatten2 | Y | 　 | 　 | 　 | Y | 　 | 　 | 　 | Y | 　 |　 |
-| fusion_elementwise_add_activation | 　 | 　 | Y | Y | Y | Y | Y | 　 | 　 | 　Y |　 |
+| fusion_elementwise_add_activation | 　 | 　 | Y | Y | Y | Y | Y | 　 | 　 | Y  |　 |
 | fusion_elementwise_div_activation | 　 | 　 | 　 | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |
 | fusion_elementwise_max_activation | 　 | 　 | 　 | Y | 　 | 　 | 　 | 　 | 　 | 　 |　 |
 | fusion_elementwise_mul_activation | 　 | 　 | Y | Y | 　 | 　 | Y | 　 | 　 | 　 |　 |
