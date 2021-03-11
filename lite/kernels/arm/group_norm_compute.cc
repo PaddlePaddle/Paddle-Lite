@@ -38,9 +38,15 @@ void GroupNormCompute::Run() {
   auto x_dims = param.x->dims();
   int n = x_dims[0];
   int c = x_dims[1];
-  int ch_per_group = channels / groups;
+  if (channels == -1) {
+    CHECK_EQ(param.data_layout_str, "NCHW")
+        << "it only support NCHW layout!, but recived layout is "
+        << param.data_layout_str;
+    channels = c;
+  }
   int height = x_dims[2];
   int width = x_dims[3];
+  int ch_per_group = channels / groups;
   int spatial_size = ch_per_group * height * width;
   int ngroup = n * groups;
   int cnt = spatial_size >> 4;

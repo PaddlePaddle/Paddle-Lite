@@ -34,7 +34,6 @@ class GroupNormComputeTest : public arena::TestCase {
   DDim dims_{{4, 5, 19, 19}};
   float epsilon_ = 1e-5f;
   int groups_ = 1;
-  int channels_ = 5;
   std::string data_layout_str_ = "NCHW";
 
  public:
@@ -43,14 +42,12 @@ class GroupNormComputeTest : public arena::TestCase {
                        DDim dims,
                        float epsilon,
                        int groups,
-                       std::string data_layout_str,
-                       int channels)
+                       std::string data_layout_str)
       : TestCase(place, alias),
         dims_(dims),
         epsilon_(epsilon),
         groups_(groups),
-        data_layout_str_(data_layout_str),
-        channels_(channels) {}
+        data_layout_str_(data_layout_str) {}
 
   void RunBaseline(Scope* scope) override {
     auto x = scope->FindTensor(x_);
@@ -162,7 +159,6 @@ class GroupNormComputeTest : public arena::TestCase {
     op_desc->SetAttr("epsilon", epsilon_);
     op_desc->SetAttr("groups", groups_);
     op_desc->SetAttr("data_layout", data_layout_str_);
-    op_desc->SetAttr("channels", channels_);
   }
 
   void PrepareData() override {
@@ -185,7 +181,7 @@ void TestGroupNorm(Place place,
                    float abs_error = 6e-5,
                    std::vector<std::string> ignored_outs = {}) {
   for (auto& n : {1, 3, 16}) {
-    for (auto& c : {1}) {
+    for (auto& c : {1, 2}) {
       for (auto& h : {1, 16, 33, 56}) {
         for (auto& w : {1, 17, 55}) {
           for (auto& groups : {1, 2, 4}) {
@@ -195,7 +191,7 @@ void TestGroupNorm(Place place,
             DDim dim_in({n, c, h, w});
             float epsilon = 1e-5f;
             std::unique_ptr<arena::TestCase> tester(new GroupNormComputeTest(
-                place, "def", dim_in, epsilon, groups, "NCHW", c));
+                place, "def", dim_in, epsilon, groups, "NCHW"));
 #ifdef LITE_WITH_ARM
             if (place == TARGET(kARM)) {
               auto& ctx = tester->context()->As<ARMContext>();
