@@ -118,7 +118,7 @@ TEST(bert_base_chinese, test_bert_base_chinese_fp32_baidu_xpu) {
   float acc = CompareDiff(out_rets, ref_out_file, diff);
   ASSERT_GT(acc, 0.99);
   float latency = cost_time / input0.size() / 1000.0;
-  ASSERT_LT(latency, 25.f);
+  ASSERT_LT(latency, 31.f);
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
