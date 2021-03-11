@@ -192,7 +192,7 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kRKNPU),
                                                TARGET(kFPGA),
                                                TARGET(kHuaweiAscendNPU),
-                                               TARGET(kImaginationNNA)},
+                                               TARGET(kImaginationNNA),
                                                TARGET(kMMA)});
   if (target == TARGET(kAny)) {
     return valid_set;
