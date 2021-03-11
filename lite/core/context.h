@@ -60,6 +60,7 @@ using APUContext = Context<TargetType::kAPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
+using MMAContext = Context<TargetType::kMMA>;
 using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
@@ -327,6 +328,20 @@ class Context<TargetType::kFPGA> {
 };
 #endif
 
+#ifdef LITE_WITH_MMA
+template <>
+class Context<TargetType::kMMA> {
+ public:
+  void InitOnce() {}
+
+  MMAContext& operator=(const MMAContext& ctx) {}
+
+  void CopySharedTo(MMAContext* ctx) {}
+
+  std::string name() const { return "MMAContext"; }
+};
+#endif
+
 #ifdef LITE_WITH_MLU
 template <>
 class Context<TargetType::kMLU> {
@@ -547,6 +562,12 @@ class ContextScheduler {
             &ctx->As<FPGAContext>());
         break;
 #endif
+#ifdef LITE_WITH_MMA
+      case TARGET(kMMA):
+        kernel_contexts_[TargetType::kMMA].As<MMAContext>().CopySharedTo(
+            &ctx->As<MMAContext>());
+        break;
+#endif
 #ifdef LITE_WITH_BM
       case TARGET(kBM):
         kernel_contexts_[TargetType::kBM].As<BMContext>().CopySharedTo(
@@ -601,6 +622,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_FPGA
     InitContext<TargetType::kFPGA, FPGAContext>();
+#endif
+#ifdef LITE_WITH_MMA
+    InitContext<TargetType::kMMA, MMAContext>();
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
