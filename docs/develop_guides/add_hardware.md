@@ -86,7 +86,7 @@
   - 设置Model的输入、输出张量和Model执行的运行时接口；
   - 输入、输出张量的内存管理接口。
   
-  具体可参考华为[HiAI DDK最新版](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/hiai_ddk_lib_330.tar.gz)、瑞芯微[rknpu_ddk](https://github.com/airockchip/rknpu_ddk.git)和[MTK Neuron Adapter](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz)（类似Android NNAPI）进行接口设计。
+  具体可参考华为[HiAI DDK v330](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/hiai_ddk_lib_330.tar.gz)、瑞芯微[rknpu_ddk](https://github.com/airockchip/rknpu_ddk.git)和[MTK Neuron Adapter](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz)（类似Android NNAPI）进行接口设计。
 
 - **什么是子图？** 将计算图依据某种规则分割为多个部分，每个部分都被称为一个子图，它包含一个或多个算子和变量，规则一般依据硬件支持能力而定。
 
