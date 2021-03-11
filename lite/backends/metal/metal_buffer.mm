@@ -481,7 +481,9 @@ id<MTLBuffer> MetalBuffer::buffer() const { return buffer_; }
 
 MetalBuffer::~MetalBuffer() {
   if(buffer_ != nil){
+#if (!__has_feature(objc_arc)) 
     [buffer_ release];
+#endif
     buffer_ = nil;
   }
 

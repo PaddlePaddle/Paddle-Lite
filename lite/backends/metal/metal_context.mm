@@ -50,7 +50,9 @@ void MetalContext::PrepareDevices() {
   best_metal_device_ = devices_[0].get();
   got_devices_ = true;
   if(mtl_devices != nil){
+#if (!__has_feature(objc_arc)) 
       [mtl_devices release];
+#endif
       mtl_devices = nil;
   }
 }
@@ -151,7 +153,11 @@ std::shared_ptr<MetalKernel> MetalContext::GetKernel(
                << "from library error: " << err_str << "\n";
     return std::shared_ptr<MetalKernel>{};
   }
+  
+#if (!__has_feature(objc_arc)) 
   [program.function_ autorelease];
+#endif
+
   program.pipeline_state_ =
       [device.device() newComputePipelineStateWithFunction:program.function_
                                                      error:&error];
@@ -163,10 +169,15 @@ std::shared_ptr<MetalKernel> MetalContext::GetKernel(
                << err_str << "\n";
     return std::shared_ptr<MetalKernel>{};
   }
-  [program.pipeline_state_ autorelease];
 
-  if (nil != library){
+#if (!__has_feature(objc_arc)) 
+  [program.pipeline_state_ autorelease];
+#endif
+
+  if (nil != library) {
+#if (!__has_feature(objc_arc)) 
     [library release];
+#endif
     library = nil;
   }
 

@@ -140,7 +140,11 @@ void MetalImage::InitTexture() {
 //  desc_.storageMode = MTLStorageModeShared;
 
   image_ = [device_->device() newTextureWithDescriptor:desc_];
+
+#if (!__has_feature(objc_arc)) 
   [desc_ release];
+#endif
+
   desc_ = nil;
 }
 
@@ -638,7 +642,9 @@ void MetalImage::CopyToNCHW(P *dst) const {
 
 MetalImage::~MetalImage() {
   if ( nil != image_){
+#if (!__has_feature(objc_arc)) 
     [image_ release];
+#endif
     image_ = nil;
   }
 

@@ -43,7 +43,9 @@ std::shared_ptr<MetalQueue> MetalDevice::GetDefaultQueue() const {
 
 MetalDevice::~MetalDevice(){
     for(auto item : queues_) {
+#if (!__has_feature(objc_arc)) 
       [item->queue() release];
+#endif
       queues_.pop_back();
     }
     queues_.clear();
