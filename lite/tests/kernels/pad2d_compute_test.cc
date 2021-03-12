@@ -46,7 +46,6 @@ class Pad2dComputeTester : public arena::TestCase {
         data_format_(data_format) {}
 
   void RunBaseline(Scope* scope) override {
-    LOG(INFO) << "into runbase";
     auto* out = scope->NewTensor(out_);
     CHECK(out);
     int out_h = dims_[2] + paddings_[0] + paddings_[1];
@@ -55,7 +54,6 @@ class Pad2dComputeTester : public arena::TestCase {
     auto* out_data = out->mutable_data<float>();
     auto* x = scope->FindTensor(x_);
     const auto* x_data = x->data<float>();
-    LOG(INFO) << "get nums";
 
     auto output_dims = out->dims();
     int n = output_dims[0];
@@ -152,9 +150,9 @@ void TestPad2d(const Place& place, float abs_error = 2e-5) {
           std::vector<int> paddings{pad_top, pad_bottom, pad_left, pad_right};
           for (std::string pad_mode : {"constant", "edge", "reflect"}) {
             for (float pad_value : {0.f, 1.0f}) {
-              LOG(INFO) << "pad param: " << pad_mode << " " << pad_value << " "
-                        << paddings[0] << " " << paddings[1] << " "
-                        << paddings[2] << " " << paddings[3];
+              VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
+                      << paddings[0] << " " << paddings[1] << " " << paddings[2]
+                      << " " << paddings[3];
               std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester(
                   place, "def", pad_mode, paddings, pad_value, data_format));
               arena::Arena arena(std::move(tester), place, abs_error);
@@ -175,9 +173,12 @@ TEST(Scale, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif
+
   TestPad2d(place, abs_error);
 }
 
