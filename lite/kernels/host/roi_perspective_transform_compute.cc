@@ -351,6 +351,7 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Mask",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("TransformMatrix", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out2InIdx", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out2InIdx",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out2InWeights", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
