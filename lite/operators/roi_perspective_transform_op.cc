@@ -76,8 +76,8 @@ bool RoiPerspectiveTransformOp::AttachImpl(const cpp::OpDesc &op_desc,
       scope->FindMutableTensor(op_desc.Output("Out2InWeights").front());
 
   param_.spatial_scale = op_desc.GetAttr<float>("spatial_scale");
-  param_.transformed_height = op_desc.GetAttr<float>("transformed_height");
-  param_.transformed_width = op_desc.GetAttr<float>("transformed_width");
+  param_.transformed_height = op_desc.GetAttr<int>("transformed_height");
+  param_.transformed_width = op_desc.GetAttr<int>("transformed_width");
   CHECK_GT(param_.spatial_scale, 0.f)
       << "The spatial_scale must be greater than 0. But received: "
       << param_.spatial_scale;
