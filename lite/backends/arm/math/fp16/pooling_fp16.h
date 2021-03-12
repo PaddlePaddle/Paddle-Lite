@@ -25,15 +25,11 @@ namespace arm {
 namespace math {
 namespace fp16 {
 typedef __fp16 float16_t;
-void pooling_basic_fp16(const float16_t* din,
-                        float16_t* dout,
-                        int num,
-                        int chout,
-                        int hout,
-                        int wout,
-                        int chin,
-                        int hin,
-                        int win,
+#define POOLING_PARAM                                                  \
+  const float16_t *din, float16_t *dout, int num, int chout, int hout, \
+      int wout, int chin, int hin, int win
+
+void pooling_basic_fp16(POOLING_PARAM,
                         const std::vector<int>& ksize,
                         const std::vector<int>& strides,
                         const std::vector<int>& paddings,
@@ -44,25 +40,23 @@ void pooling_basic_fp16(const float16_t* din,
                         bool use_quantizer,
                         const std::string& pooling_type);
 
-void pooling_global_max_fp16(const float16_t* din,
-                             float16_t* dout,
-                             int num,
-                             int chout,
-                             int hout,
-                             int wout,
-                             int chin,
-                             int hin,
-                             int win);
+void pooling_global_max_fp16(POOLING_PARAM);
 
-void pooling_global_avg_fp16(const float16_t* din,
-                             float16_t* dout,
-                             int num,
-                             int chout,
-                             int hout,
-                             int wout,
-                             int chin,
-                             int hin,
-                             int win);
+void pooling_global_avg_fp16(POOLING_PARAM);
+
+void pooling3x3s2p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right);
+
+void pooling3x3s2p0_avg_fp16(POOLING_PARAM,
+                             bool exclusive,
+                             int pad_bottom,
+                             int pad_right);
+
+void pooling3x3s2p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right);
+
+void pooling3x3s2p1_avg_fp16(POOLING_PARAM,
+                             bool exclusive,
+                             int pad_bottom,
+                             int pad_right);
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm
