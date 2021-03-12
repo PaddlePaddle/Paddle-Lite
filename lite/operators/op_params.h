@@ -2236,7 +2236,7 @@ struct RnnParam : ParamBase {
   lite::Tensor* Input;
   std::vector<lite::Tensor*> PreState;
   std::vector<lite::Tensor*> WeightList;
-  lite::Tensor* SequenceLength;
+  const lite::Tensor* SequenceLength{nullptr};
   lite::Tensor* DropoutState;
   lite::Tensor* Reserve;
   lite::Tensor* Out;
