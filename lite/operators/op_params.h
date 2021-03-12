@@ -2322,6 +2322,20 @@ struct LinspaceParam : ParamBase {
   lite::Tensor* Out{};
   int dtype{};
 };
+
+struct RoiPerspectiveTransformParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* rois{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* mask{nullptr};
+  lite::Tensor* transfor_matrix{nullptr};
+  lite::Tensor* out2in_idx{nullptr};
+  lite::Tensor* out2in_weight{nullptr};
+  float spatial_scale{1.f};
+  int transformed_height{1};
+  int transformed_width{1};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

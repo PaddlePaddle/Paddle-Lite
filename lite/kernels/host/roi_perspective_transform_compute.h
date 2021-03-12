@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,21 +19,20 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class SequenceExpandCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <class T>
+class RoiPerspectiveTransformCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  void PrepareForRun() override;
+  using param_t = operators::RoiPerspectiveTransformParam;
 
   void Run() override;
 
-  virtual ~SequenceExpandCompute() = default;
-
- private:
+  virtual ~RoiPerspectiveTransformCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

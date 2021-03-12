@@ -92,6 +92,13 @@ inference_lite_lib.armlinux.armv8
 --opt_model_dir:          输入模型的绝对路径，需要为opt转化之后的模型
 ```
 
+- 编译支持 OpenCL 的预测库
+
+```
+./lite/tools/build_linux.sh --with_opencl=ON
+```
+
+
 - 编译 瑞芯微(Rockchip) NPU 预测库方法，详情请参考：[PaddleLite使用RK NPU预测部署](../demo_guides/rockchip_npu)
 
 ```shell
