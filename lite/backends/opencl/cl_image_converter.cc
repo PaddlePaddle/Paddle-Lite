@@ -533,6 +533,7 @@ void CLImageConverterNBlock::NCHWToImage(float *nchw,
 
   size_t height = in_image_dim[1];
   size_t n_block = height / (W * H);
+  size_t c_block = (C + 3) / 4;
 
   float *image_fp32 = static_cast<float *>(image);
   half_t *image_fp16 = static_cast<half_t *>(image);
@@ -540,11 +541,14 @@ void CLImageConverterNBlock::NCHWToImage(float *nchw,
   float *p = nchw;
   size_t i0 = 0;
   for (size_t n = 0; n < n_block * 4; n++) {
-    for (size_t c = 0; c < C; c++) {
+    for (size_t c = 0; c < c_block * 4; c++) {
       for (size_t h = 0; h < H; h++) {
         for (size_t w = 0; w < W; w++) {
-          size_t img_idx = (((n / 4) * W * H + h * W + w) * C + c) * 4 + n % 4;
-          if (n < N) {
+          size_t img_idx = (n / 4) * c_block * H * W * 4 * 4 +
+                           (c / 4) * H * W * 4 * 4 + h * W * 4 * 4 + w * 4 * 4 +
+                           (c % 4) * 4 + n % 4;
+
+          if (n < N && c < C) {
             fp16_support_ ? image_fp16[img_idx] = Float2Half(*p)
                           : image_fp32[img_idx] = *p;
             p++;
@@ -555,6 +559,10 @@ void CLImageConverterNBlock::NCHWToImage(float *nchw,
         }
       }
     }
+  }
+
+  for (auto i = 0; i < n_block * 4 * c_block * 4 * H * W; i++) {
+    LOG(INFO) << "idx: " << i << " : " << Half2Float(image_fp16[i]);
   }
 }
 

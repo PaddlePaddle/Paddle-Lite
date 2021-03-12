@@ -75,6 +75,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void DepthwiseConv2d3x3();
   void DepthwiseConv2d();
   void Conv2dCommon();
+  void Conv2dMali();
 
   param_t* conv_param_{nullptr};
 
@@ -107,6 +108,9 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   const cl::Image2D* bias_image_p_{nullptr};
   const cl::Image2D* alpha_image_p_{nullptr};
   const cl::Image2D* output_image_p_{nullptr};
+
+  const cl::Buffer* filter_buffer_p_{nullptr};
+  const cl::Buffer* bias_buffer_p_{nullptr};
 
   int stride_h_{-1};
   int stride_w_{-1};

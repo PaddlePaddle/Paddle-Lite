@@ -2,7 +2,10 @@
 
 
 __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t output, __global half4 *weight,
-                            /* __global half4 *bias, */ int4 input_shape, int4 output_shape, int4 kernel_stride, int4 pad,
+                            #ifdef BIASE_CH
+                            __global half4 *bias,
+                            #endif
+                            int4 input_shape, int4 output_shape, int4 kernel_stride, int4 pad,
                             int2 dilation) {
   const int BlockH = 1;
   const int BlockW = 1;
@@ -48,13 +51,13 @@ __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t 
         half4 in_h0_w0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx0, y_idx0));
         x_idx0 += IW;
 
-        out_h0_w0_c0 += weight_ptr[0] * in_h0_w0.x; // c == 0
-        out_h0_w0_c0 += weight_ptr[1] * in_h0_w0.y; // c == 1
-        out_h0_w0_c0 += weight_ptr[2] * in_h0_w0.z; // c == 2
-        out_h0_w0_c0 += weight_ptr[3] * in_h0_w0.w; // c == 3
+        out_h0_w0_c0 += weight_ptr[0] * in_h0_w0.x; // n == 0
+        out_h0_w0_c0 += weight_ptr[1] * in_h0_w0.y; // n == 1
+        out_h0_w0_c0 += weight_ptr[2] * in_h0_w0.z; // n == 2
+        out_h0_w0_c0 += weight_ptr[3] * in_h0_w0.w; // n == 3
 
-        // if (((co_slice0 * OW + ow0) == 0) && (n_oh == 0)) {
-        //   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), out_h0_w0_c0);
+        // if (((co_slice0 * OW + ow0) == 0) && (n_oh == 0) && kh == 1 && kw == 0) {
+        //   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), weight_ptr[0]);
         // }
         weight_ptr += 4;
       }
