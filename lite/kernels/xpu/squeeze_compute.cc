@@ -26,21 +26,7 @@ void SqueezeCompute::Run() {
   auto x = param.X;
   auto output = param.Out;
   auto output_dims = output->dims();
-  output->mutable_data(TARGET(kXPU), x->memory_size());
-  int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
-                             x->data<int8_t>(),
-                             static_cast<int8_t*>(output->raw_data()),
-                             x->memory_size());
-  CHECK_EQ(r, 0);
-  output->Resize(output_dims);
-}
-
-void Squeeze2Compute::Run() {
-  auto& param = Param<operators::SqueezeParam>();
-  auto& ctx = this->ctx_->As<XPUContext>();
-  auto x = param.X;
-  auto output = param.Out;
-  auto output_dims = output->dims();
+  output->set_precision(x->precision());
   output->mutable_data(TARGET(kXPU), x->memory_size());
   int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
                              x->data<int8_t>(),
@@ -58,26 +44,27 @@ void Squeeze2Compute::Run() {
 REGISTER_LITE_KERNEL(
     squeeze, kXPU, kAny, kAny, paddle::lite::kernels::xpu::SqueezeCompute, def)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(
-                    TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(squeeze2,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::Squeeze2Compute,
-                     def)
+REGISTER_LITE_KERNEL(
+    squeeze2, kXPU, kAny, kAny, paddle::lite::kernels::xpu::SqueezeCompute, def)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(
-                    TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .BindOutput("XShape",
-                {LiteType::GetTensorTy(
-                    TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
