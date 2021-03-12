@@ -26,6 +26,7 @@
 #endif
 #ifdef LITE_WITH_XPU
 #include <functional>
+#include <mutex>  // NOLINT
 #include "lite/backends/xpu/target_wrapper.h"
 #endif
 
@@ -415,11 +416,18 @@ CxxConfig::mlu_firstconv_param() const {
 
 void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #ifdef LITE_WITH_XPU
+  static std::mutex set_l3_mutex;
+  const std::lock_guard<std::mutex> lock(set_l3_mutex);
   if (locked) {
-    lite::TargetWrapperXPU::shared_l3_size =
-        lite::TargetWrapperXPU::shared_l3_size > l3_size
-            ? lite::TargetWrapperXPU::shared_l3_size
-            : l3_size;
+    if (!lite::TargetWrapperXPU::IsSharedL3Created()) {
+      lite::TargetWrapperXPU::shared_l3_size =
+          lite::TargetWrapperXPU::shared_l3_size > l3_size
+              ? lite::TargetWrapperXPU::shared_l3_size
+              : l3_size;
+    } else {
+      CHECK(lite::TargetWrapperXPU::shared_l3_size >= l3_size)
+          << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
+    }
   } else {
     lite::TargetWrapperXPU::local_l3_size = l3_size;
   }

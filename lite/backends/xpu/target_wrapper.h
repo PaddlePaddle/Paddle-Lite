@@ -86,6 +86,9 @@ class TargetWrapper<TARGET(kXPU)> {
   }
   static void MallocL3Cache();
   static void FreeL3Cache();
+  static bool IsSharedL3Created() {
+    return shared_l3_ptr_ == nullptr ? false : true;
+  }
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   static void SetDev(int dev_no = 0) {
@@ -104,10 +107,8 @@ class TargetWrapper<TARGET(kXPU)> {
   static size_t shared_l3_size;
 
  private:
-  static XPUScratchPadGuard SetSharedL3ScratchPad(size_t size,
-                                                  void* shared_l3_ptr);
-  static XPUScratchPadGuard shared_l3_guard_;
   static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
+  static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
 };
 
