@@ -23,6 +23,45 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
+/* fuse logit block: y=log(x/(1-x)),inverse function of sigmoid */
+/* For example:                                                 */
+/* graph[0]: sub block                                          */
+/*                     in_Input                                 */
+/*                       |                                      */
+/*                       |                                      */
+/*                     clip----                                 */
+/*                       |     \                                */
+/*                       |      \                               */
+/*                       |    fill_any_like                     */
+/*                       |      /                               */
+/*                       |     /                                */
+/*                  elementwise_div                             */
+/*                       |                                      */
+/*                       |                                      */
+/*                      scale                                   */
+/*                       |                                      */
+/*                       |                                      */
+/*                      clip                                    */
+/*                       |                                      */
+/*                       |                                      */
+/*                      log                                     */
+/*                       |                                      */
+/*                       |                                      */
+/*                     scale                                    */
+/*                       |                                      */
+/*                       |                                      */
+/*                     out_Out                                  */
+/*                                                              */
+/* After the pass is applied:                                   */
+/*                     in_Input                                 */
+/*                       |                                      */
+/*                       |                                      */
+/*                  __xpu__logit                                */
+/*                       |                                      */
+/*                       |                                      */
+/*                 out_Output                                   */
+/*                                                              */
+
 class XPULogitFuser : public FuseBase {
  public:
   void BuildPattern() override {
@@ -78,9 +117,7 @@ class XPULogitFuser : public FuseBase {
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
-    cpp::OpDesc op_desc = *matched.at("clip1")->stmt()->op_info();
-    op_desc.mutable_inputs()->clear();
-    op_desc.mutable_outputs()->clear();
+    cpp::OpDesc op_desc;
     op_desc.SetType("__xpu__logit");
     op_desc.SetInput("X", {matched.at("input")->arg()->name});
     op_desc.SetOutput("Out", {matched.at("out")->arg()->name});
