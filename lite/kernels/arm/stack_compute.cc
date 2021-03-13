@@ -24,8 +24,8 @@ REGISTER_LITE_KERNEL(stack, kARM, kFloat, kNCHW, stack_float, def)
     .Finalize();
 
 using stack_int32 =
-    paddle::lite::kernels::host::StackCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(stack, kARM, kInt32, kNCHW, stack_int32, def)
+    paddle::lite::kernels::host::StackCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kARM, kFloat, kNCHW, stack_int32, int32_def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
