@@ -28,6 +28,7 @@ class Eliminator : public FuseBase {
     // the previous op's output need updat
     auto* pre_op = OpNode("preop")
                        ->assert_is_not_op_type("conditional_block")
+                       ->assert_is_not_op_type("while")
                        ->assert_is_not_op_type("scale");
     // TODO(Superjomn) check has only one output
     auto* x = VarNode("x")->assert_is_op_input("scale", "X");
