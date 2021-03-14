@@ -57,6 +57,7 @@ add_kernel(gather_compute_host Host extra SRCS gather_compute.cc DEPS ${lite_ker
 add_kernel(gather_nd_compute_host Host extra SRCS gather_nd_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(gather_tree_compute_host Host extra SRCS gather_tree_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(increment_compute_host Host extra SRCS increment_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(pad2d_compute_host Host extra SRCS pad2d_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(pad3d_compute_host Host extra SRCS pad3d_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(select_input_compute_host Host extra SRCS select_input_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(tensor_array_to_tensor_compute_host Host extra SRCS tensor_array_to_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)

@@ -69,8 +69,8 @@ REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_float, def)
     .Finalize();
 
 using stack_int32 =
-    paddle::lite::kernels::host::StackCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(stack, kHost, kInt32, kAny, stack_int32, def)
+    paddle::lite::kernels::host::StackCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_int32, int32_def)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
@@ -80,8 +80,8 @@ REGISTER_LITE_KERNEL(stack, kHost, kInt32, kAny, stack_int32, def)
     .Finalize();
 
 using stack_int64 =
-    paddle::lite::kernels::host::StackCompute<int64_t, PRECISION(kInt64)>;
-REGISTER_LITE_KERNEL(stack, kHost, kInt64, kAny, stack_int64, def)
+    paddle::lite::kernels::host::StackCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(stack, kHost, kFloat, kAny, stack_int64, int64_def)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
