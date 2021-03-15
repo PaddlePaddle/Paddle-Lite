@@ -121,7 +121,7 @@ TEST(Stack, precision) {
   test_stack<float>(place);
 #ifndef LITE_WITH_XPU
   place = TARGET(kHost);
-  test_stack<int>(place);
+  test_stack<float>(place);
 #endif
 }
 

@@ -13,38 +13,26 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
-#include <string>
-#include "lite/core/mir/pattern_matcher_high_api.h"
+#include <stdint.h>
+#include "lite/backends/arm/math/type_trans.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace mir {
-namespace fusion {
+namespace kernels {
+namespace arm {
 
-class ReshapeFuser : public FuseBase {
+class ReduceMinCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
-  explicit ReshapeFuser(const std::string& type) : type_(type) {}
+  void Run() override;
 
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+  virtual ~ReduceMinCompute() = default;
 
  private:
-  std::string type_;
 };
 
-class Reshape2OutFuser : public FuseBase {
- public:
-  explicit Reshape2OutFuser(const std::string& type) : type_(type) {}
-
-  void BuildPattern() override;
-  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
-
- private:
-  std::string type_;
-};
-}  // namespace fusion
-}  // namespace mir
+}  // namespace arm
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -23,8 +23,8 @@ namespace xpu {
 
 template <typename T, PrecisionType PType>
 void SequenceReverseCompute<T, PType>::PrepareForRun() {
-  lod_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
+  lod_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
   lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
 

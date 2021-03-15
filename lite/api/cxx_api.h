@@ -161,6 +161,7 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
+    CheckInputValid();
     program_->Run();
   }
 
@@ -171,6 +172,8 @@ class LITE_API Predictor {
   // get inputnames and get outputnames.
   std::vector<std::string> GetInputNames();
   std::vector<std::string> GetOutputNames();
+  // get input tensor precision type
+  const std::vector<PrecisionType>& GetInputPrecisions() const;
   // get param names
   std::vector<std::string> GetParamNames();
 
@@ -211,6 +214,10 @@ class LITE_API Predictor {
 
   //   void FeedVars(const std::vector<framework::Tensor>& tensors);
   // #endif
+ private:
+  // check if the input tensor precision type is correct.
+  // would be called in Run().
+  void CheckInputValid();
 
  private:
   Optimizer optimizer_;
@@ -222,6 +229,7 @@ class LITE_API Predictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<Place> valid_places_;
+  std::vector<PrecisionType> input_precisions_;
 };
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {

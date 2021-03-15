@@ -13,27 +13,23 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+#include "lite/operators/topk_v2_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class BeamSearchDecodeCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class TopkV2Compute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::BeamSearchDecodeParam;
-
-  BeamSearchDecodeCompute() = default;
-
   void Run() override;
 
-  virtual ~BeamSearchDecodeCompute() = default;
+  virtual ~TopkV2Compute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

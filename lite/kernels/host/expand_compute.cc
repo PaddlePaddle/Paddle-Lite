@@ -20,9 +20,8 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-template <typename T, PrecisionType PType>
-void ExpandCompute<T, PType>::Run() {
-  auto& param = this->template Param<operators::ExpandParam>();
+template <typename T>
+void ExpandFunc(const operators::ExpandParam& param) {
   const auto* x = param.X;
   auto* out = param.Out;
 
@@ -73,17 +72,40 @@ void ExpandCompute<T, PType>::Run() {
   }
 }
 
+void ExpandCompute::Run() {
+  auto& param = this->Param<operators::ExpandParam>();
+  const auto* x = param.X;
+  switch (x->precision()) {
+    case PRECISION(kFloat):
+      ExpandFunc<float>(param);
+      break;
+    case PRECISION(kFP64):
+      ExpandFunc<double>(param);
+      break;
+    case PRECISION(kInt32):
+      ExpandFunc<int32_t>(param);
+      break;
+    case PRECISION(kInt64):
+      ExpandFunc<int64_t>(param);
+      break;
+    case PRECISION(kBool):
+      ExpandFunc<bool>(param);
+      break;
+    default:
+      LOG(FATAL) << "not supported dtype:" << static_cast<int>(x->precision());
+  }
+}
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-using expand_float =
-    paddle::lite::kernels::host::ExpandCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_float, float32)
+REGISTER_LITE_KERNEL(
+    expand, kHost, kAny, kAny, paddle::lite::kernels::host::ExpandCompute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kFloat),
+                                      PRECISION(kAny),
                                       DATALAYOUT(kAny))})
     .BindInput("ExpandTimes",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -95,27 +117,6 @@ REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_float, float32)
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kAny))})
-    .Finalize();
-
-using expand_int32 =
-    paddle::lite::kernels::host::ExpandCompute<int, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(expand, kHost, kFloat, kAny, expand_int32, int32)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kInt32),
-                                      DATALAYOUT(kAny))})
-    .BindInput("ExpandTimes",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kInt32),
-                                      DATALAYOUT(kAny))})
-    .BindInput("expand_times_tensor",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kInt32),
-                                      DATALAYOUT(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kInt32),
+                                       PRECISION(kAny),
                                        DATALAYOUT(kAny))})
     .Finalize();

@@ -111,17 +111,7 @@ void TestGatherNdHelper(Place place,
                         const std::vector<int64_t>& x_shape,
                         const std::vector<int64_t>& index_shape,
                         const std::vector<IndexType>& index_data) {
-  auto precision = lite_api::PrecisionTypeTrait<XType>::Type();
   std::string alias("def");
-  switch (precision) {
-    case lite_api::PrecisionType::kFloat:
-      alias = std::string("float32");
-      break;
-    default:
-      LOG(FATAL) << "unsupported precision: "
-                 << lite_api::PrecisionToStr(precision);
-  }
-
   std::unique_ptr<arena::TestCase> tester(
       new GatherNdComputeTest<XType, IndexType>(
           place, alias, DDim(x_shape), DDim(index_shape), index_data));
@@ -145,7 +135,7 @@ TEST(gather_nd, precision) {
   float abs_error = 1e-5;
   Place place;
 #if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  place = TARGET(kHost);
+  place = Place(TARGET(kHost), PRECISION(kAny));
 #else
   return;
 #endif

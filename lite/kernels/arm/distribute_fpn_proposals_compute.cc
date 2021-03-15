@@ -146,6 +146,7 @@ void DistributeFpnProposalsCompute::Run() {
   if (param.multi_rois_num.size() > 0) {
     int batch_size = fpn_rois_lod.size() - 1;
     for (int i = 0; i < num_level; ++i) {
+      param.multi_rois_num[i]->Resize({batch_size});
       int* rois_num_data = param.multi_rois_num[i]->mutable_data<int>();
       for (int j = 0; j < batch_size; ++j) {
         rois_num_data[j] = static_cast<int>(multi_fpn_rois_lod0[i][j + 1] -
@@ -174,9 +175,12 @@ REGISTER_LITE_KERNEL(distribute_fpn_proposals,
                      paddle::lite::kernels::arm::DistributeFpnProposalsCompute,
                      def)
     .BindInput("FpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("RoisNum", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("RoisNum",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("MultiFpnRois", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("RestoreIndex", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("MultiLevelRoIsNum",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("RestoreIndex",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindPaddleOpVersion("distribute_fpn_proposals", 1)
     .Finalize();

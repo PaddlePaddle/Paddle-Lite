@@ -855,24 +855,21 @@ void CLRuntime::SetTunedLocalWorkSizeMap(const std::string& key,
 }
 
 double CLRuntime::GetCommandTime(const cl::Event& event) {
-  // due to one command queue, no need for `event.wait();`,
-  // and `event.wait()` affect performance of auto-tune.
+  event.wait();
   auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
   return (stop_nanos - start_nanos) / 1000000.0;
 }
 
 double CLRuntime::GetQueuedTime(const cl::Event& event) {
-  // due to one command queue, no need for `event.wait();`,
-  // and `event.wait()` affect performance of auto-tune.
+  event.wait();
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) /
          1000000.0;
 }
 
 double CLRuntime::GetSubmitTime(const cl::Event& event) {
-  // due to one command queue, no need for `event.wait();`,
-  // and `event.wait()` affect performance of auto-tune.
+  event.wait();
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) /
          1000000.0;

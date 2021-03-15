@@ -13,27 +13,32 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace operators {
 
-class SequenceExpandCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class XPULogitOp : public OpLite {
  public:
-  void PrepareForRun() override;
+  XPULogitOp() {}
 
-  void Run() override;
+  explicit XPULogitOp(const std::string &op_type) : OpLite(op_type) {}
 
-  virtual ~SequenceExpandCompute() = default;
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "XPULogit"; }
 
  private:
+  mutable XPULogitParam param_;
 };
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

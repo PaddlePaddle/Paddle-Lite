@@ -360,26 +360,39 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 
 - 编译并生成PaddleLite+RockchipNPU for armv8 and armv7的部署库
 
-  ```shell
-  For RK1808 EVB and TB-RK1808S0 AI计算棒
-  tiny_publish
-  $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
-  full_publish
-  $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
+  - For RK1808 EVB and TB-RK1808S0 AI计算棒
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
 
-  For RK1806/RV1126/RV1109 EVB
-  tiny_publish
-  $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
-  full_publish
-  $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
-  ```
+      将tiny_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
+      ```
 
-- 将编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
-- 将tiny_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件；
-- 将编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/armhf/include目录；
-- 将tiny_publish模式下编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件；
-- 将full_publish模式下编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_full_api_shared.so文件。
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
+
+      将full_publish模式下编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_full_api_shared.so文件；
+      ```
+    将编译生成的build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/arm64/include目录；
+
+  - For RK1806/RV1126/RV1109 EVB
+    - tiny_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk
+
+      将tiny_publish模式下编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件；
+      ```
+
+    - full_publish编译方式
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_rockchip_npu=ON --rockchip_npu_sdk_root=./rknpu_ddk full_publish
+
+      将full_publish模式下编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_full_api_shared.so文件。
+      ```
+    将编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.rknpu/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/armhf/include目录；
+  
+- 替换头文件后需要重新编译示例程序
 
 ## 其它说明
 

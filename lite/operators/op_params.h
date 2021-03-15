@@ -117,6 +117,7 @@ struct FcParam : ParamBase {
   lite::Tensor* input{nullptr};
   lite::Tensor* w{nullptr};
   lite::Tensor* bias{nullptr};
+  lite::Tensor* Prelu_alpha{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   // original dims of input weight
@@ -124,6 +125,8 @@ struct FcParam : ParamBase {
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
+  std::string Prelu_mode{
+      "channel"};  // prelu param, can be "all", "channel" or "element"
   // for int8
   WITH_INT8_CONFIG
   ///////////////////////////////////////////////////////////////////////////////////
@@ -1164,9 +1167,12 @@ struct WhileParam : ParamBase {
 
 struct TopkParam : ParamBase {
   const lite::Tensor* X{};
+  const lite::Tensor* KTensor{};
   lite::Tensor* Out{};
   lite::Tensor* Indices{};
+  bool k_is_tensor{false};
   int K{1};
+  int axis{-1};
 };
 
 struct IncrementParam : ParamBase {
@@ -1482,7 +1488,7 @@ struct SqueezeParam : ParamBase {
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
   std::vector<int> axes{};
-  bool inplace{true};
+  bool inplace{false};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1507,7 +1513,7 @@ struct UnsqueezeParam : ParamBase {
   std::vector<int> axes{};
   const lite::Tensor* axes_tensor{};
   std::vector<const lite::Tensor*> axes_tensor_vct{};
-  bool inplace{true};
+  bool inplace{false};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1791,6 +1797,7 @@ struct GroupNormParam : ParamBase {
   lite::Tensor* scale{};
   lite::Tensor* saved_mean{};
   lite::Tensor* saved_variance{};
+  std::string data_layout_str{"NCHW"};
   float epsilon;
   int groups;
   int channels;
@@ -1899,6 +1906,7 @@ struct XPUMultiEncoderParam : ParamBase {
   std::string act_type{};
   std::string precision{};
   bool enable_qkv_fusion{false};
+  bool norm_before{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
@@ -2083,6 +2091,12 @@ struct XPUGenerateSequenceParam : ParamBase {
   bool flatten{false};
   float value{0};
   int dtype{-1};
+};
+
+struct XPULogitParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+  float eps{1e-7};
 };
 
 // For DeformableConvolution op
@@ -2280,6 +2294,11 @@ struct CumsumParam : ParamBase {
   bool reverse{false};
 };
 
+struct PolygonBoxTransformParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
 struct SumParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
@@ -2296,6 +2315,28 @@ struct PNormParam : ParamBase {
   bool keepdim{false};
   bool asvector{false};
 };
+
+struct LinspaceParam : ParamBase {
+  const lite::Tensor* Start{};
+  const lite::Tensor* Stop{};
+  const lite::Tensor* Num{};
+  lite::Tensor* Out{};
+  int dtype{};
+};
+
+struct RoiPerspectiveTransformParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* rois{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* mask{nullptr};
+  lite::Tensor* transfor_matrix{nullptr};
+  lite::Tensor* out2in_idx{nullptr};
+  lite::Tensor* out2in_weight{nullptr};
+  float spatial_scale{1.f};
+  int transformed_height{1};
+  int transformed_width{1};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
