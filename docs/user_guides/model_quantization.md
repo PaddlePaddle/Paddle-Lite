@@ -26,7 +26,7 @@
 
 ## 2 产出量化模型
 
-目前，PaddlePaddle框架的量化训练主要针对卷积层（包括二维卷积和Depthwise卷积）、和全连接层，对应算子是conv2d、depthwise_conv2d和mul，更多量化训练的原理请参考[文档](https://github.com/PaddlePaddle/models/blob/develop/PaddleSlim/docs/tutorial.md#1-quantization-aware-training%E9%87%8F%E5%8C%96%E4%BB%8B%E7%BB%8D)。Paddle-Lite支持运行PaddlePaddle框架量化训练产出的模型，可以进一步加快模型在移动端的执行速度。
+目前，PaddlePaddle框架的量化训练主要针对卷积层（包括二维卷积和Depthwise卷积）、和全连接层，对应算子是conv2d、depthwise_conv2d和mul。Paddle-Lite支持运行PaddlePaddle框架量化训练产出的模型，可以进一步加快模型在移动端的执行速度。
 
 温馨提示：如果您是初次接触PaddlePaddle框架，建议首先学习[新人入门](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/beginners_guide/index_cn.html)和[使用指南](https://www.paddlepaddle.org.cn/documentation/docs/zh/1.5/user_guides/index_cn.html)。
 
@@ -73,7 +73,7 @@ cd models/PaddleSlim
 
 ##### 预训练模型准备
 
-参考/models/PaddleSlim/run.sh脚本， 从[models/PaddleCV/image_classification](https://github.com/PaddlePaddle/models/tree/develop/fluid/PaddleCV/image_classification#supported-models-and-performances)下载MobileNetV1的预训练模型，并保存到PaddleSlim/pretrain路径下。
+参考/models/PaddleSlim/run.sh脚本， 从[models/PaddleCV/image_classification](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/image_classification#data-preparation)下载MobileNetV1的预训练模型，并保存到PaddleSlim/pretrain路径下。
 
 经过以上三步，PaddleSlim目录下的文件结构如下所示：
 
@@ -203,7 +203,7 @@ compressor:
 
 > **备注：**
 >
-> 1）`abs_max`意为在训练的每个step及inference阶段均动态计算量化scale值。`channel_wise_abs_max`与`abs_max`类似，不同点在于它会对卷积权重进行分channel求取量化scale。换言之，`abs_max`属于tensor-wise量化，而`channel_wise_abs_max`属于channel-wise量化，详细说明请猛戳[此处](https://github.com/PaddlePaddle/FluidDoc/blob/develop/doc/fluid/design/quantization/training_quantization_model_format.md)。
+> 1）`abs_max`意为在训练的每个step及inference阶段均动态计算量化scale值。`channel_wise_abs_max`与`abs_max`类似，不同点在于它会对卷积权重进行分channel求取量化scale。换言之，`abs_max`属于tensor-wise量化，而`channel_wise_abs_max`属于channel-wise量化。
 > 
 > 2）`moving_average_abs_max`和`range_abs_max`意为在训练阶段计算出一个静态的量化scale值，并将其用于inference阶段。`moving_average_abs_max`使用窗口滑动平均的方法计算量化scale，而`range_abs_max`则使用窗口绝对值最大值的方式。
 > 
