@@ -13,22 +13,25 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include <vector>
-#include "lite/core/context.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
-bool sequence_softmax(const float* input,
-                      const std::vector<uint64_t>& seq_offset,
-                      float* out,
-                      Context<TARGET(kARM)>* ctx);
+class SequenceSoftmaxCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::SequenceSoftmaxParam;
 
-}  // namespace math
-}  // namespace arm
+  void Run() override;
+
+  virtual ~SequenceSoftmaxCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

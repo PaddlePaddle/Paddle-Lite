@@ -13,31 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
-#include "lite/operators/sequence_softmax_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class SequenceSoftmaxCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class LodResetCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
-  using param_t = operators::SequenceSoftmaxParam;
-
-  void PrepareForRun() override;
+  using param_t = operators::LodResetParam;
 
   void Run() override;
 
-  ~SequenceSoftmaxCompute() {}
-
- private:
+  virtual ~LodResetCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
