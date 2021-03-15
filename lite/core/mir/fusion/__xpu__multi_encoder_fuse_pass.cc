@@ -161,7 +161,7 @@ class XPUSingleEncoderFuser : public FuseBase {
             ->AsIntermediate();
 
     auto* qk_matmul = OpNode("qk_matmul", "matmul")->AsIntermediate();
-    if (with_q_scale_) {
+    if (!with_q_scale_) {
       qk_matmul->assert_op_attr<float>("alpha", 0.125);
     }
     auto* qk_matmul_out = VarNode("qk_matmul_out")
