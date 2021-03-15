@@ -42,13 +42,13 @@ std::shared_ptr<MetalQueue> MetalDevice::GetDefaultQueue() const {
 }
 
 MetalDevice::~MetalDevice(){
+#if (!__has_feature(objc_arc))
     for(auto item : queues_) {
-#if (!__has_feature(objc_arc)) 
       [item->queue() release];
-#endif
       queues_.pop_back();
     }
     queues_.clear();
+#endif
 }
 
 id<MTLDevice> MetalDevice::device() const { return device_; }
