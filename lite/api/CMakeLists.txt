@@ -74,6 +74,26 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         set_target_properties(paddle_light_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_light_api_shared custom_linker_map)
    endif()
+   if(NOT WIN32 AND NOT ARM_TARGET_OS STREQUAL "android" AND WITH_TESTING)
+        # check symbol hidden
+        FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/check_symbol.cmake
+            "execute_process(COMMAND sh -c \"${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_symbol.sh"
+            " ${CMAKE_CURRENT_BINARY_DIR}/libpaddle_light_api_shared.so\" RESULT_VARIABLE symbol_res)\n"
+            "if(NOT \"\${symbol_res}\" STREQUAL \"0\")\n"
+            "  message(FATAL_ERROR \"Check libpaddle_light_api_shared.so symbol failed.\")\n"
+            "endif()\n"
+            "execute_process(COMMAND sh -c \"${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_symbol.sh"
+            " ${CMAKE_CURRENT_BINARY_DIR}/libpaddle_full_api_shared.so\" RESULT_VARIABLE symbol_res)\n"
+            "if(NOT \"\${symbol_res}\" STREQUAL \"0\")\n"
+            "  message(FATAL_ERROR \"Check libpaddle_full_api_shared.so symbol failed.\")\n"
+            "endif()\n")
+        add_custom_command(
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/.check_symbol"
+            COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/check_symbol.cmake"
+            DEPENDS paddle_light_api_shared paddle_full_api_shared )
+        add_custom_target(check_symbol ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/.check_symbol")
+        add_dependencies(lite_compile_deps check_symbol)
+    endif()
 else()
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
