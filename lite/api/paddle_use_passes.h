@@ -96,3 +96,4 @@ USE_MIR_PASS(__xpu__conv2d_concat_pool2d_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_pool2d_fuse_pass);
 USE_MIR_PASS(__xpu__consecutive_block_fuse_pass);
 USE_MIR_PASS(__xpu__consecutive_conv2d_fuse_pass);
+USE_MIR_PASS(__xpu__logit_fuse_pass);
