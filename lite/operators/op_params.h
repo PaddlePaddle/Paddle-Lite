@@ -1797,6 +1797,7 @@ struct GroupNormParam : ParamBase {
   lite::Tensor* scale{};
   lite::Tensor* saved_mean{};
   lite::Tensor* saved_variance{};
+  std::string data_layout_str{"NCHW"};
   float epsilon;
   int groups;
   int channels;
@@ -2090,6 +2091,12 @@ struct XPUGenerateSequenceParam : ParamBase {
   bool flatten{false};
   float value{0};
   int dtype{-1};
+};
+
+struct XPULogitParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+  float eps{1e-7};
 };
 
 // For DeformableConvolution op
