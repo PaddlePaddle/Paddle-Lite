@@ -439,6 +439,7 @@ void Program::PrepareWorkspace(
             tensor->Resize(var_shape);
             VLOG(4) << " - dims " << tensor->dims().repr();
           }
+          tensor->set_precision(var_data_type);
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
