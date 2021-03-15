@@ -173,8 +173,8 @@ int ConvOutputSize(int input_size,
 TEST(conv2d, compute_image2d_1x1) {
   // conv infos
   const int ksize = 2;
-  const int stride = 1;
-  const int pad = 0;
+  const int stride = 2;
+  const int pad = 1;
   const int group = 1;
   const int dilation = 1;
 //  int loop_cnt = 0;
@@ -189,11 +189,11 @@ TEST(conv2d, compute_image2d_1x1) {
             for (std::string relu_flag : {"leaky_relu"}) {
 #else
   const int batch_size = 1;
-  const int oc = 3;
-  const int ih = 3;
-  const int iw = 3;
+  const int oc = 13;
+  const int ih = 30;
+  const int iw = 30;
   const int ic = 5;  // ic < 5 is right, ic > 4 is wrong
-  const bool bias_flag = false;
+  const bool bias_flag = true;
   const std::string relu_flag = "leaky_relu";
 #endif
               LOG(INFO) << "---------------------------- "
@@ -313,8 +313,8 @@ TEST(conv2d, compute_image2d_1x1) {
 
               int idx = 0;
               for (auto& i : input_v) {
-                // i = gen(engine);
-                i = (idx++) % 3;
+                i = gen(engine);
+// i = (idx++);
 #ifdef TEST_CONV_IMAGE_ALL_1
                 i = 0.01;
 #endif
@@ -322,8 +322,8 @@ TEST(conv2d, compute_image2d_1x1) {
               idx = 1;
               for (auto& f : filter_v) {
                 f = gen(engine);
-                // f = 1;
-                f = (idx++) % 3;
+// f = 1;
+// f = (idx++);
 #ifdef TEST_CONV_IMAGE_ALL_1
                 f = 0.01;
 #endif
@@ -497,9 +497,7 @@ TEST(conv2d, compute_image2d_1x1) {
                 // EXPECT_LT(relative_diff, FP16_MAX_DIFF);
                 EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                              abs_diff > FP16_ABS_DIFF);
-                // if (relative_diff > FP16_MAX_DIFF && abs_diff >
-                // FP16_ABS_DIFF)
-                {
+                if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
                   LOG(INFO) << "error idx:" << i << "output_v[" << i
                             << "]:" << output_v[i] << " "
                                                       "out_ref_data["
