@@ -114,7 +114,8 @@ TEST(yolov3_darknet53, test_yolov3_darknet53_fp32_baidu_xpu) {
   config.set_valid_places({lite_api::Place{TARGET(kXPU), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
-  config.set_xpu_workspace_l3_size_per_thread();
+  config.set_xpu_l3_cache_method(16773120, false);
+
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string cpu_out_dir =
@@ -183,7 +184,6 @@ TEST(yolov3_darknet53, test_yolov3_darknet53_fp32_baidu_xpu) {
   float score = CompareDiffWithCpu(out_rets, cpu_out);
   ASSERT_GT(score, 0.98f);
   float speed = cost_time / (input0.size() / FLAGS_batch) / 1000.0;
-  CHECK_LT(speed, 530.f);
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads

@@ -54,8 +54,8 @@ void RoiAlignCompute::Run() {
     cpu_lod_data[i] = rois_lod[i];
   }
 
-  XPUScratchPadGuard xpu_lod_grad_ = TargetWrapperXPU::MallocScratchPad(
-      cpu_lod_data.size() * sizeof(int), false /* use_l3 */);
+  XPUScratchPadGuard xpu_lod_grad_ =
+      TargetWrapperXPU::MallocScratchPad(cpu_lod_data.size() * sizeof(int));
   int* xpu_lod = reinterpret_cast<int*>(xpu_lod_grad_->addr_);
   XPU_CALL(xpu_memcpy(xpu_lod,
                       cpu_lod_data.data(),
