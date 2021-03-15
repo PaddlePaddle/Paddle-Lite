@@ -27,7 +27,7 @@
 
 ## 2 产出量化模型
 
-大家可以使用PaddlePaddle或者PaddleSlim调用有校准数据训练后量化接口，得到量化模型。本文主要介绍使用PaddlePaddle产出量化模型，使用PaddleSlim可以参考[文档](https://github.com/PaddlePaddle/models/tree/develop/PaddleSlim)。
+大家可以使用PaddlePaddle或者PaddleSlim调用有校准数据训练后量化接口，得到量化模型。本文主要介绍使用PaddlePaddle产出量化模型，使用PaddleSlim可以参考[文档](https://github.com/PaddlePaddle/PaddleSlim)。
 
 ### 2.1 安装PaddlePaddle
 
