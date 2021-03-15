@@ -1,6 +1,6 @@
 #include <cl_common.h>
 
-
+// filter: OIHW2OIHWI4O4
 __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t output, __global half4 *weight,
                             #ifdef BIASE_CH
                             __global half4 *bias,
@@ -34,22 +34,24 @@ __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t 
   int ow0 = ow + 0;
   int co_slice0 = co_slice + 0;
 
+  int tmp_h = mad24(oh0, strideH, -padTop);
+  int tmp_w = mad24(ow0, strideW, -padLeft);
+  int in_base = 0;
+
   half4 out_h0_w0_c0 = (half4)(0.0f, 0.0f, 0.0f, 0.0f);
 
-  __global half4 *weight_ptr = weight + co_slice * KH * KW * CI_SLICES * 4;
-
-
+  __global half4 *weight_ptr = weight + co_slice * KH * KW * (CI_SLICES << 2);
 
   for (int ci_slice = 0; ci_slice < CI_SLICES; ci_slice++) {
 
     for (int kh = 0; kh < KH; ++kh) {
-      int ih0 = kh * dilationH + oh0 * strideH - padTop;
+      int ih0 = mad24(kh, dilationH, tmp_h);
       int y_idx0 = (ih0 >= 0 && ih0 < IH) ? n * IH + ih0 : -1; // input image2d height idx
 
       for (int kw = 0; kw < KW; ++kw) {
-        int iw0 = kw * dilationW + ow0 * strideW - padLeft;
+        int iw0 = mad24(kw, dilationW, tmp_w);
         // int x_idx0 = iw0; // input image2d width idx
-        int x_idx0 = (iw0 >= 0 && iw0 < IW) ? iw0 + ci_slice * IW : -1;
+        int x_idx0 = (iw0 >= 0 && iw0 < IW) ? iw0 + in_base : -1;
         half4 in_h0_w0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx0, y_idx0));
 
         out_h0_w0_c0 += weight_ptr[0] * in_h0_w0.x; // n == 0
@@ -57,44 +59,12 @@ __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t 
         out_h0_w0_c0 += weight_ptr[2] * in_h0_w0.z; // n == 2
         out_h0_w0_c0 += weight_ptr[3] * in_h0_w0.w; // n == 3
 
-        // if (((co_slice0 * OW + ow0) == 0) && (n_oh == 0) && kh == 0 && kw == 0 && ci_slice == 1) {
-        //   // WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(0, 0), weight_ptr[0]);
-        //   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(0, 0), in_h0_w0);
-        // }
         weight_ptr += 4;
       }
     }
+
+    in_base += IW;
   }
-
-
-
-
-  // for (int kh = 0; kh < KH; ++kh) {
-  //   int ih0 = kh * dilationH + oh0 * strideH - padTop;
-  //   int y_idx0 = (ih0 >= 0 && ih0 < IH) ? n * IH + ih0 : -1; // input image2d height idx
-
-  //   for (int kw = 0; kw < KW; ++kw) {
-  //     int iw0 = kw * dilationW + ow0 * strideW - padLeft;
-  //     // int x_idx0 = iw0; // input image2d width idx
-  //     int x_idx0 = (iw0 >= 0 && iw0 < IW) ? iw0 : -1;
-
-  //     for (int ci_slice = 0; ci_slice < CI_SLICES; ci_slice++) {
-  //       half4 in_h0_w0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx0, y_idx0));
-
-  //       out_h0_w0_c0 += weight_ptr[0] * in_h0_w0.x; // n == 0
-  //       out_h0_w0_c0 += weight_ptr[1] * in_h0_w0.y; // n == 1
-  //       out_h0_w0_c0 += weight_ptr[2] * in_h0_w0.z; // n == 2
-  //       out_h0_w0_c0 += weight_ptr[3] * in_h0_w0.w; // n == 3
-
-  //       if (((co_slice0 * OW + ow0) == 0) && (n_oh == 0) && kh == 0 && kw == 0 && ci_slice == 1) {
-  //         WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(0, 0), weight_ptr[0]);
-  //         WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(1, 0), in_h0_w0);
-  //       }
-  //       x_idx0 += IW;
-  //       weight_ptr += 4;
-  //     }
-  //   }
-  // }
 
 #ifdef BIASE_CH
   out_h0_w0_c0 += bias[co_slice0];
@@ -107,9 +77,6 @@ __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t 
 #endif
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), out_h0_w0_c0);
-  // if (n_oh == 0 && ow == 0 && co_slice == 0) {
-  //   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), out_h0_w0_c0);
-  // }
 }
 
 

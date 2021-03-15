@@ -76,6 +76,8 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void DepthwiseConv2d();
   void Conv2dCommon();
   void Conv2dMali();
+  void OIHW2OI4HWI4O4(
+      void* src, void* dst, size_t O, size_t I, size_t H, size_t W);
 
   param_t* conv_param_{nullptr};
 

@@ -92,7 +92,7 @@ void ConvImageCompute::PrepareForRun() {
    * Upload filter, bias to opencl device
    *********************************************/
   auto* filter_cpu = conv_param_->filter->mutable_data<float>();
-  if (is_mali) {
+  if (is_mali && filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
     LOG(INFO) << "IN MALI";
     kernel_func_names_.push_back("Conv2D_H1W1C1");
     kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
@@ -105,9 +105,13 @@ void ConvImageCompute::PrepareForRun() {
     auto* filter_buffer_data =
         tensor_hold_filter_buffer->mutable_data<half_t>();
     LOG(INFO) << "1";
-    CLImageConverterNBlock converter;
+    OIHW2OI4HWI4O4(filter_cpu,
+                   filter_buffer_data,
+                   filter_dims[0],
+                   filter_dims[1],
+                   filter_dims[2],
+                   filter_dims[3]);
     filter_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
-    converter.NCHWToImage(filter_cpu, filter_buffer_data, filter_dims);
     LOG(INFO) << "2";
     filter_gpu_buffer_->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
         tensor_hold_filter_buffer->data<half_t>(), filter_ext_dims);
@@ -510,7 +514,7 @@ void ConvImageCompute::PrepareForRun() {
 
   // define buffer/image pointer for filter & bias
   LOG(INFO) << "DATA_GPU";
-  if (is_mali) {
+  if (is_mali && filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
     filter_buffer_p_ = filter_gpu_buffer_->mutable_data<half_t, cl::Buffer>();
     if (has_bias_) {
       bias_buffer_p_ = bias_gpu_buffer_->mutable_data<half_t, cl::Buffer>();
@@ -793,6 +797,38 @@ void ConvImageCompute::SetGlobalWorkSize() {
   }
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
+}
+
+void ConvImageCompute::OIHW2OI4HWI4O4(
+    void* src, void* dst, size_t O, size_t I, size_t H, size_t W) {
+  bool fp16_support =
+      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+  size_t o_block = (O + 3) / 4;
+  size_t i_block = (I + 3) / 4;
+
+  float* dst_fp32 = static_cast<float*>(dst);
+  half_t* dst_fp16 = static_cast<half_t*>(dst);
+
+  float* p = static_cast<float*>(src);
+  for (size_t o = 0; o < o_block * 4; o++) {
+    for (size_t i = 0; i < i_block * 4; i++) {
+      for (size_t h = 0; h < H; h++) {
+        for (size_t w = 0; w < W; w++) {
+          size_t idx = (o / 4) * i_block * H * W * 4 * 4 +
+                       (i / 4) * H * W * 4 * 4 + h * W * 4 * 4 + w * 4 * 4 +
+                       (i % 4) * 4 + o % 4;
+
+          if (o < O && i < I) {
+            fp16_support ? dst_fp16[idx] = Float2Half(*p) : dst_fp32[idx] = *p;
+            p++;
+          } else {
+            fp16_support ? dst_fp16[idx] = Float2Half(0.f) : dst_fp32[idx] =
+                                                                 0.f;
+          }
+        }
+      }
+    }
+  }
 }
 
 void ConvImageCompute::Conv2dMali() {

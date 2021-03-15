@@ -31,9 +31,9 @@ namespace lite {
 #define FP16_ABS_DIFF (1e-1)
 // #define TEST_CONV_IMAGE_ALL_1
 #define TEST_CONV_IMAGE_1x1
-// #define TEST_CONV_IMAGE_3x3
-// #define TEST_CONV_IMAGE_5x5
-// #define TEST_CONV_IMAGE_7x7
+#define TEST_CONV_IMAGE_3x3
+#define TEST_CONV_IMAGE_5x5
+#define TEST_CONV_IMAGE_7x7
 
 #define LEAKY_RELU_ALPHA (0.1)
 template <typename Dtype1, typename Dtype2>
