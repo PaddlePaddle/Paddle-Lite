@@ -53,13 +53,12 @@ bool QuantFilter<int8_t>(const float* filter_on_host,
 template <typename T, PrecisionType PType>
 void XPUConv2dCompute<T, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
-  auto filter_ptr = param.Filter->template data<float>();
-  auto filter_len = param.Filter->numel();
+  auto filter_ptr = param.filter->template data<float>();
+  auto filter_len = param.filter->numel();
   // max
   float max_f = paddle::lite::xpu::math::FindMaxAbs(filter_ptr, filter_len);
   std::vector<float> max_f_v(4, max_f);
-  filter_max_guard =
-      TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
+  filter_max_guard = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   filter_max = reinterpret_cast<float*>(filter_max_guard->addr_);
   XPU_CALL(xpu_memcpy(filter_max,
                       max_f_v.data(),
@@ -67,7 +66,7 @@ void XPUConv2dCompute<T, PType>::PrepareForRun() {
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   // quant
   quant_filter_guard =
-      TargetWrapperXPU::MallocScratchPad(filter_len * sizeof(T), false);
+      TargetWrapperXPU::MallocScratchPad(filter_len * sizeof(T));
   quant_filter = reinterpret_cast<T*>(quant_filter_guard->addr_);
   std::vector<T> quant_filter_cpu(filter_len, 0);
   bool ret =
@@ -84,7 +83,7 @@ void XPUConv2dCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
-  auto& input_dims = param.Input->dims();
+  auto& input_dims = param.input->dims();
   auto& filter_dims = param.filter_dims;
   int batch = static_cast<int>(input_dims[0]);
   int img_c = static_cast<int>(input_dims[1]);
@@ -95,27 +94,27 @@ void XPUConv2dCompute<T, PType>::Run() {
   int win_w = static_cast<int>(filter_dims[3]);
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
-  int groups = param.groups;
-  int act_type = param.act_type;
+  int groups = param.groups.front();
+  int act_type = param.act_type.front();
   float* output_max =
-      param.OutputMax->template mutable_data<float>(TARGET(kXPU));
-  float* output = param.Output->template mutable_data<float>(TARGET(kXPU));
+      param.output_max->template mutable_data<float>(TARGET(kXPU));
+  float* output = param.output->template mutable_data<float>(TARGET(kXPU));
   const auto* bias =
-      param.has_bias ? param.Bias->template data<float>() : nullptr;
+      param.has_bias ? param.bias->template data<float>() : nullptr;
   const auto* branch =
-      param.has_branch ? param.Branch->template data<float>() : nullptr;
+      param.has_branch ? param.branch->template data<float>() : nullptr;
   const float* input_max =
-      param.InputMax ? param.InputMax->template data<float>() : nullptr;
+      param.input_max ? param.input_max->template data<float>() : nullptr;
   xdnn::Activation_t act((xdnn::Activation_t::act_enum)act_type);
   if (act_type == 5) {
-    act.leaky_alpha = param.act_param;
+    act.leaky_alpha = param.act_param.front();
     CHECK(act.leaky_alpha >= 0.0001 && act.leaky_alpha <= 10);
   } else if (act_type == 15) {
-    act.hard_sigmoid_slope = param.act_param;
+    act.hard_sigmoid_slope = param.act_param.front();
   }
   int r = xdnn::conv2d_fusion<float, T, float, T>(
       ctx.GetRawContext(),
-      param.Input->template data<float>(),
+      param.input->template data<float>(),
       quant_filter,
       output,
       batch,

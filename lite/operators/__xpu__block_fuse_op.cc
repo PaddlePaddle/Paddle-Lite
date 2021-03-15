@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/__xpu__block_fuse_op.h"
+#include <memory>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -55,8 +56,10 @@ bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.place_z = op_desc.GetAttr<std::vector<int>>("place_z");
   param_.filter_dims = op_desc.GetAttr<std::vector<int>>("filter_dims");
   param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-  param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
-  param_.dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+  auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+  param_.paddings = std::make_shared<std::vector<int>>(paddings);
+  auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+  param_.dilations = std::make_shared<std::vector<int>>(dilations);
   param_.groups = op_desc.GetAttr<std::vector<int>>("groups");
   param_.act_type = op_desc.GetAttr<std::vector<int>>("act_type");
   param_.act_param = op_desc.GetAttr<std::vector<float>>("act_param");

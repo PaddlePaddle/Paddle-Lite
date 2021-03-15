@@ -272,9 +272,8 @@ class XPUConv2dFuser : public FuseBase {
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
-    auto op_desc = *matched.at("conv")->stmt()->op_info();
-    op_desc.mutable_inputs()->clear();
-    op_desc.mutable_outputs()->clear();
+    // auto op_desc = *matched.at("conv")->stmt()->op_info();
+    cpp::OpDesc op_desc;
     auto conv_old = matched.at("conv")->stmt()->op();
     auto* scope = conv_old->scope();
     op_desc.SetType("__xpu__conv2d");
@@ -287,21 +286,55 @@ class XPUConv2dFuser : public FuseBase {
                                  static_cast<int>(f_dims[1]),
                                  static_cast<int>(f_dims[2]),
                                  static_cast<int>(f_dims[3])};
+    std::vector<int> conv_groups{
+        matched.at("conv")->stmt()->op_info()->GetAttr<int>("groups")};
+    std::vector<int> conv_bias;
+    if (with_bn_ || with_conv_bias_) {
+      conv_bias.push_back(1);
+    } else {
+      conv_bias.push_back(0);
+    }
     op_desc.SetAttr<std::vector<int>>("filter_dims", filter_dims);
+    op_desc.SetAttr<std::vector<int>>("op_type", std::vector<int>{0});
+    op_desc.SetAttr<std::vector<int>>("place_x", std::vector<int>{0});
+    op_desc.SetAttr<std::vector<int>>("place_y", std::vector<int>{9});
+    op_desc.SetAttr<std::vector<int>>("place_z", std::vector<int>{10});
+    op_desc.SetAttr<std::vector<int>>(
+        "strides",
+        matched.at("conv")->stmt()->op_info()->GetAttr<std::vector<int>>(
+            "strides"));
+    auto conv_paddings =
+        matched.at("conv")->stmt()->op_info()->GetAttr<std::vector<int>>(
+            "paddings");
+    if (conv_paddings.size() == 2) {
+      for (size_t i = 0; i < 2; ++i) {
+        int copy_pad = *(conv_paddings.begin() + 2 * i);
+        conv_paddings.insert(conv_paddings.begin() + 2 * i + 1, copy_pad);
+      }
+    }
+    CHECK_EQ(conv_paddings.size(), 4UL)
+        << "Paddings size should be 2 or 4, But received paddings size: "
+        << conv_paddings.size();
+    op_desc.SetAttr<std::vector<int>>("paddings", conv_paddings);
+
+    op_desc.SetAttr<std::vector<int>>(
+        "dilations",
+        matched.at("conv")->stmt()->op_info()->GetAttr<std::vector<int>>(
+            "dilations"));
+    op_desc.SetAttr<std::vector<int>>("groups", conv_groups);
+    op_desc.SetAttr<std::vector<int>>("block_lod", std::vector<int>{1});
+    op_desc.SetAttr<std::vector<int>>("conv_bias", conv_bias);
+
     std::string fusion_bias_name = filter_name + "_conv_fusion_bias";
     auto* fusion_bias_node = graph->NewArgumentNode(fusion_bias_name);
     fusion_bias_node->arg()->is_weight = true;
     fusion_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* fusion_bias_t = scope->NewTensor(fusion_bias_name);
+    fusion_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
 
     op_desc.SetAttr<bool>("has_bias", (with_bn_ || with_conv_bias_));
     if (with_bn_ || with_conv_bias_) {
-      // auto* fusion_bias_node = graph->NewArgumentNode(fusion_bias_name);
-      // fusion_bias_node->arg()->is_weight = true;
-      // fusion_bias_node->arg()->type = LiteType::GetTensorTy(
-      //    TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-      // auto* fusion_bias_t = scope->NewTensor(fusion_bias_name);
       fusion_bias_t->Resize({f_dims[0]});
       float* fusion_bias_ptr = fusion_bias_t->mutable_data<float>();
       if (with_conv_bias_) {
@@ -367,6 +400,7 @@ class XPUConv2dFuser : public FuseBase {
         }
         memcpy(fusion_bias_ptr, bias_on_host, mean_len * sizeof(float));
       }
+      fusion_bias_t->set_persistable(true);
       op_desc.SetInput("Bias", {fusion_bias_name});
     }
     op_desc.SetInput("Filter", {filter_name});
@@ -396,8 +430,17 @@ class XPUConv2dFuser : public FuseBase {
         act_param_ = act_op_desc.GetAttr<float>("slope");
       }
     }
-    op_desc.SetAttr<int>("act_type", act_map[act_type_]);
-    op_desc.SetAttr<float>("act_param", act_param_);
+    op_desc.SetAttr<std::vector<int>>("act_type",
+                                      std::vector<int>{act_map[act_type_]});
+    op_desc.SetAttr<std::vector<float>>("act_param",
+                                        std::vector<float>{act_param_});
+
+    if ((matched.at("conv")->stmt()->op_info()->HasAttr("padding_algorithm"))) {
+      op_desc.SetAttr<std::string>(
+          "padding_algorithm",
+          matched.at("conv")->stmt()->op_info()->GetAttr<std::string>(
+              "padding_algorithm"));
+    }
 
     std::string output_name, output_node_name;
     if (act_type_ != "linear") {
@@ -422,7 +465,9 @@ class XPUConv2dFuser : public FuseBase {
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    scope->NewTensor(max_output_name);
+    auto* max_output_tensor = scope->NewTensor(max_output_name);
+    max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
     auto conv_op = LiteOpRegistry::Global().Create("__xpu__conv2d");

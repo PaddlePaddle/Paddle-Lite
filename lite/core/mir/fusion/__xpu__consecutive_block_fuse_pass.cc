@@ -94,12 +94,11 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     PMNode* bias0 = nullptr;
     PMNode* bias1 = nullptr;
     if (block0_with_bias_) {
-      bias0 = VarNode("bias0")
-                  ->assert_is_op_input(block0_type_, "Bias")
-                  ->AsIntermediate();
+      bias0 = VarNode("bias0")->assert_is_op_input(block0_type_, "Bias");
     }
     auto* block0 = OpNode("block0", block0_type_)
                        ->assert_op_attr<bool>("has_bias", block0_with_bias_)
+                       ->assert_op_attr<bool>("has_branch", false)
                        ->AsIntermediate();
 
     auto* block_out0 = VarNode("block_out0")
@@ -112,14 +111,12 @@ class XPUConsecutiveBlockFuser : public FuseBase {
                         ->assert_is_op_input(block1_type_, "Filter")
                         ->AsIntermediate();
     if (block1_with_bias_) {
-      bias1 = VarNode("bias1")
-                  ->assert_is_op_input(block1_type_, "Bias")
-                  ->AsIntermediate();
+      bias1 = VarNode("bias1")->assert_is_op_input(block1_type_, "Bias");
     }
     auto* block1 = OpNode("block1", block1_type_)
                        ->assert_op_attr<bool>("has_bias", block1_with_bias_)
+                       ->assert_op_attr<bool>("has_branch", false)
                        ->AsIntermediate();
-
     auto* block_out1 = VarNode("block_out1")
                            ->assert_is_op_output(block1_type_, "Output")
                            ->AsOutput();
@@ -127,11 +124,15 @@ class XPUConsecutiveBlockFuser : public FuseBase {
                                ->assert_is_op_output(block1_type_, "OutputMax")
                                ->AsOutput();
 
-    if (block0_type_ == "__xpu__conv2d") {
-      block0->assert_op_attr<bool>("has_branch", false);
-    } else if (block1_type_ == "__xpu__conv2d") {
-      block1->assert_op_attr<bool>("has_branch", false);
+    if (block0_with_bias_ && block1_with_bias_) {
+      bias0->AsIntermediate();
+      bias1->AsIntermediate();
+    } else if (block0_with_bias_) {
+      bias0->AsInput();
+    } else if (block1_with_bias_) {
+      bias1->AsInput();
     }
+
     *input >> *block0 >> *block_out0 >> *block1 >> *block_out1;
     *filter0 >> *block0;
     if (block0_with_bias_) {
@@ -178,21 +179,6 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     std::vector<int> block_lod;
     std::vector<int> conv_bias;
 
-    if (block0_type_ == "__xpu__conv2d") {
-      op_type.push_back(0);
-      place_x.push_back(0);
-      place_y.push_back(9);
-      place_z.push_back(10);
-      block_lod.push_back(1);
-      conv_groups.push_back(
-          matched.at("block0")->stmt()->op_info()->GetAttr<int>("groups"));
-      act_type.push_back(
-          matched.at("block0")->stmt()->op_info()->GetAttr<int>("act_type"));
-      act_param.push_back(
-          matched.at("block0")->stmt()->op_info()->GetAttr<float>("act_param"));
-      conv_bias.push_back(
-          matched.at("block0")->stmt()->op_info()->GetAttr<bool>("has_bias"));
-    }
     for (auto name : block_name) {
       auto cur_filter_dims =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
@@ -203,30 +189,6 @@ class XPUConsecutiveBlockFuser : public FuseBase {
       auto cur_paddings =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
               "paddings");
-      if (cur_paddings.size() == 2) {
-        for (size_t i = 0; i < cur_strides.size(); ++i) {
-          int copy_pad = *(cur_paddings.begin() + 2 * i);
-          cur_paddings.insert(cur_paddings.begin() + 2 * i + 1, copy_pad);
-        }
-      }
-      auto cur_conv_dilations =
-          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
-              "dilations");
-      filter_dims.insert(
-          filter_dims.end(), cur_filter_dims.begin(), cur_filter_dims.end());
-      conv_strides.insert(
-          conv_strides.end(), cur_strides.begin(), cur_strides.end());
-      conv_paddings.insert(
-          conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
-      conv_dilations.insert(conv_dilations.end(),
-                            cur_conv_dilations.begin(),
-                            cur_conv_dilations.end());
-
-      if (name == "block0" && block0_type_ == "__xpu__conv2d") {
-        continue;
-      } else if (name == "block1" && block1_type_ == "__xpu__conv2d") {
-        continue;
-      }
       auto cur_op_type =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
               "op_type");
@@ -267,21 +229,24 @@ class XPUConsecutiveBlockFuser : public FuseBase {
           block_lod.end(), cur_block_lod.begin(), cur_block_lod.end());
       conv_bias.insert(
           conv_bias.end(), cur_conv_bias.begin(), cur_conv_bias.end());
-    }
-    if (block1_type_ == "__xpu__conv2d") {
-      op_type.push_back(0);
-      place_x.push_back(0);
-      place_y.push_back(9);
-      place_z.push_back(10);
-      block_lod.push_back(1);
-      conv_groups.push_back(
-          matched.at("block1")->stmt()->op_info()->GetAttr<int>("groups"));
-      act_type.push_back(
-          matched.at("block1")->stmt()->op_info()->GetAttr<int>("act_type"));
-      act_param.push_back(
-          matched.at("block1")->stmt()->op_info()->GetAttr<float>("act_param"));
-      conv_bias.push_back(
-          matched.at("block1")->stmt()->op_info()->GetAttr<bool>("has_bias"));
+      if (cur_paddings.size() == 2) {
+        for (size_t i = 0; i < cur_strides.size(); ++i) {
+          int copy_pad = *(cur_paddings.begin() + 2 * i);
+          cur_paddings.insert(cur_paddings.begin() + 2 * i + 1, copy_pad);
+        }
+      }
+      auto cur_conv_dilations =
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "dilations");
+      filter_dims.insert(
+          filter_dims.end(), cur_filter_dims.begin(), cur_filter_dims.end());
+      conv_strides.insert(
+          conv_strides.end(), cur_strides.begin(), cur_strides.end());
+      conv_paddings.insert(
+          conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
+      conv_dilations.insert(conv_dilations.end(),
+                            cur_conv_dilations.begin(),
+                            cur_conv_dilations.end());
     }
     op_desc.SetAttr("op_type", op_type);
     op_desc.SetAttr("place_x", place_x);
@@ -297,6 +262,7 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     op_desc.SetAttr("block_lod", block_lod);
     op_desc.SetAttr("conv_bias", conv_bias);
     op_desc.SetAttr<bool>("has_bias", (block0_with_bias_ || block1_with_bias_));
+    op_desc.SetAttr<bool>("has_branch", false);
 
     auto* filter0_t = scope->FindMutableTensor(filter_name[0]);
     auto* filter1_t = scope->FindMutableTensor(filter_name[1]);
@@ -318,6 +284,8 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     new_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_filter_t = scope->NewTensor(new_filter_name);
+    new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_filter_t->set_persistable(true);
     new_filter_t->Resize({filter0_numel + filter1_numel});
     float* new_filter_ptr = new_filter_t->mutable_data<float>();
     memcpy(new_filter_ptr,
@@ -331,6 +299,8 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     new_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_bias_t = scope->NewTensor(new_bias_name);
+    new_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_bias_t->set_persistable(true);
     if (block0_with_bias_ && block1_with_bias_) {
       auto* bias0_t = scope->FindMutableTensor(bias_name[0]);
       auto* bias1_t = scope->FindMutableTensor(bias_name[1]);
@@ -384,42 +354,40 @@ class XPUConsecutiveBlockFuser : public FuseBase {
 class XPUConsecutiveBlockFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    for (auto block0_with_bias : {true, false}) {
-      for (auto block1_with_bias : {true, false}) {
-        bool changed = true;
-        while (changed) {
-          changed = false;
-          fusion::XPUConsecutiveBlockFuser fuser("__xpu__conv2d",
-                                                 "__xpu__block_fuse_op",
-                                                 block0_with_bias,
-                                                 block1_with_bias);
-          changed = fuser(graph.get());
+    fusion::XPUConsecutiveBlockFuser fuser0(
+        "__xpu__conv2d", "__xpu__squeeze_excitation_block", true, false);
+    fuser0(graph.get());
+    bool changed = true;
+    while (changed) {
+      changed = false;
+      for (auto block0_with_bias : {true, false}) {
+        for (auto block1_with_bias : {true, false}) {
+          fusion::XPUConsecutiveBlockFuser fuser1("__xpu__conv2d",
+                                                  "__xpu__block_fuse_op",
+                                                  block1_with_bias,
+                                                  block0_with_bias);
+          bool cur_changed = fuser1(graph.get());
+          changed = cur_changed ? true : changed;
+          fusion::XPUConsecutiveBlockFuser fuser2("__xpu__block_fuse_op",
+                                                  "__xpu__conv2d",
+                                                  block1_with_bias,
+                                                  block0_with_bias);
+          cur_changed = fuser2(graph.get());
+          changed = cur_changed ? true : changed;
         }
       }
     }
-    for (auto block0_with_bias : {true, false}) {
-      for (auto block1_with_bias : {true, false}) {
-        bool changed = true;
-        while (changed) {
-          changed = false;
-          fusion::XPUConsecutiveBlockFuser fuser("__xpu__block_fuse_op",
-                                                 "__xpu__conv2d",
-                                                 block0_with_bias,
-                                                 block1_with_bias);
-          changed = fuser(graph.get());
-        }
-      }
-    }
-    for (auto block0_with_bias : {true, false}) {
-      for (auto block1_with_bias : {true, false}) {
-        bool changed = true;
-        while (changed) {
-          changed = false;
-          fusion::XPUConsecutiveBlockFuser fuser("__xpu__block_fuse_op",
-                                                 "__xpu__block_fuse_op",
-                                                 block0_with_bias,
-                                                 block1_with_bias);
-          changed = fuser(graph.get());
+    changed = true;
+    while (changed) {
+      changed = false;
+      for (auto block0_with_bias : {true, false}) {
+        for (auto block1_with_bias : {true, false}) {
+          fusion::XPUConsecutiveBlockFuser fuser3("__xpu__block_fuse_op",
+                                                  "__xpu__block_fuse_op",
+                                                  block1_with_bias,
+                                                  block0_with_bias);
+          bool cur_changed = fuser3(graph.get());
+          changed = cur_changed ? true : changed;
         }
       }
     }

@@ -147,11 +147,14 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
               "dilations");
       auto cur_groups =
-          matched.at(name)->stmt()->op_info()->GetAttr<int>("groups");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "groups");
       auto cur_act_type =
-          matched.at(name)->stmt()->op_info()->GetAttr<int>("act_type");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "act_type");
       auto cur_act_param =
-          matched.at(name)->stmt()->op_info()->GetAttr<float>("act_param");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<float>>(
+              "act_param");
       filter_dims.insert(
           filter_dims.end(), cur_filter_dims.begin(), cur_filter_dims.end());
       encode_filter_size.push_back(encode_filter_size.back() +
@@ -173,9 +176,9 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
           conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
       conv_dilations.insert(
           conv_dilations.end(), cur_dilations.begin(), cur_dilations.end());
-      conv_groups.push_back(cur_groups);
-      act_type.push_back(cur_act_type);
-      act_param.push_back(cur_act_param);
+      conv_groups.push_back(cur_groups[0]);
+      act_type.push_back(cur_act_type[0]);
+      act_param.push_back(cur_act_param[0]);
     }
     op_desc.SetAttr("op_type", op_type);
     op_desc.SetAttr("place_x", place_x);
@@ -191,6 +194,7 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     op_desc.SetAttr("block_lod", block_lod);
     op_desc.SetAttr("conv_bias", conv_bias);
     op_desc.SetAttr<bool>("has_bias", true);
+    op_desc.SetAttr<bool>("has_branch", false);
 
     std::unique_ptr<float[]> encode_filter_float(
         new float[encode_filter_size.back()]);
@@ -208,6 +212,8 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     new_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_filter_t = scope->NewTensor(new_filter_name);
+    new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_filter_t->set_persistable(true);
     new_filter_t->Resize({encode_filter_size.back()});
     float* new_filter_ptr = new_filter_t->mutable_data<float>();
     memcpy(new_filter_ptr,
@@ -229,6 +235,8 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     new_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_bias_t = scope->NewTensor(new_bias_name);
+    new_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_bias_t->set_persistable(true);
     new_bias_t->Resize({encode_bias_size.back()});
     float* new_bias_ptr = new_bias_t->mutable_data<float>();
     memcpy(new_bias_ptr,

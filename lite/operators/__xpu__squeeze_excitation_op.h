@@ -13,32 +13,33 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
-#include "lite/core/kernel.h"
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace operators {
 
-template <typename T, PrecisionType PType>
-class XPUConv2dCompute : public KernelLite<TARGET(kXPU), PType> {
+class XPUSqueezeExcitationOp : public OpLite {
  public:
-  using param_t = operators::XPUBlockFuseParam;
+  XPUSqueezeExcitationOp() {}
+  explicit XPUSqueezeExcitationOp(const std::string &op_type)
+      : OpLite(op_type) {}
 
-  void PrepareForRun() override;
+  bool CheckShape() const override;
 
-  void Run() override;
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "SqueezeExcitation Op"; }
 
  private:
-  XPUScratchPadGuard quant_filter_guard;
-  T* quant_filter;
-  XPUScratchPadGuard filter_max_guard;
-  float* filter_max;
+  mutable XPUBlockFuseParam param_;
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

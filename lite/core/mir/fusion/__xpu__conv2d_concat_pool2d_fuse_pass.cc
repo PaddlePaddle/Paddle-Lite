@@ -137,10 +137,12 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
         OpNode("left_xpu_conv0", "__xpu__conv2d")
             ->assert_op_attr<bool>("has_branch", false)
             ->assert_op_attr<bool>("has_bias", true)
-            ->assert_op_attr_satisfied<int>(
+            ->assert_op_attr_satisfied<std::vector<int>>(
                 "act_type",
-                [](const int& attr) {
-                  return attr == 1 || attr == 2; /* support relu and sigmoid */
+                [](const std::vector<int>& attr) {
+                  return attr.size() == 1 &&
+                         (attr[0] == 1 ||
+                          attr[0] == 2); /* support relu and sigmoid */
                 })
             ->AsIntermediate();
     auto* left_conv_out0 = VarNode("left_conv_out0")
@@ -169,11 +171,12 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
           OpNode("right_xpu_conv0", "__xpu__conv2d")
               ->assert_op_attr<bool>("has_branch", false)
               ->assert_op_attr<bool>("has_bias", true)
-              ->assert_op_attr_satisfied<int>(
+              ->assert_op_attr_satisfied<std::vector<int>>(
                   "act_type",
-                  [](const int& attr) {
-                    return attr == 1 ||
-                           attr == 2; /* support relu and sigmoid */
+                  [](const std::vector<int>& attr) {
+                    return attr.size() == 1 &&
+                           (attr[0] == 1 ||
+                            attr[0] == 2); /* support relu and sigmoid */
                   })
               ->AsIntermediate();
       right_conv_out0 = VarNode("right_conv_out0")
@@ -197,10 +200,12 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
         OpNode("right_xpu_conv1", "__xpu__conv2d")
             ->assert_op_attr<bool>("has_branch", false)
             ->assert_op_attr<bool>("has_bias", true)
-            ->assert_op_attr_satisfied<int>(
+            ->assert_op_attr_satisfied<std::vector<int>>(
                 "act_type",
-                [](const int& attr) {
-                  return attr == 1 || attr == 2; /* support relu and sigmoid */
+                [](const std::vector<int>& attr) {
+                  return attr.size() == 1 &&
+                         (attr[0] == 1 ||
+                          attr[0] == 2); /* support relu and sigmoid */
                 })
             ->AsIntermediate();
     auto* right_conv_out1 = VarNode("right_conv_out1")
@@ -297,7 +302,9 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    scope->NewTensor(max_output_name);
+    auto* max_output_tensor = scope->NewTensor(max_output_name);
+    max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_output_tensor->set_persistable(true);
 
     op_desc.SetType("__xpu__block_fuse_op");
     op_desc.SetInput("Input", {matched.at("input")->arg()->name});
@@ -376,11 +383,15 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
               "dilations");
       auto cur_groups =
-          matched.at(name)->stmt()->op_info()->GetAttr<int>("groups");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "groups");
       auto cur_act_type =
-          matched.at(name)->stmt()->op_info()->GetAttr<int>("act_type");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "act_type");
       auto cur_act_param =
-          matched.at(name)->stmt()->op_info()->GetAttr<float>("act_param");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<float>>(
+              "act_param");
+
       filter_dims.insert(
           filter_dims.end(), cur_filter_dims.begin(), cur_filter_dims.end());
       encode_filter_size.push_back(encode_filter_size.back() +
@@ -402,9 +413,11 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
           conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
       conv_dilations.insert(
           conv_dilations.end(), cur_dilations.begin(), cur_dilations.end());
-      conv_groups.push_back(cur_groups);
-      act_type.push_back(cur_act_type);
-      act_param.push_back(cur_act_param);
+      conv_groups.insert(
+          conv_groups.end(), cur_groups.begin(), cur_groups.end());
+      act_type.insert(act_type.end(), cur_act_type.begin(), cur_act_type.end());
+      act_param.insert(
+          act_param.end(), cur_act_param.begin(), cur_act_param.end());
     }
 
     std::unique_ptr<float[]> encode_filter_float(
@@ -423,6 +436,8 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     new_filter_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_filter_t = scope->NewTensor(new_filter_name);
+    new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_filter_t->set_persistable(true);
     new_filter_t->Resize({encode_filter_size.back()});
     float* new_filter_ptr = new_filter_t->mutable_data<float>();
     memcpy(new_filter_ptr,
@@ -444,6 +459,8 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     new_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_bias_t = scope->NewTensor(new_bias_name);
+    new_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_bias_t->set_persistable(true);
     new_bias_t->Resize({encode_bias_size.back()});
     float* new_bias_ptr = new_bias_t->mutable_data<float>();
     memcpy(new_bias_ptr,
@@ -507,6 +524,7 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     op_desc.SetAttr("block_lod", block_lod);
     op_desc.SetAttr("conv_bias", conv_bias);
     op_desc.SetAttr<bool>("has_bias", true);
+    op_desc.SetAttr<bool>("has_branch", false);
 
     auto& valid_places = conv->valid_places();
     auto block_op = LiteOpRegistry::Global().Create(op_desc.Type());
