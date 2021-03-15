@@ -158,7 +158,6 @@ TEST(Resnet50_vd, test_resnet50_vd_fp32_baidu_xpu) {
   ASSERT_GT(top5_acc, 0.98f);
 
   float speed = cost_time / (input_data.size() / FLAGS_batch) / 1000.0;
-  CHECK_LT(speed, 19.f);
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads

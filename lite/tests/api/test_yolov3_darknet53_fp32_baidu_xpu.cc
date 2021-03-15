@@ -184,7 +184,6 @@ TEST(yolov3_darknet53, test_yolov3_darknet53_fp32_baidu_xpu) {
   float score = CompareDiffWithCpu(out_rets, cpu_out);
   ASSERT_GT(score, 0.98f);
   float speed = cost_time / (input0.size() / FLAGS_batch) / 1000.0;
-  CHECK_LT(speed, 530.f);
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
