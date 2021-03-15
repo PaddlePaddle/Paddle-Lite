@@ -92,11 +92,20 @@ class TransposeComputeFloatImage
     output_image_w_ = output_image_shape.at("width");
 
     if (output_tensor_dims_.size() == 4) {
-      kernel_func_name_ = "transpose_4d";
+      std::set<std::vector<int>> unsupported_cases{
+          std::vector<int>({0, 3, 1, 2})};
+      if (unsupported_cases.find(axis_) == unsupported_cases.end()) {
+        kernel_func_name_ = "transpose_4d";
+      } else {
+        kernel_func_name_ = "transpose_general_buffer";
+      }
     } else if (output_tensor_dims_.size() == 2) {
       kernel_func_name_ = "transpose_2d";
     } else {
       kernel_func_name_ = "transpose_general_buffer";
+    }
+
+    if (kernel_func_name_ == "transpose_general_buffer") {
       build_options_ = "-DCL_DTYPE_float";
       // create kernels of im2buf and buf2im
       auto im2buf_kernels = KernelRegistry::Global().Create(

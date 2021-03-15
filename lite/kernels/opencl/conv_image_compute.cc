@@ -93,8 +93,8 @@ void ConvImageCompute::PrepareForRun() {
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
 
-  if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
-    CHECK(pad_equal && stride_equal && dilation_equal);
+  if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1 && pad_equal &&
+      stride_equal && dilation_equal) {
     if (input_tensor_c_ % 4 == 0) {
       kernel_func_names_.push_back("conv2d_1x1_simple");
     } else {
@@ -117,9 +117,9 @@ void ConvImageCompute::PrepareForRun() {
 #define DEPTH_CONV_USE_SPL
 #ifdef DEPTH_CONV_USE_SPL
   } else if (filter_tensor_c_ == 1 && input_tensor_c_ == output_tensor_c_ &&
-             filter_tensor_h_ == 3 && filter_tensor_w_ == 3 && groups_ > 1) {
+             filter_tensor_h_ == 3 && filter_tensor_w_ == 3 && groups_ > 1 &&
+             dilation_equal) {
     // depth_conv2d_3x3s1, depth_conv2d_3x3
-    CHECK(dilation_equal);
     if (stride_equal && stride_h_ == 1 && dilation_h_ == 1) {
       kernel_func_names_.push_back("depth_conv2d_3x3s1");
       impl_ = &ConvImageCompute::DepthwiseConv2d3x3s1;
@@ -164,10 +164,9 @@ void ConvImageCompute::PrepareForRun() {
 
     impl_ = &ConvImageCompute::DepthwiseConv2d;
   } else if (filter_tensor_h_ == 3 && filter_tensor_w_ == 3 &&
-             dilation_h_ == 1 && dilation_w_ == 1) {
+             dilation_h_ == 1 && dilation_w_ == 1 && pad_equal &&
+             stride_equal && dilation_equal) {
     // conv2d_3x3
-    pad_equal = (pad_left_ == pad_up_);
-    CHECK(pad_equal && stride_equal && dilation_equal);
     if (groups_ == 1) {
       kernel_func_names_.push_back(
           input_tensor_n_ > 1 ? "conv2d_3x3_multi_batch" : "conv2d_3x3_opt");
@@ -189,8 +188,8 @@ void ConvImageCompute::PrepareForRun() {
     converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
-  } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5) {
-    CHECK(pad_equal && stride_equal && dilation_equal);
+  } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5 && pad_equal &&
+             stride_equal && dilation_equal) {
 #define CONV_5x5_OPT
 #ifndef CONV_5x5_OPT
     // conv2d_5x5
@@ -231,8 +230,8 @@ void ConvImageCompute::PrepareForRun() {
     impl_ = &ConvImageCompute::Conv2d5x5opt;
 #endif
 #undef CONV_5x5_OPT
-  } else if (filter_tensor_h_ == 7 && filter_tensor_w_ == 7) {
-    CHECK(pad_equal && stride_equal && dilation_equal);
+  } else if (filter_tensor_h_ == 7 && filter_tensor_w_ == 7 && pad_equal &&
+             stride_equal && dilation_equal) {
 #define CONV_7x7_OPT
 #ifndef CONV_7x7_OPT
     // conv2d_7x7
