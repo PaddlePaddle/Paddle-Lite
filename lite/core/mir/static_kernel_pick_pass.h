@@ -120,7 +120,8 @@ class StaticKernelPickPass : public mir::StmtPass {
             CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
             if (out_types.count(out_names[i]) &&
                 out_types.at(out_names[i]) !=
-                    kernel.GetOutputDeclType(tmp)->precision()) {
+                    kernel.GetOutputDeclType(tmp)->precision() &&
+                kernel.GetInputDeclType(tmp)->precision() != PRECISION(kAny)) {
               type_match = false;
             }
           }
