@@ -20,7 +20,7 @@
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/core/op_registry.h"
 
-// #undef LITE_WITH_LOG
+#undef LITE_WITH_LOG
 
 namespace paddle {
 namespace lite {
@@ -153,12 +153,12 @@ void ConvImageCompute::PrepareForRun() {
     auto* filter_buffer_data =
         tensor_hold_filter_buffer->mutable_data<half_t>();
     LOG(INFO) << "1";
-    OIHW2OI4HWI4O4(filter_cpu,
-                   filter_buffer_data,
-                   filter_dims[0],
-                   filter_dims[1],
-                   filter_dims[2],
-                   filter_dims[3]);
+    OIHW2OIHWI4O4(filter_cpu,
+                  filter_buffer_data,
+                  filter_dims[0],
+                  filter_dims[1],
+                  filter_dims[2],
+                  filter_dims[3]);
     // OIHW2OHWIOgroupI4O4(filter_cpu,
     //                     filter_buffer_data,
     //                     filter_dims[0],
@@ -750,7 +750,7 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                   static_cast<size_t>(w_blk_),
                                   static_cast<size_t>(nh_blk_)};
 
-  if (filter_buffer_p_ != nullptr) {
+  if (filter_gpu_buffer_ != nullptr) {
     global_work_size_ =
         cl::NDRange{static_cast<size_t>(maptofactor(nh_blk_, block_size_.H)),
                     static_cast<size_t>(maptofactor(w_blk_, block_size_.W)),
@@ -856,7 +856,7 @@ void ConvImageCompute::SetGlobalWorkSize() {
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
 }
 
-void ConvImageCompute::OIHW2OI4HWI4O4(
+void ConvImageCompute::OIHW2OIHWI4O4(
     void* src, void* dst, size_t O, size_t I, size_t H, size_t W) {
   bool fp16_support =
       CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
