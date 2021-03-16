@@ -73,6 +73,7 @@ add_kernel(meshgrid_compute_host Host extra SRCS meshgrid_compute.cc DEPS ${lite
 add_kernel(linspace_compute_host Host extra SRCS linspace_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(beam_search_decode_compute_host Host extra SRCS beam_search_decode_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(roi_perspective_transform_compute_host Host extra SRCS roi_perspective_transform_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(argsort Host extra SRCS argsort_compute.cc DEPS ${lite_kernel_deps})
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)
