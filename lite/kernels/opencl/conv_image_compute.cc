@@ -60,8 +60,8 @@ void ConvImageCompute::SetBlockSize() {
     // block_size_.W = 2;
     // block_size_.C = 2;
   } else if (block_size == 4) {
-    // block_size_.H = 2;
-    // block_size_.C = 2;
+    block_size_.H = 2;
+    block_size_.C = 2;
   } else if (block_size == 2) {
     block_size_.H = 2;
   }
@@ -147,7 +147,7 @@ void ConvImageCompute::PrepareForRun() {
     auto tensor_hold_filter_buffer = std::unique_ptr<Tensor>(new Tensor);
     auto filter_ext_dims = filter_dims;
     filter_ext_dims[0] =
-        maptofactor(maptofactor(filter_dims[0], Ogroup), 4) * Ogroup * 4;
+        maptofactor(maptofactor(filter_dims[0], 4), Ogroup) * Ogroup * 4;
     filter_ext_dims[1] = maptofactor(filter_dims[1], 4) * 4;
     tensor_hold_filter_buffer->Resize(filter_ext_dims);
     auto* filter_buffer_data =
@@ -513,7 +513,8 @@ void ConvImageCompute::PrepareForRun() {
     auto tensor_hold_bias_buffer = std::unique_ptr<Tensor>(new Tensor);
     auto bias_ext_dims = bias_dims;
     bias_ext_dims[0] =
-        maptofactor(maptofactor(bias_dims[0], block_size_.C), 4) * 4;
+        maptofactor(maptofactor(bias_dims[0], 4), block_size_.C) *
+        block_size_.C * 4;
     tensor_hold_bias_buffer->Resize(bias_ext_dims);
     tensor_hold_bias_buffer->mutable_data<half_t>();
     FloatArray2HalfArray(
@@ -897,32 +898,26 @@ void ConvImageCompute::OIHW2OHWIOgroupI4O4(void* src,
                                            size_t ogroup) {
   bool fp16_support =
       CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
-  size_t o_block = (O + 3) / 4;
   size_t i_block = (I + 3) / 4;
 
   float* dst_fp32 = static_cast<float*>(dst);
   half_t* dst_fp16 = static_cast<half_t*>(dst);
 
   float* p = static_cast<float*>(src);
-  for (size_t o = 0; o < o_block * 4; o++) {
-    for (size_t h = 0; h < H; h++) {
-      for (size_t w = 0; w < W; w++) {
-        for (size_t i = 0; i < i_block * 4; i++) {
-          for (size_t og = 0; og < ogroup; og++) {
-            size_t idx = (o / 4) * H * W * i_block * ogroup * 4 * 4 +
-                         h * W * i_block * ogroup * 4 * 4 +
-                         w * i_block * 4 * 4 + (i / 4) * ogroup * 4 * 4 +
-                         og * 4 * 4 + (i % 4) * 4 + o % 4;
-
-            if (o < O && i < I) {
-              fp16_support ? dst_fp16[idx] = Float2Half(*p) : dst_fp32[idx] =
-                                                                  *p;
-              p++;
-            } else {
-              fp16_support ? dst_fp16[idx] = Float2Half(0.f) : dst_fp32[idx] =
-                                                                   0.f;
-            }
-          }
+  for (size_t o = 0; o < O; o++) {
+    int o_idx = o / (4 * ogroup);
+    int og_idx = o % (4 * ogroup) / 4;
+    for (size_t i = 0; i < I; i++) {
+      int i_idx = i / 4;
+      for (size_t h = 0; h < H; h++) {
+        for (size_t w = 0; w < W; w++) {
+          size_t dst_idx =
+              o_idx * H * W * i_block * ogroup * 4 * 4 +
+              h * W * i_block * ogroup * 4 * 4 + w * i_block * ogroup * 4 * 4 +
+              i_idx * ogroup * 4 * 4 + og_idx * 4 * 4 + i % 4 * 4 + o % 4;
+          fp16_support ? dst_fp16[dst_idx] = Float2Half(*p)
+                       : dst_fp32[dst_idx] = *p;
+          p++;
         }
       }
     }
