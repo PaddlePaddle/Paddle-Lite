@@ -153,19 +153,19 @@ void ConvImageCompute::PrepareForRun() {
     auto* filter_buffer_data =
         tensor_hold_filter_buffer->mutable_data<half_t>();
     LOG(INFO) << "1";
-    OIHW2OIHWI4O4(filter_cpu,
-                  filter_buffer_data,
-                  filter_dims[0],
-                  filter_dims[1],
-                  filter_dims[2],
-                  filter_dims[3]);
-    // OIHW2OHWIOgroupI4O4(filter_cpu,
-    //                     filter_buffer_data,
-    //                     filter_dims[0],
-    //                     filter_dims[1],
-    //                     filter_dims[2],
-    //                     filter_dims[3],
-    //                     Ogroup);
+    // OIHW2OIHWI4O4(filter_cpu,
+    //               filter_buffer_data,
+    //               filter_dims[0],
+    //               filter_dims[1],
+    //               filter_dims[2],
+    //               filter_dims[3]);
+    OIHW2OHWIOgroupI4O4(filter_cpu,
+                        filter_buffer_data,
+                        filter_dims[0],
+                        filter_dims[1],
+                        filter_dims[2],
+                        filter_dims[3],
+                        Ogroup);
     filter_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
     LOG(INFO) << "2";
     filter_gpu_buffer_->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(

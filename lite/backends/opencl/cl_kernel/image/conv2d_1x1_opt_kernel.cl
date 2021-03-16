@@ -1,6 +1,7 @@
 #include <cl_common.h>
 
-// filter: OIHW2OIHWI4O4
+
+// filter: OIHW2OHWIOgroupI4O4
 __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t output, __global half4 *weight,
                             #ifdef BIASE_CH
                             __global half4 *bias,
@@ -36,21 +37,20 @@ __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t 
 
   int tmp_h = mad24(oh0, strideH, -padTop);
   int tmp_w = mad24(ow0, strideW, -padLeft);
-  int in_base = 0;
 
   half4 out_h0_w0_c0 = (half4)(0.0f, 0.0f, 0.0f, 0.0f);
 
   __global half4 *weight_ptr = weight + co_slice * KH * KW * (CI_SLICES << 2);
 
-  for (int ci_slice = 0; ci_slice < CI_SLICES; ci_slice++) {
+  for (int kh = 0; kh < KH; ++kh) {
+    int ih0 = mad24(kh, dilationH, tmp_h);
+    int y_idx0 = (ih0 >= 0 && ih0 < IH) ? n * IH + ih0 : -1; // input image2d height idx
 
-    for (int kh = 0; kh < KH; ++kh) {
-      int ih0 = mad24(kh, dilationH, tmp_h);
-      int y_idx0 = (ih0 >= 0 && ih0 < IH) ? n * IH + ih0 : -1; // input image2d height idx
+    for (int kw = 0; kw < KW; ++kw) {
+      int iw0 = mad24(kw, dilationW, tmp_w);
+      int in_base = 0;
 
-      for (int kw = 0; kw < KW; ++kw) {
-        int iw0 = mad24(kw, dilationW, tmp_w);
-        // int x_idx0 = iw0; // input image2d width idx
+      for (int ci_slice = 0; ci_slice < CI_SLICES; ++ci_slice) {
         int x_idx0 = (iw0 >= 0 && iw0 < IW) ? iw0 + in_base : -1;
         half4 in_h0_w0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx0, y_idx0));
 
@@ -60,10 +60,9 @@ __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t 
         out_h0_w0_c0 += weight_ptr[3] * in_h0_w0.w; // n == 3
 
         weight_ptr += 4;
+        in_base += IW;
       }
     }
-
-    in_base += IW;
   }
 
 #ifdef BIASE_CH
@@ -78,6 +77,87 @@ __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t 
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), out_h0_w0_c0);
 }
+
+
+
+// filter: OIHW2OIHWI4O4, right
+// __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t output, __global half4 *weight,
+//                             #ifdef BIASE_CH
+//                             __global half4 *bias,
+//                             #endif
+//                             int4 input_shape, int4 output_shape, int4 kernel_stride, int4 pad,
+//                             int2 dilation) {
+//   const int BlockH = 1;
+//   const int BlockW = 1;
+//   const int BlockC = 1;
+
+//   int N = input_shape.x;
+//   int IH = input_shape.y, IW = input_shape.z, CI_SLICES = input_shape.w; // CI_TILE = 4, CI_SLICES = CI / 4
+//   int OH = output_shape.y, OW = output_shape.z, CO_SLICES = output_shape.w; // CO_TILE = 4, CO_SLICES = CO / 4
+//   int KH = kernel_stride.x, KW = kernel_stride.y;
+//   int strideH = kernel_stride.z, strideW = kernel_stride.w;
+//   int padTop = pad.x, padBottom = pad.y, padLeft = pad.z, padRight = pad.w;
+//   int dilationH = dilation.x, dilationW = dilation.y;
+
+//   int n_oh = get_global_id(0); // [0, nh)
+//   int ow = get_global_id(1) * BlockW; // [0, OW]
+//   int co_slice = get_global_id(2) * BlockC; // [0, CO/4]
+//   int OH_SLICES = (OH + 3) / BlockH; // OH
+//   int n = n_oh / OH_SLICES; // [0, N]
+//   int oh = (n_oh % OH_SLICES) * BlockH; // [0, OH]
+//   if (n >= N || oh >= OH || ow >= OW || co_slice >= CO_SLICES) {
+//     return;
+//   }
+
+//   int oh0 = oh + 0;
+//   int n_oh0 = n * OH + oh0;
+//   int ow0 = ow + 0;
+//   int co_slice0 = co_slice + 0;
+
+//   int tmp_h = mad24(oh0, strideH, -padTop);
+//   int tmp_w = mad24(ow0, strideW, -padLeft);
+//   int in_base = 0;
+
+//   half4 out_h0_w0_c0 = (half4)(0.0f, 0.0f, 0.0f, 0.0f);
+
+//   __global half4 *weight_ptr = weight + co_slice * KH * KW * (CI_SLICES << 2);
+
+//   for (int ci_slice = 0; ci_slice < CI_SLICES; ci_slice++) {
+
+//     for (int kh = 0; kh < KH; ++kh) {
+//       int ih0 = mad24(kh, dilationH, tmp_h);
+//       int y_idx0 = (ih0 >= 0 && ih0 < IH) ? n * IH + ih0 : -1; // input image2d height idx
+
+//       for (int kw = 0; kw < KW; ++kw) {
+//         int iw0 = mad24(kw, dilationW, tmp_w);
+//         // int x_idx0 = iw0; // input image2d width idx
+//         int x_idx0 = (iw0 >= 0 && iw0 < IW) ? iw0 + in_base : -1;
+//         half4 in_h0_w0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx0, y_idx0));
+
+//         out_h0_w0_c0 += weight_ptr[0] * in_h0_w0.x; // n == 0
+//         out_h0_w0_c0 += weight_ptr[1] * in_h0_w0.y; // n == 1
+//         out_h0_w0_c0 += weight_ptr[2] * in_h0_w0.z; // n == 2
+//         out_h0_w0_c0 += weight_ptr[3] * in_h0_w0.w; // n == 3
+
+//         weight_ptr += 4;
+//       }
+//     }
+
+//     in_base += IW;
+//   }
+
+// #ifdef BIASE_CH
+//   out_h0_w0_c0 += bias[co_slice0];
+// #endif
+
+//   out_h0_w0_c0 = activation_type4(out_h0_w0_c0, 0.f);
+
+// #ifdef SCALE_ACTIVATION
+//   out_h0_w0_c0 = fuse_scale(out_h0_w0_c0, 1.f, 0.f, 0.f);
+// #endif
+
+//   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), out_h0_w0_c0);
+// }
 
 
 __kernel void conv2d_1x1_opt(
