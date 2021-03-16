@@ -37,42 +37,42 @@ void XPUSqueezeExcitationCompute::PrepareForRun() {
       weight_ptr + weight1_len, weight2_len);
   std::vector<float> weight_1_max_v(4, weight1_max);
 
-  weight1_max_guard = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
-  weight1_maxptr = reinterpret_cast<float*>(weight1_max_guard->addr_);
-  XPU_CALL(xpu_memcpy(weight1_maxptr,
+  weight1_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+  weight1_maxptr_ = reinterpret_cast<float*>(weight1_max_guard_->addr_);
+  XPU_CALL(xpu_memcpy(weight1_maxptr_,
                       weight_1_max_v.data(),
                       4 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   std::vector<float> weight_2_max_v(4, weight2_max);
-  weight2_max_guard = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
-  weight2_maxptr = reinterpret_cast<float*>(weight2_max_guard->addr_);
-  XPU_CALL(xpu_memcpy(weight2_maxptr,
+  weight2_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+  weight2_maxptr_ = reinterpret_cast<float*>(weight2_max_guard_->addr_);
+  XPU_CALL(xpu_memcpy(weight2_maxptr_,
                       weight_2_max_v.data(),
                       4 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   // quant
-  quant_weight1_guard =
+  quant_weight1_guard_ =
       TargetWrapperXPU::MallocScratchPad(weight1_len * sizeof(int16_t));
-  quant_weight1_ptr = reinterpret_cast<int16_t*>(quant_weight1_guard->addr_);
+  quant_weight1_ptr_ = reinterpret_cast<int16_t*>(quant_weight1_guard_->addr_);
   std::vector<int16_t> quant_weight1_cpu(weight1_len, 0);
   paddle::lite::xpu::math::ConvertFP32ToInt16(
       weight_ptr, quant_weight1_cpu.data(), weight1_max, weight1_len);
-  XPU_CALL(xpu_memcpy(quant_weight1_ptr,
+  XPU_CALL(xpu_memcpy(quant_weight1_ptr_,
                       quant_weight1_cpu.data(),
                       weight1_len * sizeof(int16_t),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
-  quant_weight2_guard =
+  quant_weight2_guard_ =
       TargetWrapperXPU::MallocScratchPad(weight2_len * sizeof(int16_t));
-  quant_weight2_ptr = reinterpret_cast<int16_t*>(quant_weight2_guard->addr_);
+  quant_weight2_ptr_ = reinterpret_cast<int16_t*>(quant_weight2_guard_->addr_);
   std::vector<int16_t> quant_weight2_cpu(weight2_len, 0);
   paddle::lite::xpu::math::ConvertFP32ToInt16(weight_ptr + weight1_len,
                                               quant_weight2_cpu.data(),
                                               weight2_max,
                                               weight2_len);
-  XPU_CALL(xpu_memcpy(quant_weight2_ptr,
+  XPU_CALL(xpu_memcpy(quant_weight2_ptr_,
                       quant_weight2_cpu.data(),
                       weight2_len * sizeof(int16_t),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
@@ -93,16 +93,16 @@ void XPUSqueezeExcitationCompute::Run() {
   int r = xdnn::squeeze_excitation_block<float, int16_t, int16_t>(
       ctx.GetRawContext(),
       param.input->data<float>(),
-      quant_weight1_ptr,
-      quant_weight2_ptr,
+      quant_weight1_ptr_,
+      quant_weight2_ptr_,
       param.output->mutable_data<float>(TARGET(kXPU)),
       batch,
       channel,
       h,
       w,
       filter_dims[0],
-      weight1_maxptr,
-      weight2_maxptr,
+      weight1_maxptr_,
+      weight2_maxptr_,
       branch,
       (xdnn::Activation_t::act_enum)param.act_type[0],
       (xdnn::Activation_t::act_enum)param.act_type[1],

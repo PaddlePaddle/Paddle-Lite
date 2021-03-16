@@ -58,21 +58,21 @@ void XPUConv2dCompute<T, PType>::PrepareForRun() {
   // max
   float max_f = paddle::lite::xpu::math::FindMaxAbs(filter_ptr, filter_len);
   std::vector<float> max_f_v(4, max_f);
-  filter_max_guard = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
-  filter_max = reinterpret_cast<float*>(filter_max_guard->addr_);
-  XPU_CALL(xpu_memcpy(filter_max,
+  filter_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+  filter_max_ = reinterpret_cast<float*>(filter_max_guard_->addr_);
+  XPU_CALL(xpu_memcpy(filter_max_,
                       max_f_v.data(),
                       4 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   // quant
-  quant_filter_guard =
+  quant_filter_guard_ =
       TargetWrapperXPU::MallocScratchPad(filter_len * sizeof(T));
-  quant_filter = reinterpret_cast<T*>(quant_filter_guard->addr_);
+  quant_filter_ = reinterpret_cast<T*>(quant_filter_guard_->addr_);
   std::vector<T> quant_filter_cpu(filter_len, 0);
   bool ret =
       QuantFilter<T>(filter_ptr, quant_filter_cpu.data(), max_f, filter_len);
   CHECK_EQ(ret, true);
-  XPU_CALL(xpu_memcpy(quant_filter,
+  XPU_CALL(xpu_memcpy(quant_filter_,
                       quant_filter_cpu.data(),
                       filter_len * sizeof(T),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
@@ -115,7 +115,7 @@ void XPUConv2dCompute<T, PType>::Run() {
   int r = xdnn::conv2d_fusion<float, T, float, T>(
       ctx.GetRawContext(),
       param.input->template data<float>(),
-      quant_filter,
+      quant_filter_,
       output,
       batch,
       img_c,
@@ -128,7 +128,7 @@ void XPUConv2dCompute<T, PType>::Run() {
       dilations,
       groups,
       input_max,
-      filter_max,
+      filter_max_,
       output_max,
       true,
       bias,

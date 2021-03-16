@@ -33,14 +33,14 @@ class XPUSqueezeExcitationCompute
   virtual ~XPUSqueezeExcitationCompute() = default;
 
  private:
-  XPUScratchPadGuard weight1_max_guard;
-  float* weight1_maxptr;
-  XPUScratchPadGuard weight2_max_guard;
-  float* weight2_maxptr;
-  XPUScratchPadGuard quant_weight1_guard;
-  int16_t* quant_weight1_ptr;
-  XPUScratchPadGuard quant_weight2_guard;
-  int16_t* quant_weight2_ptr;
+  XPUScratchPadGuard weight1_max_guard_;
+  float* weight1_maxptr_;
+  XPUScratchPadGuard weight2_max_guard_;
+  float* weight2_maxptr_;
+  XPUScratchPadGuard quant_weight1_guard_;
+  int16_t* quant_weight1_ptr_;
+  XPUScratchPadGuard quant_weight2_guard_;
+  int16_t* quant_weight2_ptr_;
 };
 
 }  // namespace xpu

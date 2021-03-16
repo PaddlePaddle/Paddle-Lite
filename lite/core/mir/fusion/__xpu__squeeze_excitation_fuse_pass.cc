@@ -22,6 +22,23 @@ namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
+/* Squeeze and Excitation Block Fusion for SE-ResNet */
+/* graph[1]: sub block                               */
+/*               in_Input                            */
+/*                |     \                            */
+/*                |       |                          */
+/*                |  Global Pooling                  */
+/*                |       |                          */
+/*                |       |                          */
+/*                |       FC                         */
+/*                |       |                          */
+/*                |       |                          */
+/*                |       FC                         */
+/*                \       |                          */
+/*                  \     |                          */
+/*                    scale                          */
+/*                      |                            */
+/*                   out_Output                      */
 
 class XPUSqueezeExcitationFuser : public FuseBase {
  public:

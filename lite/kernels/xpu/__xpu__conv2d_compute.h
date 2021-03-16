@@ -32,10 +32,10 @@ class XPUConv2dCompute : public KernelLite<TARGET(kXPU), PType> {
   void Run() override;
 
  private:
-  XPUScratchPadGuard quant_filter_guard;
-  T* quant_filter;
-  XPUScratchPadGuard filter_max_guard;
-  float* filter_max;
+  XPUScratchPadGuard quant_filter_guard_;
+  T* quant_filter_;
+  XPUScratchPadGuard filter_max_guard_;
+  float* filter_max_;
 };
 
 }  // namespace xpu

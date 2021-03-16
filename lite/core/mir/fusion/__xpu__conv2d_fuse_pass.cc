@@ -272,7 +272,6 @@ class XPUConv2dFuser : public FuseBase {
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
-    // auto op_desc = *matched.at("conv")->stmt()->op_info();
     cpp::OpDesc op_desc;
     auto conv_old = matched.at("conv")->stmt()->op();
     auto* scope = conv_old->scope();
