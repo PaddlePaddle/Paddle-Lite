@@ -294,6 +294,9 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
+#ifdef LITE_WITH_OPENCL
+    (idx % 10) ? CLRuntime::Global()->command_queue().flush() : true;
+#endif
 
     inst.Run();
 

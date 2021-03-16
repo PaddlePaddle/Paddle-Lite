@@ -42,6 +42,40 @@ void mat_mul(__global const CL_DTYPE* x,
 #endif // naive gemm
 
 __kernel
+void mat_mul_naive(__global const CL_DTYPE* a,
+                   __global const CL_DTYPE* b,
+		   __global CL_DTYPE* c,
+		   const int M,
+		   const int N,
+		   const int K,
+		   const int lda,
+		   const int ldb,
+		   const int ldc,
+		   const float alpha) {
+  const int m = get_global_id(0);
+  const int n = get_global_id(1);
+
+  CL_DTYPE res = 0.f;
+  for (int k = 0; k < K; ++k) {
+    res += a[m * lda + k] * b[k * ldb + n];
+  }
+
+#if 0
+  if (m == 0 && n == 0) {
+    for (int ii = 0; ii < M*K; ++ii) {
+      printf("a[%d]:%f\n", ii, a[ii]);
+    }
+    for (int jj = 0; jj < N*K; ++jj) {
+      printf("b[%d]:%f\n", jj, b[jj]);
+    }
+
+  }
+#endif
+
+  c[m * ldc + n] = res * alpha;
+}
+
+__kernel
 void mat_mul(__global const CL_DTYPE* a,
              __global const CL_DTYPE* b,
              __global CL_DTYPE* c,
