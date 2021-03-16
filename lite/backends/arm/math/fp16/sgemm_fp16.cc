@@ -69,18 +69,18 @@ void sgemm_fp16(bool is_transA,
               K,
               beta,
               is_bias,
-              bias_ptr,
+              bias_ptr.data(),
               act_param.has_active,
               act_param.active_type,
               ctx);
     return;
   }
-  int hblock = get_hblock(ctx);
+  int hblock = get_hblock_fp16(ctx);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
-  ctx->ExtendWorkspace(m_roundup * K * sizeof(float));
+  ctx->ExtendWorkspace(m_roundup * K * sizeof(float16_t));
 
-  auto packed_A = static_cast<float*>(ctx->workspace_data<float>()) +
-                  ctx->llc_size() / sizeof(float);
+  auto packed_A = static_cast<float16_t*>(ctx->workspace_data<float16_t>()) +
+                  ctx->llc_size() / sizeof(float16_t);
 
   prepackA_fp16(packed_A, A, alpha, lda, 0, M, 0, K, is_transA, ctx);
 

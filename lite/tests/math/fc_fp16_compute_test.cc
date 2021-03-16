@@ -69,11 +69,11 @@ void test_fc_fp16(const DDim in_dim,
   paddle::lite::DeviceInfo::Init();
 #endif
   FcParam param;
-  param.x = new Tensor;
-  param.x->set_precision(PRECISION(kFP16));
-  param.filter = new Tensor;
-  param.filter->Resize(weight_dim);
-  param.filter->set_precision(PRECISION(kFP16));
+  param.input = new Tensor;
+  param.input->set_precision(PRECISION(kFP16));
+  param.w = new Tensor;
+  param.w->Resize(weight_dim);
+  param.w->set_precision(PRECISION(kFP16));
   param.in_num_col_dims = in_num_col_dims;
   if (flag_bias) {
     param.bias = new Tensor;
@@ -87,10 +87,10 @@ void test_fc_fp16(const DDim in_dim,
   filter_fp32.Resize(weight_dim);
   filter_fp32.set_precision(PRECISION(kFloat));
   auto a_ptr = filter_fp32.mutable_data<float>();
-  auto b_ptr = param.filter->mutable_data<float16_t>();
-  fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.filter->numel());
-  // fill_data_const<float16_t>(b_ptr, -1.f, param.filter->numel());
-  fp16_to_float(param.filter->data<float16_t>(), a_ptr, param.filter->numel());
+  auto b_ptr = param.w->mutable_data<float16_t>();
+  fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.w->numel());
+  // fill_data_const<float16_t>(b_ptr, -1.f, param.w->numel());
+  fp16_to_float(param.w->data<float16_t>(), a_ptr, param.w->numel());
 
   Tensor bias_fp32;
   if (flag_bias) {
@@ -102,7 +102,7 @@ void test_fc_fp16(const DDim in_dim,
     // fill_data_const<float16_t>(b_ptr, -1.f, param.bias->numel());
     fp16_to_float(param.bias->data<float16_t>(), a_ptr, param.bias->numel());
   }
-  auto wptr = param.filter->data<float16_t>();
+  auto wptr = param.w->data<float16_t>();
   auto bias_ptr = flag_bias ? param.bias->data<float16_t>() : nullptr;
   int M = in_dim.count(0, in_num_col_dims);
   CHECK_EQ(weight_dim[0], in_dim.count(in_num_col_dims, in_dim.size()));
@@ -117,7 +117,7 @@ void test_fc_fp16(const DDim in_dim,
           new paddle::lite::KernelContext);
       auto& ctx = ctx1->As<paddle::lite::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
-      DDim dim_out = compute_out_dim(dim_in, weight_dim, in_num_col_dims);
+      DDim dim_out = compute_out_dim(in_dim, weight_dim, in_num_col_dims);
       if (dim_out[2] < 1 || dim_out[3] < 1) {
         return;
       }
@@ -128,18 +128,19 @@ void test_fc_fp16(const DDim in_dim,
       /// prepare for run
       fc.PrepareForRun();
 
-      param.x->Resize(in_dim);
+      param.input->Resize(in_dim);
       param.output->Resize(in_dim);
 
       Tensor x_fp32;
       x_fp32.Resize(in_dim);
       x_fp32.set_precision(PRECISION(kFloat));
       auto a_ptr = x_fp32.mutable_data<float>();
-      auto b_ptr = param.x->mutable_data<float16_t>();
+      auto b_ptr = param.input->mutable_data<float16_t>();
       // fill_data_rand<float16_t>(b_ptr, -1.f, 1.f, param.x->numel());
-      fill_data_const<float16_t>(b_ptr, -1.f, param.x->numel());
-      fp16_to_float(param.x->data<float16_t>(), a_ptr, param.x->numel());
-      auto din = param.x->data<float16_t>();
+      fill_data_const<float16_t>(b_ptr, -1.f, param.input->numel());
+      fp16_to_float(
+          param.input->data<float16_t>(), a_ptr, param.input->numel());
+      auto din = param.input->data<float16_t>();
       auto din_fp32 = x_fp32.data<float>();
 
       Tensor tout_basic;
@@ -158,7 +159,7 @@ void test_fc_fp16(const DDim in_dim,
 
         fill_data_const<float>(dout_basic_fp32, 0.f, tout_basic_fp32.numel());
         fill_data_const<float16_t>(dout_basic, 0.f, tout_basic.numel());
-        if (m == 1) {
+        if (M == 1) {
           basic_gemv<float, float>(N,
                                    K,
                                    din_fp32,
@@ -178,15 +179,17 @@ void test_fc_fp16(const DDim in_dim,
                                    K,
                                    1.f,
                                    din_fp32,
-                                   k,
+                                   K,
                                    filter_fp32_ptr,
-                                   n,
+                                   N,
                                    0.f,
                                    dout_basic_fp32,
+                                   N,
+                                   bias_fp32_ptr,
                                    false,
                                    false);
           if (flag_bias) {
-            AddBias(dout_basic_fp32, bias_fp32_ptr, m, n);
+            AddBias(dout_basic_fp32, bias_fp32_ptr, M, N);
           }
         }
         // fp32->fp16
@@ -239,7 +242,7 @@ void test_fc_fp16(const DDim in_dim,
     }
   }
 
-  delete param.x;
+  delete param.input;
   delete param.output;
 }
 
@@ -253,22 +256,20 @@ void test_fc_fp16(const DDim in_dim,
 #if 1  /// random param fc
 TEST(TestFcRand, test_fc_rand) {
   if (FLAGS_basic_test) {
-    for (auto m : {1, 3, 4, 11}) {
-      for (auto n : {1, 3, 11, 4}) {
-        for (auto k : {3, 1, 11, 4}) {
-          for (auto w : {1, 3, 4, 12}) {
-            for (auto flag_bias : {false, true}) {
-              DDim in_dim{{m, k}};
-              DDim wei_dim{{k, n}};
-              DDim bias_dim{{flag_bias ? n : 0}};
-              test_fc_fp16(in_dim,
-                           wei_dim,
-                           bias_dim,
-                           1,
-                           flag_bias,
-                           {4},
-                           {FLAGS_power_mode});
-            }
+    for (auto& m : {1, 3, 16}) {
+      for (auto& n : {1, 4, 16, 128, 256, 1024}) {
+        for (auto& k : {1, 16, 128, 1024}) {
+          for (auto flag_bias : {false, true}) {
+            DDim in_dim{{m, k}};
+            DDim wei_dim{{k, n}};
+            DDim bias_dim{{flag_bias ? n : 0}};
+            test_fc_fp16(in_dim,
+                         wei_dim,
+                         bias_dim,
+                         1,
+                         flag_bias,
+                         {4},
+                         {FLAGS_power_mode});
           }
         }
       }
