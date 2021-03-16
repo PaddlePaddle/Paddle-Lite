@@ -7,6 +7,7 @@ if(LITE_WITH_XTCL)
   add_kernel(subgraph_compute_xpu XPU basic SRCS subgraph_compute.cc DEPS ${lite_kernel_deps} device_xpu subgraph_engine_base ${xpu_subgraph_bridges})
 else()
   # basic
+  add_kernel(rnn_compute_xpu XPU basic SRCS rnn_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(conv_compute_xpu XPU basic SRCS conv_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(conv2d_transpose_compute_xpu XPU basic SRCS conv2d_transpose_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(io_copy_compute_xpu XPU basic SRCS io_copy_compute.cc DEPS ${lite_kernel_deps} target_wrapper_xpu)
