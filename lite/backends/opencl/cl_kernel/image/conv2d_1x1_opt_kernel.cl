@@ -321,6 +321,7 @@ __kernel void Conv2D_H2W2C2(__read_only image2d_t input, __write_only image2d_t 
   int n_oh0 = n * OH + oh0;
   int n_oh1 = n * OH + oh1;
   int ow0 = ow + 0;
+  int ow1 = ow + 1;
   int co_slice0 = co_slice + 0;
   int co_slice1 = co_slice + 1;
 
@@ -328,11 +329,16 @@ __kernel void Conv2D_H2W2C2(__read_only image2d_t input, __write_only image2d_t 
   half4 out_h1_w0_c0 = out_h0_w0_c0;
   half4 out_h0_w0_c1 = out_h0_w0_c0;
   half4 out_h1_w0_c1 = out_h0_w0_c0;
+  half4 out_h0_w1_c0 = out_h0_w0_c0;
+  half4 out_h1_w1_c0 = out_h0_w0_c0;
+  half4 out_h0_w1_c1 = out_h0_w0_c0;
+  half4 out_h1_w1_c1 = out_h0_w0_c0;
 
   __global half4 *weight_ptr = weight + co_slice / BlockC * KH * KW * CI_SLICES * BlockC * 4;
 
   for (int kh = 0; kh < KH; ++kh) {
     int ih0 = kh * dilationH + oh0 * strideH - padTop;
+    // no need to check oh1, finally write out will check (oh1 < OH)
     int ih1 = kh * dilationH + oh1 * strideH - padTop;
     // check ih0 and ih1
     int y_idx0 = (ih0 >= 0 && ih0 < IH) ? n * IH + ih0 : -1;
@@ -340,30 +346,54 @@ __kernel void Conv2D_H2W2C2(__read_only image2d_t input, __write_only image2d_t 
 
     for (int kw = 0; kw < KW; ++kw) {
       int iw0 = kw * dilationW + ow0 * strideW - padLeft;
+      int iw1 = (ow1 < OW) ? kw * dilationW + ow1 * strideW - padLeft : -2;
       int in_base = 0;
 
       for (int ci_slice = 0; ci_slice < CI_SLICES; ++ci_slice) {
-        int x_idx0 = (iw0 >= 0 && iw0 < IW) ? iw0 + in_base : -1;
+        // int x_idx0 = (iw0 >= 0 && iw0 < IW) ? iw0 + in_base : -1; // try to delete it, has very litte gain
+        // int x_idx1 = (iw1 >= 0 && iw1 < IW) ? iw1 + in_base : -1;
+
+        int x_idx0 = iw0 + in_base;
+        int x_idx1 = iw1 + in_base;
+
         half4 in_h0_w0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx0, y_idx0));
+        half4 in_h0_w1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx1, y_idx0));
         half4 in_h1_w0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx0, y_idx1));
+        half4 in_h1_w1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x_idx1, y_idx1));
 
-        out_h0_w0_c0 += weight_ptr[0] * in_h0_w0.x; // n == 0
+        out_h0_w0_c0 += weight_ptr[0] * in_h0_w0.x;
+        out_h0_w1_c0 += weight_ptr[0] * in_h0_w1.x;
         out_h1_w0_c0 += weight_ptr[0] * in_h1_w0.x;
-        out_h0_w0_c0 += weight_ptr[1] * in_h0_w0.y; // n == 1
+        out_h1_w1_c0 += weight_ptr[0] * in_h1_w1.x;
+        out_h0_w0_c0 += weight_ptr[1] * in_h0_w0.y;
+        out_h0_w1_c0 += weight_ptr[1] * in_h0_w1.y;
         out_h1_w0_c0 += weight_ptr[1] * in_h1_w0.y;
-        out_h0_w0_c0 += weight_ptr[2] * in_h0_w0.z; // n == 2
+        out_h1_w1_c0 += weight_ptr[1] * in_h1_w1.y;
+        out_h0_w0_c0 += weight_ptr[2] * in_h0_w0.z;
+        out_h0_w1_c0 += weight_ptr[2] * in_h0_w1.z;
         out_h1_w0_c0 += weight_ptr[2] * in_h1_w0.z;
-        out_h0_w0_c0 += weight_ptr[3] * in_h0_w0.w; // n == 3
+        out_h1_w1_c0 += weight_ptr[2] * in_h1_w1.z;
+        out_h0_w0_c0 += weight_ptr[3] * in_h0_w0.w;
+        out_h0_w1_c0 += weight_ptr[3] * in_h0_w1.w;
         out_h1_w0_c0 += weight_ptr[3] * in_h1_w0.w;
+        out_h1_w1_c0 += weight_ptr[3] * in_h1_w1.w;
 
-        out_h0_w0_c1 += weight_ptr[4] * in_h0_w0.x; // n == 0
+        out_h0_w0_c1 += weight_ptr[4] * in_h0_w0.x;
+        out_h0_w1_c1 += weight_ptr[4] * in_h0_w1.x;
         out_h1_w0_c1 += weight_ptr[4] * in_h1_w0.x;
-        out_h0_w0_c1 += weight_ptr[5] * in_h0_w0.y; // n == 1
+        out_h1_w1_c1 += weight_ptr[4] * in_h1_w1.x;
+        out_h0_w0_c1 += weight_ptr[5] * in_h0_w0.y;
+        out_h0_w1_c1 += weight_ptr[5] * in_h0_w1.y;
         out_h1_w0_c1 += weight_ptr[5] * in_h1_w0.y;
-        out_h0_w0_c1 += weight_ptr[6] * in_h0_w0.z; // n == 2
+        out_h1_w1_c1 += weight_ptr[5] * in_h1_w1.y;
+        out_h0_w0_c1 += weight_ptr[6] * in_h0_w0.z;
+        out_h0_w1_c1 += weight_ptr[6] * in_h0_w1.z;
         out_h1_w0_c1 += weight_ptr[6] * in_h1_w0.z;
-        out_h0_w0_c1 += weight_ptr[7] * in_h0_w0.w; // n == 3
+        out_h1_w1_c1 += weight_ptr[6] * in_h1_w1.z;
+        out_h0_w0_c1 += weight_ptr[7] * in_h0_w0.w;
+        out_h0_w1_c1 += weight_ptr[7] * in_h0_w1.w;
         out_h1_w0_c1 += weight_ptr[7] * in_h1_w0.w;
+        out_h1_w1_c1 += weight_ptr[7] * in_h1_w1.w;
 
         weight_ptr += 8;
         in_base += IW;
@@ -372,32 +402,48 @@ __kernel void Conv2D_H2W2C2(__read_only image2d_t input, __write_only image2d_t 
   }
 
 #ifdef BIASE_CH
-  out_h0_w0_c0 += bias[co_slice0];
-  out_h1_w0_c0 += bias[co_slice0];
-  out_h0_w0_c1 += bias[co_slice1];
-  out_h1_w0_c1 += bias[co_slice1];
+    out_h0_w0_c0 += bias[co_slice0];
+    out_h0_w1_c0 += bias[co_slice0];
+    out_h1_w0_c0 += bias[co_slice0];
+    out_h1_w1_c0 += bias[co_slice0];
+    out_h0_w0_c1 += bias[co_slice1];
+    out_h0_w1_c1 += bias[co_slice1];
+    out_h1_w0_c1 += bias[co_slice1];
+    out_h1_w1_c1 += bias[co_slice1];
 #endif
 
   out_h0_w0_c0 = activation_type4(out_h0_w0_c0, 0.f);
+  out_h0_w1_c0 = activation_type4(out_h0_w1_c0, 0.f);
   out_h1_w0_c0 = activation_type4(out_h1_w0_c0, 0.f);
+  out_h1_w1_c0 = activation_type4(out_h1_w1_c0, 0.f);
   out_h0_w0_c1 = activation_type4(out_h0_w0_c1, 0.f);
+  out_h0_w1_c1 = activation_type4(out_h0_w1_c1, 0.f);
   out_h1_w0_c1 = activation_type4(out_h1_w0_c1, 0.f);
+  out_h1_w1_c1 = activation_type4(out_h1_w1_c1, 0.f);
 
 #ifdef SCALE_ACTIVATION
   out_h0_w0_c0 = fuse_scale(out_h0_w0_c0, 1.f, 0.f, 0.f);
+  out_h0_w1_c0 = fuse_scale(out_h0_w1_c0, 1.f, 0.f, 0.f);
   out_h1_w0_c0 = fuse_scale(out_h1_w0_c0, 1.f, 0.f, 0.f);
+  out_h1_w1_c0 = fuse_scale(out_h1_w1_c0, 1.f, 0.f, 0.f);
   out_h0_w0_c1 = fuse_scale(out_h0_w0_c1, 1.f, 0.f, 0.f);
+  out_h0_w1_c1 = fuse_scale(out_h0_w1_c1, 1.f, 0.f, 0.f);
   out_h1_w0_c1 = fuse_scale(out_h1_w0_c1, 1.f, 0.f, 0.f);
+  out_h1_w1_c1 = fuse_scale(out_h1_w1_c1, 1.f, 0.f, 0.f);
 #endif
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh0), out_h0_w0_c0);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow1, n_oh0), out_h0_w1_c0);
   if (oh1 < OH) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow0, n_oh1), out_h1_w0_c0);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice0 * OW + ow1, n_oh1), out_h1_w1_c0);
   }
   if (co_slice1 < CO_SLICES) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice1 * OW + ow0, n_oh0), out_h0_w0_c1);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice1 * OW + ow1, n_oh0), out_h0_w1_c1);
     if (oh1 < OH) {
       WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice1 * OW + ow0, n_oh1), out_h1_w0_c1);
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(co_slice1 * OW + ow1, n_oh1), out_h1_w1_c1);
     }
   }
 }

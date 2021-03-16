@@ -56,9 +56,9 @@ void ConvImageCompute::SetBlockSize() {
   }
 
   if (block_size == 8) {
-    // block_size_.H = 2;
-    // block_size_.W = 2;
-    // block_size_.C = 2;
+    block_size_.H = 2;
+    block_size_.W = 2;
+    block_size_.C = 2;
   } else if (block_size == 4) {
     block_size_.H = 2;
     block_size_.C = 2;
