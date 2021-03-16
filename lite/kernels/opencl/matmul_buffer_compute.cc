@@ -70,16 +70,6 @@ class MatMulV2Compute
         y_gpu_t_->mutable_data(TARGET(kOpenCL), y_t->memory_size());
     TargetWrapperCL::MemcpySync(
         y_gpu_data, y_t->raw_data(), y_t->memory_size(), IoDirection::HtoD);
-
-#if 0
-    bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-    auto b_gpu_data =
-        bias_gpu_t_->mutable_data(TARGET(kOpenCL), bias_t->memory_size());
-    TargetWrapperCL::MemcpySync(b_gpu_data,
-                                bias_t->raw_data(),
-                                bias_t->memory_size(),
-                                IoDirection::HtoD);
-#endif
   }
 
   void ReInitWhenNeeded() override {
@@ -134,16 +124,7 @@ class MatMulV2Compute
       VLOG(4) << "lda_:" << lda_ << ", ldb_:" << ldb_ << ", ldc_:" << ldc_;
 #endif
 
-#if 0
-      // choose kernel
-      if (m_ == 1) {  // gemv
-        kernel_func_name_ = "fc_gemv_1x4";
-      } else {  // gemm
-        kernel_func_name_ = "fc_gemm_4x4";
-      }
-#else
       kernel_func_name_ = "mat_mul_naive";
-#endif
 
 #ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
@@ -164,19 +145,10 @@ class MatMulV2Compute
   }
 
   void GetGlobalWorkSize() {
-#if 0
-    if (kernel_func_name_ == "fc_gemv_1x4") {  // gemv
-      global_work_size_ = cl::NDRange{static_cast<size_t>((n_ + 3) / 4)};
-    } else {  // gemm
-      global_work_size_ = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
-                                      static_cast<size_t>((n_ + 3) / 4)};
-    }
-#else
     if (kernel_func_name_ == "mat_mul_naive") {
       global_work_size_ =
           cl::NDRange{static_cast<size_t>(m_), static_cast<size_t>(n_)};
     }
-#endif
   }
 
   void Run() override {

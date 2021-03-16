@@ -299,7 +299,9 @@ void RuntimeProgram::Run() {
     }
 #endif
 #ifdef LITE_WITH_OPENCL
-    (idx % 10) ? CLRuntime::Global()->command_queue().flush() : true;
+    if (inst.need_flush(idx)) {
+      inst.Flush();
+    }
 #endif
 
     inst.Run();
