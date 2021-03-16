@@ -64,7 +64,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ## 编译支持NPU的Paddle Lite库
 
-- 从https://developer.huawei.com/consumer/cn/hiai/下载华为HiAI DDK后解压到任意路径（注意：华为提供了多个版本的DDK，我们需要下载针对麒麟810/990芯片HiAI Foundation开发套件，例如最新的[DDK V310版本](https://obs.cn-north-2.myhwclouds.com/hms-ds-wf/sdk/hwhiai-ddk-100.310.011.010.zip)）。
+- 从https://developer.huawei.com/consumer/cn/hiai/下载华为HiAI DDK后解压到任意路径（注意：华为提供了多个版本的DDK，我们需要下载针对麒麟810/990芯片HiAI Foundation开发套件，例如最新的[HiAI DDK v310](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/hiai_ddk_lib_310.tar.gz)）
 - 将HiAI DDK中的ai_ddk_lib目录拷贝至Paddle Lite源码根目录后，使用[NPU编译脚本](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_npu.sh)编译full_publish和tiny_publish。
 
 注意：以下是HiAI DDK V310版解压后的目录结构，需要将ai_ddk_lib目录拷贝至Paddle Lite源码根目录。
