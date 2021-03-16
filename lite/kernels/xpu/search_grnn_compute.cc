@@ -24,12 +24,11 @@ namespace kernels {
 namespace xpu {
 
 void SearchGrnnCompute::PrepareForRun() {
-  offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SIZE * sizeof(int), false /* use_l3 */);
-  new_offset_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(
-      XPU_MAX_LOD_SEQ_LEN * sizeof(int), false /* use_l3 */);
-  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(16 * sizeof(float),
-                                                       false /* use_l3 */);
+  offset_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
+  new_offset_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SEQ_LEN * sizeof(int));
+  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(16 * sizeof(float));
 
   idx_sorted_by_width_data_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
   offset_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
