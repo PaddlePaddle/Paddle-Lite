@@ -143,7 +143,6 @@ void RunModel(std::string model_dir,
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
   //  Uncomment code below to enable OpenCL
-  /*
   if (is_opencl_backend_valid) {
     // Set opencl kernel binary.
     // Large addtitional prepare time is cost due to algorithm selecting and
@@ -180,7 +179,6 @@ void RunModel(std::string model_dir,
     // you can give backup cpu nb model instead
     // config.set_model_from_file(cpu_nb_model_dir);
   }
-  */
 
   // NOTE: To load model transformed by model_optimize_tool before
   // release/v2.3.0, plese use `set_model_dir` API as listed below.
