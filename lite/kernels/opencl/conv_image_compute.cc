@@ -56,12 +56,12 @@ void ConvImageCompute::SetBlockSize() {
   }
 
   if (block_size == 8) {
-    block_size_.H = 2;
-    block_size_.W = 2;
-    block_size_.C = 2;
+    // block_size_.H = 2;
+    // block_size_.W = 2;
+    // block_size_.C = 2;
   } else if (block_size == 4) {
-    block_size_.H = 2;
-    block_size_.C = 2;
+    // block_size_.H = 2;
+    // block_size_.C = 2;
   } else if (block_size == 2) {
     block_size_.H = 2;
   }
@@ -134,7 +134,7 @@ void ConvImageCompute::PrepareForRun() {
   auto* filter_cpu = conv_param_->filter->mutable_data<float>();
   if (is_mali && filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
     LOG(INFO) << "IN MALI";
-    // SetBlockSize();
+    SetBlockSize();
     int Ogroup = block_size_.C;
     std::string kernel_name;
     kernel_name = std::string("Conv2D_H") + std::to_string(block_size_.H) +
