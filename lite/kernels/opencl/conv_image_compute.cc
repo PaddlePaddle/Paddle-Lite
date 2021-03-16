@@ -27,6 +27,46 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
+void ConvImageCompute::SetBlockSize() {
+  bool fp16_support =
+      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+  auto task_size =
+      static_cast<float>(output_tensor_n_ * output_tensor_h_ *
+                         output_tensor_w_ * maptofactor(output_tensor_c_, 4));
+  auto task_size_per_cu = task_size / CLRuntime::Global()->DeviceComputeUnits();
+  int block_size;
+  if (task_size_per_cu <= 256) {
+    block_size = 1;
+  } else if (task_size_per_cu <= 256 * 4) {
+    block_size = 2;
+  } else if (task_size_per_cu <= (fp16_support ? 256 * 8 : FLT_MAX)) {
+    block_size = 4;
+  } else {
+    block_size = 8;
+  }
+
+  bool w_kernel_is_1 = filter_tensor_w_ == 1 && stride_w_ == 1 &&
+                       dilation_w_ == 1 && pad_left_ == 0 &&
+                       pad_right_ == 0;  // s1d1p0
+  bool h_kernel_is_1 = filter_tensor_h_ == 1 && stride_h_ == 1 &&
+                       dilation_h_ == 1 && pad_up_ == 0 && pad_down_ == 0;
+  if (!w_kernel_is_1 || !h_kernel_is_1) {
+    block_size = std::min(
+        block_size, 4);  // 如果 w/h kernel 不是 1，则取block_size的最大值为4
+  }
+
+  if (block_size == 8) {
+    block_size_.H = 2;
+    block_size_.W = 2;
+    block_size_.C = 2;
+  } else if (block_size == 4) {
+    block_size_.H = 2;
+    block_size_.C = 2;
+  } else if (block_size == 2) {
+    block_size_.H = 2;
+  }
+}
+
 void ConvImageCompute::PrepareForRun() {
   ReInitWhenNeeded();
 
@@ -94,12 +134,20 @@ void ConvImageCompute::PrepareForRun() {
   auto* filter_cpu = conv_param_->filter->mutable_data<float>();
   if (is_mali && filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
     LOG(INFO) << "IN MALI";
-    kernel_func_names_.push_back("Conv2D_H1W1C1");
+    // SetBlockSize();
+    int Ogroup = block_size_.C;
+    std::string kernel_name;
+    kernel_name = std::string("Conv2D_H") + std::to_string(block_size_.H) +
+                  std::string("W") + std::to_string(block_size_.W) +
+                  std::string("C") + std::to_string(block_size_.C);
+    LOG(INFO) << "kernel_name:" << kernel_name;
+    kernel_func_names_.push_back(kernel_name);
     kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
 
     auto tensor_hold_filter_buffer = std::unique_ptr<Tensor>(new Tensor);
     auto filter_ext_dims = filter_dims;
-    filter_ext_dims[0] = maptofactor(filter_dims[0], 4) * 4;
+    filter_ext_dims[0] =
+        maptofactor(maptofactor(filter_dims[0], Ogroup), 4) * Ogroup * 4;
     filter_ext_dims[1] = maptofactor(filter_dims[1], 4) * 4;
     tensor_hold_filter_buffer->Resize(filter_ext_dims);
     auto* filter_buffer_data =
@@ -111,6 +159,13 @@ void ConvImageCompute::PrepareForRun() {
                    filter_dims[1],
                    filter_dims[2],
                    filter_dims[3]);
+    // OIHW2OHWIOgroupI4O4(filter_cpu,
+    //                     filter_buffer_data,
+    //                     filter_dims[0],
+    //                     filter_dims[1],
+    //                     filter_dims[2],
+    //                     filter_dims[3],
+    //                     Ogroup);
     filter_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
     LOG(INFO) << "2";
     filter_gpu_buffer_->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
@@ -452,22 +507,23 @@ void ConvImageCompute::PrepareForRun() {
   }
 
   // convert cpu buffer bias --> gpu buffer/image
-  if (has_bias_ && is_mali && kernel_func_names_[0] == "Conv2D_H1W1C1") {
+  if (has_bias_ && is_mali && filter_gpu_buffer_ != nullptr) {
     bias_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
     auto bias_dims = conv_param_->bias->dims();
     auto tensor_hold_bias_buffer = std::unique_ptr<Tensor>(new Tensor);
     auto bias_ext_dims = bias_dims;
-    bias_ext_dims[0] = maptofactor(bias_dims[0], 4) * 4;
+    bias_ext_dims[0] =
+        maptofactor(maptofactor(bias_dims[0], block_size_.C), 4) * 4;
     tensor_hold_bias_buffer->Resize(bias_ext_dims);
     tensor_hold_bias_buffer->mutable_data<half_t>();
     FloatArray2HalfArray(
         conv_param_->bias->mutable_data<float>(),
         reinterpret_cast<half_t*>(tensor_hold_bias_buffer->raw_data()),
-        bias_ext_dims.production());
+        bias_dims.production());
     bias_gpu_buffer_->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
-        tensor_hold_bias_buffer->data<half_t>(), bias_dims);
+        tensor_hold_bias_buffer->data<half_t>(), bias_ext_dims);
     LOG(INFO) << "BIAS DONE";
-  } else if (is_mali && kernel_func_names_[0] == "Conv2D_H1W1C1") {
+  } else if (is_mali && filter_gpu_buffer_ != nullptr) {
     bias_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
     auto tensor_hold_bias_buffer = std::unique_ptr<Tensor>(new Tensor);
     DDimLite bias_dims({4});
@@ -694,10 +750,11 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                   static_cast<size_t>(w_blk_),
                                   static_cast<size_t>(nh_blk_)};
 
-  if (kernel_func_names_[0] == "Conv2D_H1W1C1") {
-    global_work_size_ = cl::NDRange{static_cast<size_t>(nh_blk_),
-                                    static_cast<size_t>(w_blk_),
-                                    static_cast<size_t>(c_blk_)};
+  if (filter_buffer_p_ != nullptr) {
+    global_work_size_ =
+        cl::NDRange{static_cast<size_t>(maptofactor(nh_blk_, block_size_.H)),
+                    static_cast<size_t>(maptofactor(w_blk_, block_size_.W)),
+                    static_cast<size_t>(maptofactor(c_blk_, block_size_.C))};
   } else if (kernel_func_names_[0] == "conv2d_1x1_simple" ||
              kernel_func_names_[0] == "conv2d_1x1_opt") {
     w_blk_ = maptofactor(default_w_blk_, 4);
@@ -824,6 +881,47 @@ void ConvImageCompute::OIHW2OI4HWI4O4(
           } else {
             fp16_support ? dst_fp16[idx] = Float2Half(0.f) : dst_fp32[idx] =
                                                                  0.f;
+          }
+        }
+      }
+    }
+  }
+}
+
+void ConvImageCompute::OIHW2OHWIOgroupI4O4(void* src,
+                                           void* dst,
+                                           size_t O,
+                                           size_t I,
+                                           size_t H,
+                                           size_t W,
+                                           size_t ogroup) {
+  bool fp16_support =
+      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+  size_t o_block = (O + 3) / 4;
+  size_t i_block = (I + 3) / 4;
+
+  float* dst_fp32 = static_cast<float*>(dst);
+  half_t* dst_fp16 = static_cast<half_t*>(dst);
+
+  float* p = static_cast<float*>(src);
+  for (size_t o = 0; o < o_block * 4; o++) {
+    for (size_t h = 0; h < H; h++) {
+      for (size_t w = 0; w < W; w++) {
+        for (size_t i = 0; i < i_block * 4; i++) {
+          for (size_t og = 0; og < ogroup; og++) {
+            size_t idx = (o / 4) * H * W * i_block * ogroup * 4 * 4 +
+                         h * W * i_block * ogroup * 4 * 4 +
+                         w * i_block * 4 * 4 + (i / 4) * ogroup * 4 * 4 +
+                         og * 4 * 4 + (i % 4) * 4 + o % 4;
+
+            if (o < O && i < I) {
+              fp16_support ? dst_fp16[idx] = Float2Half(*p) : dst_fp32[idx] =
+                                                                  *p;
+              p++;
+            } else {
+              fp16_support ? dst_fp16[idx] = Float2Half(0.f) : dst_fp32[idx] =
+                                                                   0.f;
+            }
           }
         }
       }
