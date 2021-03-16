@@ -55,7 +55,7 @@ void sgemm_fp16(bool is_transA,
     return;
   }
   if (M == 1 && !has_alpha) {
-    float bias_ptr[N];  // NOLINT
+    float16_t bias_ptr[N];  // NOLINT
     if (is_bias) {
       for (int i = 0; i < N; i++) {
         bias_ptr[i] = bias[0];
@@ -69,7 +69,7 @@ void sgemm_fp16(bool is_transA,
               K,
               beta,
               is_bias,
-              bias_ptr.data(),
+              bias_ptr,
               act_param.has_active,
               act_param.active_type,
               ctx);
