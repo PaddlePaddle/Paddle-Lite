@@ -34,6 +34,9 @@ class XPUMultiEncoderCompute
   virtual void Run();
 
  private:
+  int bert_encoder_run();
+  int transformer_encoder_run();
+
   std::vector<const int8_t *> arg_fc_weight_int8_;
   std::vector<const int16_t *> arg_fc_weight_int16_;
   std::vector<const float *> arg_fc_weight_fp32_;

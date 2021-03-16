@@ -20,6 +20,7 @@ add_kernel(activation_opencl_image OPENCL basic SRCS activation_image_compute.cc
 add_kernel(reshape_opencl_image OPENCL basic SRCS reshape_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(transpose_opencl_image OPENCL basic SRCS transpose_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(conv_opencl_image OPENCL basic SRCS conv_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(conv_transpose_opencl_image OPENCL basic SRCS conv_transpose_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(layout_opencl_image OPENCL basic SRCS layout_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(concat_opencl_image OPENCL basic SRCS concat_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(split_opencl_image OPENCL basic SRCS split_image_compute.cc DEPS ${cl_kernel_deps})
@@ -58,6 +59,9 @@ lite_cc_test(test_conv_image_opencl SRCS conv_image_compute_test.cc
 
 lite_cc_test(test_depthwise_conv2d_image_opencl SRCS depthwise_conv2d_image_compute_test.cc
              DEPS conv_opencl_image op_registry program context)
+
+lite_cc_test(test_conv_transpose_image_opencl SRCS conv_transpose_image_compute_test.cc
+             DEPS conv_transpose_opencl_image op_registry program context)
 
 lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_test.cc
              DEPS nearest_interp_opencl_image layout_opencl_image op_registry program context)

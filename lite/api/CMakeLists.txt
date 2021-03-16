@@ -55,13 +55,15 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         target_link_libraries(paddle_light_api_shared shlwapi.lib)
     endif()
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${huawei_ascend_npu_kernels} ${rknpu_kernels} ${apu_kernels})
-   if(APPLE)
+   if(${HOST_SYSTEM} MATCHES "macosx")
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/exported_symbols.lds")
         set(LINK_FLAGS "-Wl,-exported_symbols_list, ${LINK_MAP_FILE}")
         add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND ...)
         add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
         set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_full_api_shared custom_linker_map)
+        set_target_properties(paddle_light_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
+        add_dependencies(paddle_light_api_shared custom_linker_map)
    elseif(NOT WIN32)
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
         set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
@@ -69,7 +71,29 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         add_custom_target(custom_linker_map DEPENDS ${LINK_MAP_FILE})
         set_target_properties(paddle_full_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_full_api_shared custom_linker_map)
+        set_target_properties(paddle_light_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
+        add_dependencies(paddle_light_api_shared custom_linker_map)
    endif()
+   if(NOT WIN32 AND NOT ARM_TARGET_OS STREQUAL "android" AND WITH_TESTING)
+        # check symbol hidden
+        FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/check_symbol.cmake
+            "execute_process(COMMAND sh -c \"${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_symbol.sh"
+            " ${CMAKE_CURRENT_BINARY_DIR}/libpaddle_light_api_shared.so\" RESULT_VARIABLE symbol_res)\n"
+            "if(NOT \"\${symbol_res}\" STREQUAL \"0\")\n"
+            "  message(FATAL_ERROR \"Check libpaddle_light_api_shared.so symbol failed.\")\n"
+            "endif()\n"
+            "execute_process(COMMAND sh -c \"${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_symbol.sh"
+            " ${CMAKE_CURRENT_BINARY_DIR}/libpaddle_full_api_shared.so\" RESULT_VARIABLE symbol_res)\n"
+            "if(NOT \"\${symbol_res}\" STREQUAL \"0\")\n"
+            "  message(FATAL_ERROR \"Check libpaddle_full_api_shared.so symbol failed.\")\n"
+            "endif()\n")
+        add_custom_command(
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/.check_symbol"
+            COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/check_symbol.cmake"
+            DEPENDS paddle_light_api_shared paddle_full_api_shared )
+        add_custom_target(check_symbol ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/.check_symbol")
+        add_dependencies(lite_compile_deps check_symbol)
+    endif()
 else()
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
@@ -84,7 +108,7 @@ else()
         if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc
             set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
             # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
-            if(NOT APPLE)
+            if(NOT ${HOST_SYSTEM} MATCHES "macosx")
                 SET(CMAKE_AR "gcc-ar")
                 SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
                 SET(CMAKE_CXX_ARCHIVE_FINISH   true)
@@ -127,10 +151,10 @@ else()
 
         # 4. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
         # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
-        if(NOT APPLE)
+        if(NOT ${HOST_SYSTEM} MATCHES "macosx")
             add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
         else()
-            add_library(paddle_api_light_bundled SHARED ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+            add_library(paddle_api_light_bundled STATIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
         endif()
     endif()
 endif()

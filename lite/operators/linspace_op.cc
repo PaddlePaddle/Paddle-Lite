@@ -50,7 +50,7 @@ bool LinspaceOpLite::InferShapeImpl() const {
       param_.Out->set_precision(PRECISION(kFloat));
       break;
   }
-  param_.Out->Resize(param_.Num->dims());
+  param_.Out->Resize(std::vector<int64_t>{param_.Num->data<int32_t>()[0]});
   return true;
 }
 

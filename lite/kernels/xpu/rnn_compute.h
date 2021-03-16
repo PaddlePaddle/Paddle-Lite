@@ -8,32 +8,30 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// WIfloatHOUfloat WARRANfloatIES OR CONDIfloatIONS OF ANY KIND, either express
+// or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
 #pragma once
 #include <algorithm>
+#include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class BeamSearchDecodeCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class RnnCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::BeamSearchDecodeParam;
-
-  BeamSearchDecodeCompute() = default;
-
   void Run() override;
 
-  virtual ~BeamSearchDecodeCompute() = default;
+  virtual ~RnnCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

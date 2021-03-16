@@ -401,7 +401,6 @@ void test_precision(const lite_api::CLPrecisionType p) {
 
         std::vector<char> output_image_data(output_image_shape.production() *
                                             4 * dtype_size);  // 4 : RGBA
-        std::vector<half_t> output_v_fp16(output_dim.production());
         TargetWrapperCL::ImgcpySync(output_image_data.data(),
                                     output_image,
                                     output_image_shape[0],

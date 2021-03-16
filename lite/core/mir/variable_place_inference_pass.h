@@ -170,13 +170,13 @@ class VariablePlaceInferencePass : public DebugPass {
         VLOG(4) << " - output arg name:" << arg_name
                 << " var name:" << var_name;
         const auto* decl_type = kernel.GetOutputDeclType(arg_name);
-        if (!(*var_type) || var.is_weight) {
+        if (!(*var_type)) {
           VLOG(4) << "set type " << *decl_type << " " << var_name;
-          if (var.is_weight) {
-            SetWeightType(out_node, *decl_type, with_targets);
-          } else {
-            *var_type = decl_type;
-          }
+          *var_type = decl_type;
+          // If one op's out is anothor op's weight, its is_weight or is_persist
+          // attr should be false, otherwise an io_copy_once op may be insert.
+          var.is_weight = false;
+          var.is_persist = false;
         } else if (!(*var_type)->place().is_valid()) {
           // If is quantization, infer the Int8 type.
           if (decl_type->precision() == PRECISION(kInt8) ||

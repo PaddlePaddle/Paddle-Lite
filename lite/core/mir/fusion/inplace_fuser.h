@@ -23,9 +23,9 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-class ReshapeFuser : public FuseBase {
+class InplaceFuser : public FuseBase {
  public:
-  explicit ReshapeFuser(const std::string& type) : type_(type) {}
+  explicit InplaceFuser(const std::string& type) : type_(type) {}
 
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
@@ -34,9 +34,9 @@ class ReshapeFuser : public FuseBase {
   std::string type_;
 };
 
-class Reshape2OutFuser : public FuseBase {
+class Inplace2OutFuser : public FuseBase {
  public:
-  explicit Reshape2OutFuser(const std::string& type) : type_(type) {}
+  explicit Inplace2OutFuser(const std::string& type) : type_(type) {}
 
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;

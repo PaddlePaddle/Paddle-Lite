@@ -31,9 +31,6 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "[APU] Converting [" + op_type + "]";
 
-  CHECK(op_info->HasAttr("enable_int8") &&
-        op_info->GetAttr<bool>("enable_int8"));
-
   // Get input and output vars and op attributes
   auto input_name = op_info->Input("Input").front();
   auto input_scale_name = "Input0_scale";
@@ -50,6 +47,10 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
+  CHECK(op_info->HasInputScale(input_scale_name, true) &&
+        op_info->HasInputScale(w_scale_name, true) &&
+        op_info->HasOutputScale(out_scale_name, true));
+
   int in_num_col_dims = op_info->GetAttr<int>("in_num_col_dims");
   int m = input_dims.Slice(0, in_num_col_dims).production();
   int k = input_dims.Slice(in_num_col_dims, input_dims.size()).production();
@@ -59,11 +60,8 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
           << " out_dims: " << out_dims << " m: " << m << " k: " << k
           << " n: " << n;
 
-  CHECK(op_info->HasInputScale(input_scale_name, true));
   auto input_scale = op_info->GetInputScale(input_scale_name, true)[0];
-  CHECK(op_info->HasInputScale(w_scale_name, true));
   auto w_scale = op_info->GetInputScale(w_scale_name, true);
-  CHECK(op_info->HasOutputScale(out_scale_name, true));
   auto out_scale = op_info->GetOutputScale(out_scale_name, true)[0];
 
   // Add input tensor type

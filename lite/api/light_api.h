@@ -99,6 +99,10 @@ class LITE_API LightPredictor {
 
   void DequantizeWeight();
 
+#ifdef ENABLE_ARM_FP16
+  void WeightFP32ToFP16();
+#endif
+
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
