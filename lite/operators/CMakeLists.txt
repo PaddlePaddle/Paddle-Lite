@@ -145,6 +145,7 @@ add_operator(expand_v2_op_lite extra SRCS expand_v2_op.cc DEPS ${op_DEPS})
 add_operator(tile_op extra SRCS tile_op.cc DEPS ${op_DEPS})
 add_operator(sum_op extra SRCS sum_op.cc DEPS ${op_DEPS})
 add_operator(meshgrid_op_lite extra SRCS meshgrid_op.cc DEPS ${op_DEPS})
+add_operator(linspace_op extra SRCS linspace_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
