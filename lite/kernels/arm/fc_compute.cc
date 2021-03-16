@@ -452,7 +452,7 @@ REGISTER_LITE_KERNEL(fc, kARM, kFP16, kNCHW, FcCompute_FP16, def)
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
-#endif
+#endif  // ENABLE_ARM_FP16
 
 REGISTER_LITE_KERNEL(fc, kARM, kFloat, kNCHW, FcCompute_FP32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})

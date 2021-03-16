@@ -230,7 +230,7 @@ void test_conv_fp16(const DDim dim_in,
             }
           }
           VLOG(4) << "check: " << check << ", count: " << count;
-          check = check && count >= std::max(30, static_cast<int>(0.01 * size));
+          check = check && count >= std::max(10, static_cast<int>(0.01 * size));
           if (check) {
             int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
             print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
