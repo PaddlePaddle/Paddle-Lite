@@ -86,6 +86,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
                            size_t W,
                            size_t ogroup);
   void SetBlockSize();
+  void SetGlobalLocal();
   param_t* conv_param_{nullptr};
 
   kernel_t impl_;

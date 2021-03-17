@@ -27,6 +27,53 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
+int GetMaxDivisor(int x, int divisor) {
+  int i = divisor;
+  while (i > 0) {
+    if (x % i == 0) {
+      return i;
+    }
+    i--;
+  }
+  return 1;
+}
+
+void ConvImageCompute::SetGlobalLocal() {
+  size_t global_h =
+      output_tensor_n_ * maptofactor(output_tensor_h_, block_size_.H);
+  size_t global_w = maptofactor(output_tensor_w_, block_size_.W);
+  size_t global_c =
+      maptofactor(maptofactor(output_tensor_c_, 4), block_size_.C);
+  int local_max = 128;
+  const int local_c_max = 16;
+  const int OH_threshold = 100;
+  const int OW_threshold = 100;
+  const int OC_threshold = 64;
+  size_t local_c = GetMaxDivisor(global_c, local_c_max);
+  local_c = std::max<size_t>(local_c, 1);
+  size_t local_hw = local_max / local_c;
+  size_t local_h;
+  size_t local_w;
+  if (output_tensor_h_ >= OH_threshold && output_tensor_w_ >= OW_threshold &&
+      output_tensor_c_ <= OC_threshold) {  // c -> w -> h
+    local_w = std::min(global_w, local_hw);
+    local_h = std::min(local_hw / local_w, global_h);
+  } else {  // c -> h -> w
+    local_h = std::min(global_h, local_hw);
+    local_w = std::min(local_hw / local_h, global_w);  // NOLINT
+  }
+
+  global_h = maptofactor(global_h, local_h) * local_h;
+  global_w = maptofactor(global_w, local_w) * local_w;
+  global_c = maptofactor(global_c, local_c) * local_c;
+  global_work_size_ = cl::NDRange{static_cast<size_t>(global_h),
+                                  static_cast<size_t>(global_w),
+                                  static_cast<size_t>(global_c)};
+  local_work_size_ = cl::NDRange{static_cast<size_t>(local_h),
+                                 static_cast<size_t>(local_w),
+                                 static_cast<size_t>(local_c)};
+}
+
 void ConvImageCompute::SetBlockSize() {
   bool fp16_support =
       CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
@@ -752,6 +799,7 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                   static_cast<size_t>(nh_blk_)};
 
   if (filter_gpu_buffer_ != nullptr) {
+    // SetGlobalLocal();
     global_work_size_ =
         cl::NDRange{static_cast<size_t>(maptofactor(nh_blk_, block_size_.H)),
                     static_cast<size_t>(maptofactor(w_blk_, block_size_.W)),

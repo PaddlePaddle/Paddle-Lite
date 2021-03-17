@@ -264,19 +264,19 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
           std::unique_ptr<cl::Program> ptr(new cl::Program(program));
           programs_[prog_key] = std::move(ptr);
         }
-      }
 
-      auto it = programs_.find(program_key);
-      if (it != programs_.end()) {
+        auto it = programs_.find(program_key);
+        if (it != programs_.end()) {
 #ifdef LITE_WITH_LOG
-        VLOG(3) << " --- program -> " << program_key
-                << " has been built in binary --- ";
+          VLOG(3) << " --- program -> " << program_key
+                  << " has been built in binary --- ";
 #endif
-        gotten_bin_flag_ = true;
-        ret = true;
-      } else {
-        delete_bin_flag = true;
-        // Jump to build from source
+          gotten_bin_flag_ = true;
+          ret = true;
+        } else {
+          delete_bin_flag = true;
+          // Jump to build from source
+        }
       }
     }
 
@@ -479,9 +479,26 @@ std::string CLRuntime::GetSN(const std::string options) {
                               platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";
   std::string device_version = device_->getInfo<CL_DEVICE_VERSION>() + "; ";
   std::string driver_version = device_->getInfo<CL_DRIVER_VERSION>() + "; ";
+  std::string abi_version{""};
+#if defined(__MACOSX) || defined(__APPLE__)
+  abi_version += "apple";
+#elif defined(__ANDROID__)
+#if defined(__aarch64__)
+  abi_version += "armv8";
+#else
+  abi_version += "armv7";
+#endif  // __aarch64__
+#elif defined(__linux__)
+  abi_version += "linux";
+#elif defined(_WIN64)
+  abi_version += "win64";
+#elif defined(_WIN32)
+  abi_version += "win32";
+#endif
+  abi_version += "; ";
   std::string place_holder{"place_holder"};
   sn_ss << lite_version << options << platform_info << device_version
-        << driver_version << place_holder;
+        << driver_version << abi_version << place_holder;
   return sn_ss.str();
 }
 
