@@ -118,9 +118,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     PMNode* q_scale = nullptr;
     PMNode* q_scale_out = nullptr;
     if (with_q_scale_) {
-      q_scale = OpNode("q_scale", "scale")
-                    ->assert_op_attr<float>("scale", 0.125)
-                    ->AsIntermediate();
+      q_scale = OpNode("q_scale", "scale")->AsIntermediate();
       q_scale_out = VarNode("q_scale_out")
                         ->assert_is_op_output("scale", "Out")
                         ->assert_is_op_input("matmul", "X")
@@ -161,9 +159,6 @@ class XPUSingleEncoderFuser : public FuseBase {
             ->AsIntermediate();
 
     auto* qk_matmul = OpNode("qk_matmul", "matmul")->AsIntermediate();
-    if (!with_q_scale_) {
-      qk_matmul->assert_op_attr<float>("alpha", 0.125);
-    }
     auto* qk_matmul_out = VarNode("qk_matmul_out")
                               ->assert_is_op_output("matmul", "Out")
                               ->assert_is_op_input("elementwise_add", "X")
@@ -490,8 +485,20 @@ class XPUSingleEncoderFuser : public FuseBase {
     // extra traits to distill
     auto* reshape_op_info = matched.at("q_reshape2")->stmt()->op_info();
     auto reshape_dim = reshape_op_info->GetAttr<std::vector<int>>("shape");
+    // scale attr must be equal to 1 / std::sqrt(size_per_head)
+    int size_per_head = reshape_dim[3];
+    float scale_val = 0.f;
+    if (with_q_scale_) {
+      scale_val =
+          matched.at("q_scale")->stmt()->op_info()->GetAttr<float>("scale");
+    } else {
+      scale_val =
+          matched.at("qk_matmul")->stmt()->op_info()->GetAttr<float>("alpha");
+    }
+    float expected_value = 1.f / std::sqrt(size_per_head);
+    CHECK(std::abs(expected_value - scale_val) < 1e-6f);
     op_desc.SetAttr<int>("head_num", reshape_dim[2]);
-    op_desc.SetAttr<int>("size_per_head", reshape_dim[3]);
+    op_desc.SetAttr<int>("size_per_head", size_per_head);
     op_desc.SetAttr<std::string>("act_type", act_type_);
     op_desc.SetAttr<bool>("norm_before", norm_before_);
 
