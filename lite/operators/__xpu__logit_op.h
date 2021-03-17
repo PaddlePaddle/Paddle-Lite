@@ -13,23 +13,32 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace host {
-namespace math {
+namespace operators {
 
-void p_norm(const float* input,
-            const int pre_n,
-            const int n,
-            const int post_n,
-            const float epsilon,
-            float* out,
-            const int porder);
-}  // namespace math
-}  // namespace host
+class XPULogitOp : public OpLite {
+ public:
+  XPULogitOp() {}
+
+  explicit XPULogitOp(const std::string &op_type) : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "XPULogit"; }
+
+ private:
+  mutable XPULogitParam param_;
+};
+
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

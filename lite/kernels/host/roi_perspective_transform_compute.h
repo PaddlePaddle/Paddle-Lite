@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,22 +13,26 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include <vector>
-#include "lite/core/context.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
-bool sequence_softmax(const float* input,
-                      const std::vector<uint64_t>& seq_offset,
-                      float* out,
-                      Context<TARGET(kARM)>* ctx);
+template <class T>
+class RoiPerspectiveTransformCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::RoiPerspectiveTransformParam;
 
-}  // namespace math
-}  // namespace arm
+  void Run() override;
+
+  virtual ~RoiPerspectiveTransformCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

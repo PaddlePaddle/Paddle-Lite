@@ -173,13 +173,14 @@ void test_sequence_expand(Place place) {
 }
 
 TEST(SequenceExpand, precision) {
-// #ifdef LITE_WITH_X86
-//   Place place(TARGET(kX86));
-// #endif
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-  test_sequence_expand(place);
+  Place place;
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
 #endif
+
+  test_sequence_expand(place);
 }
 
 }  // namespace lite

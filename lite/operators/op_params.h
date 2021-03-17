@@ -1801,6 +1801,7 @@ struct GroupNormParam : ParamBase {
   lite::Tensor* scale{};
   lite::Tensor* saved_mean{};
   lite::Tensor* saved_variance{};
+  std::string data_layout_str{"NCHW"};
   float epsilon;
   int groups;
   int channels;
@@ -1868,26 +1869,30 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int axis{-1};
   int K{1};
 };
+
 struct XPUBlockFuseParam : ParamBase {
-  const lite::Tensor* input{};
-  const lite::Tensor* filter;
-  const lite::Tensor* max_filter;
-  const lite::Tensor* bias;
-  const lite::Tensor* input_max{};
-  lite::Tensor* output{};
-  lite::Tensor* output_max{};
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* filter{nullptr};
+  const lite::Tensor* bias{nullptr};
+  const lite::Tensor* branch{nullptr};
+  const lite::Tensor* input_max{nullptr};
+  lite::Tensor* output{nullptr};
+  lite::Tensor* output_max{nullptr};
   std::vector<int> op_type;
   std::vector<int> place_x;
   std::vector<int> place_y;
   std::vector<int> place_z;
   std::vector<int> filter_dims;
   std::vector<int> strides;
-  std::vector<int> paddings;
-  std::vector<int> dilations;
+  std::shared_ptr<std::vector<int>> paddings;
+  std::shared_ptr<std::vector<int>> dilations;
   std::vector<int> groups;
   std::vector<int> act_type;
   std::vector<float> act_param;
+  std::vector<int> conv_bias;
   std::vector<int> block_lod;
+  bool has_bias{false};
+  bool has_branch{false};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -1909,6 +1914,7 @@ struct XPUMultiEncoderParam : ParamBase {
   std::string act_type{};
   std::string precision{};
   bool enable_qkv_fusion{false};
+  bool norm_before{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
@@ -2058,26 +2064,6 @@ struct XPUMmdnnMergeAllParam : ParamBase {
   lite::Tensor* out{};
 };
 
-struct XPUConv2dParam : ParamBase {
-  lite::Tensor* Input{nullptr};
-  lite::Tensor* Filter{nullptr};
-  lite::Tensor* FilterMax{nullptr};
-  lite::Tensor* Output{nullptr};
-  lite::Tensor* OutputMax{nullptr};
-  lite::Tensor* InputMax{nullptr};
-  lite::Tensor* Bias{nullptr};
-  lite::Tensor* Branch{nullptr};
-
-  int act_type{0};
-  float act_param{0.0f};
-  std::vector<int> filter_dims;
-  std::vector<int> strides;
-  std::shared_ptr<std::vector<int>> paddings;
-  std::shared_ptr<std::vector<int>> dilations;
-  int groups{1};
-  bool has_branch{false};
-};
-
 struct XPUSfaHeadParam : ParamBase {
   lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
@@ -2093,6 +2079,12 @@ struct XPUGenerateSequenceParam : ParamBase {
   bool flatten{false};
   float value{0};
   int dtype{-1};
+};
+
+struct XPULogitParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+  float eps{1e-7};
 };
 
 // For DeformableConvolution op
@@ -2232,7 +2224,7 @@ struct RnnParam : ParamBase {
   lite::Tensor* Input;
   std::vector<lite::Tensor*> PreState;
   std::vector<lite::Tensor*> WeightList;
-  lite::Tensor* SequenceLength;
+  const lite::Tensor* SequenceLength{nullptr};
   lite::Tensor* DropoutState;
   lite::Tensor* Reserve;
   lite::Tensor* Out;
@@ -2319,6 +2311,29 @@ struct LinspaceParam : ParamBase {
   lite::Tensor* Out{};
   int dtype{};
 };
+
+struct RoiPerspectiveTransformParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* rois{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* mask{nullptr};
+  lite::Tensor* transfor_matrix{nullptr};
+  lite::Tensor* out2in_idx{nullptr};
+  lite::Tensor* out2in_weight{nullptr};
+  float spatial_scale{1.f};
+  int transformed_height{1};
+  int transformed_width{1};
+};
+
+struct ArgsortParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Indices{};
+
+  int axis{-1};
+  bool descending{false};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

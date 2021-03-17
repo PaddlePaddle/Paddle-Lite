@@ -149,6 +149,8 @@ add_operator(scatter_nd_add_op extra SRCS scatter_nd_add_op.cc DEPS ${op_DEPS})
 add_operator(tril_triu_op extra SRCS tril_triu_op.cc DEPS ${op_DEPS})
 add_operator(meshgrid_op_lite extra SRCS meshgrid_op.cc DEPS ${op_DEPS})
 add_operator(linspace_op extra SRCS linspace_op.cc DEPS ${op_DEPS})
+add_operator(roi_perspective_transform_op extra SRCS roi_perspective_transform_op.cc DEPS ${op_DEPS})
+add_operator(argsort_op extra SRCS argsort_op.cc DEPS ${op_DEPS})
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc DEPS ${op_DEPS})
@@ -217,6 +219,8 @@ add_operator(__xpu__mmdnn_op extra SRCS __xpu__mmdnn_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__conv2d_op extra SRCS __xpu__conv2d_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__sfa_head_op extra SRCS __xpu__sfa_head_op.cc DEPS ${op_DEPS})
 add_operator(__xpu__generate_sequence_op extra SRCS __xpu__generate_sequence_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__logit_op extra SRCS __xpu__logit_op.cc DEPS ${op_DEPS})
+add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_op.cc DEPS ${op_DEPS})
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)

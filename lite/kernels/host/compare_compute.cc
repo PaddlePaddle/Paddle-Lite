@@ -181,6 +181,23 @@ REGISTER_LITE_KERNEL(equal, kHost, kInt32, kAny, equal_int32, def)
     .BindPaddleOpVersion("equal", 1)
     .Finalize();
 
+// float kernel has higher score when picking kernel.
+using equal_int32_f = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kFloat),
+    paddle::lite::kernels::host::_EqualFunctor<int32_t>>;
+REGISTER_LITE_KERNEL(equal, kHost, kFloat, kAny, equal_int32_f, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindPaddleOpVersion("equal", 1)
+    .Finalize();
+
 using not_equal_float = paddle::lite::kernels::host::CompareCompute<
     PRECISION(kFloat),
     paddle::lite::kernels::host::_NotEqualFunctor<float>>;
