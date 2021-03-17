@@ -22,84 +22,52 @@ namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
-/* link the previous __xpu__conv2d's OutputMax to   */
-/* next __xpu__conv2d as InputMax                   */
+/* link the previous xpu_fusion_op's OutputMax to   */
+/* next xpu_fusion_op as InputMax                   */
 /* For example:                                     */
 /* graph[1]: sub block                              */
 /*                     in_Input                     */
-/*        in_Filter      |     in_FilterMax         */
-/*                  \    |    /                     */
-/*                   \   |   /                      */
-/*     in_Bias ------- __xpu__conv2d                */
+/*                       |                         */
+/*                       |                         */
+/*                    xpu_fusion_op                */
 /*                       |      \                   */
 /*                       |       \                  */
 /*                out_Output      out_OutputMax     */
 /*                       |                          */
 /*                       |                          */
-/*                    __xpu__conv2d                 */
+/*                    xpu_fusion_op                 */
 /*                       |                          */
 /*                       |                          */
 /*                     out_Output                   */
 /*                                                  */
 /* After the pass is applied:                       */
 /*                     in_Input                     */
-/*        in_Filter      |     in_FilterMax         */
-/*                  \    |    /                     */
-/*                   \   |   /                      */
-/*     in_Bias ------- __xpu__conv2d                */
+/*                      |                         */
+/*                      |                         */
+/*                   xpu_fusion_op                */
 /*                       |      \                   */
 /*                       |       \                  */
 /*                out_Output      out_OutputMax     */
 /*                       |       /                  */
 /*                       |      /                   */
-/*                    __xpu__conv2d                 */
+/*                    xpu_fusion_op                 */
 /*                       |                          */
 /*                       |                          */
 /*                     out_Output                   */
 
-class XPUConv2dLinkFuser : public FuseBase {
+class XPULinkMaxFuser : public FuseBase {
  public:
-  explicit XPUConv2dLinkFuser(bool with_branch) : _with_branch(with_branch) {}
-
+  explicit XPULinkMaxFuser(const std::string& op_type) { op_type_ = op_type; }
   void BuildPattern() override {
-    auto* input = VarNode("input")
-                      ->assert_is_op_input("__xpu__conv2d", "Input")
-                      ->AsInput();
-    auto* filter = VarNode("filter")
-                       ->assert_is_op_input("__xpu__conv2d", "Filter")
-                       ->AsInput();
-    auto* filter_max = VarNode("filter_max")
-                           ->assert_is_op_input("__xpu__conv2d", "FilterMax")
-                           ->AsInput();
-    auto* bias =
-        VarNode("bias")->assert_is_op_input("__xpu__conv2d", "Bias")->AsInput();
-    auto* xpu_conv = OpNode("xpu_conv", "__xpu__conv2d");
-    auto* xpu_conv_out = VarNode("xpu_conv_out")
-                             ->assert_is_op_output("__xpu__conv2d", "Output")
-                             ->AsOutput();
-    auto* xpu_conv_out_max =
-        VarNode("xpu_conv_out_max")
-            ->assert_is_op_output("__xpu__conv2d", "OutputMax")
-            ->AsOutput();
-
-    *input >> *xpu_conv >> *xpu_conv_out;
-    *filter >> *xpu_conv;
-    *filter_max >> *xpu_conv;
-    *bias >> *xpu_conv;
-    *xpu_conv >> *xpu_conv_out_max;
-
-    if (_with_branch) {
-      auto* branch = VarNode("branch")
-                         ->assert_is_op_input("__xpu__conv2d", "Branch")
-                         ->AsInput();
-      *branch >> *xpu_conv;
-    }
+    auto* input = VarNode("input")->assert_is_op_input(op_type_, "Input");
+    auto* xpu_fusion_op = OpNode("xpu_fusion_op", op_type_);
+    *input >> *xpu_fusion_op;
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
-    auto conv_instruct = matched.at("xpu_conv")->stmt();
-    auto op_desc = *conv_instruct->mutable_op_info();
-    auto conv_old = conv_instruct->op();
+    auto xpu_op_instruct = matched.at("xpu_fusion_op")->stmt();
+    auto op_desc = *xpu_op_instruct->mutable_op_info();
+    auto xpu_op = xpu_op_instruct->op();
 
     // try to find input_max
     std::string max_input_name = matched.at("input")->arg()->name + "_max";
@@ -109,28 +77,26 @@ class XPUConv2dLinkFuser : public FuseBase {
          !op_desc.GetAttr<bool>("has_input_max"))) {
       op_desc.SetInput("InputMax", {max_input_name});
       op_desc.SetAttr("has_input_max", true);
-      conv_instruct->ResetOp(op_desc, conv_old->valid_places());
-      DirectedLink(max_input_node, matched.at("xpu_conv"));
+      xpu_op_instruct->ResetOp(op_desc, xpu_op->valid_places());
+      DirectedLink(max_input_node, matched.at("xpu_fusion_op"));
     }
   }
 
  private:
-  bool _with_branch;
+  std::string op_type_;
 };
 
 }  // namespace fusion
 
-class XPUConv2dLinkPass : public ProgramPass {
+class XPULinkMaxPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
 
-    fusion::XPUConv2dLinkFuser fuser1(true);
-    fuser1(graph.get());
-
-    // TODO(sunsetlh): need fix bug in no branch case
-    fusion::XPUConv2dLinkFuser fuser2(false);
-    fuser2(graph.get());
+    for (auto op_type : {"__xpu__conv2d", "__xpu__block_fuse_op"}) {
+      fusion::XPULinkMaxFuser fuser(op_type);
+      fuser(graph.get());
+    }
   }
 };
 
@@ -138,7 +104,6 @@ class XPUConv2dLinkPass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__conv2d_link_previous_out_max_pass,
-                  paddle::lite::mir::XPUConv2dLinkPass)
-    .BindTargets({TARGET(kXPU)})
-    .BindKernel("__xpu__conv2d");
+REGISTER_MIR_PASS(__xpu__link_previous_out_max_pass,
+                  paddle::lite::mir::XPULinkMaxPass)
+    .BindTargets({TARGET(kXPU)});

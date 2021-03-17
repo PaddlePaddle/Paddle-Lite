@@ -54,7 +54,7 @@ sh run_benchmark.sh
 
 ### 1. 编译benchmark可执行文件
 
-根据[源码编译](../user_guides/source_compile)准备编译环境，拉取PaddleLite最新特定分支代码，并在仓库根目录下，执行：
+根据[源码编译](../source_compile/compile_env)准备编译环境，拉取PaddleLite最新特定分支代码，并在仓库根目录下，执行：
 
 ```shell
 ###########################################

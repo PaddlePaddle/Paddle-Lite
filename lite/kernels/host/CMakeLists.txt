@@ -49,6 +49,7 @@ add_kernel(crop_compute_host Host extra SRCS crop_compute.cc DEPS ${lite_kernel_
 add_kernel(crop_tensor_compute_host Host extra SRCS crop_tensor_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(sequence_unpad_compute_host Host extra SRCS sequence_unpad_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(sequence_expand_compute_host Host extra SRCS sequence_expand_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(sequence_softmax_compute_host Host extra SRCS sequence_softmax_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(flatten_contiguous_range_compute_host Host extra SRCS flatten_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(shuffle_channel_compute_host Host extra SRCS shuffle_channel_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(activation_compute_host Host train SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_host)
@@ -73,6 +74,7 @@ add_kernel(meshgrid_compute_host Host extra SRCS meshgrid_compute.cc DEPS ${lite
 add_kernel(linspace_compute_host Host extra SRCS linspace_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(beam_search_decode_compute_host Host extra SRCS beam_search_decode_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(roi_perspective_transform_compute_host Host extra SRCS roi_perspective_transform_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(lod_reset_compute_host Host extra SRCS lod_reset_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(argsort Host extra SRCS argsort_compute.cc DEPS ${lite_kernel_deps})
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
