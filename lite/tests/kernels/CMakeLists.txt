@@ -35,7 +35,7 @@ if((NOT LITE_WITH_FPGA AND NOT LITE_WITH_BM AND NOT LITE_WITH_MLU) AND (LITE_WIT
     lite_cc_test(test_kernel_instance_norm_compute SRCS instance_norm_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_grid_sampler_compute SRCS grid_sampler_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_group_norm_compute SRCS group_norm_compute_test.cc DEPS ${test_kernel_deps})
-    #lite_cc_test(test_kernel_sequence_softmax_compute SRCS sequence_softmax_compute_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_kernel_sequence_softmax_compute SRCS sequence_softmax_compute_test.cc DEPS ${test_kernel_deps})
     #lite_cc_test(test_kernel_im2sequence_compute SRCS im2sequence_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_compare_compute SRCS compare_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_logical_compute SRCS logical_compute_test.cc DEPS ${test_kernel_deps})
