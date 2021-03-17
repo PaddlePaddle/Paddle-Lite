@@ -1865,26 +1865,30 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int axis{-1};
   int K{1};
 };
+
 struct XPUBlockFuseParam : ParamBase {
-  const lite::Tensor* input{};
-  const lite::Tensor* filter;
-  const lite::Tensor* max_filter;
-  const lite::Tensor* bias;
-  const lite::Tensor* input_max{};
-  lite::Tensor* output{};
-  lite::Tensor* output_max{};
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* filter{nullptr};
+  const lite::Tensor* bias{nullptr};
+  const lite::Tensor* branch{nullptr};
+  const lite::Tensor* input_max{nullptr};
+  lite::Tensor* output{nullptr};
+  lite::Tensor* output_max{nullptr};
   std::vector<int> op_type;
   std::vector<int> place_x;
   std::vector<int> place_y;
   std::vector<int> place_z;
   std::vector<int> filter_dims;
   std::vector<int> strides;
-  std::vector<int> paddings;
-  std::vector<int> dilations;
+  std::shared_ptr<std::vector<int>> paddings;
+  std::shared_ptr<std::vector<int>> dilations;
   std::vector<int> groups;
   std::vector<int> act_type;
   std::vector<float> act_param;
+  std::vector<int> conv_bias;
   std::vector<int> block_lod;
+  bool has_bias{false};
+  bool has_branch{false};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -2054,26 +2058,6 @@ struct XPUMmdnnMergeAllParam : ParamBase {
   float fc2_w_max{0.0f};
 
   lite::Tensor* out{};
-};
-
-struct XPUConv2dParam : ParamBase {
-  lite::Tensor* Input{nullptr};
-  lite::Tensor* Filter{nullptr};
-  lite::Tensor* FilterMax{nullptr};
-  lite::Tensor* Output{nullptr};
-  lite::Tensor* OutputMax{nullptr};
-  lite::Tensor* InputMax{nullptr};
-  lite::Tensor* Bias{nullptr};
-  lite::Tensor* Branch{nullptr};
-
-  int act_type{0};
-  float act_param{0.0f};
-  std::vector<int> filter_dims;
-  std::vector<int> strides;
-  std::shared_ptr<std::vector<int>> paddings;
-  std::shared_ptr<std::vector<int>> dilations;
-  int groups{1};
-  bool has_branch{false};
 };
 
 struct XPUSfaHeadParam : ParamBase {

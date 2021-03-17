@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -22,20 +21,26 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T, PrecisionType PType>
-class XPUConv2dCompute : public KernelLite<TARGET(kXPU), PType> {
+class XPUSqueezeExcitationCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::XPUBlockFuseParam;
 
+  virtual void Run();
+
   void PrepareForRun() override;
 
-  void Run() override;
+  virtual ~XPUSqueezeExcitationCompute() = default;
 
  private:
-  XPUScratchPadGuard quant_filter_guard_;
-  T* quant_filter_;
-  XPUScratchPadGuard filter_max_guard_;
-  float* filter_max_;
+  XPUScratchPadGuard weight1_max_guard_;
+  float* weight1_maxptr_;
+  XPUScratchPadGuard weight2_max_guard_;
+  float* weight2_maxptr_;
+  XPUScratchPadGuard quant_weight1_guard_;
+  int16_t* quant_weight1_ptr_;
+  XPUScratchPadGuard quant_weight2_guard_;
+  int16_t* quant_weight2_ptr_;
 };
 
 }  // namespace xpu
