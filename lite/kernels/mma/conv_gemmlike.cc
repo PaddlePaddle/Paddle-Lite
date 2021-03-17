@@ -117,7 +117,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       lite::mma::quantize_s8(w_data, conv.ka, kl, fw);
 
       // perform conv2d
-      if (lite::mma::mma_conv(conv)) {
+      if (lite::mma::mma_conv(&conv)) {
         std::cout << "mma_conv error" << std::endl;
       }
       // Convert int32 back to fp32, [n,c,h,w]

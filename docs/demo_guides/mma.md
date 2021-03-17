@@ -12,7 +12,7 @@ Lite支持MMA作为后端硬件进行模型推理，其主要特性如下：
 
 - 对于MMA暂不支持的kernel，均会切回ARM端运行，实现ARM+MMA混合布署运行
 
-## 支持现状
+## 支持芯片
 - [Cyclone V](https://www.intel.cn/content/dam/altera-www/global/en_US/pdfs/literature/hb/cyclone-v/cv_51002.pdf)
 
 ### 已支持（或部分支持）的Paddle算子
@@ -27,7 +27,7 @@ Lite支持MMA作为后端硬件进行模型推理，其主要特性如下：
 
 ## 编译
 
-需要提前准备带有mmadrv.ko的MMA开发板C5MB/C5TB和Lite代码，Lite的交叉编译器采用arm-gcc-5.4.1
+需要提前准备带有mmadrv.ko的MMA开发板C5MB/C5TB和Lite代码
 
 CMAKE编译选项：
 
@@ -51,7 +51,7 @@ CMAKE编译选项：
         -DARM_TARGET_OS=armlinux 
     make publish_inference -j2
 ```
-Lite提供FPGA编译脚本，位于lite/tools/build_mma.sh，在Lite根目录执行该脚本即可编译
+Lite提供FPGA编译脚本，位于lite/tools/build_mma.sh full_publish，在Lite根目录执行该脚本即可编译
 
 ## 运行示例
 
@@ -71,7 +71,7 @@ cd /opt
 insmod driver/mmadrv.ko
 ```
 
-- **使用FPGA进行模型预测**
+- **使用MMA进行模型预测**
 
 ```bash
 #以下命令均在开发板上运行，在开发板上已经部署了对应的输入图片，模型，驱动程序，执行程序等
