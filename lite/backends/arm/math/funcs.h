@@ -54,6 +54,7 @@
 #include "lite/backends/arm/math/prior_box.h"
 #include "lite/backends/arm/math/quantize.h"
 #include "lite/backends/arm/math/reduce_max.h"
+#include "lite/backends/arm/math/reduce_max_min.h"
 #include "lite/backends/arm/math/reduce_mean.h"
 #include "lite/backends/arm/math/reduce_min.h"
 #include "lite/backends/arm/math/reduce_prod.h"
