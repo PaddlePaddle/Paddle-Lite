@@ -38,7 +38,7 @@ class XPUConv2dOp : public OpLite {
   std::string DebugString() const override { return "XPUConv2d"; }
 
  private:
-  mutable XPUConv2dParam param_;
+  mutable XPUBlockFuseParam param_;
 };
 
 }  // namespace operators
