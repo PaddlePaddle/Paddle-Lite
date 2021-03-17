@@ -141,9 +141,7 @@ struct Instruction {
 
 #ifdef LITE_WITH_OPENCL
   bool need_flush(const int inst_idx) const {
-    if (kernel_->target() == TargetType::kOpenCL &&
-        CLRuntime::Global()->GetGpuType() == GpuType::ARM_MALI &&
-        inst_idx % 10 == 0) {
+    if (kernel_->target() == TargetType::kOpenCL && inst_idx % 10 == 0) {
       return true;
     }
     return false;
