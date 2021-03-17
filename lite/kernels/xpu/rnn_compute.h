@@ -8,28 +8,30 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// WIfloatHOUfloat WARRANfloatIES OR CONDIfloatIONS OF ANY KIND, either express
+// or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include <algorithm>
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace host {
-namespace math {
+namespace kernels {
+namespace xpu {
 
-void p_norm(const float* input,
-            const int pre_n,
-            const int n,
-            const int post_n,
-            const float epsilon,
-            float* out,
-            const int porder);
-}  // namespace math
-}  // namespace host
+class RnnCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~RnnCompute() = default;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

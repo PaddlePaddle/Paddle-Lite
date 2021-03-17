@@ -2236,7 +2236,7 @@ struct RnnParam : ParamBase {
   lite::Tensor* Input;
   std::vector<lite::Tensor*> PreState;
   std::vector<lite::Tensor*> WeightList;
-  lite::Tensor* SequenceLength;
+  const lite::Tensor* SequenceLength{nullptr};
   lite::Tensor* DropoutState;
   lite::Tensor* Reserve;
   lite::Tensor* Out;
@@ -2335,6 +2335,15 @@ struct RoiPerspectiveTransformParam : ParamBase {
   float spatial_scale{1.f};
   int transformed_height{1};
   int transformed_width{1};
+};
+
+struct ArgsortParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Indices{};
+
+  int axis{-1};
+  bool descending{false};
 };
 
 }  // namespace operators

@@ -197,6 +197,11 @@ std::vector<std::string> Predictor::GetInputNames() { return input_names_; }
 // get outputnames
 std::vector<std::string> Predictor::GetOutputNames() { return output_names_; }
 
+// get input tensor precision type
+const std::vector<PrecisionType> &Predictor::GetInputPrecisions() const {
+  return input_precisions_;
+}
+
 // get param names
 std::vector<std::string> Predictor::GetParamNames() {
   return exec_scope_->AttributeVarNames();
@@ -222,6 +227,7 @@ void Predictor::PrepareFeedFetch() {
 
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
+  input_precisions_.resize(feeds.size());
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
@@ -229,6 +235,9 @@ void Predictor::PrepareFeedFetch() {
   for (size_t i = 0; i < fetchs.size(); i++) {
     output_names_[fetchs[i]->GetAttr<int>("col")] =
         fetchs[i]->Input("X").front();
+  }
+  for (size_t i = 0; i < feeds.size(); i++) {
+    input_precisions_[i] = GetInput(i)->precision();
   }
 }
 
@@ -466,6 +475,19 @@ void Predictor::CheckPaddleOpVersions(
 //     feed_list[i].ShareDataWith(tensors[i]);
 // }
 // #endif
+
+void Predictor::CheckInputValid() {
+  for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
+    if (GetInput(idx)->precision() != input_precisions_[idx]) {
+      LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
+                   << ") Tensor name (" << input_names_[idx]
+                   << ") Require Precision type ("
+                   << PrecisionToStr(input_precisions_[idx])
+                   << ") Input Precision type ("
+                   << PrecisionToStr(GetInput(idx)->precision()) << ").";
+    }
+  }
+}
 
 }  // namespace lite
 }  // namespace paddle

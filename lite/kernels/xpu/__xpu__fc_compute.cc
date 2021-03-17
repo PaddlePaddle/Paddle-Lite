@@ -34,7 +34,7 @@ void XPUFcCompute::PrepareForRun() {
 
 void XPUFcCompute::XPUMalloc(float** max_ptr) {
   XPUScratchPadGuard max_guard =
-      TargetWrapperXPU::MallocScratchPad(4 * sizeof(float), false);
+      TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
   *max_ptr = reinterpret_cast<float*>(max_guard->addr_);
 }
 

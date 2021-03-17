@@ -33,8 +33,7 @@ void XPUEmbeddingWithEltwiseAddCompute::PrepareForRun() {
   }
 
   size_t lens_size = table_lens_cpu_.size() * sizeof(int);
-  table_lens_guard_ =
-      TargetWrapperXPU::MallocScratchPad(lens_size, false /* use_l3 */);
+  table_lens_guard_ = TargetWrapperXPU::MallocScratchPad(lens_size);
   XPU_CALL(xpu_memcpy(table_lens_guard_->addr_,
                       &table_lens_cpu_[0],
                       lens_size,
