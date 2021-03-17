@@ -63,7 +63,6 @@
 #include "lite/backends/arm/math/sequence_expand.h"
 #include "lite/backends/arm/math/sequence_pool.h"
 #include "lite/backends/arm/math/sequence_pool_grad.h"
-#include "lite/backends/arm/math/sequence_softmax.h"
 #include "lite/backends/arm/math/sgemm.h"
 #include "lite/backends/arm/math/sgemv.h"
 #include "lite/backends/arm/math/shuffle_channel.h"
