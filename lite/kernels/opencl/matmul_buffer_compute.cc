@@ -47,17 +47,16 @@ class MatMulV2Compute
     }
   }
 
-  void trans_gpu() {}
-
   void PrepareForRun() override {
     matmul_v2_param_ = param_.get_mutable<param_t>();
+    transpose_x_ = matmul_v2_param_->transpose_X;
+    transpose_y_ = matmul_v2_param_->transpose_Y;
+    alpha_ = matmul_v2_param_->alpha;
 
     Tensor y_trans_cpu_t;
-
     auto y_t = matmul_v2_param_->Y;
-    if (y_t->persistable()) {
+    if (y_t->persistable() && transpose_y_) {
       LOG(INFO) << "y_t->persistable()";
-      //      y_trans_cpu_t_ = std::unique_ptr<Tensor>(new Tensor);
       y_trans_cpu_t.Resize(y_t->dims());
       transpose_cpu(y_t->data<float>(),
                     y_trans_cpu_t.mutable_data<float>(),
@@ -65,6 +64,8 @@ class MatMulV2Compute
                     y_t->dims()[1]);
       y_t = &y_trans_cpu_t;
     }
+
+    // upload y to gpu
     y_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     auto y_gpu_data =
         y_gpu_t_->mutable_data(TARGET(kOpenCL), y_t->memory_size());
@@ -81,14 +82,11 @@ class MatMulV2Compute
 
       // compute m,n,k
       const auto y_dims = matmul_v2_param_->Y->dims();
-      CHECK_EQ(x_dims.size(), 2UL);
-      CHECK_EQ(y_dims.size(), 2UL);
+      CHECK_EQ(x_dims.size(), 2UL) << "Unsupported x_dims with " << x_dims;
+      CHECK_EQ(y_dims.size(), 2UL) << "Unsupported y_dims with " << y_dims;
       CHECK_EQ(matmul_v2_param_->Out->dims().size(), 2UL);
 
-      bool transpose_x = matmul_v2_param_->transpose_X;
-      bool transpose_y = matmul_v2_param_->transpose_Y;
-
-      if (transpose_x) {
+      if (transpose_x_) {
         m_ = x_dims[1];
         k_ = x_dims[0];
         lda_ = m_;
@@ -98,7 +96,7 @@ class MatMulV2Compute
         lda_ = k_;
       }
 
-      if (transpose_y) {
+      if (transpose_y_) {
         n_ = y_dims[0];
         ldb_ = n_;
       } else {
@@ -118,18 +116,14 @@ class MatMulV2Compute
 #ifdef LITE_WITH_LOG
       VLOG(4) << "x_dims:" << x_dims;
       VLOG(4) << "y_dims:" << y_dims;
-      VLOG(4) << "transpose_X:" << matmul_v2_param_->transpose_X;
-      VLOG(4) << "transpose_Y:" << matmul_v2_param_->transpose_Y;
+      VLOG(4) << "transpose_X:" << transpose_x_;
+      VLOG(4) << "transpose_Y:" << transpose_y_;
       VLOG(4) << "m_:" << m_ << ", k_:" << k_ << ", n_=" << n_;
       VLOG(4) << "lda_:" << lda_ << ", ldb_:" << ldb_ << ", ldc_:" << ldc_;
 #endif
 
       kernel_func_name_ = "mat_mul_naive";
-
-#ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-#endif
-
       auto& context = ctx_->As<OpenCLContext>();
       context.cl_context()->AddKernel(kernel_func_name_,
                                       "buffer/mat_mul_kernel.cl",
@@ -154,7 +148,6 @@ class MatMulV2Compute
   void Run() override {
     auto* x_buf = matmul_v2_param_->X->data<float, cl::Buffer>();
     auto* y_buf = y_gpu_t_->template data<float, cl::Buffer>();
-    float alpha = matmul_v2_param_->alpha;
     auto* out_buf =
         matmul_v2_param_->Out->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
@@ -178,7 +171,7 @@ class MatMulV2Compute
     CL_CHECK_FATAL(status);
     status = kernel.setArg(8, ldc_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(9, alpha);
+    status = kernel.setArg(9, alpha_);
     CL_CHECK_FATAL(status);
 
     auto& context = ctx_->As<OpenCLContext>();
@@ -203,12 +196,15 @@ class MatMulV2Compute
 #endif
 
  private:
-  int m_ = 0;
-  int n_ = 0;
-  int k_ = 0;
-  int lda_ = 0;
-  int ldb_ = 0;
-  int ldc_ = 0;
+  int m_{0};
+  int n_{0};
+  int k_{0};
+  int lda_{0};
+  int ldb_{0};
+  int ldc_{0};
+  bool transpose_x_{false};
+  bool transpose_y_{false};
+  float alpha_{1.0f};
   param_t* matmul_v2_param_{nullptr};
   std::string kernel_func_name_{};
   std::string build_options_{"-DCL_DTYPE_float "};
