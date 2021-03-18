@@ -210,8 +210,8 @@ void test_softmax_fp16(const DDim in_dim,
                        const std::vector<int>& power_mode) {}
 #endif  // LITE_WITH_ARM
 
-#if 1  /// random param pool
-TEST(TestPoolRand, test_pool_rand) {
+#if 1  /// random param softmax
+TEST(TestSoftmaxRand, test_softmax_rand) {
   if (FLAGS_basic_test) {
     for (auto n : {1, 3, 4, 11}) {
       for (auto c : {1, 3, 11, 4}) {
@@ -230,7 +230,7 @@ TEST(TestPoolRand, test_pool_rand) {
 #endif  /// random param conv
 
 #if 1  /// custom
-TEST(TesPoolCustom, test_pool_fp32_custom_size) {
+TEST(TesSoftmaxCustom, test_softmax_fp16_custom_size) {
   test_softmax_fp16(
       DDim({FLAGS_batch, FLAGS_in_channel, FLAGS_in_height, FLAGS_in_width}),
       FLAGS_axis,

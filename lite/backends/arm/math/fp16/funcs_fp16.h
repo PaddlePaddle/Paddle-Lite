@@ -24,6 +24,7 @@
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include "lite/backends/arm/math/fp16/pooling_fp16.h"
+#include "lite/backends/arm/math/fp16/sgemm_fp16.h"
 #include "lite/backends/arm/math/fp16/softmax_fp16.h"
 #include "lite/backends/arm/math/fp16/type_trans_fp16.h"
 #include "lite/backends/arm/math/funcs.h"
@@ -34,6 +35,10 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
+
+template <typename T>
+void fill_bias_fc(
+    T* tensor, const T* bias, int num, int channel, bool flag_relu);
 
 // exp() computed for 8 float at once
 inline float16x8_t expq_ps_f16(float16x8_t x) {
