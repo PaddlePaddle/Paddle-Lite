@@ -55,7 +55,7 @@ class GRUCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
     int batch_size = input_lod.size() - 1;
     for (int i = 0; i < batch_size; i++) {
       int cur_seq_len = input_lod[i + 1] - input_lod[i];
-      int ret = xdnn::gru_unit_int16(
+      int ret = xdnn::paddle_gru_int16(
           ctx.GetRawContext(),              // Context *ctx,
           cur_seq_len,                      // int seq_len,
           frame_size,                       // int frame_size,
@@ -67,7 +67,7 @@ class GRUCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
           weight_s2_abs_max,  // float& weight_s2_abs_max, // [D, D]
           const_cast<float*>(bias_data),  // float *bias, // [1, 3D]
           hidden_ptr);                    // float *hidden // [seq_len, D]
-      CHECK_EQ(ret, 0) << "call xdnn::gru_unit_int16 failed!";
+      CHECK_EQ(ret, 0) << "call xdnn::paddle_gru_int16 failed!";
       input_data += cur_seq_len * 3 * frame_size;
       hidden_ptr += cur_seq_len * frame_size;
     }
