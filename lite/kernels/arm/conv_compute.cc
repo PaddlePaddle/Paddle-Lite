@@ -140,11 +140,16 @@ template <>
 void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   PARAM_INIT
   /// select conv impl
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  bool has_active = act_param.has_active;
+  bool conv_dw_relu6 =
+      (has_active && act_type != lite_api::ActivationType::kRelu);
   if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
-      no_dilation && flag_dw_3x3) {
+      no_dilation && flag_dw_3x3 && !conv_dw_relu6) {
     impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
-             pads_equal) {
+             ks_equal) {
     impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else {
     impl_ = new GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>;
