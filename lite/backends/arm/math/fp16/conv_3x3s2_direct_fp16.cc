@@ -186,7 +186,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v24.8h, %[w2].8h, v4.h[2]\n"   \
   "fmla v25.8h, %[w2].8h, v4.h[4]\n"   \
   "fmla v26.8h, %[w2].8h, v4.h[6]\n"   \
-  "fmla v27.8h, %[w2].8h, v4.h[0]\n"   \
+  "fmla v27.8h, %[w2].8h, v5.h[0]\n"   \
   "ldr d10, [%[r1]]\n"                 \
   "fmla v28.8h, %[w2].8h, v5.h[2]\n"   \
   "fmla v29.8h, %[w2].8h, v5.h[4]\n"   \
@@ -357,6 +357,7 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
   bool flag_bias = param.bias != nullptr;
   float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+
   if (act_param.has_active) {
     act_acquire(act_type,
                 flag_act,
