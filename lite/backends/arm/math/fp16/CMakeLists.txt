@@ -1,6 +1,7 @@
 cc_library(math_arm_fp16 SRCS
     conv_impl_fp16.cc
     conv_3x3s2_direct_fp16.cc
+    elementwise_fp16.cc
     gemm_fp16.cc
     gemv_fp16.cc
     pooling_fp16.cc
