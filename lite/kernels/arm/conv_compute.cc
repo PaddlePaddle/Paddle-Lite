@@ -161,11 +161,16 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
         src_data, bias_data, param.bias->numel());
   }
   /// select conv impl
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  bool has_active = act_param.has_active;
+  bool conv_dw_relu6 =
+      (has_active && act_type != lite_api::ActivationType::kRelu);
   if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
-      no_dilation && flag_dw_3x3) {
+      no_dilation && flag_dw_3x3 && !conv_dw_relu6) {
     impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
-             pads_equal) {
+             ks_equal) {
     impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else {
     impl_ = new GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>;
@@ -197,19 +202,22 @@ typedef paddle::lite::kernels::arm::ConvCompute<PRECISION(kFP16),
     ConvFp16;
 
 REGISTER_LITE_KERNEL(conv2d, kARM, kFP16, kNCHW, ConvFp16, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Prelu_alpha", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindPaddleOpVersion("conv2d", 1)
     .Finalize();
 
 REGISTER_LITE_KERNEL(depthwise_conv2d, kARM, kFP16, kNCHW, ConvFp16, def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("Filter",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindPaddleOpVersion("depthwise_conv2d", 1)
     .Finalize();
 #endif  // ENABLE_ARM_FP16
