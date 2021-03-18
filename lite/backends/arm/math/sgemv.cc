@@ -29,6 +29,7 @@ void sgemv(const int M,
            float *y,
            float beta,
            bool flag_bias,
+           bool has_a53,
            const float *bias);
 
 void sgemv_relu(const int M,
@@ -38,6 +39,7 @@ void sgemv_relu(const int M,
                 float *y,
                 float beta,
                 bool flag_bias,
+                bool has_a53,
                 const float *bias);
 
 void sgemv_relu6(const int M,
@@ -88,13 +90,14 @@ bool sgemv(const float *A,
            const ARMContext *ctx,
            float six,
            float alpha) {
+  bool has_a53 = (ctx->arch() == kA53 || ctx->arch() == kA35);
   if (transA) {
     sgemv_trans(
         M, N, A, x, y, beta, is_bias, bias, flag_act, act, ctx, six, alpha);
   } else {
     if (flag_act) {
       if (act == lite_api::ActivationType::kRelu) {
-        sgemv_relu(M, N, A, x, y, beta, is_bias, bias);
+        sgemv_relu(M, N, A, x, y, beta, is_bias, has_a53, bias);
       } else if (act == lite_api::ActivationType::kRelu6) {
         sgemv_relu6(M, N, A, x, y, beta, is_bias, bias, six);
       } else if (act == lite_api::ActivationType::kLeakyRelu) {
@@ -104,7 +107,7 @@ bool sgemv(const float *A,
             << "sgemv no transA only support relu, relu6, leakey relu fusion";
       }
     } else {
-      sgemv(M, N, A, x, y, beta, is_bias, bias);
+      sgemv(M, N, A, x, y, beta, is_bias, has_a53, bias);
     }
   }
   return true;
@@ -903,6 +906,88 @@ void sgemv_trans(const int M,
   "movi   v1.4s,  #0          \n" /* set out0 to 0 */ \
   "fmov   s0,  %w[bias0]      \n" /* set out0 = bias0 */
 
+#define SGEMV_KERNEL_8_A53                                                     \
+  /* check main loop */                                                        \
+  "cmp %w[cnt], #1            \n" /* check whether has main loop */            \
+  "blt  2f                    \n" /* jump to tail */ /* main loop */           \
+  "1:                         \n"                    /* main loop */           \
+  "ldr q8, [%[in]], #16       \n" /* load input 4 float */                     \
+  "ldr q10, [%[w0]], #16       \n" /* load w0 4 float */                       \
+  "ldr q12, [%[w1]], #16       \n" /* load w1 4 float */                       \
+  "ldr q14, [%[w2]], #16       \n" /* load w2 4 float */                       \
+  "ldr q16, [%[w3]], #16       \n" /* load w3 4 float */                       \
+  "ldr q18, [%[w4]], #16       \n" /* load w4 4 float */                       \
+  "fmla v0.4s, v8.4s, v10.4s  \n"                    /* mul + add*/            \
+  "ldr q20, [%[w5]], #16       \n" /* load w5 4 float */                       \
+  "fmla v1.4s, v8.4s, v12.4s  \n"                    /* mul + add*/            \
+  "ldr q22, [%[w6]], #16       \n" /* load w6 4 float */                       \
+  "fmla v2.4s, v8.4s, v14.4s  \n"                    /* mul + add*/            \
+  "ldr q24, [%[w7]], #16       \n" /* load w7 4 float */                       \
+  "fmla v3.4s, v8.4s, v16.4s  \n"                    /* mul + add*/            \
+  "ldr q9, [%[in]], #16       \n" /* load input 4 float */                     \
+  "fmla v4.4s, v8.4s, v18.4s  \n"                    /* mul + add*/            \
+  "ldr q11, [%[w0]], #16       \n" /* load w0 4 float */                       \
+  "fmla v5.4s, v8.4s, v20.4s  \n"                    /* mul + add*/            \
+  "ldr q13, [%[w1]], #16       \n" /* load w1 4 float */                       \
+  "fmla v6.4s, v8.4s, v22.4s  \n"                    /* mul + add*/            \
+  "ldr q15, [%[w2]], #16       \n" /* load w2 4 float */                       \
+  "fmla v7.4s, v8.4s, v24.4s  \n"                    /* mul + add*/            \
+  "ldr q17, [%[w3]], #16       \n" /* load w3 4 float */                       \
+  "fmla v0.4s, v9.4s, v11.4s  \n"                    /* mul + add*/            \
+  "ldr q19, [%[w4]], #16       \n" /* load w4 4 float */                       \
+  "fmla v1.4s, v9.4s, v13.4s  \n"                    /* mul + add*/            \
+  "ldr q21, [%[w5]], #16       \n" /* load w5 4 float */                       \
+  "fmla v2.4s, v9.4s, v15.4s  \n"                    /* mul + add*/            \
+  "ldr q23, [%[w6]], #16       \n" /* load w6 4 float */                       \
+  "fmla v3.4s, v9.4s, v17.4s  \n"                    /* mul + add*/            \
+  "ldr q25, [%[w7]], #16       \n" /* load w7 4 float */                       \
+  "subs %w[cnt], %w[cnt], #1  \n"                    /* sub main loop count */ \
+  "fmla v4.4s, v9.4s, v19.4s  \n"                    /* mul + add*/            \
+  "fmla v5.4s, v9.4s, v21.4s  \n"                    /* mul + add*/            \
+  "fmla v6.4s, v9.4s, v23.4s  \n"                    /* mul + add*/            \
+  "fmla v7.4s, v9.4s, v25.4s  \n"                    /* mul + add*/            \
+  "bne 1b                     \n" /* jump to main loop */                      \
+  /* pair add to final result */                                               \
+  "2:                         \n"  /* reduce to scale */                       \
+  "faddp  v16.4s, v0.4s, v0.4s\n"  /* pair add to vector */                    \
+  "faddp  v17.4s, v1.4s, v1.4s\n"  /* pair add to vector */                    \
+  "faddp  v18.4s, v2.4s, v2.4s\n"  /* pair add to vector */                    \
+  "faddp  v19.4s, v3.4s, v3.4s\n"  /* pair add to vector */                    \
+  "faddp  v20.4s, v4.4s, v4.4s\n"  /* pair add to vector */                    \
+  "faddp  s8, v16.2s          \n"  /* pair add to scale */                     \
+  "faddp  v21.4s, v5.4s, v5.4s\n"  /* pair add to vector */                    \
+  "faddp  s9, v17.2s          \n"  /* pair add to scale */                     \
+  "faddp  v22.4s, v6.4s, v6.4s\n"  /* pair add to vector */                    \
+  "faddp  s10, v18.2s         \n"  /* pair add to scale */                     \
+  "faddp  v23.4s, v7.4s, v7.4s\n"  /* pair add to vector */                    \
+  "faddp  s11, v19.2s         \n"  /* pair add to scale */                     \
+  "faddp  s12, v20.2s         \n"  /* pair add to scale */                     \
+  "faddp  s13, v21.2s         \n"  /* pair add to scale */                     \
+  "faddp  s14, v22.2s          \n" /* pair add to scale */                     \
+  "faddp  s15, v23.2s          \n" /* pair add to scale */                     \
+  "cmp %w[tail], #1           \n"  /* check whether has tail */                \
+  "blt  4f                    \n"  /* jump to end */                           \
+  "3:                         \n"  /* tail loop */                             \
+  "ldr     s16, [%[in]], #4   \n"  /* load in, 1 float */                      \
+  "ldr     s17, [%[w0]], #4   \n"  /* load w0, 1 float */                      \
+  "ldr     s18, [%[w1]], #4   \n"  /* load w1, 1 float */                      \
+  "ldr     s19, [%[w2]], #4   \n"  /* load w2, 1 float */                      \
+  "ldr     s20, [%[w3]], #4   \n"  /* load w3, 1 float */                      \
+  "fmadd   s8, s16, s17, s8   \n"  /* mul + add */                             \
+  "ldr     s21, [%[w4]], #4   \n"  /* load w4, 1 float */                      \
+  "fmadd   s9, s16, s18, s9   \n"  /* mul + add */                             \
+  "ldr     s22, [%[w5]], #4   \n"  /* load w5, 1 float */                      \
+  "fmadd   s10, s16, s19, s10 \n"  /* mul + add */                             \
+  "ldr     s23, [%[w6]], #4   \n"  /* load w6, 1 float */                      \
+  "fmadd   s11, s16, s20, s11 \n"  /* mul + add */                             \
+  "ldr     s24, [%[w7]], #4   \n"  /* load w7, 1 float */                      \
+  "fmadd   s12, s16, s21, s12 \n"  /* mul + add */                             \
+  "fmadd   s13, s16, s22, s13 \n"  /* mul + add */                             \
+  "fmadd   s14, s16, s23, s14 \n"  /* mul + add */                             \
+  "fmadd   s15, s16, s24, s15 \n"  /* mul + add */                             \
+  "subs %w[tail], %w[tail], #1\n"  /* sub tail loop count */                   \
+  "bne 3b                     \n"  /* jump to tail loop */
+
 #define SGEMV_KERNEL_8                                                         \
   /* check main loop */                                                        \
   "cmp %w[cnt], #1            \n" /* check whether has main loop */            \
@@ -915,10 +1000,10 @@ void sgemv_trans(const int M,
   "ldp q16, q17, [%[w3]], #32 \n"                    /* load w3 8 float */     \
   "ldp q18, q19, [%[w4]], #32 \n"                    /* load w4 8 float */     \
   "ldp q20, q21, [%[w5]], #32 \n"                    /* load w5 8 float */     \
-  "ldp q22, q23, [%[w6]], #32 \n"                    /* load w6 8 float */     \
-  "ldp q24, q25, [%[w7]], #32 \n"                    /* load w7 8 float */     \
   "fmla v0.4s, v8.4s, v10.4s  \n"                    /* mul + add*/            \
+  "ldp q22, q23, [%[w6]], #32 \n"                    /* load w6 8 float */     \
   "fmla v1.4s, v8.4s, v12.4s  \n"                    /* mul + add*/            \
+  "ldp q24, q25, [%[w7]], #32 \n"                    /* load w7 8 float */     \
   "fmla v2.4s, v8.4s, v14.4s  \n"                    /* mul + add*/            \
   "fmla v3.4s, v8.4s, v16.4s  \n"                    /* mul + add*/            \
   "fmla v4.4s, v8.4s, v18.4s  \n"                    /* mul + add*/            \
@@ -938,20 +1023,20 @@ void sgemv_trans(const int M,
   /* pair add to final result */                                               \
   "2:                         \n"  /* reduce to scale */                       \
   "faddp  v16.4s, v0.4s, v0.4s\n"  /* pair add to vector */                    \
-  "faddp  s8, v16.2s          \n"  /* pair add to scale */                     \
   "faddp  v17.4s, v1.4s, v1.4s\n"  /* pair add to vector */                    \
-  "faddp  s9, v17.2s          \n"  /* pair add to scale */                     \
   "faddp  v18.4s, v2.4s, v2.4s\n"  /* pair add to vector */                    \
-  "faddp  s10, v18.2s         \n"  /* pair add to scale */                     \
   "faddp  v19.4s, v3.4s, v3.4s\n"  /* pair add to vector */                    \
-  "faddp  s11, v19.2s         \n"  /* pair add to scale */                     \
   "faddp  v20.4s, v4.4s, v4.4s\n"  /* pair add to vector */                    \
-  "faddp  s12, v20.2s         \n"  /* pair add to scale */                     \
+  "faddp  s8, v16.2s          \n"  /* pair add to scale */                     \
   "faddp  v21.4s, v5.4s, v5.4s\n"  /* pair add to vector */                    \
-  "faddp  s13, v21.2s         \n"  /* pair add to scale */                     \
+  "faddp  s9, v17.2s          \n"  /* pair add to scale */                     \
   "faddp  v22.4s, v6.4s, v6.4s\n"  /* pair add to vector */                    \
-  "faddp  s14, v22.2s          \n" /* pair add to scale */                     \
+  "faddp  s10, v18.2s         \n"  /* pair add to scale */                     \
   "faddp  v23.4s, v7.4s, v7.4s\n"  /* pair add to vector */                    \
+  "faddp  s11, v19.2s         \n"  /* pair add to scale */                     \
+  "faddp  s12, v20.2s         \n"  /* pair add to scale */                     \
+  "faddp  s13, v21.2s         \n"  /* pair add to scale */                     \
+  "faddp  s14, v22.2s          \n" /* pair add to scale */                     \
   "faddp  s15, v23.2s          \n" /* pair add to scale */                     \
   "cmp %w[tail], #1           \n"  /* check whether has tail */                \
   "blt  4f                    \n"  /* jump to end */                           \
@@ -961,20 +1046,51 @@ void sgemv_trans(const int M,
   "ldr     s18, [%[w1]], #4   \n"  /* load w1, 1 float */                      \
   "ldr     s19, [%[w2]], #4   \n"  /* load w2, 1 float */                      \
   "ldr     s20, [%[w3]], #4   \n"  /* load w3, 1 float */                      \
-  "ldr     s21, [%[w4]], #4   \n"  /* load w4, 1 float */                      \
-  "ldr     s22, [%[w5]], #4   \n"  /* load w5, 1 float */                      \
-  "ldr     s23, [%[w6]], #4   \n"  /* load w6, 1 float */                      \
-  "ldr     s24, [%[w7]], #4   \n"  /* load w7, 1 float */                      \
   "fmadd   s8, s16, s17, s8   \n"  /* mul + add */                             \
+  "ldr     s21, [%[w4]], #4   \n"  /* load w4, 1 float */                      \
   "fmadd   s9, s16, s18, s9   \n"  /* mul + add */                             \
+  "ldr     s22, [%[w5]], #4   \n"  /* load w5, 1 float */                      \
   "fmadd   s10, s16, s19, s10 \n"  /* mul + add */                             \
+  "ldr     s23, [%[w6]], #4   \n"  /* load w6, 1 float */                      \
   "fmadd   s11, s16, s20, s11 \n"  /* mul + add */                             \
+  "ldr     s24, [%[w7]], #4   \n"  /* load w7, 1 float */                      \
   "fmadd   s12, s16, s21, s12 \n"  /* mul + add */                             \
   "fmadd   s13, s16, s22, s13 \n"  /* mul + add */                             \
   "fmadd   s14, s16, s23, s14 \n"  /* mul + add */                             \
   "fmadd   s15, s16, s24, s15 \n"  /* mul + add */                             \
   "subs %w[tail], %w[tail], #1\n"  /* sub tail loop count */                   \
   "bne 3b                     \n"  /* jump to tail loop */
+
+#define SGEMV_KERNEL_1_A53                                                     \
+  /* check main loop */                                                        \
+  "cmp %w[cnt], #1            \n" /* check whether has main loop */            \
+  "blt  2f                    \n" /* jump to tail */                           \
+  "1:                         \n" /* main loop */                              \
+  "ldr q8, [%[in]], #16       \n" /* load input 4 float */                     \
+  "ldr q10, [%[w0]], #16      \n" /* load w0 4 float */                        \
+  "ldr d9, [%[in]], #8        \n" /* load input 2 float */                     \
+  "ldr d11, [%[w0]], #8       \n" /* load input 2 float */                     \
+  "ldr x20, [%[in]], #8       \n" /* load input 2 float */                     \
+  "fmla v0.4s, v8.4s, v10.4s  \n" /* mul + add*/                               \
+  "ins v9.d[1], x20           \n" /* load input 4 float */                     \
+  "ldr x20, [%[w0]], #8       \n" /* load input 2 float */                     \
+  "ins v11.d[1], x20          \n" /* load input 4 float */                     \
+  "subs %w[cnt], %w[cnt], #1  \n" /* sub main loop count */                    \
+  "fmla v1.4s, v9.4s, v11.4s  \n" /* mul + add*/                               \
+  "bne 1b                     \n" /* jump to main loop */                      \
+  /* pair add to final result */                                               \
+  "2:                         \n" /* reduce to scale */                        \
+  "fadd   v9.4s, v0.4s, v1.4s \n" /* add 2 vector */                           \
+  "faddp  v10.4s, v9.4s, v9.4s\n" /* pair add to vector */                     \
+  "cmp %w[tail], #1           \n" /* check whether has tail */                 \
+  "faddp  s8, v10.2s          \n" /* pair add to scale */                      \
+  "blt  4f                    \n" /* jump to end */                            \
+  "3:                         \n" /* tail loop */                              \
+  "ldr     s16, [%[in]], #4   \n" /* load in, 1 float */                       \
+  "ldr     s17, [%[w0]], #4   \n" /* load w0, 1 float */                       \
+  "fmadd   s8, s16, s17, s8   \n" /* mul + add */                              \
+  "subs %w[tail], %w[tail], #1\n" /* sub tail loop count */                    \
+  "bne 3b                     \n" /* jump to tail loop */
 
 #define SGEMV_KERNEL_1                                                         \
   /* check main loop */                                                        \
@@ -1216,7 +1332,6 @@ void sgemv_trans(const int M,
   "fmul s4, s4, s5            \n"                           \
   "fadd s8, s8, s4            \n"                           \
   "str s8, [%[out]]             \n" /* save result */
-
 #else  // __aarch64__
 
 #define SGEMV_IN_4                                                    \
@@ -1477,6 +1592,45 @@ void sgemv_trans(const int M,
 #endif
 // clang-format on
 
+#ifdef __aarch64__
+#define MAIN_LOOP                                                 \
+  int out_idx = j * 8;                                            \
+  float *ptr_out = data_out + out_idx;                            \
+  const float *ptr_in = data_in;                                  \
+  const float *ptr_w0 = weights_ptr + (N * out_idx);              \
+  const float *ptr_w1 = ptr_w0 + N;                               \
+  const float *ptr_w2 = ptr_w1 + N;                               \
+  const float *ptr_w3 = ptr_w2 + N;                               \
+  const float *ptr_w4 = ptr_w3 + N;                               \
+  const float *ptr_w5 = ptr_w4 + N;                               \
+  const float *ptr_w6 = ptr_w5 + N;                               \
+  const float *ptr_w7 = ptr_w6 + N;                               \
+  const float *bias_ptr = bias + out_idx;                         \
+  float bias_local[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f}; \
+  if (flag_bias) {                                                \
+    bias_local[0] = bias_ptr[0];                                  \
+    bias_local[1] = bias_ptr[1];                                  \
+    bias_local[2] = bias_ptr[2];                                  \
+    bias_local[3] = bias_ptr[3];                                  \
+    bias_local[4] = bias_ptr[4];                                  \
+    bias_local[5] = bias_ptr[5];                                  \
+    bias_local[6] = bias_ptr[6];                                  \
+    bias_local[7] = bias_ptr[7];                                  \
+  }                                                               \
+  int cnt_loop = cnt;                                             \
+  int tail_loop = tail;
+
+#define REMAIN                                 \
+  float *ptr_out = data_out + j;               \
+  const float *ptr_in = data_in;               \
+  const float *ptr_w0 = weights_ptr + (N * j); \
+  int cnt_loop = cnt;                          \
+  int tail_loop = tail;                        \
+  float bias0 = 0.f;                           \
+  if (flag_bias) {                             \
+    bias0 = bias[j];                           \
+  }
+#endif
 void sgemv(const int M,
            const int N,
            const float *A,
@@ -1484,6 +1638,7 @@ void sgemv(const int M,
            float *y,
            float beta,
            bool flag_bias,
+           bool has_a53,
            const float *bias) {
   float *data_out = y;
   const float *data_in = x;
@@ -1496,101 +1651,77 @@ void sgemv(const int M,
 
 #ifdef __aarch64__
   int out_cnt = M >> 3;
-#pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
-    int out_idx = j * 8;
-    float *ptr_out = data_out + out_idx;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * out_idx);
-    const float *ptr_w1 = ptr_w0 + N;
-    const float *ptr_w2 = ptr_w1 + N;
-    const float *ptr_w3 = ptr_w2 + N;
-    const float *ptr_w4 = ptr_w3 + N;
-    const float *ptr_w5 = ptr_w4 + N;
-    const float *ptr_w6 = ptr_w5 + N;
-    const float *ptr_w7 = ptr_w6 + N;
-    const float *bias_ptr = bias + out_idx;
-    float bias_local[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-    if (flag_bias) {
-      bias_local[0] = bias_ptr[0];
-      bias_local[1] = bias_ptr[1];
-      bias_local[2] = bias_ptr[2];
-      bias_local[3] = bias_ptr[3];
-      bias_local[4] = bias_ptr[4];
-      bias_local[5] = bias_ptr[5];
-      bias_local[6] = bias_ptr[6];
-      bias_local[7] = bias_ptr[7];
-    }
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    // clang-format off
+#define MAIN_ASM                                                        \
+  : [in] "+r"(ptr_in), [w0] "+r"(ptr_w0), [w1] "+r"(ptr_w1), \
+    [w2] "+r"(ptr_w2), [w3] "+r"(ptr_w3), [w4] "+r"(ptr_w4), \
+    [w5] "+r"(ptr_w5), [w6] "+r"(ptr_w6), [w7] "+r"(ptr_w7), \
+    [cnt] "+r"(cnt_loop), [tail] "+r"(tail_loop)\
+  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), [vbeta] "w" (vbeta)\
+  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", \
+    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", \
+    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", \
+    "v24", "v25", "cc", "memory"
+
+#define REMAIN_ASM                                              \
+  : [in] "+r"(ptr_in), [w0] "+r"(ptr_w0), [cnt] "+r"(cnt_loop), \
+    [tail] "+r"(tail_loop)\
+  : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)\
+  : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "x20", "cc", "memory"
+
+  if (has_a53) {
     if (has_beta) {
-      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_BETA
-                 : [in] "+r"(ptr_in),
-                   [w0] "+r"(ptr_w0),
-                   [w1] "+r"(ptr_w1),
-                   [w2] "+r"(ptr_w2),
-                   [w3] "+r"(ptr_w3),
-                   [w4] "+r"(ptr_w4),
-                   [w5] "+r"(ptr_w5),
-                   [w6] "+r"(ptr_w6),
-                   [w7] "+r"(ptr_w7),
-                   [cnt] "+r"(cnt_loop),
-                   [tail] "+r"(tail_loop)
-                 : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), [vbeta] "w" (vbeta)
-                 : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                   "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                   "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
-                   "v24", "v25", "cc", "memory");
-    } else {
-      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [w4] "+r"(ptr_w4),
-                    [w5] "+r"(ptr_w5),
-                    [w6] "+r"(ptr_w6),
-                    [w7] "+r"(ptr_w7),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local)
-                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
-                    "v24", "v25", "cc", "memory");
-    }
-    // clang-format on
-  }
+#pragma omp parallel for
+      for (int j = 0; j < out_cnt; j++) {
+        MAIN_LOOP
+        asm volatile(
+            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_BETA MAIN_ASM);
+      }
 //! deal with remains
 #pragma omp parallel for
-  for (int j = out_cnt * 8; j < M; ++j) {
-    float *ptr_out = data_out + j;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    float bias0 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[j];
-    }
-    if (has_beta) {
-      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_BETA
-                   : [in] "+r"(ptr_in),
-                     [w0] "+r"(ptr_w0),
-                     [cnt] "+r"(cnt_loop),
-                     [tail] "+r"(tail_loop)
-                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
-                   : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc");
+      for (int j = out_cnt * 8; j < M; ++j) {
+        REMAIN
+        asm volatile(
+            SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_BETA REMAIN_ASM);
+      }
     } else {
-      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1
-                   : [in] "+r"(ptr_in),
-                     [w0] "+r"(ptr_w0),
-                     [cnt] "+r"(cnt_loop),
-                     [tail] "+r"(tail_loop)
-                   : [out] "r"(ptr_out), [bias0] "r"(bias0)
-                   : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc");
+#pragma omp parallel for
+      for (int j = 0; j < out_cnt; j++) {
+        MAIN_LOOP
+        asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8 MAIN_ASM);
+      }
+//! deal with remains
+#pragma omp parallel for
+      for (int j = out_cnt * 8; j < M; ++j) {
+        REMAIN
+        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1 REMAIN_ASM);
+      }
+    }
+  } else {
+    if (has_beta) {
+#pragma omp parallel for
+      for (int j = 0; j < out_cnt; j++) {
+        MAIN_LOOP
+        asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_BETA MAIN_ASM);
+      }
+//! deal with remains
+#pragma omp parallel for
+      for (int j = out_cnt * 8; j < M; ++j) {
+        REMAIN
+        asm volatile(
+            SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_BETA REMAIN_ASM);
+      }
+    } else {
+#pragma omp parallel for
+      for (int j = 0; j < out_cnt; j++) {
+        MAIN_LOOP
+        asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8 MAIN_ASM);
+      }
+//! deal with remains
+#pragma omp parallel for
+      for (int j = out_cnt * 8; j < M; ++j) {
+        REMAIN
+        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1 REMAIN_ASM);
+      }
     }
   }
 #else  // __aarch64__
@@ -1697,6 +1828,7 @@ void sgemv_relu(const int M,
                 float *y,
                 float beta,
                 bool flag_bias,
+                bool has_a53,
                 const float *bias) {
   float *data_out = y;
   const float *data_in = x;
@@ -1709,103 +1841,65 @@ void sgemv_relu(const int M,
 
 #ifdef __aarch64__
   int out_cnt = M >> 3;
-#pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
-    int out_idx = j * 8;
-    float *ptr_out = data_out + out_idx;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * out_idx);
-    const float *ptr_w1 = ptr_w0 + N;
-    const float *ptr_w2 = ptr_w1 + N;
-    const float *ptr_w3 = ptr_w2 + N;
-    const float *ptr_w4 = ptr_w3 + N;
-    const float *ptr_w5 = ptr_w4 + N;
-    const float *ptr_w6 = ptr_w5 + N;
-    const float *ptr_w7 = ptr_w6 + N;
-    const float *bias_ptr = bias + out_idx;
-    float bias_local[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-    if (flag_bias) {
-      bias_local[0] = bias_ptr[0];
-      bias_local[1] = bias_ptr[1];
-      bias_local[2] = bias_ptr[2];
-      bias_local[3] = bias_ptr[3];
-      bias_local[4] = bias_ptr[4];
-      bias_local[5] = bias_ptr[5];
-      bias_local[6] = bias_ptr[6];
-      bias_local[7] = bias_ptr[7];
-    }
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    // clang-format off
+  if (has_a53) {
     if (has_beta) {
-      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU_BETA
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [w4] "+r"(ptr_w4),
-                    [w5] "+r"(ptr_w5),
-                    [w6] "+r"(ptr_w6),
-                    [w7] "+r"(ptr_w7),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), [vbeta] "w"(vbeta)
-                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
-                    "v24", "v25", "cc", "memory");
-    } else {
-      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [w4] "+r"(ptr_w4),
-                    [w5] "+r"(ptr_w5),
-                    [w6] "+r"(ptr_w6),
-                    [w7] "+r"(ptr_w7),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local)
-                  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                    "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
-                    "v24", "v25", "cc", "memory");
-    }
-    // clang-format on
-  }
+#pragma omp parallel for
+      for (int j = 0; j < out_cnt; j++) {
+        MAIN_LOOP
+        asm volatile(
+            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_RELU_BETA MAIN_ASM);
+      }
 //! deal with remains
 #pragma omp parallel for
-  for (int j = out_cnt * 8; j < M; ++j) {
-    float *ptr_out = data_out + j;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    float bias0 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[j];
-    }
-    if (has_beta) {
-      asm volatile(
-          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU_BETA
-          : [in] "+r"(ptr_in),
-            [w0] "+r"(ptr_w0),
-            [cnt] "+r"(cnt_loop),
-            [tail] "+r"(tail_loop)
-          : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
-          : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+      for (int j = out_cnt * 8; j < M; ++j) {
+        REMAIN
+        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU_BETA
+                         REMAIN_ASM);
+      }
     } else {
-      asm volatile(
-          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU
-          : [in] "+r"(ptr_in),
-            [w0] "+r"(ptr_w0),
-            [cnt] "+r"(cnt_loop),
-            [tail] "+r"(tail_loop)
-          : [out] "r"(ptr_out), [bias0] "r"(bias0)
-          : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "cc", "memory");
+#pragma omp parallel for
+      for (int j = 0; j < out_cnt; j++) {
+        MAIN_LOOP
+        asm volatile(
+            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_RELU MAIN_ASM);
+      }
+//! deal with remains
+#pragma omp parallel for
+      for (int j = out_cnt * 8; j < M; ++j) {
+        REMAIN
+        asm volatile(
+            SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU REMAIN_ASM);
+      }
+    }
+  } else {
+    if (has_beta) {
+#pragma omp parallel for
+      for (int j = 0; j < out_cnt; j++) {
+        MAIN_LOOP
+        asm volatile(
+            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_RELU_BETA MAIN_ASM);
+      }
+//! deal with remains
+#pragma omp parallel for
+      for (int j = out_cnt * 8; j < M; ++j) {
+        REMAIN
+        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU_BETA
+                         REMAIN_ASM);
+      }
+    } else {
+#pragma omp parallel for
+      for (int j = 0; j < out_cnt; j++) {
+        MAIN_LOOP
+        asm volatile(
+            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_RELU MAIN_ASM);
+      }
+//! deal with remains
+#pragma omp parallel for
+      for (int j = out_cnt * 8; j < M; ++j) {
+        REMAIN
+        asm volatile(
+            SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU REMAIN_ASM);
+      }
     }
   }
 #else  // __aarch64__
@@ -1928,31 +2022,7 @@ void sgemv_relu6(const int M,
   int out_cnt = M >> 3;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
-    int out_idx = j * 8;
-    float *ptr_out = data_out + out_idx;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * out_idx);
-    const float *ptr_w1 = ptr_w0 + N;
-    const float *ptr_w2 = ptr_w1 + N;
-    const float *ptr_w3 = ptr_w2 + N;
-    const float *ptr_w4 = ptr_w3 + N;
-    const float *ptr_w5 = ptr_w4 + N;
-    const float *ptr_w6 = ptr_w5 + N;
-    const float *ptr_w7 = ptr_w6 + N;
-    const float *bias_ptr = bias + out_idx;
-    float bias_local[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-    if (flag_bias) {
-      bias_local[0] = bias_ptr[0];
-      bias_local[1] = bias_ptr[1];
-      bias_local[2] = bias_ptr[2];
-      bias_local[3] = bias_ptr[3];
-      bias_local[4] = bias_ptr[4];
-      bias_local[5] = bias_ptr[5];
-      bias_local[6] = bias_ptr[6];
-      bias_local[7] = bias_ptr[7];
-    }
-    int cnt_loop = cnt;
-    int tail_loop = tail;
+    MAIN_LOOP
     // clang-format off
     if (has_beta) {
       asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU6_BETA
@@ -1998,15 +2068,7 @@ void sgemv_relu6(const int M,
 //! deal with remains
 #pragma omp parallel for
   for (int j = out_cnt * 8; j < M; ++j) {
-    float *ptr_out = data_out + j;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    float bias0 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[j];
-    }
+    REMAIN
     if (has_beta) {
       asm volatile(
           SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6_BETA
@@ -2153,31 +2215,7 @@ void sgemv_leakey_relu(const int M,
   int out_cnt = M >> 3;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {
-    int out_idx = j * 8;
-    float *ptr_out = data_out + out_idx;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * out_idx);
-    const float *ptr_w1 = ptr_w0 + N;
-    const float *ptr_w2 = ptr_w1 + N;
-    const float *ptr_w3 = ptr_w2 + N;
-    const float *ptr_w4 = ptr_w3 + N;
-    const float *ptr_w5 = ptr_w4 + N;
-    const float *ptr_w6 = ptr_w5 + N;
-    const float *ptr_w7 = ptr_w6 + N;
-    const float *bias_ptr = bias + out_idx;
-    float bias_local[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-    if (flag_bias) {
-      bias_local[0] = bias_ptr[0];
-      bias_local[1] = bias_ptr[1];
-      bias_local[2] = bias_ptr[2];
-      bias_local[3] = bias_ptr[3];
-      bias_local[4] = bias_ptr[4];
-      bias_local[5] = bias_ptr[5];
-      bias_local[6] = bias_ptr[6];
-      bias_local[7] = bias_ptr[7];
-    }
-    int cnt_loop = cnt;
-    int tail_loop = tail;
+    MAIN_LOOP
     // clang-format off
     if (has_beta) {
       asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_LEAKEY_RELU_BETA
@@ -2223,15 +2261,7 @@ void sgemv_leakey_relu(const int M,
 //! deal with remains
 #pragma omp parallel for
   for (int j = out_cnt * 8; j < M; ++j) {
-    float *ptr_out = data_out + j;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    float bias0 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[j];
-    }
+    REMAIN
     if (has_beta) {
       asm volatile(
           SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU_BETA
