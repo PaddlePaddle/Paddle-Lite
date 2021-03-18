@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/intelfpga/target_wrapper.h"
-#include "lite/backends/intelfpga/lldrv/intelfpgadrv.h"
+#include "lite/backends/intel_fpga/target_wrapper.h"
+#include "lite/backends/intel_fpga/lldrv/intelfpgadrv.h"
 #include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
 
 void* TargetWrapper<TARGET(kIntelFPGA)>::Malloc(size_t size) {
-  return intelfpga::intelfpga_malloc(size);
+  return intel_fpga::intel_fpga_malloc(size);
 }
 
 void TargetWrapper<TARGET(kIntelFPGA)>::Free(void* ptr) {
-  intelfpga::intelfpga_free(ptr);
+  intel_fpga::intel_fpga_free(ptr);
 }
 
 void TargetWrapper<TARGET(kIntelFPGA)>::MemcpySync(void* dst,

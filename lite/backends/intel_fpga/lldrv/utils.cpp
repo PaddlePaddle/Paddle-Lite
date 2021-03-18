@@ -17,11 +17,11 @@ limitations under the License. */
 #include <fstream>
 #include <string>
 
-#include "lite/backends/intelfpga/lldrv/utils.h"
+#include "lite/backends/intel_fpga/lldrv/utils.h"
 
 namespace paddle {
 namespace lite {
-namespace intelfpga {
+namespace intel_fpga {
 
 float find_max(const float* data, int size) {
   float max = 0.0;
@@ -67,6 +67,6 @@ void quantize_s32(const float* src, int32_t* dst, int size, float factor) {
     dst[i] = (int32_t)fdata;
   }
 }
-}  // namespace intelfpga
+}  // namespace intel_fpga
 }  // namespace lite
 }  // namespace paddle

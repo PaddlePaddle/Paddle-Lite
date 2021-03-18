@@ -24,22 +24,22 @@ limitations under the License. */
 #include <map>
 #include <utility>
 
-#include "lite/backends/intelfpga/lldrv/intelfpgadrv.h"
+#include "lite/backends/intel_fpga/lldrv/intelfpgadrv.h"
 
 namespace paddle {
 namespace lite {
-namespace intelfpga {
+namespace intel_fpga {
 
-/// FD of intelfpga
-static int intelfpga_fd = -1;
+/// FD of intel_fpga
+static int intel_fpga_fd = -1;
 
 /// Memory blocks
-static struct intelfpga_memblk_s mb, ms, mi, mk, mo;
+static struct intel_fpga_memblk_s mb, ms, mi, mk, mo;
 
-int intelfpga_open() {
-  if (intelfpga_fd < 0) {
-    intelfpga_fd = open("/dev/intelfpgadrv0", O_RDWR);
-    if (intelfpga_fd < 0) {
+int intel_fpga_open() {
+  if (intel_fpga_fd < 0) {
+    intel_fpga_fd = open("/dev/intelfpgadrv0", O_RDWR);
+    if (intel_fpga_fd < 0) {
       return -1;
     }
     memset(&mb, 0, sizeof(mb));
@@ -52,8 +52,8 @@ int intelfpga_open() {
   return 0;
 }
 
-void intelfpga_close() {
-  if (intelfpga_fd < 0) return;
+void intel_fpga_close() {
+  if (intel_fpga_fd < 0) return;
 
   if (mb.addr) {
     free(mb.addr);
@@ -70,16 +70,16 @@ void intelfpga_close() {
   if (mo.addr) {
     free(mo.addr);
   }
-  close(intelfpga_fd);
-  intelfpga_fd = -1;
+  close(intel_fpga_fd);
+  intel_fpga_fd = -1;
 }
 
 /// memory management;
-void* intelfpga_malloc(size_t size) { return malloc(size); }
+void* intel_fpga_malloc(size_t size) { return malloc(size); }
 
-void intelfpga_free(void* ptr) { free(ptr); }
+void intel_fpga_free(void* ptr) { free(ptr); }
 
-void* intelfpga_mbias(size_t size) {
+void* intel_fpga_mbias(size_t size) {
   if (mb.addr) {
     if (mb.size >= size) {
       return mb.addr;
@@ -93,7 +93,7 @@ void* intelfpga_mbias(size_t size) {
   return mb.addr;
 }
 
-void* intelfpga_mscale(size_t size) {
+void* intel_fpga_mscale(size_t size) {
   if (ms.addr) {
     if (ms.size >= size) {
       return ms.addr;
@@ -108,7 +108,7 @@ void* intelfpga_mscale(size_t size) {
   return ms.addr;
 }
 
-void* intelfpga_minput(size_t size) {
+void* intel_fpga_minput(size_t size) {
   if (mi.addr) {
     if (mi.size >= size) {
       return mi.addr;
@@ -123,7 +123,7 @@ void* intelfpga_minput(size_t size) {
   return mi.addr;
 }
 
-void* intelfpga_mkernel(size_t size) {
+void* intel_fpga_mkernel(size_t size) {
   if (mk.addr) {
     if (mk.size >= size) {
       return mk.addr;
@@ -138,7 +138,7 @@ void* intelfpga_mkernel(size_t size) {
   return mk.addr;
 }
 
-void* intelfpga_moutput(size_t size) {
+void* intel_fpga_moutput(size_t size) {
   if (mo.addr) {
     if (mo.size >= size) {
       return mo.addr;
@@ -153,40 +153,40 @@ void* intelfpga_moutput(size_t size) {
   return mo.addr;
 }
 
-void intelfpga_copy(void* dst, void* src, int size) { memcpy(dst, src, size); }
+void intel_fpga_copy(void* dst, void* src, int size) { memcpy(dst, src, size); }
 
-int intelfpga_info(struct intelfpga_info_s* args) {
-  int cmd = INTELFPGA_IOCTL_MAKE(INTELFPGA_CMD_INFO);
+int intel_fpga_info(struct intel_fpga_info_s* args) {
+  int cmd = INTEL_FPGA_IOCTL_MAKE(INTEL_FPGA_CMD_INFO);
 
-  if (intelfpga_open()) return -1;
+  if (intel_fpga_open()) return -1;
 
-  return ioctl(intelfpga_fd, cmd, args);
+  return ioctl(intel_fpga_fd, cmd, args);
 }
 
-int intelfpga_conv(struct intelfpga_conv_s* args) {
-  int cmd = INTELFPGA_IOCTL_MAKE(INTELFPGA_CMD_CONV);
+int intel_fpga_conv(struct intel_fpga_conv_s* args) {
+  int cmd = INTEL_FPGA_IOCTL_MAKE(INTEL_FPGA_CMD_CONV);
 
-  if (intelfpga_open()) return -1;
+  if (intel_fpga_open()) return -1;
 
-  return ioctl(intelfpga_fd, cmd, args);
+  return ioctl(intel_fpga_fd, cmd, args);
 }
 
-int intelfpga_pooling(struct intelfpga_pool_s* args) {
-  int cmd = INTELFPGA_IOCTL_MAKE(INTELFPGA_CMD_POOL);
+int intel_fpga_pooling(struct intel_fpga_pool_s* args) {
+  int cmd = INTEL_FPGA_IOCTL_MAKE(INTEL_FPGA_CMD_POOL);
 
-  if (intelfpga_open()) return -1;
+  if (intel_fpga_open()) return -1;
 
-  return ioctl(intelfpga_fd, cmd, args);
+  return ioctl(intel_fpga_fd, cmd, args);
 }
 
-int intelfpga_fullconnect(struct intelfpga_fcon_s* args) {
-  int cmd = INTELFPGA_IOCTL_MAKE(INTELFPGA_CMD_FCON);
+int intel_fpga_fullconnect(struct intel_fpga_fcon_s* args) {
+  int cmd = INTEL_FPGA_IOCTL_MAKE(INTEL_FPGA_CMD_FCON);
 
-  if (intelfpga_open()) return -1;
+  if (intel_fpga_open()) return -1;
 
-  return ioctl(intelfpga_fd, cmd, args);
+  return ioctl(intel_fpga_fd, cmd, args);
 }
 
-}  // namespace intelfpga
+}  // namespace intel_fpga
 }  // namespace lite
 }  // namespace paddle

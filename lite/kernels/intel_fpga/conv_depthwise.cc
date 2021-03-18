@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/intelfpga/conv_depthwise.h"
+#include "lite/kernels/intel_fpga/conv_depthwise.h"
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace intelfpga {
+namespace intel_fpga {
 
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {}
@@ -122,7 +122,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
         w_scale_.data());
 }
 
-}  // namespace intelfpga
+}  // namespace intel_fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -21,13 +21,13 @@ limitations under the License. */
 
 namespace paddle {
 namespace lite {
-namespace intelfpga {
+namespace intel_fpga {
 
 float find_max(const float* data, int size);
 
 void quantize_s8(const float* src, int8_t* dst, int size, float factor);
 void quantize_s32(const float* src, int32_t* dst, int size, float factor);
 
-}  // namespace intelfpga
+}  // namespace intel_fpga
 }  // namespace lite
 }  // namespace paddle

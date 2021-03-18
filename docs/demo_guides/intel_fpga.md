@@ -1,6 +1,6 @@
 # PaddleLite使用IntelFPGA预测部署
 
-Paddle Lite支持基于arm的IntelFPGA c5的模型预测，提供armv7hf的交叉编译
+Paddle Lite支持基于arm的IntelFPGA C5的模型预测，提供armv7hf的交叉编译
 
 PaddleLite通过调用底层驱动实现对FPGA硬件的调度，以及对应的API接口。
 
@@ -27,11 +27,11 @@ Lite支持IntelFPGA作为后端硬件进行模型推理，其主要特性如下�
 
 ## 编译
 
-需要提前准备带有IntelFPGAdrv.ko的IntelFPGA开发板C5MB/C5TB和Lite代码
+需要提前准备带有intelfpgadrv.ko的IntelFPGA开发板C5MB/C5TB和Lite代码
 
 CMAKE编译选项：
 
-- 设置`LITE_WITH_INTELFPGA=ON`和`LITE_WITH_ARM=ON`
+- 设置`LITE_WITH_INTEL_FPGA=ON`和`LITE_WITH_ARM=ON`
 
 其他编译选项与ARM编译相同，可以参考[“Paddle Lite在Docker下的ARM编译”](../source_compile/compile_linux)。
 
@@ -47,11 +47,11 @@ CMAKE编译选项：
         -DLITE_WITH_OPENMP=ON   \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=OFF \
-        -DLITE_WITH_INTELFPGA=ON \
+        -DLITE_WITH_INTEL_FPGA=ON \
         -DARM_TARGET_OS=armlinux 
     make publish_inference -j2
 ```
-Lite提供FPGA编译脚本，位于lite/tools/build_intel_fpga.sh full_publish，在Lite根目录执行该脚本即可编译
+Lite提供IntelFPGA编译脚本，位于lite/tools/build_intel_fpga.sh full_publish，在Lite根目录执行该脚本即可编译
 
 ## 运行示例
 
@@ -68,7 +68,7 @@ Password: #密码：Awcloud@123
 #进入/opt目录[开发板执行]
 cd /opt
 #在运行模型前需要加载FPGA驱动[开发板执行]
-insmod driver/IntelFPGAdrv.ko
+insmod driver/intelfpgadrv.ko
 ```
 
 - **使用IntelFPGA进行模型预测**

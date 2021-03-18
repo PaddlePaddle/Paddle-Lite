@@ -25,7 +25,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace intelfpga {
+namespace intel_fpga {
 
 template <PrecisionType Ptype, PrecisionType Otype>
 class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
@@ -61,7 +61,7 @@ class DepthwiseConv : public KernelLite<TARGET(kARM), Ptype> {
   std::vector<float> w_scale_;
 };
 
-}  // namespace intelfpga
+}  // namespace intel_fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

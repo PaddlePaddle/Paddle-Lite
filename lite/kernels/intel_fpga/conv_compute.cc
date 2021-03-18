@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/intelfpga/conv_compute.h"
+#include "lite/kernels/intel_fpga/conv_compute.h"
 #include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
-#include "lite/kernels/intelfpga/conv_depthwise.h"
-#include "lite/kernels/intelfpga/conv_gemmlike.h"
+#include "lite/kernels/intel_fpga/conv_depthwise.h"
+#include "lite/kernels/intel_fpga/conv_gemmlike.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace intelfpga {
+namespace intel_fpga {
 #define PARAM_INIT                                                           \
   auto& param = this->Param<param_t>();                                      \
   auto w_dims = param.filter->dims();                                        \
@@ -73,13 +73,13 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   is_first_epoch_ = false;
 }
 
-}  // namespace intelfpga
+}  // namespace intel_fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-typedef paddle::lite::kernels::intelfpga::ConvCompute<PRECISION(kFloat),
-                                                      PRECISION(kFloat)>
+typedef paddle::lite::kernels::intel_fpga::ConvCompute<PRECISION(kFloat),
+                                                       PRECISION(kFloat)>
     ConvFp32;
 
 REGISTER_LITE_KERNEL(conv2d, kIntelFPGA, kFloat, kNCHW, ConvFp32, def)

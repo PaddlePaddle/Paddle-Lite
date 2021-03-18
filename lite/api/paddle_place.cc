@@ -83,7 +83,7 @@ const std::string& TargetToStr(TargetType target) {
                                               "apu",
                                               "huawei_ascend_npu",
                                               "imagination_nna",
-                                              "intelfpga"};
+                                              "intel_fpga"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
   return target2string[x];

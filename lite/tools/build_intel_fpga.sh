@@ -25,7 +25,7 @@ OPTMODEL_DIR=""
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
 # options of compiling intel fpga.
-WITH_INTELFPGA=ON
+WITH_INTEL_FPGA=ON
 # options of adding training ops
 WITH_TRAIN=OFF
 # num of threads used during compiling..
@@ -59,7 +59,7 @@ function init_cmake_mutable_options {
                         -DLITE_BUILD_TAILOR=$WITH_STRIP \
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
-                        -DLITE_WITH_INTELFPGA=$WITH_INTELFPGA \
+                        -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN"
 }
 #####################################################################################################
@@ -290,8 +290,8 @@ function main {
                 shift
                 ;;
             # compiling lib which can operate on intel fpga.
-            --with_intelfpga=*)
-                WITH_INTELFPGA="${i#*=}"
+            --with_intel_fpga=*)
+                WITH_INTEL_FPGA="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF

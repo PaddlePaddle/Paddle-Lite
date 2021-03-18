@@ -328,7 +328,7 @@ class Context<TargetType::kFPGA> {
 };
 #endif
 
-#ifdef LITE_WITH_INTELFPGA
+#ifdef LITE_WITH_INTEL_FPGA
 // TODO(xbeu): add needed implementation to context
 template <>
 class Context<TargetType::kIntelFPGA> {
@@ -563,7 +563,7 @@ class ContextScheduler {
             &ctx->As<FPGAContext>());
         break;
 #endif
-#ifdef LITE_WITH_INTELFPGA
+#ifdef LITE_WITH_INTEL_FPGA
       case TARGET(kIntelFPGA):
         kernel_contexts_[TargetType::kIntelFPGA]
             .As<IntelFPGAContext>()
@@ -625,7 +625,7 @@ class ContextScheduler {
 #ifdef LITE_WITH_FPGA
     InitContext<TargetType::kFPGA, FPGAContext>();
 #endif
-#ifdef LITE_WITH_INTELFPGA
+#ifdef LITE_WITH_INTEL_FPGA
     InitContext<TargetType::kIntelFPGA, IntelFPGAContext>();
 #endif
 #ifdef LITE_WITH_NPU

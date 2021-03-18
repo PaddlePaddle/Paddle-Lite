@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/intelfpga/conv_gemmlike.h"
+#include "lite/kernels/intel_fpga/conv_gemmlike.h"
 #include <vector>
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
-#include "lite/backends/intelfpga/lldrv/intelfpgadrv.h"
-#include "lite/backends/intelfpga/lldrv/utils.h"
+#include "lite/backends/intel_fpga/lldrv/intelfpgadrv.h"
+#include "lite/backends/intel_fpga/lldrv/utils.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace intelfpga {
+namespace intel_fpga {
 
 template <>
 void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
@@ -67,7 +67,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
   if (kh > 1 && kw > 1) {
     int i, j, il, kl, ol, l, m, n, k;
-    lite::intelfpga::intelfpga_conv_s conv;
+    lite::intel_fpga::intel_fpga_conv_s conv;
 
     conv.at = static_cast<uint32_t>(param.activation_param.active_type);
     if (conv.at == 4) {
@@ -100,26 +100,26 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     kl = conv.o.oc * conv.i.ic * conv.k.kh * conv.k.kw;
     ol = conv.o.on * conv.o.oc * conv.o.oh * conv.o.ow;
     conv.ia = static_cast<int8_t*>(
-        lite::intelfpga::intelfpga_minput(il * sizeof(int8_t)));
+        lite::intel_fpga::intel_fpga_minput(il * sizeof(int8_t)));
     conv.ka = static_cast<int8_t*>(
-        lite::intelfpga::intelfpga_mkernel(kl * sizeof(int8_t)));
+        lite::intel_fpga::intel_fpga_mkernel(kl * sizeof(int8_t)));
     conv.oa = static_cast<int32_t*>(
-        lite::intelfpga::intelfpga_moutput(ol * sizeof(int32_t)));
+        lite::intel_fpga::intel_fpga_moutput(ol * sizeof(int32_t)));
     if (conv.ia && conv.ka && conv.oa) {
-      float fd = lite::intelfpga::find_max(i_data, il);
-      float fw = lite::intelfpga::find_max(w_data, kl);
+      float fd = lite::intel_fpga::find_max(i_data, il);
+      float fw = lite::intel_fpga::find_max(w_data, kl);
 
       fd = 127.0 / fd;
       fw = 127.0 / fw;
 
       // y = 127.0 / fmax
       // y = x * scale;
-      lite::intelfpga::quantize_s8(i_data, conv.ia, il, fd);
-      lite::intelfpga::quantize_s8(w_data, conv.ka, kl, fw);
+      lite::intel_fpga::quantize_s8(i_data, conv.ia, il, fd);
+      lite::intel_fpga::quantize_s8(w_data, conv.ka, kl, fw);
 
       // perform conv2d
-      if (lite::intelfpga::intelfpga_conv(&conv)) {
-        std::cout << "intelfpga_conv error" << std::endl;
+      if (lite::intel_fpga::intel_fpga_conv(&conv)) {
+        std::cout << "intel_fpga_conv error" << std::endl;
       }
       // Convert int32 back to fp32, [n,c,h,w]
       // 1. y = x / scale
@@ -179,7 +179,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   }
 }
 
-}  // namespace intelfpga
+}  // namespace intel_fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

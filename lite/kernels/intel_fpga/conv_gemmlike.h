@@ -26,7 +26,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace intelfpga {
+namespace intel_fpga {
 
 template <PrecisionType Ptype, PrecisionType Otype>
 class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
@@ -106,7 +106,7 @@ class GemmLikeConv : public KernelLite<TARGET(kARM), Ptype> {
   int workspace_size_{0};
 };
 
-}  // namespace intelfpga
+}  // namespace intel_fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

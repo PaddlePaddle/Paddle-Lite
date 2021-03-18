@@ -20,7 +20,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace intelfpga {
+namespace intel_fpga {
 
 template <PrecisionType Ptype, PrecisionType OutType>
 class ConvCompute : public KernelLite<TARGET(kIntelFPGA), Ptype> {
@@ -49,7 +49,7 @@ class ConvCompute : public KernelLite<TARGET(kIntelFPGA), Ptype> {
   KernelLite<TARGET(kARM), Ptype>* impl_{nullptr};
 };
 
-}  // namespace intelfpga
+}  // namespace intel_fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
