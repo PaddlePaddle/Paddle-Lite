@@ -154,6 +154,25 @@ void XPUMultiEncoderCompute::Run() {
   encoder_param_.slice_axes = param.slice_axes;
   const bool norm_before_ = param.norm_before;
 
+  if (param.SeqLod && param.SeqLod->data<int>()) {
+    encoder_param_.seq_lod.resize(param.SeqLod->numel());
+    memcpy(encoder_param_.seq_lod.data(),
+           param.SeqLod->data<int>(),
+           sizeof(int) * param.SeqLod->numel());
+    encoder_param_.adaptive_seqlen = true;
+    encoder_param_.batch_size = param.SeqLod->numel() - 1;
+    int seq_pad_len = 0;
+    for (auto i = 1; i < param.SeqLod->numel(); i++) {
+      int cur_seqlen =
+          param.SeqLod->data<int>()[i] - param.SeqLod->data<int>()[i - 1];
+      seq_pad_len = seq_pad_len > cur_seqlen ? seq_pad_len : cur_seqlen;
+    }
+    encoder_param_.from_seq_len = seq_pad_len;
+    encoder_param_.to_seq_len = seq_pad_len;
+    param.output->Resize(
+        {param.SeqLod->numel() - 1, seq_pad_len, param.input->dims()[2]});
+  }
+
   int r = -1;
 
   if (norm_before_) {
@@ -176,6 +195,8 @@ REGISTER_LITE_KERNEL(__xpu__multi_encoder,
                      paddle::lite::kernels::xpu::XPUMultiEncoderCompute,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("SeqLod",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("FCWeight", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("FCBias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("LNScale", {LiteType::GetTensorTy(TARGET(kXPU))})
