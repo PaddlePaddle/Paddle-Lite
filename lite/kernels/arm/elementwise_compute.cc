@@ -22,6 +22,9 @@
 #include "lite/backends/arm/math/elementwise_common_broadcast_config.h"
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/kernels/host/elementwise_op_func.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -279,22 +282,11 @@ void ElementwiseAddCompute<T, PType>::Run() {
       paddle::lite::kernels::host::naive_add<T>);
 }
 
-/*template <>
-void ElementwiseAddCompute<int64_t, PRECISION(kInt64)>::Run() {
-  elementwise_compute_template<operators::ElementwiseParam,
-                               int64_t,
-                               OprandSwapable::YES,
-                               arm_math::NullNeonConfig>(
-      this,
-      lite::arm::math::elementwise_add_broadcast<int64_t>,
-      lite::arm::math::elementwise_add<int64_t>,
-      paddle::lite::kernels::host::naive_add<int64_t>);
-}
-*/
-
 template <typename T, PrecisionType PType>
 void ElementwiseAddActivationCompute<T, PType>::Run() {
-  auto& param = Param<operators::FusionElementwiseActivationParam>();
+  // auto& param = Param<operators::FusionElementwiseActivationParam>();
+  auto& param =
+      this->template Param<operators::FusionElementwiseActivationParam>();
   bool act_supported = false;
   if (param.act_type == "relu") {
     act_supported = true;
@@ -630,16 +622,6 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();
-
-using elementwise_sub_int64_t =
-    paddle::lite::kernels::arm::ElementwiseSubCompute<int64_t,
-                                                      PRECISION(kInt64)>;
-REGISTER_LITE_KERNEL(
-    elementwise_sub, kARM, kInt64, kNCHW, elementwise_sub_int64_t, int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

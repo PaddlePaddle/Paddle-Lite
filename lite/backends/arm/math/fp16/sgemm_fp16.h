@@ -14,25 +14,36 @@
 
 #pragma once
 
+#include <cmath>
+#include "lite/backends/arm/math/fp16/gemm_fp16.h"
+#include "lite/backends/arm/math/fp16/gemv_fp16.h"
+#include "lite/core/context.h"
+#include "lite/core/device_info.h"
+
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
-typedef __fp16 float16_t;
-template <typename T>
-void elementwise_add(const T* dinx, const T* diny, T* dout, int num);
 
-template <typename T>
-void elementwise_add_relu(const T* dinx, const T* diny, T* dout, int num);
+void sgemm_fp16(bool is_transA,
+                bool is_transB,
+                int M,
+                int N,
+                int K,
+                float16_t alpha,
+                const float16_t* A,
+                int lda,
+                const float16_t* B,
+                int ldb,
+                float16_t beta,
+                float16_t* C,
+                int ldc,
+                const float16_t* bias,
+                bool is_bias,
+                const operators::ActivationParam act_param,
+                ARMContext* ctx);
 
-template <typename T>
-void elementwise_add_broadcast(
-    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
-
-template <typename T>
-void elementwise_add_relu_broadcast(
-    const T* dinx, const T* diny, T* dout, int batch, int channels, int num);
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

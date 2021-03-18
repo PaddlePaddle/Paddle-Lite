@@ -23,8 +23,8 @@ namespace fp16 {
 #define LOOP_CNT(num)        \
   int cnt = num >> 5;        \
   int remain = num & 31;     \
-  int cnt_rem = remain >> 3; \
-  int cnt_rem = remain & 7;
+  int rem_cnt = remain >> 3; \
+  int rem_rem = remain & 7;
 
 #ifdef __aarch64__
 #define INIT_1                   \
@@ -32,14 +32,13 @@ namespace fp16 {
   "ldr q4, [%[diny_ptr]], #8 \n" \
   "1: \n"
 
-#define ADD_COMPUTE_1            \
-  "fadd v8.8h, v0.8h, v4.8h  \n" \
-  "subs %w[cnt], %w[cnt], #1 \n" \
-  "ldr q0, [%[dinx_ptr]], #8 \n" \
+#define ADD_COMPUTE_1                   \
+  "fadd v8.8h, v0.8h, v4.8h  \n"        \
+  "subs %w[cnt_num], %w[cnt_num], #1\n" \
+  "ldr q0, [%[dinx_ptr]], #8 \n"        \
   "ldr q4, [%[diny_ptr]], #8 \n"
 
 #define RELU_1 "fmax v8.8h, v8.8h, %[vzero].8h\n"
-
 #define STORE_1                   \
   "str q8, [%[dout_ptr]], #8  \n" \
   "bne 1b\n"
@@ -62,7 +61,7 @@ namespace fp16 {
 
 #define RELU                           \
   "fmax v8.8h, v8.8h, %[vzero].8h\n"   \
-  "fmax v9.8h, v9.8h, %[v[zero].8h\n"  \
+  "fmax v9.8h, v9.8h, %[vzero].8h\n"   \
   "fmax v10.8h, v10.8h, %[vzero].8h\n" \
   "fmax v11.8h, v11.8h, %[vzero].8h\n"
 
@@ -77,10 +76,6 @@ void elementwise_add<float16_t>(const float16_t* dinx,
                                 const float16_t* diny,
                                 float16_t* dout,
                                 int num) {
-  //   int cnt = num >> 5;
-  //   int remain = num & 31;
-  //   int cnt_rem = remain >> 3;
-  //   int cnt_rem = remain & 7;
   LOOP_CNT(num)
 #pragma omp parallel for
   for (int i = 0; i < cnt; i++) {
@@ -88,7 +83,7 @@ void elementwise_add<float16_t>(const float16_t* dinx,
     const float16_t* dinx_ptr = dinx + stride;
     const float16_t* diny_ptr = diny + stride;
     float16_t* dout_ptr = dout + stride;
-    asm volatile(INIT COMPUTE STORE
+    asm volatile(INIT ADD_COMPUTE STORE
                  :
                  : [dinx_ptr] "r"(dinx_ptr),
                    [diny_ptr] "r"(diny_ptr),
@@ -107,33 +102,14 @@ void elementwise_add<float16_t>(const float16_t* dinx,
                    "v9",
                    "v10",
                    "v11");
-
-    // float16x8_t dinx0 = vld1q_f16(dinx_ptr);
-    // float16x8_t diny0 = vld1q_f16(diny_ptr);
-    // float16x8_t dinx1 = vld1q_f16(dinx_ptr + 8);
-    // float16x8_t diny1 = vld1q_f16(diny_ptr + 8);
-    // float16x8_t dinx2 = vld1q_f16(dinx_ptr + 16);
-    // float16x8_t diny2 = vld1q_f16(diny_ptr + 16);
-    // float16x8_t dinx3 = vld1q_f16(dinx_ptr + 24);
-    // float16x8_t diny3 = vld1q_f16(diny_ptr + 24);
-
-    // dinx0 = vaddq_f16(dinx0, diny0);
-    // dinx1 = vaddq_f16(dinx1, diny1);
-    // dinx2 = vaddq_f16(dinx2, diny2);
-    // dinx3 = vaddq_f16(dinx3, diny3);
-
-    // vst1q_f16(dout_ptr, dinx0);
-    // vst1q_f16(dout_ptr + 8, dinx1);
-    // vst1q_f16(dout_ptr + 16, dinx2);
-    // vst1q_f16(dout_ptr + 24, dinx3);
   }
   int stride = cnt << 5;
-  if (cnt_rem > 0) {
+  if (rem_cnt > 0) {
     const float16_t* dinx_ptr = dinx + stride;
     const float16_t* diny_ptr = diny + stride;
     float16_t* dout_ptr = dout + stride;
-    int cnt_num = cnt_rem;
-    asm volatile(INIT_1 COMPUTE_1 STORE_1
+    int cnt_num = rem_cnt;
+    asm volatile(INIT_1 ADD_COMPUTE_1 STORE_1
                  : [cnt_num] "+r"(cnt_num),
                    [dinx_ptr] "+r"(dinx_ptr),
                    [diny_ptr] "+r"(diny_ptr),
@@ -153,22 +129,13 @@ void elementwise_add<float16_t>(const float16_t* dinx,
                    "v9",
                    "v10",
                    "v11");
-    // for (int i = 0; i < cnt_rem; i++) {
-    //   float16x8_t dinx0 = vld1q_f16(dinx_ptr);
-    //   float16x8_t diny0 = vld1q_f16(diny_ptr);
-    //   dinx_ptr += 8;
-    //   diny_ptr += 8;
-    //   dinx0 = vaddq_f16(dinx0, diny0);
-    //   vst1q_f16(dout_ptr, dinx0);
-    //   dout_ptr += 8;
-    // }
   }
-  if (cnt_rem > 0) {
-    stride += (cnt_rem << 3);
-    const float* dinx_ptr = dinx + stride;
-    const float* diny_ptr = diny + stride;
-    float* dout_ptr = dout + stride;
-    for (int i = 0; i < cnt_rem; i++) {
+  if (rem_rem > 0) {
+    stride += (rem_cnt << 3);
+    const float16_t* dinx_ptr = dinx + stride;
+    const float16_t* diny_ptr = diny + stride;
+    float16_t* dout_ptr = dout + stride;
+    for (int i = 0; i < rem_rem; i++) {
       *dout_ptr = *dinx_ptr + *diny_ptr;
       dout_ptr++;
       dinx_ptr++;
@@ -178,10 +145,10 @@ void elementwise_add<float16_t>(const float16_t* dinx,
 }
 
 template <>
-void elementwise_add_relu<float>(const float* dinx,
-                                 const float* diny,
-                                 float* dout,
-                                 int num) {
+void elementwise_add_relu<float16_t>(const float16_t* dinx,
+                                     const float16_t* diny,
+                                     float16_t* dout,
+                                     int num) {
   LOOP_CNT(num)
   float16x8_t vzero = vdupq_n_f16(0.f);
 #pragma omp parallel for
@@ -190,7 +157,7 @@ void elementwise_add_relu<float>(const float* dinx,
     const float16_t* dinx_ptr = dinx + stride;
     const float16_t* diny_ptr = diny + stride;
     float16_t* dout_ptr = dout + stride;
-    asm volatile(INIT COMPUTE RELU STORE
+    asm volatile(INIT ADD_COMPUTE RELU STORE
                  :
                  : [dinx_ptr] "r"(dinx_ptr),
                    [diny_ptr] "r"(diny_ptr),
@@ -212,17 +179,17 @@ void elementwise_add_relu<float>(const float* dinx,
                    "v11");
   }
   int stride = cnt << 5;
-  if (cnt_rem > 0) {
+  if (rem_cnt > 0) {
     const float16_t* dinx_ptr = dinx + stride;
     const float16_t* diny_ptr = diny + stride;
     float16_t* dout_ptr = dout + stride;
-    int cnt_num = cnt_rem;
-    asm volatile(INIT_1 COMPUTE_1 RELU_1 STORE_1
+    int cnt_num = rem_cnt;
+    asm volatile(INIT_1 ADD_COMPUTE_1 RELU_1 STORE_1
                  : [cnt_num] "+r"(cnt_num),
                    [dinx_ptr] "+r"(dinx_ptr),
                    [diny_ptr] "+r"(diny_ptr),
                    [dout_ptr] "+r"(dout_ptr)
-                 :
+                 : [vzero] "w"(vzero)
                  : "cc",
                    "memory",
                    "v0",
@@ -238,16 +205,186 @@ void elementwise_add_relu<float>(const float* dinx,
                    "v10",
                    "v11");
   }
-  if (cnt_rem > 0) {
-    stride += (cnt_rem << 3);
-    const float* dinx_ptr = dinx + stride;
-    const float* diny_ptr = diny + stride;
-    float* dout_ptr = dout + stride;
-    for (int i = 0; i < cnt_rem; i++) {
+  if (rem_rem > 0) {
+    stride += (rem_cnt << 3);
+    const float16_t* dinx_ptr = dinx + stride;
+    const float16_t* diny_ptr = diny + stride;
+    float16_t* dout_ptr = dout + stride;
+    for (int i = 0; i < rem_rem; i++) {
       float16_t tmp_val = *dinx_ptr + *diny_ptr;
       dinx_ptr++;
       diny_ptr++;
       *dout_ptr++ = tmp_val > 0.f ? tmp_val : 0.f;
+    }
+  }
+}
+
+template <>
+void elementwise_add_broadcast<float16_t>(const float16_t* dinx,
+                                          const float16_t* diny,
+                                          float16_t* dout,
+                                          int batch,
+                                          int channels,
+                                          int num) {
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const auto* dinx_ptr = dinx + offset;
+      const auto* diny_ptr = diny + j;
+      auto* dout_ptr = dout + offset;
+
+      LOOP_CNT(num)
+      for (int k = 0; k < cnt; k++) {
+        int stride = k << 5;
+        const float16_t* dinx_ptr_1 = dinx_ptr + stride;
+        const float16_t* diny_ptr_1 = diny_ptr + stride;
+        float16_t* dout_ptr_1 = dout_ptr + stride;
+        asm volatile(INIT ADD_COMPUTE STORE
+                     :
+                     : [dinx_ptr] "r"(dinx_ptr_1),
+                       [diny_ptr] "r"(diny_ptr_1),
+                       [dout_ptr] "r"(dout_ptr_1)
+                     : "cc",
+                       "memory",
+                       "v0",
+                       "v1",
+                       "v2",
+                       "v3",
+                       "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11");
+      }
+      int stride = cnt << 5;
+      if (rem_cnt > 0) {
+        const float16_t* dinx_ptr_1 = dinx_ptr + stride;
+        const float16_t* diny_ptr_1 = diny_ptr + stride;
+        float16_t* dout_ptr_1 = dout_ptr + stride;
+        int cnt_num = rem_cnt;
+        asm volatile(INIT_1 ADD_COMPUTE_1 STORE_1
+                     : [cnt_num] "+r"(cnt_num),
+                       [dinx_ptr] "+r"(dinx_ptr_1),
+                       [diny_ptr] "+r"(diny_ptr_1),
+                       [dout_ptr] "+r"(dout_ptr_1)
+                     :
+                     : "cc",
+                       "memory",
+                       "v0",
+                       "v1",
+                       "v2",
+                       "v3",
+                       "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11");
+      }
+      if (rem_rem > 0) {
+        stride += (rem_cnt << 3);
+        const float16_t* dinx_ptr_1 = dinx_ptr + stride;
+        const float16_t* diny_ptr_1 = diny_ptr + stride;
+        float16_t* dout_ptr_1 = dout_ptr + stride;
+        for (int i = 0; i < rem_rem; i++) {
+          *dout_ptr_1 = *dinx_ptr_1 + *diny_ptr_1;
+          dinx_ptr_1++;
+          diny_ptr_1++;
+          dout_ptr_1++;
+        }
+      }
+    }
+  }
+}
+
+template <>
+void elementwise_add_relu_broadcast<float16_t>(const float16_t* dinx,
+                                               const float16_t* diny,
+                                               float16_t* dout,
+                                               int batch,
+                                               int channels,
+                                               int num) {
+  float16x8_t vzero = vdupq_n_f16(0.f);
+#pragma omp parallel for collapse(2)
+  for (int i = 0; i < batch; ++i) {
+    for (int j = 0; j < channels; ++j) {
+      int offset = (i * channels + j) * num;
+      const auto* dinx_ptr = dinx + offset;
+      const auto* diny_ptr = diny + j;
+      auto* dout_ptr = dout + offset;
+
+      LOOP_CNT(num)
+      for (int k = 0; k < cnt; k++) {
+        int stride = k << 5;
+        const float16_t* dinx_ptr_1 = dinx_ptr + stride;
+        const float16_t* diny_ptr_1 = diny_ptr + stride;
+        float16_t* dout_ptr_1 = dout_ptr + stride;
+        asm volatile(INIT ADD_COMPUTE RELU STORE
+                     :
+                     : [dinx_ptr] "r"(dinx_ptr_1),
+                       [diny_ptr] "r"(diny_ptr_1),
+                       [dout_ptr] "r"(dout_ptr_1),
+                       [vzero] "w"(vzero)
+                     : "cc",
+                       "memory",
+                       "v0",
+                       "v1",
+                       "v2",
+                       "v3",
+                       "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11");
+      }
+      int stride = cnt << 5;
+      if (rem_cnt > 0) {
+        const float16_t* dinx_ptr_1 = dinx_ptr + stride;
+        const float16_t* diny_ptr_1 = diny_ptr + stride;
+        float16_t* dout_ptr_1 = dout_ptr + stride;
+        int cnt_num = rem_cnt;
+        asm volatile(INIT_1 ADD_COMPUTE_1 RELU_1 STORE_1
+                     : [cnt_num] "+r"(cnt_num),
+                       [dinx_ptr] "+r"(dinx_ptr_1),
+                       [diny_ptr] "+r"(diny_ptr_1),
+                       [dout_ptr] "+r"(dout_ptr_1)
+                     : [vzero] "w"(vzero)
+                     : "cc",
+                       "memory",
+                       "v0",
+                       "v1",
+                       "v2",
+                       "v3",
+                       "v4",
+                       "v5",
+                       "v6",
+                       "v7",
+                       "v8",
+                       "v9",
+                       "v10",
+                       "v11");
+      }
+      if (rem_rem > 0) {
+        stride += (rem_cnt << 3);
+        const float16_t* dinx_ptr_1 = dinx_ptr + stride;
+        const float16_t* diny_ptr_1 = diny_ptr + stride;
+        float16_t* dout_ptr_1 = dout_ptr + stride;
+        for (int i = 0; i < rem_rem; i++) {
+          float16_t tmp_val = *dinx_ptr_1 + *diny_ptr_1;
+          dinx_ptr_1++;
+          diny_ptr_1++;
+          *dout_ptr_1++ = tmp_val > 0.f ? tmp_val : 0.f;
+        }
+      }
     }
   }
 }
