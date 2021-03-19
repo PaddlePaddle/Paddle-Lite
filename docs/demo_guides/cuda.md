@@ -56,7 +56,7 @@ cuda的编译结果位于 `build_cuda/inference_lite_lib`
 
 以下以Yolov3模型为例，介绍如何在Nvidia GPU硬件上运行模型。
 
-一： 下载darknet_yolov3模型，模型信息请参考[这里](https://github.com/PaddlePaddle/models/tree/develop/PaddleCV/yolov3)
+一： 下载darknet_yolov3模型，模型信息请参考[这里](https://github.com/PaddlePaddle/PaddleDetection)
 
 ```
 # 下载模型
