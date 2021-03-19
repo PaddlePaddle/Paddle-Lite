@@ -215,6 +215,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
              "and you have Write&Read permission. Jump to build program "
              "from source.";
     } else {
+      LOG(INFO) << "Load opencl kernel bin file: " << bin_file;
       ret = Deserialize(bin_file, &programs_precompiled_binary_);
       CHECK(ret) << "Deserialize failed.";
 
@@ -236,9 +237,9 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
       } else if (host::memcmp(((sn_iter->second)[0]).data(),
                               GetSN(build_option).data(),
                               GetSN(build_option).length())) {
-        LOG(INFO) << "size of sn_info: " << ((sn_iter->second)[0]).size();
-        LOG(INFO) << "size of GetSN: " << GetSN(build_option).length();
-        LOG(INFO) << "GetSN: " << GetSN(build_option);
+        LOG(INFO) << "size of sn_info: " << ((sn_iter->second)[0]).size()
+                  << "\nsize of GetSN: " << GetSN(build_option).length()
+                  << "\nGetSN: " << GetSN(build_option);
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is invalid!";
         delete_bin_flag = true;
@@ -264,19 +265,17 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
           std::unique_ptr<cl::Program> ptr(new cl::Program(program));
           programs_[prog_key] = std::move(ptr);
         }
-      }
 
-      auto it = programs_.find(program_key);
-      if (it != programs_.end()) {
-#ifdef LITE_WITH_LOG
-        VLOG(3) << " --- program -> " << program_key
-                << " has been built in binary --- ";
-#endif
-        gotten_bin_flag_ = true;
-        ret = true;
-      } else {
-        delete_bin_flag = true;
-        // Jump to build from source
+        auto it = programs_.find(program_key);
+        if (it != programs_.end()) {
+          VLOG(3) << " --- program -> " << program_key
+                  << " has been built in binary --- ";
+          gotten_bin_flag_ = true;
+          ret = true;
+        } else {
+          delete_bin_flag = true;
+          // Jump to build from source
+        }
       }
     }
 
