@@ -272,13 +272,8 @@ void ElementwiseAddCompute<T, PType>::Run() {
                                OprandSwapable::YES,
                                NeonConfig>(
       this,
-#ifdef ENABLE_ARM_FP16
-      lite::arm::math::fp16::elementwise_add_broadcast<T>,
-      lite::arm::math::fp16::elementwise_add<T>,
-#else
       lite::arm::math::elementwise_add_broadcast<T>,
       lite::arm::math::elementwise_add<T>,
-#endif
       paddle::lite::kernels::host::naive_add<T>);
 }
 
@@ -295,13 +290,8 @@ void ElementwiseAddActivationCompute<T, PType>::Run() {
                                  OprandSwapable::YES,
                                  arm_math::NullNeonConfig>(
         this,
-#ifdef ENABLE_ARM_FP16
-        lite::arm::math::fp16::elementwise_add_relu_broadcast<T>,
-        lite::arm::math::fp16::elementwise_add_relu<T>,
-#else
         lite::arm::math::elementwise_add_relu_broadcast<T>,
         lite::arm::math::elementwise_add_relu<T>,
-#endif
         paddle::lite::kernels::host::naive_fused_op<
             T,
             paddle::lite::kernels::host::naive_add<T>,
@@ -326,6 +316,50 @@ void ElementwiseAddActivationCompute<T, PType>::Run() {
     LOG(FATAL) << "unsupported Activation type: " << param.act_type;
   }
 }
+
+#ifdef ENABLE_ARM_FP16
+template <>
+void ElementwiseAddCompute<float16_t, PRECISION(kFP16)>::Run() {
+  using NeonConfig = arm_math::MergeConfig<
+      arm_math::AddConfig<float16_t>,
+      arm_math::ActiveConfig<arm_math::ActiveType::NO_ACTIVE, float16_t>>;
+
+  elementwise_compute_template<operators::ElementwiseParam,
+                               float16_t,
+                               OprandSwapable::YES,
+                               NeonConfig>(
+      this,
+
+      lite::arm::math::fp16::elementwise_add_broadcast<float16_t>,
+      lite::arm::math::fp16::elementwise_add<float16_t>,
+      paddle::lite::kernels::host::naive_add<float16_t>);
+}
+
+template <>
+void ElementwiseAddActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
+  // auto& param = Param<operators::FusionElementwiseActivationParam>();
+  auto& param =
+      this->template Param<operators::FusionElementwiseActivationParam>();
+  bool act_supported = false;
+  if (param.act_type == "relu") {
+    act_supported = true;
+    elementwise_compute_template<operators::FusionElementwiseActivationParam,
+                                 float16_t,
+                                 OprandSwapable::YES,
+                                 arm_math::NullNeonConfig>(
+        this,
+        lite::arm::math::fp16::elementwise_add_relu_broadcast<float16_t>,
+        lite::arm::math::fp16::elementwise_add_relu<float16_t>,
+        paddle::lite::kernels::host::naive_fused_op<
+            float16_t,
+            paddle::lite::kernels::host::naive_add<float16_t>,
+            paddle::lite::kernels::host::naive_relu<float16_t>>);
+  }
+  if (!act_supported) {
+    LOG(FATAL) << "fp16 unsupported Activation type: " << param.act_type;
+  }
+}
+#endif
 
 template <typename T, PrecisionType PType>
 void ElementwiseSubCompute<T, PType>::Run() {

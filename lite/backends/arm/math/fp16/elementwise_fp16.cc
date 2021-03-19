@@ -27,20 +27,29 @@ namespace fp16 {
   int rem_rem = remain & 7;
 
 #ifdef __aarch64__
-#define INIT_1                   \
-  "ldr q0, [%[dinx_ptr]], #8 \n" \
-  "ldr q4, [%[diny_ptr]], #8 \n" \
+#define INIT_1                    \
+  "ldr q0, [%[dinx_ptr]], #16 \n" \
+  "ldr q4, [%[diny_ptr]], #16 \n" \
   "1: \n"
 
 #define ADD_COMPUTE_1                   \
   "fadd v8.8h, v0.8h, v4.8h  \n"        \
   "subs %w[cnt_num], %w[cnt_num], #1\n" \
-  "ldr q0, [%[dinx_ptr]], #8 \n"        \
-  "ldr q4, [%[diny_ptr]], #8 \n"
+  "ldr q0, [%[dinx_ptr]], #16 \n"       \
+  "ldr q4, [%[diny_ptr]], #16 \n"
+
+#define INIT_1_BROADCAST          \
+  "ldr q0, [%[dinx_ptr]], #16 \n" \
+  "1: \n"
+
+#define ADD_COMPUTE_1_BROADCAST         \
+  "fadd v8.8h, v0.8h, %[val_y].8h\n"    \
+  "subs %w[cnt_num], %w[cnt_num], #1\n" \
+  "ldr q0, [%[dinx_ptr]], #16 \n"
 
 #define RELU_1 "fmax v8.8h, v8.8h, %[vzero].8h\n"
-#define STORE_1                   \
-  "str q8, [%[dout_ptr]], #8  \n" \
+#define STORE_1                    \
+  "str q8, [%[dout_ptr]], #16  \n" \
   "bne 1b\n"
 
 #define INIT                     \
@@ -53,11 +62,23 @@ namespace fp16 {
   "ldr q3, [%[dinx_ptr], #48]\n" \
   "ldr q7, [%[diny_ptr], #48]\n"
 
-#define ADD_COMPUTE              \
-  "fadd v8.8h, v0.8h, v4.8h  \n" \
-  "fadd v9.8h, v1.8h, v5.8h  \n" \
-  "fadd v10.8h, v2.8h, v6.8h \n" \
-  "fadd v11.8h, v3.8h, v7.8h \n"
+#define ADD_COMPUTE             \
+  "fadd v8.8h, v0.8h, v4.8h\n"  \
+  "fadd v9.8h, v1.8h, v5.8h\n"  \
+  "fadd v10.8h, v2.8h, v6.8h\n" \
+  "fadd v11.8h, v3.8h, v7.8h\n"
+
+#define INIT_BROADCAST           \
+  "ldr q0, [%[dinx_ptr]]     \n" \
+  "ldr q1, [%[dinx_ptr], #16]\n" \
+  "ldr q2, [%[dinx_ptr], #32]\n" \
+  "ldr q3, [%[dinx_ptr], #48]\n"
+
+#define ADD_COMPUTE_BROADCAST         \
+  "fadd v8.8h, v0.8h, %[val_y].8h\n"  \
+  "fadd v9.8h, v1.8h, %[val_y].8h\n"  \
+  "fadd v10.8h, v2.8h, %[val_y].8h\n" \
+  "fadd v11.8h, v3.8h, %[val_y].8h\n"
 
 #define RELU                           \
   "fmax v8.8h, v8.8h, %[vzero].8h\n"   \
@@ -238,13 +259,13 @@ void elementwise_add_broadcast<float16_t>(const float16_t* dinx,
       for (int k = 0; k < cnt; k++) {
         int stride = k << 5;
         const float16_t* dinx_ptr_1 = dinx_ptr + stride;
-        const float16_t* diny_ptr_1 = diny_ptr + stride;
         float16_t* dout_ptr_1 = dout_ptr + stride;
-        asm volatile(INIT ADD_COMPUTE STORE
+        float16x8_t val_y = vdupq_n_f16(diny_ptr[stride]);
+        asm volatile(INIT_BROADCAST ADD_COMPUTE_BROADCAST STORE
                      :
                      : [dinx_ptr] "r"(dinx_ptr_1),
-                       [diny_ptr] "r"(diny_ptr_1),
-                       [dout_ptr] "r"(dout_ptr_1)
+                       [dout_ptr] "r"(dout_ptr_1),
+                       [val_y] "w"(val_y)
                      : "cc",
                        "memory",
                        "v0",
@@ -263,15 +284,14 @@ void elementwise_add_broadcast<float16_t>(const float16_t* dinx,
       int stride = cnt << 5;
       if (rem_cnt > 0) {
         const float16_t* dinx_ptr_1 = dinx_ptr + stride;
-        const float16_t* diny_ptr_1 = diny_ptr + stride;
         float16_t* dout_ptr_1 = dout_ptr + stride;
+        float16x8_t val_y = vdupq_n_f16(diny_ptr[stride]);
         int cnt_num = rem_cnt;
-        asm volatile(INIT_1 ADD_COMPUTE_1 STORE_1
+        asm volatile(INIT_1_BROADCAST ADD_COMPUTE_1_BROADCAST STORE_1
                      : [cnt_num] "+r"(cnt_num),
                        [dinx_ptr] "+r"(dinx_ptr_1),
-                       [diny_ptr] "+r"(diny_ptr_1),
                        [dout_ptr] "+r"(dout_ptr_1)
-                     :
+                     : [val_y] "w"(val_y)
                      : "cc",
                        "memory",
                        "v0",
@@ -290,12 +310,11 @@ void elementwise_add_broadcast<float16_t>(const float16_t* dinx,
       if (rem_rem > 0) {
         stride += (rem_cnt << 3);
         const float16_t* dinx_ptr_1 = dinx_ptr + stride;
-        const float16_t* diny_ptr_1 = diny_ptr + stride;
         float16_t* dout_ptr_1 = dout_ptr + stride;
+        float16_t val = diny_ptr[stride];
         for (int i = 0; i < rem_rem; i++) {
-          *dout_ptr_1 = *dinx_ptr_1 + *diny_ptr_1;
+          *dout_ptr_1 = *dinx_ptr_1 + val;
           dinx_ptr_1++;
-          diny_ptr_1++;
           dout_ptr_1++;
         }
       }
@@ -323,13 +342,13 @@ void elementwise_add_relu_broadcast<float16_t>(const float16_t* dinx,
       for (int k = 0; k < cnt; k++) {
         int stride = k << 5;
         const float16_t* dinx_ptr_1 = dinx_ptr + stride;
-        const float16_t* diny_ptr_1 = diny_ptr + stride;
         float16_t* dout_ptr_1 = dout_ptr + stride;
-        asm volatile(INIT ADD_COMPUTE RELU STORE
+        float16x8_t val_y = vdupq_n_f16(diny_ptr[stride]);
+        asm volatile(INIT_BROADCAST ADD_COMPUTE_BROADCAST RELU STORE
                      :
                      : [dinx_ptr] "r"(dinx_ptr_1),
-                       [diny_ptr] "r"(diny_ptr_1),
                        [dout_ptr] "r"(dout_ptr_1),
+                       [val_y] "w"(val_y),
                        [vzero] "w"(vzero)
                      : "cc",
                        "memory",
@@ -349,15 +368,14 @@ void elementwise_add_relu_broadcast<float16_t>(const float16_t* dinx,
       int stride = cnt << 5;
       if (rem_cnt > 0) {
         const float16_t* dinx_ptr_1 = dinx_ptr + stride;
-        const float16_t* diny_ptr_1 = diny_ptr + stride;
         float16_t* dout_ptr_1 = dout_ptr + stride;
+        float16x8_t val_y = vdupq_n_f16(diny_ptr[stride]);
         int cnt_num = rem_cnt;
-        asm volatile(INIT_1 ADD_COMPUTE_1 RELU_1 STORE_1
+        asm volatile(INIT_1_BROADCAST ADD_COMPUTE_1_BROADCAST RELU_1 STORE_1
                      : [cnt_num] "+r"(cnt_num),
                        [dinx_ptr] "+r"(dinx_ptr_1),
-                       [diny_ptr] "+r"(diny_ptr_1),
                        [dout_ptr] "+r"(dout_ptr_1)
-                     : [vzero] "w"(vzero)
+                     : [vzero] "w"(vzero), [val_y] "w"(val_y)
                      : "cc",
                        "memory",
                        "v0",
@@ -376,12 +394,11 @@ void elementwise_add_relu_broadcast<float16_t>(const float16_t* dinx,
       if (rem_rem > 0) {
         stride += (rem_cnt << 3);
         const float16_t* dinx_ptr_1 = dinx_ptr + stride;
-        const float16_t* diny_ptr_1 = diny_ptr + stride;
         float16_t* dout_ptr_1 = dout_ptr + stride;
+        float16_t val = diny_ptr[stride];
         for (int i = 0; i < rem_rem; i++) {
-          float16_t tmp_val = *dinx_ptr_1 + *diny_ptr_1;
+          float16_t tmp_val = *dinx_ptr_1 + val;
           dinx_ptr_1++;
-          diny_ptr_1++;
           *dout_ptr_1++ = tmp_val > 0.f ? tmp_val : 0.f;
         }
       }

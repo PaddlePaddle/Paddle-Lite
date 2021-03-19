@@ -43,22 +43,27 @@ __ai float32x4_t vld1q_f32_wrap(const float* p0) { return vld1q_f32(p0); }
 #undef vld1q_f32
 #define vld1q_f32 vld1q_f32_wrap
 
+__ai void vst1q_f32_wrap(float* a, float32x4_t b) { return vst1q_f32(a, b); }
+#undef vst1q_f32
+#define vst1q_f32 vst1q_f32_wrap
+
 #ifdef ENABLE_ARM_FP16
-typdef __fp16 flaot16_t;
+typedef __fp16 flaot16_t;
 __ai float16x8_t vld1q_f16_wrap(const float16_t* p0) { return vld1q_f16(p0); }
 #undef vld1q_f16
 #define vld1q_f16 vld1q_f16_wrap
 
-__ai void vst1q_f16_wrap(int32_t* a, float16x8_t b) { return vst1q_f16(a, b); }
+__ai void vst1q_f16_wrap(float16_t* a, float16x8_t b) {
+  return vst1q_f16(a, b);
+}
 #undef vst1q_f16
 #define vst1q_f16 vst1q_f16_wrap
 
-__ai float16x8_t vdupq_n_f16_wrap(const float16_t val) {
-  return vdupq_n_f16(val);
+__ai float16x8_t vdupq_n_f16_wrap(const float16_t p0) {
+  return vdupq_n_f16(p0);
 }
 #undef vdupq_n_f16
 #define vdupq_n_f16 vdupq_n_f16_wrap
-
 #endif
 
 #undef __ai
@@ -75,13 +80,6 @@ neon_relu_float(const float32x4_t& a) {
   return vmaxq_f32(a, zero);
 }
 
-// #ifdef ENABLE_ARM_FP16
-// static inline float16x8_t __attribute__((__always_inline__))
-// neon_relu_fp16(const float16x8_t& a) {
-//   constexpr float16x8_t zero = {0, 0, 0, 0, 0, 0, 0, 0};
-//   return vmaxq_f16(a, zero);
-// }
-// #endif
 struct NullNeonConfig {};
 
 template <class Config1, class Config2>
@@ -192,7 +190,7 @@ struct BasicConfig<float16_t> {
 template <>
 struct ActiveConfig<ActiveType::RELU, float16_t> {
   constexpr static float16_t (*naive_active)(float16_t) = naive_relu<float16_t>;
-  constexpr static float16x8_t)(const float16x8_t&) =
+  constexpr static float16x8_t (*neon_active)(const float16x8_t&) =
       neon_relu_fp16;
 };
 

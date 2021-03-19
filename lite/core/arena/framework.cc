@@ -303,6 +303,12 @@ bool TestCase::CheckPrecision(const Tensor* inst_tensor,
     case PRECISION(kFloat):
       return CheckTensorPrecision<float>(
           inst_tensor, base_tensor, type, abs_error);
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+    case PRECISION(kUnk):
+      return CheckTensorPrecision<__fp16>(
+          inst_tensor, base_tensor, type, abs_error);
+#endif
     case PRECISION(kInt8):
       return CheckTensorPrecision<int8_t>(
           inst_tensor, base_tensor, type, abs_error);
