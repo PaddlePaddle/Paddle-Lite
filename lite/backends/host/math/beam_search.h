@@ -13,13 +13,11 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
 #include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
 
 void beam_search(const Tensor* pre_ids,
@@ -32,10 +30,9 @@ void beam_search(const Tensor* pre_ids,
                  int level,
                  int beam_size,
                  int end_id,
-                 bool is_accumulated,
-                 Context<TARGET(kARM)>* ctx);
+                 bool is_accumulated);
 
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle

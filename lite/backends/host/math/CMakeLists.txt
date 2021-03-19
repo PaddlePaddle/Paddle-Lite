@@ -6,4 +6,5 @@ lite_cc_library(math_host SRCS
     stack.cc
     reduce_all.cc
     argmax.cc
+    beam_search.cc
     DEPS context)

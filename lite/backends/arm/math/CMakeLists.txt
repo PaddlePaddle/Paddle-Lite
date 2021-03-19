@@ -128,7 +128,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       topk.cc
       pad2d.cc
       negative.cc
-      beam_search.cc
       reduce_max.cc
       reduce_min.cc
       reduce_max_min.cc
