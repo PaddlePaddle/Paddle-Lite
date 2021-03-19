@@ -1898,8 +1898,8 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
   lite::Tensor* fc_weight_max{};
-  lite::Tensor* mask{nullptr};
-  lite::Tensor* SeqLod{nullptr};
+  const lite::Tensor* mask{nullptr};
+  const lite::Tensor* SeqLod{nullptr};
   lite::Tensor* output{nullptr};
 
   std::vector<int> slice_axes{};
@@ -1918,7 +1918,7 @@ struct XPUMultiEncoderParam : ParamBase {
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;
   std::vector<lite::Tensor*> Tables;
-  lite::Tensor* Mask{nullptr};
+  const lite::Tensor* Mask{nullptr};
   lite::Tensor* SeqLod{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};

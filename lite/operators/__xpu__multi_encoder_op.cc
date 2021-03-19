@@ -79,8 +79,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.SeqLod =
-            const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
+        param_.SeqLod = &(arg_var->Get<lite::Tensor>());
       }
     }
   }
@@ -90,8 +89,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.mask =
-            const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
+        param_.mask = &(arg_var->Get<lite::Tensor>());
       }
     }
   }

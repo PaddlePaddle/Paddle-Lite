@@ -23,6 +23,41 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
+/* support adaptive seq len for bert/ernie   */
+/*                in_Input      in_Mask      */
+/*                    |             |        */
+/*                    |             |        */
+/*                xpu_embedding   matmul     */
+/*                    |             |        */
+/*                    |             |        */
+/*                 layer_norm     scale      */
+/*                    |           /          */
+/*                    |        stack         */
+/*                    |         |            */
+/*                    |        /             */
+/*                    |      /               */
+/*                xpu_encoder                */
+/*                    |                      */
+/*                    |                      */
+/*                out_Output                 */
+/*-------------------------------------------*/
+/* After the pass apply:                     */
+/*                in_Input  in_Mask          */
+/*                    |        |             */
+/*                    |       /              */
+/*                xpu_embedding              */
+/*                    |       \              */
+/*                    |     SeqLod           */
+/*                    |        |             */
+/*                 layer_norm  |             */
+/*                    |        |             */
+/*                    |       /              */
+/*                xpu_encoder                */
+/*                    |                      */
+/*                    |                      */
+/*                out_Output                 */
+/*-------------------------------------------*/
+
 class XPUMultiEncoderAdaptiveSeqlenFuser : public FuseBase {
  public:
   void BuildPattern() override {

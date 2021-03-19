@@ -155,6 +155,8 @@ void XPUMultiEncoderCompute::Run() {
   const bool norm_before_ = param.norm_before;
 
   if (param.SeqLod && param.SeqLod->data<int>()) {
+    auto& ctx = this->ctx_->As<XPUContext>();
+    ctx.GetRawContext()->batch_split_type = -1;  // disable auto split batch
     encoder_param_.seq_lod.resize(param.SeqLod->numel());
     memcpy(encoder_param_.seq_lod.data(),
            param.SeqLod->data<int>(),

@@ -75,8 +75,7 @@ bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.Mask =
-            const_cast<lite::Tensor*>(&(arg_var->Get<lite::Tensor>()));
+        param_.Mask = &(arg_var->Get<lite::Tensor>());
       }
     }
   }
