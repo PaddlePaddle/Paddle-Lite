@@ -8,7 +8,7 @@ readonly workspace=${workspace%%lite/tools*}
 WITH_LOG=OFF
 WITH_CV=ON
 WITH_EXCEPTION=ON
-
+TOOL_CHAIN=clang
 
 ## step 1: compile opt tool
 cd $workspace
@@ -68,14 +68,14 @@ rm -rf $(ls ./models_opt | grep -v .nb)
 
 # step 4. compiling iOS lib
 cd $workspace
-./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --with_exception=$WITH_EXCEPTION
-./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV  --with_exception=$WITH_EXCEPTION
+./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION
+./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION
 
 # step 5. pack compiling results and optimized models
 result_name=android_lib
 rm -rf $result_name && mkdir $result_name
-cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7 $result_name/armv7.gcc
-cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8 $result_name/armv8.gcc
+cp -rf build.lite.android.armv7.$TOOL_CHAIN/inference_lite_lib.android.armv7 $result_name/armv7.$TOOL_CHAIN
+cp -rf build.lite.android.armv8.$TOOL_CHAIN/inference_lite_lib.android.armv8 $result_name/armv8.$TOOL_CHAIN
 cp build.opt/lite/api/opt $result_name/
 mv build.opt/lite/api/optimized_model $result_name
 
