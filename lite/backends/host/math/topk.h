@@ -13,22 +13,19 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/context.h"
+#include <algorithm>
+#include <utility>
+#include <vector>
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
 
-void topk(const float* din,
-          float* out_val,
-          int64_t* out_ind,
-          int m,
-          int n,
-          int k,
-          Context<TARGET(kARM)>* ctx);
+void topk(
+    const float* din, float* out_val, int64_t* out_ind, int m, int n, int k);
 
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle

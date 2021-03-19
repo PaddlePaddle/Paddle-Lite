@@ -69,6 +69,7 @@ add_kernel(fill_any_like_compute_host Host extra SRCS fill_any_like_compute.cc D
 add_kernel(fill_zeros_like_compute_host Host extra SRCS fill_zeros_like_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(scatter_nd_add_compute_host Host extra SRCS scatter_nd_add_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(tril_triu_compute_host Host extra SRCS tril_triu_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(topk_compute_host Host extra SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(topk_v2_compute_host Host extra SRCS topk_v2_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(meshgrid_compute_host Host extra SRCS meshgrid_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(linspace_compute_host Host extra SRCS linspace_compute.cc DEPS ${lite_kernel_deps})
