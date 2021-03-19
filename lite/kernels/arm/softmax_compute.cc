@@ -118,8 +118,8 @@ typedef paddle::lite::kernels::arm::SoftmaxCompute<PRECISION(kFP16),
                                                    PRECISION(kFP16)>
     SoftmaxFp16;
 REGISTER_LITE_KERNEL(softmax, kARM, kFP16, kNCHW, SoftmaxFp16, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
 #endif  // ENABLE_ARM_FP16
 
