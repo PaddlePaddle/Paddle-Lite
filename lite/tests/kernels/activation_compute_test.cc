@@ -45,6 +45,7 @@ enum activation_type_test {
   SOFTSIGN
 };
 
+template <class T = float>
 class ActivationComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -90,10 +91,10 @@ class ActivationComputeTester : public arena::TestCase {
     auto* out = scope->NewTensor(output_);
     CHECK(out);
     out->Resize(dims_);
-    auto* output_data = out->mutable_data<float>();
+    auto* output_data = out->mutable_data<T>();
 
     auto* x = scope->FindTensor(input_);
-    const auto* x_data = x->data<float>();
+    const auto* x_data = x->data<T>();
     switch (act_type_) {
       case RELU: {
         for (int i = 0; i < dims_.production(); i++) {
@@ -297,11 +298,11 @@ class ActivationComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> data(dims_.production());
+    std::vector<T> data(dims_.production());
     for (int i = 0; i < dims_.production(); i++) {
-      float sign = i % 3 == 0 ? -1.0f : 1.0f;
+      T sign = i % 3 == 0 ? -1.0f : 1.0f;
       sign = (type_ == "log" || type_ == "rsqrt" || type_ == "sqrt") ? 1 : sign;
-      data[i] = sign * static_cast<float>(i % 128) * 0.013f + 0.001;
+      data[i] = sign * static_cast<T>(i % 128) * 0.013f + 0.001;
     }
     SetCommonTensor(input_, dims_, data.data());
 
@@ -797,6 +798,22 @@ TEST(Activation_softsign, precision) {
     arena.TestPrecision();
   }
 }
+
+#if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
+TEST(Activation_relu, precision) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-5;
+
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new ActivationComputeTester<float16_t>(
+            place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "relu", RELU));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+}
+#endif
 
 }  // namespace lite
 }  // namespace paddle
