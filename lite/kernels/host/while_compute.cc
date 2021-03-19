@@ -41,15 +41,19 @@ void WhileCompute::Run() {
 REGISTER_LITE_KERNEL(
     while, kHost, kAny, kAny, paddle::lite::kernels::host::WhileCompute, def)
     .BindInput("X",
-               {LiteType::GetTensorListTy(
-                   TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorListTy(TARGET(kHost),
+                                          PRECISION(kAny),
+                                          DATALAYOUT(kAny))})
     .BindInput("Condition",
-               {LiteType::GetTensorTy(
-                   TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kBool),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorListTy(
-                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorListTy(TARGET(kHost),
+                                           PRECISION(kAny),
+                                           DATALAYOUT(kAny))})
     .BindOutput("StepScopes",
-                {LiteType::GetTensorTy(
-                    TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kAny))})
     .Finalize();
