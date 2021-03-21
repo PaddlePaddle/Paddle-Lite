@@ -156,7 +156,19 @@ void PrecisionCastPass::ComplementInputs(
   }
   // if (!in->AsArg().is_weight && !PrecisionCompatibleTo(*in->AsArg().type,
   // *decl_arg_type)) {
-  if (!PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
+  bool has_fp16 = false;
+  for (auto place : graph->valid_places()) {
+    if (place.target == TARGET(kARM)) {
+      if (place.precision == PRECISION(kFP16)) {
+        has_fp16 = true;
+        break;
+      }
+    }
+  }
+  has_fp16 = has_fp16 && (in->AsArg().is_weight);
+  VLOG(4) << "has_fp16: " << has_fp16 << ", arg_name: " << in->AsArg().name;
+  if ((!has_fp16) &&
+      !PrecisionCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
     VLOG(4) << "found Target unmatched tensor: " << in->AsArg().name
             << " for kernel " << inst.op()->DebugString() << " "
             << *in->AsArg().type << " -> " << *decl_arg_type;

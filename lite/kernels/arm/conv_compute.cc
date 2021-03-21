@@ -139,27 +139,6 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
 template <>
 void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   PARAM_INIT
-  // fp32 -> fp16
-  if (param.filter->precision() == PrecisionType::kFloat) {
-    Tensor tmp_tensor;
-    tmp_tensor.CopyDataFrom(*param.filter);
-    param.filter->clear();
-    param.filter->set_precision(PRECISION(kFP16));
-    const float* src_data = tmp_tensor.data<float>();
-    float16_t* weight_data = param.filter->mutable_data<float16_t>();
-    lite::arm::math::fp16::fp32_to_fp16(
-        src_data, weight_data, param.filter->numel());
-  }
-  if (param.bias && param.bias->precision() == PrecisionType::kFloat) {
-    Tensor tmp_tensor;
-    tmp_tensor.CopyDataFrom(*param.bias);
-    param.bias->clear();
-    param.bias->set_precision(PRECISION(kFP16));
-    const float* src_data = tmp_tensor.data<float>();
-    float16_t* bias_data = param.bias->mutable_data<float16_t>();
-    lite::arm::math::fp16::fp32_to_fp16(
-        src_data, bias_data, param.bias->numel());
-  }
   /// select conv impl
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
