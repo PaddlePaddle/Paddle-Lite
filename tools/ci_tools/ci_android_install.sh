@@ -24,7 +24,7 @@ fi
 
 # 1.1 download models into `inference_model` directory 
 function prepare_models {
-  cd ${SHELL_FOLDER}
+  cd ${WORKSPACE}
   rm -rf inference_model && mkdir inference_model && cd inference_model
   # download compressed model recorded in $MODELS_URL
   for url in ${MODELS_URL[@]}; do
@@ -42,6 +42,7 @@ function prepare_models {
       echo "Error, only .zip or .tar.gz format files are supported!"
     fi
   done
+  cd ${WORKSPACE}
 }
 
 ####################################################################################################
@@ -55,8 +56,8 @@ function prepare_models {
 #         |---------optimized_model
 #         |---------opt
 function compile_according_to_models {
-  cd $SHELL_FOLDER
-  ./lite/tools/build_android_by_models.sh $SHELL_FOLDER/inference_model
+  cd ${WORKSPACE}
+  ./lite/tools/build_android_by_models.sh ${WORKSPACE}/inference_model
 }
 
 ####################################################################################################
@@ -79,19 +80,19 @@ function test_model {
   #    2.1 upload armv7 lib
   adb -s ${adb_devices[$adb_index]} push android_lib/armv7.clang/cxx/lib/libpaddle_light_api_shared.so data/local/tmp/$adb_dir
   #    2.2 compile and upload armv7 demo
-  cd android_lib/armv7.clang/demo/cxx/mobile_light && make
+  cd android_lib/armv7.clang/demo/cxx/mobile_light && make && chmod +x mobilenetv1_light_api
   adb -s ${adb_devices[$adb_index]} push mobilenetv1_light_api data/local/tmp/$adb_dir  && cd -
   #    2.3 perform unit test
-  adb -s ${adb_devices[$adb_index]} "cd data/local/tmp/$adb_dir && export LD_LIBRARY_PATH=./ &&  mobilenetv1_light_api ./mobilenet_v1.nb"
+  adb -s ${adb_devices[$adb_index]} shell "cd /data/local/tmp/$adb_dir && export LD_LIBRARY_PATH=./ &&  ./mobilenetv1_light_api ./mobilenet_v1.nb"
 
   # 3. perform armv8 unit_test
   #    3.1 upload armv8 lib
   adb -s ${adb_devices[$adb_index]} push android_lib/armv8.clang/cxx/lib/libpaddle_light_api_shared.so data/local/tmp/$adb_dir
   #    3.2 compile and upload armv8 demo
-  cd android_lib/armv8.clang/demo/cxx/mobile_light && make
+  cd android_lib/armv8.clang/demo/cxx/mobile_light && make && chmod +x mobilenetv1_light_api
   adb -s ${adb_devices[$adb_index]} push mobilenetv1_light_api data/local/tmp/$adb_dir  && cd -
   #    3.3 perform unit test
-  adb -s ${adb_devices[$adb_index]} "cd data/local/tmp/$adb_dir && export LD_LIBRARY_PATH=./ &&  mobilenetv1_light_api ./mobilenet_v1.nb"
+  adb -s ${adb_devices[$adb_index]} shell "cd /data/local/tmp/$adb_dir && export LD_LIBRARY_PATH=./ &&  ./mobilenetv1_light_api ./mobilenet_v1.nb"
 }
 
 ####################################################################################################
