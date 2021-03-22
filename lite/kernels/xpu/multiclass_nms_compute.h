@@ -13,23 +13,21 @@
 // limitations under the License.
 
 #pragma once
-
+#include <algorithm>
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>
-class PolygonBoxTransformCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class MulticlassNmsCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
-  using param_t = operators::PolygonBoxTransformParam;
+  void Run() override;
 
-  virtual void Run();
-
-  virtual ~PolygonBoxTransformCompute() = default;
+  virtual ~MulticlassNmsCompute() = default;
 };
 
 }  // namespace xpu
