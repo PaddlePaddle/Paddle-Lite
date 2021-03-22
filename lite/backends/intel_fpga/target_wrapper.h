@@ -15,6 +15,7 @@
 #pragma once
 
 #include <map>
+#include "intelfpga.h"  // NOLINT
 #include "lite/core/target_wrapper.h"
 
 namespace paddle {

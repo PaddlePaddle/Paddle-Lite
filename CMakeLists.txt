@@ -185,6 +185,10 @@ if(LITE_WITH_IMAGINATION_NNA)
 	include(device/imagination_nna)
 endif()
 
+if(LITE_WITH_INTEL_FPGA)
+	include(device/intel_fpga)
+endif()
+
 # flatbuffer module for loading model
 if(LITE_UPDATE_FBS_HEAD)
     include(external/flatbuffers)
