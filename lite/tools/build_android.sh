@@ -202,6 +202,7 @@ function make_tiny_publish_so {
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
       ${cmake_mutable_options}  \
+      -DCMAKE_BUILD_TYPE=Debug \
       -DLITE_ON_TINY_PUBLISH=ON
 
   # Step4. Compile libs: cxx_lib, java_lib, opencl_lib
