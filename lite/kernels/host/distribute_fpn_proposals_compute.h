@@ -13,22 +13,25 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/context.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
-void topk(const float* din,
-          float* out_val,
-          int64_t* out_ind,
-          int m,
-          int n,
-          int k,
-          Context<TARGET(kARM)>* ctx);
+class DistributeFpnProposalsCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::DistributeFpnProposalsParam;
 
-}  // namespace math
-}  // namespace arm
+  void Run() override;
+
+  virtual ~DistributeFpnProposalsCompute() = default;
+};
+
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
