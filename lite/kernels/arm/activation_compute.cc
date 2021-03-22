@@ -140,7 +140,7 @@ void EluCompute::Run() {
 #ifdef ENABLE_ARM_FP16
 REGISTER_LITE_KERNEL(relu,
                      kARM,
-                     kFloat,
+                     kFP16,
                      kNCHW,
                      paddle::lite::kernels::arm::ReluCompute<PRECISION(kFP16)>,
                      def)

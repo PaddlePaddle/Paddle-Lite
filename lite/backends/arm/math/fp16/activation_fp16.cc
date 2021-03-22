@@ -14,66 +14,13 @@
 
 #include "lite/backends/arm/math/fp16/activation_fp16.h"
 #include <algorithm>
-#include <string>
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
-#ifdef __aarch64__
-#define INIT                    \
-  "cmp %w[cnt], #1          \n" \
-  "ldr q0, [%[din_ptr]], #16\n" \
-  "ldr q1, [%[din_ptr]], #16\n" \
-  "ldr q2, [%[din_ptr]], #16\n" \
-  "ldr q3, [%[din_ptr]], #16\n" \
-  "blt 0f\n"
-#define RELU                         \
-  "1: \n"                            \
-  "fmax v4.8h, v0.8h, %[vzero].8h\n" \
-  "fmax v5.8h, v1.8h, %[vzero].8h\n" \
-  "ldr q0, [%[din_ptr]], #16\n"      \
-  "fmax v6.8h, v2.8h, %[vzero].8h\n" \
-  "ldr q1, [%[din_ptr]], #16\n"      \
-  "fmax v7.8h, v3.8h, %[vzero].8h\n" \
-  "subs %w[cnt], %w[cnt], #1\n"      \
-  "ldr q2, [%[din_ptr]], #16\n"      \
-  "ldr q3, [%[din_ptr]], #16\n"
-
-#define STROE                        \
-  "stp q4, q5, [%[dout_ptr]], #32\n" \
-  "stp q6, q7 [%[dout_ptr]], #32\n"  \
-  "bne 1b\n"
-
-#define RELU_REM                     \
-  "0: \n"                            \
-  "cmp %w[rem_cnt], #0\n"            \
-  "beq 2f\n"                         \
-  "cmp %w[rem_cnt], #1\n"            \
-  "beq 3f\n"                         \
-  "cmp %w[rem_cnt], #2\n"            \
-  "beq 4f\n"                         \
-  "cmp %w[rem_cnt], #3\n"            \
-  "beq 5f\n"                         \
-  "3: \n"                            \
-  "fmax v4.8h, v0.8h, %[vzero].8h\n" \
-  "str q4, [%[dout_ptr]], #16\n"     \
-  "b 2f\n"                           \
-  "4: \n"                            \
-  "fmax v4.8h, v0.8h, %[vzero].8h\n" \
-  "fmax v5.8h, v1.8h, %[vzero].8h\n" \
-  "stp q4, q5, [%[dout_ptr]], #32\n" \
-  "b 2f\n"                           \
-  "5: \n"                            \
-  "fmax v4.8h, v0.8h, %[vzero].8h\n" \
-  "fmax v5.8h, v1.8h, %[vzero].8h\n" \
-  "fmax v6.8h, v2.8h, %[vzero].8h\n" \
-  "stp q4, q5, [%[dout_ptr]], #32\n" \
-  "str q6, [%[dout_ptr]], #16\n"     \
-  "2: \n"
-
-#endif
 
 template <>
 void act_relu<float16_t>(const float16_t* din,
@@ -96,7 +43,50 @@ void act_relu<float16_t>(const float16_t* din,
     if (neon_loop_cnt > 0 || neon_loop_rem_cnt > 0) {
 #ifdef __aarch64__
       asm volatile(
-          INIT RELU STORE RELU_REM
+          "cmp %w[cnt], #1          \n"
+          "ldr q0, [%[din_ptr]], #16\n"
+          "ldr q1, [%[din_ptr]], #16\n"
+          "ldr q2, [%[din_ptr]], #16\n"
+          "ldr q3, [%[din_ptr]], #16\n"
+          "blt 0f\n"
+          "1: \n"
+          "fmax v4.8h, v0.8h, %[vzero].8h\n"
+          "fmax v5.8h, v1.8h, %[vzero].8h\n"
+          "ldr q0, [%[din_ptr]], #16\n"
+          "fmax v6.8h, v2.8h, %[vzero].8h\n"
+          "ldr q1, [%[din_ptr]], #16\n"
+          "fmax v7.8h, v3.8h, %[vzero].8h\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "ldr q2, [%[din_ptr]], #16\n"
+          "ldr q3, [%[din_ptr]], #16\n"
+          "stp q4, q5, [%[dout_ptr]], #32\n"
+          "stp q6, q7, [%[dout_ptr]], #32\n"
+          "bne 1b\n"
+          "0: \n"
+          "cmp %w[rem_cnt], #0\n"
+          "beq 2f\n"
+          "cmp %w[rem_cnt], #1\n"
+          "beq 3f\n"
+          "cmp %w[rem_cnt], #2\n"
+          "beq 4f\n"
+          "cmp %w[rem_cnt], #3\n"
+          "beq 5f\n"
+          "3: \n"
+          "fmax v4.8h, v0.8h, %[vzero].8h\n"
+          "str q4, [%[dout_ptr]], #16\n"
+          "b 2f\n"
+          "4: \n"
+          "fmax v4.8h, v0.8h, %[vzero].8h\n"
+          "fmax v5.8h, v1.8h, %[vzero].8h\n"
+          "stp q4, q5, [%[dout_ptr]], #32\n"
+          "b 2f\n"
+          "5: \n"
+          "fmax v4.8h, v0.8h, %[vzero].8h\n"
+          "fmax v5.8h, v1.8h, %[vzero].8h\n"
+          "fmax v6.8h, v2.8h, %[vzero].8h\n"
+          "stp q4, q5, [%[dout_ptr]], #32\n"
+          "str q6, [%[dout_ptr]], #16\n"
+          "2: \n"
           : [din_ptr] "+r"(ptr_in_thread),
             [dout_ptr] "+r"(ptr_out_thread),
             [cnt] "+r"(cnt)
