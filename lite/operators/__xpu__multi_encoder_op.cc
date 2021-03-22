@@ -30,12 +30,12 @@ bool XPUMultiEncoderOp::InferShapeImpl() const {
   auto batch_size = input_shape[0];
   auto seq_len = input_shape[1];
   auto head_num = input_shape[2];
-  if (param.SeqLod && param.SeqLod->data<int>()) {
-    batch_size = param.SeqLod->numel() - 1;
+  if (param_.SeqLod && param_.SeqLod->data<int>()) {
+    batch_size = param_.SeqLod->numel() - 1;
     int seq_pad_len = 0;
-    for (auto i = 1; i < param.SeqLod->numel(); i++) {
+    for (auto i = 1; i < param_.SeqLod->numel(); i++) {
       int cur_seqlen =
-          param.SeqLod->data<int>()[i] - param.SeqLod->data<int>()[i - 1];
+          param_.SeqLod->data<int>()[i] - param_.SeqLod->data<int>()[i - 1];
       seq_pad_len = seq_pad_len > cur_seqlen ? seq_pad_len : cur_seqlen;
     }
     seq_len = seq_pad_len;
