@@ -69,6 +69,7 @@ add_kernel(fill_any_like_compute_host Host extra SRCS fill_any_like_compute.cc D
 add_kernel(fill_zeros_like_compute_host Host extra SRCS fill_zeros_like_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(scatter_nd_add_compute_host Host extra SRCS scatter_nd_add_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(tril_triu_compute_host Host extra SRCS tril_triu_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(topk_compute_host Host extra SRCS topk_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(topk_v2_compute_host Host extra SRCS topk_v2_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(meshgrid_compute_host Host extra SRCS meshgrid_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(linspace_compute_host Host extra SRCS linspace_compute.cc DEPS ${lite_kernel_deps})
@@ -76,7 +77,9 @@ add_kernel(beam_search_compute_host Host extra SRCS beam_search_compute.cc DEPS 
 add_kernel(beam_search_decode_compute_host Host extra SRCS beam_search_decode_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(roi_perspective_transform_compute_host Host extra SRCS roi_perspective_transform_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(lod_reset_compute_host Host extra SRCS lod_reset_compute.cc DEPS ${lite_kernel_deps})
-add_kernel(argsort Host extra SRCS argsort_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(argsort_compute_host Host extra SRCS argsort_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(distribute_fpn_proposals_compute_host Host extra SRCS distribute_fpn_proposals_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(collect_fpn_proposals_compute_host Host extra SRCS collect_fpn_proposals_compute.cc DEPS ${lite_kernel_deps})
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS where_index_compute_host)

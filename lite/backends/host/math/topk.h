@@ -14,25 +14,18 @@
 
 #pragma once
 #include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/operators/axpy_op.h"
+#include <utility>
+#include <vector>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace host {
+namespace math {
 
-class CollectFpnProposalsCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::CollectFpnProposalsParam;
+void topk(
+    const float* din, float* out_val, int64_t* out_ind, int m, int n, int k);
 
-  void Run() override;
-
-  virtual ~CollectFpnProposalsCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace math
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
