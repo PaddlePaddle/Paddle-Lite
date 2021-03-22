@@ -125,7 +125,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       im2sequence.cc
       prior_box.cc
       norm.cc
-      topk.cc
       pad2d.cc
       negative.cc
       beam_search.cc
