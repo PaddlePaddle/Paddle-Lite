@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/topk.h"
-#include <utility>
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/host/math/topk.h"
+
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
+
 bool comp_func(std::pair<float, int> a, std::pair<float, int> b) {
   return (a.first > b.first);
 }
@@ -29,8 +28,7 @@ void topk(const float* in_data,
           int64_t* out_ind,
           int m,
           int n,
-          int k,
-          Context<TARGET(kARM)>* ctx) {
+          int k) {
   for (int i = 0; i < m; i++) {
     const float* in_tmp = in_data + i * n;
     float* out_val_tmp = out_val + i * k;
@@ -48,6 +46,6 @@ void topk(const float* in_data,
 }
 
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle

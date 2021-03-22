@@ -13,26 +13,25 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
 #include "lite/core/kernel.h"
-#include "lite/operators/distribute_fpn_proposals_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class DistributeFpnProposalsCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class CollectFpnProposalsCompute
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
-  using param_t = operators::DistributeFpnProposalsParam;
+  using param_t = operators::CollectFpnProposalsParam;
 
   void Run() override;
 
-  virtual ~DistributeFpnProposalsCompute() = default;
+  virtual ~CollectFpnProposalsCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
