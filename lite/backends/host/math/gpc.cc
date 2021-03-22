@@ -1412,9 +1412,7 @@ void gpc_polygon_clip(gpc_op op,
 }
 
 void gpc_free_polygon(gpc_polygon *p) {
-  int c = 0;
-
-  for (c = 0; c < p->num_contours; c++) {
+  for (int c = 0; c < p->num_contours; c++) {
     gpc_free<gpc_vertex>(p->contour[c].vertex);
   }
   gpc_free<int>(p->hole);

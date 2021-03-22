@@ -167,7 +167,7 @@ inline void gpc_n_edge(edge_node *d, edge_node *e, int p) {
 template <typename T>
 void gpc_malloc(T *&p, int b, char *s) {  // NOLINT
   if (b > 0) {
-    p = (T *)malloc(b);  // NOLINT
+    p = (T *)(::malloc)(b);  // NOLINT
 
     if (!p) {
       fprintf(stderr, "gpc malloc failure: %s\n", s);
@@ -181,7 +181,7 @@ void gpc_malloc(T *&p, int b, char *s) {  // NOLINT
 template <typename T>
 void gpc_free(T *&p) {  // NOLINT
   if (p) {
-    free(p);
+    (::free)(p);
     p = NULL;
   }
 }

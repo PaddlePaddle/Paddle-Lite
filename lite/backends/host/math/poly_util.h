@@ -59,12 +59,13 @@ void Array2Poly(const T*& box,  // NOLINT
                 gpc_polygon& poly) {  // NOLINT
   size_t pts_num = box_size / 2;
   poly.num_contours = 1;
-  poly.hole = (int*)malloc(sizeof(int));  // NOLINT
+  poly.hole = (int*)(::malloc)(sizeof(int));  // NOLINT
   poly.hole[0] = 0;
-  poly.contour = (gpc_vertex_list*)malloc(sizeof(gpc_vertex_list));  // NOLINT
+  poly.contour =
+      (gpc_vertex_list*)(::malloc)(sizeof(gpc_vertex_list));  // NOLINT
   poly.contour->num_vertices = pts_num;
   poly.contour->vertex =
-      (gpc_vertex*)malloc(sizeof(gpc_vertex) * pts_num);  // NOLINT
+      (gpc_vertex*)(::malloc)(sizeof(gpc_vertex) * pts_num);  // NOLINT
   for (size_t i = 0; i < pts_num; ++i) {
     poly.contour->vertex[i].x = box[2 * i];
     poly.contour->vertex[i].y = box[2 * i + 1];
@@ -76,12 +77,13 @@ void PointVec2Poly(const std::vector<Point_<T>>& vec,
                    gpc_polygon& poly) {  // NOLINT
   int pts_num = vec.size();
   poly.num_contours = 1;
-  poly.hole = (int*)malloc(sizeof(int));  // NOLINT
+  poly.hole = (int*)(::malloc)(sizeof(int));  // NOLINT
   poly.hole[0] = 0;
-  poly.contour = (gpc_vertex_list*)malloc(sizeof(gpc_vertex_list));  // NOLINT
+  poly.contour =
+      (gpc_vertex_list*)(::malloc)(sizeof(gpc_vertex_list));  // NOLINT
   poly.contour->num_vertices = pts_num;
   poly.contour->vertex =
-      (gpc_vertex*)malloc(sizeof(gpc_vertex) * pts_num);  // NOLINT
+      (gpc_vertex*)(::malloc)(sizeof(gpc_vertex) * pts_num);  // NOLINT
   for (size_t i = 0; i < pts_num; ++i) {
     poly.contour->vertex[i].x = vec[i].x;
     poly.contour->vertex[i].y = vec[i].y;
