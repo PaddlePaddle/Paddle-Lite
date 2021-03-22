@@ -12,12 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/host/topk_compute.h"
+#pragma once
+#include <algorithm>
+#include <utility>
+#include <vector>
 
-REGISTER_LITE_KERNEL(
-    top_k, kARM, kFloat, kNCHW, paddle::lite::kernels::host::TopkCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Indices",
-                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace host {
+namespace math {
+
+void topk(
+    const float* din, float* out_val, int64_t* out_ind, int m, int n, int k);
+
+}  // namespace math
+}  // namespace host
+}  // namespace lite
+}  // namespace paddle

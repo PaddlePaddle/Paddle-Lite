@@ -19,16 +19,16 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class TopkCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class TopkCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   void Run() override;
 
   virtual ~TopkCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

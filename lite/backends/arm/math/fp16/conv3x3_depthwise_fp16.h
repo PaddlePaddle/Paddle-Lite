@@ -23,109 +23,25 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
-void conv_depthwise_3x3s1p1_bias_fp16_fp16(float16_t* dout,
-                                           const float16_t* din,
-                                           const float16_t* weights,
-                                           const float16_t* bias,
-                                           bool flag_bias,
-                                           int num,
-                                           int ch_in,
-                                           int h_in,
-                                           int w_in,
-                                           int h_out,
-                                           int w_out,
-                                           ARMContext* ctx);
+#define CONV_DEPTHWISE_PARAM                                               \
+  float16_t *dout, const float16_t *din, const float16_t *weights,         \
+      const float16_t *bias, bool flag_bias, int num, int ch_in, int h_in, \
+      int w_in, int h_out, int w_out, ARMContext *ctx
+void conv_depthwise_3x3s1p1_bias_fp16_fp16(CONV_DEPTHWISE_PARAM);
 
-void conv_depthwise_3x3s1p0_bias_fp16_fp16(float16_t* dout,
-                                           const float16_t* din,
-                                           const float16_t* weights,
-                                           const float16_t* bias,
-                                           bool flag_bias,
-                                           int num,
-                                           int ch_in,
-                                           int h_in,
-                                           int w_in,
-                                           int h_out,
-                                           int w_out,
-                                           ARMContext* ctx);
+void conv_depthwise_3x3s1p0_bias_fp16_fp16(CONV_DEPTHWISE_PARAM);
 
-void conv_depthwise_3x3s2p1_bias_fp16_fp16(float16_t* dout,
-                                           const float16_t* din,
-                                           const float16_t* weights,
-                                           const float16_t* bias,
-                                           bool flag_bias,
-                                           int num,
-                                           int ch_in,
-                                           int h_in,
-                                           int w_in,
-                                           int h_out,
-                                           int w_out,
-                                           ARMContext* ctx);
+void conv_depthwise_3x3s2p1_bias_fp16_fp16(CONV_DEPTHWISE_PARAM);
 
-void conv_depthwise_3x3s2p0_bias_fp16_fp16(float16_t* dout,
-                                           const float16_t* din,
-                                           const float16_t* weights,
-                                           const float16_t* bias,
-                                           bool flag_bias,
-                                           int num,
-                                           int ch_in,
-                                           int h_in,
-                                           int w_in,
-                                           int h_out,
-                                           int w_out,
-                                           ARMContext* ctx);
+void conv_depthwise_3x3s2p0_bias_fp16_fp16(CONV_DEPTHWISE_PARAM);
 
-void conv_depthwise_3x3s1p1_bias_relu_fp16_fp16(float16_t* dout,
-                                                const float16_t* din,
-                                                const float16_t* weights,
-                                                const float16_t* bias,
-                                                bool flag_bias,
-                                                int num,
-                                                int ch_in,
-                                                int h_in,
-                                                int w_in,
-                                                int h_out,
-                                                int w_out,
-                                                ARMContext* ctx);
+void conv_depthwise_3x3s1p1_bias_relu_fp16_fp16(CONV_DEPTHWISE_PARAM);
 
-void conv_depthwise_3x3s1p0_bias_relu_fp16_fp16(float16_t* dout,
-                                                const float16_t* din,
-                                                const float16_t* weights,
-                                                const float16_t* bias,
-                                                bool flag_bias,
-                                                int num,
-                                                int ch_in,
-                                                int h_in,
-                                                int w_in,
-                                                int h_out,
-                                                int w_out,
-                                                ARMContext* ctx);
+void conv_depthwise_3x3s1p0_bias_relu_fp16_fp16(CONV_DEPTHWISE_PARAM);
 
-void conv_depthwise_3x3s2p1_bias_relu_fp16_fp16(float16_t* dout,
-                                                const float16_t* din,
-                                                const float16_t* weights,
-                                                const float16_t* bias,
-                                                bool flag_bias,
-                                                int num,
-                                                int ch_in,
-                                                int h_in,
-                                                int w_in,
-                                                int h_out,
-                                                int w_out,
-                                                ARMContext* ctx);
+void conv_depthwise_3x3s2p1_bias_relu_fp16_fp16(CONV_DEPTHWISE_PARAM);
 
-void conv_depthwise_3x3s2p0_bias_relu_fp16_fp16(float16_t* dout,
-                                                const float16_t* din,
-                                                const float16_t* weights,
-                                                const float16_t* bias,
-                                                bool flag_bias,
-                                                int num,
-                                                int ch_in,
-                                                int h_in,
-                                                int w_in,
-                                                int h_out,
-                                                int w_out,
-                                                ARMContext* ctx);
+void conv_depthwise_3x3s2p0_bias_relu_fp16_fp16(CONV_DEPTHWISE_PARAM);
 
 }  // namespace fp16
 }  // namespace math

@@ -13,21 +13,38 @@
 // limitations under the License.
 
 #pragma once
+
+#include <cmath>
+#include "lite/backends/arm/math/fp16/gemm_fp16.h"
+#include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include "lite/core/context.h"
+#include "lite/core/device_info.h"
 
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
+namespace fp16 {
 
-void topk(const float* din,
-          float* out_val,
-          int64_t* out_ind,
-          int m,
-          int n,
-          int k,
-          Context<TARGET(kARM)>* ctx);
+void sgemm_fp16(bool is_transA,
+                bool is_transB,
+                int M,
+                int N,
+                int K,
+                float16_t alpha,
+                const float16_t* A,
+                int lda,
+                const float16_t* B,
+                int ldb,
+                float16_t beta,
+                float16_t* C,
+                int ldc,
+                const float16_t* bias,
+                bool is_bias,
+                const operators::ActivationParam act_param,
+                ARMContext* ctx);
 
+}  // namespace fp16
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

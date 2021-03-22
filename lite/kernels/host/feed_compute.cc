@@ -41,6 +41,6 @@ class FeedCompute
 
 REGISTER_LITE_KERNEL(
     feed, kHost, kAny, kAny, paddle::lite::kernels::host::FeedCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
