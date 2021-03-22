@@ -26,8 +26,7 @@ namespace fusion {
 class XPUMultiEncoderSliceLinkFuser : public FuseBase {
  public:
   void BuildPattern() override {
-    auto* xpu_encoder = OpNode("xpu_encoder", "__xpu__multi_encoder")
-                            ->assert_op_attr<bool>("adaptive_seqlen", false);
+    auto* xpu_encoder = OpNode("xpu_encoder", "__xpu__multi_encoder");
     auto* encoder_out =
         VarNode("encoder_out")
             ->assert_is_op_output("__xpu__multi_encoder", "Output")

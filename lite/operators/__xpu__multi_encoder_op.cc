@@ -27,12 +27,25 @@ bool XPUMultiEncoderOp::CheckShape() const {
 
 bool XPUMultiEncoderOp::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
+  auto batch_size = input_shape[0];
+  auto seq_len = input_shape[1];
+  auto head_num = input_shape[2];
+  if (param.SeqLod && param.SeqLod->data<int>()) {
+    batch_size = param.SeqLod->numel() - 1;
+    int seq_pad_len = 0;
+    for (auto i = 1; i < param.SeqLod->numel(); i++) {
+      int cur_seqlen =
+          param.SeqLod->data<int>()[i] - param.SeqLod->data<int>()[i - 1];
+      seq_pad_len = seq_pad_len > cur_seqlen ? seq_pad_len : cur_seqlen;
+    }
+    seq_len = seq_pad_len;
+  }
   if ((param_.slice_starts.size() > 0 && param_.slice_starts[0] == 0) &&
       (param_.slice_ends.size() > 0 && param_.slice_ends[0] == 1) &&
       (param_.slice_axes.size() > 0 && param_.slice_axes[0] == 1)) {
-    param_.output->Resize({input_shape[0], 1, input_shape[2]});
+    param_.output->Resize({batch_size, 1, head_num});
   } else {
-    param_.output->Resize(input_shape);
+    param_.output->Resize({batch_size, seq_len, head_num});
   }
   return true;
 }

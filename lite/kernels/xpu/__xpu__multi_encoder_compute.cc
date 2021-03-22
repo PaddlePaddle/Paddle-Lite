@@ -171,12 +171,8 @@ void XPUMultiEncoderCompute::Run() {
     }
     encoder_param_.from_seq_len = seq_pad_len;
     encoder_param_.to_seq_len = seq_pad_len;
-    param.output->Resize(
-        {param.SeqLod->numel() - 1, seq_pad_len, param.input->dims()[2]});
   }
-
   int r = -1;
-
   if (norm_before_) {
     r = transformer_encoder_run();
   } else {
