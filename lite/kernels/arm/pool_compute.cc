@@ -410,8 +410,8 @@ typedef paddle::lite::kernels::arm::PoolCompute<PRECISION(kFP16),
                                                 PRECISION(kFP16)>
     PoolFp16;
 REGISTER_LITE_KERNEL(pool2d, kARM, kFP16, kNCHW, PoolFp16, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindPaddleOpVersion("pool2d", 1)
     .Finalize();
 #endif  // ENABLE_ARM_FP16
