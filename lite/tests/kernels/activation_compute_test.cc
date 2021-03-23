@@ -341,8 +341,8 @@ void TestAct(const Place& place,
              float elu_alpha,
              DDim dims,
              std::string type,
-             activation_type_test act_type) {
-  float abs_error = 2e-5;
+             activation_type_test act_type,
+             float abs_error = 2e-5) {
   std::unique_ptr<arena::TestCase> tester(
       new ActivationComputeTester<T>(place,
                                      "def",
@@ -379,7 +379,17 @@ TEST(Activation_relu, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "relu", RELU);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "relu",
+            RELU,
+            abs_error);
   }
 }
 
@@ -412,7 +422,8 @@ TEST(Activation_leaky_relu, precision) {
               1.0,
               DDim(dims),
               "leaky_relu",
-              LEAKY_RELU);
+              LEAKY_RELU,
+              abs_error);
     }
   }
 }
@@ -441,7 +452,8 @@ TEST(Activation_relu_clipped, precision) {
               1.0,
               DDim(dims),
               "relu_clipped",
-              RELU_CLIPPED);
+              RELU_CLIPPED,
+              abs_error);
     }
   }
 }
@@ -460,7 +472,17 @@ TEST(Activation_prelu, precision) {
 #endif
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 2, 4}}) {
     for (auto mode : {"all", "channel", "element"}) {
-      TestAct(place, "def", 0.01, 6, mode, 0., 1.0, DDim(dims), "prelu", PRELU);
+      TestAct(place,
+              "def",
+              0.01,
+              6,
+              mode,
+              0.,
+              1.0,
+              DDim(dims),
+              "prelu",
+              PRELU,
+              abs_error);
     }
   }
 }
@@ -484,8 +506,17 @@ TEST(Activation_sigmoid, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(
-        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "sigmoid", SIGMOID);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "sigmoid",
+            SIGMOID,
+            abs_error);
   }
 }
 
@@ -510,7 +541,17 @@ TEST(Activation_tanh, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "tanh", TANH);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "tanh",
+            TANH,
+            abs_error);
   }
 }
 
@@ -526,8 +567,17 @@ TEST(Activation_swish, precision) {
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
     for (auto coef : {0.01, 0.1}) {
-      TestAct(
-          place, "def", 0.01, 6, "all", coef, 1.0, DDim(dims), "swish", SWISH);
+      TestAct(place,
+              "def",
+              0.01,
+              6,
+              "all",
+              coef,
+              1.0,
+              DDim(dims),
+              "swish",
+              SWISH,
+              abs_error);
     }
   }
 }
@@ -551,7 +601,17 @@ TEST(Activation_relu6, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "relu6", RELU6);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "relu6",
+            RELU6,
+            abs_error);
   }
 }
 
@@ -569,7 +629,17 @@ TEST(Activation_log, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "log", LOG);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "log",
+            LOG,
+            abs_error);
   }
 }
 
@@ -631,8 +701,17 @@ TEST(Activation_square, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(
-        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "square", SQUARE);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "square",
+            SQUARE,
+            abs_error);
   }
 }
 
@@ -651,7 +730,17 @@ TEST(Activation_gelu, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "gelu", GELU);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "gelu",
+            GELU,
+            abs_error);
   }
 }
 
@@ -679,7 +768,8 @@ TEST(Activation_hard_swish, precision) {
             1.0,
             DDim(dims),
             "hard_swish",
-            HARD_SWISH);
+            HARD_SWISH,
+            abs_error);
   }
 }
 
@@ -704,7 +794,8 @@ TEST(activation_reciprocal, precision) {
             1.0,
             DDim(dims),
             "reciprocal",
-            RECIPROCAL);
+            RECIPROCAL,
+            abs_error);
   }
 }
 
@@ -731,7 +822,8 @@ TEST(Activation_thresholded_relu, precision) {
             1.0,
             DDim(dims),
             "thresholded_relu",
-            THRESHOLDED_RELU);
+            THRESHOLDED_RELU,
+            abs_error);
   }
 }
 
@@ -757,7 +849,17 @@ TEST(Activation_softsign, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "relu", RELU);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "relu",
+            RELU,
+            abs_error);
   }
 }
 
@@ -768,8 +870,17 @@ TEST(Activation_relu_fp16, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct<float16_t>(
-        place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "relu", RELU);
+    TestAct<float16_t>(place,
+                       "def",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "relu",
+                       RELU,
+                       abs_error);
   }
 }
 #endif
