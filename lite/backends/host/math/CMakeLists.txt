@@ -1,4 +1,5 @@
 lite_cc_library(math_host SRCS
+    beam_search.cc
     sequence_padding.cc
     slice.cc
     pad3d.cc
