@@ -16,6 +16,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include "lite/core/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -167,7 +168,7 @@ inline void gpc_n_edge(edge_node *d, edge_node *e, int p) {
 template <typename T>
 void gpc_malloc(T *&p, int b, char *s) {  // NOLINT
   if (b > 0) {
-    p = (T *)(::malloc)(b);  // NOLINT
+    p = static_cast<T *>(host::malloc(b));
 
     if (!p) {
       fprintf(stderr, "gpc malloc failure: %s\n", s);
@@ -181,7 +182,7 @@ void gpc_malloc(T *&p, int b, char *s) {  // NOLINT
 template <typename T>
 void gpc_free(T *&p) {  // NOLINT
   if (p) {
-    (::free)(p);
+    host::free(p);
     p = NULL;
   }
 }
