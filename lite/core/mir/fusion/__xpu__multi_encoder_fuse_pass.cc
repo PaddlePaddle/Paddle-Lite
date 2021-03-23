@@ -558,9 +558,11 @@ class XPUSingleEncoderFuser : public FuseBase {
 
 class XPUMultiEncoderFuser {
  public:
-  explicit XPUMultiEncoderFuser(const std::string& fc_precision)
-      : fc_precision_(fc_precision) {}
-
+  explicit XPUMultiEncoderFuser(const std::string& fc_precision,
+                                bool adaptive_seqlen) {
+    fc_precision_ = fc_precision;
+    adaptive_seqlen_ = adaptive_seqlen;
+  }
   bool IsDirectPredecessorOf(Node* op1, Node* op2) {
     for (auto* out : op1->outlinks) {
       for (auto* in : op2->inlinks) {
@@ -659,6 +661,7 @@ class XPUMultiEncoderFuser {
     op_desc.SetAttr<std::string>(
         "act_type", first_encoder_op_info->GetAttr<std::string>("act_type"));
     op_desc.SetAttr<std::string>("precision", fc_precision_);
+    op_desc.SetAttr<bool>("adaptive_seqlen", adaptive_seqlen_);
 
     // q/k/v fusion
     bool enable_qkv_fusion = true;
@@ -925,6 +928,7 @@ class XPUMultiEncoderFuser {
 
  private:
   std::string fc_precision_;
+  bool adaptive_seqlen_;
 };
 
 }  // namespace fusion
@@ -943,6 +947,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     std::vector<bool> norm_befores{true, false};
 
     std::string fc_precision;
+    bool adaptive_seqlen = false;
 #ifdef LITE_WITH_XPU
     // TODO(miaotianxiang): core/mir/*_pass.cc are compiled anyway and need to
     // access TargetWrapperXPU::multi_encoder_precision, but this static member
@@ -968,6 +973,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
               << "lite::TargetWrapperXPU::multi_encoder_precision="
               << lite::TargetWrapperXPU::multi_encoder_precision;
     }
+    adaptive_seqlen = lite::TargetWrapperXPU::multi_encoder_adaptive_seqlen;
 #endif
 
     for (auto& act_type : act_types) {
@@ -987,7 +993,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
                       norm_before);
                   single_encoder_fuser(graph.get());
                   fusion::XPUMultiEncoderFuser multi_encoder_fuser(
-                      fc_precision);
+                      fc_precision, adaptive_seqlen);
                   multi_encoder_fuser(graph.get());
                 }
               }

@@ -44,14 +44,6 @@ bool XPUConv2dOp::CheckShape() const {
          "groups.";
   CHECK_EQ(filter_dims[0] % groups, 0)
       << "The number of output channels should be divided by groups.";
-  if (param_.has_branch) {
-    const auto branch_dims = param_.branch->dims();
-    CHECK_EQ(branch_dims.size(), 4UL)
-        << "ConvXPUOp branch should be 4-D tensor.";
-    for (auto i = 0; i < 4; i++) {
-      CHECK_EQ(in_dims[i], branch_dims[i]);
-    }
-  }
 
   return true;
 }
@@ -99,6 +91,14 @@ bool XPUConv2dOp::InferShapeImpl() const {
   // share LoD
   param_.output->set_lod(param_.input->lod());
 
+  if (param_.has_branch) {
+    const auto branch_dims = param_.branch->dims();
+    CHECK_EQ(branch_dims.size(), 4UL)
+        << "ConvXPUOp branch should be 4-D tensor.";
+    for (auto i = 0; i < 4; i++) {
+      CHECK_EQ(output_shape[i], branch_dims[i]);
+    }
+  }
   return true;
 }
 
