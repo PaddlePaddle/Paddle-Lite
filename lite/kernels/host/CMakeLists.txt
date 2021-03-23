@@ -73,6 +73,7 @@ add_kernel(topk_compute_host Host extra SRCS topk_compute.cc DEPS ${lite_kernel_
 add_kernel(topk_v2_compute_host Host extra SRCS topk_v2_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(meshgrid_compute_host Host extra SRCS meshgrid_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(linspace_compute_host Host extra SRCS linspace_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(beam_search_compute_host Host extra SRCS beam_search_compute.cc DEPS ${lite_kernel_deps} math_host)
 add_kernel(beam_search_decode_compute_host Host extra SRCS beam_search_decode_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(roi_perspective_transform_compute_host Host extra SRCS roi_perspective_transform_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(lod_reset_compute_host Host extra SRCS lod_reset_compute.cc DEPS ${lite_kernel_deps})
