@@ -92,6 +92,14 @@ bool XPUConv2dOp::InferShapeImpl() const {
   // share LoD
   param_.Output->set_lod(param_.Input->lod());
 
+  if (param_.has_branch) {
+    const auto branch_dims = param_.branch->dims();
+    CHECK_EQ(branch_dims.size(), 4UL)
+        << "ConvXPUOp branch should be 4-D tensor.";
+    for (auto i = 0; i < 4; i++) {
+      CHECK_EQ(output_shape[i], branch_dims[i]);
+    }
+  }
   return true;
 }
 

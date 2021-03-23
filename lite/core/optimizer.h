@@ -131,6 +131,7 @@ class Optimizer {
          "__xpu__embedding_with_eltwise_add_fuse_pass",
          "__xpu__fc_fuse_pass",
          "__xpu__softmax_topk_fuse_pass",
+         "__xpu__multi_encoder_adaptive_seqlen_fuse_pass",
          "__xpu__multi_encoder_slice_link_fuse_pass",
          "__xpu__generate_sequence_fuse_pass",
          // Only for fully quantized model, infer the output scale and fix the
