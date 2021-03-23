@@ -458,12 +458,25 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #endif
 }
 
+// **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
 void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::multi_encoder_precision = precision;
+  CxxConfig::set_xpu_multi_encoder_method(precision, false);
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_multi_encoder_precision' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
+                                             bool adaptive_seqlen) {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::multi_encoder_precision = precision;
+  lite::TargetWrapperXPU::multi_encoder_adaptive_seqlen = adaptive_seqlen;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_multi_encoder_method' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
