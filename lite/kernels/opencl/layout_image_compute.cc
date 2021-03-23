@@ -80,8 +80,15 @@ class LayoutComputeBufferChwToImageDefault
 
     // out info
     std::vector<size_t> new_dims = {1, 1, 1, 1};
-    for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
-      new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
+    if (x_dims.size() == 5) {
+      new_dims[4 - x_dims.size() + 1] = x_dims[0] * x_dims[1];
+      for (int tidx = 2; tidx < x_dims.size(); ++tidx) {
+        new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
+      }
+    } else {
+      for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
+        new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
+      }
     }
     const int out_C = new_dims[1];
     const int out_H = new_dims[2];
@@ -207,8 +214,15 @@ class LayoutComputeImageDefaultToBufferChw
     auto x_image_shape = InitImageDimInfoWith(x_dims);
 
     std::vector<size_t> new_dims = {1, 1, 1, 1};
-    for (int j = 0; j < x_dims.size(); ++j) {
-      new_dims[4 - x_dims.size() + j] = x_dims[j];
+    if (x_dims.size() == 5) {
+      new_dims[4 - x_dims.size() + 1] = x_dims[0] * x_dims[1];
+      for (int j = 2; j < x_dims.size(); ++j) {
+        new_dims[4 - x_dims.size() + j] = x_dims[j];
+      }
+    } else {
+      for (int j = 0; j < x_dims.size(); ++j) {
+        new_dims[4 - x_dims.size() + j] = x_dims[j];
+      }
     }
 
 #ifdef LITE_WITH_LOG
@@ -322,8 +336,15 @@ class LayoutComputeBufferChwToImage2DNw
 
     // out info
     std::vector<size_t> new_dims = {1, 1, 1, 1};
-    for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
-      new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
+    if (x_dims.size() == 5) {
+      new_dims[4 - x_dims.size() + 1] = x_dims[0] * x_dims[1];
+      for (int tidx = 2; tidx < x_dims.size(); ++tidx) {
+        new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
+      }
+    } else {
+      for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
+        new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
+      }
     }
 
     const int out_N = new_dims[0];
