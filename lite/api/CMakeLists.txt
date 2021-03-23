@@ -37,7 +37,6 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     if(LITE_WITH_CV)
       target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" paddle_cv_arm "-Wl,--no-whole-archive")
     endif(LITE_WITH_CV)
-
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared SHARED SRCS paddle_api.cc light_api.cc light_api_impl.cc
                   DEPS ${light_lib_DEPS}
@@ -47,6 +46,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   APU_DEPS ${apu_kernels}
                   RKNPU_DEPS ${rknpu_kernels}
                   IMAGINATION_NNA_DEPS ${imagination_nna_kernels}
+                  INTEL_FPGA_DEPS ${intel_fpga_kernels}
                   HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels}
                   )
 
@@ -177,10 +177,6 @@ if(LITE_WITH_FPGA)
     set(light_api_deps ${light_api_deps} ${fpga_deps})
     set(cxx_api_deps ${cxx_api_deps} ${fpga_deps})
 endif()
-if(LITE_WITH_INTEL_FPGA)
-    set(light_api_deps ${light_api_deps} ${intel_fpga_deps})
-    set(cxx_api_deps ${cxx_api_deps} ${intel_fpga_deps})
-endif()
 if(LITE_WITH_BM)
     set(light_api_deps ${light_api_deps} ${bm_deps})
     set(cxx_api_deps ${cxx_api_deps} ${bm_deps})
@@ -194,6 +190,11 @@ endif()
 if(LITE_WITH_IMAGINATION_NNA)
     set(light_api_deps ${light_api_deps} ${imagination_nna_deps})
     set(cxx_api_deps ${cxx_api_deps} ${imagination_nna_deps})
+endif()
+
+if(LITE_WITH_INTEL_FPGA)
+    set(light_api_deps ${light_api_deps} ${intel_fpga_deps})
+    set(cxx_api_deps ${cxx_api_deps} ${intel_fpga_deps})
 endif()
 
 if(LITE_WITH_HUAWEI_ASCEND_NPU)

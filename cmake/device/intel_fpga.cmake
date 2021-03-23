@@ -25,24 +25,23 @@ endif()
 
 message(STATUS "INTEL_FPGA_SDK_ROOT: ${INTEL_FPGA_SDK_ROOT}")
 
-set(INTEL_FPGA_SDK_INC  "${INTEL_FPGA_SDK_ROOT}/include")
-set(INTEL_FPGA_SDK_LIB  "${INTEL_FPGA_SDK_ROOT}/lib/libvnna.so")
+find_path(INTEL_FPGA_SDK_INC NAMES intelfpga.h
+  PATHS ${INTEL_FPGA_SDK_ROOT}/include NO_DEFAULT_PATH)
+if (NOT INTEL_FPGA_SDK_INC)
+  message(FATAL_ERROR "Can not find intelfpga.h in ${INTEL_FPGA_SDK_INC}/include")
+endif()
 
 include_directories("${INTEL_FPGA_SDK_INC}")
 
-find_library(INTEL_FPGA_LIB_FILE NAMES vnna
+find_library(INTEL_FPGA_SDK_LIB NAMES vnna
   PATHS ${INTEL_FPGA_SDK_ROOT}/lib)
 
-if(NOT INTEL_FPGA_LIB_FILE)
-  message(FATAL_ERROR "Can not find INTEL_FPGA_LIB_FILE in ${INTEL_FPGA_SDK_ROOT}")
+if(NOT INTEL_FPGA_SDK_LIB)
+  message(FATAL_ERROR "Can not find INTEL_FPGA_LIB_FILE in ${INTEL_FPGA_SDK_ROOT}/lib")
 else()
-  message(STATUS "Found INTEL_FPGA VNNA Library: ${INTEL_FPGA_LIB_FILE}")
-  add_library(vnna SHARED IMPORTED)
-  set_property(TARGET vnna PROPERTY IMPORTED_LOCATION ${INTEL_FPGA_LIB_FILE})
+  message(STATUS "Found INTEL_FPGA_SDK Library: ${INTEL_FPGA_SDK_LIB}")
+  add_library(vnna SHARED IMPORTED GLOBAL)
+  set_property(TARGET vnna PROPERTY IMPORTED_LOCATION ${INTEL_FPGA_SDK_LIB})
 endif()
-
-#link_directories("${INTEL_FPGA_SDK_ROOT}/lib")
-#add_library(vnna SHARED IMPORTED GLOBAL)
-#set_property(TARGET vnna PROPERTY IMPORTED_LOCATION ${INTEL_FPGA_SDK_LIB})
 
 set(intel_fpga_runtime_libs vnna CACHE INTERNAL "intel fpga sdk runtime libs")

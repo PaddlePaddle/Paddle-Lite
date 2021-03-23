@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <intelfpga.h>
 #include <cmath>
 #include <string>
 #include <vector>
