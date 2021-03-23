@@ -181,6 +181,23 @@ REGISTER_LITE_KERNEL(equal, kHost, kInt32, kAny, equal_int32, def)
     .BindPaddleOpVersion("equal", 1)
     .Finalize();
 
+// float kernel has higher score when picking kernel.
+using equal_int32_f = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kFloat),
+    paddle::lite::kernels::host::_EqualFunctor<int32_t>>;
+REGISTER_LITE_KERNEL(equal, kHost, kFloat, kAny, equal_int32_f, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindPaddleOpVersion("equal", 1)
+    .Finalize();
+
 using not_equal_float = paddle::lite::kernels::host::CompareCompute<
     PRECISION(kFloat),
     paddle::lite::kernels::host::_NotEqualFunctor<float>>;
@@ -198,9 +215,9 @@ REGISTER_LITE_KERNEL(not_equal, kHost, kFloat, kAny, not_equal_float, def)
     .Finalize();
 
 using not_equal_int32 = paddle::lite::kernels::host::CompareCompute<
-    PRECISION(kInt32),
+    PRECISION(kFloat),
     paddle::lite::kernels::host::_NotEqualFunctor<int32_t>>;
-REGISTER_LITE_KERNEL(not_equal, kHost, kInt32, kAny, not_equal_int32, def)
+REGISTER_LITE_KERNEL(not_equal, kHost, kFloat, kAny, not_equal_int32, int32)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
@@ -214,9 +231,9 @@ REGISTER_LITE_KERNEL(not_equal, kHost, kInt32, kAny, not_equal_int32, def)
     .Finalize();
 
 using not_equal_int64 = paddle::lite::kernels::host::CompareCompute<
-    PRECISION(kInt64),
+    PRECISION(kFloat),
     paddle::lite::kernels::host::_NotEqualFunctor<int64_t>>;
-REGISTER_LITE_KERNEL(not_equal, kHost, kInt64, kAny, not_equal_int64, def)
+REGISTER_LITE_KERNEL(not_equal, kHost, kFloat, kAny, not_equal_int64, int64)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})

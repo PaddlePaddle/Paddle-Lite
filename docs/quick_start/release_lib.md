@@ -61,10 +61,10 @@
 |armv7|OFF|ON|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios.armv7.with_cv.tiny_publish.tar.gz)|
 |armv7|ON|OFF|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios.armv7.with_extra.tiny_publish.tar.gz)|
 |armv7|ON|ON|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios.armv7.with_cv.with_extra.tiny_publish.tar.gz)|
-|armv8|OFF|OFF|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios64.armv8.tiny_publish.tar.gz)|
-|armv8|OFF|ON|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios64.armv8.with_cv.tiny_publish.tar.gz)|
-|armv8|ON|OFF|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios64.armv8.with_extra.tiny_publish.tar.gz)|
-|armv8|ON|ON|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios64.armv8.with_cv.with_extra.tiny_publish.tar.gz)|
+|armv8|OFF|OFF|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios.armv8.tiny_publish.tar.gz)|
+|armv8|OFF|ON|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios.armv8.with_cv.tiny_publish.tar.gz)|
+|armv8|ON|OFF|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios.armv8.with_extra.tiny_publish.tar.gz)|
+|armv8|ON|ON|[release/v2.8-rc](https://paddlelite-data.bj.bcebos.com/Release/2.8-rc/iOS/inference_lite_lib.ios.armv8.with_cv.with_extra.tiny_publish.tar.gz)|
 
 
 ## x86 Linux

@@ -348,6 +348,9 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto x_dims = param.x->dims();
   auto w_in = x_dims[x_dims.size() - 1];
 
+#define POOL_IN_PARAM                                                        \
+  din, dout, out_dims[0], out_dims[1], out_dims[2], out_dims[3], in_dims[1], \
+      in_dims[2], in_dims[3]
   if (global_pooling) {
     for (size_t i = 0; i < ksize.size(); ++i) {
       paddings[2 * i] = 0;
@@ -355,38 +358,36 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
       ksize[i] = static_cast<int>(in_dims[i + 2]);
     }
     if (pooling_type == "max") {
-      lite::arm::math::fp16::pooling_global_max_fp16(din,
-                                                     dout,
-                                                     out_dims[0],
-                                                     out_dims[1],
-                                                     out_dims[2],
-                                                     out_dims[3],
-                                                     in_dims[1],
-                                                     in_dims[2],
-                                                     in_dims[3]);
+      lite::arm::math::fp16::pooling_global_max_fp16(POOL_IN_PARAM);
       return;
     } else if (pooling_type == "avg") {
-      lite::arm::math::fp16::pooling_global_avg_fp16(din,
-                                                     dout,
-                                                     out_dims[0],
-                                                     out_dims[1],
-                                                     out_dims[2],
-                                                     out_dims[3],
-                                                     in_dims[1],
-                                                     in_dims[2],
-                                                     in_dims[3]);
+      lite::arm::math::fp16::pooling_global_avg_fp16(POOL_IN_PARAM);
+      return;
+    }
+  } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 0 &&
+             pads_equal && kps_equal) {
+    if (pooling_type == "max") {
+      lite::arm::math::fp16::pooling3x3s2p0_max_fp16(
+          POOL_IN_PARAM, paddings[1], paddings[3]);
+      return;
+    } else if (pooling_type == "avg") {
+      lite::arm::math::fp16::pooling3x3s2p0_avg_fp16(
+          POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
+      return;
+    }
+  } else if (ksize[0] == 3 && strides[0] == 2 && paddings[0] == 1 &&
+             pads_equal && kps_equal) {
+    if (pooling_type == "max") {
+      lite::arm::math::fp16::pooling3x3s2p1_max_fp16(
+          POOL_IN_PARAM, paddings[1], paddings[3]);
+      return;
+    } else if (pooling_type == "avg") {
+      lite::arm::math::fp16::pooling3x3s2p1_avg_fp16(
+          POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
       return;
     }
   }
-  lite::arm::math::fp16::pooling_basic_fp16(din,
-                                            dout,
-                                            out_dims[0],
-                                            out_dims[1],
-                                            out_dims[2],
-                                            out_dims[3],
-                                            in_dims[1],
-                                            in_dims[2],
-                                            in_dims[3],
+  lite::arm::math::fp16::pooling_basic_fp16(POOL_IN_PARAM,
                                             ksize,
                                             strides,
                                             paddings,
@@ -396,6 +397,7 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                             ceil_mode,
                                             use_quantizer,
                                             pooling_type);
+#undef POOL_IN_PARAM
 }
 
 #endif
@@ -408,8 +410,8 @@ typedef paddle::lite::kernels::arm::PoolCompute<PRECISION(kFP16),
                                                 PRECISION(kFP16)>
     PoolFp16;
 REGISTER_LITE_KERNEL(pool2d, kARM, kFP16, kNCHW, PoolFp16, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindPaddleOpVersion("pool2d", 1)
     .Finalize();
 #endif  // ENABLE_ARM_FP16

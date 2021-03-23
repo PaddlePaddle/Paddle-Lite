@@ -53,15 +53,27 @@ void XPUResNet50Compute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int batch_size = param.input->dims()[0];
-  int r = xdnn::conv2d_int16_resnet<float, int16_t>(
+  int n = param.input->dims()[0];
+  int c = param.input->dims()[1];
+  int h = param.input->dims()[2];
+  int w = param.input->dims()[3];
+
+  int r = xdnn::resnet50<float, int16_t, int16_t, float16>(
       ctx.GetRawContext(),                             /* context */
-      batch_size,                                      /* num */
       param.input->data<float>(),                      /* bottom */
-      &arg_filter_[0],                                 /* weight_list */
+      arg_filter_,                                     /* weight_list */
       param.output->mutable_data<float>(TARGET(kXPU)), /* top */
-      &arg_bias_[0],                                   /* bias_list */
-      &arg_max_filter_[0] /* max_filter_list */);
+      n,
+      c,
+      h,
+      w,
+      nullptr,
+      arg_max_filter_,
+      nullptr,
+      arg_bias_,
+      {nullptr, nullptr, nullptr, nullptr},
+      true);
+
   CHECK_EQ(r, 0);
 }
 

@@ -275,6 +275,10 @@ void RuntimeProgram::Run() {
   }
 #endif
 
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::MallocL3Cache();
+#endif
+
   int idx = -1;
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
@@ -313,6 +317,10 @@ void RuntimeProgram::Run() {
   LOG(INFO) << "\n"
             << precision_profiler_summary
             << inst_precision_profiler.GetSummaryTail();
+#endif
+
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::FreeL3Cache();
 #endif
 }
 
@@ -439,6 +447,7 @@ void Program::PrepareWorkspace(
             tensor->Resize(var_shape);
             VLOG(4) << " - dims " << tensor->dims().repr();
           }
+          tensor->set_precision(var_data_type);
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));

@@ -1,4 +1,5 @@
 lite_cc_library(math_host SRCS
+    beam_search.cc
     sequence_padding.cc
     slice.cc
     pad3d.cc
@@ -6,4 +7,5 @@ lite_cc_library(math_host SRCS
     stack.cc
     reduce_all.cc
     argmax.cc
+    topk.cc
     DEPS context)

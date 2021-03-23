@@ -63,6 +63,28 @@ __kernel void channel_mul(__global image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
+__kernel void channel_mul_d1(__read_only image2d_t input,    
+                             __read_only image2d_t bias,    
+                             __write_only image2d_t outputImage,    
+                             int x_w, int opt) { 
+  int x = get_global_id(0);    
+  int y = get_global_id(1);    
+
+  int2 coords;    
+  coords.x = x;    
+  coords.y = y;    
+
+  int2 coords_bias;    
+  coords_bias.x = (opt == 1) ? 0 : (x % x_w);
+  coords_bias.y = 0;
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);    
+  CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords_bias);    
+  CL_DTYPE4 output = in * (CL_DTYPE4)(biase.x);    
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);    
+}
+
 // etc : 1 1 1 72
 // run time Y  [value,0,0,0] * 72
 __kernel void channel_mul_d2(__global image2d_t input,

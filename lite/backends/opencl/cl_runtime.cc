@@ -215,7 +215,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
              "and you have Write&Read permission. Jump to build program "
              "from source.";
     } else {
-      LOG(INFO) << "Load opencl kernel binary file: " << bin_file;
+      LOG(INFO) << "Load opencl kernel bin file: " << bin_file;
       ret = Deserialize(bin_file, &programs_precompiled_binary_);
       CHECK(ret) << "Deserialize failed.";
 
@@ -237,9 +237,9 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
       } else if (host::memcmp(((sn_iter->second)[0]).data(),
                               GetSN(build_option).data(),
                               GetSN(build_option).length())) {
-        LOG(INFO) << "size of sn_info: " << ((sn_iter->second)[0]).size();
-        LOG(INFO) << "size of GetSN: " << GetSN(build_option).length();
-        LOG(INFO) << "GetSN: " << GetSN(build_option);
+        LOG(INFO) << "size of sn_info: " << ((sn_iter->second)[0]).size()
+                  << "\nsize of GetSN: " << GetSN(build_option).length()
+                  << "\nGetSN: " << GetSN(build_option);
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is invalid!";
         delete_bin_flag = true;
@@ -268,10 +268,8 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
 
         auto it = programs_.find(program_key);
         if (it != programs_.end()) {
-#ifdef LITE_WITH_LOG
           VLOG(3) << " --- program -> " << program_key
                   << " has been built in binary --- ";
-#endif
           gotten_bin_flag_ = true;
           ret = true;
         } else {
@@ -480,26 +478,9 @@ std::string CLRuntime::GetSN(const std::string options) {
                               platform_->getInfo<CL_PLATFORM_PROFILE>() + "; ";
   std::string device_version = device_->getInfo<CL_DEVICE_VERSION>() + "; ";
   std::string driver_version = device_->getInfo<CL_DRIVER_VERSION>() + "; ";
-  std::string abi_version{""};
-#if defined(__MACOSX) || defined(__APPLE__)
-  abi_version += "apple";
-#elif defined(__ANDROID__)
-#if defined(__aarch64__)
-  abi_version += "armv8";
-#else
-  abi_version += "armv7";
-#endif  // __aarch64__
-#elif defined(__linux__)
-  abi_version += "linux";
-#elif defined(_WIN64)
-  abi_version += "win64";
-#elif defined(_WIN32)
-  abi_version += "win32";
-#endif
-  abi_version += "; ";
   std::string place_holder{"place_holder"};
   sn_ss << lite_version << options << platform_info << device_version
-        << driver_version << abi_version << place_holder;
+        << driver_version << place_holder;
   return sn_ss.str();
 }
 
@@ -873,8 +854,6 @@ void CLRuntime::SetTunedLocalWorkSizeMap(const std::string& key,
 }
 
 double CLRuntime::GetCommandTime(const cl::Event& event) {
-  // due to one command queue, no need for `event.wait();`,
-  // and `event.wait()` affect performance of auto-tune.
   event.wait();
   auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
@@ -882,8 +861,6 @@ double CLRuntime::GetCommandTime(const cl::Event& event) {
 }
 
 double CLRuntime::GetQueuedTime(const cl::Event& event) {
-  // due to one command queue, no need for `event.wait();`,
-  // and `event.wait()` affect performance of auto-tune.
   event.wait();
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) /
@@ -891,8 +868,6 @@ double CLRuntime::GetQueuedTime(const cl::Event& event) {
 }
 
 double CLRuntime::GetSubmitTime(const cl::Event& event) {
-  // due to one command queue, no need for `event.wait();`,
-  // and `event.wait()` affect performance of auto-tune.
   event.wait();
   return (event.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
           event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) /
