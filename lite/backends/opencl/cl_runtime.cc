@@ -215,6 +215,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
              "and you have Write&Read permission. Jump to build program "
              "from source.";
     } else {
+      LOG(INFO) << "Load opencl kernel binary file: " << bin_file;
       ret = Deserialize(bin_file, &programs_precompiled_binary_);
       CHECK(ret) << "Deserialize failed.";
 

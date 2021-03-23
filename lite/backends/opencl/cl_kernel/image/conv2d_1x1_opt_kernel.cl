@@ -1,13 +1,166 @@
 #include <cl_common.h>
 
 
+__kernel void conv2d_1x1_mali(__read_only image2d_t input, __write_only image2d_t output, __global half4 *weight,
+                              #ifdef BIASE_CH
+                              __global half4 *bias,
+                              #endif
+                              __private const int4 input_shape, __private const int4 output_shape,
+                              __private const int4 kernel_stride, __private const int4 pad,
+                              __private const int2 dilation) {
+  const int out_c_w_idx = get_global_id(0); //c/4 w/4
+  const int out_b_h_idx  = get_global_id(1); //b h
+
+  int N = input_shape.x;
+  int IH = input_shape.y;
+  int IW = input_shape.z;
+  int OH = output_shape.y;
+  int OW = output_shape.z;
+  int CI_SLICES = input_shape.w;
+  int CO_SLICES = output_shape.w;
+  int OW_SLICES = (output_shape.z + 3) / 4;
+  int KH = kernel_stride.x, KW = kernel_stride.y;
+  int strideH = kernel_stride.z, strideW = kernel_stride.w;
+  int padTop = pad.x, padBottom = pad.y, padLeft = pad.z, padRight = pad.w;
+  int dilationH = dilation.x, dilationW = dilation.y;
+
+  if (out_c_w_idx >= CO_SLICES * OW_SLICES || out_b_h_idx >= N * OH) {
+    return;
+  }
+
+  const int out_c_blk_idx = out_c_w_idx / OW_SLICES; // [0, oc/4)
+  const int out_w_blk_idx = out_c_w_idx % OW_SLICES; // [0, ow/4)
+  const int n_idx = out_b_h_idx / OH;
+  const int out_h_idx = out_b_h_idx % OH;
+
+  const int out_w4_idx = out_w_blk_idx << 2; // [0, 4, ... , ow]
+
+#ifdef BIASE_CH
+  CL_DTYPE4 out0 = vload4(out_c_blk_idx, (__global CL_DTYPE *)bias);
+  CL_DTYPE4 out1 = out0;
+  CL_DTYPE4 out2 = out0;
+  CL_DTYPE4 out3 = out0;
+#else
+  CL_DTYPE4 out0 = 0.0f;
+  CL_DTYPE4 out1 = 0.0f;
+  CL_DTYPE4 out2 = 0.0f;
+  CL_DTYPE4 out3 = 0.0f;
+#endif
+
+  CL_DTYPE4 weights0;
+  CL_DTYPE4 weights1;
+  CL_DTYPE4 weights2;
+  CL_DTYPE4 weights3;
+
+  CL_DTYPE4 in0;
+  CL_DTYPE4 in1;
+  CL_DTYPE4 in2;
+  CL_DTYPE4 in3;
+
+  int tmp_h = mad24(out_h_idx, strideH, -padTop);
+
+  const int ow0 = out_w4_idx;
+  const int ow1 = out_w4_idx + 1;
+  const int ow2 = out_w4_idx + 2;
+  const int ow3 = out_w4_idx + 3;
+
+  // __global half4 *weight_ptr = weight + out_c_idx * KH * KW * CI_SLICES * 4;
+
+  for (int kh = 0; kh < KH; ++kh) {
+    // int ih = mad24(kh, dilationH, tmp_h);
+    // int y_idx = select(n_idx * IH + ih, -1, ih < 0 || ih >= IH);
+
+    for (int kw = 0; kw < KW; ++kw) {
+      int iw0 = mad24(kw, dilationW, ow0 * strideW - padLeft);
+      int iw1 = iw0 + strideW;
+      int iw2 = iw1 + strideW;
+      int iw3 = iw2 + strideW;
+      iw0 = select(iw0, INT_MIN, iw0 < 0 || iw0 >= IW);
+      iw1 = select(iw1, INT_MIN, iw1 < 0 || iw1 >= IW);
+      iw2 = select(iw2, INT_MIN, iw2 < 0 || iw2 >= IW);
+      iw3 = select(iw3, INT_MIN, iw3 < 0 || iw3 >= IW);
+      int in_x_base = 0;
+
+      for (int ci_slice = 0; ci_slice < CI_SLICES; ++ci_slice) {
+        int offset = mad24(out_c_blk_idx, CI_SLICES, ci_slice) * 4;
+
+        in0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw0, out_b_h_idx));
+        in1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw1, out_b_h_idx));
+        in2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw2, out_b_h_idx));
+        in3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw3, out_b_h_idx));
+
+        weights0 = vload4(offset    , (__global CL_DTYPE *)weight);
+        weights1 = vload4(offset + 1, (__global CL_DTYPE *)weight);
+        weights2 = vload4(offset + 2, (__global CL_DTYPE *)weight);
+        weights3 = vload4(offset + 3, (__global CL_DTYPE *)weight);
+
+        out0.x += dot(weights0, in0);
+        out0.y += dot(weights1, in0);
+        out0.z += dot(weights2, in0);
+        out0.w += dot(weights3, in0);
+
+        out1.x += dot(weights0, in1);
+        out1.y += dot(weights1, in1);
+        out1.z += dot(weights2, in1);
+        out1.w += dot(weights3, in1);
+
+        out2.x += dot(weights0, in2);
+        out2.y += dot(weights1, in2);
+        out2.z += dot(weights2, in2);
+        out2.w += dot(weights3, in2);
+
+        out3.x += dot(weights0, in3);
+        out3.y += dot(weights1, in3);
+        out3.z += dot(weights2, in3);
+        out3.w += dot(weights3, in3);
+
+        in_x_base += IW;
+      }
+    }
+  }
+
+  out0 = activation_type4(out0, 0.f);
+  out1 = activation_type4(out1, 0.f);
+  out2 = activation_type4(out2, 0.f);
+  out3 = activation_type4(out3, 0.f);
+
+#ifdef SCALE_ACTIVATION
+  out0 = fuse_scale(out0, 1.f, 0.f, 0.f);
+  out1 = fuse_scale(out1, 1.f, 0.f, 0.f);
+  out2 = fuse_scale(out2, 1.f, 0.f, 0.f);
+  out3 = fuse_scale(out3, 1.f, 0.f, 0.f);
+#endif
+
+  const int out_x_base = out_c_blk_idx * OW;
+  const int remain = OW - out_w4_idx;
+  int out_c4w_idx = out_x_base + out_w4_idx;
+
+  if (remain > 4) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx,     out_b_h_idx), out0);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx + 1, out_b_h_idx), out1);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx + 2, out_b_h_idx), out2);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx + 3, out_b_h_idx), out3);
+  } else if (remain == 3) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx,     out_b_h_idx), out0);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx + 1, out_b_h_idx), out1);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx + 2, out_b_h_idx), out2);
+  } else if (remain == 2) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx,     out_b_h_idx), out0);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx + 1, out_b_h_idx), out1);
+  } else if (remain == 1) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx,     out_b_h_idx), out0);
+  }
+}
+
+
 // filter: OIHW2OHWIOgroupI4O4
 __kernel void Conv2D_H1W1C1(__read_only image2d_t input, __write_only image2d_t output, __global half4 *weight,
                             #ifdef BIASE_CH
                             __global half4 *bias,
                             #endif
-                            int4 input_shape, int4 output_shape, int4 kernel_stride, int4 pad,
-                            int2 dilation) {
+                            __private const int4 input_shape, __private const int4 output_shape,
+                            __private const int4 kernel_stride, __private const int4 pad,
+                            __private const int2 dilation) {
   const int BlockH = 1;
   const int BlockW = 1;
   const int BlockC = 1;
@@ -84,8 +237,9 @@ __kernel void Conv2D_H2W1C1(__read_only image2d_t input, __write_only image2d_t 
                             #ifdef BIASE_CH
                             __global half4 *bias,
                             #endif
-                            int4 input_shape, int4 output_shape, int4 kernel_stride, int4 pad,
-                            int2 dilation) {
+                            __private const int4 input_shape, __private const int4 output_shape,
+                            __private const int4 kernel_stride, __private const int4 pad,
+                            __private const int2 dilation) {
   const int BlockH = 2;
   const int BlockW = 1;
   const int BlockC = 1;
@@ -176,8 +330,9 @@ __kernel void Conv2D_H2W1C2(__read_only image2d_t input, __write_only image2d_t 
                             #ifdef BIASE_CH
                             __global half4 *bias,
                             #endif
-                            int4 input_shape, int4 output_shape, int4 kernel_stride, int4 pad,
-                            int2 dilation) {
+                            __private const int4 input_shape, __private const int4 output_shape,
+                            __private const int4 kernel_stride, __private const int4 pad,
+                            __private const int2 dilation) {
   const int BlockH = 2;
   const int BlockW = 1;
   const int BlockC = 2;
@@ -292,8 +447,9 @@ __kernel void Conv2D_H2W2C2(__read_only image2d_t input, __write_only image2d_t 
                             #ifdef BIASE_CH
                             __global half4 *bias,
                             #endif
-                            int4 input_shape, int4 output_shape, int4 kernel_stride, int4 pad,
-                            int2 dilation) {
+                            __private const int4 input_shape, __private const int4 output_shape,
+                            __private const int4 kernel_stride, __private const int4 pad,
+                            __private const int2 dilation) {
   const int BlockH = 2;
   const int BlockW = 2;
   const int BlockC = 2;

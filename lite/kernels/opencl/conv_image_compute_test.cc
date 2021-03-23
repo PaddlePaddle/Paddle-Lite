@@ -172,11 +172,11 @@ int ConvOutputSize(int input_size,
 // #define LOOP_TEST
 TEST(conv2d, compute_image2d_1x1) {
   // conv infos
-  const int ksize = 2;
-  const int stride = 2;
-  const int pad = 1;
+  const int ksize = 1;
+  const int stride = 1;
+  const int pad = 0;
   const int group = 1;
-  const int dilation = 1;
+  const int dilation = 0;
 //  int loop_cnt = 0;
 
 #ifdef LOOP_TEST
