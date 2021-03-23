@@ -85,10 +85,13 @@ class LayoutComputeBufferChwToImageDefault
       for (int tidx = 2; tidx < x_dims.size(); ++tidx) {
         new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
       }
-    } else {
+    } else if (x_dims.size() < 5) {
       for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
         new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
       }
+    } else {
+      LOG(FATAL) << "unsupported layout tensor dims size, the dims size is:"
+                 << x_dims.size();
     }
     const int out_C = new_dims[1];
     const int out_H = new_dims[2];
@@ -219,10 +222,13 @@ class LayoutComputeImageDefaultToBufferChw
       for (int j = 2; j < x_dims.size(); ++j) {
         new_dims[4 - x_dims.size() + j] = x_dims[j];
       }
-    } else {
+    } else if (x_dims.size() < 5) {
       for (int j = 0; j < x_dims.size(); ++j) {
         new_dims[4 - x_dims.size() + j] = x_dims[j];
       }
+    } else {
+      LOG(FATAL) << "unsupported layout tensor dims size, the dims size is: "
+                 << x_dims.size();
     }
 
 #ifdef LITE_WITH_LOG
@@ -341,10 +347,13 @@ class LayoutComputeBufferChwToImage2DNw
       for (int tidx = 2; tidx < x_dims.size(); ++tidx) {
         new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
       }
-    } else {
+    } else if (x_dims.size() < 5) {
       for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
         new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
       }
+    } else {
+      LOG(FATAL) << "unsupported layout tensor dims size, the dims size is:"
+                 << x_dims.size();
     }
 
     const int out_N = new_dims[0];
