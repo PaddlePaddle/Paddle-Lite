@@ -72,25 +72,25 @@ function test_model {
   adb_devices=($(adb devices |grep -v devices |grep device | awk -F " " '{print $1}'))
 
   # prepare workspace directory
-  adb -s ${adb_devices[$adb_index]} shell "cd data/local/tmp && rm -rf $adb_dir && mkdir $adb_dir"
+  adb -s ${adb_devices[$adb_index]} shell "cd /data/local/tmp && rm -rf $adb_dir && mkdir $adb_dir"
   # 1. upload optimized model
-  adb -s ${adb_devices[$adb_index]} push android_lib/optimized_model/mobilenet_v1.nb data/local/tmp/$adb_dir
+  adb -s ${adb_devices[$adb_index]} push android_lib/optimized_model/mobilenet_v1.nb /data/local/tmp/$adb_dir
 
   # 2. perform armv7 unit_test
   #    2.1 upload armv7 lib
-  adb -s ${adb_devices[$adb_index]} push android_lib/armv7.clang/cxx/lib/libpaddle_light_api_shared.so data/local/tmp/$adb_dir
+  adb -s ${adb_devices[$adb_index]} push android_lib/armv7.clang/cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/$adb_dir
   #    2.2 compile and upload armv7 demo
   cd android_lib/armv7.clang/demo/cxx/mobile_light && make && chmod +x mobilenetv1_light_api
-  adb -s ${adb_devices[$adb_index]} push mobilenetv1_light_api data/local/tmp/$adb_dir  && cd -
+  adb -s ${adb_devices[$adb_index]} push mobilenetv1_light_api /data/local/tmp/$adb_dir  && cd -
   #    2.3 perform unit test
   adb -s ${adb_devices[$adb_index]} shell "cd /data/local/tmp/$adb_dir && export LD_LIBRARY_PATH=./ &&  ./mobilenetv1_light_api ./mobilenet_v1.nb"
 
   # 3. perform armv8 unit_test
   #    3.1 upload armv8 lib
-  adb -s ${adb_devices[$adb_index]} push android_lib/armv8.clang/cxx/lib/libpaddle_light_api_shared.so data/local/tmp/$adb_dir
+  adb -s ${adb_devices[$adb_index]} push android_lib/armv8.clang/cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/$adb_dir
   #    3.2 compile and upload armv8 demo
   cd android_lib/armv8.clang/demo/cxx/mobile_light && make && chmod +x mobilenetv1_light_api
-  adb -s ${adb_devices[$adb_index]} push mobilenetv1_light_api data/local/tmp/$adb_dir  && cd -
+  adb -s ${adb_devices[$adb_index]} push mobilenetv1_light_api /data/local/tmp/$adb_dir  && cd -
   #    3.3 perform unit test
   adb -s ${adb_devices[$adb_index]} shell "cd /data/local/tmp/$adb_dir && export LD_LIBRARY_PATH=./ &&  ./mobilenetv1_light_api ./mobilenet_v1.nb"
 }
