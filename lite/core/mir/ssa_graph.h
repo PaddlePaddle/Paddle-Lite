@@ -51,6 +51,8 @@ class SSAGraph : GraphBase {
 
   std::vector<mir::Node *> NodeTopologicalOrder();
 
+  bool IsDirectedAcyclic();
+
   // The inputs of the graph.
   std::vector<mir::Node *> inputs();
 
@@ -79,6 +81,15 @@ class SSAGraph : GraphBase {
   void SetValidPlaces(const std::vector<Place> &x) { valid_places_ = x; }
 
  private:
+  enum class NodeType { kUnk = 0, kStmt, kAny };
+  struct SortStackData {
+    NodeType node_type{NodeType::kAny};
+    std::set<mir::Node *> visited;
+    std::vector<mir::Node *> res;
+    std::map<mir::Node *, mir::Node *> reverse;
+    std::set<mir::Node *> stack;
+  };
+
   mir::Node *Argument(const std::string &name);
   // Check the bidirectional connection.
   bool CheckBidirectionalConnection();
@@ -98,10 +109,10 @@ class SSAGraph : GraphBase {
   // Build node inlink edge table.
   std::map<mir::Node *, std::set<mir::Node *>> BuildNodeAdjList();
 
-  void SortHelper(const std::map<mir::Node *, std::set<mir::Node *>> &adj_list,
-                  mir::Node *node,
-                  std::set<mir::Node *> *visited,
-                  std::vector<mir::Node *> *ret);
+  bool DepthFirstSearch(
+      const std::map<mir::Node *, std::set<mir::Node *>> &adj_list,
+      mir::Node *node,
+      SortStackData *data);
 
  private:
   std::list<mir::Node> node_storage_;

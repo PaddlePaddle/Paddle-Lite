@@ -83,23 +83,23 @@ std::string Visualize(mir::SSAGraph* graph) {
   };
   int op_idx = 0;
   std::set<std::string> exists_var_names;
-  for (auto& node : graph->StmtTopologicalOrder()) {
-    if (!node->IsStmt()) continue;
-    auto op_info = node->AsStmt().op_info();
+  for (auto& node : graph->mutable_nodes()) {
+    if (!node.IsStmt()) continue;
+    auto op_info = node.AsStmt().op_info();
     auto op_type = op_info->Type();
     std::string op_name;
-    if (node->AsStmt().need_sync_) {
+    if (node.AsStmt().need_sync_) {
       std::ostringstream oss;
-      for (size_t i = 0; i < node->AsStmt().sync_streams_.size(); ++i) {
-        oss << std::to_string(node->AsStmt().sync_streams_[i]);
-        if (i != node->AsStmt().sync_streams_.size() - 1) {
+      for (size_t i = 0; i < node.AsStmt().sync_streams_.size(); ++i) {
+        oss << std::to_string(node.AsStmt().sync_streams_[i]);
+        if (i != node.AsStmt().sync_streams_.size() - 1) {
           oss << ",";
         }
       }
       op_name = string_format("%s%d, stream=%d, sync_streams={%s}",
                               op_type.c_str(),
                               op_idx++,
-                              node->AsStmt().stream_id_,
+                              node.AsStmt().stream_id_,
                               oss.str().c_str());
     } else {
       op_name = string_format("%s%d", op_type.c_str(), op_idx++);
@@ -110,7 +110,7 @@ std::string Visualize(mir::SSAGraph* graph) {
                  Dot::Attr("style", "filled"),
                  Dot::Attr("color", "black"),
                  Dot::Attr("fillcolor", "yellow")});
-    for (auto& x : node->inlinks) {
+    for (auto& x : node.inlinks) {
       std::string var_name;
       if (x->AsArg().lane != -1) {
         var_name = string_format(
@@ -132,7 +132,7 @@ std::string Visualize(mir::SSAGraph* graph) {
       }
       dot.AddEdge(var_name, op_name, attrs);
     }
-    for (auto& x : node->outlinks) {
+    for (auto& x : node.outlinks) {
       std::string var_name;
       if (x->AsArg().lane != -1) {
         var_name = string_format(

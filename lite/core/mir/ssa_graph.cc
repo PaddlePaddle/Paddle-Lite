@@ -49,8 +49,8 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildOperationAdjList() {
       adj_list[&n] = std::set<mir::Node *>();
     }
     std::vector<mir::Node *> nodes;
-    for (auto &var : n.inlinks) {
-      for (auto &adj_n : var->inlinks) {
+    for (auto &var : n.outlinks) {
+      for (auto &adj_n : var->outlinks) {
         CHECK(adj_n->IsStmt());
         nodes.push_back(adj_n);
       }
@@ -73,7 +73,7 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
       adj_list[&n] = std::set<mir::Node *>();
     }
     std::vector<mir::Node *> nodes;
-    for (auto &var : n.inlinks) {
+    for (auto &var : n.outlinks) {
       nodes.push_back(var);
     }
     std::stable_sort(
@@ -86,56 +86,89 @@ std::map<mir::Node *, std::set<mir::Node *>> SSAGraph::BuildNodeAdjList() {
   return adj_list;
 }
 
-void SSAGraph::SortHelper(
+bool SSAGraph::DepthFirstSearch(
     const std::map<mir::Node *, std::set<mir::Node *>> &adj_list,
     mir::Node *node,
-    std::set<mir::Node *> *visited,
-    std::vector<mir::Node *> *ret) {
-  visited->insert(node);
-
+    SortStackData *data) {
+  CHECK(data);
+  bool has_cycle{false};
+  data->visited.insert(node);
+  data->stack.insert(node);
   for (auto adj : adj_list.at(node)) {
-    if (visited->find(adj) == visited->end()) {
-      SortHelper(adj_list, adj, visited, ret);
+    if (data->visited.find(adj) == data->visited.end()) {
+      data->reverse[adj] = node;
+      if (!DepthFirstSearch(adj_list, adj, data)) {
+        has_cycle = true;
+      }
+    } else if (data->stack.find(adj) != data->stack.end()) {
+      has_cycle = true;
+      std::stack<mir::Node *> cycle;
+      for (auto *n = node; n != adj; n = data->reverse.at(n)) {
+        cycle.push(n);
+      }
+      cycle.push(adj);
+      cycle.push(node);
+      VLOG(5) << "Find a directed cycle in the graph.";
+      while (!cycle.empty()) {
+        if (data->node_type == NodeType::kAny) {
+          VLOG(5) << "  -> " << *(cycle.top());
+        }
+        cycle.pop();
+      }
     }
   }
-
-  ret->push_back(node);
+  data->res.push_back(node);
+  data->stack.erase(node);
+  return !has_cycle;
 }
 
 std::vector<mir::Node *> SSAGraph::StmtTopologicalOrder() {
   CheckBidirectionalConnection();
-
-  std::stack<mir::Node *> stack;
-  std::set<mir::Node *> visited;
-  std::vector<mir::Node *> res;
+  IsDirectedAcyclic();
+  SortStackData data;
+  data.node_type = NodeType::kStmt;
 
   auto adj_list = BuildOperationAdjList();
 
   for (auto adj : adj_list) {
-    if (visited.find(adj.first) == visited.end()) {
-      SortHelper(adj_list, adj.first, &visited, &res);
+    if (data.visited.find(adj.first) == data.visited.end()) {
+      DepthFirstSearch(adj_list, adj.first, &data);
     }
   }
 
-  return res;
+  return data.res;
 }
 
 std::vector<mir::Node *> SSAGraph::NodeTopologicalOrder() {
   CheckBidirectionalConnection();
-
-  std::stack<mir::Node *> stack;
-  std::set<mir::Node *> visited;
-  std::vector<mir::Node *> res;
+  IsDirectedAcyclic();
+  SortStackData data;
 
   auto adj_list = BuildNodeAdjList();
 
   for (auto adj : adj_list) {
-    if (visited.find(adj.first) == visited.end()) {
-      SortHelper(adj_list, adj.first, &visited, &res);
+    if (data.visited.find(adj.first) == data.visited.end()) {
+      DepthFirstSearch(adj_list, adj.first, &data);
     }
   }
 
-  return res;
+  return data.res;
+}
+
+bool SSAGraph::IsDirectedAcyclic() {
+  CheckBidirectionalConnection();
+
+  SortStackData data;
+  auto adj_list = BuildNodeAdjList();
+
+  for (auto adj : adj_list) {
+    if (data.visited.find(adj.first) == data.visited.end()) {
+      if (!DepthFirstSearch(adj_list, adj.first, &data)) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 Node *SSAGraph::GraphCreateInstructNode(
@@ -199,10 +232,15 @@ void SSAGraph::Build(const Program &program,
       DirectedLink(arg_node, op_node);
     }
     for (const auto &var_name : op->op_info()->output_names()) {
-      node_storage_.emplace_back();
-      auto *arg_node = &node_storage_.back();
-      arg_node->AsArg(var_name, node_storage_.size() - 1);
-      arg_update_node_map[var_name] = arg_node;
+      mir::Node *arg_node = nullptr;
+      if (arg_update_node_map.count(var_name)) {
+        arg_node = arg_update_node_map.at(var_name);
+      } else {
+        node_storage_.emplace_back();
+        arg_node = &node_storage_.back();
+        arg_node->AsArg(var_name, node_storage_.size() - 1);
+        arg_update_node_map[var_name] = arg_node;
+      }
       if (var_type_map.count(var_name) && !arg_node->arg()->type) {
         arg_node->arg()->type = var_type_map[var_name];
       }
