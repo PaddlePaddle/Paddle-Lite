@@ -37,6 +37,10 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     if(LITE_WITH_CV)
       target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" paddle_cv_arm "-Wl,--no-whole-archive")
     endif(LITE_WITH_CV)
+    if (LITE_WITH_INTEL_FPGA)
+      # Need to add INTEL_FPGA runtime libs  dependency
+      target_link_libraries(paddle_full_api_shared ${intel_fpga_runtime_libs})
+    endif(LITE_WITH_INTEL_FPGA)
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared SHARED SRCS paddle_api.cc light_api.cc light_api_impl.cc
                   DEPS ${light_lib_DEPS}
@@ -138,6 +142,10 @@ else()
             #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
 
+        if (LITE_WITH_INTEL_FPGA)
+            # Need to add INTEL_FPGA runtime libs dependency
+            target_link_libraries(paddle_light_api_shared ${intel_fpga_runtime_libs})
+        endif(LITE_WITH_INTEL_FPGA)
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
         if (LITE_WITH_JAVA)
           add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
@@ -467,8 +475,16 @@ if (NOT LITE_ON_TINY_PUBLISH)
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     target_link_libraries(paddle_api_full ${cuda_deps})
+    if (LITE_WITH_INTEL_FPGA)
+      # Need to add INTEL_FPGA runtime libs dependency
+      target_link_libraries(paddle_api_full ${intel_fpga_runtime_libs})
+    endif()
     get_property(fluid_modules GLOBAL PROPERTY FLUID_MODULES)
     bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
+    if (LITE_WITH_INTEL_FPGA)
+      # Need to add INTEL_FPGA runtime libs dependency
+      target_link_libraries(paddle_api_light ${intel_fpga_runtime_libs})
+    endif()
 endif()
 
 #-----------------------------------------------------------------------------------------------------
