@@ -44,7 +44,6 @@ void mat_mul_naive(__global const CL_DTYPE* a,
   C(m, n, ldc) = res * alpha;
 }
 
-
 // gemv_1x4: M = 1
 // a: param.input  {M, K}
 // b: param.w      {K, N}
@@ -53,8 +52,12 @@ __kernel
 void gemv_1x4(__global const CL_DTYPE* a,
               __global const CL_DTYPE* b,
               __global CL_DTYPE* c,
-              const int M, const int N, const int K,
-              const int lda, const int ldb, const int ldc,
+              const int M,
+	      const int N,
+	      const int K,
+              const int lda,
+	      const int ldb,
+	      const int ldc,
               const CL_DTYPE alpha) {
     const int col = get_global_id(0) << 2; // gws[0]: [0, N >> 2) height of B == N
 
@@ -68,7 +71,7 @@ void gemv_1x4(__global const CL_DTYPE* a,
 
         // main loop of K
         short p = 0;
-	__global CL_DTYPE* base_b = &B(p,   col, ldb);
+	__global CL_DTYPE* base_b = (__global CL_DTYPE*)&B(p, col, ldb);
         for (; p < K - 3; p += 4) {
             a1x4 = convert_half4(vload4(0, &A(0, p, lda)));
 
@@ -77,10 +80,10 @@ void gemv_1x4(__global const CL_DTYPE* a,
             b2_1x4 = convert_half4(vload4(0, base_b + ldb * 2));
             b3_1x4 = convert_half4(vload4(0, base_b + ldb * 3));
 
-            c1x4 += a1x4.x * b0_1x4;
-            c1x4 += a1x4.y * b1_1x4;
-            c1x4 += a1x4.z * b2_1x4;
-            c1x4 += a1x4.w * b3_1x4;
+            c1x4 = mad(a1x4.x, b0_1x4, c1x4);
+            c1x4 = mad(a1x4.y, b1_1x4, c1x4);
+            c1x4 = mad(a1x4.z, b2_1x4, c1x4);
+            c1x4 = mad(a1x4.w, b3_1x4, c1x4);
 
             base_b += 4 * ldb;
         }
@@ -105,9 +108,9 @@ void gemv_1x4(__global const CL_DTYPE* a,
                 a1x4.x = a[p];
             }
         }
-        c1x4 += a1x4.x * b0_1x4;
-        c1x4 += a1x4.y * b1_1x4;
-        c1x4 += a1x4.z * b2_1x4;
+        c1x4 = mad(a1x4.x, b0_1x4, c1x4);
+        c1x4 = mad(a1x4.y, b1_1x4, c1x4);
+        c1x4 = mad(a1x4.z, b2_1x4, c1x4);
         c1x4 = c1x4 * (half4)alpha;
 
        if (col % 4 == 0) {
@@ -131,11 +134,9 @@ void gemv_1x4(__global const CL_DTYPE* a,
            for (short p = 0; p < K; ++p) {
                b0 = B(p, col_idx, ldb);
                a0 = A(0, p, lda);
-               c0 += a0 * b0;
-           }
+               c0 = mad(a0, b0, c0);
+	   }
            C(0, col_idx, ldc) = c0 * alpha;
        }
     }
 }
-
-

@@ -114,15 +114,19 @@ class MatMulV2Compute
       CHECK(x_k == y_k);
 
 #ifdef LITE_WITH_LOG
-      VLOG(4) << "x_dims:" << x_dims;
-      VLOG(4) << "y_dims:" << y_dims;
-      VLOG(4) << "transpose_X:" << transpose_x_;
-      VLOG(4) << "transpose_Y:" << transpose_y_;
-      VLOG(4) << "m_:" << m_ << ", k_:" << k_ << ", n_=" << n_;
-      VLOG(4) << "lda_:" << lda_ << ", ldb_:" << ldb_ << ", ldc_:" << ldc_;
+      LOG(INFO) << "x_dims:" << x_dims;
+      LOG(INFO) << "y_dims:" << y_dims;
+      LOG(INFO) << "transpose_X:" << transpose_x_;
+      LOG(INFO) << "transpose_Y:" << transpose_y_;
+      LOG(INFO) << "m_:" << m_ << ", k_:" << k_ << ", n_=" << n_;
+      LOG(INFO) << "lda_:" << lda_ << ", ldb_:" << ldb_ << ", ldc_:" << ldc_;
 #endif
 
-      kernel_func_name_ = "mat_mul_naive";
+      if (m_ == 1) {
+        kernel_func_name_ = "gemv_1x4";
+      } else {
+        kernel_func_name_ = "mat_mul_naive";
+      }
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
       auto& context = ctx_->As<OpenCLContext>();
       context.cl_context()->AddKernel(kernel_func_name_,
@@ -142,6 +146,8 @@ class MatMulV2Compute
     if (kernel_func_name_ == "mat_mul_naive") {
       global_work_size_ =
           cl::NDRange{static_cast<size_t>(m_), static_cast<size_t>(n_)};
+    } else if (kernel_func_name_ == "gemv_1x4") {
+      global_work_size_ = cl::NDRange{static_cast<size_t>((n_ + 3) / 4)};
     }
   }
 
