@@ -13,26 +13,22 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace xpu {
 
-class BeamSearchCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+class IncrementCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   void Run() override;
 
-  ~BeamSearchCompute() {}
-
- private:
+  virtual ~IncrementCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -24,7 +24,6 @@
 #include "lite/backends/arm/math/anchor_generator.h"
 #include "lite/backends/arm/math/argmax.h"
 #include "lite/backends/arm/math/axpy.h"
-#include "lite/backends/arm/math/beam_search.h"
 #include "lite/backends/arm/math/box_coder.h"
 #include "lite/backends/arm/math/clip.h"
 #include "lite/backends/arm/math/col_im_transform.h"
