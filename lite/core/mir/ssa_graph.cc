@@ -96,14 +96,14 @@ bool SSAGraph::DepthFirstSearch(
   data->stack.insert(node);
   for (auto adj : adj_list.at(node)) {
     if (data->visited.find(adj) == data->visited.end()) {
-      data->reverse[adj] = node;
+      data->reverse_edge[adj] = node;
       if (!DepthFirstSearch(adj_list, adj, data)) {
         has_cycle = true;
       }
     } else if (data->stack.find(adj) != data->stack.end()) {
       has_cycle = true;
       std::stack<mir::Node *> cycle;
-      for (auto *n = node; n != adj; n = data->reverse.at(n)) {
+      for (auto *n = node; n != adj; n = data->reverse_edge.at(n)) {
         cycle.push(n);
       }
       cycle.push(adj);
@@ -117,7 +117,7 @@ bool SSAGraph::DepthFirstSearch(
       }
     }
   }
-  data->res.push_back(node);
+  data->post_order.emplace_back(node);
   data->stack.erase(node);
   return !has_cycle;
 }
@@ -135,8 +135,8 @@ std::vector<mir::Node *> SSAGraph::StmtTopologicalOrder() {
       DepthFirstSearch(adj_list, adj.first, &data);
     }
   }
-
-  return data.res;
+  std::reverse(std::begin(data.post_order), std::end(data.post_order));
+  return std::move(data.post_order);
 }
 
 std::vector<mir::Node *> SSAGraph::NodeTopologicalOrder() {
@@ -152,7 +152,8 @@ std::vector<mir::Node *> SSAGraph::NodeTopologicalOrder() {
     }
   }
 
-  return data.res;
+  std::reverse(std::begin(data.post_order), std::end(data.post_order));
+  return std::move(data.post_order);
 }
 
 bool SSAGraph::IsDirectedAcyclic() {

@@ -85,8 +85,8 @@ class SSAGraph : GraphBase {
   struct SortStackData {
     NodeType node_type{NodeType::kAny};
     std::set<mir::Node *> visited;
-    std::vector<mir::Node *> res;
-    std::map<mir::Node *, mir::Node *> reverse;
+    std::vector<mir::Node *> post_order;
+    std::map<mir::Node *, mir::Node *> reverse_edge;
     std::set<mir::Node *> stack;
   };
 
