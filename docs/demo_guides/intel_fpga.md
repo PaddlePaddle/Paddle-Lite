@@ -93,6 +93,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
         - convert_to_raw_image.py # 将测试图片保存为raw数据的python脚本
         - build.sh # 示例程序编译脚本
         - run.sh # 示例程序运行脚本
+		- intelfpgadrv.ko # 英特尔FPGA启动程序
     - libs
       - PaddleLite
         - armhf
