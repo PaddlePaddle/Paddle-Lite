@@ -87,9 +87,10 @@ void elementwise_add<int64_t>(const int64_t* dinx,
                               const int64_t* diny,
                               int64_t* dout,
                               int num) {
-  for (int i = 0; i < num; i++) {
-    dout[i] = dinx[i] + diny[i];
-  }
+  neon_elementwise_range_to_range<
+      MergeConfig<AddConfig<int64_t>,
+                  ActiveConfig<ActiveType::NO_ACTIVE, int64_t>>>(
+      dinx, diny, dout, num);
 }
 
 template <>
