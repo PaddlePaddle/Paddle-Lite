@@ -201,6 +201,9 @@ void ConvImageCompute::PrepareForRun() {
     tensor_hold_filter_buffer->Resize(filter_ext_dims);
     auto* filter_buffer_data =
         tensor_hold_filter_buffer->mutable_data<half_t>();
+    ::memset(filter_buffer_data,
+             0,
+             tensor_hold_filter_buffer->numel() * sizeof(half_t));
     LOG(INFO) << "1";
     // OIHW2OIHWI4O4(filter_cpu,
     //               filter_buffer_data,
@@ -573,6 +576,9 @@ void ConvImageCompute::PrepareForRun() {
         block_size_.C * 4;
     tensor_hold_bias_buffer->Resize(bias_ext_dims);
     tensor_hold_bias_buffer->mutable_data<half_t>();
+    ::memset(tensor_hold_bias_buffer->raw_data(),
+             0,
+             tensor_hold_bias_buffer->numel() * sizeof(half_t));
     FloatArray2HalfArray(
         conv_param_->bias->mutable_data<float>(),
         reinterpret_cast<half_t*>(tensor_hold_bias_buffer->raw_data()),
@@ -1012,6 +1018,47 @@ void ConvImageCompute::OIHW2OHWIO4I4(
     }
   }
 }
+
+/*
+void ConvImageCompute::OIHW2OHWIO4I4(
+    void* src, void* dst, size_t O, size_t I, size_t H, size_t W) {
+  bool fp16_support =
+      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+  size_t i_block = (I + 3) / 4;
+  size_t o_block = (O + 3) / 4;
+
+  float* dst_fp32 = static_cast<float*>(dst);
+  half_t* dst_fp16 = static_cast<half_t*>(dst);
+
+  float* p = static_cast<float*>(src);
+  for (size_t ob = 0; ob < o_block; ob++) {
+    for (size_t h = 0; h < H; h++) {
+      for (size_t w = 0; w < W; w++) {
+        for (size_t ib = 0; ib < i_block; ib++) {
+          for (size_t o = 0; o < 4; o++) {
+            for (size_t i = 0; i < 4; i++) {
+              size_t src_o = ob * 4 + o;
+              size_t src_i = ib * 4 + i;
+              size_t src_h = h;
+              size_t src_w = w;
+              size_t src_idx = src_o * I * H * W + src_i * H * W + src_h * W +
+src_w;
+              if (src_idx < 0 || src_idx > O*I*H*W) {
+                fp16_support ? *dst_fp16 = Float2Half(0.f) : *dst_fp32 = 0.f;
+              } else {
+                fp16_support ? *dst_fp16 = Float2Half(*(p + src_idx)) :
+*dst_fp32 = *(p + src_idx);
+              }
+              dst_fp16 ++;
+              dst_fp32 ++;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+*/
 
 void ConvImageCompute::Conv2dMali() {
   cl_int4 input_shape = {input_tensor_n_,
