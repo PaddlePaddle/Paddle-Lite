@@ -5,7 +5,7 @@ set -e
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
 # armv8 or armv7hf or armv7, default armv8.
-ARCH=armv7hf
+ARCH=armv8
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
 # ON or OFF, default OFF.
@@ -34,8 +34,8 @@ IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 WITH_BAIDU_XPU=OFF
 BAIDU_XPU_SDK_ROOT=""
 # options of compiling intel fpga.
-WITH_INTEL_FPGA=ON
-INTEL_FPGA_SDK_ROOT="$(pwd)/intelfpga_sdk" 
+WITH_INTEL_FPGA=OFF
+INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk" 
 # options of adding training ops
 WITH_TRAIN=OFF
 # num of threads used during compiling..

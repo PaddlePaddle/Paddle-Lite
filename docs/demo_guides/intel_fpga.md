@@ -22,7 +22,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ### 已支持的Paddle模型
 
-- [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/intelfpga/ssd_mobilenet_v1.tar.gz)
+- [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/ssd_mobilenet_v1.tar.gz)
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -34,15 +34,15 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ## 准备工作
 
-开发板C5MB可以通过串口线进行连接，也可以通过ssh进行连接，初次使用请参考[文档](https://paddlelite-demo.bj.bcebos.com/devices/intelfpga/AIGO_C5MB_UG.pdf)
+开发板C5MB可以通过串口线进行连接，也可以通过ssh进行连接，初次使用请参考[文档](https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/AIGO_C5MB_UG.pdf)
 
 ## 参考示例演示
 
-### 测试设备(Roc1开发板)
+### 测试设备(C5MB开发板)
 
-![c5mb_front](https://paddlelite-demo.bj.bcebos.com/devices/intelfpga/c5mb_front.jpg)
+![c5mb_front](https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/c5mb_front.jpg)
 
-![c5mb_back](https://paddlelite-demo.bj.bcebos.com/devices/intelfpga/c5mb_back.jpg)
+![c5mb_back](https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/c5mb_back.jpg)
 
 ### 准备设备环境
 
@@ -53,7 +53,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 ### 准备交叉编译环境
 
 - 按照以下两种方式配置交叉编译环境：
-  - Docker交叉编译环境：由于C5MB运行环境为Ubuntu16.04，因此不能直接使用[编译环境准备](../source_compile/compile_env)中的docker image，而需要按照如下方式在Host机器上手动构建Ubuntu16.04的docker image；
+  - Docker交叉编译环境：由于C5MB运行环境为Ubuntu，因此不能直接使用[编译环境准备](../source_compile/compile_env)中的docker image，而需要按照如下方式在Host机器上手动构建Ubuntu的docker image；
 
     ```
     $ wget https://paddlelite-demo.bj.bcebos.com/devices/intelfpga/Dockerfile
@@ -70,7 +70,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ### 运行图像检测示例程序
 
-- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/intelfpga/PaddleLite-linux-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/PaddleLite-linux-demo.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-linux-demo
@@ -93,13 +93,14 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
         - convert_to_raw_image.py # 将测试图片保存为raw数据的python脚本
         - build.sh # 示例程序编译脚本
         - run.sh # 示例程序运行脚本
-		- intelfpgadrv.ko # 英特尔FPGA启动程序
+		- intelfpgadrv.ko # 英特尔FPGA内核驱动程序
     - libs
       - PaddleLite
         - armhf
           - include # PaddleLite头文件
           - lib
             - libvnna.so # 英特尔FPGA接口库
+			- libpaddle_light_api_shared.so # 用于最终移动端部署的预编译PaddleLite库（tiny publish模式下编译生成的库）
             - libpaddle_full_api_shared.so # 用于直接加载Paddle模型进行测试和Debug的预编译PaddleLite库（full publish模式下编译生成的库）
   ```
 
@@ -139,18 +140,25 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
   $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
   $ cd Paddle-Lite
   $ git checkout <release-version-tag>
-  $ curl -L https://paddlelite-demo.bj.bcebos.com/devices/intelfpga/intelfpga_sdk.tar.gz -o - | tar -zx
+  $ curl -L https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/intel_fpga_sdk.tar.gz -o - | tar -zx
   ```
 
 - 编译并生成PaddleLite+IntelFPGA的部署库
 
-  ```shell
   For C5MB
-  full_publish
-  $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_intel_fpga=ON --intel_fpga_sdk_root=./intelfpga_sdk full_publish
+  - tiny_publish编译方式
+    ```shell
+    $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_intel_fpga=ON --intel_fpga_sdk_root=./intel_fpga_sdk
+
+    将tiny_publish模式下编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.intel_fpga/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/arm64/lib/libpaddle_light_api_shared.so文件；
+	```
+  - full_publish编译方式
+  ```shell
+  $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_intel_fpga=ON --intel_fpga_sdk_root=./intel_fpga_sdk full_publish
+  
+  将full_publish模式下编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.intel_fpga/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_full_api_shared.so文件。
   ```
 
-- 将编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.intelfpga/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/armhf/include目录；
-- 将full_publish模式下编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.intelfpga/cxx/lib/libpaddle_full_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_full_api_shared.so文件。
+  - 将编译生成的build.lite.armlinux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.intelfpga/cxx/include替换PaddleLite-linux-demo/libs/PaddleLite/armhf/include目录；  
 
 ## 其它说明
