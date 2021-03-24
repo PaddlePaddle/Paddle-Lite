@@ -135,11 +135,16 @@ std::set<cl::NDRange> CLContext::GenerateLocalWorkSizes(cl::NDRange gws,
   } else if (tune_type == lite_api::CL_TUNE_NORMAL) {
     divisors = {1, 3, 5, 7, 9, 11, 13};
   } else if (tune_type == lite_api::CL_TUNE_EXHAUSTIVE) {
+    divisors = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+#undef GEN_MORE_LWS
+#ifdef GEN_MORE_LWS
     auto genByGlobal = [&](size_t global_i) -> std::set<size_t> {
       std::set<size_t> locals;
       int idx = 1;
       while (idx <= global_i) {
-        locals.insert(idx);
+        if (global_i % idx == 0) {
+          locals.insert(idx);
+        }
         idx = idx << 2;
       }
       for (size_t i = 1; i <= 16; i++) {
@@ -177,6 +182,7 @@ std::set<cl::NDRange> CLContext::GenerateLocalWorkSizes(cl::NDRange gws,
         }
       }
     }
+#endif  // GEN_MORE_LWS
   } else {
     LOG(FATAL) << "Unsupported opencl tune type:" << tune_type;
   }
