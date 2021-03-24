@@ -36,7 +36,7 @@ endif()
 # lite_cc_library(batch_norm_compute_x86 SRCS batch_norm_compute.cc DEPS ${lite_kernel_deps})
 # lite_cc_library(uniform_random_compute_x86 SRCS uniform_random_compute.cc DEPS ${lite_kernel_deps} )
 add_kernel(gru_compute_x86 X86 basic SRCS gru_compute.cc DEPS ${lite_kernel_deps} blas math_function sequence2batch gru_compute)
-add_kernel(gru_unit_compute_x86 X86 basic SRCS gru_unit_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(gru_unit_compute_x86 X86 basic SRCS gru_unit_compute.cc DEPS ${lite_kernel_deps} math_function)
 add_kernel(sequence_expand_as_compute_x86 X86 basic SRCS sequence_expand_as_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(sequence_conv_compute_x86 X86 basic SRCS sequence_conv_compute.cc DEPS ${lite_kernel_deps} math_function blas context_project)
 
