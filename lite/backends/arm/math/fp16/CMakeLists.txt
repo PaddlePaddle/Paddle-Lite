@@ -1,4 +1,5 @@
 cc_library(math_arm_fp16 SRCS
+    activation_fp16.cc
     conv_impl_fp16.cc
     conv_3x3s2_direct_fp16.cc
     conv3x3s1_depthwise_fp16.cc
