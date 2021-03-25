@@ -44,7 +44,7 @@ class GenerateProgramPass : public ProgramPass {
     // sub_block kernel
     // sub_block: while, conditional_block
     std::vector<std::string> sub_block_ops{"while", "conditional_block"};
-    for (int i = insts_.size() - 2; i >= 0; i--) {
+    for (int i = static_cast<int>(insts_.size()) - 2; i >= 0; i--) {
       for (auto& inst : insts_[i]) {
         std::string op_name = inst.op()->Type();
         if (std::find(sub_block_ops.begin(), sub_block_ops.end(), op_name) ==
