@@ -18,11 +18,15 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ### 已支持的设备
 
-- 海运捷讯C5MB开发板
+- 海运捷讯C5MB（英特尔FPGA Cyclone V）开发板
+- 海运捷讯C5CB（英特尔FPGA Cyclone V）开发板
+- 海运捷讯C5TB（英特尔FPGA Cyclone V）开发板
 
 ### 已支持的Paddle模型
 
-- [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/ssd_mobilenet_v1.tar.gz)
+- [全量化MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/mobilenet_v1.tar.gz)
+- [全量化SSD_MobileNetV1](https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/ssd_mobilenet_v1.tar.gz)
+- [全量化YOLOV3](https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/yolov3.tar.gz)
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -56,7 +60,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
   - Docker交叉编译环境：由于C5MB运行环境为Ubuntu，因此不能直接使用[编译环境准备](../source_compile/compile_env)中的docker image，而需要按照如下方式在Host机器上手动构建Ubuntu的docker image；
 
     ```
-    $ wget https://paddlelite-demo.bj.bcebos.com/devices/intelfpga/Dockerfile
+    $ wget https://paddlelite-demo.bj.bcebos.com/devices/intel_fpga/Dockerfile
     $ docker build --network=host -t paddlepaddle/paddle-lite-ubuntu16_04:1.0 .
     $ docker run --name paddle-lite-ubuntu16_04 --net=host -it --privileged -v $PWD:/Work -w /Work paddlepaddle/paddle-lite-ubuntu16_04:1.0 /bin/bash
     ```
@@ -82,9 +86,10 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
         - labels
           - pascalvoc_label_list # 检测label文件
         - models
-          - ssd_mobilenet_v1 # Non-combined格式的、SSD量化模型
+          - ssd_mobilenet_v1 # Combined格式的protobuf量化模型
             - __model__ # 已通过opt转好的拓扑信息模型文件
 			- __params__ # 已通过opt转好的参数信息模型文件
+		  - ssd_mobilenet_v1.nb # 已通过opt转好的、适合ARM CPU的naive_buffer量化模型
       - shell
         - CMakeLists.txt # 示例程序CMake脚本
         - build
@@ -99,7 +104,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
         - armhf
           - include # PaddleLite头文件
           - lib
-            - libvnna.so # 英特尔FPGA接口库
+            - libvnna.so # 英特尔FPGA推理运行时库
 			- libpaddle_light_api_shared.so # 用于最终移动端部署的预编译PaddleLite库（tiny publish模式下编译生成的库）
             - libpaddle_full_api_shared.so # 用于直接加载Paddle模型进行测试和Debug的预编译PaddleLite库（full publish模式下编译生成的库）
   ```
