@@ -493,8 +493,9 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
   }
 #ifdef SHOW_EACH_LWS_TIME
   LOG(INFO) << "=======================";
-  LOG(INFO) << "best:" << std::to_string(min_lws[0])
-            << std::to_string(min_lws[1]) << std::to_string(min_lws[2])
+  LOG(INFO) << "best:" << std::to_string(min_lws[0]) << ","
+            << std::to_string(min_lws[1]) << "," << std::to_string(min_lws[2])
+            << ","
             << " time:" << min_lws_time;
   LOG(INFO) << "======= finish ========";
 #endif

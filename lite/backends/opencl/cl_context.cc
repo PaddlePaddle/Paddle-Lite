@@ -136,6 +136,53 @@ std::set<cl::NDRange> CLContext::GenerateLocalWorkSizes(cl::NDRange gws,
     divisors = {1, 3, 5, 7, 9, 11, 13};
   } else if (tune_type == lite_api::CL_TUNE_EXHAUSTIVE) {
     divisors = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+#undef GEN_MORE_LWS
+#ifdef GEN_MORE_LWS
+    auto genByGlobal = [&](size_t global_i) -> std::set<size_t> {
+      std::set<size_t> locals;
+      int idx = 1;
+      while (idx <= global_i) {
+        if (global_i % idx == 0) {
+          locals.insert(idx);
+        }
+        idx = idx << 2;
+      }
+      for (size_t i = 1; i <= 16; i++) {
+        if (global_i % i == 0) {
+          locals.insert(i);
+        }
+      }
+      return locals;
+    };
+    std::set<size_t> locals_x = genByGlobal(static_cast<size_t>(gws[0]));
+    std::set<size_t> locals_y = gws.dimensions() > 1
+                                    ? genByGlobal(static_cast<size_t>(gws[1]))
+                                    : std::set<size_t>{1};
+    std::set<size_t> locals_z = gws.dimensions() > 2
+                                    ? genByGlobal(static_cast<size_t>(gws[2]))
+                                    : std::set<size_t>{1};
+    std::map<std::string, size_t> device_info_map =
+        CLRuntime::Global()->GetDeviceInfo();
+    std::vector<size_t> max_work_item_sizes{
+        device_info_map["CL_DEVICE_MAX_WORK_ITEM_SIZES_0"],
+        device_info_map["CL_DEVICE_MAX_WORK_ITEM_SIZES_1"],
+        device_info_map["CL_DEVICE_MAX_WORK_ITEM_SIZES_2"]};
+    for (auto x : locals_x) {
+      if (x <= max_work_item_sizes[0]) {
+        for (auto y : locals_y) {
+          if (y <= max_work_item_sizes[1]) {
+            for (auto z : locals_z) {
+              auto group_size = x * y * z;
+              if (z <= max_work_item_sizes[2] && group_size <= max_ws &&
+                  group_size >= /*min_workgrop_size=*/8) {
+                lwss.insert(cl::NDRange{x, y, z});
+              }
+            }
+          }
+        }
+      }
+    }
+#endif  // GEN_MORE_LWS
   } else {
     LOG(FATAL) << "Unsupported opencl tune type:" << tune_type;
   }

@@ -298,6 +298,11 @@ void RuntimeProgram::Run() {
       inst.Sync();
     }
 #endif
+#ifdef LITE_WITH_OPENCL
+    if (inst.need_flush(idx)) {
+      inst.Flush();
+    }
+#endif
 
     inst.Run();
 
