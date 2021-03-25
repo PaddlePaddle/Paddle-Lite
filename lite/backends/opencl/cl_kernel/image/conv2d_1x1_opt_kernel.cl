@@ -53,10 +53,12 @@ __kernel void conv2d_1x1_mali(__read_only image2d_t input, __write_only image2d_
   CL_DTYPE4 in2;
   CL_DTYPE4 in3;
 
-  int iw0 = out_w4_idx;
+  int iw0 = out_w4_idx - pad.z;
   int iw1 = out_w4_idx + 1;
   int iw2 = out_w4_idx + 2;
   int iw3 = out_w4_idx + 3;
+  int ih = out_h_idx - pad.x;
+  int out_y_idx = mad24(n_idx, input_shape.y, ih);
 
   iw0 = select(iw0, INT_MIN, iw0 >= IW);
   iw1 = select(iw1, INT_MIN, iw1 >= IW);
@@ -67,10 +69,10 @@ __kernel void conv2d_1x1_mali(__read_only image2d_t input, __write_only image2d_
   int weights_offset = mul24(out_c_blk_idx, CI_SLICES << 2);
 
   for (int ci_slice = 0; ci_slice < CI_SLICES; ++ci_slice) {
-    in0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw0, out_b_h_idx));
-    in1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw1, out_b_h_idx));
-    in2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw2, out_b_h_idx));
-    in3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw3, out_b_h_idx));
+    in0 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw0, out_y_idx));
+    in1 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw1, out_y_idx));
+    in2 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw2, out_y_idx));
+    in3 = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(in_x_base + iw3, out_y_idx));
 
     weights0 = vload4(weights_offset    , (__global CL_DTYPE *)weight);
     weights1 = vload4(weights_offset + 1, (__global CL_DTYPE *)weight);
