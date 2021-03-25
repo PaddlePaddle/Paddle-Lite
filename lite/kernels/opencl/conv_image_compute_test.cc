@@ -25,7 +25,7 @@
 
 namespace paddle {
 namespace lite {
-#define SHADOW_LOG LOG(INFO)
+// #define SHADOW_LOG LOG(INFO)
 #define SHADOW_LOG VLOG(4)
 #define FP16_MAX_DIFF (1e0)
 #define FP16_ABS_DIFF (1e-1)
@@ -106,26 +106,6 @@ static void conv_basic(const Dtype1* din,
                       ic * kernel_h * kernel_w + kh * kernel_w + kw;
 
                   dst_data_ref[out_idx] += src_data[iidx] * weights_data[widx];
-                  if (out_idx == 0) {
-                    printf(
-                        "src[%d,%d,%d,%d] * weights[%d,%d,%d,%d] = "
-                        "dst[%d,%d,%d,%d]: %f * %f = %f\n",
-                        n,
-                        g * in_c_group + ic,
-                        ih,
-                        iw,
-                        g * out_c_group + oc,
-                        g * in_c_group + ic,
-                        kh,
-                        kw,
-                        n,
-                        g * out_c_group + oc,
-                        oh,
-                        ow,
-                        src_data[iidx],
-                        weights_data[widx],
-                        src_data[iidx] * weights_data[widx]);
-                  }
                 }
               }
             }
@@ -189,11 +169,11 @@ TEST(conv2d, compute_image2d_1x1) {
             for (std::string relu_flag : {"leaky_relu"}) {
 #else
   const int batch_size = 1;
-  const int oc = 13;
-  const int ih = 30;
-  const int iw = 30;
-  const int ic = 5;  // ic < 5 is right, ic > 4 is wrong
-  const bool bias_flag = true;
+  const int oc = 2;
+  const int ih = 3;
+  const int iw = 3;
+  const int ic = 2;
+  const bool bias_flag = false;
   const std::string relu_flag = "leaky_relu";
 #endif
               LOG(INFO) << "---------------------------- "
@@ -311,19 +291,14 @@ TEST(conv2d, compute_image2d_1x1) {
 
               SHADOW_LOG << "gen input and filter ...";
 
-              int idx = 0;
               for (auto& i : input_v) {
                 i = gen(engine);
-// i = (idx++);
 #ifdef TEST_CONV_IMAGE_ALL_1
                 i = 0.01;
 #endif
               }
-              idx = 1;
               for (auto& f : filter_v) {
                 f = gen(engine);
-// f = 1;
-// f = (idx++);
 #ifdef TEST_CONV_IMAGE_ALL_1
                 f = 0.01;
 #endif
@@ -498,10 +473,10 @@ TEST(conv2d, compute_image2d_1x1) {
                 EXPECT_FALSE(relative_diff > FP16_MAX_DIFF &&
                              abs_diff > FP16_ABS_DIFF);
                 if (relative_diff > FP16_MAX_DIFF && abs_diff > FP16_ABS_DIFF) {
-                  LOG(INFO) << "error idx:" << i << "output_v[" << i
-                            << "]:" << output_v[i] << " "
-                                                      "out_ref_data["
-                            << i << "]:" << out_ref_data[i];
+                  LOG(FATAL) << "error idx:" << i << "output_v[" << i
+                             << "]:" << output_v[i] << " "
+                                                       "out_ref_data["
+                             << i << "]:" << out_ref_data[i];
                 }
               }
 #ifdef LOOP_TEST
@@ -1539,7 +1514,7 @@ TEST(conv2d, compute_image2d_7x7) {
 #undef LOOP_TEST
 #undef PRINT_RESULT
 #endif
-// #define TEST_CONV_IMAGE_COMMON
+#define TEST_CONV_IMAGE_COMMON
 #ifdef TEST_CONV_IMAGE_COMMON
 // #define PRINT_RESULT
 // #define LOOP_TEST

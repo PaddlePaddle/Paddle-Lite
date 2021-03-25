@@ -472,9 +472,13 @@ void ConvImageCompute::PrepareForRun() {
                       (fp16_support ? sizeof(half_t) : sizeof(float));
     ::memset(bias_buffer_data, 0, buf_size);
 
+    float* bias_fp32 = static_cast<float*>(bias_buffer_data);
+    half_t* bias_fp16 = static_cast<half_t*>(bias_buffer_data);
     for (auto i = 0; i < bias_dims.production(); ++i) {  // support fp32
-      reinterpret_cast<half_t*>(bias_buffer_data)[i] =
-          Float2Half(conv_param_->bias->mutable_data<float>()[i]);
+      fp16_support
+          ? bias_fp16[i] =
+                Float2Half(conv_param_->bias->mutable_data<float>()[i])
+          : bias_fp32[i] = conv_param_->bias->mutable_data<float>()[i];
     }
 
     fp16_support
