@@ -31,6 +31,7 @@ void ReadFromArrayCompute::Run() {
   param.Out->Resize(elem.dims());
   param.Out->set_lod(elem.lod());
   param.Out->set_precision(elem.precision());
+  param.Out->mutable_data(TARGET(kXPU), elem.memory_size());
   int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
                              elem.data<int8_t>(),
                              static_cast<int8_t*>(param.Out->raw_data()),
