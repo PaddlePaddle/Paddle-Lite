@@ -33,6 +33,8 @@ void ConvImageCompute::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
   const bool is_mali = context.cl_context()->IsArmMali();
+  const bool fp16_support =
+      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
 
   /*********************************************
    * Initilize attributes
@@ -87,9 +89,6 @@ void ConvImageCompute::PrepareForRun() {
   CHECK_GE(conv_param_->dilations->size(), 2);
   CHECK_GE(conv_param_->paddings->size(), 2);
   CHECK_GE(conv_param_->strides.size(), 2);
-
-  bool fp16_support =
-      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
 
   /*********************************************
    * Upload filter, bias to opencl device
@@ -242,8 +241,8 @@ void ConvImageCompute::PrepareForRun() {
                        filter_image_w_,
                        filter_image_h_,
                        filter_image_data);
-    } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5) {
-      CHECK(pad_equal && stride_equal && dilation_equal);
+    } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5 && pad_equal &&
+               stride_equal && dilation_equal) {
 #define CONV_5x5_OPT
 #ifndef CONV_5x5_OPT
       // conv2d_5x5
@@ -292,8 +291,8 @@ void ConvImageCompute::PrepareForRun() {
       impl_ = &ConvImageCompute::Conv2d5x5opt;
 #endif
 #undef CONV_5x5_OPT
-    } else if (filter_tensor_h_ == 7 && filter_tensor_w_ == 7) {
-      CHECK(pad_equal && stride_equal && dilation_equal);
+    } else if (filter_tensor_h_ == 7 && filter_tensor_w_ == 7 && pad_equal &&
+               stride_equal && dilation_equal) {
 #define CONV_7x7_OPT
 #ifndef CONV_7x7_OPT
       // conv2d_7x7
@@ -474,7 +473,7 @@ void ConvImageCompute::PrepareForRun() {
 
     float* bias_fp32 = static_cast<float*>(bias_buffer_data);
     half_t* bias_fp16 = static_cast<half_t*>(bias_buffer_data);
-    for (auto i = 0; i < bias_dims.production(); ++i) {  // support fp32
+    for (auto i = 0; i < bias_dims.production(); ++i) {
       fp16_support
           ? bias_fp16[i] =
                 Float2Half(conv_param_->bias->mutable_data<float>()[i])
@@ -560,7 +559,6 @@ void ConvImageCompute::PrepareForRun() {
                                     build_options_[i],
                                     time_stamp_);
   }
-
   SetLocalWorkSize(CLRuntime::Global()->lws_repeats());
 }
 
@@ -847,48 +845,6 @@ void ConvImageCompute::OIHW2OHWIO4I4(
   }
 }
 
-/* This version also works and no need to memset 0 */
-/*
-void ConvImageCompute::OIHW2OHWIO4I4(
-    void* src, void* dst, size_t O, size_t I, size_t H, size_t W) {
-  bool fp16_support =
-      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
-  size_t i_block = UP_DIV(I, 4);
-  size_t o_block = UP_DIV(O, 4);
-
-  float* dst_fp32 = static_cast<float*>(dst);
-  half_t* dst_fp16 = static_cast<half_t*>(dst);
-
-  float* p = static_cast<float*>(src);
-  for (size_t ob = 0; ob < o_block; ob++) {
-    for (size_t h = 0; h < H; h++) {
-      for (size_t w = 0; w < W; w++) {
-        for (size_t ib = 0; ib < i_block; ib++) {
-          for (size_t o = 0; o < 4; o++) {
-            for (size_t i = 0; i < 4; i++) {
-              size_t src_o = ob * 4 + o;
-              size_t src_i = ib * 4 + i;
-              size_t src_h = h;
-              size_t src_w = w;
-              size_t src_idx = src_o * I * H * W +
-                  src_i * H * W + src_h * W + src_w;
-              if (src_idx < 0 || src_idx > O*I*H*W) {
-                fp16_support ? *dst_fp16 = Float2Half(0.f) : *dst_fp32 = 0.f;
-              } else {
-                fp16_support ? *dst_fp16 = Float2Half(*(p + src_idx)) :
-                               *dst_fp32 = *(p + src_idx);
-              }
-              dst_fp16 ++;
-              dst_fp32 ++;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-*/
-
 void ConvImageCompute::Conv2d1x1Mali() {
   cl_int4 input_shape = {input_tensor_n_,
                          input_tensor_h_,
@@ -919,6 +875,8 @@ void ConvImageCompute::Conv2d1x1Mali() {
   status_ = kernel_.setArg(cnt++, stride);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(cnt++, pad);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(cnt++, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 
@@ -1370,7 +1328,6 @@ void ConvImageCompute::Run() {
                                  local_work_size_,
                                  nullptr,
                                  event_);
-  LOG(INFO) << "kernel run done";
   CL_CHECK_FATAL(status_);
 }
 

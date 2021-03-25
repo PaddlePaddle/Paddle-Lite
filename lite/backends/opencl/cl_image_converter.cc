@@ -502,7 +502,6 @@ void CLImageConverterWinoTransWeight::ImageToNCHW(void *image,
                                                   float *tensor,
                                                   const DDim &image_dim,
                                                   const DDim &tensor_dim) {}
-
 DDim CLImageConverterNBlock::InitImageDimInfoWith(const DDim &tensor_dim) {
   CHECK(tensor_dim.size() == 4) << " Tensor dim is not 4.";
   size_t N, C, H, W;

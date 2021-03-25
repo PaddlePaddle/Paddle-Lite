@@ -94,9 +94,6 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::unique_ptr<Tensor> tensor_hold_bias_image_{nullptr};
   std::unique_ptr<Tensor> filter_gpu_buffer_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_buffer_{nullptr};
-  std::unique_ptr<Tensor> alpha_gpu_buffer_{nullptr};
-  std::unique_ptr<Tensor> tensor_hold_filter_buffer_{nullptr};
-  std::unique_ptr<Tensor> tensor_hold_bias_buffer_{nullptr};
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
 

@@ -7,7 +7,8 @@ __kernel void conv2d_1x1_mali(__read_only image2d_t input, __write_only image2d_
                               #endif
                               __private const int4 input_shape, __private const int4 output_shape,
                               __private const int2 stride,
-                              __private const int4 pad) {
+                              __private const int4 pad,
+                              __read_only image2d_t prelu_alpha) {
   const int out_c_w_idx = get_global_id(0); //c/4 w/4
   const int out_b_h_idx  = get_global_id(1); //b h
 
@@ -23,12 +24,12 @@ __kernel void conv2d_1x1_mali(__read_only image2d_t input, __write_only image2d_
     return;
   }
 
-  const int out_c_blk_idx = out_c_w_idx / OW_SLICES; // [0, oc/4)
-  const int out_w_blk_idx = out_c_w_idx % OW_SLICES; // [0, ow/4)
+  const int out_c_blk_idx = out_c_w_idx / OW_SLICES;
+  const int out_w_blk_idx = out_c_w_idx % OW_SLICES;
   const int n_idx = out_b_h_idx / OH;
   const int out_h_idx = out_b_h_idx % OH;
 
-  const int out_w4_idx = out_w_blk_idx << 2; // [0, 4, ... , ow]
+  const int out_w4_idx = out_w_blk_idx << 2;
 
 #ifdef BIASE_CH
   CL_DTYPE4 out0 = vload4(out_c_blk_idx, (__global CL_DTYPE *)bias);
@@ -100,10 +101,48 @@ __kernel void conv2d_1x1_mali(__read_only image2d_t input, __write_only image2d_
     weights_offset += 4;
   }
 
+  const int out_x_base = out_c_blk_idx * OW;
+  const int remain = OW - out_w4_idx;
+  int out_c4w_idx = out_x_base + out_w4_idx;
+
+#if defined(PRELU_CH) || defined(PRELU_ELE) || defined(PRELU_ALL)
+  CL_DTYPE4 alpha0, alpha1, alpha2, alpha3;
+#endif
+
+#if defined(PRELU_CH) //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c_blk_idx, 0));
+  alpha1 = alpha0;
+  alpha2 = alpha0;
+  alpha3 = alpha0;
+  //}
+#elif defined(PRELU_ELE) //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c4w_idx, out_b_h_idx));
+  alpha1 = alpha0;
+  alpha2 = alpha0;
+  alpha3 = alpha0;
+  //}
+#elif defined(PRELU_ALL) //{
+  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
+  alpha0.y = alpha0.x;
+  alpha0.z = alpha0.x;
+  alpha0.w = alpha0.x;
+  alpha1 = alpha0;
+  alpha2 = alpha0;
+  alpha3 = alpha0;
+  //}
+#endif
+
+#if defined(PRELU_CH) || defined(PRELU_ELE) || defined(PRELU_ALL)
+  output0 = activation_type4(output0, alpha0);
+  output1 = activation_type4(output1, alpha1);
+  output2 = activation_type4(output2, alpha2);
+  output3 = activation_type4(output3, alpha3);
+#else
   out0 = activation_type4(out0, 0.f);
   out1 = activation_type4(out1, 0.f);
   out2 = activation_type4(out2, 0.f);
   out3 = activation_type4(out3, 0.f);
+#endif
 
 #ifdef SCALE_ACTIVATION
   out0 = fuse_scale(out0, 1.f, 0.f, 0.f);
@@ -111,10 +150,6 @@ __kernel void conv2d_1x1_mali(__read_only image2d_t input, __write_only image2d_
   out2 = fuse_scale(out2, 1.f, 0.f, 0.f);
   out3 = fuse_scale(out3, 1.f, 0.f, 0.f);
 #endif
-
-  const int out_x_base = out_c_blk_idx * OW;
-  const int remain = OW - out_w4_idx;
-  int out_c4w_idx = out_x_base + out_w4_idx;
 
   if (remain >= 4) {
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c4w_idx,     out_b_h_idx), out0);
@@ -439,27 +474,27 @@ CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
 }
 
 __kernel void conv2d_1x1_simple(
-    __private const int global_size_dim0, // (W+3)/4
-    __private const int global_size_dim1, // (C+3)/4
-    __private const int global_size_dim2, // N*H
+    __private const int global_size_dim0,
+    __private const int global_size_dim1,
+    __private const int global_size_dim2,
     __read_only image2d_t input_image,
     __read_only image2d_t filter,
     __read_only image2d_t bias,
     __write_only image2d_t output_image,
     __private const int stride,
     __private const int offset,
-    __private const int input_c, // input_c_blk
+    __private const int input_c,
     __private const int input_c_origin,
     __private const int dilation,
     __private const int input_width,  /* of one block */
     __private const int input_height, /* of one block */
     __private const int output_width,
     __private const int output_height,
-    __private const int old_w, // out_w
+    __private const int old_w,
     __read_only image2d_t prelu_alpha) {
-  const int out_c = get_global_id(0); // [0, (C+3)/4)
-  const int out_w = get_global_id(1); // [0, (W+3)/4)
-  const int out_nh = get_global_id(2);// [0, N*H)
+  const int out_c = get_global_id(0);
+  const int out_w = get_global_id(1);
+  const int out_nh = get_global_id(2);
 
   int out_w0 = out_w;
   int out_w1 = out_w + global_size_dim1;
