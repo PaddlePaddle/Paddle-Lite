@@ -78,6 +78,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void Conv2d1x1Mali();
   void OIHW2OHWIO4I4(
       void* src, void* dst, size_t O, size_t I, size_t H, size_t W);
+  void AssignDataFromCPUToGPU(const Tensor* tensor_cpu_p, Tensor* tensor_gpu_p);
 
   param_t* conv_param_{nullptr};
 

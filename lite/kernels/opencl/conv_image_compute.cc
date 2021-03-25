@@ -117,11 +117,9 @@ void ConvImageCompute::PrepareForRun() {
                   filter_dims[3]);
 
     filter_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
-    fp16_support
-        ? filter_gpu_buffer_->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
-              tensor_hold_filter_buffer->data<half_t>(), filter_ext_dims)
-        : filter_gpu_buffer_->Assign<float, lite::DDim, TARGET(kOpenCL)>(
-              tensor_hold_filter_buffer->data<float>(), filter_ext_dims);
+
+    AssignDataFromCPUToGPU(tensor_hold_filter_buffer.get(),
+                           filter_gpu_buffer_.get());
 
     impl_ = &ConvImageCompute::Conv2d1x1Mali;
   } else {
@@ -480,22 +478,16 @@ void ConvImageCompute::PrepareForRun() {
           : bias_fp32[i] = conv_param_->bias->mutable_data<float>()[i];
     }
 
-    fp16_support
-        ? bias_gpu_buffer_->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
-              tensor_hold_bias_buffer->data<half_t>(), bias_ext_dims)
-        : bias_gpu_buffer_->Assign<float, lite::DDim, TARGET(kOpenCL)>(
-              tensor_hold_bias_buffer->data<float>(), bias_ext_dims);
+    AssignDataFromCPUToGPU(tensor_hold_bias_buffer.get(),
+                           bias_gpu_buffer_.get());
   } else if (is_mali && filter_gpu_buffer_ != nullptr) {
     bias_gpu_buffer_ = std::unique_ptr<Tensor>(new Tensor);
     auto tensor_hold_bias_buffer = std::unique_ptr<Tensor>(new Tensor);
     DDimLite bias_ext_dims({4});
     tensor_hold_bias_buffer->Resize(bias_ext_dims);
     auto* bias_buffer_data = MUTABLE_DATA_CPU(tensor_hold_bias_buffer.get());
-    fp16_support
-        ? bias_gpu_buffer_->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
-              tensor_hold_bias_buffer->data<half_t>(), bias_ext_dims)
-        : bias_gpu_buffer_->Assign<float, lite::DDim, TARGET(kOpenCL)>(
-              tensor_hold_bias_buffer->data<float>(), bias_ext_dims);
+    AssignDataFromCPUToGPU(tensor_hold_bias_buffer.get(),
+                           bias_gpu_buffer_.get());
   } else if (has_bias_) {
     bias_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
     CLImageConverterFolder bias_converter;
@@ -843,6 +835,17 @@ void ConvImageCompute::OIHW2OHWIO4I4(
       }
     }
   }
+}
+
+void ConvImageCompute::AssignDataFromCPUToGPU(const Tensor* tensor_cpu_p,
+                                              Tensor* tensor_gpu_p) {
+  bool fp16_support =
+      lite::CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+  fp16_support
+      ? tensor_gpu_p->Assign<half_t, lite::DDim, TARGET(kOpenCL)>(
+            tensor_cpu_p->data<half_t>(), tensor_cpu_p->dims())
+      : tensor_gpu_p->Assign<float, lite::DDim, TARGET(kOpenCL)>(
+            tensor_cpu_p->data<float>(), tensor_cpu_p->dims());
 }
 
 void ConvImageCompute::Conv2d1x1Mali() {
