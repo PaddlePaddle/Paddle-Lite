@@ -112,6 +112,9 @@ class Optimizer {
          "lite_scale_activation_fuse_pass",             //
          "lite_elementwise_scale_fuse_pass",            //
          "lite_instance_norm_activation_fuse_pass",     //
+         "lite_priorbox_eliminate_pass",                //
+         "lite_reshape_eliminate_pass",                 //
+         "lite_concat_eliminate_pass",                  //
          "lite_fc_prelu_fuse_pass",                     //
          "lite_elementwise_activation_fuse_pass",
          "lite_conv_scale_fuse_pass",
