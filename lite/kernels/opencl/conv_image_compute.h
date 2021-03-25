@@ -75,20 +75,10 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   void DepthwiseConv2d3x3();
   void DepthwiseConv2d();
   void Conv2dCommon();
-  void Conv2dMali();
-  void OIHW2OIHWI4O4(
-      void* src, void* dst, size_t O, size_t I, size_t H, size_t W);
-  void OIHW2OHWIOgroupI4O4(void* src,
-                           void* dst,
-                           size_t O,
-                           size_t I,
-                           size_t H,
-                           size_t W,
-                           size_t ogroup);
+  void Conv2d1x1Mali();
   void OIHW2OHWIO4I4(
       void* src, void* dst, size_t O, size_t I, size_t H, size_t W);
-  void SetBlockSize();
-  void SetGlobalLocal();
+
   param_t* conv_param_{nullptr};
 
   kernel_t impl_;
@@ -178,12 +168,6 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::NDRange local_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
   bool use_lws_{true};
-
-  struct {
-    int H{1};
-    int W{1};
-    int C{1};
-  } block_size_;
 };
 
 }  // namespace opencl

@@ -6,8 +6,8 @@ __kernel void conv2d_1x1_mali(__read_only image2d_t input, __write_only image2d_
                               __global half4 *bias,
                               #endif
                               __private const int4 input_shape, __private const int4 output_shape,
-                              __private const int4 kernel_stride, __private const int4 pad,
-                              __private const int2 dilation) {
+                              __private const int2 stride,
+                              __private const int4 pad) {
   const int out_c_w_idx = get_global_id(0); //c/4 w/4
   const int out_b_h_idx  = get_global_id(1); //b h
 
