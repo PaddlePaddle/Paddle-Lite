@@ -148,8 +148,8 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   if (param.groups == ic && ic == oc && kps_equal && pads_equal &&
       no_dilation && flag_dw_3x3 && !conv_dw_relu6) {
     impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
-  } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
-             ks_equal) {
+  } else if (param.groups == 1 && kw == 3 && (sw == 2 || sw == 1) &&
+             no_dilation && ks_equal) {
     impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else {
     impl_ = new GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>;
