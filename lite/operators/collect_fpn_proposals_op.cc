@@ -27,26 +27,26 @@ bool CollectFpnProposalsOpLite::CheckShape() const {
 
   for (auto item : param_.multi_level_rois) {
     auto dims = item->dims();
-    CHECK_OR_FALSE(dims[1] == 4);
+    CHECK_EQ(dims[1], 4L);
   }
   for (auto item : param_.multi_level_scores) {
     auto dims = item->dims();
-    CHECK_OR_FALSE(dims[1] == 1);
+    CHECK_EQ(dims[1], 1L);
   }
-  for (int i = 0; i < param_.multi_level_rois.size(); i++) {
-    auto roi = param_.multi_level_rois[i];
-    auto roi_lod = roi->lod();
-    auto score = param_.multi_level_scores[i];
-    auto score_lod = score->lod();
-    CHECK_OR_FALSE(roi_lod == score_lod);
+  if (param_.multi_level_rois_num.empty()) {
+    for (size_t i = 0; i < param_.multi_level_rois.size(); i++) {
+      auto roi = param_.multi_level_rois[i];
+      auto roi_lod = roi->lod();
+      auto score = param_.multi_level_scores[i];
+      auto score_lod = score->lod();
+      CHECK(roi_lod == score_lod);
+    }
   }
   return true;
 }
 
 bool CollectFpnProposalsOpLite::InferShapeImpl() const {
-  param_.fpn_rois->Resize({param_.post_nms_topN, 4});
-  if (param_.rois_num) param_.rois_num->Resize({-1});
-
+  // fpn_rois and rois_num should be resize at runtime
   return true;
 }
 
@@ -64,25 +64,27 @@ bool CollectFpnProposalsOpLite::AttachImpl(const cpp::OpDesc& op_desc,
     param_.multi_level_scores.push_back(
         scope->FindVar(var_name)->GetMutable<lite::Tensor>());
   }
-  if (op_desc.HasInput("RoisNum")) {
+  if (op_desc.HasInput("MultiLevelRoIsNum")) {
+    auto multi_level_rois_num_names = op_desc.Input("MultiLevelRoIsNum");
+    param_.multi_level_rois_num.clear();
+    for (const auto& name : multi_level_rois_num_names) {
+      param_.multi_level_rois_num.push_back(scope->FindMutableTensor(name));
+    }
+  }
+
+  param_.fpn_rois = scope->FindMutableTensor(op_desc.Output("FpnRois").front());
+  if (op_desc.HasOutput("RoisNum")) {
     auto var = scope->FindVar(op_desc.Input("RoisNum").front());
     if (var != nullptr) {
       param_.rois_num = var->GetMutable<lite::Tensor>();
     }
   }
 
-  auto fpn_rois = op_desc.Output("FpnRois").front();
-  param_.fpn_rois = scope->FindVar(fpn_rois)->GetMutable<lite::Tensor>();
-  if (op_desc.HasOutput("MultiLevelRoIsNum")) {
-    auto multi_rois_num = op_desc.Output("MultiLevelRoIsNum");
-    param_.multi_rois_num.clear();
-    for (const auto& name : multi_rois_num) {
-      param_.multi_rois_num.push_back(
-          scope->FindVar(name)->GetMutable<lite::Tensor>());
-    }
-  }
-
   param_.post_nms_topN = op_desc.GetAttr<int>("post_nms_topN");
+  CHECK_GE(param_.post_nms_topN, 0)
+      << "The parameter post_nms_topN must be a positive integer. But received "
+         "post_nms_topN:"
+      << param_.post_nms_topN;
   return true;
 }
 

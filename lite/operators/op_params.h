@@ -1758,9 +1758,9 @@ struct ConditionalBlockParam : ParamBase {
 struct CollectFpnProposalsParam : ParamBase {
   std::vector<lite::Tensor*> multi_level_rois{};
   std::vector<lite::Tensor*> multi_level_scores{};
-  std::vector<lite::Tensor*> multi_rois_num{};
-  lite::Tensor* rois_num{};
-  lite::Tensor* fpn_rois{};
+  std::vector<lite::Tensor*> multi_level_rois_num{};
+  lite::Tensor* rois_num{nullptr};
+  lite::Tensor* fpn_rois{nullptr};
   int post_nms_topN{};
 };
 

@@ -52,32 +52,32 @@ void CollectFpnProposalsCompute::Run() {
   auto& param = Param<operators::CollectFpnProposalsParam>();
   auto multi_layer_rois = param.multi_level_rois;
   auto multi_layer_scores = param.multi_level_scores;
+  auto multi_level_rois_num = param.multi_level_rois_num;
   auto* fpn_rois = param.fpn_rois;
   int post_nms_topN = param.post_nms_topN;
 
-  if (multi_layer_rois.size() != multi_layer_scores.size()) {
-    LOG(FATAL) << "multi_layer_rois.size() should be equan to "
-                  "multi_layer_scores.size()";
-  }
+  CHECK_EQ(multi_layer_rois.size(), multi_layer_scores.size())
+      << "Input multi_layer_rois's size should be equal to input "
+         "multi_layer_scores's size.";
 
-  size_t num_fpn_level = multi_layer_rois.size();
+  const int num_fpn_level = static_cast<int>(multi_layer_rois.size());
   std::vector<int> integral_of_all_rois(num_fpn_level + 1, 0);
-  int num_size = param.multi_rois_num.size();
-  for (size_t i = 0; i < num_fpn_level; ++i) {
+  int num_size = multi_level_rois_num.size();
+  for (int i = 0; i < num_fpn_level; ++i) {
     int all_rois = 0;
     if (num_size == 0) {
       auto cur_rois_lod = multi_layer_rois[i]->lod().back();
       all_rois = cur_rois_lod[cur_rois_lod.size() - 1];
     } else {
-      const int* cur_rois_num = param.multi_rois_num[i]->data<int>();
+      const int* cur_rois_num = multi_level_rois_num[i]->data<int>();
       all_rois = std::accumulate(
-          cur_rois_num, cur_rois_num + param.multi_rois_num[i]->numel(), 0);
+          cur_rois_num, cur_rois_num + multi_level_rois_num[i]->numel(), 0);
     }
     integral_of_all_rois[i + 1] = integral_of_all_rois[i] + all_rois;
   }
   const int batch_size = (num_size == 0)
                              ? multi_layer_rois[0]->lod().back().size() - 1
-                             : param.multi_rois_num[0]->numel();
+                             : multi_level_rois_num[0]->numel();
   std::vector<ScoreWithID> scores_of_all_rois(
       integral_of_all_rois[num_fpn_level], ScoreWithID());
   for (int i = 0; i < num_fpn_level; ++i) {
@@ -93,7 +93,7 @@ void CollectFpnProposalsCompute::Run() {
           cur_batch_id++;
         }
       } else {
-        const int* rois_num_data = param.multi_rois_num[i]->data<int>();
+        const int* rois_num_data = multi_level_rois_num[i]->data<int>();
         if (j >= pre_num + rois_num_data[cur_batch_id]) {
           pre_num += rois_num_data[cur_batch_id];
           cur_batch_id++;
@@ -125,6 +125,7 @@ void CollectFpnProposalsCompute::Run() {
 
   // initialize the outputs
   const int kBoxDim = 4;
+  fpn_rois->Resize({post_nms_topN, kBoxDim});
   auto fpn_rois_data = fpn_rois->mutable_data<float>();
   std::vector<uint64_t> lod0(1, 0);
   int cur_batch_id = 0;
@@ -147,7 +148,8 @@ void CollectFpnProposalsCompute::Run() {
     }
   }
   num_per_batch.emplace_back(post_nms_topN - pre_idx);
-  if (param.rois_num) {
+  if (param.rois_num != nullptr) {
+    param.rois_num->Resize({batch_size});
     int* rois_num_data = param.rois_num->mutable_data<int>();
     for (int i = 0; i < batch_size; i++) {
       rois_num_data[i] = num_per_batch[i];
@@ -173,8 +175,8 @@ REGISTER_LITE_KERNEL(collect_fpn_proposals,
                      def)
     .BindInput("MultiLevelRois", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("MultiLevelScores", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("RoisNum", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("FpnRois", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("RoisNum", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindPaddleOpVersion("collect_fpn_proposals", 1)
     .Finalize();
