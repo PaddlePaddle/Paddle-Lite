@@ -53,15 +53,18 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
   int ow = dim_out[3];
   int oh = dim_out[2];
   int ic = dim_in[1];
-  DIRECT_WORKSPACE_COMPUTE(ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK)
+  DIRECT_WORKSPACE_COMPUTE(
+      ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK, OUT_W_BLOCK)
   return sizeof(float16_t) * (pre_in_size + ctx->threads() * pre_out_size);
 }
 
 // clang-format off
 #ifdef __aarch64__
 #define INIT_FIRST                   \
-  "ldp q0, q1, [%[r0]], #32\n"       \
-  "ldp q4, q5, [%[r1]], #32\n"       \
+  "ldr q0, [%[r0]], #16\n"           \
+  "ldr q4, [%[r1]], #16\n"           \
+  "ldr q1, [%[r0]]\n"                \
+  "ldr q5, [%[r1]]\n"                \
   "2:\n"                             \
   "fmul v16.8h, %[w0].8h, v0.h[0]\n" \
   "fmul v17.8h, %[w0].8h, v0.h[1]\n" \
@@ -81,8 +84,10 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
   "fmul v31.8h, %[w0].8h, v4.h[7]\n"
 
 #define INIT                          \
-  "ldp q0, q1, [%[r0]], #32\n"        \
-  "ldp q4, q5, [%[r1]], #32\n"        \
+  "ldr q0, [%[r0]], #16\n"            \
+  "ldr q4, [%[r1]], #16\n"            \
+  "ldr q1, [%[r0]]\n"                 \
+  "ldr q5, [%[r1]]\n"                 \
   "2:\n"                              \
   "ldp q16, q17, [%[ptr_out0]]\n"     \
   "ldp q18, q19, [%[ptr_out0], #32]\n"\
@@ -104,10 +109,10 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
   "fmla v25.8h, %[w0].8h, v4.h[1]\n"  \
   "fmla v26.8h, %[w0].8h, v4.h[2]\n"  \
   "fmla v27.8h, %[w0].8h, v4.h[3]\n"  \
-  "fmla v28.8h, %[w0].8h, v5.h[4]\n"  \
-  "fmla v29.8h, %[w0].8h, v5.h[5]\n"  \
-  "fmla v30.8h, %[w0].8h, v5.h[6]\n"  \
-  "fmla v31.8h, %[w0].8h, v5.h[7]\n"
+  "fmla v28.8h, %[w0].8h, v4.h[4]\n"  \
+  "fmla v29.8h, %[w0].8h, v4.h[5]\n"  \
+  "fmla v30.8h, %[w0].8h, v4.h[6]\n"  \
+  "fmla v31.8h, %[w0].8h, v4.h[7]\n"
 
 #define COMPUTE                        \
   /* r0-1 */                           \
@@ -138,11 +143,12 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
   "fmla v22.8h, %[w2].8h, v1.h[0]\n"   \
   "fmla v23.8h, %[w2].8h, v1.h[1]\n"   \
   /* r1-2 */                           \
-  "ldp q0, q1, [%[r2]], #32\n"         \
+  "ldr q0, [%[r2]], #16\n"             \
   "fmla v24.8h, %[w2].8h, v4.h[2]\n"   \
   "fmla v25.8h, %[w2].8h, v4.h[3]\n"   \
   "fmla v26.8h, %[w2].8h, v4.h[4]\n"   \
   "fmla v27.8h, %[w2].8h, v4.h[5]\n"   \
+  "ldr q1, [%[r2]]\n"                  \
   "fmla v28.8h, %[w2].8h, v4.h[6]\n"   \
   "fmla v29.8h, %[w2].8h, v4.h[7]\n"   \
   "fmla v30.8h, %[w2].8h, v5.h[0]\n"   \
@@ -174,7 +180,7 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
   "fmla v21.8h, %[w5].8h, v4.h[7]\n"   \
   "fmla v22.8h, %[w5].8h, v5.h[0]\n"   \
   "fmla v23.8h, %[w5].8h, v5.h[1]\n"   \
-  "ldp q4, q5, [%[r3]], #32\n"         \
+  "ldr q4, [%[r3]], #16\n"             \
   /* r2-0 */                           \
   "fmla v16.8h, %[w6].8h, v0.h[0]\n"   \
   "fmla v17.8h, %[w6].8h, v0.h[1]\n"   \
@@ -184,6 +190,7 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
   "fmla v21.8h, %[w6].8h, v0.h[5]\n"   \
   "fmla v22.8h, %[w6].8h, v0.h[6]\n"   \
   "fmla v23.8h, %[w6].8h, v0.h[7]\n"   \
+  "ldr q5, [%[r3]]\n"                  \
   "fmla v24.8h, %[w3].8h, v0.h[0]\n"   \
   "fmla v25.8h, %[w3].8h, v0.h[1]\n"   \
   "fmla v26.8h, %[w3].8h, v0.h[2]\n"   \
@@ -258,11 +265,13 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
   "fmla v31.8h, %[w8].8h, v5.h[1]\n"   \
   "stp q22, q23, [%[ptr_out0]], #32\n" \
   "subs   %w[cnt], %w[cnt], #1\n"      \
-  "ldp q0, q1, [%[r0]], #32\n"         \
+  "ldr q0, [%[r0]], #16\n"             \
   "stp q24, q25, [%[ptr_out1]], #32\n" \
-  "ldp q4, q5, [%[r1]], #32\n"         \
+  "ldr q4, [%[r1]], #16\n"             \
   "stp q26, q27, [%[ptr_out1]], #32\n" \
+  "ldr q1, [%[r0]]\n"                  \
   "stp q28, q29, [%[ptr_out1]], #32\n" \
+  "ldr q5, [%[r1]]\n"                  \
   "stp q30, q31, [%[ptr_out1]], #32\n" \
   "bne    2b\n"
 #define ASM_PARAM                                  \
@@ -298,7 +307,8 @@ void conv_3x3s1_direct_fp16(const float16_t* i_data,
   auto act_param = param.activation_param;
   const int pad_w = paddings[2];
   const int pad_h = paddings[0];
-  DIRECT_WORKSPACE_COMPUTE(ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK)
+  DIRECT_WORKSPACE_COMPUTE(
+      ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK, OUT_W_BLOCK)
 
   float16_t* tmp_work_space = ctx->workspace_data<float16_t>();
   float16_t ptr_zero[win_round];  // NOLINT
