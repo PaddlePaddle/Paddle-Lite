@@ -13,26 +13,19 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <string>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
+namespace fp16 {
 
-class BeamSearchCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  void Run() override;
+template <typename T>
+void act_relu(const T* din, T* dout, int size, int threads);
 
-  ~BeamSearchCompute() {}
-
- private:
-};
-
+}  // namespace fp16
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

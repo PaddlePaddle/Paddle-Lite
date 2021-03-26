@@ -24,7 +24,6 @@
 #include "lite/backends/arm/math/anchor_generator.h"
 #include "lite/backends/arm/math/argmax.h"
 #include "lite/backends/arm/math/axpy.h"
-#include "lite/backends/arm/math/beam_search.h"
 #include "lite/backends/arm/math/box_coder.h"
 #include "lite/backends/arm/math/clip.h"
 #include "lite/backends/arm/math/col_im_transform.h"
@@ -63,7 +62,6 @@
 #include "lite/backends/arm/math/sequence_expand.h"
 #include "lite/backends/arm/math/sequence_pool.h"
 #include "lite/backends/arm/math/sequence_pool_grad.h"
-#include "lite/backends/arm/math/sequence_softmax.h"
 #include "lite/backends/arm/math/sgemm.h"
 #include "lite/backends/arm/math/sgemv.h"
 #include "lite/backends/arm/math/shuffle_channel.h"
@@ -71,7 +69,6 @@
 #include "lite/backends/arm/math/softmax.h"
 #include "lite/backends/arm/math/split.h"
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
-#include "lite/backends/arm/math/topk.h"
 #include "lite/backends/arm/math/yolo_box.h"
 
 namespace paddle {

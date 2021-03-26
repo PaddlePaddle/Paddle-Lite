@@ -104,6 +104,7 @@ class TargetWrapper<TARGET(kXPU)> {
   static LITE_THREAD_LOCAL size_t local_l3_size;
   static LITE_THREAD_LOCAL bool conv_autotune;
   static LITE_THREAD_LOCAL std::string conv_autotune_file;  // NOLINT
+  static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
   static size_t shared_l3_size;
 
  private:

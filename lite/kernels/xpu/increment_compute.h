@@ -13,29 +13,22 @@
 // limitations under the License.
 
 #pragma once
-
-#include <cmath>
-#include "lite/core/context.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace xpu {
 
-void beam_search(const Tensor* pre_ids,
-                 const Tensor* pre_scores,
-                 const Tensor* ids,
-                 const Tensor* scores,
-                 Tensor* selected_ids,
-                 Tensor* selected_scores,
-                 Tensor* parent_idx,
-                 int level,
-                 int beam_size,
-                 int end_id,
-                 bool is_accumulated,
-                 Context<TARGET(kARM)>* ctx);
+class IncrementCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  void Run() override;
 
-}  // namespace math
-}  // namespace arm
+  virtual ~IncrementCompute() = default;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

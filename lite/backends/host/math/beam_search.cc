@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/beam_search.h"
-#include <arm_neon.h>
+#include "lite/backends/host/math/beam_search.h"
 #include <cmath>
 #include <string>
 #include <vector>
-#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
 /*
 * The basic items help to sort.
@@ -207,9 +205,7 @@ void beam_search(const Tensor *pre_ids,
                  int level,
                  int beam_size,
                  int end_id,
-                 bool is_accumulated,
-                 Context<TARGET(kARM)> *ctx) {
-  // auto abs_lod = framework::ToAbsOffset(scores->lod());
+                 bool is_accumulated) {
   auto abs_lod = scores->lod();
   auto &high_level = abs_lod[level];
   auto items = SelectTopBeamSizeItems(pre_ids,
@@ -266,6 +262,6 @@ void beam_search(const Tensor *pre_ids,
 }
 
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle

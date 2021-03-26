@@ -13,29 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
-class LodResetCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  using param_t = operators::LodResetParam;
+namespace xpu {
 
-  void PrepareForRun() override;
+class FlattenContiguousRangeCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  using param_t = operators::FlattenContiguousRangeParam;
 
   void Run() override;
 
-  ~LodResetCompute() {}
-
- private:
+  virtual ~FlattenContiguousRangeCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
