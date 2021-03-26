@@ -269,7 +269,7 @@ void OptBase::PrintHelpInfo() {
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
       "`set_valid_places(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
-      "imagination_nna)`\n"
+      "imagination_nna|intel_fpga)`\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
       "        `run() : start model transformation`\n"
