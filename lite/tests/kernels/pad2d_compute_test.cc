@@ -52,9 +52,9 @@ class Pad2dComputeTester : public arena::TestCase {
     int out_h = dims_[2] + paddings_[0] + paddings_[1];
     int out_w = dims_[3] + paddings_[2] + paddings_[3];
     out->Resize(lite::DDim({dims_[0], dims_[1], out_h, out_w}));
-    auto* out_data = out->mutable_data<T>();
+    auto* out_data = out->template mutable_data<T>();
     auto* x = scope->FindTensor(x_);
-    const auto* x_data = x->data<T>();
+    const auto* x_data = x->template data<T>();
 
     auto output_dims = out->dims();
     int n = output_dims[0];
@@ -86,8 +86,8 @@ class Pad2dComputeTester : public arena::TestCase {
 #pragma omp parallel for
 #endif
     for (int i = 0; i < n * c; ++i) {
-      const float* din_batch = x_data + i * spatial_size_in;
-      float* dout_batch = out_data + i * spatial_size_out;
+      const T* din_batch = x_data + i * spatial_size_in;
+      T* dout_batch = out_data + i * spatial_size_out;
       int in_y = 0;
       int in_x = 0;
       for (int y = 0; y < h; ++y) {
@@ -136,9 +136,11 @@ class Pad2dComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> x(dims_.production());
-    fill_data_rand(x.data(), -1.f, 1.f, dims_.production());
-    SetCommonTensor(x_, dims_, x.data());
+    std::vector<T> dx(dims_.production());
+    for (size_t i = 0; i < dims_.production(); i++) {
+      dx[i] = static_cast<T>((i % 3) * 1.1f);
+    }
+    SetCommonTensor(x_, dims_, dx.data());
   }
 };
 
@@ -180,8 +182,8 @@ TEST(Pad2d, precision) {
               VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
                       << paddings[0] << " " << paddings[1] << " " << paddings[2]
                       << " " << paddings[3];
-              TestPad2d(place, "def", pad_mode, paddings,
-                pad_value, data_format));
+              TestPad2d(
+                  place, "def", pad_mode, paddings, pad_value, data_format);
             }
           }
         }
@@ -191,7 +193,7 @@ TEST(Pad2d, precision) {
 }
 
 #if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
-TEST(Pad2d, precision) {
+TEST(Pad2d_fp16, precision) {
   Place place(TARGET(kARM), PRECISION(kFP16));
   float abs_error = 2e-5;
   std::string data_format = "NCHW";
@@ -205,8 +207,8 @@ TEST(Pad2d, precision) {
               VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
                       << paddings[0] << " " << paddings[1] << " " << paddings[2]
                       << " " << paddings[3];
-              TestPad2d<float16_t>(place, "def",
-              pad_mode, paddings, pad_value, data_format));
+              TestPad2d<float16_t>(
+                  place, "def", pad_mode, paddings, pad_value, data_format);
             }
           }
         }

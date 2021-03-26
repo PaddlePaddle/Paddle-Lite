@@ -52,11 +52,11 @@ void pad_constant_fp16(const float16_t* din,
   int bottom_loop_remain = (w * pad_bottom) & 7;
 #pragma omp parallel for
   for (int s = 0; s < num; ++s) {
-    const float* din_s = din + s * spatial_size_in;
-    float* dout_s = dout + s * spatial_size_out;
+    const float16_t* din_s = din + s * spatial_size_in;
+    float16_t* dout_s = dout + s * spatial_size_out;
     // process top
     for (int i = 0; i < top_loop; ++i) {
-      vst1q_f32(dout_s, vpad_value);
+      vst1q_f16(dout_s, vpad_value);
       dout_s += 8;
     }
     for (int i = 0; i < top_loop_remain; ++i) {
@@ -71,7 +71,7 @@ void pad_constant_fp16(const float16_t* din,
       for (int i = 0; i < left_loop_remain; ++i) {
         *dout_s++ = pad_value;
       }
-      memcpuy(dout_s, din_s, sizeof(float16_t) * w_in);
+      memcpy(dout_s, din_s, sizeof(float16_t) * w_in);
       dout_s += w_in;
       din_s += w_in;
       for (int i = 0; i < right_loop; ++i) {
@@ -227,7 +227,7 @@ void pad_reflect_fp16(const float16_t* din,
         rst[1] = val[3];
         rst[2] = val[0];
         rst[3] = val[1];
-        vst1q_f16(dout_med, rst);
+        vst1_f16(dout_med, rst);
         dout_med += 4;
       }
       for (int i = 0; i < left_loop_remain; ++i) {
@@ -240,9 +240,9 @@ void pad_reflect_fp16(const float16_t* din,
         float16x8_t val3 = vld1q_f16(din_s + 24);
         din_s += 32;
         vst1q_f16(dout_med, val0);
-        vst1q_f32(dout_med + 8, val1);
-        vst1q_f32(dout_med + 16, val2);
-        vst1q_f32(dout_med + 24, val3);
+        vst1q_f16(dout_med + 8, val1);
+        vst1q_f16(dout_med + 16, val2);
+        vst1q_f16(dout_med + 24, val3);
         dout_med += 32;
       }
       for (int i = 0; i < med_rem_cnt; ++i) {
@@ -262,7 +262,7 @@ void pad_reflect_fp16(const float16_t* din,
         rst[1] = val[3];
         rst[2] = val[0];
         rst[3] = val[1];
-        vst1q_f16(dout_med, rst);
+        vst1_f16(dout_med, rst);
         dout_med += 4;
       }
       const float16_t* remain = din_s - (right_loop << 2) - 2;
@@ -270,7 +270,7 @@ void pad_reflect_fp16(const float16_t* din,
         *dout_med++ = *remain--;
       }
     }
-
+#endif
     // process bottom
     float16_t* dout_bottom = dout_med;
     float16_t* dout_bottom_reflect = dout_med - (w << 1);

@@ -25,6 +25,7 @@
 #include "lite/backends/arm/math/fp16/elementwise_fp16.h"
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
+#include "lite/backends/arm/math/fp16/pad2d_fp16.h"
 #include "lite/backends/arm/math/fp16/pooling_fp16.h"
 #include "lite/backends/arm/math/fp16/sgemm_fp16.h"
 #include "lite/backends/arm/math/fp16/softmax_fp16.h"

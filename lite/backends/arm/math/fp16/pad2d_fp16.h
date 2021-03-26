@@ -26,6 +26,7 @@ namespace arm {
 namespace math {
 namespace fp16 {
 
+typedef __fp16 float16_t;
 #define PAD2D_PARAM                                                  \
   const float16_t *din, float16_t *dout, int n, int c, int h, int w, \
       const int pad_top, const int pad_bottom, const int pad_left,   \
