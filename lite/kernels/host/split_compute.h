@@ -13,25 +13,32 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
-#include "lite/core/op_lite.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace host {
 
-template <typename T>
-void split_cpy(const T* din, T* dout, int num);
+template <typename T, PrecisionType PType>
+class SplitCompute : public KernelLite<TARGET(kHost), PType> {
+ public:
+  void Run() override;
 
-template <typename T>
-void split(const T* din,
-           const std::vector<lite::Tensor*>& dout,
-           const int axis,
-           const std::vector<int>& in_strides);
+  virtual ~SplitCompute() = default;
+};
 
-}  // namespace math
-}  // namespace arm
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+typedef paddle::lite::kernels::host::SplitCompute<float, PRECISION(kFloat)>
+    SplitFloat;
+typedef paddle::lite::kernels::host::SplitCompute<int, PRECISION(kFloat)>
+    SplitInt32;
+typedef paddle::lite::kernels::host::SplitCompute<int64_t, PRECISION(kFloat)>
+    SplitInt64;
+typedef paddle::lite::kernels::host::SplitCompute<int64_t, PRECISION(kInt64)>
+    SplitInt64T;
