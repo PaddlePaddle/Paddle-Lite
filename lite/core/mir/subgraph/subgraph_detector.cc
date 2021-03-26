@@ -128,12 +128,12 @@ void SubgraphDetector::node_dat_t::UnionFindCombine(node_dat_t *candidate) {
   std::set<node_dat_t *> outputs(candidate->outlinks.begin(),
                                  candidate->outlinks.end());
   for (auto *out_node : outlinks) {
-    if (out_node != candidate) {
+    if (out_node != candidate && out_node != this) {
       outputs.insert(out_node);
     }
   }
   for (auto *in_node : candidate->inlinks) {
-    if (in_node != this) {
+    if (in_node != candidate && in_node != this) {
       inputs.insert(in_node);
     }
   }
