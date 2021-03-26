@@ -40,6 +40,7 @@ class GenerateProgramPass : public ProgramPass {
   std::unique_ptr<RuntimeProgram> GenProgram() {
     LOG(INFO) << "insts.size: " << insts_.size();
 
+#ifdef LITE_WITH_XPU
     // generate RuntimeProgram for sub_block and set RuntimeProgram into
     // sub_block kernel
     // sub_block: while, conditional_block
@@ -76,6 +77,7 @@ class GenerateProgramPass : public ProgramPass {
         }
       }
     }
+#endif
 
     // generate RuntimeProgram for main block
     std::unique_ptr<RuntimeProgram> program(
