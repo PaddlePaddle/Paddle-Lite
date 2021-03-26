@@ -192,7 +192,7 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
   }
 
-  if (op_desc.HasAttr("infer_flags")) {
+  if (op_desc.HasAttr("axes")) {
     param_.axes = op_desc.GetAttr<std::vector<int>>("axes");
   }
 
@@ -234,34 +234,40 @@ bool StridedSliceOp::AttachImpl(const cpp::OpDesc &op_desc,
     }
   }
   auto tensor_input = false;
-  if (op_desc.HasInput("EndsTensor") || op_desc.HasInput("StartsTensor") ||
-      op_desc.HasInput("StridesTensor")) {
+  if ((op_desc.HasInput("EndsTensor") &&
+       !op_desc.Input("EndsTensor").empty()) ||
+      (op_desc.HasInput("StartsTensor") &&
+       !op_desc.Input("StartsTensor").empty()) ||
+      (op_desc.HasInput("StridesTensor") &&
+       !op_desc.Input("StridesTensor").empty())) {
     tensor_input = true;
   }
   param_.tensor_input = tensor_input;
-  if (!op_desc.HasInput("EndsTensor")) {
+  if (op_desc.HasInput("EndsTensor") && !op_desc.Input("EndsTensor").empty()) {
+    auto inputs = op_desc.Input("EndsTensor").front();
+    param_.EndsTensor = scope->FindVar(inputs)->GetMutable<Tensor>();
+  } else {
     CHECK_EQ(param_.axes.size(), ends_size)
         << "axes.size(): " << param_.axes.size()
         << " is not equal to ends_size: " << ends_size;
-  } else {
-    auto inputs = op_desc.Input("EndsTensor").front();
-    param_.EndsTensor = scope->FindVar(inputs)->GetMutable<Tensor>();
   }
-  if (!op_desc.HasInput("StartsTensor")) {
+  if (op_desc.HasInput("StartsTensor") &&
+      !op_desc.Input("StartsTensor").empty()) {
+    auto inputs = op_desc.Input("StartsTensor").front();
+    param_.StartsTensor = scope->FindVar(inputs)->GetMutable<Tensor>();
+  } else {
     CHECK_EQ(param_.axes.size(), starts_size)
         << "axes.size(): " << param_.axes.size()
         << " is not equal to starts_size: " << starts_size;
-  } else {
-    auto inputs = op_desc.Input("StartsTensor").front();
-    param_.StartsTensor = scope->FindVar(inputs)->GetMutable<Tensor>();
   }
-  if (!op_desc.HasInput("StridesTensor")) {
+  if (op_desc.HasInput("StridesTensor") &&
+      !op_desc.Input("StridesTensor").empty()) {
+    auto inputs = op_desc.Input("StridesTensor").front();
+    param_.StridesTensor = scope->FindVar(inputs)->GetMutable<Tensor>();
+  } else {
     CHECK_EQ(param_.axes.size(), strides_size)
         << "axes.size(): " << param_.axes.size()
         << " is not equal to ends_size: " << strides_size;
-  } else {
-    auto inputs = op_desc.Input("StridesTensor").front();
-    param_.StridesTensor = scope->FindVar(inputs)->GetMutable<Tensor>();
   }
   return true;
 }
