@@ -21,6 +21,7 @@
 namespace paddle {
 namespace lite {
 
+template <class T = float>
 class Pad2dComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -51,9 +52,9 @@ class Pad2dComputeTester : public arena::TestCase {
     int out_h = dims_[2] + paddings_[0] + paddings_[1];
     int out_w = dims_[3] + paddings_[2] + paddings_[3];
     out->Resize(lite::DDim({dims_[0], dims_[1], out_h, out_w}));
-    auto* out_data = out->mutable_data<float>();
+    auto* out_data = out->mutable_data<T>();
     auto* x = scope->FindTensor(x_);
-    const auto* x_data = x->data<float>();
+    const auto* x_data = x->data<T>();
 
     auto output_dims = out->dims();
     int n = output_dims[0];
@@ -141,31 +142,21 @@ class Pad2dComputeTester : public arena::TestCase {
   }
 };
 
-void TestPad2d(const Place& place, float abs_error = 2e-5) {
-  std::string data_format = "NCHW";
-  for (int pad_top : {0, 1}) {
-    for (int pad_bottom : {0, 1}) {
-      for (int pad_left : {0, 1}) {
-        for (int pad_right : {0, 1}) {
-          std::vector<int> paddings{pad_top, pad_bottom, pad_left, pad_right};
-          for (std::string pad_mode : {"constant", "edge", "reflect"}) {
-            for (float pad_value : {0.f, 1.0f}) {
-              VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
-                      << paddings[0] << " " << paddings[1] << " " << paddings[2]
-                      << " " << paddings[3];
-              std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester(
-                  place, "def", pad_mode, paddings, pad_value, data_format));
-              arena::Arena arena(std::move(tester), place, abs_error);
-              arena.TestPrecision();
-            }
-          }
-        }
-      }
-    }
-  }
+template <class T = float>
+void TestPad2d(const Place& place,
+               const std::string& alias,
+               std::string pad_mode,
+               std::vector<int> paddings,
+               float pad_value,
+               std::string data_format,
+               float abs_error = 2e-5) {
+  std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester<T>(
+      place, "def", pad_mode, paddings, pad_value, data_format));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
 }
 
-TEST(Scale, precision) {
+TEST(Pad2d, precision) {
   Place place;
   float abs_error = 2e-5;
 #if defined(LITE_WITH_NPU)
@@ -178,9 +169,52 @@ TEST(Scale, precision) {
 #else
   return;
 #endif
-
-  TestPad2d(place, abs_error);
+  std::string data_format = "NCHW";
+  for (int pad_top : {0, 1}) {
+    for (int pad_bottom : {0, 1}) {
+      for (int pad_left : {0, 1}) {
+        for (int pad_right : {0, 1}) {
+          std::vector<int> paddings{pad_top, pad_bottom, pad_left, pad_right};
+          for (std::string pad_mode : {"constant", "edge", "reflect"}) {
+            for (float pad_value : {0.f, 1.0f}) {
+              VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
+                      << paddings[0] << " " << paddings[1] << " " << paddings[2]
+                      << " " << paddings[3];
+              TestPad2d(place, "def", pad_mode, paddings,
+                pad_value, data_format));
+            }
+          }
+        }
+      }
+    }
+  }
 }
+
+#if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
+TEST(Pad2d, precision) {
+  Place place(TARGET(kARM), PRECISION(kFP16));
+  float abs_error = 2e-5;
+  std::string data_format = "NCHW";
+  for (int pad_top : {0, 1}) {
+    for (int pad_bottom : {0, 1}) {
+      for (int pad_left : {0, 1}) {
+        for (int pad_right : {0, 1}) {
+          std::vector<int> paddings{pad_top, pad_bottom, pad_left, pad_right};
+          for (std::string pad_mode : {"constant", "edge", "reflect"}) {
+            for (float pad_value : {0.f, 1.0f}) {
+              VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
+                      << paddings[0] << " " << paddings[1] << " " << paddings[2]
+                      << " " << paddings[3];
+              TestPad2d<float16_t>(place, "def",
+              pad_mode, paddings, pad_value, data_format));
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif
 
 }  // namespace lite
 }  // namespace paddle
