@@ -219,10 +219,10 @@ void test_conv_fp16(const DDim dim_in,
         if ((max_diff - basic_max_diff) > 5e-4f) {
           int64_t size = tout_basic.numel();
           int count = 0;
-          bool check = true;
+          bool check = false;
           for (int i = 0; i < size; i++) {
             if (abs(ptr[i]) > 1) {
-              check = false;
+              check = true;
               break;
             }
             if (abs(ptr[i]) > 0.01) {
@@ -230,8 +230,9 @@ void test_conv_fp16(const DDim dim_in,
             }
           }
           VLOG(4) << "check: " << check << ", count: " << count;
-          check = check && count < std::max(10, static_cast<int>(0.01 * size));
-          if (!check) {
+          check =
+              (check || count >= std::max(10, static_cast<int>(0.01 * size)));
+          if (check) {
             int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
             print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
             print_conv_success_or_fail_info("conv_fp16",

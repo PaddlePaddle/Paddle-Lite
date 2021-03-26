@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/__xpu__block_fuse_op.h"
+#include <memory>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -42,31 +43,29 @@ bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
 
   param_.input =
       scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
-  param_.bias =
-      scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();
   param_.output =
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
   param_.output_max =
       scope->FindVar(op_desc.Output("OutputMax").front())->GetMutable<Tensor>();
   param_.filter =
       scope->FindVar(op_desc.Input("Filter").front())->GetMutable<Tensor>();
-  param_.max_filter =
-      scope->FindVar(op_desc.Input("FilterMax").front())->GetMutable<Tensor>();
 
   param_.op_type = op_desc.GetAttr<std::vector<int>>("op_type");
   param_.place_x = op_desc.GetAttr<std::vector<int>>("place_x");
   param_.place_y = op_desc.GetAttr<std::vector<int>>("place_y");
   param_.place_z = op_desc.GetAttr<std::vector<int>>("place_z");
-
   param_.filter_dims = op_desc.GetAttr<std::vector<int>>("filter_dims");
   param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
-  param_.paddings = op_desc.GetAttr<std::vector<int>>("paddings");
-  param_.dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+  auto paddings = op_desc.GetAttr<std::vector<int>>("paddings");
+  param_.paddings = std::make_shared<std::vector<int>>(paddings);
+  auto dilations = op_desc.GetAttr<std::vector<int>>("dilations");
+  param_.dilations = std::make_shared<std::vector<int>>(dilations);
   param_.groups = op_desc.GetAttr<std::vector<int>>("groups");
-
   param_.act_type = op_desc.GetAttr<std::vector<int>>("act_type");
   param_.act_param = op_desc.GetAttr<std::vector<float>>("act_param");
   param_.block_lod = op_desc.GetAttr<std::vector<int>>("block_lod");
+  param_.conv_bias = op_desc.GetAttr<std::vector<int>>("conv_bias");
+  param_.has_bias = op_desc.GetAttr<bool>("has_bias");
 
   // optional params
   if (op_desc.HasAttr("has_input_max") &&
@@ -74,6 +73,11 @@ bool XPUBlockFuseOp::AttachImpl(const cpp::OpDesc& op_desc,
     CHECK(scope->FindVar(op_desc.Input("InputMax").front()));
     param_.input_max =
         scope->FindVar(op_desc.Input("InputMax").front())->GetMutable<Tensor>();
+  }
+  if (op_desc.GetAttr<bool>("has_bias")) {
+    CHECK(scope->FindVar(op_desc.Input("Bias").front()));
+    param_.bias =
+        scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();
   }
   return true;
 }
