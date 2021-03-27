@@ -274,7 +274,7 @@ class ActivationComputeImageDefault
   }
 #endif
 
- public:
+ protected:
   param_t* act_param_{nullptr};
   DDim x_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
