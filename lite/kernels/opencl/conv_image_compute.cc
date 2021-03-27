@@ -693,6 +693,8 @@ void ConvImageCompute::SetGlobalWorkSize() {
   }
   VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
           << global_work_size_[1] << "," << global_work_size_[2] << "}";
+  VLOG(4) << "local_work_size_[3D]: {" << local_work_size_[0] << ","
+          << local_work_size_[1] << "," << local_work_size_[2] << "}";
 }
 
 void ConvImageCompute::Conv2d1x1opt() {
