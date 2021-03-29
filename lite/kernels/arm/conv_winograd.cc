@@ -51,35 +51,6 @@ namespace arm {
 #define FUNCS_PARAM i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data
 template <>
 void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
-  /*
-    auto& param = this->Param<param_t>();
-    auto& ctx = this->ctx_->template As<ARMContext>();
-    int threads = ctx.threads();
-
-    auto x_dims = param.x->dims();
-    auto w_dims = param.filter->dims();
-    auto o_dims = param.output->dims();
-
-    if (last_shape_ == x_dims) {
-      return;
-    }
-    last_shape_ = x_dims;
-    //! update workspace size
-    int ic = x_dims[1];
-    int ih = x_dims[2];
-    int iw = x_dims[3];
-    int oc = o_dims[1];
-    int oh = o_dims[2];
-    int ow = o_dims[3];
-    int tile_block = 8;
-    auto pad = *(param.paddings);
-    int pad_h0 = pad[0];
-    int pad_h1 = pad[1];
-    int pad_w0 = pad[2];
-    int pad_w1 = pad[3];
-    int oc_pad = (oc + 3) / 4 * 4;
-    int ic_pad = (ic + 3) / 4 * 4;
-    */
   WINOGRAD_INIT(3)
   const int new_input_size =
       ic_pad * (ih + pad_h0 + pad_h1) * (iw + pad_w0 + pad_w1);
@@ -191,34 +162,6 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
 template <PrecisionType OutType>
 void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
-  /*auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->template As<ARMContext>();
-  int threads = ctx.threads();
-
-  if (last_shape_ == x_dims) {
-    return;
-  }
-  auto x_dims = param.x->dims();
-  auto w_dims = param.filter->dims();
-  auto o_dims = param.output->dims();
-
-  last_shape_ = x_dims;
-  //! update workspace size
-  int ic = x_dims[1];
-  int ih = x_dims[2];
-  int iw = x_dims[3];
-  int oc = o_dims[1];
-  int oh = o_dims[2];
-  int ow = o_dims[3];
-  int tile_block = 8;
-  auto pad = *(param.paddings);
-  int pad_h0 = pad[0];
-  int pad_h1 = pad[1];
-  int pad_w0 = pad[2];
-  int pad_w1 = pad[3];
-  int oc_pad = (oc + 7) / 8 * 8;
-  int ic_pad = (ic + 7) / 8 * 8;
-  */
   WINOGRAD_INIT(8)
   w_scale_ = param.weight_scale;
   if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {

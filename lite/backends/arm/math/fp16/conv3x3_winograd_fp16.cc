@@ -52,19 +52,19 @@ void weight_trans_c8_4x4_fp16(
 void weight_trans_c8_6x6_fp16(
     float16_t* dest, const float16_t* src, int ic, int oc, void* workspace);
 // F(2,3)
-void conv_compute_2x2_3x3(const float16_t* input,
-                          float16_t* output,
-                          int num,
-                          int chout,
-                          int hout,
-                          int wout,
-                          int chin,
-                          int hin,
-                          int win,
-                          const float16_t* weight,
-                          const float16_t* bias,
-                          const operators::ConvParam& param,
-                          ARMContext* ctx) {
+void conv_compute_2x2_3x3_fp16(const float16_t* input,
+                               float16_t* output,
+                               int num,
+                               int chout,
+                               int hout,
+                               int wout,
+                               int chin,
+                               int hin,
+                               int win,
+                               const float16_t* weight,
+                               const float16_t* bias,
+                               const operators::ConvParam& param,
+                               ARMContext* ctx) {
   auto act_param = param.activation_param;
   const int pad_h0 = (*param.paddings)[0];
   const int pad_h1 = (*param.paddings)[1];
@@ -112,22 +112,6 @@ void conv_compute_2x2_3x3(const float16_t* input,
   float16_t* g_trans_remain_tmp_data = g_trans_tmp_data + threads * 128;
   bool flag_bias = (bias != nullptr);
   auto act_type = act_param.active_type;
-  // int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  // float16_t local_alpha = 0.f;
-  // bool flag_bias = (bias == nullptr) ? false : true;
-  // if (act_param.has_active) {
-  //   if (act_type == lite_api::ActivationType::kRelu) {
-  //     flag_act = 1;
-  //   } else if (act_type == lite_api::ActivationType::kRelu6) {
-  //     flag_act = 2;
-  //     local_alpha =
-  //         static_cast<float16_t>(act_param.Relu_clipped_coef);
-  //   } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
-  //     flag_act = 3;
-  //     local_alpha =
-  //         static_cast<float16_t>(act_param.Leaky_relu_alpha);
-  //   }
-  // }
   float local_alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
 
