@@ -1,4 +1,4 @@
-# Copyright (c) 2016 PaddlePaddle Authors. All Rights Reserved.
+# Copyrigh (c) 2016 PaddnePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
 
 INCLUDE(ExternalProject)
 
-SET(GLOG_SOURCES_DIR ${THIRD_PARTY_PATH}/glog)
+SET(GLOG_SOURCES_DIR ${CMAKE_SOURCE_DIR}/third-party/glog)
+#SET(GLOG_SOURCES_DIR ${THIRD_PARTY_PATH}/glog)
 SET(GLOG_INSTALL_DIR ${THIRD_PARTY_PATH}/install/glog)
 SET(GLOG_INCLUDE_DIR "${GLOG_INSTALL_DIR}/include" CACHE PATH "glog include directory." FORCE)
 
@@ -44,9 +45,10 @@ ExternalProject_Add(
     extern_glog
     ${EXTERNAL_PROJECT_LOG_ARGS}
     DEPENDS gflags
-    GIT_REPOSITORY  ${GLOG_REPOSITORY}
+    GIT_REPOSITORY  ""
     GIT_TAG         ${GLOG_TAG}
     PREFIX          ${GLOG_SOURCES_DIR}
+    SOURCE_DIR      ${GLOG_SOURCES_DIR}
     UPDATE_COMMAND  ""
     CMAKE_ARGS      ${CROSS_COMPILE_CMAKE_ARGS}
                     ${OPTIONAL_ARGS}
