@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/write_to_array_compute.h"
+#include <algorithm>
+#include "lite/backends/xpu/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -24,7 +26,9 @@ void WriteToArrayCompute::Run() {
   CHECK_EQ(param.I->numel(), 1) << "input2 should have only one element";
   auto& ctx = this->ctx_->As<XPUContext>();
 
-  int id = param.I->data<int64_t>()[0];
+  int64_t id;
+  TargetWrapperXPU::MemcpySync(
+      &id, param.I->raw_data(), sizeof(int64_t), IoDirection::DtoH);
   if (param.Out->size() < id + 1) {
     param.Out->resize(id + 1);
   }
@@ -38,7 +42,7 @@ void WriteToArrayCompute::Run() {
                              param.X->data<int8_t>(),
                              static_cast<int8_t*>(elem.raw_data()),
                              param.X->memory_size());
-  CHECK(r == 0) << " write to array failed";
+  CHECK_EQ(r, 0) << " write to array failed";
 }
 
 }  // namespace xpu
@@ -57,7 +61,7 @@ REGISTER_LITE_KERNEL(write_to_array,
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
     .BindInput("I",
-               {LiteType::GetTensorTy(TARGET(kHost),
+               {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kInt64),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
