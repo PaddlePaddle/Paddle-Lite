@@ -28,15 +28,16 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ### 已支持（或部分支持）的Paddle算子
 
-- relu/relu6/leakyrelu
 - conv2d
 - depthwise_conv2d
-- pool2d
-- fc
 
 ## 准备工作
 
 开发板C5MB可以通过串口线进行连接，也可以通过ssh进行连接，初次使用请参考[文档](https://paddlelite-demo.bj.bcebos.com/devices/intel/AIGO_C5MB_UG.pdf)
+可以通过串口完成C5MB开发板的IP修改：
+  ```
+  $ vi /etc/network/interfaces # 设备网络配置文件，将对应的address，netmask，和gateway设置为指定的地址即可。
+  ```
 
 ## 参考示例演示
 
@@ -76,7 +77,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
           - pascalvoc_label_list # 检测label文件
         - models
 		  - ssd_mobilenet_v1_fp32_300_for_intel_fpga
-		    - model.nb # 已通过opt转好的、适合英特尔FPGA的mobilenetv1量化模型
+		    - ssd_mobilenet_v1_fp32_300_for_intel_fpga.nb # 已通过opt转好的、适合英特尔FPGA的mobilenetv1量化模型
       - shell
         - CMakeLists.txt # 示例程序CMake脚本
         - build
@@ -85,7 +86,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
         - convert_to_raw_image.py # 将测试图片保存为raw数据的python脚本
         - build.sh # 示例程序编译脚本
         - run.sh # 示例程序运行脚本
-		- intelfpgadrv.ko # 英特尔FPGA内核驱动程序
+        - intelfpgadrv.ko # 英特尔FPGA内核驱动程序
     - libs
       - PaddleLite
         - armhf
@@ -135,7 +136,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
       --valid_targets=intel_fpga,arm
   
   替换自带的英特尔FPGA模型
-  $ cp opt_model.nb ssd_mobilenet_v1_fp32_300_for_intel_fpga/model.nb
+  $ cp opt_model.nb ssd_mobilenet_v1_fp32_300_for_intel_fpga/ssd_mobilenet_v1_fp32_300_for_intel_fpga.nb
   ```
 
 - 注意：opt生成的模型只是标记了英特尔FPGA支持的Paddle算子，并没有真正生成英特尔FPGA模型，只有在执行时才会将标记的Paddle算子转成英特尔FPGA的APIs，最终生成并执行模型。
