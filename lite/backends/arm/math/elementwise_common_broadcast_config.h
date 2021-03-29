@@ -47,6 +47,25 @@ __ai void vst1q_f32_wrap(float* a, float32x4_t b) { return vst1q_f32(a, b); }
 #undef vst1q_f32
 #define vst1q_f32 vst1q_f32_wrap
 
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 flaot16_t;
+__ai float16x8_t vld1q_f16_wrap(const float16_t* p0) { return vld1q_f16(p0); }
+#undef vld1q_f16
+#define vld1q_f16 vld1q_f16_wrap
+
+__ai void vst1q_f16_wrap(float16_t* a, float16x8_t b) {
+  return vst1q_f16(a, b);
+}
+#undef vst1q_f16
+#define vst1q_f16 vst1q_f16_wrap
+
+__ai float16x8_t vdupq_n_f16_wrap(const float16_t p0) {
+  return vdupq_n_f16(p0);
+}
+#undef vdupq_n_f16
+#define vdupq_n_f16 vdupq_n_f16_wrap
+#endif
+
 #undef __ai
 #endif
 
@@ -150,6 +169,37 @@ struct SubConfig<int32_t> : public BasicConfig<int32_t> {
   constexpr static auto naive_op = naive_sub<int32_t>;
   constexpr static auto neon_op = vsubq_s32;
 };
+
+#ifdef ENABLE_ARM_FP16
+static inline float16x8_t __attribute__((__always_inline__))
+neon_relu_fp16(const float16x8_t& a) {
+  constexpr float16x8_t zero = {0, 0, 0, 0, 0, 0, 0, 0};
+  return vmaxq_f16(a, zero);
+}
+
+template <>
+struct BasicConfig<float16_t> {
+  using T = float16_t;
+  using NeonT = float16x8_t;
+  constexpr static auto neon_dup = vdupq_n_f16;
+  constexpr static auto neon_ld = vld1q_f16;
+  constexpr static auto neon_st = vst1q_f16;
+  constexpr static int cnt_num = 8;
+};
+
+template <>
+struct ActiveConfig<ActiveType::RELU, float16_t> {
+  constexpr static float16_t (*naive_active)(float16_t) = naive_relu<float16_t>;
+  constexpr static float16x8_t (*neon_active)(const float16x8_t&) =
+      neon_relu_fp16;
+};
+
+template <>
+struct AddConfig<float16_t> : public BasicConfig<float16_t> {
+  constexpr static auto naive_op = naive_add<float16_t>;
+  constexpr static auto neon_op = vaddq_f16;
+};
+#endif
 
 }  // namespace math
 }  // namespace arm

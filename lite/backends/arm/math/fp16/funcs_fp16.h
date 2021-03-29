@@ -18,9 +18,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include "lite/backends/arm/math/fp16/activation_fp16.h"
 #include "lite/backends/arm/math/fp16/conv3x3_depthwise_fp16.h"
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
 #include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#include "lite/backends/arm/math/fp16/elementwise_fp16.h"
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include "lite/backends/arm/math/fp16/pooling_fp16.h"
