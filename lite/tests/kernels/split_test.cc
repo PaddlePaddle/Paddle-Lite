@@ -264,7 +264,7 @@ TEST(split_x86, precision) {
 #endif
 
 #if defined(LITE_WITH_ARM)
-TEST(split_x86, precision) {
+TEST(split_arm, precision) {
   Place place{TARGET(kARM)};
   Place place_int64{TARGET(kARM), PRECISION(kInt64)};
   float abs_error = 1e-5;
