@@ -64,6 +64,8 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
             var_name, var_node->AsArg().type));
       }
     }
+
+    // sync input var
     for (auto& sub_op_node :
          (*graphs_)[sub_block_idx]->StmtTopologicalOrder()) {
       if (!sub_op_node->IsStmt()) continue;
@@ -71,8 +73,18 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
         CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types);
       }
       for (auto* sub_var_node : sub_op_node->outlinks) {
-        CheckAndSyncTypeOfVarNode(sub_var_node, ref_var_types);
+        auto& var_name = sub_var_node->AsArg().name;
+        if (!ref_var_types.count(var_name)) {
+          ref_var_types.insert(std::pair<std::string, const Type*>(
+              var_name, sub_var_node->AsArg().type));
+        }
       }
+    }
+
+    // sync output var
+    for (auto* var_node : op_node->outlinks) {
+      CHECK(var_node->IsArg());
+      CheckAndSyncTypeOfVarNode(var_node, ref_var_types);
     }
   }
 }

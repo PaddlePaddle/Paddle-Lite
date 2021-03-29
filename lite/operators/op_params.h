@@ -69,8 +69,10 @@ struct FetchParam : ParamBase {
 
 // Helper op for lite framework
 struct IoCopyParam : ParamBase {
-  const lite::Tensor* x{};
-  lite::Tensor* y{};
+  const lite::Tensor* x{nullptr};
+  const std::vector<lite::Tensor>* x_array{nullptr};
+  lite::Tensor* y{nullptr};
+  std::vector<lite::Tensor>* y_array{nullptr};
   int process_type{0};
 };
 
