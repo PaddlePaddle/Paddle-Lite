@@ -87,7 +87,7 @@ else()
         # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
         if (ARM_TARGET_LANG STREQUAL "gcc") #gcc
             set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
-        elseif(ARM_TARGET_LANG STREQUAL "clang")
+        else()
             set(TARGET_COMIPILE_FLAGS "-fdata-sections")
         endif()
         if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
