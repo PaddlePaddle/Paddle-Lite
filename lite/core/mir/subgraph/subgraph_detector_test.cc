@@ -18,6 +18,8 @@
 #include <vector>
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
+#include "lite/core/mir/cycle_removal_pass.h"
+#include "lite/core/mir/graph_visualize_pass.h"
 #include "lite/core/mir/ssa_graph.h"
 #include "lite/core/program.h"
 #include "lite/model_parser/cpp_desc.h"
@@ -208,6 +210,10 @@ TEST(Subgraph, detect_custom_model) {
   Program program(program_desc, scope, valid_places);
   auto graph = std::unique_ptr<mir::SSAGraph>(new mir::SSAGraph());
   graph->Build(program, valid_places);
+  mir::Visualize(graph.get());
+  mir::fusion::SelfLoopDetector fuser("batch_norm");
+  fuser(graph.get());
+  mir::Visualize(graph.get());
   // Apply subgraph detector and check results
   auto teller = [](mir::Node* node) {
     if (!node->IsStmt()) return false;

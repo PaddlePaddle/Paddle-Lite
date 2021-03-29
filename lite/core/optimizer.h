@@ -82,7 +82,8 @@ class Optimizer {
     InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
 
     std::vector<std::string> passes_local{
-        {"lite_quant_dequant_fuse_pass",             //
+        {"cycle_removal_pass",                       //
+         "lite_quant_dequant_fuse_pass",             //
          "weight_quantization_preprocess_pass",      //
          "remove_scale1_pass",                       //
          "adaptive_1x1_pool2d_convert_global_pass",  //
