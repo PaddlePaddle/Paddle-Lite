@@ -23,8 +23,10 @@ namespace host {
 
 void WhileCompute::PrepareForRun() {
   auto &param = this->Param<param_t>();
-  program_.reset(new RuntimeProgram(
-      param.program_desc, param.exec_scope, param.block_idx));
+  if (program_ == nullptr) {
+    program_.reset(new RuntimeProgram(
+        param.program_desc, param.exec_scope, param.block_idx));
+  }
 }
 void WhileCompute::Run() {
   auto &param = this->Param<param_t>();
