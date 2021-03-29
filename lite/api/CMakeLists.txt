@@ -85,7 +85,7 @@ else()
     else()
         # 1. enable -flto compiling flag if toochain==gcc
         # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
-        if (ARM_TARGET_LANG STREQUAL "gcc") #gcc
+        if (NOT (ARM_TARGET_LANG STREQUAL "clang"))
             set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
         else()
             set(TARGET_COMIPILE_FLAGS "-fdata-sections")
