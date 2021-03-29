@@ -118,10 +118,18 @@ __kernel void conv2d_1x1_mali(__read_only image2d_t input, __write_only image2d_
   alpha3 = alpha0;
   //}
 #elif defined(PRELU_ELE) //{
-  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c4w_idx, out_b_h_idx));
-  alpha1 = alpha0;
-  alpha2 = alpha0;
-  alpha3 = alpha0;
+  if(out_c4w_idx < OW){
+    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c4w_idx, out_b_h_idx));
+  }
+  if((out_c4w_idx + 1) < OW){
+    alpha1 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c4w_idx + 1, out_b_h_idx));
+  }
+  if((out_c4w_idx + 2) < OW){
+    alpha2 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c4w_idx + 2, out_b_h_idx));
+  }
+  if((out_c4w_idx + 3) < OW){
+    alpha3 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c4w_idx + 3, out_b_h_idx));
+  }
   //}
 #elif defined(PRELU_ALL) //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
@@ -178,10 +186,6 @@ __kernel void conv2d_1x1_opt(
     __read_only image2d_t input_image,
     __read_only image2d_t filter,
     __read_only image2d_t bias,
-#ifdef BATCH_NORM
-    __read_only image2d_t new_scale,
-    __read_only image2d_t new_biase,
-#endif
     __write_only image2d_t output_image,
     __private const int stride,
     __private const int offset,
@@ -234,12 +238,6 @@ __kernel void conv2d_1x1_opt(
   CL_DTYPE4 output1 = output0;
   CL_DTYPE4 output2 = output0;
   CL_DTYPE4 output3 = output0;
-#elif defined(BIASE_ELE)
-  CL_DTYPE4 output0 = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, output_pos0);
-  CL_DTYPE4 output1 = output0;
-  CL_DTYPE4 output2 = output0;
-  CL_DTYPE4 output3 = output0;
-
 #else
   CL_DTYPE4 output0 = 0.0f;
   CL_DTYPE4 output1 = 0.0f;
@@ -405,24 +403,6 @@ __kernel void conv2d_1x1_opt(
     }
   }
 
-#ifdef BATCH_NORM
-  output0 = output0 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
-
-  output1 = output1 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
-
-  output2 = output2 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
-
-  output3 = output3 * READ_IMG_TYPE(
-                          CL_DTYPE_CHAR, new_scale, SAMPLER, (int2)(out_c, 0)) +
-            READ_IMG_TYPE(CL_DTYPE_CHAR, new_biase, SAMPLER, (int2)(out_c, 0));
-#endif
-
 CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
 #ifdef PRELU_CH //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(out_c, 0));
@@ -431,10 +411,18 @@ CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
   alpha3 = alpha0;
   //}
 #elif defined(PRELU_ELE) //{
-  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
-  alpha1 = alpha0;
-  alpha2 = alpha0;
-  alpha3 = alpha0;
+  if (out_w0 < old_w) {
+    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
+  }
+  if (out_w1 < old_w) {  
+    alpha1 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos1);
+  }
+  if (out_w2 < old_w) {    
+    alpha2 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos2);
+  }
+  if (out_w3 < old_w) {  
+    alpha3 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos3);
+  }
   //}
 #elif defined(PRELU_ALL) //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
@@ -597,10 +585,18 @@ CL_DTYPE4 alpha0,alpha1,alpha2,alpha3;
   alpha3 = alpha0;
   //}
 #elif defined(PRELU_ELE) //{
-  alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
-  alpha1 = alpha0;
-  alpha2 = alpha0;
-  alpha3 = alpha0;
+  if (out_w0 < old_w) {
+    alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos0);
+  }
+  if (out_w1 < old_w) {
+    alpha1 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos1);
+  }
+  if (out_w2 < old_w) {
+    alpha2 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos2);
+  }
+  if (out_w3 < old_w) {  
+    alpha3 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, output_pos3);
+  }
   //}
 #elif defined(PRELU_ALL) //{
   alpha0 = READ_IMG_TYPE(CL_DTYPE_CHAR, prelu_alpha, SAMPLER, (int2)(0, 0));
