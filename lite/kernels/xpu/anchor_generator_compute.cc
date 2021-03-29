@@ -48,7 +48,6 @@ void AnchorGeneratorCompute::Run() {
                                         anchors_data,
                                         feature_height,
                                         feature_width,
-                                        num_anchors,
                                         param.aspect_ratios,
                                         param.anchor_sizes,
                                         param.stride,
