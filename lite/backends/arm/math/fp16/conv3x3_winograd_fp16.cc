@@ -110,30 +110,33 @@ void conv_compute_2x2_3x3(const float16_t* input,
   memset(g_tmp_data, 0, threads * tmp_data_thread_stride * sizeof(float16_t));
   float16_t* g_trans_tmp_data = g_tmp_data + threads * tmp_data_thread_stride;
   float16_t* g_trans_remain_tmp_data = g_trans_tmp_data + threads * 128;
+  bool flag_bias = (bias != nullptr);
   auto act_type = act_param.active_type;
-  int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float16_t alpha[4] = {0.f, 0.f, 0.f, 0.f};
-  bool flag_bias = (bias == nullptr) ? false : true;
+  // int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
+  // float16_t local_alpha = 0.f;
+  // bool flag_bias = (bias == nullptr) ? false : true;
+  // if (act_param.has_active) {
+  //   if (act_type == lite_api::ActivationType::kRelu) {
+  //     flag_act = 1;
+  //   } else if (act_type == lite_api::ActivationType::kRelu6) {
+  //     flag_act = 2;
+  //     local_alpha =
+  //         static_cast<float16_t>(act_param.Relu_clipped_coef);
+  //   } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+  //     flag_act = 3;
+  //     local_alpha =
+  //         static_cast<float16_t>(act_param.Leaky_relu_alpha);
+  //   }
+  // }
+  float local_alpha = 0.f;
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+
   if (act_param.has_active) {
-    if (act_type == lite_api::ActivationType::kRelu) {
-      flag_act = 1;
-    } else if (act_type == lite_api::ActivationType::kRelu6) {
-      flag_act = 2;
-      float16_t local_alpha =
-          static_cast<float16_t>(act_param.Relu_clipped_coef);
-      alpha[0] = local_alpha;
-      alpha[1] = local_alpha;
-      alpha[2] = local_alpha;
-      alpha[3] = local_alpha;
-    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
-      flag_act = 3;
-      float16_t local_alpha =
-          static_cast<float16_t>(act_param.Leaky_relu_alpha);
-      alpha[0] = local_alpha;
-      alpha[1] = local_alpha;
-      alpha[2] = local_alpha;
-      alpha[3] = local_alpha;
-    }
+    act_acquire(act_type,
+                flag_act,
+                local_alpha,
+                act_param.Relu_clipped_coef,
+                act_param.Leaky_relu_alpha);
   }
 
   // begin compute
@@ -276,7 +279,7 @@ void conv_compute_2x2_3x3(const float16_t* input,
                               hout,
                               wout,
                               flag_act,
-                              alpha,
+                              local_alpha,
                               bias + ci * 8,
                               flag_bias);
           }
@@ -310,7 +313,7 @@ void conv_compute_2x2_3x3(const float16_t* input,
                               hout,
                               wout,
                               flag_act,
-                              alpha,
+                              local_alpha,
                               bias + ci * 8,
                               flag_bias);
           }
@@ -371,63 +374,50 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
 
   int threads = ctx->threads();
   float16_t* g_tmp_data = tmp_work_space + ic_8 * ic_8_stride;
-      oc_8 * oc_8_stride * sizeof(int32_t));
-      int tmp_input_thread_stride =
-          tile_block * ic_8 * 288;  // 128 = 8*4*4, 8*6*6=288
-      // tmp_output_thread_stride is batched gemm result
-      int tmp_output_thread_stride =
-          tile_block * oc_8 * 288;  // 128 = 8*4*4, 8*6*6=288
-      int tmp_data_thread_stride =
-          tmp_input_thread_stride + tmp_output_thread_stride;
-      memset(g_tmp_data, 0, tmp_data_thread_stride * sizeof(float16_t));
-      float16_t* g_trans_tmp_data =
-          g_tmp_data + threads * tmp_data_thread_stride;
-      float16_t* g_trans_remain_tmp_data = g_trans_tmp_data + threads * 288;
-      auto act_type = act_param.active_type;
-      int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-      float16_t alpha[4] = {0.f, 0.f, 0.f, 0.f};
-      bool flag_bias = (bias == nullptr) ? false : true;
-      if (act_param.has_active) {
-        if (act_type == lite_api::ActivationType::kRelu) {
-          flag_act = 1;
-        } else if (act_type == lite_api::ActivationType::kRelu6) {
-          flag_act = 2;
-          float16_t local_alpha =
-              static_cast<float16_t>(act_param.Relu_clipped_coef);
-          alpha[0] = local_alpha;
-          alpha[1] = local_alpha;
-          alpha[2] = local_alpha;
-          alpha[3] = local_alpha;
-        } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
-          flag_act = 3;
-          float16_t local_alpha =
-              static_cast<float16_t>(act_param.Leaky_relu_alpha);
-          alpha[0] = local_alpha;
-          alpha[1] = local_alpha;
-          alpha[2] = local_alpha;
-          alpha[3] = local_alpha;
-        }
-      }
-      // begin compute
-      for (int ni = 0; ni < num; ++ni) {
-        // trans input to c8
-        for (int i = 0; i < ic_8; ++i) {
-          prepack_input_nxwc8_fp16_dw(input + ni * in_n_stride,
-                                      input_c8 + i * new_c_stride,
-                                      i * 8,
-                                      -pad_h0,
-                                      hin + pad_h1,
-                                      -pad_w0,
-                                      win + pad_w1,
-                                      chin,
-                                      win,
-                                      hin,
-                                      zero_ptr);
-        }
-        float16_t* output_ptr = output + ni * out_n_stride;
+  oc_8* oc_8_stride * sizeof(int32_t);
+  int tmp_input_thread_stride =
+      tile_block * ic_8 * 288;  // 128 = 8*4*4, 8*6*6=288
+  // tmp_output_thread_stride is batched gemm result
+  int tmp_output_thread_stride =
+      tile_block * oc_8 * 288;  // 128 = 8*4*4, 8*6*6=288
+  int tmp_data_thread_stride =
+      tmp_input_thread_stride + tmp_output_thread_stride;
+  memset(g_tmp_data, 0, tmp_data_thread_stride * sizeof(float16_t));
+  float16_t* g_trans_tmp_data = g_tmp_data + threads * tmp_data_thread_stride;
+  float16_t* g_trans_remain_tmp_data = g_trans_tmp_data + threads * 288;
+  auto act_type = act_param.active_type;
+  float local_alpha = 0.f;
+  bool flag_bias = (bias != nullptr);
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
 
-        const float16_t* weight_ptr = weight;
-        const float16_t* bias_ptr = bias;
+  if (act_param.has_active) {
+    act_acquire(act_type,
+                flag_act,
+                local_alpha,
+                act_param.Relu_clipped_coef,
+                act_param.Leaky_relu_alpha);
+  }
+
+  // begin compute
+  for (int ni = 0; ni < num; ++ni) {
+    // trans input to c8
+    for (int i = 0; i < ic_8; ++i) {
+      prepack_input_nxwc8_fp16_dw(input + ni * in_n_stride,
+                                  input_c8 + i * new_c_stride,
+                                  i * 8,
+                                  -pad_h0,
+                                  hin + pad_h1,
+                                  -pad_w0,
+                                  win + pad_w1,
+                                  chin,
+                                  win,
+                                  hin,
+                                  zero_ptr);
+    }
+    float16_t* output_ptr = output + ni * out_n_stride;
+
+    const float16_t* weight_ptr = weight;
+    const float16_t* bias_ptr = bias;
 //
 #pragma omp parallel for num_threads(threads)
     for (int tbi = 0; tbi < block_count; ++tbi) {
@@ -517,7 +507,7 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
       for (int gi = 0; gi < 36; ++gi) {
         float16_t* origin_C = dst_temp_data + gi * c_gi_stride;
         float16_t* origin_B = b_ptr + gi * b_gi_stride;
-        const float* origin_A = weight + gi * w_gi_stride;
+        const float16_t* origin_A = weight + gi * w_gi_stride;
         // sgemm_prepack_c8_fp16_small(
         //     oc_8 * 8, tile_count, ic_8 * 8, origin_A, origin_B, origin_C,
         //     ctx);
@@ -530,16 +520,16 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
                                      origin_A,
                                      origin_B,
                                      origin_C,
-                                     ctx,
-                                     24);
+                                     ctx);
+          //  24);
         } else {
-          sgemm_prepack_c8_fp16_small(oc_8 * 8,
-                                      tile_count,
-                                      ic_8 * 8,
-                                      origin_A,
-                                      origin_B,
-                                      origin_C,
-                                      ctx);
+          gemm_prepack_c8_fp16_small(oc_8 * 8,
+                                     tile_count,
+                                     ic_8 * 8,
+                                     origin_A,
+                                     origin_B,
+                                     origin_C,
+                                     ctx);
         }
       }
       //*/
@@ -575,20 +565,20 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
                   trans_tmp_data + i * 48, 8, trans_remain_tmp_data + i * 8, 8);
             }
             write_to_oc8_fp16(trans_remain_tmp_data,
-                                    output_ptr,
-                                    ci * 8,
-                                    ci * 8 + 8,
-                                    dst_y,
-                                    dst_y + ey,
-                                    dst_x,
-                                    dst_x + ex,
-                                    chout,
-                                    hout,
-                                    wout,
-                                    flag_act,
-                                    alpha,
-                                    bias + ci * 8,
-                                    flag_bias;
+                              output_ptr,
+                              ci * 8,
+                              ci * 8 + 8,
+                              dst_y,
+                              dst_y + ey,
+                              dst_x,
+                              dst_x + ex,
+                              chout,
+                              hout,
+                              wout,
+                              flag_act,
+                              local_alpha,
+                              bias + ci * 8,
+                              flag_bias);
           }
         } else {
           for (int ci = 0; ci < oc_8; ++ci) {
@@ -626,7 +616,7 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
                               hout,
                               wout,
                               flag_act,
-                              alpha,
+                              local_alpha,
                               bias + ci * 8,
                               flag_bias);
           }
@@ -748,17 +738,17 @@ void input_trans_c8_6x6_fp16(const float16_t* src,
   float16x8_t src5 = vld1q_f16(src + src_stride * 5);
 
   float16x8_t dst0 =
-      vaddq_f16(vshlq_n_f16(vsubq_f16(src0, src2), 2), vsubq_f16(src4, src2));
+      vaddq_f16(vmulq_n_f16(vsubq_f16(src0, src2), 4), vsubq_f16(src4, src2));
   float16x8_t dst1 =
-      vsubq_f16(vaddq_f16(src3, src4), vshlq_n_f16(vaddq_f16(src1, src2), 2));
+      vsubq_f16(vaddq_f16(src3, src4), vmulq_n_f16(vaddq_f16(src1, src2), 4));
   float16x8_t dst2 =
-      vaddq_f16(vsubq_f16(src4, src3), vshlq_n_f16(vsubq_f16(src1, src2), 2));
+      vaddq_f16(vsubq_f16(src4, src3), vmulq_n_f16(vsubq_f16(src1, src2), 4));
   float16x8_t dst3 =
-      vaddq_f16(vsubq_f16(src4, src2), vshlq_n_f16(vsubq_f16(src3, src1), 1));
+      vaddq_f16(vsubq_f16(src4, src2), vmulq_n_f16(vsubq_f16(src3, src1), 2));
   float16x8_t dst4 =
-      vaddq_f16(vsubq_f16(src4, src2), vshlq_n_f16(vsubq_f16(src1, src3), 1));
+      vaddq_f16(vsubq_f16(src4, src2), vmulq_n_f16(vsubq_f16(src1, src3), 2));
   float16x8_t dst5 =
-      vaddq_f16(vshlq_n_f16(vsubq_f16(src1, src3), 2), vsubq_f16(src5, src3));
+      vaddq_f16(vmulq_n_f16(vsubq_f16(src1, src3), 4), vsubq_f16(src5, src3));
 
   vst1q_f16(dest, dst0);
   vst1q_f16(dest + dest_stride, dst1);
@@ -882,7 +872,7 @@ void weight_trans_c8_6x6_fp16(float16_t* dest,
       const float16_t* k2 = kernel0 + 6;
 
       //! h
-      float tmp[6][3];
+      float16_t tmp[6][3];
       for (int i = 0; i < 6; i++) {
         tmp[i][0] =
             k0[0] * coeff[i][0] + k0[1] * coeff[i][1] + k0[2] * coeff[i][2];

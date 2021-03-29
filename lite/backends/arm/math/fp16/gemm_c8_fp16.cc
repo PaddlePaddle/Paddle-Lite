@@ -102,18 +102,18 @@ void loadb_c8(float16_t* out,
   }
 }
 
-void gemm_prepack_c8_common(int M,
-                            int N,
-                            int K,
-                            const float16_t* A_packed,
-                            const float16_t* B,
-                            float16_t* C,
-                            ARMContext* ctx) {
+void gemm_prepack_c8_fp16_common(int M,
+                                 int N,
+                                 int K,
+                                 const float16_t* A_packed,
+                                 const float16_t* B,
+                                 float16_t* C,
+                                 ARMContext* ctx) {
   const int m_round = (M + 7) / 8 * 8;
   const int k_round = (K + 7) / 8 * 8;
   size_t l2_cache = ctx->llc_size() > 0 ? ctx->llc_size() : 512 * 1024;
   int threads = ctx->threads();
-  auto workspace = ctx->workspace_data<float>();
+  auto workspace = ctx->workspace_data<float16_t>();
   // l2 = MBLOCK_C8 * K + K * x_block + x_block * MBLOCK_C8;
   int bchunk_w = (l2_cache - k_round * MBLOCK_C8) /
                  ((k_round + MBLOCK_C8) * sizeof(float16_t));
@@ -379,7 +379,7 @@ void gemm_prepack_c8_common(int M,
             "bne 0b\n"
             "fadd  v18.8h, v8.8h,  v9.8h     \n"
             "fadd  v19.8h, v10.8h, v11.8h    \n"
-            "fadd  v8.8h,  v18.8h, v19.18h   \n"
+            "fadd  v8.8h,  v18.8h, v19.8h    \n"
             "str   q8,     [%[c]], #16       \n"
             "b 1f\n"
             /* remain = 2*/
@@ -451,14 +451,14 @@ void gemm_prepack_c8_common(int M,
             "bne 3b\n"
             "fadd  v18.8h, v8.8h,  v11.8h     \n"
             "fadd  v19.8h, v9.8h,  v12.8h     \n"
-            "fadd  v14.8h, v10.8h, v13.8h     \n"
-            "str   {v18.8h, v19.8h, v20.8h}, [%[c]], #32\n"
+            "fadd  v20.8h, v10.8h, v13.8h     \n"
+            "st1   {v18.8h, v19.8h, v20.8h}, [%[c]], #48\n"
             "1: \n"
             : [a] "+r"(ablock_ptr),
               [b] "+r"(bblock),
               [c] "+r"(cblock),
               [cnt] "+r"(cnt)
-            : 
+            : [remain] "r"(remain)
             : "v0", "v1", "v2", "v3", "v8", "v9", "v10", "v11", "v12", "v13",
               "v14", "v15", "v16", "v17", "v18", "v19", "v20", "cc", "memory");
 #endif
@@ -906,11 +906,9 @@ void gemm_prepack_c8_fp16(int M,
                           float16_t* C,
                           ARMContext* ctx) {
   if (N > 16) {
-    gemm_prepack_c8_fp16_common(
-        M, N, K, A_packed, B, C, bias, has_bias, has_relu, ctx);
+    gemm_prepack_c8_fp16_common(M, N, K, A_packed, B, C, ctx);
   } else {
-    gemm_prepack_c8_fp16_small(
-        M, N, K, A_packed, B, C, bias, has_bias, has_relu, ctx);
+    gemm_prepack_c8_fp16_small(M, N, K, A_packed, B, C, ctx);
   }
 }
 

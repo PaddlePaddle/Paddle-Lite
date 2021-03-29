@@ -145,10 +145,10 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   ReInitWhenNeeded();
 }
 
-SetProfileRuntimeKernelInfo(kFloat, kFloat)
+PROFILE_INFO(kFloat, kFloat)
 
-    template <>
-    void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
+template <>
+void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   ctx.ExtendWorkspace(workspace_size_);
@@ -389,9 +389,9 @@ void WinogradConv<PRECISION(kInt8), OutType>::Run() {
   }
 }
 
-SetProfileRuntimeKernelInfo(kInt8, kInt8) SetProfileRuntimeKernelInfo(
-    kInt8,
-    kFloat) template class WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
+PROFILE_INFO(kInt8, kInt8)
+PROFILE_INFO(kInt8, kFloat)
+template class WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
 template class WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
 
 #ifdef ENABLE_ARM_FP16
@@ -446,7 +446,7 @@ void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::ReInitWhenNeeded() {
           trans_tmp_ptr);
       break;
     default:
-      lite::arm::math::fp16::weight_trans_c8_6x6_int8(
+      lite::arm::math::fp16::weight_trans_c8_6x6_fp16(
           weights_data_,
           param.filter->template data<float16_t>(),
           ic,
@@ -468,7 +468,8 @@ void WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   ctx.ExtendWorkspace(workspace_size_);
   const auto* i_data = param.x->template data<float16_t>();
   const auto* w_data = weights_.data<float16_t>();
-  const auto* b_data = param.bias ? bias_.data<float16_t>() : nullptr;
+  const auto* b_data =
+      param.bias ? param.bias->template data<float16_t>() : nullptr;
   auto* o_data = param.output->template mutable_data<float16_t>();
   auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();

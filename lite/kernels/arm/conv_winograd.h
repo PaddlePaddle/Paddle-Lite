@@ -21,6 +21,10 @@
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -80,7 +84,7 @@ class WinogradConv<PRECISION(kInt8), OutType>
   std::string kernel_func_name_{"NotImplForConvWino"};
 #define PROFILE_INFO(kInt8, dtype2)                                         \
   template <>                                                               \
-  void DirectConv<PRECISION(dtype1), PRECISION(dtype2)>::                   \
+  void DirectConv<PRECISION(kInt8), PRECISION(dtype2)>::                    \
       SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) { \
     ch->kernel_func_name = kernel_func_name_;                               \
   }
