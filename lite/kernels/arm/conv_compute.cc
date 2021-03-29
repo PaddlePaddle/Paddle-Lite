@@ -151,6 +151,9 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
              ks_equal) {
     impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;
+  } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
+             ks_equal) {
+    impl_ = new WinogradConv<PRECISION(kFP16), PRECISION(kFP16)>;
   } else {
     impl_ = new GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>;
   }

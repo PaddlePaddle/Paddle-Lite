@@ -10,6 +10,7 @@ cc_library(math_arm_fp16 SRCS
     elementwise_fp16.cc
     funcs_fp16.cc
     gemm_fp16.cc
+    gemm_c8_fp16.cc
     gemv_fp16.cc
     pooling_fp16.cc
     sgemm_fp16.cc
