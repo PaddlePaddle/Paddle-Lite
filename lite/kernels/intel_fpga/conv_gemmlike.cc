@@ -16,6 +16,7 @@
 #include <vector>
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
+#include "lite/utils/logging.h"
 
 namespace paddle {
 namespace lite {
@@ -109,7 +110,7 @@ void GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     conv.op.oh = o_dims[2];
     conv.op.ow = o_dims[3];
     if (intelfpga_conv2d(&conv)) {
-      std::cout << "intel_fpga_conv error" << std::endl;
+      LOG(WARNING) << "[IntelFPGA] Conv_Compute failed";
     }
   } else {
     if (flag_1x1gemm_) {

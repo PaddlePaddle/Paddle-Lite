@@ -59,10 +59,10 @@ void ConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   /// select conv impl
   if (param.groups == ic && ic == oc && ks_equal && no_dilation && flag_dw) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
-    // VLOG(3) << "invoking dw conv";
+    VLOG(3) << "[IntelFPGA] invoking depthwise conv";
   } else {
     impl_ = new GemmLikeConv<PRECISION(kFloat), PRECISION(kFloat)>;
-    // VLOG(3) << "invoking gemm like conv";
+    VLOG(3) << "[IntelFPGA] invoking common conv";
   }
   if (!arm_cxt_) {
     arm_cxt_ = ContextScheduler::Global().NewContext(TargetType::kARM);
