@@ -149,7 +149,7 @@ function build_test_android {
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"
 }
 
-if [ $# -eq 3 ] ; then
+if [ $# -eq 3 ] && [ $3 == "enable_fp16"] ; then
   BUILD_ARM82_FP16=ON
   build_test_android armv8 clang $1 $2
 else
