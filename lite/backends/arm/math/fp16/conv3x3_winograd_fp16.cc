@@ -233,7 +233,7 @@ void conv_compute_2x2_3x3(const float16_t* input,
         float16_t* origin_C = dst_temp_data + gi * c_gi_stride;
         float16_t* origin_B = b_ptr + gi * b_gi_stride;
         const float16_t* origin_A = weight + gi * w_gi_stride;
-        sgemm_prepack_c8_small(
+        gemm_prepack_c8_fp16_small(
             oc_8 * 8, tile_count, ic_8 * 8, origin_A, origin_B, origin_C, ctx);
       }
       // output trans
@@ -262,22 +262,21 @@ void conv_compute_2x2_3x3(const float16_t* input,
                                           trans_remain_tmp_data,
                                           8,
                                           16);
-            write_to_output_c8_fp16(trans_remain_tmp_data,
-                                    output_ptr,
-                                    ci * 8,
-                                    ci * 8 + 8,
-                                    dst_y,
-                                    dst_y + ey,
-                                    dst_x,
-                                    dst_x + ex,
-                                    chout,
-                                    hout,
-                                    wout,
-                                    flag_act,
-                                    alpha,
-                                    bias + ci * 8,
-                                    flag_bias,
-                                    zero_ptr);
+            write_to_oc8_fp16(trans_remain_tmp_data,
+                              output_ptr,
+                              ci * 8,
+                              ci * 8 + 8,
+                              dst_y,
+                              dst_y + ey,
+                              dst_x,
+                              dst_x + ex,
+                              chout,
+                              hout,
+                              wout,
+                              flag_act,
+                              alpha,
+                              bias + ci * 8,
+                              flag_bias);
           }
         } else {
           for (int ci = 0; ci < oc_8; ++ci) {
@@ -297,22 +296,21 @@ void conv_compute_2x2_3x3(const float16_t* input,
                      trans_remain_tmp_data + i * 16,
                      ex * sizeof(float16_t) * 8);
             }
-            write_to_output_c8_fp16(trans_tmp_data,
-                                    output_ptr,
-                                    ci * 8,
-                                    ci * 8 + 8,
-                                    dst_y,
-                                    dst_y + ey,
-                                    dst_x,
-                                    dst_x + ex,
-                                    chout,
-                                    hout,
-                                    wout,
-                                    flag_act,
-                                    alpha,
-                                    bias + ci * 8,
-                                    flag_bias,
-                                    zero_ptr);
+            write_to_oc8_fp16(trans_tmp_data,
+                              output_ptr,
+                              ci * 8,
+                              ci * 8 + 8,
+                              dst_y,
+                              dst_y + ey,
+                              dst_x,
+                              dst_x + ex,
+                              chout,
+                              hout,
+                              wout,
+                              flag_act,
+                              alpha,
+                              bias + ci * 8,
+                              flag_bias);
           }
         }
       }
@@ -320,7 +318,7 @@ void conv_compute_2x2_3x3(const float16_t* input,
   }    // for num
 }  // conv_compute
 
-void conv_compute_4x4_3x3_int8(const float16_t* input,
+void conv_compute_4x4_3x3_fp16(const float16_t* input,
                                float16_t* output,
                                int num,
                                int chout,
@@ -524,14 +522,14 @@ void conv_compute_4x4_3x3_int8(const float16_t* input,
         int col_idx = gi / 6;
         int row_idx = gi % 6;
         if (col_idx == 5 || row_idx == 5) {
-          sgemm_prepack_c8_fp16_small(oc_8 * 8,
-                                      tile_count,
-                                      ic_8 * 8,
-                                      origin_A,
-                                      origin_B,
-                                      origin_C,
-                                      ctx,
-                                      24);
+          gemm_prepack_c8_fp16_small(oc_8 * 8,
+                                     tile_count,
+                                     ic_8 * 8,
+                                     origin_A,
+                                     origin_B,
+                                     origin_C,
+                                     ctx,
+                                     24);
         } else {
           sgemm_prepack_c8_fp16_small(oc_8 * 8,
                                       tile_count,
@@ -574,7 +572,7 @@ void conv_compute_4x4_3x3_int8(const float16_t* input,
               output_trans_c8_post_4x6_fp16(
                   trans_tmp_data + i * 48, 8, trans_remain_tmp_data + i * 8, 8);
             }
-            write_to_output_c8_fp16(trans_remain_tmp_data,
+            write_to_oc8_fp16(trans_remain_tmp_data,
                                     output_ptr,
                                     ci * 8,
                                     ci * 8 + 8,
@@ -588,8 +586,7 @@ void conv_compute_4x4_3x3_int8(const float16_t* input,
                                     flag_act,
                                     alpha,
                                     bias + ci * 8,
-                                    flag_bias,
-                                    zero_ptr);
+                                    flag_bias;
           }
         } else {
           for (int ci = 0; ci < oc_8; ++ci) {
@@ -615,22 +612,21 @@ void conv_compute_4x4_3x3_int8(const float16_t* input,
                      trans_remain_tmp_data + i * 32,
                      ex * sizeof(float16_t) * 8);
             }
-            write_to_output_c8_fp16(trans_tmp_data,
-                                    output_ptr,
-                                    ci * 8,
-                                    ci * 8 + 8,
-                                    dst_y,
-                                    dst_y + ey,
-                                    dst_x,
-                                    dst_x + ex,
-                                    chout,
-                                    hout,
-                                    wout,
-                                    flag_act,
-                                    alpha,
-                                    bias + ci * 8,
-                                    flag_bias,
-                                    zero_ptr);
+            write_to_oc8_fp16(trans_tmp_data,
+                              output_ptr,
+                              ci * 8,
+                              ci * 8 + 8,
+                              dst_y,
+                              dst_y + ey,
+                              dst_x,
+                              dst_x + ex,
+                              chout,
+                              hout,
+                              wout,
+                              flag_act,
+                              alpha,
+                              bias + ci * 8,
+                              flag_bias);
           }
         }
       }

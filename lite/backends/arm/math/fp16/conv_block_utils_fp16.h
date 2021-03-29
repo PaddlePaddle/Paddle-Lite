@@ -319,6 +319,9 @@ inline bool prepack_input_nxw(const float16_t* din,
     "v8", "v9", "v10", "v11", "v12",  \
     "v13", "v14", "v15", "v16"
 
+/*wirte result in outputs
+* input din: [n, c / 8, h, w * 8], output dout: [n, c, h, w]
+*/
 static void write_to_oc8_fp16(const float16_t* din,
                               float16_t* dout,
                               int cs,
@@ -332,7 +335,8 @@ static void write_to_oc8_fp16(const float16_t* din,
                               int width,
                               int flag_act,
                               float16_t alpha,
-                              const float16_t* bias) {
+                              const float16_t* bias,
+                              bool flag_bias) {
   int size_c_out = width * height;
 
   float16_t* doutc0r0 = dout + cs * size_c_out + hs * width + ws;
@@ -353,9 +357,12 @@ static void write_to_oc8_fp16(const float16_t* din,
   int w_in_stride = w_round << 3;
   int cnt_col = win >> 3;
   int remain = win & 7;
+  float16x8_t vbias = vdupq_n_f16(0.f);
   float16x8_t vzero = vdupq_n_f16(0.f);
-  float16x8_t vbias = vld1q_f16(bias);
   float16x8_t valpha = vdupq_n_f16(alpha);
+  if (flag_bias) {
+    vbias = vld1q_f16(bias);
+  }
   float16_t tmp0[8] = {0.f};
   float16_t tmp1[8] = {0.f};
   float16_t tmp2[8] = {0.f};

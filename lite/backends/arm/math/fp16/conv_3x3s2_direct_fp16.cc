@@ -463,7 +463,8 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
                           ow,
                           flag_act,
                           alpha,
-                          bias_ptr);
+                          bias_ptr,
+                          flag_bias);
       }
     }
   }
