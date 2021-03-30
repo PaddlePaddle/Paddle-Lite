@@ -37,6 +37,12 @@ void BilinearInterpCompute::Run() {
   auto in_h = param.X->dims()[2];
   auto in_w = param.X->dims()[3];
 
+  if (param.OutSize != nullptr) {
+    int* new_data = param.OutSize->ZynqTensor()->data<int32_t>();
+    out_h = new_data[0];
+    out_w = new_data[1];
+  }
+
   zynqmp::Tensor input_float;
   input_float.setDataLocation(zynqmp::CPU);
   input_x->invalidate();
@@ -291,7 +297,7 @@ REGISTER_LITE_KERNEL(bilinear_interp,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindInput("OutSize",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kFPGA), PRECISION(kInt32))})
     .BindInput("SizeTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -312,7 +318,7 @@ REGISTER_LITE_KERNEL(nearest_interp,
                                       PRECISION(kFP16),
                                       DATALAYOUT(kNHWC))})
     .BindInput("OutSize",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kFPGA), PRECISION(kInt32))})
     .BindInput("SizeTensor",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
