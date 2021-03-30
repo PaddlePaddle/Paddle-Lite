@@ -37,12 +37,14 @@ void WriteToArrayCompute::Run() {
   elem.Resize(param.X->dims());
   elem.set_lod(param.X->lod());
   elem.set_precision(param.X->precision());
-  elem.mutable_data(TARGET(kXPU), param.X->memory_size());
-  int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
-                             param.X->data<int8_t>(),
-                             static_cast<int8_t*>(elem.raw_data()),
-                             param.X->memory_size());
-  CHECK_EQ(r, 0) << " write to array failed";
+  if (elem.numel() > 0) {
+    elem.mutable_data(TARGET(kXPU), param.X->memory_size());
+    int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
+                               param.X->data<int8_t>(),
+                               static_cast<int8_t*>(elem.raw_data()),
+                               param.X->memory_size());
+    CHECK_EQ(r, 0) << " write to array failed";
+  }
 }
 
 }  // namespace xpu
