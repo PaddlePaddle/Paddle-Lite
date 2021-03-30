@@ -76,8 +76,8 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
         - labels
           - pascalvoc_label_list # 检测label文件
         - models
-		  - ssd_mobilenet_v1_fp32_300_for_intel_fpga
-		    - ssd_mobilenet_v1_fp32_300_for_intel_fpga.nb # 已通过opt转好的、适合英特尔FPGA的mobilenetv1量化模型
+          - ssd_mobilenet_v1_fp32_300_for_intel_fpga
+          - ssd_mobilenet_v1_fp32_300_for_intel_fpga.nb # 已通过opt转好的、适合英特尔FPGA的mobilenetv1量化模型
       - shell
         - CMakeLists.txt # 示例程序CMake脚本
         - build
@@ -93,7 +93,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
           - include # PaddleLite头文件
           - lib
             - libvnna.so # 英特尔FPGA推理运行时库
-			- libpaddle_light_api_shared.so # 用于最终移动端部署的预编译PaddleLite库（tiny publish模式下编译生成的库）
+            - libpaddle_light_api_shared.so # 用于最终移动端部署的预编译PaddleLite库（tiny publish模式下编译生成的库）
             - libpaddle_full_api_shared.so # 用于直接加载Paddle模型进行测试和Debug的预编译PaddleLite库（full publish模式下编译生成的库）
   ```
 
