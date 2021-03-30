@@ -240,7 +240,7 @@ void conv_compute_2x2_3x3_fp16(const float16_t* input,
 
         float16_t* dst_ptr = output + (dst_y * wout + dst_x) * 8;
         float16_t* src_ptr = dst_temp_data + ti * 8;
-        if (ex == 2 && ey == 2) {
+        if (ex == 2) {
           // trans output
           for (int ci = 0; ci < oc_8; ++ci) {
             float16_t* dst_ci = dst_ptr + ci * oc_8_stride;
@@ -279,7 +279,7 @@ void conv_compute_2x2_3x3_fp16(const float16_t* input,
                                           8,
                                           16);
             // copy to dest
-            memset(trans_tmp_data, 0, 16 * sizeof(float16_t));
+            memset(trans_tmp_data, 0, 32 * sizeof(float16_t));
             for (int i = 0; i < ey; ++i) {
               memcpy(trans_tmp_data + i * ex * 8,
                      trans_remain_tmp_data + i * 16,
@@ -357,16 +357,16 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
   int block_count = (size_tile + tile_block - 1) / tile_block;
 
   int threads = ctx->threads();
+
   float16_t* g_tmp_data = tmp_work_space + ic_8 * ic_8_stride;
-  oc_8* oc_8_stride * sizeof(int32_t);
   int tmp_input_thread_stride =
       tile_block * ic_8 * 288;  // 128 = 8*4*4, 8*6*6=288
-  // tmp_output_thread_stride is batched gemm result
+
   int tmp_output_thread_stride =
       tile_block * oc_8 * 288;  // 128 = 8*4*4, 8*6*6=288
   int tmp_data_thread_stride =
       tmp_input_thread_stride + tmp_output_thread_stride;
-  memset(g_tmp_data, 0, tmp_data_thread_stride * sizeof(float16_t));
+  memset(g_tmp_data, 0, threads * tmp_data_thread_stride * sizeof(float16_t));
   float16_t* g_trans_tmp_data = g_tmp_data + threads * tmp_data_thread_stride;
   float16_t* g_trans_remain_tmp_data = g_trans_tmp_data + threads * 288;
   auto act_type = act_param.active_type;
@@ -479,7 +479,7 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
                                       dst_ci + i * b_gi_stride * 6,
                                       b_gi_stride);
             }
-          }  // for ci_4
+          }  // for ci_8
         }
       }
       //*/
@@ -492,29 +492,8 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
         float16_t* origin_C = dst_temp_data + gi * c_gi_stride;
         float16_t* origin_B = b_ptr + gi * b_gi_stride;
         const float16_t* origin_A = weight + gi * w_gi_stride;
-        // sgemm_prepack_c8_fp16_small(
-        //     oc_8 * 8, tile_count, ic_8 * 8, origin_A, origin_B, origin_C,
-        //     ctx);
-        int col_idx = gi / 6;
-        int row_idx = gi % 6;
-        if (col_idx == 5 || row_idx == 5) {
-          gemm_prepack_c8_fp16_small(oc_8 * 8,
-                                     tile_count,
-                                     ic_8 * 8,
-                                     origin_A,
-                                     origin_B,
-                                     origin_C,
-                                     ctx);
-          //  24);
-        } else {
-          gemm_prepack_c8_fp16_small(oc_8 * 8,
-                                     tile_count,
-                                     ic_8 * 8,
-                                     origin_A,
-                                     origin_B,
-                                     origin_C,
-                                     ctx);
-        }
+        gemm_prepack_c8_fp16_small(
+            oc_8 * 8, tile_count, ic_8 * 8, origin_A, origin_B, origin_C, ctx);
       }
       //*/
       //*
@@ -545,8 +524,10 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
                                             48);  // 6*c8=48
             }
             for (int i = 0; i < ey; ++i) {
-              output_trans_c8_post_4x6_fp16(
-                  trans_tmp_data + i * 48, 8, trans_remain_tmp_data + i * 8, 8);
+              output_trans_c8_post_4x6_fp16(trans_tmp_data + i * 48,
+                                            8,
+                                            trans_remain_tmp_data + i * 32,
+                                            8);
             }
             write_to_oc8_fp16(trans_remain_tmp_data,
                               output_ptr,
@@ -722,17 +703,17 @@ void input_trans_c8_6x6_fp16(const float16_t* src,
   float16x8_t src5 = vld1q_f16(src + src_stride * 5);
 
   float16x8_t dst0 =
-      vaddq_f16(vmulq_n_f16(vsubq_f16(src0, src2), 4), vsubq_f16(src4, src2));
-  float16x8_t dst1 =
-      vsubq_f16(vaddq_f16(src3, src4), vmulq_n_f16(vaddq_f16(src1, src2), 4));
-  float16x8_t dst2 =
-      vaddq_f16(vsubq_f16(src4, src3), vmulq_n_f16(vsubq_f16(src1, src2), 4));
-  float16x8_t dst3 =
-      vaddq_f16(vsubq_f16(src4, src2), vmulq_n_f16(vsubq_f16(src3, src1), 2));
-  float16x8_t dst4 =
-      vaddq_f16(vsubq_f16(src4, src2), vmulq_n_f16(vsubq_f16(src1, src3), 2));
+      vaddq_f16(vsubq_f16(vmulq_n_f16(src0, 4), vmulq_n_f16(src2, 5)), src4);
+  float16x8_t tmp1 = vsubq_f16(src4, vmulq_n_f16(src2, 4));
+  float16x8_t tmp2 = vsubq_f16(vmulq_n_f16(src1, 4), src3);
+  float16x8_t dst1 = vsubq_f16(tmp1, tmp2);
+  float16x8_t dst2 = vaddq_f16(tmp1, tmp2);
+  float16x8_t tmp3 = vsubq_f16(src4, src2);
+  float16x8_t tmp4 = vmulq_n_f16(vsubq_f16(src1, src3), 2);
+  float16x8_t dst3 = vsubq_f16(tmp3, tmp4);
+  float16x8_t dst4 = vaddq_f16(tmp3, tmp4);
   float16x8_t dst5 =
-      vaddq_f16(vmulq_n_f16(vsubq_f16(src1, src3), 4), vsubq_f16(src5, src3));
+      vaddq_f16(vsubq_f16(vmulq_n_f16(src1, 4), vmulq_n_f16(src3, 5)), src5);
 
   vst1q_f16(dest, dst0);
   vst1q_f16(dest + dest_stride, dst1);
@@ -827,8 +808,67 @@ void output_trans_c8_post_4x6_fp16(const float16_t* src,
   vst1q_f16(dest + dest_stride * 3, dest3);
 }
 
+void weights_trans_c8_fp16(float16_t* dest,
+                           const float16_t* din,
+                           const float16_t (*coeff)[3],
+                           int num,
+                           int ch_in,
+                           int ch_out,
+                           void* workspace) {
+  int num_square = num * num;
+  float16_t* ptr_out = static_cast<float16_t*>(workspace);
+  for (int i = 0; i < ch_out; i++) {
+    for (int j = 0; j < ch_in; j++) {
+      const float16_t* kernel0 =
+          static_cast<const float16_t*>(din) + (i * ch_in + j) * 9;
+      float16_t* ptr_channel = ptr_out + (i * ch_in + j) * num_square;
+
+      //! transform kernel, transposed
+      const float16_t* k0 = kernel0;
+      const float16_t* k1 = kernel0 + 3;
+      const float16_t* k2 = kernel0 + 6;
+
+      //! h
+      float16_t tmp[num][3];
+      for (int i = 0; i < num; i++) {
+        tmp[i][0] =
+            k0[0] * coeff[i][0] + k0[1] * coeff[i][1] + k0[2] * coeff[i][2];
+        tmp[i][1] =
+            k1[0] * coeff[i][0] + k1[1] * coeff[i][1] + k1[2] * coeff[i][2];
+        tmp[i][2] =
+            k2[0] * coeff[i][0] + k2[1] * coeff[i][1] + k2[2] * coeff[i][2];
+      }
+
+      //! v
+      for (int j = 0; j < num; j++) {
+        float16_t* tmpp = &tmp[j][0];
+        for (int i = 0; i < num; i++) {
+          ptr_channel[j * num + i] = tmpp[0] * coeff[i][0] +
+                                     tmpp[1] * coeff[i][1] +
+                                     tmpp[2] * coeff[i][2];
+        }
+      }
+    }
+  }
+
+  int oc_pad = (ch_out + 7) / 8 * 8;
+  int ic_pad = (ch_in + 7) / 8 * 8;
+  int sum = ch_out * ch_in * num_square;
+  int ch_in_stride = ch_in * num_square;
+  int ch_in_s = ch_in_stride * 8;
+  int c_stride = ic_pad * oc_pad;
+  for (int i = 0; i < sum; ++i) {
+    int new_c = i % num_square;
+    int new_oc = i / ch_in_s;
+    int new_ic = i / num_square % ch_in;
+    int new_inner = i / ch_in_stride % 8;
+    int dest_ind =
+        new_c * c_stride + new_oc * ic_pad * 8 + new_ic * 8 + new_inner;
+    dest[dest_ind] = ptr_out[i];
+  }
+}
 // Input weight Layout: K*C*R*R (RR=3x3)
-// Output weight Layout: G*G*[K/4]*[C]*4 (GG=6x6, [x] means round up to integer)
+// Output weight Layout: G*G*[K/8]*[C]*8 (GG=6x6, [x] means round up to integer)
 // Temp data Layout: K*C*G*G
 void weight_trans_c8_6x6_fp16(float16_t* dest,
                               const float16_t* din,
@@ -841,58 +881,7 @@ void weight_trans_c8_6x6_fp16(float16_t* dest,
                                  {1.0f / 24, 1.0f / 12, 1.0f / 6},
                                  {1.0f / 24, -1.0f / 12, 1.0f / 6},
                                  {0.0f, 0.0f, 1.0f}};
-
-  float16_t* ptr_out = static_cast<float16_t*>(workspace);
-
-  for (int i = 0; i < ch_out; i++) {
-    for (int j = 0; j < ch_in; j++) {
-      const float16_t* kernel0 =
-          static_cast<const float16_t*>(din) + (i * ch_in + j) * 9;
-      float16_t* ptr_channel = ptr_out + (i * ch_in + j) * 36;
-
-      //! transform kernel, transposed
-      const float16_t* k0 = kernel0;
-      const float16_t* k1 = kernel0 + 3;
-      const float16_t* k2 = kernel0 + 6;
-
-      //! h
-      float16_t tmp[6][3];
-      for (int i = 0; i < 6; i++) {
-        tmp[i][0] =
-            k0[0] * coeff[i][0] + k0[1] * coeff[i][1] + k0[2] * coeff[i][2];
-        tmp[i][1] =
-            k1[0] * coeff[i][0] + k1[1] * coeff[i][1] + k1[2] * coeff[i][2];
-        tmp[i][2] =
-            k2[0] * coeff[i][0] + k2[1] * coeff[i][1] + k2[2] * coeff[i][2];
-      }
-
-      //! v
-      for (int j = 0; j < 6; j++) {
-        float16_t* tmpp = &tmp[j][0];
-        for (int i = 0; i < 6; i++) {
-          ptr_channel[j * 6 + i] = tmpp[0] * coeff[i][0] +
-                                   tmpp[1] * coeff[i][1] +
-                                   tmpp[2] * coeff[i][2];
-        }
-      }
-    }
-  }
-
-  int oc_pad = (ch_out + 7) / 8 * 8;
-  int ic_pad = (ch_in + 7) / 8 * 8;
-  int c_stride = ic_pad * oc_pad;
-  int sum = ch_out * ch_in * 36;
-  int ch_in_stride = ch_in * 36;
-  int ch_in_s = ch_in_stride * 8;
-  for (int i = 0; i < sum; ++i) {
-    int new_c = i % 36;
-    int new_oc = i / ch_in_s;
-    int new_ic = i / 36 % ch_in;
-    int new_inner = i / ch_in_stride % 8;
-    int dest_ind =
-        new_c * c_stride + new_oc * ic_pad * 8 + new_ic * 8 + new_inner;
-    dest[dest_ind] = ptr_out[i];
-  }
+  weights_trans_c8_fp16(dest, din, coeff, 6, ch_in, ch_out, workspace);
 }
 
 void weight_trans_c8_4x4_fp16(float16_t* dest,
@@ -904,57 +893,7 @@ void weight_trans_c8_4x4_fp16(float16_t* dest,
                                  {0.5f, 0.5f, 0.5f},
                                  {0.5f, -0.5f, 0.5f},
                                  {0.0f, 0.0f, 1.0f}};
-
-  float16_t* ptr_out = static_cast<float16_t*>(workspace);
-  for (int i = 0; i < ch_out; i++) {
-    for (int j = 0; j < ch_in; j++) {
-      const float16_t* kernel0 =
-          static_cast<const float16_t*>(din) + (i * ch_in + j) * 9;
-      float16_t* ptr_channel = ptr_out + (i * ch_in + j) * 16;
-
-      //! transform kernel, transposed
-      const float16_t* k0 = kernel0;
-      const float16_t* k1 = kernel0 + 3;
-      const float16_t* k2 = kernel0 + 6;
-
-      //! h
-      float tmp[4][3];
-      for (int i = 0; i < 4; i++) {
-        tmp[i][0] =
-            k0[0] * coeff[i][0] + k0[1] * coeff[i][1] + k0[2] * coeff[i][2];
-        tmp[i][1] =
-            k1[0] * coeff[i][0] + k1[1] * coeff[i][1] + k1[2] * coeff[i][2];
-        tmp[i][2] =
-            k2[0] * coeff[i][0] + k2[1] * coeff[i][1] + k2[2] * coeff[i][2];
-      }
-
-      //! v
-      for (int j = 0; j < 4; j++) {
-        float* tmpp = &tmp[j][0];
-        for (int i = 0; i < 4; i++) {
-          ptr_channel[j * 4 + i] = tmpp[0] * coeff[i][0] +
-                                   tmpp[1] * coeff[i][1] +
-                                   tmpp[2] * coeff[i][2];
-        }
-      }
-    }
-  }
-
-  int oc_pad = (ch_out + 7) / 8 * 8;
-  int ic_pad = (ch_in + 7) / 8 * 8;
-  int sum = ch_out * ch_in * 16;
-  int ch_in_stride = ch_in * 16;
-  int ch_in_s = ch_in_stride * 8;
-  int c_stride = ic_pad * oc_pad;
-  for (int i = 0; i < sum; ++i) {
-    int new_c = i % 16;
-    int new_oc = i / ch_in_s;
-    int new_ic = i / 16 % ch_in;
-    int new_inner = i / ch_in_stride % 8;
-    int dest_ind =
-        new_c * c_stride + new_oc * ic_pad * 8 + new_ic * 8 + new_inner;
-    dest[dest_ind] = ptr_out[i];
-  }
+  weights_trans_c8_fp16(dest, din, coeff, 4, ch_in, ch_out, workspace);
 }
 }  // namespace fp16
 }  // namespace math

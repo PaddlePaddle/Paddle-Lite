@@ -482,6 +482,7 @@ void gemm_prepack_c8_fp16_small(int M,
   const int lda = k_round << 3;
   const int ldb_byte = 8 * N * sizeof(float16_t);
   const int kcnt = k_round >> 3;
+  auto tmp = C;
 
   for (int m = 0; m < mloop; ++m) {
     const float16_t* b = B;
@@ -891,7 +892,7 @@ void gemm_prepack_c8_fp16_small(int M,
             "v19",
             "cc",
             "memory");
-      b += 4;
+      b += 8;
     }
 #endif
     A_packed += lda;
