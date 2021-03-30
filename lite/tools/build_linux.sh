@@ -9,7 +9,7 @@ ARCH=armv8
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
 # ON or OFF, default OFF.
-WITH_EXTRA=ON
+WITH_EXTRA=OFF
 # controls whether to compile python lib, default is OFF.
 WITH_PYTHON=OFF
 PY_VERSION=""

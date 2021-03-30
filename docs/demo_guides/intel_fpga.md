@@ -24,7 +24,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ### 已支持的Paddle模型
 
-- [ssd_mobilenet_v1_pascalvoc](https://https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)
+- [ssd_mobilenet_v1_pascalvoc](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)
 
 ### 已支持（或部分支持）的Paddle算子
 
@@ -149,7 +149,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
   $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
   $ cd Paddle-Lite
   $ git checkout <release-version-tag>
-  $ curl -L https://paddlelite-demo.bj.bcebos.com/devices/intel/intel_fpga_sdk.tar.gz -o - | tar -zx
+  $ curl -L https://paddlelite-demo.bj.bcebos.com/devices/intel/intel_fpga_sdk_1.0.0.tar.gz -o - | tar -zx
   ```
 
 - 编译并生成PaddleLite+IntelFPGA的部署库
