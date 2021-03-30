@@ -667,10 +667,8 @@ TEST(Activation_floor, precision) {
 
 TEST(Activation_rsqrt, precision) {
   Place place;
-  float abs_error = 2e-5;
 #if defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
-  abs_error = 5e-2;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -685,10 +683,8 @@ TEST(Activation_rsqrt, precision) {
 
 TEST(Activation_sqrt, precision) {
   Place place;
-  float abs_error = 2e-5;
 #if defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
-  abs_error = 5e-2;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
