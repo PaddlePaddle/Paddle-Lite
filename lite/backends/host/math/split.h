@@ -13,24 +13,21 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include <vector>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace host {
+namespace math {
 
-template <typename T, PrecisionType PType>
-class SplitCompute : public KernelLite<TARGET(kARM), PType> {
- public:
-  void Run() override;
+template <typename T>
+void split(const T* din,
+           const std::vector<lite::Tensor*>& dout,
+           const int axis,
+           const std::vector<int>& in_strides);
 
-  virtual ~SplitCompute() = default;
-};
-
-}  // namespace arm
-}  // namespace kernels
+}  // namespace math
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
