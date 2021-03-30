@@ -84,19 +84,15 @@ else()
         add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
     else()
         # 1. enable -flto compiling flag if toochain==gcc
-        set(TARGET_COMIPILE_FLAGS "-fdata-sections")
-        if (NOT (ARM_TARGET_LANG STREQUAL "clang")) #gcc
-            set(TARGET_COMIPILE_FLAGS "${TARGET_COMIPILE_FLAGS} -flto")
-            # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
-            if(NOT ${HOST_SYSTEM} MATCHES "macosx")
-                SET(CMAKE_AR "gcc-ar")
-                SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> qcs <TARGET> <LINK_FLAGS> <OBJECTS>")
-                SET(CMAKE_CXX_ARCHIVE_FINISH   true)
-            endif()
-            # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
+        # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
+        if (NOT (ARM_TARGET_LANG STREQUAL "clang"))
             if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
                 set(TARGET_COMIPILE_FLAGS "")
+            else()
+                set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
             endif()
+        else()
+            set(TARGET_COMIPILE_FLAGS "-fdata-sections")
         endif()
         #   1.1 enable -flto on PADDLELITE_OBJS
         set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
@@ -130,11 +126,11 @@ else()
         endif()
 
         # 4. produce static lib `libpaddle_api_light_bundled.a` from `PADDLELITE_OBJS`
-        # '-flto' is only supported by gcc-ar, while gcc-ar is not supported on MacOs
-        if(NOT ${HOST_SYSTEM} MATCHES "macosx")
-            add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
-        else()
+        # '-flto' is only supported by dynamic lib
+        if(TARGET_COMIPILE_FLAGS MATCHES ".*-flto.*")
             add_library(paddle_api_light_bundled STATIC ${__lite_cc_files} paddle_api.cc light_api.cc light_api_impl.cc)
+        else()
+            add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
         endif()
     endif()
 endif()
