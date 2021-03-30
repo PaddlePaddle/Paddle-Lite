@@ -113,10 +113,7 @@ class Optimizer {
          "lite_elementwise_scale_fuse_pass",            //
          "lite_instance_norm_activation_fuse_pass",     //
          "lite_fc_prelu_fuse_pass",                     //
-#if (defined LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || (defined LITE_WITH_CUDA) || \
-    (defined LITE_WITH_ARM)
-         "lite_elementwise_activation_fuse_pass",  //
-#endif
+         "lite_elementwise_activation_fuse_pass",
          "lite_conv_scale_fuse_pass",
          "identity_dropout_eliminate_pass",
          "__xpu__resnet_fuse_pass",
