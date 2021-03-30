@@ -34,7 +34,9 @@ void XPUScratchPadDeleter::operator()(XPUScratchPad* sp) const {
 
 void* TargetWrapperXPU::Malloc(size_t size) {
   void* ptr{nullptr};
-  XPU_CALL(xpu_malloc(&ptr, size));
+  if (size > 0) {
+    XPU_CALL(xpu_malloc(&ptr, size));
+  }
   return ptr;
 }
 

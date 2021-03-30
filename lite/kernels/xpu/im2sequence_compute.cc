@@ -66,7 +66,8 @@ void Im2SequenceCompute::Run() {
                           false);
 
   CHECK_EQ(r, 0);
-  int output_imsize = param.Out->numel() / channel / (kernel_h * kernel_w);
+  int output_imsize =
+      param.Out->numel() / channel / (kernel_h * kernel_w) / batch;
   r = xdnn::transpose<float>(
       ctx.GetRawContext(),
       y_ofc,

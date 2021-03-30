@@ -62,7 +62,10 @@ class XPUSqueezeExcitationFuser : public FuseBase {
                       ->assert_is_op_input("pool2d", "X")
                       ->assert_is_op_input("elementwise_mul", "X")
                       ->AsInput();
-    auto* pool = OpNode("pool", "pool2d")->AsIntermediate();
+    auto* pool = OpNode("pool", "pool2d")
+                     ->assert_op_attr<bool>("global_pooling", true)
+                     ->assert_op_attr<std::string>("pooling_type", "avg")
+                     ->AsIntermediate();
     auto* pool_out = VarNode("pool_out")
                          ->assert_is_op_output("pool2d", "Out")
                          ->assert_is_op_input("mul", "X")

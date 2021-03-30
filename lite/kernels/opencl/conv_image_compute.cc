@@ -820,6 +820,10 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                     static_cast<size_t>(nh_blk_)};
     input_c_block_ = static_cast<const int>((input_tensor_c_ + 3) / 4);
   }
+  VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
+          << global_work_size_[1] << "," << global_work_size_[2] << "}";
+  VLOG(4) << "local_work_size_[3D]: {" << local_work_size_[0] << ","
+          << local_work_size_[1] << "," << local_work_size_[2] << "}";
   for (auto i = 0; i < global_work_size_.dimensions(); i++) {
     VLOG(4) << "global_work_size[" << i << "]: " << global_work_size_[i];
   }

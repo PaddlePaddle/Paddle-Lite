@@ -110,7 +110,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       concat.cc
       type_trans.cc
       box_coder.cc
-      split.cc
       shuffle_channel.cc
       activation.cc
       yolo_box.cc
