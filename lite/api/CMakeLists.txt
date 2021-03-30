@@ -86,12 +86,13 @@ else()
         # 1. enable -flto compiling flag if toochain==gcc
         # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
         if (NOT (ARM_TARGET_LANG STREQUAL "clang"))
-            set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
+            if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
+                set(TARGET_COMIPILE_FLAGS "")
+            else()
+                set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
+            endif()
         else()
             set(TARGET_COMIPILE_FLAGS "-fdata-sections")
-        endif()
-        if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
-            set(TARGET_COMIPILE_FLAGS "")
         endif()
         #   1.1 enable -flto on PADDLELITE_OBJS
         set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
