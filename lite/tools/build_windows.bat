@@ -196,7 +196,7 @@ goto:eof
 goto:eof
 
 :download_third_party
-powershell.exe (new-object System.Net.WebClient).DownloadFile('https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-ea5576.tar.gz', ^
+powershell.exe (new-object System.Net.WebClient).DownloadFile('%THIRDPARTY_TAR%', ^
 '%workspace%\third-party-ea5576.tar.gz')
 goto:eof
 
