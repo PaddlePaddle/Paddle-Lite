@@ -10,3 +10,6 @@
 [submodule "third-party/protobuf-host"]
 	path = third-party/protobuf-host
 	url = https://github.com/protocolbuffers/protobuf.git
+[submodule "third-party/glog"]
+	path = third-party/glog
+	url = https://github.com/google/glog.git

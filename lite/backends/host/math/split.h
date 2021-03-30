@@ -12,15 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/fill_constant_batch_size_like_compute.h"
+#pragma once
+#include <vector>
+#include "lite/core/op_lite.h"
 
-REGISTER_LITE_KERNEL(
-    fill_constant_batch_size_like,
-    kX86,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::x86::FillConstantBatchSizeLikeCompute<float>,
-    def)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
-    .Finalize();
+namespace paddle {
+namespace lite {
+namespace host {
+namespace math {
+
+template <typename T>
+void split(const T* din,
+           const std::vector<lite::Tensor*>& dout,
+           const int axis,
+           const std::vector<int>& in_strides);
+
+}  // namespace math
+}  // namespace host
+}  // namespace lite
+}  // namespace paddle

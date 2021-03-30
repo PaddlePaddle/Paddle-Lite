@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/host/collect_fpn_proposals_compute.h"
+#include <algorithm>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -108,9 +109,7 @@ void CollectFpnProposalsCompute::Run() {
   }
 
   // keep top post_nms_topN rois, sort the rois by the score
-  if (post_nms_topN > integral_of_all_rois[num_fpn_level]) {
-    post_nms_topN = integral_of_all_rois[num_fpn_level];
-  }
+  post_nms_topN = std::min(post_nms_topN, integral_of_all_rois[num_fpn_level]);
   std::stable_sort(
       scores_of_all_rois.begin(), scores_of_all_rois.end(), CompareByScore);
   scores_of_all_rois.resize(post_nms_topN);
@@ -125,6 +124,7 @@ void CollectFpnProposalsCompute::Run() {
 
   // initialize the outputs
   const int kBoxDim = 4;
+  fpn_rois->Resize({post_nms_topN, kBoxDim});
   auto fpn_rois_data = fpn_rois->mutable_data<float>();
   std::vector<uint64_t> lod0(1, 0);
   int cur_batch_id = 0;
@@ -157,6 +157,7 @@ void CollectFpnProposalsCompute::Run() {
   lite::LoD lod;
   lod.emplace_back(lod0);
   fpn_rois->set_lod(lod);
+
   return;
 }
 

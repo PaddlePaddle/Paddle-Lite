@@ -51,8 +51,7 @@ void SoftmaxTopkCompute::Run() {
     int n = xdims.back();
     int m = param.x->numel() / n;
     XPUScratchPadGuard softmax_out_xpu_guard_ =
-        TargetWrapperXPU::MallocScratchPad(param.output->numel() *
-                                           sizeof(float));
+        TargetWrapperXPU::MallocScratchPad(param.x->numel() * sizeof(float));
     float* softmax_out_xpu_ptr =
         reinterpret_cast<float*>(softmax_out_xpu_guard_->addr_);
     int r = xdnn::softmax(ctx.GetRawContext(),

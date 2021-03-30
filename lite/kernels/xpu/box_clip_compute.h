@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,23 @@
 
 #pragma once
 
-#include <vector>
-#include "lite/core/op_lite.h"
+#include "lite/core/kernel.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
+namespace kernels {
+namespace xpu {
 
-template <typename T>
-void split_cpy(const T* din, T* dout, int num);
+class BoxClipCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::BoxClipParam;
 
-template <typename T>
-void split(const T* din,
-           const std::vector<lite::Tensor*>& dout,
-           const int axis,
-           const std::vector<int>& in_strides);
+  virtual void Run();
 
-}  // namespace math
-}  // namespace arm
+  virtual ~BoxClipCompute() = default;
+};
+
+}  // namespace xpu
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
