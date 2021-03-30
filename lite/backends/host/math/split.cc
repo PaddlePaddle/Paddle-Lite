@@ -12,44 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/split.h"
+#include "lite/backends/host/math/split.h"
 #include <algorithm>
-#include "lite/backends/arm/math/funcs.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
-
-template <>
-void split_cpy<float>(const float* din, float* dout, int num) {
-  int cnt = num >> 4;
-  int remain = num % 16;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
-    const float* din_ptr = din + (i << 4);
-    float* dout_ptr = dout + (i << 4);
-
-    float32x4_t din0 = vld1q_f32(din_ptr);
-    float32x4_t din1 = vld1q_f32(din_ptr + 4);
-    float32x4_t din2 = vld1q_f32(din_ptr + 8);
-    float32x4_t din3 = vld1q_f32(din_ptr + 12);
-
-    vst1q_f32(dout_ptr, din0);
-    vst1q_f32(dout_ptr + 4, din1);
-    vst1q_f32(dout_ptr + 8, din2);
-    vst1q_f32(dout_ptr + 12, din3);
-  }
-  if (remain > 0) {
-    const float* din_ptr = din + (cnt << 4);
-    float* dout_ptr = dout + (cnt << 4);
-    for (int i = 0; i < remain; i++) {
-      *dout_ptr = *din_ptr;
-      dout_ptr++;
-      din_ptr++;
-    }
-  }
-}
 
 template <typename T>
 void split(const T* din,
@@ -61,7 +30,7 @@ void split(const T* din,
     auto out_dim = out->dims();
     std::vector<int> out_strides(out_dim.size());
     out_strides[out_dim.size() - 1] = out_dim[out_dim.size() - 1];
-    for (int i = out_dim.size() - 2; i >= 0; --i) {
+    for (int i = static_cast<int>(out_dim.size()) - 2; i >= 0; --i) {
       out_strides[i] = out_strides[i + 1] * out_dim[i];
     }
 
@@ -85,12 +54,16 @@ template void split(const float* din,
                     const std::vector<lite::Tensor*>& dout,
                     const int axis,
                     const std::vector<int>& in_strides);
+template void split(const int* din,
+                    const std::vector<lite::Tensor*>& dout,
+                    const int axis,
+                    const std::vector<int>& in_strides);
 template void split(const int64_t* din,
                     const std::vector<lite::Tensor*>& dout,
                     const int axis,
                     const std::vector<int>& in_strides);
 
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle
