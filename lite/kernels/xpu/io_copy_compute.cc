@@ -33,8 +33,10 @@ class IoCopyHostToXPUCompute
       auto mem_size = x->memory_size();
       VLOG(4) << "host to xpu, copy size " << mem_size;
       auto* data = y->mutable_data(TARGET(kXPU), mem_size);
-      TargetWrapperXPU::MemcpySync(
-          data, x->raw_data(), mem_size, IoDirection::HtoD);
+      if (mem_size > 0) {
+        TargetWrapperXPU::MemcpySync(
+            data, x->raw_data(), mem_size, IoDirection::HtoD);
+      }
     } else if (x->target() == TARGET(kXPU)) {
       y->ShareDataWith(*x);
     } else {
@@ -89,8 +91,10 @@ class IoCopyXPUToHostCompute
       auto mem_size = x->memory_size();
       VLOG(4) << "xpu to host, copy size " << mem_size;
       auto* data = y->mutable_data(TARGET(kHost), mem_size);
-      TargetWrapperXPU::MemcpySync(
-          data, x->raw_data(), mem_size, IoDirection::DtoH);
+      if (mem_size > 0) {
+        TargetWrapperXPU::MemcpySync(
+            data, x->raw_data(), mem_size, IoDirection::DtoH);
+      }
     } else if (x->target() == TARGET(kHost) || x->target() == TARGET(kX86) ||
                x->target() == TARGET(kARM)) {
       y->ShareDataWith(*x);

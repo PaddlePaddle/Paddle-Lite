@@ -598,9 +598,9 @@ struct PadConstantLikeParam : ParamBase {
 
 // For Split op
 struct SplitParam : ParamBase {
-  lite::Tensor* x{};
+  const lite::Tensor* x{nullptr};
   std::vector<lite::Tensor*> output{};
-  lite::Tensor* axis_tensor{};
+  const lite::Tensor* axis_tensor{nullptr};
   std::vector<lite::Tensor*> sections_tensor_list{};
 
   int axis{-1};

@@ -13,24 +13,32 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <typename T, PrecisionType PType>
-class SplitCompute : public KernelLite<TARGET(kARM), PType> {
+class SplitCompute : public KernelLite<TARGET(kHost), PType> {
  public:
   void Run() override;
 
   virtual ~SplitCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+typedef paddle::lite::kernels::host::SplitCompute<float, PRECISION(kFloat)>
+    SplitFloat;
+typedef paddle::lite::kernels::host::SplitCompute<int, PRECISION(kFloat)>
+    SplitInt32;
+typedef paddle::lite::kernels::host::SplitCompute<int64_t, PRECISION(kFloat)>
+    SplitInt64;
+typedef paddle::lite::kernels::host::SplitCompute<int64_t, PRECISION(kInt64)>
+    SplitInt64T;
