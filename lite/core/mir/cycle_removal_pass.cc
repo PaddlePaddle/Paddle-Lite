@@ -15,6 +15,7 @@
 #include "lite/core/mir/cycle_removal_pass.h"
 #include <memory>
 #include <string>
+#include <vector>
 #include "lite/core/mir/pass_registry.h"
 
 namespace paddle {
@@ -30,7 +31,7 @@ void SelfLoopDetector::BuildPattern() {
   mir::PMNode* io_var = VarNode("io_var")
                             ->assert_is_op_input(op_type_)
                             ->assert_is_op_output(op_type_)
-                            ->AsIntermediate();
+                            ->assert_is_persistable_var();
   mir::PMNode* self_loop_op = OpNode("self_loop_op", op_type_);
   *io_var >> *self_loop_op >> *io_var;
 }
@@ -43,26 +44,33 @@ void SelfLoopDetector::InsertNewNode(SSAGraph* graph,
   mir::Node::Stmt* op{op_node->stmt()};
 
   const std::string& var_name{arg->name};
-  const std::string new_input_name{var_name + "__IN_VAR"};
   const std::string new_output_name{var_name + "__OUT_VAR"};
 
-  mir::Node* new_input_node{graph->NewArgumentNode(new_input_name)};
   mir::Node* new_output_node{graph->NewArgumentNode(new_output_name)};
-  new_input_node->AsArg().type = arg->type;
   new_output_node->AsArg().type = arg->type;
 
-  op->mutable_op_info()->UpdateAllInputs(var_name, new_input_name);
   op->mutable_op_info()->UpdateAllOutputs(var_name, new_output_name);
+  lite::Variable* var = op->op()->scope()->FindVar(var_name);
+  CHECK(var);
+  lite::Tensor* in_tensor = var->GetMutable<lite::Tensor>();
+  op->op()
+      ->scope()
+      ->Var(new_output_name)
+      ->GetMutable<lite::Tensor>()
+      ->ShareDataWith(*in_tensor);
 
-  RemoveDirectedLink(arg_node, op_node);
-  DirectedLink(new_input_node, op_node);
   RemoveDirectedLink(op_node, arg_node);
   DirectedLink(op_node, new_output_node);
 }
 }  // namespace fusion
 
 void CycleRemovalPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  for (auto op_type : {"batch_norm"}) {
+  const std::vector<std::string> target_ops{
+      "batch_norm",
+      "fake_quantize_range_abs_max",
+      "fake_quantize_moving_average_abs_max",
+      "fake_quantize_dequantize_moving_average_abs_max"};
+  for (auto op_type : target_ops) {
     fusion::SelfLoopDetector fuser(op_type);
     fuser(graph.get());
   }
