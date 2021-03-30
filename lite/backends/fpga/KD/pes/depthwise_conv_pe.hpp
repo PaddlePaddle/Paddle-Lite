@@ -131,6 +131,16 @@ class DepthwiseConvPE : public PE {
                      null_scale,
                      filter_dynamic_range);
 
+    uint32_t pool_limit = get_pool_cap();
+    int kernel_h = param_.filter->shape().height();
+    int kernel_rw =
+        param_.filter->shape().width() +
+        (param_.filter->shape().width() - 1) * (param_.dilations[0] - 1);
+    image_reorder_ =
+        (param_.dilations[0] > 1) &&
+        (align_to_x(kernel_rw * channel * kernel_h, IMAGE_ALIGNMENT) >
+         IMAGE_ALIGNMENT * pool_limit);
+
     DWconvArgs args = {0};
     args.bias_address = b_data;
     args.filter_address = param.quantizedFilter()->data<int16_t>();
@@ -146,6 +156,7 @@ class DepthwiseConvPE : public PE {
     args.image.pad_width = param.paddings[0];
     args.image.pad_height = param.paddings[1];
     args.image.scale_address = input->max();
+    args.dilation = param_.dilations[0];
     args.output.address = output->data<void>();
     args.output.scale_address = output->max();
     args.out_width = param.output->shape().width();
@@ -160,6 +171,29 @@ class DepthwiseConvPE : public PE {
     args.quant.inv_dynamic_range =
         *(reinterpret_cast<uint32_t*>(&inv_dynamic_range));
 
+    if (image_reorder_) {
+      int reorder_img_height =
+          param_.output->shape().height() * param_.filter->shape().height();
+      int reorder_img_width =
+          param_.output->shape().width() * param_.filter->shape().width();
+
+      Shape shape_reorder(NHWC,
+                          {1, reorder_img_height, reorder_img_width, channel});
+      float16* reorder_data =
+          reoder_input_.mutableData<float16>(FP16, shape_reorder);
+
+      args.image.address = reorder_data;
+      args.kernel.width = param_.filter->shape().width();
+      args.kernel.height = param_.filter->shape().height();
+      args.kernel.stride_w = param_.filter->shape().width();
+      args.kernel.stride_h = param_.filter->shape().height();
+      args.image.height = reorder_img_height;
+      args.image.width = reorder_img_width;
+      args.image.pad_width = 0;
+      args.image.pad_height = 0;
+      args.dilation = 1;
+    }
+
     param_.args = args;
   }
 
@@ -167,6 +201,46 @@ class DepthwiseConvPE : public PE {
     param_.input->syncToDevice();
 
     DWconvArgs& args = param_.args;
+
+    if (image_reorder_) {
+      int in_w = param_.input->shape().width();
+      int in_h = param_.input->shape().height();
+      int out_w = param_.output->shape().width();
+      int out_h = param_.output->shape().height();
+      int channel = param_.output->shape().channel();
+      int kernel_w = param_.filter->shape().width();
+      int kernel_h = param_.filter->shape().height();
+      int stride_w = param_.strides[0];
+      int stride_h = param_.strides[1];
+      int pad_w = param_.paddings[0];
+      int pad_h = param_.paddings[1];
+      int dilation = param_.dilations[0];
+
+      float16* orig_data = param_.input->data<float16>();
+      float16* reorder_data = reoder_input_.data<float16>();
+
+      for (int h_idx = 0; h_idx < out_h; h_idx++) {
+        for (int kh_idx = 0; kh_idx < kernel_h; kh_idx++) {
+          int h_p = h_idx * stride_h + dilation * kh_idx - pad_h;
+          for (int w_idx = 0; w_idx < out_w; w_idx++) {
+            for (int kw_idx = 0; kw_idx < kernel_w; kw_idx++) {
+              int w_p = w_idx * stride_w + dilation * kw_idx - pad_w;
+              if (w_p >= 0 && h_p >= 0 && w_p < in_w && h_p < in_h) {
+                int dst_addr =
+                    (w_idx * kernel_w + kw_idx) * channel +
+                    (h_idx * kernel_h + kh_idx) * channel * out_w * kernel_w;
+                int src_addr = w_p * channel + h_p * channel * in_w;
+                memcpy(reorder_data + dst_addr,
+                       orig_data + src_addr,
+                       channel * sizeof(float16));
+              }
+            }
+          }
+        }
+      }
+      reoder_input_.flush();
+    }
+
     if (param_.re_assign) {
       float16* scale_data = scale_bias_.data<float16>();
       int channel = param_.output->shape().channel();
@@ -187,6 +261,8 @@ class DepthwiseConvPE : public PE {
   DepthwiseConvParam param_;
   Tensor scale_bias_;
   int align_repeat_ = 1;
+  bool image_reorder_ = false;
+  Tensor reoder_input_;
 };
 
 }  // namespace zynqmp
