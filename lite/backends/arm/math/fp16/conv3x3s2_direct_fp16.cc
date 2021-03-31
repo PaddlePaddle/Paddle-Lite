@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/backends/arm/math/fp16/common_preprocess.h"
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
 #include "lite/core/context.h"
 #ifdef ARM_WITH_OMP
@@ -27,28 +28,6 @@ namespace fp16 {
 const int OUT_C_BLOCK = 8;
 const int OUT_H_BLOCK = 2;
 const int OUT_W_BLOCK = 8;
-#define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
-#define DIRECT_WORKSPACE_COMPUTE                                               \
-  const int threads = ctx->threads();                                          \
-  int llc_size = ctx->llc_size() / sizeof(float);                              \
-  const int wout_round = ROUNDUP(ow, OUT_W_BLOCK);                             \
-  const int win_round = wout_round * 2 /*stride_w*/ + 1;                       \
-  /* get h block */                                                            \
-  /* win_round * ic * hin_r_block + wout_round * OUT_C_BLOCK * hout_r_block */ \
-  /* * threads = llc_size */                                                   \
-  /* win_round = 2 * wout_round + 1 */                                         \
-  /* hin_r_block = 2 * hout_r_block + 1 */                                     \
-  int hout_r_block =                                                           \
-      (llc_size - 2 * wout_round * ic - ic) /                                  \
-      ((4 * wout_round + 2) * ic + wout_round * OUT_C_BLOCK * threads);        \
-  hout_r_block = hout_r_block > oh ? oh : hout_r_block;                        \
-  hout_r_block = (hout_r_block / OUT_H_BLOCK) * OUT_H_BLOCK;                   \
-  hout_r_block = hout_r_block < OUT_H_BLOCK ? OUT_H_BLOCK : hout_r_block;      \
-  const int hin_r_block = hout_r_block * 2 /*stride_h*/ + 1;                   \
-  int in_len = win_round * ic;                                                 \
-  int pre_in_size = hin_r_block * in_len;                                      \
-  int pre_out_size = OUT_C_BLOCK * hout_r_block * wout_round;
-
 #define COMPUT_INIT                     \
   float16_t* ptr_out0 = pre_out0;       \
   float16_t* ptr_out1 = pre_out1;       \
@@ -75,8 +54,8 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   int ow = dim_out[3];
   int oh = dim_out[2];
   int ic = dim_in[1];
-  DIRECT_WORKSPACE_COMPUTE
-  return sizeof(float) * (pre_in_size + ctx->threads() * pre_out_size);
+  DIRECT_WORKSPACE_COMPUTE(ctx, 3, 2, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK)
+  return sizeof(float16_t) * (pre_in_size + ctx->threads() * pre_out_size);
 }
 
 // clang-format off
@@ -328,7 +307,7 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
   auto act_param = param.activation_param;
   const int pad_w = paddings[2];
   const int pad_h = paddings[0];
-  DIRECT_WORKSPACE_COMPUTE
+  DIRECT_WORKSPACE_COMPUTE(ctx, 3, 2, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK)
 
   float16_t* tmp_work_space = ctx->workspace_data<float16_t>();
   float16_t ptr_zero[win_round];  // NOLINT

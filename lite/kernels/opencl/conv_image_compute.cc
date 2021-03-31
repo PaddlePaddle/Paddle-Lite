@@ -219,26 +219,41 @@ void ConvImageCompute::PrepareForRun() {
             input_tensor_n_ > 1 ? "conv2d_3x3_multi_batch" : "conv2d_3x3_opt");
         kernel_func_paths_.push_back("image/conv2d_3x3_opt_kernel.cl");
         impl_ = &ConvImageCompute::Conv2d3x3opt;
+
+        CLImageConverterNBlock converter;
+        const DDim& filter_image_dims =
+            converter.InitImageDimInfoWith(filter_dims);
+        filter_image_h_ = filter_image_dims[1];
+        filter_image_w_ = filter_image_dims[0];
+        tensor_hold_filter_image_->Resize(
+            {1, filter_image_w_, filter_image_h_, 4});
+        auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+
+        converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+        MUTABLE_DATA_GPU(filter_gpu_image_,
+                         filter_image_w_,
+                         filter_image_h_,
+                         filter_image_data);
       } else {  // groups_ > 1
         kernel_func_names_.push_back("conv2d_3x3");
         kernel_func_paths_.push_back("image/conv2d_3x3_kernel.cl");
         impl_ = &ConvImageCompute::Conv2d3x3;
+
+        CLImageConverterFolder converter;
+        const DDim& filter_image_dims =
+            converter.InitImageDimInfoWith(filter_dims);
+        filter_image_h_ = filter_image_dims[1];
+        filter_image_w_ = filter_image_dims[0];
+        tensor_hold_filter_image_->Resize(
+            {1, filter_image_w_, filter_image_h_, 4});
+        auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+
+        converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+        MUTABLE_DATA_GPU(filter_gpu_image_,
+                         filter_image_w_,
+                         filter_image_h_,
+                         filter_image_data);
       }
-
-      CLImageConverterFolder converter;
-      const DDim& filter_image_dims =
-          converter.InitImageDimInfoWith(filter_dims);
-      filter_image_h_ = filter_image_dims[1];
-      filter_image_w_ = filter_image_dims[0];
-      tensor_hold_filter_image_->Resize(
-          {1, filter_image_w_, filter_image_h_, 4});
-      auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
-
-      converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
-      MUTABLE_DATA_GPU(filter_gpu_image_,
-                       filter_image_w_,
-                       filter_image_h_,
-                       filter_image_data);
     } else if (filter_tensor_h_ == 5 && filter_tensor_w_ == 5 && pad_equal &&
                stride_equal && dilation_equal) {
 #define CONV_5x5_OPT
@@ -805,6 +820,10 @@ void ConvImageCompute::SetGlobalWorkSize() {
                                     static_cast<size_t>(nh_blk_)};
     input_c_block_ = static_cast<const int>((input_tensor_c_ + 3) / 4);
   }
+  VLOG(4) << "global_work_size_[3D]: {" << global_work_size_[0] << ","
+          << global_work_size_[1] << "," << global_work_size_[2] << "}";
+  VLOG(4) << "local_work_size_[3D]: {" << local_work_size_[0] << ","
+          << local_work_size_[1] << "," << local_work_size_[2] << "}";
   for (auto i = 0; i < global_work_size_.dimensions(); i++) {
     VLOG(4) << "global_work_size[" << i << "]: " << global_work_size_[i];
   }

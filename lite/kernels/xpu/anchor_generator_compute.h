@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,40 +13,29 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/program.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace host {
+namespace xpu {
 
-class WhileCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+class AnchorGeneratorCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::WhileParam;
+  using param_t = operators::AnchorGeneratorParam;
 
   void Run() override;
 
   void PrepareForRun() override;
 
-  void SetRuntimeProgram(std::unique_ptr<RuntimeProgram>* program) {
-    program_ = std::move(*program);
-  }
-
-  virtual ~WhileCompute() = default;
+  virtual ~AnchorGeneratorCompute() = default;
 
  private:
-  std::unique_ptr<RuntimeProgram> program_;
+  XPUScratchPadGuard var_guard_;
 };
 
-}  // namespace host
+}  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

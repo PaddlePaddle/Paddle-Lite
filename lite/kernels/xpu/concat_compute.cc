@@ -33,20 +33,23 @@ void ConcatCompute::Run() {
   std::vector<const float*> x_list;
   std::vector<std::vector<int>> xdims_list;
   for (int i = 0; i < ins.size(); i++) {
-    xdims_list.push_back(std::vector<int>());
-    for (int j = 0; j < ins[i]->dims().size(); j++) {
-      xdims_list[i].push_back(ins[i]->dims()[j]);
+    if (ins[i]->numel() > 0) {
+      xdims_list.push_back(std::vector<int>());
+      for (int j = 0; j < ins[i]->dims().size(); j++) {
+        xdims_list[i].push_back(ins[i]->dims()[j]);
+      }
+      x_list.push_back(ins[i]->data<float>());
     }
-    x_list.push_back(ins[i]->data<float>());
   }
+  if (x_list.size() > 0) {
+    int r = xdnn::concat<float>(ctx.GetRawContext(),
+                                x_list,
+                                out->mutable_data<float>(TARGET(kXPU)),
+                                xdims_list,
+                                axis);
 
-  int r = xdnn::concat<float>(ctx.GetRawContext(),
-                              x_list,
-                              out->mutable_data<float>(TARGET(kXPU)),
-                              xdims_list,
-                              axis);
-
-  CHECK_EQ(r, 0);
+    CHECK_EQ(r, 0);
+  }
 }
 
 }  // namespace xpu
