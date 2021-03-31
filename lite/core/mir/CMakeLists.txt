@@ -31,17 +31,23 @@ lite_cc_library(mir_passes
       fusion/__xpu__resblock_normal_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
       fusion/__xpu__resnet_cbam_fuse_pass.cc
+      fusion/__xpu__conv2d_pool2d_fuse_pass.cc
+      fusion/__xpu__conv2d_concat_pool2d_fuse_pass.cc
+      fusion/__xpu__consecutive_conv2d_fuse_pass.cc
+      fusion/__xpu__consecutive_block_fuse_pass.cc
       fusion/__xpu__multi_encoder_fuse_pass.cc
       fusion/__xpu__embedding_with_eltwise_add_fuse_pass.cc
       fusion/__xpu__fc_fuse_pass.cc
       fusion/__xpu__mmdnn_fuse_pass.cc
       fusion/__xpu__conv2d_fuse_pass.cc
-      fusion/__xpu__conv2d_link_previous_out_max_pass.cc
+      fusion/__xpu__link_previous_out_max_pass.cc
       fusion/__xpu__sfa_head_meanstd_fuse_pass.cc
       fusion/__xpu__sfa_head_moment_fuse_pass.cc
       fusion/__xpu__softmax_topk_fuse_pass.cc
       fusion/__xpu__multi_encoder_slice_link_fuse_pass.cc
+      fusion/__xpu__multi_encoder_adaptive_seqlen_fuse_pass.cc
       fusion/__xpu__generate_sequence_fuse_pass.cc
+      fusion/__xpu__squeeze_excitation_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc

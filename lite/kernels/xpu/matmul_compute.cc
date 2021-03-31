@@ -32,10 +32,25 @@ void MatMulCompute::Run() {
   auto* y = param.Y;
   auto* out = param.Out;
 
+  auto& x_dims = x->dims();
+  auto& y_dims = y->dims();
   auto mat_dim_a = math::CreateMatrixDescriptor(
-      math::RowMatrixFromVector(x->dims()), 0, param.transpose_X);
+      math::RowMatrixFromVector(x_dims), 0, param.transpose_X);
   auto mat_dim_b = math::CreateMatrixDescriptor(
-      math::ColumnMatrixFromVector(y->dims()), 0, param.transpose_Y);
+      math::ColumnMatrixFromVector(y_dims), 0, param.transpose_Y);
+
+  if (x_dims.size() == 3 && y_dims.size() <= 2) {
+    if (!param.transpose_X) {
+      mat_dim_a.height_ *= mat_dim_a.batch_size_;
+      mat_dim_a.batch_size_ = 0;
+    } else {
+      mat_dim_b.batch_size_ = mat_dim_a.batch_size_;
+      mat_dim_b.height_ = mat_dim_b.height_ / mat_dim_b.batch_size_;
+    }
+  }
+  CHECK_EQ(mat_dim_a.width_, mat_dim_b.height_);
+  CHECK_EQ(mat_dim_a.batch_size_, mat_dim_b.batch_size_);
+
   int lda = (mat_dim_a.trans_ ? mat_dim_a.height_ : mat_dim_a.width_);
   int ldb = (mat_dim_b.trans_ ? mat_dim_b.height_ : mat_dim_b.width_);
   int ldc = mat_dim_b.width_;
