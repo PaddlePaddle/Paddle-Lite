@@ -182,8 +182,13 @@ TEST(Pad2d, precision) {
               VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
                       << paddings[0] << " " << paddings[1] << " " << paddings[2]
                       << " " << paddings[3];
-              TestPad2d(
-                  place, "def", pad_mode, paddings, pad_value, data_format, abs_error);
+              TestPad2d(place,
+                        "def",
+                        pad_mode,
+                        paddings,
+                        pad_value,
+                        data_format,
+                        abs_error);
             }
           }
         }
@@ -207,8 +212,13 @@ TEST(Pad2d_fp16, precision) {
               VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
                       << paddings[0] << " " << paddings[1] << " " << paddings[2]
                       << " " << paddings[3];
-              TestPad2d<float16_t>(
-                  place, "def", pad_mode, paddings, pad_value, data_format, abs_error);
+              TestPad2d<float16_t>(place,
+                                   "def",
+                                   pad_mode,
+                                   paddings,
+                                   pad_value,
+                                   data_format,
+                                   abs_error);
             }
           }
         }
