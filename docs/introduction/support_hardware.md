@@ -56,6 +56,11 @@ Paddle Lite支持 瑞芯微 (Rockchip) NPU，支持列表如下：
 - 支持芯片：RK1808, RK1806，暂不支持RK3399Pro
 - 支持设备：RK1808/1806 EVB，TB-RK1808S0
 
+## 英特尔 (Intel) FPGA
+Paddle Lite支持 英特尔 (Inel) FPGA，支持列表如下：
+- 支持芯片：Cyclone V
+- 支持设备：C5MB，C5TB和C5CB
+
 ## 联发科 (MediaTek) APU
 Paddle Lite支持 联发科 (MediaTek) APU，支持列表如下：
 - 支持芯片：MT8168/MT8175，及其他智能芯片

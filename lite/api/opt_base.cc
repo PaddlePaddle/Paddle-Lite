@@ -107,6 +107,10 @@ void OptBase::SetValidPlaces(const std::string& valid_places,
       valid_places_.emplace_back(TARGET(kImaginationNNA));
       valid_places_.emplace_back(
           Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
+    } else if (target_repr == "intel_fpga") {
+      valid_places.emplace_back(TARGET(kIntelFPGA));
+      valid_places.emplace_back(
+          Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -265,7 +269,7 @@ void OptBase::PrintHelpInfo() {
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
       "`set_valid_places(arm|opencl|x86|npu|xpu|rknpu|apu|huawei_ascend_npu|"
-      "imagination_nna)`\n"
+      "imagination_nna|intel_fpga)`\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
       "        `run() : start model transformation`\n"
@@ -304,7 +308,7 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
       "`--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
-      "nna)`\n"
+      "nna|intel_fpga)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
@@ -316,11 +320,11 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
       "--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
-      "nna)`"
+      "nna|intel_fpga)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
       "--valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_"
-      "nna)`"
+      "nna|intel_fpga)`"
       "  Display operators in the input model\n";
   std::cout << "paddlelite opt version:" << opt_version << std::endl
             << help_info << std::endl;
@@ -340,6 +344,7 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
                                                      "kAPU",
                                                      "kHuaweiAscendNPU",
                                                      "kImaginationNNA",
+                                                     "kIntelFPGA",
                                                      "kAny",
                                                      "kUnk"};
   // Get the lengh of the first column: maximum length of the op_type

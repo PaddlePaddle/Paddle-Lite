@@ -155,6 +155,10 @@ std::vector<Place> ParserValidPlaces(bool enable_fp16) {
       valid_places.emplace_back(TARGET(kImaginationNNA));
       valid_places.emplace_back(
           Place{TARGET(kImaginationNNA), PRECISION(kInt8), DATALAYOUT(kNCHW)});
+    } else if (target_repr == "intel_fpga") {
+      valid_places.emplace_back(TARGET(kIntelFPGA));
+      valid_places.emplace_back(
+          Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else {
       LOG(FATAL) << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
@@ -245,6 +249,7 @@ void PrintOpsInfo(std::set<std::string> valid_ops = {}) {
                                       "kAPU",
                                       "kHuaweiAscendNPU",
                                       "kImaginationNNA",
+                                      "kIntelFPGA",
                                       "kAny",
                                       "kUnk"};
   size_t maximum_optype_length = 0;
@@ -316,7 +321,7 @@ void PrintHelpInfo() {
       "        "
       "`--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
       "ascend_npu|"
-      "imagination_nna)`\n"
+      "imagination_nna|intel_fpga)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
@@ -329,13 +334,13 @@ void PrintHelpInfo() {
       "        `--print_supported_ops=true  "
       "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
       "ascend_npu|"
-      "imagination_nna)"
+      "imagination_nna|intel_fpga)"
       "`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
       "--valid_targets=(arm|opencl|x86|x86_opencl|npu|xpu|rknpu|apu|huawei_"
       "ascend_npu|"
-      "imagination_nna)"
+      "imagination_nna|intel_fpga)"
       "`"
       "  Display operators in the input model\n";
   std::cout << "opt version:" << opt_version << std::endl
