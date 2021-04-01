@@ -440,22 +440,129 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   bool has_active = act_param.has_active;
+  float16_t relu6_coff = static_cast<float16_t>(act_param.Relu_clipped_coef);
+  float16_t leaky_alpha = static_cast<float16_t>(act_param.Leaky_relu_alpha);
+  float16_t scale[8];
+  switch (act_type) {
+    case lite_api::ActivationType::kRelu6:
+      for (int i = 0; i < 8; ++i) {
+        scale[i] = relu6_coff;
+      }
+      break;
+    case lite_api::ActivationType::kLeakyRelu:
+      for (int i = 0; i < 8; ++i) {
+        scale[i] = leaky_alpha;
+      }
+      break;
+    default:
+      break;
+  }
 #define CONV_DEPTHWISE_IN_PARAMS \
-  o_data, i_data, weights, bias, flag_bias, num, ic, ih, win, oh, ow, ctx
+  o_data, i_data, weights, bias, scale, flag_bias, num, ic, ih, win, oh, ow, ctx
   if (has_active) {
     switch (act_type) {
       case lite_api::ActivationType::kRelu:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
-          conv_depthwise_3x3s1p1_bias_relu_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
+          if (win <= 8)
+            conv_depthwise_3x3s1p1_bias_relu_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s1p1_bias_relu_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-          conv_depthwise_3x3s1p0_bias_relu_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
+          if (win <= 9)
+            conv_depthwise_3x3s1p0_bias_relu_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s1p0_bias_relu_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 2 && pad_h == 1 && pad_w == 1) {
-          conv_depthwise_3x3s2p1_bias_relu_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
+          if (win <= 15)
+            conv_depthwise_3x3s2p1_bias_relu_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 2 && pad_h == 0 && pad_w == 0) {
-          conv_depthwise_3x3s2p0_bias_relu_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
+          if (win <= 16)
+            conv_depthwise_3x3s2p0_bias_relu_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
         } else {
-          LOG(FATAL) << "fp16 3x3 depthwise conv stride " << stride
-                     << "and pad_h " << pad_h << "pad_w " << pad_w
+          LOG(FATAL) << "fp16 3x3 depthwise conv fuse relu stride " << stride
+                     << " pad_h " << pad_h << " pad_w " << pad_w
+                     << "is not supported!";
+        }
+        break;
+      case lite_api::ActivationType::kRelu6:
+        if (stride == 1 && pad_h == 1 && pad_w == 1) {
+          if (win <= 8)
+            conv_depthwise_3x3s1p1_bias_relu6_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s1p1_bias_relu6_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+        } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
+          if (win <= 9)
+            conv_depthwise_3x3s1p0_bias_relu6_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s1p0_bias_relu6_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+        } else if (stride == 2 && pad_h == 1 && pad_w == 1) {
+          if (win <= 15)
+            conv_depthwise_3x3s2p1_bias_relu6_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+        } else if (stride == 2 && pad_h == 0 && pad_w == 0) {
+          if (win <= 16)
+            conv_depthwise_3x3s2p0_bias_relu6_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+        } else {
+          LOG(FATAL) << "fp16 3x3 depthwise conv fuse relu6 stride " << stride
+                     << " pad_h " << pad_h << " pad_w " << pad_w
+                     << "is not supported!";
+        }
+        break;
+      case lite_api::ActivationType::kLeakyRelu:
+        if (stride == 1 && pad_h == 1 && pad_w == 1) {
+          if (win <= 8)
+            conv_depthwise_3x3s1p1_bias_leaky_relu_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s1p1_bias_leaky_relu_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+        } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
+          if (win <= 9)
+            conv_depthwise_3x3s1p0_bias_leaky_relu_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s1p0_bias_leaky_relu_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+        } else if (stride == 2 && pad_h == 1 && pad_w == 1) {
+          if (win <= 15)
+            conv_depthwise_3x3s2p1_bias_leaky_relu_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+        } else if (stride == 2 && pad_h == 0 && pad_w == 0) {
+          if (win <= 16)
+            conv_depthwise_3x3s2p0_bias_leaky_relu_small_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+          else
+            conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
+                CONV_DEPTHWISE_IN_PARAMS);
+        } else {
+          LOG(FATAL) << "fp16 3x3 depthwise conv fuse leaky relu stride "
+                     << stride << " pad_h " << pad_h << " pad_w " << pad_w
                      << "is not supported!";
         }
         break;
@@ -466,13 +573,33 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
     }
   } else {
     if (stride == 1 && pad_h == 1 && pad_w == 1) {
-      conv_depthwise_3x3s1p1_bias_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
+      if (win <= 8)
+        conv_depthwise_3x3s1p1_bias_noact_small_fp16_fp16(
+            CONV_DEPTHWISE_IN_PARAMS);
+      else
+        conv_depthwise_3x3s1p1_bias_noact_common_fp16_fp16(
+            CONV_DEPTHWISE_IN_PARAMS);
     } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-      conv_depthwise_3x3s1p0_bias_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
+      if (win <= 9)
+        conv_depthwise_3x3s1p0_bias_noact_small_fp16_fp16(
+            CONV_DEPTHWISE_IN_PARAMS);
+      else
+        conv_depthwise_3x3s1p0_bias_noact_common_fp16_fp16(
+            CONV_DEPTHWISE_IN_PARAMS);
     } else if (stride == 2 && pad_h == 1 && pad_w == 1) {
-      conv_depthwise_3x3s2p1_bias_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
+      if (win <= 15)
+        conv_depthwise_3x3s2p1_bias_noact_small_fp16_fp16(
+            CONV_DEPTHWISE_IN_PARAMS);
+      else
+        conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
+            CONV_DEPTHWISE_IN_PARAMS);
     } else if (stride == 2 && pad_h == 0 && pad_w == 0) {
-      conv_depthwise_3x3s2p0_bias_fp16_fp16(CONV_DEPTHWISE_IN_PARAMS);
+      if (win <= 16)
+        conv_depthwise_3x3s2p0_bias_noact_small_fp16_fp16(
+            CONV_DEPTHWISE_IN_PARAMS);
+      else
+        conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
+            CONV_DEPTHWISE_IN_PARAMS);
     } else {
       LOG(FATAL) << "fp16 3x3 depthwise conv stride " << stride << "and pad_h "
                  << pad_h << "pad_w " << pad_w << "is not supported!";
