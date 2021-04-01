@@ -62,10 +62,13 @@ RUN apt-get install -y --no-install-recommends \
         gcc-aarch64-linux-gnu \
         g++-aarch64-linux-gnu 
 
-# for android ndk17c
+# for android ndk17c and ndk20b
 RUN cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
+RUN cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r20b-linux-x86_64.zip
 ENV NDK_ROOT /opt/android-ndk-r17c
+ENV NDK_ROOT_R20B /opt/android-ndk-r20b
 RUN cd /opt && unzip /tmp/android-ndk-r17c-linux-x86_64.zip
+RUN cd /opt && unzip /tmp/android-ndk-r20b-linux-x86_64.zip
 
 # for android simulator
 ENV ANDROID_HOME /opt/android_sdk
