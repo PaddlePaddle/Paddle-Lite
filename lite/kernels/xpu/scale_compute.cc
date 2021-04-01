@@ -26,15 +26,20 @@ void ScaleCompute::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
 
   auto& x_dims = param.x->dims();
-
-  int r = xdnn::scale(ctx.GetRawContext(),
-                      param.x->data<float>(),                          /* x */
-                      param.output->mutable_data<float>(TARGET(kXPU)), /* y */
-                      x_dims.production(),                             /* len */
-                      param.bias_after_scale, /* bias_after_scale */
-                      param.scale,            /* alpha */
-                      param.bias);            /* beta */
-  CHECK_EQ(r, 0);
+  if (std::fabs(param.scale - 1.0f) < 1e-7 && std::fabs(param.bias) < 1e-7) {
+    auto x = param.x;
+    param.output->ShareDataWith(*x);
+    param.output->Resize(param.output->dims());
+  } else {
+    int r = xdnn::scale(ctx.GetRawContext(),
+                        param.x->data<float>(),                          /* x */
+                        param.output->mutable_data<float>(TARGET(kXPU)), /* y */
+                        x_dims.production(),    /* len */
+                        param.bias_after_scale, /* bias_after_scale */
+                        param.scale,            /* alpha */
+                        param.bias);            /* beta */
+    CHECK_EQ(r, 0);
+  }
   if (!param.x->lod().empty()) {
     param.output->set_lod(param.x->lod());
   }

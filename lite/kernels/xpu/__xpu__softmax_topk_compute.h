@@ -27,7 +27,12 @@ class SoftmaxTopkCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 
   virtual void Run();
 
+  void PrepareForRun() override;
+
   virtual ~SoftmaxTopkCompute() = default;
+
+ private:
+  XPUScratchPadGuard indices_xpu_guard_;
 };
 
 }  // namespace xpu

@@ -12,29 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+#include "lite/backends/intel_fpga/target_wrapper.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
 
-class IncrementCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  void Run() override;
+void* TargetWrapper<TARGET(kIntelFPGA)>::Malloc(size_t size) {
+  return intelfpga_malloc(size);
+}
 
-  void PrepareForRun() override;
+void TargetWrapper<TARGET(kIntelFPGA)>::Free(void* ptr) { intelfpga_free(ptr); }
 
-  virtual ~IncrementCompute() = default;
+void TargetWrapper<TARGET(kIntelFPGA)>::MemcpySync(void* dst,
+                                                   const void* src,
+                                                   size_t size,
+                                                   IoDirection dir) {
+  memcpy(dst, src, size);
+}
 
- private:
-  XPUScratchPadGuard cast_out_guard_;
-  XPUScratchPadGuard step_guard_;
-};
-
-}  // namespace xpu
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

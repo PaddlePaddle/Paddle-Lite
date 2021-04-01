@@ -21,17 +21,14 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class IncrementCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class ReadFromArrayCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
 
-  void PrepareForRun() override;
-
-  virtual ~IncrementCompute() = default;
+  ~ReadFromArrayCompute() {}
 
  private:
-  XPUScratchPadGuard cast_out_guard_;
-  XPUScratchPadGuard step_guard_;
 };
 
 }  // namespace xpu

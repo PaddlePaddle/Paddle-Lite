@@ -13,28 +13,43 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace xpu {
+namespace intel_fpga {
 
-class IncrementCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <PrecisionType Ptype, PrecisionType OutType>
+class ConvCompute : public KernelLite<TARGET(kIntelFPGA), Ptype> {
  public:
-  void Run() override;
+  virtual void PrepareForRun();
 
-  void PrepareForRun() override;
+  virtual void ReInitWhenNeeded() {
+    CHECK(impl_);
+    impl_->ReInitWhenNeeded();
+  }
 
-  virtual ~IncrementCompute() = default;
+  virtual void Run() {
+    CHECK(impl_);
+    impl_->Run();
+  }
+
+  ~ConvCompute() {
+    if (impl_ != nullptr) {
+      delete impl_;
+    }
+  }
 
  private:
-  XPUScratchPadGuard cast_out_guard_;
-  XPUScratchPadGuard step_guard_;
+  using param_t = operators::ConvParam;
+  std::unique_ptr<KernelContext> arm_cxt_{nullptr};
+  KernelLite<TARGET(kARM), Ptype>* impl_{nullptr};
 };
 
-}  // namespace xpu
+}  // namespace intel_fpga
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
