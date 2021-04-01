@@ -149,12 +149,23 @@ function build_test_android {
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"
 }
 
-if [ $# -eq 3 ] && [ $3 == "enable_fp16"] ; then
-  BUILD_ARM82_FP16=ON
-  build_test_android armv8 clang $1 $2
+# print help infomation
+if [ $# -lt 1 ] ; then
+    echo "Usage Explaination:"
+    echo " (1) tools/ci_tools/ci_android_unit_test.sh adb_index adb_workname : compile and perform FP32 android unit tests. "
+    echo "         eg. tools/ci_tools/ci_android_unit_test.sh 0 adb_work01 "
+    echo " (2) tools/ci_tools/ci_android_unit_test.sh adb_index adb_workname  enable_fp16: compile and perform FP16 android unit tests. "
+    echo "         eg. tools/ci_tools/ci_android_unit_test.sh 0 adb_work02 enable_fp16 "
+    exit 0
+fi
+
+if [ $# -eq 3 ] && [ $3 == "enable_fp16" ] ; then
+    BUILD_ARM82_FP16=ON
+    build_test_android armv8 clang $1 $2
+    build_test_android armv7 clang $1 $2
 else
- # $1 adb_device index. eg. 1
- # $2 workspace name on adb.  eg. work_tmp1
-  build_test_android armv7 gcc $1 $2
-  build_test_android armv8 gcc $1 $2
+    # $1 adb_device index. eg. 1
+    # $2 workspace name on adb.  eg. work_tmp1
+    build_test_android armv7 gcc $1 $2
+    build_test_android armv8 gcc $1 $2
 fi
