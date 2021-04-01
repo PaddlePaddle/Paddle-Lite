@@ -145,6 +145,8 @@ TEST(AssignValue, precision) {
   Place place;
 #ifdef LITE_WITH_ARM
   place = TARGET(kARM);
+#elif LITE_WITH_X86
+  place = TARGET(kX86);
 #else
   return;
 #endif
