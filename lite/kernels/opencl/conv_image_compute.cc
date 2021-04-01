@@ -62,6 +62,8 @@ void ConvImageCompute::PrepareForRun() {
   relu_fused_ = conv_param_->fuse_relu;
   has_bias_ = (conv_param_->bias) != nullptr;
   offset_ = filter_tensor_h_ / 2 - pad_up_;
+  offset_w_ = filter_tensor_w_ / 2 - pad_left_;
+  offset_h_ = offset_;
 
   bool pad_equal = ((pad_left_ == pad_up_) && (pad_left_ == pad_right_));
   bool stride_equal = stride_h_ == stride_w_;
@@ -190,10 +192,10 @@ void ConvImageCompute::PrepareForRun() {
 #undef DEPTH_CONV_USE_SPL
                ) {
       // common depth_conv2d
-      kernel_func_names_.push_back("depth_conv2d_common");
+      kernel_func_names_.push_back("depth_conv2d");
       kernel_func_paths_.push_back("image/depthwise_conv2d_basic_kernel.cl");
 
-      CLImageConverterDWFilter converter;
+      CLImageConverterNWBlock converter;
       const DDim& filter_image_dims =
           converter.InitImageDimInfoWith(filter_dims);
       filter_image_h_ = filter_image_dims[1];
@@ -1266,9 +1268,9 @@ void ConvImageCompute::DepthwiseConv2d() {
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(8, stride_h_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(9, (pad_up_ + pad_down_) / 2);
+  status_ = kernel_.setArg(9, offset_w_);
   CL_CHECK_FATAL(status_);
-  status_ = kernel_.setArg(10, (pad_left_ + pad_right_) / 2);
+  status_ = kernel_.setArg(10, offset_h_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(11, dilation_w_);
   CL_CHECK_FATAL(status_);
