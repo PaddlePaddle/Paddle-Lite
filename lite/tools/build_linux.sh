@@ -33,6 +33,9 @@ IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 BAIDU_XPU_SDK_ROOT=""
+# options of compiling intel fpga.
+WITH_INTEL_FPGA=OFF
+INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk" 
 # options of adding training ops
 WITH_TRAIN=OFF
 # num of threads used during compiling..
@@ -75,7 +78,9 @@ function init_cmake_mutable_options {
                         -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_IMAGINATION_NNA=$WITH_IMAGINATION_NNA \
-                        -DIMAGINATION_NNA_SDK_ROOT=${IMAGINATION_NNA_SDK_ROOT}"
+                        -DIMAGINATION_NNA_SDK_ROOT=${IMAGINATION_NNA_SDK_ROOT} \
+                        -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
+                        -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT}"
 
 }
 #####################################################################################################
@@ -339,6 +344,15 @@ function main {
                 ;;
             --baidu_xpu_sdk_root=*)
                 BAIDU_XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on intel fpga.
+            --with_intel_fpga=*)
+                WITH_INTEL_FPGA="${i#*=}"
+                shift
+                ;;
+            --intel_fpga_sdk_root=*)
+                INTEL_FPGA_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF

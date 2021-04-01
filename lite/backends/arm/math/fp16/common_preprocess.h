@@ -25,6 +25,7 @@ namespace arm {
 namespace math {
 namespace fp16 {
 typedef __fp16 float16_t;
+#define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
 #define PTR_ACQUIRE_PARAM(dtype)                                     \
   const dtype *ptr_zero, const dtype *ptr_w0, const dtype *ptr_w1,   \
       const dtype *ptr_w2, const dtype *ptr_w3, const dtype *ptr_w4, \
@@ -67,6 +68,32 @@ typedef __fp16 float16_t;
     tail_pre = KBLOCK;                                                \
   }                                                                   \
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+
+#define DIRECT_WORKSPACE_COMPUTE(                                              \
+    ctx, kernel_w, stride_w, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK)             \
+  const int threads = ctx->threads();                                          \
+  int llc_size = ctx->llc_size() / sizeof(float16_t);                          \
+  const int wout_round = ROUNDUP(ow, OUT_W_BLOCK);                             \
+  const int win_round = (wout_round - 1) * stride_w + kernel_w;                \
+  /* get h block */                                                            \
+  /* win_round * ic * hin_r_block + wout_round * OUT_C_BLOCK * hout_r_block */ \
+  /* * threads = llc_size */                                                   \
+  /* win_round = (wout_round - 1) * stride_w + kernel_w*/                      \
+  /* hin_r_block = (hout_r_block - 1) * stride_w + kernel_w*/                  \
+  int a = kernel_w * stride_w;                                                 \
+  int b = kernel_w * kernel_w;                                                 \
+  int c = stride_w * stride_w;                                                 \
+  int hout_r_block =                                                           \
+      (llc_size - ic * (a * (wout_round - 2) + b - c * (wout_round - 1))) /    \
+      ((ic * ((wout_round - 1) * c + a)) +                                     \
+       wout_round * OUT_C_BLOCK * threads);                                    \
+  hout_r_block = hout_r_block > oh ? oh : hout_r_block;                        \
+  hout_r_block = (hout_r_block / OUT_H_BLOCK) * OUT_H_BLOCK;                   \
+  hout_r_block = hout_r_block < OUT_H_BLOCK ? OUT_H_BLOCK : hout_r_block;      \
+  const int hin_r_block = (hout_r_block - 1) * stride_w + kernel_w;            \
+  int in_len = win_round * ic;                                                 \
+  int pre_in_size = hin_r_block * in_len;                                      \
+  int pre_out_size = OUT_C_BLOCK * hout_r_block * wout_round;
 
 #define GEMM_PREPARE_C(dtype, NBLOCK) \
   dtype cout0[NBLOCK];                \
