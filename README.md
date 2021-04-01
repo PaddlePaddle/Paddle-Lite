@@ -49,7 +49,7 @@ Paddle Lite提供了C++、Java、Python三种API，并且提供了相应API的�
 - [百度XPU示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/baidu_xpu.html)
 - [瑞芯微NPU示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html)
 - [联发科APU示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/mediatek_apu.html)
-
+- [英特尔FPGA示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/intel_fpga.html)
 
 
 ## 主要特性
