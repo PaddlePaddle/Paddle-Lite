@@ -15,18 +15,14 @@ RUN sed -ie 's|<version>|xenial|' /etc/apt/sources.list
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends \
         clang-format-3.8 \
-        cmake-curses-gui \
         curl \
-        fish \
-        gawk \
         gcc \
         g++ \
         git \
-        graphviz \
-        less \
         make \
-        patch \
+        patchelf \
         python \
+        python-dev \
         python-pip \
         python-setuptools \
         unzip \
@@ -96,4 +92,3 @@ RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple wheel
 RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pre-commit
 RUN apt-get autoremove -y && apt-get clean
 RUN rm -rf /sdk-tools-linux-4333796.zip /tmp/android-ndk-r17c-linux-x86_64.zip /cmake-3.10.3-Linux-x86_64.tar.gz
- 
