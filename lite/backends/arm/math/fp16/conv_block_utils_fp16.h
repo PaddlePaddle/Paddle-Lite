@@ -319,6 +319,9 @@ inline bool prepack_input_nxw(const float16_t* din,
     "v8", "v9", "v10", "v11", "v12",  \
     "v13", "v14", "v15", "v16"
 
+/*wirte result in outputs
+* input din: [n, c / 8, h, w * 8], output dout: [n, c, h, w]
+*/
 static void write_to_oc8_fp16(const float16_t* din,
                               float16_t* dout,
                               int cs,
@@ -332,7 +335,8 @@ static void write_to_oc8_fp16(const float16_t* din,
                               int width,
                               int flag_act,
                               float16_t alpha,
-                              const float16_t* bias) {
+                              const float16_t* bias,
+                              bool flag_bias) {
   int size_c_out = width * height;
 
   float16_t* doutc0r0 = dout + cs * size_c_out + hs * width + ws;
@@ -353,9 +357,12 @@ static void write_to_oc8_fp16(const float16_t* din,
   int w_in_stride = w_round << 3;
   int cnt_col = win >> 3;
   int remain = win & 7;
+  float16x8_t vbias = vdupq_n_f16(0.f);
   float16x8_t vzero = vdupq_n_f16(0.f);
-  float16x8_t vbias = vld1q_f16(bias);
   float16x8_t valpha = vdupq_n_f16(alpha);
+  if (flag_bias) {
+    vbias = vld1q_f16(bias);
+  }
   float16_t tmp0[8] = {0.f};
   float16_t tmp1[8] = {0.f};
   float16_t tmp2[8] = {0.f};
@@ -448,6 +455,167 @@ static void write_to_oc8_fp16(const float16_t* din,
         din += w_in_stride;
       }
       break;
+  }
+}
+
+inline void prepack_input_nxwc8_fp16_dw(const float16_t* din,
+                                        float16_t* dout,
+                                        int cs,
+                                        int hs,
+                                        int he,
+                                        int ws,
+                                        int we,
+                                        int channel,
+                                        int width,
+                                        int height,
+                                        float16_t* zero_ptr) {
+  int n = he - hs;
+  if (n <= 0) {
+    LOG(FATAL) << "prepack_dw_input_int8, valid height must > zero";
+  }
+  int size_w = we - ws;
+  int w0 = ws < 0 ? 0 : ws;
+  int w1 = we > width ? width : we;
+  int valid_w = w1 - w0;
+  int pad_l = ws < 0 ? -ws : 0;
+  int pad_r = we > width ? we - width : 0;
+  int size_c = width * height;
+
+  int valid_cnt = valid_w >> 3;
+  int remain = valid_w & 7;
+  int stride = size_w << 3;
+  int pad_l_stride = pad_l << 3;
+  int pad_r_stride = pad_r << 3;
+
+  for (int h = hs; h < he; ++h) {
+    const float16_t* ptr_c0 = din + h * width + cs * size_c;
+    const float16_t* ptr_c1 = ptr_c0 + size_c;
+    const float16_t* ptr_c2 = ptr_c1 + size_c;
+    const float16_t* ptr_c3 = ptr_c2 + size_c;
+    const float16_t* ptr_c4 = ptr_c3 + size_c;
+    const float16_t* ptr_c5 = ptr_c4 + size_c;
+    const float16_t* ptr_c6 = ptr_c5 + size_c;
+    const float16_t* ptr_c7 = ptr_c6 + size_c;
+    if (h < 0 || h >= height) {
+      memset(dout, 0.f, stride * sizeof(float16_t));
+      dout += stride;
+      continue;
+    } else if (cs + 8 > channel) {
+      switch (cs + 8 - channel) {
+        case 7:
+          ptr_c1 = zero_ptr;
+        case 6:
+          ptr_c2 = zero_ptr;
+        case 5:
+          ptr_c3 = zero_ptr;
+        case 4:
+          ptr_c4 = zero_ptr;
+        case 3:
+          ptr_c5 = zero_ptr;
+        case 2:
+          ptr_c6 = zero_ptr;
+        case 1:
+          ptr_c7 = zero_ptr;
+        default:
+          break;
+      }
+    }
+    if (pad_l) {
+      memset(dout, 0.f, pad_l_stride * sizeof(float16_t));
+      dout += pad_l_stride;
+    }
+    if (valid_cnt) {
+      int cnt = valid_cnt;
+#ifdef __aarch64__
+      asm volatile(
+          /* main loop */
+          "1:\n"
+          "ldr q0,    [%[r0]], #16\n"
+          "ldr q1,    [%[r1]], #16\n"
+          "ldr q2,    [%[r2]], #16\n"
+          "ldr q3,    [%[r3]], #16\n"
+          "ldr q4,    [%[r4]], #16\n"
+          "ldr q5,    [%[r5]], #16\n"
+          "ldr q6,    [%[r6]], #16\n"
+          "ldr q7,    [%[r7]], #16\n"
+          "trn1 v8.8h,  v0.8h, v1.8h\n"
+          "trn2 v9.8h,  v0.8h, v1.8h\n"
+          "trn1 v10.8h, v2.8h, v3.8h\n"
+          "trn2 v11.8h, v2.8h, v3.8h\n"
+          "trn1 v12.8h, v4.8h, v5.8h\n"
+          "trn2 v13.8h, v4.8h, v5.8h\n"
+          "trn1 v14.8h, v6.8h, v7.8h\n"
+          "trn2 v15.8h, v6.8h, v7.8h\n"
+          "trn1 v0.4s,  v8.4s, v10.4s\n"
+          "trn2 v1.4s,  v8.4s, v10.4s\n"
+          "trn1 v2.4s,  v9.4s, v11.4s\n"
+          "trn2 v3.4s,  v9.4s, v11.4s\n"
+          "trn1 v4.4s,  v12.4s, v14.4s\n"
+          "trn2 v5.4s,  v12.4s, v14.4s\n"
+          "trn1 v6.4s,  v13.4s, v15.4s\n"
+          "trn2 v7.4s,  v13.4s, v15.4s\n"
+          "trn1 v8.2d,  v0.2d, v4.2d\n"
+          "trn1 v9.2d,  v2.2d, v6.2d\n"
+          "trn1 v10.2d, v1.2d, v5.2d\n"
+          "trn1 v11.2d, v3.2d, v7.2d\n"
+          "trn2 v12.2d, v0.2d, v4.2d\n"
+          "str q8, [%[ptr_out]], #16\n"
+          "trn2 v13.2d, v2.2d, v6.2d\n"
+          "str q9, [%[ptr_out]], #16\n"
+          "trn2 v14.2d, v1.2d, v5.2d\n"
+          "str q10, [%[ptr_out]], #16\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "trn2 v15.2d, v3.2d, v7.2d\n"
+          "str q11, [%[ptr_out]], #16\n"
+          "stp q12, q13, [%[ptr_out]], #32\n"
+          "stp q14, q15, [%[ptr_out]], #32\n"
+          "bne    1b\n"
+          : [cnt] "+r"(cnt),
+            [r0] "+r"(ptr_c0),
+            [r1] "+r"(ptr_c1),
+            [r2] "+r"(ptr_c2),
+            [r3] "+r"(ptr_c3),
+            [r4] "+r"(ptr_c4),
+            [r5] "+r"(ptr_c5),
+            [r6] "+r"(ptr_c6),
+            [r7] "+r"(ptr_c7),
+            [ptr_out] "+r"(dout)
+          :
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15");
+#endif  // __aarch64__
+    }
+    for (int i = 0; i < remain; ++i) {
+      dout[0] = *(ptr_c0++);
+      dout[1] = *(ptr_c1++);
+      dout[2] = *(ptr_c2++);
+      dout[3] = *(ptr_c3++);
+      dout[4] = *(ptr_c4++);
+      dout[5] = *(ptr_c5++);
+      dout[6] = *(ptr_c6++);
+      dout[7] = *(ptr_c7++);
+      dout += 8;
+    }
+    if (pad_r) {
+      memset(dout, 0.f, pad_r_stride * sizeof(float16_t));
+      dout += pad_r_stride;
+    }
   }
 }
 

@@ -268,6 +268,11 @@ void TransposeCompute::Run() {
     case PRECISION(kInt64):
       TransposeCompute_<int64_t>(axis, input, output);
       break;
+#ifdef ENABLE_ARM_FP16
+    case PRECISION(kFP16):
+      TransposeCompute_<__fp16>(axis, input, output);
+      break;
+#endif
     case PRECISION(kFloat):
       TransposeCompute_<float>(axis, input, output);
       break;
