@@ -63,6 +63,16 @@ void conv_3x3s2_direct_fp16(CONV_PARAM(float16_t));
 
 void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t));
 
+void weight_trans_c8_4x4_fp16(
+    float16_t *dest, const float16_t *src, int ic, int oc, void *workspace);
+
+void weight_trans_c8_6x6_fp16(
+    float16_t *dest, const float16_t *src, int ic, int oc, void *workspace);
+
+void conv_compute_2x2_3x3_fp16(CONV_PARAM(float16_t));
+
+void conv_compute_4x4_3x3_fp16(CONV_PARAM(float16_t));
+
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm
