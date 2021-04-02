@@ -176,7 +176,7 @@ void print_tensor_host_impl(const Dtype* din, int64_t size, int64_t width) {
     os << din[i] << " ";
     if ((i + 1) % width == 0) {
       VLOG(4) << os.str();
-      os.clear();
+      os.str("");
     }
   }
   VLOG(4) << "\n";
