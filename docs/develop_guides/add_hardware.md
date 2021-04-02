@@ -192,7 +192,7 @@
   [hongming/print_ssa_graph 75ecdce] Add graph_visualze pass to output ssa graph test=develop
    1 file changed, 2 insertions(+), 1 deletion(-)
   ```
-  - 同步本地仓库代码：在准备发起Pull Request前，需要将原仓库https://github.com/PaddlePaddle/Paddle-Lite的develop分支的最新代码同步到本地仓库的新建分支。首先通过git remote -v命令查看当前远程仓库的名字，然后通过git remote add 命令添加原Paddle Lite仓库地址，最后使用git fetch和git pull命令将本地分支更新到最新代码。
+  - 同步本地仓库代码：在准备发起Pull Request前，需要将原仓库[https://github.com/PaddlePaddle/Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite)的develop分支的最新代码同步到本地仓库的新建分支。首先通过git remote -v命令查看当前远程仓库的名字，然后通过git remote add 命令添加原Paddle Lite仓库地址，最后使用git fetch和git pull命令将本地分支更新到最新代码。
   ```
   $ git remote -v
   origin  https://github.com/UserName/Paddle-Lite.git (fetch)
@@ -241,7 +241,7 @@
    delete mode 100644 lite/kernels/npu/bridges/transpose_op_test.cc
    create mode 100644 mobile/test/net/test_mobilenet_male2fe.cpp
   ```
-  - Push到远程仓库：将本地的修改推送到自己账户下的Paddle Lite仓库，即https://github.com/UserName/Paddle-Lite。
+  - Push到远程仓库：将本地的修改推送到自己账户下的Paddle Lite仓库，即https://github.com/UserName/Paddle-Lite 。
   ```
   $ git branch
   develop
