@@ -13,35 +13,37 @@
 // limitations under the License.
 
 #pragma once
+
 #include <algorithm>
 #include <string>
 #include <vector>
-#include "lite/core/kernel.h"
-#include "lite/operators/pad2d_op.h"
+#include "lite/operators/op_params.h"
+#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
+namespace fp16 {
 
-template <PrecisionType Ptype, PrecisionType OutType>
-class Pad2dCompute : public KernelLite<TARGET(kARM), Ptype> {
- public:
-  using param_t = operators::Pad2dParam;
+typedef __fp16 float16_t;
+#define PAD2D_PARAM                                                  \
+  const float16_t *din, float16_t *dout, int n, int c, int h, int w, \
+      const int pad_top, const int pad_bottom, const int pad_left,   \
+      const int pad_right, const float16_t pad_value
 
-  void Run() override;
+void pad_constant_fp16(PAD2D_PARAM);
+void pad_edge_fp16(PAD2D_PARAM);
+void pad_reflect_fp16(PAD2D_PARAM);
+void pad2d_func_fp16(const lite::Tensor* input,
+                     lite::Tensor* output,
+                     int _mode,
+                     std::vector<int> _pad_h,
+                     std::vector<int> _pad_w,
+                     float16_t _pad_value);
 
-  virtual ~Pad2dCompute() = default;
-
- private:
-  int mode_;
-  std::vector<int> pad_h_{0, 0};
-  std::vector<int> pad_w_{0, 0};
-  float pad_value_ = 0.f;
-  std::string data_format_{"NCHW"};
-};
-
+}  // namespace fp16
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

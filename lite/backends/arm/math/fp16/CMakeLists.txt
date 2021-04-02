@@ -9,6 +9,7 @@ cc_library(math_arm_fp16 SRCS
     funcs_fp16.cc
     gemm_fp16.cc
     gemv_fp16.cc
+    pad2d_fp16.cc
     pooling_fp16.cc
     sgemm_fp16.cc
     softmax_fp16.cc
