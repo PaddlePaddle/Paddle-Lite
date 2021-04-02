@@ -29,6 +29,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <random>
+#include <string>
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -169,42 +170,18 @@ void fill_tensor_rand(Tensor& tensor, float vstart, float vend) {  // NOLINT
 }
 
 template <typename Dtype>
-void print_tensor_host_impl(const Dtype* din, int64_t size, int64_t width);
-
-template <>
-void print_tensor_host_impl(const float* din, int64_t size, int64_t width) {
+void print_tensor_host_impl(const Dtype* din, int64_t size, int64_t width) {
+  std::ostringstream os;
   for (int i = 0; i < size; ++i) {
-    printf("%.6f ", din[i]);
+    os << din[i] << " ";
     if ((i + 1) % width == 0) {
-      printf("\n");
+      VLOG(4) << os.str();
+      os.clear();
     }
   }
-  printf("\n");
+  VLOG(4) << "\n";
 }
 
-template <>
-void print_tensor_host_impl(const int* din, int64_t size, int64_t width) {
-  for (int i = 0; i < size; ++i) {
-    printf("%d ", din[i]);
-    if ((i + 1) % width == 0) {
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
-
-template <>
-void print_tensor_host_impl(const signed char* din,
-                            int64_t size,
-                            int64_t width) {
-  for (int i = 0; i < size; ++i) {
-    printf("%d ", din[i]);
-    if ((i + 1) % width == 0) {
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
 /**
  *  \brief Print the data in host tensor.
  *  \param tensor  The reference of input tensor.
