@@ -278,6 +278,26 @@ REGISTER_LITE_KERNEL(less_than, kHost, kInt32, kAny, less_than_int32, def)
     .BindPaddleOpVersion("less_than", 1)
     .Finalize();
 
+// float kernel has higher score when picking kernel.
+using less_than_int32_f = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kFloat),
+    paddle::lite::kernels::host::_LessThanFunctor<int32_t>>;
+REGISTER_LITE_KERNEL(less_than, kHost, kFloat, kAny, less_than_int32_f, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .BindPaddleOpVersion("less_than", 1)
+    .Finalize();
+
 using less_than_int64 = paddle::lite::kernels::host::CompareCompute<
     PRECISION(kInt64),
     paddle::lite::kernels::host::_LessThanFunctor<int64_t>>;
@@ -291,6 +311,26 @@ REGISTER_LITE_KERNEL(less_than, kHost, kInt64, kAny, less_than_int64, def)
     .BindOutput("Out",
                 {LiteType::GetTensorTy(
                     TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindPaddleOpVersion("less_than", 1)
+    .Finalize();
+
+// float kernel has higher score when picking kernel.
+using less_than_int64_f = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kFloat),
+    paddle::lite::kernels::host::_LessThanFunctor<int64_t>>;
+REGISTER_LITE_KERNEL(less_than, kHost, kFloat, kAny, less_than_int64_f, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
     .BindPaddleOpVersion("less_than", 1)
     .Finalize();
 
