@@ -28,7 +28,7 @@ function prepare_models {
   rm -rf inference_model && mkdir inference_model && cd inference_model
   # download compressed model recorded in $MODELS_URL
   for url in ${MODELS_URL[@]}; do
-    wget $url
+    curl -O $url
   done
 
   compressed_models=$(ls)
