@@ -23,6 +23,7 @@
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
 #include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
 #include "lite/backends/arm/math/fp16/elementwise_fp16.h"
+#include "lite/backends/arm/math/fp16/gemm_c8_fp16.h"
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include "lite/backends/arm/math/fp16/pad2d_fp16.h"
