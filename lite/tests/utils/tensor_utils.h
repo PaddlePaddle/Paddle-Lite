@@ -299,7 +299,7 @@ void tensor_diff_kernel(const dtype* src1,
     case PRECISION(kFloat):
     case PRECISION(kInt32):
       for (int i = 0; i < size; ++i) {
-        LOG(INFO) << i << "   " << src1[i] << "  " << src2[i];
+        VLOG(4) << i << "   " << src1[i] << "  " << src2[i];
         dst[i] = src1[i] - src2[i];
       }
       return;
@@ -307,8 +307,8 @@ void tensor_diff_kernel(const dtype* src1,
       for (int i = 0; i < size; ++i) {
         dst[i] = src1[i] - src2[i];
         if (static_cast<int>(abs(dst[i])) > 0.1) {
-          LOG(INFO) << i << "   " << static_cast<int>(src1[i]) << "  "
-                    << static_cast<int>(src2[i]);
+          VLOG(4) << i << "   " << static_cast<int>(src1[i]) << "  "
+                  << static_cast<int>(src2[i]);
         }
       }
       return;
