@@ -29,7 +29,7 @@ void ScaleCompute::Run() {
   if (std::fabs(param.scale - 1.0f) < 1e-7 && std::fabs(param.bias) < 1e-7) {
     auto x = param.x;
     param.output->ShareDataWith(*x);
-    param.output->Resize(param.output->dims());
+    param.output->Resize(x->dims());
   } else {
     int r = xdnn::scale(ctx.GetRawContext(),
                         param.x->data<float>(),                          /* x */
