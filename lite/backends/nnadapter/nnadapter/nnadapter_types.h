@@ -25,7 +25,10 @@ typedef enum {
   NNADAPTER_NO_ERROR = 0,
   NNADAPTER_OUT_OF_MEMORY = 1,
   NNADAPTER_INVALID_OBJECT = 2,
-  NNADAPTER_
+  NNADAPTER_RESOURCE_NOT_FOUND = 3,
+  NNADAPTER_SYMBOL_NOT_FOUND = 4,
+  NNADAPTER_OUT_OF_BOUNDS = 5,
+  NNADAPTER_NOT_INITIALIZED = 6,
 } NNAdapterResultCode;
 
 enum { NNADAPTER_MAX_SIZE_OF_DIMENSIONS = 8 };
@@ -104,6 +107,8 @@ typedef enum {
   NNADAPTER_ACCELERATOR = 2,
 } NNAdapterDeviceCode;
 
+typedef int32_t NNAdapterDeviceType;
+
 /**
  * The quantization parameters for NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER
  * operand.
@@ -176,65 +181,3 @@ typedef struct NNAdapterOperand NNAdapterOperand;
 typedef struct NNAdapterOperation NNAdapterOperation;
 typedef struct NNAdapterModel NNAdapterModel;
 typedef struct NNAdapterExecution NNAdapterExecution;
-
-int NNAdapterAcquireDevice(uint32_t* devIndexOrNum, NNAdapterDevice** device);
-void NNAdapterReleaseDevice(NNAdapterDevice* device);
-int NNAdapterDeviceGetName(const NNAdapterDevice* device, const char** name);
-int NNAdapterDeviceGetType(const NNAdapterDevice* device, int32_t* type);
-int NNAdapterDeviceGetAPIVersion(const NNAdapterDevice* device,
-                                 const char** version);
-int NNAdapterDeviceGetDriverVersion(const NNAdapterDevice* device,
-                                    const char** version);
-
-int NNAdapterCreateNetwork(NNAdapterNetwork** network);
-void NNAdapterDestroyNetwork(NNAdapterNetwork* network);
-int NNAdapterNetworkAddOperand(NNAdapterNetwork* network,
-                               const NNAdapterOperandType* type,
-                               NNAdapterOperand** operand);
-int NNAdapterNetworkSetOperand(NNAdapterOperand* operand,
-                               const void* buffer,
-                               size_t length);
-int NNAdapterNetworkAddOperation(NNAdapterNetwork* network,
-                                 NNAdapterOperationType type,
-                                 NNAdapterOperation** operation);
-int NNAdapterNetworkSetOperation(NNAdapterOperation* operation,
-                                 uint32_t inputCount,
-                                 const NNAdapterOperand* inputs,
-                                 uint32_t outputCount,
-                                 const NNAdapterOperand* outputs);
-int NNAdapterNetworkIdentifyInputsAndOutputs(NNAdapterNetwork* network,
-                                             uint32_t inputCount,
-                                             const NNAdapterOperand* inputs,
-                                             uint32_t outputCount,
-                                             const NNAdapterOperand* outputs);
-
-int NNAapdterCreateModelFromCache(void* buffer,
-                                  const size_t size,
-                                  NNAdapterModel** model);
-int NNAapdterCreateModelFromNetwork(NNAdapterNetwork* network,
-                                    const NNAdapterDevice* const* devices,
-                                    uint32_t numDevices,
-                                    NNAdapterModel** model);
-void NNAapdterDestroyModel(NNAdapterModel* model);
-int NNAapdterModelSetCacheMode(NNAdapterModel* model,
-                               const char* cacheDir,
-                               const uint8_t* token);
-int NNAdapterModelGetCacheSize(NNAdapterModel* model, size_t* size);
-int NNAdapterModelGetCacheBuffer(NNAdapterModel* model,
-                                 void* buffer,
-                                 const size_t size);
-
-int NNAdapterCreateExecution(NNAdapterModel* model,
-                             NNAdapterExecution** execution);
-void NNAdapterDestroyExecution(NNAdapterExecution* execution);
-int NNAdapterExecutionSetInput(NNAdapterExecution* execution,
-                               int32_t index,
-                               const NNAdapterOperandType* type,
-                               const void* buffer,
-                               size_t length);
-int NNAdapterExecutionSetOutput(NNAdapterExecution* execution,
-                                int32_t index,
-                                const NNAdapterOperandType* type,
-                                void* buffer,
-                                size_t length);
-int NNAdapterExecutionStartCompute(NNAdapterExecution* execution);

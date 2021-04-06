@@ -2,6 +2,6 @@ if(NOT LITE_WITH_NNADAPTER)
   return()
 endif()
 
-add_subdirectory(drivers)
+add_subdirectory(nnadapter)
 
-lite_cc_library(nnadapter SRCS nnadapter_api.cc nnadapter_runtime.cc DEPS ${nnadapter_drivers})
+lite_cc_library(nnadapter_wrapper SRCS nnadapter_wrapper.cc DEPS logging)

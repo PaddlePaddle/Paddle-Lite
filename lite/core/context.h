@@ -635,6 +635,13 @@ class ContextScheduler {
         LOG(INFO) << "New Context for MLU";
       } break;
 #endif
+#ifdef LITE_WITH_NNADAPTER
+      case TARGET(kNNAdapter):
+        kernel_contexts_[TargetType::kNNAdapter]
+            .As<NNAdapterContext>()
+            .CopySharedTo(&ctx->As<NNAdapterContext>());
+        break;
+#endif
       default:
 #if (!defined LITE_ON_MODEL_OPTIMIZE_TOOL) && (!defined LITE_WITH_PYTHON)
         LOG(FATAL) << "unsupported target " << TargetToStr(target);

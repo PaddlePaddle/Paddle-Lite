@@ -188,7 +188,7 @@ add_definitions("-DLITE_WITH_HUAWEI_ASCEND_NPU")
 endif()
 
 if (LITE_WITH_NNADAPTER)
-  add_definitions("-DLITE_WITH_NNADAPTER")
+  add_definitions(-DLITE_WITH_NNADAPTER)
 endif()
 
 if (LITE_WITH_PROFILE)

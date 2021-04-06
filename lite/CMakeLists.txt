@@ -543,3 +543,22 @@ if (LITE_WITH_MLU)
     add_dependencies(publish_inference_mlu_cxx_demos paddle_full_api_shared)
     add_dependencies(publish_inference publish_inference_mlu_cxx_demos)
 endif()
+
+if(LITE_WITH_NNADAPTER)
+  # Build the NNAdapter library and copy it to the publish directory
+  add_custom_target(publish_inference_nnadapter_library
+      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/libnnadapter.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      DEPENDS nnadapter
+      )
+  add_dependencies(publish_inference publish_inference_nnadapter_library)
+  # Build the NNAdapter drivers for all of the target devices and copy it to the publish directory
+  foreach(nnadapter_driver ${nnadapter_drivers})
+    add_custom_target(publish_inference_nnadapter_driver_${nnadapter_driver}
+      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/drivers/*/lib${nnadapter_driver}.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      DEPENDS ${nnadapter_driver}
+      )
+    add_dependencies(publish_inference publish_inference_nnadapter_driver_${nnadapter_driver})
+  endforeach()
+endif()

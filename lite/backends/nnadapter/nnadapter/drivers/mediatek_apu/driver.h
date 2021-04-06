@@ -12,10 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nnadapter_hal.h"  // NOLINT
+#pragma once
 
-int onBuildModel(NNAdapterNetwork* network, void* model) {
-  return NNADAPTER_NO_ERROR;
-}
+#include "../../nnadapter_driver.h"  // NOLINT
 
-int onExcuteModel(void* model) { return NNADAPTER_NO_ERROR; }
+namespace nnadapter {
+namespace driver {
+namespace mediatek_apu {
+
+class Context {
+ public:
+  explicit Context(void* raw_ctx) : raw_ctx_(raw_ctx) {}
+  ~Context() {}
+
+ private:
+  void* raw_ctx_{nullptr};
+};
+
+}  // namespace mediatek_apu
+}  // namespace driver
+}  // namespace nnadapter

@@ -12,4 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "nnadapter_runtime.h"  // NOLINT
+#include "nnadapter_driver.h"  // NOLINT
+
+namespace nnadapter {
+namespace driver {
+
+int VerifyNetwork(Network* network) { return NNADAPTER_NO_ERROR; }
+
+}  // namespace driver
+}  // namespace nnadapter

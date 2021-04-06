@@ -3,7 +3,7 @@ if(NOT LITE_WITH_NNADAPTER)
 endif()
 
 lite_cc_library(subgraph_bridge_utility_nnadapter SRCS utility.cc DEPS tensor)
-lite_cc_library(subgraph_bridge_graph_nnadapter SRCS graph.cc DEPS nnadapter subgraph_bridge_utility_nnadapter)
+lite_cc_library(subgraph_bridge_graph_nnadapter SRCS graph.cc DEPS nnadapter_wrapper subgraph_bridge_utility_nnadapter)
 
 set(nnadapter_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_nnadapter subgraph_bridge_graph_nnadapter)
 

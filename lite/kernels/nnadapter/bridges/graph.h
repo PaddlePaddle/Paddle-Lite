@@ -19,7 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/backends/nnadapter/nnadapter_api.h"
+#include "lite/backends/nnadapter/nnadapter_wrapper.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
 
@@ -32,8 +32,31 @@ class Node {};
 
 class Graph {
  public:
-  Graph() {}
-  ~Graph() {}
+  explicit Graph(const std::vector<std::string>& device_names) {
+    for (auto& device_name : device_names) {
+      NNAdapterDevice* device = nullptr;
+      int result = NNAdapter::Global().NNAdapterDevice_acquire(
+          device_name.c_str(), &device);
+      if (device != nullptr) {
+        const char* name = nullptr;
+        result |= NNAdapter::Global().NNAdapterDevice_getName(device, &name);
+        const char* vendor = nullptr;
+        result |=
+            NNAdapter::Global().NNAdapterDevice_getVendor(device, &vendor);
+        NNAdapterDeviceType type = 0;
+        result |= NNAdapter::Global().NNAdapterDevice_getType(device, &type);
+        int32_t version = 0;
+        result |=
+            NNAdapter::Global().NNAdapterDevice_getVersion(device, &version);
+        LOG(INFO) << "[NNAdapter] " << device_name << " result=" << result
+                  << ", name=" << name << " vendor=" << vendor
+                  << " type=" << type << " version=" << version;
+        devices_.push_back(device);
+      }
+    }
+    NNAdapter::Global().NNAdapterNetwork_create(&network_);
+  }
+  ~Graph() { NNAdapter::Global().NNAdapterNetwork_free(network_); }
 
  public:
   std::shared_ptr<Node> Get(std::string name) {
@@ -47,6 +70,8 @@ class Graph {
 
  private:
   std::map<std::string, std::vector<std::shared_ptr<Node>>> nodes_;
+  NNAdapterNetwork* network_{nullptr};
+  std::vector<NNAdapterDevice*> devices_;
 };
 
 }  // namespace nnadapter

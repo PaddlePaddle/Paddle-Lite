@@ -14,25 +14,21 @@
 
 #pragma once
 
-#include "nnadapter_hal.h"  // NOLINT
+#include "../../nnadapter_driver.h"  // NOLINT
 
-class NNAdapterNetworkBuilder {
+namespace nnadapter {
+namespace driver {
+namespace huawei_kirin_npu {
+
+class Context {
  public:
-  NNAdapterNetworkBuilder() {}
+  explicit Context(void* raw_ctx) : raw_ctx_(raw_ctx) {}
+  ~Context() {}
 
  private:
+  void* raw_ctx_{nullptr};
 };
 
-class NNAdapterModelBuilder {
- public:
-  NNAdapterModelBuilder() {}
-
- private:
-};
-
-class NNAdapterExecutionBuilder {
- public:
-  NNAdapterExecutionBuilder() {}
-
- private:
-};
+}  // namespace huawei_kirin_npu
+}  // namespace driver
+}  // namespace nnadapter

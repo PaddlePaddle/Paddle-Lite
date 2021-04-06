@@ -181,8 +181,12 @@ bool DeviceProgram::BuildGraphAndCacheToFile(
   // Convert all of Paddle operators and variables to the IR nodes, and add
   // them into the IR graph
   int status = 0;
-  // subgraph::rknpu::Graph graph(graph_.get());
-  int graph = 0;
+  std::vector<std::string> device_names;
+  device_names.push_back("huawei_kirin_npu");
+  device_names.push_back("mediatek_apu");
+  device_names.push_back("rockchip_npu");
+  device_names.push_back("imagination_nna");
+  subgraph::nnadapter::Graph graph(device_names);
   const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
   CHECK(origin_program) << "[NNAdapter] The origin program is not initialized!";
   CHECK_GT(origin_program->instructions(kRootBlockIdx).size(), 0)
