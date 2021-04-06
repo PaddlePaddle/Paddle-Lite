@@ -164,6 +164,17 @@ TEST(MobileNetV1, test_arm) {
   TestModel(valid_places);
 }
 
+#ifdef ENABLE_ARM_FP16
+TEST(MobileNetV1, test_arm_fp16) {
+  std::vector<Place> valid_places({
+      Place{TARGET(kARM), PRECISION(kFP16)},
+      Place{TARGET(kARM), PRECISION(kFloat)},
+  });
+
+  TestModel(valid_places);
+}
+#endif
+
 #ifdef LITE_WITH_OPENCL
 TEST(MobileNetV1, test_opencl) {
   std::vector<Place> valid_places({
