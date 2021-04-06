@@ -117,7 +117,6 @@ class Optimizer {
          "lite_conv_scale_fuse_pass",
          "identity_dropout_eliminate_pass",
          "__xpu__resnet_fuse_pass",
-         "__xpu__resnet_d_fuse_pass",
          "__xpu__resnet_cbam_fuse_pass",
          "__xpu__conv2d_fuse_pass",
          "__xpu__squeeze_excitation_fuse_pass",
