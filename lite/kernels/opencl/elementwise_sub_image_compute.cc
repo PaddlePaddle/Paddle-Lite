@@ -82,10 +82,10 @@ void ElementwiseSubImageCompute::Run() {
       default_convertor.InitImageDimInfoWith(out->dims());  // w, h
   auto y_img_shape = default_convertor.InitImageDimInfoWith(y->dims());
 
-  auto* x_img = x->data<half_t, cl::Image2D>();
-  auto* y_img = y->data<half_t, cl::Image2D>();
-  auto* out_img = out->mutable_data<half_t, cl::Image2D>(out_img_shape[0],
-                                                         out_img_shape[1]);
+  auto* x_img = GET_DATA_GPU(x);
+  auto* y_img = GET_DATA_GPU(y);
+  auto* out_img =
+      MUTABLE_DATA_GPU(out, out_img_shape[0], out_img_shape[1], nullptr);
 
 #ifdef LITE_WITH_LOG
   VLOG(4) << "x_img_shape[w,h]:" << x_img_width << " " << x_img_height;

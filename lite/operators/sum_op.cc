@@ -29,12 +29,14 @@ bool SumOpLite::CheckShape() const {
 bool SumOpLite::InferShapeImpl() const {
   if (!param_.inplace) {
     param_.Out->Resize(param_.X[0]->dims());
+    param_.Out->set_lod(param_.X[0]->lod());
   }
   return true;
 }
 
 bool SumOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto X_names = opdesc.Input("X");
+  param_.X.clear();
   for (auto input_name : X_names) {
     auto input_var = scope->FindVar(input_name);
     CHECK(input_var);

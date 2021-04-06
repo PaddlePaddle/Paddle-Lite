@@ -27,7 +27,7 @@ lite_cc_library(mir_passes
       fusion/quant_dequant_fuse_pass.cc
       fusion/sequence_pool_concat_fuse_pass.cc
       fusion/scale_activation_fuse_pass.cc
-      fusion/reshape_fuse_pass.cc
+      fusion/inplace_fuse_pass.cc
       fusion/__xpu__resblock_reduction_fuse_pass.cc
       fusion/__xpu__resblock_normal_fuse_pass.cc
       fusion/__xpu__resnet_fuse_pass.cc
@@ -41,17 +41,21 @@ lite_cc_library(mir_passes
       fusion/__xpu__fc_fuse_pass.cc
       fusion/__xpu__mmdnn_fuse_pass.cc
       fusion/__xpu__conv2d_fuse_pass.cc
-      fusion/__xpu__conv2d_link_previous_out_max_pass.cc
+      fusion/__xpu__link_previous_out_max_pass.cc
       fusion/__xpu__sfa_head_meanstd_fuse_pass.cc
       fusion/__xpu__sfa_head_moment_fuse_pass.cc
       fusion/__xpu__softmax_topk_fuse_pass.cc
       fusion/__xpu__multi_encoder_slice_link_fuse_pass.cc
+      fusion/__xpu__multi_encoder_adaptive_seqlen_fuse_pass.cc
       fusion/__xpu__generate_sequence_fuse_pass.cc
+      fusion/__xpu__logit_fuse_pass.cc
+      fusion/__xpu__squeeze_excitation_fuse_pass.cc
       fusion/match_matrix_activation_fuse_pass.cc
       fusion/scales_fuse_pass.cc
       fusion/sequence_reverse_embedding_fuse_pass.cc
       fusion/instance_norm_activation_fuse_pass.cc
       fusion/elementwise_add_scale_fuse_pass.cc
+      fusion/fc_prelu_fuse_pass.cc
       elimination/identity_scale_eliminate_pass.cc
       elimination/identity_dropout_eliminate_pass.cc
       elimination/elementwise_mul_constant_eliminate_pass.cc
@@ -59,6 +63,7 @@ lite_cc_library(mir_passes
       elimination/remove_scale1_pass.cc
       adaptive_1x1_pool2d_convert_global_pass.cc
       elimination/control_flow_op_unused_inputs_and_outputs_eliminate_pass.cc
+      control_flow_op_shared_inputs_and_outputs_place_sync_pass.cc
       static_kernel_pick_pass.cc
       variable_place_inference_pass.cc
       fpga_kernel_place_correct_pass.cc
@@ -78,6 +83,7 @@ lite_cc_library(mir_passes
       quantized_op_attributes_inference_pass.cc
       restrict_quantized_op_with_same_input_output_scale_pass.cc
       post_quant_dynamic_pass.cc
+      fp16_attribute_pass.cc
   DEPS mir_pass types context ${mir_fusers} ${mir_subgraphs})
 
 # lite_cc_test(test_ssa_graph SRCS ssa_graph_test.cc DEPS

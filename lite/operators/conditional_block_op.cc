@@ -33,17 +33,22 @@ bool ConditionalBlockOp::AttachImpl(const cpp::OpDesc& op_desc, Scope* scope) {
   auto condition = op_desc.Input("Cond").front();
   param_.cond = scope->FindVar(condition)->GetMutable<lite::Tensor>();
   auto inputs = op_desc.Input("Input");
+  param_.inputs.clear();
+
   for (const auto& input : inputs) {
     auto* var = scope->FindVar(input);
     CHECK(var);
-    param_.inputs.push_back(var->GetMutable<lite::Tensor>());
+    if (var->IsType<lite::Tensor>()) {
+      auto* tensor = var->GetMutable<lite::Tensor>();
+      param_.inputs.push_back(tensor);
+    } else if (var->IsType<std::vector<lite::Tensor>>()) {
+      auto* tensors = var->GetMutable<std::vector<lite::Tensor>>();
+      for (auto& tensor : *tensors) {
+        param_.inputs.push_back(&tensor);
+      }
+    }
   }
-  auto outs = op_desc.Output("Out");
-  for (const auto& out : outs) {
-    auto* var = scope->FindVar(out);
-    CHECK(var);
-    param_.outs.push_back(var->GetMutable<lite::Tensor>());
-  }
+
   param_.is_scalar_condition = op_desc.GetAttr<bool>("is_scalar_condition");
   // obtain sub_block in core program.cc
   CHECK(param_.program_desc);

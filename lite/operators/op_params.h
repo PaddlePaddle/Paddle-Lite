@@ -69,8 +69,10 @@ struct FetchParam : ParamBase {
 
 // Helper op for lite framework
 struct IoCopyParam : ParamBase {
-  const lite::Tensor* x{};
-  lite::Tensor* y{};
+  const lite::Tensor* x{nullptr};
+  const std::vector<lite::Tensor>* x_array{nullptr};
+  lite::Tensor* y{nullptr};
+  std::vector<lite::Tensor>* y_array{nullptr};
   int process_type{0};
 };
 
@@ -117,6 +119,7 @@ struct FcParam : ParamBase {
   lite::Tensor* input{nullptr};
   lite::Tensor* w{nullptr};
   lite::Tensor* bias{nullptr};
+  lite::Tensor* Prelu_alpha{nullptr};
   lite::Tensor* output{nullptr};
   lite::DDim in_mat_dims;
   // original dims of input weight
@@ -124,6 +127,8 @@ struct FcParam : ParamBase {
   int in_num_col_dims{1};
   std::string activation_type{""};
   bool padding_weights{false};
+  std::string Prelu_mode{
+      "channel"};  // prelu param, can be "all", "channel" or "element"
   // for int8
   WITH_INT8_CONFIG
   ///////////////////////////////////////////////////////////////////////////////////
@@ -409,6 +414,8 @@ struct ActivationParam : ParamBase {
   float Elu_alpha{1.0f};
   // relu6
   float threshold{6.0f};
+  // gelu
+  bool gelu_approximate{false};
 
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
@@ -591,9 +598,9 @@ struct PadConstantLikeParam : ParamBase {
 
 // For Split op
 struct SplitParam : ParamBase {
-  lite::Tensor* x{};
+  const lite::Tensor* x{nullptr};
   std::vector<lite::Tensor*> output{};
-  lite::Tensor* axis_tensor{};
+  const lite::Tensor* axis_tensor{nullptr};
   std::vector<lite::Tensor*> sections_tensor_list{};
 
   int axis{-1};
@@ -662,6 +669,14 @@ struct TransposeParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+};
+
+struct TrilTriuParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  lite::Tensor* out{nullptr};
+
+  int diagonal{0};
+  bool lower{true};
 };
 
 /// ----------------------- element wise operators ----------------------
@@ -978,6 +993,7 @@ struct MatrixNmsParam : ParamBase {
   const lite::Tensor* scores{};
   lite::Tensor* out{};
   lite::Tensor* index{};
+  lite::Tensor* rois_num{};
   int background_label{0};
   float score_threshold{};
   float post_threshold{0.0f};
@@ -1153,9 +1169,12 @@ struct WhileParam : ParamBase {
 
 struct TopkParam : ParamBase {
   const lite::Tensor* X{};
+  const lite::Tensor* KTensor{};
   lite::Tensor* Out{};
   lite::Tensor* Indices{};
+  bool k_is_tensor{false};
   int K{1};
+  int axis{-1};
 };
 
 struct IncrementParam : ParamBase {
@@ -1284,6 +1303,11 @@ struct SequenceReverseParam : ParamBase {
 struct SequenceConcatParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
+};
+
+struct MeshgridParam : ParamBase {
+  std::vector<lite::Tensor*> X{};
+  std::vector<lite::Tensor*> Out{};
 };
 
 struct AttentionPaddingMaskParam : ParamBase {
@@ -1466,7 +1490,7 @@ struct SqueezeParam : ParamBase {
   lite::Tensor* Out{};
   lite::Tensor* XShape{};
   std::vector<int> axes{};
-  bool inplace{true};
+  bool inplace{false};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1491,7 +1515,7 @@ struct UnsqueezeParam : ParamBase {
   std::vector<int> axes{};
   const lite::Tensor* axes_tensor{};
   std::vector<const lite::Tensor*> axes_tensor_vct{};
-  bool inplace{true};
+  bool inplace{false};
   ///////////////////////////////////////////////////////////////////////////////////
   // get a vector of input tensors
   const std::vector<const Tensor*>* input_tensor_ptrs() override {
@@ -1513,7 +1537,7 @@ struct UnsqueezeParam : ParamBase {
 struct ExpandParam : ParamBase {
   const lite::Tensor* X{nullptr};
   const lite::Tensor* ExpandTimes{nullptr};
-  const std::vector<lite::Tensor>* expand_times_tensor{nullptr};
+  std::vector<lite::Tensor*> expand_times_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> expand_times{};
 };
@@ -1522,7 +1546,7 @@ struct ExpandParam : ParamBase {
 struct ExpandV2Param : ParamBase {
   const lite::Tensor* X{nullptr};
   const lite::Tensor* Shape{nullptr};
-  const std::vector<lite::Tensor>* expand_shapes_tensor{nullptr};
+  std::vector<lite::Tensor*> expand_shapes_tensor{};
   lite::Tensor* Out{nullptr};
   std::vector<int> shape{};
 };
@@ -1557,6 +1581,12 @@ struct MatMulParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+};
+
+struct GatherNdParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* index{nullptr};
+  lite::Tensor* out{nullptr};
 };
 
 struct GatherParam : ParamBase {
@@ -1769,6 +1799,7 @@ struct GroupNormParam : ParamBase {
   lite::Tensor* scale{};
   lite::Tensor* saved_mean{};
   lite::Tensor* saved_variance{};
+  std::string data_layout_str{"NCHW"};
   float epsilon;
   int groups;
   int channels;
@@ -1836,26 +1867,30 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int axis{-1};
   int K{1};
 };
+
 struct XPUBlockFuseParam : ParamBase {
-  const lite::Tensor* input{};
-  const lite::Tensor* filter;
-  const lite::Tensor* max_filter;
-  const lite::Tensor* bias;
-  const lite::Tensor* input_max{};
-  lite::Tensor* output{};
-  lite::Tensor* output_max{};
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* filter{nullptr};
+  const lite::Tensor* bias{nullptr};
+  const lite::Tensor* branch{nullptr};
+  const lite::Tensor* input_max{nullptr};
+  lite::Tensor* output{nullptr};
+  lite::Tensor* output_max{nullptr};
   std::vector<int> op_type;
   std::vector<int> place_x;
   std::vector<int> place_y;
   std::vector<int> place_z;
   std::vector<int> filter_dims;
   std::vector<int> strides;
-  std::vector<int> paddings;
-  std::vector<int> dilations;
+  std::shared_ptr<std::vector<int>> paddings;
+  std::shared_ptr<std::vector<int>> dilations;
   std::vector<int> groups;
   std::vector<int> act_type;
   std::vector<float> act_param;
+  std::vector<int> conv_bias;
   std::vector<int> block_lod;
+  bool has_bias{false};
+  bool has_branch{false};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -1865,8 +1900,9 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
   lite::Tensor* fc_weight_max{};
-  lite::Tensor* mask{};
-  lite::Tensor* output{};
+  const lite::Tensor* mask{nullptr};
+  const lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* output{nullptr};
 
   std::vector<int> slice_axes{};
   std::vector<int> slice_starts{};
@@ -1877,12 +1913,16 @@ struct XPUMultiEncoderParam : ParamBase {
   std::string act_type{};
   std::string precision{};
   bool enable_qkv_fusion{false};
+  bool norm_before{false};
+  bool adaptive_seqlen{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;
   std::vector<lite::Tensor*> Tables;
-  lite::Tensor* Out{};
+  const lite::Tensor* Mask{nullptr};
+  lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
 };
 
@@ -2026,26 +2066,6 @@ struct XPUMmdnnMergeAllParam : ParamBase {
   lite::Tensor* out{};
 };
 
-struct XPUConv2dParam : ParamBase {
-  lite::Tensor* Input{nullptr};
-  lite::Tensor* Filter{nullptr};
-  lite::Tensor* FilterMax{nullptr};
-  lite::Tensor* Output{nullptr};
-  lite::Tensor* OutputMax{nullptr};
-  lite::Tensor* InputMax{nullptr};
-  lite::Tensor* Bias{nullptr};
-  lite::Tensor* Branch{nullptr};
-
-  int act_type{0};
-  float act_param{0.0f};
-  std::vector<int> filter_dims;
-  std::vector<int> strides;
-  std::shared_ptr<std::vector<int>> paddings;
-  std::shared_ptr<std::vector<int>> dilations;
-  int groups{1};
-  bool has_branch{false};
-};
-
 struct XPUSfaHeadParam : ParamBase {
   lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
@@ -2061,6 +2081,12 @@ struct XPUGenerateSequenceParam : ParamBase {
   bool flatten{false};
   float value{0};
   int dtype{-1};
+};
+
+struct XPULogitParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+  float eps{1e-7};
 };
 
 // For DeformableConvolution op
@@ -2118,6 +2144,13 @@ struct RetinanetDetectionOutputParam : ParamBase {
 struct WhereIndexParam : ParamBase {
   const lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
+};
+
+struct WhereParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  const lite::Tensor* condition{nullptr};
+  lite::Tensor* out{nullptr};
 };
 
 struct ClipParam : ParamBase {
@@ -2193,7 +2226,7 @@ struct RnnParam : ParamBase {
   lite::Tensor* Input;
   std::vector<lite::Tensor*> PreState;
   std::vector<lite::Tensor*> WeightList;
-  lite::Tensor* SequenceLength;
+  const lite::Tensor* SequenceLength{nullptr};
   lite::Tensor* DropoutState;
   lite::Tensor* Reserve;
   lite::Tensor* Out;
@@ -2226,6 +2259,14 @@ struct StridedSliceParam : ParamBase {
   lite::Tensor* StridesTensor{nullptr};
 };
 
+struct TileParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> repeat_times{};
+  lite::Tensor* RepeatTimes{};
+  std::vector<lite::Tensor*> repeat_times_tensor{};
+};
+
 struct ScatterNdAddParam : ParamBase {
   const lite::Tensor* x{};
   lite::Tensor* indexs{};
@@ -2243,10 +2284,56 @@ struct CumsumParam : ParamBase {
   bool reverse{false};
 };
 
+struct PolygonBoxTransformParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+};
+
 struct SumParam : ParamBase {
   std::vector<lite::Tensor*> X{};
   lite::Tensor* Out{};
   int inplace{0};
+};
+
+struct PNormParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+
+  float porder{2.f};
+  int axis{-1};
+  float epsilon{1.0e-12f};
+  bool keepdim{false};
+  bool asvector{false};
+};
+
+struct LinspaceParam : ParamBase {
+  const lite::Tensor* Start{};
+  const lite::Tensor* Stop{};
+  const lite::Tensor* Num{};
+  lite::Tensor* Out{};
+  int dtype{};
+};
+
+struct RoiPerspectiveTransformParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* rois{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* mask{nullptr};
+  lite::Tensor* transfor_matrix{nullptr};
+  lite::Tensor* out2in_idx{nullptr};
+  lite::Tensor* out2in_weight{nullptr};
+  float spatial_scale{1.f};
+  int transformed_height{1};
+  int transformed_width{1};
+};
+
+struct ArgsortParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Indices{};
+
+  int axis{-1};
+  bool descending{false};
 };
 
 }  // namespace operators

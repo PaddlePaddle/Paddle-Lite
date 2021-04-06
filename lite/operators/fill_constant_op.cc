@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/fill_constant_op.h"
+
 #include "lite/core/op_registry.h"
 
 namespace paddle {

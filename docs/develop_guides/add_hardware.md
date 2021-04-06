@@ -32,7 +32,7 @@
 
   该步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir)
   
-  - Pass的注册方法、管理机制可以参考文档[新增Pass](./add_new_pass)；[Pass列表]((https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer.h#L87))是指按照规定的顺序处理的Pass的集合，它使用std::vector<<std::string>>存储，每个元素代表已注册到框架的Pass的名称，如果需要在Pass列表中新增一个Pass，只需在合适的位置增加一个字符串即可，例如，为了可视化conv_bn_fuse_pass优化后的计算图，可以在它后面增加一个名为[graph_visualize_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/mir/graph_visualize_pass.cc)的特殊Pass，用于在log中生成以DOT文本的表示计算图结构。
+  - Pass的注册方法、管理机制可以参考文档[新增Pass](./add_new_pass)；[Pass列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer.h#L87)是指按照规定的顺序处理的Pass的集合，它使用std::vector<<std::string>>存储，每个元素代表已注册到框架的Pass的名称，如果需要在Pass列表中新增一个Pass，只需在合适的位置增加一个字符串即可，例如，为了可视化conv_bn_fuse_pass优化后的计算图，可以在它后面增加一个名为[graph_visualize_pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/mir/graph_visualize_pass.cc)的特殊Pass，用于在log中生成以DOT文本的表示计算图结构。
 
     ```cpp
     diff --git a/lite/core/optimizer.h b/lite/core/optimizer.h
@@ -85,8 +85,8 @@
   - Graph生成Model的接口；
   - 设置Model的输入、输出张量和Model执行的运行时接口；
   - 输入、输出张量的内存管理接口。
-
-  具体可参考华为[HiAI DDK v310](https://obs.cn-north-2.myhwclouds.com/hms-ds-wf/sdk/hwhiai-ddk-100.310.011.010.zip)、瑞芯微[rknpu_ddk](https://github.com/airockchip/rknpu_ddk.git)和[MTK Neuron Adapter](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz)（类似Android NNAPI）进行接口设计。
+  
+  具体可参考华为[HiAI DDK v330](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/hiai_ddk_lib_330.tar.gz)、瑞芯微[rknpu_ddk](https://github.com/airockchip/rknpu_ddk.git)和[MTK Neuron Adapter](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz)（类似Android NNAPI）进行接口设计。
 
 - **什么是子图？** 将计算图依据某种规则分割为多个部分，每个部分都被称为一个子图，它包含一个或多个算子和变量，规则一般依据硬件支持能力而定。
 

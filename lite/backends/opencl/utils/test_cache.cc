@@ -35,6 +35,19 @@ TEST(OpenCLCache, cache) {
       << "Cache read and write are not equivalent, the test failed.";
 }
 
+TEST(OpenCLTunedCache, tuned_cache) {
+  const std::map<std::string, std::vector<int>> map{
+      {"a", {1, 1, 1}}, {"b", {1, 1, 2}},
+  };
+  TuneCache cache_0{map};
+  std::vector<int> buffer;
+  cache_0.CopyDataToBuffer(&buffer);
+
+  TuneCache cache_1{buffer};
+  CHECK(map == cache_1.GetBinaryMap())
+      << "Cache read and write are not equivalent, the test failed.";
+}
+
 }  // namespace opencl
 }  // namespace fbs
 }  // namespace lite

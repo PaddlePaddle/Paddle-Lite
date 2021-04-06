@@ -54,7 +54,8 @@ void fc_gemm_naive(__global const CL_DTYPE* a,
   }
 
 #ifdef RELU
-  c[row * N + col] = activation(c0);
+  CL_DTYPE alpha;
+  c[row * N + col] = activation(c0, alpha);
 #else
   c[row * N + col] = c0;
 #endif
@@ -91,7 +92,8 @@ void gemm_batch_naive(__global const CL_DTYPE* a,
     c0 += a0 * b0;
   }
 
-  cur_c[row * N + col] = activation(c0);
+  CL_DTYPE alpha;
+  cur_c[row * N + col] = activation(c0, alpha);
 }
 
 
@@ -235,7 +237,8 @@ void fc_gemv_naive(__global const CL_DTYPE* a,
     }
 
 #ifdef RELU
-  c[col] = activation(c0);
+  CL_DTYPE alpha;
+  c[col] = activation(c0, alpha);
 #else
   c[col] = c0;
 #endif
@@ -247,11 +250,12 @@ void fc_gemv_naive(__global const CL_DTYPE* a,
 // b: param.w      {K, N}
 // c: param.output {M, N}
 __kernel
-void fc_gemv_1x4(__global const CL_DTYPE* a,
-                 __global const CL_DTYPE* b,
-                 __global const CL_DTYPE* bias,
-                 __global CL_DTYPE* c,
-                 const int M, const int N, const int K) {
+void fc_gemv_1x4(__global const float* a,
+                 __global const float* b,
+                 __global const float* bias,
+                 __global float* c,
+                 const int M, const int N, const int K,
+                 __global const float* alpha) {
     const int col = get_global_id(0) << 2; // gws[0]: [0, N >> 2) height of B == N
 
     if (col + 3 < N) {
@@ -302,35 +306,31 @@ void fc_gemv_1x4(__global const CL_DTYPE* a,
         c0 += a0.y * b1;
         c0 += a0.z * b2;
 
-        // store res
-#ifdef RELU
+        half4 alpha0 = 0.0f;
+#ifdef PRELU_MORE
+        alpha0.x = alpha[col];
+        alpha0.y = alpha[col+1];
+        alpha0.z = alpha[col+2];
+        alpha0.w = alpha[col+3];
+#else
+        alpha0.x = alpha[0];
+        alpha0.y = alpha[0];
+        alpha0.z = alpha[0];
+        alpha0.w = alpha[0];
+#endif
        if (col % 4 == 0) {
-            float4 act_res = convert_float4(fmax(c0, (half4)0.f));
+            float4 act_res = convert_float4(activation_type4(c0, alpha0));
             vstore4(act_res, 0, c + col);
         } else {
             switch (col % 4) {
                 case 3:
-                    c[col + 2] = activation(c0.z);
+                    c[col + 2] = activation(c0.z, alpha0.z);
                 case 2:
-                    c[col + 1] = activation(c0.y);
+                    c[col + 1] = activation(c0.y, alpha0.y);
                 case 1:
-                    c[col] = activation(c0.x);
+                    c[col] = activation(c0.x, alpha0.x);
             }
         }
-#else
-       if (col % 4 == 0) {
-            vstore4(convert_float4(c0), 0, c + col);
-        } else {
-            switch (col % 4) {
-                case 3:
-                    c[col + 2] = c0.z;
-                case 2:
-                    c[col + 1] = c0.y;
-                case 1:
-                    c[col] = c0.x;
-            }
-        }
-#endif
     } else {
        const int left_col = N - col;
        for (int col_offset = 0; col_offset < left_col; ++col_offset) {
@@ -340,11 +340,13 @@ void fc_gemv_1x4(__global const CL_DTYPE* a,
                half a0 = *(a + p);
                c0 += a0 * b0;
            }
-#ifdef RELU
-           c[col + col_offset] = activation(c0);
+           half alpha0 = 0.0f;
+#ifdef PRELU_MORE
+           alpha0 = alpha[col];
 #else
-           c[col + col_offset] = c0;
+           alpha0 = alpha[0];
 #endif
+           c[col + col_offset] = activation(c0, alpha0);
        }
     }
 }
@@ -355,11 +357,12 @@ void fc_gemv_1x4(__global const CL_DTYPE* a,
 // b: param.w      {K, N}
 // c: param.output {M, N}
 __kernel
-void fc_gemm_4x4(__global const CL_DTYPE* a,
-                 __global const CL_DTYPE* b,
-                 __global const CL_DTYPE* bias,
-                 __global CL_DTYPE* c,
-                 const int M, const int N, const int K) {
+void fc_gemm_4x4(__global const float* a,
+                 __global const float* b,
+                 __global const float* bias,
+                 __global float* c,
+                 const int M, const int N, const int K,
+                 __global const float* alpha) {
     const int row = get_global_id(0) << 2; // id: [0, M>>2) height of out == M
     const int col = get_global_id(1) << 2; // id: [0, N>>2) width of out == N
 
@@ -391,17 +394,25 @@ void fc_gemm_4x4(__global const CL_DTYPE* a,
             c20 += a20 * b00; c21 += a20 * b01; c22 += a20 * b02; c23 += a20 * b03;
             c30 += a30 * b00; c31 += a30 * b01; c32 += a30 * b02; c33 += a30 * b03;
         }
-#if defined(RELU)
-        c[row*N+col] = fmax(c00, 0);     c[row*N+(col+1)] = fmax(c01, 0);     c[row*N+(col+2)] = fmax(c02, 0);     c[row*N+(col+3)] = fmax(c03, 0);
-        c[(row+1)*N+col] = fmax(c10, 0); c[(row+1)*N+(col+1)] = fmax(c11, 0); c[(row+1)*N+(col+2)] = fmax(c12, 0); c[(row+1)*N+(col+3)] = fmax(c13, 0);
-        c[(row+2)*N+col] = fmax(c20, 0); c[(row+2)*N+(col+1)] = fmax(c21, 0); c[(row+2)*N+(col+2)] = fmax(c22, 0); c[(row+2)*N+(col+3)] = fmax(c23, 0);
-        c[(row+3)*N+col] = fmax(c30, 0); c[(row+3)*N+(col+1)] = fmax(c31, 0); c[(row+3)*N+(col+2)] = fmax(c32, 0); c[(row+3)*N+(col+3)] = fmax(c33, 0);
+        half alpha0 = 0.0f;
+        half alpha1 = 0.0f;
+        half alpha2 = 0.0f;
+        half alpha3 = 0.0f;
+#ifdef PRELU_MORE
+        alpha0 = alpha[col];
+        alpha1 = alpha[col+1];
+        alpha2 = alpha[col+2];
+        alpha3 = alpha[col+3];
 #else
-        c[row*N+col] = c00;     c[row*N+(col+1)] = c01;     c[row*N+(col+2)] = c02;     c[row*N+(col+3)] = c03;
-        c[(row+1)*N+col] = c10; c[(row+1)*N+(col+1)] = c11; c[(row+1)*N+(col+2)] = c12; c[(row+1)*N+(col+3)] = c13;
-        c[(row+2)*N+col] = c20; c[(row+2)*N+(col+1)] = c21; c[(row+2)*N+(col+2)] = c22; c[(row+2)*N+(col+3)] = c23;
-        c[(row+3)*N+col] = c30; c[(row+3)*N+(col+1)] = c31; c[(row+3)*N+(col+2)] = c32; c[(row+3)*N+(col+3)] = c33;
+        alpha0 = alpha[0];
+        alpha1 = alpha[0];
+        alpha2 = alpha[0];
+        alpha3 = alpha[0];
 #endif
+        c[row*N+col] = activation(c00, alpha0);     c[row*N+(col+1)] = activation(c01, alpha1);     c[row*N+(col+2)] = activation(c02, alpha2);     c[row*N+(col+3)] = activation(c03, alpha3);
+        c[(row+1)*N+col] = activation(c10, alpha0); c[(row+1)*N+(col+1)] = activation(c11, alpha1); c[(row+1)*N+(col+2)] = activation(c12, alpha2); c[(row+1)*N+(col+3)] = activation(c13, alpha3);
+        c[(row+2)*N+col] = activation(c20, alpha0); c[(row+2)*N+(col+1)] = activation(c21, alpha1); c[(row+2)*N+(col+2)] = activation(c22, alpha2); c[(row+2)*N+(col+3)] = activation(c23, alpha3);
+        c[(row+3)*N+col] = activation(c30, alpha0); c[(row+3)*N+(col+1)] = activation(c31, alpha1); c[(row+3)*N+(col+2)] = activation(c32, alpha2); c[(row+3)*N+(col+3)] = activation(c33, alpha3);
     } else {
         for (int cidx = col; cidx < N; ++cidx) {
             for (int ridx = row; ridx < M; ++ridx) {
@@ -413,11 +424,13 @@ void fc_gemm_4x4(__global const CL_DTYPE* a,
                     b0 = *(b + p * N + cidx),
                     c0 += a0 * b0;
                 }
-#if defined(RELU)
-                c[ridx * N + cidx] = fmax(c0, 0);
+                half alpha0 = 0.0f;
+#ifdef PRELU_MORE
+                alpha0 = alpha[cidx];
 #else
-                c[ridx * N + cidx] = c0;
+                alpha0 = alpha[0];
 #endif
+                c[ridx * N + cidx] = activation(c0, alpha0);
             }
         }
     }

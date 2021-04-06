@@ -47,7 +47,7 @@ void BinaryLogicalCompute<Functor>::Run() {
   bool* z = param.Out->template mutable_data<bool>();
   const bool* x = param.X->template data<bool>();
   const bool* y = param.Y->template data<bool>();
-  for (int i = 0; i < count; ++i) {
+  for (size_t i = 0; i < count; ++i) {
     z[i] = Functor()(x[i], y[i]);
   }
 }
@@ -58,7 +58,7 @@ void UnaryLogicalCompute<Functor>::Run() {
   const size_t count = param.X->numel();
   bool* z = param.Out->template mutable_data<bool>();
   const auto x = param.X->template data<bool>();
-  for (int i = 0; i < count; ++i) {
+  for (size_t i = 0; i < count; ++i) {
     z[i] = Functor()(x[i]);
   }
 }

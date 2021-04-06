@@ -16,8 +16,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
 # absolute path of Paddle-Lite.
-#readonly workspace=$PWD/$(dirname $0)/../../
-readonly workspace=/workspace/hzq/releasev28/x2paddle/PR/PR2/Paddle-Lite/
+readonly workspace=$PWD/$(dirname $0)/../../
 # on mac environment, we should expand the maximum file num to compile successfully
 os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then
@@ -56,9 +55,10 @@ function make_fbs {
   git checkout $workspace/third-party/flatbuffers/pre-build/ && rm -rf $workspace/third-party/flatbuffers/pre-build/*
   # update
   cp -rf $workspace/lite/model_parser/flatbuffers/*generated.h $workspace/third-party/flatbuffers/pre-build/
-  cp -f $workspace/lite/backends/opencl/utils/cache_generated.h $workspace/third-party/flatbuffers/pre-build/
+  cp -rf $workspace/lite/backends/opencl/utils/*generated.h $workspace/third-party/flatbuffers/pre-build/
   cp -rf third_party/install/flatbuffers/include/flatbuffers $workspace/third-party/flatbuffers/pre-build/
-#  cd - > /dev/null
+  # return to original path
+  cd -
 }
 
 make_fbs

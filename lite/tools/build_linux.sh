@@ -39,6 +39,9 @@ NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 BAIDU_XPU_SDK_ROOT=""
+# options of compiling intel fpga.
+WITH_INTEL_FPGA=OFF
+INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk" 
 # options of adding training ops
 WITH_TRAIN=OFF
 # num of threads used during compiling..
@@ -52,7 +55,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
 # url that stores third-party zip file to accelerate third-paty lib installation
-readonly THIRDPARTY_TAR=https://paddle-inference-dist.bj.bcebos.com/PaddleLite/third-party-05b862.tar.gz
+readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for linux compiling.
@@ -86,7 +89,9 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
                         -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT
                         -DNNADAPTER_WITH_IMAGINATION_NNA=$NNADAPTER_WITH_IMAGINATION_NNA \
-                        -DNNADAPTER_IMAGINATION_NNA_SDK_ROOT=$NNADAPTER_IMAGINATION_NNA_SDK_ROOT"
+                        -DNNADAPTER_IMAGINATION_NNA_SDK_ROOT=$NNADAPTER_IMAGINATION_NNA_SDK_ROOT \
+                        -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
+                        -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT}"
 
 }
 #####################################################################################################
@@ -134,12 +139,12 @@ function prepare_opencl_source_code {
 # 3.3 prepare third_party libraries for compiling
 # here we store third_party libraries into Paddle-Lite/third-party
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-05b862.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
         rm -rf $workspace/third-party
-        if [ ! -f $workspace/third-party-05b862.tar.gz ]; then
+        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
             wget $THIRDPARTY_TAR
         fi
-        tar xzf third-party-05b862.tar.gz
+        tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
     fi
@@ -371,6 +376,15 @@ function main {
                 ;;
             --baidu_xpu_sdk_root=*)
                 BAIDU_XPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on intel fpga.
+            --with_intel_fpga=*)
+                WITH_INTEL_FPGA="${i#*=}"
+                shift
+                ;;
+            --intel_fpga_sdk_root=*)
+                INTEL_FPGA_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF

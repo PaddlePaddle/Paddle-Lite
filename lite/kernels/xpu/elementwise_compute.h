@@ -21,6 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+template <class T>
 class ElementwiseAddCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:

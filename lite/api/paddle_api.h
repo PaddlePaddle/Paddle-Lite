@@ -142,6 +142,8 @@ class LITE_API ConfigBase {
   PowerMode mode_{LITE_POWER_NO_BIND};
   // gpu opencl
   CLTuneMode opencl_tune_mode_{CL_TUNE_NONE};
+  std::string opencl_bin_path_{""};
+  std::string opencl_bin_name_{""};
   CLPrecisionType opencl_precision_{CL_PRECISION_AUTO};
   // Where to cache the npu/xpu/rknpu/apu offline model to the binary files
   std::string subgraph_model_cache_dir_{""};
@@ -162,9 +164,23 @@ class LITE_API ConfigBase {
   // set Power_mode
   void set_power_mode(PowerMode mode);
   PowerMode power_mode() const { return mode_; }
+  /// \brief Set path and file name of generated OpenCL compiled kernel binary.
+  ///
+  /// If you use GPU of specific soc, using OpenCL binary will speed up the
+  /// initialization.
+  ///
+  /// \param path  Path that OpenCL compiled kernel binay file stores in. Make
+  /// sure the path exist and you have Read&Write permission.
+  /// \param name  File name of OpenCL compiled kernel binay.
+  /// \return void
+  void set_opencl_binary_path_name(const std::string& path,
+                                   const std::string& name);
   // set GPU opencl tune
   void set_opencl_tune(CLTuneMode tune_mode = CL_TUNE_NONE,
+                       const std::string& path = "",
+                       const std::string& name = "",
                        size_t lws_repeats = 4);
+
   // set GPU opencl precision
   void set_opencl_precision(CLPrecisionType p = CL_PRECISION_AUTO);
   // set subgraph_model_dir
@@ -294,12 +310,22 @@ class LITE_API CxxConfig : public ConfigBase {
 
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
+  // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+  void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
+
+  void set_xpu_conv_autotune(bool autotune = true,
+                             const std::string& autotune_file = "");
+
   // XPU only, specify the target device ID for the current thread.
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   void set_xpu_dev_per_thread(int dev_no = 0);
+
+  // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
   void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
+  void set_xpu_multi_encoder_method(const std::string& precision = "int16",
+                                    bool adaptive_seqlen = false);
 
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when

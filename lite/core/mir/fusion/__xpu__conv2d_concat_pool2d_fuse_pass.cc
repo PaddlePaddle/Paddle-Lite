@@ -129,11 +129,6 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
                              ->assert_is_op_input("__xpu__conv2d", "Filter")
                              ->assert_is_persistable_var()
                              ->AsInput();
-    auto* left_weight_max0 =
-        VarNode("left_weight_max0")
-            ->assert_is_op_input("__xpu__conv2d", "FilterMax")
-            ->assert_is_persistable_var()
-            ->AsInput();
     auto* left_bias0 = VarNode("left_bias0")
                            ->assert_is_op_input("__xpu__conv2d", "Bias")
                            ->assert_is_persistable_var()
@@ -141,10 +136,13 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     auto* left_xpu_conv0 =
         OpNode("left_xpu_conv0", "__xpu__conv2d")
             ->assert_op_attr<bool>("has_branch", false)
-            ->assert_op_attr_satisfied<int>(
+            ->assert_op_attr<bool>("has_bias", true)
+            ->assert_op_attr_satisfied<std::vector<int>>(
                 "act_type",
-                [](const int& attr) {
-                  return attr == 1 || attr == 2; /* support relu and sigmoid */
+                [](const std::vector<int>& attr) {
+                  return attr.size() == 1 &&
+                         (attr[0] == 1 ||
+                          attr[0] == 2); /* support relu and sigmoid */
                 })
             ->AsIntermediate();
     auto* left_conv_out0 = VarNode("left_conv_out0")
@@ -156,7 +154,6 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
             ->assert_is_op_output("__xpu__conv2d", "OutputMax")
             ->AsIntermediate();
     PMNode* right_weight0 = nullptr;
-    PMNode* right_weight_max0 = nullptr;
     PMNode* right_bias0 = nullptr;
     PMNode* right_xpu_conv0 = nullptr;
     PMNode* right_conv_out0 = nullptr;
@@ -166,10 +163,6 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
                           ->assert_is_op_input("__xpu__conv2d", "Filter")
                           ->assert_is_persistable_var()
                           ->AsInput();
-      right_weight_max0 = VarNode("right_weight_max0")
-                              ->assert_is_op_input("__xpu__conv2d", "FilterMax")
-                              ->assert_is_persistable_var()
-                              ->AsInput();
       right_bias0 = VarNode("right_bias0")
                         ->assert_is_op_input("__xpu__conv2d", "Bias")
                         ->assert_is_persistable_var()
@@ -177,11 +170,13 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
       right_xpu_conv0 =
           OpNode("right_xpu_conv0", "__xpu__conv2d")
               ->assert_op_attr<bool>("has_branch", false)
-              ->assert_op_attr_satisfied<int>(
+              ->assert_op_attr<bool>("has_bias", true)
+              ->assert_op_attr_satisfied<std::vector<int>>(
                   "act_type",
-                  [](const int& attr) {
-                    return attr == 1 ||
-                           attr == 2; /* support relu and sigmoid */
+                  [](const std::vector<int>& attr) {
+                    return attr.size() == 1 &&
+                           (attr[0] == 1 ||
+                            attr[0] == 2); /* support relu and sigmoid */
                   })
               ->AsIntermediate();
       right_conv_out0 = VarNode("right_conv_out0")
@@ -197,11 +192,6 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
                               ->assert_is_op_input("__xpu__conv2d", "Filter")
                               ->assert_is_persistable_var()
                               ->AsInput();
-    auto* right_weight_max1 =
-        VarNode("right_weight_max1")
-            ->assert_is_op_input("__xpu__conv2d", "FilterMax")
-            ->assert_is_persistable_var()
-            ->AsInput();
     auto* right_bias1 = VarNode("right_bias1")
                             ->assert_is_op_input("__xpu__conv2d", "Bias")
                             ->assert_is_persistable_var()
@@ -209,10 +199,13 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     auto* right_xpu_conv1 =
         OpNode("right_xpu_conv1", "__xpu__conv2d")
             ->assert_op_attr<bool>("has_branch", false)
-            ->assert_op_attr_satisfied<int>(
+            ->assert_op_attr<bool>("has_bias", true)
+            ->assert_op_attr_satisfied<std::vector<int>>(
                 "act_type",
-                [](const int& attr) {
-                  return attr == 1 || attr == 2; /* support relu and sigmoid */
+                [](const std::vector<int>& attr) {
+                  return attr.size() == 1 &&
+                         (attr[0] == 1 ||
+                          attr[0] == 2); /* support relu and sigmoid */
                 })
             ->AsIntermediate();
     auto* right_conv_out1 = VarNode("right_conv_out1")
@@ -261,7 +254,6 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
       *input >> *right_xpu_conv0 >> *right_conv_out0 >> *right_xpu_conv1 >>
           *right_conv_out1 >> *concat;
       *right_weight0 >> *right_xpu_conv0;
-      *right_weight_max0 >> *right_xpu_conv0;
       *right_bias0 >> *right_xpu_conv0;
       *right_xpu_conv0 >> *right_conv_out_max0;
     } else {
@@ -272,12 +264,10 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
       *concat_out >> *pool2d >> *pool2d_out;
     }
     *left_weight0 >> *left_xpu_conv0;
-    *left_weight_max0 >> *left_xpu_conv0;
     *left_bias0 >> *left_xpu_conv0;
     *left_xpu_conv0 >> *left_conv_out_max0;
 
     *right_weight1 >> *right_xpu_conv1;
-    *right_weight_max1 >> *right_xpu_conv1;
     *right_bias1 >> *right_xpu_conv1;
     *right_xpu_conv1 >> *right_conv_out_max1;
   }
@@ -289,17 +279,12 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     std::vector<std::string> bias_name = {
         matched.at("left_bias0")->arg()->name,
         matched.at("right_bias1")->arg()->name};
-    std::vector<std::string> filter_max_name{
-        matched.at("left_weight_max0")->arg()->name,
-        matched.at("right_weight_max1")->arg()->name};
     if (has_mid_conv_) {
       conv_name.insert(conv_name.begin(), "right_xpu_conv0");
       filter_name.insert(filter_name.begin(),
                          matched.at("right_weight0")->arg()->name);
       bias_name.insert(bias_name.begin(),
                        matched.at("right_bias0")->arg()->name);
-      filter_max_name.insert(filter_max_name.begin(),
-                             matched.at("right_weight_max0")->arg()->name);
     }
     std::string output_name = "";
     if (has_pool2d_) {
@@ -317,13 +302,14 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    scope->NewTensor(max_output_name);
+    auto* max_output_tensor = scope->NewTensor(max_output_name);
+    max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    max_output_tensor->set_persistable(true);
 
     op_desc.SetType("__xpu__block_fuse_op");
     op_desc.SetInput("Input", {matched.at("input")->arg()->name});
     op_desc.SetInput("Filter", {filter_name});
     op_desc.SetInput("Bias", {bias_name});
-    op_desc.SetInput("FilterMax", {filter_max_name});
     op_desc.SetOutput("Output", {output_name});
     op_desc.SetOutput("OutputMax", {max_output_name});
     std::vector<int> place_x;
@@ -331,16 +317,19 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     std::vector<int> place_z;
     std::vector<int> block_lod;
     std::vector<int> op_type;
+    std::vector<int> conv_bias;
     if (has_mid_conv_) {
       place_x = {0, 0, 2, 1};
       place_y = {9, 9, 9, 3};
       place_z = {2, 1, 3, 4};
       op_type = {0, 0, 0, 20};
+      conv_bias = {1, 1, 1};
     } else {
       place_x = {0, 0, 1};
       place_y = {9, 9, 2};
       place_z = {1, 2, 3};
       op_type = {0, 0, 20};
+      conv_bias = {1, 1};
     }
     if (has_pool2d_) {
       auto last_place = place_z.back();
@@ -380,7 +369,6 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     std::vector<float> act_param;
     std::vector<int> encode_filter_size{0};
     std::vector<int> encode_bias_size{0};
-    std::vector<int> encode_filter_max_size{0};
     for (auto name : conv_name) {
       auto cur_filter_dims =
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
@@ -395,18 +383,21 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
           matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
               "dilations");
       auto cur_groups =
-          matched.at(name)->stmt()->op_info()->GetAttr<int>("groups");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "groups");
       auto cur_act_type =
-          matched.at(name)->stmt()->op_info()->GetAttr<int>("act_type");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<int>>(
+              "act_type");
       auto cur_act_param =
-          matched.at(name)->stmt()->op_info()->GetAttr<float>("act_param");
+          matched.at(name)->stmt()->op_info()->GetAttr<std::vector<float>>(
+              "act_param");
+
       filter_dims.insert(
           filter_dims.end(), cur_filter_dims.begin(), cur_filter_dims.end());
       encode_filter_size.push_back(encode_filter_size.back() +
                                    cur_filter_dims[0] * cur_filter_dims[1] *
                                        cur_filter_dims[2] * cur_filter_dims[3]);
       encode_bias_size.push_back(encode_bias_size.back() + cur_filter_dims[0]);
-      encode_filter_max_size.push_back(encode_filter_max_size.back() + 4);
       conv_strides.insert(
           conv_strides.end(), cur_strides.begin(), cur_strides.end());
       if (cur_paddings.size() == 2) {
@@ -422,32 +413,36 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
           conv_paddings.end(), cur_paddings.begin(), cur_paddings.end());
       conv_dilations.insert(
           conv_dilations.end(), cur_dilations.begin(), cur_dilations.end());
-      conv_groups.push_back(cur_groups);
-      act_type.push_back(cur_act_type);
-      act_param.push_back(cur_act_param);
+      conv_groups.insert(
+          conv_groups.end(), cur_groups.begin(), cur_groups.end());
+      act_type.insert(act_type.end(), cur_act_type.begin(), cur_act_type.end());
+      act_param.insert(
+          act_param.end(), cur_act_param.begin(), cur_act_param.end());
     }
 
-    std::unique_ptr<int16_t[]> encode_filter_int16(
-        new int16_t[encode_filter_size.back()]);
+    std::unique_ptr<float[]> encode_filter_float(
+        new float[encode_filter_size.back()]);
     for (int i = 0; i < filter_name.size(); i++) {
       auto* filter_t = scope->FindMutableTensor(filter_name[i]);
-      int16_t* filter_on_host = filter_t->mutable_data<int16_t>();
-      memcpy(encode_filter_int16.get() + encode_filter_size[i],
-             filter_on_host,
-             (encode_filter_size[i + 1] - encode_filter_size[i]) *
-                 sizeof(int16_t));
+      float* filter_on_host = filter_t->mutable_data<float>();
+      memcpy(
+          encode_filter_float.get() + encode_filter_size[i],
+          filter_on_host,
+          (encode_filter_size[i + 1] - encode_filter_size[i]) * sizeof(float));
     }
     std::string new_filter_name = "block_" + filter_name[0];
     auto* new_filter_node = graph->NewArgumentNode(new_filter_name);
     new_filter_node->arg()->is_weight = true;
     new_filter_node->arg()->type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kInt16), DATALAYOUT(kNCHW));
+        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_filter_t = scope->NewTensor(new_filter_name);
+    new_filter_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_filter_t->set_persistable(true);
     new_filter_t->Resize({encode_filter_size.back()});
-    int16_t* new_filter_ptr = new_filter_t->mutable_data<int16_t>();
+    float* new_filter_ptr = new_filter_t->mutable_data<float>();
     memcpy(new_filter_ptr,
-           encode_filter_int16.get(),
-           encode_filter_size.back() * sizeof(int16_t));
+           encode_filter_float.get(),
+           encode_filter_size.back() * sizeof(float));
     op_desc.SetInput("Filter", {new_filter_name});
 
     std::unique_ptr<float[]> encode_bias(new float[encode_bias_size.back()]);
@@ -464,35 +459,14 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     new_bias_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* new_bias_t = scope->NewTensor(new_bias_name);
+    new_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
+    new_bias_t->set_persistable(true);
     new_bias_t->Resize({encode_bias_size.back()});
     float* new_bias_ptr = new_bias_t->mutable_data<float>();
     memcpy(new_bias_ptr,
            encode_bias.get(),
            encode_bias_size.back() * sizeof(float));
     op_desc.SetInput("Bias", {new_bias_name});
-
-    std::unique_ptr<float[]> encode_filter_max(
-        new float[encode_filter_max_size.back()]);
-    for (int i = 0; i < filter_max_name.size(); i++) {
-      auto* filter_max_t = scope->FindMutableTensor(filter_max_name[i]);
-      float* filter_max_on_host = filter_max_t->mutable_data<float>();
-      memcpy(encode_filter_max.get() + encode_filter_max_size[i],
-             filter_max_on_host,
-             (encode_filter_max_size[i + 1] - encode_filter_max_size[i]) *
-                 sizeof(float));
-    }
-    std::string new_filter_max_name = "block_" + filter_max_name[0];
-    auto* new_filter_max_node = graph->NewArgumentNode(new_filter_max_name);
-    new_filter_max_node->arg()->is_weight = true;
-    new_filter_max_node->arg()->type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    auto* new_filter_max_t = scope->NewTensor(new_filter_max_name);
-    new_filter_max_t->Resize({encode_filter_max_size.back()});
-    float* new_filter_max_ptr = new_filter_max_t->mutable_data<float>();
-    memcpy(new_filter_max_ptr,
-           encode_filter_max.get(),
-           encode_filter_max_size.back() * sizeof(float));
-    op_desc.SetInput("FilterMax", {new_filter_max_name});
 
     if (has_pool2d_) {
       auto pool_kernel =
@@ -548,6 +522,9 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
     op_desc.SetAttr("act_type", act_type);
     op_desc.SetAttr("act_param", act_param);
     op_desc.SetAttr("block_lod", block_lod);
+    op_desc.SetAttr("conv_bias", conv_bias);
+    op_desc.SetAttr<bool>("has_bias", true);
+    op_desc.SetAttr<bool>("has_branch", false);
 
     auto& valid_places = conv->valid_places();
     auto block_op = LiteOpRegistry::Global().Create(op_desc.Type());
@@ -556,7 +533,6 @@ class XPUConv2dConcatPool2dFuser : public FuseBase {
 
     IR_NODE_LINK_TO(matched.at("input"), new_op_node);
     IR_NODE_LINK_TO(new_filter_node, new_op_node);
-    IR_NODE_LINK_TO(new_filter_max_node, new_op_node);
     IR_NODE_LINK_TO(new_bias_node, new_op_node);
     IR_NODE_LINK_TO(new_op_node, max_output_node);
     if (has_pool2d_) {

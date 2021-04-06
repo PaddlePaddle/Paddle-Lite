@@ -11,26 +11,32 @@ class LightPredictor
 ```python
 from __future__ import print_function
 from paddlelite.lite import *
+import numpy as np
+import argparse
+
+# Command arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("--model_file", type=str, help="the path to optimized model after opt tool")
+args = parser.parse_args()
 
 # 1. 设置MobileConfig
 config = MobileConfig()
-config.set_model_dir(args.model_dir)
+config.set_model_from_file(args.model_file)
 
 # 2. 创建LightPredictor
 predictor = create_paddle_predictor(config)
 
 # 3. 设置输入数据
 input_tensor = predictor.get_input(0)
-input_tensor.resize([1, 3, 224, 224])
-input_tensor.set_float_data([1.] * 3 * 224 * 224)
+input_tensor.from_numpy(np.ones((1, 3, 224, 224)).astype("float32"))
 
 # 4. 运行模型
 predictor.run()
 
 # 5. 获取输出数据
 output_tensor = predictor.get_output(0)
-print(output_tensor.shape())
-print(output_tensor.float_data()[:10])
+output_data = output_tensor.numpy()
+print(output_data)
 ```
 
 ### `get_input(index)`

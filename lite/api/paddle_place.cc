@@ -83,6 +83,7 @@ const std::string& TargetToStr(TargetType target) {
                                               "apu",
                                               "huawei_ascend_npu",
                                               "imagination_nna",
+                                              "intel_fpga",
                                               "nnadapter"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
@@ -131,6 +132,7 @@ const std::string& TargetRepr(TargetType target) {
                                               "kAPU",
                                               "kHuaweiAscendNPU",
                                               "kImaginationNNA",
+                                              "kIntelFPGA",
                                               "kNNAdapter"};
   auto x = static_cast<int>(target);
   CHECK_LT(x, static_cast<int>(TARGET(NUM)));
@@ -165,6 +167,20 @@ const std::string& DataLayoutRepr(DataLayoutType layout) {
   return datalayout2string[x];
 }
 
+const std::string& CLTuneModeToStr(CLTuneMode mode) {
+  static const std::string cl_tune_mode[] = {
+      "CL_TUNE_NONE", "CL_TUNE_RAPID", "CL_TUNE_NORMAL", "CL_TUNE_EXHAUSTIVE"};
+  auto x = static_cast<int>(mode);
+  return cl_tune_mode[x];
+}
+
+const std::string& CLPrecisionTypeToStr(CLPrecisionType type) {
+  static const std::string cl_precision_type[] = {
+      "CL_PRECISION_AUTO", "CL_PRECISION_FP32", "CL_PRECISION_FP16"};
+  auto x = static_cast<int>(type);
+  return cl_precision_type[x];
+}
+
 std::set<TargetType> ExpandValidTargets(TargetType target) {
   static const std::set<TargetType> valid_set({TARGET(kX86),
                                                TARGET(kCUDA),
@@ -179,6 +195,7 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kFPGA),
                                                TARGET(kHuaweiAscendNPU),
                                                TARGET(kImaginationNNA),
+                                               TARGET(kIntelFPGA),
                                                TARGET(kNNAdapter)});
   if (target == TARGET(kAny)) {
     return valid_set;

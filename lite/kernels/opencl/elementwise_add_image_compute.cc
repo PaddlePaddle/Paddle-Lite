@@ -55,8 +55,61 @@ void ElementwiseAddImageCompute::PrepareForRun() {
   } else if (y->dims().size() == 1) {
     if (axis == x->dims().size() - 1) {
       kernel_func_name_ = "width_add";  // y: ImageDefault
+      if (y->persistable()) {
+        y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
+        std::unique_ptr<Tensor> tensor_hold_y_image_ =
+            std::unique_ptr<Tensor>(new Tensor);
+        CLImageConverterDefault default_converter;
+        const DDim& y_image_dims =
+            default_converter.InitImageDimInfoWith(y->dims());
+        tensor_hold_y_image_->Resize({1, y_image_dims[0], y_image_dims[1], 4});
+
+        auto* y_cpu_image = MUTABLE_DATA_CPU(tensor_hold_y_image_);
+        auto* y_cpu_nchw =
+            static_cast<float*>(const_cast<void*>(y->raw_data()));
+        default_converter.NCHWToImage(y_cpu_nchw, y_cpu_image, y->dims());
+        MUTABLE_DATA_GPU(
+            y_weights_image_, y_image_dims[0], y_image_dims[1], y_cpu_image);
+      }
     } else if (axis == x->dims().size() - 3) {
       kernel_func_name_ = "channel_add";  // y: ImageFolder
+      if (y->persistable()) {
+        y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
+        std::unique_ptr<Tensor> tensor_hold_y_image_ =
+            std::unique_ptr<Tensor>(new Tensor);
+        CLImageConverterFolder folder_converter;
+        const DDim& y_image_dims =
+            folder_converter.InitImageDimInfoWith(y->dims());
+        tensor_hold_y_image_->Resize({1, y_image_dims[0], y_image_dims[1], 4});
+
+        auto* y_cpu_image = MUTABLE_DATA_CPU(tensor_hold_y_image_);
+        auto* y_cpu_nchw =
+            static_cast<float*>(const_cast<void*>(y->raw_data()));
+        folder_converter.NCHWToImage(y_cpu_nchw, y_cpu_image, y->dims());
+
+        MUTABLE_DATA_GPU(
+            y_weights_image_, y_image_dims[0], y_image_dims[1], y_cpu_image);
+      }
+    } else if (axis == -1 && y->dims()[0] == 1) {
+      kernel_func_name_ = "channel_add";  // for opt
+      if (y->persistable()) {
+        LOG(INFO) << "with y->persistable";
+        y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
+        std::unique_ptr<Tensor> tensor_hold_y_image_ =
+            std::unique_ptr<Tensor>(new Tensor);
+        CLImageConverterFolder folder_converter;
+        const DDim& y_image_dims =
+            folder_converter.InitImageDimInfoWith(y->dims());
+        tensor_hold_y_image_->Resize({1, y_image_dims[0], y_image_dims[1], 4});
+
+        auto* y_cpu_image = MUTABLE_DATA_CPU(tensor_hold_y_image_);
+        auto* y_cpu_nchw =
+            static_cast<float*>(const_cast<void*>(y->raw_data()));
+        folder_converter.NCHWToImage(y_cpu_nchw, y_cpu_image, y->dims());
+
+        MUTABLE_DATA_GPU(
+            y_weights_image_, y_image_dims[0], y_image_dims[1], y_cpu_image);
+      }
     } else {
       LOG(FATAL) << "ElementwiseAddImage doesn't support axis:" << axis
                  << ", x->dims().size():" << x->dims().size()
@@ -120,6 +173,7 @@ void ElementwiseAddImageCompute::Run() {
   auto* y_img = GET_DATA_GPU(y);
   auto* out_img =
       MUTABLE_DATA_GPU(out, out_img_shape_[0], out_img_shape_[1], nullptr);
+  const int tensor_w = x_dims[x_dims.size() - 1];
 
 #ifdef LITE_WITH_LOG
   VLOG(4) << "x->target():" << TargetToStr(x->target());
@@ -135,7 +189,7 @@ void ElementwiseAddImageCompute::Run() {
 
   cl_int status;
   auto kernel = kernel_;
-  if (y_dims.size() == 4) {
+  if (kernel_func_name_ == "elementwise_add") {
     int output_w = y_dims[3];
     int output_h = y_dims[2];
     status = kernel.setArg(0, *x_img);
@@ -148,29 +202,35 @@ void ElementwiseAddImageCompute::Run() {
     CL_CHECK_FATAL(status);
     status = kernel.setArg(4, output_w);
     CL_CHECK_FATAL(status);
-  } else if (y_dims.size() == 1) {
-    if (axis == x_dims.size() - 1 || axis == x_dims.size() - 3) {
-      const int tensor_w = x_dims[x_dims.size() - 1];
-#ifdef LITE_WITH_LOG
-      VLOG(4) << "tensor_w:" << tensor_w;
-#endif
-      status = kernel.setArg(0, *x_img);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(1, *y_img);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(2, *out_img);
-      CL_CHECK_FATAL(status);
-      status = kernel.setArg(3, tensor_w);
-      CL_CHECK_FATAL(status);
-    } else {
-      LOG(FATAL) << "ElementwiseAddImage doesn't support axis:" << axis
-                 << ", x->dims().size():" << x_dims.size()
-                 << ", y->dims.size():" << y_dims.size();
+  } else if (kernel_func_name_ == "channel_add") {
+    if (y->persistable()) {
+      y_img = GET_DATA_GPU(y_weights_image_);
     }
+    const int opt = y_dims[0] == 1;
+    status = kernel.setArg(0, *x_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(1, *y_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(2, *out_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(3, tensor_w);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(4, opt);
+    CL_CHECK_FATAL(status);
+  } else if (kernel_func_name_ == "width_add") {
+    if (y->persistable()) {
+      y_img = GET_DATA_GPU(y_weights_image_);
+    }
+    status = kernel.setArg(0, *x_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(1, *y_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(2, *out_img);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(3, tensor_w);
+    CL_CHECK_FATAL(status);
   } else {
-    LOG(FATAL) << "ElementwiseAddImage doesn't support axis:" << axis
-               << ", x->dims().size():" << x_dims.size()
-               << ", y->dims.size():" << y_dims.size();
+    LOG(FATAL) << "Unsupported kernel: " << kernel_func_name_;
   }
 
   auto& context = ctx_->As<OpenCLContext>();
@@ -218,6 +278,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
                      kOpenCL,
                      kFP16,

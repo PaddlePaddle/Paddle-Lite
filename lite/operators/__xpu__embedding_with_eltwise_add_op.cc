@@ -32,6 +32,9 @@ bool XPUEmbeddingWithEltwiseAddOp::CheckShape() const {
   // id_dims must be [batch_size, seq_len] or [batch_size, seq_len, 1]
   CHECK(id_rank == 2 || id_rank == 3) << "unsupported id_rank: " << id_rank;
 
+  if (param_.Mask != nullptr) {
+    CHECK(param_.SeqLod != nullptr);
+  }
   return true;
 }
 
@@ -64,7 +67,27 @@ bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
     param_.Tables.push_back(t);
   }
 
+  // optional params
+  std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "Mask") !=
+      input_arg_names.end()) {
+    auto arguments = op_desc.Input("Mask");
+    if (arguments.size() > 0) {
+      auto arg_var = scope->FindVar(arguments.front());
+      if (arg_var != nullptr) {
+        param_.Mask = &(arg_var->Get<lite::Tensor>());
+      }
+    }
+  }
+  std::vector<std::string> output_arg_names = op_desc.OutputArgumentNames();
+  if (std::find(output_arg_names.begin(), output_arg_names.end(), "SeqLod") !=
+      output_arg_names.end()) {
+    auto seqlod_name = op_desc.Output("SeqLod").front();
+    param_.SeqLod = GetMutableVar<lite::Tensor>(scope, seqlod_name);
+  }
+
   param_.padding_idx = op_desc.GetAttr<int64_t>("padding_idx");
+
   return true;
 }
 

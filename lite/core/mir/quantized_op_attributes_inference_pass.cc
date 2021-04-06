@@ -82,11 +82,6 @@ void QuantizedOpAttributesInferencePass::Apply(
         is_quantized = false;
       }
     }
-
-    // Fix the missing of the attribute 'enable_int8'.
-    if (is_quantized) {
-      inst.mutable_op_info()->SetAttr("enable_int8", true);
-    }
   }
   VLOG(5) << "\n" << Visualize(graph.get());
 }
