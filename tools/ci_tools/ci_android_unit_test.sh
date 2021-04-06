@@ -162,7 +162,6 @@ fi
 if [ $# -eq 3 ] && [ $3 == "enable_fp16" ] ; then
     BUILD_ARM82_FP16=ON
     build_test_android armv8 clang $1 $2
-    build_test_android armv7 clang $1 $2
 else
     # $1 adb_device index. eg. 1
     # $2 workspace name on adb.  eg. work_tmp1
