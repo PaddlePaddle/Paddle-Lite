@@ -185,10 +185,10 @@ __kernel void sqrt_func(__read_only image2d_t input,
   const int y = get_global_id(1);
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
-  in.x = native_sqrt(in.x);
-  in.y = native_sqrt(in.y);
-  in.z = native_sqrt(in.z);
-  in.w = native_sqrt(in.w);
+  in.x = sqrt(in.x);
+  in.y = sqrt(in.y);
+  in.z = sqrt(in.z);
+  in.w = sqrt(in.w);
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
@@ -199,10 +199,10 @@ __kernel void rsqrt_func(__read_only image2d_t input,
   const int y = get_global_id(1);
 
   CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
-  in.x = native_rsqrt(in.x);
-  in.y = native_rsqrt(in.y);
-  in.z = native_rsqrt(in.z);
-  in.w = native_rsqrt(in.w);
+  in.x = rsqrt(in.x);
+  in.y = rsqrt(in.y);
+  in.z = rsqrt(in.z);
+  in.w = rsqrt(in.w);
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }

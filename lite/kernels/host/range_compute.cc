@@ -123,4 +123,26 @@ REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int32_f, int32)
                                        PRECISION(kInt32),
                                        DATALAYOUT(kAny))})
     .Finalize();
+
+// float kernel has higher score when picking kernel.
+using range_int64_f =
+    paddle::lite::kernels::host::RangeCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(range, kHost, kFloat, kAny, range_int64_f, int64)
+    .BindInput("Start",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("End",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("Step",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
 #endif  // LITE_BUILD_EXTRA

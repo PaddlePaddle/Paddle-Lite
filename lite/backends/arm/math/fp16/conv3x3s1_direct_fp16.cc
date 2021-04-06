@@ -53,8 +53,7 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
   int ow = dim_out[3];
   int oh = dim_out[2];
   int ic = dim_in[1];
-  DIRECT_WORKSPACE_COMPUTE(
-      ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK, OUT_W_BLOCK)
+  DIRECT_WORKSPACE_COMPUTE(ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK)
   return sizeof(float16_t) * (pre_in_size + ctx->threads() * pre_out_size);
 }
 
@@ -307,8 +306,7 @@ void conv_3x3s1_direct_fp16(const float16_t* i_data,
   auto act_param = param.activation_param;
   const int pad_w = paddings[2];
   const int pad_h = paddings[0];
-  DIRECT_WORKSPACE_COMPUTE(
-      ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK, OUT_W_BLOCK)
+  DIRECT_WORKSPACE_COMPUTE(ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK)
 
   float16_t* tmp_work_space = ctx->workspace_data<float16_t>();
   float16_t ptr_zero[win_round];  // NOLINT
@@ -436,7 +434,8 @@ void conv_3x3s1_direct_fp16(const float16_t* i_data,
                           ow,
                           flag_act,
                           alpha,
-                          bias_ptr);
+                          bias_ptr,
+                          flag_bias);
       }
     }
   }
