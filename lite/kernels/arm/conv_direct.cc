@@ -209,9 +209,13 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   // extend workspace
-  ctx.ExtendWorkspace(
-      lite::arm::math::fp16::conv3x3s2_direct_workspace_size(param, &ctx));
-
+  if (param.strides[0] == 2) {
+    ctx.ExtendWorkspace(
+        lite::arm::math::fp16::conv3x3s2_direct_workspace_size(param, &ctx));
+  } else {
+    ctx.ExtendWorkspace(
+        lite::arm::math::fp16::conv3x3s1_direct_workspace_size(param, &ctx));
+  }
   const auto* i_data = param.x->data<float16_t>();
   const auto* w_data = weights_.data<float16_t>();
   const auto* b_data = param.bias ? param.bias->data<float16_t>() : nullptr;
@@ -228,9 +232,37 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
-  lite::arm::math::fp16::conv_3x3s2_direct_fp16(
-      i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, param, &ctx);
-  KERNEL_FUNC_NAME("conv_3x3s2_direct_fp16")
+  if (param.strides[0] == 2) {
+    lite::arm::math::fp16::conv_3x3s2_direct_fp16(i_data,
+                                                  o_data,
+                                                  bs,
+                                                  oc,
+                                                  oh,
+                                                  ow,
+                                                  ic,
+                                                  ih,
+                                                  iw,
+                                                  w_data,
+                                                  b_data,
+                                                  param,
+                                                  &ctx);
+    KERNEL_FUNC_NAME("conv_3x3s2_direct_fp16")
+  } else {
+    lite::arm::math::fp16::conv_3x3s1_direct_fp16(i_data,
+                                                  o_data,
+                                                  bs,
+                                                  oc,
+                                                  oh,
+                                                  ow,
+                                                  ic,
+                                                  ih,
+                                                  iw,
+                                                  w_data,
+                                                  b_data,
+                                                  param,
+                                                  &ctx);
+    KERNEL_FUNC_NAME("conv_3x3s1_direct_fp16")
+  }
 }
 PROFILE_INFO(kFP16, kFP16)
 #endif

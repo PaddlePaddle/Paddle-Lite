@@ -69,8 +69,10 @@ struct FetchParam : ParamBase {
 
 // Helper op for lite framework
 struct IoCopyParam : ParamBase {
-  const lite::Tensor* x{};
-  lite::Tensor* y{};
+  const lite::Tensor* x{nullptr};
+  const std::vector<lite::Tensor>* x_array{nullptr};
+  lite::Tensor* y{nullptr};
+  std::vector<lite::Tensor>* y_array{nullptr};
   int process_type{0};
 };
 
@@ -596,9 +598,9 @@ struct PadConstantLikeParam : ParamBase {
 
 // For Split op
 struct SplitParam : ParamBase {
-  lite::Tensor* x{};
+  const lite::Tensor* x{nullptr};
   std::vector<lite::Tensor*> output{};
-  lite::Tensor* axis_tensor{};
+  const lite::Tensor* axis_tensor{nullptr};
   std::vector<lite::Tensor*> sections_tensor_list{};
 
   int axis{-1};
@@ -1898,8 +1900,9 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
   lite::Tensor* fc_weight_max{};
-  lite::Tensor* mask{};
-  lite::Tensor* output{};
+  const lite::Tensor* mask{nullptr};
+  const lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* output{nullptr};
 
   std::vector<int> slice_axes{};
   std::vector<int> slice_starts{};
@@ -1911,12 +1914,15 @@ struct XPUMultiEncoderParam : ParamBase {
   std::string precision{};
   bool enable_qkv_fusion{false};
   bool norm_before{false};
+  bool adaptive_seqlen{false};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;
   std::vector<lite::Tensor*> Tables;
-  lite::Tensor* Out{};
+  const lite::Tensor* Mask{nullptr};
+  lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
 };
 

@@ -141,6 +141,9 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
     std::string op_path = op2pathmap[*op_info];
     fputs(op_path.c_str(), opf_source);
     fputc('\n', opf_source);
+    if (op_path == "calib_once_op.cc") {
+      fputs("calib_op.cc\n", opf_source);
+    }
   }
   std::fclose(opf_source);
   std::fclose(opf);

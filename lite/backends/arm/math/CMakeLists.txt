@@ -110,7 +110,6 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       concat.cc
       type_trans.cc
       box_coder.cc
-      split.cc
       shuffle_channel.cc
       activation.cc
       yolo_box.cc
@@ -125,10 +124,8 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       im2sequence.cc
       prior_box.cc
       norm.cc
-      topk.cc
       pad2d.cc
       negative.cc
-      beam_search.cc
       reduce_max.cc
       reduce_min.cc
       reduce_max_min.cc

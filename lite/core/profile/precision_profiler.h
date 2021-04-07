@@ -265,6 +265,17 @@ class PrecisionProfiler {
           write_result_to_file&& write_tensorfile<float>(in, name, log_dir_);
           return;
         }
+#ifdef ENABLE_ARM_FP16
+        case PRECISION(kFP16): {
+          auto ptr = in->data<__fp16>();
+          *mean = compute_mean<__fp16>(ptr, in->numel());
+          *std_dev =
+              compute_standard_deviation<__fp16>(ptr, in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<__fp16>(ptr, in->numel());
+          write_result_to_file&& write_tensorfile<__fp16>(in, name, log_dir_);
+          return;
+        }
+#endif
         case PRECISION(kBool): {
           auto ptr = in->data<bool>();
           *mean = -333333333333;

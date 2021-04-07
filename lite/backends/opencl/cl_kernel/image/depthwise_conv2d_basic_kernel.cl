@@ -188,13 +188,14 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
                            __read_only image2d_t filter,
                            __read_only image2d_t bias,
                            __write_only image2d_t output_image,
-                           __private const int stride_h,
                            __private const int stride_w,
-                           __private const int offset,
-                           __private const int input_c,
-                           __private const int dilation,
-                           __private const int input_width,  /* of one block */
-                           __private const int input_height, /* of one block */
+                           __private const int stride_h,
+                           __private const int offset_w,
+                           __private const int offset_h,
+                           __private const int dilation_w,
+                           __private const int dilation_h,
+                           __private const int input_width,
+                           __private const int input_height,
                            __private const int output_width,
                            __private const int output_height,
                            __private const int filter_width,
@@ -213,7 +214,7 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
   int2 stride_xy = (int2)(stride_w, stride_h);
   int2 ouput_pos_in_one_block = (int2)(out_w, out_nh_in_one_batch);
   int2 in_pos_in_one_block =
-      ouput_pos_in_one_block * stride_xy + (int2)(offset, offset);
+      ouput_pos_in_one_block * stride_xy + (int2)(offset_w, offset_h);
 #ifdef BIASE_CH
   CL_DTYPE4 output =
       READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, (int2)(out_c, 0));
@@ -233,9 +234,9 @@ __kernel void depth_conv2d(__private const int global_size_dim0,
   int input_y_base = pos_in_input_block.y + in_pos_in_one_block.y;
   int2 align = {filter_width / 2, filter_height / 2};
   for (int fy = 0; fy < filter_height; ++fy) {
+    int y_off = fy * dilation_h - align.y;
     for (int fx = 0; fx < filter_width; ++fx) {
-      int x_off = fx - align.x;
-      int y_off = fy - align.y;
+      int x_off = fx * dilation_w - align.x;
       CL_DTYPE4 in = SELECT(
           READ_IMG_TYPE(CL_DTYPE_CHAR,
                         input,

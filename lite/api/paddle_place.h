@@ -59,7 +59,8 @@ enum class TargetType : int {
   kAPU = 13,
   kHuaweiAscendNPU = 14,
   kImaginationNNA = 15,
-  NUM = 16,  // number of fields.
+  kIntelFPGA = 16,
+  NUM = 17,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
@@ -186,6 +187,11 @@ struct PrecisionTypeTrait {
   }
 
 _ForEachPrecisionType(DefinePrecisionTypeTrait);
+
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 float16_t;
+_ForEachPrecisionTypeHelper(DefinePrecisionTypeTrait, float16_t, kFP16);
+#endif
 
 #undef _ForEachPrecisionTypeHelper
 #undef _ForEachPrecisionType

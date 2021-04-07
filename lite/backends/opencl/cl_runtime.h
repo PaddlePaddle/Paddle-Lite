@@ -193,6 +193,10 @@ class CLRuntime {
 
   GpuType& GetGpuType();
 
+  uint32_t DeviceComputeUnits() const {
+    return device_->getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+  }
+
   double GetCommandTime(const cl::Event& event);
 
   double GetQueuedTime(const cl::Event& event);

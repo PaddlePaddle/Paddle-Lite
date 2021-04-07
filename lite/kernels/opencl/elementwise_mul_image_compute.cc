@@ -55,24 +55,24 @@ class ElementwiseMulImageCompute
       kernel_func_name_ = "elementwise_mul";
     } else {
       const int bias_dim_size = bias_dims.size();
+      if (y->persistable()) {
+        CLImageConverterFolder folder_converter;
+        const DDim& y_image_dims =
+            folder_converter.InitImageDimInfoWith(bias_dims);
+        auto y_image_cpu_t = std::unique_ptr<Tensor>(new Tensor);
+        y_image_cpu_t->Resize({1, y_image_dims[0], y_image_dims[1], 4});
+        auto* y_image_cpu_p = MUTABLE_DATA_CPU(y_image_cpu_t);
+        auto* y_nchw_cpu_p =
+            static_cast<float*>(const_cast<void*>(y->raw_data()));
+        folder_converter.NCHWToImage(y_nchw_cpu_p, y_image_cpu_p, bias_dims);
+        y_image_gpu_t_persist_ = std::unique_ptr<Tensor>(new Tensor);
+        MUTABLE_DATA_GPU(y_image_gpu_t_persist_,
+                         y_image_dims[0],
+                         y_image_dims[1],
+                         y_image_cpu_p);
+      }
       if (bias_dim_size == 1) {
         kernel_func_name_ = "channel_mul_d1";
-        if (y->persistable()) {
-          CLImageConverterFolder folder_converter;
-          const DDim& y_image_dims =
-              folder_converter.InitImageDimInfoWith(bias_dims);
-          auto y_image_cpu_t = std::unique_ptr<Tensor>(new Tensor);
-          y_image_cpu_t->Resize({1, y_image_dims[0], y_image_dims[1], 4});
-          auto* y_image_cpu_p = MUTABLE_DATA_CPU(y_image_cpu_t);
-          auto* y_nchw_cpu_p =
-              static_cast<float*>(const_cast<void*>(y->raw_data()));
-          folder_converter.NCHWToImage(y_nchw_cpu_p, y_image_cpu_p, bias_dims);
-          y_image_gpu_t_persist_ = std::unique_ptr<Tensor>(new Tensor);
-          MUTABLE_DATA_GPU(y_image_gpu_t_persist_,
-                           y_image_dims[0],
-                           y_image_dims[1],
-                           y_image_cpu_p);
-        }
       } else if (bias_dim_size == 2) {
         kernel_func_name_ = "channel_mul_d2";
       } else if (bias_dim_size == 3) {
@@ -152,7 +152,6 @@ class ElementwiseMulImageCompute
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
-
     if (bias_dims == x_dims) {
       // kernel_func_name_ = "elementwise_mul";
       cl_int status = kernel.setArg(0, *x_img);
@@ -192,6 +191,9 @@ class ElementwiseMulImageCompute
         status = kernel.setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else if (bias_dim_size == 3) {
+        if (y->persistable()) {
+          y_img = DATA_GPU(y_image_gpu_t_persist_);
+        }
         // kernel_func_name_ = "channel_mul_d3";
         const int tensor_w = x_dims[x_dims.size() - 1];
         cl_int status = kernel.setArg(0, *x_img);

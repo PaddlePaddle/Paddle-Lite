@@ -21,7 +21,7 @@
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/backends/arm/math/lstm.h"
 #include "lite/backends/arm/math/sgemm.h"
-#include "lite/backends/arm/math/split.h"
+#include "lite/backends/host/math/split.h"
 
 namespace paddle {
 namespace lite {
@@ -266,9 +266,9 @@ void runLSTMLayer(ARMContext* ctx,
     output_tensors[i].Resize(dims);
     output_tensors_t.push_back(&output_tensors[i]);
   }
-  lite::arm::math::split(
+  lite::host::math::split(
       gate_value->data<float>(), input_tensors_t, 0, stride1);
-  lite::arm::math::split(output->data<float>(), output_tensors_t, 0, stride2);
+  lite::host::math::split(output->data<float>(), output_tensors_t, 0, stride2);
   auto sd = output->mutable_data<float>();
 
   if (is_reverse) {
@@ -426,12 +426,12 @@ void RnnCompute::Run() {
     last_h_unbind_t.push_back(&last_h_unbind[i]);
     last_c_unbind_t.push_back(&last_c_unbind[i]);
   }
-  lite::arm::math::split(
+  lite::host::math::split(
       pre_state[0]->data<float>(), init_h_unbind_t, 0, stride);
-  lite::arm::math::split(
+  lite::host::math::split(
       pre_state[1]->data<float>(), init_c_unbind_t, 0, stride);
-  lite::arm::math::split(state[0]->data<float>(), last_h_unbind_t, 0, stride);
-  lite::arm::math::split(state[1]->data<float>(), last_c_unbind_t, 0, stride);
+  lite::host::math::split(state[0]->data<float>(), last_h_unbind_t, 0, stride);
+  lite::host::math::split(state[1]->data<float>(), last_c_unbind_t, 0, stride);
 
   for (int i = 0; i < num_layers; i++) {
     if (i > 0) {

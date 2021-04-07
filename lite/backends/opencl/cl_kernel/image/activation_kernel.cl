@@ -160,6 +160,7 @@ __kernel void swish(__read_only image2d_t input,
   CL_DTYPE4 out = in / (1 + exp(-(CL_DTYPE)scale * in));
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), out);
 }
+
 __kernel void hard_swish(__read_only image2d_t input,
                         __write_only image2d_t output,
                         __private const float threshold,
@@ -177,3 +178,47 @@ __kernel void hard_swish(__read_only image2d_t input,
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
 }
+
+__kernel void sqrt_func(__read_only image2d_t input,
+                        __write_only image2d_t output) {
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+  in.x = sqrt(in.x);
+  in.y = sqrt(in.y);
+  in.z = sqrt(in.z);
+  in.w = sqrt(in.w);
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+__kernel void rsqrt_func(__read_only image2d_t input,
+                         __write_only image2d_t output) {
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+  in.x = rsqrt(in.x);
+  in.y = rsqrt(in.y);
+  in.z = rsqrt(in.z);
+  in.w = rsqrt(in.w);
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+__kernel void square_func(__read_only image2d_t input,
+                        __write_only image2d_t output) {
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
+
+  CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x, y));
+  in.x = pown(in.x, 2);
+  in.y = pown(in.y, 2);
+  in.z = pown(in.z, 2);
+  in.w = pown(in.w, 2);
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(x, y), in);
+}
+
+

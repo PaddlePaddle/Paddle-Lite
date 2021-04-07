@@ -59,6 +59,9 @@ const char *opencl_error_to_str(cl_int error);
 #define CL_CHECK_FATAL(err_code__)
 #endif
 
+#define UP_DIV(x, y) (((x) + (y) - (1)) / (y))
+#define ROUND_UP(x, y) (((x) + (y) - (1)) / (y) * (y))
+
 #define EnqueueNDRangeKernel(                                      \
     context, kernel, gws_offset, gws, lws, event_wait_list, event) \
   context.cl_context()->GetCommandQueue().enqueueNDRangeKernel(    \
