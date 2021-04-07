@@ -15,14 +15,15 @@
 #pragma once
 #include <algorithm>
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 #include "lite/operators/assign_value_op.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class AssignValueCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class AssignValueCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::AssignValueParam;
 
@@ -31,7 +32,7 @@ class AssignValueCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
   virtual ~AssignValueCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

@@ -33,6 +33,7 @@ add_kernel(polygon_box_transform_compute_host Host extra SRCS polygon_box_transf
 add_kernel(write_to_array_compute_host Host extra SRCS write_to_array_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(read_from_array_compute_host Host extra SRCS read_from_array_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(assign_compute_host Host extra SRCS assign_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(assign_value_compute_host Host extra SRCS assign_value_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(retinanet_detection_output_compute_host Host extra SRCS retinanet_detection_output_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(where_index_compute_host Host extra SRCS where_index_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(where_compute_host Host extra SRCS where_compute.cc DEPS ${lite_kernel_deps})

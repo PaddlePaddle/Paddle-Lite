@@ -3,7 +3,7 @@ if(NOT LITE_WITH_X86)
 endif()
 
 add_kernel(activation_compute_x86 X86 basic SRCS activation_compute.cc DEPS ${lite_kernel_deps} math_function)
-add_kernel(assign_value_compute_x86 X86 basic SRCS assign_value_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(assign_value_compute_x86 X86 basic SRCS assign_value_compute.cc DEPS ${lite_kernel_deps} assign_value_compute_host)
 # lite_cc_library(mean_compute_x86 SRCS mean_compute.cc DEPS ${lite_kernel_deps})
 # lite_cc_library(fill_constant_compute_x86 SRCS fill_constant_compute.cc DEPS ${lite_kernel_deps})
 # lite_cc_library(sgd_compute_x86 SRCS sgd_compute.cc DEPS ${lite_kernel_deps})
