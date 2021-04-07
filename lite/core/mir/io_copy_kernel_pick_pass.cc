@@ -27,30 +27,30 @@ class IoCopyKernelPickPass : public StmtPass {
       auto& inst = node.AsStmt();
       if (inst.op_type() != "io_copy") continue;
 
-      LOG(INFO) << "....> picking a IO COPY kernel";
+      VLOG(1) << "....> picking a IO COPY kernel";
 
       auto& kernels = node.AsStmt().kernels();
       CHECK(!kernels.empty()) << "No valid kernels found for IoCopy Op";
       const auto* inty = node.inlinks.front()->AsArg().type;
       const auto* outy = node.outlinks.front()->AsArg().type;
-      LOG(INFO) << "input type " << *inty;
-      LOG(INFO) << "output type " << *outy;
+      VLOG(1) << "input type " << *inty;
+      VLOG(1) << "output type " << *outy;
 
       bool is_found = false;
-      LOG(INFO) << "kernels size " << kernels.size();
+      VLOG(1) << "kernels size " << kernels.size();
       for (auto& kernel : kernels) {
         CHECK_EQ(node.inlinks.size(), 1UL);
         CHECK_EQ(node.outlinks.size(), 1UL);
 
         const Type* in_arg_ty = kernel->GetInputDeclType("Input");
         const Type* out_arg_ty = kernel->GetOutputDeclType("Out");
-        LOG(INFO) << "checking kernel candidate " << *in_arg_ty << "->"
-                  << *out_arg_ty;
+        VLOG(1) << "checking kernel candidate " << *in_arg_ty << "->"
+                << *out_arg_ty;
         if (TargetCompatibleTo(*inty, *in_arg_ty)) {
           // Both the input and output type matches, remove other kernels
           // directly.
           if (TargetCompatibleTo(*outy, *out_arg_ty)) {
-            LOG(INFO) << "get a IOCopy kernel";
+            VLOG(1) << "get a IOCopy kernel";
 
             if (kernel->target() == TargetType::kFPGA) {
               node.outlinks.front()->AsArg().type = LiteType::GetTensorTy(

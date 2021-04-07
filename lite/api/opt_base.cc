@@ -286,6 +286,7 @@ void OptBase::PrintHelpInfo() {
       "places\n"
       "        `check_if_model_supported()`   Check if the input model is "
       "supported\n"
+      "  How to print detailed information: export GLOG_v=1 \n"
       "------------------------------------------------------------------------"
       "-----------------------------------------------------------\n";
   std::cout << "opt version:" << opt_version << std::endl << help_info;
@@ -433,11 +434,16 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
   std::set<std::string> valid_ops_set(valid_ops.begin(), valid_ops.end());
 
   // 2.Load model into program to get ops in model
-  std::string prog_path = opt_config_.model_dir() + "/__model__";
+  bool is_combined_params_form = false;
   if (!(opt_config_.model_file()).empty() &&
       !(opt_config_.param_file()).empty()) {
-    prog_path = opt_config_.model_file();
+    is_combined_params_form = true;
   }
+  const std::string prog_path =
+      lite::FindModelFileName(opt_config_.model_dir(),
+                              (opt_config_.model_file()),
+                              is_combined_params_form);
+
   lite::cpp::ProgramDesc cpp_prog;
   framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);

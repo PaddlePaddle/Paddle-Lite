@@ -144,8 +144,8 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   }
   std::fclose(opf_source);
   std::fclose(opf);
-  LOG(INFO) << "operators information of tailored model is stored into: "
-            << opf_path;
+  std::cout << "operators information of tailored model is stored into: "
+            << opf_path << std::endl;
 
   // write Kernel_type and Kernel_path into file
   for (auto kernel_info = kernels_info.begin();
@@ -165,8 +165,8 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
   }
   std::fclose(kpf_source);
   std::fclose(kpf);
-  LOG(INFO) << "kernels information of tailored model is stored into: "
-            << kpf_path;
+  std::cout << "kernels information of tailored model is stored into: "
+            << kpf_path << std::endl;
 }
 
 #ifndef LITE_WITH_FPGA
@@ -296,7 +296,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type) {
   if (config.is_model_from_memory()) {
-    LOG(INFO) << "Load model from memory.";
+    VLOG(1) << "Load model from memory.";
     Build(config.model_dir(),
           config.model_file(),
           config.param_file(),
@@ -305,7 +305,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
           model_type,
           config.get_model_buffer());
   } else {
-    LOG(INFO) << "Load model from file.";
+    VLOG(1) << "Load model from file.";
     Build(config.model_dir(),
           config.model_file(),
           config.param_file(),

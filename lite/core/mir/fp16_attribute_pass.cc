@@ -47,8 +47,8 @@ void FP16AttributePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         Tensor* weight = scope->FindVar(weight_name)->GetMutable<Tensor>();
         CHECK(weight) << "Can not find the weight in scope.";
         if (weight->precision() != PrecisionType::kFloat) {
-          LOG(INFO) << "The dtype of weight is not fp32, "
-                    << "so skip quantizing the weight of " << weight_name;
+          VLOG(1) << "The dtype of weight is not fp32, "
+                  << "so skip quantizing the weight of " << weight_name;
           continue;
         }
 

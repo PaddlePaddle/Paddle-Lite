@@ -130,8 +130,8 @@ bool MultiStreamAnalysisPass::CheckOpSupport() {
       "while", "conditional_block", "conditional_block_infer", "graph_op"};
   for (auto& op_type : op_types_set_) {
     if (invalid_op.count(op_type)) {
-      LOG(INFO) << "multi_stream_analysis_pass don't support " << op_type
-                << ", just return.";
+      VLOG(1) << "multi_stream_analysis_pass don't support " << op_type
+              << ", just return.";
       return false;
     }
   }
@@ -295,12 +295,12 @@ void MultiStreamAnalysisPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   const std::string attr_name{"nodes_in_order"};
   SetAttr<std::vector<Node*>>(attr_name, &exec_ops_);
 
-  LOG(INFO) << "stream " << 0 << " has "
-            << ops_in_streams_[0].size() - io_copy_once_num_
-            << " ops. (exclude io_copy_once).";
+  VLOG(1) << "stream " << 0 << " has "
+          << ops_in_streams_[0].size() - io_copy_once_num_
+          << " ops. (exclude io_copy_once).";
   for (size_t i = 1; i < ops_in_streams_.size(); ++i) {
-    LOG(INFO) << "stream " << i << " has " << ops_in_streams_[i].size()
-              << " ops.";
+    VLOG(1) << "stream " << i << " has " << ops_in_streams_[i].size()
+            << " ops.";
   }
 }
 

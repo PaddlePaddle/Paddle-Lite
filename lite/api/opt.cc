@@ -337,7 +337,8 @@ void PrintHelpInfo() {
       "ascend_npu|"
       "imagination_nna)"
       "`"
-      "  Display operators in the input model\n";
+      "  Display operators in the input model\n"
+      "  How to print detailed information: export GLOG_v=1 \n";
   std::cout << "opt version:" << opt_version << std::endl
             << help_info << std::endl;
   exit(1);
@@ -400,10 +401,13 @@ void CheckIfModelSupported() {
   std::set<std::string> valid_ops_set(valid_ops.begin(), valid_ops.end());
 
   // 2.Load model into program to get ops in model
-  std::string prog_path = FLAGS_model_dir + "/__model__";
+  bool is_combined_params_form = false;
   if (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()) {
-    prog_path = FLAGS_model_file;
+    is_combined_params_form = true;
   }
+  const std::string prog_path = lite::FindModelFileName(
+      FLAGS_model_dir, FLAGS_model_file, is_combined_params_form);
+
   lite::cpp::ProgramDesc cpp_prog;
   framework::proto::ProgramDesc pb_proto_prog = *lite::LoadProgram(prog_path);
   lite::pb::ProgramDesc pb_prog(&pb_proto_prog);

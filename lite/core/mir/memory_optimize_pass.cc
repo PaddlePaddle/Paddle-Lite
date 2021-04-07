@@ -93,7 +93,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   };
 
   if (has_x86_opencl()) {
-    LOG(INFO) << "skip x86 opencl target for reuse memory pass";
+    VLOG(1) << "skip x86 opencl target for reuse memory pass";
     return;
   }
 
@@ -187,7 +187,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       ++max_lifecycle_;
     }
   }
-  LOG(INFO) << "There are " << (*lifecycles).size() << " types device var.";
+  VLOG(1) << "There are " << (*lifecycles).size() << " types device var.";
 }
 
 void MemoryOptimizePass::MakeReusePlan(
@@ -236,7 +236,7 @@ void MemoryOptimizePass::MakeReusePlan(
     }
   }
   for (auto& name : cluster) {
-    LOG(INFO) << "cluster: " << name;
+    VLOG(1) << "cluster: " << name;
   }
 }
 

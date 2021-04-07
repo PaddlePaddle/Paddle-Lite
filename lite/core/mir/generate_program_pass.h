@@ -34,7 +34,7 @@ class GenerateProgramPass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph> &graph) override;
 
   std::unique_ptr<RuntimeProgram> GenProgram() {
-    LOG(INFO) << "insts.size " << insts_.size();
+    VLOG(1) << "insts.size " << insts_.size();
     std::unique_ptr<RuntimeProgram> program(
         new RuntimeProgram(std::move(insts_)));
 
